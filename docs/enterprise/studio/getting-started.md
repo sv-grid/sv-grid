@@ -9,8 +9,8 @@ If you would rather just click around first, open a live demo - no install
 needed:
 
 - **[Studio live SQL](https://svgrid.com/demos/193-studio-live-sql/)** - the whole stack in the browser, backed by real Postgres via PGlite
-- **[Live SQL](https://svgrid.com/demos/193-studio-live-sql/)** - a real Postgres in the browser (PGlite)
 - **[Supabase](https://svgrid.com/demos/194-studio-supabase/)** - connect your own hosted Postgres
+- **[The designer itself](https://svgrid.com/studio)** - open a sample app and edit it, nothing to install
 
 **Choose your tutorial.** This page needs no database and teaches the whole
 shape; the one-page tutorials build the same screen against a real backend.

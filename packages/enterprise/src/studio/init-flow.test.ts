@@ -1,7 +1,18 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { runStudioInit, parseSelection, type DbGateway, type PromptIO } from './init-flow.js'
+import { isUserError } from './user-error.js'
 import type { StudioIO } from './cli.js'
 import { parseProject, validateProject, type GridConfig } from './project.js'
+
+/** Run the flow and hand back whatever it threw. */
+async function thrownBy(run: Promise<unknown>): Promise<unknown> {
+  try {
+    await run
+    throw new Error('expected the flow to throw')
+  } catch (err) {
+    return err
+  }
+}
 
 /** A scripted terminal: answers are consumed in order, defaults fill the rest. */
 function scriptedPrompts(answers: string[]) {
@@ -350,6 +361,145 @@ describe('runStudioInit', () => {
     const result = await runStudioInit({ yes: true, theme: 'material', dark: true }, prompts.io, null, fs.io)
     expect(result.project.theme?.preset).toBe('material')
     expect(result.project.theme?.mode).toBe('dark')
+  })
+
+  describe('mistakes are reported as mistakes, not crashes', () => {
+    // The CLI writes a bug report and prints a "report this" link for anything
+    // that isn't a UserError, so a typo must never come back as an Error.
+    it('flags a bad dataset id, an empty table pick and a missing driver as user errors', async () => {
+      const fs = memoryIo()
+      const badDataset = await thrownBy(
+        runStudioInit({ yes: true, dataset: 'nope' }, scriptedPrompts([]).io, null, fs.io),
+      )
+      expect(isUserError(badDataset)).toBe(true)
+      expect((badDataset as { hint?: string }).hint).toContain('customers-orders')
+
+      const noTables = await thrownBy(
+        runStudioInit({ db: 'postgres', url: 'postgres://x' }, scriptedPrompts(['none']).io, fakeDb(), fs.io),
+      )
+      expect(isUserError(noTables)).toBe(true)
+
+      const db: DbGateway = { ...fakeDb(), ensureDriver: async () => ({ ok: false, message: 'pg is not installed' }) }
+      const noDriver = await thrownBy(
+        runStudioInit({ db: 'postgres', url: 'postgres://x' }, scriptedPrompts(['all']).io, db, fs.io),
+      )
+      expect(isUserError(noDriver)).toBe(true)
+    })
+
+    it('blames the connection string when the database cannot be reached', async () => {
+      const fs = memoryIo()
+      const db: DbGateway = {
+        ensureDriver: async () => ({ ok: true }),
+        connect: async () => { throw new Error('getaddrinfo ENOTFOUND base') },
+      }
+      const err = await thrownBy(
+        runStudioInit({ db: 'postgres', url: 'not-a-real-conn' }, scriptedPrompts([]).io, db, fs.io),
+      )
+
+      expect(isUserError(err)).toBe(true)
+      // The driver's own wording survives - it is the diagnostic - but the hint
+      // points at the thing the user can actually fix.
+      expect((err as Error).message).toContain('ENOTFOUND')
+      expect((err as { hint?: string }).hint).toContain('postgres://')
+    })
+
+    it('explains a REST endpoint that is not an absolute URL instead of throwing "Invalid URL"', async () => {
+      const prompts = scriptedPrompts(['5', './rows.json'])
+      const fs = memoryIo()
+      const rows = JSON.stringify([{ id: 1, name: 'Widget' }])
+      const err = await thrownBy(runStudioInit({}, prompts.io, null, fs.io, async () => rows))
+
+      expect(isUserError(err)).toBe(true)
+      expect((err as Error).message).not.toMatch(/Invalid URL/)
+      expect((err as Error).message).toContain('not a full URL')
+    })
+
+    it('explains a REST endpoint that does not return JSON', async () => {
+      const prompts = scriptedPrompts(['5', 'https://api.example.com/widgets'])
+      const fs = memoryIo()
+      const err = await thrownBy(runStudioInit({}, prompts.io, null, fs.io, async () => '<html>nope</html>'))
+
+      expect(isUserError(err)).toBe(true)
+      expect((err as Error).message).toContain('did not return JSON')
+    })
+  })
+
+  describe('target folder guard', () => {
+    /** A folder that already holds somebody else's SvelteKit app. */
+    const existingApp = () => {
+      const fs = memoryIo()
+      fs.files.set('package.json', '{ "name": "their-app" }')
+      fs.files.set('svelte.config.js', 'export default {}')
+      return fs
+    }
+
+    it('asks before overwriting an app that is already there', async () => {
+      const fs = existingApp()
+      const prompts = scriptedPrompts(['1', '1', 'y', '1', '1', 'n', 'Mine', '.', 'y'])
+      await runStudioInit({}, prompts.io, null, fs.io)
+
+      expect(prompts.asked).toContain('Overwrite? (y/N)')
+      expect(fs.files.has('studio.config.json')).toBe(true)
+    })
+
+    it('writes nothing when the answer is no', async () => {
+      const fs = existingApp()
+      const prompts = scriptedPrompts(['1', '1', 'y', '1', '1', 'n', 'Mine', '.', 'n'])
+      const err = await thrownBy(runStudioInit({}, prompts.io, null, fs.io))
+
+      expect(isUserError(err)).toBe(true)
+      expect(fs.files.get('package.json')).toBe('{ "name": "their-app" }')
+      expect(fs.files.has('studio.config.json')).toBe(false)
+    })
+
+    it('refuses rather than silently clobbering when nothing can be asked', async () => {
+      const fs = existingApp()
+      const err = await thrownBy(runStudioInit({ yes: true }, scriptedPrompts([]).io, null, fs.io))
+
+      expect(isUserError(err)).toBe(true)
+      expect((err as { hint?: string }).hint).toContain('--force')
+      expect(fs.files.get('package.json')).toBe('{ "name": "their-app" }')
+    })
+
+    it('goes ahead with --force', async () => {
+      const fs = existingApp()
+      await runStudioInit({ yes: true, force: true }, scriptedPrompts([]).io, null, fs.io)
+      expect(fs.files.get('package.json')).not.toBe('{ "name": "their-app" }')
+    })
+
+    it('treats a folder Studio generated as a regenerate, not a clobber', async () => {
+      const fs = memoryIo()
+      await runStudioInit({ yes: true, out: 'app' }, scriptedPrompts([]).io, null, fs.io)
+      // studio.config.json is there now, so a second run asks nothing.
+      const second = scriptedPrompts([])
+      await runStudioInit({ yes: true, out: 'app' }, second.io, null, fs.io)
+      expect(second.asked).toEqual([])
+    })
+
+    it('ignores files Studio itself creates mid-run', async () => {
+      // Picking a database installs a driver into the target folder first, which
+      // writes a package.json. The guard must not then trip over it.
+      const fs = memoryIo()
+      const db: DbGateway = {
+        ...fakeDb(),
+        ensureDriver: async () => {
+          await fs.io.writeFile('package.json', '{ "dependencies": { "pg": "^8" } }')
+          return { ok: true }
+        },
+      }
+      const prompts = scriptedPrompts([])
+      const result = await runStudioInit({ db: 'postgres', url: 'postgres://x', yes: true }, prompts.io, db, fs.io)
+
+      expect(prompts.asked).toEqual([])
+      expect(result.written.some((p) => p.endsWith('studio.config.json'))).toBe(true)
+    })
+
+    it('leaves an empty folder alone', async () => {
+      const fs = memoryIo()
+      const prompts = scriptedPrompts([])
+      await runStudioInit({ yes: true }, prompts.io, null, fs.io)
+      expect(prompts.asked).toEqual([])
+    })
   })
 
   it('keeps user-owned files that already exist', async () => {

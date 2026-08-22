@@ -126,6 +126,9 @@ importers:
 
   packages/enterprise:
     devDependencies:
+      '@sveltejs/package':
+        specifier: ^2.5.7
+        version: 2.5.7(svelte@5.55.9(@typescript-eslint/types@8.67.0))(typescript@6.0.3)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.1.2(svelte@5.55.9(@typescript-eslint/types@8.67.0))(vite@8.2.1(@types/node@22.19.19)(jiti@2.7.0))

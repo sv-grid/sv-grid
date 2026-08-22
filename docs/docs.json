@@ -1,10 +1,10 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-19T23:33:22.242Z",
+  "generatedAt": "2026-08-22T14:25:48.954Z",
   "counts": {
-    "pages": 361,
-    "enterprise": 54,
+    "pages": 362,
+    "enterprise": 55,
     "withDemo": 208
   },
   "pillars": [
@@ -619,6 +619,7 @@
       "pillar": "company",
       "pages": [
         "enterprise/evaluation.md",
+        "enterprise/getting-started.md",
         "enterprise/licensing.md",
         "enterprise/support.md"
       ]
@@ -750,6 +751,18 @@
       "demoIds": []
     },
     {
+      "path": "enterprise/getting-started.md",
+      "url": "/docs/enterprise/getting-started/",
+      "title": "Enterprise getting started: a complete example",
+      "summary": "One page, one file, from an empty folder to a working grid with Excel, PDF and CSV export. Nothing is elided - every command and every line below was run end to end against the published packages.",
+      "section": "enterprise",
+      "pillar": "company",
+      "tier": "enterprise",
+      "words": 1271,
+      "lastUpdated": "2026-08-21",
+      "demoIds": []
+    },
+    {
       "path": "enterprise/licensing.md",
       "url": "/docs/enterprise/licensing/",
       "title": "Enterprise licensing",
@@ -808,8 +821,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1299,
-      "lastUpdated": "2026-08-18",
+      "words": 1343,
+      "lastUpdated": "2026-08-21",
       "demoIds": []
     },
     {
@@ -834,8 +847,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 3632,
-      "lastUpdated": "2026-08-19",
+      "words": 3810,
+      "lastUpdated": "2026-08-21",
       "demoIds": []
     },
     {
@@ -912,8 +925,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Logic & generated code",
-      "words": 805,
-      "lastUpdated": "2026-08-15",
+      "words": 1092,
+      "lastUpdated": "2026-08-21",
       "demoIds": []
     },
     {
@@ -925,8 +938,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 946,
-      "lastUpdated": "2026-08-12",
+      "words": 956,
+      "lastUpdated": "2026-08-20",
       "demoIds": []
     },
     {
@@ -1031,8 +1044,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Screens & features",
-      "words": 909,
-      "lastUpdated": "2026-08-15",
+      "words": 2297,
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1044,8 +1057,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 2726,
-      "lastUpdated": "2026-08-19",
+      "words": 2730,
+      "lastUpdated": "2026-08-20",
       "demoIds": []
     },
     {
@@ -1083,8 +1096,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 957,
-      "lastUpdated": "2026-08-12",
+      "words": 1071,
+      "lastUpdated": "2026-08-20",
       "demoIds": []
     },
     {
@@ -1226,8 +1239,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 967,
-      "lastUpdated": "2026-08-12",
+      "words": 985,
+      "lastUpdated": "2026-08-20",
       "demoIds": []
     },
     {

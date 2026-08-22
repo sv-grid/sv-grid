@@ -47,8 +47,14 @@ jobs:
 
       - name: Build library (svelte-package)
         # Needed because the website + MCP packages depend on the published
-        # entry points being generated.
-        run: pnpm --filter @svgrid/grid build
+        # entry points being generated. Enterprise ships `dist/` too now, so
+        # its type declarations have to exist before the type-check step -
+        # @svgrid/studio and @svgrid/mcp import `@svgrid/enterprise/studio`.
+        # `build:designer` is skipped here: it is slow and only ships the SPA.
+        run: |
+          pnpm --filter @svgrid/grid build
+          pnpm --filter @svgrid/enterprise build:lib
+          pnpm --filter @svgrid/enterprise build:node
 
       - name: Type-check (svelte-check on every package)
         run: pnpm test:types

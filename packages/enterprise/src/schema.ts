@@ -29,6 +29,7 @@ import type {
   RowData,
   TableFeatures,
 } from '@svgrid/grid'
+import type { PredicateExpr } from './expressions/expression-types.js'
 
 /**
  * Minimal structural copy of the Standard Schema v1 interface
@@ -111,6 +112,27 @@ export type EntityField<TData extends RowData = RowData> = {
    * the grid).
    */
   hidden?: boolean | { grid?: boolean; form?: boolean }
+  /**
+   * Value-driven behaviour: each condition is re-evaluated against the form's
+   * current values as the user types, so a field can appear, lock, or become
+   * required in response to another answer (e.g. show "Other reason" only when
+   * `reason` is `other`).
+   *
+   * Conditions are data (`PredicateExpr`), not functions, so they survive a
+   * round-trip through `studio.config.json` and can be built in a UI. Build them
+   * by hand, with `parsePredicate('status = "active"')`, or in
+   * `SvExpressionEditor`.
+   *
+   * A field hidden by `visible` is skipped by validation and left out of the
+   * submitted payload, so an invisible field can never block a save or write a
+   * stale value. `required` here replaces the static `required` flag rather than
+   * adding to it.
+   */
+  when?: {
+    visible?: PredicateExpr
+    disabled?: PredicateExpr
+    required?: PredicateExpr
+  }
   /**
    * Options for `type: 'enum'`. Reuses the grid's `CellEditorOption`
    * (`{ value, label, color? }`) so grid and form render identically.
@@ -218,6 +240,12 @@ export type EntitySchema<TData extends RowData = RowData> = {
    * when it fails, `message` is attached to `field`.
    */
   validations?: ValidationRuleSpec[]
+  /**
+   * How the create / edit form is arranged: column count and titled sections.
+   * Part of the schema so a built form ships with the entity rather than living
+   * in whichever component happens to render it.
+   */
+  form?: FormLayout
 }
 
 /** The comparison a {@link ValidationRuleSpec} asserts must hold. */
@@ -231,6 +259,38 @@ export type ValidationRuleSpec = {
   /** Compare against another field's value (cross-field) instead of `value`. */
   compareTo?: string
   message: string
+}
+
+/**
+ * A titled group of fields in the form.
+ *
+ * `fields` names them in the order they should appear, so a section is both the
+ * grouping and the ordering. A field left out of every section still renders, in
+ * a trailing untitled group - a form never silently drops one.
+ */
+export type FormSection = {
+  title?: string
+  /** A line under the heading, for what the group is for or how to fill it in. */
+  description?: string
+  /** Column count for this section only. Defaults to the form's. */
+  columns?: 1 | 2 | 3
+  fields: string[]
+  /** Show the section only while this holds - see `EntityField.when`. */
+  visibleWhen?: PredicateExpr
+}
+
+/**
+ * How the entity's form is laid out. Lives on the schema rather than on the
+ * component so a form that has been *built* travels with the entity: it
+ * round-trips through `studio.config.json`, generates into an app, and renders
+ * the same on the client panel and the server-rendered form.
+ *
+ * `SvGridEditPanel`'s `columns` / `sections` props still win when passed, for a
+ * one-off arrangement of an otherwise shared schema.
+ */
+export type FormLayout = {
+  columns?: 1 | 2 | 3
+  sections?: FormSection[]
 }
 
 /** Normalized descriptor the edit panel renders from (one per visible-in-form field). */
@@ -264,6 +324,8 @@ export type FormFieldDescriptor = {
   span: 1 | 2
   /** Derived value function, when the field is computed (rendered read-only, live). */
   computed?: (row: RowData) => unknown
+  /** Value-driven visible / disabled / required conditions. See `EntityField.when`. */
+  when?: EntityField['when']
 }
 
 // --- derivation ------------------------------------------------------------
@@ -422,6 +484,7 @@ export function schemaToFormFields<TData extends RowData>(
         help: f.input?.help,
         span: f.input?.span ?? (f.type === 'json' ? 2 : 1),
         computed: f.computed as ((row: RowData) => unknown) | undefined,
+        when: f.when,
       }
     })
 }

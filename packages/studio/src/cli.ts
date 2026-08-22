@@ -22,6 +22,7 @@ import {
   emitStudioFragment,
   introspectDatabase,
   introspectOpenApi,
+  isUserError,
   runtimeDeps,
   listDatabaseTables,
   missingEnvKeys,
@@ -31,9 +32,11 @@ import {
   runStudioAdd,
   runStudioAddApp,
   runStudioInit,
+  sampleApps,
   serializeProject,
   setEntityDataSource,
   summarizeVerify,
+  UserError,
   type EntitySchema,
   type InitFlags,
   type PromptIO,
@@ -89,37 +92,54 @@ type Parsed = {
   dark?: boolean
   title?: string
   yes?: boolean
+  force?: boolean
 }
 
 function parse(args: string[]): Parsed {
   const out: Parsed = {}
   const positional: string[] = []
-  for (let i = 0; i < args.length; i++) {
+  /**
+   * Read the value that follows a flag. A missing or flag-shaped value used to
+   * come back as `undefined` and read as "not passed", so `--url` at the end of
+   * the line silently fell through to a different code path instead of saying
+   * what was wrong.
+   */
+  let i = 0
+  const value = (flag: string): string => {
+    const next = args[i + 1]
+    if (next === undefined || next.startsWith('-')) {
+      throw new UserError(`${flag} needs a value.`, 'Run `svgrid-studio --help` to see what each flag expects.')
+    }
+    i++
+    return next
+  }
+  for (i = 0; i < args.length; i++) {
     const a = args[i]!
-    if (a === '--from') out.from = args[++i]
-    else if (a === '--table') out.table = args[++i]
-    else if (a === '--route') out.route = args[++i]
-    else if (a === '--api') out.apiRoute = args[++i]
+    if (a === '--from') out.from = value(a)
+    else if (a === '--table') out.table = value(a)
+    else if (a === '--route') out.route = value(a)
+    else if (a === '--api') out.apiRoute = value(a)
     else if (a === '--sql') out.dataSource = 'sql'
-    else if (a === '--db') out.db = args[++i] as SqlDialectName
-    else if (a === '--url') out.url = args[++i]
+    else if (a === '--db') out.db = value(a) as SqlDialectName
+    else if (a === '--url') out.url = value(a)
     else if (a === '--all') out.all = true
-    else if (a === '--config') out.config = args[++i]
-    else if (a === '--out') out.outDir = args[++i]
-    else if (a === '--port') out.port = Number(args[++i])
-    else if (a === '--template') out.template = args[++i]
+    else if (a === '--config') out.config = value(a)
+    else if (a === '--out') out.outDir = value(a)
+    else if (a === '--port') out.port = Number(value(a))
+    else if (a === '--template') out.template = value(a)
     else if (a === '--no-open') out.noOpen = true
-    else if (a === '--target') out.target = args[++i]
+    else if (a === '--target') out.target = value(a)
     else if (a === '--dry-run') out.dryRun = true
     else if (a === '--ai') out.ai = true
-    else if (a === '--app-port') out.appPort = Number(args[++i])
+    else if (a === '--app-port') out.appPort = Number(value(a))
     else if (a === '--fragment') out.fragment = true
-    else if (a === '--supabase-url') out.supabaseUrl = args[++i]
-    else if (a === '--supabase-key') out.supabaseKey = args[++i]
-    else if (a === '--dataset') out.dataset = args[++i]
-    else if (a === '--theme') out.theme = args[++i]
+    else if (a === '--supabase-url') out.supabaseUrl = value(a)
+    else if (a === '--supabase-key') out.supabaseKey = value(a)
+    else if (a === '--dataset') out.dataset = value(a)
+    else if (a === '--theme') out.theme = value(a)
     else if (a === '--dark') out.dark = true
-    else if (a === '--title') out.title = args[++i]
+    else if (a === '--title') out.title = value(a)
+    else if (a === '-f' || a === '--force') out.force = true
     else if (a === '-y' || a === '--yes') out.yes = true
     else if (a === '-h' || a === '--help') out.help = true
     else if (!a.startsWith('-')) positional.push(a)
@@ -128,6 +148,27 @@ function parse(args: string[]): Parsed {
   if (name && !out.route) out.route = name
   if (name && !out.table) out.table = name
   return out
+}
+
+/**
+ * Every sample id, wrapped so the help stays readable. Built from the registry
+ * rather than a hand-kept list: a new sample used to be invisible here until
+ * someone remembered to update the sentence.
+ */
+function templateIds(width = 62): string {
+  const lines: string[] = []
+  let line = ''
+  for (const id of sampleApps.map((s) => s.id)) {
+    const next = line ? `${line} | ${id}` : id
+    if (next.length > width) {
+      lines.push(line)
+      line = id
+    } else {
+      line = next
+    }
+  }
+  if (line) lines.push(line)
+  return lines.join('\n                   ')
 }
 
 const HELP = `svgrid-studio - scaffold CRUD screens from a schema file or a live database
@@ -156,6 +197,7 @@ Running \`svgrid-studio\` with no arguments starts it too.
   --out <dir>      folder to write the app into (default: .)
   --theme <id>     design-system preset      --dark   dark mode
   -y, --yes        take every default, ask nothing
+  -f, --force      write into a folder that already holds another app
 
 Deploy (build first, then the provider CLI; target from --target, else
 studio.config.json, else the adapter in svelte.config.js):
@@ -163,7 +205,8 @@ studio.config.json, else the adapter in svelte.config.js):
   --dry-run        print the resolved commands without running anything
 
 Designer (visual app builder, auto-saves to studio.config.json):
-  --template <id>  open a ready-made sample app (crm | ecommerce | projects | support)
+  --template <id>  open a ready-made sample app:
+                   ${templateIds()}
   --config <path>  studio.config.json to load + auto-save (default: ./studio.config.json)
   --out <dir>      folder to write the generated app into (default: .)
   --port <n>       port to serve on (default: 4321)
@@ -287,6 +330,7 @@ async function main(): Promise<void> {
       ...(opts.dark ? { dark: true } : {}),
       ...(opts.title ? { title: opts.title } : {}),
       ...(opts.yes ? { yes: true } : {}),
+      ...(opts.force ? { force: true } : {}),
     })
     return
   }
@@ -540,6 +584,13 @@ async function writeCrashReport(err: unknown): Promise<void> {
 
 main().catch(async (err: unknown) => {
   process.stderr.write(`svgrid-studio: ${err instanceof Error ? err.message : String(err)}\n`)
+  // A mistyped connection string is not a bug. Only real crashes earn a report -
+  // otherwise ordinary fat-fingering ends with "report this on GitHub", which
+  // teaches people to distrust the message and file noise.
+  if (isUserError(err)) {
+    if (err.hint) process.stderr.write(`  ${err.hint}\n`)
+    process.exit(1)
+  }
   try {
     await writeCrashReport(err)
   } catch {

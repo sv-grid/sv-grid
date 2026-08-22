@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-19 from 361 pages.
+Generated 2026-08-22 from 362 pages.
 
 <!-- =================================================================
      /docs/brand/company-description/  (community)
@@ -1031,6 +1031,269 @@ port for a 5-grid app.
 - [Missing features](../help/missing-features.md) - the honest gap list
 
 <!-- =================================================================
+     /docs/enterprise/getting-started/  (enterprise)
+     ================================================================== -->
+
+# Enterprise getting started: a complete example
+
+One page, one file, from an empty folder to a working grid with Excel, PDF and
+CSV export. Nothing is elided - every command and every line below was run
+end to end against the published packages.
+
+If you already have a project, skip to [step 2](#2-install).
+
+## 1. Create a project
+
+```bash
+npx sv create svgrid-trial --template minimal --types ts --no-add-ons
+cd svgrid-trial
+```
+
+Those flags skip every interactive prompt, so the sequence is copy-pasteable.
+For a plain Vite app instead, `npm create @svgrid@latest` scaffolds one with
+the grid already wired in - the component below drops into either.
+
+## 2. Install
+
+```bash
+npm install @svgrid/grid @svgrid/enterprise
+npm install jszip pdfmake          # optional peers, for Excel and PDF export
+```
+
+`jszip` and `pdfmake` are optional peer dependencies, lazy-loaded the first
+time you actually call an export. Skip them if you only need CSV, TSV or HTML;
+`exportData` throws a message naming the missing package if you call a format
+whose peer is absent.
+
+**No build configuration is required.** If you are on `@svgrid/enterprise`
+2.5.x or earlier, see [older versions](#older-versions) below - those releases
+shipped TypeScript source and needed two `optimizeDeps` entries in
+`vite.config.js`.
+
+## 3. The component
+
+Replace the contents of `src/routes/+page.svelte` (or `src/App.svelte` in a
+Vite project) with this. It is self-contained: licence, theme, grid and
+exports, with nothing else to wire up.
+
+```svelte
+<script>
+  import { SvGrid } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
+  // One of 20 themes that ship with the package. Swap the id for material,
+  // nord, dracula, fluent, carbon, ag-alpine, and so on. Each carries a full
+  // light AND dark palette; dark activates on <html data-theme="dark">.
+  import '@svgrid/grid/themes/shadcn.css'
+
+  // Once, before any Enterprise feature runs. Use your own key here; see
+  // ./evaluation.md for how to get an evaluation key.
+  setLicenseKey('SVENTERPRISE-DEV-DEMO')
+
+  let api = $state(null)
+  let status = $state('')
+
+  // Capabilities are boolean props - `sortable`, `filterable`, `editable`,
+  // `groupable`, `pageable` - and each injects the feature it needs. For finer
+  // control, register features explicitly with `tableFeatures({ ... })` and
+  // pass them as `features`.
+
+  // Starts 'light' rather than reading the DOM, so this file is safe to render
+  // on the server too. The effect below syncs it once we are in the browser.
+  let theme = $state('light')
+
+  $effect(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) theme = saved
+  })
+
+  $effect(() => {
+    document.documentElement.dataset.theme = theme
+    try {
+      localStorage.setItem('theme', theme)
+    } catch (e) {
+      // Private mode / storage disabled. The toggle still works for this tab.
+    }
+  })
+
+  // Your data. Swap for a fetch() in onMount, a load function, or props.
+  let rows = $state([
+    { id: 1, name: 'Ada Lovelace', team: 'Engineering', salary: 145000, active: true },
+    { id: 2, name: 'Alan Turing', team: 'Research', salary: 160000, active: true },
+    { id: 3, name: 'Grace Hopper', team: 'Engineering', salary: 152000, active: false },
+    { id: 4, name: 'Katherine Johnson', team: 'Data', salary: 138000, active: true },
+    { id: 5, name: 'Edsger Dijkstra', team: 'Research', salary: 149000, active: false },
+  ])
+
+  const columns = [
+    { field: 'name', header: 'Name', editorType: 'text', width: 200 },
+    { field: 'team', header: 'Team', editorType: 'text', width: 150 },
+    {
+      field: 'salary',
+      header: 'Salary',
+      width: 130,
+      align: 'right',
+      format: { type: 'currency', currency: 'USD' },
+    },
+    { field: 'active', header: 'Active', editorType: 'checkbox', width: 90 },
+  ]
+
+  // installEnterprise() augments the grid API with the Pro methods:
+  // exportData, importData, print, pivot, AI.
+  async function run(label, fn) {
+    if (!api) return
+    try {
+      await fn()
+      status = `${label} ready`
+    } catch (err) {
+      status = `${label} failed: ${err instanceof Error ? err.message : String(err)}`
+    }
+  }
+</script>
+
+<main>
+  <header>
+    <div>
+      <h1>SvGrid Enterprise</h1>
+      <p>Sort, filter, select, and double-click a cell to edit.</p>
+    </div>
+    <button
+      type="button"
+      onclick={() => (theme = theme === 'dark' ? 'light' : 'dark')}
+      aria-label="Switch to {theme === 'dark' ? 'light' : 'dark'} mode"
+    >
+      {theme === 'dark' ? 'Light' : 'Dark'}
+    </button>
+  </header>
+
+  <div class="grid-shell">
+    <SvGrid
+      data={rows}
+      {columns}
+      sortable
+      filterable
+      editable
+      selectionMode="row"
+      showRowSelection={true}
+      showRowNumbers={true}
+      rowHeight={38}
+      containerHeight="100%"
+      fitColumns={true}
+      onApiReady={(next) => (api = installEnterprise(next))}
+    />
+  </div>
+
+  <div class="actions">
+    <button type="button" onclick={() => run('CSV', () => api.exportData({ format: 'csv', filename: 'team' }))}>
+      Export CSV
+    </button>
+    <button type="button" onclick={() => run('Excel', () => api.exportData({ format: 'xlsx', filename: 'team' }))}>
+      Export Excel
+    </button>
+    <button type="button" onclick={() => run('PDF', () => api.exportData({ format: 'pdf', filename: 'team' }))}>
+      Export PDF
+    </button>
+    <button type="button" onclick={() => run('Print', () => api.print())}>Print</button>
+    {#if status}<span class="status">{status}</span>{/if}
+  </div>
+
+  <p class="hint">
+    Export respects the current sort, filter and grouping. Change the theme
+    import at the top of this file to re-skin the grid and this page together.
+  </p>
+</main>
+
+<style>
+  /* Page chrome reads the same --sg-* tokens as the grid, so it re-themes with it. */
+  :global(body) {
+    margin: 0;
+    background: var(--sg-bg);
+    color: var(--sg-fg);
+    font-family: var(--sg-font, system-ui, sans-serif);
+  }
+
+  main { max-width: 760px; margin: 3rem auto; padding: 0 1rem; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+  h1 { margin: 0; font-size: 1.4rem; }
+  p { color: var(--sg-muted); }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; }
+
+  button {
+    flex: none;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius, 6px);
+    background: var(--sg-bg-subtle, transparent);
+    color: var(--sg-fg);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button:hover { background: var(--sg-row-hover-bg); }
+  button:focus-visible { outline: 2px solid var(--sg-accent); outline-offset: 2px; }
+
+  .status { font-size: 0.82rem; color: var(--sg-muted); }
+  .grid-shell { height: 320px; }
+  .hint { font-size: 0.85rem; }
+</style>
+```
+
+## 4. Run it
+
+```bash
+npm run dev
+```
+
+Open <http://localhost:5173>. You should get a five-row grid: click a header to
+sort, use the funnel for Excel-style filtering, double-click a cell to edit,
+and the four buttons write real files.
+
+## What the three pieces do
+
+| Line | Why it's there |
+| --- | --- |
+| `setLicenseKey(...)` | Runs once, before any Enterprise call. Without it the pack still works, but watermarks and nudges the app. See [licensing](./licensing.md). |
+| `installEnterprise(next)` | Wraps the `SvGridApi` from `onApiReady` and returns it with `exportData`, `importData`, `print`, pivot and AI attached. The `<SvGrid>` component itself stays Community. |
+| `import '@svgrid/grid/themes/shadcn.css'` | Optional. Declares the `--sg-*` tokens for one of 20 presets. Without it the grid still renders, using the built-in fallbacks. |
+
+## Server-side rendering
+
+The component above is SSR-safe as written: `theme` starts at a literal, and
+every DOM and `localStorage` access sits inside `$effect`, which only runs in
+the browser. No `export const ssr = false` is needed.
+
+If you move DOM access to module scope or into component initialisation, it
+will run on the server and throw. Keep it in `$effect` or `onMount`.
+
+## Older versions
+
+`@svgrid/enterprise` 2.5.x and earlier shipped TypeScript source rather than a
+built bundle. Vite's dependency pre-bundler cannot parse the `.svelte.ts` rune
+modules in it, so those versions need two entries in `vite.config.js`:
+
+```js
+optimizeDeps: {
+  // Without this the dev server fails to start:
+  //   RolldownError ... Unexpected token   (on `import type`)
+  exclude: ['@svgrid/grid', '@svgrid/enterprise'],
+  // Excluding it also stops ITS imports being pre-bundled, and jszip and
+  // pdfmake are CommonJS. Without this, xlsx and pdf export fail with
+  // "JSZip is not a constructor" / "pdfMake.createPdf is not a function".
+  include: ['jszip', 'pdfmake/build/pdfmake', 'pdfmake/build/vfs_fonts'],
+},
+```
+
+2.6.0 moved the package to a built `dist`, so neither entry is needed. Upgrading
+is the better fix.
+
+## Next
+
+- [Evaluation playbook](./evaluation.md) - what unlicensed looks like, and how
+  to get an evaluation key.
+- [Licensing](./licensing.md) - key formats, seats, renewals.
+- [Data export](../help/export.md) - styles, headers, images, multi-sheet.
+- [Data import](../help/import.md) - column mapping and per-row validation.
+
+<!-- =================================================================
      /docs/enterprise/licensing/  (enterprise)
      ================================================================== -->
 
@@ -1866,6 +2129,8 @@ designer produced, and hand it back:
 | `studio_update_screen` | Rename a screen, change its route or nav entry, or set `renderMode` (`ssr` for an idiomatic `+page.server.ts` load + form actions, `spa` for the client page) |
 | `studio_remove_screen` | Remove a screen and its blocks |
 | `studio_set_screen_layout` | Switch a screen between `grid`, `stack`, `split`, `dock`, and `canvas` layouts |
+| `studio_set_form_layout` | Arrange an entity's [create/edit form](./edit-forms.md): column count + titled sections, or `"suggest": true` to have them proposed from the field names |
+| `studio_set_field_conditions` | Make a form field [value-driven](./edit-forms.md#fields-that-react-to-the-answers) - shown, required, or locked depending on the other answers |
 | `studio_set_entity_source` | Bind an entity to a data source: `sql`, `supabase`, `rest`, `pglite`, or `memory` |
 | `studio_set_theme` | Set the theme preset, light/dark mode, and accent color |
 | `studio_set_access` | Configure [RBAC](./access-control.md): roles gating screens and create/update/delete actions |
@@ -2087,8 +2352,10 @@ security still applies, so the app sees exactly what the browser may see. The
 other paths work there too, and you can rebind to any database later with
 **Use my data**.
 
-The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - same
-questions, same generator, same app.
+The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - the same
+generator, the same app. The questions differ slightly: the CLI also asks for a
+theme and light/dark, while the wizard offers a dashboard page per table (pick
+your theme in the designer afterwards).
 
 ## How the screen is laid out
 
@@ -2205,6 +2472,21 @@ and the **Page size options** for the selector), and per-**Column** settings -
 expand a column to set its **header**, **width**, **alignment**, **pin** (left /
 right), plus show / hide + reorder. There is no standalone "Edit form" block - the
 grid owns editing end to end.
+
+### Form builder
+
+**Open form builder** - on the grid's **Form** tab, and on the entity's **Form
+layout** section - opens the form in a room of its own. The canvas draws the form
+as it will look, with real labels, control shapes, and column spans, and you drag
+the fields around on it directly. Click a field to rename it, change its control,
+add help text, span it across the row, or give it a rule so it only appears (or
+only becomes required, or locks) once another answer calls for it. **Group these
+for me** sections an unarranged form in one click, and **Try it** swaps in the
+live panel so you can type into the form and watch a condition fire.
+
+It edits the *entity*, not the block, so the arrangement follows the entity
+everywhere it is rendered - including a server-rendered screen. See
+[edit forms](./edit-forms.md#building-one-without-writing-it).
 
 ### Export toolbar
 
@@ -3355,22 +3637,53 @@ See [Databases](./databases.md) and [Data binding](./data-binding.md).
 
 ## Render mode: SPA or SSR per screen
 
-By default a generated screen is a client page (`spa`): the browser talks to
-the API route through the data-source controller. In the
-[app designer](./app-designer.md), a screen can instead opt into **`ssr`**,
-which emits idiomatic server-rendered SvelteKit - a `+page.server.ts` with a
-`load` function and form `actions`, URL-driven sort / filter / page state, and
-progressive enhancement.
+An **`ssr`** screen emits idiomatic server-rendered SvelteKit: a
+`+page.server.ts` with a `load` function and form `actions`, URL-driven sort /
+filter / page state, and progressive enhancement. A **`spa`** screen emits a
+client page where the browser talks to the API route through the data-source
+controller.
+
+**New apps built on a database or a REST API get `ssr` for free.** When you
+generate an app - `svgrid-studio init`, the designer's **New app** wizard, or
+`crudAppFromSchemas` - every screen that qualifies starts in `ssr`. You can still
+switch any screen either way in the [app designer](./app-designer.md).
+
+In-memory and PGlite apps stay `spa`, on purpose. Those sources are module
+singletons, so a server-rendered screen would read and write the server's copy of
+the rows while the app's remaining client screens read the browser's: add a row
+on one and the other never sees it. SQL and REST have no such split, because
+every path goes to the same database or the same remote API.
+
+### How the app is wired
+
+Once an app has at least one server-rendered screen, the root `src/routes/+layout.ts`
+leaves SvelteKit's own default in place - server rendering on - and each
+client-only screen opts out in its own `+page.ts`:
+
+```ts
+// src/routes/<screen>/+page.ts
+export const ssr = false
+```
+
+So the nav shell, the home page, and the sign-in pages all render on the server,
+and only the screens that fetch in the browser skip it. An app with nothing to
+server-render keeps the single `export const ssr = false` in the root layout, as
+before.
 
 Not every screen shape can emit as SSR. The rules:
 
 - The screen must be entity-bound, without a [code-behind](./code-behind.md)
   companion.
-- Its data source must be `memory` (runs in-process) or `sql` (reuses the
-  connected `/api` route via `event.fetch`); `rest`, `supabase`, and `pglite`
-  screens stay SPA.
-- **A single plain grid** emits as load + form actions (no tree data, no
-  scheduler view).
+- Its data source must be `memory` (runs in-process), `sql` (reuses the connected
+  `/api` route via `event.fetch`), or `rest` **on an absolute URL** (the server
+  calls the remote API directly; a relative URL has no origin to resolve against
+  there, so it stays SPA). `supabase` and `pglite` screens stay SPA - PGlite only
+  exists in the browser, and a Supabase read carries the signed-in user's token,
+  which a server-side call with the anon key would silently drop.
+- **A grid, optionally with a facet panel**, emits as load + form actions (no
+  tree data, no scheduler view). The facet panel becomes a plain `GET` form
+  whose controls are named for the URL params the `load` reads, so filtering
+  works with JavaScript off and every filtered view has a shareable URL.
 - **Read-only block screens** - any mix of chart, pivot, dashboard, KPI, gauge,
   tree, detail, and master-detail - emit as a load-only page.
 - Anything else (boards, calendars, UI component blocks, containers,
@@ -3449,9 +3762,10 @@ The designer edits a single JSON document - the **project** - with this shape:
       (resizable panes), `dock` (dockable / floatable panes, see
       [Dock layout](./dock-layout.md)), or `canvas` (free-form placement on a
       12-column cell grid).
-    - a **render mode** - `spa` (default; the page fetches through the data
-      source in the browser) or `ssr` (emits idiomatic SvelteKit
-      `+page.server.ts` load + form actions).
+    - a **render mode** - `ssr` (emits idiomatic SvelteKit `+page.server.ts`
+      load + form actions; the default for screens in a database-backed app) or
+      `spa` (the page fetches through the data source in the browser). See
+      [Code generation](./code-generation.md).
     - optional **code-behind** - a user-owned `handlers.ts` companion for
       event handlers, written once and never regenerated.
 
@@ -4645,8 +4959,23 @@ to a dialog role.
 
 ## Validation
 
-The panel validates on submit and blocks the save when anything fails, showing a
-message under each field. Three layers, in order:
+**When it speaks up.** A field is checked when the user leaves it, not while they
+are still typing, so a form never scolds you for a value you have not finished
+entering. Once a field is showing an error it re-checks on every keystroke, so a
+correction clears the message straight away instead of making you submit again to
+find out. A failed submit marks every field as visited, focuses the first one that
+needs fixing, and lists them all in a summary at the top of the form that jumps to
+a field when clicked.
+
+Each control carries `aria-invalid`, and its message (or its hint, when there is
+no error) is wired up with `aria-describedby`, so a screen reader announces the
+problem with the field rather than leaving it to be discovered.
+
+**Closing a form with unsaved edits asks first.** Cancel, Escape, or a click on
+the backdrop shows *Discard your changes?* in the footer, with **Keep editing**
+and **Discard**; a second Escape confirms. An untouched form closes immediately.
+
+The save is blocked while anything fails. Three layers, in order:
 
 1. **Required** - non-empty for `required` fields.
 2. **Built-in constraints** - number validity + `min` / `max`,
@@ -4662,6 +4991,168 @@ message under each field. Three layers, in order:
 
 No external library is required for the built-in rules - add a Standard Schema
 validator only when you need custom logic.
+
+### No-code rules
+
+`EntitySchema.validations` states cross-field rules as data, so the same rule
+runs in the form and in a generated app's server route:
+
+```ts
+validations: [
+  { field: 'endsAt', op: 'gte', compareTo: 'startsAt', message: 'End must be after start' },
+  { field: 'code', op: 'minLen', value: 4, message: 'Code needs 4+ characters' },
+]
+```
+
+Operators: `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `required`, `minLen`, `maxLen`.
+Use `compareTo` to compare against another field instead of a fixed `value`.
+
+## Building one without writing it
+
+Everything below this line is authorable in the [visual designer](./app-designer.md).
+Select the entity and open **Form layout -> Open form builder** (the grid block's
+**Form** tab has the same button). It edits the entity, so what you build there is
+what a generated app and a server-rendered screen render.
+
+Once it is open the entity name in the title is a picker, so you can build any
+entity's form without going back out to find a page that uses it.
+
+**The canvas is the form.** It draws real labels, real control shapes, and the
+real column grid, so arranging the form and looking at it are the same act - a
+field you span shows as spanned, a `textarea` is tall, a switch is small.
+
+- **Drag a field** anywhere on the canvas, or select one and use ↑ / ↓ (announced
+  for screen readers). Fields no section claims sit in a trailing **Not in a
+  section** group, because that is exactly where the form puts them.
+- **Sections** take a title, a line of guidance, and their own column count.
+  Hover one for its tools: columns, **Rule** (show the whole section only when a
+  condition holds), reorder, and remove - which removes the heading only, never
+  the fields under it. On an unarranged form, **Group these for me** proposes a
+  grouping from the field names; it only appears when there is a real grouping to
+  make.
+- **Click a field** and the right pane fills, in two tabs. **Field**: label,
+  control, placeholder, help text, span the full row, always required, and
+  *Remove from this form* (the field keeps its grid column). **Rules**: the
+  *Shown when* / *Required when* / *Locked when* conditions plus the cross-field
+  checks that blame this field - the same `validations` rules, edited here because
+  they are form logic. The tab carries a count, and so does the field on the
+  canvas.
+
+**Try it** swaps the canvas for the live edit panel, so you can type into the form
+and watch a condition fire. Toggle **Existing** / **New**: the values differ, so
+the conditions do too.
+
+Note that a grid block can still override the arrangement for one screen. When it
+does, the builder says so and offers to drop the override.
+
+### From an agent
+
+Two MCP tools drive the same model, so an agent can build the form too:
+
+| Tool | What it does |
+| --- | --- |
+| `studio_set_form_layout` | Set the column count and the sections. Pass `"suggest": true` instead of `sections` to have them proposed from the field names. The reply reports what actually landed, including anything that fell through to the trailing group. |
+| `studio_set_field_conditions` | Set a field's `visible` / `required` / `disabled` conditions. A condition you do not name is left alone; pass `null` to clear one. |
+
+See the [MCP server](./ai-generation.md) for the rest of the `studio_*` tools.
+
+## Laying the form out
+
+`EntitySchema.form` says how the form is arranged. It lives on the schema, not on
+the component, so a form you have *built* travels with the entity: it round-trips
+through `studio.config.json`, generates into an app, and draws the same in the
+edit panel and in a server-rendered form.
+
+```ts
+const customers: EntitySchema = {
+  name: 'customers',
+  fields: [/* ... */],
+  form: {
+    columns: 2,
+    sections: [
+      { title: 'Contact', description: 'How we reach them.', fields: ['name', 'email', 'phone'] },
+      { title: 'Billing', columns: 1, fields: ['plan', 'vatNumber'] },
+      // A whole section can be conditional, the same way a field is.
+      { title: 'Cancellation', fields: ['reason', 'notes'],
+        visibleWhen: { kind: 'cmp', column: 'status', op: 'equals', value: 'cancelled' } },
+    ],
+  },
+}
+```
+
+- `fields` gives both the grouping and the order.
+- A field in no section still renders, in a trailing untitled group. A form never
+  silently drops one.
+- A section whose fields are all hidden disappears with them, heading included.
+- `columns` on a section overrides the form's for that group alone; a field with
+  `input.span = 2` spans the full width.
+
+`SvGridEditPanel`'s `columns` and `sections` props still win when passed, for a
+one-off arrangement of an otherwise shared schema.
+
+**Server-rendered screens follow the same layout.** A screen with
+`renderMode: 'ssr'` renders its sections, descriptions and column counts, marks
+`span: 2` fields full-width, shows each field's hint, and states the field's own
+constraints (`minlength`, `maxlength`, `min`, `max`, `pattern`, and an `email` /
+`url` input type) as native HTML attributes so the browser catches an obvious
+mistake before a round-trip. The action re-checks all of it server-side
+regardless, so the attributes save a trip but never decide anything.
+
+## Fields that react to the answers
+
+A field can appear, lock, or become required based on what the user has already
+entered - the form asks for a reason only when it needs one, and never asks
+twice.
+
+Each condition is a `PredicateExpr`: **data, not a function**, so it survives a
+round-trip through `studio.config.json`, generates into an app unchanged, and can
+be edited in a UI.
+
+```ts
+{
+  field: 'otherReason',
+  type: 'text',
+  when: {
+    // Only asked for - and only demanded - when the reason is "other".
+    visible: { kind: 'cmp', column: 'reason', op: 'equals', value: 'other' },
+    required: { kind: 'cmp', column: 'reason', op: 'equals', value: 'other' },
+  },
+}
+{
+  field: 'approver',
+  type: 'text',
+  // Locked until the order is big enough to need sign-off.
+  when: { disabled: { kind: 'cmp', column: 'total', op: 'lessThan', value: 1000 } },
+}
+```
+
+Three rules make this safe to rely on:
+
+- A field hidden by `visible` is **skipped by validation** and **left out of the
+  submitted payload**. It can never block a save the user cannot fix, and a value
+  they can no longer see is never written back. The generated SSR route applies
+  the same rule to a posted form, so both paths save the same fields.
+- `required` **replaces** the static `required` flag rather than adding to it, so
+  a rule can make a normally required field optional as well as the reverse.
+- A malformed condition falls back to showing and enabling the field. A broken
+  rule degrades to an ordinary form instead of hiding data.
+
+Conditions are the same expressions the alert rules use, so `parsePredicate` and
+the `SvExpressionEditor` component both work on them:
+
+```ts
+import { parsePredicate } from '@svgrid/enterprise'
+when: { visible: parsePredicate('reason = "other"') }
+```
+
+A section whose fields are all hidden disappears along with them, heading
+included.
+
+Three [sample apps](./samples.md) ship this, so you can open one and watch it
+work: **CRM** asks a lost deal what it lost to, **Support desk** demands a
+resolution before a ticket can be resolved or closed (and only then asks for a
+CSAT rating), and **Insurance Claims** requires a justification to deny a claim
+and freezes the amount and deductible once it has been paid.
 
 ## Controls
 
@@ -4756,8 +5247,8 @@ If you would rather just click around first, open a live demo - no install
 needed:
 
 - **[Studio live SQL](https://svgrid.com/demos/193-studio-live-sql/)** - the whole stack in the browser, backed by real Postgres via PGlite
-- **[Live SQL](https://svgrid.com/demos/193-studio-live-sql/)** - a real Postgres in the browser (PGlite)
 - **[Supabase](https://svgrid.com/demos/194-studio-supabase/)** - connect your own hosted Postgres
+- **[The designer itself](https://svgrid.com/studio)** - open a sample app and edit it, nothing to install
 
 **Choose your tutorial.** This page needs no database and teaches the whole
 shape; the one-page tutorials build the same screen against a real backend.
@@ -5510,7 +6001,8 @@ picks up exactly where you left off.
 ## What it does
 
 - **Loads** `studio.config.json` from the current folder. If there's none yet,
-  the designer opens with a small starter project so you have something to edit.
+  the designer opens with a small starter project so you have something to edit,
+  and offers the **New app** wizard to replace it with your own data.
 - **Auto-saves** every change back to `studio.config.json` (debounced). This is
   the persistence the embedded component never had - your work survives a
   refresh.
@@ -5529,18 +6021,25 @@ npm run dev
 
 ## Start from zero
 
-![The designer's onboarding screen: sample apps, New entity, Connect a database, or Import a schema](/docs-media/studio-launch-onboarding.png)
+![The designer's start screen: sample apps, New entity, Connect a database, or Import a schema](/docs-media/studio-launch-onboarding.png)
 
-Launched in an empty folder, the designer opens on an **onboarding** screen -
-your app has no data model yet. The quickest start is a ready-made
-[sample app](./samples.md) (`--template <id>`, or the **Sample apps** button);
-otherwise add a data model one of these ways:
+Launched in an empty folder, the designer opens the starter project and offers
+the **New app** wizard - four steps (where the data lives, which tables, which
+pages each table gets, what it's called) that end on a working app. It runs the
+same generator as `svgrid-studio init`, so both routes land in the same place.
+
+Prefer to start from something finished? A ready-made [sample app](./samples.md)
+(`--template <id>`, or the **Sample apps** button) is one click. Or build the
+data model yourself:
 
 - **New entity** - name it and get a screen with an `id` + `name` field; flesh
   out the rest (fields, types, PK / required / relations) in the inspector. The
   **New entity** button in the toolbar works any time, not just at the start.
 - **Connect a database** - see below.
 - **Import a schema** - paste a Drizzle `schema.ts` or Prisma `schema.prisma`.
+
+Clear every screen out of a design and these same choices appear as the
+designer's start screen.
 
 Opening a [sample app](./samples.md) gives you a complete, themed app in one
 click. Here the **CRM** sample - a dashboard with KPI tiles and a deal-pipeline
@@ -5564,11 +6063,14 @@ tables into entities - no hand-typing a schema:
    **bound to its SQL table**, so **Generate app** emits a connected
    `src/routes/api/<table>/+server.ts` (driver + `DATABASE_URL`) for it.
 
-The database driver (`pg` / `mysql2` / `mssql` / `better-sqlite3`) must be
-installed in the folder you launched the designer in. The connection stays on
-your machine - the local designer server does the read; nothing is sent to a
-cloud. To scaffold from a schema file or a live DB straight from the terminal
-instead, use [`npx @svgrid/studio add`](./cli.md).
+Each database needs a driver (`pg` / `mysql2` / `mssql` / `better-sqlite3`), but
+you don't have to install it yourself: Studio checks the folder you launched the
+designer in, detects its package manager (pnpm / yarn / bun / npm from the
+lockfile) and installs the missing one for you. If that fails - no network, a
+locked file - it says which command to run by hand. The connection stays on your
+machine: the local designer server does the read; nothing is sent to a cloud. To
+scaffold from a schema file or a live DB straight from the terminal instead, use
+[`npx @svgrid/studio add`](./cli.md).
 
 ## Options
 
@@ -7169,8 +7671,8 @@ no placeholder rows.
 
 ## Start from a sample
 
-In the designer, click **Sample apps** (toolbar or the onboarding screen) and pick
-one of **17** ready-made apps. Each loads instantly as a full multi-entity app - a
+In the designer, click **Sample apps** (toolbar or the empty-state screen) and pick
+one of **18** ready-made apps. Each loads instantly as a full multi-entity app - a
 dashboard (KPIs + charts), grids, a master/detail, and **rich edit forms** - themed
 and **seeded with believable data**, so you see the real thing, not `name 1 / email 1`.
 
@@ -7193,6 +7695,7 @@ and **seeded with believable data**, so you see the real thing, not `name 1 / em
 | **Fleet** | Vehicles, Drivers, Trips - utilization + cost |
 | **Gym** | Members, Classes, Bookings - capacity + attendance |
 | **Library** | Books, Members, Loans - circulation + overdue |
+| **Insurance Claims** | Policies, Adjusters, Claims - claims pipeline board + payout dashboard, behind a sign-in |
 
 ![A loaded sample in the designer: the CRM forecast dashboard - KPI tiles (pipeline value, open deals, average deal size) and deal-value charts by stage and owner.](/docs-media/studio-sample-loaded.png)
 

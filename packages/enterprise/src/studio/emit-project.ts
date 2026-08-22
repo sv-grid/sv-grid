@@ -17,6 +17,8 @@ import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, compone
 import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-components.js'
 import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
+import { hasFieldConditions } from '../edit-panel.js'
+import { SVGRID_VERSION } from '../version.js'
 import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, prepareEntities, relationDisplayFields, sqlDdlFiles, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
@@ -2249,7 +2251,10 @@ function screenChildEntities(blocks: Block[], resolve: (name: string) => EntityS
 /** `+page.server.ts` for a read-only SSR screen (data-viz / detail / master-
  *  detail): a `load` that returns the full dataset (+ each child collection) -
  *  the page renders real SSR HTML from `data.*`. No actions (read-only). */
-function ssrReadServerFile(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql', accessEnabled: boolean, screenIds: string[], resolve: (name: string) => EntitySchema | undefined): GeneratedFile {
+/** Sources a screen can render on the server. See `ssrScreenShape`. */
+type SsrSourceKind = 'memory' | 'sql' | 'rest'
+
+function ssrReadServerFile(schema: EntitySchema, screen: Screen, sourceKind: SsrSourceKind, accessEnabled: boolean, screenIds: string[], resolve: (name: string) => EntitySchema | undefined): GeneratedFile {
   const n = namesFor(schema)
   const isSql = sourceKind === 'sql'
   const children = screenChildEntities(screen.blocks, resolve)
@@ -2264,8 +2269,8 @@ function ssrReadServerFile(schema: EntitySchema, screen: Screen, sourceKind: 'me
     contents: `import type { PageServerLoad } from './$types'
 import type { ServerRequest } from '@svgrid/grid'
 ${isSql ? "import { createKitDataSource } from '@svgrid/enterprise'\n" : ''}${rbac ? "import { error } from '@sveltejs/kit'\nimport { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${memImports.length ? `import { ${memImports.join(', ')} } from '$lib/data'\n` : ''}
-// The app shell is a client SPA (+layout.ts ssr=false); this screen opts back
-// INTO server rendering - real SSR HTML, not just a server-side load.
+// This screen renders on the server: real SSR HTML, not just a server-side
+// load. Stated explicitly so it holds whichever way the root layout is set.
 export const ssr = true
 ${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}\n` : ''}
 const PAGE: ServerRequest = { startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} }
@@ -2325,26 +2330,61 @@ function ssrQueryHelperFile(): GeneratedFile {
 }
 
 const htmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+/** Escape a value going inside a double-quoted HTML attribute. */
+const attrEsc = (s: string) => htmlEsc(s).replace(/"/g, '&quot;')
+
+/**
+ * The field's own constraints as native HTML attributes, so a server-rendered
+ * form validates in the browser too. The server still re-checks every one of
+ * them: these only save a round-trip, they never decide anything.
+ */
+function attrs(f: EntityField): string {
+  const out: string[] = []
+  if (f.input?.placeholder) out.push(`placeholder="${attrEsc(f.input.placeholder)}"`)
+  if (f.type === 'number') {
+    if (f.min != null) out.push(`min="${f.min}"`)
+    if (f.max != null) out.push(`max="${f.max}"`)
+    if (f.input?.step != null) out.push(`step="${f.input.step}"`)
+  } else {
+    if (f.minLength != null) out.push(`minlength="${f.minLength}"`)
+    if (f.maxLength != null) out.push(`maxlength="${f.maxLength}"`)
+    // `format` already picks the input type, which brings its own checking.
+    if (f.pattern && !f.format) out.push(`pattern="${attrEsc(f.pattern)}"`)
+  }
+  return out.length ? ' ' + out.join(' ') : ''
+}
 
 /** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
-function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'memory' | 'sql', accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>): GeneratedFile[] {
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: SsrSourceKind, accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>): GeneratedFile[] {
   const n = namesFor(schema)
   const isSql = sourceKind === 'sql'
+  // REST reads like the memory path - the source is imported from $lib/data and
+  // called directly - but the remote API owns the ids, so a create posts the
+  // values alone, as sql does.
+  const isRest = sourceKind === 'rest'
   const relSchemaOf = (f: EntityField) => byName.get(f.relation!.entity)!
   const relIdOf = (rs: EntitySchema) => rs.idField ?? rs.fields.find((x) => x.primaryKey)?.field ?? 'id'
-  const grid = screen.blocks[0]!.config as GridConfig
+  const grid = screen.blocks.find((b) => b.config.kind === 'grid')!.config as GridConfig
+  const facetPanel = screen.blocks.find((b) => b.config.kind === 'filter')?.config as FilterPanelConfig | undefined
   const pageSize = grid.pageSize && grid.pageSize > 0 ? grid.pageSize : 25
   const wantsFilter = grid.filterable !== false
   const idField = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
   const isFormHidden = (f: EntityField) => f.hidden === true || (typeof f.hidden === 'object' && !!f.hidden.form)
-  const formFields = schema.fields.filter(
+  const editable = schema.fields.filter(
     (f) => f.field !== idField && !f.primaryKey && !f.readonly && !f.computed && !f.formula && !isFormHidden(f),
   )
+  // The grid block's form settings win over the schema's, matching how the edit
+  // panel resolves them - so a layout arranged in the designer renders the same
+  // here instead of the server-rendered form quietly ignoring it.
+  const formFields = grid.formFields?.length
+    ? (grid.formFields.map((name) => editable.find((f) => f.field === name)).filter(Boolean) as EntityField[])
+    : editable
   const normType = (t: string): 'text' | 'number' | 'boolean' => (t === 'number' ? 'number' : t === 'boolean' ? 'boolean' : 'text')
   const fieldTypesLit = `{ ${formFields.map((f) => `${jsStr(f.field)}: ${jsStr(normType(f.type))}`).join(', ')} }`
 
-  // Relation fields render as a native <select> whose options are prefetched in load
-  // (memory path only for now; sql relation fields stay a text FK - follow-up).
+  // Relation fields render as a native <select> whose options are prefetched in
+  // load - from the in-process source on memory, or the related entity's /api
+  // route on sql (see relSource below).
   const isRel = (f: EntityField) => f.type === 'relation' && !!f.relation && byName.has(f.relation!.entity)
   const relFields = formFields.filter(isRel)
   // The $lib/data import only needs the related sources on the memory path; on sql
@@ -2371,14 +2411,25 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: 'me
   //    once, in that route's createKitHandlers - not duplicated here.
   const src = isSql ? 'source(fetch)' : n.sourceVar
   const fetchArg = isSql ? ', fetch' : ''
-  const enterpriseImports = isSql ? 'validateAll, createKitDataSource' : 'validateAll'
-  const sourceImport = isSql ? '' : `import { ${[...new Set([n.sourceVar, ...relSourceVars]), 'nextId'].join(', ')} } from '$lib/data'\n`
+  // A schema with value-driven fields posts through `stripHiddenValues`, so a
+  // field the form was hiding is never written from a submitted FormData - the
+  // same fields the client panel would have sent.
+  const conditional = hasFieldConditions(schema)
+  const readValues = (fd: string) => (conditional ? `stripHiddenValues(${n.schemaVar}, formToValues(${fd}))` : `formToValues(${fd})`)
+  const enterpriseImports = [
+    'validateAll',
+    ...(conditional ? ['stripHiddenValues'] : []),
+    ...(isSql ? ['createKitDataSource'] : []),
+  ].join(', ')
+  const sourceImport = isSql
+    ? ''
+    : `import { ${[...new Set([n.sourceVar, ...relSourceVars]), ...(isRest ? [] : ['nextId'])].join(', ')} } from '$lib/data'\n`
   const schemaImport = `import { ${n.schemaVar}${isSql ? `, type ${n.type}` : ''} } from '$lib/schemas'`
-  const idConst = isSql ? '' : `\nconst ID_FIELD = ${jsStr(idField)}`
+  const idConst = isSql || isRest ? '' : `\nconst ID_FIELD = ${jsStr(idField)}`
   const srcHelper = isSql
     ? `\n// Same-origin client over the connected /api/${n.route} route (that route runs\n// validation, RBAC, triggers + audit via createKitHandlers).\nconst source = (fetch: typeof globalThis.fetch) => createKitDataSource<${n.type}>({ endpoint: ${jsStr('/api/' + n.route)}, fetch })\n`
     : ''
-  const createCall = isSql
+  const createCall = isSql || isRest
     ? `await ${src}.createRow(values)`
     : `await ${n.sourceVar}.createRow({ [ID_FIELD]: nextId(${jsStr(n.idPrefix)}), ...values })`
 
@@ -2395,8 +2446,8 @@ import { ${enterpriseImports} } from '@svgrid/enterprise'
 ${rbac ? "import { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${sourceImport}${schemaImport}
 import { planFromSearchParams } from '$lib/server/query'
 
-// The app shell is a client SPA (+layout.ts ssr=false); this screen opts back
-// INTO server rendering - real SSR HTML, not just a server-side load.
+// This screen renders on the server: real SSR HTML, not just a server-side
+// load. Stated explicitly so it holds whichever way the root layout is set.
 export const ssr = true
 ${idConst}${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}` : ''}
 const FIELD_TYPES: Record<string, 'text' | 'number' | 'boolean'> = ${fieldTypesLit}
@@ -2422,7 +2473,7 @@ ${relPrefetch ? relPrefetch + '\n' : ''}  return { rows, total: rowCount, page: 
 
 export const actions: Actions = {
   create: async ({ request${fetchArg}${localsArg} }) => {
-${writeGuard('create')}    const values = formToValues(await request.formData())
+${writeGuard('create')}    const values = ${readValues('await request.formData()')}
     const errors = await validateAll(${n.schemaVar}, values)
     if (Object.keys(errors).length) return fail(422, { errors, values })
     ${createCall}
@@ -2431,7 +2482,7 @@ ${writeGuard('create')}    const values = formToValues(await request.formData())
   update: async ({ request${fetchArg}${localsArg} }) => {
     const fd = await request.formData()
 ${writeGuard('update')}    const id = String(fd.get('__id') ?? '')
-    const values = formToValues(fd)
+    const values = ${readValues('fd')}
     const errors = await validateAll(${n.schemaVar}, values)
     if (Object.keys(errors).length) return fail(422, { errors, values })
     await ${src}.updateRow(id, values)
@@ -2444,6 +2495,78 @@ ${writeGuard('delete')}    const fd = await request.formData()
   },
 }
 `
+
+  // The facet panel becomes a plain GET form: each control is named for the
+  // param `planFromSearchParams` reads, so submitting navigates to a filtered
+  // URL and the server load does the rest. No JavaScript required, and the
+  // resulting URL is shareable. A GET submit drops `page`, which is what we want
+  // (filtering returns you to the first page); `sort` is carried in a hidden
+  // input so it survives.
+  // Which control types the panel actually renders, so the stylesheet below can
+  // skip rules for controls this screen has none of (svelte-check flags an unused
+  // selector, and a generated app should not ship warnings).
+  const facetControls = { select: false, input: false }
+  const facetForm = (() => {
+    if (!facetPanel) return ''
+    const fields = filterFieldsOf(schema, facetPanel)
+    if (!fields.length) return ''
+    // Parenthesised: `===` binds tighter than `??`, so an unwrapped
+    // `get(x) ?? '' === ''` would compare the empty strings and hand `selected`
+    // the raw param value - marking every option selected at once.
+    const cur = (f: EntityField) => `(page.url.searchParams.get(${jsStr('f_' + f.field)}) ?? '')`
+    // `selected` per option rather than `value` on the <select>: the value form
+    // is applied client-side, so a server-rendered page would show "Any" while
+    // the URL said otherwise.
+    const optionList = (f: EntityField, opts: { value: string; label: string }[]) =>
+      [`<option value="" selected={${cur(f)} === ''}>Any</option>`]
+        .concat(opts.map((o) => `<option value=${jsStr(o.value)} selected={${cur(f)} === ${jsStr(o.value)}}>${htmlEsc(o.label)}</option>`))
+        .join('\n            ')
+    const controls = fields
+      .map((f) => {
+        const key = jsStr('f_' + f.field)
+        const opts = enumOpts(f)
+        let control: string
+        if (opts.length) {
+          facetControls.select = true
+          control = `<select name=${key}>\n            ${optionList(f, opts)}\n          </select>`
+        } else if (f.type === 'boolean') {
+          facetControls.select = true
+          control = `<select name=${key}>\n            ${optionList(f, [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }])}\n          </select>`
+        } else {
+          facetControls.input = true
+          control = `<input name=${key} value={${cur(f)}} placeholder="Any" />`
+        }
+        return `      <label class="sk-facet">\n        <span>${htmlEsc(f.label ?? f.field)}</span>\n        ${control}\n      </label>`
+      })
+      .join('\n')
+    return `
+  <form method="GET" class="sk-facets">
+    <input type="hidden" name="sort" value={page.url.searchParams.get('sort') ?? ''} />
+${controls}
+    <div class="sk-facet-actions">
+      <button type="submit">Filter</button>
+      <a href={page.url.pathname}>Clear</a>
+    </div>
+  </form>
+`
+  })()
+
+  const facetCss = !facetForm
+    ? ''
+    : [
+        '  .sk-facets { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--sg-border, #cbd5e1); border-radius: 10px; background: var(--sg-surface, #f8fafc); }',
+        '  .sk-facet { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }',
+        '  .sk-facet span { color: var(--sg-muted, #64748b); }',
+        ...(facetControls.select && facetControls.input
+          ? ['  .sk-facet input, .sk-facet select { font: inherit; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }']
+          : facetControls.select
+            ? ['  .sk-facet select { font: inherit; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }']
+            : ['  .sk-facet input { font: inherit; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }']),
+        '  .sk-facet-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }',
+        '  .sk-facet-actions button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--sg-accent, #4f46e5); background: var(--sg-accent, #4f46e5); color: #fff; cursor: pointer; }',
+        '  .sk-facet-actions a { font-size: 13px; color: var(--sg-muted, #64748b); }',
+        '',
+      ].join('\n')
 
   const row = `(editing as Record<string, unknown>)`
   const fieldBlocks = formFields
@@ -2461,17 +2584,57 @@ ${writeGuard('delete')}    const fd = await request.formData()
       } else if (isRel(f)) {
         // Relation: options prefetched in load (data.<field>Options), current FK selected.
         input = `<select name=${key}${req}>\n            <option value="">-</option>\n            {#each data.${f.field}Options as o (o.value)}<option value={o.value} selected={!isCreate && String(${row}[${key}] ?? '') === o.value}>{o.label}</option>{/each}\n          </select>`
+      } else if (f.input?.editorType === 'textarea' || f.type === 'json') {
+        input = `<textarea name=${key}${req}${attrs(f)}>{isCreate ? '' : (${row}[${key}] ?? '')}</textarea>`
       } else {
-        const t = normType(f.type) === 'number' ? 'number' : f.type === 'date' || f.type === 'dateString' ? 'date' : 'text'
-        input = `<input type="${t}" name=${key} value={isCreate ? '' : (${row}[${key}] ?? '')}${req} />`
+        // The browser enforces the same constraints the server will, so an
+        // obvious mistake is caught before a round-trip - and still caught after
+        // one, because `validateAll` runs in the action regardless.
+        const t = f.format === 'email' ? 'email'
+          : f.format === 'url' ? 'url'
+          : normType(f.type) === 'number' ? 'number'
+          : f.type === 'date' || f.type === 'dateString' ? 'date'
+          : 'text'
+        input = `<input type="${t}" name=${key} value={isCreate ? '' : (${row}[${key}] ?? '')}${req}${attrs(f)} />`
       }
-      return `        <label class="sk-field">
+      const hint = f.input?.help
+      return `        <label class="sk-field${f.input?.span === 2 ? ' sk-field--wide' : ''}">
           <span>${htmlEsc(f.label ?? f.field)}${f.required ? ' *' : ''}</span>
           ${input}
-          {#if form?.errors?.[${key}]}<em class="sk-err">{form.errors[${key}]}</em>{/if}
+${hint ? `          {#if !form?.errors?.[${key}]}<small class="sk-hint">${htmlEsc(hint)}</small>{/if}\n` : ''}          {#if form?.errors?.[${key}]}<em class="sk-err">{form.errors[${key}]}</em>{/if}
         </label>`
     })
-    .join('\n')
+
+  // Group the inputs the way the schema's form layout says, so the server-
+  // rendered form matches the one the edit panel draws instead of being a flat
+  // fallback. Fields outside every section keep rendering, in a trailing group.
+  const blockFor = (name: string) => {
+    const i = formFields.findIndex((f) => f.field === name)
+    return i === -1 ? null : fieldBlocks[i]!
+  }
+  const layout = {
+    columns: grid.formColumns ?? schema.form?.columns,
+    sections: grid.formSections?.length ? grid.formSections : schema.form?.sections,
+  }
+  const ssrSections = layout?.sections?.length
+    ? (() => {
+        const assigned = new Set<string>()
+        const groups = layout.sections!.map((s) => {
+          const items = s.fields.map((name) => { assigned.add(name); return blockFor(name) }).filter(Boolean) as string[]
+          return { title: s.title, description: s.description, columns: s.columns, items }
+        }).filter((g) => g.items.length)
+        const rest = formFields.filter((f) => !assigned.has(f.field)).map((f) => blockFor(f.field)!).filter(Boolean)
+        return rest.length ? [...groups, { title: undefined, description: undefined, columns: undefined, items: rest }] : groups
+      })()
+    : null
+  const formCols = layout?.columns ?? 1
+  const fieldsMarkup = ssrSections
+    ? ssrSections
+        .map((g) => `        <fieldset class="sk-group" style="--sk-cols: ${g.columns ?? formCols}">
+${g.title ? `          <legend>${htmlEsc(g.title)}</legend>\n` : ''}${g.description ? `          <p class="sk-group__desc">${htmlEsc(g.description)}</p>\n` : ''}${g.items.join('\n')}
+        </fieldset>`)
+        .join('\n')
+    : `        <div class="sk-group" style="--sk-cols: ${formCols}">\n${fieldBlocks.join('\n')}\n        </div>`
 
   const page = `<script lang="ts">
   import { SvGrid, renderSnippet, type ColumnDef, type CellContext } from '@svgrid/grid'
@@ -2541,7 +2704,7 @@ ${wantsFilter ? `
   <h1>{TITLE}</h1>
   <button type="button" class="sk-btn sk-btn--primary" onclick={() => (editing = 'create')}>{NEW_LABEL}</button>
 </header>
-
+${facetForm}
 <SvGrid
   data={data.rows}
   {columns}
@@ -2560,7 +2723,7 @@ ${wantsFilter ? `
     <form method="POST" action={isCreate ? '?/create' : '?/update'} class="sk-form" use:enhance={onSubmit}>
       <h2>{isCreate ? NEW_LABEL : 'Edit ${htmlEsc(n.label)}'}</h2>
       {#if !isCreate}<input type="hidden" name="__id" value={${row}[ID_FIELD] as string} />{/if}
-${fieldBlocks}
+${fieldsMarkup}
       <div class="sk-form__actions">
         <button type="button" class="sk-btn" onclick={() => (editing = null)}>Cancel</button>
         <button type="submit" class="sk-btn sk-btn--primary">Save</button>
@@ -2574,12 +2737,19 @@ ${fieldBlocks}
   .sk-head h1 { margin: 0; font-size: 20px; }
   .sk-btn { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer; }
   .sk-btn--primary { background: var(--sg-accent, #4f46e5); border-color: var(--sg-accent, #4f46e5); color: #fff; }
-  .sk-rowact { display: flex; gap: 10px; }
+${facetCss}  .sk-rowact { display: flex; gap: 10px; }
   .sk-link { background: none; border: none; padding: 0; font: inherit; color: var(--sg-accent, #4f46e5); cursor: pointer; }
   .sk-danger { color: #dc2626; }
   .sk-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: grid; place-items: center; z-index: 50; }
   .sk-form { width: min(480px, 92vw); max-height: 90vh; overflow: auto; background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 24px 60px -20px rgba(15, 23, 42, 0.5); }
   .sk-form h2 { margin: 0 0 4px; font-size: 16px; }
+  .sk-group { display: grid; grid-template-columns: repeat(var(--sk-cols, 1), minmax(0, 1fr)); gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+  .sk-group + .sk-group { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sg-border, #e2e8f0); }
+  .sk-group legend { grid-column: 1 / -1; padding: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sg-muted, #64748b); }
+  .sk-group__desc { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--sg-muted, #64748b); }
+  .sk-field--wide { grid-column: 1 / -1; }
+  .sk-hint { color: var(--sg-muted, #64748b); font-size: 11.5px; }
+  @media (max-width: 560px) { .sk-group { grid-template-columns: 1fr; } }
   .sk-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
   .sk-field span { color: var(--sg-muted, #64748b); }
   .sk-field input, .sk-field select { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--sg-border, #cbd5e1); background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a); }
@@ -2669,7 +2839,8 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     // driven sort/filter/page; a read-only screen (data-viz / detail) gets a
     // load-only server file, and the SAME page markup renders from data.*.
     if (isSsrScreen(project, screen)) {
-      const srcKind = sources[screen.entity]?.kind === 'sql' ? 'sql' : 'memory'
+      const kind = sources[screen.entity]?.kind
+      const srcKind: SsrSourceKind = kind === 'sql' ? 'sql' : kind === 'rest' ? 'rest' : 'memory'
       if (ssrScreenShape(project, screen) === 'grid') {
         pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
       } else {
@@ -2681,6 +2852,20 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
       continue
     }
     pages.push(screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled, false, sources[screen.entity]))
+  }
+  // Once the root layout leaves SSR on, every client-only screen has to say so
+  // itself: these pages fetch their rows in the browser, so rendering them on the
+  // server would run that fetch there and hand back an empty first paint.
+  const anySsr = project.screens.some((s) => isSsrScreen(project, s))
+  if (anySsr) {
+    for (const screen of project.screens) {
+      if (isSsrScreen(project, screen) || !screen.route) continue
+      pages.push({
+        path: `src/routes/${screen.route}/+page.ts`,
+        description: `${screen.title} renders in the browser (client data source).`,
+        contents: `// This screen loads its rows in the browser, so it opts out of the root\n// layout's server rendering.\nexport const ssr = false\n`,
+      })
+    }
   }
   // Any SSR screen needs the shared URL-params -> query helper (server-only).
   const ssrHelpers = project.screens.some((s) => isSsrScreen(project, s)) ? [ssrQueryHelperFile()] : []
@@ -4516,6 +4701,26 @@ main().then(() => process.exit(0)).catch((err) => { console.error(err); process.
 const appSlug = (title: string): string =>
   (title || 'studio-app').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'studio-app'
 
+/**
+ * The root `+layout.ts`.
+ *
+ * An app with server-rendered screens leaves SvelteKit's own default in place
+ * (SSR on) and lets each client-only screen opt out in its own `+page.ts` - so
+ * the app reads the way a hand-written SvelteKit app does, instead of announcing
+ * itself as a SPA in the first file anyone opens. With nothing to server-render,
+ * the whole app stays a SPA as before.
+ */
+function rootLayoutModule(project: StudioProject): GeneratedFile {
+  const anySsr = project.screens.some((s) => isSsrScreen(project, s))
+  return {
+    path: 'src/routes/+layout.ts',
+    description: anySsr ? 'Root layout options (SSR on; client-only screens opt out per page).' : 'Client SPA (in-memory sources persist across navigation).',
+    contents: anySsr
+      ? `// Server rendering stays on (SvelteKit's default). Screens that have to run in\n// the browser - anything on an in-memory source, or a shape that can't render on\n// the server - opt out in their own +page.ts.\nexport const prerender = false\n`
+      : `// In-memory sources are module singletons, so render as a client SPA. Move an\n// entity to SQL / Supabase and its /api route still runs server-side.\nexport const ssr = false\nexport const prerender = false\n`,
+  }
+}
+
 /** The static SvelteKit + Vite scaffolding around the generated screens. */
 const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
   // watch.ignored: `studio dev` runs this app's Vite next to the designer, which
@@ -4525,7 +4730,6 @@ const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
   { path: 'tsconfig.json', description: 'TypeScript config.', contents: `{\n  "extends": "./.svelte-kit/tsconfig.json",\n  "compilerOptions": {\n    "allowJs": true,\n    "checkJs": true,\n    "esModuleInterop": true,\n    "forceConsistentCasingInFileNames": true,\n    "resolveJsonModule": true,\n    "skipLibCheck": true,\n    "sourceMap": true,\n    "strict": true,\n    "moduleResolution": "bundler"\n  }\n}\n` },
   { path: 'src/app.html', description: 'HTML shell.', contents: `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    %sveltekit.head%\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div style="display: contents">%sveltekit.body%</div>\n  </body>\n</html>\n` },
   { path: 'src/app.d.ts', description: 'SvelteKit app types.', contents: `declare global {\n  namespace App {}\n}\n\nexport {}\n` },
-  { path: 'src/routes/+layout.ts', description: 'Client SPA (in-memory sources persist across navigation).', contents: `// In-memory sources are module singletons, so render as a client SPA. Move an\n// entity to SQL / Supabase and its /api route still runs server-side.\nexport const ssr = false\nexport const prerender = false\n` },
   // engine-strict=false: a mismatched Node `engines` range only warns, never hard-fails
   // `npm install` - important for sandboxes (StackBlitz WebContainer) whose Node version
   // may not satisfy every transitive dep. (npm 7+ installs peers by default, so no
@@ -4883,7 +5087,12 @@ function svelteConfig(plan: DeployPlan): string {
 /** The runtime npm deps the generated source imports, keyed by package -> range.
  *  One source of truth for package.json AND the fragment-mode dependency report. */
 export function runtimeDeps(project: StudioProject, allSource: string): Record<string, string> {
-  const dependencies: Record<string, string> = { '@svgrid/grid': 'latest', '@svgrid/enterprise': 'latest' }
+  // Pin to the generator's own version, not `latest`: the emitted code uses the
+  // APIs of the SvGrid it was written by, so the app must install a runtime at
+  // least that new. `latest` also made a scaffold non-reproducible - an app could
+  // resolve a different runtime tomorrow, or break on an unrelated publish.
+  const svgrid = `^${SVGRID_VERSION}`
+  const dependencies: Record<string, string> = { '@svgrid/grid': svgrid, '@svgrid/enterprise': svgrid }
   if (allSource.includes("from '@supabase/supabase-js'")) dependencies['@supabase/supabase-js'] = '^2.45.0'
   if (allSource.includes("import pg from 'pg'")) dependencies['pg'] = '^8.11.0'
   if (allSource.includes("from 'mysql2/promise'")) dependencies['mysql2'] = '^3.9.0'
@@ -5088,6 +5297,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     { path: 'src/lib/schemas.test.ts', description: 'Smoke tests: every entity renders + round-trips through its data source.', contents: smokeTestFile(project) },
     ...plan.files,
     ...cronScheduleFiles(project, plan),
+    rootLayoutModule(project),
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
     ...(envDotFile(allSource) ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET is pre-filled so sessions are secure out of the box; fill in the rest.', contents: envDotFile(allSource)! }] : []),

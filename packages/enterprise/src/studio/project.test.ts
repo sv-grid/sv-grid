@@ -27,6 +27,21 @@ import {
   addBlockAt,
   addComponentBlock,
   addEntity,
+  entityOf,
+  formPlan,
+  setEntityForm,
+  setFormColumns,
+  addFormSection,
+  updateFormSection,
+  removeFormSection,
+  moveFormSection,
+  moveFormField,
+  setFieldConditions,
+  updateEntityField,
+  setFieldInput,
+  setFieldHidden,
+  formControlsFor,
+  suggestFormSections,
   addFreestandingScreen,
   addScreen,
   addScreenAction,
@@ -620,6 +635,36 @@ describe('component blocks', () => {
 })
 
 describe('validateProject', () => {
+  it('catches a form condition that reads a field which does not exist', () => {
+    // Silently, such a field would compare against undefined and sit hidden for
+    // good, with nothing on screen to explain why.
+    const p = createProject([customers])
+    const typo = {
+      ...p,
+      entities: [{
+        ...p.entities[0]!,
+        fields: p.entities[0]!.fields.map((f) => (f.field === 'name'
+          ? { ...f, when: { visible: { kind: 'cmp', column: 'stage', op: 'equals', value: 'lost' } as never } }
+          : f)),
+      }],
+    }
+    const issue = validateProject(typo).find((i) => /not a field/.test(i.message))
+    expect(issue?.level).toBe('error')
+    expect(issue?.message).toContain('stage')
+
+    // The same condition against a real field is clean.
+    const ok = {
+      ...typo,
+      entities: [{
+        ...typo.entities[0]!,
+        fields: typo.entities[0]!.fields.map((f) => (f.field === 'name'
+          ? { ...f, when: { visible: { kind: 'cmp', column: 'tier', op: 'equals', value: 'pro' } as never } }
+          : f)),
+      }],
+    }
+    expect(validateProject(ok).filter((i) => /not a field/.test(i.message))).toEqual([])
+  })
+
   it('addScreen dedupes the route so two screens for one entity do not collide', () => {
     const p = addScreen(createProject([customers]), 'customers')
     expect(new Set(p.screens.map((s) => s.route)).size).toBe(2) // customers, customers-1
@@ -879,6 +924,175 @@ describe('screen templates', () => {
     expect(p.screens).toHaveLength(2)
     expect(new Set(p.screens.map((s) => s.id)).size).toBe(2)
     expect(p.screens[1]!.blocks.some((b) => b.config.kind === 'chart')).toBe(true)
+  })
+})
+
+describe('form layout operations', () => {
+  const withForm = () => addFormSection(addFormSection(createProject([customers]), 'customers', 'Contact'), 'customers', 'Billing')
+  const sectionsOf = (p: ReturnType<typeof createProject>) => entityOf(p, 'customers')!.form?.sections ?? []
+
+  it('plans every field, dropping names that no longer resolve', () => {
+    // 'ghost' is what a rename or a delete leaves behind in a section.
+    const schema: EntitySchema = { ...customers, form: { sections: [{ title: 'Who', fields: ['name', 'ghost', 'name'] }] } }
+    const plan = formPlan(schema)
+    expect(plan.sections[0]!.fields).toEqual(['name'])
+    // Nothing is silently lost: the rest come back as unassigned, which is
+    // exactly where the form puts them (a trailing untitled group). `id` is
+    // hidden from this fixture's form, so it is not among them.
+    expect(plan.unassigned).toEqual(['secret', 'tier', 'mrr'])
+  })
+
+  it('takes an override, so a per-block arrangement plans the same way', () => {
+    expect(formPlan(customers, [{ fields: ['mrr'] }]).unassigned).not.toContain('mrr')
+  })
+
+  it('arranges only the fields the form renders', () => {
+    // `id` is hidden from the form on this fixture, so it is not arrangeable -
+    // putting it in a section could never make it appear there.
+    expect(formPlan(customers).unassigned).not.toContain('id')
+    const p = moveFormField(addFormSection(createProject([customers]), 'customers', 'Contact'), 'customers', 'id', 0)
+    expect(sectionsOf(p)[0]!.fields).toEqual([])
+    expect(formPlan({ ...customers, form: { sections: [{ fields: ['id', 'name'] }] } }).sections[0]!.fields).toEqual(['name'])
+  })
+
+  it('moves a field into a section at a position, and never leaves it in two', () => {
+    let p = withForm()
+    p = moveFormField(p, 'customers', 'name', 0)
+    p = moveFormField(p, 'customers', 'tier', 0)
+    p = moveFormField(p, 'customers', 'mrr', 0, 1) // between the two
+    expect(sectionsOf(p)[0]!.fields).toEqual(['name', 'mrr', 'tier'])
+
+    p = moveFormField(p, 'customers', 'mrr', 1)
+    expect(sectionsOf(p)[0]!.fields).toEqual(['name', 'tier'])
+    expect(sectionsOf(p)[1]!.fields).toEqual(['mrr'])
+  })
+
+  it('moves a field back out of every section, and ignores an unknown target', () => {
+    let p = moveFormField(withForm(), 'customers', 'name', 0)
+    expect(moveFormField(p, 'customers', 'name', 7)).toBe(p) // no such section
+    expect(moveFormField(p, 'customers', 'nope', 0)).toBe(p) // no such field
+    p = moveFormField(p, 'customers', 'name', null)
+    expect(sectionsOf(p)[0]!.fields).toEqual([])
+    expect(formPlan(entityOf(p, 'customers')!).unassigned).toContain('name')
+  })
+
+  it('keeps the fields when a section is removed, so a heading is all that goes', () => {
+    let p = moveFormField(withForm(), 'customers', 'name', 0)
+    p = removeFormSection(p, 'customers', 0)
+    expect(sectionsOf(p)).toHaveLength(1)
+    expect(formPlan(entityOf(p, 'customers')!).unassigned).toContain('name')
+  })
+
+  it('patches a section and drops the keys that were cleared', () => {
+    let p = updateFormSection(withForm(), 'customers', 0, { description: 'How we reach them.', columns: 1 })
+    expect(sectionsOf(p)[0]).toMatchObject({ title: 'Contact', description: 'How we reach them.', columns: 1 })
+    p = updateFormSection(p, 'customers', 0, { title: '', description: '', columns: undefined })
+    expect(sectionsOf(p)[0]).toEqual({ fields: [] })
+    expect(updateFormSection(p, 'customers', 9, { title: 'x' })).toBe(p)
+  })
+
+  it('reorders sections', () => {
+    const p = moveFormSection(withForm(), 'customers', 1, 0)
+    expect(sectionsOf(p).map((s) => s.title)).toEqual(['Billing', 'Contact'])
+    expect(moveFormSection(p, 'customers', 0, 0)).toBe(p)
+    expect(moveFormSection(p, 'customers', 0, 5)).toBe(p)
+  })
+
+  it('stores no empty layout, so "no layout" stays distinguishable from "one column"', () => {
+    const p = setEntityForm(createProject([customers]), 'customers', { sections: [] })
+    expect(entityOf(p, 'customers')!.form).toBeUndefined()
+    const cols = setFormColumns(p, 'customers', 3)
+    expect(entityOf(cols, 'customers')!.form).toEqual({ columns: 3 })
+    expect(entityOf(setFormColumns(cols, 'customers', undefined), 'customers')!.form).toBeUndefined()
+  })
+
+  it('sets and clears a field’s conditions, keeping only the ones given', () => {
+    const cond = { kind: 'cmp', column: 'tier', op: 'equals', value: 'pro' } as const
+    let p = setFieldConditions(createProject([customers]), 'customers', 'mrr', { visible: cond, disabled: undefined })
+    expect(entityOf(p, 'customers')!.fields.find((f) => f.field === 'mrr')!.when).toEqual({ visible: cond })
+    p = setFieldConditions(p, 'customers', 'mrr', {})
+    expect(entityOf(p, 'customers')!.fields.find((f) => f.field === 'mrr')!.when).toBeUndefined()
+  })
+
+  it('merges into a field’s form presentation and drops the cleared keys', () => {
+    const fieldOf = (p: ReturnType<typeof createProject>) => entityOf(p, 'customers')!.fields.find((f) => f.field === 'name')!
+    let p = setFieldInput(createProject([customers]), 'customers', 'name', { placeholder: 'Jane Doe', span: 2 })
+    expect(fieldOf(p).input).toEqual({ placeholder: 'Jane Doe', span: 2 })
+    // A merge, not a replace: setting help keeps the placeholder.
+    p = setFieldInput(p, 'customers', 'name', { help: 'As it appears on the invoice.' })
+    expect(fieldOf(p).input).toEqual({ placeholder: 'Jane Doe', span: 2, help: 'As it appears on the invoice.' })
+    // Emptying every key removes `input` rather than leaving `input: {}`.
+    p = setFieldInput(p, 'customers', 'name', { placeholder: '', span: undefined, help: '' })
+    expect(fieldOf(p).input).toBeUndefined()
+  })
+
+  it('patches a field of any entity, not just the selected screen’s', () => {
+    const p = updateEntityField(createProject([customers, orders]), 'orders', 'total', { label: 'Order total', required: true })
+    const field = entityOf(p, 'orders')!.fields.find((f) => f.field === 'total')!
+    expect(field).toMatchObject({ field: 'total', type: 'number', label: 'Order total', required: true })
+    // Untouched entities are left as they were.
+    expect(entityOf(p, 'customers')).toEqual(customers)
+    expect(updateEntityField(p, 'orders', 'nope', { label: 'x' })).toEqual(p)
+  })
+
+  it('hides a field from one surface without answering for the other', () => {
+    const fieldOf = (p: ReturnType<typeof createProject>) => entityOf(p, 'customers')!.fields.find((f) => f.field === 'secret')!
+    // `secret` starts hidden from the grid only.
+    let p = setFieldHidden(createProject([customers]), 'customers', 'secret', 'form', true)
+    expect(fieldOf(p).hidden).toBe(true) // both surfaces now
+    p = setFieldHidden(p, 'customers', 'secret', 'grid', false)
+    expect(fieldOf(p).hidden).toEqual({ form: true }) // and the grid answer survived the round-trip
+    p = setFieldHidden(p, 'customers', 'secret', 'form', false)
+    expect(fieldOf(p).hidden).toBeUndefined()
+  })
+
+  it('offers only the controls that suit a field’s type', () => {
+    expect(formControlsFor('boolean')).toEqual(['checkbox'])
+    expect(formControlsFor('date')).toContain('date')
+    expect(formControlsFor('date')).not.toContain('color')
+    expect(formControlsFor('text')).toContain('phone')
+    // The first entry is what the field renders as with no explicit editorType.
+    expect(formControlsFor('number')[0]).toBe('number')
+  })
+
+  it('suggests sections by what the field names say they are', () => {
+    const contacts: EntitySchema = {
+      name: 'contacts', idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true }, { field: 'name', type: 'text' },
+        { field: 'email', type: 'text' }, { field: 'phone', type: 'text' },
+        { field: 'street', type: 'text' }, { field: 'city', type: 'text' },
+        { field: 'notes', type: 'text' },
+      ],
+    }
+    const sections = suggestFormSections(contacts)
+    expect(sections.map((s) => s.title)).toEqual(['Details', 'Contact', 'Address'])
+    // 'notes' is the only Notes match, so it goes back to Details rather than
+    // getting a heading of its own.
+    expect(sections[0]!.fields).toEqual(['id', 'name', 'notes'])
+    expect(sections[1]!.fields).toEqual(['email', 'phone'])
+    // Every arrangeable field is placed - a suggestion never loses one.
+    expect(sections.flatMap((s) => s.fields).sort()).toEqual(formPlan(contacts).unassigned.slice().sort())
+  })
+
+  it('suggests nothing for a form small enough not to need it', () => {
+    expect(suggestFormSections(customers)).toEqual([]) // 4 arrangeable fields
+    expect(suggestFormSections(orders)).toEqual([])
+  })
+
+  it('leaves an unknown entity alone rather than throwing', () => {
+    const p = createProject([customers])
+    expect(addFormSection(p, 'nope')).toBe(p)
+    expect(setFieldConditions(p, 'nope', 'x', undefined)).toBe(p)
+    expect(setFormColumns(p, 'nope', 2)).toBe(p)
+  })
+
+  it('round-trips a built form through studio.config.json', () => {
+    const cond = { kind: 'cmp', column: 'tier', op: 'equals', value: 'pro' } as const
+    let p = moveFormField(addFormSection(createProject([customers]), 'customers', 'Contact'), 'customers', 'name', 0)
+    p = updateFormSection(p, 'customers', 0, { visibleWhen: cond })
+    p = setFieldConditions(p, 'customers', 'mrr', { required: cond })
+    expect(parseProject(serializeProject(p))).toEqual(p)
   })
 })
 

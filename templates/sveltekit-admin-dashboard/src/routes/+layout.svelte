@@ -36,8 +36,8 @@
   >
     <div class="flex items-center gap-2 px-5 py-4">
       <span
-        class="grid h-8 w-8 place-items-center rounded-lg font-bold text-white"
-        style="background: var(--app-accent);">S</span
+        class="grid h-8 w-8 place-items-center rounded-lg font-bold"
+        style="background: var(--app-accent); color: var(--app-on-accent);">S</span
       >
       <div class="leading-tight">
         <p class="text-sm font-bold" style="color: var(--app-fg);">SvGrid Admin</p>
@@ -51,7 +51,7 @@
           href={item.href}
           class="mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
           style={isActive(item.href)
-            ? 'background: var(--app-accent); color: #fff;'
+            ? 'background: var(--app-accent); color: var(--app-on-accent);'
             : 'color: var(--app-fg);'}
         >
           <span class="w-5 text-center">{item.icon}</span>

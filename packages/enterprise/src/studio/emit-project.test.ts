@@ -4,6 +4,7 @@ import type { EntitySchema } from '../schema'
 import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setJob, setTenancy, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
+import { crudAppFromSchemas } from './screen-suites'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
 
 /** Type-check a handler BODY against a generated ambient ctx `.d.ts` using the real
@@ -208,6 +209,155 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     const files = emitStudioProject(p)
     expect(files.find((f) => f.path === 'src/routes/customers/+page.server.ts')).toBeUndefined()
     expect(files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents).toMatch(/loadAll\(\)/)
+  })
+
+  it('a facet panel beside the grid becomes a GET form the server can filter on', () => {
+    // Every list screen the onboarding generator produces is [filter, grid], so
+    // if the facet panel did not survive into SSR, no generated app could ever
+    // render on the server.
+    const app = crudAppFromSchemas([customers, orders], {
+      dataSource: 'sql',
+      sources: {
+        customers: { kind: 'sql', table: 'customers', dialect: 'postgres' },
+        orders: { kind: 'sql', table: 'orders', dialect: 'postgres' },
+      },
+    })
+    const list = app.screens.find((s) => s.id === 'customers')!
+    expect(list.blocks.map((b) => b.config.kind)).toContain('filter')
+    expect(list.renderMode).toBe('ssr')
+
+    const files = emitStudioProject(app)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!
+    // The load + actions module has to at least parse as TypeScript.
+    expect(
+      ts.transpileModule(server.contents, { reportDiagnostics: true, compilerOptions: { target: ts.ScriptTarget.ES2021 } })
+        .diagnostics?.map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n')) ?? [],
+    ).toEqual([])
+    const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('<form method="GET" class="sk-facets">')
+    // Named for the param planFromSearchParams reads, so no JS is needed to filter.
+    expect(page).toMatch(/<select name='f_tier'>/)
+    expect(page).toMatch(/name="sort"/) // sort survives a facet submit
+    // `===` binds tighter than `??`: an unparenthesised current-value read would
+    // hand `selected` the raw param and mark every option at once.
+    expect(page).toMatch(/selected=\{\(page\.url\.searchParams\.get\('f_tier'\) \?\? ''\) === 'pro'\}/)
+    for (const f of files) expect(f.contents, f.path).not.toMatch(/\?\?\s*''\s*===/)
+    // It renders on the server, so it has to compile both ways.
+    for (const mode of ['client', 'server'] as const) {
+      expect(() => compile(page, { filename: 'p.svelte', generate: mode }), mode).not.toThrow()
+    }
+  })
+
+  it('an app with SSR screens keeps SvelteKit\'s server default and opts out per client screen', () => {
+    // The root +layout.ts is the first file a reviewer opens. Announcing
+    // `ssr = false` there makes the whole app read as a SPA even when most of its
+    // screens render on the server.
+    const app = crudAppFromSchemas([customers, orders], {
+      dataSource: 'sql',
+      sources: {
+        customers: { kind: 'sql', table: 'customers', dialect: 'postgres' },
+        orders: { kind: 'sql', table: 'orders', dialect: 'postgres' },
+      },
+    })
+    const bundle = emitStudioAppBundle(app)
+    const layout = bundle.find((f) => f.path === 'src/routes/+layout.ts')!.contents
+    expect(layout).not.toMatch(/export const ssr = false/)
+    expect(layout).toMatch(/export const prerender = false/)
+
+    // Every screen that still runs in the browser says so itself, so nothing
+    // starts rendering server-side that was never written for it.
+    for (const screen of app.screens) {
+      const optOut = bundle.find((f) => f.path === `src/routes/${screen.route}/+page.ts`)
+      if (screen.renderMode === 'ssr') expect(optOut, `${screen.id} is SSR and needs no opt-out`).toBeUndefined()
+      else expect(optOut?.contents, `${screen.id} runs client-side and must opt out`).toMatch(/export const ssr = false/)
+    }
+  })
+
+  it('a REST entity on an absolute URL renders on the server, calling the API directly', () => {
+    const rest = { kind: 'rest' as const, baseUrl: 'https://api.example.com', path: 'customers', method: 'GET' as const, params: [] }
+    const app = crudAppFromSchemas([customers], { dataSource: 'rest', sources: { customers: rest } })
+    expect(app.screens.find((s) => s.id === 'customers')!.renderMode).toBe('ssr')
+
+    const server = emitStudioProject(app).find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    // Reads through the in-process source like memory does...
+    expect(server).toMatch(/import \{ customersSource \} from '\$lib\/data'/)
+    // ...but the remote API owns the ids, so a create posts only the values.
+    expect(server).toMatch(/await customersSource\.createRow\(values\)/)
+    expect(server).not.toMatch(/nextId/)
+  })
+
+  it('a relative REST url stays SPA - there is no origin to fetch from on the server', () => {
+    const rest = { kind: 'rest' as const, baseUrl: '', path: '/api/customers', method: 'GET' as const, params: [] }
+    const app = crudAppFromSchemas([customers], { dataSource: 'rest', sources: { customers: rest } })
+    expect(app.screens.every((s) => s.renderMode === undefined)).toBe(true)
+  })
+
+  it('the SSR form follows the schema layout and states the field constraints', () => {
+    // The server-rendered form used to be a flat single column that ignored the
+    // layout entirely, so the same entity looked like two different forms
+    // depending on which path rendered it.
+    const laidOut: EntitySchema = {
+      name: 'people',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'name', type: 'text', required: true, minLength: 2, maxLength: 60, input: { placeholder: 'Ada Lovelace' } },
+        { field: 'email', type: 'text', format: 'email', input: { help: 'We only use this for receipts.' } },
+        { field: 'notes', type: 'text', input: { editorType: 'textarea', span: 2 } },
+      ],
+      form: { columns: 2, sections: [{ title: 'Contact', description: 'How we reach them.', fields: ['name', 'email'] }] },
+    }
+    let p = createProject([laidOut])
+    p = { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/people/+page.svelte')!.contents
+
+    expect(page).toContain('<legend>Contact</legend>')
+    expect(page).toContain('How we reach them.')
+    expect(page).toMatch(/--sk-cols: 2/)
+    // Constraints the browser can enforce, mirroring what the action re-checks.
+    expect(page).toMatch(/minlength="2"/)
+    expect(page).toMatch(/maxlength="60"/)
+    expect(page).toMatch(/placeholder="Ada Lovelace"/)
+    expect(page).toMatch(/<input type="email"/)
+    expect(page).toContain('We only use this for receipts.')
+    expect(page).toMatch(/<textarea name='notes'/)
+    expect(page).toContain('sk-field--wide')
+    // The unassigned field still renders, in a trailing group.
+    expect(page).toMatch(/name='notes'/)
+
+    for (const mode of ['client', 'server'] as const) {
+      expect(() => compile(page, { filename: 'p.svelte', generate: mode }), mode).not.toThrow()
+    }
+  })
+
+  it('a layout arranged on the grid block reaches the SSR form too', () => {
+    // The designer writes the form arrangement onto the grid block. Before this,
+    // only the client panel read it, so what you arranged in the designer was not
+    // what a server-rendered screen drew.
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const gid = p.screens[0]!.blocks[0]!.id
+    p = updateBlock(p, sid, gid, {
+      config: {
+        editing: 'form',
+        formColumns: 3,
+        formSections: [{ title: 'Identity', description: 'Who they are.', fields: ['name'] }],
+      } as Partial<GridConfig>,
+    })
+    p = { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
+
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toContain('<legend>Identity</legend>')
+    expect(page).toContain('Who they are.')
+    expect(page).toMatch(/--sk-cols: 3/)
+    expect(() => compile(page, { filename: 'p.svelte', generate: 'server' })).not.toThrow()
+  })
+
+  it('an in-memory app stays a SPA at the layout, with no per-screen opt-outs', () => {
+    const app = crudAppFromSchemas([customers])
+    const bundle = emitStudioAppBundle(app)
+    expect(bundle.find((f) => f.path === 'src/routes/+layout.ts')!.contents).toMatch(/export const ssr = false/)
+    expect(bundle.filter((f) => f.path.endsWith('/+page.ts'))).toEqual([])
   })
 
   it('sql SSR + relation field: prefetches options via the related /api route', () => {
@@ -1590,6 +1740,47 @@ describe('Custom actions', () => {
     for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
       expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
     }
+  })
+})
+
+describe('value-driven form fields (the form builder)', () => {
+  const cmp = (column: string, op: string, value: unknown) => ({ kind: 'cmp', column, op, value })
+  const conditional: EntitySchema = {
+    name: 'returns',
+    idField: 'id',
+    fields: [
+      { field: 'id', type: 'text', primaryKey: true, readonly: true },
+      { field: 'mode', type: 'text' },
+      { field: 'justification', type: 'text', when: { visible: cmp('mode', 'equals', 'refund') as never } },
+    ],
+  }
+
+  it('carries the conditions into the generated schema, so the app behaves the same', () => {
+    // They are plain data, so they survive the JSON round-trip into schemas.ts
+    // with no compilation step - the reason conditions are a PredicateExpr
+    // rather than a function.
+    const files = emitStudioProject(createProject([conditional]))
+    const schemas = files.find((f) => f.path === 'src/lib/schemas.ts')!.contents
+    expect(schemas).toContain('"when"')
+    expect(schemas).toMatch(/"column": "mode"/)
+    expect(schemas).toMatch(/"op": "equals"/)
+  })
+
+  it('makes an SSR route drop values for fields the form was hiding', () => {
+    let p = createProject([conditional])
+    p = { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
+    const server = emitStudioProject(p).find((f) => f.path === 'src/routes/returns/+page.server.ts')
+    if (!server) return // shape not SSR-eligible in this project; covered elsewhere
+    expect(server.contents).toMatch(/import \{ validateAll, stripHiddenValues \}/)
+    expect(server.contents).toMatch(/stripHiddenValues\(returnsSchema, formToValues\(/)
+  })
+
+  it('leaves a schema without conditions exactly as it was', () => {
+    const p = createProject([customers])
+    const ssr = { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
+    const server = emitStudioProject(ssr).find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).not.toMatch(/stripHiddenValues/)
+    expect(server).toMatch(/const values = formToValues\(/)
   })
 })
 

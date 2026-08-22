@@ -33,6 +33,11 @@ afterEach(() => {
 })
 
 function render(props: Record<string, unknown>): HTMLElement {
+  // Tear down a previous mount first: a test that renders more than once used to
+  // leak every panel but the last, leaving live components (and duplicate field
+  // ids) in the document for whatever ran next.
+  if (comp) { unmount(comp); comp = null }
+  if (host) { host.remove(); host = null }
   host = document.createElement('div')
   document.body.appendChild(host)
   comp = mount(SvGridEditPanel, { target: host, props })
@@ -142,5 +147,174 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(payload.id).toBe('1')
     expect(payload.values).toMatchObject({ name: 'Ada', mrr: 1200, active: true, tier: 'pro' })
     expect(payload.values).not.toHaveProperty('id') // readonly PK is never submitted
+  })
+
+  it('lays the form out from the schema, so a built form travels with the entity', () => {
+    const laidOut: EntitySchema = {
+      name: 'people',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'name', type: 'text' },
+        { field: 'email', type: 'text' },
+        { field: 'street', type: 'text' },
+        { field: 'city', type: 'text' },
+      ],
+      form: {
+        columns: 2,
+        sections: [
+          { title: 'Who', description: 'How we reach them.', fields: ['name', 'email'] },
+          { title: 'Where', columns: 1, fields: ['street', 'city'] },
+        ],
+      },
+    }
+    const el = render({ schema: laidOut, presentation: 'inline', onSubmit: vi.fn() })
+
+    const titles = [...el.querySelectorAll('.sv-ep__section-title')].map((n) => n.textContent)
+    expect(titles).toEqual(['Who', 'Where'])
+    expect(el.querySelector('.sv-ep__section-desc')?.textContent).toBe('How we reach them.')
+
+    // Per-section column count wins over the form's.
+    const bodies = [...el.querySelectorAll<HTMLElement>('.sv-ep__body')]
+    expect(bodies[0]!.style.getPropertyValue('--sv-ep-cols')).toBe('2')
+    expect(bodies[1]!.style.getPropertyValue('--sv-ep-cols')).toBe('1')
+
+    // The unassigned id field is not dropped - it lands in a trailing group.
+    expect(el.querySelector('#sv-ef-id')).toBeTruthy()
+  })
+
+  it('waits until you leave a field before complaining, then clears as you fix it', async () => {
+    const required: EntitySchema = {
+      name: 'people',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'email', type: 'text', required: true, format: 'email' },
+      ],
+    }
+    const el = render({ schema: required, presentation: 'inline', onSubmit: vi.fn() })
+    const input = el.querySelector<HTMLInputElement>('#sv-ef-email')!
+
+    // Typing something invalid says nothing yet - the user is mid-thought.
+    input.value = 'nope'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    expect(el.querySelector('.sv-ep-field__err')).toBeNull()
+    expect(input.getAttribute('aria-invalid')).toBe('false')
+
+    // Leaving it is the moment to speak up.
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+    await vi.waitFor(() => expect(el.querySelector('.sv-ep-field__err')?.textContent).toMatch(/valid email/))
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    // The message is wired to the input for screen readers.
+    expect(input.getAttribute('aria-describedby')).toBe('sv-ee-email')
+    expect(el.querySelector('#sv-ee-email')).toBeTruthy()
+
+    // Correcting it clears the message without another submit.
+    input.value = 'ada@example.com'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    await vi.waitFor(() => expect(el.querySelector('.sv-ep-field__err')).toBeNull())
+    expect(input.getAttribute('aria-invalid')).toBe('false')
+  })
+
+  it('summarises a failed submit and focuses the first field that needs fixing', async () => {
+    const required: EntitySchema = {
+      name: 'people',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'name', type: 'text', required: true },
+        { field: 'email', type: 'text', required: true },
+      ],
+    }
+    const onSubmit = vi.fn()
+    const el = render({ schema: required, presentation: 'inline', onSubmit })
+
+    el.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()
+
+    await vi.waitFor(() => expect(el.querySelector('.sv-ep__summary')).toBeTruthy())
+    expect(onSubmit).not.toHaveBeenCalled()
+    const summary = el.querySelector('.sv-ep__summary')!
+    expect(summary.getAttribute('role')).toBe('alert')
+    expect(summary.textContent).toContain('Name')
+    expect(summary.textContent).toContain('Email')
+    // Focus lands on the first problem, so fixing can start immediately.
+    expect(document.activeElement?.id).toBe('sv-ef-name')
+  })
+
+  it('asks before throwing away edits, and closes straight away when there are none', () => {
+    const onCancel = vi.fn()
+    const el = render({
+      schema,
+      row: { id: '1', name: 'Ada', mrr: 1200, active: true, tier: 'pro' },
+      presentation: 'inline',
+      onSubmit: vi.fn(),
+      onCancel,
+    })
+    const cancel = () => [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Cancel')!
+
+    // Untouched: cancelling just closes.
+    cancel().click()
+    flushSync()
+    expect(onCancel).toHaveBeenCalledTimes(1)
+
+    // Now dirty the form; cancelling asks instead of discarding.
+    const name = el.querySelector<HTMLInputElement>('#sv-ef-name')!
+    name.value = 'Grace'
+    name.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    cancel().click()
+    flushSync()
+    expect(onCancel).toHaveBeenCalledTimes(1) // still not closed
+    expect(el.textContent).toContain('Discard your changes?')
+
+    // "Keep editing" puts you back in the form with the edit intact.
+    ;[...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Keep editing')!.click()
+    flushSync()
+    expect(el.textContent).not.toContain('Discard your changes?')
+    expect(el.querySelector<HTMLInputElement>('#sv-ef-name')!.value).toBe('Grace')
+
+    // Confirming discards.
+    cancel().click()
+    flushSync()
+    ;[...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === 'Discard')!.click()
+    flushSync()
+    expect(onCancel).toHaveBeenCalledTimes(2)
+  })
+
+  it('reveals and locks fields live as the answers change', async () => {
+    // One answer drives two others: choosing "refund" asks for a justification
+    // and unlocks the approver, both without a remount.
+    const cmp = (column: string, op: string, value: unknown) => ({ kind: 'cmp', column, op, value })
+    const returns = {
+      name: 'returns',
+      idField: 'id',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true, readonly: true },
+        { field: 'mode', type: 'text' },
+        { field: 'justification', type: 'text', label: 'Justification', when: { visible: cmp('mode', 'equals', 'refund') } },
+        { field: 'approver', type: 'text', when: { disabled: cmp('mode', 'notEquals', 'refund') } },
+      ],
+    } as unknown as EntitySchema<Record<string, unknown>>
+
+    const el = render({
+      schema: returns,
+      row: { id: '1', mode: 'exchange', justification: '', approver: '' },
+      presentation: 'inline',
+      onSubmit: vi.fn(),
+    })
+
+    // An exchange: no justification asked for, and the approver is locked.
+    expect(el.textContent).not.toContain('Justification')
+    expect(el.querySelector('#sv-ef-approver')!.hasAttribute('disabled')).toBe(true)
+
+    // Switch to a refund; both fields react to the new value.
+    const mode = el.querySelector<HTMLInputElement>('#sv-ef-mode')!
+    mode.value = 'refund'
+    mode.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+
+    expect(el.textContent).toContain('Justification')
+    expect(el.querySelector('#sv-ef-approver')!.hasAttribute('disabled')).toBe(false)
   })
 })

@@ -17,6 +17,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join, basename, resolve, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createInterface } from 'node:readline/promises'
+import { createRequire } from 'node:module'
 import { stdin, stdout } from 'node:process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -92,7 +93,7 @@ ${color('bold', 'Have a database?')}
 }
 
 const THEME_IDS = [
-  'shadcn', 'tailwind', 'material', 'excel', 'fluent', 'carbon', 'sap',
+  'ember', 'shadcn', 'tailwind', 'material', 'excel', 'fluent', 'carbon', 'sap',
   'salesforce', 'atlassian', 'github', 'antd', 'ag-alpine', 'bootstrap',
   'vercel', 'linear', 'notion', 'nord', 'dracula', 'catppuccin',
 ]
@@ -268,12 +269,36 @@ async function renameBack(dir) {
   }
 }
 
+/**
+ * The @svgrid/enterprise version this scaffolder was published alongside, read
+ * from the copy npm actually installed next to it.
+ */
+async function svgridVersion() {
+  try {
+    const require = createRequire(import.meta.url)
+    const pkg = JSON.parse(await readFile(require.resolve('@svgrid/enterprise/package.json'), 'utf8'))
+    return typeof pkg.version === 'string' && /^\d+\.\d+\.\d+/.test(pkg.version) ? pkg.version : null
+  } catch {
+    return null
+  }
+}
+
 async function setProjectName(destDir, name) {
   const pkgPath = join(destDir, 'package.json')
   if (!existsSync(pkgPath)) return
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
     pkg.name = name
+    // The template ships "latest" so it stays honest in the repo, but a
+    // scaffolded app pins to the version this scaffolder was built against.
+    // Left as "latest", `npm install` resolves it fresh on every machine and
+    // every day, so an unrelated publish can break an app nobody touched.
+    const version = await svgridVersion()
+    if (version && pkg.dependencies) {
+      for (const dep of ['@svgrid/grid', '@svgrid/enterprise']) {
+        if (pkg.dependencies[dep] === 'latest') pkg.dependencies[dep] = `^${version}`
+      }
+    }
     await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   } catch {
     // leave the template's name if it isn't valid JSON for some reason

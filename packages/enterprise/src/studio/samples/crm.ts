@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, boardScreen, schedulerScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, schedulerScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, whenIs, type SampleApp } from './shared.js'
 
 // Salesforce Lightning-style chrome: a gradient blue brand rail, white rounded-pill
 // nav with a solid-white active state, and a Lightning-blue rule under the toolbar.
@@ -79,6 +79,15 @@ const deals: EntitySchema = {
     { field: 'weighted', type: 'number', label: 'Weighted ($)', readonly: true, formula: 'value * probability / 100' },
     { field: 'owner', type: 'enum', label: 'Owner', options: OWNERS },
     { field: 'closeDate', type: 'date', label: 'Close date' },
+    // Only asked for once a deal is actually lost, and then it is mandatory - the
+    // form never shows a question it does not need an answer to.
+    { field: 'lostReason', type: 'enum', label: 'Lost to', hidden: { grid: true }, options: [
+      { value: 'price', label: 'Price' },
+      { value: 'competitor', label: 'Competitor' },
+      { value: 'timing', label: 'Timing' },
+      { value: 'no-budget', label: 'No budget' },
+      { value: 'other', label: 'Other' },
+    ], when: { visible: whenIs('stage', 'lost'), required: whenIs('stage', 'lost') } },
   ],
 }
 
@@ -143,7 +152,7 @@ const seed = {
     { id: 'dl1', title: 'Globex platform rollout', companyId: 'co1', stage: 'proposal', value: 48000, probability: 60, owner: 'Sam Rivera', closeDate: '2026-08-15' },
     { id: 'dl2', title: 'Initech data pipeline', companyId: 'co2', stage: 'won', value: 26000, probability: 100, owner: 'Jamie Chen', closeDate: '2026-06-30' },
     { id: 'dl3', title: 'Umbrella compliance suite', companyId: 'co3', stage: 'qualified', value: 91000, probability: 40, owner: 'Sam Rivera', closeDate: '2026-09-20' },
-    { id: 'dl4', title: 'Hooli migration', companyId: 'co4', stage: 'lost', value: 15000, probability: 0, owner: 'Priya Patel', closeDate: '2026-05-10' },
+    { id: 'dl4', title: 'Hooli migration', companyId: 'co4', stage: 'lost', value: 15000, probability: 0, owner: 'Priya Patel', closeDate: '2026-05-10', lostReason: 'competitor' },
     { id: 'dl5', title: 'Soylent storefront', companyId: 'co5', stage: 'lead', value: 8000, probability: 20, owner: 'Jamie Chen', closeDate: '2026-10-01' },
     { id: 'dl6', title: 'Stark analytics', companyId: 'co6', stage: 'proposal', value: 132000, probability: 65, owner: 'Priya Patel', closeDate: '2026-08-28' },
     { id: 'dl7', title: 'Globex add-on seats', companyId: 'co1', stage: 'won', value: 12000, probability: 100, owner: 'Sam Rivera', closeDate: '2026-07-05' },

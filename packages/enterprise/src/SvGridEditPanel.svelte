@@ -25,7 +25,7 @@
   import { fade, fly } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
   import { SvGridDropdown, SvNumberInput, SvColorInput, SvPasswordInput, SvSlider, SvSwitchButton, SvPhoneInput, SvCountryInput, SvMaskedInput, SvDateTimePicker, SvTagsInput, type CellEditorOption } from '@svgrid/grid'
-  import { schemaToFormFields, type EntitySchema, type FormFieldDescriptor } from './schema'
+  import { schemaToFormFields, type EntitySchema, type FormFieldDescriptor, type FormSection } from './schema'
   import SvFileInput from './SvFileInput.svelte'
   import {
     buildInitialValues,
@@ -40,7 +40,11 @@
     fromNumberValue,
     toSliderValue,
     toTags,
+    fieldState,
+    sectionVisible,
+    validateOne,
     type EditMode,
+    type FieldState,
   } from './edit-panel'
   import SvLookupInput from './SvLookupInput.svelte'
   import type { RelationLookup } from './sources/relation-lookup'
@@ -76,13 +80,15 @@
      * localStorage under this key, so it reopens where the user left it.
      */
     persistKey?: string
-    /** Form column count (default 2). A field with `span: 2` spans all columns. */
+    /** Form column count. Defaults to the schema's `form.columns`, else 2. A field
+     *  with `span: 2` spans all columns. */
     columns?: 1 | 2 | 3
     /** Restrict + order the form fields (by field name). Default: all schema fields. */
     formFields?: string[]
-    /** Group fields into titled fieldsets. Fields not in any section render in a
-     *  trailing default group. When set, `formFields` ordering is per-section. */
-    sections?: Array<{ title?: string; fields: string[] }>
+    /** Group fields into titled fieldsets, overriding the schema's `form.sections`.
+     *  Fields not in any section render in a trailing default group. When set,
+     *  `formFields` ordering is per-section. */
+    sections?: FormSection[]
     /** Dialog width for the modal / drawer presentations. Default 'md'. */
     formSize?: 'sm' | 'md' | 'lg'
     onSubmit: (payload: SubmitPayload) => void | Promise<void>
@@ -100,7 +106,7 @@
     uploads,
     dependentOptions,
     persistKey,
-    columns = 2,
+    columns,
     formFields,
     sections,
     formSize = 'md',
@@ -108,25 +114,51 @@
     onCancel,
   }: Props = $props()
 
+  let values = $state<Record<string, any>>({})
+  let errors = $state<Record<string, string>>({})
+  let submitting = $state(false)
+  let submitError = $state<string | null>(null)
+  // Fields the user has finished with. A field is only allowed to show an error
+  // once they have left it, so a form does not scold you for what you have not
+  // typed yet; after a failed submit everything counts as visited.
+  let touched = $state<Record<string, boolean>>({})
+  let submitAttempted = $state(false)
+
   const allFields = $derived(schemaToFormFields(schema))
   // Apply the include/order list (formFields), else keep the schema order.
-  const fields = $derived(
+  const listedFields = $derived(
     formFields && formFields.length
       ? (formFields.map((name) => allFields.find((f) => f.field === name)).filter(Boolean) as FormFieldDescriptor[])
       : allFields,
   )
+  // Live state per field: a `when` condition re-evaluates against the current
+  // values, so answering one question can reveal, lock, or demand another.
+  const fieldStates = $derived(new Map(allFields.map((f) => [f.field, fieldState(f, values)] as const)))
+  const stateOf = (f: FormFieldDescriptor): FieldState =>
+    fieldStates.get(f.field) ?? { visible: true, disabled: f.readonly, required: f.required }
+  const fields = $derived(listedFields.filter((f) => stateOf(f).visible))
+  // The arrangement comes from the schema (so a built form travels with the
+  // entity); the props override it for a one-off layout of a shared schema.
+  const layoutColumns = $derived(columns ?? schema.form?.columns ?? 2)
+  const layoutSections = $derived(sections ?? schema.form?.sections)
+
   // Grouped layout: each section's resolvable fields, plus a trailing group for
   // anything not assigned to a section (so no field is ever silently dropped).
-  const fieldGroups = $derived.by((): Array<{ title?: string; fields: FormFieldDescriptor[] }> => {
-    if (!sections || !sections.length) return [{ fields }]
+  const fieldGroups = $derived.by((): Array<{ title?: string; description?: string; columns?: 1 | 2 | 3; fields: FormFieldDescriptor[] }> => {
+    if (!layoutSections || !layoutSections.length) return [{ fields }]
     const assigned = new Set<string>()
-    const groups = sections.map((s) => {
+    const groups = layoutSections.map((s) => {
       const gf = s.fields.map((name) => fields.find((f) => f.field === name)).filter(Boolean) as FormFieldDescriptor[]
       for (const f of gf) assigned.add(f.field)
-      return { title: s.title, fields: gf }
+      // A section can be conditional in its own right, the same way a field is.
+      const shown = s.visibleWhen ? sectionVisible(s.visibleWhen, values) : true
+      return { title: s.title, description: s.description, columns: s.columns, fields: shown ? gf : [] }
     })
     const rest = fields.filter((f) => !assigned.has(f.field))
-    return rest.length ? [...groups, { fields: rest }] : groups
+    // A section whose fields are all hidden by a condition disappears with them,
+    // rather than leaving a heading over nothing.
+    const shown = groups.filter((g) => g.fields.length)
+    return rest.length ? [...shown, { fields: rest }] : shown
   })
 
   // Options for the custom dropdown: prepend a blank "clear" option for
@@ -139,15 +171,21 @@
   )
   const overlayed = $derived(presentation !== 'inline')
 
-  let values = $state<Record<string, any>>({})
-  let errors = $state<Record<string, string>>({})
-  let submitting = $state(false)
-  let submitError = $state<string | null>(null)
+  // The values the form opened with, to tell an edited form from an untouched one.
+  let initial = $state<Record<string, any>>({})
 
   $effect(() => {
-    values = buildInitialValues(schema, row)
+    // Seed from a local, and copy from that local rather than from `values`:
+    // reading the state this effect also writes makes the effect its own
+    // dependency, which spins forever.
+    const seeded = buildInitialValues(schema, row)
+    values = seeded
+    initial = { ...seeded }
     errors = {}
+    touched = {}
+    submitAttempted = false
     submitError = null
+    confirmingDiscard = false
   })
 
   // Cascade: when a parent field changes, clear a dependent field whose value is
@@ -171,12 +209,50 @@
     }
   })
 
+  /**
+   * Re-check one field as the user leaves it. Once a field has an error it keeps
+   * being checked on every keystroke, so a correction clears the message
+   * immediately instead of making them submit again to find out.
+   */
+  async function checkField(field: string) {
+    touched[field] = true
+    const message = await validateOne(schema, field, values)
+    if (message) errors[field] = message
+    else delete errors[field]
+  }
+
+  // Live re-validation, but only for fields already showing an error.
+  $effect(() => {
+    void values
+    for (const field of Object.keys(errors)) void checkField(field)
+  })
+
+  /** Errors the form is allowed to show: visited fields, or everything after a submit. */
+  const shownErrors = $derived(
+    Object.fromEntries(Object.entries(errors).filter(([field]) => submitAttempted || touched[field])),
+  )
+  const errorList = $derived(
+    fields.filter((f) => shownErrors[f.field]).map((f) => ({ field: f.field, label: f.label, message: shownErrors[f.field]! })),
+  )
+
+  /** Send focus to a field from the error summary. */
+  function focusField(field: string) {
+    const el = document.getElementById(`sv-ef-${field}`)
+    if (el instanceof HTMLElement) el.focus()
+  }
+
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
     submitError = null
+    submitAttempted = true
     const found = await validateAll(schema, values)
     errors = found
-    if (Object.keys(found).length > 0) return
+    if (Object.keys(found).length > 0) {
+      // Put the user on the first thing they need to fix.
+      const first = fields.find((f) => found[f.field])
+      if (first) focusField(first.field)
+      return
+    }
     submitting = true
     try {
       await onSubmit({
@@ -191,11 +267,28 @@
     }
   }
 
+  /**
+   * Guard against throwing away edits. Closing a dirty form asks first, in the
+   * footer rather than through a `confirm()` dialog, so the answer appears where
+   * the user is already looking and the form stays on screen behind it.
+   */
+  let confirmingDiscard = $state(false)
+  const isDirty = $derived(
+    !submitting && fields.some((f) => !f.readonly && String(values[f.field] ?? '') !== String(initial[f.field] ?? '')),
+  )
+
   function close() {
+    if (isDirty && !confirmingDiscard) {
+      confirmingDiscard = true
+      return
+    }
+    confirmingDiscard = false
     onCancel?.()
   }
   function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && onCancel) close()
+    if (e.key !== 'Escape' || !onCancel) return
+    // A second Escape confirms, so the keyboard path is not a dead end.
+    close()
   }
   function stop(e: Event) {
     e.stopPropagation()
@@ -376,17 +469,31 @@
       </div>
     </header>
 
+    {#if errorList.length > 1}
+      <!-- One place to see everything that needs fixing, with a jump to each.
+           Only worth showing when more than one field failed. -->
+      <div class="sv-ep__summary" role="alert">
+        <p class="sv-ep__summary-title">Please fix {errorList.length} fields:</p>
+        <ul>
+          {#each errorList as e (e.field)}
+            <li><button type="button" onclick={() => focusField(e.field)}>{e.label}: {e.message}</button></li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+
     {#if fieldGroups.length > 1 || fieldGroups[0]?.title}
       {#each fieldGroups as g, gi (gi)}
         <div class="sv-ep__section">
           {#if g.title}<h4 class="sv-ep__section-title">{g.title}</h4>{/if}
-          <div class="sv-ep__body" style="--sv-ep-cols: {columns}">
+          {#if g.description}<p class="sv-ep__section-desc">{g.description}</p>{/if}
+          <div class="sv-ep__body" style="--sv-ep-cols: {g.columns ?? layoutColumns}">
             {#each g.fields as f (f.field)}{@render fieldRow(f)}{/each}
           </div>
         </div>
       {/each}
     {:else}
-      <div class="sv-ep__body" style="--sv-ep-cols: {columns}">
+      <div class="sv-ep__body" style="--sv-ep-cols: {layoutColumns}">
         {#each fields as f (f.field)}{@render fieldRow(f)}{/each}
       </div>
     {/if}
@@ -394,21 +501,38 @@
     {#if submitError}<p class="sv-ep__submit-err" role="alert">{submitError}</p>{/if}
 
     <footer class="sv-ep__footer">
-      {#if onCancel}
-        <button type="button" class="sv-ep__btn" onclick={close} disabled={submitting}>Cancel</button>
+      {#if confirmingDiscard}
+        <span class="sv-ep__discard" role="alert">Discard your changes?</span>
+        <button type="button" class="sv-ep__btn" onclick={() => (confirmingDiscard = false)}>Keep editing</button>
+        <button type="button" class="sv-ep__btn sv-ep__btn--danger" onclick={close}>Discard</button>
+      {:else}
+        {#if onCancel}
+          <button type="button" class="sv-ep__btn" onclick={close} disabled={submitting}>Cancel</button>
+        {/if}
+        <button type="submit" class="sv-ep__btn sv-ep__btn--primary" disabled={submitting}>
+          {submitting ? 'Saving…' : (submitLabel ?? (mode === 'create' ? 'Create' : 'Save'))}
+        </button>
       {/if}
-      <button type="submit" class="sv-ep__btn sv-ep__btn--primary" disabled={submitting}>
-        {submitting ? 'Saving…' : (submitLabel ?? (mode === 'create' ? 'Create' : 'Save'))}
-      </button>
     </footer>
   </form>
 {/snippet}
 
-{#snippet fieldRow(f: FormFieldDescriptor)}
+{#snippet fieldRow(spec: FormFieldDescriptor)}
+        {@const st = stateOf(spec)}
+        <!-- Every control below already reads `readonly` / `required` off the
+             descriptor, so folding the live condition state into a shadow copy
+             makes all of them honour it without touching each branch. -->
+        {@const f = st.disabled === spec.readonly && st.required === spec.required
+          ? spec
+          : { ...spec, readonly: st.disabled, required: st.required }}
         {@const kind = controlKind(f)}
         {@const lk = f.relation ? lookups?.[f.field] : undefined}
         {@const depOptions = dependentOptions?.[f.field]}
-        <div class="sv-ep-field" class:sv-ep-field--wide={f.span === 2} class:sv-ep-field--error={!!errors[f.field]}>
+        {@const err = shownErrors[f.field]}
+        <!-- Point screen readers at whichever of help / error is on screen. -->
+        {@const describedBy = err ? `sv-ee-${f.field}` : f.help ? `sv-eh-${f.field}` : undefined}
+        <div class="sv-ep-field" class:sv-ep-field--wide={f.span === 2} class:sv-ep-field--error={!!err}
+          onfocusoutcapture={() => { if (!f.readonly) void checkField(f.field) }}>
           <label for={`sv-ef-${f.field}`}>
             {f.label}{#if f.required && !f.readonly}<span class="sv-ep-field__req" aria-hidden="true"> *</span>{/if}
           </label>
@@ -447,31 +571,31 @@
             <!-- Boolean fields render as the suite's switch (nicer than a raw checkbox). -->
             <SvSwitchButton id={`sv-ef-${f.field}`} ariaLabel={f.label} checked={!!values[f.field]} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'number'}
-            <SvNumberInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} step={f.step} precision={f.precision} prefix={f.prefix} suffix={f.suffix} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
+            <SvNumberInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} step={f.step} precision={f.precision} prefix={f.prefix} suffix={f.suffix} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
           {:else if f.editorType === 'color'}
-            <SvColorInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] || '#3b82f6'} disabled={f.readonly} invalid={!!errors[f.field]} onChange={(v) => (values[f.field] = v)} />
+            <SvColorInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] || '#3b82f6'} disabled={f.readonly} invalid={!!err} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'password'}
-            <SvPasswordInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+            <SvPasswordInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'rating' || f.editorType === 'slider'}
             {@const rmin = f.min ?? 0}
             {@const rmax = f.max ?? (f.editorType === 'rating' ? 5 : 100)}
             <SvSlider id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toSliderValue(values[f.field], rmin)} min={rmin} max={rmax} step={1} ticks={f.editorType === 'rating' ? rmax - rmin + 1 : undefined} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'phone'}
-            <SvPhoneInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+            <SvPhoneInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'country'}
-            <SvCountryInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} disabled={f.readonly} invalid={!!errors[f.field]} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+            <SvCountryInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} disabled={f.readonly} invalid={!!err} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'mask'}
-            <SvMaskedInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} mask={f.mask ?? ''} disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(masked) => (values[f.field] = masked)} />
+            <SvMaskedInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} mask={f.mask ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(masked) => (values[f.field] = masked)} />
           {:else if f.editorType === 'date'}
-            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" nullable disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd'} onChange={(d) => (values[f.field] = toDateString(d))} />
+            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" nullable disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd'} onChange={(d) => (values[f.field] = toDateString(d))} />
           {:else if f.editorType === 'datetime'}
-            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} formatString="yyyy-MM-dd HH:mm" nullable disabled={f.readonly} invalid={!!errors[f.field]} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd hh:mm'} onChange={(d) => (values[f.field] = toDateTimeString(d))} />
+            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} formatString="yyyy-MM-dd HH:mm" nullable disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd hh:mm'} onChange={(d) => (values[f.field] = toDateTimeString(d))} />
           {:else if f.editorType === 'chips'}
             <!-- Multi-value entry: stores a string[]. (Previously a chips field fell back to a single-select.) -->
-            <SvTagsInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toTags(values[f.field])} disabled={f.readonly} invalid={!!errors[f.field]} placeholder={f.placeholder ?? 'Add…'} onChange={(tags) => (values[f.field] = tags)} />
+            <SvTagsInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toTags(values[f.field])} disabled={f.readonly} invalid={!!err} placeholder={f.placeholder ?? 'Add…'} onChange={(tags) => (values[f.field] = tags)} />
           {:else if kind === 'select'}
             {#if f.readonly}
-              <input id={`sv-ef-${f.field}`} type="text" value={values[f.field] ?? ''} disabled />
+              <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="text" value={values[f.field] ?? ''} disabled />
             {:else}
               <!-- Custom dropdown: its panel portals to <body> (position:fixed),
                    so it floats above the modal and never grows the form body
@@ -487,21 +611,21 @@
               </div>
             {/if}
           {:else if kind === 'textarea'}
-            <textarea id={`sv-ef-${f.field}`} bind:value={values[f.field]} disabled={f.readonly} placeholder={f.placeholder}></textarea>
+            <textarea id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} bind:value={values[f.field]} disabled={f.readonly} placeholder={f.placeholder}></textarea>
           {:else if kind === 'number'}
-            <input id={`sv-ef-${f.field}`} type="number" bind:value={values[f.field]} disabled={f.readonly} placeholder={f.placeholder} />
+            <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="number" bind:value={values[f.field]} disabled={f.readonly} placeholder={f.placeholder} />
           {:else if kind === 'date'}
-            <input id={`sv-ef-${f.field}`} type="date" bind:value={values[f.field]} disabled={f.readonly} />
+            <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="date" bind:value={values[f.field]} disabled={f.readonly} />
           {:else if kind === 'datetime'}
-            <input id={`sv-ef-${f.field}`} type="datetime-local" bind:value={values[f.field]} disabled={f.readonly} />
+            <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="datetime-local" bind:value={values[f.field]} disabled={f.readonly} />
           {:else if kind === 'time'}
-            <input id={`sv-ef-${f.field}`} type="time" bind:value={values[f.field]} disabled={f.readonly} />
+            <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="time" bind:value={values[f.field]} disabled={f.readonly} />
           {:else}
-            <input id={`sv-ef-${f.field}`} type="text" bind:value={values[f.field]} disabled={f.readonly} placeholder={f.placeholder} />
+            <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="text" bind:value={values[f.field]} disabled={f.readonly} placeholder={f.placeholder} />
           {/if}
 
-          {#if f.help && !errors[f.field]}<p class="sv-ep-field__help">{f.help}</p>{/if}
-          {#if errors[f.field]}<p class="sv-ep-field__err">{errors[f.field]}</p>{/if}
+          {#if f.help && !err}<p class="sv-ep-field__help" id={`sv-eh-${f.field}`}>{f.help}</p>{/if}
+          {#if err}<p class="sv-ep-field__err" id={`sv-ee-${f.field}`}>{err}</p>{/if}
         </div>
 {/snippet}
 
@@ -725,7 +849,15 @@
   /* Grouped layout: one scroll region holds the titled fieldsets. */
   .sv-ep__section { display: flex; flex-direction: column; }
   .sv-ep__section + .sv-ep__section { border-top: 1px solid var(--sg-border, #e6e8ec); }
-  .sv-ep__section-title { margin: 0; padding: 14px 18px 0; font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sg-muted, #64748b); }
+  /* A section heading is a heading, not a label: it reads at the same weight as
+     the dialog title, one size down. An all-caps micro-label got lost among the
+     field labels, which are themselves small and muted. */
+  .sv-ep__section-title { margin: 0; padding: 16px 18px 0; font-size: 13.5px; font-weight: 650; color: var(--ep-fg); }
+  .sv-ep__section-desc { margin: 3px 0 0; padding: 0 18px; font-size: 12px; line-height: 1.45; color: var(--sg-muted, #64748b); }
+  /* The heading owns the gap above its fields, so the group reads as one thing. */
+  .sv-ep__section-title + .sv-ep__body, .sv-ep__section-desc + .sv-ep__body { padding-top: 10px; }
+  .sv-ep__discard { margin-right: auto; font-size: 12.5px; font-weight: 600; color: var(--ep-danger); }
+  .sv-ep__btn--danger { border-color: var(--ep-danger); background: var(--ep-danger); color: #fff; }
   .sv-ep__section .sv-ep__body { flex: 0 0 auto; overflow: visible; }
   .sv-ep-field {
     display: flex;
@@ -739,7 +871,12 @@
   .sv-ep-field label {
     font-size: 12px;
     font-weight: 550;
-    color: var(--ep-muted);
+    /* The label names the thing you are about to type in, so it reads at full
+       strength; muted text is for the hint underneath it. */
+    color: var(--ep-fg);
+  }
+  .sv-ep-field--error label {
+    color: var(--ep-danger);
   }
   .sv-ep-field__req {
     color: var(--ep-danger);
@@ -806,6 +943,42 @@
     font-size: 11px;
     font-weight: 500;
     color: var(--ep-danger);
+  }
+  .sv-ep__summary {
+    margin: 0 18px 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--ep-danger);
+    border-left-width: 3px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ep-danger) 7%, var(--sg-bg, #fff));
+  }
+  .sv-ep__summary-title {
+    margin: 0 0 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ep-danger);
+  }
+  .sv-ep__summary ul {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .sv-ep__summary li {
+    font-size: 12px;
+    color: var(--sg-fg, #0f172a);
+  }
+  .sv-ep__summary button {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .sv-ep__submit-err {
     margin: 0;

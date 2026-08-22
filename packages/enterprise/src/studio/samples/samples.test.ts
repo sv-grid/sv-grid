@@ -214,6 +214,42 @@ describe('sample apps', () => {
       }
     })
   })
+
+  describe('forms that react to the answers', () => {
+    // Each of these asks a question only when the answer matters: a lost deal
+    // wants a reason, a closed ticket wants its resolution, a denied claim wants
+    // a justification.
+    const cases: Record<string, { field: string; drivenBy: string }> = {
+      crm: { field: 'lostReason', drivenBy: 'stage' },
+      support: { field: 'resolution', drivenBy: 'status' },
+      insurance: { field: 'denialReason', drivenBy: 'status' },
+    }
+
+    for (const [id, { field, drivenBy }] of Object.entries(cases)) {
+      it(`${id}: asks for "${field}" only when "${drivenBy}" calls for it`, () => {
+        const project = getSampleApp(id)!.build()
+        const conditional = project.entities.flatMap((e) => e.fields).find((f) => f.field === field)!
+        expect(conditional.when?.visible, `${field} should be conditional`).toBeTruthy()
+        expect(conditional.when?.required, `${field} should be demanded when shown`).toBeTruthy()
+        // The condition has to read a field that exists, or it would sit hidden
+        // forever - validateProject enforces this, so assert it stays clean.
+        expect(validateProject(project).filter((i) => i.level === 'error')).toEqual([])
+        // And it must survive into the generated app as plain data.
+        const schemas = emitStudioProject(project).find((f) => f.path === 'src/lib/schemas.ts')!.contents
+        expect(schemas).toContain(`"${field}"`)
+        expect(schemas).toMatch(new RegExp(`"column": "${drivenBy}"`))
+      })
+    }
+
+    it('seeds the conditional fields, so a loaded sample shows real answers', () => {
+      const rowsOf = (id: string, entity: string) =>
+        (getSampleApp(id)!.build().dataSources?.[entity] as { seed?: Record<string, unknown>[] })?.seed ?? []
+      expect(rowsOf('crm', 'deals').filter((r) => r.stage === 'lost').every((r) => !!r.lostReason)).toBe(true)
+      expect(rowsOf('support', 'tickets').filter((r) => r.status === 'resolved' || r.status === 'closed')
+        .every((r) => !!r.resolution)).toBe(true)
+      expect(rowsOf('insurance', 'claims').filter((r) => r.status === 'denied').every((r) => !!r.denialReason)).toBe(true)
+    })
+  })
 })
 
 describe('starter project (fresh `svgrid-studio designer` session)', () => {

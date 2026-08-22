@@ -5,7 +5,9 @@ import {
   createProject,
   parseProject,
   serializeProject,
+  ssrEligible,
   validateProject,
+  withSsrDefaults,
   type DetailConfig,
   type GridConfig,
   type Screen,
@@ -194,6 +196,47 @@ describe('crudAppFromSchemas', () => {
     expect(app.dataSources?.customers).toEqual({ kind: 'pglite', table: 'customers', seed: [{ id: 'c1' }] })
     expect(app.dataSources?.orders).toEqual({ kind: 'sql', table: 'orders', dialect: 'postgres' })
     expect(app.dataSource).toBe('sql')
+  })
+
+  describe('server rendering defaults', () => {
+    const sqlApp = () => crudAppFromSchemas([customers, orders], {
+      dataSource: 'sql',
+      sources: {
+        customers: { kind: 'sql', table: 'customers', dialect: 'postgres' },
+        orders: { kind: 'sql', table: 'orders', dialect: 'postgres' },
+      },
+    })
+
+    it('renders database-backed screens on the server', () => {
+      const app = sqlApp()
+      const list = app.screens.find((s) => s.id === 'customers')!
+      expect(list.renderMode).toBe('ssr')
+      // Every screen that opted in has to actually be emittable that way.
+      for (const s of app.screens.filter((s) => s.renderMode === 'ssr')) {
+        expect(ssrEligible(app, s), `${s.id} claims ssr but is not eligible`).toBe(true)
+      }
+    })
+
+    it('leaves in-memory apps as a client SPA', () => {
+      // In-memory sources are per-process singletons: an SSR screen would mutate
+      // the server's rows while the app's SPA screens read the browser's.
+      const app = crudAppFromSchemas([customers, orders])
+      expect(app.screens.every((s) => s.renderMode === undefined)).toBe(true)
+    })
+
+    it('leaves PGlite alone even in a SQL project', () => {
+      const app = crudAppFromSchemas([customers], {
+        dataSource: 'sql',
+        sources: { customers: { kind: 'pglite', table: 'customers' } },
+      })
+      expect(app.screens.every((s) => s.renderMode === undefined)).toBe(true)
+    })
+
+    it('never overrides a mode that is already set', () => {
+      const app = sqlApp()
+      const pinned = { ...app, screens: app.screens.map((s) => ({ ...s, renderMode: 'spa' as const })) }
+      expect(withSsrDefaults(pinned).screens.every((s) => s.renderMode === 'spa')).toBe(true)
+    })
   })
 
   it('applies per-entity overrides', () => {

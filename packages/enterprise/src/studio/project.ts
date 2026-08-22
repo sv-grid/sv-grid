@@ -10,8 +10,10 @@
  * Block-config unions are defined here (not imported from `sources/`) to keep the
  * module resolvable under node16.
  */
-import type { EntityField, EntityFieldType, EntitySchema } from '../schema.js'
+import { schemaToFormFields, type EntityField, type EntityFieldType, type EntitySchema, type FormLayout, type FormSection, type StudioEditorType } from '../schema.js'
 import type { ChartType, DockManagerState, DockNode, DockPane, DockTabs } from '@svgrid/grid'
+import type { PredicateExpr } from '../expressions/expression-types.js'
+import { collectColumnRefs } from '../expressions/parse.js'
 import { uiComponentSpec } from './ui-components.js'
 
 export type Reduce = 'sum' | 'avg' | 'count' | 'min' | 'max'
@@ -125,8 +127,9 @@ export type GridConfig = {
   formColumns?: 1 | 2 | 3
   /** Restrict + order the form's fields (field names). */
   formFields?: string[]
-  /** Group fields into titled fieldsets. */
-  formSections?: Array<{ title?: string; fields: string[] }>
+  /** Group fields into titled fieldsets. Overrides the entity's own
+   *  `EntitySchema.form.sections` for this grid's form. */
+  formSections?: FormSection[]
   /** Dialog title override + width for the modal/drawer form. */
   formTitle?: string
   formSize?: 'sm' | 'md' | 'lg'
@@ -911,13 +914,26 @@ const SSR_READ_KINDS = new Set<BlockKind>(['chart', 'pivot', 'dashboard', 'kpi',
  *  null when it must stay SPA. */
 export function ssrScreenShape(project: StudioProject, screen: Screen): 'grid' | 'read' | null {
   if (!screen.entity || screen.code) return null
-  const kind = project.dataSources?.[screen.entity]?.kind ?? project.dataSource
+  const source = project.dataSources?.[screen.entity]
+  const kind = source?.kind ?? project.dataSource
   // memory runs the source in-process; sql reuses the connected /api route via
-  // event.fetch. (rest/supabase/pglite stay SPA for now.)
-  if (kind !== 'memory' && kind !== 'sql') return null
+  // event.fetch; rest calls the remote API straight from the server, which needs
+  // an absolute URL to resolve there. (supabase and pglite stay SPA: pglite only
+  // exists in the browser, and a Supabase read carries the signed-in user's token,
+  // which a server-side call with the anon key would silently drop.)
+  if (kind === 'rest') {
+    if (!(source?.kind === 'rest' && /^https?:\/\//i.test(source.baseUrl ?? ''))) return null
+  } else if (kind !== 'memory' && kind !== 'sql') {
+    return null
+  }
   const blocks = screen.blocks ?? []
-  if (blocks.length === 1 && blocks[0]!.config.kind === 'grid') {
-    const g = blocks[0]!.config as GridConfig
+  // A grid, optionally preceded by a facet panel. The panel is the reason this
+  // allowance exists: every list screen the generator produces is [filter, grid],
+  // so without it the shipped app shape could never render on the server. Facets
+  // map cleanly onto the URL params `planFromSearchParams` already reads.
+  const grids = blocks.filter((b) => b.config.kind === 'grid')
+  if (grids.length === 1 && blocks.every((b) => b.config.kind === 'grid' || b.config.kind === 'filter')) {
+    const g = grids[0]!.config as GridConfig
     if (g.treeData || g.scheduler) return null
     return 'grid'
   }
@@ -941,6 +957,33 @@ export function setScreenRenderMode(project: StudioProject, screenId: string, mo
 /** True when the screen should actually emit as SSR (mode is 'ssr' AND eligible). */
 export function isSsrScreen(project: StudioProject, screen: Screen): boolean {
   return screenRenderMode(project, screen) === 'ssr' && ssrEligible(project, screen)
+}
+
+/**
+ * Turn server rendering on for every screen that can support it, for entities
+ * backed by a real database. Applied when a project is first generated, so a new
+ * app reads as idiomatic SvelteKit (a `load` and form `actions`) rather than a
+ * client SPA. Screens that already state a mode are left alone, so this never
+ * overrides a choice somebody made.
+ *
+ * Deliberately limited to sources that hold one copy of the data. In-memory and
+ * PGlite sources are module singletons, so an SSR screen would read and write the
+ * *server's* copy of the rows while the app's remaining SPA screens read the
+ * browser's - create a row on one and the other never sees it. SQL and REST have
+ * no such split: every path goes to the same database or the same remote API.
+ */
+const SSR_DEFAULT_KINDS = new Set<DataSourceKind>(['sql', 'rest'])
+
+export function withSsrDefaults(project: StudioProject): StudioProject {
+  return {
+    ...project,
+    screens: project.screens.map((screen) => {
+      if (screen.renderMode || !screen.entity) return screen
+      const kind = project.dataSources?.[screen.entity]?.kind ?? project.dataSource
+      if (!SSR_DEFAULT_KINDS.has(kind)) return screen
+      return ssrEligible(project, screen) ? { ...screen, renderMode: 'ssr' } : screen
+    }),
+  }
 }
 
 /** The triggers configured for an entity (or an empty object). */
@@ -1458,6 +1501,325 @@ export function removeEntity(project: StudioProject, name: string): StudioProjec
     entities: project.entities.filter((e) => e.name !== name),
     screens: project.screens.filter((s) => s.entity !== name),
   }
+}
+
+// ---- Form layout ----------------------------------------------------------
+//
+// The arrangement lives on the entity (`EntitySchema.form`) rather than on the
+// block that happens to render it, so a form built once travels with the entity:
+// it round-trips through `studio.config.json`, generates into the app, and draws
+// the same in the edit panel and in a server-rendered form. These are the
+// operations a builder UI drives; keeping them here - pure, on the project -
+// means the designer and an MCP tool cannot disagree about what "move a field"
+// means.
+
+/**
+ * The fields a form actually renders, in schema order. Arranging anything else
+ * would be a lie: a field hidden from the form cannot be put in a section and
+ * then appear there.
+ */
+function formFieldNames(schema: EntitySchema): string[] {
+  return schemaToFormFields(schema).map((f) => f.field)
+}
+
+/**
+ * The sections as a builder should show them, plus the fields no section claims.
+ *
+ * Sections name their fields by string, so a rename, a delete, or hiding a field
+ * from the form can leave a name behind. Those are dropped here rather than
+ * drawn as ghosts, and a field in no section comes back in `unassigned` - which
+ * is where the form itself puts it too, in a trailing untitled group.
+ */
+export function formPlan(
+  schema: EntitySchema,
+  override?: ReadonlyArray<FormSection>,
+): { sections: FormSection[]; unassigned: string[] } {
+  const inForm = formFieldNames(schema)
+  const known = new Set(inForm)
+  const source = override ?? schema.form?.sections ?? []
+  const seen = new Set<string>()
+  const sections = source.map((section) => {
+    // A field named twice belongs to the first section that claimed it: two
+    // copies of one control in a form is never what anybody meant. Claiming as
+    // we go also catches a name repeated inside a single section.
+    const fields = section.fields.filter((f) => {
+      if (!known.has(f) || seen.has(f)) return false
+      seen.add(f)
+      return true
+    })
+    return { ...section, fields }
+  })
+  return { sections, unassigned: inForm.filter((f) => !seen.has(f)) }
+}
+
+/** Replace an entity's form layout. `undefined` drops it back to the default. */
+export function setEntityForm(project: StudioProject, entityName: string, form: FormLayout | undefined): StudioProject {
+  return mapEntity(project, entityName, (schema) => {
+    const next = { ...schema }
+    // An empty layout is deleted rather than stored, so a config file does not
+    // carry `form: {}` around and a reader can tell "no layout" from "one column".
+    if (form && (form.columns !== undefined || form.sections?.length)) next.form = form
+    else delete next.form
+    return next
+  })
+}
+
+/** Set the form's column count, or clear it back to the default. */
+export function setFormColumns(project: StudioProject, entityName: string, columns: 1 | 2 | 3 | undefined): StudioProject {
+  const schema = entityOf(project, entityName)
+  if (!schema) return project
+  return setEntityForm(project, entityName, { ...schema.form, columns })
+}
+
+/** Append a section. New sections start empty - fields move in afterwards. */
+export function addFormSection(project: StudioProject, entityName: string, title = 'Section'): StudioProject {
+  const schema = entityOf(project, entityName)
+  if (!schema) return project
+  return setEntityForm(project, entityName, { ...schema.form, sections: [...(schema.form?.sections ?? []), { title, fields: [] }] })
+}
+
+/** Patch one section. An out-of-range index is a no-op rather than an error. */
+export function updateFormSection(
+  project: StudioProject,
+  entityName: string,
+  index: number,
+  patch: Partial<FormSection>,
+): StudioProject {
+  const schema = entityOf(project, entityName)
+  const sections = schema?.form?.sections
+  if (!sections?.[index]) return project
+  const next = sections.map((s, i) => {
+    if (i !== index) return s
+    const merged: FormSection = { ...s, ...patch }
+    // A cleared title / description is dropped rather than stored blank, so the
+    // form renders an untitled group instead of an empty heading.
+    if (!merged.title) delete merged.title
+    if (!merged.description) delete merged.description
+    if (!merged.visibleWhen) delete merged.visibleWhen
+    if (!merged.columns) delete merged.columns
+    return merged
+  })
+  return setEntityForm(project, entityName, { ...schema!.form, sections: next })
+}
+
+/**
+ * Remove a section. Its fields stay in the form - they fall back to the trailing
+ * untitled group, so deleting a heading never deletes the questions under it.
+ */
+export function removeFormSection(project: StudioProject, entityName: string, index: number): StudioProject {
+  const schema = entityOf(project, entityName)
+  const sections = schema?.form?.sections
+  if (!sections?.[index]) return project
+  return setEntityForm(project, entityName, { ...schema!.form, sections: sections.filter((_, i) => i !== index) })
+}
+
+/** Reorder the sections themselves. */
+export function moveFormSection(project: StudioProject, entityName: string, from: number, to: number): StudioProject {
+  const schema = entityOf(project, entityName)
+  const sections = schema?.form?.sections
+  if (!sections?.[from] || to < 0 || to >= sections.length || from === to) return project
+  const next = [...sections]
+  next.splice(to, 0, next.splice(from, 1)[0]!)
+  return setEntityForm(project, entityName, { ...schema!.form, sections: next })
+}
+
+/**
+ * Move a field into a section at a position, or out of every section when
+ * `toSection` is null. The field is pulled out of wherever it was first, so it
+ * can never end up in two sections - which would render the control twice.
+ */
+export function moveFormField(
+  project: StudioProject,
+  entityName: string,
+  field: string,
+  toSection: number | null,
+  toIndex = Number.MAX_SAFE_INTEGER,
+): StudioProject {
+  const schema = entityOf(project, entityName)
+  // Only a field the form renders can be placed - see `formPlan`.
+  if (!schema || !formFieldNames(schema).includes(field)) return project
+  const sections = schema.form?.sections ?? []
+  if (toSection !== null && !sections[toSection]) return project
+  const stripped = sections.map((s) => ({ ...s, fields: s.fields.filter((f) => f !== field) }))
+  if (toSection === null) return setEntityForm(project, entityName, { ...schema.form, sections: stripped })
+  const target = stripped[toSection]!
+  const at = Math.max(0, Math.min(toIndex, target.fields.length))
+  const fields = [...target.fields]
+  fields.splice(at, 0, field)
+  return setEntityForm(project, entityName, {
+    ...schema.form,
+    sections: stripped.map((s, i) => (i === toSection ? { ...s, fields } : s)),
+  })
+}
+
+/**
+ * Set (or clear) a field's value-driven conditions. Each is a `PredicateExpr`,
+ * so it stays data all the way into the generated app - see `EntityField.when`.
+ */
+export function setFieldConditions(
+  project: StudioProject,
+  entityName: string,
+  field: string,
+  when: EntityField['when'] | undefined,
+): StudioProject {
+  return mapEntity(project, entityName, (schema) => ({
+    ...schema,
+    fields: schema.fields.map((f) => {
+      if (f.field !== field) return f
+      const next = { ...f }
+      if (when?.visible || when?.disabled || when?.required) {
+        next.when = {
+          ...(when.visible && { visible: when.visible }),
+          ...(when.disabled && { disabled: when.disabled }),
+          ...(when.required && { required: when.required }),
+        }
+      } else {
+        delete next.when
+      }
+      return next
+    }),
+  }))
+}
+
+/**
+ * Patch one field of one entity. The form builder edits an entity that is not
+ * necessarily the selected screen's, so it needs the project-level door rather
+ * than the schema-level `updateField`.
+ *
+ * Deliberately shallow: `type` changes belong to the schema designer, which also
+ * has to clean up `options` / `relation` when the type moves.
+ */
+export function updateEntityField(
+  project: StudioProject,
+  entityName: string,
+  field: string,
+  patch: Partial<EntityField>,
+): StudioProject {
+  return mapEntity(project, entityName, (schema) => ({
+    ...schema,
+    fields: schema.fields.map((f) => (f.field === field ? { ...f, ...patch } : f)),
+  }))
+}
+
+/**
+ * Patch a field's form presentation (`EntityField.input`). Merges rather than
+ * replaces, and a key set to `undefined` or `''` is removed - so clearing a
+ * placeholder leaves no empty string behind, and emptying the last key drops
+ * `input` itself rather than persisting `input: {}`.
+ */
+export function setFieldInput(
+  project: StudioProject,
+  entityName: string,
+  field: string,
+  patch: Partial<NonNullable<EntityField['input']>>,
+): StudioProject {
+  return mapEntity(project, entityName, (schema) => ({
+    ...schema,
+    fields: schema.fields.map((f) => {
+      if (f.field !== field) return f
+      const input: Record<string, unknown> = { ...f.input }
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined || value === '') delete input[key]
+        else input[key] = value
+      }
+      const next = { ...f }
+      if (Object.keys(input).length) next.input = input as EntityField['input']
+      else delete next.input
+      return next
+    }),
+  }))
+}
+
+/**
+ * Show or hide a field on one surface, keeping the other surface's answer.
+ * `hidden: true` means both, so it is expanded before one half is changed -
+ * otherwise hiding a field from the form would silently un-hide its column.
+ */
+export function setFieldHidden(
+  project: StudioProject,
+  entityName: string,
+  field: string,
+  surface: 'grid' | 'form',
+  hidden: boolean,
+): StudioProject {
+  return mapEntity(project, entityName, (schema) => ({
+    ...schema,
+    fields: schema.fields.map((f) => {
+      if (f.field !== field) return f
+      const current = f.hidden === true ? { grid: true, form: true } : { ...(f.hidden || {}) }
+      const merged = { ...current, [surface]: hidden }
+      const next = { ...f }
+      if (merged.grid && merged.form) next.hidden = true
+      else if (merged.grid || merged.form) next.hidden = { ...(merged.grid && { grid: true }), ...(merged.form && { form: true }) }
+      else delete next.hidden
+      return next
+    }),
+  }))
+}
+
+/**
+ * The form controls worth offering for a field type. A form builder that listed
+ * every editor for every type would be a wall of mostly-wrong choices - a date
+ * field has no business rendering as a colour picker. The first entry is what
+ * the field renders as when `input.editorType` is unset.
+ */
+export function formControlsFor(type: EntityFieldType): StudioEditorType[] {
+  switch (type) {
+    case 'number': return ['number', 'slider', 'rating', 'text']
+    case 'boolean': return ['checkbox']
+    case 'date': case 'dateString': return ['date', 'date-native']
+    case 'datetime': return ['datetime', 'datetime-native', 'time']
+    case 'enum': return ['select', 'rich-select', 'list', 'chips', 'autocomplete']
+    case 'relation': return ['select', 'autocomplete']
+    case 'json': return ['textarea', 'text']
+    default: return ['text', 'textarea', 'password', 'phone', 'country', 'mask', 'color', 'autocomplete', 'chips']
+  }
+}
+
+/**
+ * A first pass at sectioning an unarranged form, by what the field names say
+ * they are. Studio's promise is a working app in a few clicks, and an entity of
+ * fifteen fields in one flat list is not that.
+ *
+ * A guess, offered once: it returns sections for a builder to drop in and then
+ * edit, and it never invents a group for a form small enough not to need one.
+ */
+const SECTION_HINTS: ReadonlyArray<{ title: string; match: RegExp }> = [
+  { title: 'Contact', match: /^(email|phone|mobile|fax|website|url|contact)/i },
+  { title: 'Address', match: /(address|street|city|state|province|zip|postcode|postal|country|region)/i },
+  { title: 'Money', match: /(amount|price|cost|total|revenue|mrr|arr|salary|budget|value|balance|fee|tax|discount)/i },
+  { title: 'Dates', match: /(date|_at$|At$|deadline|due|expires|starts|ends)/i },
+  { title: 'Notes', match: /(note|notes|comment|comments|description|summary|remark)/i },
+]
+
+export function suggestFormSections(schema: EntitySchema): FormSection[] {
+  const names = formFieldNames(schema)
+  // Below this a flat form reads fine, and a heading over two fields is noise.
+  if (names.length < 6) return []
+  const buckets = new Map<string, string[]>()
+  const rest: string[] = []
+  for (const name of names) {
+    const hint = SECTION_HINTS.find((h) => h.match.test(name))
+    if (!hint) { rest.push(name); continue }
+    const bucket = buckets.get(hint.title)
+    if (bucket) bucket.push(name)
+    else buckets.set(hint.title, [name])
+  }
+  // A bucket of one is not a group; give it back to Details rather than crown it.
+  const sections: FormSection[] = []
+  for (const [title, fields] of buckets) {
+    if (fields.length > 1) sections.push({ title, fields })
+    else rest.push(...fields)
+  }
+  if (!sections.length) return []
+  // Whatever matched nothing leads, under the entity's own name for a heading.
+  return rest.length ? [{ title: 'Details', fields: rest }, ...sections] : sections
+}
+
+/** Apply a change to one entity's schema, leaving the project alone if it is unknown. */
+function mapEntity(project: StudioProject, entityName: string, fn: (schema: EntitySchema) => EntitySchema): StudioProject {
+  if (!entityOf(project, entityName)) return project
+  return { ...project, entities: project.entities.map((e) => (e.name === entityName ? fn(e) : e)) }
 }
 
 /** Append a screen, making its id AND route unique against the existing set. */
@@ -2235,6 +2597,27 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
   const issues: ProjectIssue[] = []
   if (project.entities.length === 0) issues.push({ level: 'error', message: 'Add at least one entity.' })
   if (project.screens.length === 0) issues.push({ level: 'warning', message: 'No screens yet.' })
+
+  // Form conditions read other fields by name. A name that resolves to nothing
+  // compares against undefined, so the field it guards would sit hidden or
+  // locked forever with no clue why - worth catching before it ships.
+  for (const entity of project.entities) {
+    const names = new Set(entity.fields.map((f) => f.field))
+    for (const field of entity.fields) {
+      if (!field.when) continue
+      for (const [flag, expr] of Object.entries(field.when)) {
+        if (!expr) continue
+        for (const ref of collectColumnRefs(expr as PredicateExpr)) {
+          if (!names.has(ref)) {
+            issues.push({
+              level: 'error',
+              message: `"${entity.name}.${field.field}" has a ${flag} condition on "${ref}", which is not a field on ${entity.name}.`,
+            })
+          }
+        }
+      }
+    }
+  }
 
   const routes = new Set<string>()
   for (const s of project.screens) {

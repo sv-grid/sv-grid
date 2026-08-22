@@ -126,8 +126,8 @@ export const themePresets: ThemePreset[] = [
     light: { bg: '#ffffff', fg: '#1f2328', muted: '#59636e', border: '#d1d9e0', headerBg: '#f6f8fa', headerFg: '#59636e', accent: '#0969da', rowAlt: '#ffffff', rowHover: '#f6f8fa', selectionBg: '#ddf4ff' },
     dark: { bg: '#0d1117', fg: '#f0f6fc', muted: '#9198a1', border: '#3d444d', headerBg: '#151b23', headerFg: '#9198a1', accent: '#4493f8', rowAlt: '#0d1117', rowHover: '#151b23', selectionBg: 'rgba(56, 139, 253, 0.10)' } },
   { id: 'antd', name: 'Ant Design', radius: 6, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif',
-    light: { bg: '#ffffff', fg: 'rgba(0, 0, 0, 0.88)', muted: 'rgba(0, 0, 0, 0.65)', border: '#d9d9d9', headerBg: '#fafafa', headerFg: 'rgba(0, 0, 0, 0.88)', accent: '#1677ff', rowAlt: '#ffffff', rowHover: '#f5f5f5', selectionBg: '#e6f4ff' },
-    dark: { bg: '#141414', fg: 'rgba(255, 255, 255, 0.85)', muted: 'rgba(255, 255, 255, 0.65)', border: '#424242', headerBg: '#1f1f1f', headerFg: 'rgba(255, 255, 255, 0.85)', accent: '#177ddc', rowAlt: '#141414', rowHover: '#262626', selectionBg: '#111a2c' } },
+    light: { bg: '#ffffff', fg: 'rgba(0, 0, 0, 0.88)', muted: 'rgba(0, 0, 0, 0.65)', border: '#d9d9d9', headerBg: '#fafafa', headerFg: 'rgba(0, 0, 0, 0.88)', accent: '#066dff', rowAlt: '#ffffff', rowHover: '#f5f5f5', selectionBg: '#e6f4ff' },
+    dark: { bg: '#141414', fg: 'rgba(255, 255, 255, 0.85)', muted: 'rgba(255, 255, 255, 0.65)', border: '#424242', headerBg: '#1f1f1f', headerFg: 'rgba(255, 255, 255, 0.85)', accent: '#1678d3', rowAlt: '#141414', rowHover: '#262626', selectionBg: '#111a2c' } },
   { id: 'ag-alpine', name: 'Alpine', radius: 3, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     light: { bg: '#ffffff', fg: '#181d1f', muted: 'rgba(24, 29, 31, 0.5)', border: '#babfc7', headerBg: '#f8f8f8', headerFg: '#181d1f', accent: '#2196f3', rowAlt: '#fcfcfc', rowHover: 'rgba(33, 150, 243, 0.1)', selectionBg: 'rgba(33, 150, 243, 0.3)' },
     dark: { bg: '#181d1f', fg: '#ffffff', muted: 'rgba(255, 255, 255, 0.5)', border: '#68686e', headerBg: '#222628', headerFg: '#ffffff', accent: '#2196f3', rowAlt: '#222628', rowHover: 'rgba(33, 150, 243, 0.1)', selectionBg: 'rgba(33, 150, 243, 0.3)' } },
@@ -144,7 +144,7 @@ export const themePresets: ThemePreset[] = [
     light: { bg: '#ffffff', fg: '#37352f', muted: '#787774', border: '#e9e9e7', headerBg: '#f7f6f3', headerFg: '#787774', accent: '#2383e2', rowAlt: '#fbfbfa', rowHover: '#f1f1ef', selectionBg: '#d9eaf7' },
     dark: { bg: '#191919', fg: '#d4d4d4', muted: '#9b9b9b', border: '#2f2f2f', headerBg: '#202020', headerFg: '#9b9b9b', accent: '#529cca', rowAlt: '#1c1c1c', rowHover: '#252525', selectionBg: '#20415c' } },
   { id: 'nord', name: 'Nord', radius: 4, font: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    light: { bg: '#eceff4', fg: '#2e3440', muted: '#4c566a', border: '#d8dee9', headerBg: '#e5e9f0', headerFg: '#2e3440', accent: '#5e81ac', rowAlt: '#e5e9f0', rowHover: '#dde3ec', selectionBg: '#d8dee9' },
+    light: { bg: '#eceff4', fg: '#2e3440', muted: '#4c566a', border: '#d8dee9', headerBg: '#e5e9f0', headerFg: '#2e3440', accent: '#5579a5', rowAlt: '#e5e9f0', rowHover: '#dde3ec', selectionBg: '#d8dee9' },
     dark: { bg: '#2e3440', fg: '#d8dee9', muted: '#4c566a', border: '#434c5e', headerBg: '#3b4252', headerFg: '#e5e9f0', accent: '#88c0d0', rowAlt: '#333b48', rowHover: '#3b4252', selectionBg: '#434c5e' } },
   { id: 'dracula', name: 'Dracula', radius: 6, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     light: { bg: '#fffbeb', fg: '#1f1f1f', muted: '#6c664b', border: '#dedccf', headerBg: '#ece9df', headerFg: '#1f1f1f', accent: '#644ac9', rowAlt: '#fffdf5', rowHover: '#f2efe3', selectionBg: '#cfcfde' },
@@ -161,15 +161,36 @@ export const defaultThemePreset: ThemePreset = themePresets.find((t) => t.id ===
 export const getThemePreset = (id?: string): ThemePreset | undefined =>
   id ? themePresets.find((t) => t.id === id) : undefined
 
-/** A readable (near-black / white) foreground for text placed on the accent. */
+/** WCAG 2.1 relative luminance. */
+function relativeLuminance(hex: string): number {
+  const n = parseInt(hex, 16)
+  const chan = (v: number) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  }
+  return 0.2126 * chan((n >> 16) & 255) + 0.7152 * chan((n >> 8) & 255) + 0.0722 * chan(n & 255)
+}
+
+/** WCAG contrast ratio between two 6-digit hex colors, 1 (identical) to 21. */
+function contrastRatio(a: string, b: string): number {
+  const [x, y] = [relativeLuminance(a), relativeLuminance(b)]
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+
+/**
+ * A readable (near-black / white) foreground for text placed on the accent.
+ *
+ * Picks whichever candidate has the higher WCAG contrast against the accent.
+ * This used to threshold a YIQ luminance approximation at 0.6, which handed
+ * white text to every mid-tone accent - Tailwind's indigo in dark mode scored
+ * 2.98:1 against white where AA wants 4.5. Comparing real contrast ratios fixes
+ * that class of preset without touching any palette.
+ */
 function onAccent(accent: string): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(accent.trim())
   if (!m) return '#ffffff'
-  const n = parseInt(m[1]!, 16)
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
-  // Perceived luminance (sRGB, quick approximation).
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return lum > 0.6 ? '#18181b' : '#ffffff'
+  const hex = m[1]!
+  return contrastRatio('18181b', hex) >= contrastRatio('ffffff', hex) ? '#18181b' : '#ffffff'
 }
 
 /** Resolve the effective `--sg-*` tokens for a preset in a given mode, with an

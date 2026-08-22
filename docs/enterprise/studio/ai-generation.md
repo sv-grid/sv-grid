@@ -84,6 +84,8 @@ designer produced, and hand it back:
 | `studio_update_screen` | Rename a screen, change its route or nav entry, or set `renderMode` (`ssr` for an idiomatic `+page.server.ts` load + form actions, `spa` for the client page) |
 | `studio_remove_screen` | Remove a screen and its blocks |
 | `studio_set_screen_layout` | Switch a screen between `grid`, `stack`, `split`, `dock`, and `canvas` layouts |
+| `studio_set_form_layout` | Arrange an entity's [create/edit form](./edit-forms.md): column count + titled sections, or `"suggest": true` to have them proposed from the field names |
+| `studio_set_field_conditions` | Make a form field [value-driven](./edit-forms.md#fields-that-react-to-the-answers) - shown, required, or locked depending on the other answers |
 | `studio_set_entity_source` | Bind an entity to a data source: `sql`, `supabase`, `rest`, `pglite`, or `memory` |
 | `studio_set_theme` | Set the theme preset, light/dark mode, and accent color |
 | `studio_set_access` | Configure [RBAC](./access-control.md): roles gating screens and create/update/delete actions |

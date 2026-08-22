@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.2.1",
+  "version": "2.5.0",
   "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element). Drop into React, Vue, Angular, or plain HTML - no build step required.",
   "type": "module",
   "license": "MIT",

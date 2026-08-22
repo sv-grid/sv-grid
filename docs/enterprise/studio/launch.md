@@ -36,7 +36,8 @@ picks up exactly where you left off.
 ## What it does
 
 - **Loads** `studio.config.json` from the current folder. If there's none yet,
-  the designer opens with a small starter project so you have something to edit.
+  the designer opens with a small starter project so you have something to edit,
+  and offers the **New app** wizard to replace it with your own data.
 - **Auto-saves** every change back to `studio.config.json` (debounced). This is
   the persistence the embedded component never had - your work survives a
   refresh.
@@ -55,18 +56,25 @@ npm run dev
 
 ## Start from zero
 
-![The designer's onboarding screen: sample apps, New entity, Connect a database, or Import a schema](/docs-media/studio-launch-onboarding.png)
+![The designer's start screen: sample apps, New entity, Connect a database, or Import a schema](/docs-media/studio-launch-onboarding.png)
 
-Launched in an empty folder, the designer opens on an **onboarding** screen -
-your app has no data model yet. The quickest start is a ready-made
-[sample app](./samples.md) (`--template <id>`, or the **Sample apps** button);
-otherwise add a data model one of these ways:
+Launched in an empty folder, the designer opens the starter project and offers
+the **New app** wizard - four steps (where the data lives, which tables, which
+pages each table gets, what it's called) that end on a working app. It runs the
+same generator as `svgrid-studio init`, so both routes land in the same place.
+
+Prefer to start from something finished? A ready-made [sample app](./samples.md)
+(`--template <id>`, or the **Sample apps** button) is one click. Or build the
+data model yourself:
 
 - **New entity** - name it and get a screen with an `id` + `name` field; flesh
   out the rest (fields, types, PK / required / relations) in the inspector. The
   **New entity** button in the toolbar works any time, not just at the start.
 - **Connect a database** - see below.
 - **Import a schema** - paste a Drizzle `schema.ts` or Prisma `schema.prisma`.
+
+Clear every screen out of a design and these same choices appear as the
+designer's start screen.
 
 Opening a [sample app](./samples.md) gives you a complete, themed app in one
 click. Here the **CRM** sample - a dashboard with KPI tiles and a deal-pipeline
@@ -90,11 +98,14 @@ tables into entities - no hand-typing a schema:
    **bound to its SQL table**, so **Generate app** emits a connected
    `src/routes/api/<table>/+server.ts` (driver + `DATABASE_URL`) for it.
 
-The database driver (`pg` / `mysql2` / `mssql` / `better-sqlite3`) must be
-installed in the folder you launched the designer in. The connection stays on
-your machine - the local designer server does the read; nothing is sent to a
-cloud. To scaffold from a schema file or a live DB straight from the terminal
-instead, use [`npx @svgrid/studio add`](./cli.md).
+Each database needs a driver (`pg` / `mysql2` / `mssql` / `better-sqlite3`), but
+you don't have to install it yourself: Studio checks the folder you launched the
+designer in, detects its package manager (pnpm / yarn / bun / npm from the
+lockfile) and installs the missing one for you. If that fails - no network, a
+locked file - it says which command to run by hand. The connection stays on your
+machine: the local designer server does the read; nothing is sent to a cloud. To
+scaffold from a schema file or a live DB straight from the terminal instead, use
+[`npx @svgrid/studio add`](./cli.md).
 
 ## Options
 

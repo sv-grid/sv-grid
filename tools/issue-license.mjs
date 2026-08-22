@@ -54,7 +54,9 @@ Required:
   --tenant   Customer / company name (free text — used in the file header
              and slugified into the key)
   --seats    Number of developer seats (positive integer)
-  --expires  Subscription expiry month, format YYYY-MM (e.g. 2027-05)
+  --expires  Expiry, either YYYY-MM (end of that month, for subscriptions)
+             or YYYY-MM-DD (end of that day - use this for trials, e.g. a
+             14-day eval)
 
 Optional:
   --kind     One of: prod (default), eval, dev, oss. Picks the key prefix.
@@ -67,7 +69,7 @@ Optional:
 
 Examples:
   node tools/issue-license.mjs --tenant "ACME Corp" --seats 5 --expires 2027-05
-  node tools/issue-license.mjs --tenant Globex --seats 1 --expires 2026-06 --kind eval
+  node tools/issue-license.mjs --tenant Globex --seats 1 --expires 2026-06-14 --kind eval
   node tools/issue-license.mjs --tenant "github.com/foo/bar" --seats 1 --expires 2027-05 --kind oss
 
 After issuance:
@@ -126,23 +128,40 @@ function main() {
     die(`--seats must be a positive integer (got: ${args.seats})`)
   }
 
-  const expiresMatch = /^(\d{4})-(\d{2})$/.exec(String(args.expires))
+  // Two widths, both understood by parseLicenseExpiry() in
+  // packages/enterprise/src/license-core.ts:
+  //   YYYY-MM     -> compact YYYYMM,   expires end of that month (subscriptions)
+  //   YYYY-MM-DD  -> compact YYYYMMDD, expires end of that day   (trials)
+  // A 14-day trial needs the day form; the month form would hand out the rest
+  // of the calendar month instead.
+  const expiresMatch = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(String(args.expires))
   if (!expiresMatch) {
-    die(`--expires must be YYYY-MM (got: ${args.expires})`)
+    die(`--expires must be YYYY-MM or YYYY-MM-DD (got: ${args.expires})`)
   }
-  const [, expYear, expMonth] = expiresMatch
+  const [, expYear, expMonth, expDay] = expiresMatch
   const expMonthNum = Number.parseInt(expMonth, 10)
   if (expMonthNum < 1 || expMonthNum > 12) {
     die(`--expires month must be 01-12 (got: ${expMonth})`)
   }
-  const expiresCompact = expYear + expMonth
+  if (expDay != null) {
+    const dayNum = Number.parseInt(expDay, 10)
+    const daysInMonth = new Date(Date.UTC(Number(expYear), expMonthNum, 0)).getUTCDate()
+    if (dayNum < 1 || dayNum > daysInMonth) {
+      die(`--expires day must be 01-${String(daysInMonth).padStart(2, '0')} for ${expYear}-${expMonth} (got: ${expDay})`)
+    }
+  }
+  const expiresCompact = expYear + expMonth + (expDay ?? '')
 
   const kind = (args.kind ?? 'prod').toLowerCase()
+  // These MUST stay in sync with VALID_PREFIX and the status checks in
+  // packages/enterprise/src/license-core.ts. A key that does not start with
+  // "SVENTERPRISE-" is classified 'invalid', and license.ts THROWS on it - so a
+  // mismatch here does not degrade gracefully, it breaks the customer's app.
   const PREFIX = {
-    prod: 'SVPRO',
-    eval: 'SVPRO-EVAL',
-    dev: 'SVPRO-DEV',
-    oss: 'SVPRO-OSS',
+    prod: 'SVENTERPRISE',
+    eval: 'SVENTERPRISE-EVAL',
+    dev: 'SVENTERPRISE-DEV',
+    oss: 'SVENTERPRISE-OSS',
   }
   if (!(kind in PREFIX)) {
     die(`--kind must be one of: prod, eval, dev, oss (got: ${args.kind})`)

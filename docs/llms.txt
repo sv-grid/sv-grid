@@ -417,6 +417,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 ### Enterprise tier
 
 - [Enterprise evaluation](https://svgrid.com/docs/enterprise/evaluation/): The @svgrid/enterprise package is soft-gated; you can evaluate every feature in production-equivalent code paths without contacting sales. This page is the playbook.
+- [Enterprise getting started: a complete example](https://svgrid.com/docs/enterprise/getting-started/): One page, one file, from an empty folder to a working grid with Excel, PDF and CSV export. Nothing is elided - every command and every line below was run end to end against the published packages.
 - [Enterprise licensing](https://svgrid.com/docs/enterprise/licensing/): The @svgrid/enterprise package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a …
 - [Enterprise support](https://svgrid.com/docs/enterprise/support/): What you get on each tier, what response time to expect, how to escalate.
 
