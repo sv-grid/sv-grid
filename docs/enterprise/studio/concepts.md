@@ -51,9 +51,10 @@ The designer edits a single JSON document - the **project** - with this shape:
       (resizable panes), `dock` (dockable / floatable panes, see
       [Dock layout](./dock-layout.md)), or `canvas` (free-form placement on a
       12-column cell grid).
-    - a **render mode** - `spa` (default; the page fetches through the data
-      source in the browser) or `ssr` (emits idiomatic SvelteKit
-      `+page.server.ts` load + form actions).
+    - a **render mode** - `ssr` (emits idiomatic SvelteKit `+page.server.ts`
+      load + form actions; the default for screens in a database-backed app) or
+      `spa` (the page fetches through the data source in the browser). See
+      [Code generation](./code-generation.md).
     - optional **code-behind** - a user-owned `handlers.ts` companion for
       event handlers, written once and never regenerated.
 

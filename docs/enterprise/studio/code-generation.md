@@ -109,22 +109,53 @@ See [Databases](./databases.md) and [Data binding](./data-binding.md).
 
 ## Render mode: SPA or SSR per screen
 
-By default a generated screen is a client page (`spa`): the browser talks to
-the API route through the data-source controller. In the
-[app designer](./app-designer.md), a screen can instead opt into **`ssr`**,
-which emits idiomatic server-rendered SvelteKit - a `+page.server.ts` with a
-`load` function and form `actions`, URL-driven sort / filter / page state, and
-progressive enhancement.
+An **`ssr`** screen emits idiomatic server-rendered SvelteKit: a
+`+page.server.ts` with a `load` function and form `actions`, URL-driven sort /
+filter / page state, and progressive enhancement. A **`spa`** screen emits a
+client page where the browser talks to the API route through the data-source
+controller.
+
+**New apps built on a database or a REST API get `ssr` for free.** When you
+generate an app - `svgrid-studio init`, the designer's **New app** wizard, or
+`crudAppFromSchemas` - every screen that qualifies starts in `ssr`. You can still
+switch any screen either way in the [app designer](./app-designer.md).
+
+In-memory and PGlite apps stay `spa`, on purpose. Those sources are module
+singletons, so a server-rendered screen would read and write the server's copy of
+the rows while the app's remaining client screens read the browser's: add a row
+on one and the other never sees it. SQL and REST have no such split, because
+every path goes to the same database or the same remote API.
+
+### How the app is wired
+
+Once an app has at least one server-rendered screen, the root `src/routes/+layout.ts`
+leaves SvelteKit's own default in place - server rendering on - and each
+client-only screen opts out in its own `+page.ts`:
+
+```ts
+// src/routes/<screen>/+page.ts
+export const ssr = false
+```
+
+So the nav shell, the home page, and the sign-in pages all render on the server,
+and only the screens that fetch in the browser skip it. An app with nothing to
+server-render keeps the single `export const ssr = false` in the root layout, as
+before.
 
 Not every screen shape can emit as SSR. The rules:
 
 - The screen must be entity-bound, without a [code-behind](./code-behind.md)
   companion.
-- Its data source must be `memory` (runs in-process) or `sql` (reuses the
-  connected `/api` route via `event.fetch`); `rest`, `supabase`, and `pglite`
-  screens stay SPA.
-- **A single plain grid** emits as load + form actions (no tree data, no
-  scheduler view).
+- Its data source must be `memory` (runs in-process), `sql` (reuses the connected
+  `/api` route via `event.fetch`), or `rest` **on an absolute URL** (the server
+  calls the remote API directly; a relative URL has no origin to resolve against
+  there, so it stays SPA). `supabase` and `pglite` screens stay SPA - PGlite only
+  exists in the browser, and a Supabase read carries the signed-in user's token,
+  which a server-side call with the anon key would silently drop.
+- **A grid, optionally with a facet panel**, emits as load + form actions (no
+  tree data, no scheduler view). The facet panel becomes a plain `GET` form
+  whose controls are named for the URL params the `load` reads, so filtering
+  works with JavaScript off and every filtered view has a shareable URL.
 - **Read-only block screens** - any mix of chart, pivot, dashboard, KPI, gauge,
   tree, detail, and master-detail - emit as a load-only page.
 - Anything else (boards, calendars, UI component blocks, containers,

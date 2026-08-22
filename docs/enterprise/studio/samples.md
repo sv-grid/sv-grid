@@ -8,8 +8,8 @@ no placeholder rows.
 
 ## Start from a sample
 
-In the designer, click **Sample apps** (toolbar or the onboarding screen) and pick
-one of **17** ready-made apps. Each loads instantly as a full multi-entity app - a
+In the designer, click **Sample apps** (toolbar or the empty-state screen) and pick
+one of **18** ready-made apps. Each loads instantly as a full multi-entity app - a
 dashboard (KPIs + charts), grids, a master/detail, and **rich edit forms** - themed
 and **seeded with believable data**, so you see the real thing, not `name 1 / email 1`.
 
@@ -32,6 +32,7 @@ and **seeded with believable data**, so you see the real thing, not `name 1 / em
 | **Fleet** | Vehicles, Drivers, Trips - utilization + cost |
 | **Gym** | Members, Classes, Bookings - capacity + attendance |
 | **Library** | Books, Members, Loans - circulation + overdue |
+| **Insurance Claims** | Policies, Adjusters, Claims - claims pipeline board + payout dashboard, behind a sign-in |
 
 ![A loaded sample in the designer: the CRM forecast dashboard - KPI tiles (pipeline value, open deals, average deal size) and deal-value charts by stage and owner.](/docs-media/studio-sample-loaded.png)
 

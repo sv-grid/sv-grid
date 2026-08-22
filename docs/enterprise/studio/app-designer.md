@@ -41,8 +41,10 @@ security still applies, so the app sees exactly what the browser may see. The
 other paths work there too, and you can rebind to any database later with
 **Use my data**.
 
-The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - same
-questions, same generator, same app.
+The terminal equivalent is [`svgrid-studio init`](./cli.md#init) - the same
+generator, the same app. The questions differ slightly: the CLI also asks for a
+theme and light/dark, while the wizard offers a dashboard page per table (pick
+your theme in the designer afterwards).
 
 ## How the screen is laid out
 
@@ -159,6 +161,21 @@ and the **Page size options** for the selector), and per-**Column** settings -
 expand a column to set its **header**, **width**, **alignment**, **pin** (left /
 right), plus show / hide + reorder. There is no standalone "Edit form" block - the
 grid owns editing end to end.
+
+### Form builder
+
+**Open form builder** - on the grid's **Form** tab, and on the entity's **Form
+layout** section - opens the form in a room of its own. The canvas draws the form
+as it will look, with real labels, control shapes, and column spans, and you drag
+the fields around on it directly. Click a field to rename it, change its control,
+add help text, span it across the row, or give it a rule so it only appears (or
+only becomes required, or locks) once another answer calls for it. **Group these
+for me** sections an unarranged form in one click, and **Try it** swaps in the
+live panel so you can type into the form and watch a condition fire.
+
+It edits the *entity*, not the block, so the arrangement follows the entity
+everywhere it is rendered - including a server-rendered screen. See
+[edit forms](./edit-forms.md#building-one-without-writing-it).
 
 ### Export toolbar
 
