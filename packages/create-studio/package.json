@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "0.2.2",
+  "version": "0.5.0",
   "description": "Scaffold a runnable SvGrid Studio data app in one command: npm create @svgrid/studio@latest",
   "type": "module",
   "license": "MIT",
