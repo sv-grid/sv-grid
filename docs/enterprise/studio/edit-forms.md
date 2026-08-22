@@ -103,6 +103,25 @@ validations: [
 Operators: `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `required`, `minLen`, `maxLen`.
 Use `compareTo` to compare against another field instead of a fixed `value`.
 
+## Where a form comes from
+
+Three places, and which one you want depends on the record:
+
+| You want to | Use |
+| --- | --- |
+| Edit an existing row from a list | A **grid** with **Editing mode: Popup form**. Double-click a row. |
+| Edit whichever row is selected on the screen | A **record panel** with editing on - inline, drawer, or modal. |
+| Create a new record, with no grid behind it | A **Form** block, dragged from the Components rail. |
+
+All three render the same `SvGridEditPanel` against the same `EntitySchema.form`,
+so a form designed once looks the same in every one of them.
+
+The **Form** block is create-only by design. It is blank on load, submits, and
+creates a row; after saving it either blanks itself for the next entry (the
+default, with a "Saved" confirmation) or opens another screen. Give it a heading
+and a submit label in the inspector - "Report a problem" / "Send it" reads better
+than "New Ticket" / "Create" on a page somebody was sent to.
+
 ## Building one without writing it
 
 Everything below this line is authorable in the [visual designer](./app-designer.md).

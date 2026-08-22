@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-22T14:25:48.954Z",
+  "generatedAt": "2026-08-22T15:34:07.324Z",
   "counts": {
     "pages": 362,
     "enterprise": 55,
@@ -759,7 +759,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 1271,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -822,7 +822,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 1343,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -847,8 +847,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 3810,
-      "lastUpdated": "2026-08-21",
+      "words": 3902,
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -926,7 +926,7 @@
       "tier": "enterprise",
       "group": "Logic & generated code",
       "words": 1092,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -939,7 +939,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 956,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1044,7 +1044,7 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Screens & features",
-      "words": 2297,
+      "words": 2480,
       "lastUpdated": "2026-08-22",
       "demoIds": []
     },
@@ -1058,7 +1058,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 2730,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1097,7 +1097,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 1071,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1240,7 +1240,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 985,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
