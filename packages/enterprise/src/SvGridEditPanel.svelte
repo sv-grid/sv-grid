@@ -855,12 +855,16 @@
     display: flex;
     flex-direction: column;
   }
+  /* Inline fills whatever it is placed in - a form block on a page is as wide as
+     the block, and a fixed cap here made a wide block look broken. Narrow it
+     with `formSize` when a full-width form is too much to read. */
   .sv-ep--inline {
     width: 100%;
-    max-width: 460px;
     border: 1px solid var(--ep-border);
     border-radius: var(--ep-radius);
   }
+  .sv-ep--sz-sm.sv-ep--inline { max-width: 460px; }
+  .sv-ep--sz-lg.sv-ep--inline { max-width: 900px; }
 
   .sv-ep__form {
     display: flex;

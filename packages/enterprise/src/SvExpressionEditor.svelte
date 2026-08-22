@@ -328,7 +328,10 @@
   .sx-combinator { display: flex; align-items: center; gap: 6px; font-size: 12px; opacity: 0.7; }
   .sx-rows { display: flex; flex-direction: column; gap: 7px; }
   .sx-row {
-    display: grid; grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) 2fr auto; gap: 7px; align-items: center;
+    /* minmax(0, 2fr), not 2fr: a grid track sizes to its content by default, so
+       the value input refused to shrink and pushed the row out of any narrow
+       panel (the form builder's rules pane, a docked alerts panel). */
+    display: grid; grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) minmax(0, 2fr) auto; gap: 7px; align-items: center;
     border: 1px solid color-mix(in srgb, currentColor 14%, transparent); border-radius: 9px; padding: 8px;
   }
   .sx-noval { text-align: center; font-size: 13px; opacity: 0.5; }
