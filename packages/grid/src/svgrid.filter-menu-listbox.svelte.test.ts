@@ -93,11 +93,20 @@ async function openFilterMenu(target: HTMLElement) {
   // failed once that way in a full-suite run. Every caller here opens a menu on
   // a column that has values, so a populated list is the settled state to wait
   // for, and each test's own assertions are unchanged.
-  await vi.waitFor(() => {
-    const menu = target.querySelector('.sv-grid-filter-menu')
-    expect(menu).not.toBeNull()
-    expect(menu!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0)
-  })
+  //
+  // The 1s default is not enough for the lazy chunk when `test:lib` runs the
+  // whole suite with `--coverage`: instrumentation plus parallel load pushes
+  // the import past a second and the menu is still null when the clock runs
+  // out. The assertions are unchanged - this only waits longer for a dynamic
+  // import, so a slow machine reports a real failure rather than a timeout.
+  await vi.waitFor(
+    () => {
+      const menu = target.querySelector('.sv-grid-filter-menu')
+      expect(menu).not.toBeNull()
+      expect(menu!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0)
+    },
+    { timeout: 5000 },
+  )
   return target.querySelector('.sv-grid-filter-menu') as HTMLElement
 }
 

@@ -19,7 +19,7 @@
   --sg-input-bg: #ffffff;
   --sg-input-border: #e7e5e4;
   --sg-accent: #ff3e00;
-  --sg-on-accent: #ffffff;
+  --sg-on-accent: #18181b;
   --sg-radius: 6px;
   --sg-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --sg-danger: #dc2626;
@@ -65,7 +65,7 @@
   --sg-input-bg: #0c0a09;
   --sg-input-border: #292524;
   --sg-accent: #ff5a1f;
-  --sg-on-accent: #ffffff;
+  --sg-on-accent: #18181b;
   --sg-radius: 6px;
   --sg-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --sg-danger: #f87171;

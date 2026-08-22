@@ -83,6 +83,10 @@
   --app-fg: var(--sg-fg);
   --app-muted: var(--sg-muted);
   --app-accent: var(--sg-accent);
+  /* Text that sits ON the accent. Every preset declares this, and it is NOT
+     always white: shadcn dark uses a near-white accent (#fafafa) with near-black
+     text. Hardcoding #fff here made the active nav item invisible. */
+  --app-on-accent: var(--sg-on-accent);
 }
 
 html,
