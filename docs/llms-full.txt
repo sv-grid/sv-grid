@@ -5049,17 +5049,42 @@ field you span shows as spanned, a `textarea` is tall, a switch is small.
   section** group, because that is exactly where the form puts them.
 - **Sections** take a title, a line of guidance, and their own column count.
   Hover one for its tools: columns, **Rule** (show the whole section only when a
-  condition holds), reorder, and remove - which removes the heading only, never
-  the fields under it. On an unarranged form, **Group these for me** proposes a
-  grouping from the field names; it only appears when there is a real grouping to
-  make.
+  condition holds), **Fold**, reorder, and remove - which removes the heading
+  only, never the fields under it. On an unarranged form, **Group these for me**
+  proposes a grouping from the field names; it only appears when there is a real
+  grouping to make.
 - **Click a field** and the right pane fills, in two tabs. **Field**: label,
   control, placeholder, help text, span the full row, always required, and
-  *Remove from this form* (the field keeps its grid column). **Rules**: the
-  *Shown when* / *Required when* / *Locked when* conditions plus the cross-field
-  checks that blame this field - the same `validations` rules, edited here because
-  they are form logic. The tab carries a count, and so does the field on the
-  canvas.
+  *Remove from this form* (the field keeps its grid column). Controls that need
+  more say so - a mask gets its pattern, a number or slider gets its range, step,
+  decimals and affixes - and nothing else is shown, so picking a control never
+  leaves you with nowhere to configure it. **Rules**: the *Shown when* /
+  *Required when* / *Locked when* conditions plus the cross-field checks that
+  blame this field - the same `validations` rules, edited here because they are
+  form logic. The tab carries a count, and so does the field on the canvas.
+
+### Folding a long form
+
+**Fold** on a section cycles through three states: not foldable, foldable, and
+foldable-and-starts-folded. A foldable section's heading becomes a disclosure
+button carrying a count, so a long form opens at a readable length instead of a
+wall of inputs.
+
+Folding is a **display state, not a condition**. The fields are still filled in
+and still validated - use `visibleWhen` when you actually want them gone. If a
+folded section holds an error the form opens it, so a rejected submit can never
+point at something the user cannot see.
+
+Server-rendered screens get the same thing as a native `<details>`, so it folds
+with JavaScript off, and a section that starts folded opens itself when the
+server sends back an error for one of its fields.
+
+```ts
+sections: [
+  { title: 'Contact', fields: ['name', 'email'] },
+  { title: 'Billing', fields: ['vatNumber', 'poNumber'], collapsible: true, collapsed: true },
+]
+```
 
 **Try it** swaps the canvas for the live edit panel, so you can type into the form
 and watch a condition fire. Toggle **Existing** / **New**: the values differ, so
