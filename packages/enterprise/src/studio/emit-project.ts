@@ -11,7 +11,7 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, ScheduledJob, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
+import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, FormConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, ScheduledJob, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
 import { tenantField, isTenantScoped } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, rowSelectSlot, eventSlot, FORM_SUBMIT, GRID_EVENTS, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
 import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-components.js'
@@ -517,9 +517,36 @@ ${panels}
     case 'component':
       return componentBlockMarkup(block, cfg, ctx.handleNames?.get(block.id), rowsExpr)
     case 'form':
+      return createFormMarkup(entity, schemaVar, block, cfg)
     default:
-      return '' // the form is the edit modal, rendered after the screen grid
+      return ''
   }
+}
+
+/**
+ * A standalone create form: blank, always on the page, submits a new row.
+ *
+ * Keyed on `formSaves` so a successful create remounts the panel with empty
+ * values - the panel seeds itself from `row` once, so without the key the
+ * previous entry would still be sitting in the fields.
+ */
+function createFormMarkup(entity: EntitySchema, schemaVar: string, block: Block, cfg: FormConfig): string {
+  const span = wrapperStyle(block)
+  const cls = wrapperClass(block)
+  const attrs: string[] = [`schema={${schemaVar}}`, 'row={null}', 'presentation="inline"']
+  attrs.push(`title={${jsStr(cfg.title ?? `New ${entity.label ?? entity.name}`)}}`)
+  if (cfg.submitLabel) attrs.push(`submitLabel={${jsStr(cfg.submitLabel)}}`)
+  // A confirmation only makes sense when the page stays put; navigating away
+  // makes the new screen the confirmation.
+  const done = cfg.afterSave === 'navigate'
+    ? ''
+    : `
+      {#if formSaves}<p class="st-form__done" role="status">Saved. Add another below.</p>{/if}`
+  return `    <div ${span}${cls}>${done}
+      {#key formSaves}
+        <SvGridEditPanel ${attrs.join(' ')} onSubmit={createRecord} />
+      {/key}
+    </div>`
 }
 
 /** Emits a UI-kit component block (see `UI_COMPONENT_REGISTRY`): a literal
@@ -1808,7 +1835,10 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // literal shared with the PageContext type. Data handles read the entity row type.
   const handleNames = handleNameMap(screen)
   const codeWire = codeEnabled ? codeWiring(screen, n.type, undefined) : null
-  const hasForm = has(blocks, 'form') // legacy standalone form block
+  // A standalone Form block creates a record. It does NOT want the grid's edit
+  // modal (that edits an existing row), so it is deliberately kept out of
+  // `wantsForm` - it emits its own always-visible panel and its own handler.
+  const createForm = blocks.map((b) => b.config).find((c): c is FormConfig => c.kind === 'form')
   // Editing is a Grid property: a grid with editing 'form' opens the edit panel.
   const gridConfigs = blocks.map((b) => b.config).filter((c): c is GridConfig => c.kind === 'grid')
   const formGrid = gridConfigs.find((c) => c.editing === 'form')
@@ -1818,7 +1848,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // Rich cell renderers (badge / progress / link) each emit a `cell` snippet.
   const cellRenderKinds = new Set(gridConfigs.flatMap((c) => c.columns.filter((col) => col.show && col.cellType).map((col) => col.cellType!.kind)))
   const hasCellRenderers = cellRenderKinds.size > 0
-  const wantsForm = !!formGrid || hasForm || hasEditAction
+  const wantsForm = !!formGrid || hasEditAction
   // An unpaginated grid loads everything (one big page); else its configured size.
   const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? (gridConfigs[0].pageSize ?? 10) : 1000) : 10
   const formPres = formGrid?.formPresentation ?? 'modal'
@@ -1831,7 +1861,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const recordEditable = blocks.some((b) => b.config.kind === 'record' && b.config.editable)
   // Filter panels drive the grid's controller; record panels read the grid's
   // selection - both need the controller even if the grid isn't editable.
-  const needsController = hasGrid || wantsForm || hasFilter || hasRecord
+  const needsController = hasGrid || wantsForm || hasFilter || hasRecord || !!createForm
   // Supabase Realtime: when the screen's entity is Supabase-backed and opts into
   // live updates, subscribe to Postgres change streams and refresh() the paged
   // grid on any INSERT / UPDATE / DELETE (respects the active sort/filter/page).
@@ -1933,7 +1963,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     (b.config.kind === 'grid' && b.config.rowActions?.some((a) => a.kind === 'navigate' && a.screen && routeById.has(a.screen))) ||
     (b.config.kind === 'chart' && b.config.drillScreen && routeById.has(b.config.drillScreen)) ||
     ((b.config.kind === 'board' || b.config.kind === 'calendar') && b.config.openScreen != null && routeById.has(b.config.openScreen)) ||
-    (b.config.kind === 'master-detail' && b.config.linkScreen != null && routeById.has(b.config.linkScreen)))
+    (b.config.kind === 'master-detail' && b.config.linkScreen != null && routeById.has(b.config.linkScreen)) ||
+    (b.config.kind === 'form' && b.config.afterSave === 'navigate' && b.config.navigateTo != null && routeById.has(b.config.navigateTo)))
   const applyUrlFilters = drillEnabled && needsController
   const filterableFieldNames = schema.fields.filter((f) => !f.primaryKey).map((f) => f.field)
   // RBAC gates the UI only where there's a create/update affordance to gate.
@@ -2068,6 +2099,21 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     if (mode === 'create') { await controller.createRow({ [idField]: nextId('${n.idPrefix}'), ...values } as Partial<${n.type}>); controller.setPage(view.pageCount - 1) }
     else if (id) { await controller.updateRow(id, values) }${submitBody}
     editing = undefined${needsAllRows ? '\n    await loadAll()' : ''}
+  }`)
+  }
+  // Standalone create form: a counter that both blanks the panel (it is the
+  // {#key}) and drives the "Saved" confirmation.
+  if (createForm) {
+    const nav = createForm.afterSave === 'navigate' && createForm.navigateTo
+      ? routeById.get(createForm.navigateTo)
+      : undefined
+    const after = nav
+      ? `\n    await goto('/${nav}')`
+      : ''
+    parts.push(`let formSaves = $state(0)
+  async function createRecord({ values }: { mode: 'create' | 'edit'; id: string | null; values: Partial<${n.type}> }) {
+    await controller.createRow({ [idField]: nextId('${n.idPrefix}'), ...values } as Partial<${n.type}>)${submitBody}
+    formSaves += 1${after}
   }`)
   }
   // Record panel: the row selected in the grid, plus (when editable) a save hook.

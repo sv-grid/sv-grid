@@ -258,7 +258,32 @@ export type RowAction = {
 export type ActionConfig = { id: string; label: string; icon?: string; confirm?: string }
 /** Legacy standalone edit-form block. Editing is now a Grid property; kept so old
  *  `studio.config.json` files still parse. Not offered in the palette. */
-export type FormConfig = { kind: 'form'; presentation: Presentation }
+/**
+ * A standalone form for creating a record: a "New ticket" page, an intake
+ * screen, a signup. Blank on load, submits, and creates a row.
+ *
+ * Deliberately create-only, because the other two directions are already taken:
+ * a grid with `editing: 'form'` edits an existing row in a popup, and a
+ * `record` block with `editable` edits whatever row is selected. What no block
+ * covered was a form that stands on its own with no grid behind it.
+ *
+ * Its fields, order, sections and conditions come from the entity's own
+ * `EntitySchema.form` - the same layout the form builder edits - so a form
+ * designed once looks the same wherever it is placed.
+ */
+export type FormConfig = {
+  kind: 'form'
+  presentation: Presentation
+  /** Heading above the form. Defaults to "New <entity>". */
+  title?: string
+  /** Submit button text. Defaults to "Create". */
+  submitLabel?: string
+  /** After a successful create: blank the form for another entry (default), or
+   *  go to another screen. */
+  afterSave?: 'reset' | 'navigate'
+  /** Screen id to open when `afterSave` is 'navigate'. */
+  navigateTo?: string
+}
 /** A chart, optionally drilling into `drillScreen` (filtered by the clicked category). */
 export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string; dataLabels?: boolean; color?: string }
 /** Number format for a KPI value. `auto` keeps the legacy behavior ($ when the
@@ -1040,10 +1065,12 @@ export type ProjectIssue = { level: ProjectIssueLevel; message: string; screen?:
 /** One palette entry: a draggable block kind + what it needs to be useful. */
 export type PaletteItem = { kind: BlockKind; label: string; needs?: 'measure' | 'child' }
 
-/** The designer's block palette, in menu order. (Editing is a Grid property, so
- *  there's no standalone form block.) */
+/** The designer's block palette, in menu order. A grid owns edit-in-popup and a
+ *  record panel edits the selected row, so the standalone Form block is the one
+ *  that creates: a form on its own page, with no grid behind it. */
 export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'grid', label: 'Grid' },
+  { kind: 'form', label: 'Form' },
   { kind: 'chart', label: 'Chart', needs: 'measure' },
   { kind: 'pivot', label: 'Pivot', needs: 'measure' },
   { kind: 'dashboard', label: 'Dashboard' },
@@ -1111,7 +1138,8 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
     case 'grid':
       return { kind, columns: gridColumns(entity), pageSize: 10, selectable: true, sortable: true, filterable: false, editing: 'form', formPresentation: 'modal', density: 'normal', striped: false, cellSelection: false, rowSummaries: false, paginated: true, paginationPosition: 'bottom', pageSizeOptions: [10, 25, 50, 100] }
     case 'form':
-      return { kind, presentation: 'modal' }
+      // Inline: a create form belongs on the page, not floating over it.
+      return { kind, presentation: 'inline', afterSave: 'reset' }
     case 'chart': {
       const measure = pickMeasure(entity)
       return { kind, dimension: pickDimension(entity), measure, reduce: measure ? 'sum' : 'count', type: 'bar' }
@@ -2636,7 +2664,18 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
     for (const b of flattenBlocks(s.blocks)) {
       const at = (message: string, level: ProjectIssueLevel = 'warning'): ProjectIssue => ({ level, message, screen: s.id, block: b.id })
       const c = b.config
-      if (c.kind === 'master-detail') {
+      if (c.kind === 'form') {
+        // A form on a screen with no entity has nothing to create.
+        if (!s.entity) issues.push(at('A Form block needs a screen bound to an entity.', 'error'))
+        // "Go to a screen" that names none, or names a screen that has since been
+        // removed, leaves the user on a form that appears to do nothing on save.
+        if (c.afterSave === 'navigate') {
+          if (!c.navigateTo) issues.push(at('The form is set to open a screen after saving, but no screen is chosen.'))
+          else if (!project.screens.some((x) => x.id === c.navigateTo)) {
+            issues.push(at(`The form opens a missing screen "${c.navigateTo}" after saving.`, 'error'))
+          }
+        }
+      } else if (c.kind === 'master-detail') {
         if (!c.childEntity || !c.foreignKey) issues.push(at('Master/detail needs a child entity + foreign key.'))
         else if (!entityOf(project, c.childEntity)) issues.push(at(`Master/detail points at a missing child entity "${c.childEntity}".`))
       } else if (c.kind === 'tree') {
