@@ -28,6 +28,10 @@ import {
   updateScreen,
   removeScreen,
   setScreenLayout,
+  setEntityForm,
+  setFieldConditions,
+  formPlan,
+  suggestFormSections,
   setEntityDataSource,
   setJob,
   setTenancy,
@@ -261,6 +265,37 @@ export const projectTools: ProjectTool[] = [
       type: 'object',
       properties: { screenId: { type: 'string' }, layout: { type: 'string', enum: ['grid', 'stack', 'split', 'dock', 'canvas'] } },
       required: ['screenId', 'layout'],
+    },
+  },
+  {
+    name: 'studio_set_form_layout',
+    description:
+      'Arrange an entity\'s create/edit form: column count and titled sections. `sections` is an array of { title?, description?, columns?: 1|2|3, fields: string[], visibleWhen?: PredicateExpr }; `fields` gives both the grouping and the order, and a field left out of every section still renders in a trailing untitled group. Omit `sections` and pass "suggest": true to have them proposed from the field names. The layout lives on the entity, so it renders the same in the edit panel, the generated app, and a server-rendered form.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity: { type: 'string' },
+        columns: { type: 'number', enum: [1, 2, 3] },
+        sections: { type: 'array', items: { type: 'object' }, description: 'The FormSection list. Replaces the current one.' },
+        suggest: { type: 'boolean', description: 'Propose sections from the field names instead of passing them.' },
+      },
+      required: ['entity'],
+    },
+  },
+  {
+    name: 'studio_set_field_conditions',
+    description:
+      'Make a form field value-driven: `visible`, `required`, and `disabled` conditions, each a PredicateExpr over the other fields, e.g. { "kind": "cmp", "column": "status", "op": "equals", "value": "cancelled" }. A field hidden by `visible` is skipped by validation and left out of the saved record; `required` REPLACES the field\'s static required flag (so it can make a required field optional too). Pass a condition as null to clear it, or omit every condition to clear all three. Conditions are data, so they generate into the app and re-run server-side.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity: { type: 'string' },
+        field: { type: 'string' },
+        visible: { type: ['object', 'null'], description: 'PredicateExpr, or null to clear.' },
+        required: { type: ['object', 'null'], description: 'PredicateExpr, or null to clear.' },
+        disabled: { type: ['object', 'null'], description: 'PredicateExpr, or null to clear.' },
+      },
+      required: ['entity', 'field'],
     },
   },
   {
@@ -513,6 +548,54 @@ export function handleProjectTool(name: string, args: Record<string, unknown>): 
         if (!allowed.includes(layout)) return fail(`layout must be one of: ${allowed.join(' | ')}.`)
         project = setScreenLayout(p, screenId, layout as Parameters<typeof setScreenLayout>[2])
         return confirm(`Screen ${screenId} now uses the ${layout} layout.`)
+      }
+      case 'studio_set_form_layout': {
+        const p = requireProject()
+        const entity = String(args.entity ?? '')
+        const schema = p.entities.find((e) => e.name === entity)
+        if (!schema) return fail(`No entity "${entity}".`)
+        const columns = args.columns === undefined ? schema.form?.columns : (Number(args.columns) as 1 | 2 | 3)
+        if (columns !== undefined && ![1, 2, 3].includes(columns)) return fail('columns must be 1, 2, or 3.')
+        let sections = schema.form?.sections
+        if (args.suggest) {
+          sections = suggestFormSections(schema)
+          if (!sections.length) return fail(`Nothing to suggest for "${entity}" - too few form fields to be worth grouping.`)
+        } else if (args.sections !== undefined) {
+          if (!Array.isArray(args.sections)) return fail('sections must be an array of FormSection objects.')
+          sections = args.sections as NonNullable<typeof sections>
+        }
+        // Plan before storing: a name that resolves to nothing (a typo, or a
+        // field since renamed) is dropped here rather than persisted into
+        // `studio.config.json` for a later reader to puzzle over. The reply
+        // reports the plan, so the agent sees what actually landed.
+        const plan = formPlan(schema, sections)
+        project = setEntityForm(p, entity, { columns, sections: plan.sections })
+        const placed = plan.sections.map((s) => `${s.title ?? '(untitled)'}: ${s.fields.join(', ') || '(empty)'}`)
+        return confirm(
+          `"${entity}" form: ${columns ?? 2} columns, ${plan.sections.length} section(s).` +
+            (placed.length ? `\n${placed.join('\n')}` : '') +
+            (plan.unassigned.length ? `\nUnsectioned (render last): ${plan.unassigned.join(', ')}` : ''),
+        )
+      }
+      case 'studio_set_field_conditions': {
+        const p = requireProject()
+        const entity = String(args.entity ?? '')
+        const field = String(args.field ?? '')
+        const schema = p.entities.find((e) => e.name === entity)
+        if (!schema) return fail(`No entity "${entity}".`)
+        if (!schema.fields.some((f) => f.field === field)) return fail(`No field "${field}" on "${entity}".`)
+        const current = schema.fields.find((f) => f.field === field)!.when ?? {}
+        const keys = ['visible', 'required', 'disabled'] as const
+        // Absent = leave as it was; null = clear it. Without that distinction an
+        // agent setting one condition would silently drop the other two.
+        const given = keys.filter((k) => args[k] !== undefined)
+        const when = given.length
+          ? Object.fromEntries(keys.map((k) => [k, args[k] === undefined ? current[k] : (args[k] || undefined)]))
+          : undefined
+        const next = setFieldConditions(p, entity, field, when)
+        project = next
+        const set = keys.filter((k) => next.entities.find((e) => e.name === entity)!.fields.find((f) => f.field === field)!.when?.[k])
+        return confirm(set.length ? `"${entity}.${field}" is now conditional on: ${set.join(', ')}.` : `Cleared the conditions on "${entity}.${field}".`)
       }
       case 'studio_set_entity_source': {
         const p = requireProject()
