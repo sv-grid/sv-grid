@@ -443,6 +443,16 @@ function hiddenFor(field: { hidden?: EntityField['hidden'] }, surface: 'grid' | 
 }
 
 /**
+ * Whether a field is hidden from one surface. Public because the `hidden`
+ * union (`true` means both surfaces, an object names them) is exactly the kind
+ * of logic that drifts when every caller re-derives it - the form builder's
+ * "Hidden from this form" tray is one such caller.
+ */
+export function isFieldHidden(field: Pick<EntityField, 'hidden'>, surface: 'grid' | 'form'): boolean {
+  return hiddenFor(field, surface)
+}
+
+/**
  * Derive grid columns from a schema. Read-only fields become non-editable
  * columns; `enum` carries its options through as `editorOptions`. The
  * per-field `column` escape hatch is merged last, so any explicit grid prop

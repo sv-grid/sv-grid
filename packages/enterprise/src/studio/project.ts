@@ -283,6 +283,12 @@ export type FormConfig = {
   afterSave?: 'reset' | 'navigate'
   /** Screen id to open when `afterSave` is 'navigate'. */
   navigateTo?: string
+  /**
+   * How wide the form draws. Inline forms fill their block by default, which is
+   * right for a narrow column and too wide to read across a full page - this
+   * caps it. Maps to `SvGridEditPanel`'s `formSize`.
+   */
+  width?: 'sm' | 'md' | 'lg'
 }
 /** A chart, optionally drilling into `drillScreen` (filtered by the clicked category). */
 export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string; dataLabels?: boolean; color?: string }
@@ -1679,6 +1685,46 @@ export function moveFormField(
   return setEntityForm(project, entityName, {
     ...schema.form,
     sections: stripped.map((s, i) => (i === toSection ? { ...s, fields } : s)),
+  })
+}
+
+/**
+ * Move several fields at once, as one contiguous block in the order given.
+ *
+ * Not a loop of {@link moveFormField}: each single move both shifts the target
+ * indices and re-resolves the plan, so a loop lands the group scattered or
+ * reversed. Strip every named field first, then splice the whole group at the
+ * index computed against the stripped target.
+ *
+ * Unknown and hidden-from-form names are dropped, duplicates keep their first
+ * position, and an input that resolves to nothing returns the project
+ * unchanged (same reference), so an undo stack never records a no-op.
+ */
+export function moveFormFields(
+  project: StudioProject,
+  entityName: string,
+  fields: ReadonlyArray<string>,
+  toSection: number | null,
+  toIndex = Number.MAX_SAFE_INTEGER,
+): StudioProject {
+  const schema = entityOf(project, entityName)
+  if (!schema) return project
+  const movable = new Set(formFieldNames(schema))
+  const group: string[] = []
+  for (const f of fields) if (movable.has(f) && !group.includes(f)) group.push(f)
+  if (!group.length) return project
+  const sections = schema.form?.sections ?? []
+  if (toSection !== null && !sections[toSection]) return project
+  const moving = new Set(group)
+  const stripped = sections.map((s) => ({ ...s, fields: s.fields.filter((f) => !moving.has(f)) }))
+  if (toSection === null) return setEntityForm(project, entityName, { ...schema.form, sections: stripped })
+  const target = stripped[toSection]!
+  const at = Math.max(0, Math.min(toIndex, target.fields.length))
+  const next = [...target.fields]
+  next.splice(at, 0, ...group)
+  return setEntityForm(project, entityName, {
+    ...schema.form,
+    sections: stripped.map((s, i) => (i === toSection ? { ...s, fields: next } : s)),
   })
 }
 

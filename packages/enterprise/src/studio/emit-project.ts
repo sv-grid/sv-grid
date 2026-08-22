@@ -536,6 +536,8 @@ function createFormMarkup(entity: EntitySchema, schemaVar: string, block: Block,
   const attrs: string[] = [`schema={${schemaVar}}`, 'row={null}', 'presentation="inline"']
   attrs.push(`title={${jsStr(cfg.title ?? `New ${entity.label ?? entity.name}`)}}`)
   if (cfg.submitLabel) attrs.push(`submitLabel={${jsStr(cfg.submitLabel)}}`)
+  // Inline fills its block unless told otherwise, so only a real choice is emitted.
+  if (cfg.width && cfg.width !== 'md') attrs.push(`formSize=${jsStr(cfg.width)}`)
   // A confirmation only makes sense when the page stays put; navigating away
   // makes the new screen the confirmation.
   const done = cfg.afterSave === 'navigate'

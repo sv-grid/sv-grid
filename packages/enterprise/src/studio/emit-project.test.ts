@@ -3348,6 +3348,16 @@ describe('code companion (design + your own code)', () => {
       expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
     }, 30_000)
 
+    it('fills its block unless a width is chosen', () => {
+      // Inline forms are responsive now, so only a real choice is emitted.
+      const wide = formScreen({ width: 'lg' })
+      const page = emitStudioProject(wide.p).find((f) => f.path === `src/routes/${wide.route}/+page.svelte`)!.contents
+      expect(page).toContain("formSize='lg'")
+      const plain = formScreen({ width: 'md' })
+      const dflt = emitStudioProject(plain.p).find((f) => f.path === `src/routes/${plain.route}/+page.svelte`)!.contents
+      expect(dflt).not.toContain('formSize')
+    })
+
     it('does not drag in the grid’s edit-an-existing-row modal', () => {
       const { p, route } = formScreen()
       const page = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/+page.svelte`)!.contents

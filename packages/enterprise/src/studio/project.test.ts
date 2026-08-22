@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { EntitySchema } from '../schema'
+import { isFieldHidden, type EntitySchema } from '../schema'
 import {
   addBlock,
   applyGridPreset,
@@ -36,6 +36,7 @@ import {
   removeFormSection,
   moveFormSection,
   moveFormField,
+  moveFormFields,
   setFieldConditions,
   updateEntityField,
   setFieldInput,
@@ -966,6 +967,73 @@ describe('form layout operations', () => {
     p = moveFormField(p, 'customers', 'mrr', 1)
     expect(sectionsOf(p)[0]!.fields).toEqual(['name', 'tier'])
     expect(sectionsOf(p)[1]!.fields).toEqual(['mrr'])
+  })
+
+  describe('moving several fields at once', () => {
+    // Two sections, everything arrangeable placed: [name, secret] and [tier, mrr].
+    const packed = () => {
+      let p = addFormSection(addFormSection(createProject([customers]), 'customers', 'A'), 'customers', 'B')
+      p = moveFormField(p, 'customers', 'name', 0)
+      p = moveFormField(p, 'customers', 'secret', 0, 1)
+      p = moveFormField(p, 'customers', 'tier', 1)
+      p = moveFormField(p, 'customers', 'mrr', 1, 1)
+      return p
+    }
+    const at = (p: ReturnType<typeof createProject>, i: number) => entityOf(p, 'customers')!.form!.sections![i]!.fields
+
+    it('lands the group contiguously, in the order given', () => {
+      const p = moveFormFields(packed(), 'customers', ['mrr', 'tier'], 0, 1)
+      expect(at(p, 0)).toEqual(['name', 'mrr', 'tier', 'secret'])
+      expect(at(p, 1)).toEqual([])
+    })
+
+    it('gathers fields from different sections without index drift', () => {
+      // The bug a loop of single moves has: each move re-indexes the target.
+      const p = moveFormFields(packed(), 'customers', ['secret', 'mrr'], 1, 0)
+      expect(at(p, 0)).toEqual(['name'])
+      expect(at(p, 1)).toEqual(['secret', 'mrr', 'tier'])
+    })
+
+    it('reorders within one section, counting against the stripped list', () => {
+      const p = moveFormFields(packed(), 'customers', ['name', 'secret'], 0, Number.MAX_SAFE_INTEGER)
+      expect(at(p, 0)).toEqual(['name', 'secret']) // already last; clamping is a no-move
+      const q = moveFormFields(packed(), 'customers', ['name'], 1, 1)
+      expect(at(q, 0)).toEqual(['secret'])
+      expect(at(q, 1)).toEqual(['tier', 'name', 'mrr'])
+    })
+
+    it('takes the whole group out of every section', () => {
+      const p = moveFormFields(packed(), 'customers', ['name', 'tier'], null)
+      expect(at(p, 0)).toEqual(['secret'])
+      expect(at(p, 1)).toEqual(['mrr'])
+      expect(formPlan(entityOf(p, 'customers')!).unassigned).toEqual(['name', 'tier'])
+    })
+
+    it('drops names it cannot move, and keeps the first of a duplicate', () => {
+      const p = moveFormFields(packed(), 'customers', ['tier', 'nope', 'id', 'tier'], 0, 0)
+      expect(at(p, 0)).toEqual(['tier', 'name', 'secret']) // 'id' is hidden from this form
+    })
+
+    it('is a no-op - same reference - when nothing can move', () => {
+      const base = packed()
+      expect(moveFormFields(base, 'customers', [], 0)).toBe(base)
+      expect(moveFormFields(base, 'customers', ['nope', 'id'], 0)).toBe(base)
+      expect(moveFormFields(base, 'customers', ['name'], 7)).toBe(base)
+      expect(moveFormFields(base, 'nope', ['name'], 0)).toBe(base)
+    })
+
+    it('clamps an out-of-range index rather than leaving a hole', () => {
+      expect(at(moveFormFields(packed(), 'customers', ['tier'], 0, -5), 0)).toEqual(['tier', 'name', 'secret'])
+      expect(at(moveFormFields(packed(), 'customers', ['tier'], 0, 99), 0)).toEqual(['name', 'secret', 'tier'])
+    })
+  })
+
+  it('reads the hidden union the same way everywhere', () => {
+    expect(isFieldHidden({ hidden: true }, 'form')).toBe(true)
+    expect(isFieldHidden({ hidden: true }, 'grid')).toBe(true)
+    expect(isFieldHidden({ hidden: { form: true } }, 'form')).toBe(true)
+    expect(isFieldHidden({ hidden: { form: true } }, 'grid')).toBe(false)
+    expect(isFieldHidden({}, 'form')).toBe(false)
   })
 
   it('moves a field back out of every section, and ignores an unknown target', () => {
