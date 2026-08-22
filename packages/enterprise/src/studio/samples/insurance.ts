@@ -1,6 +1,6 @@
 import type { EntitySchema } from '../../schema.js'
 import type { FormatRule } from '../project.js'
-import { screen, formScreen, boardScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, calendarScreen, detailScreen, project, dashScreen, statusPills, pad, ids, whenIs, type SampleApp } from './shared.js'
 
 // SAP Fiori-style chrome: a dark shell bar across the top (the toolbar), a white
 // launchpad-style rail, and a blue left-bar on the active item (square corners).
@@ -88,8 +88,14 @@ const claims: EntitySchema = {
       { value: 'paid', label: 'Paid', color: '#10b981' },
       { value: 'denied', label: 'Denied', color: '#ef4444' },
     ] },
-    { field: 'amount', type: 'number', label: 'Amount ($)', min: 0, required: true },
-    { field: 'deductible', type: 'number', label: 'Deductible ($)', min: 0, defaultValue: 500 },
+    // Money is frozen once the claim has been paid out - the figures stay on
+    // screen for reference, but they can no longer be edited.
+    { field: 'amount', type: 'number', label: 'Amount ($)', min: 0, required: true, when: { disabled: whenIs('status', 'paid') } },
+    { field: 'deductible', type: 'number', label: 'Deductible ($)', min: 0, defaultValue: 500, when: { disabled: whenIs('status', 'paid') } },
+    // A denial has to be justified, and only a denial asks for it.
+    { field: 'denialReason', type: 'text', label: 'Reason for denial', hidden: { grid: true },
+      input: { editorType: 'textarea', span: 2, help: 'Required to deny a claim' },
+      when: { visible: whenIs('status', 'denied'), required: whenIs('status', 'denied') } },
     // Derived: net payout after the deductible (display-only, never stored).
     { field: 'net', type: 'number', label: 'Net payout ($)', readonly: true, formula: 'amount - deductible' },
     { field: 'severity', type: 'number', label: 'Severity', min: 0, max: 100, defaultValue: 40, input: { editorType: 'slider', suffix: '%', help: 'Loss severity 0-100' } },
@@ -123,7 +129,7 @@ const seed = {
     { id: 'cl1', claimNumber: 'CLM-500001', policyId: 'pl1', adjusterId: 'ad1', type: 'collision', status: 'paid', amount: 8400, deductible: 500, severity: 55, fraudRisk: 1, tags: ['rear-end', 'no-injury'], incidentDate: '2026-01-04', filedAt: '2026-01-06T09:30:00.000Z' },
     { id: 'cl2', claimNumber: 'CLM-500002', policyId: 'pl2', adjusterId: 'ad2', type: 'water', status: 'review', amount: 15200, deductible: 1000, severity: 70, fraudRisk: 2, tags: ['burst-pipe'], incidentDate: '2026-02-01', filedAt: '2026-02-03T14:15:00.000Z' },
     { id: 'cl3', claimNumber: 'CLM-500003', policyId: 'pl3', adjusterId: 'ad3', type: 'medical', status: 'approved', amount: 6200, deductible: 750, severity: 40, fraudRisk: 1, tags: ['surgery'], incidentDate: '2026-02-10', filedAt: '2026-02-12T11:00:00.000Z' },
-    { id: 'cl4', claimNumber: 'CLM-500004', policyId: 'pl5', adjusterId: 'ad1', type: 'theft', status: 'denied', amount: 22000, deductible: 500, severity: 90, fraudRisk: 5, tags: ['suspicious', 'late-report'], incidentDate: '2026-01-20', filedAt: '2026-01-28T16:45:00.000Z' },
+    { id: 'cl4', claimNumber: 'CLM-500004', policyId: 'pl5', adjusterId: 'ad1', type: 'theft', status: 'denied', amount: 22000, deductible: 500, severity: 90, fraudRisk: 5, tags: ['suspicious', 'late-report'], incidentDate: '2026-01-20', filedAt: '2026-01-28T16:45:00.000Z', denialReason: 'Loss reported 8 days after the incident, outside the policy window.' },
     { id: 'cl5', claimNumber: 'CLM-500005', policyId: 'pl6', adjusterId: 'ad4', type: 'fire', status: 'paid', amount: 41000, deductible: 2000, severity: 95, fraudRisk: 2, tags: ['kitchen', 'total-loss'], incidentDate: '2026-03-01', filedAt: '2026-03-02T08:20:00.000Z' },
     { id: 'cl6', claimNumber: 'CLM-500006', policyId: 'pl7', adjusterId: 'ad3', type: 'medical', status: 'filed', amount: 3100, deductible: 750, severity: 25, fraudRisk: 1, tags: ['ER-visit'], incidentDate: '2026-03-11', filedAt: '2026-03-12T13:10:00.000Z' },
     { id: 'cl7', claimNumber: 'CLM-500007', policyId: 'pl8', adjusterId: 'ad6', type: 'collision', status: 'review', amount: 9700, deductible: 500, severity: 60, fraudRisk: 3, tags: ['intersection'], incidentDate: '2026-03-15', filedAt: '2026-03-17T10:05:00.000Z' },

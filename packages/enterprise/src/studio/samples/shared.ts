@@ -8,6 +8,7 @@
  * parse/serialize and generates a runnable app with no special-casing.
  */
 import type { EntitySchema } from '../../schema.js'
+import type { PredicateExpr } from '../../expressions/expression-types.js'
 import { generateValue } from '../sample-data.js'
 import { gridConfig, type GridOpts } from '../screen-suites.js'
 import { sanitizeProject, screenFromTemplate, buildDockLayout, type Block, type GridConfig, type Screen, type ScreenTemplate, type StudioProject, type EntityDataSource, type ShellStyle, type SchedulerViewConfig, type SchedulerViewMode, type AuthConfig, type AccessControl } from '../project.js'
@@ -60,6 +61,19 @@ export function pad(schema: EntitySchema, rows: Row[], target: number, fkPools: 
 
 /** The `id` values of a seed array (for building foreign-key pools). */
 export const ids = (rows: Row[]): string[] => rows.map((r) => String(r.id))
+
+/**
+ * `field = value` as a form condition (see `EntityField.when`). Helpers rather
+ * than hand-written literals because an operator the filter engine does not know
+ * silently matches everything, which would leave a conditional field permanently
+ * on-screen.
+ */
+export const whenIs = (field: string, value: string | number): PredicateExpr =>
+  ({ kind: 'cmp', column: field, op: 'equals', value })
+
+/** `field` is any one of `values`. */
+export const whenIsAny = (field: string, values: ReadonlyArray<string | number>): PredicateExpr =>
+  ({ kind: 'or', parts: values.map((value) => ({ kind: 'cmp', column: field, op: 'equals', value })) })
 
 /** A ready-made app shown in the gallery. */
 export type SampleApp = {

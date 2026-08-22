@@ -1,5 +1,5 @@
 import type { EntitySchema } from '../../schema.js'
-import { screen, formScreen, boardScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, type SampleApp } from './shared.js'
+import { screen, formScreen, boardScreen, workspaceScreen, detailScreen, project, dashScreen, statusPills, pad, ids, whenIsAny, type SampleApp } from './shared.js'
 
 // Outlook-style chrome: a solid blue command ribbon (the toolbar), a light "folder"
 // rail with compact rows, and an accented left bar on the active folder.
@@ -86,7 +86,14 @@ const tickets: EntitySchema = {
     { field: 'tags', type: 'text', label: 'Tags', input: { editorType: 'chips', help: 'Topic labels for routing' } },
     { field: 'createdAt', type: 'datetime', label: 'Created', input: { editorType: 'datetime', help: 'When the ticket was opened' } },
     { field: 'firstResponseMins', type: 'number', label: 'First response (min)', min: 0, input: { help: 'Time to the first agent reply' } },
-    { field: 'satisfaction', type: 'number', label: 'CSAT', min: 1, max: 5, input: { editorType: 'rating', help: 'Customer rating on close' } },
+    // The close notes appear the moment a ticket reaches a terminal status, and
+    // the ticket cannot be saved in that state without them.
+    { field: 'resolution', type: 'text', label: 'Resolution', hidden: { grid: true },
+      input: { editorType: 'textarea', span: 2, help: 'What fixed it - required to resolve or close' },
+      when: { visible: whenIsAny('status', ['resolved', 'closed']), required: whenIsAny('status', ['resolved', 'closed']) } },
+    { field: 'satisfaction', type: 'number', label: 'CSAT', min: 1, max: 5, input: { editorType: 'rating', help: 'Customer rating on close' },
+      // A rating only means something once the customer has had an outcome.
+      when: { visible: whenIsAny('status', ['resolved', 'closed']) } },
     { field: 'estimateHrs', type: 'number', label: 'Estimate (hrs)', min: 0, defaultValue: 1, input: { help: 'Estimated effort to resolve' } },
     { field: 'hourlyRate', type: 'number', label: 'Rate ($/hr)', min: 0, defaultValue: 90, input: { help: 'Billed support rate' } },
     // Derived: estimated support cost for the ticket (display-only, never seeded).
@@ -111,10 +118,10 @@ const seed = {
     { id: 'tk1', subject: 'Cannot reset password', customerId: 'c1', agentId: 'a1', priority: 'high', status: 'open', channel: 'email', tags: ['auth', 'login'], createdAt: '2026-07-10T08:30:00Z', firstResponseMins: 12, satisfaction: 4, estimateHrs: 2, hourlyRate: 90 },
     { id: 'tk2', subject: 'Invoice discrepancy', customerId: 'c2', agentId: 'a2', priority: 'normal', status: 'pending', channel: 'email', tags: ['billing'], createdAt: '2026-07-08T11:05:00Z', firstResponseMins: 45, satisfaction: 3, estimateHrs: 1, hourlyRate: 75 },
     { id: 'tk3', subject: 'API returns 500', customerId: 'c3', agentId: 'a1', priority: 'urgent', status: 'open', channel: 'chat', tags: ['api', 'outage'], createdAt: '2026-07-12T15:40:00Z', firstResponseMins: 4, satisfaction: 5, estimateHrs: 4, hourlyRate: 120 },
-    { id: 'tk4', subject: 'How do I export data?', customerId: 'c4', agentId: 'a3', priority: 'low', status: 'resolved', channel: 'chat', tags: ['export'], createdAt: '2026-07-02T09:20:00Z', firstResponseMins: 20, satisfaction: 5, estimateHrs: 1, hourlyRate: 60 },
-    { id: 'tk5', subject: 'Upgrade to Business', customerId: 'c5', agentId: 'a3', priority: 'normal', status: 'closed', channel: 'phone', tags: ['upgrade', 'billing'], createdAt: '2026-06-28T13:10:00Z', firstResponseMins: 8, satisfaction: 4, estimateHrs: 1, hourlyRate: 75 },
+    { id: 'tk4', subject: 'How do I export data?', customerId: 'c4', agentId: 'a3', priority: 'low', status: 'resolved', channel: 'chat', tags: ['export'], createdAt: '2026-07-02T09:20:00Z', firstResponseMins: 20, satisfaction: 5, estimateHrs: 1, hourlyRate: 60, resolution: 'Walked the customer through Export > CSV in the toolbar.' },
+    { id: 'tk5', subject: 'Upgrade to Business', customerId: 'c5', agentId: 'a3', priority: 'normal', status: 'closed', channel: 'phone', tags: ['upgrade', 'billing'], createdAt: '2026-06-28T13:10:00Z', firstResponseMins: 8, satisfaction: 4, estimateHrs: 1, hourlyRate: 75, resolution: 'Upgraded the account to Business and prorated the invoice.' },
     { id: 'tk6', subject: 'SSO configuration', customerId: 'c1', agentId: 'a1', priority: 'high', status: 'pending', channel: 'email', tags: ['sso', 'security'], createdAt: '2026-07-11T10:00:00Z', firstResponseMins: 60, satisfaction: 2, estimateHrs: 3, hourlyRate: 120 },
-    { id: 'tk7', subject: 'Double charge refund', customerId: 'c2', agentId: 'a2', priority: 'urgent', status: 'resolved', channel: 'phone', tags: ['refund', 'billing'], createdAt: '2026-07-05T16:25:00Z', firstResponseMins: 15, satisfaction: 4, estimateHrs: 2, hourlyRate: 90 },
+    { id: 'tk7', subject: 'Double charge refund', customerId: 'c2', agentId: 'a2', priority: 'urgent', status: 'resolved', channel: 'phone', tags: ['refund', 'billing'], createdAt: '2026-07-05T16:25:00Z', firstResponseMins: 15, satisfaction: 4, estimateHrs: 2, hourlyRate: 90, resolution: 'Refunded the duplicate charge; payment retry guard added.' },
     { id: 'tk8', subject: 'Feature request: dark mode', customerId: 'c3', agentId: 'a3', priority: 'low', status: 'open', channel: 'chat', tags: ['feature'], createdAt: '2026-07-13T12:50:00Z', firstResponseMins: 90, satisfaction: 3, estimateHrs: 5, hourlyRate: 100 },
   ],
 }
