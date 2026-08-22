@@ -4,43 +4,46 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.3.2",
+  "version": "2.6.0",
   "description": "Enterprise feature pack for SvGrid: Excel (xlsx), PDF, CSV, TSV and HTML export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler views. Requires a paid license key.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
   "homepage": "https://svgrid.com/pricing",
   "type": "module",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "svelte": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "svelte": "./src/index.ts",
-      "import": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "import": "./dist/index.js"
     },
     "./export": {
-      "types": "./src/export.ts",
-      "svelte": "./src/export.ts",
-      "import": "./src/export.ts"
+      "types": "./dist/export.d.ts",
+      "svelte": "./dist/export.js",
+      "import": "./dist/export.js"
     },
     "./print": {
-      "types": "./src/print.ts",
-      "svelte": "./src/print.ts",
-      "import": "./src/print.ts"
+      "types": "./dist/print.d.ts",
+      "svelte": "./dist/print.js",
+      "import": "./dist/print.js"
     },
     "./import": {
-      "types": "./src/import.ts",
-      "svelte": "./src/import.ts",
-      "import": "./src/import.ts"
+      "types": "./dist/import.d.ts",
+      "svelte": "./dist/import.js",
+      "import": "./dist/import.js"
     },
     "./pivot": {
-      "types": "./src/pivot.ts",
-      "svelte": "./src/pivot.ts",
-      "import": "./src/pivot.ts"
+      "types": "./dist/pivot.d.ts",
+      "svelte": "./dist/pivot.js",
+      "import": "./dist/pivot.js"
     },
     "./studio": {
-      "types": "./src/studio/index.ts",
+      "types": "./dist/studio/index.d.ts",
       "node": "./dist/node/studio.js",
-      "svelte": "./src/studio/index.ts",
-      "import": "./src/studio/index.ts"
+      "svelte": "./dist/studio/index.js",
+      "import": "./dist/studio/index.js"
     },
     "./cdn/svelte-external": {
       "import": "./dist/cdn/svgrid-enterprise.svelte-external.js",
@@ -51,10 +54,7 @@
   "unpkg": "./dist/cdn/svgrid-enterprise.svelte-external.js",
   "jsdelivr": "./dist/cdn/svgrid-enterprise.svelte-external.js",
   "files": [
-    "src",
-    "dist/node",
-    "dist/cdn",
-    "dist/designer",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -64,11 +64,12 @@
   "scripts": {
     "test": "vitest run",
     "test:types": "tsc -p tsconfig.json --noEmit",
-    "build": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "build:lib": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist",
     "build:cdn": "node ./scripts/build-cdn.mjs",
     "build:node": "node ./scripts/build-node.mjs",
     "build:designer": "node ./scripts/build-designer.mjs",
-    "prepublishOnly": "node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "prepublishOnly": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
     "extract:ui-props": "node scripts/extract-ui-props.mjs",
     "lint": "eslint ./src"
   },
@@ -87,6 +88,7 @@
     }
   },
   "devDependencies": {
+    "@sveltejs/package": "^2.5.7",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@svgrid/grid": "workspace:^",
     "jszip": "^3.10.1",
