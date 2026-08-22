@@ -787,7 +787,9 @@
       {/if}
     </div>
   {:else}
-    <div class="sv-ep sv-ep--inline" role="dialog" aria-label={heading}>
+    <!-- The size class matters for inline too now: it fills its container by
+         default, and `formSize` is what narrows it. -->
+    <div class="sv-ep sv-ep--inline sv-ep--sz-{formSize}" role="dialog" aria-label={heading}>
       {@render panelInner()}
     </div>
   {/if}

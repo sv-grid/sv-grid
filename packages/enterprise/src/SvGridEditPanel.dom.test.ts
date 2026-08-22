@@ -183,6 +183,16 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(el.querySelector('#sv-ef-id')).toBeTruthy()
   })
 
+  it('fills its container inline, and carries the size class that narrows it', () => {
+    // Inline used to be capped at 460px and ignore formSize entirely, so a form
+    // block wider than that drew a narrow form in a wide box.
+    const el = render({ schema, presentation: 'inline', onSubmit: vi.fn() })
+    const panel = el.querySelector('.sv-ep--inline')!
+    expect(panel.classList.contains('sv-ep--sz-md')).toBe(true) // the default
+    const narrow = render({ schema, presentation: 'inline', formSize: 'sm', onSubmit: vi.fn() })
+    expect(narrow.querySelector('.sv-ep--inline')!.classList.contains('sv-ep--sz-sm')).toBe(true)
+  })
+
   it('folds a section away, and opens it again rather than hiding an error', async () => {
     const long: EntitySchema = {
       name: 'people',
