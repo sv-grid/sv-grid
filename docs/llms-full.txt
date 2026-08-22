@@ -5030,6 +5030,11 @@ default, with a "Saved" confirmation) or opens another screen. Give it a heading
 and a submit label in the inspector - "Report a problem" / "Send it" reads better
 than "New Ticket" / "Create" on a page somebody was sent to.
 
+An inline form **fills whatever it is placed in**, so a form block is as wide as
+its block. Set the block's **Width** to *Narrow* or *Wide* when a full-width form
+is more than a reader wants to cross; in code that is `SvGridEditPanel`'s
+`formSize`.
+
 ## Building one without writing it
 
 Everything below this line is authorable in the [visual designer](./app-designer.md).
@@ -5054,14 +5059,33 @@ field you span shows as spanned, a `textarea` is tall, a switch is small.
   proposes a grouping from the field names; it only appears when there is a real
   grouping to make.
 - **Click a field** and the right pane fills, in two tabs. **Field**: label,
-  control, placeholder, help text, span the full row, always required, and
-  *Remove from this form* (the field keeps its grid column). Controls that need
-  more say so - a mask gets its pattern, a number or slider gets its range, step,
+  control, an `enum`'s choices, default value, placeholder, help text, span the
+  full row, always required, and *Remove from this form*. Controls that need more
+  say so - a mask gets its pattern, a number or slider gets its range, step,
   decimals and affixes - and nothing else is shown, so picking a control never
   leaves you with nowhere to configure it. **Rules**: the *Shown when* /
   *Required when* / *Locked when* conditions plus the cross-field checks that
   blame this field - the same `validations` rules, edited here because they are
   form logic. The tab carries a count, and so does the field on the canvas.
+- **Ctrl-click** adds a field to the selection and **Shift-click** takes a range
+  within one lane; dragging any of them moves the whole set together, as does
+  ↑ / ↓. With more than one selected the right pane offers what is genuinely
+  bulk - move them all to a section, or remove them all - because the Field and
+  Rules editors are single-field by nature. Escape drops back to one.
+- **+ Add field** builds a form from nothing without leaving for the schema
+  inspector. Name and type up front; a name already on the entity is refused.
+  Each section has its own **+ Field** that drops straight into it.
+- **Remove from this form is reversible.** Removed fields collect in a **Hidden
+  from this form** tray under the canvas, and *Restore* puts one back where it
+  was - removing never edited the section, only the field's visibility.
+- **Show rules** (on whenever the form has any) plays the conditions against the
+  sample record right on the canvas: a field a rule hides goes dim with a
+  *hidden* badge, a locked one gets a padlock, and a rule-required one gets the
+  asterisk. Dimmed fields stay selectable and draggable - you are arranging the
+  design, not the record. **Existing** / **New** switches which record you are
+  simulating.
+- **Width** draws the form at the size it will really have. The window itself
+  drags by its header, resizes from its corner, and maximizes on a double-click.
 
 ### Folding a long form
 
