@@ -36,6 +36,7 @@
     size = 'md',
     name,
     ariaLabel,
+    block = false,
     invalid = false,
     required = false,
     error,
@@ -69,7 +70,7 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <div class="sv-tags sv-tags--{size}" class:is-disabled={disabled} class:is-invalid={invalid} {...ti.rootProps()}>
+  <div class="sv-tags sv-tags--{size}" class:is-block={block} class:is-disabled={disabled} class:is-invalid={invalid} {...ti.rootProps()}>
     {#each value as tag, i (tag + i)}
       <span class="sv-tags__chip" {...ti.tagProps(i)}>
         <span class="sv-tags__label">{tag}</span>
@@ -109,4 +110,6 @@
   .sv-tags__x { background: none; border: 0; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; opacity: 0.7; }
   .sv-tags__x:hover { opacity: 1; }
   .sv-tags__input { flex: 1; min-width: 80px; border: 0; background: none; outline: none; color: inherit; font: inherit; font-size: var(--_fs); height: 24px; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-tags.is-block { width: 100%; max-width: 100%; }
 </style>

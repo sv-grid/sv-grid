@@ -684,28 +684,28 @@
             <!-- Boolean fields render as the suite's switch (nicer than a raw checkbox). -->
             <SvSwitchButton id={`sv-ef-${f.field}`} ariaLabel={f.label} checked={!!values[f.field]} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'number'}
-            <SvNumberInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} step={f.step} precision={f.precision} prefix={f.prefix} suffix={f.suffix} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
+            <SvNumberInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toNumberValue(values[f.field])} min={f.min} max={f.max} step={f.step} precision={f.precision} prefix={f.prefix} suffix={f.suffix} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = fromNumberValue(v))} />
           {:else if f.editorType === 'color'}
-            <SvColorInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] || '#3b82f6'} disabled={f.readonly} invalid={!!err} onChange={(v) => (values[f.field] = v)} />
+            <SvColorInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] || '#3b82f6'} disabled={f.readonly} invalid={!!err} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'password'}
-            <SvPasswordInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+            <SvPasswordInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'rating' || f.editorType === 'slider'}
             {@const rmin = f.min ?? 0}
             {@const rmax = f.max ?? (f.editorType === 'rating' ? 5 : 100)}
-            <SvSlider id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toSliderValue(values[f.field], rmin)} min={rmin} max={rmax} step={1} ticks={f.editorType === 'rating' ? rmax - rmin + 1 : undefined} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
+            <SvSlider block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toSliderValue(values[f.field], rmin)} min={rmin} max={rmax} step={1} ticks={f.editorType === 'rating' ? rmax - rmin + 1 : undefined} disabled={f.readonly} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'phone'}
-            <SvPhoneInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+            <SvPhoneInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'country'}
-            <SvCountryInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} disabled={f.readonly} invalid={!!err} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
+            <SvCountryInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} disabled={f.readonly} invalid={!!err} placeholder={f.placeholder} onChange={(v) => (values[f.field] = v)} />
           {:else if f.editorType === 'mask'}
-            <SvMaskedInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} mask={f.mask ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(masked) => (values[f.field] = masked)} />
+            <SvMaskedInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? ''} mask={f.mask ?? ''} disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder} onChange={(masked) => (values[f.field] = masked)} />
           {:else if f.editorType === 'date'}
-            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" nullable disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd'} onChange={(d) => (values[f.field] = toDateString(d))} />
+            <SvDateTimePicker block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" nullable disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd'} onChange={(d) => (values[f.field] = toDateString(d))} />
           {:else if f.editorType === 'datetime'}
-            <SvDateTimePicker id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} formatString="yyyy-MM-dd HH:mm" nullable disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd hh:mm'} onChange={(d) => (values[f.field] = toDateTimeString(d))} />
+            <SvDateTimePicker block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={values[f.field] ?? null} formatString="yyyy-MM-dd HH:mm" nullable disabled={f.readonly} invalid={!!err} required={f.required && !f.readonly} placeholder={f.placeholder ?? 'yyyy-mm-dd hh:mm'} onChange={(d) => (values[f.field] = toDateTimeString(d))} />
           {:else if f.editorType === 'chips'}
             <!-- Multi-value entry: stores a string[]. (Previously a chips field fell back to a single-select.) -->
-            <SvTagsInput id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toTags(values[f.field])} disabled={f.readonly} invalid={!!err} placeholder={f.placeholder ?? 'Add…'} onChange={(tags) => (values[f.field] = tags)} />
+            <SvTagsInput block id={`sv-ef-${f.field}`} ariaLabel={f.label} value={toTags(values[f.field])} disabled={f.readonly} invalid={!!err} placeholder={f.placeholder ?? 'Add…'} onChange={(tags) => (values[f.field] = tags)} />
           {:else if kind === 'select'}
             {#if f.readonly}
               <input id={`sv-ef-${f.field}`} aria-invalid={!!err} aria-describedby={describedBy} type="text" value={values[f.field] ?? ''} disabled />
@@ -1013,6 +1013,9 @@
   .sv-ep-field__req {
     color: var(--ep-danger);
   }
+  /* Controls fill their cell via the suite's own `block` prop - see the markup.
+     The boolean switch deliberately does not: a full-width toggle is not what
+     anybody means by a checkbox. */
   .sv-ep-field input,
   .sv-ep-field textarea {
     box-sizing: border-box;

@@ -37,6 +37,7 @@
     name,
     size = 'md',
     ariaLabel,
+    block = false,
     invalid = false,
     required = false,
     error,
@@ -93,7 +94,7 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <button bind:this={triggerEl} class="sv-country sv-country--{size}" class:is-open={ci.open} class:is-disabled={disabled} class:is-invalid={invalid} {...ci.triggerProps()}>
+  <button bind:this={triggerEl} class="sv-country sv-country--{size}" class:is-block={block} class:is-open={ci.open} class:is-disabled={disabled} class:is-invalid={invalid} {...ci.triggerProps()}>
     {#if selected}
       <span class="sv-country__flag" aria-hidden="true">{flagEmoji(selected.code)}</span>
       <span class="sv-country__name">{selected.name}</span>
@@ -157,4 +158,6 @@
   :global(.sv-country__opt) { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   :global(.sv-country__opt.is-active) { background: var(--sg-row-hover-bg, #f1f5f9); }
   :global(.sv-country__opt.is-selected) { color: var(--sg-accent, #2563eb); font-weight: 600; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-country.is-block { width: 100%; max-width: 100%; }
 </style>
