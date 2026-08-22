@@ -178,6 +178,43 @@ sections: [
 ]
 ```
 
+### Asking one step at a time
+
+`form.steps` turns the sections into a wizard - **Ask one step at a time** in the
+builder. Each section is a step, so the sections *are* the design; there is no
+second list to keep in sync.
+
+```ts
+form: {
+  steps: true,
+  sections: [
+    { title: 'Who', fields: ['name', 'email'] },
+    { title: 'Company', fields: ['company', 'role'] },
+    { title: 'Billing', fields: ['vatNumber'] },
+  ],
+}
+```
+
+Four things make it behave:
+
+- **Next validates only the step you are on**, so a long form fails early and
+  locally instead of dumping every error at the end. Back never validates -
+  going backwards is always allowed.
+- A section hidden by `visibleWhen` is **skipped**, so the step count follows the
+  answers rather than showing an empty step.
+- Fields in no section **join the last step** rather than becoming an untitled
+  one of their own. Every step should be deliberate.
+- A submit that fails on an earlier step **jumps back to it**, so the focus never
+  lands off-screen.
+
+One section is a page, not a one-step wizard, and `collapsible` is ignored while
+stepping - a step is already one group at a time.
+
+**Server-rendered screens render the steps as ordinary sections.** Stepping
+through a `<form>` without JavaScript would mean a round-trip per step and
+somewhere to hold the half-finished record. The server validates everything
+either way.
+
 **Try it** swaps the canvas for the live edit panel, so you can type into the form
 and watch a condition fire. Toggle **Existing** / **New**: the values differ, so
 the conditions do too.
