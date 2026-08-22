@@ -54,6 +54,7 @@ export {
   type InitFlags,
   type InitResult,
 } from './init-flow.js'
+export { UserError, isUserError } from './user-error.js'
 export {
   crudSuiteScreens,
   addCrudSuite,
@@ -99,6 +100,22 @@ export {
   addEntity,
   removeEntity,
   updateEntity,
+  // Form layout: the operations a form builder drives, on the entity's own
+  // `form` so a built form travels with the entity rather than with one block.
+  formPlan,
+  setEntityForm,
+  setFormColumns,
+  addFormSection,
+  updateFormSection,
+  removeFormSection,
+  moveFormSection,
+  moveFormField,
+  setFieldConditions,
+  updateEntityField,
+  setFieldInput,
+  setFieldHidden,
+  formControlsFor,
+  suggestFormSections,
   addScreen,
   addFreestandingScreen,
   addScreenAction,
@@ -171,6 +188,7 @@ export {
   clickSlot,
   ssrScreenShape,
   ssrEligible,
+  withSsrDefaults,
   setScreenRenderMode,
   eventSlot,
   rowSelectSlot,

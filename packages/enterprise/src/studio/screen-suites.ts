@@ -25,6 +25,7 @@ import {
   entityOf,
   pickFacetFields,
   sanitizeProject,
+  withSsrDefaults,
   type Block,
   type BlockConfig,
   type DataSourceKind,
@@ -434,12 +435,14 @@ export function crudAppFromSchemas(schemas: EntitySchema[], opts: CrudAppOptions
       : source
   }
 
-  return sanitizeProject({
+  // Database-backed screens render on the server by default, so a generated app
+  // ships real SvelteKit (load + form actions) rather than a client SPA.
+  return withSsrDefaults(sanitizeProject({
     title: opts.title ?? 'My Studio App',
     entities: [...schemas],
     screens,
     dataSource: kind,
     dataSources,
     ...(opts.theme ? { theme: opts.theme } : {}),
-  })
+  }))
 }

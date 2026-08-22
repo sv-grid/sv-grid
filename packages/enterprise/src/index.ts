@@ -7,9 +7,15 @@ export {
   assertEnterpriseLicensed,
   nudgeEnterprise,
   checkLicenseKey,
+  // Trial expiry. The built-in card already appears on its own once a trial
+  // lapses; these are for hosts that would rather render their own banner.
+  isLicenseExpired,
+  getLicenseExpiry,
   type LicenseInfo,
   type LicenseStatus,
 } from './license'
+
+export { parseLicenseExpiry } from './license-core'
 
 export {
   exportGrid,
@@ -181,6 +187,8 @@ export {
   type EntityFieldType,
   type EntityHooks,
   type FormFieldDescriptor,
+  type FormLayout,
+  type FormSection,
   type StudioEditorType,
   type StandardSchemaV1,
   type StandardSchemaResult,
@@ -274,11 +282,17 @@ export {
   buildInitialValues,
   controlKind,
   editMode,
+  evalValidationRules,
+  fieldState,
+  hasFieldConditions,
   rowId,
+  stripHiddenValues,
   toSubmitValues,
   validateAll,
+  visibleFormFields,
   type EditMode,
   type ControlKind,
+  type FieldState,
 } from './edit-panel'
 export { default as SvGridEditPanel } from './SvGridEditPanel.svelte'
 export { default as SvLookupInput } from './SvLookupInput.svelte'
@@ -352,6 +366,20 @@ export {
   addEntity,
   removeEntity,
   updateEntity,
+  formPlan,
+  setEntityForm,
+  setFormColumns,
+  addFormSection,
+  updateFormSection,
+  removeFormSection,
+  moveFormSection,
+  moveFormField,
+  setFieldConditions,
+  updateEntityField,
+  setFieldInput,
+  setFieldHidden,
+  formControlsFor,
+  suggestFormSections,
   setDataSource,
   defaultEntitySource,
   setEntityDataSource,

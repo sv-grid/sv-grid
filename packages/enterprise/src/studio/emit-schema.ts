@@ -88,7 +88,10 @@ export const lookupVar = (schema: EntitySchema, field: string) => `${camel(schem
 function rowType(schema: EntitySchema, derived: Set<string>): string {
   // Runtime-filled columns are optional in the row type: relation labels (`derived`)
   // and computed / no-code-formula fields (not present on seed rows / inserts).
-  const optional = (f: EntityField) => derived.has(f.field) || !!f.formula || !!f.computed
+  // So is a field the form only asks for under a condition - a row that never met
+  // the condition simply does not carry it (a won deal has no "lost reason").
+  const optional = (f: EntityField) =>
+    derived.has(f.field) || !!f.formula || !!f.computed || !!f.when?.visible
   const lines = schema.fields.map((f) => `  ${f.field}${optional(f) ? '?' : ''}: ${tsType(f)}`)
   return `export type ${pascal(schema.name)} = {\n${lines.join('\n')}\n}`
 }
