@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-22T22:59:40.613Z",
+  "generatedAt": "2026-08-22T23:47:15.647Z",
   "counts": {
     "pages": 362,
     "enterprise": 55,
@@ -1557,8 +1557,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2086,
-      "lastUpdated": "2026-08-19",
+      "words": 2088,
+      "lastUpdated": "2026-08-22",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -2537,20 +2537,20 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 843,
-      "lastUpdated": "2026-08-15",
+      "words": 849,
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
       "path": "help/mcp-server.md",
       "url": "/docs/help/mcp-server/",
       "title": "MCP server",
-      "summary": "The sv-grid MCP server lets AI clients (Claude Desktop, Cursor, Zed, Continue, custom agents) query the documentation, scaffold column definitions, and preview exports - all grounded in the same schemas the library ships with. No API key required; everything runs locally against your installed copy.",
+      "summary": "The SvGrid MCP server lets AI clients (Claude Code, Claude Desktop, Cursor, Zed, Codex, custom agents) query the documentation, read real demo source, and scaffold SvelteKit CRUD apps - all grounded in the files this repository ships. No API key required; everything runs locally over stdio.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1079,
-      "lastUpdated": "2026-08-19",
+      "words": 1271,
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {

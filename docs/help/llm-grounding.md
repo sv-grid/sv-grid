@@ -95,9 +95,9 @@ on demand, and it can answer any sv-grid question with current data.
 
 If your workflow centers on Claude Desktop / Cursor / Zed, the
 [MCP server](./mcp-server.md) is the single line of config that
-exposes all four files PLUS callable tools (`scaffoldColumns`,
-`validateColumns`, `previewExport`). Skip Recipes 1-3 and use the
-MCP server instead.
+exposes the same grounding PLUS callable tools (`search_docs`,
+`get_doc`, `get_example_source`, `get_api_reference`, and the SvGrid
+Studio generators). Skip Recipes 1-3 and use the MCP server instead.
 
 ## What's IN the grounding files
 

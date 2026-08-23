@@ -1,30 +1,60 @@
 # MCP server
 
-The sv-grid MCP server lets AI clients (Claude Desktop, Cursor, Zed,
-Continue, custom agents) query the documentation, scaffold column
-definitions, and preview exports - all grounded in the same schemas
-the library ships with. No API key required; everything runs locally
-against your installed copy.
+The SvGrid MCP server lets AI clients (Claude Code, Claude Desktop,
+Cursor, Zed, Codex, custom agents) query the documentation, read real
+demo source, and scaffold SvelteKit CRUD apps - all grounded in the
+files this repository ships. No API key required; everything runs
+locally over stdio.
 
 ![An AI coding agent calls the @svgrid/mcp server over the Model Context Protocol, which runs grid tools and returns structured JSON results back to the agent.](/docs-media/grid-mcp.svg)
 
 > **What is MCP?** Model Context Protocol is the open standard
 > ([modelcontextprotocol.io](https://modelcontextprotocol.io)) for
-> exposing tools / resources / prompts to LLM clients. sv-grid ships an
-> MCP server out of the box so the model your team already uses can
-> "see" the grid without you having to copy-paste docs into prompts.
+> exposing tools to LLM clients. SvGrid ships an MCP server so the
+> model your team already uses can "see" the grid without you having
+> to copy-paste docs into prompts.
+
+The package is [`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp)
+on npm, and it is listed in the official MCP registry as
+`com.svgrid/svgrid`.
 
 ## Install
 
+No install step is required - `npx` fetches it on demand:
+
 ```bash
-# Inside any project that already depends on @svgrid/grid
-pnpm add -D @sv-grid/mcp-server
+# One-shot, from any project
+npx -y @svgrid/mcp
 ```
 
-The server is a Node binary. Run it on demand from the package's
-`bin` field - no daemon to maintain.
+To pin it as a dev dependency instead:
+
+```bash
+pnpm add -D @svgrid/mcp
+```
+
+The server is a Node binary (`svgrid-mcp`) that speaks MCP over stdio.
+There is no daemon to maintain.
 
 ## Wire it into your AI client
+
+### Claude Code
+
+One command:
+
+```bash
+claude mcp add svgrid -- npx -y @svgrid/mcp
+```
+
+Then run `/mcp` in a session and you will see `svgrid` listed.
+
+To share the server with your team, add `--scope project`. That writes
+a `.mcp.json` at the repository root which you can commit, so everyone
+who clones the repo gets the same tooling with no per-machine setup:
+
+```bash
+claude mcp add svgrid --scope project -- npx -y @svgrid/mcp
+```
 
 ### Claude Desktop
 
@@ -34,23 +64,23 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "sv-grid": {
+    "svgrid": {
       "command": "npx",
-      "args": ["-y", "@sv-grid/mcp-server"]
+      "args": ["-y", "@svgrid/mcp"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. Type `@sv-grid` in any chat to confirm the
-tools are exposed.
+Restart Claude Desktop, then ask *"using svgrid, build me a grid that
+groups by department"* to confirm the tools are exposed.
 
 ### Cursor
 
-`Settings → MCP → Add new MCP server`:
+`Settings -> MCP -> Add new MCP server`:
 
 ```json
-{ "command": "npx", "args": ["-y", "@sv-grid/mcp-server"] }
+{ "command": "npx", "args": ["-y", "@svgrid/mcp"] }
 ```
 
 ### Zed
@@ -60,142 +90,202 @@ tools are exposed.
 ```json
 {
   "context_servers": {
-    "sv-grid": { "command": { "path": "npx", "args": ["-y", "@sv-grid/mcp-server"] } }
+    "svgrid": {
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+### VS Code
+
+Create `.vscode/mcp.json` in the workspace. Note that VS Code uses
+`servers` rather than the `mcpServers` wrapper:
+
+```json
+{
+  "servers": {
+    "svgrid": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"]
+    }
   }
 }
 ```
 
 ### Custom agents (OpenAI Agents SDK, Anthropic SDK, LangChain)
 
-Point your client's MCP transport at:
+Point your client's MCP stdio transport at:
 
 ```
-npx -y @sv-grid/mcp-server
+npx -y @svgrid/mcp
 ```
 
 Any client that speaks MCP stdio works.
 
 ## Tools exposed
 
-The server registers six tools. All return structured JSON; none
-require an API key or network access.
+The server registers 35 tools: 8 for documentation, examples, and
+scaffolding, plus 27 `studio_*` tools that drive the SvGrid Studio
+project model. All run locally; none require an API key or a network
+call.
 
-### `searchDocs`
+### Documentation and examples
 
-Ground the model in the doc set without dumping the whole corpus.
+These six are free and need no license key.
 
-```ts
-searchDocs({ query: string, limit?: number }):
-  Array<{ path, title, summary, score, snippet }>
-```
+#### `list_examples`
 
-Backed by the same `docs.json` manifest you can fetch directly.
-
-### `getDocPage`
-
-Pull the full markdown of one page by URL or path.
+List every demo with `id`, `title`, and a one-line blurb. Use it to
+discover what exists before fetching source.
 
 ```ts
-getDocPage({ path: '/help/pivot.md' }): { title, source, demoIds }
+list_examples(): Array<{ id, title, blurb, path }>
 ```
 
-### `scaffoldColumns`
+#### `get_example_source`
 
-Generate a `ColumnDef[]` from a sample row. Picks reasonable widths,
-inferred editor types, sensible header labels, and format options for
-numbers / currencies / ISO dates.
-
-```ts {nocheck}
-scaffoldColumns({
-  sampleRow: { id: 'r1', sellDate: '2026-05-12', price: 1499.99, currency: 'USD' },
-  inferFormat?: boolean,    // default true
-  language?: 'ts' | 'js',   // default 'ts'
-})
-// → { code: string, columns: ColumnDef[] }
-```
-
-### `validateColumns`
-
-Check a `ColumnDef[]` payload against `column-def.json`. Returns the
-list of issues with file / line hints (when the input is a code
-string). Useful for agents that generate columns and want a self-check
-before showing the result.
+Return the full `.svelte` source of one demo, verbatim, including
+imports - the same file a user would copy into a project.
 
 ```ts
-validateColumns({ columns: ColumnDef[] | string }):
-  { valid: boolean, issues: Array<{ path, message, severity }> }
+get_example_source({ id: '11-stock-market' }): string
 ```
 
-### `previewExport`
+#### `list_docs`
 
-Dry-run an `api.exportData({...})` call. Returns the rows + header
-layout the exporter WOULD write, without actually triggering a
-download. Useful when an agent is composing a multi-sheet export and
-wants to verify column ordering before committing.
+List every documentation page with slug and title. Slugs use forward
+slashes, for example `help/columns/column-definitions`.
 
 ```ts
-previewExport({ format: 'xlsx', rows: [...], columns: [...] }):
-  { sheets: Array<{ label, header, rows }> }
+list_docs(): Array<{ slug, title }>
 ```
 
-### `listDemos`
+#### `get_doc`
 
-Returns every demo in `examples/src/demos/` with its title, blurb,
-category, source path, and the prompt sidecar (see
-[LLM grounding](./llm-grounding.md)).
+Return the markdown of a single page by slug.
 
 ```ts
-listDemos({ category?: string }):
-  Array<{ id, title, blurb, category, source, prompt }>
+get_doc({ slug: 'getting-started' }): string
 ```
 
-## Resources exposed
+#### `search_docs`
 
-In addition to tools, the server exposes three MCP **resources** -
-read-only documents the client can browse:
+Case-insensitive substring search across all docs. Returns matching
+slugs with a one-line excerpt around the first hit.
 
-| URI                            | Content                                           |
-| ------------------------------ | ------------------------------------------------- |
-| `svgrid://docs/llms.txt`       | Topic map (see [llms.txt](/llms.txt))             |
-| `svgrid://docs/llms-full.txt`  | Concatenated full text of every doc              |
-| `svgrid://docs/manifest`       | `docs.json` route manifest                        |
-| `svgrid://schemas/column-def`  | JSON Schema for `ColumnDef`                       |
-| `svgrid://schemas/svgrid-options` | JSON Schema for `<SvGrid>` props              |
-| `svgrid://schemas/export-options` | JSON Schema for `api.exportData({...})`        |
+```ts
+search_docs({ query: 'row virtualization', limit?: 10 })
+```
 
-## Prompts exposed
+#### `get_api_reference`
 
-Pre-built MCP prompts you can invoke directly from a chat:
+The curated public-API surface, grouped by category (components,
+headless, scheduler, data ops, export, row models, features,
+virtualization, accessibility, utilities).
 
-- **`/svgrid:scaffold-grid`** - paste a sample row, get a complete
-  `<SvGrid>` + `tableFeatures` + `ColumnDef[]` setup
-- **`/svgrid:refactor-to-pivot`** - hand it a flat-grid component, get
-  a pivot-grid version
-- **`/svgrid:wire-server-side`** - convert client-side data to a
-  server-side adapter with sort / filter / paginate round-trips
+```ts
+get_api_reference(): string
+```
+
+### SvGrid Studio (commercial)
+
+These tools generate application code. They still run without a
+license key, but generated files are prefixed with a comment pointing
+at [pricing](https://svgrid.com/pricing/). Set `SVGRID_LICENSE_KEY` in
+the MCP server's environment for licensed use (see
+[Licensing](#licensing) below).
+
+#### `introspect_source`
+
+Infer a draft `EntitySchema` from a data source: either a Drizzle
+schema file (`kind: "drizzle"`, `source`: the file text) or sample
+rows (`kind: "json"`, `rows`, `name`). Review and refine the draft
+before scaffolding.
+
+```ts
+introspect_source({ kind: 'drizzle', source: '...' })
+introspect_source({ kind: 'json', rows: [...], name: 'orders' })
+```
+
+#### `scaffold_entity`
+
+Generate runnable SvelteKit files from an `EntitySchema`: the `$lib`
+schema module, a `+server.ts` API route using `createKitHandlers`, and
+a `+page.svelte` with `SvGrid` and `SvGridEditPanel`.
+
+```ts
+scaffold_entity({ schema, route?, apiRoute? }):
+  Array<{ path, contents, description }>
+```
+
+Generated bodies are wrapped in `svgrid:managed` markers, so
+regeneration preserves your edits outside them. After writing the
+files, run the project's own `svelte-check` or `tsc` to verify they
+compile.
+
+#### The `studio_*` tools
+
+27 tools let an agent build and edit the same validated project model
+the visual designer uses, then generate the app:
+
+| Area | Tools |
+| ---- | ----- |
+| Project | `studio_new_project`, `studio_load_project`, `studio_describe_project`, `studio_validate`, `studio_capabilities`, `studio_get_config`, `studio_generate_app` |
+| Entities | `studio_add_entity`, `studio_set_entity_source` |
+| Screens | `studio_add_screen`, `studio_update_screen`, `studio_remove_screen`, `studio_set_screen_layout` |
+| Blocks and components | `studio_add_block`, `studio_update_block`, `studio_move_block`, `studio_remove_block`, `studio_add_component` |
+| Forms | `studio_set_form_layout`, `studio_set_field_conditions` |
+| Platform | `studio_set_auth`, `studio_set_access`, `studio_set_tenancy`, `studio_set_data_layer`, `studio_set_deploy_target`, `studio_set_theme`, `studio_set_job` |
+
+Call `studio_capabilities` first: it reports exactly what the
+installed version supports, so the agent does not have to guess.
+
+## Licensing
+
+The documentation and example tools are free. The Studio code
+generators are part of the commercial offering: they run unlicensed,
+but prepend a notice comment to generated files. To license them, set
+the key in your MCP client's server config:
+
+```json
+{
+  "mcpServers": {
+    "svgrid": {
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"],
+      "env": { "SVGRID_LICENSE_KEY": "SVENTERPRISE-..." }
+    }
+  }
+}
+```
 
 ## Verifying it works
 
 After wiring the server, ask your model: *"What MCP tools do you have
-from sv-grid?"* You should see all six tools listed. If not, check
-your client's MCP log; the most common issue is `npx` not being on
-PATH (use the absolute path to the binary instead).
+from svgrid?"* You should see the documentation tools and the
+`studio_*` set. If not, check your client's MCP log; the most common
+issue is `npx` not being on PATH (use the absolute path to the binary
+instead).
 
 ## Security model
 
-- The server runs **locally**. No telemetry, no outbound network calls.
-- File reads are scoped to your project's `node_modules/@sv-grid/*`
-  and any `docs/` folder you explicitly pass via the `--docs <dir>` flag.
-- `scaffoldColumns` and `previewExport` are pure functions - they
-  inspect input and emit text. They never write to disk or fetch from
-  the network.
+- The server runs **locally** over stdio. No telemetry, no outbound
+  network calls, no API key.
+- It serves a documentation and example corpus bundled into the
+  package at build time, so answers are pinned to the version you
+  installed.
+- The Studio tools return generated files as data. Writing them to
+  disk is your client's decision, not the server's.
 - See [security](./security.md) for the general supply-chain posture.
 
 ## Building your own MCP integrations
 
-The same `docs.json` + JSON Schemas + `llms.txt` files the server uses
-are also accessible directly from your docs site
-([https://svgrid.com](https://svgrid.com)):
+The same docs manifest, JSON Schemas, and `llms.txt` files are also
+served directly from the docs site:
 
 ```ts
 const docs    = await fetch('https://svgrid.com/docs.json').then((r) => r.json())
@@ -203,8 +293,8 @@ const schemas = await fetch('https://svgrid.com/schemas/index.json').then((r) =>
 const llms    = await fetch('https://svgrid.com/llms-full.txt').then((r) => r.text())
 ```
 
-If you don't want to run the MCP server, building these into your
-agent's system prompt gives ~80% of the same value.
+If you do not want to run the MCP server, building these into your
+agent's system prompt gives most of the same grounding.
 
 ## See also
 
@@ -214,20 +304,22 @@ agent's system prompt gives ~80% of the same value.
 
 ## Frequently asked questions
 
-### What is the sv-grid MCP server?
+### What is the SvGrid MCP server?
 
-A Model Context Protocol server that lets AI clients (Claude Desktop, Cursor,
-Zed, Continue, custom agents) query SvGrid's documentation, scaffold column
-definitions, and preview exports - all grounded in the schemas the library
-ships with, so the model answers from current facts instead of guessing.
+A Model Context Protocol server that lets AI clients (Claude Code, Claude
+Desktop, Cursor, Zed, custom agents) query SvGrid's documentation, read real
+demo source, and scaffold SvelteKit CRUD apps - grounded in the files the
+package ships, so the model answers from current facts instead of guessing.
 
 ### Do I need an API key to run it?
 
-No. The MCP server runs locally against your installed copy of SvGrid. There is
-no key and no external call.
+No. The MCP server runs locally over stdio. There is no key and no external
+call. A `SVGRID_LICENSE_KEY` is optional and only affects the commercial
+Studio code generators.
 
 ### How does it help AI assistants write better SvGrid code?
 
-It exposes example sources, the docs, and the API reference as MCP tools, so the
-assistant retrieves accurate, version-pinned answers rather than hallucinating
-an API from training data.
+It exposes example sources, the docs, and the API reference as MCP tools, so
+the assistant retrieves accurate, version-pinned answers rather than
+hallucinating an API from training data. That matters most for Svelte 5, where
+models routinely mix in outdated Svelte 4 syntax.

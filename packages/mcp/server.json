@@ -3,7 +3,7 @@
   "name": "com.svgrid/svgrid",
   "title": "SvGrid",
   "description": "Version-pinned Svelte 5 data grid APIs, 373 demo sources, and SvelteKit app scaffolding.",
-  "version": "2.5.0",
+  "version": "2.6.1",
   "websiteUrl": "https://svgrid.com/docs/help/mcp-server/",
   "repository": {
     "url": "https://github.com/sv-grid/sv-grid",
@@ -15,7 +15,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@svgrid/mcp",
-      "version": "2.5.0",
+      "version": "2.6.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

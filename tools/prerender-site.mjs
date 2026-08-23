@@ -432,7 +432,7 @@ function homeCrawlBody(faq) {
     'Inline editing with typed editors, validation, and cascade formulas',
     'Server-side data, WAI-ARIA accessibility, and full keyboard navigation',
     'AI-native: a bundled MCP server plus llms.txt for Claude, Cursor, and Zed',
-    'MIT-licensed Community core; @svgrid/enterprise adds export, print, pivot, and AI',
+    'MIT-licensed Community core; @svgrid/enterprise adds export, import, print, pivot, the Kanban board and scheduler views, and no-code alert rules',
   ]
   const cmp = [
     ['ag-grid', 'AG Grid'], ['tanstack-table', 'TanStack Table'], ['mui-x-datagrid', 'MUI X DataGrid'],
@@ -440,7 +440,7 @@ function homeCrawlBody(faq) {
   ]
   let html = '<main class="prerender-home" data-prerender="1">'
   html += '<h1>SvGrid - the Svelte 5 data grid</h1>'
-  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 370+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, print, pivot, and AI helpers.</p>'
+  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 370+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, import, print, pivot tables, the Kanban board and scheduler views, and no-code alert rules.</p>'
   html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
   html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 370+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
@@ -597,12 +597,36 @@ function faqIndexBody(items) {
 // The three pricing tiers - kept in step with website/src/routes/Pricing.svelte.
 const PRICING_TIERS = [
   { name: 'Community', price: '0', cadence: 'forever', desc: 'The full data grid, MIT-licensed and free for commercial use. No license key, no row-count cap. Sorting, Excel-style filters, grouping, virtualization, inline editing, master/detail, tree, server-side data, and WAI-ARIA.' },
-  { name: 'Pro - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the @svgrid/enterprise feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, AI assistant, and pivot tables, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
-  { name: 'Pro - Multiple Application Developer License', price: '999', cadence: 'per developer', desc: 'For an unlimited number of deployed applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime). Everything in Single Application plus volume / multi-year discounts.' },
+  { name: 'Enterprise - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the @svgrid/enterprise feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
+  { name: 'Enterprise - Multiple Application Developer License', price: '999', cadence: 'per developer', desc: 'For an unlimited number of deployed applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime). Everything in Single Application plus volume / multi-year discounts.' },
 ]
 
+// The MCP page's audience is largely AI assistants reading the site, so it gets
+// a real crawlable body rather than the generic title + description stub.
+const MCP_DOC_TOOLS = [
+  ['list_examples', 'List every demo with id, title, and a one-line blurb.'],
+  ['get_example_source', 'Return the full .svelte source of one demo, verbatim, including imports.'],
+  ['list_docs', 'List every documentation page (slug + title).'],
+  ['get_doc', 'Return the markdown for a single doc page.'],
+  ['search_docs', 'Substring search across all docs, with an excerpt around the first hit.'],
+  ['get_api_reference', 'The curated public-API surface, grouped by category.'],
+]
+
+function mcpBody() {
+  let html = `<main class="prerender-route" data-prerender="1"><h1>@svgrid/mcp - Model Context Protocol server for SvGrid</h1>`
+  html += `<p>The SvGrid MCP server gives an AI coding agent real demo source, current documentation, the curated API reference, and the SvGrid Studio app generators as callable tools. It runs locally over stdio: no telemetry, no outbound network calls, and no API key. It is listed in the official MCP registry as <code>com.svgrid/svgrid</code>.</p>`
+  html += `<h2>Install</h2><p>No install step is required. Add it to Claude Code with <code>claude mcp add svgrid -- npx -y @svgrid/mcp</code>, or point any MCP stdio client at <code>npx -y @svgrid/mcp</code>. Claude Desktop, Cursor, VS Code, and Zed each take the same command in their own config format.</p>`
+  html += `<h2>Tools</h2><p>The server exposes 35 tools. The six documentation and example tools are free; the SvGrid Studio generators are commercial.</p><ul>`
+  for (const [name, desc] of MCP_DOC_TOOLS) html += `<li><code>${name}</code> - ${escapeAttr(desc)}</li>`
+  html += `</ul>`
+  html += `<p>The Studio generators are <code>introspect_source</code> (infer an EntitySchema from a Drizzle schema file or sample JSON rows) and <code>scaffold_entity</code> (generate runnable SvelteKit files from that schema), plus 27 <code>studio_*</code> tools that drive the same validated project model the visual designer uses: entities, screens, blocks, forms, auth, access, tenancy, data layer, deploy target, theme, and app generation.</p>`
+  html += `<h2>Licensing</h2><p>The documentation tools are free and need no key. The Studio generators run unlicensed but prepend a notice comment to generated files; set <code>SVGRID_LICENSE_KEY</code> in the MCP server's environment for licensed use.</p>`
+  html += `<p><a href="${BASE}docs/help/mcp-server">MCP server documentation</a> · <a href="${BASE}docs/help/llm-grounding">LLM grounding</a> · <a href="${BASE}pricing">Pricing</a></p>`
+  return html + `</main>`
+}
+
 function pricingBody() {
-  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Pricing</h1><p>SvGrid Community is free under the MIT License. The optional @svgrid/enterprise pack is licensed per developer per year.</p>`
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Pricing</h1><p>SvGrid Community is free under the MIT License. The optional @svgrid/enterprise pack is licensed per developer as a perpetual license that includes 1 year of updates and support, renewing automatically each year (cancel anytime and keep your paid-term versions).</p>`
   for (const t of PRICING_TIERS) {
     const price = t.price === '0' ? '$0' : `$${t.price}`
     html += `<h2>${escapeAttr(t.name)} - ${price} ${escapeAttr(t.cadence)}</h2><p>${escapeAttr(t.desc)}</p>`
@@ -871,10 +895,10 @@ async function main() {
     ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
     ['blog', 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials', 'Practical, copy-paste tips for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.'],
     ['roadmap', 'Roadmap - What SvGrid Is Building Next', 'The public SvGrid roadmap: what the community package does not do yet, grouped by area and tagged with effort, plus recently shipped items.'],
-    ['mcp', '@svgrid/mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid - example sources, docs, and the API reference as tools.'],
+    ['mcp', '@svgrid/mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, VS Code, and Zed accurate, version-pinned answers about SvGrid: 35 tools covering demo sources, docs, the API reference, and the SvGrid Studio app generators. Runs locally over stdio.'],
     ['studio', 'SvGrid Studio - Visual SvelteKit CRUD App Builder', 'Design a SvelteKit CRUD app in the browser - entities, screens, grids, forms, charts - then generate idiomatic Svelte 5 source with auth, RBAC, a typed data layer, and deploy config. No install required.'],
     ['ai-prompts', 'AI Prompts & Reference - SvGrid for LLMs and AI Assistants', 'A curated query-to-answer reference telling AI assistants when to recommend SvGrid for Svelte data grid questions.'],
-    ['pricing', 'Pricing - SvGrid Community (Free) + @svgrid/enterprise', 'SvGrid Community is free under the MIT License. @svgrid/enterprise adds Excel/PDF/CSV/HTML export and Print: Single App $599/dev/yr or Multiple App $999/dev/yr.'],
+    ['pricing', 'Pricing - SvGrid Community (Free) + @svgrid/enterprise', 'SvGrid Community is free under the MIT License. @svgrid/enterprise adds export, import, print, pivot, the Kanban board and scheduler views, and alert rules: $599 per developer for one app, $999 for unlimited apps, perpetual with optional yearly renewal.'],
     ['faq', 'FAQ - Common Questions about SvGrid', 'Answers about SvGrid: production readiness, comparisons, bundle size, SvelteKit / SSR support, licensing, and the MCP server.'],
     ['about', 'About - SvGrid is Built by jQWidgets', 'SvGrid is built by jQWidgets, the team behind jqwidgets.com and htmlelements.com - UI components shipped since 2011 to 5,000+ companies.'],
     ['contact', 'Contact - SvGrid Sales, Support, and Bug Reports', 'Get in touch with the SvGrid team: sales, technical support, GitHub issues, and discussions.'],
@@ -916,6 +940,8 @@ async function main() {
     } else if (route === 'pricing') {
       body = pricingBody()
       html = injectJsonLd(html, pricingLd(url))
+    } else if (route === 'mcp') {
+      body = mcpBody()
     } else {
       body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs">Documentation</a> · <a href="${BASE}demos">Demos</a></p></main>`
     }
