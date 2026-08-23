@@ -277,6 +277,19 @@ export type FormSection = {
   fields: string[]
   /** Show the section only while this holds - see `EntityField.when`. */
   visibleWhen?: PredicateExpr
+  /**
+   * Let the user fold this group away. Turns the heading into a disclosure
+   * button, so a long form opens at a readable length instead of a wall of
+   * inputs.
+   *
+   * A collapsed section is still **filled in and still validated** - it is a
+   * display state, not a condition. Use `visibleWhen` to actually drop fields
+   * from the form. If a collapsed section holds an error the panel opens it, so
+   * a failed submit can never point at something the user cannot see.
+   */
+  collapsible?: boolean
+  /** Start folded. Only meaningful with `collapsible`. */
+  collapsed?: boolean
 }
 
 /**
@@ -291,6 +304,25 @@ export type FormSection = {
 export type FormLayout = {
   columns?: 1 | 2 | 3
   sections?: FormSection[]
+  /**
+   * Ask one section at a time, with Back / Next and a progress line - an intake
+   * form or an onboarding flow rather than a page of inputs.
+   *
+   * Each section is a step, so the sections ARE the design: no second list to
+   * keep in sync. **Next validates only the step you are on**, so a long form
+   * fails early and locally instead of dumping every error at the end. A section
+   * hidden by `visibleWhen` is skipped rather than shown empty, so the step count
+   * follows the answers.
+   *
+   * Needs sections (with none, it is one page and this does nothing) and makes
+   * `collapsible` moot - a step is already one group at a time.
+   *
+   * A server-rendered screen renders the steps as ordinary sections: stepping
+   * through a `<form>` with no JavaScript would mean a round-trip per step and
+   * somewhere to keep the half-finished record. The server still validates
+   * everything either way.
+   */
+  steps?: boolean
 }
 
 /** Normalized descriptor the edit panel renders from (one per visible-in-form field). */
@@ -408,6 +440,16 @@ function hiddenFor(field: { hidden?: EntityField['hidden'] }, surface: 'grid' | 
   if (field.hidden === true) return true
   if (field.hidden && typeof field.hidden === 'object') return field.hidden[surface] === true
   return false
+}
+
+/**
+ * Whether a field is hidden from one surface. Public because the `hidden`
+ * union (`true` means both surfaces, an object names them) is exactly the kind
+ * of logic that drifts when every caller re-derives it - the form builder's
+ * "Hidden from this form" tray is one such caller.
+ */
+export function isFieldHidden(field: Pick<EntityField, 'hidden'>, surface: 'grid' | 'form'): boolean {
+  return hiddenFor(field, surface)
 }
 
 /**

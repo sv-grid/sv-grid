@@ -11,7 +11,7 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
-import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, ScheduledJob, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
+import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, FormConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, ScheduledJob, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
 import { tenantField, isTenantScoped } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, rowSelectSlot, eventSlot, FORM_SUBMIT, GRID_EVENTS, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
 import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-components.js'
@@ -517,9 +517,38 @@ ${panels}
     case 'component':
       return componentBlockMarkup(block, cfg, ctx.handleNames?.get(block.id), rowsExpr)
     case 'form':
+      return createFormMarkup(entity, schemaVar, block, cfg)
     default:
-      return '' // the form is the edit modal, rendered after the screen grid
+      return ''
   }
+}
+
+/**
+ * A standalone create form: blank, always on the page, submits a new row.
+ *
+ * Keyed on `formSaves` so a successful create remounts the panel with empty
+ * values - the panel seeds itself from `row` once, so without the key the
+ * previous entry would still be sitting in the fields.
+ */
+function createFormMarkup(entity: EntitySchema, schemaVar: string, block: Block, cfg: FormConfig): string {
+  const span = wrapperStyle(block)
+  const cls = wrapperClass(block)
+  const attrs: string[] = [`schema={${schemaVar}}`, 'row={null}', 'presentation="inline"']
+  attrs.push(`title={${jsStr(cfg.title ?? `New ${entity.label ?? entity.name}`)}}`)
+  if (cfg.submitLabel) attrs.push(`submitLabel={${jsStr(cfg.submitLabel)}}`)
+  // Inline fills its block unless told otherwise, so only a real choice is emitted.
+  if (cfg.width && cfg.width !== 'md') attrs.push(`formSize=${jsStr(cfg.width)}`)
+  // A confirmation only makes sense when the page stays put; navigating away
+  // makes the new screen the confirmation.
+  const done = cfg.afterSave === 'navigate'
+    ? ''
+    : `
+      {#if formSaves}<p class="st-form__done" role="status">Saved. Add another below.</p>{/if}`
+  return `    <div ${span}${cls}>${done}
+      {#key formSaves}
+        <SvGridEditPanel ${attrs.join(' ')} onSubmit={createRecord} />
+      {/key}
+    </div>`
 }
 
 /** Emits a UI-kit component block (see `UI_COMPONENT_REGISTRY`): a literal
@@ -1808,7 +1837,10 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // literal shared with the PageContext type. Data handles read the entity row type.
   const handleNames = handleNameMap(screen)
   const codeWire = codeEnabled ? codeWiring(screen, n.type, undefined) : null
-  const hasForm = has(blocks, 'form') // legacy standalone form block
+  // A standalone Form block creates a record. It does NOT want the grid's edit
+  // modal (that edits an existing row), so it is deliberately kept out of
+  // `wantsForm` - it emits its own always-visible panel and its own handler.
+  const createForm = blocks.map((b) => b.config).find((c): c is FormConfig => c.kind === 'form')
   // Editing is a Grid property: a grid with editing 'form' opens the edit panel.
   const gridConfigs = blocks.map((b) => b.config).filter((c): c is GridConfig => c.kind === 'grid')
   const formGrid = gridConfigs.find((c) => c.editing === 'form')
@@ -1818,7 +1850,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // Rich cell renderers (badge / progress / link) each emit a `cell` snippet.
   const cellRenderKinds = new Set(gridConfigs.flatMap((c) => c.columns.filter((col) => col.show && col.cellType).map((col) => col.cellType!.kind)))
   const hasCellRenderers = cellRenderKinds.size > 0
-  const wantsForm = !!formGrid || hasForm || hasEditAction
+  const wantsForm = !!formGrid || hasEditAction
   // An unpaginated grid loads everything (one big page); else its configured size.
   const gridPageSize = gridConfigs[0] ? (gridConfigs[0].paginated !== false ? (gridConfigs[0].pageSize ?? 10) : 1000) : 10
   const formPres = formGrid?.formPresentation ?? 'modal'
@@ -1831,7 +1863,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const recordEditable = blocks.some((b) => b.config.kind === 'record' && b.config.editable)
   // Filter panels drive the grid's controller; record panels read the grid's
   // selection - both need the controller even if the grid isn't editable.
-  const needsController = hasGrid || wantsForm || hasFilter || hasRecord
+  const needsController = hasGrid || wantsForm || hasFilter || hasRecord || !!createForm
   // Supabase Realtime: when the screen's entity is Supabase-backed and opts into
   // live updates, subscribe to Postgres change streams and refresh() the paged
   // grid on any INSERT / UPDATE / DELETE (respects the active sort/filter/page).
@@ -1933,7 +1965,8 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     (b.config.kind === 'grid' && b.config.rowActions?.some((a) => a.kind === 'navigate' && a.screen && routeById.has(a.screen))) ||
     (b.config.kind === 'chart' && b.config.drillScreen && routeById.has(b.config.drillScreen)) ||
     ((b.config.kind === 'board' || b.config.kind === 'calendar') && b.config.openScreen != null && routeById.has(b.config.openScreen)) ||
-    (b.config.kind === 'master-detail' && b.config.linkScreen != null && routeById.has(b.config.linkScreen)))
+    (b.config.kind === 'master-detail' && b.config.linkScreen != null && routeById.has(b.config.linkScreen)) ||
+    (b.config.kind === 'form' && b.config.afterSave === 'navigate' && b.config.navigateTo != null && routeById.has(b.config.navigateTo)))
   const applyUrlFilters = drillEnabled && needsController
   const filterableFieldNames = schema.fields.filter((f) => !f.primaryKey).map((f) => f.field)
   // RBAC gates the UI only where there's a create/update affordance to gate.
@@ -2068,6 +2101,21 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
     if (mode === 'create') { await controller.createRow({ [idField]: nextId('${n.idPrefix}'), ...values } as Partial<${n.type}>); controller.setPage(view.pageCount - 1) }
     else if (id) { await controller.updateRow(id, values) }${submitBody}
     editing = undefined${needsAllRows ? '\n    await loadAll()' : ''}
+  }`)
+  }
+  // Standalone create form: a counter that both blanks the panel (it is the
+  // {#key}) and drives the "Saved" confirmation.
+  if (createForm) {
+    const nav = createForm.afterSave === 'navigate' && createForm.navigateTo
+      ? routeById.get(createForm.navigateTo)
+      : undefined
+    const after = nav
+      ? `\n    await goto('/${nav}')`
+      : ''
+    parts.push(`let formSaves = $state(0)
+  async function createRecord({ values }: { mode: 'create' | 'edit'; id: string | null; values: Partial<${n.type}> }) {
+    await controller.createRow({ [idField]: nextId('${n.idPrefix}'), ...values } as Partial<${n.type}>)${submitBody}
+    formSaves += 1${after}
   }`)
   }
   // Record panel: the row selected in the grid, plus (when editable) a save hook.
@@ -2620,19 +2668,37 @@ ${hint ? `          {#if !form?.errors?.[${key}]}<small class="sk-hint">${htmlEs
     ? (() => {
         const assigned = new Set<string>()
         const groups = layout.sections!.map((s) => {
-          const items = s.fields.map((name) => { assigned.add(name); return blockFor(name) }).filter(Boolean) as string[]
-          return { title: s.title, description: s.description, columns: s.columns, items }
+          const names: string[] = []
+          const items = s.fields.map((name) => { assigned.add(name); names.push(name); return blockFor(name) }).filter(Boolean) as string[]
+          return { title: s.title, description: s.description, columns: s.columns, collapsible: s.collapsible, collapsed: s.collapsed, names, items }
         }).filter((g) => g.items.length)
         const rest = formFields.filter((f) => !assigned.has(f.field)).map((f) => blockFor(f.field)!).filter(Boolean)
-        return rest.length ? [...groups, { title: undefined, description: undefined, columns: undefined, items: rest }] : groups
+        return rest.length ? [...groups, { title: undefined, description: undefined, columns: undefined, collapsible: false, collapsed: false, names: [], items: rest }] : groups
       })()
     : null
   const formCols = layout?.columns ?? 1
   const fieldsMarkup = ssrSections
     ? ssrSections
-        .map((g) => `        <fieldset class="sk-group" style="--sk-cols: ${g.columns ?? formCols}">
-${g.title ? `          <legend>${htmlEsc(g.title)}</legend>\n` : ''}${g.description ? `          <p class="sk-group__desc">${htmlEsc(g.description)}</p>\n` : ''}${g.items.join('\n')}
-        </fieldset>`)
+        .map((g) => {
+          const inner = `${g.description ? `          <p class="sk-group__desc">${htmlEsc(g.description)}</p>\n` : ''}${g.items.join('\n')}`
+          // A collapsible group is a native <details>, so it folds with no JS at
+          // all - which is the point on a server-rendered page. A group that
+          // starts folded is forced open when the server sent back an error for
+          // one of its fields, so a rejected submit is never pointing at
+          // something the user cannot see.
+          if (g.collapsible && g.title) {
+            const open = g.collapsed
+              ? `{${JSON.stringify(g.names)}.some((f) => form?.errors?.[f])}`
+              : '{true}'
+            return `        <details class="sk-group sk-group--fold" style="--sk-cols: ${g.columns ?? formCols}" open=${open}>
+          <summary>${htmlEsc(g.title)}</summary>
+${inner}
+        </details>`
+          }
+          return `        <fieldset class="sk-group" style="--sk-cols: ${g.columns ?? formCols}">
+${g.title ? `          <legend>${htmlEsc(g.title)}</legend>\n` : ''}${inner}
+        </fieldset>`
+        })
         .join('\n')
     : `        <div class="sk-group" style="--sk-cols: ${formCols}">\n${fieldBlocks.join('\n')}\n        </div>`
 
@@ -2747,6 +2813,13 @@ ${facetCss}  .sk-rowact { display: flex; gap: 10px; }
   .sk-group + .sk-group { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sg-border, #e2e8f0); }
   .sk-group legend { grid-column: 1 / -1; padding: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--sg-muted, #64748b); }
   .sk-group__desc { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--sg-muted, #64748b); }
+  /* A foldable group is a native <details>, so it works with JavaScript off.
+     display:grid on the element itself would lay the <summary> out as a grid
+     item and break the disclosure, so the grid moves to [open] children. */
+  .sk-group--fold { display: block; }
+  .sk-group--fold > summary { grid-column: 1 / -1; margin-bottom: 12px; font-size: 13.5px; font-weight: 650; color: var(--sg-fg, #0f172a); cursor: pointer; list-style-position: inside; }
+  .sk-group--fold[open] { display: grid; }
+  .sk-group--fold[open] > summary { margin-bottom: 0; }
   .sk-field--wide { grid-column: 1 / -1; }
   .sk-hint { color: var(--sg-muted, #64748b); font-size: 11.5px; }
   @media (max-width: 560px) { .sk-group { grid-template-columns: 1fr; } }

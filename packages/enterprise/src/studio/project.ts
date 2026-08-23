@@ -258,7 +258,38 @@ export type RowAction = {
 export type ActionConfig = { id: string; label: string; icon?: string; confirm?: string }
 /** Legacy standalone edit-form block. Editing is now a Grid property; kept so old
  *  `studio.config.json` files still parse. Not offered in the palette. */
-export type FormConfig = { kind: 'form'; presentation: Presentation }
+/**
+ * A standalone form for creating a record: a "New ticket" page, an intake
+ * screen, a signup. Blank on load, submits, and creates a row.
+ *
+ * Deliberately create-only, because the other two directions are already taken:
+ * a grid with `editing: 'form'` edits an existing row in a popup, and a
+ * `record` block with `editable` edits whatever row is selected. What no block
+ * covered was a form that stands on its own with no grid behind it.
+ *
+ * Its fields, order, sections and conditions come from the entity's own
+ * `EntitySchema.form` - the same layout the form builder edits - so a form
+ * designed once looks the same wherever it is placed.
+ */
+export type FormConfig = {
+  kind: 'form'
+  presentation: Presentation
+  /** Heading above the form. Defaults to "New <entity>". */
+  title?: string
+  /** Submit button text. Defaults to "Create". */
+  submitLabel?: string
+  /** After a successful create: blank the form for another entry (default), or
+   *  go to another screen. */
+  afterSave?: 'reset' | 'navigate'
+  /** Screen id to open when `afterSave` is 'navigate'. */
+  navigateTo?: string
+  /**
+   * How wide the form draws. Inline forms fill their block by default, which is
+   * right for a narrow column and too wide to read across a full page - this
+   * caps it. Maps to `SvGridEditPanel`'s `formSize`.
+   */
+  width?: 'sm' | 'md' | 'lg'
+}
 /** A chart, optionally drilling into `drillScreen` (filtered by the clicked category). */
 export type ChartConfig = { kind: 'chart'; dimension: string; measure?: string; reduce: Reduce; type: ChartType; drillScreen?: string; dataLabels?: boolean; color?: string }
 /** Number format for a KPI value. `auto` keeps the legacy behavior ($ when the
@@ -1040,10 +1071,12 @@ export type ProjectIssue = { level: ProjectIssueLevel; message: string; screen?:
 /** One palette entry: a draggable block kind + what it needs to be useful. */
 export type PaletteItem = { kind: BlockKind; label: string; needs?: 'measure' | 'child' }
 
-/** The designer's block palette, in menu order. (Editing is a Grid property, so
- *  there's no standalone form block.) */
+/** The designer's block palette, in menu order. A grid owns edit-in-popup and a
+ *  record panel edits the selected row, so the standalone Form block is the one
+ *  that creates: a form on its own page, with no grid behind it. */
 export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'grid', label: 'Grid' },
+  { kind: 'form', label: 'Form' },
   { kind: 'chart', label: 'Chart', needs: 'measure' },
   { kind: 'pivot', label: 'Pivot', needs: 'measure' },
   { kind: 'dashboard', label: 'Dashboard' },
@@ -1111,7 +1144,8 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
     case 'grid':
       return { kind, columns: gridColumns(entity), pageSize: 10, selectable: true, sortable: true, filterable: false, editing: 'form', formPresentation: 'modal', density: 'normal', striped: false, cellSelection: false, rowSummaries: false, paginated: true, paginationPosition: 'bottom', pageSizeOptions: [10, 25, 50, 100] }
     case 'form':
-      return { kind, presentation: 'modal' }
+      // Inline: a create form belongs on the page, not floating over it.
+      return { kind, presentation: 'inline', afterSave: 'reset' }
     case 'chart': {
       const measure = pickMeasure(entity)
       return { kind, dimension: pickDimension(entity), measure, reduce: measure ? 'sum' : 'count', type: 'bar' }
@@ -1597,6 +1631,8 @@ export function updateFormSection(
     if (!merged.description) delete merged.description
     if (!merged.visibleWhen) delete merged.visibleWhen
     if (!merged.columns) delete merged.columns
+    if (!merged.collapsible) { delete merged.collapsible; delete merged.collapsed }
+    if (!merged.collapsed) delete merged.collapsed
     return merged
   })
   return setEntityForm(project, entityName, { ...schema!.form, sections: next })
@@ -1649,6 +1685,46 @@ export function moveFormField(
   return setEntityForm(project, entityName, {
     ...schema.form,
     sections: stripped.map((s, i) => (i === toSection ? { ...s, fields } : s)),
+  })
+}
+
+/**
+ * Move several fields at once, as one contiguous block in the order given.
+ *
+ * Not a loop of {@link moveFormField}: each single move both shifts the target
+ * indices and re-resolves the plan, so a loop lands the group scattered or
+ * reversed. Strip every named field first, then splice the whole group at the
+ * index computed against the stripped target.
+ *
+ * Unknown and hidden-from-form names are dropped, duplicates keep their first
+ * position, and an input that resolves to nothing returns the project
+ * unchanged (same reference), so an undo stack never records a no-op.
+ */
+export function moveFormFields(
+  project: StudioProject,
+  entityName: string,
+  fields: ReadonlyArray<string>,
+  toSection: number | null,
+  toIndex = Number.MAX_SAFE_INTEGER,
+): StudioProject {
+  const schema = entityOf(project, entityName)
+  if (!schema) return project
+  const movable = new Set(formFieldNames(schema))
+  const group: string[] = []
+  for (const f of fields) if (movable.has(f) && !group.includes(f)) group.push(f)
+  if (!group.length) return project
+  const sections = schema.form?.sections ?? []
+  if (toSection !== null && !sections[toSection]) return project
+  const moving = new Set(group)
+  const stripped = sections.map((s) => ({ ...s, fields: s.fields.filter((f) => !moving.has(f)) }))
+  if (toSection === null) return setEntityForm(project, entityName, { ...schema.form, sections: stripped })
+  const target = stripped[toSection]!
+  const at = Math.max(0, Math.min(toIndex, target.fields.length))
+  const next = [...target.fields]
+  next.splice(at, 0, ...group)
+  return setEntityForm(project, entityName, {
+    ...schema.form,
+    sections: stripped.map((s, i) => (i === toSection ? { ...s, fields: next } : s)),
   })
 }
 
@@ -1774,6 +1850,25 @@ export function formControlsFor(type: EntityFieldType): StudioEditorType[] {
     case 'json': return ['textarea', 'text']
     default: return ['text', 'textarea', 'password', 'phone', 'country', 'mask', 'color', 'autocomplete', 'chips']
   }
+}
+
+/**
+ * Which extra settings a control actually uses, so a builder can show those and
+ * nothing else. Picking "mask" and then having nowhere to type the pattern - or
+ * "slider" with no way to set its range - is a dead end, and listing all of them
+ * against every control is a wall of mostly-irrelevant boxes.
+ *
+ * `range` is min/max, which live on the field itself rather than under `input`
+ * (they validate as well as bound the control).
+ */
+export type ControlSetting = 'range' | 'step' | 'precision' | 'affix' | 'mask'
+
+export function formControlSettings(control: StudioEditorType | undefined, type: EntityFieldType): ControlSetting[] {
+  const kind = control ?? formControlsFor(type)[0]
+  if (kind === 'mask') return ['mask']
+  if (kind === 'slider' || kind === 'rating') return ['range', 'step']
+  if (kind === 'number' || (type === 'number' && kind !== 'text')) return ['range', 'step', 'precision', 'affix']
+  return []
 }
 
 /**
@@ -2636,7 +2731,18 @@ export function validateProject(project: StudioProject): ProjectIssue[] {
     for (const b of flattenBlocks(s.blocks)) {
       const at = (message: string, level: ProjectIssueLevel = 'warning'): ProjectIssue => ({ level, message, screen: s.id, block: b.id })
       const c = b.config
-      if (c.kind === 'master-detail') {
+      if (c.kind === 'form') {
+        // A form on a screen with no entity has nothing to create.
+        if (!s.entity) issues.push(at('A Form block needs a screen bound to an entity.', 'error'))
+        // "Go to a screen" that names none, or names a screen that has since been
+        // removed, leaves the user on a form that appears to do nothing on save.
+        if (c.afterSave === 'navigate') {
+          if (!c.navigateTo) issues.push(at('The form is set to open a screen after saving, but no screen is chosen.'))
+          else if (!project.screens.some((x) => x.id === c.navigateTo)) {
+            issues.push(at(`The form opens a missing screen "${c.navigateTo}" after saving.`, 'error'))
+          }
+        }
+      } else if (c.kind === 'master-detail') {
         if (!c.childEntity || !c.foreignKey) issues.push(at('Master/detail needs a child entity + foreign key.'))
         else if (!entityOf(project, c.childEntity)) issues.push(at(`Master/detail points at a missing child entity "${c.childEntity}".`))
       } else if (c.kind === 'tree') {

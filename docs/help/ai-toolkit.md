@@ -18,7 +18,7 @@ model choice, routing, and what data leaves the browser.
 | --- | --- | --- |
 | **Who invokes it** | your end users | you and your coding agent |
 | **What it does** | filter / fill / summarise / classify / export the live grid | scaffold columns, generate CRUD screens, answer API questions |
-| **Package** | `@svgrid/enterprise` (`api.ai.*`) | `@sv-grid/mcp-server`, `@svgrid/mcp`, grounding files |
+| **Package** | `@svgrid/enterprise` (`api.ai.*`) | `@svgrid/mcp`, grounding files |
 | **Needs a model key** | yes - the one you register | no - your agent brings its own |
 | **Deep dive** | [AI assistant](./ai.md) | [MCP server](./mcp-server.md) · [LLM grounding](./llm-grounding.md) |
 
@@ -184,20 +184,19 @@ an API from its training cutoff. No API key, all local.
 ```json
 {
   "mcpServers": {
-    "sv-grid": { "command": "npx", "args": ["-y", "@sv-grid/mcp-server"] }
+    "svgrid": { "command": "npx", "args": ["-y", "@svgrid/mcp"] }
   }
 }
 ```
 
-It registers callable tools - `searchDocs`, `getDocPage`, `scaffoldColumns`
-(sample row -> `ColumnDef[]`), `validateColumns`, `previewExport`,
-`listDemos` - plus read-only resources (the docs manifest and JSON Schemas)
-and pre-built prompts (`/svgrid:scaffold-grid`, `/svgrid:refactor-to-pivot`,
-`/svgrid:wire-server-side`).
+It registers callable tools - `list_examples`, `get_example_source`,
+`list_docs`, `get_doc`, `search_docs`, and `get_api_reference` - so the
+agent reads real demo source and current docs instead of guessing.
 
 For **Studio** (turning a database or schema into a CRUD data-app), the
-separate [`@svgrid/mcp`](../enterprise/studio/ai-generation.md) server adds
-`introspect_source` and `scaffold_entity`. The generated screen is run
+[same server](../enterprise/studio/ai-generation.md) adds
+`introspect_source`, `scaffold_entity`, and 27 `studio_*` project-model
+tools. The generated screen is run
 through the Svelte compiler before it comes back, and each file carries
 `svgrid:managed` markers so a re-generation updates the managed regions and
 leaves your hand-written code untouched.
@@ -264,8 +263,8 @@ data within a boundary before it reaches a provider.
 | `mockAIProvider` | `@svgrid/enterprise` | Deterministic canned provider for demos and tests. |
 | `type AIProvider` | `@svgrid/enterprise` | `(req: AIRequest) => Promise<string>` - the one function you implement. |
 | `api.ai.filter` / `smartFill` / `summarize` / `classify` / `export` / `findAnomalies` | `@svgrid/enterprise` | The in-grid helpers, added by `installEnterprise(api)`. |
-| `scaffoldColumns`, `validateColumns`, `previewExport`, ... | `@sv-grid/mcp-server` | Build-time MCP tools your coding agent calls. |
-| `introspect_source`, `scaffold_entity` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen). |
+| `search_docs`, `get_doc`, `list_examples`, `get_example_source`, `get_api_reference`, `list_docs` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls. |
+| `introspect_source`, `scaffold_entity`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). |
 
 Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../reference/auto/svgrid-enterprise-ai.md).
 

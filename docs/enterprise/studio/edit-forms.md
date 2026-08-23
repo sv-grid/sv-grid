@@ -103,6 +103,30 @@ validations: [
 Operators: `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `required`, `minLen`, `maxLen`.
 Use `compareTo` to compare against another field instead of a fixed `value`.
 
+## Where a form comes from
+
+Three places, and which one you want depends on the record:
+
+| You want to | Use |
+| --- | --- |
+| Edit an existing row from a list | A **grid** with **Editing mode: Popup form**. Double-click a row. |
+| Edit whichever row is selected on the screen | A **record panel** with editing on - inline, drawer, or modal. |
+| Create a new record, with no grid behind it | A **Form** block, dragged from the Components rail. |
+
+All three render the same `SvGridEditPanel` against the same `EntitySchema.form`,
+so a form designed once looks the same in every one of them.
+
+The **Form** block is create-only by design. It is blank on load, submits, and
+creates a row; after saving it either blanks itself for the next entry (the
+default, with a "Saved" confirmation) or opens another screen. Give it a heading
+and a submit label in the inspector - "Report a problem" / "Send it" reads better
+than "New Ticket" / "Create" on a page somebody was sent to.
+
+An inline form **fills whatever it is placed in**, so a form block is as wide as
+its block. Set the block's **Width** to *Narrow* or *Wide* when a full-width form
+is more than a reader wants to cross; in code that is `SvGridEditPanel`'s
+`formSize`.
+
 ## Building one without writing it
 
 Everything below this line is authorable in the [visual designer](./app-designer.md).
@@ -122,17 +146,98 @@ field you span shows as spanned, a `textarea` is tall, a switch is small.
   section** group, because that is exactly where the form puts them.
 - **Sections** take a title, a line of guidance, and their own column count.
   Hover one for its tools: columns, **Rule** (show the whole section only when a
-  condition holds), reorder, and remove - which removes the heading only, never
-  the fields under it. On an unarranged form, **Group these for me** proposes a
-  grouping from the field names; it only appears when there is a real grouping to
-  make.
+  condition holds), **Fold**, reorder, and remove - which removes the heading
+  only, never the fields under it. On an unarranged form, **Group these for me**
+  proposes a grouping from the field names; it only appears when there is a real
+  grouping to make.
 - **Click a field** and the right pane fills, in two tabs. **Field**: label,
-  control, placeholder, help text, span the full row, always required, and
-  *Remove from this form* (the field keeps its grid column). **Rules**: the
-  *Shown when* / *Required when* / *Locked when* conditions plus the cross-field
-  checks that blame this field - the same `validations` rules, edited here because
-  they are form logic. The tab carries a count, and so does the field on the
-  canvas.
+  control, an `enum`'s choices, default value, placeholder, help text, span the
+  full row, always required, and *Remove from this form*. Controls that need more
+  say so - a mask gets its pattern, a number or slider gets its range, step,
+  decimals and affixes - and nothing else is shown, so picking a control never
+  leaves you with nowhere to configure it. **Rules**: the *Shown when* /
+  *Required when* / *Locked when* conditions plus the cross-field checks that
+  blame this field - the same `validations` rules, edited here because they are
+  form logic. The tab carries a count, and so does the field on the canvas.
+- **Ctrl-click** adds a field to the selection and **Shift-click** takes a range
+  within one lane; dragging any of them moves the whole set together, as does
+  ↑ / ↓. With more than one selected the right pane offers what is genuinely
+  bulk - move them all to a section, or remove them all - because the Field and
+  Rules editors are single-field by nature. Escape drops back to one.
+- **+ Add field** builds a form from nothing without leaving for the schema
+  inspector. Name and type up front; a name already on the entity is refused.
+  Each section has its own **+ Field** that drops straight into it.
+- **Remove from this form is reversible.** Removed fields collect in a **Hidden
+  from this form** tray under the canvas, and *Restore* puts one back where it
+  was - removing never edited the section, only the field's visibility.
+- **Show rules** (on whenever the form has any) plays the conditions against the
+  sample record right on the canvas: a field a rule hides goes dim with a
+  *hidden* badge, a locked one gets a padlock, and a rule-required one gets the
+  asterisk. Dimmed fields stay selectable and draggable - you are arranging the
+  design, not the record. **Existing** / **New** switches which record you are
+  simulating.
+- **Width** draws the form at the size it will really have. The window itself
+  drags by its header, resizes from its corner, and maximizes on a double-click.
+
+### Folding a long form
+
+**Fold** on a section cycles through three states: not foldable, foldable, and
+foldable-and-starts-folded. A foldable section's heading becomes a disclosure
+button carrying a count, so a long form opens at a readable length instead of a
+wall of inputs.
+
+Folding is a **display state, not a condition**. The fields are still filled in
+and still validated - use `visibleWhen` when you actually want them gone. If a
+folded section holds an error the form opens it, so a rejected submit can never
+point at something the user cannot see.
+
+Server-rendered screens get the same thing as a native `<details>`, so it folds
+with JavaScript off, and a section that starts folded opens itself when the
+server sends back an error for one of its fields.
+
+```ts
+sections: [
+  { title: 'Contact', fields: ['name', 'email'] },
+  { title: 'Billing', fields: ['vatNumber', 'poNumber'], collapsible: true, collapsed: true },
+]
+```
+
+### Asking one step at a time
+
+`form.steps` turns the sections into a wizard - **Ask one step at a time** in the
+builder. Each section is a step, so the sections *are* the design; there is no
+second list to keep in sync.
+
+```ts
+form: {
+  steps: true,
+  sections: [
+    { title: 'Who', fields: ['name', 'email'] },
+    { title: 'Company', fields: ['company', 'role'] },
+    { title: 'Billing', fields: ['vatNumber'] },
+  ],
+}
+```
+
+Four things make it behave:
+
+- **Next validates only the step you are on**, so a long form fails early and
+  locally instead of dumping every error at the end. Back never validates -
+  going backwards is always allowed.
+- A section hidden by `visibleWhen` is **skipped**, so the step count follows the
+  answers rather than showing an empty step.
+- Fields in no section **join the last step** rather than becoming an untitled
+  one of their own. Every step should be deliberate.
+- A submit that fails on an earlier step **jumps back to it**, so the focus never
+  lands off-screen.
+
+One section is a page, not a one-step wizard, and `collapsible` is ignored while
+stepping - a step is already one group at a time.
+
+**Server-rendered screens render the steps as ordinary sections.** Stepping
+through a `<form>` without JavaScript would mean a round-trip per step and
+somewhere to hold the half-finished record. The server validates everything
+either way.
 
 **Try it** swaps the canvas for the live edit panel, so you can type into the form
 and watch a condition fire. Toggle **Existing** / **New**: the values differ, so

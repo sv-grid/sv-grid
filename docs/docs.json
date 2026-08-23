@@ -2545,7 +2545,7 @@
       "path": "help/mcp-server.md",
       "url": "/docs/help/mcp-server/",
       "title": "MCP server",
-      "summary": "The sv-grid MCP server lets AI clients (Claude Desktop, Cursor, Zed, Continue, custom agents) query the documentation, scaffold column definitions, and preview exports - all grounded in the same schemas the library ships with. No API key required; everything runs locally against your installed copy.",
+      "summary": "The SvGrid MCP server lets AI clients (Claude Code, Claude Desktop, Cursor, Zed, Codex, custom agents) query the documentation, read real demo source, and scaffold SvelteKit CRUD apps - all grounded in the files this repository ships. No API key required; everything runs locally over stdio.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",

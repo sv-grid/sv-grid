@@ -44,6 +44,7 @@
     orientation = 'horizontal',
     name,
     ariaLabel,
+    block = false,
     invalid = false,
     required = false,
     error,
@@ -109,7 +110,7 @@
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
 <div
-  class="sv-slider sv-slider--{orientation} sv-slider--{size}"
+  class="sv-slider sv-slider--{orientation} sv-slider--{size}" class:is-block={block}
   class:is-disabled={disabled}
   class:is-readonly={readonly}
   dir={resolvedDir}
@@ -197,4 +198,6 @@
   .sv-slider__tick { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: var(--sg-muted, #94a3b8); }
   .sv-slider--horizontal .sv-slider__tick { inset-inline-start: var(--p); top: 50%; transform: translate(-50%, -50%); }
   .sv-slider--vertical .sv-slider__tick { bottom: var(--p); left: 50%; transform: translate(-50%, 50%); }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-slider--horizontal.is-block { width: 100%; max-width: 100%; }
 </style>
