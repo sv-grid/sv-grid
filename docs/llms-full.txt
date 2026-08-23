@@ -2470,8 +2470,11 @@ Row selection, Cell range selection, Striped rows, Totals footer row, Density),
 **Paging** (Paginate on / off, Page size, **Pager position** - bottom / top / both,
 and the **Page size options** for the selector), and per-**Column** settings -
 expand a column to set its **header**, **width**, **alignment**, **pin** (left /
-right), plus show / hide + reorder. There is no standalone "Edit form" block - the
-grid owns editing end to end.
+right), plus show / hide + reorder.
+
+**Editing an existing record is a grid property**, not a block - the grid owns it
+end to end. The one thing a grid cannot give you is a form with no grid behind
+it, which is what the **Form** block is for (see below).
 
 ### Form builder
 
@@ -2516,6 +2519,7 @@ views, not generic widgets:
 
 | Block | What it renders | Inspector |
 | --- | --- | --- |
+| **Form** | A standalone **create** form (`SvGridEditPanel`, inline and blank) - a "New ticket" page, an intake screen. Its fields, sections and rules come from the entity, so a form you designed once renders the same anywhere. | Heading, submit label, and what happens after saving: blank it for another entry, or go to a screen. Plus **Open form builder**. |
 | **Chart** | A chart (`SvSchemaChart`) - bar, pie, line, area, radar, funnel, waterfall, or treemap. | Group-by dimension, measure, reduce, type. |
 | **Pivot** | A full pivot table (`SvPivotDesigner`) the end user can re-pivot live. | Row + column dimensions (checkboxes), a measure, and its aggregate. |
 | **Dashboard** | A schema-driven KPI + chart board (`SvSchemaDashboard`). | - |
@@ -5007,6 +5011,30 @@ validations: [
 Operators: `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `required`, `minLen`, `maxLen`.
 Use `compareTo` to compare against another field instead of a fixed `value`.
 
+## Where a form comes from
+
+Three places, and which one you want depends on the record:
+
+| You want to | Use |
+| --- | --- |
+| Edit an existing row from a list | A **grid** with **Editing mode: Popup form**. Double-click a row. |
+| Edit whichever row is selected on the screen | A **record panel** with editing on - inline, drawer, or modal. |
+| Create a new record, with no grid behind it | A **Form** block, dragged from the Components rail. |
+
+All three render the same `SvGridEditPanel` against the same `EntitySchema.form`,
+so a form designed once looks the same in every one of them.
+
+The **Form** block is create-only by design. It is blank on load, submits, and
+creates a row; after saving it either blanks itself for the next entry (the
+default, with a "Saved" confirmation) or opens another screen. Give it a heading
+and a submit label in the inspector - "Report a problem" / "Send it" reads better
+than "New Ticket" / "Create" on a page somebody was sent to.
+
+An inline form **fills whatever it is placed in**, so a form block is as wide as
+its block. Set the block's **Width** to *Narrow* or *Wide* when a full-width form
+is more than a reader wants to cross; in code that is `SvGridEditPanel`'s
+`formSize`.
+
 ## Building one without writing it
 
 Everything below this line is authorable in the [visual designer](./app-designer.md).
@@ -5026,17 +5054,98 @@ field you span shows as spanned, a `textarea` is tall, a switch is small.
   section** group, because that is exactly where the form puts them.
 - **Sections** take a title, a line of guidance, and their own column count.
   Hover one for its tools: columns, **Rule** (show the whole section only when a
-  condition holds), reorder, and remove - which removes the heading only, never
-  the fields under it. On an unarranged form, **Group these for me** proposes a
-  grouping from the field names; it only appears when there is a real grouping to
-  make.
+  condition holds), **Fold**, reorder, and remove - which removes the heading
+  only, never the fields under it. On an unarranged form, **Group these for me**
+  proposes a grouping from the field names; it only appears when there is a real
+  grouping to make.
 - **Click a field** and the right pane fills, in two tabs. **Field**: label,
-  control, placeholder, help text, span the full row, always required, and
-  *Remove from this form* (the field keeps its grid column). **Rules**: the
-  *Shown when* / *Required when* / *Locked when* conditions plus the cross-field
-  checks that blame this field - the same `validations` rules, edited here because
-  they are form logic. The tab carries a count, and so does the field on the
-  canvas.
+  control, an `enum`'s choices, default value, placeholder, help text, span the
+  full row, always required, and *Remove from this form*. Controls that need more
+  say so - a mask gets its pattern, a number or slider gets its range, step,
+  decimals and affixes - and nothing else is shown, so picking a control never
+  leaves you with nowhere to configure it. **Rules**: the *Shown when* /
+  *Required when* / *Locked when* conditions plus the cross-field checks that
+  blame this field - the same `validations` rules, edited here because they are
+  form logic. The tab carries a count, and so does the field on the canvas.
+- **Ctrl-click** adds a field to the selection and **Shift-click** takes a range
+  within one lane; dragging any of them moves the whole set together, as does
+  ↑ / ↓. With more than one selected the right pane offers what is genuinely
+  bulk - move them all to a section, or remove them all - because the Field and
+  Rules editors are single-field by nature. Escape drops back to one.
+- **+ Add field** builds a form from nothing without leaving for the schema
+  inspector. Name and type up front; a name already on the entity is refused.
+  Each section has its own **+ Field** that drops straight into it.
+- **Remove from this form is reversible.** Removed fields collect in a **Hidden
+  from this form** tray under the canvas, and *Restore* puts one back where it
+  was - removing never edited the section, only the field's visibility.
+- **Show rules** (on whenever the form has any) plays the conditions against the
+  sample record right on the canvas: a field a rule hides goes dim with a
+  *hidden* badge, a locked one gets a padlock, and a rule-required one gets the
+  asterisk. Dimmed fields stay selectable and draggable - you are arranging the
+  design, not the record. **Existing** / **New** switches which record you are
+  simulating.
+- **Width** draws the form at the size it will really have. The window itself
+  drags by its header, resizes from its corner, and maximizes on a double-click.
+
+### Folding a long form
+
+**Fold** on a section cycles through three states: not foldable, foldable, and
+foldable-and-starts-folded. A foldable section's heading becomes a disclosure
+button carrying a count, so a long form opens at a readable length instead of a
+wall of inputs.
+
+Folding is a **display state, not a condition**. The fields are still filled in
+and still validated - use `visibleWhen` when you actually want them gone. If a
+folded section holds an error the form opens it, so a rejected submit can never
+point at something the user cannot see.
+
+Server-rendered screens get the same thing as a native `<details>`, so it folds
+with JavaScript off, and a section that starts folded opens itself when the
+server sends back an error for one of its fields.
+
+```ts
+sections: [
+  { title: 'Contact', fields: ['name', 'email'] },
+  { title: 'Billing', fields: ['vatNumber', 'poNumber'], collapsible: true, collapsed: true },
+]
+```
+
+### Asking one step at a time
+
+`form.steps` turns the sections into a wizard - **Ask one step at a time** in the
+builder. Each section is a step, so the sections *are* the design; there is no
+second list to keep in sync.
+
+```ts
+form: {
+  steps: true,
+  sections: [
+    { title: 'Who', fields: ['name', 'email'] },
+    { title: 'Company', fields: ['company', 'role'] },
+    { title: 'Billing', fields: ['vatNumber'] },
+  ],
+}
+```
+
+Four things make it behave:
+
+- **Next validates only the step you are on**, so a long form fails early and
+  locally instead of dumping every error at the end. Back never validates -
+  going backwards is always allowed.
+- A section hidden by `visibleWhen` is **skipped**, so the step count follows the
+  answers rather than showing an empty step.
+- Fields in no section **join the last step** rather than becoming an untitled
+  one of their own. Every step should be deliberate.
+- A submit that fails on an earlier step **jumps back to it**, so the focus never
+  lands off-screen.
+
+One section is a page, not a one-step wizard, and `collapsible` is ignored while
+stepping - a step is already one group at a time.
+
+**Server-rendered screens render the steps as ordinary sections.** Stepping
+through a `<form>` without JavaScript would mean a round-trip per step and
+somewhere to hold the half-finished record. The server validates everything
+either way.
 
 **Try it** swaps the canvas for the live edit panel, so you can type into the form
 and watch a condition fire. Toggle **Existing** / **New**: the values differ, so
@@ -12310,7 +12419,7 @@ model choice, routing, and what data leaves the browser.
 | --- | --- | --- |
 | **Who invokes it** | your end users | you and your coding agent |
 | **What it does** | filter / fill / summarise / classify / export the live grid | scaffold columns, generate CRUD screens, answer API questions |
-| **Package** | `@svgrid/enterprise` (`api.ai.*`) | `@sv-grid/mcp-server`, `@svgrid/mcp`, grounding files |
+| **Package** | `@svgrid/enterprise` (`api.ai.*`) | `@svgrid/mcp`, grounding files |
 | **Needs a model key** | yes - the one you register | no - your agent brings its own |
 | **Deep dive** | [AI assistant](./ai.md) | [MCP server](./mcp-server.md) · [LLM grounding](./llm-grounding.md) |
 
@@ -12476,20 +12585,19 @@ an API from its training cutoff. No API key, all local.
 ```json
 {
   "mcpServers": {
-    "sv-grid": { "command": "npx", "args": ["-y", "@sv-grid/mcp-server"] }
+    "svgrid": { "command": "npx", "args": ["-y", "@svgrid/mcp"] }
   }
 }
 ```
 
-It registers callable tools - `searchDocs`, `getDocPage`, `scaffoldColumns`
-(sample row -> `ColumnDef[]`), `validateColumns`, `previewExport`,
-`listDemos` - plus read-only resources (the docs manifest and JSON Schemas)
-and pre-built prompts (`/svgrid:scaffold-grid`, `/svgrid:refactor-to-pivot`,
-`/svgrid:wire-server-side`).
+It registers callable tools - `list_examples`, `get_example_source`,
+`list_docs`, `get_doc`, `search_docs`, and `get_api_reference` - so the
+agent reads real demo source and current docs instead of guessing.
 
 For **Studio** (turning a database or schema into a CRUD data-app), the
-separate [`@svgrid/mcp`](../enterprise/studio/ai-generation.md) server adds
-`introspect_source` and `scaffold_entity`. The generated screen is run
+[same server](../enterprise/studio/ai-generation.md) adds
+`introspect_source`, `scaffold_entity`, and 27 `studio_*` project-model
+tools. The generated screen is run
 through the Svelte compiler before it comes back, and each file carries
 `svgrid:managed` markers so a re-generation updates the managed regions and
 leaves your hand-written code untouched.
@@ -12556,8 +12664,8 @@ data within a boundary before it reaches a provider.
 | `mockAIProvider` | `@svgrid/enterprise` | Deterministic canned provider for demos and tests. |
 | `type AIProvider` | `@svgrid/enterprise` | `(req: AIRequest) => Promise<string>` - the one function you implement. |
 | `api.ai.filter` / `smartFill` / `summarize` / `classify` / `export` / `findAnomalies` | `@svgrid/enterprise` | The in-grid helpers, added by `installEnterprise(api)`. |
-| `scaffoldColumns`, `validateColumns`, `previewExport`, ... | `@sv-grid/mcp-server` | Build-time MCP tools your coding agent calls. |
-| `introspect_source`, `scaffold_entity` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen). |
+| `search_docs`, `get_doc`, `list_examples`, `get_example_source`, `get_api_reference`, `list_docs` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls. |
+| `introspect_source`, `scaffold_entity`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). |
 
 Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../reference/auto/svgrid-enterprise-ai.md).
 
@@ -22281,9 +22389,9 @@ on demand, and it can answer any sv-grid question with current data.
 
 If your workflow centers on Claude Desktop / Cursor / Zed, the
 [MCP server](./mcp-server.md) is the single line of config that
-exposes all four files PLUS callable tools (`scaffoldColumns`,
-`validateColumns`, `previewExport`). Skip Recipes 1-3 and use the
-MCP server instead.
+exposes the same grounding PLUS callable tools (`search_docs`,
+`get_doc`, `get_example_source`, `get_api_reference`, and the SvGrid
+Studio generators). Skip Recipes 1-3 and use the MCP server instead.
 
 ## What's IN the grounding files
 
@@ -22328,31 +22436,53 @@ origin (rejected if the major changes; we serve a 410).
 
 # MCP server
 
-The sv-grid MCP server lets AI clients (Claude Desktop, Cursor, Zed,
-Continue, custom agents) query the documentation, scaffold column
-definitions, and preview exports - all grounded in the same schemas
-the library ships with. No API key required; everything runs locally
-against your installed copy.
+The SvGrid MCP server lets AI clients (Claude Code, Claude Desktop,
+Cursor, Zed, Codex, custom agents) query the documentation, read real
+demo source, and scaffold SvelteKit CRUD apps - all grounded in the
+files this repository ships. No API key required; everything runs
+locally over stdio.
 
 ![An AI coding agent calls the @svgrid/mcp server over the Model Context Protocol, which runs grid tools and returns structured JSON results back to the agent.](/docs-media/grid-mcp.svg)
 
 > **What is MCP?** Model Context Protocol is the open standard
 > ([modelcontextprotocol.io](https://modelcontextprotocol.io)) for
-> exposing tools / resources / prompts to LLM clients. sv-grid ships an
-> MCP server out of the box so the model your team already uses can
-> "see" the grid without you having to copy-paste docs into prompts.
+> exposing tools to LLM clients. SvGrid ships an MCP server so the
+> model your team already uses can "see" the grid without you having
+> to copy-paste docs into prompts.
+
+The package is [`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp)
+on npm, and it is listed in the official MCP registry as
+`com.svgrid/svgrid`.
 
 ## Install
 
+No install step is required - `npx` fetches it on demand:
+
 ```bash
-# Inside any project that already depends on @svgrid/grid
-pnpm add -D @sv-grid/mcp-server
+# One-shot, from any project
+npx -y @svgrid/mcp
 ```
 
-The server is a Node binary. Run it on demand from the package's
-`bin` field - no daemon to maintain.
+To pin it as a dev dependency instead:
+
+```bash
+pnpm add -D @svgrid/mcp
+```
+
+The server is a Node binary (`svgrid-mcp`) that speaks MCP over stdio.
+There is no daemon to maintain.
 
 ## Wire it into your AI client
+
+### Claude Code
+
+One command:
+
+```bash
+claude mcp add svgrid -- npx -y @svgrid/mcp
+```
+
+Then run `/mcp` in a session and you will see `svgrid` listed.
 
 ### Claude Desktop
 
@@ -22362,23 +22492,23 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "sv-grid": {
+    "svgrid": {
       "command": "npx",
-      "args": ["-y", "@sv-grid/mcp-server"]
+      "args": ["-y", "@svgrid/mcp"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. Type `@sv-grid` in any chat to confirm the
-tools are exposed.
+Restart Claude Desktop, then ask *"using svgrid, build me a grid that
+groups by department"* to confirm the tools are exposed.
 
 ### Cursor
 
-`Settings → MCP → Add new MCP server`:
+`Settings -> MCP -> Add new MCP server`:
 
 ```json
-{ "command": "npx", "args": ["-y", "@sv-grid/mcp-server"] }
+{ "command": "npx", "args": ["-y", "@svgrid/mcp"] }
 ```
 
 ### Zed
@@ -22388,142 +22518,181 @@ tools are exposed.
 ```json
 {
   "context_servers": {
-    "sv-grid": { "command": { "path": "npx", "args": ["-y", "@sv-grid/mcp-server"] } }
+    "svgrid": { "command": { "path": "npx", "args": ["-y", "@svgrid/mcp"] } }
   }
 }
 ```
 
 ### Custom agents (OpenAI Agents SDK, Anthropic SDK, LangChain)
 
-Point your client's MCP transport at:
+Point your client's MCP stdio transport at:
 
 ```
-npx -y @sv-grid/mcp-server
+npx -y @svgrid/mcp
 ```
 
 Any client that speaks MCP stdio works.
 
 ## Tools exposed
 
-The server registers six tools. All return structured JSON; none
-require an API key or network access.
+The server registers 35 tools: 8 for documentation, examples, and
+scaffolding, plus 27 `studio_*` tools that drive the SvGrid Studio
+project model. All run locally; none require an API key or a network
+call.
 
-### `searchDocs`
+### Documentation and examples
 
-Ground the model in the doc set without dumping the whole corpus.
+These six are free and need no license key.
 
-```ts
-searchDocs({ query: string, limit?: number }):
-  Array<{ path, title, summary, score, snippet }>
-```
+#### `list_examples`
 
-Backed by the same `docs.json` manifest you can fetch directly.
-
-### `getDocPage`
-
-Pull the full markdown of one page by URL or path.
+List every demo with `id`, `title`, and a one-line blurb. Use it to
+discover what exists before fetching source.
 
 ```ts
-getDocPage({ path: '/help/pivot.md' }): { title, source, demoIds }
+list_examples(): Array<{ id, title, blurb, path }>
 ```
 
-### `scaffoldColumns`
+#### `get_example_source`
 
-Generate a `ColumnDef[]` from a sample row. Picks reasonable widths,
-inferred editor types, sensible header labels, and format options for
-numbers / currencies / ISO dates.
-
-```ts {nocheck}
-scaffoldColumns({
-  sampleRow: { id: 'r1', sellDate: '2026-05-12', price: 1499.99, currency: 'USD' },
-  inferFormat?: boolean,    // default true
-  language?: 'ts' | 'js',   // default 'ts'
-})
-// → { code: string, columns: ColumnDef[] }
-```
-
-### `validateColumns`
-
-Check a `ColumnDef[]` payload against `column-def.json`. Returns the
-list of issues with file / line hints (when the input is a code
-string). Useful for agents that generate columns and want a self-check
-before showing the result.
+Return the full `.svelte` source of one demo, verbatim, including
+imports - the same file a user would copy into a project.
 
 ```ts
-validateColumns({ columns: ColumnDef[] | string }):
-  { valid: boolean, issues: Array<{ path, message, severity }> }
+get_example_source({ id: '11-stock-market' }): string
 ```
 
-### `previewExport`
+#### `list_docs`
 
-Dry-run an `api.exportData({...})` call. Returns the rows + header
-layout the exporter WOULD write, without actually triggering a
-download. Useful when an agent is composing a multi-sheet export and
-wants to verify column ordering before committing.
+List every documentation page with slug and title. Slugs use forward
+slashes, for example `help/columns/column-definitions`.
 
 ```ts
-previewExport({ format: 'xlsx', rows: [...], columns: [...] }):
-  { sheets: Array<{ label, header, rows }> }
+list_docs(): Array<{ slug, title }>
 ```
 
-### `listDemos`
+#### `get_doc`
 
-Returns every demo in `examples/src/demos/` with its title, blurb,
-category, source path, and the prompt sidecar (see
-[LLM grounding](./llm-grounding.md)).
+Return the markdown of a single page by slug.
 
 ```ts
-listDemos({ category?: string }):
-  Array<{ id, title, blurb, category, source, prompt }>
+get_doc({ slug: 'getting-started' }): string
 ```
 
-## Resources exposed
+#### `search_docs`
 
-In addition to tools, the server exposes three MCP **resources** -
-read-only documents the client can browse:
+Case-insensitive substring search across all docs. Returns matching
+slugs with a one-line excerpt around the first hit.
 
-| URI                            | Content                                           |
-| ------------------------------ | ------------------------------------------------- |
-| `svgrid://docs/llms.txt`       | Topic map (see [llms.txt](/llms.txt))             |
-| `svgrid://docs/llms-full.txt`  | Concatenated full text of every doc              |
-| `svgrid://docs/manifest`       | `docs.json` route manifest                        |
-| `svgrid://schemas/column-def`  | JSON Schema for `ColumnDef`                       |
-| `svgrid://schemas/svgrid-options` | JSON Schema for `<SvGrid>` props              |
-| `svgrid://schemas/export-options` | JSON Schema for `api.exportData({...})`        |
+```ts
+search_docs({ query: 'row virtualization', limit?: 10 })
+```
 
-## Prompts exposed
+#### `get_api_reference`
 
-Pre-built MCP prompts you can invoke directly from a chat:
+The curated public-API surface, grouped by category (components,
+headless, scheduler, data ops, export, row models, features,
+virtualization, accessibility, utilities).
 
-- **`/svgrid:scaffold-grid`** - paste a sample row, get a complete
-  `<SvGrid>` + `tableFeatures` + `ColumnDef[]` setup
-- **`/svgrid:refactor-to-pivot`** - hand it a flat-grid component, get
-  a pivot-grid version
-- **`/svgrid:wire-server-side`** - convert client-side data to a
-  server-side adapter with sort / filter / paginate round-trips
+```ts
+get_api_reference(): string
+```
+
+### SvGrid Studio (commercial)
+
+These tools generate application code. They still run without a
+license key, but generated files are prefixed with a comment pointing
+at [pricing](https://svgrid.com/pricing/). Set `SVGRID_LICENSE_KEY` in
+the MCP server's environment for licensed use (see
+[Licensing](#licensing) below).
+
+#### `introspect_source`
+
+Infer a draft `EntitySchema` from a data source: either a Drizzle
+schema file (`kind: "drizzle"`, `source`: the file text) or sample
+rows (`kind: "json"`, `rows`, `name`). Review and refine the draft
+before scaffolding.
+
+```ts
+introspect_source({ kind: 'drizzle', source: '...' })
+introspect_source({ kind: 'json', rows: [...], name: 'orders' })
+```
+
+#### `scaffold_entity`
+
+Generate runnable SvelteKit files from an `EntitySchema`: the `$lib`
+schema module, a `+server.ts` API route using `createKitHandlers`, and
+a `+page.svelte` with `SvGrid` and `SvGridEditPanel`.
+
+```ts
+scaffold_entity({ schema, route?, apiRoute? }):
+  Array<{ path, contents, description }>
+```
+
+Generated bodies are wrapped in `svgrid:managed` markers, so
+regeneration preserves your edits outside them. After writing the
+files, run the project's own `svelte-check` or `tsc` to verify they
+compile.
+
+#### The `studio_*` tools
+
+27 tools let an agent build and edit the same validated project model
+the visual designer uses, then generate the app:
+
+| Area | Tools |
+| ---- | ----- |
+| Project | `studio_new_project`, `studio_load_project`, `studio_describe_project`, `studio_validate`, `studio_capabilities`, `studio_get_config`, `studio_generate_app` |
+| Entities | `studio_add_entity`, `studio_set_entity_source` |
+| Screens | `studio_add_screen`, `studio_update_screen`, `studio_remove_screen`, `studio_set_screen_layout` |
+| Blocks and components | `studio_add_block`, `studio_update_block`, `studio_move_block`, `studio_remove_block`, `studio_add_component` |
+| Forms | `studio_set_form_layout`, `studio_set_field_conditions` |
+| Platform | `studio_set_auth`, `studio_set_access`, `studio_set_tenancy`, `studio_set_data_layer`, `studio_set_deploy_target`, `studio_set_theme`, `studio_set_job` |
+
+Call `studio_capabilities` first: it reports exactly what the
+installed version supports, so the agent does not have to guess.
+
+## Licensing
+
+The documentation and example tools are free. The Studio code
+generators are part of the commercial offering: they run unlicensed,
+but prepend a notice comment to generated files. To license them, set
+the key in your MCP client's server config:
+
+```json
+{
+  "mcpServers": {
+    "svgrid": {
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"],
+      "env": { "SVGRID_LICENSE_KEY": "SVENTERPRISE-..." }
+    }
+  }
+}
+```
 
 ## Verifying it works
 
 After wiring the server, ask your model: *"What MCP tools do you have
-from sv-grid?"* You should see all six tools listed. If not, check
-your client's MCP log; the most common issue is `npx` not being on
-PATH (use the absolute path to the binary instead).
+from svgrid?"* You should see the documentation tools and the
+`studio_*` set. If not, check your client's MCP log; the most common
+issue is `npx` not being on PATH (use the absolute path to the binary
+instead).
 
 ## Security model
 
-- The server runs **locally**. No telemetry, no outbound network calls.
-- File reads are scoped to your project's `node_modules/@sv-grid/*`
-  and any `docs/` folder you explicitly pass via the `--docs <dir>` flag.
-- `scaffoldColumns` and `previewExport` are pure functions - they
-  inspect input and emit text. They never write to disk or fetch from
-  the network.
+- The server runs **locally** over stdio. No telemetry, no outbound
+  network calls, no API key.
+- It serves a documentation and example corpus bundled into the
+  package at build time, so answers are pinned to the version you
+  installed.
+- The Studio tools return generated files as data. Writing them to
+  disk is your client's decision, not the server's.
 - See [security](./security.md) for the general supply-chain posture.
 
 ## Building your own MCP integrations
 
-The same `docs.json` + JSON Schemas + `llms.txt` files the server uses
-are also accessible directly from your docs site
-([https://svgrid.com](https://svgrid.com)):
+The same docs manifest, JSON Schemas, and `llms.txt` files are also
+served directly from the docs site:
 
 ```ts
 const docs    = await fetch('https://svgrid.com/docs.json').then((r) => r.json())
@@ -22531,8 +22700,8 @@ const schemas = await fetch('https://svgrid.com/schemas/index.json').then((r) =>
 const llms    = await fetch('https://svgrid.com/llms-full.txt').then((r) => r.text())
 ```
 
-If you don't want to run the MCP server, building these into your
-agent's system prompt gives ~80% of the same value.
+If you do not want to run the MCP server, building these into your
+agent's system prompt gives most of the same grounding.
 
 ## See also
 
@@ -22542,23 +22711,25 @@ agent's system prompt gives ~80% of the same value.
 
 ## Frequently asked questions
 
-### What is the sv-grid MCP server?
+### What is the SvGrid MCP server?
 
-A Model Context Protocol server that lets AI clients (Claude Desktop, Cursor,
-Zed, Continue, custom agents) query SvGrid's documentation, scaffold column
-definitions, and preview exports - all grounded in the schemas the library
-ships with, so the model answers from current facts instead of guessing.
+A Model Context Protocol server that lets AI clients (Claude Code, Claude
+Desktop, Cursor, Zed, custom agents) query SvGrid's documentation, read real
+demo source, and scaffold SvelteKit CRUD apps - grounded in the files the
+package ships, so the model answers from current facts instead of guessing.
 
 ### Do I need an API key to run it?
 
-No. The MCP server runs locally against your installed copy of SvGrid. There is
-no key and no external call.
+No. The MCP server runs locally over stdio. There is no key and no external
+call. A `SVGRID_LICENSE_KEY` is optional and only affects the commercial
+Studio code generators.
 
 ### How does it help AI assistants write better SvGrid code?
 
-It exposes example sources, the docs, and the API reference as MCP tools, so the
-assistant retrieves accurate, version-pinned answers rather than hallucinating
-an API from training data.
+It exposes example sources, the docs, and the API reference as MCP tools, so
+the assistant retrieves accurate, version-pinned answers rather than
+hallucinating an API from training data. That matters most for Svelte 5, where
+models routinely mix in outdated Svelte 4 syntax.
 
 <!-- =================================================================
      /docs/help/migrating-from-ag-grid/  (community)

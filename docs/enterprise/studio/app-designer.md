@@ -159,8 +159,11 @@ Row selection, Cell range selection, Striped rows, Totals footer row, Density),
 **Paging** (Paginate on / off, Page size, **Pager position** - bottom / top / both,
 and the **Page size options** for the selector), and per-**Column** settings -
 expand a column to set its **header**, **width**, **alignment**, **pin** (left /
-right), plus show / hide + reorder. There is no standalone "Edit form" block - the
-grid owns editing end to end.
+right), plus show / hide + reorder.
+
+**Editing an existing record is a grid property**, not a block - the grid owns it
+end to end. The one thing a grid cannot give you is a form with no grid behind
+it, which is what the **Form** block is for (see below).
 
 ### Form builder
 
@@ -205,6 +208,7 @@ views, not generic widgets:
 
 | Block | What it renders | Inspector |
 | --- | --- | --- |
+| **Form** | A standalone **create** form (`SvGridEditPanel`, inline and blank) - a "New ticket" page, an intake screen. Its fields, sections and rules come from the entity, so a form you designed once renders the same anywhere. | Heading, submit label, and what happens after saving: blank it for another entry, or go to a screen. Plus **Open form builder**. |
 | **Chart** | A chart (`SvSchemaChart`) - bar, pie, line, area, radar, funnel, waterfall, or treemap. | Group-by dimension, measure, reduce, type. |
 | **Pivot** | A full pivot table (`SvPivotDesigner`) the end user can re-pivot live. | Row + column dimensions (checkboxes), a measure, and its aggregate. |
 | **Dashboard** | A schema-driven KPI + chart board (`SvSchemaDashboard`). | - |

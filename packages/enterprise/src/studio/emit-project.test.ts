@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setJob, setTenancy, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
+import { addBlock, addScreen, blockPalette, validateProject, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setJob, setTenancy, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { crudAppFromSchemas } from './screen-suites'
@@ -3311,6 +3311,97 @@ describe('code companion (design + your own code)', () => {
     // brushing the default 5s budget under full-suite parallel load; every grid
     // API added since made that worse. Give the compile room.
   }, 30_000)
+
+  describe('standalone Form block', () => {
+    /** A screen holding one Form block and nothing else. */
+    const formScreen = (config: Record<string, unknown> = {}) => {
+      let p = createProject([customers])
+      p = addScreen(p, 'customers')
+      const sid = p.screens[1]!.id
+      for (const b of [...p.screens[1]!.blocks]) p = removeBlock(p, sid, b.id)
+      p = addBlock(p, sid, 'form')
+      const bid = p.screens.find((s) => s.id === sid)!.blocks[0]!.id
+      if (Object.keys(config).length) p = updateBlock(p, sid, bid, { config: config as never })
+      return { p, sid, bid, route: p.screens.find((s) => s.id === sid)!.route }
+    }
+
+    it('is offered in the palette and starts as an inline create form', () => {
+      expect(blockPalette.some((x) => x.kind === 'form')).toBe(true)
+      const { p, sid } = formScreen()
+      expect(p.screens.find((s) => s.id === sid)!.blocks[0]!.config)
+        .toMatchObject({ kind: 'form', presentation: 'inline', afterSave: 'reset' })
+    })
+
+    it('emits a blank panel that creates a row, and compiles', () => {
+      const { p, route } = formScreen({ title: 'Add a customer', submitLabel: 'Add' })
+      const page = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/+page.svelte`)!.contents
+      expect(page).toContain('row={null}')
+      expect(page).toContain('presentation="inline"')
+      expect(page).toContain("title={'Add a customer'}")
+      expect(page).toContain("submitLabel={'Add'}")
+      expect(page).toContain('onSubmit={createRecord}')
+      // It must actually write a row, not just look like a form.
+      expect(page).toMatch(/async function createRecord[\s\S]*controller\.createRow\(/)
+      // Keyed on the save counter so a create blanks the fields for the next entry.
+      expect(page).toContain('{#key formSaves}')
+      expect(page).toContain('formSaves += 1')
+      expect(() => compile(page, { filename: 'p.svelte', generate: 'client' })).not.toThrow()
+    }, 30_000)
+
+    it('fills its block unless a width is chosen', () => {
+      // Inline forms are responsive now, so only a real choice is emitted.
+      const wide = formScreen({ width: 'lg' })
+      const page = emitStudioProject(wide.p).find((f) => f.path === `src/routes/${wide.route}/+page.svelte`)!.contents
+      expect(page).toContain("formSize='lg'")
+      const plain = formScreen({ width: 'md' })
+      const dflt = emitStudioProject(plain.p).find((f) => f.path === `src/routes/${plain.route}/+page.svelte`)!.contents
+      expect(dflt).not.toContain('formSize')
+    })
+
+    it('does not drag in the grid’s edit-an-existing-row modal', () => {
+      const { p, route } = formScreen()
+      const page = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/+page.svelte`)!.contents
+      // `editing` + save() belong to a grid opening a popup for a selected row.
+      expect(page).not.toContain('let editing = $state')
+      expect(page).not.toContain('async function save(')
+    })
+
+    it('navigates after saving when told to, and confirms in place otherwise', () => {
+      const target = createProject([customers]).screens[0]!.id
+      const { p, route } = formScreen({ afterSave: 'navigate', navigateTo: target })
+      const page = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/+page.svelte`)!.contents
+      expect(page).toContain("import { goto } from '$app/navigation'")
+      expect(page).toMatch(/formSaves \+= 1\n\s+await goto\('\//)
+      // Navigating away IS the confirmation, so no banner.
+      expect(page).not.toContain('st-form__done')
+
+      const stay = emitStudioProject(formScreen().p).find((f) => f.path.endsWith(`${route}/+page.svelte`))!.contents
+      expect(stay).toContain('st-form__done')
+      expect(stay).not.toContain("import { goto } from '$app/navigation'")
+    })
+
+    it('follows the entity’s own form layout, so a built form looks the same here', () => {
+      const withLayout: EntitySchema = { ...customers, form: { columns: 3, sections: [{ title: 'Billing', fields: ['tier', 'mrr'] }] } }
+      let p = createProject([withLayout])
+      const sid = p.screens[0]!.id
+      for (const b of [...p.screens[0]!.blocks]) p = removeBlock(p, sid, b.id)
+      p = addBlock(p, sid, 'form')
+      const route = p.screens.find((s) => s.id === sid)!.route
+      const page = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/+page.svelte`)!.contents
+      // The panel reads EntitySchema.form itself - the block passes no override,
+      // which is the point: design the form once, place it anywhere.
+      expect(page).not.toContain('sections={')
+      expect(page).toContain('onSubmit={createRecord}')
+    })
+
+    it('flags a dead end rather than generating a form that appears to do nothing', () => {
+      const noTarget = formScreen({ afterSave: 'navigate' }).p
+      expect(validateProject(noTarget).map((i) => i.message).join(' ')).toMatch(/no screen is chosen/)
+      const ghost = formScreen({ afterSave: 'navigate', navigateTo: 'nope' }).p
+      const issue = validateProject(ghost).find((i) => /missing screen/.test(i.message))!
+      expect(issue.level).toBe('error')
+    })
+  })
 
   it('onDestroy is a first-class slot in handlers.ts + page-context manifest', () => {
     let p = createProject([customers])
