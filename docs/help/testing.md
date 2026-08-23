@@ -206,8 +206,9 @@ test('a11y: quick-start grid', async ({ page }) => {
 })
 ```
 
-The grid passes axe's WCAG 2.1 AA rules at the default theme; if your
-custom theme breaks contrast, this test fails immediately.
+The default theme is built to clear axe's WCAG 2.1 AA rules, and this is
+the test to prove it in your own build. If your custom theme breaks
+contrast, it fails immediately.
 
 ## Visual regression
 

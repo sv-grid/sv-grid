@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-22 from 362 pages.
+Generated 2026-08-23 from 362 pages.
 
 <!-- =================================================================
      /docs/brand/company-description/  (community)
@@ -852,12 +852,11 @@ responsibility ends and yours begins.
 
 1. **MIT licence** - vetted by your legal team once, valid forever
 2. **Public source code** - no obfuscation; your auditor can read every line
-3. **Published SBOM** - CycloneDX 1.5 generated per release; tracks every direct + transitive dep
-4. **Security disclosure policy** - email `support@jqwidgets.com`, GPG fingerprint published, response SLA documented in [security](../help/security.md)
-5. **Vulnerability history** - every CVE attributed to sv-grid published in the [changelog](../changelog.md) with disclosure date, fix version, mitigation
-6. **Deterministic builds** - reproducible `dist/` from a clean clone; the SHA-256 of each release artefact is published in the GitHub release notes
-7. **Code-review evidence** - every commit signed; every PR requires review from a CODEOWNER
-8. **Dependency review** - Renovate bot opens a PR within 24h of any upstream release; we review and tag
+3. **Zero runtime dependencies** - `@svgrid/grid`, `@svgrid/enterprise`, `@svgrid/grid-wc` and `@svgrid/ui` each declare no runtime dependencies, so there is no transitive tree to review. Verify with `npm view @svgrid/grid dependencies`. The two optional peers for Enterprise export (`jszip`, `pdfmake`, both MIT) are listed in [security](../help/security.md)
+4. **SBOM on request** - generate one against any installed version with `npx @cyclonedx/cdxgen -o sbom.json`; see [security](../help/security.md#sbom)
+5. **Security disclosure policy** - email `support@jqwidgets.com`, GPG fingerprint published, response SLA documented in [security](../help/security.md)
+6. **Vulnerability history** - every CVE attributed to sv-grid published in the [changelog](../changelog.md) with disclosure date, fix version, mitigation
+7. **npm provenance** - `@svgrid/grid` is published from CI with `--provenance`, so npm records a verifiable link from the tarball back to the building workflow and commit
 
 ## Common auditor questions
 
@@ -11735,9 +11734,9 @@ The grid can't know:
    sort, filter, edit, undo. If any action is unreachable, file an issue.
 2. **NVDA + VoiceOver.** Each makes different choices about announcement
    verbosity. Test both.
-3. **Lighthouse accessibility audit.** Default theme passes 100. If
-   your custom theme drops the score, the deltas are virtually always
-   contrast issues you control.
+3. **Lighthouse accessibility audit.** Run it against your own build. Most
+   deltas are contrast issues in your theme rather than grid markup, so
+   check those first.
 4. **axe-core in your e2e suite.**
    ```ts
    import { injectAxe, checkA11y } from 'axe-playwright'
@@ -16751,13 +16750,14 @@ depends on the framework you ship on and your budget.
 
 - You're on **React, Angular, or Vue**, not Svelte. SvGrid is
   Svelte-only.
-- You need **every grid feature shipped** out of the box: row drag,
-  master-detail with built-in API, range selection, status bar,
-  context menu, column tool panel, integrated charts (Enterprise),
-  Excel-native pivot UI (Enterprise), server-side row model
-  (Enterprise).
-- You need **enterprise commercial support** with SLAs. AG sells it;
-  SvGrid Enterprise support is best-effort.
+- You need **server-side pivoting**, or a push-based **viewport row model**
+  for a real-time trading blotter. SvGrid ships pivot, charts and a
+  server-side row model (sort / filter / group / infinite), but not those
+  two.
+- You need **pluggable custom filter components or custom tool panels**.
+  SvGrid's tool panel is a fixed Columns + Filters pair.
+- You want a vendor with **a decade of enterprise procurement paperwork**
+  already on file.
 
 ## When TanStack Table is the right choice
 
@@ -16789,14 +16789,16 @@ depends on the framework you ship on and your budget.
 | Column pinning (left/right)     | ✓                | ✓          | ✓                 | ✓                  | -              |
 | Fit-to-width with shrink        | ✓                | ✓          | partial           | ✓                  | -              |
 | WAI-ARIA grid pattern           | ✓                | ✓          | ✓                 | ✓                  | -              |
-| Server-side row model           | external mode    | external mode | -              | ✓ (built-in)       | external mode  |
+| Server-side row model           | ✓ (built-in)     | ✓ (built-in) | -              | ✓ (built-in)       | external mode  |
 | CSP-clean (no eval, no inline)  | ✓                | ✓          | ✓                 | ✓                  | n/a            |
 | Meaningful SSR markup           | ✓                | ✓          | -                 | -                  | depends on FW  |
 | Excel / PDF / CSV export        | -                | ✓          | -                 | ✓ (Enterprise)     | -              |
 | Excel / CSV import              | -                | ✓          | -                 | -                  | -              |
 | AI assistant                    | -                | ✓ (BYO provider) | -           | -                  | -              |
 | Pivot table                     | -                | ✓          | -                 | ✓                  | (custom)       |
-| Integrated charts               | -                | -          | -                 | ✓                  | -              |
+| Integrated charts               | ✓                | ✓          | -                 | ✓ (paid add-on)    | -              |
+| Runtime dependencies            | 0                | 0          | 2                 | 2                  | 1              |
+| Support response time           | GitHub (best-effort) | 1 business day; 1h sev-1 on Enterprise | GitHub (best-effort) | no number published | GitHub (best-effort) |
 | Theming via CSS variables       | ✓ (`--sg-*`)     | ✓          | ✓ (theme builder) | ✓                  | n/a            |
 | Source-button per demo          | ✓ (gallery)      | ✓          | -                 | -                  | -              |
 
@@ -22893,8 +22895,8 @@ is similar but not identical - see [Set filter](./filtering/set-filter.md).
 Be honest. Stay on AG Grid if you:
 
 - **Use multiple frameworks** - AG Grid has React, Angular, Vue, Solid, Qwik, vanilla adapters. SvGrid is Svelte-only.
-- **Use AG Grid's integrated charts** - those depend on AG Grid's chart engine; SvGrid has no equivalent.
-- **Depend on AG Grid pivoting** - not in SvGrid's roadmap.
+- **Need server-side pivoting or a push-based viewport row model** - SvGrid ships pivot, integrated charts and a server-side row model (sort / filter / group / infinite), but not those two.
+- **Need pluggable custom filter components or custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair.
 - **Are mid-project and shipping in <2 weeks** - the migration is a few hours per grid, but only do it when you have buffer.
 - **Have a Svelte 4 codebase you can't upgrade** - SvGrid requires Svelte 5 runes. (Consider [htmlelements.com](https://www.htmlelements.com) for vanilla / multi-framework.)
 
@@ -33867,8 +33869,9 @@ test('a11y: quick-start grid', async ({ page }) => {
 })
 ```
 
-The grid passes axe's WCAG 2.1 AA rules at the default theme; if your
-custom theme breaks contrast, this test fails immediately.
+The default theme is built to clear axe's WCAG 2.1 AA rules, and this is
+the test to prove it in your own build. If your custom theme breaks
+contrast, it fails immediately.
 
 ## Visual regression
 

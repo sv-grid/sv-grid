@@ -82,7 +82,11 @@ for (const dir of ORDER) {
 
   // --no-git-checks here because we already guarded the tree above; pnpm runs
   // this package's prepublishOnly/prepack build hook before packing.
+  // --provenance needs an OIDC token, which only exists inside a supported CI
+  // runner with `id-token: write`. Passing it from a laptop makes npm error out,
+  // so gate it on the runner rather than always sending it.
   const publishArgs = ['publish', '--access', 'public', '--no-git-checks']
+  if (process.env.GITHUB_ACTIONS === 'true') publishArgs.push('--provenance')
   if (otpArg) publishArgs.push(otpArg)
   const r = sh('pnpm', publishArgs, { cwd: join(ROOT, 'packages', dir), stdio: 'inherit' })
   if (r.status !== 0) {

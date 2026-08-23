@@ -35,9 +35,9 @@ this section answers each one directly.
 | Is the source code auditable?                     | **Yes.** MIT-licensed; published as readable source (no minified obfuscation).                   |
 | Where is data stored?                             | **In your app's memory.** Never on a sv-grid server. There is no sv-grid server. |
 | Is there a security disclosure policy?            | Yes - email `support@jqwidgets.com`. Patches typically ship within 7 days for high-severity issues. |
-| Is the library tested for accessibility?          | Yes - WAI-ARIA 1.2 grid pattern + axe-core in CI. See [accessibility](../help/accessibility.md). |
+| Is the library tested for accessibility?          | The WAI-ARIA 1.2 grid pattern is implemented and covered by unit tests over the ARIA prop builders. Rendered-DOM axe testing is a recipe we publish for your suite, not a check we run in ours. See [accessibility](../help/accessibility.md). |
 | Are dependencies vetted?                          | Yes - 0 runtime dependencies in `@svgrid/grid`. `@svgrid/enterprise` lazy-loads `jszip` + `pdfmake` as peers. See [security](../help/security.md) for the dep table. |
-| Is there an SBOM?                                 | Yes - `pnpm run sbom` emits CycloneDX 1.5. See [security](../help/security.md#sbom-generation). |
+| Is there an SBOM?                                 | Generate one for any installed version with `npx @cyclonedx/cdxgen -o sbom.json`. With 0 runtime dependencies the tree is shallow by construction. See [security](../help/security.md#sbom). |
 
 ## See also
 

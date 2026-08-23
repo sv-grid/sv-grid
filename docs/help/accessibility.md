@@ -164,9 +164,9 @@ The grid can't know:
    sort, filter, edit, undo. If any action is unreachable, file an issue.
 2. **NVDA + VoiceOver.** Each makes different choices about announcement
    verbosity. Test both.
-3. **Lighthouse accessibility audit.** Default theme passes 100. If
-   your custom theme drops the score, the deltas are virtually always
-   contrast issues you control.
+3. **Lighthouse accessibility audit.** Run it against your own build. Most
+   deltas are contrast issues in your theme rather than grid markup, so
+   check those first.
 4. **axe-core in your e2e suite.**
    ```ts
    import { injectAxe, checkA11y } from 'axe-playwright'

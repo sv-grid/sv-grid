@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-22T14:25:48.954Z",
+  "generatedAt": "2026-08-23T11:36:48.715Z",
   "counts": {
     "pages": 362,
     "enterprise": 55,
@@ -734,8 +734,8 @@
       "section": "compliance",
       "pillar": "company",
       "tier": "community",
-      "words": 643,
-      "lastUpdated": "2026-06-16",
+      "words": 661,
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -759,7 +759,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 1271,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -822,7 +822,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 1343,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -848,7 +848,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 3810,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -926,7 +926,7 @@
       "tier": "enterprise",
       "group": "Logic & generated code",
       "words": 1092,
-      "lastUpdated": "2026-08-21",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -939,7 +939,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 956,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1045,7 +1045,7 @@
       "tier": "enterprise",
       "group": "Screens & features",
       "words": 2297,
-      "lastUpdated": "2026-08-22",
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -1058,7 +1058,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 2730,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1097,7 +1097,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 1071,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1240,7 +1240,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 985,
-      "lastUpdated": "2026-08-20",
+      "lastUpdated": "2026-08-22",
       "demoIds": []
     },
     {
@@ -1517,8 +1517,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1393,
-      "lastUpdated": "2026-07-22",
+      "words": 1395,
+      "lastUpdated": "2026-08-23",
       "demoIds": [
         "17-accessibility"
       ]
@@ -1558,7 +1558,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2086,
-      "lastUpdated": "2026-08-19",
+      "lastUpdated": "2026-08-23",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -2034,8 +2034,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1536,
-      "lastUpdated": "2026-08-19",
+      "words": 1597,
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -2538,7 +2538,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 843,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -2550,7 +2550,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1079,
-      "lastUpdated": "2026-08-19",
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -2561,8 +2561,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2127,
-      "lastUpdated": "2026-08-19",
+      "words": 2151,
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -3375,8 +3375,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1297,
-      "lastUpdated": "2026-08-19",
+      "words": 1308,
+      "lastUpdated": "2026-08-23",
       "demoIds": [
         "02-sort-filter-paginate",
         "01-quick-start"

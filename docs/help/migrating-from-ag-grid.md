@@ -327,8 +327,8 @@ is similar but not identical - see [Set filter](./filtering/set-filter.md).
 Be honest. Stay on AG Grid if you:
 
 - **Use multiple frameworks** - AG Grid has React, Angular, Vue, Solid, Qwik, vanilla adapters. SvGrid is Svelte-only.
-- **Use AG Grid's integrated charts** - those depend on AG Grid's chart engine; SvGrid has no equivalent.
-- **Depend on AG Grid pivoting** - not in SvGrid's roadmap.
+- **Need server-side pivoting or a push-based viewport row model** - SvGrid ships pivot, integrated charts and a server-side row model (sort / filter / group / infinite), but not those two.
+- **Need pluggable custom filter components or custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair.
 - **Are mid-project and shipping in <2 weeks** - the migration is a few hours per grid, but only do it when you have buffer.
 - **Have a Svelte 4 codebase you can't upgrade** - SvGrid requires Svelte 5 runes. (Consider [htmlelements.com](https://www.htmlelements.com) for vanilla / multi-framework.)
 

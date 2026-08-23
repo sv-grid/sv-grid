@@ -34,13 +34,14 @@ depends on the framework you ship on and your budget.
 
 - You're on **React, Angular, or Vue**, not Svelte. SvGrid is
   Svelte-only.
-- You need **every grid feature shipped** out of the box: row drag,
-  master-detail with built-in API, range selection, status bar,
-  context menu, column tool panel, integrated charts (Enterprise),
-  Excel-native pivot UI (Enterprise), server-side row model
-  (Enterprise).
-- You need **enterprise commercial support** with SLAs. AG sells it;
-  SvGrid Enterprise support is best-effort.
+- You need **server-side pivoting**, or a push-based **viewport row model**
+  for a real-time trading blotter. SvGrid ships pivot, charts and a
+  server-side row model (sort / filter / group / infinite), but not those
+  two.
+- You need **pluggable custom filter components or custom tool panels**.
+  SvGrid's tool panel is a fixed Columns + Filters pair.
+- You want a vendor with **a decade of enterprise procurement paperwork**
+  already on file.
 
 ## When TanStack Table is the right choice
 
@@ -72,14 +73,16 @@ depends on the framework you ship on and your budget.
 | Column pinning (left/right)     | ✓                | ✓          | ✓                 | ✓                  | -              |
 | Fit-to-width with shrink        | ✓                | ✓          | partial           | ✓                  | -              |
 | WAI-ARIA grid pattern           | ✓                | ✓          | ✓                 | ✓                  | -              |
-| Server-side row model           | external mode    | external mode | -              | ✓ (built-in)       | external mode  |
+| Server-side row model           | ✓ (built-in)     | ✓ (built-in) | -              | ✓ (built-in)       | external mode  |
 | CSP-clean (no eval, no inline)  | ✓                | ✓          | ✓                 | ✓                  | n/a            |
 | Meaningful SSR markup           | ✓                | ✓          | -                 | -                  | depends on FW  |
 | Excel / PDF / CSV export        | -                | ✓          | -                 | ✓ (Enterprise)     | -              |
 | Excel / CSV import              | -                | ✓          | -                 | -                  | -              |
 | AI assistant                    | -                | ✓ (BYO provider) | -           | -                  | -              |
 | Pivot table                     | -                | ✓          | -                 | ✓                  | (custom)       |
-| Integrated charts               | -                | -          | -                 | ✓                  | -              |
+| Integrated charts               | ✓                | ✓          | -                 | ✓ (paid add-on)    | -              |
+| Runtime dependencies            | 0                | 0          | 2                 | 2                  | 1              |
+| Support response time           | GitHub (best-effort) | 1 business day; 1h sev-1 on Enterprise | GitHub (best-effort) | no number published | GitHub (best-effort) |
 | Theming via CSS variables       | ✓ (`--sg-*`)     | ✓          | ✓ (theme builder) | ✓                  | n/a            |
 | Source-button per demo          | ✓ (gallery)      | ✓          | -                 | -                  | -              |
 
