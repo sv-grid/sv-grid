@@ -1,6 +1,7 @@
 import {
-    applyExcelFilter,
     applyGroupAggregate,
+    compileExcelFilter,
+    type CompiledExcelFilter,
     normalizeForFilter,
     createColumnVirtualizer,
     createCoreRowModel,
@@ -1270,15 +1271,17 @@ export function createSvGridController<
       if (op === "between") return value.trim().length > 0 && (valueTo ?? "").trim().length > 0;
       return value.trim().length > 0;
     };
-    const evalCond = (
-      cellValue: unknown,
+    // Compile a condition ONCE per filter change rather than once per row.
+    // Folding the needle, splitting `in` tokens and building a regex all
+    // depend only on the filter, so over 100k rows this used to be 100k
+    // redundant passes.
+    const compileCond = (
       columnId: string,
       op: FilterOperator,
       value: string,
       valueTo?: string,
-    ): boolean =>
-      applyExcelFilter(
-        cellValue,
+    ): CompiledExcelFilter =>
+      compileExcelFilter(
         { id: columnId, operator: op, value, valueTo: op === "between" ? valueTo : undefined },
         { locale: (props.filterLocale ?? props.localization?.locale) },
       );
@@ -1289,18 +1292,26 @@ export function createSvGridController<
       return a || b;
     });
     if (menuFilters.length) {
+      // Hoisted out of the row loop: each column's (up to two) conditions
+      // become compiled predicates before a single row is tested.
+      const compiledMenuFilters = menuFilters.map(([columnId, f]) => ({
+        columnId,
+        join: f.join,
+        a: condActive(f.operator, f.value, f.valueTo)
+          ? compileCond(columnId, f.operator, f.value, f.valueTo)
+          : null,
+        b: !!f.operator2 && condActive(f.operator2, f.value2 ?? "", f.valueTo2)
+          ? compileCond(columnId, f.operator2 as FilterOperator, f.value2 ?? "", f.valueTo2)
+          : null,
+      }));
       rows = rows.filter((row) =>
-        menuFilters.every(([columnId, f]) => {
+        compiledMenuFilters.every(({ columnId, join, a, b }) => {
           const cellValue = getRowColumnValue(row, columnId);
-          const aActive = condActive(f.operator, f.value, f.valueTo);
-          const bActive = !!f.operator2 && condActive(f.operator2, f.value2 ?? "", f.valueTo2);
-          const ra = aActive ? evalCond(cellValue, columnId, f.operator, f.value, f.valueTo) : null;
-          const rb = bActive
-            ? evalCond(cellValue, columnId, f.operator2 as FilterOperator, f.value2 ?? "", f.valueTo2)
-            : null;
+          const ra = a ? a(cellValue) : null;
+          const rb = b ? b(cellValue) : null;
           if (ra === null) return rb ?? true;
           if (rb === null) return ra;
-          return f.join === "OR" ? ra || rb : ra && rb;
+          return join === "OR" ? ra || rb : ra && rb;
         }),
       );
     }

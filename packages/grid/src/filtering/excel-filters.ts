@@ -159,61 +159,89 @@ function scanInTokens(value: unknown): { tokens: string[]; trailing: string } {
   return { tokens, trailing: take() }
 }
 
-export function applyExcelFilter(
-  cellValue: unknown,
+/** A filter with its needle-side work already done. Call per row. */
+export type CompiledExcelFilter = (cellValue: unknown) => boolean
+
+/**
+ * Compile a filter once, then test many rows against it.
+ *
+ * Everything that depends only on the FILTER - folding the needle, splitting
+ * `in` tokens, building the regex, coercing range endpoints - happens here,
+ * so the per-row closure does the minimum. Filtering 100k rows used to redo
+ * all of it 100k times.
+ *
+ * `applyExcelFilter` is defined in terms of this, so there is exactly one
+ * copy of the operator semantics.
+ */
+export function compileExcelFilter(
   filter: ExcelFilter,
   options?: ExcelFilterOptions,
-) {
-  const text = String(cellValue ?? '')
-  const normalizedText = normalizeForFilter(text, options?.locale)
-  const normalizedValue = normalizeForFilter(String(filter.value ?? ''), options?.locale)
+): CompiledExcelFilter {
+  const locale = options?.locale
+  const fold = (v: unknown) => normalizeForFilter(String(v ?? ''), locale)
+  const needle = fold(filter.value)
+
   switch (filter.operator) {
     case 'contains':
-      return normalizedText.includes(normalizedValue)
+      return (cellValue) => fold(cellValue).includes(needle)
     case 'notContains':
       // An empty needle is no constraint (mirrors `contains` returning true),
       // so nothing is excluded until the user types something.
-      return normalizedValue === '' || !normalizedText.includes(normalizedValue)
+      if (needle === '') return () => true
+      return (cellValue) => !fold(cellValue).includes(needle)
     case 'equals':
-      return normalizedText === normalizedValue
+      return (cellValue) => fold(cellValue) === needle
     case 'notEquals':
-      return normalizedValue === '' || normalizedText !== normalizedValue
+      if (needle === '') return () => true
+      return (cellValue) => fold(cellValue) !== needle
     case 'startsWith':
-      return normalizedText.startsWith(normalizedValue)
+      return (cellValue) => fold(cellValue).startsWith(needle)
     case 'endsWith':
-      return normalizedText.endsWith(normalizedValue)
+      return (cellValue) => fold(cellValue).endsWith(needle)
     case 'regex': {
       // Case-insensitive by default (matches the accent/case-folded feel of
       // the other text operators). An invalid pattern matches nothing rather
       // than throwing, so a half-typed regex never crashes the row model.
+      // Note this tests the RAW text, not the folded text.
       const pattern = String(filter.value ?? '')
-      if (!pattern) return true
+      if (!pattern) return () => true
+      let re: RegExp
       try {
-        return new RegExp(pattern, 'i').test(text)
+        re = new RegExp(pattern, 'i')
       } catch {
-        return false
+        return () => false
       }
+      return (cellValue) => re.test(String(cellValue ?? ''))
     }
     case 'in':
     case 'notIn': {
       const tokens = splitInTokens(filter.value)
-      if (tokens.length === 0) return true
-      const hit = tokens.some(
-        (t) => normalizeForFilter(t, options?.locale) === normalizedText,
-      )
-      return filter.operator === 'in' ? hit : !hit
+      if (tokens.length === 0) return () => true
+      // A Set of pre-folded tokens turns the old per-row `tokens.some(...)`
+      // (which re-folded every token for every row) into one lookup.
+      const wanted = new Set(tokens.map((t) => normalizeForFilter(t, locale)))
+      if (filter.operator === 'in') return (cellValue) => wanted.has(fold(cellValue))
+      return (cellValue) => !wanted.has(fold(cellValue))
     }
     case 'greaterThan': {
-      const a = Number(cellValue)
       const b = Number(filter.value)
-      if (Number.isFinite(a) && Number.isFinite(b)) return a > b
-      return String(cellValue ?? '') > String(filter.value ?? '')
+      const bFinite = Number.isFinite(b)
+      const bText = String(filter.value ?? '')
+      return (cellValue) => {
+        const a = Number(cellValue)
+        if (bFinite && Number.isFinite(a)) return a > b
+        return String(cellValue ?? '') > bText
+      }
     }
     case 'lessThan': {
-      const a = Number(cellValue)
       const b = Number(filter.value)
-      if (Number.isFinite(a) && Number.isFinite(b)) return a < b
-      return String(cellValue ?? '') < String(filter.value ?? '')
+      const bFinite = Number.isFinite(b)
+      const bText = String(filter.value ?? '')
+      return (cellValue) => {
+        const a = Number(cellValue)
+        if (bFinite && Number.isFinite(a)) return a < b
+        return String(cellValue ?? '') < bText
+      }
     }
     case 'between': {
       // Two paths: numeric (coerce both endpoints with the historical
@@ -223,21 +251,30 @@ export function applyExcelFilter(
       // see the historical inclusive-range behaviour.
       const lo = filter.value   == null ? 0 : Number(filter.value)
       const hi = filter.valueTo == null ? 0 : Number(filter.valueTo)
-      const a  = Number(cellValue ?? 0)
-      if (Number.isFinite(a) && Number.isFinite(lo) && Number.isFinite(hi)) {
-        return a >= lo && a <= hi
-      }
+      const rangeFinite = Number.isFinite(lo) && Number.isFinite(hi)
       // Either endpoint is non-numeric (ISO date string, etc). Compare
       // lexicographically - YYYY-MM-DD orders chronologically so the
       // result matches user intent.
-      const s  = String(cellValue ?? '')
       const sl = String(filter.value ?? '')
       const sh = String(filter.valueTo ?? '')
-      return s >= sl && s <= sh
+      return (cellValue) => {
+        const a = Number(cellValue ?? 0)
+        if (rangeFinite && Number.isFinite(a)) return a >= lo && a <= hi
+        const s = String(cellValue ?? '')
+        return s >= sl && s <= sh
+      }
     }
     case 'isBlank':
-      return text.trim().length === 0
+      return (cellValue) => String(cellValue ?? '').trim().length === 0
     case 'isNotBlank':
-      return text.trim().length > 0
+      return (cellValue) => String(cellValue ?? '').trim().length > 0
   }
+}
+
+export function applyExcelFilter(
+  cellValue: unknown,
+  filter: ExcelFilter,
+  options?: ExcelFilterOptions,
+) {
+  return compileExcelFilter(filter, options)(cellValue)
 }

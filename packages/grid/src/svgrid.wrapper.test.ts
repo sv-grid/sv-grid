@@ -55,7 +55,9 @@ describe('SvGrid wrapper', () => {
     expect(source).toContain('editorType === "number"')
     expect(source).toContain('editorType === "date"')
     expect(source).toContain('editorType === "checkbox"')
-    expect(source).toContain('applyExcelFilter')
+    // The controller compiles each condition once per filter change rather
+    // than calling applyExcelFilter per row; both share one switch body.
+    expect(source).toContain('compileExcelFilter')
     expect(source).toContain('showFilterRow')
   })
 })

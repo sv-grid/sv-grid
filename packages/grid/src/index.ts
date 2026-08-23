@@ -699,10 +699,12 @@ export {
 } from './editors/cell-editors'
 export {
   applyExcelFilter,
+  compileExcelFilter,
   normalizeForFilter,
   splitInTokens,
   joinInTokens,
   trailingInToken,
+  type CompiledExcelFilter,
   type ExcelFilter,
   type ExcelFilterOperator,
   type ExcelFilterOptions,
