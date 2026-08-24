@@ -288,9 +288,15 @@ export type SvGridApi<
   >
 
   /**
-   * Snapshot of the rows the grid is actually displaying right now -
-   * after filtering, sorting, grouping, and pagination have been applied.
-   * Use this when you need to export the visible result set (e.g. CSV).
+   * Snapshot of the DATA rows the grid is displaying right now - after
+   * filtering, sorting, grouping and pagination. Use this when you need the
+   * visible result set (e.g. to export it as CSV).
+   *
+   * Group banner rows are not included: the return type is `TData`, and a
+   * banner is not one of your rows. That matters while grouping is on, because
+   * with every group collapsed this returns an EMPTY array even though the
+   * grid visibly shows a banner per group. Count banners from `getState()`
+   * rather than from the length of this.
    */
   getDisplayedRows(): ReadonlyArray<TData>
 

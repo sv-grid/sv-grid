@@ -172,7 +172,7 @@ export {
   isValuelessOperator,
   isRangeOperator,
   type FilterValueType,
-} from './filter-operator-catalogue'
+} from './filter-operator-catalogue.js'
 
 /** A filter with its needle-side work already done. Call per row. */
 export type CompiledExcelFilter = (cellValue: unknown) => boolean

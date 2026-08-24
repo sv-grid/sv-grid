@@ -14,7 +14,7 @@
  * engine registered via `registerAdvancedFilterEngine`, which compiles it. That
  * keeps the evaluator, the parser and the editor commercial.
  */
-import type { ExcelFilterOperator } from './excel-filters'
+import type { ExcelFilterOperator } from './excel-filters.js'
 
 /** Comparison operators available to a cross-column (`scalarCmp`) node. */
 export type GridComparisonOp = '=' | '!=' | '>' | '<' | '>=' | '<='

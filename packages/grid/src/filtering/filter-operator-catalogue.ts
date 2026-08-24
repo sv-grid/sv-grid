@@ -19,7 +19,7 @@
  * Zero imports beyond the operator union, so any package can consume this
  * without pulling in the grid's type graph.
  */
-import type { ExcelFilterOperator } from './excel-filters'
+import type { ExcelFilterOperator } from './excel-filters.js'
 
 /** Coarse value type used to decide which operators a column offers. */
 export type FilterValueType = 'text' | 'number' | 'date' | 'datetime' | 'boolean'
