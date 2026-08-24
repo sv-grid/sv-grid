@@ -57,6 +57,31 @@ function defaultBuildQuery(request: ServerRequest): Record<string, string> {
   const { predicates, search } = normalizeFilters(request.filterModel)
   if (search) params.search = search
   for (const p of predicates) params[p.column] = encodePredicate(p)
+
+  // ---- Server-side grouping ----------------------------------------------
+  // The grid asks for one level at a time. The path already chosen is sent as
+  // ordinary equality filters (the same shape any other filter uses), so an
+  // endpoint that already understands `?region=eq:EMEA` only needs to learn
+  // `groupBy` and `aggregate`.
+  //
+  //   ?groupBy=region&aggregate=sum:amount,count:id
+  //
+  // and, one level down:
+  //
+  //   ?groupBy=rep&region=eq:EMEA&aggregate=sum:amount
+  //
+  // The response is then one object per distinct key, each carrying the
+  // aggregate under its SOURCE column name - that is where the grid reads it.
+  const groupCols = request.groupBy ?? []
+  const groupKeys = request.groupKeys ?? []
+  for (let i = 0; i < groupKeys.length && i < groupCols.length; i += 1) {
+    params[groupCols[i]!] = `eq:${groupKeys[i]}`
+  }
+  if (groupKeys.length < groupCols.length) {
+    params.groupBy = groupCols[groupKeys.length]!
+    const aggs = request.aggregations ?? []
+    if (aggs.length) params.aggregate = aggs.map((a) => `${a.fn}:${a.col}`).join(',')
+  }
   return params
 }
 

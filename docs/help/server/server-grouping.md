@@ -41,6 +41,51 @@ async function getRows(req) {
 }
 ```
 
+## You probably do not have to write that
+
+Mapping the grid's request onto a backend query is the part teams actually
+find hard, so `@svgrid/enterprise` ships adapters that already do it - SQL,
+REST and Supabase - including the grouped case above.
+
+```ts
+import { planQuery, planToSql } from '@svgrid/enterprise'
+
+// In your endpoint. `schema` is the EntitySchema for the table.
+const plan = planQuery(schema, request)
+const sql = planToSql(plan, { placeholders: '$', ilike: true }) // Postgres
+
+const rows = await db.query(
+  plan.groupBy
+    // Grouped level: the plan hands you the SELECT list and GROUP BY.
+    ? `SELECT ${sql.select} FROM sales ${sql.whereText} ${sql.groupByText}
+       ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`
+    // Leaf level: your own columns.
+    : `SELECT * FROM sales ${sql.whereText}
+       ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
+  sql.params,
+)
+```
+
+Three details the plan handles that are easy to get wrong by hand:
+
+- **The path becomes ordinary predicates.** `groupKeys` arrives as equality
+  filters in `plan.where`, so your backend only ever handles "filter, then
+  group by one column" - never a multi-level GROUP BY.
+- **The count means different things at different levels.** `sql.countText` is
+  `COUNT(DISTINCT col)` when grouping and `COUNT(*)` when not, because the grid
+  sizes its scrollbar from the number of *groups* at a group level.
+- **Aggregates are aliased back to their source column.** `SUM("amount") AS
+  "amount"`, because that is the key the grid reads from the group row.
+
+Only fields declared on the `EntitySchema` reach the plan, so a client cannot
+group by or aggregate an identifier you did not declare.
+
+For REST, `createRestDataSource` sends `?groupBy=region&aggregate=sum:amount`
+plus the path as ordinary filter params. For Postgres via PostgREST,
+`createSupabaseDataSource` uses aggregate selects (requires PostgREST 12+ with
+aggregates enabled). `createInMemoryDataSource` implements the whole contract
+in memory and is the reference to test your own backend against.
+
 Each group row is a plain object carrying the group column's value (under that
 column's field) and the aggregate values (under each aggregation column) - the
 controller reads them straight off the row.

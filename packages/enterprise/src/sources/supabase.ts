@@ -50,7 +50,39 @@ export function createSupabaseDataSource<TData extends RowData>(
 
   return {
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
-      let q = client.from(table).select('*', { count: 'exact' })
+      // ---- Server-side grouping -------------------------------------------
+      // The grid asks one level at a time. The already-chosen path becomes
+      // ordinary `.eq()` filters below; at this level we ask PostgREST for the
+      // group column plus aggregates, which implicitly groups by the
+      // non-aggregate columns in `select`.
+      //
+      // Each aggregate is aliased back to its SOURCE column name, because that
+      // is the key the grid reads it from on the group row.
+      //
+      // REQUIRES PostgREST 12+ with aggregate functions enabled
+      // (`db-aggregates-enabled`, off by default on some Supabase projects). On
+      // an older or restricted instance the request errors rather than silently
+      // returning ungrouped rows, so the failure is visible.
+      const groupCols = request.groupBy ?? []
+      const groupKeys = request.groupKeys ?? []
+      const groupField =
+        groupKeys.length < groupCols.length ? groupCols[groupKeys.length] : undefined
+
+      const selectExpr = groupField
+        ? [
+            groupField,
+            ...(request.aggregations ?? []).map((a) =>
+              a.fn === 'count' ? `${a.col}:count()` : `${a.col}:${a.col}.${a.fn}()`,
+            ),
+          ].join(',')
+        : '*'
+
+      let q = client.from(table).select(selectExpr, { count: 'exact' })
+
+      // The path constrains the rows before grouping.
+      for (let i = 0; i < groupKeys.length && i < groupCols.length; i += 1) {
+        q = q.eq(groupCols[i]!, groupKeys[i])
+      }
 
       const { predicates, search } = normalizeFilters(request.filterModel)
       for (const p of predicates) {
@@ -70,7 +102,24 @@ export function createSupabaseDataSource<TData extends RowData>(
         q = q.or(searchColumns.map((c) => `${c}.ilike.%${term}%`).join(','))
       }
 
-      for (const s of request.sortModel) q = q.order(s.id, { ascending: !s.desc })
+      // When grouping, only columns the grouped select actually produces can be
+      // ordered on - PostgREST rejects an ORDER BY over a column that is
+      // neither grouped nor aggregated. Fall back to the group key so the
+      // result has a stable order either way.
+      if (groupField) {
+        const produced = new Set<string>([
+          groupField,
+          ...(request.aggregations ?? []).map((a) => a.col),
+        ])
+        const usable = request.sortModel.filter((s) => produced.has(s.id))
+        if (usable.length) {
+          for (const s of usable) q = q.order(s.id, { ascending: !s.desc })
+        } else {
+          q = q.order(groupField, { ascending: true })
+        }
+      } else {
+        for (const s of request.sortModel) q = q.order(s.id, { ascending: !s.desc })
+      }
 
       const { data, count, error } = await q.range(request.startRow, request.endRow - 1)
       if (error) throw new Error(error.message)

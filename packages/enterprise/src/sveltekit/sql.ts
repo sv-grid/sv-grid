@@ -46,6 +46,26 @@ export type SqlPlan = {
   params: unknown[]
   limit: number
   offset: number
+  /**
+   * SELECT list for a GROUPED request: the group column plus one aliased
+   * aggregate per requested column, e.g.
+   * `"region", SUM("amount") AS "amount"`.
+   *
+   * Empty string for a flat/leaf query - select your own columns then.
+   * The aggregate is aliased back to the SOURCE column name because that is
+   * where the grid reads it from on the group row.
+   */
+  select: string
+  /** GROUP BY body without the keyword, e.g. `"region"`. Empty when flat. */
+  groupBy: string
+  /** GROUP BY body with the leading `GROUP BY ` keyword, or `''`. */
+  groupByText: string
+  /**
+   * COUNT expression for the total, which differs between the two modes:
+   * grouped requests need the number of DISTINCT groups, not of rows, or the
+   * grid's scrollbar and paging will be sized from the wrong number.
+   */
+  countText: string
 }
 
 export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
@@ -88,6 +108,30 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
   const where = clauses.join(' AND ')
   const orderBy = plan.orderBy.map((o) => `${id(o.field)} ${o.desc ? 'DESC' : 'ASC'}`).join(', ')
 
+  // ---- Grouping ----------------------------------------------------------
+  // `plan.groupBy` is a single column: the grid asks one level at a time and
+  // sends the chosen path as ordinary predicates, so there is never a
+  // multi-column GROUP BY to emit here.
+  const groupBy = plan.groupBy ? id(plan.groupBy) : ''
+  let select = ''
+  if (plan.groupBy) {
+    const parts = [id(plan.groupBy)]
+    for (const agg of plan.aggregations ?? []) {
+      // COUNT(*) rather than COUNT(col) so the tally counts rows in the group
+      // rather than non-null values of one column.
+      const expr = agg.fn === 'count' ? 'COUNT(*)' : `${agg.fn.toUpperCase()}(${id(agg.field)})`
+      // Aliased back to the source column name: that is the key the grid reads
+      // the aggregate from on the group row.
+      parts.push(`${expr} AS ${id(agg.field)}`)
+    }
+    select = parts.join(', ')
+  }
+
+  // A grouped total is the number of distinct keys, not of underlying rows.
+  const countText = plan.groupBy
+    ? `COUNT(DISTINCT ${id(plan.groupBy)})`
+    : 'COUNT(*)'
+
   return {
     where,
     whereText: where ? `WHERE ${where}` : '',
@@ -96,6 +140,10 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     params,
     limit: plan.limit,
     offset: plan.offset,
+    select,
+    groupBy,
+    groupByText: groupBy ? `GROUP BY ${groupBy}` : '',
+    countText,
   }
 }
 

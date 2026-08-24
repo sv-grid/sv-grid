@@ -102,3 +102,58 @@ describe('createRestDataSource writes', () => {
     expect((calls[0]!.init?.headers as Record<string, string>).authorization).toBe('Bearer t')
   })
 })
+
+describe('createRestDataSource server-side grouping', () => {
+  const params = (url: string) => Object.fromEntries(new URL(url, 'http://x').searchParams)
+
+  it('asks for the first group level when no path is chosen', async () => {
+    const { fetch, calls } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0 }))
+    const src = createRestDataSource<Row>({ url: '/api/sales', fetch })
+    await src.getRows(
+      req({
+        groupBy: ['region', 'rep'],
+        groupKeys: [],
+        aggregations: [{ col: 'amount', fn: 'sum' }, { col: 'id', fn: 'count' }],
+      }),
+    )
+    const p = params(calls[0]!.url)
+    expect(p.groupBy).toBe('region')
+    expect(p.aggregate).toBe('sum:amount,count:id')
+  })
+
+  it('sends the chosen path as ordinary equality filters and descends', async () => {
+    const { fetch, calls } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0 }))
+    const src = createRestDataSource<Row>({ url: '/api/sales', fetch })
+    await src.getRows(
+      req({
+        groupBy: ['region', 'rep'],
+        groupKeys: ['EMEA'],
+        aggregations: [{ col: 'amount', fn: 'sum' }],
+      }),
+    )
+    const p = params(calls[0]!.url)
+    // The path reuses the SAME encoding an ordinary filter uses, so an endpoint
+    // that already handles filters needs no new concept for it.
+    expect(p.region).toBe('eq:EMEA')
+    expect(p.groupBy).toBe('rep')
+  })
+
+  it('stops asking for groups at the innermost level so leaves come back', async () => {
+    const { fetch, calls } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0 }))
+    const src = createRestDataSource<Row>({ url: '/api/sales', fetch })
+    await src.getRows(req({ groupBy: ['region'], groupKeys: ['EMEA'] }))
+    const p = params(calls[0]!.url)
+    expect(p.region).toBe('eq:EMEA')
+    expect(p.groupBy).toBeUndefined()
+    expect(p.aggregate).toBeUndefined()
+  })
+
+  it('sends no grouping params for a flat request', async () => {
+    const { fetch, calls } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0 }))
+    const src = createRestDataSource<Row>({ url: '/api/sales', fetch })
+    await src.getRows(req({}))
+    const p = params(calls[0]!.url)
+    expect(p.groupBy).toBeUndefined()
+    expect(p.aggregate).toBeUndefined()
+  })
+})
