@@ -1381,6 +1381,18 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   initialAdvancedFilter?: GridPredicateExpr | null;
   /**
+   * Fires whenever the advanced-filter expression changes, whatever changed it:
+   * `api.setAdvancedFilter()`, `clearAllFilters()`, or the toolbar's clear
+   * control.
+   *
+   * The panel that authors the expression is mounted by you, outside the grid,
+   * so it cannot see a change the grid made on its own. Without this, clearing
+   * from the toolbar leaves that panel showing a filter the grid is no longer
+   * applying. Feed this back into the panel's `expression` prop to keep them
+   * agreeing.
+   */
+  onAdvancedFilterChange?: (expr: GridPredicateExpr | null) => void;
+  /**
    * When `true`, the grid still records column-filter / global-filter /
    * facet state (so the menu UI works and indicators light up) but does
    * NOT actually filter the rows. The consumer is expected to fetch / sort

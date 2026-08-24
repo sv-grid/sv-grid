@@ -47,6 +47,9 @@ export type GridMessages = {
   announceFiltersCleared: string
   announceRowsSelected: string
   announceSelectionCleared: string
+  // Advanced-filter toolbar chip
+  advancedFilterActive: string
+  advancedFilterClear: string
   // Filter operator labels (mirror filterOperatorOptions ids)
   opContains: string
   opNotContains: string
@@ -110,6 +113,8 @@ export const defaultGridMessages: GridMessages = {
   announceFiltersCleared: 'Filters cleared, showing all {total} rows',
   announceRowsSelected: '{count} rows selected',
   announceSelectionCleared: 'Selection cleared',
+  advancedFilterActive: 'Advanced filter',
+  advancedFilterClear: 'Clear advanced filter',
   menuCopy: 'Copy',
   menuCut: 'Cut',
   menuPaste: 'Paste',

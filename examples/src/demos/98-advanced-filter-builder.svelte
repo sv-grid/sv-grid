@@ -167,6 +167,27 @@
       },
     },
     {
+      name: 'nested',
+      label: 'EMEA, or big APAC at risk',
+      // A group nested inside the top-level OR. The flat builder could not show
+      // this - it fell back to text mode - so open the Builder tab on this one
+      // to see the nested group with its own AND.
+      expr: {
+        kind: 'or',
+        parts: [
+          { kind: 'cmp', column: 'region', op: 'equals', value: 'EMEA' },
+          {
+            kind: 'and',
+            parts: [
+              { kind: 'cmp', column: 'region', op: 'equals', value: 'APAC' },
+              { kind: 'cmp', column: 'arr', op: 'greaterThan', value: '250000' },
+              { kind: 'cmp', column: 'churnRisk', op: 'equals', value: 'high' },
+            ],
+          },
+        ],
+      },
+    },
+    {
       name: 'above-average',
       label: 'ARR above the current average',
       // Not expressible as a column filter at all: it compares each row to an
@@ -219,6 +240,14 @@
       {columns}
       {features}
       onApiReady={(a) => { api = a; refreshStats() }}
+      onAdvancedFilterChange={(expr) => {
+        // The grid can clear the filter itself, from the toolbar chip. Without
+        // this the grid would unfilter while the panel kept showing "Active"
+        // and this counter kept the old number.
+        expression = expr
+        if (expr == null) activePreset = null
+        queueMicrotask(refreshStats)
+      }}
       containerHeight="100%"
     />
   </div>

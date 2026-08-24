@@ -51,7 +51,11 @@ const cols: ColumnDef<typeof features, Order>[] = [
 ]
 
 function mountGrid(props: Record<string, unknown> = {}) {
-  return new Promise<{ api: SvGridApi<typeof features, Order>; destroy: () => void }>(
+  return new Promise<{
+    api: SvGridApi<typeof features, Order>
+    target: HTMLElement
+    destroy: () => void
+  }>(
     (res, rej) => {
       const target = document.createElement('div')
       document.body.appendChild(target)
@@ -74,7 +78,7 @@ function mountGrid(props: Record<string, unknown> = {}) {
           ...props,
           onApiReady(received: SvGridApi<typeof features, Order>) {
             api = received
-            res({ api, destroy: () => { unmount(app); target.remove() } })
+            res({ api, target, destroy: () => { unmount(app); target.remove() } })
           },
         } as never,
       })
@@ -324,6 +328,152 @@ describe('seeding and view state', () => {
       await tick()
       expect(api.getAdvancedFilter()).toBeNull()
       expect(ids(api)).toHaveLength(4)
+    } finally {
+      destroy()
+    }
+  })
+})
+
+describe('toolbar indicator', () => {
+  // A filter set from a consumer-mounted panel hides rows with nothing in the
+  // grid to explain it. The chip is the grid's own account of that state.
+  const chip = (t: HTMLElement) => t.querySelector('.sv-grid-advf-chip')
+
+  it('is absent until an advanced filter is set', async () => {
+    const { target, destroy } = await mountGrid()
+    try {
+      await tick()
+      expect(chip(target)).toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('appears when a filter is set, even with no engine registered', async () => {
+    // Deliberate: the expression IS set, so the state is real and worth
+    // showing. Whether an engine acts on it is a separate concern, and the
+    // panel reports that separately.
+    const { api, target, destroy } = await mountGrid()
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      expect(chip(target)).not.toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('clears the filter and restores the rows', async () => {
+    registerAdvancedFilterEngine(regionEqualsEngine)
+    const { api, target, destroy } = await mountGrid()
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      expect(ids(api)).toEqual(['O-1', 'O-2'])
+
+      ;(chip(target)!.querySelector('.sv-grid-advf-clear') as HTMLButtonElement).click()
+      await tick()
+
+      expect(api.getAdvancedFilter()).toBeNull()
+      expect(ids(api)).toEqual(['O-1', 'O-2', 'O-3', 'O-4'])
+      expect(chip(target)).toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('labels the clear control for assistive tech and translates it', async () => {
+    const { api, target, destroy } = await mountGrid({
+      localization: { text: { advancedFilterActive: 'Geavanceerd filter' } },
+    })
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      expect(chip(target)!.textContent).toContain('Geavanceerd filter')
+      expect(
+        chip(target)!.querySelector('.sv-grid-advf-clear')!.getAttribute('aria-label'),
+      ).toBe('Clear advanced filter')
+    } finally {
+      destroy()
+    }
+  })
+})
+
+describe('onAdvancedFilterChange', () => {
+  // The authoring panel lives outside the grid, so a change the grid makes on
+  // its own has to be announced or the two drift apart.
+  it('does not fire on mount', async () => {
+    const seen: Array<GridPredicateExpr | null> = []
+    const { destroy } = await mountGrid({
+      onAdvancedFilterChange: (e: GridPredicateExpr | null) => seen.push(e),
+    })
+    try {
+      await tick()
+      expect(seen).toEqual([])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('fires when the filter is set and when it is cleared', async () => {
+    const seen: Array<GridPredicateExpr | null> = []
+    const { api, destroy } = await mountGrid({
+      onAdvancedFilterChange: (e: GridPredicateExpr | null) => seen.push(e),
+    })
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      api.clearAdvancedFilter()
+      await tick()
+      expect(seen).toEqual([EMEA, null])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('fires when the toolbar chip clears it', async () => {
+    const seen: Array<GridPredicateExpr | null> = []
+    const { api, target, destroy } = await mountGrid({
+      onAdvancedFilterChange: (e: GridPredicateExpr | null) => seen.push(e),
+    })
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      ;(target.querySelector('.sv-grid-advf-clear') as HTMLButtonElement).click()
+      await tick()
+      expect(seen.at(-1)).toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('fires when clearAllFilters sweeps it away', async () => {
+    const seen: Array<GridPredicateExpr | null> = []
+    const { api, destroy } = await mountGrid({
+      onAdvancedFilterChange: (e: GridPredicateExpr | null) => seen.push(e),
+    })
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      api.clearAllFilters()
+      await tick()
+      expect(seen.at(-1)).toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('does not fire again when the same expression is re-applied', async () => {
+    const seen: Array<GridPredicateExpr | null> = []
+    const { api, destroy } = await mountGrid({
+      onAdvancedFilterChange: (e: GridPredicateExpr | null) => seen.push(e),
+    })
+    try {
+      api.setAdvancedFilter(EMEA)
+      await tick()
+      api.setAdvancedFilter({ ...EMEA })
+      await tick()
+      expect(seen).toHaveLength(1)
     } finally {
       destroy()
     }

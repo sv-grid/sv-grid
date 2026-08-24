@@ -84,6 +84,7 @@ filterFns.equals(cellValue, query)
 - [Number filter](./number-filter.md)
 - [Date filter](./date-filter.md)
 - [Set filter](./set-filter.md)
+- [Advanced filter](./advanced-filter.md) - OR across columns, nested groups, and comparisons against an aggregate
 - [Filter API](./filter-api.md)
 - [demos/03-excel-filters.svelte](../../../examples/src/demos/03-excel-filters.svelte)
 

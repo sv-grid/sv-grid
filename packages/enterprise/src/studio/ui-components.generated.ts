@@ -7272,6 +7272,12 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "description": "Fires whenever the sort clauses change. Receives the new array of `{ id, desc }` entries. Pair with `externalSort={true}` when the consumer wants to own the row ordering."
       },
       {
+        "key": "advancedFilterChange",
+        "label": "Advanced Filter Change",
+        "prop": "onAdvancedFilterChange",
+        "description": "Fires whenever the advanced-filter expression changes, whatever changed it: `api.setAdvancedFilter()`, `clearAllFilters()`, or the toolbar's clear control. The panel that authors the expression is mounted by you, outside the grid, so it cannot see a change the grid made on its own. Without this, clearing from the toolbar leaves that panel showing a filter the grid is no longer applying. Feed this back into the panel's `expression` prop to keep them agreeing."
+      },
+      {
         "key": "filtersChange",
         "label": "Filters Change",
         "prop": "onFiltersChange",

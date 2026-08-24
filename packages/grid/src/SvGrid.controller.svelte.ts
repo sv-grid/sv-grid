@@ -1735,6 +1735,22 @@ export function createSvGridController<
     return () => clearTimeout(filterAnnounceTimer);
   });
 
+  // Forward advanced-filter changes to the consumer. Same dedupe-and-skip-first
+  // pattern as the selection forwarder: the panel that authors the expression
+  // lives outside the grid, so a change the grid makes itself (the toolbar's
+  // clear, clearAllFilters) is invisible to it otherwise.
+  let lastAdvancedFilterSerialized = JSON.stringify(
+    untrack(() => advancedFilter) ?? null,
+  );
+  $effect(() => {
+    const serialized = JSON.stringify(advancedFilter ?? null);
+    if (serialized === untrack(() => lastAdvancedFilterSerialized)) return;
+    untrack(() => {
+      lastAdvancedFilterSerialized = serialized;
+      props.onAdvancedFilterChange?.(advancedFilter ?? null);
+    });
+  });
+
   let lastAnnouncedSelectionCount = 0;
   $effect(() => {
     const count = Object.values(rowSelectionState).filter(Boolean).length;

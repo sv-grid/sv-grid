@@ -1900,8 +1900,29 @@
       </label>
     {/if}
 
-    {#if toolPanelEnabled || ctrl.chartingEnabled}
+    {#if toolPanelEnabled || ctrl.chartingEnabled || ctrl.advancedFilter}
       <div class="sv-grid-toolbar">
+        {#if ctrl.advancedFilter}
+          <!--
+            An advanced filter is set from a panel the consumer mounts, which
+            may be scrolled away or in a drawer. Without something here, rows
+            are missing from the grid with nothing on screen to explain why or
+            to undo it. This is that something: state plus a way out.
+          -->
+          <span class="sv-grid-advf-chip">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            {messages.advancedFilterActive}
+            <button
+              type="button"
+              class="sv-grid-advf-clear"
+              aria-label={messages.advancedFilterClear}
+              title={messages.advancedFilterClear}
+              onclick={() => (ctrl.advancedFilter = null)}
+            >✕</button>
+          </span>
+        {/if}
         {#if toolPanelEnabled}
           <button
             type="button"
