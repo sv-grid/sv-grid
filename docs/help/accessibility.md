@@ -17,9 +17,9 @@ walk-through:
 | Standard                | Status                                                                 |
 | ----------------------- | ---------------------------------------------------------------------- |
 | WAI-ARIA 1.2 grid pattern | Implemented (see [Roles & properties](#roles--properties)).         |
-| WCAG 2.1 AA             | The grid meets AA for the default theme + tokens; your custom theme determines pass/fail of contrast. |
+| WCAG 2.1 AA             | Structure is audited by `axe-core` in CI. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
 | Keyboard navigation     | Full coverage; see [Keyboard map](#keyboard-map).                      |
-| Screen-reader announcements | Cell + selection + edit announcements via a single `aria-live=polite` region. |
+| Screen-reader announcements | Filter results and bulk selection changes, via a single `aria-live=polite` region. See [What the grid announces](#what-the-grid-announces). |
 | Reduced motion          | Honored: scroll animations + chevron transitions disable when `prefers-reduced-motion: reduce`. |
 | Forced colors / high contrast | Supported: borders + focus rings use `currentColor`; no hardcoded `border-color`. |
 
@@ -99,19 +99,59 @@ The keyboard handler in [Tree rows](./rows/tree-rows.md) adds:
 
 ## Screen-reader announcements
 
-The grid maintains a single `aria-live="polite"` region that emits:
+The grid shares one visually-hidden `aria-live="polite"` region with the rest of
+the component library, and is deliberately sparing about what it puts there.
 
-- Cell content when the active cell moves (so VoiceOver/JAWS reads
-  "Customer column, row 14, Acme Corp").
-- Selection state changes (`"row 14 selected, 3 of 12 rows selected"`).
-- Edit commits (`"saved 19.95"`) - useful for users who can't see the
-  cell's visual state.
-- Sort changes (`"sorted by Customer ascending"`).
-- Filter changes (`"3 of 124 rows match"`).
+### What the grid announces
 
-You can replace the announcer with your own by passing
-`announcer={(message) => ...}` to `<SvGrid>` if you have a unified
-toast system.
+| Event | What is said |
+| --- | --- |
+| A filter changes the matching rows | `"12 of 250 rows match the current filters"`, or `"No rows match the current filters"` |
+| Every filter is cleared | `"Filters cleared, showing all 250 rows"` |
+| A bulk selection change | `"250 rows selected"` / `"Selection cleared"` |
+
+Filter announcements are debounced by 400 ms, so typing in the search box
+announces the count you stopped on rather than one for every prefix. They are
+also skipped entirely under `externalFilter`, because there the server decides
+what matched and the local count would describe only the page in hand.
+
+### What it deliberately does not announce
+
+This is the more important half. A live region is not the only way a screen
+reader learns something, and announcing what the accessibility tree already
+carries makes the grid talk over itself:
+
+- **The cell you moved to.** Focus moves there (roving tabindex), so the reader
+  announces the cell, its column header and its row position natively.
+- **Sort state.** Carried by `aria-sort` on the column header, read when focus
+  lands on it.
+- **Whether the row you are on is selected.** Carried by `aria-selected`.
+- **Selecting or deselecting a single row.** The focused row is announced with
+  its new selected state; adding `"1 row selected"` on top would be a second,
+  redundant utterance. Only changes of more than one row, which cannot have come
+  from a single focus move, are announced.
+
+### Translating them
+
+Announcements are full sentences, so unlike the single-word labels elsewhere in
+`localeText` they take `{placeholders}` and you control the word order:
+
+```svelte
+<SvGrid
+  localization={{
+    text: {
+      announceFilterResults: '{visible} van de {total} rijen komen overeen',
+      announceNoMatches: 'Geen rijen komen overeen',
+      announceFiltersCleared: 'Filters gewist, alle {total} rijen worden getoond',
+      announceRowsSelected: '{count} rijen geselecteerd',
+      announceSelectionCleared: 'Selectie gewist',
+    },
+  }}
+/>
+```
+
+An unknown placeholder is left in the output rather than blanked, so a typo in
+an override is visible instead of silently eating the number.
 
 ## Focus management
 
@@ -157,6 +197,12 @@ The grid can't know:
 - **Reading order** of header groups. The grid emits group headers
   with `aria-colspan` correctly, but if your group label is "Q1"
   alone, screen readers say "Q1" - consider "Q1 2025" to give context.
+- **The wording of validation messages.** A cell failing a column's
+  `validate` hook is marked `aria-invalid` and the returned string is
+  carried to assistive technology, so return a message that says how to
+  fix it ("Score must be at least 90"), not just that something is
+  wrong ("Invalid"). Returning `false` marks the cell invalid with no
+  message at all, which leaves a screen-reader user without a reason.
 
 ## How to verify
 
@@ -167,6 +213,20 @@ The grid can't know:
 3. **Lighthouse accessibility audit.** Run it against your own build. Most
    deltas are contrast issues in your theme rather than grid markup, so
    check those first.
+
+   > We run `axe-core` against a rendered grid in CI (`a11y.axe.test.ts`),
+   > covering the plain grid, the filter row, row selection and pagination.
+   > That suite runs in jsdom, which does no layout, so axe's own
+   > colour-contrast rule is disabled there.
+   >
+   > Contrast is covered separately and more thoroughly: `themes/contrast.test.ts`
+   > computes WCAG ratios for **every built-in preset in both light and dark**
+   > and fails the build below AA. Body text, secondary text, header text, text
+   > on zebra / hovered / selected rows, and text on accent-filled controls all
+   > have to clear 4.5:1, and the accent has to clear 3:1 where it signals focus
+   > or selection. So the presets are checked exhaustively rather than whichever
+   > one a browser test happened to load. What is still yours to verify is a
+   > **custom** theme.
 4. **axe-core in your e2e suite.**
    ```ts
    import { injectAxe, checkA11y } from 'axe-playwright'

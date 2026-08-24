@@ -141,16 +141,24 @@ export const themePresets: ThemePreset[] = [
     light: { bg: '#ffffff', fg: '#282a30', muted: '#6b6f76', border: '#e9e9eb', headerBg: '#f7f8f8', headerFg: '#6b6f76', accent: '#5e6ad2', rowAlt: '#fbfbfc', rowHover: '#f4f4f5', selectionBg: '#e8eafd' },
     dark: { bg: '#08090a', fg: '#f7f8f8', muted: '#8a8f98', border: '#23252a', headerBg: '#0f1011', headerFg: '#8a8f98', accent: '#5e6ad2', rowAlt: '#0f1011', rowHover: '#1a1b1e', selectionBg: '#2a2d4a' } },
   { id: 'notion', name: 'Notion', radius: 4, font: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-    light: { bg: '#ffffff', fg: '#37352f', muted: '#787774', border: '#e9e9e7', headerBg: '#f7f6f3', headerFg: '#787774', accent: '#2383e2', rowAlt: '#fbfbfa', rowHover: '#f1f1ef', selectionBg: '#d9eaf7' },
+    // muted + headerFg darkened from #787774, which sat at 4.48:1 on white and
+    // 4.14:1 on the header fill - both just under AA. #6b6a67 keeps the warm
+    // grey and clears it at 5.41:1 / 5:1.
+    light: { bg: '#ffffff', fg: '#37352f', muted: '#6b6a67', border: '#e9e9e7', headerBg: '#f7f6f3', headerFg: '#6b6a67', accent: '#2383e2', rowAlt: '#fbfbfa', rowHover: '#f1f1ef', selectionBg: '#d9eaf7' },
     dark: { bg: '#191919', fg: '#d4d4d4', muted: '#9b9b9b', border: '#2f2f2f', headerBg: '#202020', headerFg: '#9b9b9b', accent: '#529cca', rowAlt: '#1c1c1c', rowHover: '#252525', selectionBg: '#20415c' } },
   { id: 'nord', name: 'Nord', radius: 4, font: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     light: { bg: '#eceff4', fg: '#2e3440', muted: '#4c566a', border: '#d8dee9', headerBg: '#e5e9f0', headerFg: '#2e3440', accent: '#5579a5', rowAlt: '#e5e9f0', rowHover: '#dde3ec', selectionBg: '#d8dee9' },
-    dark: { bg: '#2e3440', fg: '#d8dee9', muted: '#4c566a', border: '#434c5e', headerBg: '#3b4252', headerFg: '#e5e9f0', accent: '#88c0d0', rowAlt: '#333b48', rowHover: '#3b4252', selectionBg: '#434c5e' } },
+    // muted lightened from Nord's #4c566a (nord3): on the nord0 background that
+    // is 1.69:1, effectively invisible. #97a0b0 keeps the Nord hue at 4.74:1.
+    dark: { bg: '#2e3440', fg: '#d8dee9', muted: '#97a0b0', border: '#434c5e', headerBg: '#3b4252', headerFg: '#e5e9f0', accent: '#88c0d0', rowAlt: '#333b48', rowHover: '#3b4252', selectionBg: '#434c5e' } },
   { id: 'dracula', name: 'Dracula', radius: 6, font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     light: { bg: '#fffbeb', fg: '#1f1f1f', muted: '#6c664b', border: '#dedccf', headerBg: '#ece9df', headerFg: '#1f1f1f', accent: '#644ac9', rowAlt: '#fffdf5', rowHover: '#f2efe3', selectionBg: '#cfcfde' },
-    dark: { bg: '#282a36', fg: '#f8f8f2', muted: '#6272a4', border: '#44475a', headerBg: '#21222c', headerFg: '#f8f8f2', accent: '#bd93f9', rowAlt: '#2d2f3b', rowHover: '#343746', selectionBg: '#44475a' } },
+    // muted lightened from Dracula's comment colour #6272a4 (3.03:1) to 5.04:1.
+    dark: { bg: '#282a36', fg: '#f8f8f2', muted: '#8b98c9', border: '#44475a', headerBg: '#21222c', headerFg: '#f8f8f2', accent: '#bd93f9', rowAlt: '#2d2f3b', rowHover: '#343746', selectionBg: '#44475a' } },
   { id: 'catppuccin', name: 'Catppuccin', radius: 8, font: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    light: { bg: '#eff1f5', fg: '#4c4f69', muted: '#6c6f85', border: '#ccd0da', headerBg: '#e6e9ef', headerFg: '#4c4f69', accent: '#8839ef', rowAlt: '#e6e9ef', rowHover: '#dce0e8', selectionBg: '#dce0e8' },
+    // muted moved from Latte subtext0 (#6c6f85, 4.37:1) to subtext1 (#5c5f77),
+    // still an official Catppuccin colour, at 5.53:1.
+    light: { bg: '#eff1f5', fg: '#4c4f69', muted: '#5c5f77', border: '#ccd0da', headerBg: '#e6e9ef', headerFg: '#4c4f69', accent: '#8839ef', rowAlt: '#e6e9ef', rowHover: '#dce0e8', selectionBg: '#dce0e8' },
     dark: { bg: '#1e1e2e', fg: '#cdd6f4', muted: '#a6adc8', border: '#313244', headerBg: '#181825', headerFg: '#cdd6f4', accent: '#cba6f7', rowAlt: '#1a1a28', rowHover: '#313244', selectionBg: '#45475a' } },
 ]
 

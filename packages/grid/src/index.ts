@@ -710,6 +710,34 @@ export {
   type ExcelFilterOptions,
 } from './filtering/excel-filters'
 export {
+  ALL_FILTER_OPERATORS,
+  SET_OPERATOR_IDS,
+  VALUELESS_OPERATOR_IDS,
+  RANGE_OPERATOR_IDS,
+  isSetOperator,
+  isValuelessOperator,
+  isRangeOperator,
+  type FilterValueType,
+} from './filtering/filter-operator-catalogue'
+export { applyRowPredicate } from './filtering/row-predicate'
+export type {
+  GridPredicateExpr,
+  GridScalarExpr,
+  GridComparisonOp,
+  GridArithmeticOp,
+  GridAggFn,
+} from './filtering/predicate-expr'
+// Advanced-filter seam: enterprise registers the compiler, the grid owns the
+// state and the pipeline slot.
+export {
+  registerAdvancedFilterEngine,
+  getAdvancedFilterEngine,
+  hasAdvancedFilterEngine,
+  type AdvancedFilterEngine,
+  type AdvancedFilterCompileContext,
+  type CompiledRowPredicate,
+} from './advanced-filter.svelte'
+export {
   getGridCellDomId,
   getGridCellA11yProps,
   getGridHeaderA11yProps,

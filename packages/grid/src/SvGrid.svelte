@@ -2332,6 +2332,18 @@
                           aria-orientation="vertical"
                           aria-label={`Resize ${toolPanelHeaderLabel(header.column)}`}
                           tabindex="0"
+                          {...(() => {
+                            // A focusable separator is a widget, so ARIA requires
+                            // aria-valuenow. The value it exposes is the column
+                            // width the arrow keys change; 40 is the floor
+                            // enforced in resizeColumnByKeyboard.
+                            const w = Math.round(ctrl.getColumnWidth(header.column.id));
+                            return {
+                              "aria-valuenow": w,
+                              "aria-valuemin": 40,
+                              "aria-valuetext": `${w} pixels`,
+                            };
+                          })()}
                           onpointerdown={(event) =>
                             startColumnResize(event, header.column.id)}
                           onkeydown={(event) =>
@@ -2359,9 +2371,14 @@
                     ></th>
                   {/if}
                   {#if showRowSelectionEffective}
+                    <!-- Filter-row spacer over the selection column. Blank and
+                         non-interactive, so hide it from the a11y tree the same
+                         way the header-row twin does; an exposed empty th is an
+                         axe `empty-table-header` violation. -->
                     <th
                       class="sv-grid-column sv-grid-selection-column"
                       style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                      aria-hidden="true"
                     ></th>
                   {/if}
                   {#if columnVirtualizationEnabled && columnWindowStart > 0}
@@ -2688,6 +2705,7 @@
                           class:sv-grid-cell-cf={hasConditionalFormats}
                           class:sv-grid-cell-invalid={cellValidity.invalid}
                           class:sv-grid-cell-has-note={cellNote != null}
+                          aria-invalid={cellValidity.invalid ? "true" : undefined}
                           title={cellValidity.message ?? undefined}
                           data-svgrid-row={rowIndex}
                           data-svgrid-col={colIndex}
@@ -2935,6 +2953,7 @@
                         class:sv-grid-cell-cf={hasConditionalFormats}
                         class:sv-grid-cell-invalid={cellValidity.invalid}
                         class:sv-grid-cell-has-note={cellNote != null}
+                        aria-invalid={cellValidity.invalid ? "true" : undefined}
                         data-svgrid-row={rowIndex}
                         data-svgrid-col={colIndex}
                         data-col-id={rendered.column.id}
@@ -3008,6 +3027,20 @@
                             cellValue,
                           )}
                         {/if}
+                        {#if cellValidity.invalid && cellValidity.message}
+                          <!-- The validation message, for assistive tech.
+                               On this path the message is shown visually by
+                               the pointerenter tooltip above, which is mouse-
+                               only - a keyboard or screen-reader user would
+                               get `aria-invalid` with no reason attached.
+                               A visually-hidden span inside the cell is read
+                               as part of the cell when focus lands on it, and
+                               unlike `title` it adds no second native tooltip
+                               competing with the custom one. -->
+                          <span class="sv-grid-sr-only"
+                            >{cellValidity.message}</span
+                          >
+                        {/if}
                         {#if cellNote != null && !isEditing}
                           <!-- Excel-style per-cell note indicator. The
                                triangle itself is the hot-zone; hover
@@ -3067,17 +3100,21 @@
                 {#if showRowNumbersEffective}
                   <!-- Row-number column has no aggregate; the digit it normally
                    shows is the row index, which doesn't make sense to sum. -->
-                  <th
+                  <!-- Blank spacer, not a header - see the selection cell below. -->
+                  <td
                     class="sv-grid-column sv-grid-summary-column sv-grid-row-number-column"
                     style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-                  ></th>
+                  ></td>
                 {/if}
                 {#if showRowSelectionEffective}
-                  <!-- Selection column is checkbox-only; no aggregate. -->
-                  <th
+                  <!-- Selection column is checkbox-only; no aggregate. A blank
+                       spacer in the summary row carries no header semantics, so
+                       it is a td: an empty th is a real a11y violation
+                       (axe `empty-table-header`). -->
+                  <td
                     class="sv-grid-column sv-grid-summary-column sv-grid-selection-column"
                     style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
-                  ></th>
+                  ></td>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
                   <th

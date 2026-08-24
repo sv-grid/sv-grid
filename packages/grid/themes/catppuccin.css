@@ -2,7 +2,7 @@
 :root {
   --sg-bg: #eff1f5;
   --sg-fg: #4c4f69;
-  --sg-muted: #6c6f85;
+  --sg-muted: #5c5f77;
   --sg-border: #ccd0da;
   --sg-header-bg: #e6e9ef;
   --sg-header-fg: #4c4f69;
@@ -29,10 +29,10 @@
   --sg-invalid-fg: #dc2626;
   --sg-scrollbar-bg: #e6e9ef;
   --sg-scrollbar-border: #ccd0da;
-  --sg-scrollbar-thumb: #6c6f85;
+  --sg-scrollbar-thumb: #5c5f77;
   --sg-scrollbar-thumb-hover: #4c4f69;
   --sg-scrollbar-thumb-active: #4c4f69;
-  --sg-scrollbar-arrow: #6c6f85;
+  --sg-scrollbar-arrow: #5c5f77;
   --sg-scrollbar-arrow-hover: #4c4f69;
   --sg-scrollbar-arrow-hover-bg: #dce0e8;
   --sg-scrollbar-arrow-active: #4c4f69;

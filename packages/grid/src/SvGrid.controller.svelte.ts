@@ -1,7 +1,10 @@
 import {
     applyGroupAggregate,
+    applyRowPredicate,
     compileExcelFilter,
     type CompiledExcelFilter,
+    getAdvancedFilterEngine,
+    type GridPredicateExpr,
     normalizeForFilter,
     createColumnVirtualizer,
     createCoreRowModel,
@@ -94,6 +97,11 @@ import {
     createClipboard,
   } from "./clipboard";
 import { resolveGridMessages } from "./grid-messages";
+import { announce } from "./a11y/live-region";
+import {
+  filterAnnouncement,
+  selectionAnnouncement,
+} from "./a11y/grid-announcements";
 import { getPivotEngine, hasPivotEngine } from "./pivot-view.svelte";
 import {
     filterOperatorOptions,
@@ -324,6 +332,13 @@ export function createSvGridController<
   let globalFilter = $state("");
   let scrollContainer: HTMLDivElement | null = $state(null);
   let gridRootEl: HTMLElement | null = $state(null);
+  // Advanced filter (Pro). Seeded once from `initialAdvancedFilter` and driven
+  // thereafter through the API - deliberately NOT a live prop, so it cannot
+  // repeat the `externalFilter` trap of looking controlled while being read
+  // exactly once.
+  let advancedFilter = $state<GridPredicateExpr | null>(
+    props.initialAdvancedFilter ?? null,
+  );
   let filterRowValues = $state<Record<string, string>>({});
   let filterMenuValues = $state<
     Record<
@@ -1345,6 +1360,32 @@ export function createSvGridController<
       );
     }
 
+    // --- Advanced filter (Pro) ---------------------------------------------
+    // Runs LAST for two reasons: it evaluates over the smallest row set, and
+    // its aggregates (`SUM(amount) > 1000`) fold over what the user is
+    // currently looking at rather than the raw dataset. Composed with AND
+    // against the three stages above.
+    //
+    // Fails OPEN throughout. No engine registered (enterprise absent), an
+    // expression the engine cannot compile, or a throw from inside it all
+    // leave `rows` untouched. A half-applied filter that quietly shows the
+    // wrong rows is worse than one that visibly did nothing.
+    if (advancedFilter) {
+      const engine = getAdvancedFilterEngine();
+      if (engine) {
+        try {
+          const predicate = engine(advancedFilter, {
+            getValue: getRowColumnValue,
+            locale: props.filterLocale ?? props.localization?.locale,
+            rows,
+          });
+          if (predicate) rows = applyRowPredicate(rows, predicate, isGroupRow);
+        } catch {
+          // Malformed expression: leave the rows alone.
+        }
+      }
+    }
+
     return rows;
   });
 
@@ -1638,6 +1679,76 @@ export function createSvGridController<
   // Resolved chrome messages (English defaults merged with `localeText`). One
   // map every consumer (SvGrid.svelte, GridFooter, menus, filter labels) reads.
   const gridMessages = $derived(resolveGridMessages(props.localization?.text));
+
+  // ---- Screen-reader status announcements (WCAG 4.1.3) ----
+  // Only genuine status messages belong here: information no focus change
+  // reveals. `a11y/grid-announcements.ts` documents what is deliberately left
+  // unsaid, and why saying it would make the grid talk over itself.
+
+  /** Data rows before any local filtering - the denominator in "12 of 250". */
+  const unfilteredRowTotal = $derived.by(() => {
+    dataStateVersion;
+    void internalData;
+    return grid.getRowModel().rows.length;
+  });
+
+  /** Whether any of the five filter surfaces is currently narrowing the rows. */
+  const anyFilterActive = $derived(
+    globalFilter !== "" ||
+      advancedFilter !== null ||
+      Object.keys(filterRowValues).length > 0 ||
+      Object.keys(filterMenuValues).length > 0 ||
+      Object.keys(valueFilters).length > 0,
+  );
+
+  let filtersWereActive = false;
+  let filterAnnounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $effect(() => {
+    // In external-filter mode the server decides what matched, so the local
+    // counts describe only the page in hand. Announcing them would misreport
+    // the result set, which is worse than staying silent.
+    if (externalFilterEnabled) return;
+
+    const visible = paginatedRowTotal;
+    const total = unfilteredRowTotal;
+    const active = anyFilterActive;
+    const messages = gridMessages;
+
+    untrack(() => {
+      const message = filterAnnouncement(
+        visible,
+        total,
+        active,
+        filtersWereActive,
+        messages,
+      );
+      filtersWereActive = active;
+      if (!message) return;
+      // Typing in the global filter re-runs this per keystroke. A polite region
+      // queues rather than replaces, so without a debounce the user hears the
+      // count for every prefix they typed before the one they care about.
+      clearTimeout(filterAnnounceTimer);
+      filterAnnounceTimer = setTimeout(() => announce(message), 400);
+    });
+
+    return () => clearTimeout(filterAnnounceTimer);
+  });
+
+  let lastAnnouncedSelectionCount = 0;
+  $effect(() => {
+    const count = Object.values(rowSelectionState).filter(Boolean).length;
+    const messages = gridMessages;
+    untrack(() => {
+      const message = selectionAnnouncement(
+        lastAnnouncedSelectionCount,
+        count,
+        messages,
+      );
+      lastAnnouncedSelectionCount = count;
+      if (message) announce(message);
+    });
+  });
 
   // ---- In-grid pivot mode ----
   // The pivot ENGINE ships in @svgrid/enterprise (registered via the pivot-view
@@ -3089,6 +3200,8 @@ export function createSvGridController<
     set filterRowValues(v) { filterRowValues = v as never; },
     get filterMenuValues() { return filterMenuValues; },
     set filterMenuValues(v) { filterMenuValues = v as never; },
+    get advancedFilter() { return advancedFilter; },
+    set advancedFilter(v) { advancedFilter = v as never; },
     get verticalScrollbarEl() { return verticalScrollbarEl; },
     set verticalScrollbarEl(v) { verticalScrollbarEl = v as never; },
     get horizontalScrollbarEl() { return horizontalScrollbarEl; },

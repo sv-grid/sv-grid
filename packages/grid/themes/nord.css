@@ -42,7 +42,7 @@
 :root[data-theme='dark'] {
   --sg-bg: #2e3440;
   --sg-fg: #d8dee9;
-  --sg-muted: #4c566a;
+  --sg-muted: #97a0b0;
   --sg-border: #434c5e;
   --sg-header-bg: #3b4252;
   --sg-header-fg: #e5e9f0;
@@ -69,10 +69,10 @@
   --sg-invalid-fg: #f87171;
   --sg-scrollbar-bg: #3b4252;
   --sg-scrollbar-border: #434c5e;
-  --sg-scrollbar-thumb: #4c566a;
+  --sg-scrollbar-thumb: #97a0b0;
   --sg-scrollbar-thumb-hover: #d8dee9;
   --sg-scrollbar-thumb-active: #d8dee9;
-  --sg-scrollbar-arrow: #4c566a;
+  --sg-scrollbar-arrow: #97a0b0;
   --sg-scrollbar-arrow-hover: #d8dee9;
   --sg-scrollbar-arrow-hover-bg: #3b4252;
   --sg-scrollbar-arrow-active: #d8dee9;

@@ -18,6 +18,9 @@ this section answers each one directly.
   data physically sits, the user-rights surface
 - [HIPAA posture](./hipaa.md) - PHI handling in the browser, what
   "no PHI on disk" requires you to wire
+- [Accessibility Conformance Report (VPAT 2.5Rev)](./vpat.md) - the
+  per-criterion WCAG 2.1 / Section 508 / EN 301 549 claim, with the
+  evidence behind each one and the gaps stated rather than omitted.
 - [Audit log integration](./audit-log.md) - turn the grid's callbacks
   into an immutable audit trail with one adapter
 
@@ -35,9 +38,10 @@ this section answers each one directly.
 | Is the source code auditable?                     | **Yes.** MIT-licensed; published as readable source (no minified obfuscation).                   |
 | Where is data stored?                             | **In your app's memory.** Never on a sv-grid server. There is no sv-grid server. |
 | Is there a security disclosure policy?            | Yes - email `support@jqwidgets.com`. Patches typically ship within 7 days for high-severity issues. |
-| Is the library tested for accessibility?          | The WAI-ARIA 1.2 grid pattern is implemented and covered by unit tests over the ARIA prop builders. Rendered-DOM axe testing is a recipe we publish for your suite, not a check we run in ours. See [accessibility](../help/accessibility.md). |
+| Is the library tested for accessibility?          | **Yes.** `axe-core` runs against a rendered `<SvGrid>` in CI on every commit, across the plain grid, the filter row, row selection and pagination. Layout-dependent rules (notably colour contrast) are disabled because the suite runs in jsdom, which performs no layout; contrast is covered instead by a computed check over all 20 built-in themes in light and dark. See [accessibility](../help/accessibility.md). |
+| Do you publish a VPAT / ACR?                      | **Yes.** [VPAT 2.5Rev INT](./vpat.md), covering WCAG 2.1 AA, Revised Section 508 and EN 301 549 in one document. It is a self-assessment, and says so: every "Supports" names the test behind it, and the two known gaps (no `aria-invalid` on cell editors, no recorded screen-reader test pass) are stated in the report rather than left out. |
 | Are dependencies vetted?                          | Yes - 0 runtime dependencies in `@svgrid/grid`. `@svgrid/enterprise` lazy-loads `jszip` + `pdfmake` as peers. See [security](../help/security.md) for the dep table. |
-| Is there an SBOM?                                 | Generate one for any installed version with `npx @cyclonedx/cdxgen -o sbom.json`. With 0 runtime dependencies the tree is shallow by construction. See [security](../help/security.md#sbom). |
+| Is there an SBOM?                                 | **Yes.** A CycloneDX 1.6 document per published package lives in [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), regenerated with `pnpm sbom`. With 0 runtime dependencies in the grid the graph is shallow by construction. See [security](../help/security.md#sbom). |
 
 ## See also
 

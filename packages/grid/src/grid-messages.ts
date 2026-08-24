@@ -39,6 +39,14 @@ export type GridMessages = {
   total: string
   rowsSuffix: string
   rowSuffix: string
+  // Screen-reader announcements. Unlike the labels above these are whole
+  // sentences, so they take `{placeholders}` - a translator needs to control
+  // word order, which assembling atoms in English order does not allow.
+  announceFilterResults: string
+  announceNoMatches: string
+  announceFiltersCleared: string
+  announceRowsSelected: string
+  announceSelectionCleared: string
   // Filter operator labels (mirror filterOperatorOptions ids)
   opContains: string
   opNotContains: string
@@ -97,6 +105,11 @@ export const defaultGridMessages: GridMessages = {
   total: 'Total',
   rowsSuffix: 'rows',
   rowSuffix: 'row',
+  announceFilterResults: '{visible} of {total} rows match the current filters',
+  announceNoMatches: 'No rows match the current filters',
+  announceFiltersCleared: 'Filters cleared, showing all {total} rows',
+  announceRowsSelected: '{count} rows selected',
+  announceSelectionCleared: 'Selection cleared',
   menuCopy: 'Copy',
   menuCut: 'Cut',
   menuPaste: 'Paste',
