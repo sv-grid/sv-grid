@@ -427,6 +427,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [GDPR + data residency](https://svgrid.com/docs/compliance/gdpr/): sv-grid is **GDPR-neutral**: the library never transmits personal data, never stores it server-side, and never logs it. If your app is GDPR-compliant before adding sv-grid, adding sv-grid does not …
 - [HIPAA posture](https://svgrid.com/docs/compliance/hipaa/): sv-grid is **HIPAA-neutral**: the library does not transmit, store, or process PHI on its own. If your app is HIPAA-compliant before adding sv-grid, adding sv-grid does not break that compliance.
 - [SOC 2 posture](https://svgrid.com/docs/compliance/soc2/): sv-grid is a UI library, not a service - so it cannot itself hold a SOC 2 report. But it can sit inside a SOC 2-audited application, and the controls below describe the line where the library's res…
+- [Accessibility Conformance Report (VPAT 2.5Rev, INT)](https://svgrid.com/docs/compliance/vpat/): **Product:** SvGrid (@svgrid/grid, @svgrid/enterprise) **Report version:** 1.0 **Report date:** 2026-08-24 **Contact:** support@jqwidgets.com
 
 ### Legal
 

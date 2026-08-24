@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-23 from 362 pages.
+Generated 2026-08-24 from 363 pages.
 
 <!-- =================================================================
      /docs/brand/company-description/  (community)
@@ -853,7 +853,7 @@ responsibility ends and yours begins.
 1. **MIT licence** - vetted by your legal team once, valid forever
 2. **Public source code** - no obfuscation; your auditor can read every line
 3. **Zero runtime dependencies** - `@svgrid/grid`, `@svgrid/enterprise`, `@svgrid/grid-wc` and `@svgrid/ui` each declare no runtime dependencies, so there is no transitive tree to review. Verify with `npm view @svgrid/grid dependencies`. The two optional peers for Enterprise export (`jszip`, `pdfmake`, both MIT) are listed in [security](../help/security.md)
-4. **SBOM on request** - generate one against any installed version with `npx @cyclonedx/cdxgen -o sbom.json`; see [security](../help/security.md#sbom)
+4. **Published SBOM** - a CycloneDX 1.6 document per package under [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime and peer dependencies to full declared depth. Regenerate with `pnpm sbom`; `pnpm sbom:check` fails if it has drifted from the manifests. Satisfies the EU Cyber Resilience Act's machine-readable SBOM expectation
 5. **Security disclosure policy** - email `support@jqwidgets.com`, GPG fingerprint published, response SLA documented in [security](../help/security.md)
 6. **Vulnerability history** - every CVE attributed to sv-grid published in the [changelog](../changelog.md) with disclosure date, fix version, mitigation
 7. **npm provenance** - `@svgrid/grid` is published from CI with `--provenance`, so npm records a verifiable link from the tarball back to the building workflow and commit
@@ -890,6 +890,162 @@ for the support window.
 - [GDPR + data residency](./gdpr.md)
 - [Security & supply chain](../help/security.md) - SBOM, signing, dep table
 - [Audit log integration](./audit-log.md) - turn callbacks into audit events
+
+<!-- =================================================================
+     /docs/compliance/vpat/  (community)
+     ================================================================== -->
+
+# Accessibility Conformance Report (VPAT 2.5Rev, INT)
+
+**Product:** SvGrid (`@svgrid/grid`, `@svgrid/enterprise`)
+**Report version:** 1.0
+**Report date:** 2026-08-24
+**Contact:** support@jqwidgets.com
+
+This report follows the **VPAT 2.5Rev International edition**, which covers the
+Revised Section 508 standards, EN 301 549, and WCAG 2.1 in one document.
+
+> **This is a self-assessment, not a third-party certification.** It records what
+> we test, how we test it, and what we have not tested. Nothing here is a legal
+> certification of conformance. Where a criterion depends on your content or your
+> theme, this report says so rather than claiming credit for it.
+
+## What SvGrid is, for the purposes of this report
+
+SvGrid is a **software component**, not a web page or an application. It renders
+a data grid inside a page you control. Several WCAG criteria are therefore
+scoped to the page rather than the component (page title, language of page,
+bypass blocks, consistent navigation) and are marked **Not Applicable** with a
+note; you remain responsible for them in the page that hosts the grid.
+
+Several others are **shared**: the grid supplies correct roles, names and
+keyboard behaviour, but you supply cell content. A custom cell renderer that
+emits an image without alt text will fail 1.1.1 no matter what the grid does.
+Those are marked *Supports, with author responsibility* and the boundary is
+stated in the remarks.
+
+## Evaluation methods
+
+| Method | What it covers | Where it runs |
+| --- | --- | --- |
+| `axe-core` against a rendered grid | Roles, names, relationships, duplicate ids, nested-interactive violations. Four configurations: plain, filter row + global filter, row selection, pagination | `packages/grid/src/a11y.axe.test.ts`, on every commit in CI |
+| WCAG contrast computation | Text, secondary text, header text, text on zebra / hovered / selected rows, text on accent controls, and the accent as a focus indicator, for **all 20 built-in themes in both light and dark** | `packages/grid/src/themes/contrast.test.ts`, on every commit in CI |
+| ARIA contract unit tests | The role / `aria-*` property builders and the roving-tabindex pattern | `a11y.test.ts`, `a11y.contract.test.ts` |
+| Focus and live-region unit tests | Focus trap, dismissable layers, scroll lock, the `aria-live` announcer | `packages/grid/src/a11y/*.test.ts` |
+| Manual keyboard review | The documented keyboard map | Manual, not automated |
+
+### Known limits of this evidence
+
+Stated plainly, because a conformance report that hides its gaps is worse than
+no report:
+
+- **The axe suite runs in jsdom**, which performs no layout or painting. Its own
+  `color-contrast` rule is therefore disabled there, and geometry-dependent
+  rules (`target-size`, `scrollable-region-focusable`) are not exercised.
+  Contrast is covered separately and more thoroughly by computation over the
+  theme tokens, but **target size has not been machine-verified**.
+- **No formal screen-reader test pass has been recorded.** The grid implements
+  the WAI-ARIA 1.2 grid pattern and is audited structurally, but we do not
+  currently publish results from a scripted NVDA / JAWS / VoiceOver run.
+  Criteria that depend on assistive-technology behaviour are marked
+  *Supports* on the strength of the ARIA implementation and automated audit,
+  and that basis is noted per row.
+- **Only the built-in themes are contrast-tested.** A custom theme is yours to
+  verify; the method is documented in [accessibility](../help/accessibility.md).
+
+Writing this report was itself an audit, and it found two real defects rather
+than only describing existing behaviour. Both are fixed and covered by tests:
+the grid never called its own `announce()`, so the documented status messages
+were not being made at all; and a cell failing `validate` was marked with a red
+class and a mouse-only tooltip, giving a screen-reader user no way to know the
+value had been rejected.
+
+## WCAG 2.1 Level A
+
+| Criterion | Conformance | Remarks |
+| --- | --- | --- |
+| 1.1.1 Non-text Content | Supports, with author responsibility | Grid chrome (sort, filter, menu, pagination controls) carries text or `aria-label`. Content inside cells is yours; a custom renderer must supply its own text alternatives. |
+| 1.2.x Time-based Media | Not Applicable | The grid renders no audio or video. |
+| 1.3.1 Info and Relationships | Supports | Native `<table>` semantics plus the ARIA grid pattern: `grid`, `rowgroup`, `row`, `columnheader`, `gridcell`, with `aria-rowindex` / `aria-colindex` / `aria-rowcount` / `aria-colcount`. Verified by the axe suite and the ARIA contract tests. |
+| 1.3.2 Meaningful Sequence | Supports | DOM order follows visual order, including with pinned columns. |
+| 1.3.3 Sensory Characteristics | Supports | Sort state is exposed via `aria-sort`, not by icon alone. |
+| 1.4.1 Use of Color | Supports, with author responsibility | Grid state is conveyed by ARIA as well as colour: sort by `aria-sort`, selection by `aria-selected`, focus by the roving tabindex, and a failed `validate` by `aria-invalid` plus its message rather than the red highlight alone. Conditional formatting you configure is yours to make non-colour-dependent. |
+| 1.4.2 Audio Control | Not Applicable | No audio. |
+| 2.1.1 Keyboard | Supports | Full keyboard operation: navigation, selection, sorting, filtering, editing, undo. Column resize handles are keyboard-operable with arrow keys. See the keyboard map in [accessibility](../help/accessibility.md). |
+| 2.1.2 No Keyboard Trap | Supports | Roving tabindex: one cell is tabbable and Tab exits the grid. Popovers (filter menus, editors) use a dismissable-layer stack that restores focus on close. Covered by the focus-trap unit tests. |
+| 2.1.4 Character Key Shortcuts | Supports | Single-character shortcuts act only while focus is inside the grid, and are suppressed while a cell editor is open. |
+| 2.2.1 Timing Adjustable | Not Applicable | No time limits. |
+| 2.2.2 Pause, Stop, Hide | Supports | No auto-updating content originates in the grid. Scroll animation and chevron transitions honour `prefers-reduced-motion: reduce`. |
+| 2.3.1 Three Flashes | Supports | Cell-flash highlighting on value change is a single fade well under three flashes per second. |
+| 2.4.1 Bypass Blocks | Not Applicable | Page-level concern. |
+| 2.4.2 Page Titled | Not Applicable | Page-level concern. |
+| 2.4.3 Focus Order | Supports | Roving tabindex keeps a single predictable stop; popovers return focus to their trigger. |
+| 2.4.4 Link Purpose | Supports, with author responsibility | Links rendered inside cells are yours. |
+| 2.5.1 Pointer Gestures | Supports | No multipoint or path-based gesture is required; drag operations (column reorder, resize, row drag) all have keyboard equivalents. |
+| 2.5.2 Pointer Cancellation | Supports | Actions fire on pointer-up. |
+| 2.5.3 Label in Name | Supports | Accessible names for grid controls begin with their visible text. |
+| 2.5.4 Motion Actuation | Not Applicable | No motion actuation. |
+| 3.1.1 Language of Page | Not Applicable | Page-level concern. |
+| 3.2.1 On Focus | Supports | Focus alone never changes context. |
+| 3.2.2 On Input | Supports | Filtering and editing update the grid in place; no unexpected context change. |
+| 3.3.1 Error Identification | Supports, with author responsibility | A cell failing a column's `validate` hook carries `aria-invalid="true"`, and the message it returns reaches assistive technology as the cell's accessible description or as visually-hidden text read with the cell - not only as the hover tooltip. Deciding *what* is invalid is yours. |
+| 3.3.2 Labels or Instructions | Supports | Editors and filter inputs derive an accessible name from the column header. |
+| 4.1.2 Name, Role, Value | Supports | The core of the grid pattern, and the criterion the axe suite exercises most directly. Interactive chrome exposes role, name and state. |
+| 4.1.3 Status Messages | Supports | The status changes that move no focus are announced through a visually-hidden `aria-live="polite"` region: filter match counts, filter clearing, and bulk selection changes. Changes the accessibility tree already carries (the focused cell, `aria-sort`, a single row's `aria-selected`) are deliberately not repeated there. Covered by `a11y.announce.test.ts` against a rendered grid. |
+
+## WCAG 2.1 Level AA
+
+| Criterion | Conformance | Remarks |
+| --- | --- | --- |
+| 1.4.3 Contrast (Minimum) | Supports for built-in themes; author responsibility for custom themes | Every one of the 20 built-in presets is CI-tested in both light and dark against 4.5:1 for body, secondary, header, zebra, hover, selection and accent-control text. A custom theme is not covered by that test. |
+| 1.4.4 Resize Text | Supports | Layout is token-driven and reflows at 200% zoom. |
+| 1.4.5 Images of Text | Supports | No images of text. |
+| 1.4.10 Reflow | Partially Supports | The grid reflows and its own regions scroll rather than the page. A data table with many columns still requires horizontal scrolling at 320 CSS pixels, which is inherent to tabular data; the `responsive` prop and per-column `hideBelow` let you reduce the column set at narrow widths. |
+| 1.4.11 Non-text Contrast | Supports | The accent used for focus and selection indication is CI-tested at 3:1 against the background for every theme. Note that decorative table gridlines are intentionally not held to 3:1: the grid's structure is conveyed by the accessibility tree, so the rule does not apply to them. |
+| 1.4.12 Text Spacing | Supports | Row height and cell padding are token-driven; no clipping under the required spacing overrides. |
+| 1.4.13 Content on Hover or Focus | Supports | Tooltips and popovers are dismissable with Escape, hoverable, and persist until dismissed. |
+| 2.4.5 Multiple Ways | Not Applicable | Page-level concern. |
+| 2.4.6 Headings and Labels | Supports | Column headers are descriptive `columnheader` elements. |
+| 2.4.7 Focus Visible | Supports | The active cell carries a visible focus ring that uses `currentColor`, so it survives forced-colors mode. |
+| 3.1.2 Language of Parts | Not Applicable | Page-level concern. |
+| 3.2.3 Consistent Navigation | Not Applicable | Page-level concern. |
+| 3.2.4 Consistent Identification | Supports | Grid controls are identified consistently across instances. |
+| 3.3.3 Error Suggestion | Supports, with author responsibility | The string your `validate` hook returns is carried through verbatim, so a correction hint ("Score must be at least 90") reaches the user. Writing a useful hint is yours. |
+| 3.3.4 Error Prevention | Not Applicable | No legal, financial or data-deletion transaction originates in the grid. |
+| 4.1.1 Parsing | Supports | Obsolete in WCAG 2.2; no duplicate ids or malformed markup, checked by the axe suite. |
+
+## Revised Section 508
+
+Section 508 incorporates **WCAG 2.0 Level A and AA** by reference. Every WCAG
+2.0 criterion is a subset of the 2.1 tables above, so the conformance claims
+carry over unchanged.
+
+| Chapter | Conformance | Remarks |
+| --- | --- | --- |
+| 302 Functional Performance Criteria | Supports, with the limits noted above | Operation without vision relies on the ARIA grid pattern; see the screen-reader caveat in *Known limits*. |
+| 501-504 Software | Supports | The grid is authored content within a host application; it exposes platform accessibility services via ARIA in the browser. |
+| 602 Support Documentation | Supports | Accessibility documentation is published at [accessibility](../help/accessibility.md), including the keyboard map and verification guidance. |
+
+## EN 301 549
+
+EN 301 549 v3.2.1, the harmonised European standard, incorporates **WCAG 2.1
+Level A and AA** for web content. Clauses 9.1 through 9.4 map directly onto the
+WCAG 2.1 tables above; clause 11 (software) is addressed by the same ARIA
+implementation. No separate claims are made here.
+
+## Reproducing these results
+
+```bash
+pnpm --filter @svgrid/grid test:lib   # includes the axe and contrast suites
+```
+
+Both suites fail the build on a regression, so this report is checked by CI
+rather than being a point-in-time snapshot.
+
+## See also
+
+- [Accessibility](../help/accessibility.md) - roles, keyboard map, and how to verify a custom theme
+- [Compliance overview](./index.md) - the wider procurement questions
 
 <!-- =================================================================
      /docs/enterprise/evaluation/  (enterprise)
@@ -11696,9 +11852,9 @@ walk-through:
 | Standard                | Status                                                                 |
 | ----------------------- | ---------------------------------------------------------------------- |
 | WAI-ARIA 1.2 grid pattern | Implemented (see [Roles & properties](#roles--properties)).         |
-| WCAG 2.1 AA             | The grid meets AA for the default theme + tokens; your custom theme determines pass/fail of contrast. |
+| WCAG 2.1 AA             | Structure is audited by `axe-core` in CI. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
 | Keyboard navigation     | Full coverage; see [Keyboard map](#keyboard-map).                      |
-| Screen-reader announcements | Cell + selection + edit announcements via a single `aria-live=polite` region. |
+| Screen-reader announcements | Filter results and bulk selection changes, via a single `aria-live=polite` region. See [What the grid announces](#what-the-grid-announces). |
 | Reduced motion          | Honored: scroll animations + chevron transitions disable when `prefers-reduced-motion: reduce`. |
 | Forced colors / high contrast | Supported: borders + focus rings use `currentColor`; no hardcoded `border-color`. |
 
@@ -11778,19 +11934,59 @@ The keyboard handler in [Tree rows](./rows/tree-rows.md) adds:
 
 ## Screen-reader announcements
 
-The grid maintains a single `aria-live="polite"` region that emits:
+The grid shares one visually-hidden `aria-live="polite"` region with the rest of
+the component library, and is deliberately sparing about what it puts there.
 
-- Cell content when the active cell moves (so VoiceOver/JAWS reads
-  "Customer column, row 14, Acme Corp").
-- Selection state changes (`"row 14 selected, 3 of 12 rows selected"`).
-- Edit commits (`"saved 19.95"`) - useful for users who can't see the
-  cell's visual state.
-- Sort changes (`"sorted by Customer ascending"`).
-- Filter changes (`"3 of 124 rows match"`).
+### What the grid announces
 
-You can replace the announcer with your own by passing
-`announcer={(message) => ...}` to `<SvGrid>` if you have a unified
-toast system.
+| Event | What is said |
+| --- | --- |
+| A filter changes the matching rows | `"12 of 250 rows match the current filters"`, or `"No rows match the current filters"` |
+| Every filter is cleared | `"Filters cleared, showing all 250 rows"` |
+| A bulk selection change | `"250 rows selected"` / `"Selection cleared"` |
+
+Filter announcements are debounced by 400 ms, so typing in the search box
+announces the count you stopped on rather than one for every prefix. They are
+also skipped entirely under `externalFilter`, because there the server decides
+what matched and the local count would describe only the page in hand.
+
+### What it deliberately does not announce
+
+This is the more important half. A live region is not the only way a screen
+reader learns something, and announcing what the accessibility tree already
+carries makes the grid talk over itself:
+
+- **The cell you moved to.** Focus moves there (roving tabindex), so the reader
+  announces the cell, its column header and its row position natively.
+- **Sort state.** Carried by `aria-sort` on the column header, read when focus
+  lands on it.
+- **Whether the row you are on is selected.** Carried by `aria-selected`.
+- **Selecting or deselecting a single row.** The focused row is announced with
+  its new selected state; adding `"1 row selected"` on top would be a second,
+  redundant utterance. Only changes of more than one row, which cannot have come
+  from a single focus move, are announced.
+
+### Translating them
+
+Announcements are full sentences, so unlike the single-word labels elsewhere in
+`localeText` they take `{placeholders}` and you control the word order:
+
+```svelte
+<SvGrid
+  localization={{
+    text: {
+      announceFilterResults: '{visible} van de {total} rijen komen overeen',
+      announceNoMatches: 'Geen rijen komen overeen',
+      announceFiltersCleared: 'Filters gewist, alle {total} rijen worden getoond',
+      announceRowsSelected: '{count} rijen geselecteerd',
+      announceSelectionCleared: 'Selectie gewist',
+    },
+  }}
+/>
+```
+
+An unknown placeholder is left in the output rather than blanked, so a typo in
+an override is visible instead of silently eating the number.
 
 ## Focus management
 
@@ -11836,6 +12032,12 @@ The grid can't know:
 - **Reading order** of header groups. The grid emits group headers
   with `aria-colspan` correctly, but if your group label is "Q1"
   alone, screen readers say "Q1" - consider "Q1 2025" to give context.
+- **The wording of validation messages.** A cell failing a column's
+  `validate` hook is marked `aria-invalid` and the returned string is
+  carried to assistive technology, so return a message that says how to
+  fix it ("Score must be at least 90"), not just that something is
+  wrong ("Invalid"). Returning `false` marks the cell invalid with no
+  message at all, which leaves a screen-reader user without a reason.
 
 ## How to verify
 
@@ -11846,6 +12048,20 @@ The grid can't know:
 3. **Lighthouse accessibility audit.** Run it against your own build. Most
    deltas are contrast issues in your theme rather than grid markup, so
    check those first.
+
+   > We run `axe-core` against a rendered grid in CI (`a11y.axe.test.ts`),
+   > covering the plain grid, the filter row, row selection and pagination.
+   > That suite runs in jsdom, which does no layout, so axe's own
+   > colour-contrast rule is disabled there.
+   >
+   > Contrast is covered separately and more thoroughly: `themes/contrast.test.ts`
+   > computes WCAG ratios for **every built-in preset in both light and dark**
+   > and fails the build below AA. Body text, secondary text, header text, text
+   > on zebra / hovered / selected rows, and text on accent-filled controls all
+   > have to clear 4.5:1, and the accent has to clear 3:1 where it signals focus
+   > or selection. So the presets are checked exhaustively rather than whichever
+   > one a browser test happened to load. What is still yours to verify is a
+   > **custom** theme.
 4. **axe-core in your e2e suite.**
    ```ts
    import { injectAxe, checkA11y } from 'axe-playwright'
@@ -22486,6 +22702,14 @@ claude mcp add svgrid -- npx -y @svgrid/mcp
 
 Then run `/mcp` in a session and you will see `svgrid` listed.
 
+To share the server with your team, add `--scope project`. That writes
+a `.mcp.json` at the repository root which you can commit, so everyone
+who clones the repo gets the same tooling with no per-machine setup:
+
+```bash
+claude mcp add svgrid --scope project -- npx -y @svgrid/mcp
+```
+
 ### Claude Desktop
 
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -22520,7 +22744,28 @@ groups by department"* to confirm the tools are exposed.
 ```json
 {
   "context_servers": {
-    "svgrid": { "command": { "path": "npx", "args": ["-y", "@svgrid/mcp"] } }
+    "svgrid": {
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+### VS Code
+
+Create `.vscode/mcp.json` in the workspace. Note that VS Code uses
+`servers` rather than the `mcpServers` wrapper:
+
+```json
+{
+  "servers": {
+    "svgrid": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@svgrid/mcp"]
+    }
   }
 }
 ```
@@ -22586,8 +22831,10 @@ get_doc({ slug: 'getting-started' }): string
 Case-insensitive substring search across all docs. Returns matching
 slugs with a one-line excerpt around the first hit.
 
+`limit` is optional and defaults to 10.
+
 ```ts
-search_docs({ query: 'row virtualization', limit?: 10 })
+search_docs({ query: 'row virtualization', limit: 10 })
 ```
 
 #### `get_api_reference`
@@ -22626,9 +22873,14 @@ Generate runnable SvelteKit files from an `EntitySchema`: the `$lib`
 schema module, a `+server.ts` API route using `createKitHandlers`, and
 a `+page.svelte` with `SvGrid` and `SvGridEditPanel`.
 
-```ts
-scaffold_entity({ schema, route?, apiRoute? }):
-  Array<{ path, contents, description }>
+`route` defaults to the schema name and `apiRoute` to `/api/{route}`.
+
+```ts {nocheck}
+scaffold_entity(args: {
+  schema: EntitySchema
+  route?: string
+  apiRoute?: string
+}): Array<{ path: string; contents: string; description: string }>
 ```
 
 Generated bodies are wrapped in `svgrid:managed` markers, so
@@ -30517,13 +30769,21 @@ Notes:
 
 ## SBOM
 
-Every release ships an `npm pack` tarball. You can generate a CycloneDX
-or SPDX SBOM directly:
+We publish a **CycloneDX 1.6** document per package in
+[`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime
+and peer dependencies to full declared depth. Fetch the one you need straight
+from the repo, or regenerate from a clone:
 
 ```bash
-npx @cyclonedx/cdxgen -t npm -o sbom.json @svgrid/grid
-# or
-npx @cyclonedx/cdxgen -t npm -o sbom.json @svgrid/enterprise
+pnpm sbom          # write sbom/*.cdx.json
+pnpm sbom:check    # non-zero exit if they have drifted from the manifests
+```
+
+If your process prefers a scanner-produced document, or you want SPDX instead,
+generate one against your own installed tree:
+
+```bash
+npx @cyclonedx/cdxgen -t npm -o sbom.json
 ```
 
 For Enterprise, the SBOM lists `jszip` and `pdfmake` as optional peers - flag
@@ -31331,6 +31591,68 @@ menu opens (cached per column):
 Now the checklist shows every value, not just the ones on screen; selecting them
 drives `filterModel.columns[col].selectedValues` as usual.
 
+## The advanced filter over the wire
+
+`filterModel.columns` is a flat map with an implicit AND, so it cannot express
+OR across columns, nesting, negation, two conditions on one column, or a
+comparison against an aggregate. Those arrive separately, as a JSON expression:
+
+```ts
+filterModel.expression // GridPredicateExpr | undefined
+```
+
+### It is all or nothing
+
+A backend that receives an expression MUST either translate **the whole thing**,
+make `rowCount` reflect it, and acknowledge it:
+
+```ts
+return { rows, rowCount, appliedExpression: true }
+```
+
+or apply **none** of it and stay silent:
+
+```ts
+return { rows, rowCount } // no acknowledgement
+```
+
+Partial application is a contract violation rather than a degraded mode.
+Dropping a clause makes the result *broader*, so the grid would show rows the
+user's filter excluded, while the UI says the filter is on. Nothing about that
+result looks wrong, which is what makes it dangerous.
+
+### What happens when you do not apply it
+
+The grid does **not** filter the loaded page for you. Filtering one page would
+turn "3 of 1,000,000 match" into a confident lie and make paging incoherent,
+since page 2 would re-filter a different slice. Instead the controller sets
+`state.expressionUnapplied`, logs one warning, and leaves the rows alone, so you
+can show the user that the filter did not run:
+
+```svelte
+{#if state.expressionUnapplied}
+  <p role="status">
+    This grid loads rows from a server that has not applied the advanced
+    filter, so the results below are unfiltered.
+  </p>
+{/if}
+```
+
+### Using the plan seam
+
+`planQuery` admits the expression only when every column it references is on the
+`EntitySchema` - and rejects it **whole** if any is not, for the reason above.
+`createInMemoryDataSource` implements the contract end to end and is the
+reference to test a real backend against.
+
+```ts
+const plan = planQuery(schema, request)
+if (plan.expression) {
+  // Safe to translate: every column is on the schema.
+  // Translate it in full, or do not acknowledge it.
+}
+```
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the datasource contract and request lifecycle.
@@ -31382,6 +31704,51 @@ async function getRows(req) {
   return { rows: leafRows, rowCount: total }
 }
 ```
+
+## You probably do not have to write that
+
+Mapping the grid's request onto a backend query is the part teams actually
+find hard, so `@svgrid/enterprise` ships adapters that already do it - SQL,
+REST and Supabase - including the grouped case above.
+
+```ts
+import { planQuery, planToSql } from '@svgrid/enterprise'
+
+// In your endpoint. `schema` is the EntitySchema for the table.
+const plan = planQuery(schema, request)
+const sql = planToSql(plan, { placeholders: '$', ilike: true }) // Postgres
+
+const rows = await db.query(
+  plan.groupBy
+    // Grouped level: the plan hands you the SELECT list and GROUP BY.
+    ? `SELECT ${sql.select} FROM sales ${sql.whereText} ${sql.groupByText}
+       ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`
+    // Leaf level: your own columns.
+    : `SELECT * FROM sales ${sql.whereText}
+       ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
+  sql.params,
+)
+```
+
+Three details the plan handles that are easy to get wrong by hand:
+
+- **The path becomes ordinary predicates.** `groupKeys` arrives as equality
+  filters in `plan.where`, so your backend only ever handles "filter, then
+  group by one column" - never a multi-level GROUP BY.
+- **The count means different things at different levels.** `sql.countText` is
+  `COUNT(DISTINCT col)` when grouping and `COUNT(*)` when not, because the grid
+  sizes its scrollbar from the number of *groups* at a group level.
+- **Aggregates are aliased back to their source column.** `SUM("amount") AS
+  "amount"`, because that is the key the grid reads from the group row.
+
+Only fields declared on the `EntitySchema` reach the plan, so a client cannot
+group by or aggregate an identifier you did not declare.
+
+For REST, `createRestDataSource` sends `?groupBy=region&aggregate=sum:amount`
+plus the path as ordinary filter params. For Postgres via PostgREST,
+`createSupabaseDataSource` uses aggregate selects (requires PostgREST 12+ with
+aggregates enabled). `createInMemoryDataSource` implements the whole contract
+in memory and is the reference to test your own backend against.
 
 Each group row is a plain object carrying the group column's value (under that
 column's field) and the aggregate values (under each aggregation column) - the

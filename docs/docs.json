@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-23T11:36:48.715Z",
+  "generatedAt": "2026-08-24T07:03:34.752Z",
   "counts": {
-    "pages": 362,
+    "pages": 363,
     "enterprise": 55,
     "withDemo": 208
   },
@@ -632,7 +632,8 @@
         "compliance/audit-log.md",
         "compliance/gdpr.md",
         "compliance/hipaa.md",
-        "compliance/soc2.md"
+        "compliance/soc2.md",
+        "compliance/vpat.md"
       ]
     },
     {
@@ -734,8 +735,20 @@
       "section": "compliance",
       "pillar": "company",
       "tier": "community",
-      "words": 661,
+      "words": 687,
       "lastUpdated": "2026-08-23",
+      "demoIds": []
+    },
+    {
+      "path": "compliance/vpat.md",
+      "url": "/docs/compliance/vpat/",
+      "title": "Accessibility Conformance Report (VPAT 2.5Rev, INT)",
+      "summary": "**Product:** SvGrid (@svgrid/grid, @svgrid/enterprise) **Report version:** 1.0 **Report date:** 2026-08-24 **Contact:** support@jqwidgets.com",
+      "section": "compliance",
+      "pillar": "company",
+      "tier": "community",
+      "words": 1970,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -847,7 +860,7 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 3810,
+      "words": 3902,
       "lastUpdated": "2026-08-23",
       "demoIds": []
     },
@@ -1044,7 +1057,7 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Screens & features",
-      "words": 2297,
+      "words": 3197,
       "lastUpdated": "2026-08-23",
       "demoIds": []
     },
@@ -1517,8 +1530,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1395,
-      "lastUpdated": "2026-08-23",
+      "words": 1892,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "17-accessibility"
       ]
@@ -1557,7 +1570,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2086,
+      "words": 2088,
       "lastUpdated": "2026-08-23",
       "demoIds": [
         "51-ai-assistant"
@@ -2537,7 +2550,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 843,
+      "words": 849,
       "lastUpdated": "2026-08-23",
       "demoIds": []
     },
@@ -2549,7 +2562,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1079,
+      "words": 1379,
       "lastUpdated": "2026-08-23",
       "demoIds": []
     },
@@ -3150,8 +3163,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1270,
-      "lastUpdated": "2026-08-15",
+      "words": 1315,
+      "lastUpdated": "2026-08-23",
       "demoIds": [
         "16-csp-compliant"
       ]
@@ -3190,8 +3203,8 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1325,
-      "lastUpdated": "2026-08-19",
+      "words": 1652,
+      "lastUpdated": "2026-08-23",
       "demoIds": []
     },
     {
@@ -3202,8 +3215,8 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1207,
-      "lastUpdated": "2026-07-22",
+      "words": 1505,
+      "lastUpdated": "2026-08-23",
       "demoIds": [
         "344-server-grouping-model",
         "114-server-grouping"

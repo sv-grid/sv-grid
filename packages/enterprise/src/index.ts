@@ -66,6 +66,17 @@ export { enableBoardView, SvGridBoard } from './board'
 // In-grid pivot mode (Pro). `enablePivot()` registers the pivot engine so
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
+export { enableAdvancedFilter } from './advanced-filter-enable'
+export { default as SvAdvancedFilter } from './SvAdvancedFilter.svelte'
+export {
+  exprColumnsFromGrid,
+  type ExprColumnsOptions,
+} from './advanced-filter/expr-columns-from-grid'
+export {
+  compilePredicate,
+  compileScalar,
+  type CompileOptions,
+} from './expressions/compile'
 // Scheduler Pro feature surface (dependencies, multi-assignment + summaries,
 // axis collapse + zoom). Config type extends the free grid's SchedulerConfig;
 // the pure models are unit-tested framework-free helpers the renderer consumes.

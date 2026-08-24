@@ -177,8 +177,10 @@ get_doc({ slug: 'getting-started' }): string
 Case-insensitive substring search across all docs. Returns matching
 slugs with a one-line excerpt around the first hit.
 
+`limit` is optional and defaults to 10.
+
 ```ts
-search_docs({ query: 'row virtualization', limit?: 10 })
+search_docs({ query: 'row virtualization', limit: 10 })
 ```
 
 #### `get_api_reference`
@@ -217,9 +219,14 @@ Generate runnable SvelteKit files from an `EntitySchema`: the `$lib`
 schema module, a `+server.ts` API route using `createKitHandlers`, and
 a `+page.svelte` with `SvGrid` and `SvGridEditPanel`.
 
-```ts
-scaffold_entity({ schema, route?, apiRoute? }):
-  Array<{ path, contents, description }>
+`route` defaults to the schema name and `apiRoute` to `/api/{route}`.
+
+```ts {nocheck}
+scaffold_entity(args: {
+  schema: EntitySchema
+  route?: string
+  apiRoute?: string
+}): Array<{ path: string; contents: string; description: string }>
 ```
 
 Generated bodies are wrapped in `svgrid:managed` markers, so

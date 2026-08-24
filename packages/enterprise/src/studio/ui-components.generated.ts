@@ -7085,6 +7085,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "initialAdvancedFilter",
+        "label": "Initial Advanced Filter",
+        "type": "json",
+        "description": "The advanced-filter expression to start in (Pro). Applied once at mount; change it afterwards through `api.setAdvancedFilter()`. Filtering only happens once `@svgrid/enterprise`'s `enableAdvancedFilter()` has registered a compiler - without it the expression is stored and reported but no rows are removed, so the free grid degrades to a no-op rather than to a wrong row set.",
+        "group": "common"
+      },
+      {
         "key": "externalFilter",
         "label": "External Filter",
         "type": "boolean",
