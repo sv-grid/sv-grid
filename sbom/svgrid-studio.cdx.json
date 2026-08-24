@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:562f040b-f980-4975-a172-c17e4a189a84",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/studio@0.6.0",
+      "name": "@svgrid/studio",
+      "version": "0.6.0",
+      "purl": "pkg:npm/%40svgrid/studio@0.6.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "SEE LICENSE IN LICENSE"
+          }
+        }
+      ],
+      "description": "SvGrid Studio CLI: scaffold a full CRUD screen (grid + edit panel + SvelteKit API route) from a Drizzle schema in one command."
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "name": "@svgrid/enterprise",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "scope": "required",
+      "description": "Runtime dependency (declared range: workspace:^)"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/studio@0.6.0",
+      "dependsOn": [
+        "pkg:npm/%40svgrid/enterprise@2.6.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "dependsOn": []
+    }
+  ]
+}

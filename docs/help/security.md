@@ -109,13 +109,21 @@ Notes:
 
 ## SBOM
 
-Every release ships an `npm pack` tarball. You can generate a CycloneDX
-or SPDX SBOM directly:
+We publish a **CycloneDX 1.6** document per package in
+[`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime
+and peer dependencies to full declared depth. Fetch the one you need straight
+from the repo, or regenerate from a clone:
 
 ```bash
-npx @cyclonedx/cdxgen -t npm -o sbom.json @svgrid/grid
-# or
-npx @cyclonedx/cdxgen -t npm -o sbom.json @svgrid/enterprise
+pnpm sbom          # write sbom/*.cdx.json
+pnpm sbom:check    # non-zero exit if they have drifted from the manifests
+```
+
+If your process prefers a scanner-produced document, or you want SPDX instead,
+generate one against your own installed tree:
+
+```bash
+npx @cyclonedx/cdxgen -t npm -o sbom.json
 ```
 
 For Enterprise, the SBOM lists `jszip` and `pdfmake` as optional peers - flag

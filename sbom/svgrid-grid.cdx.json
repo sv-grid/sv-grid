@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:3af606be-3963-4d14-a739-955600af3810",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "name": "@svgrid/grid",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/grid@2.6.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "description": "Svelte 5-native data grid and data table. Headless-first engine with virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data, pivot, and server-side data. Drop-in <SvGrid> component. TypeScript, SSR-ready."
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/svelte@5.55.9",
+      "name": "svelte",
+      "version": "5.55.9",
+      "purl": "pkg:npm/svelte@5.55.9",
+      "scope": "required",
+      "description": "Peer dependency (declared range: ^5.0.0)"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "dependsOn": [
+        "pkg:npm/svelte@5.55.9"
+      ]
+    },
+    {
+      "ref": "pkg:npm/svelte@5.55.9",
+      "dependsOn": []
+    }
+  ]
+}

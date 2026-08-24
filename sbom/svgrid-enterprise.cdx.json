@@ -1,0 +1,99 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:88017aea-9dde-4aae-ac3b-27d9469b1c79",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "name": "@svgrid/enterprise",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "SEE LICENSE IN LICENSE"
+          }
+        }
+      ],
+      "description": "Enterprise feature pack for SvGrid: Excel (xlsx), PDF, CSV, TSV and HTML export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler views. Requires a paid license key."
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "name": "@svgrid/grid",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/grid@2.6.1",
+      "scope": "required",
+      "description": "Peer dependency (declared range: workspace:^)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/jszip@3.10.1",
+      "name": "jszip",
+      "version": "3.10.1",
+      "purl": "pkg:npm/jszip@3.10.1",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: ^3.10.0)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/pdfmake@0.2.23",
+      "name": "pdfmake",
+      "version": "0.2.23",
+      "purl": "pkg:npm/pdfmake@0.2.23",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: ^0.2.0)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/svelte@5.55.9",
+      "name": "svelte",
+      "version": "5.55.9",
+      "purl": "pkg:npm/svelte@5.55.9",
+      "scope": "required",
+      "description": "Peer dependency (declared range: ^5.0.0)"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "dependsOn": [
+        "pkg:npm/%40svgrid/grid@2.6.1",
+        "pkg:npm/jszip@3.10.1",
+        "pkg:npm/pdfmake@0.2.23",
+        "pkg:npm/svelte@5.55.9"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/jszip@3.10.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pdfmake@0.2.23",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/svelte@5.55.9",
+      "dependsOn": []
+    }
+  ]
+}

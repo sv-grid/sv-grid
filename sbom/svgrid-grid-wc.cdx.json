@@ -1,0 +1,41 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:61fb56f6-01e5-42d0-a6cd-bb0383ef0db0",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/grid-wc@2.6.1",
+      "name": "@svgrid/grid-wc",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/grid-wc@2.6.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element). Drop into React, Vue, Angular, or plain HTML - no build step required."
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/grid-wc@2.6.1",
+      "dependsOn": []
+    }
+  ]
+}

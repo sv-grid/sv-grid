@@ -1,0 +1,41 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:380c08e0-49f9-4a45-a5d4-1530623502d9",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/ui@2.6.1",
+      "name": "@svgrid/ui",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/ui@2.6.1",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "description": "Add and preview SvGrid UI components in one command: npx @svgrid/ui try calendar"
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/ui@2.6.1",
+      "dependsOn": []
+    }
+  ]
+}

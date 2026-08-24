@@ -40,7 +40,7 @@ responsibility ends and yours begins.
 1. **MIT licence** - vetted by your legal team once, valid forever
 2. **Public source code** - no obfuscation; your auditor can read every line
 3. **Zero runtime dependencies** - `@svgrid/grid`, `@svgrid/enterprise`, `@svgrid/grid-wc` and `@svgrid/ui` each declare no runtime dependencies, so there is no transitive tree to review. Verify with `npm view @svgrid/grid dependencies`. The two optional peers for Enterprise export (`jszip`, `pdfmake`, both MIT) are listed in [security](../help/security.md)
-4. **SBOM on request** - generate one against any installed version with `npx @cyclonedx/cdxgen -o sbom.json`; see [security](../help/security.md#sbom)
+4. **Published SBOM** - a CycloneDX 1.6 document per package under [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime and peer dependencies to full declared depth. Regenerate with `pnpm sbom`; `pnpm sbom:check` fails if it has drifted from the manifests. Satisfies the EU Cyber Resilience Act's machine-readable SBOM expectation
 5. **Security disclosure policy** - email `support@jqwidgets.com`, GPG fingerprint published, response SLA documented in [security](../help/security.md)
 6. **Vulnerability history** - every CVE attributed to sv-grid published in the [changelog](../changelog.md) with disclosure date, fix version, mitigation
 7. **npm provenance** - `@svgrid/grid` is published from CI with `--provenance`, so npm records a verifiable link from the tarball back to the building workflow and commit

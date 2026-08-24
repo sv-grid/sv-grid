@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:17b57c1c-a05f-4f94-acae-c54d3201ef36",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/create-studio@0.5.0",
+      "name": "@svgrid/create-studio",
+      "version": "0.5.0",
+      "purl": "pkg:npm/%40svgrid/create-studio@0.5.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "description": "Scaffold a runnable SvGrid Studio data app in one command: npm create @svgrid/studio@latest"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "name": "@svgrid/enterprise",
+      "version": "2.6.1",
+      "purl": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "scope": "required",
+      "description": "Runtime dependency (declared range: workspace:^)"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/create-studio@0.5.0",
+      "dependsOn": [
+        "pkg:npm/%40svgrid/enterprise@2.6.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "dependsOn": []
+    }
+  ]
+}
