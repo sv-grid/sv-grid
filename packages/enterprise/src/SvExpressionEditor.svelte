@@ -30,13 +30,15 @@
   } from './expressions/expression-columns'
   import type { PredicateExpr } from './expressions/expression-types'
 
-  type Condition = {
-    column: string
-    op: ExcelFilterOperator
-    value: string
-    valueTo: string
-    values: string[]
-  }
+  import {
+    freshCondition,
+    freshGroup,
+    fromBuilderTree,
+    toBuilderTree,
+    MAX_BUILDER_DEPTH,
+    type BuilderGroup,
+    type BuilderNode,
+  } from './expressions/builder-tree'
 
   type Props = {
     columns: ReadonlyArray<ExprColumn>
@@ -55,92 +57,50 @@
   }: Props = $props()
 
   // --- Builder <-> predicate conversion ------------------------------------
+  // The conversion itself lives in expressions/builder-tree.ts, so the round
+  // trip can be tested without mounting this component.
 
-  function toConditions(expr: PredicateExpr): { combinator: 'and' | 'or'; conditions: Condition[] } | null {
-    // `const true` is how "no filter yet" is spelled. Treat it as an empty
-    // builder rather than an unrepresentable expression, so a fresh panel opens
-    // on a ready-to-fill condition row instead of dropping into text mode
-    // showing the word `true`.
-    if (expr.kind === 'const') {
-      return expr.value ? { combinator: 'and', conditions: [freshCondition()] } : null
-    }
-    const parts =
-      expr.kind === 'and' || expr.kind === 'or' ? expr.parts : [expr]
-    const combinator = expr.kind === 'or' ? 'or' : 'and'
-    const conditions: Condition[] = []
-    for (const p of parts) {
-      if (p.kind !== 'cmp') return null // scalarCmp / nested -> text mode only
-      conditions.push({
-        column: p.column,
-        op: p.op,
-        value: p.value != null && !Array.isArray(p.value) ? String(p.value) : '',
-        valueTo: p.valueTo != null ? String(p.valueTo) : '',
-        values: Array.isArray(p.value) ? p.value.map(String) : [],
-      })
-    }
-    return { combinator, conditions }
-  }
-
-  function fromConditions(combinator: 'and' | 'or', conditions: Condition[]): PredicateExpr {
-    const parts: PredicateExpr[] = conditions.map((c) => {
-      const base = { kind: 'cmp' as const, column: c.column, op: c.op }
-      if (isValueless(c.op)) return base
-      if (isSetOperator(c.op)) return { ...base, value: c.values }
-      if (isRangeOperator(c.op)) return { ...base, value: c.value, valueTo: c.valueTo }
-      return { ...base, value: c.value }
-    })
-    if (parts.length === 0) return { kind: 'const', value: true }
-    if (parts.length === 1) return parts[0]
-    return { kind: combinator, parts }
-  }
-
-  const initial = toConditions(value)
-  let combinator = $state<'and' | 'or'>(initial?.combinator ?? 'and')
-  let conditions = $state<Condition[]>(
-    initial?.conditions ?? [freshCondition()],
-  )
-  // If the incoming value is not representable as a flat condition list, start
-  // in text mode so nothing is lost.
+  const initial = toBuilderTree(value, columns)
+  let root = $state<BuilderGroup>(initial ?? freshGroup(columns))
+  // If the incoming value cannot be shown as a tree, start in text mode so
+  // nothing is lost.
   if (!initial && mode === 'builder') mode = 'text'
 
   let text = $state(stringifyPredicate(value, columns))
   let textError = $state<string | null>(null)
 
   /**
-   * The last expression WE produced. Everything below is seeded once at init,
-   * so without this the editor would ignore a `value` assigned from outside -
-   * loading a saved filter or clicking a preset would update the grid while the
-   * editor kept showing the old conditions.
+   * The last expression WE produced, serialized. Everything below is seeded
+   * once at init, so without this the editor would ignore a `value` assigned
+   * from outside - loading a saved filter or clicking a preset would update the
+   * grid while the editor kept showing the old conditions.
    *
-   * Compared by reference on purpose: our own emits assign the very object we
-   * just built, so they are skipped, while any expression from elsewhere is a
-   * different object and re-seeds the UI.
+   * Compared by VALUE, not by reference. Reference comparison looks right and
+   * is cheaper, but `value` is $bindable: the object that comes back in is not
+   * the object we assigned, so the check never matched and the effect re-seeded
+   * the tree after every one of our own edits. Flat lists survived that because
+   * they round-trip exactly; a nested group does not, since a group holding one
+   * condition serializes to the bare condition, so adding a group appeared to
+   * do nothing at all.
    */
-  let lastEmitted: PredicateExpr | null = $state(value)
+  let lastEmittedJson = $state<string>(JSON.stringify(value))
 
   $effect(() => {
     const incoming = value
-    if (incoming === untrack(() => lastEmitted)) return
+    if (JSON.stringify(incoming) === untrack(() => lastEmittedJson)) return
     untrack(() => {
-      const next = toConditions(incoming)
+      const next = toBuilderTree(incoming, columns)
       if (next) {
-        combinator = next.combinator
-        conditions = next.conditions
+        root = next
       } else if (mode === 'builder') {
-        // Not representable as a flat list; text mode keeps it intact.
+        // Not representable as a tree; text mode keeps it intact.
         mode = 'text'
       }
       text = stringifyPredicate(incoming, columns)
       textError = null
-      lastEmitted = incoming
+      lastEmittedJson = JSON.stringify(incoming)
     })
   })
-
-  function freshCondition(): Condition {
-    const first = columns[0]
-    const ops = operatorsForType(first?.type)
-    return { column: first?.id ?? '', op: ops[0]?.value ?? 'equals', value: '', valueTo: '', values: [] }
-  }
 
   const columnOptions = $derived(columns.map((c) => ({ value: c.id, label: c.name ?? c.id })))
 
@@ -152,8 +112,8 @@
   // --- Emit ----------------------------------------------------------------
 
   function emitBuilder() {
-    const expr = fromConditions(combinator, conditions)
-    lastEmitted = expr
+    const expr = fromBuilderTree(root)
+    lastEmittedJson = JSON.stringify(expr)
     value = expr
     text = stringifyPredicate(expr, columns)
     textError = null
@@ -170,7 +130,7 @@
       const problems = validateExpression(expr, columns)
       textError = problems.length ? problems.join('; ') : null
       if (!problems.length) {
-        lastEmitted = expr
+        lastEmittedJson = JSON.stringify(expr)
         value = expr
         onChange?.(expr)
       }
@@ -179,19 +139,38 @@
     }
   }
 
-  function addCondition() {
-    conditions = [...conditions, freshCondition()]
+  // Mutations take the parent group and an index rather than a path, because
+  // the recursive markup already holds the parent it is rendering.
+
+  function addCondition(group: BuilderGroup) {
+    group.children.push(freshCondition(columns))
     emitBuilder()
   }
-  function removeCondition(i: number) {
-    conditions = conditions.filter((_, idx) => idx !== i)
-    if (conditions.length === 0) conditions = [freshCondition()]
+
+  function addGroup(group: BuilderGroup) {
+    // A nested group defaults to the OPPOSITE combinator. Nesting an "all"
+    // inside an "all" is a no-op the user would then have to correct, so the
+    // default is the one that makes the new group mean something.
+    group.children.push(
+      freshGroup(columns, group.combinator === 'and' ? 'or' : 'and'),
+    )
     emitBuilder()
   }
-  function setColumn(i: number, columnId: string) {
+
+  function removeChild(group: BuilderGroup, i: number) {
+    group.children.splice(i, 1)
+    // The root must always offer somewhere to type. A nested group is allowed
+    // to empty out, because removing its last child is how you delete it.
+    if (group === root && group.children.length === 0) {
+      group.children.push(freshCondition(columns))
+    }
+    emitBuilder()
+  }
+
+  function setColumn(cond: Extract<BuilderNode, { kind: 'cond' }>, columnId: string) {
     const ops = opsFor(columnId)
-    conditions[i].column = columnId
-    if (!ops.some((o) => o.value === conditions[i].op)) conditions[i].op = ops[0]?.value ?? 'equals'
+    cond.column = columnId
+    if (!ops.some((o) => o.value === cond.op)) cond.op = ops[0]?.value ?? 'equals'
     emitBuilder()
   }
 
@@ -206,7 +185,7 @@
   const builderAvailable = $derived.by(() => {
     if (mode === 'builder') return true
     try {
-      return toConditions(parsePredicate(text, columns)) != null
+      return toBuilderTree(parsePredicate(text, columns), columns) != null
     } catch {
       // Half-typed text is not a reason to lock the tab; switchMode reports
       // the parse error properly if they do click.
@@ -223,14 +202,13 @@
       // Re-seed the builder from the parsed text, if representable.
       try {
         const expr = parsePredicate(text, columns)
-        const c = toConditions(expr)
-        if (!c) {
-          textError = 'This expression uses maths or grouping - stay in text mode'
+        const tree = toBuilderTree(expr, columns)
+        if (!tree) {
+          textError = 'This expression uses column maths - stay in text mode'
           return
         }
-        combinator = c.combinator
-        conditions = c.conditions
-        lastEmitted = expr
+        root = tree
+        lastEmittedJson = JSON.stringify(expr)
         value = expr
       } catch {
         textError = 'Fix the expression before switching'
@@ -297,65 +275,7 @@
   </div>
 
   {#if mode === 'builder'}
-    <div class="sx-combinator">
-      Match
-      <SvDropDownList
-        size="sm"
-        options={[{ value: 'and', label: 'all' }, { value: 'or', label: 'any' }]}
-        value={combinator}
-        onChange={(v) => { combinator = v as 'and' | 'or'; emitBuilder() }}
-        ariaLabel="Combine conditions" />
-      of the following:
-    </div>
-    <div class="sx-rows">
-      {#each conditions as cond, i (i)}
-        <div class="sx-row">
-          <SvDropDownList
-            size="sm"
-            options={columnOptions}
-            value={cond.column}
-            onChange={(v) => setColumn(i, String(v))}
-            ariaLabel="Column" />
-          <SvDropDownList
-            size="sm"
-            options={opsFor(cond.column)}
-            value={cond.op}
-            onChange={(v) => { conditions[i].op = v as ExcelFilterOperator; emitBuilder() }}
-            ariaLabel="Operator" />
-          {#if isValueless(cond.op)}
-            <span class="sx-noval">-</span>
-          {:else if isSetOperator(cond.op)}
-            <SvTagsInput
-              value={cond.values}
-              onChange={(vals) => { conditions[i].values = vals; emitBuilder() }}
-              placeholder="Add value…"
-              ariaLabel="Values" />
-          {:else if isRangeOperator(cond.op)}
-            <SvTextInput
-              size="sm"
-              value={cond.value}
-              onChange={(v) => { conditions[i].value = v; emitBuilder() }}
-              placeholder="From"
-              ariaLabel="From" />
-            <SvTextInput
-              size="sm"
-              value={cond.valueTo}
-              onChange={(v) => { conditions[i].valueTo = v; emitBuilder() }}
-              placeholder="To"
-              ariaLabel="To" />
-          {:else}
-            <SvTextInput
-              size="sm"
-              value={cond.value}
-              onChange={(v) => { conditions[i].value = v; emitBuilder() }}
-              placeholder="Value"
-              ariaLabel="Value" />
-          {/if}
-          <button type="button" class="sx-del" onclick={() => removeCondition(i)} aria-label="Remove condition">✕</button>
-        </div>
-      {/each}
-    </div>
-    <button type="button" class="sx-add" onclick={addCondition}>+ Add condition</button>
+    {@render groupBody(root, 0)}
   {:else}
     <SvTextArea
       value={text}
@@ -370,6 +290,122 @@
     {/if}
   {/if}
 </div>
+
+<!--
+  One condition row: column, operator, and whichever value control the operator
+  needs. `cond` is the live state object, so writing to it mutates the tree in
+  place and `emitBuilder` re-reads the whole thing.
+-->
+{#snippet conditionRow(cond: Extract<BuilderNode, { kind: 'cond' }>, parent: BuilderGroup, i: number)}
+  <div class="sx-row">
+    <SvDropDownList
+      size="sm"
+      options={columnOptions}
+      value={cond.column}
+      onChange={(v) => setColumn(cond, String(v))}
+      ariaLabel="Column" />
+    <SvDropDownList
+      size="sm"
+      options={opsFor(cond.column)}
+      value={cond.op}
+      onChange={(v) => { cond.op = v as ExcelFilterOperator; emitBuilder() }}
+      ariaLabel="Operator" />
+    {#if isValueless(cond.op)}
+      <span class="sx-noval">-</span>
+    {:else if isSetOperator(cond.op)}
+      <SvTagsInput
+        value={cond.values}
+        onChange={(vals) => { cond.values = vals; emitBuilder() }}
+        placeholder="Add value…"
+        ariaLabel="Values" />
+    {:else if isRangeOperator(cond.op)}
+      <SvTextInput
+        size="sm"
+        value={cond.value}
+        onChange={(v) => { cond.value = v; emitBuilder() }}
+        placeholder="From"
+        ariaLabel="From" />
+      <SvTextInput
+        size="sm"
+        value={cond.valueTo}
+        onChange={(v) => { cond.valueTo = v; emitBuilder() }}
+        placeholder="To"
+        ariaLabel="To" />
+    {:else}
+      <SvTextInput
+        size="sm"
+        value={cond.value}
+        onChange={(v) => { cond.value = v; emitBuilder() }}
+        placeholder="Value"
+        ariaLabel="Value" />
+    {/if}
+    <button
+      type="button"
+      class="sx-del"
+      onclick={() => removeChild(parent, i)}
+      aria-label="Remove condition">✕</button>
+  </div>
+{/snippet}
+
+<!--
+  A group and everything under it. Recursive: a snippet may render itself, which
+  is what lets one definition cover arbitrary nesting.
+
+  `depth` only drives presentation and whether another level may be added.
+  toBuilderTree enforces the same limit on the way in, so an expression too deep
+  to render never reaches here in the first place.
+-->
+{#snippet groupBody(group: BuilderGroup, depth: number)}
+  <div class="sx-combinator">
+    {#if group.negated}
+      <span class="sx-not">NOT</span>
+    {/if}
+    Match
+    <SvDropDownList
+      size="sm"
+      options={[{ value: 'and', label: 'all' }, { value: 'or', label: 'any' }]}
+      value={group.combinator}
+      onChange={(v) => { group.combinator = v as 'and' | 'or'; emitBuilder() }}
+      ariaLabel="Combine conditions" />
+    of the following:
+  </div>
+  <div class="sx-rows">
+    {#each group.children as child, i (i)}
+      {#if child.kind === 'cond'}
+        {@render conditionRow(child, group, i)}
+      {:else}
+        <div class="sx-group">
+          <div class="sx-group-head">
+            <button
+              type="button"
+              class="sx-neg"
+              class:sx-neg-on={child.negated}
+              aria-pressed={child.negated}
+              title="Negate this group"
+              onclick={() => { child.negated = !child.negated; emitBuilder() }}>NOT</button>
+            <span class="sx-group-spacer"></span>
+            <button
+              type="button"
+              class="sx-del"
+              onclick={() => removeChild(group, i)}
+              aria-label="Remove group">✕</button>
+          </div>
+          {@render groupBody(child, depth + 1)}
+        </div>
+      {/if}
+    {/each}
+  </div>
+  <div class="sx-actions">
+    <button type="button" class="sx-add" onclick={() => addCondition(group)}>
+      + Add condition
+    </button>
+    {#if depth < MAX_BUILDER_DEPTH - 1}
+      <button type="button" class="sx-add" onclick={() => addGroup(group)}>
+        + Add group
+      </button>
+    {/if}
+  </div>
+{/snippet}
 
 <style>
   /* Theme-agnostic surfaces (see SvGridAlerts): currentColor + inherit. */
@@ -404,8 +440,33 @@
   .sx-noval { text-align: center; font-size: 13px; opacity: 0.5; }
   .sx-del { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; background: transparent; color: inherit; opacity: 0.55; cursor: pointer; font-size: 13px; border-radius: 7px; transition: background 0.13s ease, color 0.13s ease, opacity 0.13s ease; }
   .sx-del:hover { color: var(--sg-danger, #dc2626); opacity: 1; background: color-mix(in srgb, var(--sg-danger, #dc2626) 12%, transparent); }
+  .sx-actions { display: flex; gap: 7px; flex-wrap: wrap; }
   .sx-add { align-self: flex-start; border: 1px dashed color-mix(in srgb, var(--sg-accent, #4f46e5) 45%, currentColor); background: transparent; color: var(--sg-accent, #4f46e5); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.13s ease; }
   .sx-add:hover { background: color-mix(in srgb, var(--sg-accent, #4f46e5) 10%, transparent); }
+  /* A nested group. The left rule is what makes the nesting readable at a
+     glance - without it the rows of a subgroup look like siblings of the rows
+     above them, which is exactly the ambiguity the group exists to remove. */
+  .sx-group {
+    display: flex; flex-direction: column; gap: 8px;
+    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    border-left: 3px solid color-mix(in srgb, var(--sg-accent, #4f46e5) 55%, transparent);
+    border-radius: 9px; padding: 9px; margin-left: 2px;
+    background: color-mix(in srgb, currentColor 3%, transparent);
+  }
+  .sx-group-head { display: flex; align-items: center; gap: 6px; }
+  .sx-group-spacer { flex: 1; }
+  .sx-neg {
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    background: transparent; color: inherit; opacity: 0.6;
+    border-radius: 6px; padding: 2px 8px; font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.04em; cursor: pointer; transition: background 0.13s ease, opacity 0.13s ease;
+  }
+  .sx-neg:hover { opacity: 1; }
+  .sx-neg-on {
+    background: var(--sg-danger, #dc2626); border-color: var(--sg-danger, #dc2626);
+    color: #fff; opacity: 1;
+  }
+  .sx-not { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; color: var(--sg-danger, #dc2626); }
   .sx-error { margin: 0; font-size: 12px; color: var(--sg-danger, #dc2626); }
   .sx-hint { margin: 0; font-size: 12px; opacity: 0.55; }
 </style>

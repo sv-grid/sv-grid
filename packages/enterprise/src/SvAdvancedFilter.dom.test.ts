@@ -172,6 +172,179 @@ describe('SvAdvancedFilter panel', () => {
   })
 })
 
+describe('nested groups in the builder', () => {
+  const mountEditor = (value: unknown) =>
+    mountCmp(SvExpressionEditorDirect as never, { columns, value, mode: 'builder' })
+
+  const buttons = (t: HTMLElement, label: string) =>
+    [...t.querySelectorAll('button')].filter((b) => b.textContent?.trim() === label)
+
+  const nested: PredicateExpr = {
+    kind: 'or',
+    parts: [
+      { kind: 'cmp', column: 'region', op: 'equals', value: 'EMEA' },
+      {
+        kind: 'and',
+        parts: [
+          { kind: 'cmp', column: 'amount', op: 'greaterThan', value: '300' },
+          { kind: 'cmp', column: 'region', op: 'equals', value: 'APAC' },
+        ],
+      },
+    ],
+  }
+
+  it('opens in the builder for an expression that used to force text mode', () => {
+    // Before the tree this fell back to text and the Builder tab was disabled.
+    const { target, destroy } = mountEditor(nested)
+    try {
+      flushSync()
+      const el = target as HTMLElement
+      expect(el.querySelector('.sx-group')).not.toBeNull()
+      const builder = [...el.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === 'Builder',
+      ) as HTMLButtonElement
+      expect(builder.disabled).toBe(false)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('renders one nested group with its own combinator', () => {
+    const { target, destroy } = mountEditor(nested)
+    try {
+      flushSync()
+      const el = target as HTMLElement
+      expect(el.querySelectorAll('.sx-group')).toHaveLength(1)
+      // Outer "any" plus inner "all" means two combinator rows, not one.
+      expect(el.querySelectorAll('.sx-combinator')).toHaveLength(2)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('emits a nested expression once the group holds more than one condition', () => {
+    const onChange = vi.fn()
+    const { target, destroy } = mountCmp(SvExpressionEditorDirect as never, {
+      columns,
+      value: { kind: 'cmp', column: 'region', op: 'equals', value: 'EMEA' },
+      mode: 'builder',
+      onChange,
+    })
+    try {
+      flushSync()
+      const el = target as HTMLElement
+      buttons(el, '+ Add group')[0]!.click()
+      flushSync()
+      // A group of one is the same expression as that one condition, so it
+      // serializes flat on purpose - the AST stays minimal. The group is still
+      // there in the UI, waiting for a second condition.
+      expect(el.querySelectorAll('.sx-group')).toHaveLength(1)
+
+      // Scope to the group rather than indexing: the nested group's actions
+      // sit inside the root's rows, so it comes FIRST in document order.
+      const group = el.querySelector('.sx-group') as HTMLElement
+      buttons(group, '+ Add condition')[0]!.click()
+      flushSync()
+
+      const emitted = onChange.mock.lastCall?.[0] as PredicateExpr
+      expect(emitted.kind).toBe('and')
+      const parts = (emitted as { parts: PredicateExpr[] }).parts
+      // Now it is a real nested node rather than a flattened sibling.
+      expect(parts.some((p) => p.kind === 'or')).toBe(true)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('keeps an added group on screen instead of rebuilding it away', () => {
+    // Regression: the editor compared the incoming `value` to its own last
+    // emit by reference. `value` is $bindable, so the object coming back was
+    // never the object sent, the check never matched, and every edit re-seeded
+    // the tree from the emitted AST. A group of one collapses in that AST, so
+    // adding a group looked like it did nothing at all.
+    const { target, destroy } = mountEditor({
+      kind: 'cmp',
+      column: 'region',
+      op: 'equals',
+      value: 'EMEA',
+    })
+    try {
+      flushSync()
+      const el = target as HTMLElement
+      buttons(el, '+ Add group')[0]!.click()
+      flushSync()
+      expect(el.querySelectorAll('.sx-group')).toHaveLength(1)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('defaults a nested group to the opposite combinator', () => {
+    // Nesting an "all" inside an "all" is a no-op the user would have to undo.
+    const { target, destroy } = mountEditor({
+      kind: 'and',
+      parts: [
+        { kind: 'cmp', column: 'region', op: 'equals', value: 'EMEA' },
+        { kind: 'cmp', column: 'amount', op: 'greaterThan', value: '1' },
+      ],
+    })
+    try {
+      flushSync()
+      buttons(target as HTMLElement, '+ Add group')[0]!.click()
+      flushSync()
+      const group = (target as HTMLElement).querySelector('.sx-group')
+      expect(group).not.toBeNull()
+      expect(group!.textContent).toContain('any')
+    } finally {
+      destroy()
+    }
+  })
+
+  it('negates a group with the NOT toggle', () => {
+    const onChange = vi.fn()
+    const { target, destroy } = mountCmp(SvExpressionEditorDirect as never, {
+      columns,
+      value: nested,
+      mode: 'builder',
+      onChange,
+    })
+    try {
+      flushSync()
+      const not = [...(target as HTMLElement).querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === 'NOT',
+      ) as HTMLButtonElement
+      expect(not.getAttribute('aria-pressed')).toBe('false')
+      not.click()
+      flushSync()
+      const emitted = onChange.mock.lastCall?.[0] as PredicateExpr
+      const parts = (emitted as { parts: PredicateExpr[] }).parts
+      expect(parts.some((p) => p.kind === 'not')).toBe(true)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('keeps an editable row after the root is emptied', () => {
+    // Removing the last root child must not leave a builder with nowhere
+    // to type.
+    const { target, destroy } = mountEditor({
+      kind: 'cmp',
+      column: 'region',
+      op: 'equals',
+      value: 'EMEA',
+    })
+    try {
+      flushSync()
+      const el = target as HTMLElement
+      ;(el.querySelector('.sx-del') as HTMLButtonElement).click()
+      flushSync()
+      expect(el.querySelectorAll('.sx-row').length).toBeGreaterThan(0)
+    } finally {
+      destroy()
+    }
+  })
+})
+
 describe('Builder tab availability', () => {
   const mountEditor = (value: unknown, mode = 'text') =>
     mountCmp(SvExpressionEditorDirect as never, { columns, value, mode })
