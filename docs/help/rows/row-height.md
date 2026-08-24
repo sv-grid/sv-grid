@@ -7,22 +7,24 @@ Row height is a single integer in pixels.
 <SvGrid {data} {columns} features={{}} rowHeight={36} />
 ```
 
-The default is 36 px. The virtualizer reads `rowHeight` once and uses it to
+The default is 30 px. The virtualizer reads `rowHeight` and uses it to
 compute the visible window and total scroll height.
+
+Because the virtualizer needs the height as a number up front, row
+height is a prop rather than a CSS token, and the grid writes it as an
+inline style on each row. A stylesheet rule cannot set it.
 
 ## Density
 
-For a density toggle, change `rowHeight` and a matching CSS custom property:
+A density toggle is just a derived `rowHeight`:
 
 ```svelte
 <script lang="ts">
   let density = $state<'compact' | 'normal' | 'comfortable'>('normal')
-  const px = $derived(density === 'compact' ? 28 : density === 'comfortable' ? 48 : 36)
+  const px = $derived(density === 'compact' ? 28 : density === 'comfortable' ? 48 : 30)
 </script>
 
-<div style:--sg-row-height="{px}px">
-  <SvGrid {data} {columns} features={{}} rowHeight={px} />
-</div>
+<SvGrid {data} {columns} features={{}} rowHeight={px} />
 ```
 
 The example gallery's

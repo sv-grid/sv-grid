@@ -257,15 +257,23 @@ function setCell<K extends keyof Ticket>(rowId: string, field: K, value: Ticket[
 
 Why bother with both? Two reasons:
 
-- When the grid is mounted, `api.setCellValue` emits `onCellValueChange`,
-  triggers validators, and updates dirty tracking. Direct mutation
-  skips all of that.
+- When the grid is mounted, `api.setCellValue` writes through the grid's
+  own copy of the data, so the change is reflected in `api.getData()`,
+  the rendered cells, and anything derived from them. Direct mutation of
+  your `$state` array does not reach the mounted grid's copy.
 - When the grid is unmounted, `api` is `null`. Direct mutation is the
   only path that still updates the underlying `$state` array.
 
-If you want **identical observer behavior in both modes**, register
-your `onCellValueChange` callbacks against the `$state` array via a
-`$effect` instead of via the grid prop. Then either path triggers it.
+Note that `api.setCellValue` is a programmatic write, not an edit
+commit: it does **not** fire the `onCellValueChange` prop. That callback
+belongs to the inline editor's commit path, so neither branch of
+`setCell` above triggers it.
+
+That makes the two modes consistent, but it means the grid prop is the
+wrong place to hang your side effects. For **identical observer
+behavior in both modes**, react to the `$state` array with a `$effect`
+instead of using the `onCellValueChange` prop - both branches write to
+data the effect can see.
 
 ## A force-toggle for testing
 

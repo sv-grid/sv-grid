@@ -193,10 +193,30 @@ Wire to the grid:
 ```svelte
 <SvGrid
   ...
-  onEditingChange={(state) => (isEditing = state.cell != null)}
-  onRowSelectionChange={({ selectedRows }) => (hasSelection = selectedRows.length > 0)}
+  onCellDoubleClick={() => (isEditing = true)}
+  onCellValueChange={() => (isEditing = false)}
+  onRowSelectionChange={(selection, rows) => (hasSelection = rows.length > 0)}
 />
 ```
+
+`onRowSelectionChange` receives two positional arguments - the
+`{ [rowId]: true }` record and the array of selected rows.
+
+There is no dedicated editing-state callback today, so the edit flag is
+assembled from the two ends of the edit: a double-click opens the
+editor, and a committed value closes it. That leaves one gap - an edit
+abandoned with `Escape` commits nothing, so clear the flag on the
+wrapper's `onkeydown` too:
+
+```svelte
+<div onkeydown={(e) => { if (e.key === 'Escape') isEditing = false }}>
+  <SvGrid ... />
+</div>
+```
+
+If your app starts edits itself through `api.startEditing()` /
+`api.stopEditing()`, set the flag at those call sites instead - you
+already know the state there, and it covers every exit path.
 
 ## Backpressure (when the server is too fast)
 

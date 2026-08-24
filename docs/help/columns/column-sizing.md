@@ -27,7 +27,7 @@ There is no opt-out today - if you do not want users to resize a column,
 overlay your own pointer-blocking element on the header or wrap in CSS:
 
 ```css
-table[role='grid'] th[data-col-id="firstName"] [data-resize-handle] {
+table[role='grid'] th[data-col-id="firstName"] .sv-grid-resize-handle {
   pointer-events: none;
 }
 ```

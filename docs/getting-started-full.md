@@ -310,7 +310,6 @@ directly on `<SvGrid>`.
 
 ```css
 :root {
-  --sg-row-height: 36px;
   --sg-header-bg: #f6f7f9;
   --sg-header-fg: #1f2933;
   --sg-row-hover-bg: #eef2ff;
@@ -330,9 +329,11 @@ directly on `<SvGrid>`.
 }
 ```
 
-**Density.** The default theme reads `--sg-row-height`; flip it to
-`28px` for compact mode and `48px` for comfortable. Density changes are
-applied without remounting the virtualizer.
+**Density.** Row height is the one piece of the look that is a prop
+rather than a token - the virtualizer needs it as a number, and the
+grid writes it as an inline style on each row. Pass `rowHeight`
+(default `30`): `28` for compact, `48` for comfortable. Changing it
+does not remount the virtualizer.
 
 **Reduced motion.** Sort animations and expand transitions respect
 `prefers-reduced-motion: reduce` automatically.
@@ -341,18 +342,17 @@ applied without remounting the virtualizer.
 
 ## 7. Sizing the grid
 
-`<SvGrid>` fills its parent. Give it a height and it scrolls - without
-one, it expands to its content and never virtualises.
+The grid's scroll shell is sized by `containerHeight`, which defaults to
+520 px. A number is pixels; a string is passed through to CSS, so `'100%'`
+fills the parent and `'auto'` grows to the content.
 
 ```svelte
-<!-- Fixed: 600px tall, full width. The typical choice. -->
-<div style="height: 600px;">
-  <SvGrid data={rows} columns={columns} />
-</div>
+<!-- Fixed: 600px tall. The typical choice. -->
+<SvGrid data={rows} columns={columns} containerHeight={600} />
 
-<!-- Flexible: fills the viewport minus header/footer. -->
+<!-- Flexible: fills a parent that sets the height itself. -->
 <div class="grid-shell">
-  <SvGrid data={rows} columns={columns} />
+  <SvGrid data={rows} columns={columns} containerHeight="100%" />
 </div>
 
 <style>
@@ -363,13 +363,20 @@ one, it expands to its content and never virtualises.
 ```
 
 **Auto-height (small datasets only).** For grids with fewer than ~200
-rows you can let the grid grow to its content:
+rows you can let the grid grow to its content. Turn row virtualization
+off as well - a shell with no fixed height gives the virtualizer nothing
+to measure against:
 
 ```svelte
-<SvGrid data={rows} columns={columns} domLayout="autoHeight" />
+<SvGrid
+  data={rows}
+  columns={columns}
+  containerHeight="auto"
+  virtualization={false}
+/>
 ```
 
-Auto-height disables row virtualization. Don't use it for large data.
+Don't use this for large data: every row renders.
 
 ---
 
@@ -667,9 +674,11 @@ for a complete runnable version with debounce, abort wiring, and a
 
 ## 12. Virtualization for large datasets
 
-For more than a few thousand rows, enable row virtualization. For very
-wide grids (50+ columns) also enable column virtualization. Both are
-opt-in so small grids don't pay the cost.
+Row and column virtualization are both **on by default** - you opt out,
+not in. `virtualization={false}` and `columnVirtualization={false}` render
+every row / column, which is what you want for a short grid you intend to
+print, or when sticky column pinning has to survive (the column virtualizer
+recycles DOM nodes, so the two cannot co-exist).
 
 ```svelte
 <script lang="ts">
@@ -679,12 +688,15 @@ opt-in so small grids don't pay the cost.
 <SvGrid
   data={rows}
   columns={columns}
-  virtualizeRows
-  virtualizeColumns
-  estimatedRowHeight={36}
+  rowHeight={36}
   overscan={6}
 />
 ```
+
+`rowHeight` takes a number (default 30) or a `(rowIndex) => px` function for
+per-row heights. When row content varies and you cannot predict it, set
+`autoRowHeight` instead and the grid measures each row. `overscan` (default 8)
+is how many rows beyond the viewport stay mounted.
 
 For full control (e.g. variable row heights, programmatic scroll),
 use the headless virtualizer directly:

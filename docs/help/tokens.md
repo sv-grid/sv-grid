@@ -37,9 +37,13 @@ ship in a corporate design system.
 
 | Token                  | Default     | What it controls                                                       |
 | ---------------------- | ----------- | ---------------------------------------------------------------------- |
-| `--sg-row-height`      | `32px`      | Default row height. Per-grid override via the `rowHeight` prop wins.    |
 | `--sg-radius`          | `6px`       | Border radius on rounded UI inside the grid (chips, badges, menus)      |
 | `--sg-font`            | inherits    | Font family used inside the grid                                        |
+
+Row height is **not** a token. The virtualizer needs the height as a
+number before it can lay rows out, so it comes from the `rowHeight`
+prop (default `30`) and is written as an inline style on each row. See
+[Row height](./rows/row-height.md).
 
 ## Header typography tokens
 
@@ -121,7 +125,7 @@ library. Copy if you want the same convention; rename freely otherwise.
 ```css
 :root {
   --sg-accent: #db2777;          /* hot pink everywhere */
-  --sg-row-height: 36px;
+  --sg-radius: 10px;
   --sg-font: 'Inter', sans-serif;
 }
 ```

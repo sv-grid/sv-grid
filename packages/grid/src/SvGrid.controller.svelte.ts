@@ -727,13 +727,15 @@ export function createSvGridController<
     },
     state: {
       columnFilters: [],
-      grouping: [],
+      // svelte-ignore state_referenced_locally
+      grouping: treeDataConfig ? [] : [...(props.groupBy ?? [])],
       // svelte-ignore state_referenced_locally
       sorting: props.initialSorting ?? [],
       // svelte-ignore state_referenced_locally
       pagination: { pageIndex: 0, pageSize: props.pageSize ?? 10 },
       rowSelection: {},
-      expanded: {},
+      // svelte-ignore state_referenced_locally
+      expanded: { ...(props.expanded ?? {}) },
       activeCell: { rowIndex: 0, colIndex: 0, cellId: null },
     },
   });
@@ -794,6 +796,42 @@ export function createSvGridController<
     if (incoming === lastSeededOrder) return;
     lastSeededOrder = incoming;
     userColumnOrder = props.columnOrder ? [...props.columnOrder] : [];
+  });
+
+  // `groupBy` prop -> engine grouping state. Same shape as the `columnOrder`
+  // re-seed above: we only write when the PROP itself changes, so a group-by
+  // set from the column menu or `api.setGroupBy()` is not clobbered on the next
+  // unrelated re-render.
+  let lastSeededGroupBy = (props.groupBy ?? []).join("|");
+  $effect(() => {
+    if (treeDataConfig) return;
+    const incoming = (props.groupBy ?? []).join("|");
+    if (incoming === lastSeededGroupBy) return;
+    lastSeededGroupBy = incoming;
+    grid.setGrouping(() => [...(props.groupBy ?? [])]);
+  });
+
+  // `expanded` prop -> engine expansion state, and the store -> the
+  // `onExpandedChange` callback. `lastSeededExpanded` is written from BOTH
+  // directions so a controlled parent that echoes the callback value straight
+  // back into the prop does not trigger a redundant re-seed (and so no
+  // prop -> state -> callback -> prop loop can form).
+  let lastSeededExpanded = JSON.stringify(props.expanded ?? {});
+  $effect(() => {
+    const incoming = JSON.stringify(props.expanded ?? {});
+    if (incoming === lastSeededExpanded) return;
+    lastSeededExpanded = incoming;
+    grid.setExpanded(() => ({ ...(props.expanded ?? {}) }));
+  });
+  $effect(() => {
+    let previous = grid.getState().expanded ?? {};
+    return grid.store.subscribe(() => {
+      const next = grid.getState().expanded ?? {};
+      if (next === previous) return;
+      previous = next;
+      lastSeededExpanded = JSON.stringify(next);
+      props.onExpandedChange?.({ ...next });
+    });
   });
 
   // Declared here rather than beside the other pagination/state derivations:

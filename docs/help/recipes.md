@@ -73,8 +73,10 @@ the middle scrolls under sticky edges:
 
 The user pins via the column menu - no extra wiring needed if
 `columnFilteringFeature` is registered (the menu lives on the same
-header button). Or call `api.pinColumn(columnId, 'left' | 'right' | null)`
-programmatically.
+header button). Or set the whole pinning state programmatically with
+`api.setColumnPinning({ left: ['name'], right: ['total'] })` - pass an
+empty array for a side to unpin it. `api.getColumnPinning()` reads it
+back for persistence.
 
 ## List + chips editors
 

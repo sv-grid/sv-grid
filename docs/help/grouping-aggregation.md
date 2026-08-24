@@ -62,9 +62,15 @@ Three ways, ranked by ergonomic order:
 
 1. **The column menu.** When the user opens a header's menu, "Group
    by this column" toggles that column in/out of the group-by list.
-2. **The `groupBy` prop.** Initial state for the group-by list.
+2. **The `groupBy` prop.** Seeds the group-by list and re-applies
+   whenever the prop's own value changes, so it works both as initial
+   state and as a controlled value. A group-by set from the menu or the
+   API is not clobbered while the prop stays put.
 3. **The imperative API.** `api.setGroupBy(['department', 'role'])`
    for toolbars / saved views.
+
+`groupBy` is ignored when `treeData` is set - a row cannot be both a
+hierarchy node and bucketed under a group banner.
 
 The group order is significant - `['region', 'country']` rolls up
 country inside region; reverse the array to flip the hierarchy.
@@ -167,8 +173,19 @@ saved-views purposes:
 />
 ```
 
-The shape is `Record<groupId, boolean>` where `groupId` is the path
-through the hierarchy (`'Engineering > Senior'`).
+`onExpandedChange` fires for every path that changes expansion: a click
+on a group banner, `api.setRowExpanded()`, and
+`api.expandAllGroups()` / `api.collapseAllGroups()`. It receives the
+full next map, so writing it straight back into `expanded` (as above) is
+safe and will not loop.
+
+The shape is `Record<rowId, boolean>`. Group row ids are built from the
+grouping path rather than the display label - grouping by `department`
+gives `group_department_Engineering`, and adding `role` beneath it gives
+`group_department_Engineering_role_Senior`. Tree rows key off the
+engine's row id instead, so set `getRowId` if you want those keys to be
+your own ids. Capture the map from `onExpandedChange` rather than
+hand-building the keys.
 
 ## Group sort vs leaf sort
 
@@ -299,7 +316,7 @@ expanded one is a header and takes none.
 ### How do I group rows in SvGrid?
 
 Register `columnGroupingFeature` and group by one or more columns. Each group
-renders a collapsible header row, and you attach an `aggregator` per column to
+renders a collapsible header row, and you attach an `aggregate` per column to
 compute sum, avg, count, min, max, or a custom reducer at every group level.
 
 ### What aggregation functions does SvGrid support?

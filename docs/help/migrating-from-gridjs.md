@@ -15,7 +15,7 @@ filters, editing, grouping - when you outgrow the basics.
 | `columns: ['Name', 'Amount']`             | `columns: [{ field, header }]`             |
 | `columns: [{ name, formatter }]`          | `{ header, cell: (c) => renderSnippet(...) }` |
 | `sort: true`                              | `rowSortingFeature`                        |
-| `search: true`                            | `api.setGlobalFilter(query)` / filter feature |
+| `search: true`                            | `api.setState({ globalFilter: query })` / filter feature |
 | `pagination: { limit: 25 }`               | `showPagination` (+ page size)             |
 | `server: { url, then }`                   | `externalSort` / `externalFilter` + refetch |
 

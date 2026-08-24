@@ -418,9 +418,14 @@ export function createGridApi<
         // `allRows` is the final, post-filter, post-sort, post-group,
         // post-pagination list - exactly what the body renders. Skip group
         // header rows (they wrap an aggregate, not a TData row).
+        //
+        // `isGroupRow` rather than a `subRows.length` test: a TREE parent also
+        // has subRows, but it is a real data row that renders its own cells, so
+        // dropping it here silently truncated every tree read - including the
+        // enterprise export, whose default row source is this method.
         const out: TData[] = [];
         for (const row of ctx.allRows) {
-          if (row.subRows && row.subRows.length > 0) continue;
+          if (isGroupRow(row)) continue;
           out.push(row.original as TData);
         }
         return out;

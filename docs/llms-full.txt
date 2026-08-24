@@ -10122,7 +10122,6 @@ directly on `<SvGrid>`.
 
 ```css
 :root {
-  --sg-row-height: 36px;
   --sg-header-bg: #f6f7f9;
   --sg-header-fg: #1f2933;
   --sg-row-hover-bg: #eef2ff;
@@ -10142,9 +10141,11 @@ directly on `<SvGrid>`.
 }
 ```
 
-**Density.** The default theme reads `--sg-row-height`; flip it to
-`28px` for compact mode and `48px` for comfortable. Density changes are
-applied without remounting the virtualizer.
+**Density.** Row height is the one piece of the look that is a prop
+rather than a token - the virtualizer needs it as a number, and the
+grid writes it as an inline style on each row. Pass `rowHeight`
+(default `30`): `28` for compact, `48` for comfortable. Changing it
+does not remount the virtualizer.
 
 **Reduced motion.** Sort animations and expand transitions respect
 `prefers-reduced-motion: reduce` automatically.
@@ -10153,18 +10154,17 @@ applied without remounting the virtualizer.
 
 ## 7. Sizing the grid
 
-`<SvGrid>` fills its parent. Give it a height and it scrolls - without
-one, it expands to its content and never virtualises.
+The grid's scroll shell is sized by `containerHeight`, which defaults to
+520 px. A number is pixels; a string is passed through to CSS, so `'100%'`
+fills the parent and `'auto'` grows to the content.
 
 ```svelte
-<!-- Fixed: 600px tall, full width. The typical choice. -->
-<div style="height: 600px;">
-  <SvGrid data={rows} columns={columns} />
-</div>
+<!-- Fixed: 600px tall. The typical choice. -->
+<SvGrid data={rows} columns={columns} containerHeight={600} />
 
-<!-- Flexible: fills the viewport minus header/footer. -->
+<!-- Flexible: fills a parent that sets the height itself. -->
 <div class="grid-shell">
-  <SvGrid data={rows} columns={columns} />
+  <SvGrid data={rows} columns={columns} containerHeight="100%" />
 </div>
 
 <style>
@@ -10175,13 +10175,20 @@ one, it expands to its content and never virtualises.
 ```
 
 **Auto-height (small datasets only).** For grids with fewer than ~200
-rows you can let the grid grow to its content:
+rows you can let the grid grow to its content. Turn row virtualization
+off as well - a shell with no fixed height gives the virtualizer nothing
+to measure against:
 
 ```svelte
-<SvGrid data={rows} columns={columns} domLayout="autoHeight" />
+<SvGrid
+  data={rows}
+  columns={columns}
+  containerHeight="auto"
+  virtualization={false}
+/>
 ```
 
-Auto-height disables row virtualization. Don't use it for large data.
+Don't use this for large data: every row renders.
 
 ---
 
@@ -10479,9 +10486,11 @@ for a complete runnable version with debounce, abort wiring, and a
 
 ## 12. Virtualization for large datasets
 
-For more than a few thousand rows, enable row virtualization. For very
-wide grids (50+ columns) also enable column virtualization. Both are
-opt-in so small grids don't pay the cost.
+Row and column virtualization are both **on by default** - you opt out,
+not in. `virtualization={false}` and `columnVirtualization={false}` render
+every row / column, which is what you want for a short grid you intend to
+print, or when sticky column pinning has to survive (the column virtualizer
+recycles DOM nodes, so the two cannot co-exist).
 
 ```svelte
 <script lang="ts">
@@ -10491,12 +10500,15 @@ opt-in so small grids don't pay the cost.
 <SvGrid
   data={rows}
   columns={columns}
-  virtualizeRows
-  virtualizeColumns
-  estimatedRowHeight={36}
+  rowHeight={36}
   overscan={6}
 />
 ```
+
+`rowHeight` takes a number (default 30) or a `(rowIndex) => px` function for
+per-row heights. When row content varies and you cannot predict it, set
+`autoRowHeight` instead and the grid measures each row. `overscan` (default 8)
+is how many rows beyond the viewport stay mounted.
 
 For full control (e.g. variable row heights, programmatic scroll),
 use the headless virtualizer directly:
@@ -11351,7 +11363,6 @@ The 20-odd tokens the renderer reads:
 | `--sg-header-bg` / `--sg-header-fg` | Header row                               |
 | `--sg-row-alt-bg`                | Zebra rows                                  |
 | `--sg-row-hover-bg`              | Row + cell hover                            |
-| `--sg-row-height`                | Row height                                  |
 | `--sg-selection-bg`              | Selected cell / row tint                    |
 | `--sg-accent`                    | Sort indicator, focus ring, primary buttons |
 | `--sg-focus-ring`                | Keyboard focus outline                      |
@@ -11420,22 +11431,21 @@ demo applies three full palettes (light / dark / high-contrast) this way.
 
 ## Density
 
-Two ways:
+Density is a **prop, not a token**. The virtualizer has to know each
+row's height as a number before it can position rows, so it cannot be
+resolved from CSS - the grid writes the height as an inline style on
+every row, which would override a stylesheet rule anyway.
 
-1. **Set `rowHeight` on `<SvGrid>`**. Numeric, in pixels. Drives the
-   row height and the active-cell hit box.
+Set `rowHeight` on `<SvGrid>`. Numeric, in pixels; drives the row
+height and the active-cell hit box. The default is `30`.
 
-   ```svelte
-   <SvGrid {data} {columns} features={features} rowHeight={28} />
-   ```
+```svelte
+<SvGrid {data} {columns} features={features} rowHeight={28} />
+```
 
-2. **Override `--sg-row-height` on a wrapper.** Same effect, with the
-   token shape if you'd rather express density in CSS.
-
-   ```css
-   .compact { --sg-row-height: 28px; }
-   .comfortable { --sg-row-height: 48px; }
-   ```
+Common steps: `28` compact, `30` normal, `46`-`48` comfortable. For
+rows whose height depends on their content, set `autoRowHeight`
+instead and the grid measures each row.
 
 A user-facing "density selector" is half a dozen lines:
 
@@ -11443,7 +11453,7 @@ A user-facing "density selector" is half a dozen lines:
 <script lang="ts">
   let density = $state<'compact' | 'normal' | 'comfortable'>('normal')
   const height = $derived(
-    density === 'compact' ? 28 : density === 'comfortable' ? 48 : 36,
+    density === 'compact' ? 28 : density === 'comfortable' ? 48 : 30,
   )
 </script>
 
@@ -16522,7 +16532,7 @@ There is no opt-out today - if you do not want users to resize a column,
 overlay your own pointer-blocking element on the header or wrap in CSS:
 
 ```css
-table[role='grid'] th[data-col-id="firstName"] [data-resize-handle] {
+table[role='grid'] th[data-col-id="firstName"] .sv-grid-resize-handle {
   pointer-events: none;
 }
 ```
@@ -20581,9 +20591,9 @@ is uncontrollable-by-default; opt in via the `onXxxChange` props.
 
 ## D
 
-**Density.** The vertical compaction of rows. Controlled via the
-`--sg-row-height` CSS variable + the `rowHeight` prop. Default is
-36 px ("comfortable"); 28 px is "compact"; 48 px is "loose".
+**Density.** The vertical compaction of rows. Controlled by the
+`rowHeight` prop (not a CSS token - the virtualizer needs the height as
+a number). Default is 30 px; 28 px is "compact", 48 px is "loose".
 
 **Display rows.** The rows the grid is currently showing AFTER the
 pipeline runs (filter -> sort -> group -> page). Accessible via
@@ -20660,8 +20670,9 @@ errors.
 ## P
 
 **Pinned column.** A column sticky-positioned to the left or right
-edge while the rest scroll. Set via the column menu or
-`api.pinColumn(id, 'left' | 'right' | null)`.
+edge while the rest scroll. Set via the column menu, the
+`initialColumnPinning` prop, or
+`api.setColumnPinning({ left: [...], right: [...] })`.
 
 **Pipeline.** The chain of row-model transformations: core ->
 filtered -> sorted -> grouped -> expanded -> paginated. Runs once per
@@ -20818,9 +20829,15 @@ Three ways, ranked by ergonomic order:
 
 1. **The column menu.** When the user opens a header's menu, "Group
    by this column" toggles that column in/out of the group-by list.
-2. **The `groupBy` prop.** Initial state for the group-by list.
+2. **The `groupBy` prop.** Seeds the group-by list and re-applies
+   whenever the prop's own value changes, so it works both as initial
+   state and as a controlled value. A group-by set from the menu or the
+   API is not clobbered while the prop stays put.
 3. **The imperative API.** `api.setGroupBy(['department', 'role'])`
    for toolbars / saved views.
+
+`groupBy` is ignored when `treeData` is set - a row cannot be both a
+hierarchy node and bucketed under a group banner.
 
 The group order is significant - `['region', 'country']` rolls up
 country inside region; reverse the array to flip the hierarchy.
@@ -20923,8 +20940,19 @@ saved-views purposes:
 />
 ```
 
-The shape is `Record<groupId, boolean>` where `groupId` is the path
-through the hierarchy (`'Engineering > Senior'`).
+`onExpandedChange` fires for every path that changes expansion: a click
+on a group banner, `api.setRowExpanded()`, and
+`api.expandAllGroups()` / `api.collapseAllGroups()`. It receives the
+full next map, so writing it straight back into `expanded` (as above) is
+safe and will not loop.
+
+The shape is `Record<rowId, boolean>`. Group row ids are built from the
+grouping path rather than the display label - grouping by `department`
+gives `group_department_Engineering`, and adding `role` beneath it gives
+`group_department_Engineering_role_Senior`. Tree rows key off the
+engine's row id instead, so set `getRowId` if you want those keys to be
+your own ids. Capture the map from `onExpandedChange` rather than
+hand-building the keys.
 
 ## Group sort vs leaf sort
 
@@ -21055,7 +21083,7 @@ expanded one is a header and takes none.
 ### How do I group rows in SvGrid?
 
 Register `columnGroupingFeature` and group by one or more columns. Each group
-renders a collapsible header row, and you attach an `aggregator` per column to
+renders a collapsible header row, and you attach an `aggregate` per column to
 compute sum, avg, count, min, max, or a custom reducer at every group level.
 
 ### What aggregation functions does SvGrid support?
@@ -23868,7 +23896,7 @@ filters, editing, grouping - when you outgrow the basics.
 | `columns: ['Name', 'Amount']`             | `columns: [{ field, header }]`             |
 | `columns: [{ name, formatter }]`          | `{ header, cell: (c) => renderSnippet(...) }` |
 | `sort: true`                              | `rowSortingFeature`                        |
-| `search: true`                            | `api.setGlobalFilter(query)` / filter feature |
+| `search: true`                            | `api.setState({ globalFilter: query })` / filter feature |
 | `pagination: { limit: 25 }`               | `showPagination` (+ page size)             |
 | `server: { url, then }`                   | `externalSort` / `externalFilter` + refetch |
 
@@ -24387,8 +24415,8 @@ MUI X.
 | `setSortModel([{field, sort}])`              | `api.setSort(field, sort)`                  |
 | `setFilterModel({items: [...]})`             | `api.setFilter(field, {operator, value})`   |
 | `setPage(0)` / `setPageSize(50)`             | Use the built-in pager; for headless control register `pageSize` prop |
-| `selectRow(id)`                              | Toggle the row checkbox via the wrapper's UI; programmatic select is `api.setRowSelection({id: true})` |
-| `getSelectedRows()`                          | `api.getDisplayedRows().filter((r) => ...)` |
+| `selectRow(id)`                              | Toggle the row checkbox via the wrapper's UI; programmatic select is `api.selectRows([id])` (`api.toggleRowSelected(id)` to flip one) |
+| `getSelectedRows()`                          | `api.getSelectedRows()` (ids via `api.getSelectedRowIds()`) |
 | `exportDataAsExcel()`                        | `api.exportData({ format: 'xlsx' })` (Enterprise)  |
 | `setColumnVisibilityModel({field: false})`   | `api.setColumnVisible('field', false)`     |
 
@@ -24464,8 +24492,11 @@ visual piece is a CSS custom property (`--sg-*`); see
 [design tokens](./tokens.md). Override at any DOM level:
 
 ```css
-.grid-host { --sg-accent: #db2777; --sg-row-height: 40px; }
+.grid-host { --sg-accent: #db2777; --sg-radius: 10px; }
 ```
+
+Row height is the exception: it is the `rowHeight` prop rather than a
+token, because the virtualizer needs it as a number.
 
 For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 [demo 74](https://svgrid.com/demos/74-theme-integrations/).
@@ -25543,7 +25574,7 @@ port is mostly about deciding how much markup you want to keep.
 | `new TableHandler(data, { rowsPerPage })`  | `createSvGrid({...})` or `<SvGrid>`        |
 | `<ThSort {table} field="name">`            | `rowSortingFeature` (header sort built in) |
 | `<ThFilter {table} field="name">`          | `columnFilteringFeature`                   |
-| `table.global.set(query)` (search)         | `api.setGlobalFilter(query)`               |
+| `table.global.set(query)` (search)         | `api.setState({ globalFilter: query })`    |
 | `<Pagination {table} />` / `<RowCount>`    | Built in; toggle `showPagination`          |
 | `table.rows` (current page rows)           | `api.getDisplayedRows()`                   |
 | Server mode (`table.load(...)`)            | `externalSort` / `externalFilter` + refetch |
@@ -26047,15 +26078,23 @@ function setCell<K extends keyof Ticket>(rowId: string, field: K, value: Ticket[
 
 Why bother with both? Two reasons:
 
-- When the grid is mounted, `api.setCellValue` emits `onCellValueChange`,
-  triggers validators, and updates dirty tracking. Direct mutation
-  skips all of that.
+- When the grid is mounted, `api.setCellValue` writes through the grid's
+  own copy of the data, so the change is reflected in `api.getData()`,
+  the rendered cells, and anything derived from them. Direct mutation of
+  your `$state` array does not reach the mounted grid's copy.
 - When the grid is unmounted, `api` is `null`. Direct mutation is the
   only path that still updates the underlying `$state` array.
 
-If you want **identical observer behavior in both modes**, register
-your `onCellValueChange` callbacks against the `$state` array via a
-`$effect` instead of via the grid prop. Then either path triggers it.
+Note that `api.setCellValue` is a programmatic write, not an edit
+commit: it does **not** fire the `onCellValueChange` prop. That callback
+belongs to the inline editor's commit path, so neither branch of
+`setCell` above triggers it.
+
+That makes the two modes consistent, but it means the grid prop is the
+wrong place to hang your side effects. For **identical observer
+behavior in both modes**, react to the `$state` array with a `$effect`
+instead of using the `onCellValueChange` prop - both branches write to
+data the effect can see.
 
 ## A force-toggle for testing
 
@@ -27014,10 +27053,30 @@ Wire to the grid:
 ```svelte
 <SvGrid
   ...
-  onEditingChange={(state) => (isEditing = state.cell != null)}
-  onRowSelectionChange={({ selectedRows }) => (hasSelection = selectedRows.length > 0)}
+  onCellDoubleClick={() => (isEditing = true)}
+  onCellValueChange={() => (isEditing = false)}
+  onRowSelectionChange={(selection, rows) => (hasSelection = rows.length > 0)}
 />
 ```
+
+`onRowSelectionChange` receives two positional arguments - the
+`{ [rowId]: true }` record and the array of selected rows.
+
+There is no dedicated editing-state callback today, so the edit flag is
+assembled from the two ends of the edit: a double-click opens the
+editor, and a committed value closes it. That leaves one gap - an edit
+abandoned with `Escape` commits nothing, so clear the flag on the
+wrapper's `onkeydown` too:
+
+```svelte
+<div onkeydown={(e) => { if (e.key === 'Escape') isEditing = false }}>
+  <SvGrid ... />
+</div>
+```
+
+If your app starts edits itself through `api.startEditing()` /
+`api.stopEditing()`, set the flag at those call sites instead - you
+already know the state there, and it covers every exit path.
 
 ## Backpressure (when the server is too fast)
 
@@ -27161,8 +27220,10 @@ the middle scrolls under sticky edges:
 
 The user pins via the column menu - no extra wiring needed if
 `columnFilteringFeature` is registered (the menu lives on the same
-header button). Or call `api.pinColumn(columnId, 'left' | 'right' | null)`
-programmatically.
+header button). Or set the whole pinning state programmatically with
+`api.setColumnPinning({ left: ['name'], right: ['total'] })` - pass an
+empty array for a side to unpin it. `api.getColumnPinning()` reads it
+back for persistence.
 
 ## List + chips editors
 
@@ -28287,22 +28348,24 @@ Row height is a single integer in pixels.
 <SvGrid {data} {columns} features={{}} rowHeight={36} />
 ```
 
-The default is 36 px. The virtualizer reads `rowHeight` once and uses it to
+The default is 30 px. The virtualizer reads `rowHeight` and uses it to
 compute the visible window and total scroll height.
+
+Because the virtualizer needs the height as a number up front, row
+height is a prop rather than a CSS token, and the grid writes it as an
+inline style on each row. A stylesheet rule cannot set it.
 
 ## Density
 
-For a density toggle, change `rowHeight` and a matching CSS custom property:
+A density toggle is just a derived `rowHeight`:
 
 ```svelte
 <script lang="ts">
   let density = $state<'compact' | 'normal' | 'comfortable'>('normal')
-  const px = $derived(density === 'compact' ? 28 : density === 'comfortable' ? 48 : 36)
+  const px = $derived(density === 'compact' ? 28 : density === 'comfortable' ? 48 : 30)
 </script>
 
-<div style:--sg-row-height="{px}px">
-  <SvGrid {data} {columns} features={{}} rowHeight={px} />
-</div>
+<SvGrid {data} {columns} features={{}} rowHeight={px} />
 ```
 
 The example gallery's
@@ -29797,7 +29860,6 @@ The gallery defines these tokens - override at `:root` or on the grid host:
 --sg-row-alt-bg         even-row background
 --sg-row-hover-bg       hover background
 --sg-selection-bg       selected-row background
---sg-row-height         row height (also pass `rowHeight` prop)
 --sg-focus-ring         focus outline (box-shadow)
 --sg-accent             primary accent (sort arrow, etc)
 ```
@@ -33108,15 +33170,17 @@ point of assignment:
   --sg-scrollbar-thumb-hover: hsl(var(--muted-foreground) / 0.6);
   --sg-font:                  var(--font-sans, sans-serif);
   --sg-radius:                var(--radius);
-  --sg-row-height:            40px;
 }
 ```
 
 ```svelte
 <div class="sg-shadcn">
-  <SvGrid {data} {columns} sortable filterable />
+  <SvGrid {data} {columns} sortable filterable rowHeight={40} />
 </div>
 ```
+
+Row height is a prop, not a token - the virtualizer needs it as a
+number, so it cannot come from the stylesheet above.
 
 **Always wrap in `hsl()`.** Writing `--sg-accent: var(--primary)`
 passes bare HSL channels straight to the grid, which expects a complete
@@ -34072,7 +34136,6 @@ The full surface (see the gallery's
 | `--sg-header-bg` / `--sg-header-fg` | Header row |
 | `--sg-row-alt-bg` | Zebra rows |
 | `--sg-row-hover-bg` | Row + cell hover |
-| `--sg-row-height` | Row height (read by the wrapper's `rowHeight` prop) |
 | `--sg-selection-bg` | Selected cell / row tint |
 | `--sg-accent` | Sort indicator, focus ring, primary buttons |
 | `--sg-focus-ring` | Keyboard focus outline |
@@ -34705,9 +34768,13 @@ ship in a corporate design system.
 
 | Token                  | Default     | What it controls                                                       |
 | ---------------------- | ----------- | ---------------------------------------------------------------------- |
-| `--sg-row-height`      | `32px`      | Default row height. Per-grid override via the `rowHeight` prop wins.    |
 | `--sg-radius`          | `6px`       | Border radius on rounded UI inside the grid (chips, badges, menus)      |
 | `--sg-font`            | inherits    | Font family used inside the grid                                        |
+
+Row height is **not** a token. The virtualizer needs the height as a
+number before it can lay rows out, so it comes from the `rowHeight`
+prop (default `30`) and is written as an inline style on each row. See
+[Row height](./rows/row-height.md).
 
 ## Header typography tokens
 
@@ -34789,7 +34856,7 @@ library. Copy if you want the same convention; rename freely otherwise.
 ```css
 :root {
   --sg-accent: #db2777;          /* hot pink everywhere */
-  --sg-row-height: 36px;
+  --sg-radius: 10px;
   --sg-font: 'Inter', sans-serif;
 }
 ```
@@ -56133,7 +56200,7 @@ The render component. One `<SvGrid>` element per grid instance.
 | Prop                 | Type                 | Default     | Notes                                                                  |
 | -------------------- | -------------------- | ----------- | ---------------------------------------------------------------------- |
 | `containerHeight`    | `number \| string`   | `520`       | Pixels (number) or any CSS height (string). Use `'100%'` inside a flex parent. |
-| `rowHeight`          | `number`             | `36`        | In pixels. Drives virtualizer math when virtualization is on.          |
+| `rowHeight`          | `number \| (i) => number` | `30`   | In pixels. Drives virtualizer math when virtualization is on. Pass a function for per-row heights. Not a CSS token - the virtualizer needs a number, so it is written as an inline style per row. |
 | `columnWidth`        | `number`             | `140`       | Default for columns without an explicit `width`.                       |
 | `fitColumns`         | `boolean`            | `false`     | Scale columns proportionally to fill the viewport; residue absorbed in the last column. Shrinks down to 85% of natural widths; beyond that the user gets a horizontal scrollbar. |
 | `showRowNumbers`     | `boolean`            | `false`     | Leading 1-based row-number column.                                     |
@@ -56190,9 +56257,11 @@ The render component. One `<SvGrid>` element per grid instance.
 
 ## Grouping
 
-| Prop                   | Type      | Default | Notes                            |
-| ---------------------- | --------- | ------- | -------------------------------- |
-| `showGroupingControls` | `boolean` | `false` | Show the group-by toolbar.       |
+| Prop                   | Type                       | Default | Notes                            |
+| ---------------------- | -------------------------- | ------- | -------------------------------- |
+| `showGroupingControls` | `boolean`                  | `false` | Show the group-by toolbar.       |
+| `groupBy`              | `ReadonlyArray<string>`    | `[]`    | Column ids to group by, outermost first. Re-applies when the prop changes; ignored when `treeData` is set. |
+| `expanded`             | `Record<string, boolean>`  | `{}`    | Which group / tree rows are open, keyed by row id. Seeds the state and re-applies on change. |
 
 ## Callbacks
 
@@ -56255,9 +56324,24 @@ onCellValueChange?: (event: {
 }) => void
 ```
 
-Fires after the grid has written the parsed value back into the row.
-Use this for cascading recomputes (line totals, derived columns) and
-for sending edits to a server. See [Saving values](../help/editing/saving-values.md).
+Fires when an inline edit **commits**. This is the editor's commit path
+only - the programmatic `api.setCellValue()` writes the value without
+firing it. Use this for cascading recomputes (line totals, derived
+columns) and for sending edits to a server. See
+[Saving values](../help/editing/saving-values.md).
+
+### `onExpandedChange(expanded)`
+
+```ts
+onExpandedChange?: (expanded: Record<string, boolean>) => void
+```
+
+Fires whenever the expanded set changes - a click on a group banner,
+`api.setRowExpanded()`, `api.expandAllGroups()` /
+`api.collapseAllGroups()`. Receives the full next map, so it can be
+written straight back into the `expanded` prop for a controlled setup
+without looping. Group row ids look like
+`group_department_Engineering`; tree rows use the engine row id.
 
 ### `onActiveCellChange(cell)`
 

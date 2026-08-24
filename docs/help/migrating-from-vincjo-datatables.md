@@ -17,7 +17,7 @@ port is mostly about deciding how much markup you want to keep.
 | `new TableHandler(data, { rowsPerPage })`  | `createSvGrid({...})` or `<SvGrid>`        |
 | `<ThSort {table} field="name">`            | `rowSortingFeature` (header sort built in) |
 | `<ThFilter {table} field="name">`          | `columnFilteringFeature`                   |
-| `table.global.set(query)` (search)         | `api.setGlobalFilter(query)`               |
+| `table.global.set(query)` (search)         | `api.setState({ globalFilter: query })`    |
 | `<Pagination {table} />` / `<RowCount>`    | Built in; toggle `showPagination`          |
 | `table.rows` (current page rows)           | `api.getDisplayedRows()`                   |
 | Server mode (`table.load(...)`)            | `externalSort` / `externalFilter` + refetch |

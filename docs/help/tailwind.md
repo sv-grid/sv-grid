@@ -74,7 +74,6 @@ The full surface (see the gallery's
 | `--sg-header-bg` / `--sg-header-fg` | Header row |
 | `--sg-row-alt-bg` | Zebra rows |
 | `--sg-row-hover-bg` | Row + cell hover |
-| `--sg-row-height` | Row height (read by the wrapper's `rowHeight` prop) |
 | `--sg-selection-bg` | Selected cell / row tint |
 | `--sg-accent` | Sort indicator, focus ring, primary buttons |
 | `--sg-focus-ring` | Keyboard focus outline |

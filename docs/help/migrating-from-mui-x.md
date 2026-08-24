@@ -69,8 +69,8 @@ MUI X.
 | `setSortModel([{field, sort}])`              | `api.setSort(field, sort)`                  |
 | `setFilterModel({items: [...]})`             | `api.setFilter(field, {operator, value})`   |
 | `setPage(0)` / `setPageSize(50)`             | Use the built-in pager; for headless control register `pageSize` prop |
-| `selectRow(id)`                              | Toggle the row checkbox via the wrapper's UI; programmatic select is `api.setRowSelection({id: true})` |
-| `getSelectedRows()`                          | `api.getDisplayedRows().filter((r) => ...)` |
+| `selectRow(id)`                              | Toggle the row checkbox via the wrapper's UI; programmatic select is `api.selectRows([id])` (`api.toggleRowSelected(id)` to flip one) |
+| `getSelectedRows()`                          | `api.getSelectedRows()` (ids via `api.getSelectedRowIds()`) |
 | `exportDataAsExcel()`                        | `api.exportData({ format: 'xlsx' })` (Enterprise)  |
 | `setColumnVisibilityModel({field: false})`   | `api.setColumnVisible('field', false)`     |
 
@@ -146,8 +146,11 @@ visual piece is a CSS custom property (`--sg-*`); see
 [design tokens](./tokens.md). Override at any DOM level:
 
 ```css
-.grid-host { --sg-accent: #db2777; --sg-row-height: 40px; }
+.grid-host { --sg-accent: #db2777; --sg-radius: 10px; }
 ```
+
+Row height is the exception: it is the `rowHeight` prop rather than a
+token, because the virtualizer needs it as a number.
 
 For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 [demo 74](https://svgrid.com/demos/74-theme-integrations/).

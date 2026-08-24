@@ -35,7 +35,7 @@ The render component. One `<SvGrid>` element per grid instance.
 | Prop                 | Type                 | Default     | Notes                                                                  |
 | -------------------- | -------------------- | ----------- | ---------------------------------------------------------------------- |
 | `containerHeight`    | `number \| string`   | `520`       | Pixels (number) or any CSS height (string). Use `'100%'` inside a flex parent. |
-| `rowHeight`          | `number`             | `36`        | In pixels. Drives virtualizer math when virtualization is on.          |
+| `rowHeight`          | `number \| (i) => number` | `30`   | In pixels. Drives virtualizer math when virtualization is on. Pass a function for per-row heights. Not a CSS token - the virtualizer needs a number, so it is written as an inline style per row. |
 | `columnWidth`        | `number`             | `140`       | Default for columns without an explicit `width`.                       |
 | `fitColumns`         | `boolean`            | `false`     | Scale columns proportionally to fill the viewport; residue absorbed in the last column. Shrinks down to 85% of natural widths; beyond that the user gets a horizontal scrollbar. |
 | `showRowNumbers`     | `boolean`            | `false`     | Leading 1-based row-number column.                                     |
@@ -92,9 +92,11 @@ The render component. One `<SvGrid>` element per grid instance.
 
 ## Grouping
 
-| Prop                   | Type      | Default | Notes                            |
-| ---------------------- | --------- | ------- | -------------------------------- |
-| `showGroupingControls` | `boolean` | `false` | Show the group-by toolbar.       |
+| Prop                   | Type                       | Default | Notes                            |
+| ---------------------- | -------------------------- | ------- | -------------------------------- |
+| `showGroupingControls` | `boolean`                  | `false` | Show the group-by toolbar.       |
+| `groupBy`              | `ReadonlyArray<string>`    | `[]`    | Column ids to group by, outermost first. Re-applies when the prop changes; ignored when `treeData` is set. |
+| `expanded`             | `Record<string, boolean>`  | `{}`    | Which group / tree rows are open, keyed by row id. Seeds the state and re-applies on change. |
 
 ## Callbacks
 
@@ -157,9 +159,24 @@ onCellValueChange?: (event: {
 }) => void
 ```
 
-Fires after the grid has written the parsed value back into the row.
-Use this for cascading recomputes (line totals, derived columns) and
-for sending edits to a server. See [Saving values](../help/editing/saving-values.md).
+Fires when an inline edit **commits**. This is the editor's commit path
+only - the programmatic `api.setCellValue()` writes the value without
+firing it. Use this for cascading recomputes (line totals, derived
+columns) and for sending edits to a server. See
+[Saving values](../help/editing/saving-values.md).
+
+### `onExpandedChange(expanded)`
+
+```ts
+onExpandedChange?: (expanded: Record<string, boolean>) => void
+```
+
+Fires whenever the expanded set changes - a click on a group banner,
+`api.setRowExpanded()`, `api.expandAllGroups()` /
+`api.collapseAllGroups()`. Receives the full next map, so it can be
+written straight back into the `expanded` prop for a controlled setup
+without looping. Group row ids look like
+`group_department_Engineering`; tree rows use the engine row id.
 
 ### `onActiveCellChange(cell)`
 

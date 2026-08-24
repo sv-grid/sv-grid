@@ -46,9 +46,9 @@ is uncontrollable-by-default; opt in via the `onXxxChange` props.
 
 ## D
 
-**Density.** The vertical compaction of rows. Controlled via the
-`--sg-row-height` CSS variable + the `rowHeight` prop. Default is
-36 px ("comfortable"); 28 px is "compact"; 48 px is "loose".
+**Density.** The vertical compaction of rows. Controlled by the
+`rowHeight` prop (not a CSS token - the virtualizer needs the height as
+a number). Default is 30 px; 28 px is "compact", 48 px is "loose".
 
 **Display rows.** The rows the grid is currently showing AFTER the
 pipeline runs (filter -> sort -> group -> page). Accessible via
@@ -125,8 +125,9 @@ errors.
 ## P
 
 **Pinned column.** A column sticky-positioned to the left or right
-edge while the rest scroll. Set via the column menu or
-`api.pinColumn(id, 'left' | 'right' | null)`.
+edge while the rest scroll. Set via the column menu, the
+`initialColumnPinning` prop, or
+`api.setColumnPinning({ left: [...], right: [...] })`.
 
 **Pipeline.** The chain of row-model transformations: core ->
 filtered -> sorted -> grouped -> expanded -> paginated. Runs once per

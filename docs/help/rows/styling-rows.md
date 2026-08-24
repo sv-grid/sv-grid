@@ -75,7 +75,6 @@ The gallery defines these tokens - override at `:root` or on the grid host:
 --sg-row-alt-bg         even-row background
 --sg-row-hover-bg       hover background
 --sg-selection-bg       selected-row background
---sg-row-height         row height (also pass `rowHeight` prop)
 --sg-focus-ring         focus outline (box-shadow)
 --sg-accent             primary accent (sort arrow, etc)
 ```

@@ -6683,6 +6683,20 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "groupBy",
+        "label": "Group By",
+        "type": "json",
+        "description": "Group the rows by these column ids, outermost first - `['region', 'country']` rolls country up inside region. ```svelte <SvGrid {data} {columns} {features} groupBy={['department']} /> ``` The prop seeds the group-by list and re-applies whenever it changes, so it works both as initial state and as a controlled value. The column menu and `api.setGroupBy()` write the same state; a change from either survives until this prop's own value changes. Ignored when `treeData` is set - a row cannot be both a hierarchy node and bucketed under a group banner.",
+        "group": "common"
+      },
+      {
+        "key": "expanded",
+        "label": "Expanded",
+        "type": "json",
+        "description": "Which group / tree rows are expanded, keyed by row id. Expansion is owned by the engine by default; pass this prop to hoist it (saved views, \"expand everything on load\", persisted UI state). Like `groupBy` it seeds the state and re-applies whenever it changes. Group row ids are built from the grouping path, not the display label: `group_department_Engineering`, and one level deeper `group_department_Engineering_role_Senior`. Tree rows key off the engine's row id instead (set `getRowId` to make that your own id). Prefer capturing the map from `onExpandedChange` over hand-building these keys.",
+        "group": "common"
+      },
+      {
         "key": "groupFooters",
         "label": "Group Footers",
         "type": "boolean",
@@ -7240,6 +7254,12 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Pivot Mode Change",
         "prop": "onPivotModeChange",
         "description": "Fired when the in-grid Pivot toggle flips `pivotMode`."
+      },
+      {
+        "key": "expandedChange",
+        "label": "Expanded Change",
+        "prop": "onExpandedChange",
+        "description": "Fired whenever the expanded set changes - chevron clicks, `api.setRowExpanded()`, `expandAllGroups()` / `collapseAllGroups()`. Receives the full next map, so it can be written straight back into `expanded` for a controlled setup."
       },
       {
         "key": "paginationChange",

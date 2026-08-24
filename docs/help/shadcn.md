@@ -106,15 +106,17 @@ point of assignment:
   --sg-scrollbar-thumb-hover: hsl(var(--muted-foreground) / 0.6);
   --sg-font:                  var(--font-sans, sans-serif);
   --sg-radius:                var(--radius);
-  --sg-row-height:            40px;
 }
 ```
 
 ```svelte
 <div class="sg-shadcn">
-  <SvGrid {data} {columns} sortable filterable />
+  <SvGrid {data} {columns} sortable filterable rowHeight={40} />
 </div>
 ```
+
+Row height is a prop, not a token - the virtualizer needs it as a
+number, so it cannot come from the stylesheet above.
 
 **Always wrap in `hsl()`.** Writing `--sg-accent: var(--primary)`
 passes bare HSL channels straight to the grid, which expects a complete

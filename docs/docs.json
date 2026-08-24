@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-24T07:38:48.281Z",
+  "generatedAt": "2026-08-24T18:20:20.631Z",
   "counts": {
     "pages": 364,
     "enterprise": 55,
@@ -1415,8 +1415,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 3330,
-      "lastUpdated": "2026-08-18",
+      "words": 3458,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -1489,8 +1489,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 805,
-      "lastUpdated": "2026-08-18",
+      "words": 844,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -1967,7 +1967,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 385,
-      "lastUpdated": "2026-06-16",
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "63-column-layout-api"
       ]
@@ -2398,8 +2398,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1173,
-      "lastUpdated": "2026-07-02",
+      "words": 1183,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2410,8 +2410,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1588,
-      "lastUpdated": "2026-08-18",
+      "words": 1733,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "07-grouping-aggregation"
       ]
@@ -2625,8 +2625,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 406,
-      "lastUpdated": "2026-08-15",
+      "words": 409,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2673,8 +2673,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 871,
-      "lastUpdated": "2026-08-15",
+      "words": 897,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2793,8 +2793,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 632,
-      "lastUpdated": "2026-08-15",
+      "words": 635,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2817,8 +2817,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1816,
-      "lastUpdated": "2026-07-22",
+      "words": 1895,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "81-mobile-card-view"
       ]
@@ -2871,8 +2871,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1136,
-      "lastUpdated": "2026-07-21",
+      "words": 1257,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "34-realtime-orders"
       ]
@@ -2885,8 +2885,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1503,
-      "lastUpdated": "2026-06-05",
+      "words": 1525,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "02-sort-filter-paginate",
         "04-selection-copy-paste",
@@ -3007,8 +3007,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 553,
-      "lastUpdated": "2026-08-19",
+      "words": 584,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -3096,8 +3096,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 260,
-      "lastUpdated": "2026-06-08",
+      "words": 253,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "62-conditional-styling"
       ]
@@ -3299,8 +3299,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 963,
-      "lastUpdated": "2026-08-15",
+      "words": 986,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -3377,8 +3377,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 959,
-      "lastUpdated": "2026-06-09",
+      "words": 947,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -3418,8 +3418,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1183,
-      "lastUpdated": "2026-08-15",
+      "words": 1209,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "74-theme-integrations"
       ]
@@ -5516,8 +5516,8 @@
       "section": "reference",
       "pillar": "grid",
       "tier": "community",
-      "words": 1030,
-      "lastUpdated": "2026-06-16",
+      "words": 1184,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {

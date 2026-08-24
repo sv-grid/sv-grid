@@ -47,7 +47,6 @@ The 20-odd tokens the renderer reads:
 | `--sg-header-bg` / `--sg-header-fg` | Header row                               |
 | `--sg-row-alt-bg`                | Zebra rows                                  |
 | `--sg-row-hover-bg`              | Row + cell hover                            |
-| `--sg-row-height`                | Row height                                  |
 | `--sg-selection-bg`              | Selected cell / row tint                    |
 | `--sg-accent`                    | Sort indicator, focus ring, primary buttons |
 | `--sg-focus-ring`                | Keyboard focus outline                      |
@@ -116,22 +115,21 @@ demo applies three full palettes (light / dark / high-contrast) this way.
 
 ## Density
 
-Two ways:
+Density is a **prop, not a token**. The virtualizer has to know each
+row's height as a number before it can position rows, so it cannot be
+resolved from CSS - the grid writes the height as an inline style on
+every row, which would override a stylesheet rule anyway.
 
-1. **Set `rowHeight` on `<SvGrid>`**. Numeric, in pixels. Drives the
-   row height and the active-cell hit box.
+Set `rowHeight` on `<SvGrid>`. Numeric, in pixels; drives the row
+height and the active-cell hit box. The default is `30`.
 
-   ```svelte
-   <SvGrid {data} {columns} features={features} rowHeight={28} />
-   ```
+```svelte
+<SvGrid {data} {columns} features={features} rowHeight={28} />
+```
 
-2. **Override `--sg-row-height` on a wrapper.** Same effect, with the
-   token shape if you'd rather express density in CSS.
-
-   ```css
-   .compact { --sg-row-height: 28px; }
-   .comfortable { --sg-row-height: 48px; }
-   ```
+Common steps: `28` compact, `30` normal, `46`-`48` comfortable. For
+rows whose height depends on their content, set `autoRowHeight`
+instead and the grid measures each row.
 
 A user-facing "density selector" is half a dozen lines:
 
@@ -139,7 +137,7 @@ A user-facing "density selector" is half a dozen lines:
 <script lang="ts">
   let density = $state<'compact' | 'normal' | 'comfortable'>('normal')
   const height = $derived(
-    density === 'compact' ? 28 : density === 'comfortable' ? 48 : 36,
+    density === 'compact' ? 28 : density === 'comfortable' ? 48 : 30,
   )
 </script>
 
