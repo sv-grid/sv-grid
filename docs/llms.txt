@@ -157,6 +157,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 ### Filtering
 
+- [Advanced filter](https://svgrid.com/docs/help/filtering/advanced-filter/): The column filters cover one column at a time, joined with AND. The advanced filter is for the questions that shape does not reach: OR across different columns, negation, nested groups, and compari…
 - [Applying filters](https://svgrid.com/docs/help/filtering/applying-filters/): "Applying" a filter means running it against the data. SvGrid applies filters **eagerly** by default: every keystroke updates the row model and the visible rows (with a 150ms debounce inside the co…
 - [Custom column filters](https://svgrid.com/docs/help/filtering/custom-column-filters/): When the built-in operators and the set-filter pattern are not enough, take over the filter pipeline.
 - [Date filter](https://svgrid.com/docs/help/filtering/date-filter/): A column with editorType: 'date' (or 'datetime') gets the **date** filter operator set: equals, lessThan, greaterThan, **between**, isBlank.

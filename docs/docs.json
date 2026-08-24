@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-24T07:03:34.752Z",
+  "generatedAt": "2026-08-24T07:38:48.281Z",
   "counts": {
-    "pages": 363,
+    "pages": 364,
     "enterprise": 55,
-    "withDemo": 208
+    "withDemo": 209
   },
   "pillars": [
     {
@@ -237,6 +237,7 @@
       "title": "Filtering",
       "pillar": "grid",
       "pages": [
+        "help/filtering/advanced-filter.md",
         "help/filtering/applying-filters.md",
         "help/filtering/custom-column-filters.md",
         "help/filtering/date-filter.md",
@@ -2233,6 +2234,20 @@
       "demoIds": []
     },
     {
+      "path": "help/filtering/advanced-filter.md",
+      "url": "/docs/help/filtering/advanced-filter/",
+      "title": "Advanced filter",
+      "summary": "The column filters cover one column at a time, joined with AND. The advanced filter is for the questions that shape does not reach: OR across different columns, negation, nested groups, and comparisons against an aggregate of the rows themselves.",
+      "section": "help/filtering",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1015,
+      "lastUpdated": "2026-08-24",
+      "demoIds": [
+        "98-advanced-filter-builder"
+      ]
+    },
+    {
       "path": "help/filtering/applying-filters.md",
       "url": "/docs/help/filtering/applying-filters/",
       "title": "Applying filters",
@@ -2339,8 +2354,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 559,
-      "lastUpdated": "2026-08-18",
+      "words": 573,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "03-excel-filters"
       ]
