@@ -12,6 +12,7 @@ import type { ConditionalFormat } from "./conditional-formatting";
 import type { GroupDisplayType } from "./group-display";
 import type { GridMessages } from "./grid-messages";
 import type { GridPivotConfig } from "./pivot-view.svelte";
+import type { GridPredicateExpr } from "./filtering/predicate-expr";
 import type { MenuItem } from "./SvMenuList.svelte";
 
 /** The calendar views the scheduler can render. {@link SchedulerConfig}. The
@@ -1369,6 +1370,16 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * sorted data on first render. Applied once at mount; user sorting takes over.
    */
   initialSorting?: Array<{ id: string; desc: boolean }>;
+  /**
+   * The advanced-filter expression to start in (Pro). Applied once at mount;
+   * change it afterwards through `api.setAdvancedFilter()`.
+   *
+   * Filtering only happens once `@svgrid/enterprise`'s `enableAdvancedFilter()`
+   * has registered a compiler - without it the expression is stored and
+   * reported but no rows are removed, so the free grid degrades to a no-op
+   * rather than to a wrong row set.
+   */
+  initialAdvancedFilter?: GridPredicateExpr | null;
   /**
    * When `true`, the grid still records column-filter / global-filter /
    * facet state (so the menu UI works and indicators light up) but does

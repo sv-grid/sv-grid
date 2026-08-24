@@ -287,3 +287,97 @@ describe('createServerDataSource optimistic mutations', () => {
     expect(src.getRows).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('advanced-filter expression contract', () => {
+  const EXPR = { kind: 'cmp', column: 'id', op: 'greaterThan', value: '5' } as never
+
+  /** A source that reports whether it honoured the expression. */
+  function exprSource(ack: boolean | undefined) {
+    const seen: unknown[] = []
+    const source: ServerDataSource<Row> = {
+      async getRows(req) {
+        seen.push(req.filterModel.expression)
+        return {
+          rows: [{ id: 1 }],
+          rowCount: 1,
+          ...(ack === undefined ? {} : { appliedExpression: ack }),
+        }
+      },
+    }
+    return { source, seen }
+  }
+
+  it('forwards the expression to the source', async () => {
+    const { source, seen } = exprSource(true)
+    const ctl = createServerDataSource(source, { pageSize: 10, onChange: () => {} })
+    ctl.setFilter({ expression: EXPR })
+    await flush()
+    expect(seen.at(-1)).toEqual(EXPR)
+  })
+
+  it('is satisfied when the source acknowledges applying it', async () => {
+    const ctl = createServerDataSource(exprSource(true).source, { pageSize: 10, onChange: () => {} })
+    ctl.setFilter({ expression: EXPR })
+    await flush()
+    expect(ctl.getState().expressionUnapplied).toBe(false)
+  })
+
+  it('flags an unapplied expression when the ack is missing', async () => {
+    const ctl = createServerDataSource(exprSource(undefined).source, { pageSize: 10, onChange: () => {} })
+    ctl.setFilter({ expression: EXPR })
+    await flush()
+    // The rows look perfectly normal, which is exactly why this has to be
+    // surfaced rather than inferred by the user.
+    expect(ctl.getState().expressionUnapplied).toBe(true)
+  })
+
+  it('flags it when the source explicitly declines', async () => {
+    const ctl = createServerDataSource(exprSource(false).source, { pageSize: 10, onChange: () => {} })
+    ctl.setFilter({ expression: EXPR })
+    await flush()
+    expect(ctl.getState().expressionUnapplied).toBe(true)
+  })
+
+  it('does NOT client-filter the loaded page as a fallback', async () => {
+    const ctl = createServerDataSource(exprSource(undefined).source, { pageSize: 10, onChange: () => {} })
+    ctl.setFilter({ expression: EXPR })
+    await flush()
+    // id 1 fails `id > 5`. Filtering here would turn "1 of 1,000,000 match"
+    // into a confident lie and make paging incoherent, so the row survives and
+    // the flag carries the truth instead.
+    expect(ctl.getState().rows).toEqual([{ id: 1 }])
+  })
+
+  it('warns once, not on every fetch', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const ctl = createServerDataSource(exprSource(undefined).source, { pageSize: 10, onChange: () => {} })
+      ctl.setFilter({ expression: EXPR })
+      await flush()
+      ctl.refresh()
+      await flush()
+      ctl.refresh()
+      await flush()
+      expect(warn).toHaveBeenCalledTimes(1)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('stays clear when no expression is in play', async () => {
+    const ctl = createServerDataSource(exprSource(undefined).source, { pageSize: 10, onChange: () => {} })
+    ctl.refresh()
+    await flush()
+    expect(ctl.getState().expressionUnapplied).toBe(false)
+  })
+
+  it('clears the flag once the expression is removed', async () => {
+    const ctl = createServerDataSource(exprSource(undefined).source, { pageSize: 10, onChange: () => {} })
+    ctl.setFilter({ expression: EXPR })
+    await flush()
+    expect(ctl.getState().expressionUnapplied).toBe(true)
+    ctl.setFilter({})
+    await flush()
+    expect(ctl.getState().expressionUnapplied).toBe(false)
+  })
+})

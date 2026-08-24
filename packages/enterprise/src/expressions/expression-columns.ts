@@ -5,9 +5,21 @@
  *
  * The operator set mirrors the grid's own filter row (text / number / date),
  * so an expression's operators line up with what a user already knows from the
- * column menu. We keep a local copy rather than importing the grid's internal
- * `filter-operators` module (which is not part of the public surface).
+ * column menu.
+ *
+ * Identity and input-shape semantics come from the grid's shared catalogue, so
+ * the two surfaces cannot disagree about which operators exist or which need a
+ * chip input / no input / a second value. Labels and ordering stay local on
+ * purpose: the editor leads with `Equals` where the filter menu leads with
+ * `Contains`, and each is right for its context.
  */
+// Imported from the `/filtering` subpath, not the package root: the root would
+// drag SvGrid.svelte into a module that is otherwise pure logic.
+import {
+  isRangeOperator as gridIsRangeOperator,
+  isSetOperator as gridIsSetOperator,
+  isValuelessOperator as gridIsValuelessOperator,
+} from '@svgrid/grid/filtering'
 import type { ExcelFilterOperator } from '@svgrid/grid'
 
 /** Coarse value type used to decide which operators a column offers. */
@@ -40,8 +52,16 @@ const NUM: ExprColumnType[] = ['number']
 const DATES: ExprColumnType[] = ['date', 'datetime']
 const ALL: ExprColumnType[] = ['text', 'number', 'date', 'datetime', 'boolean']
 
-/** The full operator catalogue, ordered as the editor should present it. */
-export const OPERATORS: ReadonlyArray<OperatorMeta> = [
+/**
+ * Label + type applicability are local (presentation); the `valueless` / `set` /
+ * `range` flags are stamped on from the grid's shared catalogue below, so the
+ * editor can never render the wrong input control for an operator.
+ */
+const OPERATOR_PRESENTATION: ReadonlyArray<{
+  value: ExcelFilterOperator
+  label: string
+  types: ReadonlyArray<ExprColumnType>
+}> = [
   { value: 'equals', label: 'Equals', types: ALL },
   { value: 'notEquals', label: 'Not equals', types: ALL },
   { value: 'contains', label: 'Contains', types: TEXT },
@@ -51,12 +71,20 @@ export const OPERATORS: ReadonlyArray<OperatorMeta> = [
   { value: 'regex', label: 'Matches regex', types: TEXT },
   { value: 'greaterThan', label: 'Greater than', types: [...NUM, ...DATES] },
   { value: 'lessThan', label: 'Less than', types: [...NUM, ...DATES] },
-  { value: 'between', label: 'Between', types: [...NUM, ...DATES], range: true },
-  { value: 'in', label: 'In', types: ['text', 'number'], set: true },
-  { value: 'notIn', label: 'Not in', types: ['text', 'number'], set: true },
-  { value: 'isBlank', label: 'Is blank', types: ALL, valueless: true },
-  { value: 'isNotBlank', label: 'Is not blank', types: ALL, valueless: true },
+  { value: 'between', label: 'Between', types: [...NUM, ...DATES] },
+  { value: 'in', label: 'In', types: ['text', 'number'] },
+  { value: 'notIn', label: 'Not in', types: ['text', 'number'] },
+  { value: 'isBlank', label: 'Is blank', types: ALL },
+  { value: 'isNotBlank', label: 'Is not blank', types: ALL },
 ]
+
+/** The full operator catalogue, ordered as the editor should present it. */
+export const OPERATORS: ReadonlyArray<OperatorMeta> = OPERATOR_PRESENTATION.map((op) => ({
+  ...op,
+  ...(gridIsValuelessOperator(op.value) ? { valueless: true } : {}),
+  ...(gridIsSetOperator(op.value) ? { set: true } : {}),
+  ...(gridIsRangeOperator(op.value) ? { range: true } : {}),
+}))
 
 const BY_VALUE = new Map<ExcelFilterOperator, OperatorMeta>(
   OPERATORS.map((op) => [op.value, op]),
@@ -73,19 +101,19 @@ export function operatorsForType(type: ExprColumnType | undefined): OperatorMeta
   return OPERATORS.filter((op) => op.types.includes(t))
 }
 
-/** Whether an operator needs no value input. */
+/** Whether an operator needs no value input. Delegates to the grid catalogue. */
 export function isValueless(op: ExcelFilterOperator): boolean {
-  return operatorMeta(op).valueless === true
+  return gridIsValuelessOperator(op)
 }
 
 /** Whether an operator takes a multi-value token list. */
 export function isSetOperator(op: ExcelFilterOperator): boolean {
-  return operatorMeta(op).set === true
+  return gridIsSetOperator(op)
 }
 
 /** Whether an operator needs a second (`valueTo`) value. */
 export function isRangeOperator(op: ExcelFilterOperator): boolean {
-  return operatorMeta(op).range === true
+  return gridIsRangeOperator(op)
 }
 
 /** Look a column up by its canonical id. */

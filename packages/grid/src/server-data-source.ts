@@ -15,6 +15,8 @@
  * non-optimistic for now - the grid reflects a change only after the
  * follow-up re-fetch of the current page lands.
  */
+import type { GridPredicateExpr } from './filtering/predicate-expr'
+
 export type ServerSortModel = Array<{ id: string; desc: boolean }>
 
 export type ServerFilterModel = {
@@ -29,6 +31,24 @@ export type ServerFilterModel = {
     string,
     { operator: string; value: string; valueTo?: string; selectedValues?: string[] }
   >
+  /**
+   * Advanced-filter predicate (Pro), as a JSON AST. Expresses what `columns`
+   * cannot: OR across columns, nesting, negation, two conditions on one
+   * column, cross-column comparison, and aggregates.
+   *
+   * CONTRACT - all or nothing. A backend that receives this MUST either:
+   *
+   *   (a) translate the WHOLE expression into its query, make `rowCount`
+   *       reflect it, and set `appliedExpression: true` on the result; or
+   *   (b) apply none of it and leave `appliedExpression` unset.
+   *
+   * Partial application is a contract violation, not a degraded mode: it
+   * returns a SUPERSET of the requested rows while the UI says the filter is
+   * on. That is strictly worse than not filtering, because nothing about the
+   * result looks wrong. When the ack is missing the grid says so rather than
+   * filtering the loaded page itself - see `ServerState.expressionUnapplied`.
+   */
+  expression?: GridPredicateExpr
 }
 
 /** A value column to roll up per group. */
@@ -144,6 +164,12 @@ export type ServerResult<TData> = {
   rows: ReadonlyArray<TData>
   /** Total row count after filtering (for the pager). */
   rowCount: number
+  /**
+   * Set `true` ONLY when `filterModel.expression` was applied in full. Leave it
+   * unset if you ignored the expression; the grid then warns rather than
+   * pretending the filter ran. See the contract on `ServerFilterModel.expression`.
+   */
+  appliedExpression?: boolean
 }
 
 export type ServerDataSource<TData> = {
@@ -171,6 +197,15 @@ export type ServerState<TData> = {
   pageCount: number
   sortModel: ServerSortModel
   filterModel: ServerFilterModel
+  /**
+   * True when an advanced-filter expression was sent but the source did not
+   * acknowledge applying it - so `rows` is unfiltered and the UI should say so.
+   * Surface this rather than hiding it: the rows look perfectly normal.
+   *
+   * Optional so existing code that builds a `ServerState` literal keeps
+   * compiling; the controller always sets it.
+   */
+  expressionUnapplied?: boolean
 }
 
 export type ServerController<TData> = {
@@ -232,12 +267,16 @@ export function createServerDataSource<TData>(
     pageCount: 1,
     sortModel: [],
     filterModel: {},
+    expressionUnapplied: false,
   }
 
   // Monotonic request id: only the latest fetch is allowed to land, so a slow
   // response for an old sort/filter can't clobber a newer one.
   let requestSeq = 0
   let disposed = false
+  // Once per controller: a misconfigured backend would otherwise log on every
+  // page, scroll and filter change.
+  let warnedExpressionUnapplied = false
 
   const emit = () => {
     state.pageCount = Math.max(1, Math.ceil(state.total / state.pageSize))
@@ -267,6 +306,23 @@ export function createServerDataSource<TData>(
       if (disposed || id !== requestSeq) return // stale
       state.rows = result.rows
       state.total = result.rowCount
+      // An expression was sent but the backend did not acknowledge applying it,
+      // so these rows are a SUPERSET of what was asked for. Say so instead of
+      // filtering the loaded page here: filtering one page would turn
+      // "3 of 1,000,000 match" into a confident lie and make paging incoherent,
+      // since page 2 would re-filter a different slice.
+      state.expressionUnapplied =
+        state.filterModel.expression != null && result.appliedExpression !== true
+      if (state.expressionUnapplied && !warnedExpressionUnapplied) {
+        warnedExpressionUnapplied = true
+        console.warn(
+          '[svgrid] The data source was sent filterModel.expression but did not ' +
+            'return `appliedExpression: true`, so the advanced filter is NOT applied ' +
+            'and the rows shown are unfiltered. Apply the whole expression and ' +
+            'acknowledge it, or clear the advanced filter. ' +
+            'See https://svgrid.com/docs/help/server/server-filtering',
+        )
+      }
       state.loading = false
       emit()
     } catch (err) {

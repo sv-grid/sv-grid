@@ -12,6 +12,7 @@
     SvTagsInput,
     type ExcelFilterOperator,
   } from '@svgrid/grid'
+  import { untrack } from 'svelte'
   import { evaluatePredicate } from './expressions/evaluate'
   import {
     ExpressionParseError,
@@ -56,6 +57,13 @@
   // --- Builder <-> predicate conversion ------------------------------------
 
   function toConditions(expr: PredicateExpr): { combinator: 'and' | 'or'; conditions: Condition[] } | null {
+    // `const true` is how "no filter yet" is spelled. Treat it as an empty
+    // builder rather than an unrepresentable expression, so a fresh panel opens
+    // on a ready-to-fill condition row instead of dropping into text mode
+    // showing the word `true`.
+    if (expr.kind === 'const') {
+      return expr.value ? { combinator: 'and', conditions: [freshCondition()] } : null
+    }
     const parts =
       expr.kind === 'and' || expr.kind === 'or' ? expr.parts : [expr]
     const combinator = expr.kind === 'or' ? 'or' : 'and'
@@ -98,6 +106,36 @@
   let text = $state(stringifyPredicate(value, columns))
   let textError = $state<string | null>(null)
 
+  /**
+   * The last expression WE produced. Everything below is seeded once at init,
+   * so without this the editor would ignore a `value` assigned from outside -
+   * loading a saved filter or clicking a preset would update the grid while the
+   * editor kept showing the old conditions.
+   *
+   * Compared by reference on purpose: our own emits assign the very object we
+   * just built, so they are skipped, while any expression from elsewhere is a
+   * different object and re-seeds the UI.
+   */
+  let lastEmitted: PredicateExpr | null = $state(value)
+
+  $effect(() => {
+    const incoming = value
+    if (incoming === untrack(() => lastEmitted)) return
+    untrack(() => {
+      const next = toConditions(incoming)
+      if (next) {
+        combinator = next.combinator
+        conditions = next.conditions
+      } else if (mode === 'builder') {
+        // Not representable as a flat list; text mode keeps it intact.
+        mode = 'text'
+      }
+      text = stringifyPredicate(incoming, columns)
+      textError = null
+      lastEmitted = incoming
+    })
+  })
+
   function freshCondition(): Condition {
     const first = columns[0]
     const ops = operatorsForType(first?.type)
@@ -115,6 +153,7 @@
 
   function emitBuilder() {
     const expr = fromConditions(combinator, conditions)
+    lastEmitted = expr
     value = expr
     text = stringifyPredicate(expr, columns)
     textError = null
@@ -131,6 +170,7 @@
       const problems = validateExpression(expr, columns)
       textError = problems.length ? problems.join('; ') : null
       if (!problems.length) {
+        lastEmitted = expr
         value = expr
         onChange?.(expr)
       }
@@ -155,6 +195,25 @@
     emitBuilder()
   }
 
+  /**
+   * Whether the text currently in the box could be shown in the builder.
+   *
+   * Drives the Builder tab's disabled state. Letting the user click a tab that
+   * then refuses with a red error is worse than showing up front that this
+   * particular expression has to be edited as text - the refusal is a property
+   * of the expression, not a mistake the user made.
+   */
+  const builderAvailable = $derived.by(() => {
+    if (mode === 'builder') return true
+    try {
+      return toConditions(parsePredicate(text, columns)) != null
+    } catch {
+      // Half-typed text is not a reason to lock the tab; switchMode reports
+      // the parse error properly if they do click.
+      return true
+    }
+  })
+
   function switchMode(next: 'builder' | 'text') {
     if (next === mode) return
     if (next === 'text') {
@@ -171,6 +230,7 @@
         }
         combinator = c.combinator
         conditions = c.conditions
+        lastEmitted = expr
         value = expr
       } catch {
         textError = 'Fix the expression before switching'
@@ -213,6 +273,10 @@
         role="tab"
         aria-selected={mode === 'builder'}
         class:sx-active={mode === 'builder'}
+        disabled={!builderAvailable}
+        title={builderAvailable
+          ? undefined
+          : 'The builder shows a flat list of conditions, so it cannot represent column maths, aggregates or nested groups. Edit this one as text.'}
         onclick={() => switchMode('builder')}>Builder</button>
       <button
         type="button"
@@ -320,6 +384,9 @@
   .sx-modes button { border: 0; background: transparent; color: inherit; opacity: 0.65; padding: 4px 12px; font-size: 12px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.13s ease, opacity 0.13s ease; }
   .sx-modes button:hover { opacity: 1; }
   .sx-modes button.sx-active { background: var(--sg-accent, #4f46e5); color: #fff; opacity: 1; }
+  /* Not representable as a flat condition list - the tooltip says why. */
+  .sx-modes button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .sx-modes button:disabled:hover { opacity: 0.35; }
   .sx-match {
     font-size: 11.5px; font-weight: 600; color: var(--sg-accent, #4f46e5);
     background: color-mix(in srgb, var(--sg-accent, #4f46e5) 14%, transparent);

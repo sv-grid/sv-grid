@@ -159,6 +159,21 @@ function scanInTokens(value: unknown): { tokens: string[]; trailing: string } {
   return { tokens, trailing: take() }
 }
 
+// Re-exported here so consumers can reach the catalogue through the
+// `@svgrid/grid/filtering` subpath. Importing it from the package root would
+// pull in SvGrid.svelte, which is a runtime cost (and a bundler hazard) for
+// anything that only wants operator semantics.
+export {
+  ALL_FILTER_OPERATORS,
+  SET_OPERATOR_IDS,
+  VALUELESS_OPERATOR_IDS,
+  RANGE_OPERATOR_IDS,
+  isSetOperator,
+  isValuelessOperator,
+  isRangeOperator,
+  type FilterValueType,
+} from './filter-operator-catalogue'
+
 /** A filter with its needle-side work already done. Call per row. */
 export type CompiledExcelFilter = (cellValue: unknown) => boolean
 

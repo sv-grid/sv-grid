@@ -25,6 +25,7 @@ import {
   getColumnAlign,
   columnDefMatchesId,
 } from "./cell-values";
+import { hasAdvancedFilterEngine } from "./advanced-filter.svelte";
 
 export function createGridApi<
   TFeatures extends TableFeatures = TableFeatures,
@@ -369,12 +370,32 @@ export function createGridApi<
         // See `setFilter` for why the read-modify-write is untracked.
         untrack(() => {
           // Wipe every filter surface in one go: column-menu, filter-row, set
-          // filters, and the global search box.
+          // filters, the global search box, and the advanced filter. This
+          // promises "every filter surface", so leaving the advanced one set
+          // would strand rows nobody can see a cause for.
           ctx.filterMenuValues = {};
           ctx.filterRowValues = {};
           ctx.valueFilters = {};
           if (ctx.globalFilter !== "") ctx.globalFilter = "";
+          if (ctx.advancedFilter !== null) ctx.advancedFilter = null;
         });
+      },
+      setAdvancedFilter(expr) {
+        // See `setFilter` for why the write is untracked.
+        untrack(() => {
+          ctx.advancedFilter = expr ?? null;
+        });
+      },
+      getAdvancedFilter() {
+        return ctx.advancedFilter ?? null;
+      },
+      clearAdvancedFilter() {
+        untrack(() => {
+          ctx.advancedFilter = null;
+        });
+      },
+      isAdvancedFilterActive() {
+        return ctx.advancedFilter != null && hasAdvancedFilterEngine();
       },
       getFilters() {
         // Return a defensive copy so callers can't mutate internal state.
@@ -428,6 +449,10 @@ export function createGridApi<
           // editorType-based default the body uses.
           format: c.columnDef.format,
           align: getColumnAlign(c),
+          // The column's declared value type. Lets a filter or expression UI
+          // offer the right operators (numeric ranges vs text matching) without
+          // re-walking the columnDef tree.
+          editorType: (c.columnDef as { editorType?: string }).editorType,
         });
         // Visible columns first, in their current visual order...
         const out = ctx.allColumns.map((c: any) => describe(c, true));
@@ -721,6 +746,11 @@ export function createGridApi<
               Array.from(set),
             ]),
           ),
+          // Emitted only when set. `attachAutoSavedView` diffs
+          // JSON.stringify(getState()) on a timer, so adding an always-present
+          // key would change every existing snapshot and force one spurious
+          // save in every app on upgrade.
+          ...(ctx.advancedFilter ? { advancedFilter: ctx.advancedFilter } : {}),
           ...(ctx.chartingEnabled
             ? {
                 chart: {
@@ -776,6 +806,12 @@ export function createGridApi<
           for (const [k, arr] of Object.entries(state.facetFilters))
             next[k] = new Set(arr);
           ctx.valueFilters = next;
+        }
+        // `in` rather than a truthiness check, so an explicit null clears while
+        // an absent key leaves the current filter alone (the documented
+        // "only the keys present are applied" contract).
+        if ("advancedFilter" in state) {
+          ctx.advancedFilter = state.advancedFilter ?? null;
         }
         if ((state.chart || state.charts) && ctx.chartingEnabled) {
           if (Array.isArray(state.charts) && state.charts.length) {

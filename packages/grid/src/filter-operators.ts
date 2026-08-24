@@ -3,6 +3,10 @@
 // so it lives outside the controller.
 import type { Column, RowData } from "./index";
 import type { FilterOperator, FilterOption } from "./SvGrid.types";
+import {
+  SET_OPERATOR_IDS,
+  VALUELESS_OPERATOR_IDS,
+} from "./filtering/filter-operator-catalogue";
 
 export const filterOperatorOptions: Array<FilterOption> = [
   { value: "contains", label: "Contains", iconName: "op-contains" },
@@ -22,13 +26,12 @@ export const filterOperatorOptions: Array<FilterOption> = [
 ];
 /** Operators whose predicate is a set-membership test over a token list.
  *  The filter row renders a multi-value chip input for these instead of a
- *  single text box. */
-export const SET_OPERATORS: ReadonlyArray<FilterOperator> = ["in", "notIn"];
+ *  single text box. Sourced from the shared catalogue so the grid and the
+ *  expression editor cannot disagree about which control to render. */
+export const SET_OPERATORS: ReadonlyArray<FilterOperator> = SET_OPERATOR_IDS;
 /** Operators that need no value input - they act on emptiness alone. */
-export const VALUELESS_OPERATORS: ReadonlyArray<FilterOperator> = [
-  "isBlank",
-  "isNotBlank",
-];
+export const VALUELESS_OPERATORS: ReadonlyArray<FilterOperator> =
+  VALUELESS_OPERATOR_IDS;
 /** Which operators make sense for each column editor type. */
 export const TEXT_OPERATORS: Array<FilterOperator> = [
   "contains",

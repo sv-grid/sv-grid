@@ -239,6 +239,68 @@ menu opens (cached per column):
 Now the checklist shows every value, not just the ones on screen; selecting them
 drives `filterModel.columns[col].selectedValues` as usual.
 
+## The advanced filter over the wire
+
+`filterModel.columns` is a flat map with an implicit AND, so it cannot express
+OR across columns, nesting, negation, two conditions on one column, or a
+comparison against an aggregate. Those arrive separately, as a JSON expression:
+
+```ts
+filterModel.expression // GridPredicateExpr | undefined
+```
+
+### It is all or nothing
+
+A backend that receives an expression MUST either translate **the whole thing**,
+make `rowCount` reflect it, and acknowledge it:
+
+```ts
+return { rows, rowCount, appliedExpression: true }
+```
+
+or apply **none** of it and stay silent:
+
+```ts
+return { rows, rowCount } // no acknowledgement
+```
+
+Partial application is a contract violation rather than a degraded mode.
+Dropping a clause makes the result *broader*, so the grid would show rows the
+user's filter excluded, while the UI says the filter is on. Nothing about that
+result looks wrong, which is what makes it dangerous.
+
+### What happens when you do not apply it
+
+The grid does **not** filter the loaded page for you. Filtering one page would
+turn "3 of 1,000,000 match" into a confident lie and make paging incoherent,
+since page 2 would re-filter a different slice. Instead the controller sets
+`state.expressionUnapplied`, logs one warning, and leaves the rows alone, so you
+can show the user that the filter did not run:
+
+```svelte
+{#if state.expressionUnapplied}
+  <p role="status">
+    This grid loads rows from a server that has not applied the advanced
+    filter, so the results below are unfiltered.
+  </p>
+{/if}
+```
+
+### Using the plan seam
+
+`planQuery` admits the expression only when every column it references is on the
+`EntitySchema` - and rejects it **whole** if any is not, for the reason above.
+`createInMemoryDataSource` implements the contract end to end and is the
+reference to test a real backend against.
+
+```ts
+const plan = planQuery(schema, request)
+if (plan.expression) {
+  // Safe to translate: every column is on the schema.
+  // Translate it in full, or do not acknowledge it.
+}
+```
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the datasource contract and request lifecycle.

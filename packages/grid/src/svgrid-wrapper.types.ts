@@ -4,6 +4,7 @@
 import type { FilterOperator, Props } from './SvGrid.types'
 import type { GridExportOptions, GridClipboardOptions } from './export-format'
 import type { ChartSpec, ChartType } from './chart'
+import type { GridPredicateExpr } from './filtering/predicate-expr'
 
 // Aliased to the core union rather than restated: the API surfaces below hand
 // back whatever the grid actually filtered with, so a hand-maintained subset
@@ -33,6 +34,13 @@ export type SvGridViewState = {
   >
   /** Facet (Excel-style value checklist) selections, keyed by column id. */
   facetFilters: Record<string, string[]>
+  /**
+   * Advanced-filter expression (Pro). OPTIONAL, and omitted entirely when no
+   * advanced filter is set - so views saved before this feature existed, and
+   * views from grids that never use it, round-trip byte-identical. An explicit
+   * `null` clears the filter on `setState`.
+   */
+  advancedFilter?: GridPredicateExpr | null
   /** Built-in chart panel state (present only when `charting` is on): the
    *  ACTIVE chart, for back-compat + spread-and-tweak. */
   chart?: {
@@ -250,10 +258,25 @@ export type SvGridApi<
    */
   refreshEditorOptions(columnId?: string): void
   /**
-   * Clear every active column filter (menu, filter-row, set-list, and global).
-   * Resets the grid to "no filtering" in a single call.
+   * Clear every active column filter (menu, filter-row, set-list, global, and
+   * the advanced filter). Resets the grid to "no filtering" in a single call.
    */
   clearAllFilters(): void
+  /**
+   * Set the advanced-filter expression (Pro). `null` clears it. Composed with
+   * AND after the global, column and facet filters.
+   *
+   * Rows are only removed once `@svgrid/enterprise`'s `enableAdvancedFilter()`
+   * has registered a compiler. Without it the expression is stored but nothing
+   * is filtered - use `isAdvancedFilterActive()` to tell the two apart.
+   */
+  setAdvancedFilter(expr: GridPredicateExpr | null): void
+  /** The current advanced-filter expression, or `null`. */
+  getAdvancedFilter(): GridPredicateExpr | null
+  /** Clear the advanced filter, leaving other filter surfaces untouched. */
+  clearAdvancedFilter(): void
+  /** Whether an expression is set AND an engine is registered to run it. */
+  isAdvancedFilterActive(): boolean
   /**
    * Read the active column-menu filters as a snapshot. Keyed by column id.
    * Returns an empty object when nothing is filtered. `valueTo` is only
@@ -290,6 +313,9 @@ export type SvGridApi<
     format?: CellFormatConfig
     /** Effective horizontal alignment ('left' | 'center' | 'right'). */
     align?: 'left' | 'center' | 'right'
+    /** The column's declared `editorType`, when set. Lets a filter or
+     *  expression UI offer type-appropriate operators. */
+    editorType?: string
   }>
 
   // ----- Free data export (CSV / TSV / JSON + clipboard) -----

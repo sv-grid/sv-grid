@@ -30,6 +30,7 @@ import {
 } from './pivot'
 import { enableSchedulerView } from './scheduler'
 import { enableBoardView } from './board'
+import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
 
 export type EnterpriseAIApi<TData extends RowData> = {
@@ -138,6 +139,7 @@ export function installEnterprise<
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
   registerExportProvider(exportGrid as never)
   enablePivot()
+  enableAdvancedFilter()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),
