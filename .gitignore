@@ -112,3 +112,11 @@ tools/capture-readme-hero.mjs
 tools/capture-studio-shots.mjs
 tools/check-links.mjs
 tools/measure-bundle.mjs
+
+# Claude Code auto-memory. Two stale copies (reference_colormix_pinned_gotcha,
+# reference_responsive_grid) were swept into the public repo by the bulk 2.0.0
+# commit. The canonical files live outside the repo, under
+# %USERPROFILE%\.claude\projects\<project>\memory\. Nothing in the tree links
+# here. NOT to be confused with skills/svgrid/ and AGENTS.md, which are
+# deliberate, user-facing AI grounding surfaces and stay tracked.
+memory/
