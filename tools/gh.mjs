@@ -12,8 +12,10 @@
 //   node tools/gh.mjs discussion create  --category Announcements --title "..." --body "..."
 //   node tools/gh.mjs discussion comment --number 5 --body "Shipped in v1.4."
 //   node tools/gh.mjs discussion close   --number 5 --comment "Shipped." [--reason RESOLVED]
-const REPO = 'sv-grid/sv-grid'
-const [OWNER, NAME] = REPO.split('/')
+//
+// Every command also takes --repo owner/name (or GITHUB_REPO) to target a repo
+// other than the public one - use that for rehearsals.
+const DEFAULT_REPO = 'sv-grid/sv-grid'
 const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN
 
 import { readFileSync } from 'node:fs'
@@ -25,6 +27,11 @@ const flag = (k) => {
   const i = argv.indexOf(`--${k}`)
   return i >= 0 ? argv[i + 1] : undefined
 }
+// Target repo: --repo owner/name, or GITHUB_REPO, else the public repo. Point
+// this at a private sandbox when you are rehearsing rather than really filing.
+const REPO = flag('repo') ?? process.env.GITHUB_REPO ?? DEFAULT_REPO
+const [OWNER, NAME] = REPO.split('/')
+if (!OWNER || !NAME) fail(`--repo must be "owner/name" (got "${REPO}")`)
 // Text from --<name>, or --<name>-file (a path) for robust multi-line markdown.
 const text = (name) => {
   const inline = flag(name)
@@ -70,7 +77,7 @@ async function gql(query, variables) {
 }
 
 function preview(label, obj) {
-  console.log(`[dry] ${label}:`)
+  console.log(`[dry] ${REPO} ${label}:`)
   console.log(JSON.stringify(obj, null, 2))
 }
 

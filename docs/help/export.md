@@ -154,7 +154,7 @@ them.
 
 Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /
 year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
-and 14-day trials respectively.
+and 30-day trials respectively.
 
 ## Reference
 

@@ -15,7 +15,7 @@ For the MIT core, everyone gets the same channels:
 - **Bugs and feature requests** - open an issue at
   [github.com/sv-grid/sv-grid/issues](https://github.com/sv-grid/sv-grid/issues).
 - **Usage questions** - check the [docs](https://svgrid.com/docs) and the
-  [150+ demos](https://svgrid.com/demos/) first; if you are still stuck, open an
+  [370+ demos](https://svgrid.com/demos/) first; if you are still stuck, open an
   issue with a minimal reproduction.
 
 Community support is best-effort. We triage as fast as we can, but there is no

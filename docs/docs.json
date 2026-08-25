@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-25T13:43:11.588Z",
+  "generatedAt": "2026-08-25T20:02:45.291Z",
   "counts": {
     "pages": 365,
     "enterprise": 55,
@@ -2419,12 +2419,12 @@
       "path": "help/grouping-aggregation.md",
       "url": "/docs/help/grouping-aggregation/",
       "title": "Grouping & aggregation",
-      "summary": "Roll rows up by one or more columns and compute aggregates (sum, avg, count, min, max, custom) at each group level. Powered by columnGroupingFeature plus per-column aggregator config.",
+      "summary": "Roll rows up by one or more columns and compute aggregates (sum, avg, count, min, max, custom) at each group level. Powered by columnGroupingFeature plus per-column aggregate config.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 1733,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": [
         "07-grouping-aggregation"
       ]

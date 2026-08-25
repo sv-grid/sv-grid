@@ -5,7 +5,17 @@
 //   - sv-grid-license-<slug>.ts   — email this to the customer
 //   - audit.jsonl                 — append-only audit log of every issued key
 //
-// The audit log is your only record of what you've sold. Back it up.
+// The audit log is your only record of what you've sold, and tools/licenses/ is
+// gitignored - nothing in this repo protects it. Back it up off-machine after
+// every issuance, e.g.:
+//
+//   git -C tools/licenses add -A && git -C tools/licenses commit -m "issue: <tenant>"
+//   git -C tools/licenses push                 # a PRIVATE remote, never this repo
+//
+// (Initialise once with: git -C tools/licenses init && git -C tools/licenses
+// remote add origin <private-url>.) A cloud-synced folder works too; the only
+// unacceptable state is a single un-backed-up copy on one laptop. Losing it
+// means losing the ability to answer "who bought what, and has it expired".
 //
 // Usage:
 //   node tools/issue-license.mjs --tenant "ACME Corp" --seats 5 --expires 2027-05
@@ -56,12 +66,12 @@ Required:
   --seats    Number of developer seats (positive integer)
   --expires  Expiry, either YYYY-MM (end of that month, for subscriptions)
              or YYYY-MM-DD (end of that day - use this for trials, e.g. a
-             14-day eval)
+             30-day eval)
 
 Optional:
   --kind     One of: prod (default), eval, dev, oss. Picks the key prefix.
               prod  - paid production key (no console notice, no watermark)
-              eval  - 14-day trial (console notice on first use)
+              eval  - 30-day trial (console notice on first use)
               dev   - local development / internal (console notice)
               oss   - free key for open-source projects (no notice, no watermark);
                       see https://svgrid.com/pricing#oss for the policy
@@ -132,7 +142,7 @@ function main() {
   // packages/enterprise/src/license-core.ts:
   //   YYYY-MM     -> compact YYYYMM,   expires end of that month (subscriptions)
   //   YYYY-MM-DD  -> compact YYYYMMDD, expires end of that day   (trials)
-  // A 14-day trial needs the day form; the month form would hand out the rest
+  // A 30-day trial needs the day form; the month form would hand out the rest
   // of the calendar month instead.
   const expiresMatch = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(String(args.expires))
   if (!expiresMatch) {

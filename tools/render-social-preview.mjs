@@ -125,7 +125,7 @@ const variantA = `
   </div>
   <div style="position:absolute;left:80px;top:452px;color:${C.muted};font-weight:500;font-size:26px;line-height:1.45;">
     Virtualization, Excel-style filters, cell selection, inline editing - one prop pass.<br/>
-    150+ examples. MIT-licensed core. Built for Svelte 5 runes.
+    370+ examples. MIT-licensed core. Built for Svelte 5 runes.
   </div>
   <div class="footer"><span>svgrid.com</span><span>Built by jQWidgets</span></div>
 </div>`
@@ -143,7 +143,7 @@ const variantB = `
     <div style="margin-top:30px;display:flex;gap:12px;">
       <span class="pill"><span class="dot"></span>1,000,000 rows</span>
       <span class="pill"><span class="dot"></span>MIT core</span>
-      <span class="pill"><span class="dot"></span>150+ examples</span>
+      <span class="pill"><span class="dot"></span>370+ examples</span>
     </div>
   </div>
   ${miniGrid().replace('<div class="mini"', '<div class="mini" style="left:720px;top:120px;width:480px;"')}

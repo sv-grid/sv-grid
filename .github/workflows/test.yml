@@ -84,6 +84,15 @@ jobs:
         # private submodule checked out above.
         run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts
 
+      - name: Demo count + quoted claims
+        # The registry and examples/src/demos/ must agree, and every "370+
+        # demos" style number quoted in a README, the website, or the MCP
+        # package must still be true. Both drifted before: the count sat at
+        # "280+" while the real number was past 360, and "150+"/"140" survived
+        # in three files for months. Reads website/src/lib/*, so it needs the
+        # private submodule checked out above.
+        run: node tools/count-demos.mjs
+
       - name: Scaffold templates
         # The theme a user picks at scaffold time is recorded in three places
         # (app.css, the data-theme on the HTML shell, and the runtime picker's
