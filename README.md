@@ -81,7 +81,7 @@ inline editing all wire up the moment you turn on the matching prop.
 | **Requires** | `svelte@^5` (peer dependency), Node 16+ |
 | **Bundle (gzip)** | ~2 KB headless core, ~77 KB full `<SvGrid>` + ~9 KB CSS |
 | **Types** | Bundled, no `@types/` package needed |
-| **SSR** | Works under SvelteKit SSR and static builds |
+| **SSR** | Server-renders header + a viewport window of rows; verified in CI by `pnpm ssr:check` |
 | **Demos** | 370+ at [svgrid.com/demos](https://svgrid.com/demos/) |
 | **AI grounding** | [MCP server](https://www.npmjs.com/package/@svgrid/mcp), [llms.txt](https://svgrid.com/llms.txt), [Agent Skill](https://svgrid.com/docs/help/skill/) |
 
@@ -136,6 +136,8 @@ Svelte-first. Full detail and migration guides:
 [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-grid/) ·
 [Migrating from Handsontable](https://svgrid.com/docs/help/migrating-from-handsontable/)
 
+Using SvelteKit? [SvGrid with SvelteKit](https://svgrid.com/docs/getting-started/sveltekit/) covers server loads, URL-driven sorting, form actions and what actually server-renders.
+
 ## AI-native
 
 SvGrid is built to be written *by* AI as well as used with it. Three grounding surfaces ship with the
@@ -169,7 +171,7 @@ npx skills add sv-grid/sv-grid    # always-on house-style rules
 
 ### Does SvGrid work with SvelteKit and SSR?
 
-Yes. The render component emits meaningful HTML before hydration, so it works under SvelteKit SSR and
+Yes. The server HTML contains the header and a viewport-sized window of rows with their real cell values, so crawlers and no-JS clients see the content; the rest of the rows arrive once the client measures the viewport. Verified in CI against a real server build (`pnpm ssr:check`). It works under SvelteKit SSR and
 static builds. See [going to production](https://svgrid.com/docs/getting-started/6-going-to-production/).
 
 ### Is SvGrid free for commercial use?

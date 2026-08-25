@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-25T06:39:06.692Z",
+  "generatedAt": "2026-08-25T10:15:00.500Z",
   "counts": {
-    "pages": 364,
+    "pages": 365,
     "enterprise": 55,
     "withDemo": 209
   },
@@ -80,7 +80,8 @@
         "getting-started/4-features.md",
         "getting-started/5-theme-and-density.md",
         "getting-started/6-going-to-production.md",
-        "getting-started/starters.md"
+        "getting-started/starters.md",
+        "getting-started/sveltekit.md"
       ]
     },
     {
@@ -761,7 +762,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 681,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -1439,8 +1440,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 642,
-      "lastUpdated": "2026-08-19",
+      "words": 662,
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -1503,8 +1504,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 799,
-      "lastUpdated": "2026-07-21",
+      "words": 961,
+      "lastUpdated": "2026-08-25",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
@@ -1521,6 +1522,18 @@
       "tier": "community",
       "words": 611,
       "lastUpdated": "2026-08-18",
+      "demoIds": []
+    },
+    {
+      "path": "getting-started/sveltekit.md",
+      "url": "/docs/getting-started/sveltekit/",
+      "title": "SvGrid with SvelteKit",
+      "summary": "A grid in a SvelteKit app is not the same job as a grid in a Vite SPA. The data usually comes from a +page.server.ts load, the page has to server-render for crawlers, sorting should survive a refresh and a shared link, and edits go back through a form action. This page walks all four.",
+      "section": "getting-started",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1134,
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -1626,7 +1639,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1040,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -1638,7 +1651,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1310,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -2049,7 +2062,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1597,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -2590,7 +2603,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2151,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -2734,7 +2747,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1272,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -2858,7 +2871,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1141,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": [
         "22-admin-template"
       ]
@@ -5457,7 +5470,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 712,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -5541,7 +5554,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 923,
-      "lastUpdated": "2026-08-24",
+      "lastUpdated": "2026-08-25",
       "demoIds": [
         "186-headless-table"
       ]

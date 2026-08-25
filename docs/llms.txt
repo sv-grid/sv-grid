@@ -25,6 +25,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [5. Theme and density](https://svgrid.com/docs/getting-started/5-theme-and-density/): Before hand-writing any tokens: 20 design-system presets ship with the package, each a single stylesheet with a full light + dark palette. One import re-themes the whole grid.
 - [6. Going to production](https://svgrid.com/docs/getting-started/6-going-to-production/): You have a working grid. This page is the checklist that turns it into something you'd ship.
 - [Starters & scaffolding](https://svgrid.com/docs/getting-started/starters/): The fastest way to a working SvGrid app. One command scaffolds a project with the grid already wired up - no copy-paste, no config archaeology.
+- [SvGrid with SvelteKit](https://svgrid.com/docs/getting-started/sveltekit/): A grid in a SvelteKit app is not the same job as a grid in a Vite SPA. The data usually comes from a +page.server.ts load, the page has to server-render for crawlers, sorting should survive a refre…
 
 ### Help / topic pages
 

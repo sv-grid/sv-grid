@@ -27,7 +27,8 @@
     "thumbs": "node tools/capture-demo-thumbs.mjs",
     "thumbs:check": "node tools/check-demo-thumbs.mjs",
     "changelog": "node tools/build-changelog.mjs",
-    "size:check": "node packages/grid/scripts/measure-size.mjs --check"
+    "size:check": "node packages/grid/scripts/measure-size.mjs --check",
+    "ssr:check": "node packages/grid/scripts/check-ssr.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

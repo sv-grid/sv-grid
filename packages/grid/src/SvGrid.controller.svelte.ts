@@ -31,6 +31,7 @@ import {
   createRowScrollScaling,
   resolveMaxDomHeight,
 } from "./virtualization/scroll-scaling";
+import { buildPreMeasureItems } from "./virtualization/virtualizer";
 import "./sv-grid-scrollbar";
 import {
     computeColumnStat,
@@ -2286,13 +2287,40 @@ export function createSvGridController<
   const columnVirtualizationEnabled = $derived(
     (props.columnVirtualization ?? true) && allColumns.length > 0,
   );
+  // Row height / viewport as they can be known WITHOUT measuring the DOM. Used
+  // only for the pre-measurement window below; once the measuring effect runs,
+  // the virtualizer's own (real) numbers take over.
+  const preMeasureRowHeight = $derived(
+    typeof props.rowHeight === "number" ? props.rowHeight : 30,
+  );
+  const preMeasureViewport = $derived(
+    typeof props.containerHeight === "number" ? props.containerHeight : 520,
+  );
+
   const virtualRows = $derived.by(() => {
     virtualizer.version;
-    return virtualizer.getVirtualItems();
+    const items = virtualizer.getVirtualItems();
+    if (items.length || allRows.length === 0) return items;
+    // No measurement yet. On a server that is permanent (effects never run), so
+    // without this the grid emits an empty <tbody> and its content is invisible
+    // to crawlers and no-JS clients. On the client this is the first render
+    // only, and it matches what the server produced, so hydration is clean.
+    return buildPreMeasureItems(
+      allRows.length,
+      preMeasureRowHeight,
+      preMeasureViewport,
+      props.overscan ?? 8,
+    );
   });
   const virtualRowTotalSize = $derived.by(() => {
     virtualizer.version;
-    return virtualizer.getTotalSize();
+    const size = virtualizer.getTotalSize();
+    // Keep the scroll height honest during the pre-measurement render, so the
+    // spacers below do not collapse the body to the height of one window.
+    if (size === 0 && allRows.length > 0) {
+      return allRows.length * preMeasureRowHeight;
+    }
+    return size;
   });
   const virtualRowStart = $derived.by(() => virtualRows[0]?.start ?? 0);
   const virtualRowEnd = $derived.by(
@@ -2363,16 +2391,27 @@ export function createSvGridController<
     columnVirtualizerVersion;
     return columnVirtualizer.getTotalSize();
   });
+  /** Every column, laid out left to right. The non-virtualized layout, and the
+   *  fallback while no measurement exists. */
+  const allColumnItems = () => {
+    let start = 0;
+    return allColumns.map((column, index) => {
+      const size = getColumnWidth(column.id);
+      const item = { index, key: index, size, start, end: start + size };
+      start += size;
+      return item;
+    });
+  };
+
   const renderedColumnItems = $derived.by(() => {
-    if (!columnVirtualizationEnabled) {
-      let start = 0;
-      return allColumns.map((column, index) => {
-        const size = getColumnWidth(column.id);
-        const item = { index, key: index, size, start, end: start + size };
-        start += size;
-        return item;
-      });
-    }
+    if (!columnVirtualizationEnabled) return allColumnItems();
+    // Column virtualization is ON by default and its virtualizer, like the row
+    // one, only learns `count` from an effect - which never runs on a server.
+    // Without this the server emitted rows containing no data cells. Render the
+    // full set pre-measurement: it is what a crawler should see, it matches the
+    // first client render so hydration is clean, and the real window replaces
+    // it as soon as the measuring effect lands.
+    if (virtualColumns.length === 0 && allColumns.length > 0) return allColumnItems();
     // Pinned columns are position:sticky, so they only stay pinned while their
     // cell is in the DOM. Plain column virtualization drops them once they leave
     // the scroll window, and the pinned column vanishes. Because allColumns is

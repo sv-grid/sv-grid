@@ -140,9 +140,26 @@ attaches event listeners.
 />
 ```
 
-[Demo 19 - SSR](../../examples/src/demos/19-ssr.svelte) takes a
-sandboxed pre-hydration snapshot in a JS-disabled iframe to prove the
-markup is meaningful before JS runs.
+What is and is not in the server HTML:
+
+- **In it:** the header, and a viewport-sized window of rows with their real
+  cell values. Enough for a crawler to index the content and for a no-JS client
+  to read the table.
+- **Not in it:** rows below that first window. Virtualization survives SSR, so a
+  5,000-row grid does not serialise 5,000 rows into the page; the rest arrive
+  when the client measures the viewport and takes over.
+
+`pnpm ssr:check` asserts this against a real `generate: 'server'` build and runs
+in CI. It exists because the grid silently stopped server-rendering rows for a
+while: both virtualizers learn their row and column count from an `$effect`, and
+effects never run during SSR, so the server emitted an empty `<tbody>` while
+this page claimed otherwise.
+
+[Demo 19 - SSR](../../examples/src/demos/19-ssr.svelte) illustrates the *shape*
+of the pre-hydration markup by snapshotting the rendered grid into a
+script-blocked iframe. Note it snapshots the client-rendered DOM, so it shows
+what the markup looks like without JS - it does not measure the server output.
+`pnpm ssr:check` is what actually verifies that.
 
 ## 5. Content Security Policy
 

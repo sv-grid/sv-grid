@@ -3,6 +3,13 @@
    * 19. Server-side rendering
    * -------------------------
    * SvGrid produces meaningful, semantic HTML *before* client-side JS runs.
+   *
+   * WHAT THIS DEMO IS: it snapshots the CLIENT-rendered grid into a
+   * script-blocked iframe, so it shows the SHAPE of the markup without JS.
+   * It does NOT measure real server output and cannot catch an SSR
+   * regression - it kept looking green while `<SvGrid>` was in fact shipping
+   * an empty `<tbody>` from the server. `pnpm ssr:check` is the real check,
+   * against a `generate: "server"` build.
    * In a SvelteKit (or any Svelte SSR) setup, calling `render(SvGrid,
    * { props })` from `svelte/server` returns a string of `<table>` markup
    * with the data baked in - that's the response the user's first paint

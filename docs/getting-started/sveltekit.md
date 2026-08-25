@@ -1,0 +1,220 @@
+# SvGrid with SvelteKit
+
+A grid in a SvelteKit app is not the same job as a grid in a Vite SPA. The data
+usually comes from a `+page.server.ts` load, the page has to server-render for
+crawlers, sorting should survive a refresh and a shared link, and edits go back
+through a form action. This page walks all four.
+
+Everything here was run against a real SvelteKit app before it was written -
+`sv create`, `sv add`, `svelte-check`, `vite build`, and the server HTML checked
+over HTTP.
+
+## 1. Scaffold
+
+SvGrid ships an add-on for the [Svelte CLI](https://svelte.dev/docs/cli), so a
+new app is two commands:
+
+```bash
+npx sv create myapp     # pick SvelteKit, TypeScript
+cd myapp
+npx sv add @svgrid
+```
+
+`sv add` resolves `@svgrid` to `@svgrid/sv`, adds `@svgrid/grid` to your
+dependencies, and - if you say yes to the demo - writes a working grid to
+`src/routes/svgrid-demo/+page.svelte`. To skip the prompts:
+
+```bash
+npx sv add "@svgrid=demo:yes+enterprise:no" --no-download-check
+```
+
+Two things worth knowing. `sv add` must run **inside** a project - in an empty
+directory it fails with *"Invalid workspace"*, which is the CLI's own guard, not
+the add-on. And community add-ons are still marked experimental upstream, so if
+`sv` changes under you, `npm install @svgrid/grid` does the same job.
+
+Adding to an existing app is just the install:
+
+```bash
+npm install @svgrid/grid
+```
+
+## 2. Load data on the server
+
+Put the query in `+page.server.ts` and hand the rows to the page. Nothing about
+SvGrid is special here - it takes a plain array.
+
+```ts
+// src/routes/people/+page.server.ts
+import type { PageServerLoad } from './$types'
+import { listPeople } from '$lib/db'
+
+export const load: PageServerLoad = () => {
+  return { rows: listPeople() }
+}
+```
+
+```svelte
+<!-- src/routes/people/+page.svelte -->
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import type { Person } from '$lib/db'
+
+  let { data } = $props()
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name' },
+    { field: 'role', header: 'Role' },
+    { field: 'year', header: 'Year' },
+  ]
+</script>
+
+<SvGrid data={data.rows} {columns} sortable containerHeight={320} />
+```
+
+Type the column array against your row type. `GridColumns<Person>` checks every
+`field` against real keys; a bare `GridColumns` widens the row to
+`Record<string, unknown>` and stops checking them.
+
+## 3. What actually server-renders
+
+The server HTML contains the header and a **viewport-sized window of rows** with
+their real cell values. That is what a crawler indexes and what a reader with JS
+disabled sees.
+
+It does *not* contain every row. Virtualization survives SSR, so a 5,000-row
+grid does not serialise 5,000 rows into the page - the rest arrive when the
+client measures the viewport and takes over. Hydration is clean because the
+server and the first client render produce the same markup.
+
+You can check it yourself on any page:
+
+```bash
+npm run build && npm run preview
+curl -s http://localhost:4173/people | grep -c 'data-svgrid-row'
+```
+
+A non-zero count means rows are in the HTML.
+
+> This genuinely did not work before `@svgrid/grid@2.6.8`. Both virtualizers
+> learned their row count from an `$effect`, and effects never run during SSR,
+> so the server emitted an empty `<tbody>`. If you are on an older version and
+> SEO matters, upgrade.
+
+## 4. Sorting that survives a refresh
+
+The idiomatic SvelteKit move is to keep sort state in the URL. The link is then
+shareable and bookmarkable, the back button works, and the sorted page is
+server-rendered - so it works with JS disabled too.
+
+Sort on the server from the query string:
+
+```ts
+// src/routes/people/+page.server.ts
+export const load: PageServerLoad = ({ url }) => {
+  const sortBy = (url.searchParams.get('sort') ?? 'name') as keyof Person
+  const desc = url.searchParams.get('dir') === 'desc'
+  return { rows: listPeople(sortBy, desc), sortBy, desc }
+}
+```
+
+Then tell the grid the server owns the ordering, and push header clicks into the
+URL:
+
+```svelte
+<script lang="ts">
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
+
+  function onSortingChange(sorting: Array<{ id: string; desc: boolean }>) {
+    const next = new URL(page.url)
+    if (sorting.length === 0) {
+      next.searchParams.delete('sort')
+      next.searchParams.delete('dir')
+    } else {
+      next.searchParams.set('sort', sorting[0]!.id)
+      next.searchParams.set('dir', sorting[0]!.desc ? 'desc' : 'asc')
+    }
+    goto(next, { keepFocus: true, noScroll: true })
+  }
+</script>
+
+<SvGrid
+  data={data.rows}
+  {columns}
+  sortable
+  externalSort
+  initialSorting={[{ id: data.sortBy, desc: data.desc }]}
+  {onSortingChange}
+/>
+```
+
+`externalSort` is the important prop: the grid keeps rendering sort indicators
+and cycling on header click, but stops reordering rows itself - because the rows
+arriving from `load` are already in the right order. Without it the grid sorts
+the page a second time, which is wasted work and goes wrong the moment the
+server is paginating.
+
+`keepFocus` and `noScroll` stop the navigation stealing focus from the header
+you just clicked or jumping the page to the top.
+
+## 5. Saving an edit through a form action
+
+Turn on editing, then push each committed change at an action:
+
+```ts
+// +page.server.ts
+export const actions: Actions = {
+  rename: async ({ request }) => {
+    const form = await request.formData()
+    renamePerson(Number(form.get('id')), String(form.get('name')))
+    return { success: true }
+  },
+}
+```
+
+```svelte
+<script lang="ts">
+  async function onCellValueChange(e: { row: Person; columnId: string; newValue: unknown }) {
+    if (e.columnId !== 'name') return
+    const body = new FormData()
+    body.set('id', String(e.row.id))
+    body.set('name', String(e.newValue))
+    await fetch('?/rename', { method: 'POST', body })
+  }
+</script>
+
+<SvGrid data={data.rows} {columns} editable {onCellValueChange} />
+```
+
+The grid updates its own copy of the row immediately, so the cell shows the new
+value while the request is in flight. Handle a rejected save by reloading
+(`invalidateAll()`) or by writing the old value back.
+
+SvelteKit's CSRF protection rejects a cross-origin POST to an action. Browsers
+send the `Origin` header themselves so this is invisible in an app - but if you
+script the endpoint from Node or curl, set `Origin` or you will get
+`403 Cross-site POST form submissions are forbidden`.
+
+## 6. Going further
+
+- **Server-side paging and filtering** for large tables: `externalFilter` and
+  `externalPagination` are the equivalents of `externalSort` above. See
+  [server paging](../help/server/server-paging.md),
+  [server filtering](../help/server/server-filtering.md) and the
+  [server row model](../help/server/server-row-model.md), which wraps the whole
+  request shape rather than wiring each prop by hand.
+- **Owning the markup.** If you need a table only you could write, the headless
+  engine is importable on its own from `@svgrid/grid/core` and runs anywhere,
+  including inside a load function. See [Why headless?](../why-headless.md).
+- **Themes and dark mode.** Set the theme attribute before first paint from an
+  inline script in `app.html`, or the page renders in the wrong palette for a
+  frame. [Theme and density](./5-theme-and-density.md) covers it.
+- **Deployment.** SvGrid is a normal client dependency with no build step or
+  server runtime of its own, so any SvelteKit adapter works unchanged.
+
+## See also
+
+- [Going to production](./6-going-to-production.md) - CSP, SSR, accessibility
+- [First grid](./2-first-grid.md) - the framework-agnostic walkthrough
+- [Why headless?](../why-headless.md) - when to skip the render component

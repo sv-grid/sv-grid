@@ -21,7 +21,10 @@ npm create @svgrid@latest my-admin -- --template admin-dashboard
 
 See [Starters & scaffolding](./starters.md) for the templates (minimal
 Vite app or a full SvelteKit admin dashboard) and the Deploy-to-Vercel
-flow. To add SvGrid to an **existing** app, install it directly:
+flow. Building with **SvelteKit**? [SvGrid with SvelteKit](./sveltekit.md) is the
+end-to-end path: `sv add`, server loads, URL-driven sort, form actions and SSR.
+
+To add SvGrid to an **existing** app, install it directly:
 
 ```bash
 # pnpm (recommended)

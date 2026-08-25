@@ -69,6 +69,32 @@ function buildUniformItems(
   return items
 }
 
+/**
+ * The window to render when no DOM measurement exists yet.
+ *
+ * The virtualizer learns its real `count` from an effect, and effects do not
+ * run during SSR - so on a server it still thinks `count` is 0 and returns an
+ * empty window. That is why `<SvGrid>` used to emit an empty `<tbody>`: the
+ * rows were in the row model, but nothing asked for them. Crawlers and no-JS
+ * clients saw an empty shell.
+ *
+ * Deliberately deterministic - anchored at index 0 with no scroll offset - so
+ * the server and the first client render produce identical markup and
+ * hydration does not mismatch. The measuring effect replaces it a tick later.
+ */
+export function buildPreMeasureItems(
+  count: number,
+  estimateSize: number,
+  viewportHeight: number,
+  overscan: number,
+): Array<VirtualItem> {
+  if (count <= 0) return []
+  const size = Math.max(estimateSize, 1)
+  const visible = Math.ceil(Math.max(viewportHeight, 0) / size)
+  const endIndex = Math.min(visible + Math.max(overscan, 0), count - 1)
+  return buildUniformItems(0, Math.max(endIndex, 0), size)
+}
+
 function buildVariableItems(
   startIndex: number,
   endIndex: number,
