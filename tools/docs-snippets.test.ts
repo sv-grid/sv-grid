@@ -95,6 +95,16 @@ const COMPILER_OPTIONS: ts.CompilerOptions = {
   // Resolve our own packages to their real source so the checker sees real types.
   paths: {
     '@svgrid/grid': ['packages/grid/src/index.ts'],
+    // Subpaths whose published target is NOT `src/<name>.ts`. Without these the
+    // wildcard below silently resolves to the wrong file and the checker reports
+    // errors a real consumer never sees - `@svgrid/grid/core` landed on
+    // `src/core.ts` (which has `createSvGridCore`) instead of `src/headless.ts`
+    // (which re-exports `createSvGrid`), so every documented headless import
+    // looked broken. Keep in sync with the `exports` map in
+    // packages/grid/package.json.
+    '@svgrid/grid/core': ['packages/grid/src/headless.ts'],
+    '@svgrid/grid/format': ['packages/grid/src/export-format.ts'],
+    '@svgrid/grid/filtering': ['packages/grid/src/filtering/excel-filters.ts'],
     '@svgrid/grid/*': ['packages/grid/src/*.ts', 'packages/grid/src/*/index.ts'],
     '@svgrid/enterprise': ['packages/enterprise/src/index.ts'],
     '@svgrid/enterprise/*': ['packages/enterprise/src/*.ts', 'packages/enterprise/src/*/index.ts'],

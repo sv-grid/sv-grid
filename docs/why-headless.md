@@ -95,12 +95,26 @@ and Vite tree-shakes away the rest.
 browser:
 
 ```ts
-import { createSvGrid, ... } from '@svgrid/grid/core'
+import {
+  createSvGrid, createCoreRowModel, createSortedRowModel,
+  tableFeatures, rowSortingFeature, sortFns,
+} from '@svgrid/grid/core'
 
 test('sorts by salary descending', () => {
-  const grid = createSvGrid({ ..., state: { sorting: [{ id: 'salary', desc: true }] } })
+  const grid = createSvGrid({
+    _features: tableFeatures({ rowSortingFeature }),
+    _rowModels: {
+      coreRowModel: createCoreRowModel(),
+      sortedRowModel: createSortedRowModel(sortFns),
+    },
+    columns: [{ field: 'salary', header: 'Salary' }],
+    data: [{ salary: 100 }, { salary: 300 }, { salary: 200 }],
+    state: { sorting: [{ id: 'salary', desc: true }] },
+  })
+
   const rows = grid.getRowModel().rows
-  expect(rows[0]!.getValue('salary')).toBeGreaterThan(rows[1]!.getValue('salary'))
+  // Rows expose `getCellValueByColumnId`; `getValue()` lives on a cell.
+  expect(rows[0]!.getCellValueByColumnId('salary')).toBe(300)
 })
 ```
 

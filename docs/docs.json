@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-25T11:11:45.450Z",
+  "generatedAt": "2026-08-25T11:42:18.152Z",
   "counts": {
     "pages": 365,
     "enterprise": 55,
@@ -1532,7 +1532,7 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1134,
+      "words": 1720,
       "lastUpdated": "2026-08-25",
       "demoIds": []
     },
@@ -5553,7 +5553,7 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 923,
+      "words": 966,
       "lastUpdated": "2026-08-25",
       "demoIds": [
         "186-headless-table"

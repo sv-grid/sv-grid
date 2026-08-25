@@ -196,6 +196,138 @@ send the `Origin` header themselves so this is invisible in an app - but if you
 script the endpoint from Node or curl, set `Origin` or you will get
 `403 Cross-site POST form submissions are forbidden`.
 
+## The whole thing, end to end
+
+Four commands and three files. Every line below was run from a clean scaffold
+before it was published here: `svelte-check` reports 0 errors, the page
+server-renders its rows, clicking a header rewrites the URL, and an edit
+survives a reload.
+
+```bash
+npx sv create people --template minimal --types ts
+cd people
+npx sv add "@svgrid=demo:no+enterprise:no" --no-download-check
+npm install
+```
+
+**`src/lib/people.ts`** - stands in for your database.
+
+```ts
+export type Person = { id: number; name: string; role: string; year: number }
+
+const people: Person[] = [
+  { id: 1, name: 'Ada Lovelace', role: 'Mathematician', year: 1843 },
+  { id: 2, name: 'Grace Hopper', role: 'Rear Admiral', year: 1952 },
+  { id: 3, name: 'Karen Sparck Jones', role: 'Computer Scientist', year: 1972 },
+  { id: 4, name: 'Barbara Liskov', role: 'Computer Scientist', year: 1968 },
+  { id: 5, name: 'Margaret Hamilton', role: 'Software Engineer', year: 1969 },
+]
+
+export function listPeople(sortBy: keyof Person = 'name', desc = false): Person[] {
+  const rows = [...people]
+  rows.sort((a, b) => (a[sortBy] > b[sortBy] ? 1 : a[sortBy] < b[sortBy] ? -1 : 0))
+  return desc ? rows.reverse() : rows
+}
+
+export function renamePerson(id: number, name: string): void {
+  const row = people.find((p) => p.id === id)
+  if (row) row.name = name
+}
+```
+
+**`src/routes/people/+page.server.ts`** - sorts from the query string, and takes
+the edit.
+
+```ts
+import type { Actions, PageServerLoad } from './$types'
+import { listPeople, renamePerson, type Person } from '$lib/people'
+
+export const load: PageServerLoad = ({ url }) => {
+  const sortBy = (url.searchParams.get('sort') ?? 'name') as keyof Person
+  const desc = url.searchParams.get('dir') === 'desc'
+  return { rows: listPeople(sortBy, desc), sortBy, desc }
+}
+
+export const actions: Actions = {
+  rename: async ({ request }) => {
+    const data = await request.formData()
+    renamePerson(Number(data.get('id')), String(data.get('name')))
+    return { success: true }
+  },
+}
+```
+
+**`src/routes/people/+page.svelte`**
+
+```svelte
+<script lang="ts">
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import type { Person } from '$lib/people'
+
+  let { data } = $props()
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', editable: true },
+    { field: 'role', header: 'Role' },
+    { field: 'year', header: 'Year' },
+  ]
+
+  // Header click -> URL -> server sorts -> load returns ordered rows.
+  function onSortingChange(sorting: Array<{ id: string; desc: boolean }>) {
+    const next = new URL(page.url)
+    if (sorting.length === 0) {
+      next.searchParams.delete('sort')
+      next.searchParams.delete('dir')
+    } else {
+      next.searchParams.set('sort', sorting[0]!.id)
+      next.searchParams.set('dir', sorting[0]!.desc ? 'desc' : 'asc')
+    }
+    goto(next, { keepFocus: true, noScroll: true })
+  }
+
+  // Committed edit -> form action -> database.
+  async function onCellValueChange(e: { row: Person; columnId: string; newValue: unknown }) {
+    if (e.columnId !== 'name') return
+    const body = new FormData()
+    body.set('id', String(e.row.id))
+    body.set('name', String(e.newValue))
+    await fetch('?/rename', { method: 'POST', body })
+  }
+</script>
+
+<h1>People</h1>
+<p>Click a header to sort - the order lives in the URL. Double-click a name to edit it.</p>
+
+<SvGrid
+  data={data.rows}
+  {columns}
+  sortable
+  editable
+  externalSort
+  initialSorting={[{ id: data.sortBy, desc: data.desc }]}
+  {onSortingChange}
+  {onCellValueChange}
+  containerHeight={320}
+/>
+```
+
+Then:
+
+```bash
+npm run dev    # http://localhost:5173/people
+```
+
+Three things to try, in this order:
+
+1. **Click the `Year` header.** The URL becomes `?sort=year&dir=asc`. Copy that
+   link into a new tab - it opens already sorted, because the server did it.
+2. **Double-click a name, change it, press Enter, then reload.** The edit went
+   through the form action and survived.
+3. **View source, or `curl localhost:5173/people`.** The rows are in the HTML,
+   not just injected by JS. That is what a crawler sees.
+
 ## 6. Going further
 
 - **Server-side paging and filtering** for large tables: `externalFilter` and
