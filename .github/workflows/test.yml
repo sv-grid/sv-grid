@@ -84,6 +84,13 @@ jobs:
         # private submodule checked out above.
         run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts
 
+      - name: Bundle size budget
+        # Guards the lazy boundaries. A static import of something meant to load
+        # via import() silently inflates the base bundle and can also defeat an
+        # existing import() of the same module - that has happened before and
+        # nothing caught it. Budgets live in packages/grid/scripts/measure-size.mjs.
+        run: pnpm size:check
+
       - name: Build MCP server (smoke check)
         run: pnpm --filter @svgrid/mcp build
 
