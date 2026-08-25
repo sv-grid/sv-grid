@@ -25,7 +25,9 @@
     "verify:app": "node tools/verify-generated-app.mjs",
     "demos:count": "node tools/count-demos.mjs",
     "thumbs": "node tools/capture-demo-thumbs.mjs",
-    "thumbs:check": "node tools/check-demo-thumbs.mjs"
+    "thumbs:check": "node tools/check-demo-thumbs.mjs",
+    "changelog": "node tools/build-changelog.mjs",
+    "size:check": "node packages/grid/scripts/measure-size.mjs --check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

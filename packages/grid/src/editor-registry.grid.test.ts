@@ -3,7 +3,7 @@
  * component registered via `registerCellEditor` is actually mounted when a cell
  * of that custom `editorType` starts editing.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import SvRating from './SvRating.svelte'
@@ -34,7 +34,6 @@ const cols: ColumnDef<typeof features, Row>[] = [
   { field: 'score', header: 'Score', width: 160, editorType: 'stars' },
 ]
 
-const tick = () => new Promise<void>((r) => queueMicrotask(r))
 
 function mountGrid() {
   return new Promise<{ api: SvGridApi<typeof features, Row>; target: HTMLElement; destroy: () => void }>(
@@ -84,11 +83,12 @@ describe('registry wiring in SvGrid', () => {
     const { api, target, destroy } = await mountGrid()
     try {
       api.startEditing(0, 'score')
-      await tick()
-      await tick()
-      // The registered SvRating editor is mounted in the editing overlay.
-      const rating = target.querySelector('.sv-rating')
-      expect(rating).not.toBeNull()
+      // The editor UI is a lazy chunk (SvGridCellEditor), so a fixed number of
+      // ticks is a race - poll the same assertion until the import lands.
+      await vi.waitFor(() => {
+        // The registered SvRating editor is mounted in the editing overlay.
+        expect(target.querySelector('.sv-rating')).not.toBeNull()
+      })
     } finally {
       destroy()
     }
@@ -111,8 +111,9 @@ describe('registry wiring in SvGrid', () => {
     const { api, target, destroy } = await mountGrid()
     try {
       api.startEditing(0, 'score')
-      await tick()
-      await tick()
+      // SvGridCellEditor is a lazy chunk; poll until it has mounted and run the
+      // registration's props mapping.
+      await vi.waitFor(() => expect(typeof seen.onCommit).toBe('function'))
       expect(typeof seen.onCommit).toBe('function')
       expect(typeof seen.onCancel).toBe('function')
       expect(typeof seen.onChange).toBe('function')
@@ -134,9 +135,8 @@ describe('registry wiring in SvGrid', () => {
     const { api, target, destroy } = await mountGrid()
     try {
       api.startEditing(0, 'score')
-      await tick()
-      await tick()
-      expect(target.querySelector('.sv-rating')).not.toBeNull()
+      // SvGridCellEditor is a lazy chunk; poll rather than fixing a tick count.
+      await vi.waitFor(() => expect(target.querySelector('.sv-rating')).not.toBeNull())
     } finally {
       destroy()
     }

@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@svgrid/mcp"><img src="https://img.shields.io/npm/v/%40svgrid%2Fmcp.svg?label=%40svgrid%2Fmcp" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/@svgrid/mcp"><img src="https://img.shields.io/npm/dm/%40svgrid%2Fmcp.svg" alt="npm downloads" /></a>
-  <a href="https://svgrid.com/pricing/"><img src="https://img.shields.io/badge/license-commercial-blue.svg" alt="Commercial license" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License" /></a>
 </p>
 
 <p align="center">
@@ -122,7 +122,8 @@ them into `src/data.ts`, so the published package is fully self-contained.
 
 ## Licensing
 
-Commercial. Part of the SvGrid Enterprise offering; see [svgrid.com/pricing](https://svgrid.com/pricing/).
+MIT - free to run, no license key. Some tools generate SvGrid Studio projects, and Studio itself is
+commercial; see [svgrid.com/pricing](https://svgrid.com/pricing/).
 The MIT [`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid) core is free for any use.
 
 SvGrid&trade; and sv-grid&trade; are trademarks of jQWidgets Ltd.

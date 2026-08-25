@@ -73,6 +73,14 @@ export default defineConfig({
         'src/SvGridDropdown.svelte',
         'src/GridMenus.svelte',
         'src/GridFooter.svelte',
+        // The cell / full-row editor UI. This was part of SvGrid.svelte until it
+        // was split out to load lazily, so it inherits that exclusion rather
+        // than changing what is measured: the same behavioral mount tests
+        // (editor-registry.grid, builtin-editors.grid, async-editor-options,
+        // the editing suites) exercise it, they just reach it through an
+        // import() now. Counting it here would silently re-measure code the
+        // list above has always deliberately left to behavioral tests.
+        'src/SvGridCellEditor.svelte',
         // The render component's reactive state machine ($state/$derived/$effect
         // glue extracted out of SvGrid.svelte). It only runs meaningfully while
         // the component is mounted, so it is exercised through the 60+ behavioral

@@ -26,7 +26,15 @@ you already have; the grid component stays Community.
 ### [Data export](../help/export.md)
 
 `pro.exportData(opts)` writes the current view to Excel (xlsx), PDF,
-CSV, TSV, or HTML. The xlsx writer honours:
+CSV, TSV, or HTML from a single call.
+
+**CSV, TSV and JSON export do not need Enterprise** - they are free in
+`@svgrid/grid`, along with copy-to-clipboard. What Enterprise adds is
+xlsx, PDF, styled HTML and XML, plus the unified entry point with
+column resolution and group handling. See
+[the export page](../help/export.md) for the exact split.
+
+The xlsx writer honours:
 
 - **Cell + row styles** via `opts.styles` - read the same `--sg-*`
   tokens the grid renders with so the file matches the theme.

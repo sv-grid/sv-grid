@@ -41,6 +41,13 @@ Or add it to an existing app:
 npm install @svgrid/grid
 ```
 
+In a project that already uses the [Svelte CLI](https://svelte.dev/docs/cli), the add-on
+wires it up and can drop in a working demo grid:
+
+```bash
+npx sv add @svgrid
+```
+
 ## The 30-second example
 
 ```svelte
@@ -72,7 +79,7 @@ inline editing all wire up the moment you turn on the matching prop.
 | **Package** | `@svgrid/grid` |
 | **License** | MIT, free for commercial use |
 | **Requires** | `svelte@^5` (peer dependency), Node 16+ |
-| **Bundle (gzip)** | ~2 KB headless core, ~80 KB full `<SvGrid>` + ~9 KB CSS |
+| **Bundle (gzip)** | ~2 KB headless core, ~77 KB full `<SvGrid>` + ~9 KB CSS |
 | **Types** | Bundled, no `@types/` package needed |
 | **SSR** | Works under SvelteKit SSR and static builds |
 | **Demos** | 370+ at [svgrid.com/demos](https://svgrid.com/demos/) |
@@ -104,8 +111,10 @@ The MIT community core has zero feature gating: no license key, no watermark, no
 | Excel / PDF export, import, pivot tables, print, Kanban + scheduler renderers | `+ @svgrid/enterprise` | Commercial |
 | The grid in React, Vue, Angular, or plain HTML | `@svgrid/grid-wc` | MIT |
 | Standalone Svelte 5 UI components (no grid) | `@svgrid/ui` | MIT |
-| Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | Free to run; Studio codegen tools are Commercial |
+| Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | MIT |
 | A generated CRUD app from your database schema | `@svgrid/studio` | Commercial |
+| To port an existing `svelte-headless-table` app | `npx @svgrid/migrate` | MIT |
+| To add the grid via the Svelte CLI | `npx sv add @svgrid` | MIT |
 
 OSS projects under an [OSI-approved license](https://opensource.org/licenses) get the Enterprise pack
 free. See [Pricing](https://svgrid.com/pricing/).
@@ -116,7 +125,7 @@ free. See [Pricing](https://svgrid.com/pricing/).
 |---|---|---|---|
 | **Svelte 5 runes native** | Yes | No, JS core + wrapper | Adapter only |
 | **Ships a renderer** | Yes, plus headless | Yes | No, headless only |
-| **Bundle (gzip)** | ~2 KB headless / ~80 KB full | ~340 KB | ~12-14 KB |
+| **Bundle (gzip)** | ~2 KB headless / ~77 KB full | ~340 KB | ~12-14 KB |
 | **Virtualization built in** | Yes | Yes | Bring your own |
 | **Master/detail, tree, range selection** | Free | Enterprise only | Build it yourself |
 | **License** | MIT core, commercial pack | MIT core, commercial pack | MIT |
@@ -181,7 +190,7 @@ filtering, and grouping to your backend.
 
 ### How big is the bundle?
 
-About 2 KB gzipped for the headless core and about 80 KB for the full `<SvGrid>` render component, plus
+About 2 KB gzipped for the headless core and about 77 KB for the full `<SvGrid>` render component, plus
 9 KB of CSS, with Svelte excluded as a peer dependency. Charts, date/time editors, menus, and export add
 another ~64 KB that loads on demand rather than up front. Run `pnpm size` to re-measure.
 
@@ -228,10 +237,11 @@ licenses, not donations.
 
 Honest list:
 
-- Column spanning (`colSpan` on cell context). On the roadmap, large effort.
-- Built-in row dragging across grids. Demos cover the in-grid case; cross-grid is not in the engine.
-- Variable row height on the `<SvGrid>` render component. The headless virtualizer does it today.
-- Engine-level formula language. There's a working in-grid formula engine in a demo, but it hasn't graduated into the package.
+- Custom filter / floating-filter component slot. Filters are configurable but not yet pluggable as your own component. Medium effort.
+- Custom tool panels. The tool panel is a fixed Columns + Filters pair. Medium effort.
+- Integrated-chart depth. 17 chart types, the wizard, and "chart selected range" ship; the chart toolbar and the click-to-cross-filter loop do not. Large effort.
+- Server-side pivot and a viewport row model. The server-side row model does sort / filter / group / infinite today. Large effort.
+- A formula language of our own. `createHyperFormulaSheet` ships in the package so you can bring HyperFormula, and there are in-grid formula demos, but the engine itself is not ours and there is no formula bar.
 - Custom calendar systems (Hijri, Buddhist, fiscal year) for the date editor. Gregorian dates / times / datetimes are built in.
 
 Full public [roadmap with effort tags](https://svgrid.com/roadmap/) and a "recently shipped" track record
@@ -252,6 +262,8 @@ packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
 packages/svgrid-ui/       @svgrid/ui            - UI component CLI
 packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
+packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
+packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
 examples/                                       - 370+ live demos
 website/                                        - svgrid.com source
 docs/                                           - markdown docs
@@ -326,8 +338,9 @@ import {
 
 ## License
 
-This repository ships under **mixed licensing**. The grid, the web component, the UI CLI, and the two
-scaffolders are open source; the Enterprise pack, Studio, the MCP server, and the website are commercial.
+This repository ships under **mixed licensing**. The grid, the web component, the UI CLI, the MCP
+server, the migration codemod, the Svelte CLI add-on, and the two scaffolders are open source; the
+Enterprise pack, Studio, and the website are commercial.
 
 | Package | License | LICENSE file |
 |---|---|---|
@@ -336,14 +349,16 @@ scaffolders are open source; the Enterprise pack, Studio, the MCP server, and th
 | [packages/svgrid-ui](packages/svgrid-ui/) | **MIT** | [LICENSE](packages/svgrid-ui/LICENSE) |
 | [packages/create-sv-grid](packages/create-sv-grid/) | **MIT** | [LICENSE](packages/create-sv-grid/LICENSE) |
 | [packages/create-studio](packages/create-studio/) | **MIT** | [LICENSE](packages/create-studio/LICENSE) |
+| [packages/migrate](packages/migrate/) | **MIT** | [LICENSE](packages/migrate/LICENSE) |
+| [packages/svgrid-sv](packages/svgrid-sv/) | **MIT** | [LICENSE](packages/svgrid-sv/LICENSE) |
 | [packages/enterprise](packages/enterprise/) | Commercial | [LICENSE](packages/enterprise/LICENSE) |
-| [packages/mcp](packages/mcp/) | Commercial | [LICENSE](packages/mcp/LICENSE) |
+| [packages/mcp](packages/mcp/) | **MIT** | [LICENSE](packages/mcp/LICENSE) |
 | [packages/studio](packages/studio/) | Commercial | [LICENSE](packages/studio/LICENSE) |
 | [website](website/) | Proprietary | [LICENSE](website/LICENSE) |
 
-The MIT packages can be used freely, including for commercial work. The Enterprise feature pack, Studio,
-the MCP server, and the marketing + docs website are proprietary: source is visible for evaluation and
-for paying customers, but visibility does not grant a license. See the
+The MIT packages can be used freely, including for commercial work. The Enterprise feature pack,
+Studio, and the marketing + docs website are proprietary: source is visible for evaluation and for
+paying customers, but visibility does not grant a license. See the
 [SvGrid pricing page](https://svgrid.com/pricing/) for Enterprise purchases.
 
 ## Trademark

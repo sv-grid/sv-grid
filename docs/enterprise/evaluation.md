@@ -97,7 +97,7 @@ Bundle sizes (gzip):
 
 | Surface         | Size  | Notes                              |
 | --------------- | ----- | ---------------------------------- |
-| Community only  | 80 kB | Renderer + engine (+ 9 kB CSS)     |
+| Community only  | 77 kB | Renderer + engine (+ 9 kB CSS)     |
 | + Enterprise export    | +12 kB| + `jszip` peer when xlsx is used   |
 | + Enterprise pdf       | +90 kB| + `pdfmake` peer when pdf is used  |
 | + Enterprise pivot     | +6 kB | Pure TS, no peers                  |

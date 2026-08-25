@@ -24,7 +24,7 @@
 
 ## What it adds
 
-- **Data export** - Excel (`.xlsx`), PDF, CSV, TSV, and HTML, with theme-matched styling, headers/footers, and image support.
+- **Data export** - Excel (`.xlsx`), PDF, styled HTML and XML, with theme-matched styling, headers/footers, and image support. CSV, TSV and JSON export (and copy-to-clipboard) are free in `@svgrid/grid`; Enterprise adds the paid formats and a single `exportGrid()` entry point over all of them.
 - **Data import** - read Excel / CSV / TSV / JSON into typed rows with column auto-mapping, type inference, and per-row validation, plus a ready-made `SvImportDialog`.
 - **Paginated print** - opens a clean, paginated, printable view of the grid with title and page breaks.
 - **Pivot tables** - drag-and-drop pivot Designer with row/column/value fields, aggregation, drill-through to source rows, and pivot-to-chart.

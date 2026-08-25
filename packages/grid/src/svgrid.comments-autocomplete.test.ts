@@ -64,7 +64,11 @@ describe('autocomplete cell type', () => {
     // city is the 2nd column => index 1 in the first row's cells
     const cell = target.querySelectorAll('.sv-grid-cell[data-svgrid-row="0"]')[1] as HTMLElement
     cell.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
-    await tick()
+    // The editor UI is a lazy chunk (SvGridCellEditor); poll for the input
+    // rather than assuming one tick is enough for the import to land.
+    await vi.waitFor(() =>
+      expect(target.querySelector('.sv-grid-cell-editor-autocomplete')).not.toBeNull(),
+    )
     const input = target.querySelector('.sv-grid-cell-editor-autocomplete') as HTMLInputElement
     expect(input).not.toBeNull()
     input.value = 'B'

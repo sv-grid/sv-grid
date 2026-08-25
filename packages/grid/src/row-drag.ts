@@ -51,7 +51,25 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     return bus.group != null && bus.group === group();
   }
 
+  // A `dragleave` is not proof the pointer left the drop area. With row
+  // virtualization, scrolling to the viewport edge UNMOUNTS the row under the
+  // pointer, which fires its `dragleave`; the replacement row does not fire
+  // `dragover` until the next frame. Clearing synchronously made the drop
+  // indicator flicker off and the target go missing mid-drag (#69).
+  //
+  // So a leave only schedules the clear, and any `dragover` on a real row
+  // cancels it. If the pointer genuinely left, no dragover arrives and the
+  // clear lands a frame later - invisible to the user.
+  let leaveFrame: number | null = null;
+
+  function cancelPendingLeave() {
+    if (leaveFrame === null) return;
+    cancelAnimationFrame(leaveFrame);
+    leaveFrame = null;
+  }
+
   function clearIndicators() {
+    cancelPendingLeave();
     ctx.rowDragActive = false;
     ctx.rowDropIndex = null;
     ctx.rowDropSide = null;
@@ -92,6 +110,9 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
   function onRowDragOver(e: DragEvent, rowIndex: number) {
     if (!canAccept()) return;
     e.preventDefault();
+    // We are demonstrably still over a row, so a leave queued by a row that
+    // just unmounted underneath us must not fire.
+    cancelPendingLeave();
     if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     ctx.rowDropIndex = rowIndex;
@@ -99,17 +120,35 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
   }
 
   function onRowDragLeave(rowIndex: number) {
-    if (ctx.rowDropIndex === rowIndex) {
+    // A leave from a row that is not the current target is already stale.
+    if (ctx.rowDropIndex !== rowIndex) return;
+    cancelPendingLeave();
+    // No rAF (SSR, or a jsdom without one): fall back to the old synchronous
+    // clear rather than leaving a stale indicator forever.
+    if (typeof requestAnimationFrame !== "function") {
       ctx.rowDropIndex = null;
       ctx.rowDropSide = null;
+      return;
     }
+    leaveFrame = requestAnimationFrame(() => {
+      leaveFrame = null;
+      // Re-check: an intervening dragover may have moved the target to another
+      // row, in which case this leave is stale and must not clear it.
+      if (ctx.rowDropIndex !== rowIndex) return;
+      ctx.rowDropIndex = null;
+      ctx.rowDropSide = null;
+    });
   }
 
-  function onRowDrop(e: DragEvent, rowIndex: number) {
+  /**
+   * Splice the dragged row into position, for a drop on `rowIndex`.
+   *
+   * Input-agnostic on purpose: HTML5 `drop` and the pointer/touch path (#66)
+   * both land here, so the reorder, the cross-grid hand-off and the
+   * `onRowDragEnd` payload have exactly one implementation.
+   */
+  function commitDropOnRow(rowIndex: number, side: "before" | "after") {
     if (!canAccept() || !bus) return;
-    e.preventDefault();
-    e.stopPropagation(); // don't let the tbody handler also fire (end-append)
-    const side = ctx.rowDropSide ?? "before";
     const dragged = bus.row;
     const target = originalAt(rowIndex);
     const sourceGridId = bus.gridId;
@@ -133,6 +172,13 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     if (!sameGrid) bus.removeFromSource();
     emitEnd(dragged, to, sameGrid, sourceGridId);
     bus = null;
+  }
+
+  function onRowDrop(e: DragEvent, rowIndex: number) {
+    if (!canAccept() || !bus) return;
+    e.preventDefault();
+    e.stopPropagation(); // don't let the tbody handler also fire (end-append)
+    commitDropOnRow(rowIndex, ctx.rowDropSide ?? "before");
   }
 
   // Dropping in the empty area below the last row, or into an empty target
@@ -169,6 +215,101 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     bus = null;
   }
 
+  // Touch drag (#66) lives in its own module and is fetched on the first touch
+  // that lands on a draggable row, so desktop never downloads it. The 350 ms
+  // long press inside it more than covers the fetch - the drag cannot start
+  // before that elapses anyway.
+  let touchDrag: import("./row-drag-touch").TouchDragHandle | null = null;
+  let touchLoading = false;
+
+  function touchDeps() {
+    return {
+      ctx,
+      managed,
+      originalAt,
+      commitDropOnRow,
+      clearIndicators,
+      cancelPendingLeave,
+      openBus: (row: unknown) => {
+        bus = {
+          group: group(),
+          gridId,
+          row,
+          sourceProps: ctx.props,
+          removeFromSource: () => {
+            ctx.internalData = (ctx.internalData as unknown[]).filter((r) => r !== row);
+          },
+        };
+      },
+      closeBus: () => {
+        bus = null;
+      },
+    };
+  }
+
+  /**
+   * Start of a possible touch drag. Ignores mouse and pen so the HTML5 drag
+   * handlers above keep owning those inputs.
+   */
+  function onRowPointerDown(e: PointerEvent, rowIndex: number) {
+    if (!managed() || e.pointerType !== "touch") return;
+    if (touchDrag) {
+      touchDrag.start(e, rowIndex);
+      return;
+    }
+    if (touchLoading) return;
+    touchLoading = true;
+
+    // The touch module is not here yet, so nothing is listening. Watch the
+    // gesture ourselves for the length of the fetch: if the finger moves (a
+    // scroll) or lifts (a tap) before the module lands, the drag must not start
+    // when it does - otherwise the fetch window silently swallows the user's
+    // scroll and we hijack it.
+    const pid = e.pointerId;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let aborted = false;
+    function stopWatching() {
+      window.removeEventListener("pointermove", onEarlyMove);
+      window.removeEventListener("pointerup", onEarlyEnd);
+      window.removeEventListener("pointercancel", onEarlyEnd);
+    }
+    function onEarlyMove(ev: PointerEvent) {
+      if (ev.pointerId !== pid) return;
+      // Same slop the touch module uses once it owns the gesture.
+      if (Math.abs(ev.clientY - startY) + Math.abs(ev.clientX - startX) > 10) {
+        aborted = true;
+        stopWatching();
+      }
+    }
+    function onEarlyEnd(ev: PointerEvent) {
+      if (ev.pointerId !== pid) return;
+      aborted = true;
+      stopWatching();
+    }
+    window.addEventListener("pointermove", onEarlyMove, { passive: true });
+    window.addEventListener("pointerup", onEarlyEnd);
+    window.addEventListener("pointercancel", onEarlyEnd);
+
+    // The event object is pooled in some engines, so capture what start() needs
+    // before yielding to the import.
+    const snapshot = {
+      pointerId: e.pointerId,
+      pointerType: e.pointerType,
+      clientX: e.clientX,
+      clientY: e.clientY,
+      currentTarget: e.currentTarget,
+      preventDefault: () => {},
+    } as unknown as PointerEvent;
+    void import("./row-drag-touch").then((m) => {
+      touchLoading = false;
+      stopWatching();
+      if (aborted || !managed()) return;
+      touchDrag = m.createTouchDrag(touchDeps());
+      touchDrag.start(snapshot, rowIndex);
+    });
+  }
+
   return {
     onRowDragStart,
     onRowDragOver,
@@ -177,6 +318,8 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     onRowsContainerDragOver,
     onRowsContainerDrop,
     onRowDragEnd,
+    /** Touch entry point (#66) - see the pointer-drag block above. */
+    onRowPointerDown,
     rowDragGridId: gridId,
     /**
      * Clear any managed drag this grid currently owns. Call on unmount so an
@@ -186,6 +329,13 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
      * never disturbs a concurrent drag owned by another grid.
      */
     destroyRowDrag() {
+      // Also drop any deferred leave: it would otherwise fire a frame later and
+      // write indicator state into a controller whose grid is gone.
+      cancelPendingLeave();
+      // ...and tear down an in-flight touch drag, which owns window listeners,
+      // a long-press timer and an autoscroll frame.
+      touchDrag?.destroy();
+      touchDrag = null;
       if (bus?.gridId === gridId) bus = null;
     },
   };

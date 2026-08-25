@@ -657,6 +657,16 @@
  * the grip; without row numbers the grab cursor still hints it. */
 .sv-grid-row-draggable { cursor: grab; }
 .sv-grid-row-draggable:active { cursor: grabbing; }
+/* Touch drag (#66): once the long press has promoted the gesture to a drag, stop
+   the row text being selected under the finger. Scrolling is suppressed from JS
+   with a non-passive touchmove listener rather than `touch-action` here -
+   touch-action is evaluated when the gesture BEGINS, which is before we know
+   whether this is a drag or a scroll, so setting it up front would cost the
+   user the ability to scroll the grid at all. */
+.sv-grid-row-drag-active .sv-grid-row-draggable {
+  -webkit-user-select: none;
+  user-select: none;
+}
 .sv-grid-row-draggable .sv-grid-row-number-cell {
   position: relative;
   padding-left: 14px;

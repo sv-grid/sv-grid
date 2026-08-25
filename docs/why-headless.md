@@ -11,6 +11,12 @@ rows, columns, sorting, filtering, grouping, pagination, expansion, and
 selection. It does **not** know about pixels, DOM, ARIA, or CSS. It is
 a state machine over your data that you query and mutate from Svelte.
 
+The `/core` subpath is the headless surface on its own: no components, no
+CSS, nothing that touches the DOM. Every symbol on it is also re-exported
+from the main `@svgrid/grid` barrel, so either import works and you can mix
+them. Import from `/core` when you want the dependency to be obvious in
+review and the bundle cost to be provable.
+
 The component - `<SvGrid>` - is one (opinionated) way to render that
 state machine into a `<table>`. It is itself written against the
 headless core, so the same hooks are available to you if you want to
@@ -45,7 +51,7 @@ You write the markup, you keep the headless brain.
 
 ```ts
 import { createSvGrid, createCoreRowModel, createSortedRowModel,
-         tableFeatures, rowSortingFeature, sortFns } from '@svgrid/grid'
+         tableFeatures, rowSortingFeature, sortFns } from '@svgrid/grid/core'
 
 const grid = createSvGrid({
   _features: tableFeatures({ rowSortingFeature }),
@@ -73,7 +79,7 @@ the markup is the demo's:
 in one bundle. With SvGrid you only register what you use:
 
 ```ts
-import { tableFeatures, rowSortingFeature } from '@svgrid/grid'
+import { tableFeatures, rowSortingFeature } from '@svgrid/grid/core'
 
 // no filtering, no grouping, no pagination - none of that code is
 // reachable from this grid instance
@@ -89,7 +95,7 @@ and Vite tree-shakes away the rest.
 browser:
 
 ```ts
-import { createSvGrid, ... } from '@svgrid/grid'
+import { createSvGrid, ... } from '@svgrid/grid/core'
 
 test('sorts by salary descending', () => {
   const grid = createSvGrid({ ..., state: { sorting: [{ id: 'salary', desc: true }] } })

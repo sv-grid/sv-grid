@@ -7,7 +7,7 @@ depends on the framework you ship on and your budget.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~78 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~77 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -94,7 +94,7 @@ Measured gzipped, with Svelte treated as a peer dependency and excluded
 | @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
 | Headless core (`createGrid` + a row model)      | ~2 KB   | ~7 KB    |
-| Full `<SvGrid>` render component                | ~78 KB  | ~340 KB  |
+| Full `<SvGrid>` render component                | ~77 KB  | ~340 KB  |
 
 Add ~9 KB gzipped for the render component's CSS. A further ~64 KB of
 charts, date/time editors, menus, and export splits into `import()` chunks
@@ -164,7 +164,7 @@ bridge into Svelte 5.
 
 ### Is SvGrid a good AG Grid alternative?
 
-Yes, for Svelte projects. SvGrid ships a much smaller bundle (~78 KB gzipped
+Yes, for Svelte projects. SvGrid ships a much smaller bundle (~77 KB gzipped
 for the full render component, ~2 KB headless) than AG Grid Community, is
 MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
@@ -181,7 +181,7 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 ### How big is the SvGrid bundle?
 
 Measured gzipped (Svelte excluded as a peer dependency): ~2 KB for the
-headless core and ~78 KB for the full `<SvGrid>` render component (~340 KB
+headless core and ~77 KB for the full `<SvGrid>` render component (~340 KB
 minified), plus ~9 KB of CSS. Charts, date/time editors, menus, and export
 add another ~64 KB that loads on demand rather than up front. Enterprise
 features are separate, lazy-loaded subpath imports, so you ship only what

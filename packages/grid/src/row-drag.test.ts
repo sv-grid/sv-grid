@@ -6,7 +6,7 @@
  * Because the bus is shared, we can create TWO fake ctxs (two grids) and drive
  * a genuine grid-to-grid move without mounting anything.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createRowDrag, rowDropZone } from './row-drag'
 
 type AnyCtx = Record<string, any>
@@ -164,5 +164,190 @@ describe('rowDropZone (external drop target)', () => {
     expect(dropped.length).toBe(0)
     expect((a.internalData as Task[]).length).toBe(1) // untouched
     action.destroy()
+  })
+})
+
+/**
+ * #69 - the drop indicator vanished mid-drag under row virtualization.
+ *
+ * Scrolling to the viewport edge unmounts the row the pointer is over, which
+ * fires that row's `dragleave`. The replacement row does not fire `dragover`
+ * until the next frame, so a synchronous clear left the user with no indicator
+ * and no drop target until they moved the pointer.
+ */
+describe('createRowDrag - drop indicator during virtualized scroll (#69)', () => {
+  const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r(null)))
+
+  it('keeps the indicator when the hovered row unmounts and another takes over', async () => {
+    const rows: Task[] = [
+      { id: 1, title: 'a' },
+      { id: 2, title: 'b' },
+      { id: 3, title: 'c' },
+    ]
+    const ctx = makeCtx(rows, P)
+    const d = createRowDrag(ctx)
+
+    d.onRowDragStart(fakeEvent(), 0)
+    d.onRowDragOver(fakeEvent(30, 0, 40), 1)
+    expect(ctx.rowDropIndex).toBe(1)
+
+    // Virtualization unmounts row 1 from under the pointer, firing its leave.
+    d.onRowDragLeave(1)
+
+    // THIS is the bug: the replacement row has not fired `dragover` yet, and a
+    // synchronous clear leaves the user with no indicator and no drop target in
+    // the meantime. The indicator must survive the gap.
+    expect(ctx.rowDropIndex).toBe(1)
+    expect(ctx.rowDropSide).not.toBeNull()
+
+    // The row scrolled into its place then takes over on the next frame.
+    d.onRowDragOver(fakeEvent(30, 0, 40), 2)
+    await nextFrame()
+    await nextFrame()
+    expect(ctx.rowDropIndex).toBe(2)
+    expect(ctx.rowDropSide).not.toBeNull()
+  })
+
+  it('still clears once the pointer genuinely leaves the rows', async () => {
+    const ctx = makeCtx([{ id: 1, title: 'a' }, { id: 2, title: 'b' }], P)
+    const d = createRowDrag(ctx)
+
+    d.onRowDragStart(fakeEvent(), 0)
+    d.onRowDragOver(fakeEvent(30, 0, 40), 1)
+    expect(ctx.rowDropIndex).toBe(1)
+
+    d.onRowDragLeave(1)
+    // No dragover follows - the deferral must not turn into a stuck indicator.
+    await nextFrame()
+    await nextFrame()
+    expect(ctx.rowDropIndex).toBeNull()
+    expect(ctx.rowDropSide).toBeNull()
+  })
+
+  it('does not write indicator state after the grid is destroyed', async () => {
+    const ctx = makeCtx([{ id: 1, title: 'a' }, { id: 2, title: 'b' }], P)
+    const d = createRowDrag(ctx)
+
+    d.onRowDragStart(fakeEvent(), 0)
+    d.onRowDragOver(fakeEvent(30, 0, 40), 1)
+    d.onRowDragLeave(1)
+    d.destroyRowDrag()
+    ctx.rowDropIndex = 'sentinel'
+
+    await nextFrame()
+    await nextFrame()
+    // A frame that survived teardown would have nulled this.
+    expect(ctx.rowDropIndex).toBe('sentinel')
+  })
+})
+
+/**
+ * #66 - row drag was dead on touch: the whole feature rode on HTML5 DragEvent,
+ * which iOS Safari and Android Chrome never fire for touch input.
+ *
+ * The pointer path is a second INPUT onto the same model, so these tests drive
+ * the real handlers and assert on the same `bus` / indicator state the mouse
+ * path uses, then check the reorder actually happened.
+ */
+describe('createRowDrag - touch (#66)', () => {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+  // `stubRowAt` replaces a global. Without restoring it, every later test in
+  // the worker inherits a fake elementFromPoint - which showed up as an
+  // intermittent failure elsewhere in the suite, not here.
+  const realElementFromPoint = document.elementFromPoint
+  afterEach(() => {
+    ;(document as any).elementFromPoint = realElementFromPoint
+  })
+
+  function pointer(type: string, clientY: number, extra: AnyCtx = {}): any {
+    return {
+      pointerId: 1,
+      pointerType: type,
+      clientX: 10,
+      clientY,
+      preventDefault: vi.fn(),
+      currentTarget: { setPointerCapture: vi.fn(), closest: () => null },
+      ...extra,
+    }
+  }
+
+  /** Put row `index` under the pointer, the way elementFromPoint would. */
+  function stubRowAt(index: number, top: number, height = 40) {
+    const marker = { dataset: { svgridRow: String(index) } }
+    const tr = {
+      querySelector: () => marker,
+      getBoundingClientRect: () => ({ top, height, bottom: top + height }),
+    }
+    ;(document as any).elementFromPoint = () => ({ closest: (s: string) => (s === 'tr.sv-grid-row' ? tr : null) })
+  }
+
+  it('ignores mouse and pen so the HTML5 path keeps owning them', () => {
+    const ctx = makeCtx([{ id: 1, title: 'a' }, { id: 2, title: 'b' }], P)
+    const d = createRowDrag(ctx)
+    d.onRowPointerDown(pointer('mouse', 10), 0)
+    d.onRowPointerDown(pointer('pen', 10), 0)
+    expect(ctx.rowDragActive).toBe(false)
+  })
+
+  it('does not start until the long press elapses', async () => {
+    const ctx = makeCtx([{ id: 1, title: 'a' }, { id: 2, title: 'b' }], P)
+    const d = createRowDrag(ctx)
+    d.onRowPointerDown(pointer('touch', 10), 0)
+    expect(ctx.rowDragActive).toBe(false)
+    await wait(400)
+    expect(ctx.rowDragActive).toBe(true)
+    d.destroyRowDrag()
+  })
+
+  it('treats an early move as a scroll and never starts the drag', async () => {
+    const ctx = makeCtx([{ id: 1, title: 'a' }, { id: 2, title: 'b' }], P)
+    const d = createRowDrag(ctx)
+    d.onRowPointerDown(pointer('touch', 10), 0)
+    window.dispatchEvent(Object.assign(new Event('pointermove'), {
+      pointerId: 1, clientX: 10, clientY: 60, preventDefault() {},
+    }))
+    await wait(400)
+    expect(ctx.rowDragActive).toBe(false)
+    d.destroyRowDrag()
+  })
+
+  it('reorders on lift, through the same commit as the mouse path', async () => {
+    const rows: Task[] = [
+      { id: 1, title: 'a' },
+      { id: 2, title: 'b' },
+      { id: 3, title: 'c' },
+    ]
+    const onRowDragEnd = vi.fn()
+    const ctx = makeCtx(rows, { ...P, onRowDragEnd })
+    const d = createRowDrag(ctx)
+
+    d.onRowPointerDown(pointer('touch', 10), 0)
+    await wait(400)
+    expect(ctx.rowDragActive).toBe(true)
+
+    // Finger moves over the lower half of row 2.
+    stubRowAt(2, 80, 40)
+    window.dispatchEvent(Object.assign(new Event('pointermove'), {
+      pointerId: 1, clientX: 10, clientY: 115, preventDefault() {},
+    }))
+    expect(ctx.rowDropIndex).toBe(2)
+    expect(ctx.rowDropSide).toBe('after')
+
+    window.dispatchEvent(Object.assign(new Event('pointerup'), { pointerId: 1, clientY: 115 }))
+    expect((ctx.internalData as Task[]).map((r) => r.id)).toEqual([2, 3, 1])
+    expect(onRowDragEnd).toHaveBeenCalledTimes(1)
+    expect(ctx.rowDragActive).toBe(false)
+  })
+
+  it('cancels without reordering on pointercancel', async () => {
+    const rows: Task[] = [{ id: 1, title: 'a' }, { id: 2, title: 'b' }]
+    const ctx = makeCtx(rows, P)
+    const d = createRowDrag(ctx)
+    d.onRowPointerDown(pointer('touch', 10), 0)
+    await wait(400)
+    window.dispatchEvent(Object.assign(new Event('pointercancel'), { pointerId: 1 }))
+    expect((ctx.internalData as Task[]).map((r) => r.id)).toEqual([1, 2])
+    expect(ctx.rowDragActive).toBe(false)
   })
 })

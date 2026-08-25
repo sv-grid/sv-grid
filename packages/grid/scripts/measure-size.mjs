@@ -19,7 +19,36 @@ const pkgSrc = new URL('../src/', import.meta.url).pathname.replace(/^\/([A-Za-z
 const ENTRIES = {
   'full render component (SvGrid)': `export { default } from ${JSON.stringify(pkgSrc + 'SvGrid.svelte')}`,
   'headless core (createGrid)': `export { createGrid, createSvGrid } from ${JSON.stringify(pkgSrc + 'createGrid.svelte.ts')}`,
+  // The whole published '@svgrid/grid/core' subpath, not just createGrid - this
+  // is the number a consumer actually pays for `import ... from '@svgrid/grid/core'`.
+  "headless subpath (@svgrid/grid/core)": `export * from ${JSON.stringify(pkgSrc + 'headless.ts')}`,
 }
+
+/**
+ * Base-JS ceilings, in KB gzip. `--check` fails when an entry exceeds its
+ * budget, so a stray static import cannot silently undo a lazy boundary.
+ *
+ * That has happened: GridFooter once statically imported SvGridDropdown, which
+ * dragged 5.9 KB into base AND defeated SvGrid.svelte's own `import()` of the
+ * same component. Nothing caught it.
+ *
+ * Budgets are a small margin above the measured number - tighten them when a
+ * change legitimately lowers the floor, and never raise one without saying why
+ * in the commit.
+ */
+const BUDGET_KB = {
+  // 77.3 -> 77.9 when #69 and #66 landed: the deferred drop-indicator clear
+  // (a frame handle + its cancel paths) and the touch-drag entry point, which
+  // has to watch the gesture itself while its module is being fetched. The
+  // touch implementation proper is a lazy chunk (`row-drag-touch`), so this is
+  // the irreducible base half of two bug fixes, not drift.
+  'full render component (SvGrid)': 78.2,
+  'headless core (createGrid)': 3.0,
+  'headless subpath (@svgrid/grid/core)': 5.0,
+}
+
+const CHECK = process.argv.includes('--check')
+const failures = []
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB'
 
@@ -63,13 +92,35 @@ for (const [label, code] of Object.entries(ENTRIES)) {
     if (kind === 'css') css += gz
     else if (kind === 'base') baseJs += gz
     else lazyJs += gz
-    console.log(`   ${kind.padEnd(6)} ${o.fileName.padEnd(28)} raw ${kb(bytes).padStart(9)}   gzip ${kb(gz).padStart(9)}`)
+    if (!CHECK) {
+      console.log(`   ${kind.padEnd(6)} ${o.fileName.padEnd(28)} raw ${kb(bytes).padStart(9)}   gzip ${kb(gz).padStart(9)}`)
+    }
   }
   const entryJs = baseJs
+  const budget = BUDGET_KB[label]
+  const overBudget = budget != null && entryJs / 1024 > budget
+  if (overBudget) {
+    failures.push(`${label}: base JS ${kb(entryJs)} exceeds the ${budget} KB budget`)
+  }
   console.log(
     `=> ${label}: base JS gzip ${kb(entryJs)}` +
+      (budget != null ? ` (budget ${budget} KB${overBudget ? ' - OVER' : ''})` : '') +
       (css ? ` + CSS ${kb(css)}` : '') +
       (lazyJs ? `   |  lazy chunks (loaded on demand) ${kb(lazyJs)}` : '') +
       '\n',
   )
+}
+
+if (CHECK) {
+  if (failures.length) {
+    console.error('\nSize budget exceeded:')
+    for (const f of failures) console.error('  - ' + f)
+    console.error(
+      '\nSomething moved into the base graph. Usual cause: a static import of a\n' +
+        'module that is supposed to load via import(). Check the newest imports in\n' +
+        'SvGrid.svelte and anything it reaches.',
+    )
+    process.exit(1)
+  }
+  console.log('All entries within budget.')
 }

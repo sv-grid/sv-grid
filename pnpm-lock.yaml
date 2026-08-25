@@ -215,6 +215,12 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
 
+  packages/migrate:
+    devDependencies:
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1)(vite@8.2.1(@types/node@22.19.19)(jiti@2.7.0))
+
   packages/studio:
     dependencies:
       '@svgrid/enterprise':
@@ -227,6 +233,15 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+
+  packages/svgrid-sv:
+    devDependencies:
+      sv:
+        specifier: ^0.17.0
+        version: 0.17.0
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1)(vite@8.2.1(@types/node@22.19.19)(jiti@2.7.0))
 
   packages/svgrid-ui:
     devDependencies:
@@ -810,6 +825,9 @@ packages:
     hasBin: true
     peerDependencies:
       svelte: ^3.44.0 || ^4.0.0 || ^5.0.0-next.1
+
+  '@sveltejs/sv-utils@0.3.3':
+    resolution: {integrity: sha512-K6Voe+/4Ry6o3QTFdG4cNkdgW9kvbkJuRyyIyUbSVkuJUVz4jCdvYNuDCBNYC1mpxBFi7nuulpOeuqRjldZXRA==}
 
   '@sveltejs/vite-plugin-svelte@7.1.2':
     resolution: {integrity: sha512-DrUBA2UXRfDmUX/ZTiEopd3X40yavsJF1FX2RygcuIScHL7o5YX1fMvoYnDhjeJQC4weCOklirpNWlcb2NiSeA==}
@@ -2232,6 +2250,10 @@ packages:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
     engines: {node: '>=8'}
 
+  sv@0.17.0:
+    resolution: {integrity: sha512-bYEZjqq2XSAf6+uE59sXKgGQLS/W8vXrSvuDPeFN7Kit+iDA/LtL8oN/KkldU3pHufSS/R73xaLS4eDrZae62w==}
+    hasBin: true
+
   svelte-check@4.4.8:
     resolution: {integrity: sha512-67adfgBox5eNSNIvIIwgFizKGdcRrGpiMoNO2obHcYuLz7iTa8Xgm/NGU3ntMFnNm8K1grFOIG6HhMLX/vcN8w==}
     engines: {node: '>= 18.0.0'}
@@ -2958,6 +2980,8 @@ snapshots:
       svelte2tsx: 0.7.55(svelte@5.55.9(@typescript-eslint/types@8.67.0))(typescript@6.0.3)
     transitivePeerDependencies:
       - typescript
+
+  '@sveltejs/sv-utils@0.3.3': {}
 
   '@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.9(@typescript-eslint/types@8.67.0))(vite@8.2.1(@types/node@22.19.19)(jiti@2.7.0))':
     dependencies:
@@ -4382,6 +4406,10 @@ snapshots:
   supports-color@7.2.0:
     dependencies:
       has-flag: 4.0.0
+
+  sv@0.17.0:
+    dependencies:
+      '@sveltejs/sv-utils': 0.3.3
 
   svelte-check@4.4.8(picomatch@4.0.5)(svelte@5.55.9(@typescript-eslint/types@8.67.0))(typescript@6.0.3):
     dependencies:

@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-24 from 364 pages.
+Generated 2026-08-25 from 364 pages.
 
 <!-- =================================================================
      /docs/brand/company-description/  (community)
@@ -1150,7 +1150,7 @@ Bundle sizes (gzip):
 
 | Surface         | Size  | Notes                              |
 | --------------- | ----- | ---------------------------------- |
-| Community only  | 80 kB | Renderer + engine (+ 9 kB CSS)     |
+| Community only  | 77 kB | Renderer + engine (+ 9 kB CSS)     |
 | + Enterprise export    | +12 kB| + `jszip` peer when xlsx is used   |
 | + Enterprise pdf       | +90 kB| + `pdfmake` peer when pdf is used  |
 | + Enterprise pivot     | +6 kB | Pure TS, no peers                  |
@@ -13805,7 +13805,7 @@ mutate DOM nodes during a sort.
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
 | 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~2 kB gzip)     |
-| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~78 kB gzip + 9 kB CSS) |
+| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~77 kB gzip + 9 kB CSS) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## See also
@@ -13880,7 +13880,7 @@ see the [bundle size reference](../reference/bundle-size.md).
 
 | Surface                             | gzip   | Notes                                  |
 | ----------------------------------- | ------ | -------------------------------------- |
-| `@svgrid/grid` (full `<SvGrid>`)    | 80 kB  | One import covers the entire renderer; + 9 kB CSS |
+| `@svgrid/grid` (full `<SvGrid>`)    | 77 kB  | One import covers the entire renderer; + 9 kB CSS |
 | Headless engine (`createGrid`)      | 2 kB   | If you bring your own renderer         |
 | Lazy chunks (charts, date editors, menus, export) | 64 kB | Loaded on demand, not in the initial bundle |
 | `@svgrid/enterprise` core           | 8 kB   | Export + print + import shells         |
@@ -14038,7 +14038,7 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~78 KB gzipped for the full render component,
+It ships a much smaller bundle (~77 KB gzipped for the full render component,
 or ~2 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.
@@ -17057,7 +17057,7 @@ depends on the framework you ship on and your budget.
 
 | Project              | Lives in                                 | Ships                                   | Bundle (typical) | License            |
 | -------------------- | ---------------------------------------- | --------------------------------------- | ---------------- | ------------------ |
-| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~78 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
+| **SvGrid**           | Svelte 5                                 | Headless core + Svelte render + Enterprise pack | ~2 KB headless / ~77 KB full (gzip) | MIT (Community) / commercial (Enterprise) |
 | **AG Grid Community**| React, Angular, Vue, plain JS            | Full grid + renderer                    | ~340 KB                                   | MIT                                |
 | **AG Grid Enterprise**| same                                    | Adds pivot, integrated charts, server-side row model, more | ~600 KB+ | Commercial                         |
 | **TanStack Table**   | React, Vue, Svelte, Solid, Qwik, Lit, JS | Headless engine **only**                | ~12-14 KB                                 | MIT                                |
@@ -17144,7 +17144,7 @@ Measured gzipped, with Svelte treated as a peer dependency and excluded
 | @svgrid/grid path                          | Gzipped | Minified |
 | ----------------------------------------------- | ------- | -------- |
 | Headless core (`createGrid` + a row model)      | ~2 KB   | ~7 KB    |
-| Full `<SvGrid>` render component                | ~78 KB  | ~340 KB  |
+| Full `<SvGrid>` render component                | ~77 KB  | ~340 KB  |
 
 Add ~9 KB gzipped for the render component's CSS. A further ~64 KB of
 charts, date/time editors, menus, and export splits into `import()` chunks
@@ -17214,7 +17214,7 @@ bridge into Svelte 5.
 
 ### Is SvGrid a good AG Grid alternative?
 
-Yes, for Svelte projects. SvGrid ships a much smaller bundle (~78 KB gzipped
+Yes, for Svelte projects. SvGrid ships a much smaller bundle (~77 KB gzipped
 for the full render component, ~2 KB headless) than AG Grid Community, is
 MIT-licensed for commercial use, and offers `@svgrid/enterprise` for
 export/pivot/import at a per-developer price instead of AG Grid Enterprise's
@@ -17231,7 +17231,7 @@ virtualization, and editing UI yourself. Both are MIT-licensed.
 ### How big is the SvGrid bundle?
 
 Measured gzipped (Svelte excluded as a peer dependency): ~2 KB for the
-headless core and ~78 KB for the full `<SvGrid>` render component (~340 KB
+headless core and ~77 KB for the full `<SvGrid>` render component (~340 KB
 minified), plus ~9 KB of CSS. Charts, date/time editors, menus, and export
 add another ~64 KB that loads on demand rather than up front. Enterprise
 features are separate, lazy-loaded subpath imports, so you ship only what
@@ -23209,7 +23209,7 @@ We tell you when **not** to switch at the bottom.
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~78 KB full | lazy-loaded subpaths |
+| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~77 KB full | lazy-loaded subpaths |
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
@@ -23581,7 +23581,7 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~78 KB gzipped (or ~2 KB
+Almost always. SvGrid's full render component is ~77 KB gzipped (or ~2 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.
@@ -24951,6 +24951,37 @@ Svelte 5 runes and ships a render component, so the port mostly
 > Estimated effort: **1-3 hours** per grid. Most of the time is deleting
 > the `<table>` markup and `Subscribe` blocks you no longer need.
 
+## Know your options first
+
+The last svelte-headless-table release was 0.18.3 in October 2024 and it
+declares `svelte@^4`, so a Svelte 5 upgrade forces a decision. There are three
+honest answers and you should know all of them:
+
+1. **`@humanspeak/svelte-headless-table`** - a maintained fork on Svelte 5 with
+   the same API. Changing one package name is the cheapest path by a wide
+   margin. If your table works and you only need Svelte 5, do that.
+2. **TanStack Table v9** - shipped a Svelte 5 adapter in August 2026. Still
+   headless-only, so you keep writing and maintaining the markup.
+3. **SvGrid** - this page. A different trade: you delete the markup and take a
+   renderer instead.
+
+Pick SvGrid when the markup is the part you are tired of. Either way, note that
+Svelte 5 removed `let:` slot props, so the `Subscribe` blocks below do not
+survive the upgrade unchanged no matter which option you choose.
+
+## Run the codemod
+
+```bash
+npx @svgrid/migrate             # preview the result
+npx @svgrid/migrate src --write # apply it
+```
+
+It translates column definitions and plugin config, deletes the
+`Subscribe`/`Render` scaffolding, and reports anything it cannot map rather than
+dropping it silently. It previews by default. See
+[`@svgrid/migrate`](https://www.npmjs.com/package/@svgrid/migrate) for the full
+mapping and its limits.
+
 ## Vocabulary cheat sheet
 
 | svelte-headless-table                     | sv-grid                                   |
@@ -24969,6 +25000,31 @@ Svelte 5 runes and ships a render component, so the port mostly
 | `addDataExport()`                         | `@svgrid/enterprise` export pack                  |
 | `createViewModel(columns)` + `Subscribe`  | `<SvGrid>` (no view model to wire)         |
 | `pluginStates.sort.sortKeys`              | `api.setSort(id, dir)` / `onSortingChange` |
+
+### The shortcut form
+
+That table maps plugins onto the headless *features*, which is what you want if
+you keep driving the engine yourself. If you are moving to the `<SvGrid>`
+component, every capability also has a boolean prop, and that is what the
+codemod emits:
+
+| Plugin | `<SvGrid>` prop |
+| --- | --- |
+| `addSortBy()` | `sortable` |
+| `addTableFilter()` | `filterable showGlobalFilter` |
+| `addColumnFilters()` | `filterable showColumnFilters` |
+| `addPagination({ initialPageSize: 25 })` | `pageable pageSize={25}` |
+| `addSelectedRows()` | `showRowSelection` |
+| `addGroupBy()` | `groupable` |
+| `addSubRows()` | `treeData` |
+| `addColumnOrder()` | `enableColumnReorder` |
+| `addResizedColumns()` | nothing - resizing is built in |
+| `addHiddenColumns()` | `visible: false` on the column |
+| `addExpandedRows()` | `treeData`, or `isDetailRow` + `renderDetailRow` |
+| `addGridLayout()` | nothing - SvGrid owns its layout |
+
+Every capability is off by default and turned on by its prop; there is no
+plugin registration step.
 
 ## Before / after
 
@@ -25009,6 +25065,10 @@ Svelte 5 runes and ships a render component, so the port mostly
 + <SvGrid data={rows} columns={columns} features={features} showPagination />
 ```
 
+Type the column array against your row type. `GridColumns<(typeof data)[number]>`
+is the shortest form; a bare `GridColumns` widens the row to
+`Record<string, unknown>` and stops checking `field` against your real keys.
+
 ## What you get for free
 
 - **The renderer.** No `createViewModel`, no `Subscribe`, no hand-built
@@ -25022,11 +25082,29 @@ Svelte 5 runes and ships a render component, so the port mostly
 ## What changes
 
 - **Stores → runes.** Reactive data is `$state` / a plain array, not a
-  Svelte store you pass to `createTable`.
+  Svelte store you pass to `createTable`. If your rows came from a `derived`
+  store, read it with `$` at the call site or move it to `$derived`.
 - **Plugins → features.** Register `rowSortingFeature` etc. in
   `tableFeatures({...})` instead of `addSortBy()` in the plugin bag.
 - **View model → component.** You stop owning the markup; style through
   `--sg-*` tokens (and Tailwind) instead of `tableAttrs`.
+
+## What does not come across
+
+- **Custom `cell` renderers.** `createRender(MyComponent, props)` has no direct
+  equivalent; SvGrid uses a `cell` snippet. The codemod preserves yours as a
+  `// TODO port:` comment.
+- **Your own plugins.** There is no plugin system to port them into.
+- **`tableAttrs` / `attrs()` spreading.** The component owns its attributes.
+
+## When not to migrate
+
+- You need control of the exact DOM. Use the fork, or SvGrid's
+  [headless core](../why-headless.md) at `@svgrid/grid/core`.
+- Your table is a handful of rows with no interaction. A plain `{#each}` is
+  less code than either library.
+- You depend on custom plugins. That is a rewrite, not a migration.
+- You only need Svelte 5 support. Use the fork.
 
 ## See also
 
@@ -25039,9 +25117,10 @@ Svelte 5 runes and ships a render component, so the port mostly
 
 ### How hard is it to move from svelte-headless-table to SvGrid?
 
-Usually 1-3 hours per grid. The plugin-to-feature mapping is almost one-to-one;
-most of the work is deleting the `createViewModel` + `Subscribe` + `<table>`
-markup, because SvGrid renders that for you.
+Usually 1-3 hours per grid, and `npx @svgrid/migrate` does the mechanical part.
+The plugin-to-feature mapping is almost one-to-one; most of the work is deleting
+the `createViewModel` + `Subscribe` + `<table>` markup, because SvGrid renders
+that for you.
 
 ### Does SvGrid use Svelte 5 runes instead of stores?
 
@@ -25051,8 +25130,16 @@ native (`$state` / `$derived` / `$effect`) with snippets for custom cells.
 ### Is SvGrid still headless like svelte-headless-table?
 
 Yes - `createSvGrid` plus the row-model factories is a headless engine you can
-drive with your own markup. The difference is that SvGrid *also* ships a
-batteries-included `<SvGrid>` component so you usually do not have to.
+drive with your own markup, importable on its own from `@svgrid/grid/core`. The
+difference is that SvGrid *also* ships a batteries-included `<SvGrid>` component
+so you usually do not have to.
+
+### Is svelte-headless-table still maintained?
+
+The original has not published since 0.18.3 in October 2024 and targets Svelte
+4. A community fork, `@humanspeak/svelte-headless-table`, is maintained and runs
+on Svelte 5 with the same API, which is the lowest-effort option if you are
+happy with the library and only need Svelte 5.
 
 <!-- =================================================================
      /docs/help/migrating-from-syncfusion/  (community)
@@ -25786,12 +25873,12 @@ sparklines, collaboration). The genuine remaining gaps:
 | Gap | Note | Effort |
 | --- | ---- | ------ |
 | ~~**Multi Filter** (two conditions on one column)~~ | **shipped** - a column filter takes a second condition joined by AND / OR, in the menu and via `api.setFilter` | ✓ |
-| **Custom filter / floating-filter component** slot | first-class pluggable filter | M |
-| **Custom tool panels** | panel is fixed Columns + Filters | M |
+| **Custom filter / floating-filter component** slot | first-class pluggable filter. Needs a MODEL seam as well as a render one: menu filters compile through `compileExcelFilter` from the closed `FilterOperator` union, so there is nowhere for a consumer predicate to enter today | L |
+| **Custom tool panels** | panel is fixed Columns + Filters (`toolPanelDefaultTab` is a `"columns" \| "filters"` union, with no registry) | M |
 | ~~**UI-string localisation** (`localeText`)~~ | **shipped** - `localeText` prop over `GridMessages`; every menu/panel/chrome string is overridable | ✓ |
 | ~~**Row-grouping display modes** + group-level footers~~ | **shipped** - `groupDisplayMode: 'groupRows' \| 'singleColumn' \| 'multipleColumns'` plus `groupFooters` and `grandTotalRow`; demo `427-group-footers` | ✓ |
 | ~~**In-grid pivot mode** (toggle on the main grid)~~ | **shipped** - `enablePivot()` registers the engine and the main grid pivots in place | ✓ |
-| **Integrated-chart depth** (chart toolbar, cross-filtering) | 17 chart types + wizard + a "Chart selected range" context-menu item ship; the chart toolbar and click-to-filter loop do not | L |
+| ~~**Integrated-chart depth** (chart toolbar, cross-filtering)~~ | **shipped** - `crossFilter` config plus `applyChartCrossFilter` / `clearChartCrossFilter`, wired from chart selection in `SvGridChartPanel`, with a Clear filter button; the panel toolbar has chart-type switching, export, AI, add-chart, tabs, maximize, dock and pop out | ✓ |
 | **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |
 
 ## What's already there
@@ -26648,7 +26735,7 @@ Measured gzipped, with Svelte excluded as a peer dependency:
 | What you import                                       | Gzipped | Minified |
 | ----------------------------------------------------- | ------- | -------- |
 | Headless core (`createGrid` + `createCoreRowModel`)   | ~2 KB   | ~7 KB    |
-| Full `<SvGrid>` render component (everything)         | ~78 KB  | ~340 KB  |
+| Full `<SvGrid>` render component (everything)         | ~77 KB  | ~340 KB  |
 
 Add ~9 KB gzipped for the render component's CSS. Charts, date/time
 editors, menus, and export split into `import()` chunks (~64 KB total)
@@ -55285,7 +55372,15 @@ node packages/grid/scripts/measure-size.mjs
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createGrid`) | **2.3 kB** | - | - |
-| Full render component (`<SvGrid>`) | **78.2 kB** | **9.0 kB** | 77.1 kB |
+| Headless subpath (`@svgrid/grid/core`) | **4.2 kB** | - | - |
+| Full render component (`<SvGrid>`) | **77.3 kB** | **9.1 kB** | 81.4 kB |
+
+The two headless rows measure different things on purpose. `createGrid` is the
+engine plus the row model it needs, which is what you pay when you import just
+that symbol. The subpath row is every export on `@svgrid/grid/core` pulled in at
+once with nothing tree-shaken, so it is the ceiling rather than the typical
+cost - a real consumer importing `createSvGrid` and two row models sits near the
+lower number.
 
 Svelte is a peer dependency and is excluded from every figure. Builds are
 minified and gzipped at level 9.
@@ -55301,6 +55396,7 @@ splits into:
 | `chart` (engine) | 11.7 kB | charting is enabled |
 | `GridMenus` | 11.7 kB | a header or context menu opens |
 | `SvGridChartPanel` | 7.5 kB | the chart panel opens |
+| `SvGridCellEditor` | 4.3 kB | editing is enabled (loads at mount, before the first edit) |
 | `SvGridDropdown` | 5.2 kB | a list / chips cell editor or the page-size picker opens |
 | `dismissable` | 3.7 kB | any popover, menu or dropdown layer opens |
 | `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |
@@ -56589,6 +56685,12 @@ rows, columns, sorting, filtering, grouping, pagination, expansion, and
 selection. It does **not** know about pixels, DOM, ARIA, or CSS. It is
 a state machine over your data that you query and mutate from Svelte.
 
+The `/core` subpath is the headless surface on its own: no components, no
+CSS, nothing that touches the DOM. Every symbol on it is also re-exported
+from the main `@svgrid/grid` barrel, so either import works and you can mix
+them. Import from `/core` when you want the dependency to be obvious in
+review and the bundle cost to be provable.
+
 The component - `<SvGrid>` - is one (opinionated) way to render that
 state machine into a `<table>`. It is itself written against the
 headless core, so the same hooks are available to you if you want to
@@ -56623,7 +56725,7 @@ You write the markup, you keep the headless brain.
 
 ```ts
 import { createSvGrid, createCoreRowModel, createSortedRowModel,
-         tableFeatures, rowSortingFeature, sortFns } from '@svgrid/grid'
+         tableFeatures, rowSortingFeature, sortFns } from '@svgrid/grid/core'
 
 const grid = createSvGrid({
   _features: tableFeatures({ rowSortingFeature }),
@@ -56651,7 +56753,7 @@ the markup is the demo's:
 in one bundle. With SvGrid you only register what you use:
 
 ```ts
-import { tableFeatures, rowSortingFeature } from '@svgrid/grid'
+import { tableFeatures, rowSortingFeature } from '@svgrid/grid/core'
 
 // no filtering, no grouping, no pagination - none of that code is
 // reachable from this grid instance
@@ -56667,7 +56769,7 @@ and Vite tree-shakes away the rest.
 browser:
 
 ```ts
-import { createSvGrid, ... } from '@svgrid/grid'
+import { createSvGrid, ... } from '@svgrid/grid/core'
 
 test('sorts by salary descending', () => {
   const grid = createSvGrid({ ..., state: { sorting: [{ id: 'salary', desc: true }] } })

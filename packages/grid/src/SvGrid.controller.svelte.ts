@@ -3434,6 +3434,7 @@ export function createSvGridController<
     get onRowsContainerDragOver() { return onRowsContainerDragOver; },
     get onRowsContainerDrop() { return onRowsContainerDrop; },
     get onRowDragEnd() { return onRowDragEnd; },
+    get onRowPointerDown() { return onRowPointerDown; },
     get broadcastAlignedScroll() { return broadcastAlignedScroll; },
     get getCurrentColumnOrder() { return getCurrentColumnOrder; },
     get emitColumnOrder() { return emitColumnOrder; },
@@ -3824,7 +3825,7 @@ export function createSvGridController<
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
-  const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
+  const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
   const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);

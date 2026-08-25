@@ -19,22 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-------------------------------------------------------------------------
-
-NOTE ON BUNDLED CONTENT
-
-This package embeds SvGrid documentation, API reference, and example sources
-so the server can answer questions offline. That material is Copyright (c)
-2026 jQWidgets Ltd and is also published openly at https://svgrid.com/docs/,
-https://svgrid.com/llms.txt and https://svgrid.com/llms-full.txt for exactly
-this purpose. The MIT grant above covers it.
-
-SvGrid(TM) and sv-grid(TM) are trademarks of jQWidgets Ltd. This license
-covers the source code and bundled content only; it grants no rights to the
-SvGrid / sv-grid names or logos.
-
-Some tools exposed by this server generate SvGrid Studio projects. Studio
-itself is a commercial product (https://svgrid.com/pricing) and needs a
-license key to use in production, but this server, and asking it questions,
-are free.

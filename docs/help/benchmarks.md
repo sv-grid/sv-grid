@@ -36,7 +36,7 @@ see the [bundle size reference](../reference/bundle-size.md).
 
 | Surface                             | gzip   | Notes                                  |
 | ----------------------------------- | ------ | -------------------------------------- |
-| `@svgrid/grid` (full `<SvGrid>`)    | 80 kB  | One import covers the entire renderer; + 9 kB CSS |
+| `@svgrid/grid` (full `<SvGrid>`)    | 77 kB  | One import covers the entire renderer; + 9 kB CSS |
 | Headless engine (`createGrid`)      | 2 kB   | If you bring your own renderer         |
 | Lazy chunks (charts, date editors, menus, export) | 64 kB | Loaded on demand, not in the initial bundle |
 | `@svgrid/enterprise` core           | 8 kB   | Export + print + import shells         |
@@ -194,7 +194,7 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~78 KB gzipped for the full render component,
+It ships a much smaller bundle (~77 KB gzipped for the full render component,
 or ~2 KB for the headless core) and virtualizes by default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.

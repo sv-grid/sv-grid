@@ -3,7 +3,7 @@
  * mounts SvDurationInput in the editing cell (proving the built-in registration +
  * the SvGrid registry wiring together).
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -33,7 +33,6 @@ const cols: ColumnDef<typeof features, Row>[] = [
   { field: 'estimate', header: 'Estimate', width: 160, editorType: 'duration' },
 ]
 
-const tick = () => new Promise<void>((r) => queueMicrotask(r))
 
 function mountGrid() {
   return new Promise<{ api: SvGridApi<typeof features, Row>; target: HTMLElement; destroy: () => void }>(
@@ -75,9 +74,8 @@ describe('registerBuiltinEditors in SvGrid', () => {
     const { api, target, destroy } = await mountGrid()
     try {
       api.startEditing(0, 'estimate')
-      await tick()
-      await tick()
-      expect(target.querySelector('.sv-dur__input')).not.toBeNull()
+      // SvGridCellEditor is a lazy chunk; poll instead of fixing a tick count.
+      await vi.waitFor(() => expect(target.querySelector('.sv-dur__input')).not.toBeNull())
     } finally {
       destroy()
     }

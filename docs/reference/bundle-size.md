@@ -14,7 +14,15 @@ node packages/grid/scripts/measure-size.mjs
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createGrid`) | **2.3 kB** | - | - |
-| Full render component (`<SvGrid>`) | **78.2 kB** | **9.0 kB** | 77.1 kB |
+| Headless subpath (`@svgrid/grid/core`) | **4.2 kB** | - | - |
+| Full render component (`<SvGrid>`) | **77.3 kB** | **9.1 kB** | 81.4 kB |
+
+The two headless rows measure different things on purpose. `createGrid` is the
+engine plus the row model it needs, which is what you pay when you import just
+that symbol. The subpath row is every export on `@svgrid/grid/core` pulled in at
+once with nothing tree-shaken, so it is the ceiling rather than the typical
+cost - a real consumer importing `createSvGrid` and two row models sits near the
+lower number.
 
 Svelte is a peer dependency and is excluded from every figure. Builds are
 minified and gzipped at level 9.
@@ -30,6 +38,7 @@ splits into:
 | `chart` (engine) | 11.7 kB | charting is enabled |
 | `GridMenus` | 11.7 kB | a header or context menu opens |
 | `SvGridChartPanel` | 7.5 kB | the chart panel opens |
+| `SvGridCellEditor` | 4.3 kB | editing is enabled (loads at mount, before the first edit) |
 | `SvGridDropdown` | 5.2 kB | a list / chips cell editor or the page-size picker opens |
 | `dismissable` | 3.7 kB | any popover, menu or dropdown layer opens |
 | `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |

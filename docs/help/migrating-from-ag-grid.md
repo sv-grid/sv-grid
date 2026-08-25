@@ -16,7 +16,7 @@ We tell you when **not** to switch at the bottom.
 | --- | --- | --- | --- | --- |
 | **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
 | **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~78 KB full | lazy-loaded subpaths |
+| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~77 KB full | lazy-loaded subpaths |
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
@@ -388,7 +388,7 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~78 KB gzipped (or ~2 KB
+Almost always. SvGrid's full render component is ~77 KB gzipped (or ~2 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.

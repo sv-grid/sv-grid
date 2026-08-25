@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-24T18:20:20.631Z",
+  "generatedAt": "2026-08-25T06:39:06.692Z",
   "counts": {
     "pages": 364,
     "enterprise": 55,
@@ -761,7 +761,7 @@
       "pillar": "company",
       "tier": "enterprise",
       "words": 681,
-      "lastUpdated": "2026-08-18",
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -1626,7 +1626,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1040,
-      "lastUpdated": "2026-08-19",
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -1638,7 +1638,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1310,
-      "lastUpdated": "2026-08-19",
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -2049,7 +2049,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1597,
-      "lastUpdated": "2026-08-23",
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2590,7 +2590,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2151,
-      "lastUpdated": "2026-08-23",
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2733,8 +2733,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 670,
-      "lastUpdated": "2026-08-15",
+      "words": 1272,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -2805,8 +2805,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1484,
-      "lastUpdated": "2026-08-18",
+      "words": 1538,
+      "lastUpdated": "2026-08-25",
       "demoIds": []
     },
     {
@@ -2858,7 +2858,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1141,
-      "lastUpdated": "2026-08-19",
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "22-admin-template"
       ]
@@ -5456,8 +5456,8 @@
       "section": "reference",
       "pillar": "grid",
       "tier": "community",
-      "words": 613,
-      "lastUpdated": "2026-08-19",
+      "words": 712,
+      "lastUpdated": "2026-08-24",
       "demoIds": []
     },
     {
@@ -5540,8 +5540,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 863,
-      "lastUpdated": "2026-08-18",
+      "words": 923,
+      "lastUpdated": "2026-08-24",
       "demoIds": [
         "186-headless-table"
       ]

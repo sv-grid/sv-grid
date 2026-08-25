@@ -89,7 +89,9 @@ describe('async editorOptions (#18)', () => {
     cleanup = g.destroy
     await settle()
     await openEditor(g.getApi(), 'city')
-    expect(document.body.textContent).toContain('Lyon')
+    // Two lazy hops now: SvGridCellEditor, then SvGridDropdown inside it. Poll
+    // the same assertion rather than guessing how many settles that takes.
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Lyon'))
   })
 
   it('fetches once no matter how many times render asks', async () => {
