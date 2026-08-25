@@ -84,6 +84,13 @@ jobs:
         # private submodule checked out above.
         run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts
 
+      - name: SSR renders rows
+        # <SvGrid> silently stopped server-rendering its rows once: both
+        # virtualizers learn their count from an $effect, and effects do not run
+        # during SSR. Nothing tested it, so the docs claimed working SSR for a
+        # long time while the server shipped an empty shell.
+        run: pnpm ssr:check
+
       - name: Bundle size budget
         # Guards the lazy boundaries. A static import of something meant to load
         # via import() silently inflates the base bundle and can also defeat an
