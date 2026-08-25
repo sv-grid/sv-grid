@@ -8,11 +8,13 @@ Per-package licensing
 
   packages/grid/            @svgrid/grid          MIT
   packages/grid-wc/         @svgrid/grid-wc       MIT
+  packages/mcp/             @svgrid/mcp           MIT
+  packages/migrate/         @svgrid/migrate       MIT
+  packages/svgrid-sv/       @svgrid/sv            MIT
+  packages/svgrid-ui/       @svgrid/ui            MIT
   packages/create-sv-grid/  @svgrid/create        MIT
   packages/create-studio/   @svgrid/create-studio MIT
-  packages/svgrid-ui/       @svgrid/ui            MIT
   packages/enterprise/      @svgrid/enterprise    Commercial
-  packages/mcp/             @svgrid/mcp           Commercial
   packages/studio/          @svgrid/studio        Commercial
   website/                                        Proprietary
 
@@ -21,8 +23,8 @@ for that package. The MIT text reproduced below is the license for the
 MIT-licensed packages in that list.
 
 The commercial and proprietary packages (the Enterprise feature pack,
-the MCP server, SvGrid Studio, the marketing + docs website, and any
-package added later that does not ship its own MIT LICENSE) may not be
+SvGrid Studio, the marketing + docs website, and any package added
+later that does not ship its own MIT LICENSE) may not be
 copied, modified, or redistributed without a paid license. Source is
 visible in this repository for transparency and for paying customers;
 visibility does not grant a license.

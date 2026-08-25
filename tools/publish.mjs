@@ -35,7 +35,7 @@ const otpArg = args.find((a) => a.startsWith('--otp='))
 
 // Dependency-first order: everything that peer-depends on grid comes after it,
 // and the CLIs (which reference the others) come last.
-const ORDER = ['grid', 'enterprise', 'grid-wc', 'mcp', 'studio', 'svgrid-ui', 'create-sv-grid', 'create-studio']
+const ORDER = ['grid', 'enterprise', 'grid-wc', 'mcp', 'studio', 'svgrid-ui', 'create-sv-grid', 'create-studio', 'migrate', 'svgrid-sv']
 
 const sh = (cmd, argv, opts = {}) => spawnSync(cmd, argv, { encoding: 'utf8', shell: true, ...opts })
 

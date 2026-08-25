@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Scaffold a Svelte app powered by SvGrid in one command: npm create @svgrid@latest",
   "type": "module",
   "license": "MIT",

@@ -23,6 +23,10 @@ const TEMPLATES = {
     label: 'Minimal      - Vite + Svelte 5 + SvGrid, one page',
     bundled: join(__dirname, 'templates', 'minimal'),
   },
+  sveltekit: {
+    label: 'SvelteKit    - server load, URL-driven sort, form-action edits, theme picker',
+    bundled: join(__dirname, 'templates', 'sveltekit'),
+  },
   'admin-dashboard': {
     label: 'Admin dashboard - SvelteKit shell, multiple grids, deploy to Vercel',
     bundled: join(__dirname, 'templates', 'admin-dashboard'),
@@ -81,7 +85,8 @@ ${Object.entries(TEMPLATES)
 
 ${color('bold', 'Options')}
   --theme <id>       One of: ${THEME_IDS.join(', ')} (default: tailwind).
-  --dark / --light   Start in dark or light mode (default: dark).
+  --dark / --light   Pin the starting mode. Left out, minimal and sveltekit
+                     follow the visitor's OS; admin-dashboard starts dark.
   --force            Scaffold into a non-empty directory.
 
 ${color('bold', 'Examples')}
@@ -175,6 +180,62 @@ async function applyTheme(destDir, choice) {
   if (marked.test(cssText)) {
     await writeFile(cssPath, cssText.replace(marked, `/* svgrid-theme:start */\n${css}\n/* svgrid-theme:end */`))
   }
+
+  // Templates with a RUNTIME theme picker keep the starting selection in TS, so
+  // the picker opens on the theme that was scaffolded rather than disagreeing
+  // with the stylesheet above. Absent in templates without a picker, where the
+  // missing file makes this a no-op.
+  const tsPath = join(destDir, 'src', 'lib', 'theme.svelte.ts')
+  const tsText = await readFile(tsPath, 'utf8').catch(() => null)
+  if (tsText == null) return
+  const tsMarked = /\/\* svgrid-initial-theme:start \*\/([\s\S]*?)\/\* svgrid-initial-theme:end \*\//
+  if (!tsMarked.test(tsText)) return
+  // Only the preset here. The mode is left to applyModeSvelteKit, which pins it
+  // only when one was actually asked for.
+  const body = tsText.match(tsMarked)[1].replace(
+    /export const INITIAL_THEME = '[^']*'/,
+    `export const INITIAL_THEME = '${preset.id}'`,
+  )
+  await writeFile(
+    tsPath,
+    tsText.replace(
+      tsMarked,
+      `/* svgrid-initial-theme:start */${body}/* svgrid-initial-theme:end */`,
+    ),
+  )
+}
+
+/** sveltekit settles its start mode in an inline script in `src/app.html`,
+ *  falling back to the OS preference, exactly as minimal does. Pin it only when
+ *  light or dark was actually asked for. The picker in the layout reads the
+ *  attribute that script sets, so both halves have to agree. */
+async function applyModeSvelteKit(destDir, choice) {
+  if (!choice || !choice.explicitMode) return
+
+  const htmlPath = join(destDir, 'src', 'app.html')
+  const html = await readFile(htmlPath, 'utf8').catch(() => null)
+  if (html != null) {
+    await writeFile(
+      htmlPath,
+      html
+        .replace(`<html lang="en" data-theme="light">`, `<html lang="en" data-theme="${choice.mode}">`)
+        .replace(
+          `var fallback = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'`,
+          `var fallback = '${choice.mode}'`,
+        ),
+    )
+  }
+
+  const tsPath = join(destDir, 'src', 'lib', 'theme.svelte.ts')
+  const ts = await readFile(tsPath, 'utf8').catch(() => null)
+  if (ts == null) return
+  await writeFile(
+    tsPath,
+    ts.replace(
+      /export const INITIAL_MODE: ThemeMode = '[^']*'/,
+      `export const INITIAL_MODE: ThemeMode = '${choice.mode}'`,
+    ),
+  )
 }
 
 /** admin-dashboard defaults to dark (see app.html / src/lib/theme.ts /
@@ -330,7 +391,7 @@ async function main() {
       Object.entries(TEMPLATES).forEach(([, t], i) => {
         stdout.write(`   ${color('cyan', String(i + 1))}. ${t.label}\n`)
       })
-      const pick = await ask('\nChoose a template (1-2):', '1')
+      const pick = await ask(`\nChoose a template (1-${Object.keys(TEMPLATES).length}):`, '1')
       template = Object.keys(TEMPLATES)[Number(pick) - 1] ?? 'minimal'
     } else {
       template = 'minimal'
@@ -378,13 +439,15 @@ async function main() {
   await applyTheme(destDir, themeChoice)
   await applyMode(destDir, themeChoice)
   await applyModeMinimal(destDir, themeChoice)
+  await applyModeSvelteKit(destDir, themeChoice)
 
   // 5. Next steps.
   const rel = isAbsolute(target) || target.startsWith('.') ? target : `./${target}`
   stdout.write(`\n${color('green', '✔')} Scaffolded ${color('bold', projectName)} (${template}) into ${rel}\n`)
   if (themeChoice) {
-    // minimal only pins a mode when one was asked for; otherwise it reads the
-    // OS preference at load, so reporting "dark" here would be a lie.
+    // minimal and sveltekit only pin a mode when one was asked for; otherwise
+    // they read the OS preference at load, so reporting "dark" here would be a
+    // lie. admin-dashboard is dark by default either way.
     const pinned = themeChoice.explicitMode || template === 'admin-dashboard'
     const mode = pinned ? themeChoice.mode : 'follows your OS'
     stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name} (${mode})\n`)

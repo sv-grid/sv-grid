@@ -76,7 +76,8 @@ depends on the framework you ship on and your budget.
 | Server-side row model           | ✓ (built-in)     | ✓ (built-in) | -              | ✓ (built-in)       | external mode  |
 | CSP-clean (no eval, no inline)  | ✓                | ✓          | ✓                 | ✓                  | n/a            |
 | Meaningful SSR markup           | ✓                | ✓          | -                 | -                  | depends on FW  |
-| Excel / PDF / CSV export        | -                | ✓          | -                 | ✓ (Enterprise)     | -              |
+| CSV / TSV / JSON export         | ✓                | ✓          | ✓                 | ✓                  | -              |
+| Excel (.xlsx) / PDF export      | -                | ✓          | -                 | ✓ (Enterprise)     | -              |
 | Excel / CSV import              | -                | ✓          | -                 | -                  | -              |
 | AI assistant                    | -                | ✓ (BYO provider) | -           | -                  | -              |
 | Pivot table                     | -                | ✓          | -                 | ✓                  | (custom)       |

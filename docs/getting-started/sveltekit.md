@@ -9,6 +9,33 @@ Everything here was run against a real SvelteKit app before it was written -
 `sv create`, `sv add`, `svelte-check`, `vite build`, and the server HTML checked
 over HTTP.
 
+## Run it before you read it
+
+Everything this page builds is also a template, so you can have it on your
+machine in three commands:
+
+```bash
+npm create @svgrid@latest people -- --template sveltekit
+cd people && npm install && npm run dev
+```
+
+That is the app from [the end-to-end section](#the-whole-thing-end-to-end)
+below, plus a theme picker in the header - all 20 presets, light and dark,
+switched live while the grid is running. Pick the starting theme up front if you
+prefer:
+
+```bash
+npm create @svgrid@latest people -- --template sveltekit --theme dracula --dark
+```
+
+`--theme` writes the preset into `src/app.css`, so the first paint and the
+server-rendered HTML are already themed rather than flashing a frame of the
+default. Leave `--dark`/`--light` off and the app follows the visitor's OS
+setting instead. `npm create @svgrid@latest -- --help` lists every preset id.
+
+The rest of this page builds the same thing by hand, which is the better way to
+understand it.
+
 ## 1. Scaffold
 
 SvGrid ships an add-on for the [Svelte CLI](https://svelte.dev/docs/cli), so a
@@ -203,6 +230,10 @@ before it was published here: `svelte-check` reports 0 errors, the page
 server-renders its rows, clicking a header rewrites the URL, and an edit
 survives a reload.
 
+If you would rather run it than type it,
+`npm create @svgrid@latest people -- --template sveltekit` gives you this app
+with a theme picker already wired in. The files below are what it contains.
+
 ```bash
 npx sv create people --template minimal --types ts
 cd people
@@ -341,7 +372,10 @@ Three things to try, in this order:
   including inside a load function. See [Why headless?](../why-headless.md).
 - **Themes and dark mode.** Set the theme attribute before first paint from an
   inline script in `app.html`, or the page renders in the wrong palette for a
-  frame. [Theme and density](./5-theme-and-density.md) covers it.
+  frame. The `sveltekit` template above ships that script plus a runtime picker
+  built on `resolveThemeTokens` from `@svgrid/grid/themes`, which is the short
+  way to see the pattern. [Theme and density](./5-theme-and-density.md) covers
+  it properly.
 - **Deployment.** SvGrid is a normal client dependency with no build step or
   server runtime of its own, so any SvelteKit adapter works unchanged.
 

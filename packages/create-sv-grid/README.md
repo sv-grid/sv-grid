@@ -43,19 +43,20 @@ pnpm create @svgrid my-app -t minimal
 | Template | Stack | Best for |
 | --- | --- | --- |
 | `minimal` | Vite + Svelte 5 + SvGrid | Dropping a grid into something quickly |
+| `sveltekit` | SvelteKit, server load + form actions | Learning how a grid fits SvelteKit, or starting one |
 | `admin-dashboard` | SvelteKit + Tailwind + SvGrid, deploy to Vercel | A real dashboard / internal tool |
 
 ## Options
 
 | Flag | Description |
 | --- | --- |
-| `--template`, `-t` | `minimal` or `admin-dashboard` |
+| `--template`, `-t` | `minimal`, `sveltekit` or `admin-dashboard` |
 | `--theme <id>` | One of `@svgrid/grid`'s 20 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more (default: `tailwind`) |
-| `--dark` / `--light` | Start in dark or light mode. `minimal` follows the OS when neither is given |
+| `--dark` / `--light` | Pin the starting mode. `minimal` and `sveltekit` follow the visitor's OS when neither is given |
 | `--force`, `-f` | Scaffold into a non-empty directory |
 | `--help`, `-h` | Show usage |
 
-Either template prompts for a theme and a light/dark mode when run
+Every template prompts for a theme and a light/dark mode when run
 interactively, or takes them as flags:
 
 ```bash
@@ -63,8 +64,10 @@ npm create @svgrid@latest my-app -- -t admin-dashboard --theme material --light
 npm create @svgrid@latest my-app -- -t minimal --theme nord --dark
 ```
 
-Both ship a working toggle, so the choice is a starting point rather than
-something you are stuck with.
+All three ship a working toggle, so the choice is a starting point rather than
+something you are stuck with. `sveltekit` goes further and puts all 20 presets
+in a picker in the header, so you can try them against your own data without
+rescaffolding.
 
 Then:
 
