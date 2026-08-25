@@ -48,7 +48,7 @@ export type LicenseInfo = {
  * in that position) yields null, which reads as "no expiry encoded".
  *
  * Boundaries are UTC so a key does not lapse at a different instant per
- * timezone. Kept in sync with `tools/issue-license.mjs`.
+ * timezone. Kept in sync with the (maintainer-side) key issuer.
  */
 export function parseLicenseExpiry(key: string | null | undefined): Date | null {
   if (!key) return null

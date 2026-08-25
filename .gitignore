@@ -75,3 +75,40 @@ docs/legal/SvGrid-EULA.pdf
 # hid every NEW .mjs from `git status` - including build scripts that
 # package.json invokes (`tools/count-demos.mjs`, `packages/enterprise/scripts/
 # build-designer.mjs`). Ignore scratch scripts by name, never by extension.
+
+# Maintainer-only tooling under tools/ - kept locally, never in the public repo.
+# tools/ CANNOT be ignored wholesale: 5 workflows and both package.json script
+# sets invoke ~25 scripts there (build-docs-index, prerender-site, release-grid,
+# post-tweet + twitter/*, the *.test.ts files, ...). Ignoring the folder would
+# break CI. Only the scripts with no build/CI dependency are listed here, by
+# name - never by extension (see the blanket `*.mjs` note above).
+
+# Commercial / credential-adjacent
+tools/issue-license.mjs
+tools/gh-secrets.ps1
+tools/publish.mjs
+tools/eula-to-pdf.mjs
+
+# GitHub + Discussions ops (posting runs on say-so only)
+tools/gh.mjs
+tools/simulate-issues.mjs
+tools/seed-discussions.mjs
+
+# Marketing / SEO / launch-asset generation (pairs with the ignored marketing/)
+tools/blog-internal-links.mjs
+tools/blog-pillars.mjs
+tools/capture-launch-assets.mjs
+tools/make-brand-logo.mjs
+
+# One-off blog + demo maintenance scripts (not wired into any build)
+tools/assign-blog-authors.mjs
+tools/backfill-demo-embeds.mjs
+tools/blog-add-images.mjs
+tools/blog-screenshots.mjs
+tools/insert-blog-images.mjs
+tools/build-demo-prompts.mjs
+tools/build-recipe-stubs.mjs
+tools/capture-readme-hero.mjs
+tools/capture-studio-shots.mjs
+tools/check-links.mjs
+tools/measure-bundle.mjs
