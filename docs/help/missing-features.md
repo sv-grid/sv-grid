@@ -46,7 +46,7 @@ can see both the trajectory and the (short) list of real gaps.
 
 | Gap | Status | Effort |
 | --- | ------ | ------ |
-| ~~Excel / xlsx, PDF, CSV / TSV / HTML export, Print~~ | **shipped** in `@svgrid/enterprise` - demos `21`, `56`-`59`, `93`, `101`, `119`, `126`, `127` | ✓ |
+| ~~Excel / xlsx, PDF, styled-HTML export, Print~~ | **shipped** in `@svgrid/enterprise` (CSV / TSV / JSON export is free in `@svgrid/grid`) - demos `21`, `56`-`59`, `93`, `101`, `119`, `126`, `127` | ✓ |
 
 ## Filtering
 

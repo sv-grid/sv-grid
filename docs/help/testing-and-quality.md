@@ -4,17 +4,26 @@ SvGrid ships with a comprehensive automated test suite. This page is the
 honest accounting of what we test, what we don't, and where coverage
 stands today.
 
-## Headline numbers (v1.0)
+## Headline numbers
 
-> **96.8% line coverage** on the testable surface
+> **79.6% line coverage** on the measurable surface
 > (`pnpm --filter @svgrid/grid test:lib`)
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
-| Lines | 92.20% | ≥ 90% |
-| Statements | 90.94% | ≥ 90% |
-| Branches | 82.21% | ≥ 75% |
-| Functions | 82.87% | ≥ 80% |
+| Lines | 79.65% | >= 79% |
+| Statements | 73.74% | >= 73% |
+| Branches | 64.37% | >= 63% |
+| Functions | 74.18% | >= 73% |
+
+The thresholds are a **ratchet, not a target**: each sits just under the measured
+value so a drop fails the build while ordinary churn does not. They were once set
+at 90/90/80/75, which was aspirational rather than real and kept CI red.
+
+The figure excludes the render components - `SvGrid.svelte`, the chart panel,
+menus, the footer and the cell editor. Their layout, scroll and paint branches
+depend on real browser metrics that jsdom reports as zero, so line coverage there
+measures nothing useful; they are covered by behavioural mount tests instead.
 
 Run the suite locally:
 
@@ -96,7 +105,7 @@ and is documented inline with the reasoning for each entry.
 | `a11y.test.ts`, `a11y.contract.test.ts` | ARIA prop builders + contract | Pure unit |
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
 
-Total: **1,191 tests** across **61 test files** (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
+Total: **2,308 tests** across **179 test files** in `@svgrid/grid`, plus **1,607** across **101** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 
@@ -142,7 +151,22 @@ Total: **1,191 tests** across **61 test files** (the table above lists the core 
 
 ## CI
 
-The deploy workflow (`.github/workflows/deploy-website.yml`) currently
-builds the library and the website. The next step is to add a
-**Test workflow** that runs `pnpm test` + `pnpm test:types` on every PR
-and posts the coverage delta as a comment.
+`.github/workflows/test.yml` runs on every push and PR:
+
+- build the library with `svelte-package`
+- `svelte-check` on every package
+- unit + behavioural tests with coverage, against the ratchet above
+- the Enterprise suite, and the web-component suite against its built bundle
+- docs guardrails (snippets in the docs must still compile)
+- **`pnpm ssr:check`** - builds `<SvGrid>` with `generate: "server"` and asserts
+  the server HTML really contains rows. Added after the grid silently stopped
+  server-rendering: both virtualizers learn their count from an `$effect`, and
+  effects never run during SSR, so the server shipped an empty `<tbody>` while
+  the docs claimed otherwise. Nothing caught it.
+- **`pnpm size:check`** - fails when the base bundle exceeds its budget. A stray
+  static import of something meant to load via `import()` inflates the bundle and
+  can defeat an existing lazy boundary; that has happened here before.
+- a coverage summary uploaded as an artifact and posted on the PR
+
+The deploy workflow (`.github/workflows/deploy-website.yml`) builds the library
+and the website separately.

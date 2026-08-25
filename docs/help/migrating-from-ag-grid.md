@@ -20,7 +20,8 @@ We tell you when **not** to switch at the bottom.
 | **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
 | **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
 | **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
-| **PDF / CSV / TSV / HTML export** | ❌ | Partial | ❌ | ✅ |
+| **CSV / TSV / JSON export** | ❌ | Partial | ✅ **free** | ✅ |
+| **Excel / PDF / styled-HTML export** | ❌ | Partial | ❌ | ✅ |
 | **Print view** | ❌ | ❌ | ❌ | ✅ |
 | **Set filter / Excel-style filter menu** | ❌ Enterprise | ✅ | ✅ (free) | (in Community) |
 
@@ -375,7 +376,7 @@ not a rewrite.
 
 ### What is the SvGrid equivalent of AG Grid Enterprise?
 
-`@svgrid/enterprise`. It adds Excel/PDF/CSV/TSV/HTML export, a printable view, pivot
+`@svgrid/enterprise`. It adds Excel/PDF/styled-HTML export (CSV, TSV and JSON export are already free in the grid), a printable view, pivot
 tables, data import, and AI helpers. It is licensed per developer
 ($599 single-app / $999 multi-app), not per deployment, and the Community
 package is MIT-licensed and free for commercial use.
