@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/migrate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Codemod that ports a svelte-headless-table component to SvGrid: translates column definitions and plugins, and removes the Subscribe/Render scaffolding.",
   "type": "module",
   "license": "MIT",
@@ -14,8 +14,12 @@
   "keywords": [
     "svelte",
     "sveltekit",
+    "svelte-5",
     "codemod",
     "migrate",
+    "migration",
+    "svelte-headless-table",
+    "headless-table",
     "data-grid",
     "datagrid",
     "table",

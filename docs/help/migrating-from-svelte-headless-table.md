@@ -24,9 +24,13 @@ honest answers and you should know all of them:
 3. **SvGrid** - this page. A different trade: you delete the markup and take a
    renderer instead.
 
-Pick SvGrid when the markup is the part you are tired of. Either way, note that
-Svelte 5 removed `let:` slot props, so the `Subscribe` blocks below do not
-survive the upgrade unchanged no matter which option you choose.
+Pick SvGrid when the markup is the part you are tired of. Note that the blocker
+is the peer range, not the syntax: `svelte-headless-table@0.18.3` declares
+`svelte@^4`, so installing it beside Svelte 5 is a peer conflict. Slots and
+`let:` themselves still work in Svelte 5 - they are deprecated in favour of
+snippets, not removed - so the `Subscribe` blocks below keep rendering. What you
+cannot do is pass slotted content to a component that renders with
+`{@render ...}`, which is why the pattern grates in a runes codebase.
 
 ## Run the codemod
 
