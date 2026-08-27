@@ -21,6 +21,9 @@ usable in SvelteKit with SSR.
 
 <p align="center">
   <img src="https://svgrid.com/brand/svgrid-hero.png" alt="A SvGrid trading desk: KPI cards, sector filter chips, and a virtualized data table with sparkline trend columns, conditional colour, and pinned columns." width="100%" />
+
+<img width="1607" height="789" alt="1m-rows" src="https://github.com/user-attachments/assets/ab175a5b-7653-4077-92c1-a6fd21d34a9a" />
+
 </p>
 
 **Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [370+ Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [npm](https://www.npmjs.com/package/@svgrid/grid)
@@ -66,11 +69,13 @@ npx sv add @svgrid
   ]
 </script>
 
-<SvGrid data={rows} columns={columns} />
+<SvGrid data={rows} columns={columns} sortable filterable editable />
 ```
 
 That is a real, working, accessible table. Sorting, filtering, virtualization, cell selection, and
 inline editing all wire up the moment you turn on the matching prop.
+
+<img width="960" height="560" alt="03-inline-edit" src="https://github.com/user-attachments/assets/cebfb8ed-e54e-4409-aa82-e77df73fb584" />
 
 ## Quick facts
 
@@ -167,6 +172,9 @@ npx skills add sv-grid/sv-grid    # always-on house-style rules
 [llms-full.txt](https://svgrid.com/llms-full.txt) (every doc page concatenated). See
 [Use sv-grid docs as LLM context](https://svgrid.com/docs/help/llm-grounding/).
 
+<img width="974" height="961" alt="svgridmcp" src="https://github.com/user-attachments/assets/cf7b2fa0-ac14-43a8-8db6-423888e1bb18" />
+
+
 ## Frequently asked questions
 
 ### Does SvGrid work with SvelteKit and SSR?
@@ -192,7 +200,7 @@ filtering, and grouping to your backend.
 
 ### How big is the bundle?
 
-About 2 KB gzipped for the headless core and about 77 KB for the full `<SvGrid>` render component, plus
+About 2 KB gzipped for the headless core and about 78 KB for the full `<SvGrid>` render component, plus
 9 KB of CSS, with Svelte excluded as a peer dependency. Charts, date/time editors, menus, and export add
 another ~64 KB that loads on demand rather than up front. Run `pnpm size` to re-measure.
 
