@@ -22,7 +22,7 @@ usable in SvelteKit with SSR.
 <p align="center">
   <img src="https://svgrid.com/brand/svgrid-hero.png" alt="A SvGrid trading desk: KPI cards, sector filter chips, and a virtualized data table with sparkline trend columns, conditional colour, and pinned columns." width="100%" />
 
-<img width="1607" height="789" alt="1m-rows" src="https://github.com/user-attachments/assets/ab175a5b-7653-4077-92c1-a6fd21d34a9a" />
+<img width="100%" alt="1m-rows" src="https://github.com/user-attachments/assets/ab175a5b-7653-4077-92c1-a6fd21d34a9a" />
 
 </p>
 
@@ -75,7 +75,7 @@ npx sv add @svgrid
 That is a real, working, accessible table. Sorting, filtering, virtualization, cell selection, and
 inline editing all wire up the moment you turn on the matching prop.
 
-<img width="960" height="560" alt="03-inline-edit" src="https://github.com/user-attachments/assets/cebfb8ed-e54e-4409-aa82-e77df73fb584" />
+<img width="100%" alt="03-inline-edit" src="https://github.com/user-attachments/assets/cebfb8ed-e54e-4409-aa82-e77df73fb584" />
 
 ## Quick facts
 
