@@ -318,7 +318,7 @@
   </span>
 {/snippet}
 
-<section class="hz">
+<section class="hz" data-mobile-pan>
   <aside class="hz-nav">
     <div class="hz-brand">📅 Horizon</div>
     <div class="hz-mini">
@@ -536,4 +536,15 @@
   .hz-ev-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; flex: 1 1 auto; }
   .hz-ev-people { flex: none; margin-left: auto; }
   .hz-ev-who { font-size: 0.72em; opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none; }
+
+  /* Mobile: this is an app-shell console - a fixed 240px nav rail beside the
+     scheduler - and the root hides its overflow, so on a phone the right-hand
+     side was silently cut off. Floor it and let the whole console pan inside
+     the demo stage (see .demo-stage.is-wide in examples/src/mobile.css), which
+     keeps the rail and the timeline aligned. */
+  @media (max-width: 767px) {
+    .hz {
+      min-width: 900px;
+    }
+  }
 </style>

@@ -38,10 +38,26 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // The existing specs are desktop-only; keep the mobile folder out of them.
+      testIgnore: /[\\/]mobile[\\/]/,
+    },
+    {
+      // Phone-viewport guard for the demo gallery: 390x844 with touch, the
+      // iPhone 13 metrics. Pinned to CHROMIUM rather than the descriptor's
+      // default WebKit so `playwright install chromium` still covers the whole
+      // suite - these assertions are layout-only (overflow width, pane height),
+      // which is engine-agnostic. The two things that genuinely need Safari,
+      // iOS focus-zoom and dvh-vs-vh, aren't simulated by Playwright's WebKit
+      // either (it has no dynamic URL bar), so they need a real device anyway.
+      // Runs against the GALLERY on 5174, so it works without the private
+      // website submodule.
+      name: 'mobile',
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      testMatch: /[\\/]mobile[\\/].*\.spec\.ts$/,
     },
   ],
 
-  webServer: {
+  webServer: [{
     // The specs navigate to `/sv-grid/#/demos/<id>`, which is a WEBSITE route,
     // not the example gallery (`pnpm dev`, port 5174, served at `/`). So start
     // the website's dev server, which vite.config.ts already pins to 5180, and
@@ -57,5 +73,15 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
     stderr: 'pipe',
-  },
+  }, {
+    // The examples gallery, for the `mobile` project. This one lives entirely
+    // in the parent repo, so the mobile guard runs on any checkout - unlike
+    // the website server above, which needs the private submodule.
+    command: 'pnpm --filter @svgrid/grid-example-gallery dev',
+    url: 'http://localhost:5174/',
+    timeout: 60_000,
+    reuseExistingServer: !process.env.CI,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  }],
 })

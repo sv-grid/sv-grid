@@ -1,5 +1,9 @@
 ﻿@import 'tailwindcss';
 @import './themes.css';
+/* Phone / tablet-portrait layer. Every rule inside is guarded by a
+ * `max-width` media query, so this import cannot affect desktop.
+ * The website imports this same file - see website/src/index.css. */
+@import './mobile.css';
 
 /* Tailwind's `dark:` modifier follows our data-theme attribute, so theme
  * switching is in sync with our own --sg-* tokens. App.svelte writes the

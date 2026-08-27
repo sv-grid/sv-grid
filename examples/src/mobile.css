@@ -1,0 +1,367 @@
+/* =========================================================================
+ * Phone / tablet-portrait layer for BOTH demo surfaces.
+ *
+ * HARD CONTRACT: every declaration in this file lives inside a media query
+ * that a desktop cannot match - either `max-width` (a narrow viewport) or
+ * `max-height` + `pointer: coarse` (a phone in landscape, which is 844px wide
+ * and so matches no width query). Desktop rendering is byte-identical to
+ * before this file existed.
+ * `node tools/check-mobile-css.mjs` enforces that mechanically (wired into
+ * `pnpm lint`), so nobody can quietly add an unguarded rule later.
+ *
+ * Wiring - mirrors the existing cross-repo import at website/src/index.css:2:
+ *   examples/src/index.css : @import './mobile.css';
+ *   website/src/index.css  : @import '../../examples/src/mobile.css';
+ * Both shells render a `.demo-page` root (examples/src/App.svelte and
+ * website/src/routes/Demos.svelte), and both tag the element that directly
+ * wraps the demo with `.demo-stage`.
+ *
+ * SPECIFICITY, because it decides whether a rule here actually lands:
+ *   - Svelte scopes a demo's own rules by appending a hash class, e.g.
+ *     `.two.svelte-epij3i { grid-template-columns: 1fr 1fr }` = (0,2,0).
+ *     So `.demo-page .demo-stage .two` = (0,3,0) wins WITHOUT `!important`.
+ *     Prefer that three-part form; it keeps the layer debuggable.
+ *   - Tailwind v4 emits its utilities inside `@layer utilities`, and
+ *     unlayered CSS beats layered CSS regardless of specificity, so plain
+ *     rules here already beat `p-6` / `overflow-x-hidden` with no
+ *     `!important` either.
+ *   - `!important` is therefore reserved for exactly one thing: beating an
+ *     INLINE style attribute. Each use below says which one.
+ * ========================================================================= */
+
+/* ============================ NARROW (<= 767px) =========================
+   Matches the breakpoint both shells already use for the sidebar drawer
+   (examples/src/App.svelte and website/src/routes/Demos.svelte), so the
+   drawer and this layer flip at exactly the same width. */
+@media (max-width: 767px) {
+  /* --- 1. Page guard: the body must never pan sideways. -----------------
+     `clip` rather than `hidden` because clip does NOT create a scroll
+     container, so the grid's sticky header and the popovers that portal to
+     <body> as `position: fixed` keep working. `hidden` is the Safari <16
+     fallback. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  @supports (overflow-x: clip) {
+    html,
+    body {
+      overflow-x: clip;
+    }
+  }
+
+  /* --- 1b. Contained horizontal pan. -----------------------------------
+     The stage - not <main> - is the pan surface, so a wide demo slides
+     while the demo's title and toolbar stay put. `.is-wide` is set by the
+     shells only after MEASURING that the content really doesn't fit, which
+     matters because `overflow-x` forces `overflow-y` to compute to `auto`:
+     a stage that scrolled unconditionally would clip the absolutely
+     positioned popovers that many demos own.
+     `overscroll-behavior: contain` stops the pan chaining out to the page
+     (and stops iOS reading it as a back-swipe). Two horizontal scrollers
+     never fight here, because a demo whose only wide element is the grid
+     has a stage that fits, so the stage never becomes a scroller at all. */
+  .demo-page .demo-stage.is-wide {
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* --- 2. The cornerstone rule. ----------------------------------------
+     `1fr` means `minmax(auto, 1fr)`, and a flex item defaults to
+     `min-width: auto`. Both resolve to the item's min-content width, and
+     that is what actually forces layouts wider than the phone. Zeroing only
+     the AUTOMATIC minimum turns every `repeat(N, 1fr)` into
+     `repeat(N, minmax(0, 1fr))` and lets every flex row shrink - which
+     removes most overflow across ~192 grid-template-columns and ~367
+     non-wrapping flex rows without touching a single demo file.
+
+     `:where()` contributes ZERO specificity, so this whole selector is
+     (0,0,0) on purpose:
+       - a demo's own `min-width: 280px` is (0,2,0) and still wins, so
+         deliberate floors survive;
+       - the grid sets min-width INLINE on every virtualised cell, so its
+         own column sizing is untouched;
+       - the grid's own min-width rules are class-scoped and also win.
+     Do not "tidy" this into `.demo-page .demo-stage *` - that is (0,2,0),
+     which ties with demo rules and makes the result depend on source order. */
+  :where(.demo-page .demo-stage) * {
+    min-width: 0;
+  }
+
+  /* --- 3. Shell padding: `p-6` is 24px a side, 12% of a 390px viewport.
+     A plain rule beats the Tailwind utility with no `!important` because
+     Tailwind v4 emits utilities inside `@layer utilities`, and unlayered
+     CSS outranks layered CSS regardless of specificity. */
+  .demo-page main {
+    padding: 12px;
+  }
+
+  /* --- 4. Grid-demo root (183 files carry this class string). Already a
+     flex column filling the stage; just buy a row of height back. */
+  .demo-page .demo-stage > section.flex.flex-col {
+    gap: 0.5rem;
+  }
+
+  /* --- 5. The `.wrap` family (103 files). Uniform shape:
+     `padding: 20-24px; max-width: 560-940px; display: flex; column`.
+     The max-width is already fluid and the `.cols` / `.controls` / `.stage`
+     children already carry `flex-wrap: wrap`, so ONLY the padding needs to
+     move. (0,3,0) beats `.wrap.svelte-hash`. */
+  .demo-page .demo-stage .wrap {
+    padding: 14px;
+  }
+
+  /* --- 6. Toolbars and button rows. The corpus contains ZERO
+     `flex-wrap: nowrap` declarations, so forcing wrap cannot contradict a
+     deliberate authoring choice. `flex-wrap` is inert on non-flex boxes, so
+     a broad name list is safe. */
+  .demo-page .demo-stage :is(
+      .controls, .toolbar, .filters, .actions, .row, .head, .head-actions,
+      .top-actions, .page-head, .bar, .seg, .st__toolbar, .st__head, .st__actions
+    ) {
+    flex-wrap: wrap;
+  }
+  /* Tailwind-only toolbar rows (`<div class="flex items-center gap-3 shrink-0">`)
+     carry no demo class to match on. Matched two levels below the demo root,
+     because these rows nest: an outer `justify-between` row that already wraps,
+     holding an inner `shrink-0` control cluster that does not. Two levels is
+     still demo chrome and never reaches a grid cell renderer, where the same
+     utilities are everywhere and wrapping would look wrong - the grid's own
+     markup starts below `.sv-grid-root`, which is never `.flex.items-center`.
+
+     `max-width` rather than relaxing `flex-shrink`: these clusters carry
+     `shrink-0`, which pins them at max-content even once they wrap. Capping
+     the width fixes that on the horizontal axis only - overriding
+     `flex-shrink` would also let toolbars shrink VERTICALLY inside the column
+     flex roots most demos use, which is what `shrink-0` is there to prevent. */
+  .demo-page .demo-stage > section > .flex.items-center:not(.flex-col),
+  .demo-page .demo-stage > section > * > .flex.items-center:not(.flex-col) {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  /* --- 7. Fixed-px two-pane splits (46 files: `280px 1fr`, `1fr 320px`,
+     `minmax(280px,360px) 1fr`, ...). These are PANEL splits, not data grids,
+     so stacking them hides no data - which is why this is allowed under the
+     "don't reflow wide grids" rule. */
+  .demo-page .demo-stage :is(
+      .cols, .split, .layout, .shell, .two, .grid2, .lower, .smart-layout,
+      .theme-layout, .edz-layout, .mg-split, .su-grid, .pa-body, .cq-body,
+      .fs-body, .rt-body
+    ) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* --- 8. The chart-card family (demos 147, 150-165). Each is a `flex-1`
+     grid beside `<div class="shrink-0" style="width: 560-580px">`. Stack
+     rather than pan: a chart at 366px is readable, a chart panned half
+     off-screen is not.
+     `!important` HERE ONLY because the width is an inline style attribute,
+     which no selector can outrank. */
+  /* Both the root section itself (6 demos are a horizontal flex at the root,
+     e.g. `<section class="fm-shell flex flex-1 min-h-0">`) and the inner
+     split rows (26 more). */
+  .demo-page .demo-stage > section.flex:not(.flex-col),
+  .demo-page .demo-stage > section > .flex.flex-1.min-h-0 {
+    flex-direction: column;
+  }
+  .demo-page .demo-stage > section > .flex.flex-1 > .shrink-0[style*='width:'] {
+    width: 100% !important;
+    flex: 0 0 auto;
+    min-height: 260px;
+  }
+
+  /* --- 8b. The grid's built-in chart side panel (demos 353-358, 406, 125).
+     Opened with an explicit width - `charting={{ width: 460 }}` - the grid
+     DOCKS it by writing an inline `padding-right: 460px` on its own root to
+     reserve the space. On a 366px phone that pushes the root to 460px wide
+     and squeezes the actual grid to zero.
+     Undock it instead: drop the reservation and let the panel overlay the
+     full width, which is the right shape on a phone anyway.
+     `!important` on both because the grid writes them inline. */
+  .demo-page .demo-stage .sv-grid-root[style*='padding-right'] {
+    padding-right: 0 !important;
+  }
+  .demo-page .demo-stage .sv-grid-chart-panel.is-right {
+    width: 100% !important;
+  }
+
+  /* --- 8c. Fixed-width side rails. Detail panes and export previews are
+     typically `<aside>` with an explicit width plus `flex-shrink: 0`, which
+     is exactly the combination that cannot shrink on a phone. Capping them
+     to the stage is safe because `min-width` still beats `max-width` in the
+     cascade - so a demo that deliberately declares a pan floor (see
+     `data-mobile-pan`) is unaffected.
+     Deliberately NOT applied to `*`: the grid's own `<table>` MUST be allowed
+     to exceed its container, that is what makes the grid pan. */
+  .demo-page .demo-stage aside,
+  .demo-page .demo-stage :is(
+      .ex-preview, .ep-preview, .fm-detail, .cw-panel, .mg-code-card, .rw-agg-card
+    ) {
+    max-width: 100%;
+  }
+
+  /* --- 9. iOS zooms the whole page when a focused control is under 16px,
+     and then leaves the layout scrolled sideways. Every text control in the
+     demos is 12-13.5px. Excluding the grid's inline cell editor would mean
+     accepting that zoom on every cell tap, which is worse; 16px still fits
+     the default row height. */
+  .demo-page input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  .demo-page select,
+  .demo-page textarea {
+    font-size: 16px;
+  }
+}
+
+/* ============================ PHONE (<= 639px) ==========================
+   One below Tailwind's `sm`, and exactly the grid's own `responsive`
+   default breakpoint - so the grid's narrow mode and this layer engage
+   together instead of fighting in a band. */
+@media (max-width: 639px) {
+  /* --- 10. KPI / stat strips go 2-up. Strips are written both ways in the
+     corpus - some are `display: grid` with `repeat(5, 1fr)`, some are a
+     `display: flex` row - so set both properties. Each is inert on the box
+     type it doesn't apply to, which is also why the broad substring match is
+     safe: it silently no-ops on `.kpi-label` and `.kpi-value` and only bites
+     on the actual strips. */
+  .demo-page .demo-stage [class*='kpi'],
+  .demo-page .demo-stage [class*='-strip'],
+  .demo-page .demo-stage :is(.kpis, .stats, .tiles, .metrics, .kpi-row, .dash-top) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
+  }
+
+  /* Note on multi-column forms: `SvForm` writes `--cols` as an INLINE style,
+     which no stylesheet rule can outrank without `!important`. Left alone on
+     purpose - the only counts used in the gallery are 1 and 2, and a 2-column
+     form measures 139px per field at 390px, which reads fine. The date-time
+     picker that used to overflow such a cell is handled below instead. */
+
+  /* --- 10b. UI-kit editors declare comfortable fixed widths (e.g. the
+     date-time picker is 240px). Those are fine on their own but overflow a
+     narrow form cell, so let them shrink to whatever the cell gives them. */
+  .demo-page .demo-stage :is(.sv-dtp, .sv-dp, .sv-tp, .sv-daterange) {
+    width: 100%;
+    max-width: 100%;
+  }
+  /* Same for the shared field/combo/dropdown shells, which carry `--sm`/`--md`
+     /`--lg` size classes or a flat width (`.sv-ddl` is 200px) that resolve to
+     fixed pixel widths. The dropdown only showed up at 360px, not 390 - these
+     sit close enough to the edge that the extra 30px decides it. */
+  .demo-page .demo-stage :is(.sv-field__control, .sv-combo, .sv-ddl) {
+    max-width: 100%;
+  }
+
+  /* --- 10c. Range calendars. `SvCalendar` lays its months out in a row with
+     `grid-template-columns: repeat(7, 34px)` per month (238px each) plus a
+     118px presets rail, so a two-month range picker needs ~610px. `.sv-cal__view`
+     hides its overflow, so on a phone the second month was silently cut off
+     rather than being scrollable. Stack instead: presets above, months below,
+     each month then fits 366px at its natural size. */
+  .demo-page .demo-stage .sv-cal {
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+  }
+  .demo-page .demo-stage .sv-cal__presets {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-self: stretch;
+    padding-inline-end: 0;
+    border-inline-end: 0;
+    padding-block-end: 6px;
+    border-block-end: 1px solid var(--sg-border, #e2e8f0);
+  }
+  .demo-page .demo-stage .sv-cal__panels {
+    flex-direction: column;
+  }
+
+  /* --- 10d. Sparklines and gauges take an explicit pixel width prop (e.g.
+     `width={220}`) and render a viewBox'd svg, so they scale perfectly - they
+     just need permission to. Without this a 220px sparkline overflows the
+     ~166px card it sits in once the KPI strip goes 2-up above. */
+  .demo-page .demo-stage :is(.sv-spark, .sv-gauge__svg) {
+    max-width: 100%;
+  }
+
+  /* --- 11. Touch targets on DEMO-AUTHORED buttons. Apple HIG is 44px, WCAG
+     2.2 SC 2.5.8 is 24px. `min-height` only, so nothing reflows sideways.
+
+     Deliberately excludes `sv-*` classes, i.e. everything the grid and UI kit
+     ship. A blanket `button { min-height: 40px }` stretched the grid's own
+     row-selection checkbox from 16x16 to 16x40 - shipped components size their
+     controls precisely and a demo stylesheet must not second-guess that.
+     Making those hit 44px is a product decision for the grid package itself,
+     not something to force from the demo layer. */
+  .demo-page .demo-stage button:not([class*='sv-']),
+  .demo-page .demo-stage [role='button']:not([class*='sv-']),
+  .demo-page .st-btn,
+  .demo-page .st-tab {
+    min-height: 40px;
+  }
+
+  /* --- 12. Studio layer. `studio-theme.css` is a GLOBAL class layer
+     imported by the shared SvGridStudio.svelte wrapper, so this one block
+     covers every Studio demo at once instead of 9+ per-demo edits. */
+  .demo-page .st {
+    gap: 12px;
+  }
+  .demo-page .st__title {
+    font-size: 17px;
+  }
+  .demo-page .st__sub {
+    font-size: 12.5px;
+  }
+
+  /* --- 13. Spreadsheet chrome (demos 207-212). Likewise already a shared
+     global block in examples/src/index.css, so one rule set covers all six.
+     `.fx-suggest` is absolutely positioned at `left: 70px`, which pushes it
+     off a 390px screen. */
+  .demo-page .sheet-demo .fx {
+    flex-wrap: wrap;
+  }
+  .demo-page .sheet-demo .fx-suggest {
+    left: 8px;
+    right: 8px;
+  }
+  .demo-page .sheet-demo .bs-title {
+    font-size: 17px;
+  }
+  .demo-page .sheet-demo .bs-sub {
+    font-size: 12px;
+  }
+}
+
+/* ======================== LANDSCAPE PHONE (short + touch) ================
+   A phone on its side is 844x390. It matches NEITHER width block above, so
+   none of the layout rules apply - yet the demos are still on a phone, and
+   the sweep found 26 of them pushing content off the right edge where it was
+   silently clipped by the shell.
+
+   Rather than re-run the whole narrow layer at 844px wide (which would stack
+   panels that comfortably fit there), give landscape the same CONTAINED PAN
+   the narrow block uses: an over-wide demo slides inside its own stage and
+   the page itself stays put. That keeps every demo reachable without
+   second-guessing a layout that has the room.
+
+   `pointer: coarse` is load-bearing - a short desktop window has a fine
+   pointer and never matches, so desktop rendering is untouched. */
+@media (max-height: 500px) and (pointer: coarse) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  @supports (overflow-x: clip) {
+    html,
+    body {
+      overflow-x: clip;
+    }
+  }
+
+  .demo-page .demo-stage.is-wide {
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}

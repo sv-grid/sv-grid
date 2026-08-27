@@ -144,4 +144,16 @@
   .totals dt { color: var(--sg-muted, #64748b); margin: 0; }
   .totals dd { margin: 0; font-variant-numeric: tabular-nums; }
   .copy { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 13px; }
+
+  /* Mobile: the line row's fixed tracks (78 + 120 + 90 + 32) plus four 10px
+     gaps need 360px, which is more than the ~304px a phone gives the card - so
+     the description column collapsed to nothing and the row-action button hung
+     off the edge. Tighten the tracks and the gap to fit, keeping all five
+     columns so the row still reads as an invoice line. */
+  @media (max-width: 767px) {
+    .lrow {
+      grid-template-columns: minmax(0, 1fr) 44px 64px 56px 32px;
+      gap: 6px;
+    }
+  }
 </style>

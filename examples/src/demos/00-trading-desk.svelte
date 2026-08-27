@@ -1573,4 +1573,15 @@
   :global(.td-pnl) {
     font-weight: 700;
   }
+
+  /* Landscape phone: the notification badge hangs 6px outside its bell button
+     (`right: -6px`), and in landscape that button sits flush with the right
+     edge of the demo stage - so the badge was the one thing on this demo
+     getting clipped. Tuck it inside the button; it still reads as a badge. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .td-bell-badge {
+      top: -4px;
+      right: 0;
+    }
+  }
 </style>

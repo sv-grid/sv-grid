@@ -340,4 +340,14 @@ $: filtered = deals.filter(d =>
     padding: 12px 14px;
     overflow: auto;
   }
+
+  /* Mobile: the code row is `repeat(auto-fit, minmax(380px, 1fr))`. `auto-fit`
+     collapses to a single column on a phone, but the 380px floor is still
+     wider than the ~366px available, so the cards hung over the edge. Drop the
+     floor - the `<pre>` inside already scrolls its own long lines. */
+  @media (max-width: 767px) {
+    .mg-code-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 </style>

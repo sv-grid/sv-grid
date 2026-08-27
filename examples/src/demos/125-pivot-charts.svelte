@@ -545,4 +545,15 @@
     box-shadow: inset 3px 0 0 var(--sg-accent, #2563eb);
     background: color-mix(in srgb, var(--sg-accent, #6366f1) 16%, transparent) !important;
   }
+
+  /* Mobile: the chart rail is a fixed 520px and `flex-shrink: 0`, so it hung
+     off the side of a phone. The shared layer already stacks the split; the
+     rail just needs to stop insisting on its desktop width. Charts read fine
+     full-width stacked under the cube. */
+  @media (max-width: 767px) {
+    .ch-charts {
+      width: 100%;
+      flex-shrink: 1;
+    }
+  }
 </style>

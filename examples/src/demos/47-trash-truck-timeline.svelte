@@ -377,7 +377,7 @@
 
 <!-- ───────────────────── LAYOUT ───────────────────── -->
 
-<section class="tk-shell flex flex-col flex-1 min-h-0 gap-3">
+<section class="tk-shell flex flex-col flex-1 min-h-0 gap-3" data-mobile-pan>
   <!-- KPI strip -->
   <div class="tk-kpi-strip">
     <div class="tk-kpi">
@@ -740,5 +740,16 @@
     border-color: transparent;
     background: var(--sg-accent, #2563eb);
     color: var(--sg-on-accent, #fff);
+  }
+
+  /* Mobile: `.tk-axis-wrap` hides its overflow, so the ~830px route timeline
+     was silently cut off at ~366px on a phone. Floor the whole shell rather
+     than scrolling the axis alone - the axis and the truck rows must pan
+     together to stay aligned. The stage then becomes a contained scroller
+     (see .demo-stage.is-wide in examples/src/mobile.css). */
+  @media (max-width: 767px) {
+    .tk-shell {
+      min-width: 860px;
+    }
   }
 </style>

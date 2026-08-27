@@ -217,7 +217,7 @@
 
 <!-- ───────────────────── LAYOUT ───────────────────── -->
 
-<section class="gc-shell flex flex-col flex-1 min-h-0 gap-3">
+<section class="gc-shell flex flex-col flex-1 min-h-0 gap-3" data-mobile-pan>
   <!-- KPI strip -->
   <div class="gc-kpi-strip">
     <div class="gc-kpi">
@@ -498,5 +498,18 @@
     top: 0; bottom: 0;
     border-left: 2px dashed var(--sg-accent, #2563eb);
     pointer-events: none;
+  }
+
+  /* Mobile: the timeline axis is ~990px wide and `.gc-axis-wrap` hides its
+     overflow, so on a phone the chart was silently cut off at ~366px.
+     Give the whole shell a floor instead of scrolling the axis on its own -
+     the axis and the task bars have to pan together or the bars stop lining
+     up with their dates. The shell measures wide, so the demo stage becomes
+     a contained scroller (see .demo-stage.is-wide in examples/src/mobile.css)
+     and the gantt pans as one piece while the page stays put. */
+  @media (max-width: 767px) {
+    .gc-shell {
+      min-width: 900px;
+    }
   }
 </style>

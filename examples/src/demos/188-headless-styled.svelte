@@ -160,4 +160,16 @@
 
   .hs-note { font-size: 12.5px; color: var(--sg-muted, #64748b); margin: 0; }
   .hs-note strong { color: var(--sg-accent, #6366f1); }
+
+  /* Mobile: the table is `width: 100%`, but `table-layout: auto` will not
+     shrink a table below its min-content - and the four columns need ~336px
+     against the ~328px a 360px phone leaves. The `hs-bordered` preset hides
+     the overflow, so the last column's border was shaved off rather than
+     being reachable. Let it pan inside the bordered box instead, the same
+     contained-scroll treatment the grid demos get. */
+  @media (max-width: 767px) {
+    .hs-table {
+      overflow-x: auto;
+    }
+  }
 </style>

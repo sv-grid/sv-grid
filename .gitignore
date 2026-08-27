@@ -120,3 +120,7 @@ tools/measure-bundle.mjs
 # here. NOT to be confused with skills/svgrid/ and AGENTS.md, which are
 # deliberate, user-facing AI grounding surfaces and stay tracked.
 memory/
+
+# Local report from `pnpm audit:mobile` (tools/audit-mobile.mjs). Regenerated
+# on every run; useful while working, not worth tracking.
+mobile-audit*.json

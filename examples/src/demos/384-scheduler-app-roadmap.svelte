@@ -199,7 +199,7 @@
   {/if}
 {/snippet}
 
-<section class="rm">
+<section class="rm" data-mobile-pan>
   <aside class="rm-nav">
     <header class="rm-brand"><span class="rm-brand-mark">🗺</span><span><span class="rm-brand-name">Roadmap</span><span class="rm-brand-sub">Portfolio planning</span></span></header>
 
@@ -401,4 +401,15 @@
   .rm-ev-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rm-ev-owner { font-size: 0.74em; opacity: 0.85; flex: none; }
   .rm-ev-prog { display: block; width: 70px; }
+
+  /* Mobile: this is an app-shell console - a fixed 230px nav rail beside the
+     scheduler - and the root hides its overflow, so on a phone the right-hand
+     side was silently cut off. Floor it and let the whole console pan inside
+     the demo stage (see .demo-stage.is-wide in examples/src/mobile.css), which
+     keeps the rail and the timeline aligned. */
+  @media (max-width: 767px) {
+    .rm {
+      min-width: 900px;
+    }
+  }
 </style>

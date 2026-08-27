@@ -41,6 +41,45 @@ path - see [src/demos/community/README.md](src/demos/community/README.md).
 - [`src/shared/seed.ts`](src/shared/seed.ts) - deterministic `makePeople()` and `makeWidePeople()` fixtures (Mulberry32 PRNG).
 - [`src/shared/registry.ts`](src/shared/registry.ts) - demo list driving the sidebar.
 - [`src/index.css`](src/index.css) - shared theme tokens (`--sg-*`) plus pill / sparkbar / focus-ring helpers.
+- [`src/mobile.css`](src/mobile.css) - the phone/tablet layer, shared with the website. See below.
+
+## Mobile
+
+Demos are written desktop-first. `src/mobile.css` adapts them at 767px and
+639px and is imported by **both** this gallery and the website, so one edit
+covers both surfaces.
+
+Its hard rule: **every declaration lives inside a `max-width` media query**, so
+desktop rendering is untouched. `node tools/check-mobile-css.mjs` enforces that
+and runs as part of `pnpm lint`.
+
+Most demos need nothing - the shared layer handles collapsing KPI strips,
+wrapping toolbars, stacking fixed-px panel splits, and letting flex rows shrink.
+A demo that genuinely cannot fit a phone (a gantt canvas, a scheduler console)
+keeps its desktop layout and **pans inside the demo stage** instead of being cut
+off. Opt in from the demo's own `<style>`, and tag the element so the audit
+knows the overflow is deliberate:
+
+```svelte
+<section class="gc-shell ..." data-mobile-pan>
+...
+@media (max-width: 767px) {
+  .gc-shell { min-width: 900px; }
+}
+```
+
+Check your work:
+
+```bash
+pnpm dev                    # gallery on :5174
+pnpm audit:mobile           # sweeps every demo at 390x844
+pnpm audit:mobile http://localhost:5174 45-gantt-chart   # or just one
+pnpm test:e2e:mobile        # the phone-viewport regression gate
+```
+
+`audit:mobile` fails if the page can scroll sideways, and separately lists
+content that an ancestor clips - correct for a carousel track, silent data loss
+for anything the reader needs.
 
 ## Layout
 
@@ -50,6 +89,7 @@ examples/
 │  ├─ App.svelte         # sidebar + hash router
 │  ├─ main.ts            # entry
 │  ├─ index.css          # shared tokens & helper classes
+│  ├─ mobile.css         # phone/tablet layer (also imported by the website)
 │  ├─ demos/             # one .svelte file per example
 │  │  ├─ community/      # community-contributed demos
 │  │  └─ prompts/        # generated AI prompt sidecars

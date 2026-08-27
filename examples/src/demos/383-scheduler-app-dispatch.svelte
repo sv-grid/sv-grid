@@ -216,7 +216,7 @@
   </span>
 {/snippet}
 
-<section class="dp">
+<section class="dp" data-mobile-pan>
   <aside class="dp-nav">
     <header class="dp-brand"><span class="dp-brand-mark">📡</span><span><span class="dp-brand-name">Dispatch</span><span class="dp-brand-sub">Field ops console</span></span></header>
 
@@ -399,4 +399,15 @@
   .dp-ev-sla { flex: none; font-size: 0.64em; font-weight: 700; padding: 1px 5px; border-radius: 999px; background: color-mix(in srgb, #fff 82%, transparent); color: #334155; border: 1px solid color-mix(in srgb, #000 12%, transparent); }
   .dp-ev-sla-warn { background: #fef3c7; color: #92400e; border-color: transparent; }
   .dp-ev-sla-bad { background: #dc2626; color: #fff; border-color: transparent; }
+
+  /* Mobile: this is an app-shell console - a fixed 230px nav rail beside the
+     scheduler - and the root hides its overflow, so on a phone the right-hand
+     side was silently cut off. Floor it and let the whole console pan inside
+     the demo stage (see .demo-stage.is-wide in examples/src/mobile.css), which
+     keeps the rail and the timeline aligned. */
+  @media (max-width: 767px) {
+    .dp {
+      min-width: 900px;
+    }
+  }
 </style>

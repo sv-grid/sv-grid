@@ -198,6 +198,49 @@
     mobileNavOpen = false
   })
 
+  // Mobile: blurbs run to ~580 chars, which wraps to 10-20 lines on a phone
+  // and - because the header is shrink-0 and the stage is flex-1 - starves the
+  // demo of height. The mobile layer clamps it to two lines; this toggle keeps
+  // the full text reachable, since the blurb IS the demo's documentation.
+  let blurbOpen = $state(false)
+  $effect(() => {
+    current.id
+    blurbOpen = false
+  })
+
+  // Mobile: the stage becomes a horizontal pan container ONLY when its content
+  // genuinely doesn't fit. This is measured, not guessed, because `overflow-x`
+  // forces `overflow-y` to compute to `auto` - so making the stage a scroller
+  // unconditionally would clip the absolutely-positioned popovers that ~49
+  // demos own (the grid's own popovers portal to <body>, so they're fine).
+  // Keeping it `overflow: visible` for the demos that DO fit avoids that.
+  // Inert on desktop: no rule references `.is-wide` outside the mobile layer.
+  let stageEl = $state(null)
+  let stageWide = $state(false)
+  $effect(() => {
+    current.id // re-measure when the demo changes
+    const el = stageEl
+    if (!el) return
+    const measure = () => {
+      stageWide = el.scrollWidth > el.clientWidth + 1
+    }
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    measure()
+    // ResizeObserver only fires on the observed BOXES, so content that grows
+    // past the stage without changing them - an absolutely-positioned badge, a
+    // late async render - never triggers a re-measure and the demo silently
+    // loses that content. Two cheap follow-ups catch it.
+    const raf = requestAnimationFrame(measure)
+    const late = [setTimeout(measure, 400)]
+    return () => {
+      ro.disconnect()
+      cancelAnimationFrame(raf)
+      late.forEach(clearTimeout)
+    }
+  })
+
   // ---- Smart demo search -------------------------------------------------
   // Matches across title, blurb, category, and id. Scores each demo so a
   // title hit beats a blurb-deep mention; multi-token queries treat each
@@ -555,7 +598,7 @@
 
   <main class="flex flex-col flex-1 overflow-x-hidden min-h-0" class:p-6={!fullscreen}>
     {#if !fullscreen}
-    <header class="mb-5 flex shrink-0 items-start justify-between gap-4">
+    <header class="demo-head mb-5 flex shrink-0 items-start justify-between gap-4">
       <div class="flex items-start gap-2 min-w-0">
         <button
           type="button"
@@ -568,21 +611,34 @@
           </svg>
         </button>
         <div class="min-w-0">
-          <h2 class="text-2xl font-semibold">{current.title}</h2>
-          <p class="text-slate-600 dark:text-slate-300">{current.blurb}</p>
+          <h2 class="demo-head-title text-2xl font-semibold">{current.title}</h2>
+          <p class="demo-head-blurb text-slate-600 dark:text-slate-300" class:is-open={blurbOpen}>
+            {current.blurb}
+          </p>
+          <button
+            type="button"
+            class="demo-head-more"
+            aria-expanded={blurbOpen}
+            onclick={() => (blurbOpen = !blurbOpen)}
+          >
+            {blurbOpen ? 'Less' : 'More'}
+          </button>
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-2">
         <button
           type="button"
           onclick={() => (fullscreen = true)}
-          class="hidden md:inline-flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+          class="inline-flex items-center gap-1.5 rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
           title="Full screen (hide sidebar)"
+          aria-label="Full screen"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />
           </svg>
-          Full screen
+          <!-- Icon-only below md: full screen is the mode that helps most on a
+               phone, but the label costs width the header cannot spare. -->
+          <span class="hidden md:inline">Full screen</span>
         </button>
         <button
           type="button"
@@ -598,8 +654,29 @@
       </div>
     </header>
     {/if}
-    <div class="flex flex-col flex-1 min-h-0 relative">
+    <div
+      bind:this={stageEl}
+      class="demo-stage flex flex-col flex-1 min-h-0 relative"
+      class:is-wide={stageWide}
+    >
       {#if fullscreen}
+        <!-- Fullscreen unmounts the header, and with it the hamburger - so on
+             mobile there would be no route back to the demo list. The <aside>
+             is unmounted here too, so this has to leave fullscreen as well as
+             open the drawer. Hidden at md+, where the sidebar is always up. -->
+        <button
+          type="button"
+          onclick={() => {
+            fullscreen = false
+            mobileNavOpen = true
+          }}
+          class="demo-fs-menu md:hidden absolute left-3 top-3 z-50 inline-flex h-11 w-11 items-center justify-center rounded-md border border-slate-300 bg-white/90 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/90"
+          aria-label="Open menu"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
         <button
           type="button"
           onclick={() => (fullscreen = false)}
@@ -628,8 +705,138 @@
 {/if}
 
 <style>
+  /* The blurb "More" toggle exists only for the mobile clamp below, so it is
+     hidden by default - desktop renders exactly as it did before it existed. */
+  .demo-head-more {
+    display: none;
+  }
+
+  /* The header clamp applies on a narrow screen AND on a SHORT touch screen -
+     a phone held in landscape is 844x390, so it never matches `max-width:
+     767px`, yet it is where the header does the most damage: the blurb wrapped
+     to 440px inside a 390px-tall viewport, leaving the demo exactly 0px. The
+     header is `shrink-0` and the stage is `flex-1`, so the stage absorbs all
+     of it.
+
+     `pointer: coarse` is what keeps the desktop promise intact. A short window
+     on a desktop has a fine pointer and never matches; only a touch device
+     does. Deliberately does NOT include the drawer rules below - the hamburger
+     is `md:hidden`, so turning the sidebar into a drawer at 844px wide would
+     hide it with no way to open it. */
+  @media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+    .demo-head {
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+    }
+    .demo-head-title {
+      font-size: 1.125rem;
+      line-height: 1.3;
+    }
+    .demo-head-blurb {
+      font-size: 0.8125rem;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+    .demo-head-blurb.is-open {
+      -webkit-line-clamp: unset;
+    }
+    .demo-head-more {
+      display: inline-block;
+      padding: 2px 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sg-accent, #2563eb);
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+  }
+  /* Landscape phone (~390px tall) is the tightest case there is, so it gets a
+     harder trim than portrait: one blurb line instead of two, and a title kept
+     to a single line. The action buttons sit beside the title and squeeze its
+     column, which was wrapping the title to three lines - 94px of a 390px
+     screen spent on a heading. Ellipsis rather than wrap, since the full title
+     is already in the sidebar and the page title. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .demo-page main {
+      padding: 10px;
+    }
+    .demo-head-title {
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .demo-head-blurb {
+      -webkit-line-clamp: 1;
+    }
+    .demo-head-blurb.is-open {
+      -webkit-line-clamp: unset;
+    }
+  }
+
+  /* Landscape phone: give the demo the sidebar's 288px back.
+     At 844x390 the sidebar is still in flow, so the stage is only 536px - well
+     inside "narrow" territory - while every width-based rule keys off the
+     844px VIEWPORT and therefore never fires. That mismatch is what left
+     345-ops-dashboard's figures and 403-alert-console-navpane's toolbar
+     clipped. Drawering the sidebar takes the stage to 824px, which is the
+     canvas these demos were drawn for.
+
+     Unlike the portrait drawer this must also force the hamburger visible: it
+     carries Tailwind's `md:hidden`, and 844px is above `md`. A plain rule wins
+     because Tailwind's utilities are in `@layer utilities` and this is not.
+     Same for the backdrop, whose `min-width: 768px` hide rule sits above -
+     equal specificity, later in source, so this wins. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .demo-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 40;
+      width: 60vw;
+      max-width: 320px;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      background: var(--sg-bg, #fff);
+    }
+    .demo-sidebar.is-open {
+      transform: translateX(0);
+      box-shadow: 0 12px 48px rgba(15, 23, 42, 0.35);
+    }
+    .demo-hamburger {
+      display: inline-flex;
+    }
+    .demo-backdrop {
+      display: block;
+    }
+  }
+
   /* Mobile: the sidebar slides in as an off-canvas drawer over the demo. */
   @media (max-width: 767px) {
+    /* 100vh on iOS is the LARGE viewport, so the URL bar clips the bottom of
+       every demo. Scoped to a media query rather than swapping h-screen for
+       h-dvh so the desktop rule is provably untouched. */
+    .demo-page {
+      height: 100dvh;
+    }
+
+    /* Touch targets: the hamburger is 32px and the search clear is 22px,
+       both under the 44px guideline. */
+    .demo-hamburger {
+      height: 44px;
+      width: 44px;
+    }
+    .demo-search-input {
+      font-size: 16px; /* under 16px makes iOS zoom the page on focus */
+    }
+    .demo-search-clear {
+      width: 32px;
+      height: 32px;
+    }
+
     .demo-sidebar {
       position: fixed;
       inset: 0 auto 0 0;

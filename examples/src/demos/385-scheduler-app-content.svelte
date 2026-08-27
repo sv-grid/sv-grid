@@ -202,7 +202,7 @@
   </div>
 {/snippet}
 
-<section class="ct">
+<section class="ct" data-mobile-pan>
   <aside class="ct-nav">
     <header class="ct-brand"><span class="ct-brand-mark">📣</span><span><span class="ct-brand-name">Broadcast</span><span class="ct-brand-sub">Content command center</span></span></header>
 
@@ -364,4 +364,15 @@
   .ct-card-owner { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--sg-muted, #6b7280); }
   .ct-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .ct-card-reach { font-size: 0.72rem; font-weight: 600; color: var(--sg-muted, #6b7280); }
+
+  /* Mobile: this is an app-shell console - a fixed 230px nav rail beside the
+     scheduler - and the root hides its overflow, so on a phone the right-hand
+     side was silently cut off. Floor it and let the whole console pan inside
+     the demo stage (see .demo-stage.is-wide in examples/src/mobile.css), which
+     keeps the rail and the timeline aligned. */
+  @media (max-width: 767px) {
+    .ct {
+      min-width: 900px;
+    }
+  }
 </style>

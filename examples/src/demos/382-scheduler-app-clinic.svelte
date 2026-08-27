@@ -170,7 +170,7 @@
   </span>
 {/snippet}
 
-<section class="mc">
+<section class="mc" data-mobile-pan>
   <!-- LEFT rail -->
   <aside class="mc-rail">
     <header class="mc-brand"><span class="mc-brand-mark">✚</span><span><span class="mc-brand-name">Meridian Clinic</span><span class="mc-brand-sub">Front desk console</span></span></header>
@@ -370,4 +370,15 @@
   .mc-wl-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mc-wl-dur { font-size: 0.7rem; color: var(--sg-muted, #6b7280); flex: none; }
   .mc-wl-hint { margin-top: 8px; font-size: 0.7rem; color: var(--sg-muted, #9ca3af); font-style: italic; }
+
+  /* Mobile: this is an app-shell console - a fixed 230px nav rail beside the
+     scheduler - and the root hides its overflow, so on a phone the right-hand
+     side was silently cut off. Floor it and let the whole console pan inside
+     the demo stage (see .demo-stage.is-wide in examples/src/mobile.css), which
+     keeps the rail and the timeline aligned. */
+  @media (max-width: 767px) {
+    .mc {
+      min-width: 900px;
+    }
+  }
 </style>
