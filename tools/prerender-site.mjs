@@ -32,6 +32,11 @@ const DIST = join(ROOT, 'website', 'dist')
 const PUBLIC = join(ROOT, 'website', 'public')
 
 const BASE = process.env.SVGRID_SITE_BASE ?? '/' // "/" (custom domain) or "/sv-grid/"
+// INVARIANT: every crawlable href and every JSON-LD item/url below ends in a
+// slash. The sitemap and each page canonical use the slash form, and GitHub
+// Pages 301s the slash-less form to it - so emitting the short form pointed
+// every crawled link at a redirect and got both variants indexed (165
+// duplicate pairs, 54% of page impressions, in the 2026-08-27 GSC export).
 const ORIGIN = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'
 const CANON = ORIGIN + BASE.replace(/\/$/, '') // "https://svgrid.com"
 const SITE_HOST = ORIGIN.replace(/^https?:\/\//, '') // "svgrid.com"
@@ -195,8 +200,33 @@ function resolveMdLink(href, currentSlug, knownSlugs) {
     segs = baseSegs
   }
   const slug = segs.join('/')
-  if (knownSlugs.has(slug)) return `${BASE}docs/${slug}${tail}`
+  if (knownSlugs.has(slug)) return `${BASE}docs/${slug}/${tail}`
   return href
+}
+
+/**
+ * Point a markdown link at the canonical URL form. Content files still carry
+ * legacy `#/demos/x` hash routes and slash-less `/blog/x` paths. Both resolve
+ * for a human - one via a client-side rewrite, one via a GitHub Pages 301 -
+ * but a crawler banks the non-canonical variant it was handed, which is how
+ * 165 duplicate pairs and 7 `#/` URLs ended up indexed. External links,
+ * in-page anchors and asset paths pass through untouched.
+ */
+function canonicalizeSiteLink(href) {
+  if (!href) return href
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) return href // external or protocol-relative
+  const h = href.startsWith('#/') ? BASE + href.slice(2) : href
+  if (!h.startsWith(BASE)) return href // in-page anchor (#section) or relative
+  let cut = h.length
+  for (const mark of ['#', '?']) {
+    const at = h.indexOf(mark)
+    if (at !== -1 && at < cut) cut = at
+  }
+  const path = h.slice(0, cut)
+  const tail = h.slice(cut)
+  if (path.endsWith('/')) return h
+  if (/\.[a-z0-9]{2,5}$/i.test(path)) return h // asset: .png, .txt, .zip
+  return path + '/' + tail
 }
 
 // Unescape a single-quoted JS string literal's body.
@@ -294,6 +324,56 @@ async function readDemoSource(id) {
   }
 }
 
+/**
+ * Slice a bracketed literal starting at `open` (the index of its `[`),
+ * honouring quoted strings so a `[` inside a string does not skew the depth.
+ */
+function sliceArrayLiteral(src, open) {
+  let depth = 0
+  let quote = null
+  for (let i = open; i < src.length; i += 1) {
+    const ch = src[i]
+    if (quote) {
+      if (ch === '\\') i += 1
+      else if (ch === quote) quote = null
+      continue
+    }
+    if (ch === "'" || ch === '"' || ch === '`') { quote = ch; continue }
+    if (ch === '[') depth += 1
+    else if (ch === ']') {
+      depth -= 1
+      if (depth === 0) return src.slice(open, i + 1)
+    }
+  }
+  return ''
+}
+
+/** Pull `key: [ 'a', 'b' ]` out of a comparison chunk as a string array. */
+function parseStringArray(chunk, key) {
+  const at = chunk.search(new RegExp('\\b' + key + ':\\s*\\['))
+  if (at === -1) return []
+  const block = sliceArrayLiteral(chunk, chunk.indexOf('[', at))
+  const out = []
+  const re = /'((?:\\.|[^'\\])*)'/g
+  let m
+  while ((m = re.exec(block))) out.push(unesc(m[1]))
+  return out
+}
+
+/** Pull the `features: [{ feature, svgrid, competitor }]` matrix. */
+function parseFeatureRows(chunk) {
+  const at = chunk.search(/\bfeatures:\s*\[/)
+  if (at === -1) return []
+  const block = sliceArrayLiteral(chunk, chunk.indexOf('[', at))
+  const out = []
+  const re = /feature:\s*'((?:\\.|[^'\\])*)'\s*,\s*svgrid:\s*'((?:\\.|[^'\\])*)'\s*,\s*competitor:\s*'((?:\\.|[^'\\])*)'/g
+  let m
+  while ((m = re.exec(block))) {
+    out.push({ feature: unesc(m[1]), svgrid: unesc(m[2]), competitor: unesc(m[3]) })
+  }
+  return out
+}
+
 /** Parse the comparison entries (slug + competitor + tagline + verdict). */
 async function parseComparisons() {
   const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'comparisons.ts'), 'utf-8')
@@ -320,6 +400,13 @@ async function parseComparisons() {
       oneLineVerdict: verdict ? unesc(verdict[1]) : '',
       bottomLine: bottom ? unesc(bottom[1]) : '',
       migrationSlug: mig ? mig[1] : '',
+      intro: parseStringArray(chunk, 'intro'),
+      similarities: parseStringArray(chunk, 'similarities'),
+      svgridAdvantages: parseStringArray(chunk, 'svgridAdvantages'),
+      competitorAdvantages: parseStringArray(chunk, 'competitorAdvantages'),
+      whenToChooseSvGrid: parseStringArray(chunk, 'whenToChooseSvGrid'),
+      whenToChooseCompetitor: parseStringArray(chunk, 'whenToChooseCompetitor'),
+      features: parseFeatureRows(chunk),
       faq,
     })
   }
@@ -442,8 +529,8 @@ function homeCrawlBody(faq) {
   html += '<h1>SvGrid - the Svelte 5 data grid</h1>'
   html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 370+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, import, print, pivot tables, the Kanban board and scheduler views, and no-code alert rules.</p>'
   html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
-  html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
-  html += `<p><a href="${BASE}docs/getting-started">Get started</a> &middot; <a href="${BASE}demos">Browse 370+ demos</a> &middot; <a href="${BASE}docs">Documentation</a> &middot; <a href="${BASE}compare">All comparisons</a> &middot; <a href="${BASE}blog">Blog</a> &middot; <a href="${BASE}pricing">Pricing</a></p>`
+  html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}/">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
+  html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 370+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
   if (faq.length) html += `<h2>Frequently asked questions</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
   return html + '</main>'
 }
@@ -494,7 +581,7 @@ async function parseRoadmap() {
 
 function roadmapIndexBody(roadmap) {
   const total = roadmap.groups.reduce((n, g) => n + g.items.length, 0)
-  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Roadmap - What We Are Building Next</h1><p>${total} planned features for the SvGrid Svelte 5 data grid, grouped by area, plus ${roadmap.shipped.length} recently shipped. An honest, living account - the <a href="${BASE}docs/help/missing-features">full accounting</a> lists workarounds available today.</p>`
+  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Roadmap - What We Are Building Next</h1><p>${total} planned features for the SvGrid Svelte 5 data grid, grouped by area, plus ${roadmap.shipped.length} recently shipped. An honest, living account - the <a href="${BASE}docs/help/missing-features/">full accounting</a> lists workarounds available today.</p>`
   for (const g of roadmap.groups) {
     html += `<h2>${escapeAttr(g.area)}</h2><ul>`
     for (const it of g.items) html += `<li>${escapeAttr(it.title)}${it.note ? ' - ' + escapeAttr(it.note) : ''}</li>`
@@ -525,7 +612,7 @@ function demosIndexBody(demos) {
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Demos - Svelte 5 Data Grid Examples</h1><p>${demos.length} live, editable examples covering sorting, filtering, grouping, editing, virtualization, server-side data, and more.</p>`
   for (const [cat, list] of byCat) {
     html += `<h2>${escapeAttr(cat)}</h2><ul>`
-    for (const d of list) html += `<li><a href="${BASE}demos/${d.id}">${escapeAttr(d.title)}</a> - ${escapeAttr(d.blurb)}</li>`
+    for (const d of list) html += `<li><a href="${BASE}demos/${d.id}/">${escapeAttr(d.title)}</a> - ${escapeAttr(d.blurb)}</li>`
     html += `</ul>`
   }
   return html + `</main>`
@@ -554,7 +641,7 @@ function docsIndexBody(docs) {
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Documentation</h1><p>${docs.length} topic pages for the Svelte 5 data grid: getting started, columns, rows, cells, filtering, editing, and more.</p>`
   for (const [sec, list] of bySec) {
     html += `<h2>${escapeAttr(sec)}</h2><ul>`
-    for (const d of list) html += `<li><a href="${BASE}docs/${d.slug}">${escapeAttr(d.title)}</a></li>`
+    for (const d of list) html += `<li><a href="${BASE}docs/${d.slug}/">${escapeAttr(d.title)}</a></li>`
     html += `</ul>`
   }
   return html + `</main>`
@@ -563,7 +650,7 @@ function docsIndexBody(docs) {
 function compareIndexBody(comparisons) {
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid vs Other Svelte Data Grids</h1><p>Honest, feature-by-feature comparisons.</p><ul>`
   for (const c of comparisons) {
-    html += `<li><a href="${BASE}compare/${c.slug}">SvGrid vs ${escapeAttr(c.competitor)}</a> - ${escapeAttr(c.oneLineVerdict || c.tagline)}</li>`
+    html += `<li><a href="${BASE}compare/${c.slug}/">SvGrid vs ${escapeAttr(c.competitor)}</a> - ${escapeAttr(c.oneLineVerdict || c.tagline)}</li>`
   }
   return html + `</ul></main>`
 }
@@ -574,7 +661,7 @@ function blogIndexBody(posts) {
   const pinned = posts.filter((p) => p.pinned)
   if (pinned.length) {
     html += `<h2>Featured</h2><ul>`
-    for (const p of pinned) html += `<li><a href="${BASE}blog/${p.slug}">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+    for (const p of pinned) html += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
     html += `</ul>`
   }
   // Then a section per top-level group.
@@ -582,7 +669,7 @@ function blogIndexBody(posts) {
     const inGroup = posts.filter((p) => p.group === group && !p.pinned)
     if (!inGroup.length) continue
     html += `<h2>${escapeAttr(group)}</h2><ul>`
-    for (const p of inGroup) html += `<li><a href="${BASE}blog/${p.slug}">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+    for (const p of inGroup) html += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
     html += `</ul>`
   }
   return html + `</main>`
@@ -621,7 +708,7 @@ function mcpBody() {
   html += `</ul>`
   html += `<p>The Studio generators are <code>introspect_source</code> (infer an EntitySchema from a Drizzle schema file or sample JSON rows) and <code>scaffold_entity</code> (generate runnable SvelteKit files from that schema), plus 27 <code>studio_*</code> tools that drive the same validated project model the visual designer uses: entities, screens, blocks, forms, auth, access, tenancy, data layer, deploy target, theme, and app generation.</p>`
   html += `<h2>Licensing</h2><p>The documentation tools are free and need no key. The Studio generators run unlicensed but prepend a notice comment to generated files; set <code>SVGRID_LICENSE_KEY</code> in the MCP server's environment for licensed use.</p>`
-  html += `<p><a href="${BASE}docs/help/mcp-server">MCP server documentation</a> · <a href="${BASE}docs/help/llm-grounding">LLM grounding</a> · <a href="${BASE}pricing">Pricing</a></p>`
+  html += `<p><a href="${BASE}docs/help/mcp-server/">MCP server documentation</a> · <a href="${BASE}docs/help/llm-grounding/">LLM grounding</a> · <a href="${BASE}pricing/">Pricing</a></p>`
   return html + `</main>`
 }
 
@@ -821,7 +908,7 @@ async function main() {
   function renderDoc(doc) {
     const m = new Marked({
       walkTokens(token) {
-        if (token.type === 'link') token.href = resolveMdLink(token.href, doc.slug, knownSlugs)
+        if (token.type === 'link') token.href = canonicalizeSiteLink(resolveMdLink(token.href, doc.slug, knownSlugs))
       },
     })
     m.use({
@@ -861,8 +948,8 @@ async function main() {
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
-          { '@type': 'ListItem', position: 2, name: 'Docs', item: `${CANON}/docs` },
-          { '@type': 'ListItem', position: 3, name: sectionLabel, item: `${CANON}/docs` },
+          { '@type': 'ListItem', position: 2, name: 'Docs', item: `${CANON}/docs/` },
+          { '@type': 'ListItem', position: 3, name: sectionLabel, item: `${CANON}/docs/` },
           { '@type': 'ListItem', position: 4, name: doc.title, item: url },
         ],
       },
@@ -878,7 +965,7 @@ async function main() {
       })
     }
     html = injectJsonLd(html, docGraph)
-    const article = `<main class="prerender-doc" data-prerender="1">${renderDoc(doc)}</main>`
+    const article = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}docs/">Docs</a></nav>${renderDoc(doc)}</main>`
     html = injectBody(html, article)
 
     const outDir = join(DIST, 'docs', ...doc.slug.split('/'))
@@ -916,16 +1003,16 @@ async function main() {
     let body
     if (route === 'demos') {
       body = demosIndexBody(demos)
-      html = injectJsonLd(html, collectionLd('SvGrid Demos', url, demos.map((d) => ({ name: d.title, url: `${CANON}/demos/${d.id}` }))))
+      html = injectJsonLd(html, collectionLd('SvGrid Demos', url, demos.map((d) => ({ name: d.title, url: `${CANON}/demos/${d.id}/` }))))
     } else if (route === 'docs') {
       body = docsIndexBody(docs)
-      html = injectJsonLd(html, collectionLd('SvGrid Documentation', url, docs.map((d) => ({ name: d.title, url: `${CANON}/docs/${d.slug}` }))))
+      html = injectJsonLd(html, collectionLd('SvGrid Documentation', url, docs.map((d) => ({ name: d.title, url: `${CANON}/docs/${d.slug}/` }))))
     } else if (route === 'compare') {
       body = compareIndexBody(comparisons)
-      html = injectJsonLd(html, collectionLd('SvGrid Comparisons', url, comparisons.map((c) => ({ name: `SvGrid vs ${c.competitor}`, url: `${CANON}/compare/${c.slug}` }))))
+      html = injectJsonLd(html, collectionLd('SvGrid Comparisons', url, comparisons.map((c) => ({ name: `SvGrid vs ${c.competitor}`, url: `${CANON}/compare/${c.slug}/` }))))
     } else if (route === 'blog') {
       body = blogIndexBody(blogPosts)
-      html = injectJsonLd(html, collectionLd('SvGrid Blog', url, blogPosts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}` }))))
+      html = injectJsonLd(html, collectionLd('SvGrid Blog', url, blogPosts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))))
     } else if (route === 'community') {
       body = communityIndexBody(discussionsData)
       if (discussionsData.discussions?.length) {
@@ -943,7 +1030,7 @@ async function main() {
     } else if (route === 'mcp') {
       body = mcpBody()
     } else {
-      body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs">Documentation</a> · <a href="${BASE}demos">Demos</a></p></main>`
+      body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs/">Documentation</a> · <a href="${BASE}demos/">Demos</a></p></main>`
     }
     html = injectBody(html, body)
     const outDir = join(DIST, route)
@@ -973,8 +1060,8 @@ async function main() {
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
-          { '@type': 'ListItem', position: 2, name: 'Demos', item: `${CANON}/demos` },
-          { '@type': 'ListItem', position: 3, name: d.category, item: `${CANON}/demos` },
+          { '@type': 'ListItem', position: 2, name: 'Demos', item: `${CANON}/demos/` },
+          { '@type': 'ListItem', position: 3, name: d.category, item: `${CANON}/demos/` },
           { '@type': 'ListItem', position: 4, name: d.title, item: url },
         ],
       },
@@ -984,10 +1071,10 @@ async function main() {
     const ghUrl = `https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/${d.id}.svelte`
 
     let body = `<main class="prerender-demo" data-prerender="1">`
-    body += `<nav><a href="${BASE}demos">Demos</a> / ${escapeAttr(d.category)}</nav>`
+    body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}demos/">Demos</a> / ${escapeAttr(d.category)}</nav>`
     body += `<h1>${escapeAttr(d.title)}</h1>`
     body += `<p>${escapeAttr(d.blurb)}${tier}</p>`
-    body += `<p>A live, editable Svelte 5 data grid example. <a href="${BASE}demos/${d.id}">Open the interactive demo</a> or <a href="${BASE}docs">read the documentation</a>.</p>`
+    body += `<p>A live, editable Svelte 5 data grid example. <a href="${BASE}demos/${d.id}/">Open the interactive demo</a> or <a href="${BASE}docs/">read the documentation</a>.</p>`
 
     if (pitch) {
       body += `<section><h2>What this example shows</h2>`
@@ -1005,7 +1092,7 @@ async function main() {
     if (relatedDocs.length) {
       body += `<section><h2>Related documentation</h2><ul>`
       for (const doc of relatedDocs) {
-        body += `<li><a href="${BASE}docs/${doc.slug}">${escapeAttr(doc.title)}</a></li>`
+        body += `<li><a href="${BASE}docs/${doc.slug}/">${escapeAttr(doc.title)}</a></li>`
       }
       body += `</ul></section>`
     }
@@ -1014,7 +1101,7 @@ async function main() {
     if (siblings.length) {
       body += `<section><h2>More ${escapeAttr(d.category)} examples</h2><ul>`
       for (const s of siblings) {
-        body += `<li><a href="${BASE}demos/${s.id}">${escapeAttr(s.title)}</a> - ${escapeAttr(s.blurb)}</li>`
+        body += `<li><a href="${BASE}demos/${s.id}/">${escapeAttr(s.title)}</a> - ${escapeAttr(s.blurb)}</li>`
       }
       body += `</ul></section>`
     }
@@ -1043,7 +1130,7 @@ async function main() {
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
-          { '@type': 'ListItem', position: 2, name: 'Comparisons', item: `${CANON}/compare` },
+          { '@type': 'ListItem', position: 2, name: 'Comparisons', item: `${CANON}/compare/` },
           { '@type': 'ListItem', position: 3, name: `SvGrid vs ${c.competitor}`, item: url },
         ],
       },
@@ -1059,13 +1146,40 @@ async function main() {
     }
     html = injectJsonLd(html, cmpGraph)
     const migLink = c.migrationSlug
-      ? `<p><a href="${BASE}docs/help/${c.migrationSlug}">Migration guide: moving from ${escapeAttr(c.competitor)} to SvGrid</a></p>`
+      ? `<p><a href="${BASE}docs/help/${c.migrationSlug}/">Migration guide: moving from ${escapeAttr(c.competitor)} to SvGrid</a></p>`
       : ''
     const bottom = c.bottomLine ? `<h2>The bottom line</h2><p>${escapeAttr(c.bottomLine)}</p>` : ''
     const faqHtml = c.faq && c.faq.length
       ? `<h2>Frequently asked questions</h2>${c.faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
       : ''
-    const body = `<main class="prerender-compare" data-prerender="1"><nav><a href="${BASE}compare">Comparisons</a></nav><h1>SvGrid vs ${escapeAttr(c.competitor)}</h1><p>${escapeAttr(c.oneLineVerdict || c.tagline)}</p>${migLink}<p><a href="${BASE}compare/${c.slug}">See the full feature-by-feature comparison</a>.</p>${bottom}${faqHtml}</main>`
+    // The comparison body used to stop at the verdict and link to itself for
+    // "the full feature-by-feature comparison", leaving the matrix and every
+    // pro/con list JS-only. These are the site's highest-intent pages, so the
+    // whole argument now ships as raw HTML for crawlers that do not render.
+    const list = (heading, items) =>
+      items && items.length
+        ? `<h2>${escapeAttr(heading)}</h2><ul>${items.map((i) => `<li>${escapeAttr(i)}</li>`).join('')}</ul>`
+        : ''
+    const introHtml = (c.intro ?? []).map((para) => `<p>${escapeAttr(para)}</p>`).join('')
+    const featureTable = c.features && c.features.length
+      ? `<h2>SvGrid vs ${escapeAttr(c.competitor)}: feature by feature</h2>` +
+        `<table><thead><tr><th scope="col">Feature</th><th scope="col">SvGrid</th>` +
+        `<th scope="col">${escapeAttr(c.competitor)}</th></tr></thead><tbody>` +
+        c.features.map((r) => `<tr><th scope="row">${escapeAttr(r.feature)}</th>` +
+          `<td>${escapeAttr(r.svgrid)}</td><td>${escapeAttr(r.competitor)}</td></tr>`).join('') +
+        `</tbody></table>`
+      : ''
+    const body = `<main class="prerender-compare" data-prerender="1">` +
+      `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}compare/">Comparisons</a></nav>` +
+      `<h1>SvGrid vs ${escapeAttr(c.competitor)}</h1>` +
+      `<p>${escapeAttr(c.oneLineVerdict || c.tagline)}</p>` +
+      introHtml + migLink + featureTable +
+      list('What they have in common', c.similarities) +
+      list('Where SvGrid is stronger', c.svgridAdvantages) +
+      list(`Where ${c.competitor} is stronger`, c.competitorAdvantages) +
+      list('Choose SvGrid when', c.whenToChooseSvGrid) +
+      list(`Choose ${c.competitor} when`, c.whenToChooseCompetitor) +
+      bottom + faqHtml + `</main>`
     html = injectBody(html, body)
     const outDir = join(DIST, 'compare', c.slug)
     await mkdir(outDir, { recursive: true })
@@ -1075,7 +1189,11 @@ async function main() {
 
   // 4d. Prerender each blog post (per-post SEO + the full rendered article as
   // crawlable HTML, so the tip is indexable and AI-ingestible without JS).
-  const renderMarked = new Marked()
+  const renderMarked = new Marked({
+    walkTokens(token) {
+      if (token.type === 'link') token.href = canonicalizeSiteLink(token.href)
+    },
+  })
   renderMarked.use({
     renderer: {
       heading({ tokens, depth }) {
@@ -1099,14 +1217,14 @@ async function main() {
         inLanguage: 'en', keywords: p.tags.join(', '), articleSection: p.category,
         author: { '@type': 'Person', name: p.author },
         publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
-        isPartOf: { '@type': 'Blog', name: 'SvGrid Blog', url: `${CANON}/blog` },
+        isPartOf: { '@type': 'Blog', name: 'SvGrid Blog', url: `${CANON}/blog/` },
         about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },
       },
       {
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
-          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANON}/blog` },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANON}/blog/` },
           { '@type': 'ListItem', position: 3, name: p.title, item: url },
         ],
       },
@@ -1124,7 +1242,7 @@ async function main() {
     html = injectJsonLd(html, blogGraph)
     const article = renderMarked.parse(p.markdown, { async: false })
     const hero = `<img src="${heroImg}" width="1200" height="630" alt="${escapeAttr(heroAlt)}" loading="eager" />`
-    const body = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}blog">Blog</a> / ${escapeAttr(p.category)}</nav>${hero}<h1>${escapeAttr(p.title)}</h1><p>${escapeAttr(p.description)}</p>${article}</main>`
+    const body = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / ${escapeAttr(p.category)}</nav>${hero}<h1>${escapeAttr(p.title)}</h1><p>${escapeAttr(p.description)}</p>${article}</main>`
     html = injectBody(html, body)
     const outDir = join(DIST, 'blog', p.slug)
     await mkdir(outDir, { recursive: true })
