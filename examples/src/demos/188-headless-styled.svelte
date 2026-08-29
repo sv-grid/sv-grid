@@ -47,10 +47,8 @@
       data,
       columns,
       state: { sorting },
-      onSortingChange: (u: unknown) =>
-        (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : (u as Sort[])),
-      enableSorting: true,
-    } as never),
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+    }),
   )
   const headerGroups = $derived(table.getHeaderGroups())
   const rows = $derived(table.getRowModel().rows)

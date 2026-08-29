@@ -22,6 +22,7 @@ recompute.
     createSvGrid,
     createCoreRowModel,
     createSvelteVirtualizer,
+    tableFeatures,
     type ColumnDef,
   } from '@svgrid/grid'
 
@@ -29,15 +30,17 @@ recompute.
   const data: Row[] = Array.from({ length: 100_000 }, (_, i) => ({
     id: i, name: `Item ${i}`, score: (i * 37) % 1000,
   }))
-  const columns: ColumnDef<Record<string, never>, Row>[] = [
+  const features = tableFeatures({})   // core only - nothing to sort or filter
+  const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'score', header: 'Score' },
   ]
 
   const table = createSvGrid({
+    _features: features,
     _rowModels: { coreRowModel: createCoreRowModel<Row>() },
     data, columns,
-  } as never)
+  })
   const rows = table.getRowModel().rows
 
   const ROW_H = 34

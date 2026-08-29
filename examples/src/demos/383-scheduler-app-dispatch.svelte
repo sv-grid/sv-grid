@@ -410,4 +410,11 @@
       min-width: 900px;
     }
   }
+  /* Phone: the shell hides overflow for its rounded corners, which makes its automatic
+     minimum height 0 - so as a flex item of the demo stage it shrank to the (short)
+     phone stage and clipped its lower panes. Keep the content height; the stage
+     scrolls vertically and pans sideways. */
+  @media (max-width: 767px) {
+    .dp { flex-shrink: 0; }
+  }
 </style>

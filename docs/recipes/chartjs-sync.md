@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Chart.js sync from grid filter state
 
 > Live in [demo 73-chartjs-sync](https://svgrid.com/demos/73-chartjs-sync/).

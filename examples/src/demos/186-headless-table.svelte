@@ -57,13 +57,9 @@
       data,
       columns,
       state: { sorting, columnFilters },
-      onSortingChange: (u: unknown) =>
-        (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : (u as Sort[])),
-      onColumnFiltersChange: (u: unknown) =>
-        (columnFilters = typeof u === 'function' ? (u as (f: Filter[]) => Filter[])(columnFilters) : (u as Filter[])),
-      enableSorting: true,
-      enableColumnFilters: true,
-    } as never),
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+      onColumnFiltersChange: (u) => (columnFilters = typeof u === 'function' ? u(columnFilters) : u),
+    }),
   )
 
   const headerGroups = $derived(table.getHeaderGroups())

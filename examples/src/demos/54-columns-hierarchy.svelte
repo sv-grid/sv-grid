@@ -755,4 +755,9 @@
   :global(.ch-sum) { display: inline-flex; flex-direction: column; line-height: 1.2; min-width: 0; }
   :global(.ch-sum-strong) { font-weight: 700; }
   :global(.ch-sum-faint) { font-size: 11px; color: var(--sg-muted, #64748b); }
+  /* Phone: the column groups are hidden-overflow flex children of the tree, which is
+     the scroller - they shrank to their header instead of letting the tree scroll. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .ch-group { flex-shrink: 0; }
+  }
 </style>

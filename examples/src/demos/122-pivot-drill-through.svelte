@@ -352,4 +352,15 @@
     border-top: 1px solid var(--sg-border, #e2e8f0);
     font-size: 11px; color: var(--sg-muted, #64748b);
   }
+  /* Phone: the pivot wrapper hides overflow for its open/close animation, which clipped
+     the (now content-sized) designer. Let it take its height; the drill rail scrolls. */
+  @media (max-width: 639px) {
+    .dt-pivot-wrap { flex: none; overflow: visible; }
+    .dt-rail { width: auto; max-height: 60vh; overflow-y: auto; }
+  }
+  /* Landscape phone: the split stays a ROW here (844px is wide enough), so the portrait
+     fix - sizing the wrapper to content - would set its WIDTH. Let it scroll instead. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .dt-pivot-wrap { overflow-y: auto; }
+  }
 </style>

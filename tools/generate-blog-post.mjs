@@ -3,7 +3,15 @@
  * Blog post generator + regenerator for the SvGrid website.
  *
  * Modes:
- *   node tools/generate-blog-post.mjs                 # write a new post at the end of the queue
+ *   node tools/generate-blog-post.mjs                 # same as --next
+ *   node tools/generate-blog-post.mjs --next          # write the next unwritten topic from
+ *                                                     # tools/blog-topics.json at the end of the
+ *                                                     # publish queue; an empty topic queue is a
+ *                                                     # no-op (exit 0, nothing written)
+ *   node tools/generate-blog-post.mjs --topic <slug>  # write one specific queued topic
+ *   node tools/generate-blog-post.mjs --list-topics   # show the queue with done / next marks
+ *   node tools/generate-blog-post.mjs --freeform      # let the model pick a topic (the old
+ *                                                     # behaviour; kept for one-offs)
  *   node tools/generate-blog-post.mjs --regenerate <slug>
  *                                                     # rewrite an existing post's body, keep
  *                                                     # frontmatter (date/slug/category/tags/author);
@@ -48,12 +56,13 @@ import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseFrontmatter } from './blog-card.mjs'
+import { BLOG_CATEGORIES, loadTopics, nextTopic, findTopic, isTopicConsumed } from './lib/blog-topics.mjs'
+import { loadGridExports, loadApiMethods } from './lib/grid-api-facts.mjs'
+import { clampDescription } from './lib/seo-text.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 const BLOG_DIR = join(ROOT, 'website', 'src', 'content', 'blog')
-const GRID_INDEX = join(ROOT, 'packages', 'grid', 'src', 'index.ts')
-const WRAPPER_TYPES = join(ROOT, 'packages', 'grid', 'src', 'svgrid-wrapper.types.ts')
 const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 
 const DRY_RUN = process.argv.includes('--dry-run')
@@ -62,13 +71,9 @@ const API_KEY = process.env.ANTHROPIC_API_KEY
 const MAX_RETRIES = Number.parseInt(process.env.BLOG_MAX_RETRIES ?? '1', 10)
 const AUTHOR = 'Boyko Markov'
 
-// Categories currently in use across the queue. New posts pick one.
-const CATEGORIES = [
-  'Engineering', 'Accessibility', 'Cells', 'Use cases', 'Comparisons',
-  'Concepts', 'Editing', 'Selection', 'Columns', 'Rows', 'Filtering',
-  'Data', 'Export', 'Grouping', 'Architecture', 'Formatting', 'Sorting',
-  'Getting started', 'Integration', 'Theming', 'Performance', 'AI',
-]
+// Categories currently in use across the queue (shared with the topic queue
+// validator so a queued topic cannot name one the site does not group).
+const CATEGORIES = BLOG_CATEGORIES
 
 // Tag keywords that tools/blog-card.mjs maps to a feature illustration.
 const FEATURE_TAGS = [
@@ -140,49 +145,14 @@ function listPosts() {
 
 // -------- Real-API grounding --------------------------------------------
 
-/** Read the export names from packages/grid/src/index.ts so the model
- *  knows exactly which functions / types are available. */
-function loadGridExports() {
-  const src = readFileSync(GRID_INDEX, 'utf-8')
-  const values = new Set()
-  const types = new Set()
-  // Match `export { ... }` blocks and pull identifiers.
-  const blocks = src.matchAll(/export\s*\{([^}]+)\}/g)
-  for (const [, inner] of blocks) {
-    for (const raw of inner.split(',')) {
-      const t = raw.trim()
-      if (!t) continue
-      const isType = t.startsWith('type ')
-      const clean = t.replace(/^type\s+/, '').replace(/\s+as\s+.+$/, '').trim()
-      if (!clean) continue
-      if (isType) types.add(clean); else values.add(clean)
-    }
-  }
-  const defaults = src.matchAll(/export\s*\{\s*default\s+as\s+(\w+)/g)
-  for (const [, name] of defaults) values.add(name)
-  return {
-    values: [...values].sort(),
-    types: [...types].sort(),
-  }
-}
-
-/** Pull the top-level SvGridApi method names so posts can name them
- *  correctly (setActiveCell, autosizeColumn, applyTransaction, ...). */
-function loadApiMethods() {
-  try {
-    const src = readFileSync(WRAPPER_TYPES, 'utf-8')
-    // Match property signatures inside `SvGridApi = { ... }` looking for
-    // `name(...): ...` or `name: (...) => ...`.
-    const methods = new Set()
-    for (const m of src.matchAll(/^\s{2,4}(\w+)\s*\(/gm)) methods.add(m[1])
-    return [...methods].sort()
-  } catch { return [] }
-}
+// The export list and SvGridApi method names come from tools/lib/grid-api-facts.mjs,
+// shared with the topic queue validator.
 
 /** Load a compact code sample from each demo (first 80 non-comment lines
  *  of the script block) so the model can crib real usage patterns. Only
- *  the demos whose id / description matches the post's tags get bundled. */
-function loadRelevantDemos(tags, title) {
+ *  the demos whose id / description matches the post's tags get bundled,
+ *  plus any the topic contract requires the post to link. */
+function loadRelevantDemos(tags, title, required = []) {
   if (!existsSync(DEMOS_DIR)) return []
   const files = readdirSync(DEMOS_DIR).filter((f) => f.endsWith('.svelte'))
   const needle = [title, ...tags].join(' ').toLowerCase()
@@ -194,7 +164,7 @@ function loadRelevantDemos(tags, title) {
     const script = scriptMatch[1]
     // Score by how many of the tag keywords appear in the file's text.
     const hay = (f + '\n' + raw).toLowerCase()
-    let score = 0
+    let score = required.includes(f.replace(/\.svelte$/, '')) ? 100 : 0
     for (const tag of tags) if (hay.includes(tag.toLowerCase())) score += 5
     for (const word of needle.split(/\s+/)) {
       if (word.length >= 4 && hay.includes(word)) score += 1
@@ -211,15 +181,15 @@ function loadRelevantDemos(tags, title) {
     scored.push({ file: f, score, script: compact })
   }
   scored.sort((a, b) => b.score - a.score)
-  return scored.slice(0, 3)
+  return scored.slice(0, Math.max(3, required.length))
 }
 
 /** Build a "grounding" section for the prompt: real exports + real demo
  *  code the model can adapt. */
-function buildGrounding({ tags = [], title = '' } = {}) {
-  const { values, types } = loadGridExports()
-  const apiMethods = loadApiMethods()
-  const demos = loadRelevantDemos(tags, title)
+function buildGrounding({ tags = [], title = '', demos: required = [] } = {}) {
+  const { values, types } = loadGridExports(ROOT)
+  const apiMethods = loadApiMethods(ROOT)
+  const demos = loadRelevantDemos(tags, title, required)
   const lines = []
   lines.push('# Grounding facts (use ONLY these APIs; do not invent)')
   lines.push('')
@@ -346,7 +316,7 @@ metadata JSON. Second, the raw markdown body (no escaping - write it as
 you want it to appear on disk, including \`\`\` code fences).
 
 ---METADATA-START---
-{"title": "...", "slug": "...", "description": "...", "category": "...", "tags": ["...", "..."]}
+{"title": "...", "slug": "...", "description": "...", "seoTitle": "...", "seoDescription": "...", "category": "...", "tags": ["...", "..."]}
 ---METADATA-END---
 ---BODY-START---
 ... full markdown body here, no JSON escaping, use real code fences with backticks ...
@@ -354,7 +324,44 @@ you want it to appear on disk, including \`\`\` code fences).
 
 Emit NOTHING outside those markers. No prose, no explanation, no extra fences.`
 
-function newPostPrompt({ titles, grounding }) {
+/** The part of the prompt that turns a queued search query into a post that
+ *  can rank for it: the query where it has to appear, the demos and docs the
+ *  post has to link (real internal links are what the demo and doc pages were
+ *  missing), and the identifiers the code has to use. */
+function topicContract(topic) {
+  const demos = topic.demos ?? []
+  const docs = topic.docs ?? []
+  const api = topic.api ?? []
+  const lines = [
+    'TOPIC CONTRACT (hard - this post exists to rank for one search query)',
+    '',
+    `Primary query: "${topic.query}"`,
+    `Secondary phrasings: ${(topic.secondary ?? []).join(', ') || '(none)'}`,
+    `Intent: ${topic.intent}`,
+    `Working title (rewrite freely, keep the query's words in it): ${topic.workingTitle}`,
+    `Category: ${topic.category} (use exactly this)`,
+    `Tags: ${topic.tags.join(', ')} (use exactly these)`,
+    `Brief: ${topic.brief}`,
+    '',
+    'Requirements:',
+    '- The primary query, or a close natural variant of it, appears in the title, in the first 100 words, and in at least one H2. Write it the way a developer types it; never stuff it.',
+  ]
+  if (demos.length) lines.push(`- Link each of these demos at least once with a real markdown link and descriptive link text: ${demos.map((id) => `[...](/demos/${id}/)`).join(', ')}`)
+  if (docs.length) lines.push(`- Link each of these docs the same way: ${docs.map((s) => `[...](/docs/${s}/)`).join(', ')}`)
+  if (api.length) lines.push(`- Use these identifiers in the code, spelled exactly: ${api.join(', ')}`)
+  lines.push(
+    '- Fill "seoTitle" (at most 60 characters, leads with the query\'s head noun, no site name) and "seoDescription" (at most 155 characters, one concrete promise, contains the query) in the metadata.',
+    '- The existing titles above are covered ground; take the angle in the brief rather than restating one of them.',
+  )
+  return lines.join('\n')
+}
+
+function newPostPrompt({ titles, grounding, topic = null }) {
+  const task = topic
+    ? `TASK: write ONE new blog post that fulfils the topic contract below and follows the guidance above. It must read like a working engineer wrote it - varied structure, real voice, real code.
+
+${topicContract(topic)}`
+    : `TASK: pick a fresh topic not covered above, and write ONE new blog post that follows the guidance above. It must read like a working engineer wrote it - varied structure, real voice, real code. Choose "category" from: ${CATEGORIES.join(', ')}. Choose 3-6 lowercase tags; make at least one tag one of these feature keywords so the auto hero image is relevant: ${FEATURE_TAGS.join(', ')}. Fill "seoTitle" (at most 60 characters, keyword first, no site name) and "seoDescription" (at most 155 characters) in the metadata.`
   return `You are a senior engineer writing for the SvGrid developer blog. SvGrid is a headless-first, Svelte 5-native data grid: a free MIT community package (@svgrid/grid) plus a paid enterprise package. Voice: precise, practical, written for working developers.
 
 Existing post titles (DO NOT duplicate):
@@ -364,7 +371,7 @@ ${grounding}
 
 ${STRUCTURE_CONTRACT}
 
-TASK: pick a fresh topic not covered above, and write ONE new blog post that follows the guidance above. It must read like a working engineer wrote it - varied structure, real voice, real code. Choose "category" from: ${CATEGORIES.join(', ')}. Choose 3-6 lowercase tags; make at least one tag one of these feature keywords so the auto hero image is relevant: ${FEATURE_TAGS.join(', ')}.
+${task}
 
 ${OUTPUT_FORMAT}`
 }
@@ -497,7 +504,7 @@ const BANNED_PHRASES = [
 /** Verify the body meets minimum quality bars WITHOUT forcing a fixed
  *  section skeleton. Returns null on pass, or a string describing what
  *  needs to change (used to retry). */
-function validateBody(body) {
+function validateBody(body, topic = null) {
   const errs = []
   const wc = wordCount(body)
   if (wc < 700) errs.push(`Body is ${wc} words; expand to 900-1600 (topic-dependent).`)
@@ -518,22 +525,51 @@ function validateBody(body) {
   if (skeleton.length >= 3) {
     errs.push('Post uses the default AI skeleton (setup / full example / gotchas / FAQ). Restructure around the specific topic; use topic-specific headings.')
   }
+  if (topic) {
+    // The contract is what makes the post rank: the query's words, the demo
+    // and doc links, the identifiers. Each is checked mechanically.
+    const words = topic.query.toLowerCase().split(/\s+/).filter((w) => w.length > 2)
+    const thin = words.filter((w) => lower.split(w).length - 1 < 2)
+    if (thin.length) errs.push(`The query words ${thin.join(', ')} appear fewer than twice; work "${topic.query}" into the body naturally.`)
+    for (const id of topic.demos ?? []) {
+      if (!new RegExp(`\\]\\(/demos/${id}/?\\)`).test(body)) errs.push(`Missing a markdown link to /demos/${id}/.`)
+    }
+    for (const s of topic.docs ?? []) {
+      if (!new RegExp(`\\]\\(/docs/${s}/?\\)`).test(body)) errs.push(`Missing a markdown link to /docs/${s}/.`)
+    }
+    for (const name of topic.api ?? []) {
+      if (!body.includes(name)) errs.push(`The identifier ${name} must appear in the code.`)
+    }
+  }
   return errs.length ? errs.join(' | ') : null
 }
 
 // -------- Render + write ------------------------------------------------
 
-function renderFrontmatter({ title, description, date, updated, category, tags, author }) {
+const oneLine = (s) => sanitize(s).replace(/\s+/g, ' ').trim()
+
+/** A search title the model proposed, or nothing when it is unusable: the
+ *  page falls back to "<title> - SvGrid Blog" rather than ship a truncated
+ *  or empty <title>. */
+function cleanSeoTitle(raw) {
+  const t = raw ? oneLine(raw) : ''
+  return t && t.length <= 65 ? t : ''
+}
+
+function renderFrontmatter({ title, description, seoTitle, seoDescription, date, updated, category, tags, author, pinned }) {
   const lines = [
     '---',
-    `title: ${sanitize(title).replace(/\s+/g, ' ').trim()}`,
-    `description: ${sanitize(description).replace(/\s+/g, ' ').trim()}`,
-    `date: ${date}`,
+    `title: ${oneLine(title)}`,
+    `description: ${oneLine(description)}`,
   ]
+  if (seoTitle) lines.push(`seoTitle: ${oneLine(seoTitle)}`)
+  if (seoDescription) lines.push(`seoDescription: ${oneLine(seoDescription)}`)
+  lines.push(`date: ${date}`)
   if (updated) lines.push(`updated: ${updated}`)
   lines.push(`category: ${sanitize(category).trim()}`)
   lines.push(`tags: ${tags}`)
   lines.push(`author: ${author}`)
+  if (pinned) lines.push('pinned: true')
   lines.push('---')
   lines.push('')
   return lines.join('\n')
@@ -548,41 +584,46 @@ function assembleTagsField(tags) {
 
 // -------- Mode: generate NEW post --------------------------------------
 
-async function generateNew() {
+async function generateNew({ topic = null } = {}) {
   const posts = listPosts()
   const titles = posts.map((p) => p.meta.title).filter(Boolean)
   const slugs = new Set(posts.map((p) => p.slug))
   const maxDate = posts.reduce((m, p) => (p.meta.date && p.meta.date > m ? p.meta.date : m), todayISO())
   const date = addDays(maxDate, 1)
+  if (topic && slugs.has(topic.slug)) throw new Error(`Topic "${topic.slug}" already has a post; it is consumed.`)
 
-  const grounding = buildGrounding({})
+  const grounding = buildGrounding(topic ? { tags: topic.tags, title: topic.workingTitle, demos: topic.demos ?? [] } : {})
   let attempt = 0
   let post
   let lastErr = null
+  let passed = false
   while (attempt <= MAX_RETRIES) {
-    let prompt = newPostPrompt({ titles, grounding })
+    let prompt = newPostPrompt({ titles, grounding, topic })
     if (lastErr) prompt += `\n\nRETRY: the previous output failed validation:\n${lastErr}\nRegenerate the post from scratch, addressing every point.`
     const raw = await callModel(prompt)
     post = extractStructured(raw)
-    const err = validateBody(post.body)
-    if (!err) break
+    const err = validateBody(post.body, topic)
+    if (!err) { passed = true; break }
     lastErr = err
     attempt += 1
   }
   if (!post) throw new Error('Model returned no post.')
+  // A topic post that still misses its contract (required links, query) is
+  // not worth publishing: fail the run and the queue retries it tomorrow.
+  if (topic && !passed) throw new Error(`Post for "${topic.slug}" failed validation after ${MAX_RETRIES + 1} attempts: ${lastErr}`)
 
-  let slug = slugify(post.slug || post.title)
-  if (slugs.has(slug)) {
-    let n = 2
-    while (slugs.has(`${slug}-${n}`)) n += 1
-    slug = `${slug}-${n}`
-  }
+  // A queued topic owns its slug. A collision (either mode) is a duplicate
+  // post, not a reason to publish "<slug>-2" next to the original.
+  const slug = topic ? topic.slug : slugify(post.slug || post.title)
+  if (slugs.has(slug)) throw new Error(`A post with slug "${slug}" already exists; not writing a duplicate.`)
   const fm = renderFrontmatter({
     title: post.title,
     description: post.description,
+    seoTitle: cleanSeoTitle(post.seoTitle),
+    seoDescription: post.seoDescription ? clampDescription(oneLine(post.seoDescription)) : '',
     date,
-    category: post.category,
-    tags: assembleTagsField(post.tags),
+    category: topic ? topic.category : post.category,
+    tags: assembleTagsField(topic ? topic.tags : post.tags),
     author: AUTHOR,
   })
   const body = sanitize(post.body).replace(/^#\s+.*\n+/, '').trim() + '\n'
@@ -640,11 +681,14 @@ async function regenerate(slug) {
   const fm = renderFrontmatter({
     title: meta.title,               // never let the model change the title
     description: post.description || meta.description,
+    seoTitle: meta.seoTitle,         // hand-tuned search copy survives a rewrite
+    seoDescription: meta.seoDescription,
     date: meta.date,                 // preserve original publish date
     updated,                         // deterministic spread over the last 60 days
     category: meta.category,
     tags: assembleTagsField(post.tags || meta.tags),
     author: meta.author || AUTHOR,
+    pinned: meta.pinned === 'true',
   })
   const newBody = sanitize(post.body).replace(/^#\s+.*\n+/, '').trim() + '\n'
   const md = fm + newBody
@@ -690,7 +734,6 @@ async function regenerateBatch({ onlyUnpublished, onlyFailed }) {
   let done = 0
   for (const p of posts) {
     try {
-      // eslint-disable-next-line no-await-in-loop
       await regenerate(p.slug)
       done += 1
     } catch (e) {
@@ -732,7 +775,43 @@ async function main() {
     await regenerateBatch({ onlyUnpublished: false, onlyFailed: true })
     return
   }
-  await generateNew()
+  if (args.includes('--freeform')) {
+    await generateNew({})
+    return
+  }
+  const { topics, problems } = loadTopics(ROOT)
+  if (args.includes('--list-topics')) {
+    for (const t of topics) {
+      process.stdout.write(`${isTopicConsumed(ROOT, t.slug) ? 'done' : 'next'}  ${t.slug}  "${t.query}"  [${t.category}]\n`)
+    }
+    const open = topics.filter((t) => !isTopicConsumed(ROOT, t.slug)).length
+    process.stdout.write(`\n${topics.length} topics, ${open} open.\n`)
+    if (problems.length) {
+      console.error('\nProblems:\n' + problems.map((p) => '  - ' + p).join('\n'))
+      process.exit(1)
+    }
+    return
+  }
+  if (problems.length) {
+    console.error('tools/blog-topics.json has problems:\n' + problems.map((p) => '  - ' + p).join('\n'))
+    process.exit(1)
+  }
+  const topicIdx = args.indexOf('--topic')
+  if (topicIdx !== -1) {
+    const slug = args[topicIdx + 1]
+    const topic = slug ? findTopic(topics, slug) : null
+    if (!topic) { console.error(`--topic needs a slug from tools/blog-topics.json (got "${slug ?? ''}")`); process.exit(1) }
+    await generateNew({ topic })
+    return
+  }
+  // --next, or no flag at all: the queue drives the daily post. An empty queue
+  // is a quiet no-op so the scheduled run stays green and commits nothing.
+  const topic = nextTopic(ROOT, topics)
+  if (!topic) {
+    process.stdout.write('Topic queue is empty; nothing generated. Add entries to tools/blog-topics.json or pass --freeform.\n')
+    return
+  }
+  await generateNew({ topic })
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseDocFrontmatter } from '../../../tools/lib/doc-meta.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkgRoot = join(__dirname, '..')
@@ -55,7 +56,9 @@ const examples = readAll(demosDir, '.svelte').map((path) => {
 const docs = readAll(docsDir, '.md')
   .filter((p) => !p.includes('examples-plan'))
   .map((path) => {
-    const markdown = readFileSync(path, 'utf8')
+    // Search-facing frontmatter (seoTitle etc.) is for the website; the model
+    // gets the page body only.
+    const markdown = parseDocFrontmatter(readFileSync(path, 'utf8')).body
     const slug = relative(docsDir, path).replaceAll('\\', '/').replace(/\.md$/, '')
     const titleMatch = markdown.replace(/^﻿/, '').match(/^#\s+(.+?)\s*$/m)
     return {

@@ -701,7 +701,7 @@ export function entityScreenPage(schema: EntitySchema, route?: string, title?: s
 
 export type NavItem = { href: string; label: string; id?: string }
 
-export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: ShellConfig; title?: string; themeVars?: Record<string, string>; lightVars?: Record<string, string>; darkVars?: Record<string, string>; dark?: boolean; access?: boolean; auth?: boolean; supabaseAuth?: boolean; authRoutes?: string[]; authAccount?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
+export function layoutFile(nav: NavItem[], opts: { shell?: ShellConfig; title?: string; themeSwitch?: boolean; dark?: boolean; access?: boolean; auth?: boolean; supabaseAuth?: boolean; authRoutes?: string[]; authAccount?: boolean; i18n?: boolean; appClass?: string } = {}): GeneratedFile {
   // Nav is the app's own screens; `/` just redirects to the first one, so no separate
   // "Home" link (it would duplicate the first screen).
   const links = nav
@@ -713,32 +713,13 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   const brand = (shell.brand ?? '').trim() || opts.title || 'My Studio App'
   const footer = shell.footer === undefined ? 'Built with SvGrid Studio' : shell.footer
   const right = style === 'sidebar' && shell.navPosition === 'right'
-  // Emit the full theme token bundle so the generated app matches the look chosen
-  // in the designer. When both light + dark token sets are supplied we ship a
-  // built-in light/dark switcher: both sets are scoped by [data-theme] on <html>,
-  // and the bare :root falls back to the mode picked in Studio (pre-hydration).
+  // The theme tokens themselves live in src/app.css (imported below) - see
+  // `themeTokenCss` - so the fragment, which drops this file, stays themed too.
+  // `themeSwitch` ships the built-in light/dark toggle: app.css scopes both
+  // palettes by [data-theme] on <html>, and the bare :root falls back to the mode
+  // picked in Studio (pre-hydration).
   const defaultMode: 'light' | 'dark' = opts.dark ? 'dark' : 'light'
-  const withAccent = (m?: Record<string, string>) => {
-    const v = { ...(m ?? {}) }
-    if (opts.accent) v['--sg-accent'] = opts.accent
-    return v
-  }
-  const declLines = (m: Record<string, string>) => Object.entries(m).map(([k, v]) => `${k}: ${v};`).join(' ')
-  const hasSwitch = !!(opts.lightVars && opts.darkVars)
-  let themeHead = ''
-  if (hasSwitch) {
-    const lv = withAccent(opts.lightVars)
-    const dv = withAccent(opts.darkVars)
-    const defRule = [declLines(defaultMode === 'dark' ? dv : lv), `color-scheme: ${defaultMode};`].join(' ')
-    const lightRule = [declLines(lv), 'color-scheme: light;'].join(' ')
-    const darkRule = [declLines(dv), 'color-scheme: dark;'].join(' ')
-    themeHead = `\n<svelte:head><style>:root { ${defRule} }\n:root[data-theme="light"] { ${lightRule} }\n:root[data-theme="dark"] { ${darkRule} }</style></svelte:head>\n`
-  } else {
-    const vars = withAccent(opts.themeVars)
-    const varLines = declLines(vars)
-    const rootRule = [varLines, opts.dark ? 'color-scheme: dark;' : ''].filter(Boolean).join(' ')
-    themeHead = rootRule ? `\n<svelte:head><style>:root { ${rootRule} }</style></svelte:head>\n` : ''
-  }
+  const hasSwitch = !!opts.themeSwitch
 
   // i18n: translate nav labels via `nav.<id>` keys (Home has no id -> literal).
   const navLabel = opts.i18n ? `{item.id ? $t('nav.' + item.id, item.label) : item.label}` : '{item.label}'
@@ -983,7 +964,7 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   $effect(() => { void page.url.pathname; navOpen = false })${hasSwitch ? `
   // Light/dark switcher: defaults to the mode picked in Studio, then honours the
   // visitor's saved choice. Applies via [data-theme] on <html> (see the token
-  // sets in <svelte:head>), and persists per browser.
+  // sets in app.css), and persists per browser.
   let theme = $state<'light' | 'dark'>('${defaultMode}')
   function applyTheme(t: 'light' | 'dark') {
     theme = t
@@ -1021,7 +1002,6 @@ export function layoutFile(nav: NavItem[], opts: { accent?: string; shell?: Shel
   // Close both menus on route change.
   $effect(() => { void page.url.pathname; bellOpen = false; menuOpen = false })` : ''}
 </script>
-${themeHead}
 
 ${opts.auth ? `{#if ${JSON.stringify(opts.authRoutes ?? ['/login'])}.includes(page.url.pathname)}
 {@render children()}

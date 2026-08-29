@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Heatmap-tinted numeric cells
 
 > Live in [demo 60-pivot-expandable](https://svgrid.com/demos/60-pivot-expandable/).

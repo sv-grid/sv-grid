@@ -1,0 +1,1306 @@
+{
+  "readme": "Solution pages served at /svelte/<slug>: one landing page per thing developers search for by name. The demo gallery answers those queries with a bare demo shell and the docs answer them with reference prose; neither reads like a landing page. Rendered by tools/prerender-site.mjs (step 4e) and website/src/routes/Solutions.svelte, which import this same file. Every demos/docs/posts/related id is checked by tools/seo-guardrails.test.ts, so a wrong id fails CI rather than shipping a dead link. tier: 'community' means the feature is MIT in @svgrid/grid; 'enterprise' means the renderer ships in the paid companion package. Keep that honest, it is the first thing an evaluator checks.",
+  "solutions": [
+    {
+      "slug": "kanban-board",
+      "kind": "view",
+      "icon": "▥",
+      "cardText": "Lanes from a status field, drag and drop.",
+      "query": "svelte kanban board",
+      "h1": "Svelte Kanban Board",
+      "seoTitle": "Svelte Kanban Board - Drag and Drop from Grid Data",
+      "seoDescription": "Build a Svelte 5 Kanban board from the rows you already have: one board prop, lanes bucketed by a status field, drag-and-drop, WIP limits and rich cards.",
+      "keywords": [
+        "svelte kanban",
+        "svelte kanban board",
+        "sveltekit kanban",
+        "svelte drag and drop board",
+        "kanban component svelte"
+      ],
+      "tier": "enterprise",
+      "intro": [
+        "A Kanban board is a data grid that draws its rows as cards instead of table rows. SvGrid treats it exactly that way: same <SvGrid>, same data, same columns, one extra board prop. Lanes are bucketed by a field on your rows, so a board and a table are two views of one dataset rather than two components to keep in sync.",
+        "Dragging a card does not mutate anything behind your back. The grid raises onCardMove with the card and its new lane, you assign the field on your own row object, and the board re-renders from your state. The same is true of the built-in card editor: it hands you a value, you decide what to store."
+      ],
+      "install": "npm i @svgrid/grid @svgrid/enterprise",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n  import { enableBoardView } from '@svgrid/enterprise'\n\n  enableBoardView()\n\n  let data = $state([\n    { id: 1, title: 'Design the board layout', status: 'backlog', assignee: 'Sam Rivera' },\n    { id: 2, title: 'Lane drag and drop', status: 'in_progress', assignee: 'Lee Park' },\n  ])\n  const columns = [\n    { field: 'title', header: 'Task' },\n    { field: 'status', header: 'Status' },\n    { field: 'assignee', header: 'Assignee' },\n  ]\n</script>\n\n<SvGrid {data} {columns} board={{ groupBy: 'status' }} />"
+      },
+      "heroDemo": "343-kanban-board",
+      "demos": [
+        "343-kanban-board",
+        "344-kanban-sprint",
+        "345-kanban-pipeline",
+        "349-kanban-subtasks",
+        "350-kanban-structure",
+        "346-kanban-virtualized"
+      ],
+      "docs": [
+        "help/rows/kanban-board",
+        "recipes/kanban-from-grid-data"
+      ],
+      "posts": [
+        "svelte-kanban-board",
+        "project-task-board-grid"
+      ],
+      "features": [
+        {
+          "title": "Lanes from a field",
+          "body": "groupBy names the field that buckets cards into lanes. Change it at runtime and the board re-buckets; the underlying rows never move."
+        },
+        {
+          "title": "Drag, or the keyboard",
+          "body": "Pointer drag-and-drop and Space plus arrow keys both move a card, so the board is usable without a mouse."
+        },
+        {
+          "title": "WIP limits and swimlanes",
+          "body": "Cap a lane with enforceWip, and cross the lanes with a second axis using swimlaneBy to get a grid of lane by owner."
+        },
+        {
+          "title": "Cards you control",
+          "body": "Take the built-in card with badges, sub-tasks and a progress bar, or pass your own snippet and render whatever the row needs."
+        },
+        {
+          "title": "Virtualized to 50k cards",
+          "body": "board.virtualized keeps only the visible cards in the DOM, so a lane with thousands of items still drags smoothly."
+        },
+        {
+          "title": "Still a grid",
+          "body": "Sorting, filtering and search run before the board renders, so a filter box above the board filters cards for free."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I build a Kanban board in Svelte 5?",
+          "answer": "Give <SvGrid> your data and columns and set the board prop with the field to bucket lanes by, for example board={{ groupBy: 'status' }}. Cards are your rows and lanes are that field's values."
+        },
+        {
+          "question": "Is the Kanban board free?",
+          "answer": "The grid, the board prop and its config types are MIT-licensed in @svgrid/grid. The board renderer ships in the commercial @svgrid/enterprise package, which runs unlicensed with a small watermark while you evaluate it."
+        },
+        {
+          "question": "How does the board write changes back to my data?",
+          "answer": "It does not write to your data at all. Moving a card raises onCardMove and editing one raises onCardCommit; you apply the change to your own state and the board re-renders from it."
+        },
+        {
+          "question": "Can I switch between a board and a table?",
+          "answer": "Yes, and that is the point of the design. The board is a view of the same grid, so toggling the board prop on and off swaps between cards and rows with no data changes."
+        }
+      ],
+      "related": [
+        "scheduler",
+        "gantt-chart",
+        "data-table"
+      ]
+    },
+    {
+      "slug": "scheduler",
+      "kind": "view",
+      "icon": "◷",
+      "cardText": "Events on a calendar or a resource timeline.",
+      "query": "svelte scheduler component",
+      "h1": "Svelte Scheduler and Calendar",
+      "seoTitle": "Svelte Scheduler - Calendar and Resource Timeline",
+      "seoDescription": "A Svelte 5 scheduler from one prop: rows become events across Month, Week, Day and Agenda views, with drag to reschedule and a resource timeline.",
+      "keywords": [
+        "svelte scheduler",
+        "svelte calendar component",
+        "svelte resource timeline",
+        "sveltekit scheduler",
+        "svelte appointment scheduling"
+      ],
+      "tier": "enterprise",
+      "intro": [
+        "Set one scheduler prop and the grid places its rows as events on a calendar instead of a table. It is the same <SvGrid> with the same data and columns; only the presentation changes. Events are positioned by time across Month, Week, Day and Agenda views, plus horizontal resource timelines where each row is a person, room or machine.",
+        "Like the board view, the scheduler is a pure view of the grid. It renders rows that have already been filtered, sorted and searched, and writes back only through callbacks such as onEventMove and onEventResize, so your data stays yours."
+      ],
+      "install": "npm i @svgrid/grid @svgrid/enterprise",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n  import { enableSchedulerView } from '@svgrid/enterprise'\n\n  enableSchedulerView()\n\n  let data = $state([\n    { id: 1, title: 'Standup', start: '2026-09-01T09:00', end: '2026-09-01T09:15' },\n    { id: 2, title: 'Design review', start: '2026-09-01T13:00', end: '2026-09-01T14:00' },\n  ])\n</script>\n\n<SvGrid\n  {data}\n  {columns}\n  scheduler={{\n    startField: 'start',\n    endField: 'end',\n    titleField: 'title',\n    initialView: 'week',\n    weekStartsOn: 1,\n    editable: true,\n  }}\n/>"
+      },
+      "heroDemo": "363-scheduler-intro",
+      "demos": [
+        "363-scheduler-intro",
+        "371-scheduler-timeline",
+        "372-scheduler-selection",
+        "386-scheduler-rules",
+        "382-scheduler-app-clinic",
+        "381-scheduler-app-calendar"
+      ],
+      "docs": [
+        "help/rows/scheduler",
+        "enterprise/studio/scheduler"
+      ],
+      "posts": [
+        "timesheet-scheduling-grid"
+      ],
+      "features": [
+        {
+          "title": "Four calendar views",
+          "body": "Month, Week, Day and Agenda from one config, switchable at runtime from your own toolbar or the built-in one."
+        },
+        {
+          "title": "Resource timelines",
+          "body": "Point resourceField at a column and time runs left to right with one row per resource, sized to real durations."
+        },
+        {
+          "title": "Drag to reschedule",
+          "body": "Drag an event to move it, drag its edge to resize, or drag empty space to create one. Each raises a callback with the new times."
+        },
+        {
+          "title": "Booking rules",
+          "body": "Working hours, blackout dates, capacity and eligibility rules keep an appointment from landing where it should not."
+        },
+        {
+          "title": "Recurrence and time zones",
+          "body": "Repeating events with per-occurrence edits, a second time-zone ruler, and iCal import and export in the calendar app demo."
+        },
+        {
+          "title": "Still a grid",
+          "body": "The same rows render as a table whenever you want one, which is what makes an Upcoming list next to the calendar trivial."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I add a scheduler to a Svelte app?",
+          "answer": "Install @svgrid/enterprise, call enableSchedulerView() once, and set the scheduler prop on <SvGrid> with the fields that hold the start and end of each row."
+        },
+        {
+          "question": "Is the scheduler a Gantt chart?",
+          "answer": "No. The scheduler is a resource, booking and calendar view: appointments, staff and asset scheduling. It deliberately has no critical path, baselines or work-breakdown structure, and none are planned."
+        },
+        {
+          "question": "Is the scheduler free?",
+          "answer": "The scheduler prop and its config types are part of the free MIT grid, but the calendar renderer ships in the commercial @svgrid/enterprise package."
+        },
+        {
+          "question": "Can events be edited?",
+          "answer": "Yes. Set editable and the scheduler supports drag to move, edge-drag to resize, drag-select to create and a built-in edit drawer, each reporting back through a callback."
+        }
+      ],
+      "related": [
+        "kanban-board",
+        "gantt-chart",
+        "date-picker"
+      ]
+    },
+    {
+      "slug": "pivot-table",
+      "kind": "view",
+      "icon": "▦",
+      "cardText": "Crosstab your rows, with a drag-and-drop designer.",
+      "query": "svelte pivot table",
+      "h1": "Svelte Pivot Table",
+      "seoTitle": "Svelte Pivot Table - Drag-and-Drop Designer",
+      "seoDescription": "Summarize flat rows into a Svelte 5 pivot table: row and column dimensions, value aggregations, multi-level headers and a drag-and-drop designer.",
+      "keywords": [
+        "svelte pivot table",
+        "svelte pivot grid",
+        "pivot table component svelte",
+        "svelte olap cube",
+        "svelte crosstab"
+      ],
+      "tier": "enterprise",
+      "intro": [
+        "A pivot table turns a flat list of facts into a crosstab: pick the fields that become rows, the fields that become columns, and the measures to aggregate in the cells. SvGrid does that with createPivotModel over your existing array, and renders the result through the same grid you already use.",
+        "If you want your users to build the pivot rather than you, SvPivotDesigner gives them a searchable field list and four drop wells for Filters, Rows, Columns and Values, with per-field aggregators. Its layout is a single bindable prop, so saving and restoring a view is one line."
+      ],
+      "install": "npm i @svgrid/grid @svgrid/enterprise",
+      "snippet": {
+        "lang": "ts",
+        "code": "import { createPivotModel } from '@svgrid/enterprise'\n\nconst pivot = createPivotModel(orders, {\n  rows:   ['region', 'salesPerson'],\n  cols:   ['quarter'],\n  values: [\n    { field: 'amount', agg: 'sum', label: 'Total', format: { type: 'currency', currency: 'USD' } },\n    { field: 'amount', agg: 'avg', label: 'Avg' },\n  ],\n})"
+      },
+      "heroDemo": "52-pivot-table",
+      "demos": [
+        "52-pivot-table",
+        "168-pivot-designer",
+        "360-pivot-mode-grid",
+        "60-pivot-expandable",
+        "123-pivot-totals",
+        "359-pivot-chart"
+      ],
+      "docs": [
+        "help/pivot",
+        "recipes/mobile-card-pivot"
+      ],
+      "posts": [
+        "pivot-tables",
+        "what-is-a-pivot-table"
+      ],
+      "features": [
+        {
+          "title": "Rows, columns, measures",
+          "body": "Any number of row and column dimensions, and as many value aggregations as you need, each with its own aggregator and number format."
+        },
+        {
+          "title": "Drag-and-drop designer",
+          "body": "SvPivotDesigner gives end users the field list and the four wells, so they can build their own view without a code change."
+        },
+        {
+          "title": "Subtotals and grand totals",
+          "body": "Multi-level column headers with subtotal rows per group and a grand total, expandable and collapsible from the row headers."
+        },
+        {
+          "title": "Pivot mode toggle",
+          "body": "Flip one switch to swap between the flat grid and the pivot, keeping the same page, the same theme and the same toolbar."
+        },
+        {
+          "title": "Heatmaps and charts",
+          "body": "Tint measure cells by value to read the cube at a glance, or feed the pivot straight into a chart view."
+        },
+        {
+          "title": "Export what you see",
+          "body": "The pivot exports to Excel with its header structure intact, not as a flattened dump of the source rows."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I make a pivot table in Svelte?",
+          "answer": "Call createPivotModel from @svgrid/enterprise with your rows, your row and column dimensions and your value aggregations, then render the result through <SvGrid>. For a user-built pivot, drop in SvPivotDesigner instead."
+        },
+        {
+          "question": "Is the pivot table free?",
+          "answer": "No. Pivot is part of the commercial @svgrid/enterprise package, alongside export, import, print and the board and scheduler views. It runs unlicensed with a watermark while you evaluate it."
+        },
+        {
+          "question": "Can users build their own pivot?",
+          "answer": "Yes. SvPivotDesigner ships a searchable field picker and Filters, Columns, Rows and Values wells with drag-and-drop between them. Its layout is a bindable prop you can persist per user."
+        },
+        {
+          "question": "How large a dataset can it pivot?",
+          "answer": "The pivot aggregates in memory, so it is bound by how much data you can hold client-side. For very large sources, aggregate on the server and pivot the summary rows."
+        }
+      ],
+      "related": [
+        "spreadsheet",
+        "data-table",
+        "admin-dashboard"
+      ]
+    },
+    {
+      "slug": "spreadsheet",
+      "kind": "feature",
+      "icon": "▩",
+      "cardText": "Cell ranges, a fill handle, real formulas.",
+      "query": "svelte spreadsheet",
+      "h1": "Svelte Spreadsheet",
+      "seoTitle": "Svelte Spreadsheet - Formulas, Ranges, Fill Handle",
+      "seoDescription": "Turn a Svelte 5 data grid into a spreadsheet: column-letter headers, a formula bar, cell ranges, a fill handle, freeze panes and a real formula engine.",
+      "keywords": [
+        "svelte spreadsheet",
+        "svelte excel component",
+        "svelte spreadsheet formulas",
+        "svelte grid fill handle",
+        "svelte freeze panes"
+      ],
+      "tier": "community",
+      "intro": [
+        "The difference between a data grid and a spreadsheet is mostly interaction: cell-range selection instead of row selection, a fill handle, column-letter headers, a formula bar and paste that understands a rectangle of TSV. SvGrid ships all of that in the free package, so a sheet is a configuration of the grid rather than a separate component.",
+        "Formulas are the one piece that needs an engine. createHyperFormulaSheet binds the grid to HyperFormula so a cell can hold =SUM(B2:D2) and every dependent cell recalculates as you type, with cycle detection included."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid, tableFeatures } from '@svgrid/grid'\n\n  const features = tableFeatures({})\n</script>\n\n<SvGrid\n  {data}\n  {columns}\n  {features}\n  selectionMode=\"cell\"\n  enableCellSelection={true}\n  showRowNumbers={true}\n  rowNumberWidth={48}\n/>"
+      },
+      "heroDemo": "83-spreadsheet-formulas",
+      "demos": [
+        "207-blank-sheet",
+        "83-spreadsheet-formulas",
+        "27-spreadsheet-ribbon",
+        "208-freeze-panes",
+        "170-cell-merging",
+        "173-hyperformula"
+      ],
+      "docs": [
+        "help/spreadsheet-formulas",
+        "help/cells/expressions",
+        "help/columns/column-pinning"
+      ],
+      "posts": [
+        "cell-range-selection",
+        "paste-from-excel",
+        "fill-handle-drag-to-fill"
+      ],
+      "features": [
+        {
+          "title": "Cell ranges and the fill handle",
+          "body": "Select a rectangle, drag the corner to fill, and copy or paste TSV straight into and out of Excel and Google Sheets."
+        },
+        {
+          "title": "A real formula engine",
+          "body": "A1 references, A1:A10 ranges, SUM, AVG, IF, COUNTIF and ROUND, with live recalculation of every dependent cell and cycle detection."
+        },
+        {
+          "title": "Freeze panes",
+          "body": "Pin the first columns while a year of months scrolls sideways. It is the initialColumnPinning prop, not a separate sheet mode."
+        },
+        {
+          "title": "Data validation",
+          "body": "List-constrained columns with a dropdown, numeric bounds, and a declarative validate() hook that lights invalid cells red with the reason."
+        },
+        {
+          "title": "Merged cells and borders",
+          "body": "Merge a run of cells for a section header and draw real cell borders, so a sheet can carry the layout a report needs."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "All of the above is in @svgrid/grid. Only Excel export and import need the commercial package."
+        }
+      ],
+      "faq": [
+        {
+          "question": "Can SvGrid work as a spreadsheet?",
+          "answer": "Yes. Set selectionMode to cell, enable cell selection and row numbers and you have range selection, a fill handle and clipboard round-trips. Add createHyperFormulaSheet for real formulas."
+        },
+        {
+          "question": "Which formulas are supported?",
+          "answer": "Formulas come from HyperFormula, so the usual sheet functions work: SUM, AVG, IF, COUNTIF, ROUND, arithmetic and string concatenation, with A1 refs and A1:A10 ranges."
+        },
+        {
+          "question": "Is the spreadsheet behaviour free?",
+          "answer": "Yes. Cell ranges, the fill handle, clipboard, freeze panes, validation and merging are all MIT-licensed in @svgrid/grid. Excel export and import are the paid parts."
+        },
+        {
+          "question": "Can I paste from Excel?",
+          "answer": "Yes. The clipboard round-trips TSV, so copying a block from Excel and pasting it into the grid keeps the rectangle and types the values as it lands."
+        }
+      ],
+      "related": [
+        "data-table",
+        "editable-table",
+        "pivot-table"
+      ]
+    },
+    {
+      "slug": "gantt-chart",
+      "kind": "feature",
+      "icon": "▬",
+      "cardText": "Task bars in one wide custom cell.",
+      "query": "svelte gantt chart",
+      "h1": "Svelte Gantt Chart",
+      "seoTitle": "Svelte Gantt Chart - Project Timeline in a Grid",
+      "seoDescription": "A Gantt-style project plan in a Svelte 5 data grid: task bars positioned by start and end date in one wide cell, with phase colour and progress fill.",
+      "keywords": [
+        "svelte gantt chart",
+        "svelte gantt",
+        "svelte project timeline",
+        "svelte roadmap chart",
+        "gantt component svelte"
+      ],
+      "tier": "community",
+      "intro": [
+        "SvGrid has no Gantt mode, and it is worth saying that before you read further. What it has is a grid with custom cells, and a Gantt row is a task on the left and one wide cell on the right whose bar is positioned by percentage of the project span. That is exactly how the demo below is built, in one file you can copy.",
+        "If your plan is really a schedule of bookings across resources rather than a work-breakdown structure, the enterprise scheduler timeline is the better fit: it draws real bars on a time axis with drag to re-time and resize. It is deliberately not a project planner though, so there is no critical path, no baselines and no percent-complete roll-up, and none are planned."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'\n</script>\n\n{#snippet TimelineCell({ row })}\n  <div class=\"track\">\n    <div\n      class=\"bar\"\n      style:left=\"{((+new Date(row.start) - projectStart) / projectSpan) * 100}%\"\n      style:width=\"{((+new Date(row.end) - +new Date(row.start)) / projectSpan) * 100}%\"\n    ></div>\n  </div>\n{/snippet}\n\n<SvGrid\n  data={tasks}\n  columns={[\n    { field: 'name', header: 'Task', width: 240 },\n    { field: 'end', header: 'Schedule', width: 400,\n      cell: (ctx) => renderSnippet(TimelineCell, { row: ctx.row.original }) },\n  ]}\n/>"
+      },
+      "heroDemo": "45-gantt-chart",
+      "demos": [
+        "45-gantt-chart",
+        "384-scheduler-app-roadmap",
+        "205-project-management",
+        "167-project-tracker",
+        "29-wbs-project-tree",
+        "47-trash-truck-timeline"
+      ],
+      "docs": [
+        "help/recipes",
+        "help/rows/scheduler"
+      ],
+      "posts": [
+        "project-task-board-grid",
+        "pinned-frozen-columns"
+      ],
+      "features": [
+        {
+          "title": "One wide custom cell",
+          "body": "The timeline is a snippet cell that positions absolutely-placed bars by date arithmetic. No plugin, no second component, no new mental model."
+        },
+        {
+          "title": "Pinned task columns",
+          "body": "Pin the name, owner and progress columns so they stay put while months of timeline scroll sideways."
+        },
+        {
+          "title": "Phases and progress",
+          "body": "Colour bars by phase, fill them by percent done, and draw a today line and an overdue glow with plain CSS."
+        },
+        {
+          "title": "A tree of tasks",
+          "body": "Combine it with tree data and a work-breakdown structure indents under its parent, expandable and collapsible."
+        },
+        {
+          "title": "Or the scheduler timeline",
+          "body": "For resource scheduling with real drag to re-time, the enterprise timeline views give you bars on a shared axis per squad or person."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "The Gantt-style grid is entirely @svgrid/grid. Only the scheduler timeline route needs the commercial package."
+        }
+      ],
+      "faq": [
+        {
+          "question": "Does SvGrid have a Gantt chart component?",
+          "answer": "No. There is no Gantt mode or Gantt component. A Gantt view is built as a grid with one wide custom cell per row that positions task bars by date, which is what the example on this page does."
+        },
+        {
+          "question": "Can I use the scheduler as a Gantt chart?",
+          "answer": "For resource and booking timelines, yes. The scheduler's timeline views draw bars on a time axis with drag to re-time and resize. It is explicitly not a project planner: no critical path, baselines or work-breakdown structure."
+        },
+        {
+          "question": "Can tasks have dependencies?",
+          "answer": "The enterprise scheduler has optional dependencies for ordered bookings, where a job moves through stations in sequence. They are opt-in, and without dependency config the timeline draws no arrows and cascades nothing."
+        },
+        {
+          "question": "Is it free?",
+          "answer": "The grid-based Gantt is MIT-licensed in @svgrid/grid. The scheduler timeline alternative needs the commercial @svgrid/enterprise package."
+        }
+      ],
+      "related": [
+        "scheduler",
+        "kanban-board",
+        "tree-grid"
+      ]
+    },
+    {
+      "slug": "tree-grid",
+      "kind": "feature",
+      "icon": "⊞",
+      "cardText": "Nested rows from a parent id.",
+      "query": "svelte tree grid",
+      "h1": "Svelte Tree Grid",
+      "seoTitle": "Svelte Tree Grid - Hierarchical Rows from a Parent Id",
+      "seoDescription": "Render hierarchical rows in a Svelte 5 data grid: pass a parentField and the grid nests, indents, expands and collapses, with lazy loading on expand.",
+      "keywords": [
+        "svelte tree grid",
+        "svelte tree table",
+        "svelte hierarchical data grid",
+        "svelte treeview table",
+        "svelte nested rows"
+      ],
+      "tier": "community",
+      "intro": [
+        "Hierarchical data is usually already in your rows: every record carries the id of its parent. Give SvGrid that field name and it builds the tree for you, indenting children under parents and putting an expander in the column you nominate. There is no separate tree component and no second data shape to maintain.",
+        "Everything the flat grid does keeps working. Sorting sorts within a level, filtering keeps the ancestors of a match visible, and children can be fetched on expand instead of loaded up front."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n\n  const people = [\n    { id: 1, managerId: null, name: 'Ada Lovelace', title: 'CTO' },\n    { id: 2, managerId: 1,    name: 'Grace Hopper', title: 'VP Engineering' },\n    { id: 3, managerId: 2,    name: 'Alan Turing',  title: 'Staff Engineer' },\n  ]\n</script>\n\n<SvGrid\n  data={people}\n  {columns}\n  treeData={{ parentField: 'managerId', column: 'name' }}\n/>"
+      },
+      "heroDemo": "426-tree-data",
+      "demos": [
+        "426-tree-data",
+        "08-tree-and-master-detail",
+        "28-org-chart-tree",
+        "31-lazy-tree-load",
+        "102-tree-checkbox-cascade",
+        "30-bom-tree"
+      ],
+      "docs": [
+        "help/rows/tree-data",
+        "help/rows/tree-rows",
+        "help/server/server-tree-data"
+      ],
+      "posts": [
+        "tree-data-hierarchies",
+        "building-grouping-trees-master-detail"
+      ],
+      "features": [
+        {
+          "title": "One prop, from a parent id",
+          "body": "treeData={{ parentField: 'managerId', column: 'name' }} is the whole setup. idField defaults to id and indentPx to 12."
+        },
+        {
+          "title": "Lazy children",
+          "body": "Load a node's children the first time it expands, so a deep hierarchy costs one small request per opened branch instead of a full download."
+        },
+        {
+          "title": "Cascading checkboxes",
+          "body": "Tick a parent and its subtree follows, with a tri-state indeterminate box when only some children are selected."
+        },
+        {
+          "title": "Server-side trees",
+          "body": "For hierarchies too large to hold in memory, the server tree row model asks your endpoint for one level at a time."
+        },
+        {
+          "title": "Master-detail as well",
+          "body": "When the children are a different shape from the parent, an expandable detail panel per row is often the better fit, and is built in."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "Tree data, lazy expansion and master-detail are all in @svgrid/grid with no license key."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I show hierarchical data in a Svelte table?",
+          "answer": "Keep the flat array and add the treeData prop naming the field that holds each row's parent id, plus the column that should carry the expander. The grid nests and indents the rows for you."
+        },
+        {
+          "question": "Do I need nested arrays?",
+          "answer": "No. The common case is a flat list with a parent id, which is what treeData expects. Nested source data can be flattened once with a synthetic parent field, as the demo does."
+        },
+        {
+          "question": "Can children load on demand?",
+          "answer": "Yes. Fetch a node's children when it first expands, or use the server tree row model to page an entire hierarchy one level at a time."
+        },
+        {
+          "question": "Is the tree grid free?",
+          "answer": "Yes. Tree data, expansion, cascading selection and master-detail rows are MIT-licensed in @svgrid/grid."
+        }
+      ],
+      "related": [
+        "data-table",
+        "kanban-board",
+        "server-side-table"
+      ]
+    },
+    {
+      "slug": "data-table",
+      "kind": "feature",
+      "icon": "▤",
+      "cardText": "Sort, filter, paginate. The grid as it comes.",
+      "query": "svelte data table",
+      "h1": "Svelte Data Table",
+      "seoTitle": "Svelte Data Table - Sortable, Filterable, Paginated",
+      "seoDescription": "A sortable, filterable, paginated data table in Svelte 5: pass data and columns, register the features you want, and render. Free and MIT-licensed.",
+      "keywords": [
+        "svelte data table",
+        "svelte table component",
+        "svelte sortable table",
+        "svelte 5 data grid",
+        "sveltekit table"
+      ],
+      "tier": "community",
+      "intro": [
+        "Most tables need three things: sorting, filtering and paging. In SvGrid those are opt-in features rather than always-on weight, so a plain read-only table stays small and a full-featured one is a one-line change to the features array.",
+        "The component takes a data array and a columns array and renders. Columns are plain objects with a field and a header; everything beyond that, from widths to custom cell snippets, is optional."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import {\n    SvGrid, tableFeatures,\n    rowSortingFeature, columnFilteringFeature, rowPaginationFeature,\n    type ColumnDef,\n  } from '@svgrid/grid'\n\n  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowPaginationFeature })\n\n  const columns: ColumnDef<typeof features, Person>[] = [\n    { field: 'firstName', header: 'First name' },\n    { field: 'age', header: 'Age' },\n  ]\n</script>\n\n<SvGrid {data} {columns} {features} filterMode=\"row\" showPagination pageSize={50} />"
+      },
+      "heroDemo": "02-sort-filter-paginate",
+      "demos": [
+        "01-quick-start",
+        "02-sort-filter-paginate",
+        "03-excel-filters",
+        "06-large-dataset",
+        "80-cell-types-showcase",
+        "78-million-rows"
+      ],
+      "docs": [
+        "getting-started/2-first-grid",
+        "getting-started/4-features"
+      ],
+      "posts": [
+        "render-your-first-svelte-data-grid",
+        "data-grid-vs-data-table",
+        "accessible-data-table-wcag"
+      ],
+      "features": [
+        {
+          "title": "Sorting",
+          "body": "Single and multi-column sorting with your own comparators when the default type-aware ordering is not what you want."
+        },
+        {
+          "title": "Filtering",
+          "body": "A filter row, Excel-style operator menus, or a set filter with checkboxes and a search box inside it."
+        },
+        {
+          "title": "Pagination or scrolling",
+          "body": "Page through results, or turn pagination off and let row virtualization carry 100,000 rows in one scroll."
+        },
+        {
+          "title": "Custom cells",
+          "body": "Render any Svelte snippet in a cell: a badge, an avatar, a sparkline, a progress bar or a button."
+        },
+        {
+          "title": "Accessible by default",
+          "body": "WAI-ARIA grid semantics and full keyboard navigation, so the table is usable without a mouse and readable by a screen reader."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "The whole table, virtualization included, is in @svgrid/grid with no license key and no row cap."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I build a sortable, filterable table in Svelte?",
+          "answer": "Pass data and columns to <SvGrid> and register rowSortingFeature and columnFilteringFeature through tableFeatures. Sorting and filtering are then handled for you."
+        },
+        {
+          "question": "What is the difference between a data grid and a data table?",
+          "answer": "A data table displays rows; a data grid also edits them, virtualizes them, groups them and talks to a server. SvGrid is a grid that is perfectly happy being used as a plain table."
+        },
+        {
+          "question": "How many rows can it render?",
+          "answer": "Row and column virtualization keep only the visible window in the DOM, so 100,000 rows by 100 columns stay smooth and a one-million-row demo scrolls fine."
+        },
+        {
+          "question": "Does it work with SvelteKit and SSR?",
+          "answer": "Yes. The grid is SSR-ready and the starter templates include a SvelteKit project, so data loaded in a load function renders without a flash of empty table."
+        }
+      ],
+      "related": [
+        "editable-table",
+        "server-side-table",
+        "tree-grid"
+      ]
+    },
+    {
+      "slug": "editable-table",
+      "kind": "feature",
+      "icon": "✎",
+      "cardText": "Typed cell editors, validation and undo.",
+      "query": "svelte editable table",
+      "h1": "Svelte Editable Table",
+      "seoTitle": "Svelte Editable Table - Inline Cell Editing",
+      "seoDescription": "Inline editing in a Svelte 5 table: give a column an editorType and it becomes editable, with validation, full-row edits, a fill handle and undo.",
+      "keywords": [
+        "svelte editable table",
+        "svelte inline editing",
+        "svelte grid cell editor",
+        "svelte editable data grid",
+        "svelte table validation"
+      ],
+      "tier": "community",
+      "intro": [
+        "Editing is opt-in per column, which is the safe default: turn on enableInlineEditing and a column with no editorType stays read-only. Give a column an editorType and it gets the right editor, whether that is a text box, a number field, a checkbox, a date picker or a dropdown backed by your own options.",
+        "Commits come back to you as events rather than mutations. onCellValueChange hands you the row, the column, the old value and the new one, so validation, optimistic updates and a save button are all decisions you make."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'\n\n  const features = tableFeatures({})\n\n  const columns: ColumnDef<typeof features, Person>[] = [\n    { field: 'firstName', header: 'First',  editorType: 'text' },\n    { field: 'age',       header: 'Age',    editorType: 'number' },\n    { field: 'joinedAt',  header: 'Joined', editorType: 'date' },\n    { field: 'active',    header: 'Active', editorType: 'checkbox' },\n  ]\n</script>\n\n<SvGrid\n  {data}\n  {columns}\n  {features}\n  enableInlineEditing={true}\n  onCellValueChange={(e) => save(e.row, e.columnId, e.newValue)}\n/>"
+      },
+      "heroDemo": "05-inline-editing",
+      "demos": [
+        "05-inline-editing",
+        "84-editor-types",
+        "177-full-row-editing",
+        "24-validation",
+        "95-fill-handle",
+        "86-undo-redo"
+      ],
+      "docs": [
+        "help/editing/overview",
+        "help/editing/provided-editors",
+        "help/editing/validation"
+      ],
+      "posts": [
+        "inline-editing-with-validation",
+        "building-the-editing-engine",
+        "editable-select-dropdown-cell"
+      ],
+      "features": [
+        {
+          "title": "Typed editors",
+          "body": "Text, number, checkbox, date, date-time and list editors ship with the grid, each with the keyboard behaviour you expect."
+        },
+        {
+          "title": "Validation while editing",
+          "body": "A validate hook per column marks a cell invalid with a reason as you type, and can block the commit until it is fixed."
+        },
+        {
+          "title": "Full-row editing",
+          "body": "Edit every cell in a row at once and commit or cancel as a unit, which is what forms-in-a-grid usually want."
+        },
+        {
+          "title": "Fill handle and paste",
+          "body": "Drag the corner of a selection to fill it, or paste a rectangle from Excel and have the values typed as they land."
+        },
+        {
+          "title": "Undo and redo",
+          "body": "Ctrl+Z and Ctrl+Y across edits, fills and pastes, so a mistake in a bulk change is one keystroke away from being gone."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "Every editor, validation and undo are in @svgrid/grid. Only staged batch editing is part of the commercial package."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I make a Svelte table editable?",
+          "answer": "Set enableInlineEditing on <SvGrid> and give each editable column an editorType. Columns without an editorType stay read-only even when editing is enabled."
+        },
+        {
+          "question": "How do I save an edit?",
+          "answer": "Handle onCellValueChange, which reports the row, the column id, the old value and the new one. Persist it however you like; the grid does not write to your data itself."
+        },
+        {
+          "question": "Can I use a dropdown in a cell?",
+          "answer": "Yes. Use editorType 'list' with editorOptions, which accepts plain values or objects with a label and a colour for a chip-style editor."
+        },
+        {
+          "question": "Is inline editing free?",
+          "answer": "Yes. Editing, the provided editors, validation, the fill handle and undo are all MIT-licensed in @svgrid/grid."
+        }
+      ],
+      "related": [
+        "data-table",
+        "spreadsheet",
+        "date-picker"
+      ]
+    },
+    {
+      "slug": "server-side-table",
+      "kind": "feature",
+      "icon": "⇅",
+      "cardText": "Sorting, filtering and paging on your endpoint.",
+      "query": "svelte server side table",
+      "h1": "Svelte Server-Side Table",
+      "seoTitle": "SvelteKit Server-Side Table - Paging, Sort, Filter",
+      "seoDescription": "Keep the data on the server: a Svelte 5 grid that round-trips sorting, filtering and paging to your endpoint, with keyset paging and infinite scroll.",
+      "keywords": [
+        "svelte server side table",
+        "sveltekit table pagination",
+        "svelte grid server side data",
+        "svelte infinite scroll table",
+        "svelte keyset pagination"
+      ],
+      "tier": "community",
+      "intro": [
+        "When the dataset is too large to send, the grid stops owning the rows and starts asking for them. You implement one getRows function that receives the current sort, filters and row range and returns the rows plus a total count; the grid handles caching, request cancellation, race safety and the loading state.",
+        "The same contract covers offset paging, keyset or cursor paging, infinite scroll and server-side grouping, so moving from one to another is a change of options rather than a rewrite."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "ts",
+        "code": "import { createServerDataSource, type ServerDataSource } from '@svgrid/grid'\n\nconst source: ServerDataSource<Row> = {\n  async getRows({ startRow, endRow, sortModel, filterModel }) {\n    const res = await fetch('/api/rows', {\n      method: 'POST',\n      body: JSON.stringify({ startRow, endRow, sortModel, filterModel }),\n    })\n    const { rows, total } = await res.json()\n    return { rows, rowCount: total } // rowCount = total AFTER filtering\n  },\n}\n\nconst ctl = createServerDataSource(source, { pageSize: 50, onChange: (s) => (view = s) })\nctl.refresh()"
+      },
+      "heroDemo": "09-server-side",
+      "demos": [
+        "148-server-row-model",
+        "09-server-side",
+        "33-server-infinite",
+        "113-cursor-pagination",
+        "344-server-grouping-model",
+        "79-loading-from-rest"
+      ],
+      "docs": [
+        "help/server-side-data",
+        "help/server/server-row-model",
+        "help/headless/server-side"
+      ],
+      "posts": [
+        "server-side-data",
+        "client-side-vs-server-side-data",
+        "server-side-data-and-the-headless-core"
+      ],
+      "features": [
+        {
+          "title": "One getRows contract",
+          "body": "A single function receives the row range, the sort model and the filter model, and returns rows plus the filtered total. Everything else is handled."
+        },
+        {
+          "title": "Debounce and cancellation",
+          "body": "Typing in a filter does not fire a request per keystroke, and a superseded request is cancelled rather than racing the one after it."
+        },
+        {
+          "title": "Keyset paging",
+          "body": "Cursor-based paging for tables where OFFSET gets slow, with the same grid props as offset paging."
+        },
+        {
+          "title": "Infinite scroll",
+          "body": "Fetch the next block as the user scrolls, keeping a sliding window of rows in memory instead of the whole result."
+        },
+        {
+          "title": "Server-side grouping",
+          "body": "Group nodes expand one level at a time through the same contract, so the grid holds only the groups you opened."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "The server row model, cursor paging and server grouping are all in @svgrid/grid."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I do server-side pagination in a Svelte table?",
+          "answer": "Create a ServerDataSource with a getRows function that receives startRow, endRow, sortModel and filterModel, and return the rows with the total count after filtering. Pass the controller's state to the grid."
+        },
+        {
+          "question": "What does the grid send to my endpoint?",
+          "answer": "The requested row range plus the current sort model and filter model. You decide how to turn those into SQL or an API call; the grid never assumes a backend."
+        },
+        {
+          "question": "Does it support infinite scroll?",
+          "answer": "Yes. Turn pagination off and the grid requests the next block as the user scrolls, keeping a window of rows rather than the entire result set."
+        },
+        {
+          "question": "Is server-side data free?",
+          "answer": "Yes. The server row model, infinite scroll, cursor paging and server-side grouping are MIT-licensed in @svgrid/grid."
+        }
+      ],
+      "related": [
+        "data-table",
+        "tree-grid",
+        "admin-dashboard"
+      ]
+    },
+    {
+      "slug": "admin-dashboard",
+      "kind": "feature",
+      "icon": "◈",
+      "cardText": "Grid, stat tiles and charts on one screen.",
+      "query": "svelte admin dashboard",
+      "h1": "Svelte Admin Dashboard",
+      "seoTitle": "Svelte Admin Dashboard - Grid, Stats and Charts",
+      "seoDescription": "Build an admin dashboard in Svelte 5: a data grid at the centre, stat tiles and charts around it. Scaffold the whole project with one create command.",
+      "keywords": [
+        "svelte admin dashboard",
+        "sveltekit admin panel",
+        "svelte dashboard template",
+        "svelte admin template",
+        "svelte crud dashboard"
+      ],
+      "tier": "community",
+      "intro": [
+        "Almost every admin screen is the same shape: some numbers at the top, a table in the middle that people actually work in, and a detail view or drawer off to the side. SvGrid gives you the middle, and the UI kit that ships with it gives you the rest, from stat tiles and sparklines to menus, drawers and forms.",
+        "If you would rather not assemble it, the admin-dashboard starter scaffolds a SvelteKit project with the layout, the grid and Tailwind already wired together."
+      ],
+      "install": "npm create @svgrid@latest my-admin -- --template admin-dashboard",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'\n</script>\n\n<SvGrid\n  data={filteredUsers}\n  columns={[\n    { field: 'name', header: 'User', width: 250,\n      cell: (ctx) => renderSnippet(UserCell, { row: ctx.row.original }) },\n    { field: 'role', header: 'Role', width: 110,\n      editorType: 'list', editorOptions: ROLE_OPTIONS },\n    { field: 'mfa', header: 'MFA', width: 80, editorType: 'checkbox' },\n  ] satisfies ColumnDef<typeof features, User>[]}\n  {features}\n  enableInlineEditing={true}\n/>"
+      },
+      "heroDemo": "49-admin-dashboard",
+      "demos": [
+        "49-admin-dashboard",
+        "22-admin-template",
+        "423-block-dashboard",
+        "345-ops-dashboard",
+        "424-block-app-shell",
+        "50-seller-panel"
+      ],
+      "docs": [
+        "getting-started/starters",
+        "enterprise/studio/dashboards"
+      ],
+      "posts": [
+        "building-admin-dashboard-svelte",
+        "admin-user-management-screen",
+        "order-management-dashboard"
+      ],
+      "features": [
+        {
+          "title": "One command to a project",
+          "body": "The admin-dashboard template scaffolds a SvelteKit app with the shell, the grid and Tailwind already connected."
+        },
+        {
+          "title": "Stat tiles and sparklines",
+          "body": "SvStat, SvSparkline and SvGauge cover the numbers row without pulling in a chart library."
+        },
+        {
+          "title": "A working table",
+          "body": "The grid at the centre sorts, filters, edits inline and exports, which is what an admin screen is mostly for."
+        },
+        {
+          "title": "Drawers and forms",
+          "body": "SvDrawer plus SvForm give you the edit panel, with schema-driven fields and validation rather than hand-written markup."
+        },
+        {
+          "title": "App shell blocks",
+          "body": "Ready-made navigation, header and dashboard blocks you can paste in and restyle instead of starting from an empty page."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "The grid, the UI kit and the starter are all MIT. Only export, pivot and the board and scheduler views are commercial."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I build an admin dashboard in Svelte?",
+          "answer": "Start from the admin-dashboard template with npm create @svgrid@latest my-admin -- --template admin-dashboard, or compose it yourself from the grid plus the stat, chart and drawer components in the UI kit."
+        },
+        {
+          "question": "Does it include authentication?",
+          "answer": "The starter does not. SvGrid Studio, the commercial app builder, generates SvelteKit projects with auth and role-based access wired in if you want that part generated too."
+        },
+        {
+          "question": "Can I use my own design system?",
+          "answer": "Yes. The grid is themed through CSS custom properties, so matching an existing palette is a token change rather than a fork, and the theme builder exports the tokens for you."
+        },
+        {
+          "question": "Is the admin dashboard free?",
+          "answer": "Yes. The starter template, the grid and the UI components are MIT-licensed. Excel export and pivot are the parts that need a commercial license."
+        }
+      ],
+      "related": [
+        "data-table",
+        "dock-layout",
+        "server-side-table"
+      ]
+    },
+    {
+      "slug": "date-picker",
+      "kind": "component",
+      "icon": "▣",
+      "cardText": "Calendar, range and date-time, no dependency.",
+      "query": "svelte date picker",
+      "h1": "Svelte Date Picker",
+      "seoTitle": "Svelte Date Picker - Calendar, Range and Date-Time",
+      "seoDescription": "A Svelte 5 date picker with no extra dependency: a calendar, a date-time picker with a clock, and a range input. Standalone or as a grid cell editor.",
+      "keywords": [
+        "svelte date picker",
+        "svelte calendar component",
+        "svelte datepicker",
+        "svelte date range picker",
+        "svelte 5 date time picker"
+      ],
+      "tier": "community",
+      "intro": [
+        "The date components in SvGrid are the ones the grid itself mounts when you edit a date cell, which means they are built for keyboard use and awkward input before they are built to look good in a screenshot. They also work perfectly well on their own, in any form, with no grid in sight.",
+        "There are three of them: SvCalendar for picking days out of a month, year or decade view, SvDateTimePicker for a masked input with a calendar and clock dropdown, and SvDateRangeInput for a start and end pair."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvDateTimePicker, SvCalendar } from '@svgrid/grid'\n\n  let value = $state<Date | null>(new Date())\n  let day = $state<Date | null>(null)\n</script>\n\n<SvDateTimePicker {value} hourFormat={24} onChange={(v) => (value = v)} />\n\n<SvCalendar value={day} selectionMode=\"single\" weekNumbers onChange={(d) => (day = d)} />"
+      },
+      "heroDemo": "252-datetimepicker",
+      "demos": [
+        "252-datetimepicker",
+        "250-calendar",
+        "283-daterange-input",
+        "258-calendar-range",
+        "259-datetimepicker-forms",
+        "260-calendar-birthday"
+      ],
+      "docs": [
+        "help/ui-components/sv-date-time-picker",
+        "help/ui-components/sv-calendar",
+        "help/ui-components/sv-date-range-input"
+      ],
+      "posts": [
+        "date-picker-cell-editor"
+      ],
+      "features": [
+        {
+          "title": "No extra dependency",
+          "body": "The calendar and the pickers are part of @svgrid/grid. No date library, no plugin, nothing else to install or keep updated."
+        },
+        {
+          "title": "Selection modes",
+          "body": "Single day, a range, a whole week or several unrelated days, with min and max bounds and restricted dates."
+        },
+        {
+          "title": "Type or pick",
+          "body": "The date-time input is masked, so a keyboard user can type a value and an invalid one reverts instead of silently becoming a wrong date."
+        },
+        {
+          "title": "A real clock",
+          "body": "The time tab is an analog dial with minute snapping and automatic hour-to-minute switching, plus optional spin buttons."
+        },
+        {
+          "title": "Range presets",
+          "body": "A presets rail for Today, Last 7 days, This month and Year to date, resolved relative to the current date."
+        },
+        {
+          "title": "Also a cell editor",
+          "body": "Set a column's editorType to date and the same component opens inside the grid, so a form and a table behave identically."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I add a date picker to a Svelte app?",
+          "answer": "Import SvDateTimePicker or SvCalendar from @svgrid/grid and bind a value. There is no separate package and no date library to add."
+        },
+        {
+          "question": "Can it pick a date range?",
+          "answer": "Yes. SvCalendar has a range selection mode with an optional presets rail, and SvDateRangeInput gives you a start and end field pair in one control."
+        },
+        {
+          "question": "Is the date picker free?",
+          "answer": "Yes. Every date and time component is MIT-licensed in @svgrid/grid, with no license key."
+        },
+        {
+          "question": "Does it work as a grid cell editor?",
+          "answer": "Yes, and that is where it came from. A column with editorType 'date' or 'datetime' opens the same component inline when the cell is edited."
+        }
+      ],
+      "related": [
+        "editable-table",
+        "command-palette",
+        "rich-text-editor"
+      ]
+    },
+    {
+      "slug": "command-palette",
+      "kind": "component",
+      "icon": "⌘",
+      "cardText": "Fuzzy search over your actions, on Cmd+K.",
+      "query": "svelte command palette",
+      "h1": "Svelte Command Palette",
+      "seoTitle": "Svelte Command Palette - Cmd+K Fuzzy Search",
+      "seoDescription": "A Cmd+K command palette for Svelte 5: fuzzy search, groups, shortcuts, arrow-key navigation and a global hotkey. Free, MIT and dependency-free.",
+      "keywords": [
+        "svelte command palette",
+        "svelte cmd k",
+        "svelte command menu",
+        "svelte kbar alternative",
+        "svelte quick actions"
+      ],
+      "tier": "community",
+      "intro": [
+        "A command palette is a list of commands plus fuzzy matching plus a global hotkey, and the hard parts are the ones nobody demos: trapping focus, locking the scroll behind it, dismissing on Escape or an outside click without breaking the layer underneath. SvCommand sits on the same primitives the grid's own popovers use, so those are already handled.",
+        "You give it an array of commands with an id, a label, an optional group and a shortcut, and a function to run. It opens on Cmd+K or Ctrl+K by default, or you can drive the open state yourself."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvCommand, type CommandItem } from '@svgrid/grid'\n\n  const commands: CommandItem[] = [\n    { id: 'new',    label: 'New record',  group: 'Actions', shortcut: 'Ctrl+N', onRun: create },\n    { id: 'export', label: 'Export CSV',  group: 'Actions', onRun: exportCsv },\n    { id: 'docs',   label: 'Open docs',   group: 'Help',    onRun: () => goto('/docs') },\n  ]\n</script>\n\n<!-- Cmd/Ctrl+K opens it -->\n<SvCommand {commands} onRun={(c) => track(c.id)} />"
+      },
+      "heroDemo": "340-command-palette",
+      "demos": [
+        "340-command-palette",
+        "424-block-app-shell"
+      ],
+      "docs": [
+        "help/ui-components/sv-command",
+        "help/ui-components/navigation"
+      ],
+      "posts": [
+        "svgrid-ui-components-tips-and-tricks"
+      ],
+      "features": [
+        {
+          "title": "Fuzzy matching",
+          "body": "Type a few letters from anywhere in a label and the command surfaces, with extra keywords per item for the words people actually use."
+        },
+        {
+          "title": "Groups and shortcuts",
+          "body": "Commands cluster under headings and can display their own keyboard shortcut, so the palette doubles as a shortcut cheat sheet."
+        },
+        {
+          "title": "Global hotkey",
+          "body": "Cmd+K on a Mac and Ctrl+K elsewhere by default, configurable, and it does not fire while the user is typing in an input."
+        },
+        {
+          "title": "Keyboard first",
+          "body": "Arrow keys move, Enter runs, Escape closes, and focus returns to where it was. Focus is trapped while it is open."
+        },
+        {
+          "title": "Bindable open state",
+          "body": "bind:open lets a button, a menu item or a route change open the palette, not just the hotkey."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "SvCommand is in @svgrid/grid, dependency-free, and shares the focus and dismissable primitives with every other overlay."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I add a Cmd+K command palette to a Svelte app?",
+          "answer": "Import SvCommand from @svgrid/grid, pass an array of commands with id, label and onRun, and render it once near the root of your layout. The Cmd or Ctrl plus K hotkey is wired by default."
+        },
+        {
+          "question": "Can I open it from a button?",
+          "answer": "Yes. Use bind:open and set it to true from anywhere, which is how the header search buttons in the demos work."
+        },
+        {
+          "question": "Is it accessible?",
+          "answer": "It traps focus while open, restores focus on close, locks the background scroll and is fully operable with the arrow keys, Enter and Escape."
+        },
+        {
+          "question": "Is the command palette free?",
+          "answer": "Yes. SvCommand is MIT-licensed in @svgrid/grid and pulls in no third-party dependency."
+        }
+      ],
+      "related": [
+        "dock-layout",
+        "date-picker",
+        "rich-text-editor"
+      ]
+    },
+    {
+      "slug": "dock-layout",
+      "kind": "component",
+      "icon": "❖",
+      "cardText": "Draggable, resizable, serializable panels.",
+      "query": "svelte dock layout",
+      "h1": "Svelte Dock Layout",
+      "seoTitle": "Svelte Dock Layout - Draggable Docking Panels",
+      "seoDescription": "An IDE-style docking workspace in Svelte 5: drag tabs between panes to split or stack, resize with splitters, pop panes out, and serialize the layout.",
+      "keywords": [
+        "svelte dock layout",
+        "svelte docking panels",
+        "svelte dockable workspace",
+        "svelte split pane",
+        "svelte ide layout"
+      ],
+      "tier": "community",
+      "intro": [
+        "A docking layout is the shape every serious internal tool converges on: panes you can drag, split, stack as tabs and resize, arranged however the person using it prefers. SvDockLayout gives you that, and the whole arrangement is a plain serializable tree you can store per user.",
+        "Because the layout is data, restoring a workspace is assigning a value, and shipping a sensible default layout is writing one down. SvDockManager adds floating and popped-out windows on top for the cases where a pane needs to leave the page entirely."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvDockLayout, dockGroup, dockTabs, dockPane, type DockNode } from '@svgrid/grid'\n\n  let layout = $state<DockNode>(\n    dockGroup('row', [\n      dockTabs([dockPane('explorer', 'Explorer')]),\n      dockGroup('column', [\n        dockTabs([dockPane('editor', 'index.ts'), dockPane('readme', 'README.md')]),\n        dockTabs([dockPane('terminal', 'Terminal')]),\n      ], [0.7, 0.3]),\n    ], [0.25, 0.75]),\n  )\n</script>\n\n<SvDockLayout bind:layout>\n  {#snippet pane(p)}\n    {#if p.id === 'explorer'}<FileTree />{:else}<div>{p.title}</div>{/if}\n  {/snippet}\n</SvDockLayout>"
+      },
+      "heroDemo": "361-dock-layout",
+      "demos": [
+        "361-dock-layout",
+        "362-dock-manager",
+        "365-dock-dashboard",
+        "363-dock-headers",
+        "364-dock-api",
+        "367-dock-popout"
+      ],
+      "docs": [
+        "help/ui-components/sv-dock-layout",
+        "help/ui-components/sv-dock-manager",
+        "enterprise/studio/dock-layout"
+      ],
+      "posts": [
+        "svgrid-ui-components-tips-and-tricks"
+      ],
+      "features": [
+        {
+          "title": "Drag to split or stack",
+          "body": "Drop a tab on a pane edge to split in that direction, or on its centre to stack it as another tab in the same pane."
+        },
+        {
+          "title": "The layout is data",
+          "body": "A DockNode tree of groups, tab sets and panes. Bind it, save it to localStorage or a user record, and assign it back to restore."
+        },
+        {
+          "title": "Resizable splitters",
+          "body": "Every group carries its own size ratios, so dragging a splitter updates the same tree the rest of the layout lives in."
+        },
+        {
+          "title": "Floating and popped-out panes",
+          "body": "SvDockManager adds panes that float over the workspace or open in a real browser window and keep working."
+        },
+        {
+          "title": "Keep-alive tabs",
+          "body": "A hidden tab can keep its component mounted, so a grid scrolled halfway down is still there when you come back to it."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "Both SvDockLayout and SvDockManager are in @svgrid/grid with no license key."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I build a dockable layout in Svelte?",
+          "answer": "Compose a DockNode tree with dockGroup, dockTabs and dockPane, bind it to SvDockLayout, and render each pane from the pane snippet by its id."
+        },
+        {
+          "question": "Can I save and restore the layout?",
+          "answer": "Yes. The bound layout is a plain serializable object, so JSON.stringify it into localStorage or a user profile and assign it back on load."
+        },
+        {
+          "question": "Can a pane open in its own window?",
+          "answer": "Yes. SvDockManager supports popping a pane out into a real browser window, which stays connected to the same application state."
+        },
+        {
+          "question": "Is the dock layout free?",
+          "answer": "Yes. The docking layout and the dock manager are MIT-licensed in @svgrid/grid."
+        }
+      ],
+      "related": [
+        "admin-dashboard",
+        "command-palette",
+        "data-table"
+      ]
+    },
+    {
+      "slug": "rich-text-editor",
+      "kind": "component",
+      "icon": "¶",
+      "cardText": "A small WYSIWYG that emits HTML.",
+      "query": "svelte rich text editor",
+      "h1": "Svelte Rich Text Editor",
+      "seoTitle": "Svelte Rich Text Editor - WYSIWYG with bind:value",
+      "seoDescription": "A lightweight Svelte 5 WYSIWYG editor: bold, headings, lists, quotes, code blocks and links, emitting HTML through bind:value with a custom toolbar.",
+      "keywords": [
+        "svelte rich text editor",
+        "svelte wysiwyg",
+        "svelte html editor",
+        "svelte 5 text editor",
+        "svelte contenteditable editor"
+      ],
+      "tier": "community",
+      "intro": [
+        "SvRichText is a small WYSIWYG editor over a contentEditable region. It emits HTML through bind:value, takes a configurable toolbar, and adds no third-party dependency to your bundle. It covers the formatting most applications actually need: bold, italic, underline, strikethrough, headings, lists, quotes, code blocks, alignment, links and undo.",
+        "It is deliberately not a document editor. There is no collaborative editing, no comment threads and no change tracking. For a notes field, a description box or a comment form, that is the right amount of editor."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvRichText } from '@svgrid/grid'\n\n  let html = $state('<p>Hello</p>')\n</script>\n\n<SvRichText\n  bind:value={html}\n  placeholder=\"Write something...\"\n  minHeight=\"120px\"\n  tools={['bold', 'italic', 'underline', '|', 'ul', 'ol', '|', 'link', 'clear']}\n/>"
+      },
+      "heroDemo": "341-rich-text-editor",
+      "demos": [
+        "341-rich-text-editor",
+        "404-form-rich-fields",
+        "334-input-editors"
+      ],
+      "docs": [
+        "help/ui-components/sv-rich-text",
+        "help/ui-components/inputs"
+      ],
+      "posts": [
+        "svgrid-ui-components-tips-and-tricks"
+      ],
+      "features": [
+        {
+          "title": "HTML through bind:value",
+          "body": "The value is a plain HTML string in and out, so storing it, sanitizing it and rendering it elsewhere are all your normal code."
+        },
+        {
+          "title": "A toolbar you choose",
+          "body": "The tools array names exactly the buttons you want, with a pipe for a separator. Leave it out and you get a sensible default set."
+        },
+        {
+          "title": "No dependency",
+          "body": "It ships inside @svgrid/grid and pulls in nothing else, so a notes field does not cost you a document-editor bundle."
+        },
+        {
+          "title": "Sensible defaults",
+          "body": "Placeholder text, a minimum height, disabled and read-only states, and an onChange callback if you would rather not bind."
+        },
+        {
+          "title": "Works in a form",
+          "body": "It follows the same field contract as the other editors, so labels, hints, validation and RTL behave as they do everywhere else."
+        },
+        {
+          "title": "Free and MIT",
+          "body": "SvRichText is part of @svgrid/grid with no license key."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How do I add a rich text editor to a Svelte app?",
+          "answer": "Import SvRichText from @svgrid/grid and bind a string with bind:value. The editor emits HTML and needs no other package."
+        },
+        {
+          "question": "Can I customize the toolbar?",
+          "answer": "Yes. Pass a tools array naming the buttons you want, in order, using a pipe string for a separator."
+        },
+        {
+          "question": "Does it support collaborative editing?",
+          "answer": "No. It is a single-user WYSIWYG field with no collaboration, comments or change tracking, and none are planned. For a document editor, use a dedicated one."
+        },
+        {
+          "question": "Is it free?",
+          "answer": "Yes. SvRichText is MIT-licensed in @svgrid/grid and dependency-free."
+        }
+      ],
+      "related": [
+        "editable-table",
+        "date-picker",
+        "command-palette"
+      ]
+    }
+  ]
+}

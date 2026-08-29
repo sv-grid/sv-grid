@@ -294,4 +294,10 @@
   .pin-strip.pin-bottom :global(td) {
     background: linear-gradient(180deg, color-mix(in oklab, #10b981 4%, transparent), transparent) !important;
   }
+  /* Phone: the strips hide overflow (rounded corners), so as flex items of the
+     stage they shrank to what the floored middle grid left and clipped their
+     own small grids. Keep their heights; the page scrolls. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .pin-strip { flex-shrink: 0; }
+  }
 </style>

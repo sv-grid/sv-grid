@@ -118,4 +118,14 @@
   .tags { display: flex; gap: 6px; flex-wrap: wrap; }
   .tag { padding: 3px 10px; border-radius: 6px; font-size: 13px; background: var(--sg-row-hover-bg, #f1f5f9); }
   .empty { color: var(--sg-muted, #94a3b8); font-style: italic; margin: 0; }
+  /* Phone: the mini month is a 7-column grid whose weekday initials set a min-content
+     width wider than the card. Let the columns shrink; the day cells stay square. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .mini__grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .mini__wd { overflow: hidden; }
+    /* The day cells set aspect-ratio: 1 with no width, so they took their width
+       FROM their row height (40px) and overflowed their 32px column. Pin the width
+       to the column and let the ratio drive the height instead. */
+    .mini__day { width: 100%; }
+  }
 </style>

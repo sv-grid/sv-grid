@@ -935,4 +935,9 @@
     font-style: italic;
     font-size: 11.5px;
   }
+  /* Phone: same shape - content-sized rows, and the order log scrolls inside its card. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .rt-body { grid-auto-rows: max-content; }
+    .rt-log-list { max-height: 45vh; overflow-y: auto; }
+  }
 </style>

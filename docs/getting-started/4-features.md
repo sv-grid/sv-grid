@@ -18,17 +18,42 @@ constants:
 />
 ```
 
+`selectable` completes the set - see
+[the exception](#the-exception-selection-is-already-on) below, since selection
+is already on:
+
+```svelte
+<SvGrid data={rows} columns={columns} selectable={false} />
+```
+
 | Shortcut     | Turns on                                         | Equivalent to                              |
 | ------------ | ------------------------------------------------ | ------------------------------------------ |
 | `sortable`   | Click headers to sort                            | injects `rowSortingFeature`                |
 | `filterable` | Per-column filter menu                           | injects `columnFilteringFeature`           |
-| `editable`   | Inline cell editing (needs `editorType` columns) | `enableInlineEditing`                      |
+| `editable`   | Inline cell editing (text editor unless `editorType`) | `enableInlineEditing`                 |
+| `selectable` | Cell selection (click a cell, drag for a range)  | `enableCellSelection`                      |
 | `groupable`  | "Group by this column" in the column menu        | `showGroupingControls`                     |
 | `pageable`   | Pagination footer                                | `showPagination`                           |
 
 Each shortcut is an override: omit it (or set `false`) to leave the
 capability off; set it `true` to opt in. See the live
 [Shortcut config](https://svgrid.com/demos/135-shortcut-config/) demo.
+
+### The exception: selection is already on
+
+`selectable` is the one shortcut that starts **on**. Selection is governed by
+`selectionMode`, which defaults to `'both'`, so a bare grid already has both
+surfaces:
+
+| Surface                  | Controlled by                       | Default |
+| ------------------------ | ----------------------------------- | ------- |
+| Cell / range selection   | `selectable` -> `enableCellSelection` | **on**  |
+| Selection checkbox column | `showRowSelection`                  | **on**  |
+
+Neither needs a feature import. `selectable` is listed with the shortcuts so
+the capability has a name next to the others, and so `selectable={false}` is a
+one-word way to switch cell selection off. To move both surfaces at once, use
+`selectionMode="none"` (or `"row"` / `"cell"`).
 
 **For most grids this is the whole story** - skip to
 [Theme and density](./5-theme-and-density.md). The rest of this page is the
@@ -165,7 +190,9 @@ Both are off by default. Two top-level umbrella props turn them on:
 - `'both'`  - both (default)
 - `'none'`  - both off
 
-Cell editing requires `editorType` on the columns you want editable.
+Cell editing falls back to a text editor, so `editable` works on plain
+columns; declare `editorType` on a column to get the right control for its
+type (`number`, `date`, `checkbox`, `list`, ...).
 See [Editing overview](../help/editing/overview.md).
 
 ## Keyboard map

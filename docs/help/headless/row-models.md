@@ -37,6 +37,10 @@ import {
   createPaginatedRowModel,
   createGroupedRowModel,
   createExpandedRowModel,
+  tableFeatures,
+  rowPaginationFeature,
+  columnGroupingFeature,
+  rowExpandingFeature,
 } from '@svgrid/grid'
 
 const table = createSvGrid({
@@ -51,7 +55,7 @@ const table = createSvGrid({
   columns,
   state,
   // ...change handlers
-} as never)
+})
 
 const rows = table.getRowModel().rows // filtered → sorted → paged
 ```
@@ -66,7 +70,10 @@ Add `createPaginatedRowModel` and drive it with `pagination` state:
 ```ts
 let pagination = $state({ pageIndex: 0, pageSize: 20 })
 
+const features = tableFeatures({ rowPaginationFeature })
+
 const table = $derived.by(() => createSvGrid({
+  _features: features,
   _rowModels: {
     coreRowModel:      createCoreRowModel<Row>(),
     paginatedRowModel: createPaginatedRowModel<Row>(),
@@ -75,7 +82,7 @@ const table = $derived.by(() => createSvGrid({
   state: { pagination },
   onPaginationChange: (u) =>
     (pagination = typeof u === 'function' ? u(pagination) : u),
-} as never))
+}))
 
 // getRowModel().rows is now just the current page
 function nextPage() { pagination = { ...pagination, pageIndex: pagination.pageIndex + 1 } }
@@ -91,7 +98,10 @@ and its aggregates come from each column's `aggregate` setting.
 let grouping = $state<string[]>(['lang'])
 let expanded = $state<Record<string, boolean>>({})
 
+const features = tableFeatures({ columnGroupingFeature, rowExpandingFeature })
+
 const table = $derived.by(() => createSvGrid({
+  _features: features,
   _rowModels: {
     coreRowModel:     createCoreRowModel<Repo>(),
     groupedRowModel:  createGroupedRowModel<Repo>(),
@@ -104,7 +114,7 @@ const table = $derived.by(() => createSvGrid({
   ],
   state: { grouping, expanded },
   onExpandedChange: (u) => (expanded = typeof u === 'function' ? u(expanded) : u),
-} as never))
+}))
 
 const rows = $derived(table.getRowModel().rows)
 // each row: row.getIsGrouped(), row.getIsExpanded(), row.toggleExpanded()
@@ -118,11 +128,12 @@ what you give it:
 
 ```ts
 const table = createSvGrid({
+  _features: tableFeatures({}),   // no features - the server did the work
   _rowModels: { coreRowModel: createCoreRowModel<Row>() }, // core only
   data: serverPage.rows,   // already sorted/filtered/paged by the API
   columns,
   state,
-} as never)
+})
 ```
 
 Track the sort/filter state via the change handlers and re-fetch on change - see

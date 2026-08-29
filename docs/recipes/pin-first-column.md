@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Pin first column on horizontal scroll
 
 > Live in [demo 25-column-pinning](https://svgrid.com/demos/25-column-pinning/).

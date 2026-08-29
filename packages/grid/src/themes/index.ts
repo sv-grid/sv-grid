@@ -162,8 +162,10 @@ export const themePresets: ThemePreset[] = [
     dark: { bg: '#1e1e2e', fg: '#cdd6f4', muted: '#a6adc8', border: '#313244', headerBg: '#181825', headerFg: '#cdd6f4', accent: '#cba6f7', rowAlt: '#1a1a28', rowHover: '#313244', selectionBg: '#45475a' } },
 ]
 
-/** The default preset (used when nothing is chosen). */
-export const defaultThemePreset: ThemePreset = themePresets.find((t) => t.id === 'tailwind') ?? themePresets[0]!
+/** The default preset (used when nothing is chosen): Ember, the house theme the
+ *  demo gallery and svgrid.com open on, so a scaffolded or Studio-generated app
+ *  looks like the demos unless a preset is picked. */
+export const defaultThemePreset: ThemePreset = themePresets.find((t) => t.id === 'ember') ?? themePresets[0]!
 
 /** Look up a preset by id. */
 export const getThemePreset = (id?: string): ThemePreset | undefined =>

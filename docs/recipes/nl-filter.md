@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # NL filter wired to your LLM
 
 > Live in [demo 51-ai-assistant](https://svgrid.com/demos/51-ai-assistant/).

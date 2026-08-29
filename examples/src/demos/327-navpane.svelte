@@ -89,6 +89,11 @@
   code { background: var(--sg-row-hover-bg, #eef2ff); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
   .toggle { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--sg-muted, #64748b); }
   .stage { display: flex; gap: 18px; align-items: flex-start; }
+  /* Phone: the nav pane is 260px wide, which left the content card a 60px
+     column of one-word lines. Put the content under the pane instead. */
+  @media (max-width: 639px) {
+    .stage { flex-direction: column; align-items: stretch; }
+  }
   .content { flex: 1; padding: 16px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 10px; min-height: 200px; }
   .content h3 { margin: 0 0 8px; font-size: 16px; text-transform: capitalize; }
   .content p { margin: 0; font-size: 13.5px; color: var(--sg-muted, #64748b); line-height: 1.6; }

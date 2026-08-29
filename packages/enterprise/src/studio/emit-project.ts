@@ -15,7 +15,7 @@ import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityData
 import { tenantField, isTenantScoped } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, rowSelectSlot, eventSlot, FORM_SUBMIT, GRID_EVENTS, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
 import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-components.js'
-import { resolveThemeTokens, resolveThemeTokensFor, isDarkTheme } from './themes.js'
+import { isDarkTheme, themeTokenCss } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { hasFieldConditions } from '../edit-panel.js'
 import { SVGRID_VERSION } from '../version.js'
@@ -2988,7 +2988,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   if (authUserAdmin) navExtras = [...navExtras, { href: '/users', label: 'Users', id: '__users__' }]
   const i18nFiles = i18nEnabled ? [i18nModule(project)] : []
   const handleFiles = project.screens.some(screenHasCode) ? [handlesModuleFile()] : []
-  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...jobFileList, ...tenantFileList, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { accent: project.theme?.accent, shell: project.theme?.shell, title: project.title, themeVars: resolveThemeTokens(project.theme), lightVars: resolveThemeTokensFor(project.theme, 'light'), darkVars: resolveThemeTokensFor(project.theme, 'dark'), dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled && !supabaseAuth, supabaseAuth, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
+  return [...files, ...accessFiles, ...authFileList, ...dataLayerList, ...ddlFiles, ...auditFiles, ...jobFileList, ...tenantFileList, ...i18nFiles, ...actionRouteFiles, ...ssrHelpers, ...pages, ...companions, ...handleFiles, layoutFile(navExtras, { shell: project.theme?.shell, title: project.title, themeSwitch: true, dark: isDarkTheme(project.theme), access: accessEnabled, auth: authEnabled && !supabaseAuth, supabaseAuth, authRoutes: publicAuthRoutes, authAccount: dbBackedAuth, i18n: i18nEnabled, appClass: project.theme?.appClass }), homeFile(navExtras)]
 }
 
 /** The default-locale (`en`) message catalog, keyed for nav, screen titles, the
@@ -4811,8 +4811,16 @@ const SCAFFOLD_STATIC: ReadonlyArray<GeneratedFile> = [
   { path: '.gitignore', description: 'git ignore.', contents: `node_modules\n.svelte-kit\n/build\n.env\n.env.*\n!.env.example\n.DS_Store\n` },
 ]
 
-const APP_CSS = `:root { --sg-accent: #4f46e5; color-scheme: light dark; }
-* { box-sizing: border-box; }
+/** `src/app.css`: the project's theme tokens (see `themeTokenCss`) followed by the
+ *  `.st-*` page styles every generated screen uses. This is the ONE place the tokens
+ *  are emitted, so the fragment (which drops the layout) and the full app are
+ *  themed alike. `layer` is for drop-in outputs - see `themeTokenCss`. */
+function appCss(project: StudioProject, opts: { layer?: string } = {}): string {
+  return `${themeTokenCss(project.theme, opts)}
+${APP_CSS_BODY}`
+}
+
+const APP_CSS_BODY = `* { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { font-family: var(--sg-font, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif); color: var(--sg-fg, #0f172a); background: var(--sg-bg, #fff); }
 .st__title { margin: 0; font-size: 22px; font-weight: 720; letter-spacing: -0.015em; }
@@ -5374,7 +5382,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
     ...(envDotFile(allSource) ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET is pre-filled so sessions are secure out of the box; fill in the rest.', contents: envDotFile(allSource)! }] : []),
-    { path: 'src/app.css', description: 'App theme + page styles.', contents: APP_CSS },
+    { path: 'src/app.css', description: 'App theme tokens + page styles.', contents: appCss(project) },
     // Your styles: a dedicated CSS file the layout imports AFTER app.css, so its rules
     // win. Edited in the designer's Styles panel; regenerated from the model.
     { path: 'src/custom.css', description: 'Your custom styles (edited in the designer; imported after app.css so it overrides).', contents: `/* Your custom styles. Edit in the designer's Styles panel, or here after ejecting.\n   Imported after app.css, so these rules override the defaults. */\n${project.theme?.customCss ? `\n${project.theme.customCss}\n` : ''}` },
@@ -5431,7 +5439,9 @@ ${depList}
 
 ## 3. Styles
 Import \`src/app.css\` once (e.g. in your root \`+layout.svelte\`) - it carries the
-\`.st-*\` page styles the screens use and the \`--sg-*\` design tokens.
+\`.st-*\` page styles the screens use and the \`--sg-*\` design tokens of the theme
+picked in Studio. The tokens sit in a cascade layer (\`@layer svgrid-studio\`), so if
+your app already defines its own \`--sg-*\` tokens, yours keep winning.
 
 ## 4. What your app must provide
 The full-app nav shell, home redirect, auth guard, RBAC bootstrap, i18n provider,
@@ -5444,7 +5454,7 @@ ${libFiles.join('\n')}
 
   return [
     ...content,
-    { path: 'src/app.css', description: 'Page styles (.st-*) + design tokens - import once in your layout.', contents: APP_CSS },
+    { path: 'src/app.css', description: 'Theme tokens (layered, so yours win) + page styles (.st-*) - import once in your layout.', contents: appCss(project, { layer: 'svgrid-studio' }) },
     { path: 'FRAGMENT.md', description: 'How to drop this fragment into an existing SvelteKit app.', contents: fragmentMd },
   ]
 }

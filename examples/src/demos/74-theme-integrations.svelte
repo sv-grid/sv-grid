@@ -216,7 +216,7 @@ ${dark}
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="flex flex-wrap items-center gap-2 text-sm shrink-0">
     <span class="font-medium">Theme preset:</span>
-    <div class="inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+    <div class="preset-strip inline-flex items-center rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
       {#each THEMES as t (t.id)}
         {@const previewTokens = mode === 'dark' ? t.dark : t.light}
         <button type="button" onclick={() => (theme = t)}
@@ -269,6 +269,14 @@ ${dark}
 </section>
 
 <style>
+  /* Phone: five preset chips need ~520px; the strip clipped the last two
+     with no way to reach them. Let it pan (the `overflow-hidden` utility
+     sits in Tailwind's layer, so this plain rule wins) and keep each chip
+     at its natural width. */
+  @media (max-width: 639px) {
+    .preset-strip { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+    .theme-chip { flex-shrink: 0; }
+  }
   .themed-host { font-family: var(--sg-font, inherit); }
 
   /* Layout: CSS Grid (not flex-wrap) so each pane gets a single,
@@ -339,5 +347,11 @@ ${dark}
     background: #0b1220;
     color: #e2e8f0;
     border-color: #1e293b;
+  }
+  /* Landscape phone: .theme-layout hides overflow on purpose (so the demo cannot
+     push the page), but in a ~250px stage the themed grid needs ~11px more than
+     the pane and its last row was cut. Let the layout scroll instead of clip. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .theme-layout { overflow-y: auto; }
   }
 </style>

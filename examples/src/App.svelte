@@ -215,7 +215,7 @@
   // demos own (the grid's own popovers portal to <body>, so they're fine).
   // Keeping it `overflow: visible` for the demos that DO fit avoids that.
   // Inert on desktop: no rule references `.is-wide` outside the mobile layer.
-  let stageEl = $state(null)
+  let stageEl = $state<HTMLDivElement | null>(null)
   let stageWide = $state(false)
   $effect(() => {
     current.id // re-measure when the demo changes
@@ -790,8 +790,21 @@
      carries Tailwind's `md:hidden`, and 844px is above `md`. A plain rule wins
      because Tailwind's utilities are in `@layer utilities` and this is not.
      Same for the backdrop, whose `min-width: 768px` hide rule sits above -
-     equal specificity, later in source, so this wins. */
-  @media (max-height: 500px) and (pointer: coarse) {
+     equal specificity, later in source, so this wins.
+
+     TABLET PORTRAIT is the same mismatch and gets the same treatment. An iPad
+     mini is 768x1024: above the 767px drawer breakpoint, so the sidebar keeps
+     its 288px and the stage is 432px - NARROWER than the 466px stage on a
+     390px phone - while no width-based rule fires, because they all key off
+     the 767px viewport. 345-ops-dashboard had 25 elements up to 248px off
+     screen there with no way to reach them. Drawering takes the stage to
+     ~740px.
+
+     `pointer: coarse` is what keeps the desktop promise: a desktop window
+     resized to 900px has a FINE pointer and never matches, so this cannot
+     touch the desktop rendering. */
+  @media (max-height: 500px) and (pointer: coarse),
+    (min-width: 768px) and (max-width: 1023px) and (pointer: coarse) {
     .demo-sidebar {
       position: fixed;
       inset: 0 auto 0 0;

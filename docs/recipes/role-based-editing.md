@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Role-based editable columns
 
 > Live in [demo 41-healthcare-emr](https://svgrid.com/demos/41-healthcare-emr/).

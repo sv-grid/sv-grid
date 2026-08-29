@@ -17,8 +17,7 @@ const table = $derived.by(() => createSvGrid({
   state: { sorting },                         // ── in
   onSortingChange: (u) =>                      // ── out
     (sorting = typeof u === 'function' ? u(sorting) : u),
-  enableSorting: true,
-} as never))
+}))
 ```
 
 The handler receives either the next value **or** an updater function - always
@@ -55,8 +54,8 @@ const table = $derived.by(() => createSvGrid({
   get data() { return rows },
   get columns() { return columns },
   state: { sorting: getSorting() },
-  onSortingChange: (u) => setSorting(u as never),
-} as never))
+  onSortingChange: setSorting,   // the setter already handles updaters
+}))
 ```
 
 ### Share one store across two grids
@@ -72,8 +71,8 @@ const [getSorting, setSorting] = createGridState<Sort[]>([])
 const makeGrid = () => $derived.by(() => createSvGrid({
   get data() { return rows }, get columns() { return columns },
   state: { sorting: getSorting() },
-  onSortingChange: (u) => setSorting(u as never),
-} as never))
+  onSortingChange: setSorting,
+}))
 
 const gridA = makeGrid()
 const gridB = makeGrid()   // shares getSorting/setSorting -> stays in sync

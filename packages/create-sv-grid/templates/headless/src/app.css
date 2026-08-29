@@ -1,0 +1,153 @@
+/* ---------------------------------------------------------------------------
+ * Your stylesheet. All of it.
+ *
+ * Nothing here comes from @svgrid/grid - there is no preset import, no --sg-*
+ * token, no theme to pick. The headless entry point ships an engine and no CSS,
+ * so the table below is styled the same way any other table in your app would
+ * be. Rename the variables, drop them for Tailwind classes, delete this file
+ * and start over: none of it affects sorting or filtering.
+ *
+ * If you'd rather inherit a themed grid than write one, the other starters use
+ * the <SvGrid> renderer and its 20 presets:
+ *   npm create @svgrid@latest my-app -- --template minimal
+ * ------------------------------------------------------------------------- */
+
+:root {
+  --app-bg: #ffffff;
+  --app-surface: #fafaf9;
+  --app-fg: #1c1917;
+  --app-muted: #78716c;
+  --app-border: #e7e5e4;
+  --app-accent: #c2410c;
+  --app-hover: #f5f5f4;
+  color-scheme: light;
+}
+
+/* Dark mode follows the OS. Swap this for a data-theme attribute and a toggle
+   if you want the choice to be the user's. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-bg: #1c1917;
+    --app-surface: #292524;
+    --app-fg: #fafaf9;
+    --app-muted: #a8a29e;
+    --app-border: #44403c;
+    --app-accent: #fb923c;
+    --app-hover: #292524;
+    color-scheme: dark;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+main {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+}
+
+header p {
+  margin: 0 0 1.5rem;
+  color: var(--app-muted);
+  line-height: 1.6;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.search {
+  width: 260px;
+  margin-bottom: 1rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 1px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th {
+  padding: 0;
+  background: var(--app-surface);
+  border-bottom: 2px solid var(--app-border);
+  text-align: left;
+}
+
+/* The header is a button so keyboard users can sort too - the engine does not
+   care what element calls toggleSort. */
+th button {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+th button:hover {
+  color: var(--app-accent);
+}
+
+th button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: -2px;
+}
+
+.indicator {
+  color: var(--app-accent);
+  font-size: 0.7em;
+}
+
+td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--app-border);
+}
+
+tbody tr:hover td {
+  background: var(--app-hover);
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: 1.5rem;
+  color: var(--app-muted);
+  text-align: center;
+}
+
+.count {
+  margin-top: 0.75rem;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}

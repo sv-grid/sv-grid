@@ -43,7 +43,11 @@ function shellOf(app: string) {
 }
 
 // Keep in step with TEMPLATES in packages/create-sv-grid/index.mjs.
-const templates = ['minimal', 'sveltekit', 'admin-dashboard']
+const templates = ['minimal', 'sveltekit', 'admin-dashboard', 'headless']
+// The subset that renders <SvGrid> and therefore has a --sg-* palette to write
+// a theme into. `headless` ships the engine and no CSS, so it is deliberately
+// never asked and never told which preset to use.
+const themedTemplates = ['minimal', 'sveltekit', 'admin-dashboard']
 
 describe('create-sv-grid templates', () => {
   it.each(templates)('%s scaffolds with its dotfiles renamed back', (template) => {
@@ -55,7 +59,7 @@ describe('create-sv-grid templates', () => {
     expect(readFileSync(join(app, 'package.json'), 'utf8')).not.toContain('__NAME__')
   })
 
-  it.each(templates)('%s honours --theme and --dark everywhere it records one', (template) => {
+  it.each(themedTemplates)('%s honours --theme and --dark everywhere it records one', (template) => {
     const app = scaffold(template, ['--theme', 'dracula', '--dark'])
 
     // 1. The stylesheet: either the preset import or its resolved tokens.
@@ -77,7 +81,7 @@ describe('create-sv-grid templates', () => {
     expect(shellOf(app)).toMatch(/<html\b[^>]*data-theme="dark"/)
   })
 
-  it.each(templates)('%s honours --light in the shell too', (template) => {
+  it.each(themedTemplates)('%s honours --light in the shell too', (template) => {
     expect(shellOf(scaffold(template, ['--theme', 'excel', '--light']))).toMatch(
       /<html\b[^>]*data-theme="light"/,
     )
@@ -111,6 +115,33 @@ describe('create-sv-grid templates', () => {
     // Sorting is the server's job here; a grid left to sort internally would
     // silently disagree with the URL.
     expect(pageSvelte).toContain('externalSort')
+  })
+
+  // The whole promise of this template is that no grid CSS arrives with it. A
+  // stray preset import or --sg-* token would quietly re-theme an app whose
+  // owner was told the stylesheet is theirs.
+  it('headless ships the engine and none of the renderer', () => {
+    const app = scaffold('headless')
+    const appSvelte = readFileSync(join(app, 'src', 'App.svelte'), 'utf8')
+    expect(appSvelte).toContain("from '@svgrid/grid/core'")
+    expect(appSvelte).toContain('createSvGrid')
+    expect(appSvelte).not.toContain('<SvGrid')
+
+    // Comments stripped first: the file explains what --sg-* is and why it is
+    // absent, and that prose is not a token.
+    const css = readFileSync(join(app, 'src', 'app.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(css).not.toContain('@svgrid/grid/themes')
+    expect(css).not.toContain('--sg-')
+    expect(css).not.toContain('svgrid-theme:start')
+  })
+
+  // Passing --theme to a template with nothing to theme used to collect the
+  // answer, apply none of it, and still report a theme in the summary.
+  it('headless ignores --theme instead of pretending to apply it', () => {
+    const app = scaffold('headless', ['--theme', 'dracula', '--dark'])
+    const css = readFileSync(join(app, 'src', 'app.css'), 'utf8')
+    expect(css).not.toContain('dracula')
+    expect(css).not.toContain('#282a36')
   })
 
   it('an unknown template fails loudly instead of scaffolding something else', () => {

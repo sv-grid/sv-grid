@@ -116,7 +116,9 @@ in turn links out to the docs). Regenerate the pages after editing tips:
 `node tools/twitter/build-tips-pages.mjs`.
 
 **Publishing the pages:** `build-tips-pages.mjs` writes into the PRIVATE website
-submodule (`website/src/content/blog/`); it is NOT run at deploy time. To make
-the pages live, commit + push them inside `website/` (the `sv-grid/website`
-repo), then the site rebuilds. Until then the tweet deep-links 404, so publish
-the pages before enabling the tip tweets.
+submodule (`website/src/content/blog/`), and the website deploy runs it against
+a fresh clone before every build (together with the pillar and internal-link
+generators; `pnpm blog:seo` runs the same three locally). The generated pages
+are never committed. Editing `tips-data.mjs` triggers a deploy on push, so a new
+tip is live on the site before its tweet can go out; run the script locally only
+to preview the pages in the dev server.

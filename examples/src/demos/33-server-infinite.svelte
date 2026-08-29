@@ -1104,6 +1104,18 @@
     font-size: 11px;
     color: var(--sg-fg, #1e293b);
   }
+  /* Phone: a 280px panel floating over a 360px-wide grid hides half of it.
+     Put it in the flow under the grid instead. */
+  @media (max-width: 639px) {
+    .srv-net {
+      position: static;
+      width: auto;
+      max-height: none;
+      flex-shrink: 0;
+      margin-top: 8px;
+      box-shadow: none;
+    }
+  }
   .srv-net-head {
     display: flex;
     align-items: center;

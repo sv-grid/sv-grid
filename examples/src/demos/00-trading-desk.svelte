@@ -788,6 +788,10 @@
 
   <!-- Toolbar: sector chips + pause -->
   <div class="td-toolbar">
+    <!-- `.td-chips` is `display: contents` on desktop, so the chips lay out in
+         the toolbar exactly as they did before it existed; on a phone it turns
+         into one horizontally scrolling row (see the phone block in <style>). -->
+    <div class="td-chips">
     <button
       type="button"
       class="td-chip td-chip-all"
@@ -804,6 +808,7 @@
         onclick={() => (sectorFilter = s)}>{s}</button
       >
     {/each}
+    </div>
     <div class="td-toolbar-spacer"></div>
     <span class="td-hint">
       Editable: <strong>Position</strong> · <strong>Sector</strong> ·
@@ -1088,6 +1093,9 @@
   }
   .td-toolbar-spacer {
     flex: 1 1 auto;
+  }
+  .td-chips {
+    display: contents;
   }
   .td-btn {
     border: 1px solid var(--sg-border, #cbd5e1);
@@ -1574,14 +1582,64 @@
     font-weight: 700;
   }
 
-  /* Landscape phone: the notification badge hangs 6px outside its bell button
-     (`right: -6px`), and in landscape that button sits flush with the right
-     edge of the demo stage - so the badge was the one thing on this demo
-     getting clipped. Tuck it inside the button; it still reads as a badge. */
-  @media (max-height: 500px) and (pointer: coarse) {
+  /* Phones, portrait and landscape: the notification badge hangs 6px outside
+     its bell button (`right: -6px`), and on a phone that button sits flush
+     with the right edge of the demo stage (in portrait the spacer pushes the
+     hint / Pause / bell line to the right once the chips take a line of their
+     own) - so the badge was the one thing on this demo getting clipped. Tuck
+     it inside the button; it still reads as a badge. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse),
+    (min-width: 768px) and (max-width: 1023px) and (pointer: coarse) {
     .td-bell-badge {
       top: -4px;
       right: 0;
+    }
+  }
+
+  /* Phone: the chrome above the grid has to be cheap, or the grid pays for
+     it - the KPI strip and toolbar are shrink-0 and the grid pane is flex-1.
+     The shared mobile layer makes the strip 2-up (three rows of these cards)
+     and gives every button a 40px touch target, which stacked ~480px of KPIs
+     and wrapped chips above the grid on a 384px-wide phone and squeezed the
+     grid to nothing. Compact cards and a single scrolling chip row bring
+     that to ~300px. */
+  @media (max-width: 639px) {
+    .td-kpi-strip {
+      gap: 6px;
+    }
+    .td-kpi {
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+    .td-kpi-label {
+      font-size: 10px;
+      margin-bottom: 3px;
+    }
+    .td-kpi-value {
+      font-size: 17px;
+    }
+    .td-kpi-foot {
+      margin-top: 3px;
+      font-size: 10.5px;
+    }
+    /* One row that pans instead of three that wrap. `flex: 1 1 100%` takes
+       the toolbar's whole first line, so the hint, Pause and the bell drop to
+       a second line together. */
+    .td-chips {
+      display: flex;
+      flex: 1 1 100%;
+      flex-wrap: nowrap;
+      gap: 6px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .td-chips::-webkit-scrollbar {
+      display: none;
+    }
+    .td-chip {
+      flex: 0 0 auto;
     }
   }
 </style>

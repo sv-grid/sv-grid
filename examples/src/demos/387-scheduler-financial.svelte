@@ -202,4 +202,9 @@
   .fin-card-exp { margin-left: auto; font-size: 0.72rem; color: var(--sg-muted, #6b7280); }
   .fin-card-title { font-size: 0.82rem; font-weight: 600; }
   .fin-card-sub { font-size: 0.72rem; color: var(--sg-muted, #6b7280); }
+  /* Phone: keep the desk at its content height (hidden overflow made it shrink to the
+     stage) and let the 720px docking workspace pan inside the card. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .fin { flex-shrink: 0; overflow-x: auto; }
+  }
 </style>

@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Conditional row coloring
 
 > Live in [demo 62-conditional-styling](https://svgrid.com/demos/62-conditional-styling/).

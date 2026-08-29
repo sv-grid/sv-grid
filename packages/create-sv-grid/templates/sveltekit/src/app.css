@@ -8,7 +8,7 @@
  * `npm create @svgrid@latest -- --theme <id>` rewrites the line between the
  * markers, so pick a starting theme at scaffold time if you prefer. */
 /* svgrid-theme:start */
-@import '@svgrid/grid/themes/tailwind.css';
+@import '@svgrid/grid/themes/ember.css';
 /* svgrid-theme:end */
 
 * { box-sizing: border-box; }

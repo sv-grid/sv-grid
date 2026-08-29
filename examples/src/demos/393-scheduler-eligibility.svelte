@@ -111,4 +111,9 @@
   .ds-seg-btn { border: 0; background: var(--sg-bg, #fff); color: var(--sg-muted, #6b7280); font: inherit; font-size: 0.82rem; padding: 5px 12px; cursor: pointer; }
   .ds-seg-btn.ds-on { background: var(--sg-accent, #4f46e5); color: var(--sg-on-accent, #fff); }
   .ds-body { flex: 1 1 auto; min-height: 0; padding: 8px; }
+  /* Phone: the skill legend sat beside the view switch and its chips were squeezed
+     into one another; the shared layer wraps the legend, the chips keep their width. */
+  @media (max-width: 639px) {
+    .ds-chip { flex-shrink: 0; }
+  }
 </style>

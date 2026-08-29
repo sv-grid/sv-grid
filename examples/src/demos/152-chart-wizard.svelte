@@ -552,4 +552,9 @@
   .cw-iconbtn:hover {
     border-color: var(--sg-accent, #2563eb);
   }
+  /* Phone: the wizard panel is stretched to a stage shorter than its content and hides
+     the rest; let it scroll inside itself. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .cw-panel { overflow-y: auto; }
+  }
 </style>

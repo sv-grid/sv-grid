@@ -117,9 +117,12 @@
                 onChange={(v) => setPageSize(Number(v))}
               />
             {:else}
-              <!-- Mirrors SvGridDropdown's closed trigger exactly (same classes,
-                   same ARIA) so there is no visual change and no layout shift
-                   when the real component swaps in. -->
+              <!-- Mirrors SvGridDropdown's closed trigger (same classes, same
+                   ARIA). Its box styling comes from the global
+                   .sv-grid-pagination-pagesize-dd rules in SvGrid.css, NOT from
+                   SvGridDropdown's scoped styles (those only exist once the chunk
+                   loads) - so keep the two in step or the placeholder renders as
+                   a stock <button> until the first click. -->
               <div class="sv-grid-dropdown">
                 <button
                   type="button"

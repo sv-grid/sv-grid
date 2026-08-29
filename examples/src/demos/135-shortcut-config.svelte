@@ -11,6 +11,7 @@
    *   sortable    -> click headers to sort
    *   filterable  -> per-column filter menu
    *   editable    -> double-click a cell to edit
+   *   selectable  -> click a cell, drag for a range
    *   groupable   -> "Group by this column" in the column menu
    *   pageable    -> pagination footer
    *
@@ -52,6 +53,7 @@
   let sortable = $state(false)
   let filterable = $state(false)
   let editable = $state(false)
+  let selectable = $state(false)
   let groupable = $state(false)
   let pageable = $state(false)
 
@@ -59,15 +61,16 @@
     { key: 'sortable',   get: () => sortable,   set: (v: boolean) => (sortable = v),   hint: 'Click a header to sort' },
     { key: 'filterable', get: () => filterable, set: (v: boolean) => (filterable = v), hint: 'Open the column menu to filter' },
     { key: 'editable',   get: () => editable,   set: (v: boolean) => (editable = v),   hint: 'Double-click a cell to edit' },
+    { key: 'selectable', get: () => selectable, set: (v: boolean) => (selectable = v), hint: 'Click a cell, drag for a range' },
     { key: 'groupable',  get: () => groupable,  set: (v: boolean) => (groupable = v),  hint: 'Column menu -> Group by this column' },
     { key: 'pageable',   get: () => pageable,   set: (v: boolean) => (pageable = v),   hint: 'Pagination footer appears' },
   ]
 
-  function allOn() { sortable = filterable = editable = groupable = pageable = true }
-  function allOff() { sortable = filterable = editable = groupable = pageable = false }
+  function allOn() { sortable = filterable = editable = selectable = groupable = pageable = true }
+  function allOff() { sortable = filterable = editable = selectable = groupable = pageable = false }
 
   const enabledCount = $derived(
-    [sortable, filterable, editable, groupable, pageable].filter(Boolean).length,
+    [sortable, filterable, editable, selectable, groupable, pageable].filter(Boolean).length,
   )
 </script>
 
@@ -117,6 +120,7 @@
       {sortable}
       {filterable}
       {editable}
+      {selectable}
       {groupable}
       {pageable}
       pageSize={25}
@@ -129,7 +133,7 @@
   </div>
 
   <footer class="shrink-0 text-xs" style="color: var(--sg-muted);">
-    {rows.length} rows · {enabledCount}/5 capabilities enabled · the grid is a
+    {rows.length} rows · {enabledCount}/6 capabilities enabled · the grid is a
     plain read-only table until you opt in.
   </footer>
 </section>

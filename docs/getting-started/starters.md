@@ -27,6 +27,9 @@ npm create @svgrid@latest my-app -- --template minimal
 
 # Full SvelteKit admin dashboard
 npm create @svgrid@latest my-admin -- --template admin-dashboard
+
+# The engine only - your own markup and CSS
+npm create @svgrid@latest my-table -- --template headless
 ```
 
 Then:
@@ -42,17 +45,25 @@ npm run dev
 | Template | Stack | Best for |
 | --- | --- | --- |
 | `minimal` | Vite + Svelte 5 + `@svgrid/grid`, one page | Dropping a grid into something quickly |
+| `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, theme picker | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
 | `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
+| `headless` | Vite + Svelte 5 + `@svgrid/grid/core`: the engine driving a hand-written `<table>` | Your own renderer and your own CSS |
+
+The three `<SvGrid>` templates start on the Ember theme, the same one the demos
+and svgrid.com use, unless you pass `--theme <id>`. `headless` loads no grid
+stylesheet at all, so it has no theme to pick.
 
 ### Options
 
 | Flag | Alias | Description |
 | --- | --- | --- |
-| `--template <name>` | `-t` | `minimal` or `admin-dashboard` |
+| `--template <name>` | `-t` | `minimal`, `sveltekit`, `admin-dashboard`, or `headless` |
+| `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` |
+| `--dark` / `--light` | | Pin the starting mode. Left out, `minimal` and `sveltekit` follow the visitor's OS and `admin-dashboard` starts dark |
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
 
-Both templates use the free MIT `@svgrid/grid` core. Add
+Every template uses the free MIT `@svgrid/grid` core. Add
 [`@svgrid/enterprise`](../enterprise/README.md) for export, import, print, and pivot.
 The AI helpers (natural-language filter, smart fill, summarize, classify) are part of
 the free core - you register your own model provider.
@@ -87,6 +98,33 @@ subfolder, set the Vercel **Root Directory** to
 `templates/sveltekit-admin-dashboard`. Scaffolding a standalone copy
 first (above) avoids that step.
 
+## The headless starter
+
+`headless` is the one template that does not render `<SvGrid>`. It imports
+`createSvGrid` from `@svgrid/grid/core` - the engine, with no DOM code, no ARIA,
+and no CSS - and feeds a `<table>` written by hand in `src/App.svelte`:
+
+- **The row pipeline is explicit** - `coreRowModel` -> `filteredRowModel` ->
+  `sortedRowModel`, listed in `App.svelte`. Add
+  [grouping, pagination, or tree data](../help/headless/row-models.md) by adding
+  their row models to the same object.
+- **Features are registered, not inferred** -
+  `tableFeatures({ rowSortingFeature, columnFilteringFeature })`. What you leave
+  out never enters the bundle; the built starter is about 17 KB gzipped,
+  including the Svelte runtime.
+- **State is controlled** - `sorting` and `columnFilters` are plain Svelte 5
+  `$state`, typed as the engine's own `SortingState` and `ColumnFiltersState`.
+  See [Controlled state](../help/headless/controlled-state.md).
+- **The stylesheet is yours** - `src/app.css` has no preset import and no
+  `--sg-*` token. `--theme` is accepted but ignored here, because there is
+  nothing for it to write to.
+
+Start there when you need a renderer the component does not give you: a plain
+table for print or email, a card list on mobile, an SVG, or a custom virtualized
+view. For the common case, `minimal` and `<SvGrid>` are less work. Background:
+[Headless overview](../help/headless/overview.md) and
+[Build a table from scratch](../help/headless/build-a-table.md).
+
 ## Adding the grid to an existing app
 
 Already have a Svelte or SvelteKit project? Skip the scaffolder and
@@ -107,9 +145,16 @@ Yes. `npm create @svgrid@latest my-admin -- --template admin-dashboard`
 scaffolds a SvelteKit + Tailwind admin with multiple grids, prerendered
 for SEO, and a one-click Deploy-to-Vercel button.
 
+### Can I scaffold a headless project, without the grid's CSS?
+
+Yes. `npm create @svgrid@latest my-table -- --template headless` scaffolds a
+Vite + Svelte 5 app built on `createSvGrid`, the engine behind `<SvGrid>`. It
+ships a hand-written `<table>` and a stylesheet with no grid tokens in it, so
+sorting and filtering come from SvGrid and every pixel is yours.
+
 ### Do the starters require a Enterprise license?
 
-No. Both templates use the free MIT `@svgrid/grid` core. Enterprise
+No. Every template uses the free MIT `@svgrid/grid` core. Enterprise
 features (export, import, print, pivot, AI) are an optional add-on that
 runs in evaluation without a key.
 

@@ -701,4 +701,10 @@
     .mb-field-grid    { grid-template-columns: 1fr; }
     .mb-field-wide    { grid-column: auto; }
   }
+  /* Phone: a card row is auto-sized, but the card carries min-height: 140px, which makes
+     its height definite - so the stretched body was capped at 138 while its content
+     needed 152 and the last detail line was clipped. Size the rows to content. */
+  @media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+    .mb-cards-scroll { grid-auto-rows: max-content; }
+  }
 </style>

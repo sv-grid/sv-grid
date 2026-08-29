@@ -9,7 +9,7 @@
    * other 480 rows. Every state change fires one request; you watch the count
    * climb. The markup is a plain hand-styled <table>.
    */
-  import { createSvGrid, createCoreRowModel, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
 
   type Row = { id: number; name: string; dept: string; salary: number }
   type SortKey = 'name' | 'dept' | 'salary'
@@ -75,17 +75,19 @@
   })
 
   // ---- Headless engine: wrap ONLY the returned page -----------------------
-  const columns: ColumnDef<Record<string, never>, Row>[] = [
+  const features = tableFeatures({})
+  const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'dept', header: 'Department' },
     { field: 'salary', header: 'Salary' },
   ]
   const table = $derived.by(() =>
     createSvGrid({
+      _features: features,
       _rowModels: { coreRowModel: createCoreRowModel<Row>() },
       data: pageRows, // already sorted / filtered / paged by the "server"
       columns,
-    } as never),
+    }),
   )
   const rows = $derived(table.getRowModel().rows)
 

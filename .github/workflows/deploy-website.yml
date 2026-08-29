@@ -18,6 +18,13 @@ on:
       - 'tools/build-schemas.mjs'
       - 'tools/fetch-discussions.mjs'
       - 'tools/prerender-site.mjs'
+      # Shared doc/demo/SEO helpers the prerender and the site import.
+      - 'tools/lib/**'
+      # Blog SEO structure generated at deploy time (see the blog:seo step).
+      - 'tools/blog-internal-links.mjs'
+      - 'tools/blog-pillars.mjs'
+      - 'tools/twitter/build-tips-pages.mjs'
+      - 'tools/twitter/tips-data.mjs'
   # Instant deploy: the PRIVATE website repo (sv-grid/website) fires this via a
   # repository_dispatch on every push to its main (see its notify-monorepo
   # workflow), since website content changes no longer land in this repo.
@@ -68,6 +75,19 @@ jobs:
           rm -rf website
           git clone --depth 1 --branch main \
             "https://x-access-token:${WEBSITE_TOKEN}@github.com/sv-grid/website.git" website
+
+      # Regenerate the blog's SEO structure against the fresh clone: the four
+      # tips pages, the three pillar hubs, and every post's "Related reading"
+      # block. The daily drip adds posts without any of this, so it has to be
+      # rebuilt on each deploy or new posts publish as orphans. Dependency-free
+      # node scripts, so they run before pnpm install. Order matters: tips pages
+      # first (they are posts), pillars next (they list published posts), links
+      # last (so the pillars and tips pages get linked and link out).
+      - name: Generate blog SEO structure
+        run: |
+          node tools/twitter/build-tips-pages.mjs
+          node tools/blog-pillars.mjs
+          node tools/blog-internal-links.mjs
 
       - uses: pnpm/action-setup@v4
         with:

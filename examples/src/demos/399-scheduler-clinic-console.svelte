@@ -310,4 +310,11 @@
   .cx-ev { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
   .cx-ev-t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cx-ev-p { font-size: 0.72em; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Phone: nav pane above the workspace instead of beside it (240px of 360 was the nav),
+     the console at its content height, and the docking workspace panning in its stage. */
+  @media (max-width: 639px) {
+    .cx { flex-direction: column; flex-shrink: 0; }
+    .cx-nav { flex: none; border-right: 0; border-bottom: 1px solid var(--sg-border, #e5e7eb); }
+    .cx-stage { overflow-x: auto; }
+  }
 </style>

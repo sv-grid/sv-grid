@@ -466,4 +466,9 @@
     cursor: pointer; font-size: 14px; line-height: 1;
   }
   .diff-drop:hover { background: rgba(239, 68, 68, 0.10); color: var(--diff-neg, #b91c1c); }
+  /* Phone: content-sized rows so the pending-changes rail is not clipped under the grid. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .layout { grid-auto-rows: max-content; }
+    .stage-rail { max-height: 60vh; overflow-y: auto; }
+  }
 </style>

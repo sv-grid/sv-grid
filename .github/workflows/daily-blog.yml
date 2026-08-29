@@ -1,10 +1,13 @@
 name: Daily blog post
 
 # Generate one brand-new blog post per day with the Anthropic API and commit it.
-# The post is appended to the END of the publish queue (dated after the last
-# scheduled post), so it goes live on its own day via the existing drip - it is
-# never published the same day. The daily website rebuild (deploy-website.yml,
-# 07:12 UTC) renders whichever post's date has arrived, hero image included.
+# The subject is the next unwritten entry of tools/blog-topics.json (a search
+# query with the demos and docs the post must link); an empty queue is a
+# no-op run. The post is appended to the END of the publish queue (dated after
+# the last scheduled post), so it goes live on its own day via the existing
+# drip - it is never published the same day. The daily website rebuild
+# (deploy-website.yml, 07:12 UTC) renders whichever post's date has arrived,
+# hero image included.
 #
 # Required repo secret:
 #   ANTHROPIC_API_KEY - Anthropic API key.
@@ -63,7 +66,7 @@ jobs:
 
       - name: Generate post
         id: gen
-        run: node tools/generate-blog-post.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: node tools/generate-blog-post.mjs --next ${{ inputs.dry_run && '--dry-run' || '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BLOG_MODEL: ${{ vars.BLOG_MODEL }}

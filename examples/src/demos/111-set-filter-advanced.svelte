@@ -336,6 +336,10 @@
   .modes {
     display: grid; grid-template-columns: 1fr 1.2fr 1.3fr; gap: 10px;
   }
+  /* Phone: three explainer cards in a row read one word per line. Stack. */
+  @media (max-width: 639px) {
+    .modes { grid-template-columns: minmax(0, 1fr); }
+  }
   .mode-card {
     border: 1px solid var(--sg-border, #e2e8f0);
     background: var(--sg-bg, #fff);

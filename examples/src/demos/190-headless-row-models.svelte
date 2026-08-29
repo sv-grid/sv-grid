@@ -48,7 +48,7 @@
 
   // Controlled state - the pipeline reads from here.
   let grouping = $state<string[]>(['lang'])
-  let expanded = $state<Record<string, boolean> | boolean>({})
+  let expanded = $state<Record<string, boolean>>({})
   type Sort = { id: string; desc: boolean }
   let sorting = $state<Sort[]>([{ id: 'stars', desc: true }])
 
@@ -64,12 +64,9 @@
       data,
       columns,
       state: { grouping, expanded, sorting },
-      onExpandedChange: (u: unknown) =>
-        (expanded = typeof u === 'function' ? (u as (e: typeof expanded) => typeof expanded)(expanded) : (u as typeof expanded)),
-      onSortingChange: (u: unknown) =>
-        (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : (u as Sort[])),
-      enableSorting: true,
-    } as never),
+      onExpandedChange: (u) => (expanded = typeof u === 'function' ? u(expanded) : u),
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+    }),
   )
 
   const rows = $derived(table.getRowModel().rows)

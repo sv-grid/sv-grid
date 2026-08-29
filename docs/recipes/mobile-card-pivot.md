@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Mobile card view with grid-on-desktop
 
 > Live in [demo 81-mobile-card-view](https://svgrid.com/demos/81-mobile-card-view/).

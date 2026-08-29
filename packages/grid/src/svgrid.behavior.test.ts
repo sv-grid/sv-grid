@@ -703,3 +703,211 @@ describe('SvGrid - fitColumns', () => {
     }
   })
 })
+
+describe('SvGrid - selectable shortcut (cell selection)', () => {
+  // The gated path a user actually takes: pointerdown on a cell runs through
+  // createSelection.setSelection, which bails on !enableCellSelectionEffective.
+  // Asserting through it (rather than api.selectCells, which writes the range
+  // directly and bypasses the gate) is what makes these tests meaningful.
+  // Deliberately skips `.sv-grid-selection-cell`: the checkbox column is a
+  // different surface and a pointerdown there starts no range, so clicking it
+  // would make every assertion below pass vacuously.
+  async function clickCell(target: HTMLElement, index: number) {
+    const cells = target.querySelectorAll(
+      '.sv-grid-cell:not(.sv-grid-selection-cell)',
+    )
+    const cell = cells[index]
+    if (!cell) throw new Error(`no data cell at index ${index} (found ${cells.length})`)
+    cell.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+    await tick()
+  }
+
+  it('is ON by default - selectionMode defaults to "both"', async () => {
+    const { api, target, destroy } = await mountGrid()
+    try {
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected().length).toBe(1)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('selectable={false} turns cell selection off', async () => {
+    const { api, target, destroy } = await mountGrid({ selectable: false })
+    try {
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected()).toEqual([])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('selectable={true} wins over selectionMode="none"', async () => {
+    const { api, target, destroy } = await mountGrid({
+      selectable: true,
+      selectionMode: 'none',
+    })
+    try {
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected().length).toBe(1)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('selectable={false} wins over enableCellSelection={true}', async () => {
+    const { api, target, destroy } = await mountGrid({
+      selectable: false,
+      enableCellSelection: true,
+    })
+    try {
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected()).toEqual([])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('falls back to enableCellSelection when selectable is omitted', async () => {
+    const { api, target, destroy } = await mountGrid({ enableCellSelection: false })
+    try {
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected()).toEqual([])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('api.setOption("selectable", false) turns it off at runtime', async () => {
+    const { api, target, destroy } = await mountGrid()
+    try {
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected().length).toBe(1)
+
+      api.setOption('selectable', false)
+      await tick()
+      api.selectCells([])
+      await tick()
+      await clickCell(target, 0)
+      expect(api.getSelected()).toEqual([])
+    } finally {
+      destroy()
+    }
+  })
+})
+
+/**
+ * Guards the promise the homepage "A real grid in ~15 lines" section makes:
+ * the snippet shown there is shortcuts-only - no `features` import, no
+ * `editorType` - so every capability it advertises must work from exactly
+ * those props. The section drifted from the component once already (it showed
+ * a bare grid beside a preview captioned "sort, filter, select, edit ... are
+ * all live"), which is what this test exists to catch.
+ */
+describe('SvGrid - homepage snippet (shortcuts only, no features import)', () => {
+  const snippetRows = [
+    { firstName: 'Ada', age: 36, status: 'active' },
+    { firstName: 'Linus', age: 54, status: 'active' },
+    { firstName: 'Grace', age: 85, status: 'inactive' },
+  ]
+  const snippetColumns = [
+    { field: 'firstName', header: 'First name' },
+    { field: 'age', header: 'Age' },
+    { field: 'status', header: 'Status' },
+  ] as unknown as typeof personColumns
+
+  function mountSnippet(): Promise<MountResult> {
+    return new Promise((resolveApi, rejectApi) => {
+      const target = document.createElement('div')
+      document.body.appendChild(target)
+      const app = mount(SvGrid, {
+        target,
+        props: {
+          data: snippetRows,
+          columns: snippetColumns,
+          // The four shortcuts the snippet passes - and nothing else.
+          sortable: true,
+          filterable: true,
+          editable: true,
+          selectable: true,
+          getRowId: (r: { firstName: string }) => r.firstName,
+          rowHeight: 36,
+          containerHeight: 300,
+          virtualization: false,
+          onApiReady(api: SvGridApi<any, any>) {
+            resolveApi({
+              api,
+              target,
+              destroy: () => {
+                unmount(app)
+                target.remove()
+              },
+            } as unknown as MountResult)
+          },
+        } as never,
+      })
+      if (!app) rejectApi(new Error('mount failed'))
+    })
+  }
+
+  it('sortable works without importing rowSortingFeature', async () => {
+    const { api, destroy } = await mountSnippet()
+    try {
+      await tick()
+      api.setSort('age', 'asc')
+      await tick()
+      expect(api.getState().sorting).toEqual([{ id: 'age', desc: false }])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('editable opens an editor on a column with no editorType', async () => {
+    const { api, target, destroy } = await mountSnippet()
+    try {
+      await tick()
+      api.startEditing(0, 'firstName')
+      await tick()
+      expect(target.querySelectorAll('.sv-grid-cell-editing').length).toBe(1)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('selectable gives cell selection', async () => {
+    const { api, target, destroy } = await mountSnippet()
+    try {
+      await tick()
+      const cell = target.querySelector('.sv-grid-cell:not(.sv-grid-selection-cell)')
+      cell?.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
+      await tick()
+      expect(api.getSelected().length).toBe(1)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('the checkbox column renders and toggles a row - no feature import needed', async () => {
+    const { api, target, destroy } = await mountSnippet()
+    try {
+      await tick()
+      // [0] is the header select-all; [1] is the first row.
+      const boxes = target.querySelectorAll<HTMLElement>('.sv-grid-checkbox')
+      expect(boxes.length).toBeGreaterThan(1)
+      boxes[1]?.click()
+      await tick()
+      const names = (api.getSelectedRows() as unknown as { firstName: string }[]).map(
+        (r) => r.firstName,
+      )
+      expect(names).toEqual(['Ada'])
+    } finally {
+      destroy()
+    }
+  })
+})

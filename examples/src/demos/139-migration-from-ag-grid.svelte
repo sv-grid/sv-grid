@@ -350,4 +350,9 @@ $: filtered = deals.filter(d =>
       grid-template-columns: minmax(0, 1fr);
     }
   }
+  /* Phone: once the two panes stack, the split hands its rows only the leftover space,
+     so each 280px card clipped its floored grid. Size rows to content instead. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .mg-split { grid-auto-rows: max-content; }
+  }
 </style>

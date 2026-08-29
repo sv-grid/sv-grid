@@ -218,4 +218,9 @@
   .log-pane li .before { color: #b91c1c; text-decoration: line-through; }
   .log-pane li .after  { color: #047857; font-weight: 600; }
   .empty { padding: 18px; color: var(--sg-muted, #94a3b8); text-align: center; font-size: 12px; }
+  /* Phone: content-sized rows so the edit log is not clipped; the log scrolls inside. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .layout { grid-auto-rows: max-content; }
+    .log-pane ol { max-height: 45vh; }
+  }
 </style>

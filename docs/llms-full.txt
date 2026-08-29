@@ -1,152 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-26 from 365 pages.
-
-<!-- =================================================================
-     /docs/brand/company-description/  (community)
-     ================================================================== -->
-
-# SvGrid - Company / Brand Description
-
-*About the company and brand behind SvGrid. For partner listings, press kits,
-marketplace profiles, and procurement forms. Product descriptions live
-elsewhere.*
-
-## Positioning statement
-
-SvGrid is the enterprise-grade data grid the Svelte ecosystem was missing, built
-natively for Svelte 5 by a team that has engineered data grids since 2011.
-
-## One-liner
-
-SvGrid is the enterprise data grid standard for Svelte, built by jQWidgets.
-
-## Short (50 words)
-
-SvGrid is the enterprise-grade data grid for the Svelte ecosystem, built natively
-for Svelte 5 by jQWidgets, the team behind jqxGrid and the Smart UI web
-components. Since 2011 our grids have run inside enterprise software at companies
-including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel.
-
-## Standard (100 words)
-
-SvGrid is the enterprise-grade data grid the Svelte ecosystem was missing. It is
-built by jQWidgets, a software company that has engineered data grids since 2011,
-first with jqxGrid in the jQuery era, then with the Smart UI web components on
-htmlelements.com. Where other grids reach Svelte through wrappers, SvGrid is
-written natively for Svelte 5 and its fine-grained reactivity. Across fifteen
-years our grids have powered enterprise software at companies including Samsung,
-Boeing, NVIDIA, Microsoft, Nokia, and Intel, and Smart UI was a Gold Winner in
-Visual Studio Magazine's 2025 Readers' Choice Awards. SvGrid brings that
-pedigree, and an AI-ready toolchain, to Svelte.
-
-## Long (company profile)
-
-SvGrid is the enterprise-grade data grid for Svelte: the complete, professional,
-performance-first grid that serious applications can standardize on, brought
-native to the Svelte ecosystem.
-
-It is built by jQWidgets, an independent software company that has specialized in
-high-performance UI components since 2011. The company's first product,
-jQWidgets, anchored by the jqxGrid data grid, set a principle that still defines
-the team: a grid is a performance product first. Components that stutter when a
-user scrolls, sorts, or filters do not survive in real enterprise software, so
-virtualization, stable references, and minimal repaints are designed in from the
-start rather than bolted on later.
-
-As the web platform matured, the team rebuilt its suite on web standards and
-launched it as Smart UI on htmlelements.com, letting a single component run across
-React, Angular, Vue, and plain HTML. Across both generations of products,
-jQWidgets and Smart UI components have been used in enterprise software at
-companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel, among
-thousands of organizations worldwide. Smart UI was voted Gold Winner among
-software development service providers in Visual Studio Magazine's 2025 Readers'
-Choice Awards.
-
-SvGrid is the team's native grid for Svelte 5. Rather than wrap an engine designed
-for another framework, it was written from scratch to exploit Svelte's
-fine-grained reactivity, and built for an AI-native future in which assistants are
-first-class consumers of the library. The goal is straightforward: to be the
-default, enterprise-ready data grid for Svelte, the standard a serious Svelte
-application can build on. The company is led by founder Boyko Markov and is the
-same team that has shipped grids for over a decade.
-
-## Why SvGrid
-
-- **Category standard.** Built to be the default data grid a serious Svelte
-  application standardizes on, the role a professional grid plays in every mature
-  ecosystem.
-- **Enterprise depth.** Sorting, filtering, grouping, pivoting, editing, export,
-  and virtualization at the depth enterprise applications actually require.
-- **Native, not a wrapper.** Written for Svelte 5 runes, not bridged from another
-  framework's engine.
-- **Proven lineage.** Fifteen years of grid engineering behind it, not a first
-  attempt.
-
-## Principles (carry across every product)
-
-- Performance is a feature, not an optimization.
-- Accessibility is the default, not a setting.
-- Meet developers where they are - jQuery, web components, native Svelte, and now
-  AI assistants.
-- Honesty builds trust. Our comparison pages name the cases where another grid is
-  the better choice.
-
-## Facts (for forms)
-
-- Company / vendor name: jQWidgets
-- Founder: Boyko Markov
-- Founded: 2011
-- Products: jQWidgets (jqxGrid), Smart UI (htmlelements.com), SvGrid
-- Customers include: Samsung, Boeing, NVIDIA, Microsoft, Nokia, Intel
-- Recognition: Gold Winner, Visual Studio Magazine 2025 Readers' Choice Awards
-  (Smart UI)
-- Services / consulting partner: Resolute Software (resolutesoftware.com)
-- Contact: sales@jqwidgets.com / support@jqwidgets.com
-
-## Boilerplate (drop-in press footer)
-
-> SvGrid is the enterprise-grade data grid for the Svelte ecosystem, built by
-> jQWidgets. The team has engineered data grids since 2011, from jqxGrid to the
-> Smart UI web components, and SvGrid components run in enterprise software at
-> companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel.
-
-<!-- =================================================================
-     /docs/brand/social/README/  (community)
-     ================================================================== -->
-
-# GitHub social preview images
-
-On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings ->
-General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size),
-and well under the 1 MB upload limit.
-
-| File | Use |
-| --- | --- |
-| `svgrid-github-social.png` | Primary. Headline lockup: "The Svelte 5 data grid. / Headless-first. Render-ready." |
-| `svgrid-github-social-product.png` | Product card: headline + a mini-grid showing an accent-highlighted cell. |
-| `svgrid-github-social-centered.png` | Centered, minimal: mark + wordmark + tagline. |
-
-## Apply on GitHub
-
-1. Repo -> **Settings** -> **General**.
-2. Scroll to **Social preview** -> **Edit** -> upload one of the PNGs above.
-
-(The image lives in GitHub's settings, not in code - it is not auto-read from
-the repo. These files are kept here as the source of truth + for reuse on other
-social cards.)
-
-## Regenerate
-
-```bash
-node tools/render-social-preview.mjs
-```
-
-Renders all three via Chromium (Playwright) at 1280x640. Brand tokens (dark
-navy gradient, the 4-tile mark, the Svelte orange->red accent) are lifted from
-`website/public/og-image.svg`; edit the variant markup in the script to tweak
-copy or layout. Inter is pulled from Google Fonts when online and falls back to
-the system sans otherwise.
+Generated 2026-08-29 from 347 pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -203,6 +57,10 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **Ember is now the default theme preset** (`defaultThemePreset` in
+  `@svgrid/grid/themes`). It is what the demo gallery and svgrid.com open on, so
+  a scaffolded or Studio-generated app now looks like the demos unless you pick
+  a preset. Previously the default was Tailwind.
 - **Popup editors keep themselves on screen.** `SvAutoComplete`, `SvComboBox`,
   `SvDropDownList` and the date pickers now measure the space to the viewport
   edge: the panel flips up when there is not enough room below and clamps its
@@ -213,6 +71,32 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **The footer summary row server-rendered as empty cells.** The totals were
+  assigned from an `$effect`, and effects never run during SSR - so the server
+  emitted a summary row that took up space and drew its border but held no
+  numbers. They appeared only after hydration (a visible pop-in), and never at
+  all for a reader with JavaScript off. A grid under the aggregation cell
+  limit now derives its totals synchronously, so they ship with the HTML; a
+  very large grid keeps the rAF-deferred effect so it still paints before it
+  totals. `pnpm ssr:check` asserts the real aggregate now.
+- **The grid painted one unmeasured frame on every mount.** `hasMeasured`
+  gates the custom scrollbars, the 16px scrollbar gutter on a trailing
+  right-aligned column and the top pager (which carries a `border-top`), but
+  it only flipped inside the `ResizeObserver` callback - and that callback is
+  deliberately deferred by one `requestAnimationFrame`, so the browser was
+  guaranteed to paint a frame with those missing and correct it on the next.
+  On a first load that was the "flashing scrollbar"; in an app that recreates
+  the grid per navigation (a `{#key}` around it, or a route that remounts) it
+  showed up as the grid flashing on every sort / filter / page change, with a
+  stray border line. The container is now measured synchronously in the mount
+  effect - before the first paint - and the observer still handles later
+  resizes. Covered by an e2e regression test, since jsdom has no layout to
+  miss a paint with.
+- **Pager page-size trigger rendered as a stock button until first click.** The
+  closed trigger is a placeholder until the lazy dropdown chunk loads, but its
+  box styling only existed in that chunk's scoped CSS, so server-rendered and
+  freshly-mounted pagers showed a UA-bordered, left-hugging `<button>` inside the
+  bordered box. The placeholder now gets the same rules from `SvGrid.css`.
 - **Virtualized lists no longer flash blank on a fast scrollbar-thumb drag.**
   A fast drag can move the viewport into the windowed list's off-screen padding
   faster than JS can re-render the rows there; the padding now paints faint row
@@ -234,6 +118,16 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Studio emitted no theme for the fragment export and the CLI `add`
+  scaffolds.** Only the full app's `+layout.svelte` carried the `--sg-*` tokens;
+  `eject --fragment` (which drops that file) shipped an `app.css` with one
+  hard-coded accent, and `svgrid-studio add` / `add --all` wrote none at all. The
+  tokens now come from one helper (`themeTokenCss`): `src/app.css` carries them
+  for the full app and the fragment, and the `add` scaffolds emit them in
+  `<svelte:head>`. Drop-in outputs wrap them in `@layer svgrid-studio`, so a host
+  app that already defines its own tokens keeps its look. `add` also honours
+  `--theme` / `--dark`, and a project with no theme picked gets Ember (the demo
+  theme) instead of Tailwind.
 - **Scheduler column alignment.** The all-day lane, day/time-grid header, and
   body columns now reserve the scrollbar width consistently, so the columns line
   up instead of drifting by the scrollbar's width.
@@ -252,7 +146,16 @@ For machine-readable releases, fetch
   ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
   shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
 - **See a component before you wire it in** (`@svgrid/ui` 0.3.x).
-  `npx @svgrid/ui try <component>` spins up a zero-setup Vite + Svelte sandbox and
+  `npx @svgrid/ui try <component>` spins
+
+#### Changed
+
+- **`npm create @svgrid` starts on Ember** (the demo theme) instead of Tailwind,
+  for every template; `--theme <id>` still picks any preset. The `sveltekit`
+  template is now listed on the starters page, and the `sv add @svgrid` demo route
+  imports the Ember stylesheet so it no longer renders unthemed.
+
+ up a zero-setup Vite + Svelte sandbox and
   opens the component in your browser; `add --preview` writes a
   `src/routes/preview/<id>` route (plus a `/preview` index) in a SvelteKit app.
   `add` now installs `@svgrid/grid` by default (`--no-install` to opt out) and
@@ -3451,6 +3354,8 @@ page.
 | `--sql` | Emit a `createSqlDataSource` with an `execute()` stub instead of a live driver. |
 | `--route <seg>` | Route segment (default: `<name>` / table name). |
 | `--api <path>` | API route path (default: `/api/<route>`). |
+| `--theme <id>` | Design-system preset for the generated screens (default: `ember`, the demo theme). The tokens go in the page's `<svelte:head>` inside `@layer svgrid-studio`, so an app that already defines its own `--sg-*` tokens keeps its look. |
+| `--dark` | Start in dark mode. |
 | `-h`, `--help` | Show help. |
 
 ## Examples
@@ -11146,17 +11051,45 @@ constants:
 />
 ```
 
+`selectable` completes the set - see [the exceptions](#two-exceptions-to-off-by-default)
+below, since cell selection is already on:
+
+```svelte
+<SvGrid data={rows} columns={columns} selectable={false} />
+```
+
 | Shortcut     | Turns on                                         | Equivalent to                              |
 | ------------ | ------------------------------------------------ | ------------------------------------------ |
 | `sortable`   | Click headers to sort                            | injects `rowSortingFeature`                |
 | `filterable` | Per-column filter menu                           | injects `columnFilteringFeature`           |
 | `editable`   | Inline cell editing (needs `editorType` columns) | `enableInlineEditing`                      |
+| `selectable` | Cell selection (click a cell, drag for a range)  | `enableCellSelection`                      |
 | `groupable`  | "Group by this column" in the column menu        | `showGroupingControls`                     |
 | `pageable`   | Pagination footer                                | `showPagination`                           |
 
 Each shortcut is an override: omit it (or set `false`) to leave the
 capability off; set it `true` to opt in. See the live
 [Shortcut config](https://svgrid.com/demos/135-shortcut-config/) demo.
+
+### Two exceptions to "off by default"
+
+`selectable` is the one shortcut that starts **on**: `selectionMode` defaults
+to `'both'`, so a bare grid already lets you click a cell and drag a range. It
+is listed here so the capability has a name next to the others, and so
+`selectable={false}` is a one-word way to switch it off.
+
+The selection **checkbox column** is a separate surface, and no shortcut turns
+it on - a checkbox column implies row-selection state a bare grid does not
+carry. Ask for it explicitly:
+
+```svelte
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSelectionFeature } from '@svgrid/grid'
+  const features = tableFeatures({ rowSelectionFeature })
+</script>
+
+<SvGrid data={rows} columns={columns} {features} sortable filterable editable />
+```
 
 **For most grids this is the whole story** - skip to
 [Theme and density](./5-theme-and-density.md). The rest of this page is the
@@ -11767,6 +11700,9 @@ npm create @svgrid@latest my-app -- --template minimal
 
 # Full SvelteKit admin dashboard
 npm create @svgrid@latest my-admin -- --template admin-dashboard
+
+# The engine only - your own markup and CSS
+npm create @svgrid@latest my-table -- --template headless
 ```
 
 Then:
@@ -11782,17 +11718,25 @@ npm run dev
 | Template | Stack | Best for |
 | --- | --- | --- |
 | `minimal` | Vite + Svelte 5 + `@svgrid/grid`, one page | Dropping a grid into something quickly |
+| `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, theme picker | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
 | `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
+| `headless` | Vite + Svelte 5 + `@svgrid/grid/core`: the engine driving a hand-written `<table>` | Your own renderer and your own CSS |
+
+The three `<SvGrid>` templates start on the Ember theme, the same one the demos
+and svgrid.com use, unless you pass `--theme <id>`. `headless` loads no grid
+stylesheet at all, so it has no theme to pick.
 
 ### Options
 
 | Flag | Alias | Description |
 | --- | --- | --- |
-| `--template <name>` | `-t` | `minimal` or `admin-dashboard` |
+| `--template <name>` | `-t` | `minimal`, `sveltekit`, `admin-dashboard`, or `headless` |
+| `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` |
+| `--dark` / `--light` | | Pin the starting mode. Left out, `minimal` and `sveltekit` follow the visitor's OS and `admin-dashboard` starts dark |
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
 
-Both templates use the free MIT `@svgrid/grid` core. Add
+Every template uses the free MIT `@svgrid/grid` core. Add
 [`@svgrid/enterprise`](../enterprise/README.md) for export, import, print, and pivot.
 The AI helpers (natural-language filter, smart fill, summarize, classify) are part of
 the free core - you register your own model provider.
@@ -11827,6 +11771,33 @@ subfolder, set the Vercel **Root Directory** to
 `templates/sveltekit-admin-dashboard`. Scaffolding a standalone copy
 first (above) avoids that step.
 
+## The headless starter
+
+`headless` is the one template that does not render `<SvGrid>`. It imports
+`createSvGrid` from `@svgrid/grid/core` - the engine, with no DOM code, no ARIA,
+and no CSS - and feeds a `<table>` written by hand in `src/App.svelte`:
+
+- **The row pipeline is explicit** - `coreRowModel` -> `filteredRowModel` ->
+  `sortedRowModel`, listed in `App.svelte`. Add
+  [grouping, pagination, or tree data](../help/headless/row-models.md) by adding
+  their row models to the same object.
+- **Features are registered, not inferred** -
+  `tableFeatures({ rowSortingFeature, columnFilteringFeature })`. What you leave
+  out never enters the bundle; the built starter is about 17 KB gzipped,
+  including the Svelte runtime.
+- **State is controlled** - `sorting` and `columnFilters` are plain Svelte 5
+  `$state`, typed as the engine's own `SortingState` and `ColumnFiltersState`.
+  See [Controlled state](../help/headless/controlled-state.md).
+- **The stylesheet is yours** - `src/app.css` has no preset import and no
+  `--sg-*` token. `--theme` is accepted but ignored here, because there is
+  nothing for it to write to.
+
+Start there when you need a renderer the component does not give you: a plain
+table for print or email, a card list on mobile, an SVG, or a custom virtualized
+view. For the common case, `minimal` and `<SvGrid>` are less work. Background:
+[Headless overview](../help/headless/overview.md) and
+[Build a table from scratch](../help/headless/build-a-table.md).
+
 ## Adding the grid to an existing app
 
 Already have a Svelte or SvelteKit project? Skip the scaffolder and
@@ -11847,9 +11818,16 @@ Yes. `npm create @svgrid@latest my-admin -- --template admin-dashboard`
 scaffolds a SvelteKit + Tailwind admin with multiple grids, prerendered
 for SEO, and a one-click Deploy-to-Vercel button.
 
+### Can I scaffold a headless project, without the grid's CSS?
+
+Yes. `npm create @svgrid@latest my-table -- --template headless` scaffolds a
+Vite + Svelte 5 app built on `createSvGrid`, the engine behind `<SvGrid>`. It
+ships a hand-written `<table>` and a stylesheet with no grid tokens in it, so
+sorting and filtering come from SvGrid and every pixel is yours.
+
 ### Do the starters require a Enterprise license?
 
-No. Both templates use the free MIT `@svgrid/grid` core. Enterprise
+No. Every template uses the free MIT `@svgrid/grid` core. Enterprise
 features (export, import, print, pivot, AI) are an optional add-on that
 runs in evaluation without a key.
 
@@ -21658,13 +21636,10 @@ this for you; here you do it explicitly.
       data,
       columns,
       state: { sorting, columnFilters },
-      onSortingChange: (u) =>
-        (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : u),
-      onColumnFiltersChange: (u) =>
-        (columnFilters = typeof u === 'function' ? (u as (f: Filter[]) => Filter[])(columnFilters) : u),
-      enableSorting: true,
-      enableColumnFilters: true,
-    } as never),
+      // `u` is an Updater: either the next value or a function producing it.
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+      onColumnFiltersChange: (u) => (columnFilters = typeof u === 'function' ? u(columnFilters) : u),
+    }),
   )
 
   const headerGroups = $derived(table.getHeaderGroups())
@@ -21756,8 +21731,7 @@ const table = $derived.by(() => createSvGrid({
   state: { sorting },                         // ── in
   onSortingChange: (u) =>                      // ── out
     (sorting = typeof u === 'function' ? u(sorting) : u),
-  enableSorting: true,
-} as never))
+}))
 ```
 
 The handler receives either the next value **or** an updater function - always
@@ -21794,8 +21768,8 @@ const table = $derived.by(() => createSvGrid({
   get data() { return rows },
   get columns() { return columns },
   state: { sorting: getSorting() },
-  onSortingChange: (u) => setSorting(u as never),
-} as never))
+  onSortingChange: setSorting,   // the setter already handles updaters
+}))
 ```
 
 ### Share one store across two grids
@@ -21811,8 +21785,8 @@ const [getSorting, setSorting] = createGridState<Sort[]>([])
 const makeGrid = () => $derived.by(() => createSvGrid({
   get data() { return rows }, get columns() { return columns },
   state: { sorting: getSorting() },
-  onSortingChange: (u) => setSorting(u as never),
-} as never))
+  onSortingChange: setSorting,
+}))
 
 const gridA = makeGrid()
 const gridB = makeGrid()   // shares getSorting/setSorting -> stays in sync
@@ -21872,8 +21846,10 @@ your data ─▶ createSvGrid (engine) ─▶ row model ─▶ your markup
 - `getHeaderGroups(): HeaderGroup<TData>[]` - the multi-level column-header tree,
 - `getAllColumns(): Column<TData>[]` - every column with its metadata (id,
   visible, pinned, width),
-- imperative setters (`setSorting`, `setColumnFilters`, `setRowSelection`, …)
-  that push into the engine's store.
+- imperative setters (`setColumnFilters`, `setPagination`, `setGrouping`,
+  `setExpanded`, `setRowSelection`, `setActiveCell`) that push into the engine's
+  store. Sorting has no setter - drive it from the `sorting` state you pass in,
+  or from a header's `getToggleSortingHandler()`.
 
 No DOM, no CSS, no virtualization - those live in the renderer. Here's the
 engine rendering a plain, hand-styled `<table>` (sort + filter are the engine's;
@@ -21887,7 +21863,7 @@ the markup is the demo's):
 | --- | --- |
 | A rich grid in a Svelte app | `<SvGrid>` (start here) |
 | Render as a plain `<table>` (print / email / RSC) | Headless |
-| Drive a server-side row model from Node | Headless |
+| Drive a server-side row model from Node | Headless, via `createSvGridCore` |
 | Unit-test sort / filter / aggregator logic | Headless |
 | Build a custom virtualized renderer | Headless + the [virtualizer](./virtualization.md) exports |
 | Share one state object across two grids | Headless + [`createGridState`](./controlled-state.md) |
@@ -21906,6 +21882,52 @@ run the pipeline where there is no DOM.
    Svelte 5 `$state`. See [Controlled state](./controlled-state.md).
 3. **Rendering is yours.** The engine hands you rows + header groups; you emit
    the markup. See [Build a table from scratch](./build-a-table.md).
+
+## `createSvGrid` vs `createSvGridCore`
+
+Both build the same engine and expose the same `getRowModel()` /
+`getHeaderGroups()` surface. The difference is reactivity:
+
+| | `createSvGrid` | `createSvGridCore` |
+| --- | --- | --- |
+| State | Svelte 5 runes | plain objects |
+| Needs the Svelte compiler | Yes | No |
+| Runs under | Vite, SvelteKit, vitest | anywhere Node runs |
+
+Inside a component, use `createSvGrid` - runes are what make `$derived` re-run
+the pipeline when your state changes. Outside one - a Node service, a worker, a
+CLI, a plain unit test with no Svelte in the pipeline - use `createSvGridCore`
+and rebuild it yourself when the state changes:
+
+```js
+// plain node script.mjs - no bundler, no compiler
+import {
+  createSvGridCore,
+  createCoreRowModel,
+  createSortedRowModel,
+  tableFeatures,
+  rowSortingFeature,
+} from '@svgrid/grid/core'
+
+const features = tableFeatures({ rowSortingFeature })
+const table = createSvGridCore({
+  _features: features,
+  _rowModels: {
+    coreRowModel: createCoreRowModel(),
+    sortedRowModel: createSortedRowModel(),
+  },
+  data,
+  columns,
+  state: { sorting: [{ id: 'salary', desc: true }] },
+  onSortingChange: () => {},
+})
+
+const rows = table.getRowModel().rows   // sorted, no DOM involved
+```
+
+`createSvGrid` imported into a bare Node process throws
+`ReferenceError: $state is not defined` - that is the compiler missing, not a
+bug. Reach for the core function there.
 
 ## See also
 
@@ -21961,6 +21983,10 @@ import {
   createPaginatedRowModel,
   createGroupedRowModel,
   createExpandedRowModel,
+  tableFeatures,
+  rowPaginationFeature,
+  columnGroupingFeature,
+  rowExpandingFeature,
 } from '@svgrid/grid'
 
 const table = createSvGrid({
@@ -21975,7 +22001,7 @@ const table = createSvGrid({
   columns,
   state,
   // ...change handlers
-} as never)
+})
 
 const rows = table.getRowModel().rows // filtered → sorted → paged
 ```
@@ -21990,7 +22016,10 @@ Add `createPaginatedRowModel` and drive it with `pagination` state:
 ```ts
 let pagination = $state({ pageIndex: 0, pageSize: 20 })
 
+const features = tableFeatures({ rowPaginationFeature })
+
 const table = $derived.by(() => createSvGrid({
+  _features: features,
   _rowModels: {
     coreRowModel:      createCoreRowModel<Row>(),
     paginatedRowModel: createPaginatedRowModel<Row>(),
@@ -21999,7 +22028,7 @@ const table = $derived.by(() => createSvGrid({
   state: { pagination },
   onPaginationChange: (u) =>
     (pagination = typeof u === 'function' ? u(pagination) : u),
-} as never))
+}))
 
 // getRowModel().rows is now just the current page
 function nextPage() { pagination = { ...pagination, pageIndex: pagination.pageIndex + 1 } }
@@ -22015,7 +22044,10 @@ and its aggregates come from each column's `aggregate` setting.
 let grouping = $state<string[]>(['lang'])
 let expanded = $state<Record<string, boolean>>({})
 
+const features = tableFeatures({ columnGroupingFeature, rowExpandingFeature })
+
 const table = $derived.by(() => createSvGrid({
+  _features: features,
   _rowModels: {
     coreRowModel:     createCoreRowModel<Repo>(),
     groupedRowModel:  createGroupedRowModel<Repo>(),
@@ -22028,7 +22060,7 @@ const table = $derived.by(() => createSvGrid({
   ],
   state: { grouping, expanded },
   onExpandedChange: (u) => (expanded = typeof u === 'function' ? u(expanded) : u),
-} as never))
+}))
 
 const rows = $derived(table.getRowModel().rows)
 // each row: row.getIsGrouped(), row.getIsExpanded(), row.toggleExpanded()
@@ -22042,11 +22074,12 @@ what you give it:
 
 ```ts
 const table = createSvGrid({
+  _features: tableFeatures({}),   // no features - the server did the work
   _rowModels: { coreRowModel: createCoreRowModel<Row>() }, // core only
   data: serverPage.rows,   // already sorted/filtered/paged by the API
   columns,
   state,
-} as never)
+})
 ```
 
 Track the sort/filter state via the change handlers and re-fetch on change - see
@@ -22087,7 +22120,7 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
 
 ```svelte
 <script lang="ts">
-  import { createSvGrid, createCoreRowModel, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
 
   type Row = { id: number; name: string; dept: string; salary: number }
 
@@ -22122,17 +22155,19 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
 
   // 3. The engine wraps ONLY the returned page - no filtered/sorted/paginated
   //    row model, because the server already did all of that.
-  const columns: ColumnDef<Record<string, never>, Row>[] = [
+  const features = tableFeatures({})   // the server sorts, filters and pages
+  const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'dept', header: 'Department' },
     { field: 'salary', header: 'Salary' },
   ]
   const table = $derived.by(() =>
     createSvGrid({
+      _features: features,
       _rowModels: { coreRowModel: createCoreRowModel<Row>() },
       data: pageRows,
       columns,
-    } as never),
+    }),
   )
   const rows = $derived(table.getRowModel().rows)
   const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)))
@@ -22334,6 +22369,7 @@ recompute.
     createSvGrid,
     createCoreRowModel,
     createSvelteVirtualizer,
+    tableFeatures,
     type ColumnDef,
   } from '@svgrid/grid'
 
@@ -22341,15 +22377,17 @@ recompute.
   const data: Row[] = Array.from({ length: 100_000 }, (_, i) => ({
     id: i, name: `Item ${i}`, score: (i * 37) % 1000,
   }))
-  const columns: ColumnDef<Record<string, never>, Row>[] = [
+  const features = tableFeatures({})   // core only - nothing to sort or filter
+  const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'score', header: 'Score' },
   ]
 
   const table = createSvGrid({
+    _features: features,
     _rowModels: { coreRowModel: createCoreRowModel<Row>() },
     data, columns,
-  } as never)
+  })
   const rows = table.getRowModel().rows
 
   const ROW_H = 34
@@ -50247,235 +50285,6 @@ instance.
 - [Architecture](./architecture.md) - headless core vs. render component
 
 <!-- =================================================================
-     /docs/legal/EULA/  (community)
-     ================================================================== -->
-
-# SVGRID END USER LICENSE AGREEMENT
-
-Version 1.0
-
-This End User License Agreement ("EULA") governs your use of SvGrid. Please read
-it carefully before downloading, installing, or using any portion of the
-Software. By downloading, installing, or using the Software you agree to be bound
-by the terms and conditions of this EULA. If you do not agree, you are not
-permitted to use the Software or any portion of it.
-
-SvGrid is distributed in two editions under two different sets of terms:
-
-- The **Community Edition** (`@svgrid/grid` and `@svgrid/mcp`) is free and open
-  source under the **MIT License**. Sections 2 and 3 apply to it.
-- The **Enterprise Package** (`@svgrid/enterprise`) is commercial software
-  licensed, not sold, under the terms in Sections 4 through 12.
-
-## 1. DEFINITIONS
-
-- **"Software"** means SvGrid, including its modules, components, program files,
-  source code, examples, media, and documentation, as well as any portion of
-  them.
-- **"Community Edition"** means the `@svgrid/grid` and `@svgrid/mcp` packages and
-  any other SvGrid package published under the MIT License.
-- **"Enterprise Package"** means the `@svgrid/enterprise` package and any other
-  SvGrid package published under this commercial license.
-- **"Author"** means jQWidgets Ltd.
-- **"Subscriber"** means the individual or organization that has obtained a valid
-  Enterprise license.
-- **"Developer"** means any individual who writes or modifies source code that
-  imports the Enterprise Package. Read-only users and end users are not
-  Developers.
-- **"License Key"** means a key issued by the Author that activates the
-  Enterprise Package for the number of Developer seats covered by the
-  Subscriber's order.
-
-## 2. COMMUNITY EDITION - MIT LICENSE
-
-The Community Edition is licensed under the MIT License. You may use, copy,
-modify, merge, publish, distribute, sublicense, and sell copies of the Community
-Edition, including in proprietary and commercial products, free of charge,
-subject only to the conditions of the MIT License (preservation of the copyright
-and permission notice). No License Key is required, there is no row-count cap,
-and there is no usage reporting. The full text of the MIT License is included in
-the repository at `packages/grid/LICENSE`.
-
-## 3. COMMUNITY EDITION - NO WARRANTY
-
-The Community Edition is provided "as is" under the MIT License, without warranty
-of any kind. The warranty disclaimer and limitation of liability of the MIT
-License apply to it.
-
-## 4. ENTERPRISE LICENSE - GRANT
-
-Subject to the Subscriber's compliance with this EULA and to continued payment of
-the applicable license fee where an updates-and-support term is in effect, the
-Author grants the Subscriber a non-exclusive, non-transferable,
-non-sublicensable license to:
-
-  (a) install and use the Enterprise Package on developer workstations and in
-      the Subscriber's development, staging, and production deployments;
-  (b) modify the Enterprise Package for the Subscriber's internal use, provided
-      that all copyright notices and license terms are preserved;
-  (c) distribute the Enterprise Package bundled inside the Subscriber's own
-      application, provided that the Enterprise Package is not the primary product
-      distributed and remains under this EULA.
-
-The scope of deployment is determined by the Subscriber's order:
-
-- A **Single Application Developer License** covers one (1) deployed production
-  application, plus any number of internal development and staging environments.
-- A **Multiple Application Developer License** covers an unlimited number of
-  deployed production applications within the Subscriber's organization,
-  including subsidiaries and sister products.
-- An **Enterprise / Custom (Site or Organization-wide) License** covers the scope
-  defined in the separately negotiated order or master agreement.
-
-## 5. ENTERPRISE LICENSE - SEATS
-
-The Enterprise Package is licensed per Developer. The number of Developer seats
-is determined by the Subscriber's order. Production seats and end users are
-unlimited and are not counted. One License Key activates every grid instance in
-scope; there is no per-page or per-component accounting. A seat is tied to a role,
-not to a named individual: if a Developer leaves and is replaced, the seat
-transfers to the replacement at no additional cost. License Keys must not be
-shared outside the Developer seats covered by the Subscriber's order.
-
-## 6. ENTERPRISE LICENSE - PERPETUAL LICENSE AND UPDATES/SUPPORT TERM
-
-The Enterprise license is **perpetual**: the Subscriber owns the right to use the
-versions of the Enterprise Package released during a paid term forever. Each
-order includes a one (1) year term of software updates and support, which
-**renews automatically each year** at the then-current rate until cancelled. The
-Subscriber may **cancel at any time**. On cancellation or lapse of the
-updates-and-support term:
-
-  (a) every version of the Enterprise Package released during a paid term keeps
-      working and keeps validating against the Subscriber's License Key;
-  (b) the Subscriber stops receiving new releases and support issued after the
-      paid term ends.
-
-The Author will not disable working features of a paying or previously paying
-Subscriber.
-
-## 7. ENTERPRISE LICENSE - EVALUATION AND SOFT-GATE
-
-The Enterprise Package is soft-gated. All Enterprise features are fully functional
-without a License Key for the purpose of evaluation. While unlicensed, the grid
-displays a small "Unlicensed @svgrid/enterprise" watermark and emits a one-time
-console notice. There is no time limit and no disabled functionality during
-evaluation. Setting a valid License Key removes the watermark and the notice.
-On request, the Author issues a time-limited evaluation key that removes the
-watermark during evaluation. Any sentinel or development key published by the
-Author for local development and testing must not be used in production.
-
-## 8. ENTERPRISE LICENSE - OPEN SOURCE PROJECTS
-
-The Author issues a free Enterprise License Key for projects that are open source
-under an OSI-approved license, hosted in a public repository, and are not a paid
-product. Such keys provide the full Enterprise feature set with no watermark and
-are renewable annually for as long as the project remains open source. Requests
-are made to the Author with the repository URL.
-
-## 9. ENTERPRISE LICENSE - LICENSE KEY AND VALIDATION
-
-License Key validation is performed entirely client-side, signed against the
-Author's public key. No network call is made to validate a License Key, and no
-telemetry is sent. Air-gapped deployments are supported. Each License Key embeds
-a stable identifier used only to cross-reference the Subscriber's order during
-support. The Subscriber must not remove, obscure, or disable the License Key
-check.
-
-## 10. ENTERPRISE LICENSE - RESTRICTIONS
-
-The Subscriber may NOT:
-
-  (a) redistribute the Enterprise Package as a standalone package, library, or
-      component;
-  (b) sublicense, rent, lease, or sell the Enterprise Package to third parties;
-  (c) remove, obscure, or disable the License Key check or any copyright or
-      proprietary notices;
-  (d) use the Enterprise Package to develop a data-grid or table component
-      product that competes with the Software for distribution to third parties;
-  (e) share License Keys outside of the Developer seats covered by the
-      Subscriber's order.
-
-## 11. INTELLECTUAL PROPERTY
-
-All intellectual property rights in the Enterprise Package, including patents,
-trademarks, copyrights, and trade secret rights, are and remain the property of
-the Author. The Enterprise Package is licensed, not sold. Purchasing a license,
-including a license that provides access to source code, does not transfer any
-intellectual property rights or ownership in the Software. "SvGrid", "jQWidgets",
-and "HTMLElements" are trademarks of the Author. All rights not expressly granted
-by this EULA are reserved. This Section does not restrict any right granted to you
-for the Community Edition under the MIT License.
-
-## 12. THIRD-PARTY COMPONENTS
-
-The Enterprise Package includes a vendored copy of the data-export utility from
-Smart UI / jQWidgets, redistributed under the same ownership (Copyright (c)
-2011-2026 jQWidgets). Optional peer dependencies, including `jszip` and `pdfmake`,
-are licensed by their respective authors under their own terms (MIT) and are not
-bundled into the package; you install them separately.
-
-## 13. DISCLAIMER OF WARRANTY
-
-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING WITHOUT LIMITATION THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. THE AUTHOR DOES NOT
-WARRANT THAT THE SOFTWARE WILL MEET YOUR REQUIREMENTS OR THAT ITS OPERATION WILL
-BE UNINTERRUPTED OR ERROR FREE. YOU ASSUME RESPONSIBILITY FOR SELECTING THE
-SOFTWARE TO ACHIEVE YOUR INTENDED RESULTS AND FOR THE RESULTS OBTAINED FROM IT.
-
-## 14. LIMITATION OF LIABILITY
-
-IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR
-CONSEQUENTIAL DAMAGES, OR FOR ANY DAMAGES WHATSOEVER INCLUDING BUT NOT LIMITED TO
-LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, OR LOSS OF BUSINESS INFORMATION,
-ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF
-THE POSSIBILITY OF SUCH DAMAGES. REGARDLESS OF THE FORM OF ACTION, THE AUTHOR'S
-AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS EULA SHALL NOT EXCEED THE
-LICENSE FEES PAID BY THE SUBSCRIBER IN THE TWELVE (12) MONTHS PRECEDING THE EVENT
-GIVING RISE TO THE CLAIM. THE FOREGOING LIMITATIONS SHALL APPLY TO THE MAXIMUM
-EXTENT ALLOWED BY APPLICABLE LAW.
-
-## 15. TERMINATION
-
-This EULA, with respect to the Enterprise Package, terminates automatically upon
-the Subscriber's material breach of Sections 4, 5, 10, or 11. On termination for
-breach, the Subscriber must cease all use of the Enterprise Package, remove it
-from development environments, and stop deploying new versions of any application
-that depends on it. Existing copies already deployed to production may continue to
-operate, but no new deployments are permitted. License fees for licenses
-cancelled due to violation of this EULA are non-refundable. Any provision
-intended to survive termination will survive. Termination of the Enterprise
-license does not affect rights granted for the Community Edition under the MIT
-License.
-
-## 16. SEVERABILITY
-
-If any provision of this EULA is held invalid or unenforceable, that provision
-will be enforced to the maximum extent permissible and the remaining provisions
-will remain in full force and effect.
-
-## 17. EXPORT REGULATIONS
-
-The Software may be subject to export or import regulations, and you agree to
-comply strictly with all such laws and regulations.
-
-## 18. GOVERNING LAW
-
-This EULA is governed by the laws of the jurisdiction in which the Author is
-registered, and any dispute arising out of or related to it will be handled
-there.
-
-## 19. CONTACT
-
-- Sales and licensing: sales@jqwidgets.com
-- Support: support@jqwidgets.com
-- General: info@jqwidgets.com
-- Pricing: https://svgrid.com/pricing/
-
-END OF AGREEMENT
-
-<!-- =================================================================
      /docs/recipes/autosave-with-debounce/  (community)
      ================================================================== -->
 
@@ -53446,30 +53255,37 @@ import {
 
 const features = tableFeatures({ rowSortingFeature })
 
+type Row = { x: number }
+const data: Row[] = [{ x: 1 }, { x: 3 }, { x: 2 }]
+
+// State is controlled, so a test does not call a setter - it builds the engine
+// with the state it wants to assert on.
+const build = (sorting: Array<{ id: string; desc: boolean }>) =>
+  createSvGrid({
+    _features: features,
+    _rowModels: {
+      coreRowModel:   createCoreRowModel<Row>(),
+      sortedRowModel: createSortedRowModel<Row>(),
+    },
+    data,
+    columns: [{ field: 'x' }],
+    state: { sorting },
+    onSortingChange: () => {},
+  })
+
 describe('row sorting', () => {
-  it('sorts rows desc on api call', () => {
-    type Row = { x: number }
-    const data: Row[] = [{ x: 1 }, { x: 3 }, { x: 2 }]
-    let sorting: Array<{ id: string; desc: boolean }> = []
-
-    const table = createSvGrid({
-      _features: features,
-      _rowModels: {
-        coreRowModel:   createCoreRowModel<Row>(),
-        sortedRowModel: createSortedRowModel<Row>(),
-      },
-      data,
-      columns: [{ field: 'x' }],
-      state: { sorting },
-      onSortingChange: (u) => {
-        sorting = typeof u === 'function' ? (u as (s: typeof sorting) => typeof sorting)(sorting) : u
-      },
-      enableSorting: true,
-    } as never)
-
-    table.setSorting([{ id: 'x', desc: true }])
-    const rows = table.getRowModel().rows.map((r) => (r.original as Row).x)
+  it('sorts rows desc', () => {
+    const rows = build([{ id: 'x', desc: true }])
+      .getRowModel()
+      .rows.map((r) => (r.original as Row).x)
     expect(rows).toEqual([3, 2, 1])
+  })
+
+  it('leaves source order alone when nothing is sorted', () => {
+    const rows = build([])
+      .getRowModel()
+      .rows.map((r) => (r.original as Row).x)
+    expect(rows).toEqual([1, 3, 2])
   })
 })
 ```
@@ -53477,6 +53293,12 @@ describe('row sorting', () => {
 Notes:
 - `_rowModels` must be passed explicitly when bypassing `<SvGrid>` -
   the component wires them for you, the headless path doesn't.
+- There is no `table.setSorting()`. Sorting is driven either by the `sorting`
+  state you pass in, as above, or from a header via
+  `header.getToggleSortingHandler()`, which fires `onSortingChange` for you.
+  Filters, pagination, grouping, expansion and selection do have imperative
+  setters on the table (`setColumnFilters`, `setPagination`, `setGrouping`,
+  `setExpanded`, `setRowSelection`).
 
 ## Strategy 2 - Component (testing-library)
 
@@ -54098,3016 +53920,6 @@ page that explains the underlying feature in depth is linked from the
 - [Demo 34-realtime-orders source](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/34-realtime-orders.svelte)
 - [Demo 34-realtime-orders prompt sidecar](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/prompts/34-realtime-orders.md) - drop into an LLM context window
 - [Recipes index](./index.md)
-
-<!-- =================================================================
-     /docs/reference/auto/index/  (community)
-     ================================================================== -->
-
-# Auto-generated reference
-
-_Generated from the published TypeScript sources. Do not edit by hand - rerun `node tools/build-reference.mjs`._
-
-For the hand-curated reference (with defaults + behaviour tables),
-see [the main reference index](../index.md).
-
-## @svgrid/grid
-
-- [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 48 exports
-- [`@svgrid/grid/svgrid-wrapper.types.ts`](./svgrid-grid-svgrid-wrapper.types.md) - 6 exports
-
-## @svgrid/enterprise
-
-- [`@svgrid/enterprise/export.ts`](./svgrid-enterprise-export.md) - 7 exports
-- [`@svgrid/enterprise/pivot.ts`](./svgrid-enterprise-pivot.md) - 10 exports
-- [`@svgrid/enterprise/import.ts`](./svgrid-enterprise-import.md) - 8 exports
-- [`@svgrid/enterprise/ai.ts`](./svgrid-enterprise-ai.md) - 19 exports
-- [`@svgrid/enterprise/install.ts`](./svgrid-enterprise-install.md) - 4 exports
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-enterprise-ai/  (community)
-     ================================================================== -->
-
-# `@svgrid/enterprise` · `ai.ts`
-
-Auto-generated. Source: `packages\enterprise\src\ai.ts`.
-
-### `type AIProvider`
-
-Shape every consumer-provided model adapter must implement. Keeping this
-tiny (one async call, two response formats) lets the same adapter drive
-OpenAI's `chat.completions`, Anthropic's `messages`, a self-hosted
-llama.cpp endpoint, or a server-side proxy. The grid only cares that the
-provider eventually returns a string we can parse.
-
-```ts
-export type AIProvider = (request: AIRequest) => Promise<string>
-```
-
-### `type AIRequest`
-
-_No JSDoc yet._
-
-```ts
-export type AIRequest = {
-  /** Full prompt the grid built for the model. Already includes column
-   *  schema and any sampled rows where applicable. */
-  prompt: string
-  /** When 'json', the provider should ask the model to return strict
-   *  JSON only - no prose. We parse the response with JSON.parse and
-   *  throw a typed error on failure. */
-  responseFormat?: 'text' | 'json'
-  /** Honored if the underlying transport supports cancellation. */
-  signal?: AbortSignal
-  /** Free-form tag for telemetry / logging. One of: 'filter',
-   *  'smart-fill', 'summarize', 'classify'. */
-  task: AITask
-  /** Soft hint to the provider about how many tokens we expect back.
-   *  Useful for routing small jobs to a cheaper model. */
-  maxOutputTokens?: number
-}
-```
-
-### `type AITask`
-
-_No JSDoc yet._
-
-```ts
-export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify'
-```
-
-### `function setAIProvider`
-
-Register the model adapter every AI call will route through. Call once
-at app boot. Passing `null` clears the provider and AI calls revert to
-throwing "no provider" errors.
-
-```ts
-export function setAIProvider(p: AIProvider | null): void {
-  provider = p
-}
-```
-
-### `function getAIProvider`
-
-_No JSDoc yet._
-
-```ts
-export function getAIProvider(): AIProvider | null {
-  return provider
-}
-```
-
-### `function hasAIProvider`
-
-_No JSDoc yet._
-
-```ts
-export function hasAIProvider(): boolean {
-  return provider != null
-}
-```
-
-### `type AIFilterClause`
-
-_No JSDoc yet._
-
-```ts
-export type AIFilterClause = {
-  field: string
-  operator: 'contains' | 'equals' | 'startsWith' | 'greaterThan' | 'lessThan' | 'isBlank'
-  value?: string
-}
-```
-
-### `type AISortClause`
-
-_No JSDoc yet._
-
-```ts
-export type AISortClause = { field: string; desc: boolean }
-```
-
-### `type AIFilterResult`
-
-_No JSDoc yet._
-
-```ts
-export type AIFilterResult = {
-  filters: AIFilterClause[]
-  sort: AISortClause[]
-  /** Plain-English explanation of how the model interpreted the query.
-   *  Surface this in the UI so the user can confirm or undo. */
-  rationale: string
-}
-```
-
-### `type AIFilterOptions`
-
-_No JSDoc yet._
-
-```ts
-export type AIFilterOptions = {
-  /**
-   * When true, the helper not only RETURNS the plan but also applies it
-   * to the grid via `api.setFilter` / `api.setSort`. Defaults to false
-   * so callers can show a preview before committing.
-   */
-  apply?: boolean
-  signal?: AbortSignal
-}
-```
-
-### `type AISmartFillExample`
-
-_No JSDoc yet._
-
-```ts
-export type AISmartFillExample = { input: Record<string, unknown>; output: unknown }
-```
-
-### `type AISmartFillResult`
-
-_No JSDoc yet._
-
-```ts
-export type AISmartFillResult<TValue = unknown> = {
-  field: string
-  predictions: Array<{ rowIndex: number; value: TValue; confidence: number }>
-  rationale: string
-}
-```
-
-### `type AISmartFillOptions`
-
-_No JSDoc yet._
-
-```ts
-export type AISmartFillOptions = {
-  /** Target column - the one whose values we want filled. */
-  field: string
-  /** Index of rows the model should propose values for. If omitted, every
-   *  row whose current `field` value is `null`, `undefined` or `''` is
-   *  selected automatically. */
-  targetRowIndices?: number[]
-  /**
-   * Worked examples the user has already filled in. Required - the
-   * model needs at least one to know the pattern, two or more to lock
-   * the schema. We don't pull these from the grid automatically because
-   * "edited" vs "untouched" isn't a state SvGrid exposes today.
-   */
-  examples: AISmartFillExample[]
-  signal?: AbortSignal
-}
-```
-
-### `type AISummarizeTarget`
-
-_No JSDoc yet._
-
-```ts
-export type AISummarizeTarget =
-```
-
-### `type AISummary`
-
-_No JSDoc yet._
-
-```ts
-export type AISummary = {
-  text: string
-  bullets: string[]
-  /** Field names the model thinks are the most load-bearing for the
-   *  story it just told. UI can highlight those columns. */
-  highlightedFields: string[]
-}
-```
-
-### `type AISummarizeOptions`
-
-_No JSDoc yet._
-
-```ts
-export type AISummarizeOptions = {
-  target: AISummarizeTarget
-  /** Optional question the user is trying to answer. Helps the model
-   *  bias the summary toward the relevant columns. */
-  question?: string
-  signal?: AbortSignal
-}
-```
-
-### `type AIClassifyOptions`
-
-_No JSDoc yet._
-
-```ts
-export type AIClassifyOptions = {
-  /** Column whose free-text we're classifying. */
-  inputField: string
-  /** Target column the model should write to. */
-  outputField: string
-  /** Allowed values. The model is constrained to pick one. */
-  classes: string[]
-  /** Optional one-line description of each class (acts as a labeling rubric). */
-  classDescriptions?: Record<string, string>
-  /** Rows to classify. Defaults to all. */
-  targetRowIndices?: number[]
-  signal?: AbortSignal
-}
-```
-
-### `type AIClassifyResult`
-
-_No JSDoc yet._
-
-```ts
-export type AIClassifyResult = {
-  inputField: string
-  outputField: string
-  predictions: Array<{ rowIndex: number; value: string; confidence: number }>
-}
-```
-
-### `const mockAIProvider`
-
-A deterministic provider that returns canned, schema-shaped responses
-for each task. Wire it in via `setAIProvider(mockAIProvider)` to make
-the AI demo work end-to-end without a real model key. Not for production.
-
-```ts
-export const mockAIProvider: AIProvider = async (req) => {
-  // Tiny artificial delay so the UI's "thinking" state is visible.
-  await new Promise((r) => setTimeout(r, 350 + Math.random() * 400))
-
-  if (req.task === 'filter') {
-    const q = extractUserQuery(req.prompt)
-    return JSON.stringify(buildMockFilter(req.prompt, q))
-  }
-  if (req.task === 'smart-fill') {
-    return JSON.stringify(buildMockSmartFill(req.prompt))
-  }
-  if (req.task === 'summarize') {
-    return JSON.stringify(buildMockSummary(req.prompt))
-  }
-  if (req.task === 'classify') {
-    return JSON.stringify(buildMockClassify(req.prompt))
-  }
-  return '{}'
-}
-```
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-enterprise-export/  (community)
-     ================================================================== -->
-
-# `@svgrid/enterprise` · `export.ts`
-
-Auto-generated. Source: `packages\enterprise\src\export.ts`.
-
-### `type ExportFormat`
-
-_No JSDoc yet._
-
-```ts
-export type ExportFormat = 'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'
-```
-
-### `type ExportColumn`
-
-_No JSDoc yet._
-
-```ts
-export type ExportColumn = {
-  /** Data field name on the row object. */
-  field: string
-  /** Header label to render in the exported file. Defaults to `field`. */
-  header?: string
-}
-```
-
-### `type ExportCellStyle`
-
-Per-cell style descriptor. Mirrors a subset of CSS; the keys the
-underlying exporter honours are font / colour / background / border /
-alignment. Anything else is ignored gracefully.
-
-```ts
-export type ExportCellStyle = {
-  color?: string
-  backgroundColor?: string
-  fontWeight?: 'normal' | 'bold' | number
-  fontStyle?: 'normal' | 'italic'
-  fontSize?: number | string
-  fontFamily?: string
-  border?: string
-  textAlign?: 'left' | 'right' | 'center'
-  verticalAlign?: 'top' | 'middle' | 'bottom'
-}
-```
-
-### `type ExportStyles`
-
-Document-level style. Apply blanket styles to the header row, the
-value rows, or selectively per cell-reference (e.g. `'B2'`).
-
-```ts
-export type ExportStyles = {
-  /** Style applied to every header cell. */
-  headerRow?: ExportCellStyle
-  /** Style applied to every data row. Even / odd zebra are derived from this if `rowAlternate` is set. */
-  rows?: ExportCellStyle
-  /** Optional zebra background for odd-indexed rows. */
-  rowAlternate?: ExportCellStyle
-  /** Per-cell overrides keyed by Excel-style reference (`'A1'`, `'C3'`). */
-  cells?: Record<string, ExportCellStyle>
-}
-```
-
-### `type ExportHeaderFooterLine`
-
-Header / footer entries for xlsx + pdf. Each line is rendered top to
-bottom on the page. Embed an image with `{ image: dataUrl }`; embed
-text with `{ text: '...', style?: ExportCellStyle }`.
-
-```ts
-export type ExportHeaderFooterLine =
-```
-
-### `type ExportSheet`
-
-_No JSDoc yet._
-
-```ts
-export type ExportSheet<TData> = {
-  /** Sheet/tab label. Required. */
-  label: string
-  /** Rows for this sheet. */
-  rows: ReadonlyArray<TData>
-  /** Per-sheet columns. Falls back to the top-level `columns` if omitted. */
-  columns?: ReadonlyArray<ExportColumn>
-  /** Per-sheet styles. */
-  styles?: ExportStyles
-}
-```
-
-### `type ExportOptions`
-
-_No JSDoc yet._
-
-```ts
-export type ExportOptions<TData> = {
-  format: ExportFormat
-  /** Base filename (extension is appended if missing). Defaults to "grid". */
-  filename?: string
-  /**
-   * Columns to include. If omitted, every key of the first row is exported
-   * (in original object order) using the field name as the header label.
-   */
-  columns?: ReadonlyArray<ExportColumn>
-  /**
-   * Source rows. If omitted, the current displayed rows from the api are used.
-   * Provide explicitly when you want to override (e.g. export the whole
-   * dataset rather than the filtered view).
-   */
-  rows?: ReadonlyArray<TData>
-  /** PDF only. Page orientation. Defaults to "portrait". */
-  pageOrientation?: 'portrait' | 'landscape'
-  /**
-   * Cell + row styles. Apply once to match a light/dark theme, or per-cell
-   * for conditional formatting. xlsx and pdf honour these; csv/tsv ignore
-   * them; html bakes them into inline `style=` attributes.
-   */
-  styles?: ExportStyles
-  /** Page header lines (xlsx, pdf, html). Logos go here as `{ image: ... }`. */
-  header?: ReadonlyArray<ExportHeaderFooterLine>
-  /** Page footer lines. Common pattern: page number on the right. */
-  footer?: ReadonlyArray<ExportHeaderFooterLine>
-  /**
-   * Multi-sheet export (xlsx only). When set, each entry becomes one
-   * sheet/tab. The top-level `rows` / `columns` are ignored.
-   */
-  sheets?: ReadonlyArray<ExportSheet<TData>>
-  /**
-   * If a row has a column whose value matches one of these field names
-   * AND the value looks like a URL or data URL, the cell is exported as
-   * an embedded image (xlsx). Defaults to `[]` (no auto-detection).
-   */
-  imageFields?: ReadonlyArray<string>
-  /**
-   * Pixel dimensions used when embedding images. Smart's xlsx writer
-   * draws the image at this size relative to the cell origin. Defaults
-   * to `{ width: 32, height: 32 }`. Set larger for thumbnails, smaller
-   * for inline icons.
-   */
-  imageSize?: { width: number; height: number }
-  /**
-   * Group flat rows by one or more field names. The exporter wraps each
-   * group in an Excel outline row (with the +/- expand button), and
-   * emits a `<value> <field>` group header above every cluster. Maps
-   * straight to Smart DataExporter's constructor `groupBy` arg. xlsx
-   * only; csv/tsv/html flatten the groups back out.
-   */
-  groupBy?: ReadonlyArray<string>
-  /**
-   * Mark rows as a hierarchical (tree) data source. Each row should
-   * declare its own children either via the `subRows` convention or by
-   * matching the parent/child shape Smart expects on the input rows.
-   * Mutually exclusive with `groupBy`. xlsx only.
-   */
-  hierarchical?: boolean
-}
-```
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-enterprise-import/  (community)
-     ================================================================== -->
-
-# `@svgrid/enterprise` · `import.ts`
-
-Auto-generated. Source: `packages\enterprise\src\import.ts`.
-
-### `type ImportFormat`
-
-_No JSDoc yet._
-
-```ts
-export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
-```
-
-### `type ImportColumnMap`
-
-_No JSDoc yet._
-
-```ts
-export type ImportColumnMap = Record<string, string>
-```
-
-### `type ImportFieldType`
-
-Declared data type per target field. When `columnTypes` is set on
-`ImportOptions`, the parser tries to coerce each non-empty cell into
-the declared shape and emits an `ImportRowError` when it can't -
-stricter than the ad-hoc "looks like a number" fallback.
-
-```ts
-export type ImportFieldType =
-```
-
-### `type ImportColumnTypes`
-
-_No JSDoc yet._
-
-```ts
-export type ImportColumnTypes = Record<string, ImportFieldType>
-```
-
-### `type ImportRowError`
-
-_No JSDoc yet._
-
-```ts
-export type ImportRowError = {
-  /** 0-based row index in the SOURCE file (excluding the header). */
-  rowIndex: number
-  /** Target field name (the grid's column field), or '*' for whole-row errors. */
-  field: string
-  message: string
-}
-```
-
-### `type ImportValidator`
-
-_No JSDoc yet._
-
-```ts
-export type ImportValidator<TData> = (
-```
-
-### `type ImportOptions`
-
-_No JSDoc yet._
-
-```ts
-export type ImportOptions<TData> = {
-  /** The file to read. A `File`/`Blob` works for xlsx; a string is treated as
-   *  inline CSV/TSV/JSON text. */
-  file: File | Blob | string
-  /** When 'auto', the format is sniffed from `file.name`'s extension (Files
-   *  only), otherwise the function inspects the first characters of the
-   *  text payload. */
-  format?: ImportFormat
-  /**
-   * Map source-header -> target-field. Missing entries fall back to the
-   * source header verbatim (lowercased + trimmed). Pass `null` for a
-   * source header you want to drop on the floor.
-   */
-  columnMap?: ImportColumnMap
-  /**
-   * Declared data types per target field. When set, the importer uses
-   * strict per-type coercion (`'2024-03-15'` -> ISO date; `'$1,234'`
-   * -> 1234 for `number` fields) and emits an `ImportRowError` whenever
-   * a value can't be coerced. Fields not listed fall back to the
-   * built-in best-effort coercion (currency / number / date sniffing
-   * by value shape).
-   */
-  columnTypes?: ImportColumnTypes
-  /** Per-row validator. Returned errors land in `result.errors`. */
-  validator?: ImportValidator<TData>
-  /** When true, the parsed rows are appended to the grid via
-   *  `api.addRows(...)` automatically. Defaults to false (preview mode). */
-  commit?: boolean
-  /** Where to insert when `commit` is true. Defaults to 'bottom'. */
-  commitAt?: 'top' | 'bottom' | number
-}
-```
-
-### `type ImportResult`
-
-_No JSDoc yet._
-
-```ts
-export type ImportResult<TData> = {
-  /** Source headers as found in the file, in their original order. */
-  headers: string[]
-  /** Parsed + mapped rows. Order matches the source. */
-  rows: TData[]
-  /** All validation errors (zero-length if the file passed clean). */
-  errors: ImportRowError[]
-  /** Rows skipped because they were entirely blank. */
-  skipped: number
-  /** Total source rows the parser saw (including blanks and bad rows). */
-  total: number
-  /** Detected format (resolved from 'auto'). */
-  format: Exclude<ImportFormat, 'auto'>
-}
-```
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-enterprise-install/  (community)
-     ================================================================== -->
-
-# `@svgrid/enterprise` · `install.ts`
-
-Auto-generated. Source: `packages\enterprise\src\install.ts`.
-
-### `type EnterpriseAIApi`
-
-_No JSDoc yet._
-
-```ts
-export type EnterpriseAIApi<TData extends RowData> = {
-  /** Natural-language -> filter + sort plan (and optionally apply it). */
-  filter(query: string, opts?: AIFilterOptions): Promise<AIFilterResult>
-  /** Propose values for empty cells based on a few worked examples. */
-  smartFill<TValue = unknown>(opts: AISmartFillOptions): Promise<AISmartFillResult<TValue>>
-  /** One-paragraph + bullets summary of a row, selection, group, or the whole view. */
-  summarize(opts: AISummarizeOptions): Promise<AISummary>
-  /** Classify free-text cells into one of a known set of labels. */
-  classify(opts: AIClassifyOptions): Promise<AIClassifyResult>
-  // TData is referenced so the type stays bound to the row shape even
-  // though the helpers all read through `api.getData()`. Lets callers
-  // get correct inference downstream without explicit generics.
-  readonly _rowType?: TData
-}
-```
-
-### `type EnterprisePivotApi`
-
-_No JSDoc yet._
-
-```ts
-export type EnterprisePivotApi<
-```
-
-### `type EnterpriseGridApi`
-
-_No JSDoc yet._
-
-```ts
-export type EnterpriseGridApi<
-```
-
-### `function installEnterprise`
-
-Augment a SvGridApi instance with Enterprise methods (`exportData`, `print`,
-`ai.*`). Mutates and returns the same object so existing references
-keep working.
-
-If no license key has been set, the Enterprise methods still function but the
-grid shows a small "unlicensed" watermark linking to jqwidgets.com and
-the console emits a one-time nudge. Revoked or malformed keys throw on
-first call.
-
-```ts
-export function installEnterprise<
-```
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-enterprise-pivot/  (community)
-     ================================================================== -->
-
-# `@svgrid/enterprise` · `pivot.ts`
-
-Auto-generated. Source: `packages\enterprise\src\pivot.ts`.
-
-### `type PivotAggregatorId`
-
-_No JSDoc yet._
-
-```ts
-export type PivotAggregatorId =
-```
-
-### `type PivotAggregator`
-
-_No JSDoc yet._
-
-```ts
-export type PivotAggregator = (values: ReadonlyArray<unknown>) => unknown
-```
-
-### `type PivotValueConfig`
-
-_No JSDoc yet._
-
-```ts
-export type PivotValueConfig<TData> = {
-  /** Row field whose values get aggregated. */
-  field: keyof TData & string
-  /** Built-in aggregator id, or a custom reducer. */
-  agg: PivotAggregatorId | PivotAggregator
-  /** Display name in the column header. Defaults to `${field} (${agg})`. */
-  label?: string
-  /** Optional cell formatter. */
-  format?: CellFormatConfig
-}
-```
-
-### `type PivotConfig`
-
-_No JSDoc yet._
-
-```ts
-export type PivotConfig<TData> = {
-  /** Outer-most first. Each entry becomes one level of row grouping. */
-  rows: ReadonlyArray<keyof TData & string>
-  /** Outer-most first. Each entry becomes one level of column grouping. */
-  cols: ReadonlyArray<keyof TData & string>
-  /** One or more measures aggregated under each column-axis leaf. */
-  values: ReadonlyArray<PivotValueConfig<TData>>
-  /** Grand-total row at the bottom. Default `true`. */
-  grandTotalRow?: boolean
-  /** Grand-total column on the right. Default `true`. */
-  grandTotalCol?: boolean
-  /** Subtotal rows between row groups. Default `true`. */
-  rowSubtotals?: boolean
-  /** Optional sort for column-axis values per dim level (defaults to alpha). */
-  colSort?: (a: unknown, b: unknown, level: number) => number
-  /** Optional sort for row-axis values per dim level (defaults to alpha). */
-  rowSort?: (a: unknown, b: unknown, level: number) => number
-}
-```
-
-### `type PivotRowKind`
-
-_No JSDoc yet._
-
-```ts
-export type PivotRowKind = 'group' | 'subtotal' | 'leaf' | 'grandTotal'
-```
-
-### `type PivotRow`
-
-Shape of one entry in `result.rows`. The first-column label lives at
-`__pivotLabel`; every value cell lives at the column id matching the
-leaf column generated for its (col-path × measure).
-
-`__pivotParentId` is the `__pivotId` of the row's row-axis parent
-(or `null` for top-level groups, the grand-total row, and the one
-synthetic "All" row when no row dims are configured). Use it with
-`filterCollapsedPivotRows` to hide leaves whose ancestor is
-collapsed - that's how expandable pivots are built on top of the
-model.
-
-`__pivotExpandable` is `true` for `group` rows that have at least
-one descendant. A renderer uses this to decide whether to show a
-chevron next to the label.
-
-```ts
-export type PivotRow = {
-  __pivotId: string
-  __pivotKind: PivotRowKind
-  __pivotDepth: number
-  __pivotLabel: string
-  __pivotParentId: string | null
-  __pivotExpandable: boolean
-  /** Aggregated value cells - keyed by leaf column id. */
-  [columnId: string]: unknown
-}
-```
-
-### `type PivotResult`
-
-_No JSDoc yet._
-
-```ts
-export type PivotResult<TFeatures extends TableFeatures> = {
-  rows: PivotRow[]
-  columns: Array<ColumnDef<TFeatures, PivotRow>>
-}
-```
-
-### `function createPivotModel`
-
-_No JSDoc yet._
-
-```ts
-export function createPivotModel<
-```
-
-### `const pivotAggregators`
-
-Public registry of built-in aggregators. Useful for surfacing the
-available options in a pivot designer UI.
-
-```ts
-export const pivotAggregators: Record<PivotAggregatorId, PivotAggregator> = { ...BUILT_IN_AGGS }
-```
-
-### `function filterCollapsedPivotRows`
-
-Filter a `result.rows` array down to only the rows the user should
-see given the current expansion state. A row stays in the output if
-its entire ancestor chain (via `__pivotParentId`) is in `expandedIds`.
-
-Pass `true` to bypass filtering (everything visible - the default
-shape `createPivotModel` already returns). Pass an empty array /
-empty Set to collapse every group to its subtotal row.
-
-The result is a new array; the input is not mutated.
-
-```ts
-export function filterCollapsedPivotRows(
-```
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-grid-core/  (community)
-     ================================================================== -->
-
-# `@svgrid/grid` · `core.ts`
-
-Auto-generated. Source: `packages\grid\src\core.ts`.
-
-### `type RowData`
-
-_No JSDoc yet._
-
-```ts
-export type RowData = Record<string, unknown>
-```
-
-### `type Updater`
-
-_No JSDoc yet._
-
-```ts
-export type Updater<T> = T | ((prev: T) => T)
-```
-
-### `type SortingState`
-
-_No JSDoc yet._
-
-```ts
-export type SortingState = Array<{ id: string; desc: boolean }>
-```
-
-### `type ColumnFilter`
-
-_No JSDoc yet._
-
-```ts
-export type ColumnFilter = { id: string; value: unknown; fn?: keyof typeof filterFns }
-```
-
-### `type ColumnFiltersState`
-
-_No JSDoc yet._
-
-```ts
-export type ColumnFiltersState = Array<ColumnFilter>
-```
-
-### `type PaginationState`
-
-_No JSDoc yet._
-
-```ts
-export type PaginationState = { pageIndex: number; pageSize: number }
-```
-
-### `type GroupingState`
-
-_No JSDoc yet._
-
-```ts
-export type GroupingState = Array<string>
-```
-
-### `type ExpandedState`
-
-_No JSDoc yet._
-
-```ts
-export type ExpandedState = Record<string, boolean>
-```
-
-### `type RowSelectionState`
-
-_No JSDoc yet._
-
-```ts
-export type RowSelectionState = Record<string, boolean>
-```
-
-### `type ActiveCellState`
-
-_No JSDoc yet._
-
-```ts
-export type ActiveCellState = {
-  rowIndex: number
-  colIndex: number
-  cellId: string | null
-}
-```
-
-### `type TableFeatures`
-
-_No JSDoc yet._
-
-```ts
-export type TableFeatures = Record<string, unknown>
-```
-
-### `type CellData`
-
-_No JSDoc yet._
-
-```ts
-export type CellData = unknown
-```
-
-### `type HeaderContext`
-
-_No JSDoc yet._
-
-```ts
-export type HeaderContext<TData extends RowData> = {
-  header: Header<TData>
-  column: Column<TData>
-  table: SvGrid<TData>
-}
-```
-
-### `type CellContext`
-
-_No JSDoc yet._
-
-```ts
-export type CellContext<TData extends RowData> = {
-  cell: Cell<TData>
-  row: Row<TData>
-  column: Column<TData>
-  table: SvGrid<TData>
-  getValue: () => unknown
-}
-```
-
-### `type EditorContext`
-
-Context passed to a custom `cellEditor` snippet/component. Three write
-helpers cover the lifecycle:
-
-  - `update(next)`  - stage `next` as the draft, keep the editor open.
-                      Use this for live-preview controls (sliders,
-                      color pickers) so the user can keep adjusting.
-  - `commit(next?)` - write the value AND close the editor. The
-                      argument is optional; when omitted, the most
-                      recently `update()`d value is saved. Use this
-                      for "done" gestures (Enter, picking an option).
-  - `cancel()`      - discard the draft and close the editor.
-
-```ts
-export type EditorContext<TData extends RowData> = CellContext<TData> & {
-  value: unknown
-  update: (next: unknown) => void
-  commit: (next?: unknown) => void
-  cancel: () => void
-}
-```
-
-### `type CellFormatConfig`
-
-_No JSDoc yet._
-
-```ts
-export type CellFormatConfig =
-```
-
-### `type CellFormatter`
-
-_No JSDoc yet._
-
-```ts
-export type CellFormatter<TData extends RowData> = (context: {
-  value: unknown
-  row: Row<TData>
-  column: Column<TData>
-  table: SvGrid<TData>
-}) => string
-```
-
-### `type ColumnDefTemplate`
-
-_No JSDoc yet._
-
-```ts
-export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
-```
-
-### `type GroupAggregator`
-
-How a column's value is aggregated for a group row when `columnGrouping`
-is active. Built-in reducers cover the common cases; pass a function for
-anything custom (weighted average, median, percentile, distinct count).
-The function receives the finite numeric values AND the raw leaf rows.
-
-```ts
-export type GroupAggregator<TData = any> =
-```
-
-### `function applyGroupAggregate`
-
-Apply a group aggregator over a bucket's leaf rows for one column. */
-
-```ts
-export function applyGroupAggregate<TData extends RowData>(
-```
-
-### `type ColumnDef`
-
-_No JSDoc yet._
-
-```ts
-export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
-  id?: string
-  field?: keyof TData & string
-  fieldFn?: (row: TData) => unknown
-  header?: ColumnDefTemplate<HeaderContext<TData>>
-  footer?: ColumnDefTemplate<HeaderContext<TData>>
-  cell?: ColumnDefTemplate<CellContext<TData>>
-  columns?: Array<ColumnDef<TFeatures, TData>>
-  editorType?:
-    | 'text'
-    | 'number'
-    | 'date'
-    | 'datetime'
-    | 'time'         // native <input type="time"> - HH:MM or HH:MM:SS
-    | 'password'     // native <input type="password"> with masked rendering
-    | 'checkbox'
-    | 'list'
-    | 'chips'
-    | 'select'       // custom dropdown - single value, no typeahead
-    | 'rich-select'  // custom dropdown with a typeahead search input
-    | 'textarea'     // multi-line editor; Tab or Ctrl+Enter commits, plain Enter inserts a newline
-    | 'color'        // native <input type="color"> swatch
-    | 'rating'       // 5-star rating control
-  /**
-   * Custom in-cell editor. Receives the cell context PLUS a `commit(value)`
-   * and `cancel()` helper. Use when none of the built-in `editorType`s fit;
-   * the snippet's outer element is mounted inside the editing cell and
-   * inherits keyboard handling (Esc cancels, Enter commits unless your
-   * snippet preventDefaults it).
-   *
-   * Coexists with `editorType`: when both are set, `cellEditor` wins and
-   * `editorType` is treated as a hint for parsing the saved value.
-   */
-  cellEditor?: ColumnDefTemplate<EditorContext<TData>>
-  /**
-   * Per-column tooltip. String shows as a native `title=`; `(ctx) => string`
-   * runs per cell so the tooltip can reflect the value. Returning an empty
-   * string skips the tooltip.
-   */
-  tooltip?: string | ((ctx: CellContext<TData>) => string | null | undefined)
-  /**
-   * Gate editing per column or per cell.
-   *
-   *   - `true` (or omitted): the column is fully editable.
-   *   - `false`: the column is read-only - double-click, type-to-edit,
-   *     fill-handle drag, Delete, and clipboard paste all skip it.
-   *   - `(ctx) => boolean`: evaluated for each cell, so you can lock
-   *     individual rows (e.g. by role, status, ownership). Returning
-   *     `false` opts the cell out of every editing path, identical to
-   *     setting `editable: false` on the whole column for that row.
-   *
-   * The grid-wide `enableInlineEditing` prop still wins when set to
-   * `false`.
-   */
-  editable?: boolean | ((context: CellContext<TData>) => boolean)
-  /**
-   * When `false`, this column never shows a sort indicator and clicking
-   * its header is a no-op - `api.setSort(thisColumn, ...)` is also
-   * ignored. Defaults to `true` (the column participates in sorting as
-   * long as `rowSortingFeature` is registered).
-   */
-  sortable?: boolean
-  /**
-   * When `false`, this column never shows a filter funnel / menu and
-   * `api.setFilter(thisColumn, ...)` is ignored. Defaults to `true` (the
-   * column is filterable as long as `columnFilteringFeature` is
-   * registered).
-   */
-  filterable?: boolean
-  /**
-   * Options for `editorType: 'list' | 'chips'`. Either bare values (the
-   * string is both value and label) or `{ value, label }` objects.
-   * For `chips` this is optional - when omitted, the chips editor becomes
-   * free-form (user types and presses Enter to commit a chip).
-   *
-   * Pass a function `(row) => options` for row-dependent (cascading)
-   * options - e.g. City options that depend on Country in the same row.
-   */
-  editorOptions?:
-    | ReadonlyArray<
-        string | number | { value: string | number; label?: string; color?: string }
-      >
-    | ((
-        row: TData,
-      ) => ReadonlyArray<
-        string | number | { value: string | number; label?: string; color?: string }
-      >)
-  /** When true, list/chips allow multiple selections. Cell value becomes an array. */
-  editorMultiple?: boolean
-  /** Separator used when joining array values for the readonly cell display. Defaults to ', '. */
-  editorSeparator?: string
-  format?: CellFormatConfig
-  formatter?: CellFormatter<TData>
-  /**
-   * Aggregate this column's values into the group row when grouping is
-   * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
-   * 'extent' | 'first'`, or a custom `(values, rows) => unknown`. The result
-   * is formatted with this column's `format` and shown in the group header.
-   */
-  aggregate?: GroupAggregator<TData>
-  /**
-   * Render the cell as an in-cell sparkline chart. The cell value should be
-   * an array of numbers (or a comma/space separated string). Mutually
-   * exclusive with a custom `cell` renderer (a `cell` wins if both are set).
-   *
-   *   { sparkline: { type: 'line' } }                 // default line
-   *   { sparkline: { type: 'bar', color: '#16a34a' } }
-   *   { sparkline: { type: 'winloss' } }              // sign-only up/down
-   *
-   * See `SparklineConfig` for the full option set (type, color,
-   * negativeColor, width, height, fixed min/max).
-   */
-  sparkline?: SparklineConfig
-  /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
-  width?: number
-  /**
-   * Horizontal alignment for header and body cells. When omitted, the
-   * default is inferred from `editorType`:
-   *   - `'number' | 'date' | 'datetime'` → `'right'`
-   *   - `'checkbox'`                     → `'center'`
-   *   - everything else                  → `'left'`
-   */
-  align?: 'left' | 'center' | 'right'
-  /**
-   * Per-cell conditional CSS. Two shapes:
-   *
-   *   - **String** (or array of strings): class name(s) added to the
-   *     cell's `<td>` for every row in this column.
-   *   - **Function**: invoked per cell with the same `CellContext` shape
-   *     the `cell` renderer receives. Return a string, an array of
-   *     strings, or an object mapping class names to booleans.
-   *
-   * Use it for status tinting, conditional bold, "negative number"
-   * coloring - anything that's a function of the row's value. Cells
-   * still receive their format / cell renderer; the class just
-   * augments the rendered `<td>`.
-   */
-  cellClass?:
-    | string
-    | ReadonlyArray<string>
-    | ((ctx: CellContext<TData>) => string | ReadonlyArray<string> | Record<string, boolean> | undefined | null)
-}
-```
-
-### `type Column`
-
-_No JSDoc yet._
-
-```ts
-export type Column<TData extends RowData> = {
-  id: string
-  columnDef: ColumnDef<any, TData>
-  depth: number
-  parentId?: string
-  getCanSort: () => boolean
-  getCanFilter: () => boolean
-  getIsSorted: () => false | 'asc' | 'desc'
-  getToggleSortingHandler: () => () => void
-}
-```
-
-### `type Header`
-
-_No JSDoc yet._
-
-```ts
-export type Header<TData extends RowData> = {
-  id: string
-  isPlaceholder: boolean
-  colSpan: number
-  column: Column<TData>
-  getContext: () => HeaderContext<TData>
-}
-```
-
-### `type HeaderGroup`
-
-_No JSDoc yet._
-
-```ts
-export type HeaderGroup<TData extends RowData> = {
-  id: string
-  headers: Array<Header<TData>>
-}
-```
-
-### `type Cell`
-
-_No JSDoc yet._
-
-```ts
-export type Cell<TData extends RowData> = {
-  id: string
-  row: Row<TData>
-  column: Column<TData>
-  getValue: () => unknown
-  getContext: () => CellContext<TData>
-}
-```
-
-### `type Row`
-
-_No JSDoc yet._
-
-```ts
-export type Row<TData extends RowData> = {
-  id: string
-  index: number
-  original: TData
-  depth: number
-  subRows?: Array<Row<TData>>
-  /** Total leaf (data) rows under this group row. Undefined for data rows. */
-  leafCount?: number
-  getCanExpand: () => boolean
-  getIsExpanded: () => boolean
-  toggleExpanded: () => void
-  getIsSelected: () => boolean
-  toggleSelected: () => void
-  getAllCells: () => Array<Cell<TData>>
-  getCellValueByColumnId: (columnId: string) => unknown
-}
-```
-
-### `type RowModel`
-
-_No JSDoc yet._
-
-```ts
-export type RowModel<TData extends RowData> = {
-  rows: Array<Row<TData>>
-}
-```
-
-### `type Store`
-
-_No JSDoc yet._
-
-```ts
-export type Store<T> = {
-  readonly state: T
-  setState: (updater: (prev: T) => T) => void
-  subscribe: (listener: () => void) => () => void
-}
-```
-
-### `const rowSortingFeature`
-
-_No JSDoc yet._
-
-```ts
-export const rowSortingFeature = { key: 'rowSortingFeature' }
-```
-
-### `const columnFilteringFeature`
-
-_No JSDoc yet._
-
-```ts
-export const columnFilteringFeature = { key: 'columnFilteringFeature' }
-```
-
-### `const rowPaginationFeature`
-
-_No JSDoc yet._
-
-```ts
-export const rowPaginationFeature = { key: 'rowPaginationFeature' }
-```
-
-### `const columnGroupingFeature`
-
-_No JSDoc yet._
-
-```ts
-export const columnGroupingFeature = { key: 'columnGroupingFeature' }
-```
-
-### `const rowSelectionFeature`
-
-_No JSDoc yet._
-
-```ts
-export const rowSelectionFeature = { key: 'rowSelectionFeature' }
-```
-
-### `const rowExpandingFeature`
-
-_No JSDoc yet._
-
-```ts
-export const rowExpandingFeature = { key: 'rowExpandingFeature' }
-```
-
-### `function tableFeatures`
-
-_No JSDoc yet._
-
-```ts
-export function tableFeatures<T extends TableFeatures>(features: T): T {
-  return features
-}
-```
-
-### `const sortFns`
-
-_No JSDoc yet._
-
-```ts
-export const sortFns = {
-  auto: (a: unknown, b: unknown) => String(a).localeCompare(String(b)),
-  number: (a: unknown, b: unknown) => Number(a ?? 0) - Number(b ?? 0),
-  date: (a: unknown, b: unknown) => {
-    const aa = new Date(a as any).getTime()
-    const bb = new Date(b as any).getTime()
-    return aa - bb
-  },
-}
-```
-
-### `const filterFns`
-
-_No JSDoc yet._
-
-```ts
-export const filterFns = {
-  includesString: (value: unknown, query: string) =>
-    String(value).toLowerCase().includes(query.toLowerCase()),
-  equals: (value: unknown, query: unknown) => value === query,
-}
-```
-
-### `type RowModelFactory`
-
-_No JSDoc yet._
-
-```ts
-export type RowModelFactory<TData extends RowData> = (args: {
-  table: SvGrid<TData>
-  rows: Array<Row<TData>>
-}) => Array<Row<TData>>
-```
-
-### `function createCoreRowModel`
-
-_No JSDoc yet._
-
-```ts
-export function createCoreRowModel<TData extends RowData>(): RowModelFactory<TData> {
-  return ({ rows }) => rows
-}
-```
-
-### `function createFilteredRowModel`
-
-_No JSDoc yet._
-
-```ts
-export function createFilteredRowModel<TData extends RowData>(): RowModelFactory<TData> {
-  return ({ table, rows }) => {
-    const filters: ColumnFiltersState = table.getState().columnFilters ?? []
-    if (!filters.length) return rows
-    return rows.filter((row) => {
-      return filters.every((filter) => {
-        const cellValue = row
-          .getAllCells()
-          .find((cell) => cell.column.id === filter.id)
-          ?.getValue()
-        const filterFn = filter.fn ? filterFns[filter.fn] : filterFns.includesString
-        return filterFn(cellValue, filter.value as any)
-      })
-    })
-  }
-}
-```
-
-### `function createPaginatedRowModel`
-
-_No JSDoc yet._
-
-```ts
-export function createPaginatedRowModel<TData extends RowData>(): RowModelFactory<TData> {
-  return ({ table, rows }) => {
-    const pagination = table.getState().pagination ?? { pageIndex: 0, pageSize: rows.length || 10 }
-    const start = pagination.pageIndex * pagination.pageSize
-    return rows.slice(start, start + pagination.pageSize)
-  }
-}
-```
-
-### `function createGroupedRowModel`
-
-_No JSDoc yet._
-
-```ts
-export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<TData> {
-  return ({ table, rows }) => {
-    const grouping: GroupingState = table.getState().grouping ?? []
-    if (!grouping.length) return rows
-    const columns = table.getAllColumns()
-
-    // Recursively bucket rows by each grouping column in turn. At every level a
-    // group row is built that stands in for its children - a non-group column
-    // resolves to the value shared by every leaf row, or to undefined when the
-    // leaves disagree.
-    function buildGroups(
-      input: Array<Row<TData>>,
-      levelIndex: number,
-      depth: number,
-      idPrefix: string,
-    ): Array<Row<TData>> {
-      if (levelIndex >= grouping.length) {
-        // Leaves: actual data rows, with their nesting depth recorded.
-        return input.map((row) => ({ ...row, depth }))
-      }
-      const groupKey = grouping[levelIndex]
-      if (!groupKey) return input
-
-      const buckets = new Map<string, Array<Row<TData>>>()
-      for (const row of input) {
-        const value = row.getCellValueByColumnId(groupKey)
-        const key = String(value ?? '')
-        const list = buckets.get(key) ?? []
-        list.push(row)
-        buckets.set(key, list)
-      }
-
-      const groupRows: Array<Row<TData>> = []
-      let index = 0
-      buckets.forEach((children, key) => {
-        const id = `${idPrefix}_${groupKey}_${key}`
-        const subRows = buildGroups(children, levelIndex + 1, depth + 1, id)
-        const isDeepest = levelIndex + 1 >= grouping.length
-        const leafCount = isDeepest
-          ? subRows.length
-          : subRows.reduce((sum, sub) => sum + (sub.leafCount ?? 0), 0)
-
-        const resolveColumnValue = (columnId: string): unknown => {
-          if (columnId === groupKey) return key
-          let resolved: unknown
-          let hasResolved = false
-          for (const child of children) {
-            const childValue = child.getCellValueByColumnId(columnId)
-            if (!hasResolved) {
-              resolved = childValue
-              hasResolved = true
-            } else if (childValue !== resolved) {
-              return undefined
-            }
-          }
-          return resolved
-        }
-
-        const groupOriginal: Record<string, unknown> = {}
-        columns.forEach((column) => {
-          const field = column.columnDef.field
-          if (!field) return
-          const agg = column.columnDef.aggregate
-          groupOriginal[field] = agg
-            ? applyGroupAggregate(agg, column.id, children)
-            : resolveColumnValue(column.id)
-        })
-
-        const groupRow: Row<TData> = {
-          id,
-          index: index++,
-          original: groupOriginal as TData,
-          depth,
-          subRows,
-          leafCount,
-          getCanExpand: () => true,
-          getIsExpanded: () => Boolean((table.getState().expanded ?? {})[id]),
-          toggleExpanded: () => {
-            table.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
-          },
-          getIsSelected: () => Boolean((table.getState().rowSelection ?? {})[id]),
-          toggleSelected: () => {
-            table.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
-          },
-          getAllCells: () => [],
-          // Prefer the precomputed group value (which carries aggregates)
-          // and fall back to the shared-value resolver for columns without
-          // a field.
-          getCellValueByColumnId: (columnId: string) => {
-            const col = columns.find((c) => c.id === columnId)
-            const field = col?.columnDef.field
-            if (field && field in groupOriginal) return groupOriginal[field]
-            return resolveColumnValue(columnId)
-          },
-        }
-        groupRows.push(groupRow)
-      })
-      return groupRows
-    }
-
-    return buildGroups(rows, 0, 0, 'group')
-  }
-}
-```
-
-### `function createExpandedRowModel`
-
-_No JSDoc yet._
-
-```ts
-export function createExpandedRowModel<TData extends RowData>(): RowModelFactory<TData> {
-  return ({ table, rows }) => {
-    const expanded: ExpandedState = table.getState().expanded ?? {}
-    const flattened: Array<Row<TData>> = []
-    const visit = (row: Row<TData>) => {
-      flattened.push(row)
-      if (row.subRows?.length && expanded[row.id]) {
-        for (const sub of row.subRows) visit(sub)
-      }
-    }
-    for (const row of rows) visit(row)
-    return flattened
-  }
-}
-```
-
-### `function createSortedRowModel`
-
-_No JSDoc yet._
-
-```ts
-export function createSortedRowModel<TData extends RowData>(
-```
-
-### `type SvGridOptions`
-
-_No JSDoc yet._
-
-```ts
-export type SvGridOptions<TFeatures extends TableFeatures, TData extends RowData> = {
-  _features: TFeatures
-  _rowModels?: {
-    coreRowModel?: RowModelFactory<TData>
-    filteredRowModel?: RowModelFactory<TData>
-    sortedRowModel?: RowModelFactory<TData>
-    paginatedRowModel?: RowModelFactory<TData>
-    groupedRowModel?: RowModelFactory<TData>
-    expandedRowModel?: RowModelFactory<TData>
-  }
-  columns: Array<ColumnDef<TFeatures, TData>>
-  data: ReadonlyArray<TData>
-  /**
-   * Optional row-id resolver. When set, the value it returns becomes
-   * `row.id` (and therefore the selection / expansion / edit key). When
-   * omitted, ids fall back to the row's array index as a string. Use a
-   * stable id (database PK, UUID, etc.) so selection survives reorders.
-   */
-  getRowId?: (row: TData, index: number) => string
-  state?: Partial<Record<string, any>>
-  onSortingChange?: (updater: Updater<SortingState>) => void
-  onColumnFiltersChange?: (updater: Updater<ColumnFiltersState>) => void
-  onPaginationChange?: (updater: Updater<PaginationState>) => void
-  onGroupingChange?: (updater: Updater<GroupingState>) => void
-  onExpandedChange?: (updater: Updater<ExpandedState>) => void
-  onRowSelectionChange?: (updater: Updater<RowSelectionState>) => void
-  onActiveCellChange?: (updater: Updater<ActiveCellState>) => void
-}
-```
-
-### `type SvGrid`
-
-_No JSDoc yet._
-
-```ts
-export type SvGrid<TData extends RowData> = {
-  store: Store<Record<string, any>>
-  optionsStore: Store<Record<string, any>>
-  state: Record<string, any>
-  getState: () => Record<string, any>
-  setOptions: (updater: Updater<Record<string, any>>) => void
-  setColumnFilters: (updater: Updater<ColumnFiltersState>) => void
-  setPagination: (updater: Updater<PaginationState>) => void
-  setGrouping: (updater: Updater<GroupingState>) => void
-  setExpanded: (updater: Updater<ExpandedState>) => void
-  setRowSelection: (updater: Updater<RowSelectionState>) => void
-  setActiveCell: (updater: Updater<ActiveCellState>) => void
-  moveActiveCell: (next: { rowDelta?: number; colDelta?: number }) => void
-  getAllColumns: () => Array<Column<TData>>
-  getHeaderGroups: () => Array<HeaderGroup<TData>>
-  getFooterGroups: () => Array<HeaderGroup<TData>>
-  getRowModel: () => RowModel<TData>
-}
-```
-
-### `function createSvGridCore`
-
-_No JSDoc yet._
-
-```ts
-export function createSvGridCore<TFeatures extends TableFeatures, TData extends RowData>(
-```
-
-### `function isFunction`
-
-_No JSDoc yet._
-
-```ts
-export function isFunction(value: unknown): value is (...args: Array<any>) => any {
-  return typeof value === 'function'
-}
-```
-
-<!-- =================================================================
-     /docs/reference/auto/svgrid-grid-svgrid-wrapper.types/  (community)
-     ================================================================== -->
-
-# `@svgrid/grid` · `svgrid-wrapper.types.ts`
-
-Auto-generated. Source: `packages\grid\src\svgrid-wrapper.types.ts`.
-
-### `type SvGridFilterOperator`
-
-_No JSDoc yet._
-
-```ts
-export type SvGridFilterOperator =
-```
-
-### `type SvGridViewState`
-
-A serializable snapshot of everything that makes up the current "view":
-sort, grouping, pagination, column layout (width / pinning / order /
-visibility), and all filter surfaces. Round-trippable through
-`api.getState()` / `api.setState()` - persist it to a URL, localStorage, or
-a server to implement "save view" / "named views".
-
-```ts
-export type SvGridViewState = {
-  sorting: Array<{ id: string; desc: boolean }>
-  grouping: string[]
-  pagination: { pageIndex: number; pageSize: number }
-  columnWidths: Record<string, number>
-  columnPinning: { left: string[]; right: string[] }
-  columnOrder: string[]
-  /** Ids of columns currently hidden via setColumnVisible. */
-  hiddenColumns: string[]
-  globalFilter: string
-  columnFilters: Record<
-    string,
-    { operator: SvGridFilterOperator; value: string; valueTo?: string }
-  >
-  /** Facet (Excel-style value checklist) selections, keyed by column id. */
-  facetFilters: Record<string, string[]>
-}
-```
-
-### `type SvGridTransaction`
-
-A batch of row mutations for `api.applyTransaction`. `update` / `remove`
-(by id) match on `getRowId`; `remove` also accepts row object references.
-
-```ts
-export type SvGridTransaction<TData> = {
-  add?: ReadonlyArray<TData>
-  update?: ReadonlyArray<TData>
-  remove?: ReadonlyArray<TData | string>
-}
-```
-
-### `type SvGridTransactionResult`
-
-_No JSDoc yet._
-
-```ts
-export type SvGridTransactionResult = {
-  added: number
-  updated: number
-  removed: number
-}
-```
-
-### `type SvGridApi`
-
-Imperative API exposed via the `<SvGrid onApiReady>` callback. Use it for
-data, column, filter, sort, group, and visibility operations from outside
-the component.
-
-```ts
-export type SvGridApi<
-```
-
-### `type SvGridWrapperProps`
-
-_No JSDoc yet._
-
-```ts
-export type SvGridWrapperProps<
-```
-
-<!-- =================================================================
-     /docs/reference/bundle-size/  (community)
-     ================================================================== -->
-
-# Bundle size
-
-What SvGrid costs in your bundle, how to reproduce the number on your
-branch, and what to do if size matters.
-
-## Measured
-
-Re-measured **2026-08-20** with the script that ships in the repo:
-
-```bash
-node packages/grid/scripts/measure-size.mjs
-```
-
-| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
-| --- | ---: | ---: | ---: |
-| Headless core (`createGrid`) | **2.3 kB** | - | - |
-| Headless subpath (`@svgrid/grid/core`) | **4.2 kB** | - | - |
-| Full render component (`<SvGrid>`) | **77.3 kB** | **9.1 kB** | 81.4 kB |
-
-The two headless rows measure different things on purpose. `createGrid` is the
-engine plus the row model it needs, which is what you pay when you import just
-that symbol. The subpath row is every export on `@svgrid/grid/core` pulled in at
-once with nothing tree-shaken, so it is the ceiling rather than the typical
-cost - a real consumer importing `createSvGrid` and two row models sits near the
-lower number.
-
-Svelte is a peer dependency and is excluded from every figure. Builds are
-minified and gzipped at level 9.
-
-The "loaded on demand" column is code that is reachable only through
-`import()`, so it never lands in your initial bundle. As measured, that
-splits into:
-
-| Chunk | gzip | Loads when |
-| --- | ---: | --- |
-| `SvDateTimePicker` | 18.2 kB | a date / datetime / time cell editor opens |
-| `SvGridChart` | 15.7 kB | a chart renders |
-| `chart` (engine) | 11.7 kB | charting is enabled |
-| `GridMenus` | 11.7 kB | a header or context menu opens |
-| `SvGridChartPanel` | 7.5 kB | the chart panel opens |
-| `SvGridCellEditor` | 4.3 kB | editing is enabled (loads at mount, before the first edit) |
-| `SvGridDropdown` | 5.2 kB | a list / chips cell editor or the page-size picker opens |
-| `dismissable` | 3.7 kB | any popover, menu or dropdown layer opens |
-| `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |
-| `popover` | 0.9 kB | a popover is positioned |
-| `SvGridChartView` | 0.7 kB | the grid switches to chart view |
-
-The Kanban board and the scheduler / calendar view are not in either
-figure: their renderers live in `@svgrid/enterprise` and register into the
-free grid through the board and scheduler view seams.
-
-## Reproduce on your branch
-
-`measure-size.mjs` runs two isolated Vite library builds, one per target,
-with Svelte marked external, then gzips each emitted chunk and classifies
-it as `base` (statically reachable from the entry) or `lazy` (reachable
-only via `import()`).
-
-```bash
-node packages/grid/scripts/measure-size.mjs
-# or, from the repo root:
-pnpm size
-```
-
-To see where the weight sits inside the base bundle:
-
-```bash
-corepack pnpm --filter @svgrid/grid build
-npx source-map-explorer packages/grid/dist/index.js
-```
-
-A treemap opens in your browser. Each block is a source file scaled by its
-byte cost in the final bundle.
-
-## @svgrid/enterprise
-
-The Enterprise pack is a separate install and a separate bundle. `xlsx`
-export pulls JSZip and PDF export pulls pdfmake as optional peer
-dependencies, imported on the first `api.exportData(...)` call rather than
-at module load, so neither is in your synchronous bundle.
-
-## What to do if size matters
-
-1. **Use the headless engine for read-only views.** When you only need to
-   display server-side data with no interaction, `createGrid` plus a short
-   `<table>` renderer is 2.3 kB instead of 78.2 kB. See the
-   [headless engine reference](./headless-engine.md).
-2. **Register only the features you use.** The grid is feature-gated:
-   sorting, filtering, grouping, pagination, expansion, and selection are
-   each opt-in and tree-shake out when not imported. See the
-   [features reference](./features.md).
-3. **Let the lazy chunks stay lazy.** Charts, date/time editors, menus,
-   and export already split themselves. Importing their modules directly
-   at the top level pulls them back into your base bundle.
-4. **Code-split the Enterprise pack.** `installEnterprise(api)` is
-   async-safe, so import it in the route that needs export rather than at
-   module load:
-   `const { installEnterprise } = await import('@svgrid/enterprise')`.
-
-## See also
-
-- [Features reference](./features.md) - what each feature does
-- [Headless engine reference](./headless-engine.md) - skip the renderer entirely
-- [Going to production guide](../getting-started/6-going-to-production.md)
-
-<!-- =================================================================
-     /docs/reference/ColumnDef/  (community)
-     ================================================================== -->
-
-# `ColumnDef` reference
-
-A column definition is the contract between the grid and one column of
-data. Pass an array of these as the `columns` prop to `<SvGrid>`.
-
-```ts
-import type { ColumnDef } from '@svgrid/grid'
-
-type Row = { id: string; firstName: string; salary: number; joinedAt: string }
-
-const columns: ColumnDef<{}, Row>[] = [
-  { field: 'firstName', header: 'First name' },
-  {
-    field: 'salary',
-    header: 'Salary',
-    format: { type: 'currency', currency: 'USD' },
-    align: 'right',
-  },
-]
-```
-
-## Type
-
-```ts
-type ColumnDef<TFeatures, TData> = {
-  // Identity
-  id?: string
-  field?: keyof TData & string
-  fieldFn?: (row: TData) => unknown
-
-  // Rendering
-  header?: string | RenderFn
-  footer?: string | RenderFn
-  cell?:   string | RenderFn
-  format?:    CellFormatConfig
-  formatter?: CellFormatter<TData>
-
-  // Layout
-  width?:   number
-  visible?: boolean
-  align?:   'left' | 'right' | 'center'
-
-  // Editing
-  editorType?: 'text' | 'number' | 'date' | 'datetime' | 'checkbox'
-
-  // Grouping (column groups - nested headers)
-  columns?: Array<ColumnDef<TFeatures, TData>>
-}
-```
-
-## Identity
-
-One of `field`, `fieldFn`, or `id` must be set. The grid derives the
-column id in that order:
-
-1. Explicit `id` wins if present.
-2. Otherwise `field` becomes the id.
-3. Otherwise the column gets a synthetic id (`col_0_0`, etc.) - works
-   but you can't reference it from the API.
-
-| Field         | Type                              | Notes                                                                  |
-| ------------- | --------------------------------- | ---------------------------------------------------------------------- |
-| `id`          | `string`                          | Stable column id. Required when you use `fieldFn`.                  |
-| `field`       | `keyof TData & string`            | Reads `row[field]`. The clean default.                                 |
-| `fieldFn`  | `(row: TData) => unknown`         | Computed value. Pair with `id`.                                        |
-
-## Rendering
-
-| Field       | Type                                            | Notes                                                       |
-| ----------- | ----------------------------------------------- | ----------------------------------------------------------- |
-| `header`    | `string \| (ctx) => HeaderRender`               | Header label or render snippet/component.                   |
-| `footer`    | `string \| (ctx) => HeaderRender`               | Footer label or render. Off by default.                     |
-| `cell`      | `string \| (ctx) => CellRender`                 | Body cell render. Use `renderSnippet(YourSnippet, props)`.  |
-| `format`    | `CellFormatConfig`                              | Built-in formatter; tree-shakeable. See below.              |
-| `formatter` | `(value, row) => string`                        | One-off custom string. Cheaper than a `cell` render fn.     |
-
-### `CellFormatConfig`
-
-```ts
-type CellFormatConfig =
-  | { type: 'number';   options?: Intl.NumberFormatOptions; locales?: string | string[] }
-  | { type: 'currency'; currency: string; options?: Intl.NumberFormatOptions; locales?: string | string[] }
-  | { type: 'percent';  options?: Intl.NumberFormatOptions; locales?: string | string[] }
-  | { type: 'date';     pattern?: string; options?: Intl.DateTimeFormatOptions; locales?: string | string[] }
-  | { type: 'datetime'; pattern?: string; options?: Intl.DateTimeFormatOptions; locales?: string | string[] }
-```
-
-The grid caches the underlying `Intl.NumberFormat` /
-`Intl.DateTimeFormat` instances by signature so format throughput stays
-fast on large datasets.
-
-### `pattern` for date/datetime
-
-Built-in pattern tokens:
-
-| Token  | Replaced with                |
-| ------ | ---------------------------- |
-| `y`    | 4-digit year                 |
-| `yy`   | 2-digit year                 |
-| `m`    | 2-digit month                |
-| `mmm`  | Short month name             |
-| `mmmm` | Long month name              |
-| `d`    | 2-digit day                  |
-| `H`    | 2-digit hour (24h)           |
-| `h`    | 2-digit hour (12h)           |
-| `M`    | 2-digit minute               |
-| `s`    | 2-digit second               |
-| `a`    | am / pm                      |
-
-Example: `{ type: 'date', pattern: 'y-m-d' }` ⇒ `2026-06-05`.
-
-## Layout
-
-| Field   | Type                                 | Notes                                                                                 |
-| ------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `width`   | `number`                             | Initial width in pixels. Falls back to the wrapper's `columnWidth` prop (default 140). |
-| `visible` | `boolean`                            | Initial visibility. Set `false` to start the column hidden while still listing it in the Choose Columns / tool panel for the user to re-enable. Applied once at mount; after that `api.setColumnVisible` and user toggles win. On a group column, `false` hides the whole group's leaf columns. |
-| `align`   | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
-
-## Editing
-
-| Field        | Type                                                              | Notes                                                       |
-| ------------ | ----------------------------------------------------------------- | ----------------------------------------------------------- |
-| `editorType` | `'text' \| 'number' \| 'date' \| 'datetime' \| 'checkbox'`        | Required for the column to be inline-editable.              |
-
-The grid uses `editorType` for two things: which inline editor to
-mount when the user presses F2, AND which sort comparator to pick when
-sorting. Set it even when you don't need editing if your column is
-numeric or date-typed.
-
-## Column groups
-
-| Field     | Type                                       | Notes                                                       |
-| --------- | ------------------------------------------ | ----------------------------------------------------------- |
-| `columns` | `Array<ColumnDef<TFeatures, TData>>`       | Child columns. Renders this column-def as a header group.   |
-
-Example:
-
-```ts
-const columns: ColumnDef<{}, Row>[] = [
-  {
-    id: 'name',
-    header: 'Name',
-    columns: [
-      { field: 'firstName', header: 'First' },
-      { field: 'lastName',  header: 'Last' },
-    ],
-  },
-  { field: 'salary', header: 'Salary' },
-]
-```
-
-## Custom-cell context
-
-When `cell` is a function, it receives a `CellContext<TData>`:
-
-```ts
-type CellContext<TData> = {
-  cell:    Cell<TData>
-  row:     Row<TData>
-  column:  Column<TData>
-  table:   SvGrid<TData>
-  getValue: () => unknown
-}
-```
-
-You typically need `ctx.row.original` (the source row) and
-`ctx.getValue()`:
-
-```ts
-import { renderSnippet } from '@svgrid/grid'
-
-{
-  id: 'name',
-  header: 'Name',
-  fieldFn: (r) => `${r.firstName} ${r.lastName}`,
-  cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
-}
-```
-
-## See also
-
-- [`SvGrid`](./SvGrid.md) - where columns are passed in
-- [`SvGridApi`](./SvGridApi.md) - imperative add/remove/visibility
-- [Cell components](../help/cells/cell-components.md) - the snippet patterns
-- [Cell data types](../help/cells/cell-data-types.md) - how `editorType` interacts with sort/filter
-
-<!-- =================================================================
-     /docs/reference/enterprise/  (enterprise)
-     ================================================================== -->
-
-# Enterprise reference
-
-Everything that `@svgrid/enterprise` adds on top of the Community surface.
-Install + license: see [Enterprise feature pack](../enterprise/README.md).
-
-```ts
-import {
-  installEnterprise, setLicenseKey,
-  exportGrid, printGrid, importData,
-  createPivotModel, pivotAggregators,
-  type EnterpriseGridApi, type ExportOptions, type ImportOptions, type PivotConfig,
-} from '@svgrid/enterprise'
-
-// The AI helpers are free and live in the community package. Enterprise only
-// registers its export engine so an AI-planned Excel / PDF export can run.
-import { setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify } from '@svgrid/grid'
-```
-
-## License
-
-### `setLicenseKey(key)` / `clearLicenseKey()` / `isLicenseKeySet()`
-
-```ts
-setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
-```
-
-Call once at app startup. Without a key the Enterprise methods still work
-but the grid shows an "unlicensed" watermark + a one-time console
-nudge.
-
-### `dismissUnlicensedNudge()`
-
-Hide the console nudge for the rest of the session (useful in tests).
-
-## Augmenting the API
-
-### `installEnterprise(api)`
-
-```ts
-function installEnterprise<TFeatures, TData>(
-  api: SvGridApi<TFeatures, TData>,
-): EnterpriseGridApi<TFeatures, TData>
-```
-
-Mutates and returns the same api object. After install, the api has
-the new methods listed below.
-
-```svelte
-<SvGrid
-  data={rows} columns={columns} features={features}
-  onApiReady={(next) => (api = installEnterprise(next))}
-/>
-```
-
-## Export
-
-### `pro.exportData(opts)`
-
-```ts
-exportData(opts: ExportOptions<TData>): Promise<void>
-```
-
-Writes the current view to a file and triggers a download.
-
-```ts
-type ExportOptions<TData> = {
-  format: 'xlsx' | 'pdf' | 'csv' | 'tsv' | 'html'
-  filename?: string                        // base name; extension auto-appended
-  columns?: ReadonlyArray<ExportColumn>    // defaults to every key on the first row
-  rows?: ReadonlyArray<TData>              // defaults to api.getDisplayedRows()
-  pageOrientation?: 'portrait' | 'landscape'  // pdf only
-
-  // Style + branding
-  styles?: ExportStyles
-  header?: ReadonlyArray<ExportHeaderFooterLine>
-  footer?: ReadonlyArray<ExportHeaderFooterLine>
-
-  // Embedded images
-  imageFields?: ReadonlyArray<string>
-
-  // Multi-sheet workbook (xlsx only)
-  sheets?: ReadonlyArray<ExportSheet<TData>>
-}
-```
-
-See [Data export](../help/export.md) for the option-by-option
-walk-through and the demo links.
-
-### `pro.print(opts?)`
-
-```ts
-print(opts?: PrintOptions<TData>): Promise<void>
-```
-
-Opens a printable view in a new window with repeat-on-page headers,
-optional cover page, configurable page-size + orientation, and a
-print-CSS theme.
-
-### Static helpers
-
-If you don't want to install Enterprise onto the api, use the module-level
-helpers directly:
-
-```ts
-import { exportGrid, printGrid } from '@svgrid/enterprise'
-await exportGrid(api, { format: 'xlsx' })
-await printGrid(api)
-```
-
-## Import
-
-### `pro.importData(opts)`
-
-```ts
-importData(opts: ImportOptions<TData>): Promise<ImportResult<TData>>
-
-type ImportOptions<TData> = {
-  format?: ImportFormat                   // auto-detected from filename/MIME
-  source: File | Blob | string            // file picker result, drag-drop, or inline text
-  columns?: ImportColumnMap<TData>        // header-row → field map
-  types?: ImportColumnTypes<TData>        // per-field type coercion
-  validate?: ImportValidator<TData>       // per-row validation
-  preview?: boolean                       // return parsed rows + errors; do NOT commit
-}
-
-type ImportResult<TData> = {
-  rows: ReadonlyArray<TData>
-  errors: ReadonlyArray<ImportRowError>
-  summary: { read: number; accepted: number; rejected: number }
-}
-```
-
-See [Data import](../help/import.md).
-
-## AI
-
-### `setAIProvider(provider)`
-
-```ts
-type AIProvider = (req: AIRequest) => Promise<unknown>
-
-setAIProvider(async (req) => {
-  // call your model - OpenAI, Anthropic, Ollama, local. ANY provider.
-  return { /* shape depends on req.task */ }
-})
-```
-
-You write one adapter; the four helpers below route through it.
-
-### `pro.ai.filter(query, opts?)`
-
-Natural-language to filter + sort plan.
-
-```ts
-await pro.ai.filter('show me churned customers from Q3 sorted by ARR', {
-  apply: true,   // also call api.setFilter/setSort with the result
-})
-```
-
-### `pro.ai.smartFill(opts)`
-
-Propose values for empty cells from a few worked examples.
-
-### `pro.ai.summarize(opts)`
-
-One-paragraph + bullets summary of a row, selection, group, or the
-whole view.
-
-### `pro.ai.classify(opts)`
-
-Classify free-text cells into one of a known label set.
-
-Full options + return shapes: [AI assistant](../help/ai.md).
-
-## Pivot
-
-### `createPivotModel(data, config)`
-
-```ts
-function createPivotModel<TFeatures, TData>(
-  data: ReadonlyArray<TData>,
-  config: PivotConfig<TData>,
-): PivotResult<TFeatures>
-
-type PivotResult<TFeatures> = {
-  rows: PivotRow[]
-  columns: Array<ColumnDef<TFeatures, PivotRow>>
-}
-```
-
-Pure - no DOM, no api required. Hand the result to a regular
-`<SvGrid>` instance.
-
-### `pro.pivot.build(config)` / `pro.pivot.buildFrom(data, config)`
-
-Same model, with the live api's `getData()` (or an arbitrary array)
-as the source.
-
-### `pivotAggregators`
-
-```ts
-type PivotAggregatorId =
-  | 'sum' | 'avg' | 'min' | 'max'
-  | 'count' | 'countDistinct'
-  | 'first' | 'last'
-```
-
-A custom aggregator is a plain function: `agg: (values) => something`.
-
-Full reference: [Pivot tables](../help/pivot.md).
-
-## Subpath imports
-
-The package ships per-feature subpaths so you can tree-shake:
-
-```ts
-import { exportGrid }      from '@svgrid/enterprise/export'
-import { importData }      from '@svgrid/enterprise/import'
-import { aiFilter }        from '@svgrid/grid'
-import { createPivotModel } from '@svgrid/enterprise/pivot'
-```
-
-If you only need export, the AI plumbing, pivot engine, and import
-parser don't ship in your bundle.
-
-## Types
-
-```ts
-import type {
-  EnterpriseGridApi,            // SvGridApi + Enterprise methods
-  EnterpriseAIApi,              // .ai namespace shape
-  EnterprisePivotApi,           // .pivot namespace shape
-
-  ExportFormat,
-  ExportOptions,
-  ExportColumn,
-  ExportCellStyle,
-  ExportStyles,
-  ExportHeaderFooterLine,
-  ExportSheet,
-
-  ImportFormat,
-  ImportOptions,
-  ImportResult,
-  ImportColumnMap,
-  ImportColumnTypes,
-  ImportRowError,
-  ImportValidator,
-  ImportFieldType,
-
-  PivotAggregator,
-  PivotAggregatorId,
-  PivotConfig,
-  PivotResult,
-  PivotRow,
-  PivotRowKind,
-  PivotValueConfig,
-} from '@svgrid/enterprise'
-
-// AI types come from the community package alongside the helpers themselves.
-import type {
-  AIProvider,
-  AIRequest,
-  AITask,
-  AIFilterOptions,
-  AIFilterResult,
-  AIFilterClause,
-  AISortClause,
-  AISmartFillOptions,
-  AISmartFillResult,
-  AISmartFillExample,
-  AISummarizeOptions,
-  AISummarizeTarget,
-  AISummary,
-  AIClassifyOptions,
-  AIClassifyResult,
-} from '@svgrid/grid'
-```
-
-<!-- =================================================================
-     /docs/reference/features/  (community)
-     ================================================================== -->
-
-# Features reference
-
-A "feature" is a small bundle of state + helpers the grid engine
-checks for when wiring its row-model pipeline. Register only what
-you use - each feature ships about 1-2 KB gzipped and adds a small
-per-update cost.
-
-```ts
-import {
-  tableFeatures,
-  rowSortingFeature,
-  columnFilteringFeature,
-  columnGroupingFeature,
-  rowExpandingFeature,
-  rowPaginationFeature,
-  rowSelectionFeature,
-} from '@svgrid/grid'
-
-const features = tableFeatures({
-  rowSortingFeature,
-  columnFilteringFeature,
-  rowSelectionFeature,
-})
-```
-
-The `features` object is the contract the headless core checks for
-optional capabilities. The wrapper reads it once at mount and wires
-the matching row-model pipeline (core → filtered → sorted → grouped →
-expanded). Features you don't register are tree-shaken out.
-
-## The feature catalogue
-
-| Feature                  | Enables                                                    | Topic                                                    |
-| ------------------------ | ---------------------------------------------------------- | -------------------------------------------------------- |
-| `rowSortingFeature`      | Click headers to sort; Shift-click for multi-sort.         | [Row sorting](../help/rows/row-sorting.md)               |
-| `columnFilteringFeature` | Per-column filter menu, global search, filter row.         | [Filter overview](../help/filtering/overview.md)         |
-| `rowPaginationFeature`   | Page slicing + the footer pager.                           | [Row pagination](../help/rows/row-pagination.md)         |
-| `rowSelectionFeature`    | Checkbox column + Shift/Ctrl multi-select.                 | [Styling rows](../help/rows/styling-rows.md)             |
-| `columnGroupingFeature`  | Group-by-column + aggregated footer summaries.             | [Grouping & aggregation](../help/grouping-aggregation.md)|
-| `rowExpandingFeature`    | Tree / master-detail expand-collapse.                      | [Tree rows](../help/rows/tree-rows.md)                   |
-
-## `tableFeatures(features)` factory
-
-```ts
-function tableFeatures<TFeatures extends Partial<TableFeatures>>(
-  features: TFeatures,
-): TFeatures
-```
-
-Identity at runtime - just a typed pass-through. Its job is to give
-TypeScript a precise type for the `features` object that
-`<SvGrid features={...}>` and `ColumnDef<TFeatures, TData>` both
-consume.
-
-## Row-model factories (headless)
-
-Each feature has a matching row-model factory exported from the
-package. When you use the `<SvGrid>` wrapper, the factories get wired
-in for you. When you drop down to `createSvGrid` directly, register
-them yourself:
-
-```ts
-import {
-  createSvGrid,
-  createCoreRowModel,
-  createFilteredRowModel,
-  createSortedRowModel,
-  createGroupedRowModel,
-  createExpandedRowModel,
-  createPaginatedRowModel,
-  tableFeatures,
-  rowSortingFeature,
-  columnFilteringFeature,
-  rowPaginationFeature,
-  sortFns,
-  filterFns,
-} from '@svgrid/grid'
-
-const grid = createSvGrid({
-  _features: tableFeatures({
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowPaginationFeature,
-  }),
-  _rowModels: {
-    coreRowModel:       createCoreRowModel(),
-    filteredRowModel:   createFilteredRowModel(),
-    sortedRowModel:     createSortedRowModel(sortFns),
-    paginatedRowModel:  createPaginatedRowModel(),
-  },
-  columns,
-  data,
-})
-```
-
-| Factory                    | Order in pipeline | Notes                                                              |
-| -------------------------- | ----------------- | ------------------------------------------------------------------ |
-| `createCoreRowModel`       | 1                 | Identity. Always required.                                         |
-| `createFilteredRowModel`   | 2                 | Applies the grid's `columnFilters` state.                          |
-| `createSortedRowModel`     | 3                 | Applies `sorting` state; comparator picked by column `editorType`.|
-| `createGroupedRowModel`    | 4                 | Applies `grouping` state; emits group rows.                        |
-| `createExpandedRowModel`   | 5                 | Filters out collapsed children.                                    |
-| `createPaginatedRowModel`  | 6                 | Slices to the current page. NOT used by the wrapper - see below.   |
-
-> **Wrapper pagination note.** The `<SvGrid>` wrapper does **not** put
-> `paginatedRowModel` in the pipeline. It paginates **after** its own
-> filter overlays so the filter UI sees the full dataset, not the
-> visible page. See [Row pagination](../help/rows/row-pagination.md).
-
-## Sort + filter function registries
-
-### `sortFns`
-
-```ts
-import { sortFns } from '@svgrid/grid'
-
-// sortFns.auto   - lexical (default for unknown / mixed types)
-// sortFns.number - numeric, NaN-safe
-// sortFns.date   - parsed via new Date(...)
-```
-
-Pick a comparator yourself by setting the column's `editorType` -
-`'number'`, `'date'`, `'datetime'` map to `sortFns.number` /
-`sortFns.date` automatically.
-
-### `filterFns`
-
-```ts
-import { filterFns } from '@svgrid/grid'
-
-// includesString, equalsString, arrIncludes,
-// inNumberRange, isAfter, isBefore, isEmpty, isNotEmpty
-```
-
-Reference a filter function by name on a column-filter clause:
-
-```ts
-const columnFilters = [{ id: 'age', value: 30, fn: 'equals' }]
-```
-
-Extend the registry yourself - it's a plain mutable object:
-
-```ts
-import { filterFns } from '@svgrid/grid'
-
-declare module '@svgrid/grid' {
-  interface FilterFnsRegistry {
-    inListCSV: (value: unknown, query: string) => boolean
-  }
-}
-
-;(filterFns as any).inListCSV = (value, query) => {
-  const items = String(query).split(',').map((s) => s.trim().toLowerCase())
-  return items.includes(String(value ?? '').toLowerCase())
-}
-```
-
-## See also
-
-- [`<SvGrid>`](./SvGrid.md) - where features get passed in
-- [`SvGridApi`](./SvGridApi.md) - imperative sort/filter/group setters
-- [Why headless?](../why-headless.md) - when to use the row-model factories directly
-
-<!-- =================================================================
-     /docs/reference/headless-engine/  (community)
-     ================================================================== -->
-
-# Headless engine
-
-> `<SvGrid>` is the renderer. `createSvGrid` is the engine that powers
-> it. They are independent - you can use the engine without the
-> renderer to build a custom UI, drive a server, run logic in a worker,
-> or test reducer code.
-
-## What you get from the headless API
-
-`createSvGrid(options)` returns a table object with:
-
-- `getRowModel(): { rows: Row<TData>[] }` - the final post-pipeline row
-  list (filtered, sorted, grouped, expanded, paginated)
-- `getHeaderGroups(): HeaderGroup<TData>[]` - the multi-level column
-  header tree
-- `getAllColumns(): Column<TData>[]` - every column object with
-  metadata (id, visible, pinned, width)
-- `setSorting`, `setColumnFilters`, `setRowSelection`, ... - imperative
-  setters that update the engine's internal store
-
-No DOM, no styles, no virtualisation. A `<SvGrid>` consumer never sees
-these directly - the renderer reads the row model and emits the
-markup.
-
-## When to reach for headless
-
-| Want to...                                       | Use                                         |
-| ------------------------------------------------ | ------------------------------------------- |
-| Render with a different framework (React, Vue)   | Embed via [`@svgrid/grid-wc`](../help/wc.md) or wrap `createSvGrid` yourself |
-| Render as `<table>` for print / email export     | Headless                                    |
-| Drive a server-side row model from Node          | Headless                                    |
-| Unit-test sort / filter / aggregator logic       | Headless                                    |
-| Build a custom virtualised renderer              | Headless + the virtualiser exports          |
-
-For the standard case (rich grid in a Svelte app), use `<SvGrid>`.
-
-## Wiring up - the minimum surface
-
-When you bypass `<SvGrid>`, you must wire the row models you want
-explicitly. `<SvGrid>` does this for you under the hood.
-
-```ts
-import {
-  createSvGrid,
-  createCoreRowModel,
-  createSortedRowModel,
-  createFilteredRowModel,
-  tableFeatures,
-  rowSortingFeature,
-  columnFilteringFeature,
-  type ColumnDef,
-} from '@svgrid/grid'
-
-type Repo = { name: string; lang: string; stars: number }
-
-const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-const columns: ColumnDef<typeof features, Repo>[] = [
-  { field: 'name',  header: 'Name'  },
-  { field: 'lang',  header: 'Lang'  },
-  { field: 'stars', header: 'Stars' },
-]
-const data: Repo[] = [/* ... */]
-
-// Reactive state - Svelte 5 $state lifts the engine into reactivity.
-type Sort = { id: string; desc: boolean }
-type Filter = { id: string; value: unknown }
-let sorting       = $state<Sort[]>([])
-let columnFilters = $state<Filter[]>([])
-
-const table = $derived.by(() =>
-  createSvGrid({
-    _features: features,
-    _rowModels: {
-      coreRowModel:     createCoreRowModel<Repo>(),
-      sortedRowModel:   createSortedRowModel<Repo>(),
-      filteredRowModel: createFilteredRowModel<Repo>(),
-    },
-    data,
-    columns,
-    state: { sorting, columnFilters },
-    onSortingChange: (u) =>
-      (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : u),
-    onColumnFiltersChange: (u) =>
-      (columnFilters = typeof u === 'function' ? (u as (f: Filter[]) => Filter[])(columnFilters) : u),
-    enableSorting: true,
-    enableColumnFilters: true,
-  } as never),
-)
-
-const headerGroups = $derived(table.getHeaderGroups())
-const rows         = $derived(table.getRowModel().rows)
-```
-
-The whole renderer is now under 30 lines of template:
-
-```svelte
-<table>
-  <thead>
-    {#each headerGroups as hg (hg.id)}
-      <tr>
-        {#each hg.headers as h (h.id)}
-          <th onclick={() => toggleSort(h.column.id)}>
-            {h.column.columnDef.header}{indicator(h.column.id)}
-          </th>
-        {/each}
-      </tr>
-    {/each}
-  </thead>
-  <tbody>
-    {#each rows as r (r.id)}
-      <tr>
-        {#each columns as col (col.field)}
-          <td>{(r.original as Repo)[col.field as keyof Repo] ?? ''}</td>
-        {/each}
-      </tr>
-    {/each}
-  </tbody>
-</table>
-```
-
-## Row model pipeline
-
-The pipeline runs in this order, each step lazy:
-
-```
-data → coreRowModel → filteredRowModel → sortedRowModel → groupedRowModel → expandedRowModel → paginatedRowModel
-```
-
-Pass only the steps you need into `_rowModels`. Unused steps are
-tree-shaken. The example above skips grouping and pagination because
-the demo doesn't need them.
-
-## The `state` channel is controlled
-
-Pass `state` in, get change callbacks out. The engine never mutates
-your state - it calls your `onXxxChange` handler with the next value
-(or an updater function) and re-reads `state` on the next render.
-
-That's why this pattern works with Svelte 5's `$state`: the engine
-reads from reactive state and emits to reactive setters; the row model
-re-derives on every change.
-
-## See also
-
-- [Features reference](./features.md) - what each feature contributes
-- [Architecture overview](../help/architecture.md) - why headless first
-- [Build your own feature plugin recipe](../recipes/build-a-feature-plugin.md)
-- [Bundle size reference](./bundle-size.md) - what you save by skipping the renderer
-
-<!-- =================================================================
-     /docs/reference/SvGrid/  (community)
-     ================================================================== -->
-
-# `<SvGrid>` reference
-
-The render component. One `<SvGrid>` element per grid instance.
-
-```svelte
-<SvGrid
-  data={rows}
-  columns={columns}
-  features={features}
-  filterMode="menu"
-  showPagination={true}
-  pageSize={25}
-  onApiReady={(api) => (gridApi = api)}
-/>
-```
-
-## Required props
-
-| Prop       | Type                                       | Notes                                                                  |
-| ---------- | ------------------------------------------ | ---------------------------------------------------------------------- |
-| `data`     | `ReadonlyArray<TData>`                     | The row source. Re-rendering on `data` reference change is automatic.   |
-| `columns`  | `Array<ColumnDef<TFeatures, TData>>`       | See [ColumnDef reference](./ColumnDef.md).                              |
-| `features` | `TFeatures`                                | Build with `tableFeatures({...})`. See [features reference](./features.md). |
-
-## Data state
-
-| Prop           | Type                  | Default              | Notes                                                       |
-| -------------- | --------------------- | -------------------- | ----------------------------------------------------------- |
-| `loading`      | `boolean`             | `false`              | Shows a built-in loading overlay.                           |
-| `error`        | `string \| null`      | `null`               | Shows an error banner inside the shell.                     |
-| `emptyMessage` | `string`              | `"No data"`          | Replaces the empty-state copy.                              |
-
-## Layout
-
-| Prop                 | Type                 | Default     | Notes                                                                  |
-| -------------------- | -------------------- | ----------- | ---------------------------------------------------------------------- |
-| `containerHeight`    | `number \| string`   | `520`       | Pixels (number) or any CSS height (string). Use `'100%'` inside a flex parent. |
-| `rowHeight`          | `number \| (i) => number` | `30`   | In pixels. Drives virtualizer math when virtualization is on. Pass a function for per-row heights. Not a CSS token - the virtualizer needs a number, so it is written as an inline style per row. |
-| `columnWidth`        | `number`             | `140`       | Default for columns without an explicit `width`.                       |
-| `fitColumns`         | `boolean`            | `false`     | Scale columns proportionally to fill the viewport; residue absorbed in the last column. Shrinks down to 85% of natural widths; beyond that the user gets a horizontal scrollbar. |
-| `showRowNumbers`     | `boolean`            | `false`     | Leading 1-based row-number column.                                     |
-| `rowNumberWidth`     | `number`             | `56`        | Width (px) of the row-number column. Default fits up to "99,999"; bump it for six-figure row counts so the largest number stays fully visible at the bottom of a long scroll. |
-| `initialColumnPinning` | `{ left?, right? }`| -           | Seed left/right pinning at mount.                                      |
-
-## Virtualization
-
-| Prop                   | Type      | Default | Notes                                              |
-| ---------------------- | --------- | ------- | -------------------------------------------------- |
-| `virtualization`       | `boolean` | `true`  | Row virtualization.                                |
-| `columnVirtualization` | `boolean` | `true`  | Column virtualization. Disable for sticky-column pinning. |
-| `overscan`             | `number`  | `8`     | Rows kept rendered above + below the viewport.     |
-| `columnOverscan`       | `number`  | `3`     | Columns kept rendered left + right of the viewport. |
-
-## Filter UI
-
-| Prop                | Type                                       | Default   | Notes                                                                  |
-| ------------------- | ------------------------------------------ | --------- | ---------------------------------------------------------------------- |
-| `filterMode`        | `'menu' \| 'row' \| 'global' \| 'none'`    | `'menu'`  | Umbrella prop. Overridden per-surface by the three below.              |
-| `showGlobalFilter`  | `boolean`                                  | derived   | Show the global search input.                                          |
-| `showColumnFilters` | `boolean`                                  | derived   | Show the column-menu filter funnel.                                    |
-| `showFilterRow`     | `boolean`                                  | derived   | Show the per-column filter row under the header.                       |
-| `showFilterMenu`    | `boolean`                                  | derived   | (Legacy alias for `showColumnFilters`.)                                |
-| `externalFilter`    | `boolean`                                  | `false`   | Grid records filter UI state but does NOT filter rows. Pair with `onFiltersChange`. |
-
-## Selection
-
-| Prop                 | Type                                       | Default | Notes                                                |
-| -------------------- | ------------------------------------------ | ------- | ---------------------------------------------------- |
-| `selectionMode`      | `'both' \| 'row' \| 'cell' \| 'none'`      | `'both'`| Umbrella prop. Overridden per-surface by the two below. |
-| `showRowSelection`   | `boolean`                                  | derived | Checkbox column.                                     |
-| `enableCellSelection`| `boolean`                                  | derived | Click-and-drag range selection.                      |
-
-## Editing
-
-| Prop                  | Type      | Default | Notes                                                  |
-| --------------------- | --------- | ------- | ------------------------------------------------------ |
-| `enableInlineEditing` | `boolean` | `false` | Per-column `editorType` still required for a column to be editable. |
-| `enableRowSummaries`  | `boolean` | `false` | Footer row with sum/avg/count summaries.               |
-
-## Sort
-
-| Prop           | Type      | Default | Notes                                                          |
-| -------------- | --------- | ------- | -------------------------------------------------------------- |
-| `externalSort` | `boolean` | `false` | Grid records sort state but does NOT re-order rows. Pair with `onSortingChange`. |
-
-## Pagination
-
-| Prop             | Type      | Default | Notes                                                          |
-| ---------------- | --------- | ------- | -------------------------------------------------------------- |
-| `showPagination` | `boolean` | `false` | Show the footer pager.                                         |
-| `pageSize`       | `number`  | `10`    | Initial page size.                                             |
-
-## Grouping
-
-| Prop                   | Type                       | Default | Notes                            |
-| ---------------------- | -------------------------- | ------- | -------------------------------- |
-| `showGroupingControls` | `boolean`                  | `false` | Show the group-by toolbar.       |
-| `groupBy`              | `ReadonlyArray<string>`    | `[]`    | Column ids to group by, outermost first. Re-applies when the prop changes; ignored when `treeData` is set. |
-| `expanded`             | `Record<string, boolean>`  | `{}`    | Which group / tree rows are open, keyed by row id. Seeds the state and re-applies on change. |
-
-## Callbacks
-
-All callbacks are optional. None of them are required for the grid to
-function - they exist for parents that want to observe or override.
-
-### `onApiReady(api)`
-
-Fires once after mount with the [`SvGridApi`](./SvGridApi.md) for
-imperative operations.
-
-### `onSortingChange(sorting)`
-
-```ts
-onSortingChange?: (sorting: Array<{ id: string; desc: boolean }>) => void
-```
-
-Fires when the user clicks a sort header. With `externalSort={true}`,
-this is your hook to re-fetch / re-order the source data.
-
-### `onFiltersChange(filters)`
-
-```ts
-onFiltersChange?: (filters: {
-  global: string
-  columns: Array<{
-    id: string
-    operator: 'contains' | 'equals' | 'startsWith' | 'greaterThan' | 'lessThan' | 'isBlank'
-    value: string
-    selectedValues?: Array<string>
-  }>
-}) => void
-```
-
-Fires when the global filter, any column operator filter, or any facet
-checklist changes. With `externalFilter={true}`, this is your hook to
-re-fetch.
-
-### `onRowSelectionChange(selection, rows)`
-
-```ts
-onRowSelectionChange?: (
-  selection: Record<string, boolean>,
-  rows: TData[],
-) => void
-```
-
-`selection` is keyed by row index; `rows` is the materialised array of
-selected rows.
-
-### `onCellValueChange(event)`
-
-```ts
-onCellValueChange?: (event: {
-  rowIndex: number
-  columnId: string
-  oldValue: unknown
-  newValue: unknown
-  row: TData
-}) => void
-```
-
-Fires when an inline edit **commits**. This is the editor's commit path
-only - the programmatic `api.setCellValue()` writes the value without
-firing it. Use this for cascading recomputes (line totals, derived
-columns) and for sending edits to a server. See
-[Saving values](../help/editing/saving-values.md).
-
-### `onExpandedChange(expanded)`
-
-```ts
-onExpandedChange?: (expanded: Record<string, boolean>) => void
-```
-
-Fires whenever the expanded set changes - a click on a group banner,
-`api.setRowExpanded()`, `api.expandAllGroups()` /
-`api.collapseAllGroups()`. Receives the full next map, so it can be
-written straight back into the `expanded` prop for a controlled setup
-without looping. Group row ids look like
-`group_department_Engineering`; tree rows use the engine row id.
-
-### `onActiveCellChange(cell)`
-
-```ts
-onActiveCellChange?: (cell: {
-  rowIndex: number
-  colIndex: number
-  columnId: string
-}) => void
-```
-
-Fires every time the active cell changes - click, keyboard move,
-Tab, Page Up/Down. Toolbar / ribbon UIs use this to stay synced with
-the grid's selection without polling.
-
-## See also
-
-- [`SvGridApi`](./SvGridApi.md) - the imperative API exposed via `onApiReady`
-- [`ColumnDef`](./ColumnDef.md) - column-definition shape
-- [features](./features.md) - the feature registry
-- [Enterprise extensions](./enterprise.md) - what `installEnterprise(api)` adds
-
-<!-- =================================================================
-     /docs/reference/SvGridApi/  (community)
-     ================================================================== -->
-
-# `SvGridApi` reference
-
-The imperative API exposed via `<SvGrid onApiReady={(api) => ...}>`.
-Use it for data, column, filter, sort, group, selection, and
-visibility operations from outside the component.
-
-```ts
-import type { SvGridApi } from '@svgrid/grid'
-
-let api = $state<SvGridApi<typeof features, Order> | null>(null)
-```
-
-```svelte
-<SvGrid
-  data={rows}
-  columns={columns}
-  features={features}
-  onApiReady={(next) => (api = next)}
-/>
-
-<button onclick={() => api?.addRow({ /* ... */ })}>Add row</button>
-```
-
-## Cells
-
-### `getCellValue(rowIndex, columnId)`
-
-```ts
-getCellValue(rowIndex: number, columnId: string): unknown
-```
-
-Read a cell value from the underlying data. Returns `undefined` when
-either argument doesn't resolve.
-
-### `setCellValue(rowIndex, columnId, value)`
-
-```ts
-setCellValue(rowIndex: number, columnId: string, value: unknown): void
-```
-
-Write a cell value through the column's `field`. Triggers a re-render.
-Does NOT fire `onCellValueChange` - that callback is for **user**
-edits.
-
-## Rows
-
-### `addRow(row, position?)`
-
-```ts
-addRow(row: TData, position?: 'top' | 'bottom' | number): void
-```
-
-`position` defaults to `'bottom'`. A numeric index inserts before that
-index.
-
-### `addRows(rows, position?)`
-
-```ts
-addRows(rows: ReadonlyArray<TData>, position?: 'top' | 'bottom' | number): void
-```
-
-Batched insert. Cheaper than calling `addRow` in a loop for hundreds
-of rows.
-
-### `removeRow(rowIndex)` / `removeRows(rowIndices)`
-
-```ts
-removeRow(rowIndex: number): void
-removeRows(rowIndices: ReadonlyArray<number>): void
-```
-
-Remove by data-array index (the same index `onCellValueChange` reports).
-
-## Columns
-
-### `addColumn(column, position?)` / `addColumns(columns, position?)`
-
-```ts
-addColumn(column: ColumnDef<TFeatures, TData>, position?: 'left' | 'right' | number): void
-addColumns(columns: ReadonlyArray<ColumnDef<TFeatures, TData>>, position?: 'left' | 'right' | number): void
-```
-
-`position` defaults to `'right'`.
-
-### `removeColumn(columnId)`
-
-```ts
-removeColumn(columnId: string): void
-```
-
-By id (or `field` when no id was provided).
-
-## Visibility
-
-### `setColumnVisible(columnId, visible)` / `isColumnVisible(columnId)`
-
-```ts
-setColumnVisible(columnId: string, visible: boolean): void
-isColumnVisible(columnId: string): boolean
-```
-
-Hidden columns stay in the column array but don't render.
-
-## Sort
-
-### `setSort(columnId, direction)`
-
-```ts
-setSort(columnId: string, direction: 'asc' | 'desc' | null): void
-```
-
-Replaces any existing sort. Pass `null` to clear sort on that column.
-Multi-sort through the API is on the
-[Missing features](../help/missing-features.md) list - the user can
-build it themselves with Shift-click on headers.
-
-### `clearSort()`
-
-```ts
-clearSort(): void
-```
-
-Clear all sort clauses.
-
-## Group
-
-### `setGroupBy(columnIds)`
-
-```ts
-setGroupBy(columnIds: ReadonlyArray<string>): void
-```
-
-Group by zero or more columns. Replaces any existing group config.
-
-## Filter
-
-### `setFilter(columnId, filter)`
-
-```ts
-setFilter(
-  columnId: string,
-  filter: { operator: SvGridFilterOperator; value?: string } | null,
-): void
-```
-
-Where `SvGridFilterOperator` is:
-
-```ts
-type SvGridFilterOperator =
-  | 'contains' | 'equals' | 'startsWith'
-  | 'greaterThan' | 'lessThan' | 'isBlank'
-```
-
-Pass `null` to clear.
-
-### `clearFilter(columnId)`
-
-```ts
-clearFilter(columnId: string): void
-```
-
-Clear a single column's filter. (A `clearAllFilters()` helper is on
-the [Missing features](../help/missing-features.md) list.)
-
-## Data snapshot
-
-### `getData()`
-
-```ts
-getData(): ReadonlyArray<TData>
-```
-
-Snapshot of the current internal data array - the grid's working
-copy, which reflects every cell edit and `addRow` / `removeRow` since
-mount.
-
-### `getDisplayedRows()`
-
-```ts
-getDisplayedRows(): ReadonlyArray<TData>
-```
-
-Returns the rows that are currently **visible** in the grid - after
-filter, sort, and pagination. Use for `pro.exportData(...)` when you
-want to export the current view.
-
-## Enterprise extensions
-
-After `installEnterprise(api)`, the same object also exposes:
-
-```ts
-api.exportData(opts)   // see Enterprise export reference
-api.print(opts)
-api.importData(opts)
-api.ai.filter(...)
-api.ai.smartFill(...)
-api.ai.summarize(...)
-api.ai.classify(...)
-api.pivot.build(config)
-api.pivot.buildFrom(data, config)
-```
-
-See [Enterprise reference](./enterprise.md).
 
 <!-- =================================================================
      /docs/why-headless/  (community)

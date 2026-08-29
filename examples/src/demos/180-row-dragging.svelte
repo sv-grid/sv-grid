@@ -57,7 +57,7 @@
     {lastMove}
   </div>
 
-  <div class="grid grid-cols-2 gap-4 flex-1 min-h-0">
+  <div class="boards grid grid-cols-2 gap-4 flex-1 min-h-0">
     <div class="flex flex-col min-h-0">
       <h3 class="text-sm font-semibold mb-1 shrink-0" style="color: var(--sg-fg);">Backlog</h3>
       <div class="flex-1 min-h-0">
@@ -93,3 +93,12 @@
     </div>
   </div>
 </section>
+
+<style>
+  /* Phone: two boards side by side are ~170px each. Stack them; the shared
+     mobile layer floors each grid pane, so both stay usable and the page
+     scrolls. */
+  @media (max-width: 639px) {
+    .boards { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

@@ -28,7 +28,7 @@ const STORAGE_KEY = 'svgrid-theme'
 // so does the OS preference when nobody has pinned a mode. The inline script in
 // `app.html` settles the same question before the first paint.
 /* svgrid-initial-theme:start */
-export const INITIAL_THEME = 'tailwind'
+export const INITIAL_THEME = 'ember'
 export const INITIAL_MODE: ThemeMode = 'light'
 /* svgrid-initial-theme:end */
 

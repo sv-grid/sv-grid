@@ -434,6 +434,18 @@ describe('emitStudioFragment (drop into an existing app)', () => {
     expect(paths).toContain('FRAGMENT.md')
   })
 
+  it('is themed: app.css carries the picked preset + accent in a cascade layer (host tokens win)', () => {
+    const p = setTheme(setThemePreset(createProject([customers]), 'ember'), { accent: '#ff5500' })
+    const css = emitStudioFragment(p).find((f) => f.path === 'src/app.css')!.contents
+    expect(css).toContain('@layer svgrid-studio {')
+    expect(css).toContain('--sg-header-bg: #fafaf9') // Ember light surface
+    expect(css).toContain('--sg-accent: #ff5500')
+    expect(css).toContain(':root[data-theme="dark"]')
+    expect(css).toContain('.st-btn') // and still the page styles
+    // The full app's app.css is unlayered (it owns the page).
+    expect(emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents).not.toContain('@layer')
+  })
+
   it('FRAGMENT.md reports the runtime deps + host requirements', () => {
     let p = createProject([customers])
     p = setEntityDataSource(p, 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
@@ -2857,6 +2869,8 @@ describe('emitStudioAppBundle (full runnable app)', () => {
 describe('pages (nav) + shell codegen', () => {
   const layoutOf = (p: Parameters<typeof emitStudioProject>[0]) =>
     emitStudioProject(p).find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+  const cssOf = (p: Parameters<typeof emitStudioProject>[0]) =>
+    emitStudioAppBundle(p).find((f) => f.path === 'src/app.css')!.contents
 
   it('drops hidden pages from nav and honors label + order', () => {
     let p = createProject([customers, orders])
@@ -2897,26 +2911,34 @@ describe('pages (nav) + shell codegen', () => {
     expect(layout).not.toContain('class="sv-app__foot"')
   })
 
-  it('emits the chosen theme preset tokens into :root', () => {
+  it('emits the chosen theme preset tokens into :root of app.css (the one token source)', () => {
     const p = setThemePreset(createProject([customers]), 'material')
-    const layout = layoutOf(p)
-    expect(layout).toContain('--sg-accent: #6750a4')     // Material 3 light accent
-    expect(layout).toContain('--sg-header-bg: #f3edf7')  // Material 3 light surface
-    expect(layout).toContain('--sg-radius: 8px')
+    const css = cssOf(p)
+    expect(css).toContain('--sg-accent: #6750a4')     // Material 3 light accent
+    expect(css).toContain('--sg-header-bg: #f3edf7')  // Material 3 light surface
+    expect(css).toContain('--sg-radius: 8px')
+    // The layout no longer carries a second copy (it only references the tokens via var()).
+    expect(layoutOf(p)).not.toContain('--sg-header-bg:')
+  })
+
+  it('no theme picked -> the default preset (Ember, what the demos use) is still emitted', () => {
+    const css = cssOf(createProject([customers]))
+    expect(css).toContain('--sg-header-bg: #fafaf9') // Ember light surface
+    expect(css).toMatch(/:root \{[^}]*color-scheme: light;/)
   })
 
   it('dark mode emits the dark palette + color-scheme: dark', () => {
     const p = setTheme(setThemePreset(createProject([customers]), 'tailwind'), { mode: 'dark' })
-    const layout = layoutOf(p)
-    expect(layout).toContain('--sg-bg: #0f172a')   // Tailwind dark bg
-    expect(layout).toContain('color-scheme: dark')
+    const css = cssOf(p)
+    expect(css).toContain('--sg-bg: #0f172a')   // Tailwind dark bg
+    expect(css).toMatch(/:root \{[^}]*color-scheme: dark;/)
   })
 
   it('an accent override wins over the preset default accent', () => {
     const p = setTheme(setThemePreset(createProject([customers]), 'github'), { accent: '#123456' })
-    const layout = layoutOf(p)
-    expect(layout).toContain('--sg-accent: #123456')
-    expect(layout).not.toContain('--sg-accent: #0969da')
+    const css = cssOf(p)
+    expect(css).toContain('--sg-accent: #123456')
+    expect(css).not.toContain('--sg-accent: #0969da')
   })
 
   it('custom CSS goes to its own src/custom.css, imported after app.css by the layout', () => {
@@ -2945,15 +2967,16 @@ describe('pages (nav) + shell codegen', () => {
     expect(home).toContain('goto(home, { replaceState: true })')
   })
 
-  it('ships a light/dark switcher: both token sets scoped by [data-theme] + a toggle', () => {
+  it('ships a light/dark switcher: both token sets scoped by [data-theme] in app.css + a toggle in the layout', () => {
     const p = setThemePreset(createProject([customers]), 'tailwind')
-    const layout = layoutOf(p)
+    const css = cssOf(p)
     // Both palettes emitted, keyed off <html data-theme>.
-    expect(layout).toContain(':root[data-theme="light"]')
-    expect(layout).toContain(':root[data-theme="dark"]')
-    expect(layout).toContain('--sg-bg: #ffffff')   // Tailwind light bg
-    expect(layout).toContain('--sg-bg: #0f172a')   // Tailwind dark bg
+    expect(css).toContain(':root[data-theme="light"]')
+    expect(css).toContain(':root[data-theme="dark"]')
+    expect(css).toContain('--sg-bg: #ffffff')   // Tailwind light bg
+    expect(css).toContain('--sg-bg: #0f172a')   // Tailwind dark bg
     // The toggle + its runtime are wired in and persist the choice.
+    const layout = layoutOf(p)
     expect(layout).toContain('function toggleTheme()')
     expect(layout).toContain("document.documentElement.dataset.theme")
     expect(layout).toContain("localStorage.setItem('svapp:theme'")

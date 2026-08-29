@@ -44,10 +44,9 @@
       _rowModels: { coreRowModel: createCoreRowModel<Row>(), sortedRowModel: createSortedRowModel<Row>() },
       data,
       columns,
-      state: { sorting: getSorting() },              // read the shared store
-      onSortingChange: (u: unknown) => setSorting(u as never), // write the shared store
-      enableSorting: true,
-    } as never)
+      state: { sorting: getSorting() }, // read the shared store
+      onSortingChange: setSorting, // write it - the setter already applies updaters
+    })
   // Two independent engines, both derived from the same shared store.
   const gridA = $derived.by(buildGrid)
   const gridB = $derived.by(buildGrid)

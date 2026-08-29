@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Theme tokens for Ant / MUI / Fluent / shadcn
 
 > Live in [demo 74-theme-integrations](https://svgrid.com/demos/74-theme-integrations/).

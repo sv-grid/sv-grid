@@ -14,6 +14,7 @@
 import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
 import { join, relative, sep, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isHiddenDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
@@ -21,13 +22,6 @@ const ROOT      = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR  = join(ROOT, 'docs')
 const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers
 const SITE      = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'   // canonical doc origin
-
-// Slugs with no prerendered route. Keep in sync with HIDDEN in
-// tools/prerender-site.mjs.
-const HIDDEN = new Set([
-  'examples-plan', 'help/index', 'recipes/index', 'compliance/index',
-  'reference/index', 'enterprise/README',
-])
 
 const SECTION_TITLES = {
   '':                  'Overview',
@@ -202,11 +196,13 @@ async function main() {
   for await (const file of walk(DOCS_DIR)) {
     if (!file.endsWith('.md')) continue
     const rel = relative(DOCS_DIR, file).replaceAll('\\', '/')
-    // Mirror the HIDDEN set in tools/prerender-site.mjs: these have no route,
-    // so listing them here would advertise 404s to LLM crawlers.
-    if (HIDDEN.has(rel.replace(/\.md$/, ''))) continue
-    const src = await readFile(file, 'utf-8')
-    const { title, summary } = extract(src)
+    // Pages the site cannot route (shared with the prerenderer and the SPA via
+    // tools/lib/doc-meta.mjs); listing them would advertise 404s to crawlers.
+    if (isHiddenDoc(rel.replace(/\.md$/, ''))) continue
+    // Optional search-facing frontmatter (seoTitle, seoDescription, keywords,
+    // noindex); the body is what every consumer renders and indexes.
+    const { meta, body } = parseDocFrontmatter(await readFile(file, 'utf-8'))
+    const { title, summary } = extract(body)
     if (!title) continue
     const s = await stat(file)
     const section = sectionOf(rel.replaceAll('/', sep))
@@ -217,17 +213,21 @@ async function main() {
       url:         `/docs/${rel.replace(/\.md$/, '')}/`,
       title,
       summary,
+      ...(meta.seoTitle ? { seoTitle: meta.seoTitle } : {}),
+      ...(meta.seoDescription ? { seoDescription: meta.seoDescription } : {}),
+      ...(meta.keywords?.length ? { keywords: meta.keywords } : {}),
+      ...(meta.noindex ? { noindex: true } : {}),
       section,
       pillar:      SECTION_PILLAR[section] ?? 'grid',
       tier:        ENTERPRISE_SECTIONS.has(section) || /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
       ...(pageGroupLabel.has(rel) ? { group: pageGroupLabel.get(rel) } : {}),
-      words:       src.split(/\s+/).filter(Boolean).length,
+      words:       body.split(/\s+/).filter(Boolean).length,
       lastUpdated: s.mtime.toISOString().slice(0, 10),
       // Demo associations come from two link styles: the `data-docs-demo`
       // embeds (help/ pages) and inline `#/demos/<id>` links (studio/ pages).
       demoIds:     [...new Set([
-        ...[...src.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
-        ...[...src.matchAll(/#\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]),
+        ...[...body.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
+        ...[...body.matchAll(/#\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]),
       ])],
     })
   }
@@ -325,12 +325,12 @@ async function main() {
   llmsFullLines.push(`Generated ${new Date().toISOString().slice(0, 10)} from ${docs.length} pages.`)
   llmsFullLines.push('')
   for (const d of docs) {
-    const src = await readFile(join(DOCS_DIR, d.path), 'utf-8')
+    const { body } = parseDocFrontmatter(await readFile(join(DOCS_DIR, d.path), 'utf-8'))
     llmsFullLines.push(`<!-- =================================================================`)
     llmsFullLines.push(`     ${d.url}  (${d.tier})`)
     llmsFullLines.push(`     ================================================================== -->`)
     llmsFullLines.push('')
-    llmsFullLines.push(src.trim())
+    llmsFullLines.push(body.trim())
     llmsFullLines.push('')
   }
   await writeFile(join(DOCS_DIR, 'llms-full.txt'), llmsFullLines.join('\n'), 'utf-8')

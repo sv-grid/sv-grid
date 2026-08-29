@@ -229,6 +229,8 @@ Options:
   --sql            Wire a real SQL data source (default with --db)
   --route <seg>    Route segment (default: <name> / table name)
   --api <path>     API route path (default: /api/<route>)
+  --theme <id>     design-system preset (default: ember) - layered, so your own tokens win
+  --dark           start in dark mode
   -h, --help       Show this help
 
 Examples:
@@ -505,7 +507,7 @@ async function main(): Promise<void> {
       for (const table of tables) {
         schemas.push(await introspectDatabase({ dialect: opts.db, table, execute }))
       }
-      const res = await runStudioAddApp(schemas, { dataSource: ds }, io)
+      const res = await runStudioAddApp(schemas, { dataSource: ds, theme: opts.theme, dark: opts.dark }, io)
       report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify))
       process.stdout.write(`\nRun \`npm run dev\` and open /\n`)
       return
@@ -513,7 +515,7 @@ async function main(): Promise<void> {
 
     const table = opts.table ?? opts.route!
     const schema = await introspectDatabase({ dialect: opts.db, table, execute })
-    const res = await runStudioAdd({ schema, route: opts.route ?? table, dataSource: ds }, io)
+    const res = await runStudioAdd({ schema, route: opts.route ?? table, dataSource: ds, theme: opts.theme, dark: opts.dark }, io)
     report(table, res.written, summarizeVerify(res.verify))
     process.stdout.write(`\nRun \`npm run dev\` and open /${opts.route ?? table}\n`)
     return
@@ -532,14 +534,14 @@ async function main(): Promise<void> {
       process.stderr.write('svgrid-studio: no tables/models found in ' + opts.from + '\n')
       process.exit(1)
     }
-    const res = await runStudioAddApp(schemas, { dataSource: opts.dataSource }, io)
+    const res = await runStudioAddApp(schemas, { dataSource: opts.dataSource, theme: opts.theme, dark: opts.dark }, io)
     report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify))
     process.stdout.write(`\nRun \`npm run dev\` and open /\n`)
     return
   }
 
   const result = await runStudioAdd(
-    { from: opts.from, table: opts.table, route: opts.route, apiRoute: opts.apiRoute, dataSource: opts.dataSource },
+    { from: opts.from, table: opts.table, route: opts.route, apiRoute: opts.apiRoute, dataSource: opts.dataSource, theme: opts.theme, dark: opts.dark },
     io,
   )
   report(result.schema.name, result.written, summarizeVerify(result.verify))

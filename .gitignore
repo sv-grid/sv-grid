@@ -94,9 +94,9 @@ tools/gh.mjs
 tools/simulate-issues.mjs
 tools/seed-discussions.mjs
 
-# Marketing / SEO / launch-asset generation (pairs with the ignored marketing/)
-tools/blog-internal-links.mjs
-tools/blog-pillars.mjs
+# Marketing / SEO / launch-asset generation (pairs with the ignored marketing/).
+# tools/blog-internal-links.mjs and tools/blog-pillars.mjs are NOT listed: the
+# website deploy runs them (`pnpm blog:seo`), so they have to be in the repo.
 tools/capture-launch-assets.mjs
 tools/make-brand-logo.mjs
 

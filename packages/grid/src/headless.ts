@@ -7,6 +7,13 @@
  * your own renderer, running the engine under SSR, or unit-testing row models
  * without a browser.
  *
+ * Two entry functions, and the difference matters outside a bundler:
+ * `createSvGrid` is the Svelte 5 wrapper - it holds its state in runes, so it
+ * needs the Svelte compiler in the pipeline (Vite, SvelteKit, vitest). Bare
+ * `node script.mjs` cannot run it. `createSvGridCore` is the same engine with
+ * no runes and no reactivity, so it runs anywhere Node runs: a service, a
+ * worker, a CLI, a plain unit test.
+ *
  * Every runtime symbol here is also reachable from the main `@svgrid/grid`
  * barrel, so the two paths never disagree. This entry additionally exposes the
  * low-level types a custom renderer needs and the barrel does not re-export

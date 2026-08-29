@@ -242,6 +242,11 @@
     background: linear-gradient(180deg, color-mix(in oklab, var(--sg-accent, #6366f1) 4%, var(--sg-bg, #fff)), var(--sg-bg, #fff));
     border-radius: 10px; padding: 10px 14px;
   }
+  /* Phone: toggle / controls / summary in one row squeezed the select and
+     the 3-5-10-20-30 slider into ~80px. Stack the three cells. */
+  @media (max-width: 639px) {
+    .topn-bar { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  }
   .topn-toggle {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 700; color: var(--sg-fg, #0f172a);

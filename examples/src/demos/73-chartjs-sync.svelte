@@ -374,6 +374,12 @@
     min-height: 200px;
     max-height: 200px;
   }
+  /* Phone: three charts side by side are ~100px each - unreadable. Stack. */
+  @media (max-width: 639px) {
+    .dash-charts {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
   .chart-card {
     border: 1px solid var(--sg-border, #e2e8f0);
     background: var(--sg-bg, #fff);

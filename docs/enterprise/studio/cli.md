@@ -83,6 +83,8 @@ page.
 | `--sql` | Emit a `createSqlDataSource` with an `execute()` stub instead of a live driver. |
 | `--route <seg>` | Route segment (default: `<name>` / table name). |
 | `--api <path>` | API route path (default: `/api/<route>`). |
+| `--theme <id>` | Design-system preset for the generated screens (default: `ember`, the demo theme). The tokens go in the page's `<svelte:head>` inside `@layer svgrid-studio`, so an app that already defines its own `--sg-*` tokens keeps its look. |
+| `--dark` | Start in dark mode. |
 | `-h`, `--help` | Show help. |
 
 ## Examples

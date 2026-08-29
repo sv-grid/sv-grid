@@ -290,6 +290,12 @@
   .pgbtn:disabled { opacity: 0.4; cursor: default; filter: grayscale(1); }
 
   .cursors { display: flex; gap: 6px; flex: 1; min-width: 0; }
+  /* Phone: after Previous / Next / Reset there is ~100px left on the line,
+     so the two cursor cards were 50px wide and their PREVCURSOR / NEXTCURSOR
+     labels painted past them. Give the cards their own line. */
+  @media (max-width: 639px) {
+    .cursors { flex-basis: 100%; }
+  }
   .cursor-card {
     flex: 1; min-width: 0;
     background: var(--sg-bg, #fff);

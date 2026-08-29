@@ -84,4 +84,10 @@
   .hint { color: var(--sg-muted, #64748b); font-size: 12.5px; }
   .hint code { background: var(--sg-row-hover-bg, #f1f5f9); padding: 1px 5px; border-radius: 4px; }
   .stage { border: 1px solid var(--sg-border, #eef2f7); border-radius: 10px; overflow: hidden; }
+  /* Phone: the chart view needs ~408px inside a 380px grid root, so the last
+     row of the chart legend fell outside the stage, which hides overflow for
+     its rounded corners. Let the stage scroll rather than cut it. */
+  @media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+    .stage { overflow-y: auto; }
+  }
 </style>

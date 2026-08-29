@@ -18,6 +18,9 @@
  *      --prefix=  - route prefix. The gallery serves a demo at `#/<id>`; the
  *                  website nests it under `#/demos/<id>`, so sweeping the site
  *                  needs `--prefix=demos/`.
+ *      --shots=DIR - also save a viewport screenshot per demo as DIR/<id>.png,
+ *                  for eyeballing what the numbers cannot express (a chip row
+ *                  that fits but reads badly, a card that wrapped ugly).
  *
  *   Sweep the website surface (start it with the RIGHT base - from Git Bash
  *   set MSYS_NO_PATHCONV=1 or the leading slash is rewritten to a Win path):
@@ -42,7 +45,17 @@
  *   anything added later with no maintenance.
  *
  * Also flags a starved demo pane (stage shorter than MIN_STAGE_H), which is
- * what a long unclamped header blurb does on a phone.
+ * what a long unclamped header blurb does on a phone - and, separately, a
+ * starved GRID pane (`section > .flex-1.min-h-0` shorter than MIN_PANE_H): the
+ * stage can be a healthy 700px while the demo's own KPI strip and toolbar,
+ * both shrink-0, squeeze the grid below them to nothing.
+ * Two more soft buckets, reported but never gated:
+ *   - "vcut"  - cut off at the BOTTOM by an ancestor that hides overflow and
+ *               does not scroll. The shell's <main> scrolls, so only clipping
+ *               inside the stage counts. A collapsed accordion is correct; a
+ *               card whose last line is gone is not.
+ *   - "spill" - content wider than its own box with overflow left visible,
+ *               i.e. it paints over its neighbour. A KPI value in a 64px cell.
  *
  * Runtime is ~1s/demo serial, so a full sweep is ~6 minutes. If it is running
  * an order of magnitude slower, the selector wait is timing out per demo -
@@ -50,7 +63,7 @@
  * Do NOT parallelise against the Vite dev server - see the worker-cap comment
  * in playwright.config.ts for why that just produces timeouts.
  */
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
@@ -85,6 +98,12 @@ const VIEWPORT = vpArg
     })()
   : DEFAULT_VIEWPORT
 const MIN_STAGE_H = Math.round(VIEWPORT.height * MIN_STAGE_H_RATIO)
+// The demo PANE - the `flex-1 min-h-0` child of the root section that holds the
+// grid - is measured separately from the stage. The stage can be a healthy
+// 700px while the pane is 0px: everything above it is shrink-0, so it alone
+// absorbs the shortfall (the trading desk on a Galaxy S24 Ultra). mobile.css
+// rule 4b floors it at 360px; this reports anything under 300 at 844 tall.
+const MIN_PANE_H = Math.round(VIEWPORT.height * (300 / 844))
 
 const rest = argv.filter((a) => !a.startsWith('--'))
 const BASE = rest[0] && rest[0].startsWith('http') ? rest[0] : 'http://localhost:5174'
@@ -97,6 +116,9 @@ const OUT = join(ROOT, outName(VIEWPORT, BASE))
 // has its own chrome (site header, different padding) and so a different stage.
 const prefixArg = argv.find((a) => a.startsWith('--prefix='))
 const ROUTE_PREFIX = prefixArg ? prefixArg.slice(9) : ''
+
+const shotsArg = argv.find((a) => a.startsWith('--shots='))
+const SHOTS = shotsArg ? shotsArg.slice(8) : ''
 
 // Playwright is a devDependency of the root workspace.
 const { chromium } = createRequire(import.meta.url)('playwright')
@@ -111,7 +133,7 @@ async function demoIds() {
 }
 
 /** Runs in the page. Kept dependency-free so it can be pasted into devtools. */
-function probe(minStageH) {
+function probe({ minStageH, minPaneH }) {
   const de = document.documentElement
   // `.demo-stage` is the shell hook added by the mobile pass; fall back to
   // <main> so a BASELINE run against unmodified code still measures something.
@@ -168,21 +190,82 @@ function probe(minStageH) {
     return clipsSomewhere ? 'hidden' : null
   }
 
+  const selOf = (el) => {
+    const cls = typeof el.className === 'string' ? el.className : ''
+    return el.tagName.toLowerCase() + (cls ? '.' + cls.trim().split(/\s+/).join('.') : '')
+  }
+  // Vertical reachability. A box scrolls vertically when its overflow-y is
+  // auto/scroll AND it has something to scroll - which includes the common
+  // `overflow-x: hidden` wrapper, since that forces overflow-y to `auto`.
+  const canScrollY = (el) => {
+    const oy = getComputedStyle(el).overflowY
+    return (oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1
+  }
+
   const right = stageRight
   const offenders = []
   const clipped = []
+  const vcut = []
+  const spill = []
   for (const el of stage.querySelectorAll('*')) {
     const b = el.getBoundingClientRect()
     if (b.width < 2 || b.height < 2) continue // hidden / zero-size
+    // Chrome keeps the content of a CLOSED <details> laid out (it hides it
+    // with content-visibility), so it has a box but is not on screen.
+    const details = el.closest('details')
+    if (details && !details.open && !el.closest('summary') && el !== details) continue
+
+    // A native <select> reports the width of its longest OPTION in
+    // scrollWidth, but the browser never paints an option outside the
+    // control's border box - the popup is OS-drawn. And an element the page
+    // has made invisible (an `opacity: 0` overlay such as the phone input's
+    // country picker) cannot paint over anything by definition. Neither can
+    // spill; checked before the spill test so they are not reported.
+    const cs0 = getComputedStyle(el)
+    const paints = cs0.visibility !== 'hidden' && Number(cs0.opacity) > 0.01 && el.tagName !== 'SELECT'
+
+    // Spill: content wider than its own box while overflow stays visible, so
+    // it paints over whatever sits to its right. Report the DEEPEST spilling
+    // box only - the ancestors all inherit the same overflow and would just
+    // repeat it. Inline elements have clientWidth 0 and are skipped; their
+    // block parent reports the spill instead.
+    if (paints && el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 3 && cs0.overflowX === 'visible') {
+      let childSpills = false
+      for (const c of el.children) {
+        if (c.clientWidth > 0 && c.scrollWidth > c.clientWidth + 3 && getComputedStyle(c).overflowX === 'visible') {
+          childSpills = true
+          break
+        }
+      }
+      // Only a spill that reaches the eye counts: if any ancestor up to the
+      // stage clips or scrolls sideways, the overflow is either cut (the
+      // grid's own cells truncate like this by design) or pannable - and both
+      // are the other buckets' business.
+      // A panning stage contains everything in it, so a dock that is wider
+      // than its wrapper by design is a pan, not a spill.
+      let contained = canPan(stage)
+      for (let p = el.parentElement; !contained && p && p !== stage; p = p.parentElement) {
+        if (getComputedStyle(p).overflowX !== 'visible') contained = true
+      }
+      if (!childSpills && !contained) spill.push({ sel: selOf(el), w: Math.round(b.width), over: el.scrollWidth - el.clientWidth })
+    }
+
+    // Vertical cut: walk up to the stage's parent; a scrolling ancestor means
+    // reachable, a hiding ancestor whose bottom edge is above ours means cut.
+    for (let p = el.parentElement; p && p !== stage.parentElement; p = p.parentElement) {
+      if (canScrollY(p)) break
+      const oy = getComputedStyle(p).overflowY
+      if (oy === 'hidden' || oy === 'clip') {
+        const pb = p.getBoundingClientRect().bottom
+        if (b.bottom > pb + 1) vcut.push({ sel: selOf(el), w: Math.round(b.width), over: Math.round(b.bottom - pb) })
+        break
+      }
+    }
+
     if (b.right <= right + 1) continue
     const how = containment(el)
     if (how === 'pan') continue // reachable by scrolling - sanctioned
-    const cls = typeof el.className === 'string' ? el.className : ''
-    const rec = {
-      sel: el.tagName.toLowerCase() + (cls ? '.' + cls.trim().split(/\s+/).join('.') : ''),
-      w: Math.round(b.width),
-      over: Math.round(b.right - right),
-    }
+    const rec = { sel: selOf(el), w: Math.round(b.width), over: Math.round(b.right - right) }
     ;(how === 'hidden' ? clipped : offenders).push(rec)
   }
   // Collapse duplicates (virtualised rows repeat the same selector).
@@ -195,14 +278,24 @@ function probe(minStageH) {
     return [...seen.values()].sort((a, b) => b.over - a.over).slice(0, 5)
   }
 
+  // null when the demo has no such pane (the `.wrap` UI-kit family, sheets).
+  const pane = stage.querySelector(':scope > section > .flex-1.min-h-0')
+
   return {
+    // The landscape CSS keys off `(pointer: coarse)`; a run that does not
+    // match it is auditing desktop rendering and its numbers mean nothing.
+    coarse: matchMedia('(pointer: coarse)').matches,
     pageOverflow: de.scrollWidth - de.clientWidth,
     bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
     stagePans: stage.scrollWidth > stage.clientWidth + 1,
     stageH: Math.round(stage.clientHeight),
     starved: stage.clientHeight < minStageH,
+    paneH: pane ? Math.round(pane.clientHeight) : null,
+    paneStarved: !!pane && pane.clientHeight < minPaneH,
     offenders: dedupe(offenders),
     clipped: dedupe(clipped),
+    vcut: dedupe(vcut),
+    spill: dedupe(spill),
   }
 }
 
@@ -213,7 +306,10 @@ async function main() {
   )
 
   const browser = await chromium.launch()
-  const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 2, hasTouch: true })
+  // `isMobile` as well as `hasTouch`: touch alone does not flip Chromium's
+  // `(pointer: coarse)` media query, and the landscape layer keys off it.
+  const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 2, hasTouch: true, isMobile: true })
+  if (SHOTS) await mkdir(SHOTS, { recursive: true })
 
   // Preflight. A dev server that is down (or was never started) otherwise
   // produces 357 identical timeouts over ~12 minutes and a report full of
@@ -259,6 +355,7 @@ async function main() {
   const results = []
   let overflowing = 0
   let starved = 0
+  let starvedPane = 0
   let failed = 0
 
   for (const id of ids) {
@@ -280,28 +377,42 @@ async function main() {
         .catch(() => {})
       await page.waitForTimeout(900)
 
-      const r = await page.evaluate(probe, MIN_STAGE_H)
+      const r = await page.evaluate(probe, { minStageH: MIN_STAGE_H, minPaneH: MIN_PANE_H })
       if (r.fatal) throw new Error(r.fatal)
+      if (results.length === 0 && !r.coarse) {
+        process.stdout.write(`  !! (pointer: coarse) does not match - the phone CSS is inert in this run\n`)
+      }
       results.push({ id, ...r })
+      if (SHOTS) await page.screenshot({ path: join(SHOTS, `${id}.png`) })
 
       const bad = r.pageOverflow > 0
       if (bad) overflowing += 1
       if (r.starved) starved += 1
+      if (r.paneStarved) starvedPane += 1
 
       const flags = [
         bad ? `PAGE+${r.pageOverflow}` : null,
         r.starved ? `starved(${r.stageH}px)` : null,
+        r.paneStarved ? `pane(${r.paneH}px)` : null,
         r.stagePans ? 'stage-pans' : null,
+        r.vcut.length ? `vcut:${r.vcut.length}` : null,
+        r.spill.length ? `spill:${r.spill.length}` : null,
       ].filter(Boolean)
 
       process.stdout.write(
-        `  ${bad ? '!!' : r.starved ? ' ~' : ' ok'}  ${id.padEnd(34)} ${flags.join(' ') || 'clean'}\n`,
+        `  ${bad ? '!!' : r.starved || r.paneStarved ? ' ~' : ' ok'}  ${id.padEnd(34)} ${flags.join(' ') || 'clean'}\n`,
       )
       for (const o of r.offenders.slice(0, 3)) {
-        process.stdout.write(`      esc +${String(o.over).padStart(4)}px  ${o.sel.slice(0, 72)}\n`)
+        process.stdout.write(`      esc  +${String(o.over).padStart(4)}px  ${o.sel.slice(0, 72)}\n`)
       }
       for (const o of r.clipped.slice(0, 3)) {
-        process.stdout.write(`      cut +${String(o.over).padStart(4)}px  ${o.sel.slice(0, 72)}\n`)
+        process.stdout.write(`      cut  +${String(o.over).padStart(4)}px  ${o.sel.slice(0, 72)}\n`)
+      }
+      for (const o of r.vcut.slice(0, 3)) {
+        process.stdout.write(`      vcut +${String(o.over).padStart(4)}px  ${o.sel.slice(0, 72)}\n`)
+      }
+      for (const o of r.spill.slice(0, 3)) {
+        process.stdout.write(`      spill+${String(o.over).padStart(4)}px  ${o.sel.slice(0, 72)}\n`)
       }
     } catch (err) {
       failed += 1
@@ -351,7 +462,8 @@ async function main() {
   }
 
   process.stdout.write(
-    `\ndone: ${results.length} audited, ${overflowing} page-overflow, ${starved} starved pane, ` +
+    `\ndone: ${results.length} audited, ${overflowing} page-overflow, ${starved} starved stage, ` +
+      `${starvedPane} starved grid pane, ` +
       `${withCut.length} clipped, ${failed} failed\n` +
       `report: ${OUT}\n`,
   )

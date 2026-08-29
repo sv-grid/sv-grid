@@ -64,8 +64,8 @@
   "scripts": {
     "test": "vitest run",
     "test:types": "tsc -p tsconfig.json --noEmit",
-    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
-    "build:lib": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist",
+    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "build:lib": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist",
     "build:cdn": "node ./scripts/build-cdn.mjs",
     "build:node": "node ./scripts/build-node.mjs",
     "build:designer": "node ./scripts/build-designer.mjs",

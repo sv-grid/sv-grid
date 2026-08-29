@@ -556,4 +556,14 @@
       flex-shrink: 1;
     }
   }
+  /* Phone: the linked-chart column is a fixed 520px; its SVGs scale to their box, so
+     let it take the phone width instead of panning. */
+  @media (max-width: 767px) {
+    .ch-charts { width: auto; flex-shrink: 0; height: auto; }
+  }
+  /* Phone: the chart column already scrolls, but its cards were shrinking inside it
+     (they hide overflow, so their automatic minimum is 0) and clipped their own SVG. */
+  @media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+    .ch-chart-card { flex-shrink: 0; }
+  }
 </style>

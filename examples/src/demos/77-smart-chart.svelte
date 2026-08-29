@@ -294,6 +294,12 @@
     .smart-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
     .smart-card   { max-height: 380px; }
   }
+  /* Phone: the 380px cap left no room for the chart's own footer once the
+     title and tabs wrapped; let the card take its content height (the page
+     scrolls) instead of clipping the footer. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .smart-card { max-height: none; }
+  }
   .smart-grid-pane { min-height: 0; }
 
   /* ---- Chart card ---- */
@@ -365,4 +371,13 @@
     font-size: 11px; color: var(--sg-muted, #64748b);
   }
   .smart-foot code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--sg-fg, #0f172a); background: var(--sg-row-alt-bg, #f8fafc); padding: 1px 4px; border-radius: 3px; }
+  /* Phone: with the 1fr row the chart card only got what the grid left. Content-sized rows. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .smart-layout { grid-template-rows: auto auto; }
+    /* The chart itself is absolutely positioned inside a flex-basis-0
+       wrapper, so the card contributes only its header (86px) to the row
+       and the chart + footer fell outside it. Title + tabs + 280px chart +
+       footer is ~420px; reserve it. */
+    .smart-card { min-height: 430px; }
+  }
 </style>

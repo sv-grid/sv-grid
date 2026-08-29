@@ -82,6 +82,14 @@ const cells = (bigHtml.match(/data-svgrid-row=/g) ?? []).length
 check('a large grid still renders its first rows', bigHtml.includes('Person 0'))
 check('virtualization survives SSR (not every row serialised)', cells > 0 && cells < many.length)
 
+// The footer summary row is on by default (`enableRowSummaries`), and it used
+// to server-render as empty cells: the totals were assigned from an $effect,
+// and effects do not run during SSR. So the row occupied space and drew its
+// border, then filled in after hydration - and stayed blank forever with JS
+// off. They are derived now, so the numbers ship with the HTML.
+check('the summary row server-renders its totals, not empty cells', /sv-grid-summary-column[^>]*>\s*(Count: 2|1843|3795)/.test(html) || html.includes('Count: 2'))
+check('summary totals are the REAL aggregate (sum of the year column)', html.includes(String(1843 + 1952)))
+
 check('the empty state still renders for no rows', mod.ssr([]).includes('sv-grid-empty-row'))
 check('feature props do not break SSR', (() => {
   try {

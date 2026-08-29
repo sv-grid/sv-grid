@@ -29,8 +29,10 @@
     "thumbs": "node tools/capture-demo-thumbs.mjs",
     "thumbs:check": "node tools/check-demo-thumbs.mjs",
     "changelog": "node tools/build-changelog.mjs",
+    "blog:seo": "node tools/twitter/build-tips-pages.mjs && node tools/blog-pillars.mjs && node tools/blog-internal-links.mjs",
     "size:check": "node packages/grid/scripts/measure-size.mjs --check",
-    "ssr:check": "node packages/grid/scripts/check-ssr.mjs"
+    "ssr:check": "node packages/grid/scripts/check-ssr.mjs",
+    "node:check": "node packages/grid/scripts/check-node-entry.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

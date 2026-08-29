@@ -15,6 +15,7 @@
  */
 import { resolveIdField, type EntityField, type EntitySchema } from '../schema.js'
 import type { SqlDialectName } from './introspect-db.js'
+import { themeTokenCss } from './themes.js'
 
 export type GeneratedFile = {
   path: string
@@ -29,6 +30,14 @@ export type GeneratedFile = {
 export type ScaffoldOptions = {
   /** Route segment for the page, defaults to the schema name. e.g. `'customers'`. */
   route?: string
+  /**
+   * Theme preset id (one of `@svgrid/grid/themes`; default: the house Ember
+   * preset) and starting mode. The tokens are emitted in the page's
+   * `<svelte:head>` inside `@layer svgrid-studio`, so an app that already
+   * defines its own `--sg-*` tokens keeps its look.
+   */
+  theme?: string
+  dark?: boolean
   /** API route the page talks to, defaults to `/api/{route}`. */
   apiRoute?: string
   /** `$lib` path for the generated schema module, defaults to `$lib/{route}.schema`. */
@@ -296,6 +305,10 @@ ${managed(serverBody)}
 
 ${managed(pageBody)}
 </script>
+
+<svelte:head><style>
+${themeTokenCss({ preset: options.theme, mode: options.dark ? 'dark' : 'light' }, { layer: 'svgrid-studio' })}
+</style></svelte:head>
 
 <div class="page">
   <header class="page__toolbar">

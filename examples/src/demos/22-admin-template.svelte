@@ -872,6 +872,48 @@
     display: flex;
     flex-direction: column;
   }
+  /* Phone: the shared mobile layer stacks this shell into a column, which
+     put a full-height sidebar on top and clipped the whole admin page under
+     it (the shell hides overflow for its rounded corners). Turn the sidebar
+     into a slim top strip - brand, then the nav buttons in a row that pans -
+     and let the main column shrink so `.sg-content` keeps its own scroll. */
+  @media (max-width: 767px) {
+    .sg-sidebar {
+      width: auto;
+      flex-direction: row;
+      align-items: center;
+      border-right: 0;
+      border-bottom: 1px solid var(--sg-admin-border);
+    }
+    .sg-brand {
+      height: 44px;
+      padding: 0 12px;
+      border-bottom: 0;
+      border-right: 1px solid var(--sg-admin-border);
+      flex: none;
+      white-space: nowrap;
+    }
+    .sg-nav {
+      flex: 1 1 auto;
+      flex-direction: row;
+      padding: 5px 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+    .sg-nav-btn {
+      width: auto;
+      height: 34px;
+      flex: none;
+      white-space: nowrap;
+    }
+    .sg-foot {
+      display: none;
+    }
+    .sg-main {
+      min-height: 0;
+    }
+  }
   .sg-brand {
     display: flex;
     align-items: center;

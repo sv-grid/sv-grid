@@ -1337,6 +1337,14 @@
                         letter-spacing: 0.04em; color: var(--sg-muted); text-align: center;
                         order: 99; padding-top: 2px; }
   .ribbon-group-buttons { display: flex; align-items: center; gap: 4px; }
+  /* Phone: the ribbon body already pans sideways; what broke was the groups
+     shrinking first (the mobile layer zeroes every automatic minimum), so
+     the buttons painted over each other. Keep each group at its natural
+     width and let the body do the scrolling it was built for. */
+  @media (max-width: 767px) {
+    .ribbon-group { flex: 0 0 auto; }
+    .ribbon-group-buttons > * { flex-shrink: 0; }
+  }
 
   .rib-btn { display: inline-flex; align-items: center; justify-content: center;
              min-width: 28px; height: 28px; padding: 0 8px; font: inherit; font-size: 12px;
@@ -1458,4 +1466,14 @@
   :global(html[data-theme='dark']) .ctx-item-danger { color: #f87171; }
   :global(html[data-theme='dark']) .ctx-item-danger .ctx-ico { color: #f87171; }
   :global(html[data-theme='dark']) .ctx-item-danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.16); }
+  /* Phone: the formula bar is a shrinkable flex item of the shell and collapsed to 2px
+     once the ribbon above it wrapped (its input is 16px here - the iOS no-zoom rule -
+     so it is taller than on desktop). Keep it at its own height. */
+  @media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+    .formula-bar { flex-shrink: 0; }
+    /* The status bar items were shrunk to 12px each, so "Cells: 1" painted over its
+       neighbour. Let the bar wrap and keep each readout at its own width. */
+    .status { flex-wrap: wrap; }
+    .status > * { flex-shrink: 0; }
+  }
 </style>

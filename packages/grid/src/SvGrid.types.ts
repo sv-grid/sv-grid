@@ -1020,6 +1020,7 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    *   `sortable`   - column sorting       (injects `rowSortingFeature`)
    *   `filterable` - column filtering     (injects `columnFilteringFeature`)
    *   `editable`   - inline cell editing  (alias of `enableInlineEditing`)
+   *   `selectable` - cell selection       (alias of `enableCellSelection`)
    *   `groupable`  - row grouping controls(alias of `showGroupingControls`,
    *                  also injects `columnGroupingFeature`)
    *   `pageable`   - pagination footer    (alias of `showPagination`)
@@ -1030,6 +1031,26 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   sortable?: boolean;
   filterable?: boolean;
   editable?: boolean;
+  /**
+   * Cell selection - click a cell to select it, drag or shift-click to extend
+   * the selection to a range. Alias of `enableCellSelection`, and the highest
+   * priority of the three inputs that decide it:
+   * `selectable` -> `enableCellSelection` -> `selectionMode`.
+   *
+   * NOTE the asymmetry with its siblings, which are all off until you opt in:
+   * this one is **ON by default**, because `selectionMode` defaults to
+   * `'both'`. It is named here so the capability is discoverable next to the
+   * other shortcuts, and so `selectable={false}` is a one-word way to turn
+   * cell selection off (the longhand being `selectionMode="none"`, which also
+   * removes the row-selection surface).
+   *
+   * This is the CELL surface only. The selection **checkbox column** is the
+   * other half of `selectionMode`, controlled by `showRowSelection` - also on
+   * by default, and it needs no feature import (verified: the column renders
+   * and toggles rows with an empty `features` set). Use `selectionMode` when
+   * you want to move both surfaces at once.
+   */
+  selectable?: boolean;
   /**
    * Client-side tree data: nest rows into a hierarchy by parent id.
    *

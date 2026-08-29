@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Lazy-load expand on demand
 
 > Live in [demo 31-lazy-tree-load](https://svgrid.com/demos/31-lazy-tree-load/).

@@ -33,6 +33,8 @@ function demoComponent(language) {
 
   return `${open}
   ${importLine}
+  // The house theme - what the demos use. Swap for any preset in @svgrid/grid/themes.
+  import '@svgrid/grid/themes/ember.css'
 
   const data = [
     { name: 'Ada Lovelace', role: 'Mathematician', year: 1843 },

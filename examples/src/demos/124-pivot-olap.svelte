@@ -1079,4 +1079,14 @@
   .density-compact :global(.cube-val),
   .density-compact :global(.cube-dim) { font-size: 11.5px; }
   .density-compact :global(.cube-mhdr) { font-size: 10px; }
+  /* Phone: same as the other card panes - basis 0 kept the card at the floor and the
+     cube grid was clipped by the card. Size it to content; the page scrolls. */
+  @media (max-width: 639px) {
+    .cube-card { flex: 1 0 auto; }
+  }
+  /* Landscape phone: the workspace is still a row, so the card cannot grow to its
+     content without eating the rail width. Scroll inside the card instead. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .cube-card { overflow-y: auto; }
+  }
 </style>

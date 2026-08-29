@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # External search box with highlighted matches
 
 > Live in [demo 69-highlighted-search](https://svgrid.com/demos/69-highlighted-search/).

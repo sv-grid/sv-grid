@@ -103,6 +103,56 @@
     gap: 0.5rem;
   }
 
+  /* --- 4b. The pane floor. That root's grid pane is `flex-1 min-h-0` and
+     everything above it (a KPI strip, a chip toolbar) is `shrink-0`, so
+     inside the shell's fixed-height column the pane alone absorbs the whole
+     shortfall. At 384x745 - a Galaxy S24 Ultra with the URL bar showing -
+     the trading desk's chrome ran to ~480px and left the grid 0-40px tall,
+     and because nothing overflowed, the page could not even scroll to it.
+     Floor the pane instead. The root is `min-h-0`, so the surplus simply
+     overflows the stage into the shell's <main>, which both shells already
+     let scroll vertically (`overflow-x: hidden` computes `overflow-y: auto`
+     on the gallery's; the website's is `overflow-y: auto` outright) - the
+     visitor scrolls past the chrome to a grid that is really there. 360px is
+     the header row plus eight 40px rows, enough to read as a grid; the demo
+     should still trim its own chrome on phones (see 00-trading-desk) so the
+     grid gets the screen rather than the floor.
+     Unlayered, so it beats Tailwind's `min-h-0` with no `!important`. The
+     second selector reaches one level into the split rows rule 8 stacks,
+     whose grid otherwise gets whatever the 260px chart leaves. */
+  .demo-page .demo-stage > section > .flex-1.min-h-0,
+  .demo-page .demo-stage > section > .flex.flex-1.min-h-0 > .flex-1.min-h-0 {
+    min-height: 360px;
+  }
+  /* --- 4d. Demo roots that are NOT the Tailwind flex pane (the alert apps'
+     `div.app`, `div.shell`, `section.hz`, the sheet and studio shells ...)
+     keep their content height. Nearly all of them hide overflow for their
+     rounded corners, which makes a flex item's automatic minimum height 0:
+     as the stage's flex child they shrank to whatever a phone stage is and
+     clipped their own footer, lower pane or nav. Content height instead;
+     the page scrolls. The `.flex` pane is excluded because its `flex-1`
+     children are what fill it, and that shape is handled by 4b/4c. */
+  .demo-page .demo-stage > :is(div, section):not(.flex) {
+    flex-shrink: 0;
+  }
+
+  /* --- 4c. The same floor for the box that DIRECTLY wraps a fill-height
+     grid, wherever it sits. The 4b selectors only see the root's own pane;
+     ~40 demos put the grid inside a CSS-grid layout instead (`.layout`,
+     `.cq-body`, Tailwind `grid lg:grid-cols-[1fr_360px]`), which rule 7
+     stacks into one column - and a grid container with a definite height
+     hands its leftover space to the rows EQUALLY, so the grid's row ended
+     up 70-170px next to a side panel that kept its content height
+     (43-compliance-queue: 75px, 88-staged-editing: 69px). Flooring the
+     wrapper makes the row's content 360px, the layout overflows its box,
+     and <main> scrolls. `.sv-grid-root-fill` is the grid's own marker for
+     `containerHeight="100%"`, so the 2-3 demos with a small fixed-height
+     helper grid are untouched. `:has()` is fine here: this is phone-only
+     CSS and every phone browser has shipped it since 2022-23. */
+  .demo-page .demo-stage :has(> .sv-grid-root-fill) {
+    min-height: 360px;
+  }
+
   /* --- 5. The `.wrap` family (103 files). Uniform shape:
      `padding: 20-24px; max-width: 560-940px; display: flex; column`.
      The max-width is already fluid and the `.cols` / `.controls` / `.stage`
@@ -145,12 +195,113 @@
      `minmax(280px,360px) 1fr`, ...). These are PANEL splits, not data grids,
      so stacking them hides no data - which is why this is allowed under the
      "don't reflow wide grids" rule. */
+  /* `.shell` is deliberately NOT in this list: its only user is
+     424-block-app-shell, whose sidebar column is an SvNavPane that carries
+     its own <= 720px treatment (a 64px icon rail). Stacking it here put a
+     232px-wide nav pane above the page and clipped the content under it. */
   .demo-page .demo-stage :is(
-      .cols, .split, .layout, .shell, .two, .grid2, .lower, .smart-layout,
+      .cols, .split, .layout, .two, .grid2, .lower, .smart-layout,
       .theme-layout, .edz-layout, .mg-split, .su-grid, .pa-body, .cq-body,
       .fs-body, .rt-body
     ) {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* --- 7b. Toolbars whose buttons were being squeezed into their labels.
+     Rule 2 zeroes the automatic minimum so that flex ROWS can shrink - the
+     side effect is that a button in a nowrap row shrinks below its own text
+     ("Today" -> "Tod", "Agenda" -> "Agend", "Timeline" -> "Time"). Two
+     families did this on nearly every phone screenshot:
+       - the enterprise scheduler's toolbar (nav / title / view buttons);
+       - the demos' own segmented controls (`.ds-seg`, `.bk-seg`, `.hm-seg`
+         ... a dozen prefixes, always "<prefix>-seg" holding buttons) sitting
+         in a header row beside a title.
+     Buttons keep their width and the ROW wraps instead: the scheduler's
+     views drop under its title, a segmented control drops under its heading.
+     `:has()` is fine here - phone-only CSS, and every phone browser has had
+     it since 2022-23. */
+  .demo-page .demo-stage .sv-sched-toolbar {
+    flex-wrap: wrap;
+  }
+  .demo-page .demo-stage .sv-sched-btn,
+  .demo-page .demo-stage :is([class$='-seg'], [class*='-seg ']),
+  .demo-page .demo-stage :is([class$='-seg'], [class*='-seg ']) > button {
+    flex-shrink: 0;
+  }
+  /* A three-way control ("Timeline - Week / Timeline - Month / Table") is
+     wider than the phone even on a line of its own; let its buttons wrap
+     inside the rounded box rather than be clipped by it. */
+  .demo-page .demo-stage :is([class$='-seg'], [class*='-seg ']) {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  /* The colour legends that sit in those same header rows (`.ds-legend`,
+     `.ch-legend`, `.pv-legend` ...) are nowrap flex rows too; once the row
+     wraps they get a line of their own, and they should wrap on it rather
+     than squeeze "Electrical Plumbing HVAC" into one word. */
+  .demo-page .demo-stage :is([class$='-legend'], [class*='-legend ']) {
+    flex-wrap: wrap;
+  }
+  .demo-page .demo-stage :has(> [class$='-seg']),
+  .demo-page .demo-stage :has(> [class*='-seg ']) {
+    flex-wrap: wrap;
+  }
+
+  /* --- 7c. The pivot designer's header row (title, Reset, Presets, the
+     Table/Chart switch, Export) is a nowrap flex row that squeezed "Reset"
+     to "Rese" on six demos. Wrap it; the presets group too. */
+  .demo-page .demo-stage :is(.pvd-toolbar, .pvd-presets) {
+    flex-wrap: wrap;
+  }
+  /* The designer itself is `height: 100%` of the pane with hidden overflow,
+     and once its body stacks (its own <= 900px rule) the field panel keeps
+     its full content height - 1400px on 360-pivot-mode-grid - while the
+     grid wrapper, a `flex: 1; min-height: 0` box, collapsed to 0 and its
+     floored grid painted over the panel; the left-rail layouts (52, 122,
+     166, 168, 359) lost the bottom of their wells the same way. Size the
+     designer to its content instead. That makes the height chain indefinite,
+     so the grid's own `height: 100%` gets an explicit 360px box to resolve
+     against (`.pvd-grid` is the fill grid's direct wrapper in both layouts),
+     and the panel / rail are capped at half the screen and scroll inside
+     themselves - nothing is lost, the page just scrolls. */
+  .demo-page .demo-stage .pvd {
+    height: auto;
+  }
+  /* Four classes deep on purpose: the designer's own
+     `.pvd-gridwrap.svelte-x .pvd-grid:where(.svelte-x)` is (0,3,0) too, and
+     on the website its stylesheet comes AFTER this one, so a (0,3,0) rule
+     lost the tie there and the grid was 1px on svgrid.com only. */
+  .demo-page .demo-stage .pvd .pvd-grid {
+    /* `!important` because the designer writes `height: 100%` INLINE on this
+       box (its `gridHeight` default) - a percentage that resolves to nothing
+       once the chain above is indefinite, leaving the grid 1px tall.
+       `flex: none` is load-bearing too: the box is a `flex: 1 1 0%` item, and
+       a flex item in a container of indefinite height is not "definite" for
+       its children even with an explicit height (Flexbox 9.8) - the grid's
+       own `height: 100%` still computed to 1px. With basis `auto` the height
+       IS the basis and the grid fills it. */
+    flex: none;
+    height: 360px !important;
+  }
+  .demo-page .demo-stage :is(.pvd-panel, .pvd-rail) {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  /* --- 7d. Docking workspaces (SvDockLayout / SvDockManager: 361-366, the
+     Meridian and Northwind desks, the clinic console). A five-pane IDE
+     layout has no sensible single-column shape, and letting it shrink gave
+     a 60px file explorer with every name clipped. Give it the same
+     contained pan a gantt gets: a 720px floor, so the stage measures wide
+     and scrolls, and every pane stays the size it was designed at. */
+  .demo-page .demo-stage :is(.sv-dock, .sv-dockmgr) {
+    min-width: 720px;
+  }
+  /* Inside a content-sized card (the Meridian / Northwind desks) the
+     manager is `flex: 1` of an indefinite column and would collapse; give
+     it a working height. The IDE demos sit in fixed-height stages already. */
+  .demo-page .demo-stage .sv-dockmgr {
+    min-height: 480px;
   }
 
   /* --- 8. The chart-card family (demos 147, 150-165). Each is a `flex-1`
@@ -249,8 +400,17 @@
      /`--lg` size classes or a flat width (`.sv-ddl` is 200px) that resolve to
      fixed pixel widths. The dropdown only showed up at 360px, not 390 - these
      sit close enough to the edge that the extra 30px decides it. */
-  .demo-page .demo-stage :is(.sv-field__control, .sv-combo, .sv-ddl) {
+  .demo-page .demo-stage :is(.sv-field, .sv-field__control, .sv-combo, .sv-ddl, .sv-file) {
     max-width: 100%;
+  }
+  /* Same for the two remaining fixed-width controls: the country picker's
+     trigger is 220px and the slider is 240px, while a 2-column SvForm cell
+     is 157px at 384px wide - so both painted over the field beside them.
+     `min-width: 0` as well: a slider is a flex row whose track would
+     otherwise hold it at its own min-content width. */
+  .demo-page .demo-stage :is(.sv-country, .sv-slider) {
+    max-width: 100%;
+    min-width: 0;
   }
 
   /* --- 10c. Range calendars. `SvCalendar` lays its months out in a row with
@@ -275,6 +435,63 @@
   }
   .demo-page .demo-stage .sv-cal__panels {
     flex-direction: column;
+  }
+
+  /* --- 10c2. Stat tiles (SvStat) in a 2-up strip are ~150px wide; the foot
+     row is delta + hint + a sparkline pushed right with `margin-inline-start:
+     auto`, which cannot fit and painted the sparkline over the hint. Let the
+     foot wrap and the sparkline take its own line. */
+  .demo-page .demo-stage .sv-stat__foot {
+    flex-wrap: wrap;
+  }
+  .demo-page .demo-stage .sv-stat__chart {
+    margin-inline-start: 0;
+    max-width: 100%;
+  }
+
+  /* --- 10c3. SvStepper lays its steps out in one row with a description
+     under each label; five steps in 360px wrapped the descriptions to one
+     word per line and overlapped the labels. Drop the descriptions on a
+     phone - the label is the step - and tighten the connector lines. */
+  .demo-page .demo-stage .sv-step__desc,
+  .demo-page .demo-stage .sv-step__optional {
+    display: none;
+  }
+  /* Five steps share 360px, ~70px each: a 28px marker BESIDE a label leaves
+     the label 30px. Stack the label under the marker instead; the connector
+     line then sits at the marker's centre (4px button padding + 14px). */
+  .demo-page .demo-stage .sv-step--horizontal .sv-step__btn {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    padding: 4px 2px;
+  }
+  .demo-page .demo-stage .sv-step--horizontal .sv-step__text {
+    align-items: center;
+  }
+  .demo-page .demo-stage .sv-step__label {
+    font-size: 11.5px;
+    line-height: 1.2;
+  }
+  .demo-page .demo-stage .sv-step--horizontal .sv-step__line {
+    align-self: flex-start;
+    margin: 18px 2px 0;
+  }
+
+  /* --- 10c4. The grid's pager. "Page size" + dropdown + "1 to 25 of 120" +
+     "Page 1 of 5" + four nav buttons need ~430px; at 360 the label wrapped
+     to "Pag / Size." on every paginated demo. The dropdown is self-evident
+     next to the range text, so drop the label's text on a phone. */
+  .demo-page .demo-stage .sv-grid-pagination-pagesize > span {
+    display: none;
+  }
+  .demo-page .demo-stage .sv-grid-pagination {
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+  .demo-page .demo-stage .sv-grid-pagination > * {
+    flex-shrink: 0;
   }
 
   /* --- 10d. Sparklines and gauges take an explicit pixel width prop (e.g.
@@ -348,6 +565,95 @@
    `pointer: coarse` is load-bearing - a short desktop window has a fine
    pointer and never matches, so desktop rendering is untouched. */
 @media (max-height: 500px) and (pointer: coarse) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  @supports (overflow-x: clip) {
+    html,
+    body {
+      overflow-x: clip;
+    }
+  }
+
+  .demo-page .demo-stage.is-wide {
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+  /* The pane floor from 4b, sized for a 390px-tall screen: a header row plus
+     five 40px rows. A KPI strip and a two-line toolbar are ~180px here, and
+     the website's stage is ~200px, so without this the trading desk's grid
+     measured 0px in landscape. The surplus overflows into <main>, which
+     scrolls vertically on both shells. */
+  .demo-page .demo-stage > section > .flex-1.min-h-0,
+  .demo-page .demo-stage > section > .flex.flex-1.min-h-0 > .flex-1.min-h-0,
+  .demo-page .demo-stage :has(> .sv-grid-root-fill) {
+    min-height: 240px;
+  }
+  /* Same as 4d above: non-Tailwind demo roots keep their content height. A
+     390px-tall screen is where a `height: 100%` shell clips the most. */
+  .demo-page .demo-stage > :is(div, section):not(.flex) {
+    flex-shrink: 0;
+  }
+  /* The pivot designer and the docking manager, sized as in the narrow
+     block (7c / 7d) but for a short screen: the designer is `height: 100%`
+     of a ~250px stage here, which cut every one of its grids. */
+  .demo-page .demo-stage .pvd {
+    height: auto;
+  }
+  .demo-page .demo-stage .pvd .pvd-grid {
+    flex: none;
+    height: 240px !important;
+  }
+  .demo-page .demo-stage :is(.pvd-panel, .pvd-rail) {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .demo-page .demo-stage .sv-dockmgr {
+    min-height: 360px;
+  }
+
+  /* The fixed-width editors, capped exactly as in the phone block. Landscape
+     is 844px WIDE, so none of those `max-width: 639px` rules reach it - but
+     the box an editor sits in is a panel or a form cell, not the viewport,
+     and a 240px date picker or 220px country trigger still paints over its
+     neighbour inside a 160px cell (98-advanced-filter-builder,
+     334-checkout-form). Width is what is capped here, so this cannot fight
+     the height rules above. */
+  .demo-page .demo-stage :is(
+      .sv-dtp, .sv-dp, .sv-tp, .sv-daterange, .sv-field__control, .sv-combo,
+      .sv-ddl, .sv-country, .sv-slider, .sv-spark, .sv-gauge__svg, .sv-file, .sv-field
+    ) {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ===================== TABLET PORTRAIT (touch, 768-1023px) ==============
+   An iPad mini is 768x1024 and an iPad Air 820x1180: above every width query
+   in this file, so none of the rules above reach them - yet the demo stage is
+   only ~720px once the shells drawer the sidebar (they now do so here too, see
+   the matching block in examples/src/App.svelte).
+
+   That leaves ONE thing genuinely broken there: the chart-card family (17
+   demos, 147 + 150-165 + 20) puts a 560-580px fixed-width chart beside the
+   grid, so ~200-620px of it sits past the stage - and `main` hides its
+   overflow, so that part is simply unreachable. The shells already measure the
+   stage and set `.is-wide`; all that is missing is the rule that makes a wide
+   stage pan, because that rule lives in the <= 767px block.
+
+   `pointer: coarse` is what keeps the desktop promise. A desktop window resized
+   to 1000px has a FINE pointer and never matches, so its rendering - including
+   the same clipping, which is pre-existing desktop behaviour and deliberately
+   left alone - is untouched.
+
+   Deliberately NOT re-running the whole narrow layer here: at 720px these
+   demos have the room they were drawn for, and stacking their panels would be
+   wrong. Only reachability is fixed. */
+@media (min-width: 768px) and (max-width: 1023px) and (pointer: coarse) {
   html,
   body {
     overflow-x: hidden;

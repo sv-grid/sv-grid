@@ -49,6 +49,10 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **Ember is now the default theme preset** (`defaultThemePreset` in
+  `@svgrid/grid/themes`). It is what the demo gallery and svgrid.com open on, so
+  a scaffolded or Studio-generated app now looks like the demos unless you pick
+  a preset. Previously the default was Tailwind.
 - **Popup editors keep themselves on screen.** `SvAutoComplete`, `SvComboBox`,
   `SvDropDownList` and the date pickers now measure the space to the viewport
   edge: the panel flips up when there is not enough room below and clamps its
@@ -59,6 +63,32 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **The footer summary row server-rendered as empty cells.** The totals were
+  assigned from an `$effect`, and effects never run during SSR - so the server
+  emitted a summary row that took up space and drew its border but held no
+  numbers. They appeared only after hydration (a visible pop-in), and never at
+  all for a reader with JavaScript off. A grid under the aggregation cell
+  limit now derives its totals synchronously, so they ship with the HTML; a
+  very large grid keeps the rAF-deferred effect so it still paints before it
+  totals. `pnpm ssr:check` asserts the real aggregate now.
+- **The grid painted one unmeasured frame on every mount.** `hasMeasured`
+  gates the custom scrollbars, the 16px scrollbar gutter on a trailing
+  right-aligned column and the top pager (which carries a `border-top`), but
+  it only flipped inside the `ResizeObserver` callback - and that callback is
+  deliberately deferred by one `requestAnimationFrame`, so the browser was
+  guaranteed to paint a frame with those missing and correct it on the next.
+  On a first load that was the "flashing scrollbar"; in an app that recreates
+  the grid per navigation (a `{#key}` around it, or a route that remounts) it
+  showed up as the grid flashing on every sort / filter / page change, with a
+  stray border line. The container is now measured synchronously in the mount
+  effect - before the first paint - and the observer still handles later
+  resizes. Covered by an e2e regression test, since jsdom has no layout to
+  miss a paint with.
+- **Pager page-size trigger rendered as a stock button until first click.** The
+  closed trigger is a placeholder until the lazy dropdown chunk loads, but its
+  box styling only existed in that chunk's scoped CSS, so server-rendered and
+  freshly-mounted pagers showed a UA-bordered, left-hugging `<button>` inside the
+  bordered box. The placeholder now gets the same rules from `SvGrid.css`.
 - **Virtualized lists no longer flash blank on a fast scrollbar-thumb drag.**
   A fast drag can move the viewport into the windowed list's off-screen padding
   faster than JS can re-render the rows there; the padding now paints faint row
@@ -80,6 +110,16 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Studio emitted no theme for the fragment export and the CLI `add`
+  scaffolds.** Only the full app's `+layout.svelte` carried the `--sg-*` tokens;
+  `eject --fragment` (which drops that file) shipped an `app.css` with one
+  hard-coded accent, and `svgrid-studio add` / `add --all` wrote none at all. The
+  tokens now come from one helper (`themeTokenCss`): `src/app.css` carries them
+  for the full app and the fragment, and the `add` scaffolds emit them in
+  `<svelte:head>`. Drop-in outputs wrap them in `@layer svgrid-studio`, so a host
+  app that already defines its own tokens keeps its look. `add` also honours
+  `--theme` / `--dark`, and a project with no theme picked gets Ember (the demo
+  theme) instead of Tailwind.
 - **Scheduler column alignment.** The all-day lane, day/time-grid header, and
   body columns now reserve the scrollbar width consistently, so the columns line
   up instead of drifting by the scrollbar's width.
@@ -98,7 +138,16 @@ For machine-readable releases, fetch
   ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
   shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
 - **See a component before you wire it in** (`@svgrid/ui` 0.3.x).
-  `npx @svgrid/ui try <component>` spins up a zero-setup Vite + Svelte sandbox and
+  `npx @svgrid/ui try <component>` spins
+
+#### Changed
+
+- **`npm create @svgrid` starts on Ember** (the demo theme) instead of Tailwind,
+  for every template; `--theme <id>` still picks any preset. The `sveltekit`
+  template is now listed on the starters page, and the `sv add @svgrid` demo route
+  imports the Ember stylesheet so it no longer renders unthemed.
+
+ up a zero-setup Vite + Svelte sandbox and
   opens the component in your browser; `add --preview` writes a
   `src/routes/preview/<id>` route (plus a `/preview` index) in a SvelteKit app.
   `add` now installs `@svgrid/grid` by default (`--no-install` to opt out) and

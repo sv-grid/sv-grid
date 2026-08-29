@@ -1035,4 +1035,9 @@
     font-size: 12px;
   }
   :global([data-theme='dark']) .ad-error { background: rgba(239,68,68,.18); color: #f87171; }
+  /* Phone: the sidebar sections hide overflow (rounded corners) and shrank inside a
+     short stage - the permission grid was clipped at 30px. Keep their heights. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .ad-side-section { flex-shrink: 0; }
+  }
 </style>

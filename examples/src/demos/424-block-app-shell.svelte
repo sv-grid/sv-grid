@@ -32,7 +32,12 @@
   }
 
   let active = $state('dashboard')
-  let collapsed = $state(false)
+  // Start collapsed on a phone: the <= 720px rule below already gives the
+  // sidebar the 64px rail width, so an expanded nav pane there could only
+  // paint its labels over the page. The toggle still works either way.
+  let collapsed = $state(
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
+  )
   let query = $state('')
 
   const accountMenu: MenuItem[] = [
@@ -135,5 +140,26 @@
   @media (max-width: 720px) {
     .search { display: none; }
     .shell { grid-template-columns: 64px 1fr; }
+    /* The 64px column is the collapsed rail's width, but `collapsed` is
+       still the user's toggle - so hide the brand text and clip the nav
+       pane's labels instead of letting them paint over the breadcrumb. */
+    .brand strong { display: none; }
+    .side { overflow: hidden; }
+    /* The top bar wraps on a phone (bell + avatar drop to a second line);
+       with a fixed 56px height that line painted over the page heading. */
+    .bar { height: auto; min-height: 56px; padding: 8px 12px; }
+    /* As a flex item that hides overflow, the shell's automatic minimum is
+       0, so it shrank to whatever the demo stage had left. Keep its height
+       and let the page scroll. */
+    .shell { flex-shrink: 0; }
+    /* The stat cards go 2-up here and the page grows past 620px; without a
+       pinned row the implicit grid row grew with it and the shell clipped
+       the bottom. Pin the row to the shell so `.content` scrolls, as it
+       does on desktop. */
+    .shell { grid-template-rows: minmax(0, 1fr); }
+    /* `.content` is a flex column with a definite height, so its cards
+       (hidden overflow, automatic minimum 0) squeezed instead of making
+       it scroll. Keep their heights; the column scrolls. */
+    .content > :global(*) { flex-shrink: 0; }
   }
 </style>

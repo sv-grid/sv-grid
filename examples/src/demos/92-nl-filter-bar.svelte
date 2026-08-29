@@ -497,4 +497,9 @@
     cursor: pointer;
   }
   .nlf-sample:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.18)); }
+  /* Narrow phones: the API-key hint holds a long unbroken code token, which has
+     no break opportunity and so ran past the callout. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .nlf-aikey-body, .nlf-aikey-body code { overflow-wrap: anywhere; }
+  }
 </style>

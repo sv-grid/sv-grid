@@ -62,13 +62,10 @@ this for you; here you do it explicitly.
       data,
       columns,
       state: { sorting, columnFilters },
-      onSortingChange: (u) =>
-        (sorting = typeof u === 'function' ? (u as (s: Sort[]) => Sort[])(sorting) : u),
-      onColumnFiltersChange: (u) =>
-        (columnFilters = typeof u === 'function' ? (u as (f: Filter[]) => Filter[])(columnFilters) : u),
-      enableSorting: true,
-      enableColumnFilters: true,
-    } as never),
+      // `u` is an Updater: either the next value or a function producing it.
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+      onColumnFiltersChange: (u) => (columnFilters = typeof u === 'function' ? u(columnFilters) : u),
+    }),
   )
 
   const headerGroups = $derived(table.getHeaderGroups())

@@ -344,6 +344,12 @@
 
   .ab-mid { display: inline-flex; align-items: center; gap: 12px; }
   .ctrl { display: inline-flex; align-items: center; gap: 6px; }
+  /* Phone: ACTION and CONCURRENCY with their selects do not fit one line;
+     let the middle cluster wrap rather than truncate the labels. */
+  @media (max-width: 639px) {
+    .ab-mid { flex-wrap: wrap; }
+    .ctrl > span { white-space: nowrap; }
+  }
   .ctrl > span { font-size: 10px; font-weight: 800; letter-spacing: 0.06em;
                  text-transform: uppercase; color: var(--sg-muted, #64748b); }
   .ctrl select {

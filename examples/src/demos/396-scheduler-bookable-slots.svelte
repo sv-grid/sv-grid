@@ -134,4 +134,9 @@
   .bs-ev { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
   .bs-ev-t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bs-ev-c { font-size: 0.72em; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Phone: a hidden-overflow flex item has an automatic minimum of 0, so the card shrank
+     to the stage and clipped the scheduler. Keep its content height. */
+  @media (max-width: 639px) {
+    .bs { flex-shrink: 0; }
+  }
 </style>

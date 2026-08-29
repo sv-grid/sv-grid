@@ -33,30 +33,37 @@ import {
 
 const features = tableFeatures({ rowSortingFeature })
 
+type Row = { x: number }
+const data: Row[] = [{ x: 1 }, { x: 3 }, { x: 2 }]
+
+// State is controlled, so a test does not call a setter - it builds the engine
+// with the state it wants to assert on.
+const build = (sorting: Array<{ id: string; desc: boolean }>) =>
+  createSvGrid({
+    _features: features,
+    _rowModels: {
+      coreRowModel:   createCoreRowModel<Row>(),
+      sortedRowModel: createSortedRowModel<Row>(),
+    },
+    data,
+    columns: [{ field: 'x' }],
+    state: { sorting },
+    onSortingChange: () => {},
+  })
+
 describe('row sorting', () => {
-  it('sorts rows desc on api call', () => {
-    type Row = { x: number }
-    const data: Row[] = [{ x: 1 }, { x: 3 }, { x: 2 }]
-    let sorting: Array<{ id: string; desc: boolean }> = []
-
-    const table = createSvGrid({
-      _features: features,
-      _rowModels: {
-        coreRowModel:   createCoreRowModel<Row>(),
-        sortedRowModel: createSortedRowModel<Row>(),
-      },
-      data,
-      columns: [{ field: 'x' }],
-      state: { sorting },
-      onSortingChange: (u) => {
-        sorting = typeof u === 'function' ? (u as (s: typeof sorting) => typeof sorting)(sorting) : u
-      },
-      enableSorting: true,
-    } as never)
-
-    table.setSorting([{ id: 'x', desc: true }])
-    const rows = table.getRowModel().rows.map((r) => (r.original as Row).x)
+  it('sorts rows desc', () => {
+    const rows = build([{ id: 'x', desc: true }])
+      .getRowModel()
+      .rows.map((r) => (r.original as Row).x)
     expect(rows).toEqual([3, 2, 1])
+  })
+
+  it('leaves source order alone when nothing is sorted', () => {
+    const rows = build([])
+      .getRowModel()
+      .rows.map((r) => (r.original as Row).x)
+    expect(rows).toEqual([1, 3, 2])
   })
 })
 ```
@@ -64,6 +71,12 @@ describe('row sorting', () => {
 Notes:
 - `_rowModels` must be passed explicitly when bypassing `<SvGrid>` -
   the component wires them for you, the headless path doesn't.
+- There is no `table.setSorting()`. Sorting is driven either by the `sorting`
+  state you pass in, as above, or from a header via
+  `header.getToggleSortingHandler()`, which fires `onSortingChange` for you.
+  Filters, pagination, grouping, expansion and selection do have imperative
+  setters on the table (`setColumnFilters`, `setPagination`, `setGrouping`,
+  `setExpanded`, `setRowSelection`).
 
 ## Strategy 2 - Component (testing-library)
 

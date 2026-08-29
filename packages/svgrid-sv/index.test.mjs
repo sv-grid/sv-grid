@@ -58,6 +58,8 @@ describe('@svgrid/sv add-on', () => {
     expect(w.files[path]).toBeTruthy()
     expect(w.files[path]).toContain("from '@svgrid/grid'")
     expect(w.files[path]).toContain('<SvGrid')
+    // Themed like the demos, not the bare fallback palette.
+    expect(w.files[path]).toContain("import '@svgrid/grid/themes/ember.css'")
   })
 
   test('writes a lib component for a non-Kit project', async () => {

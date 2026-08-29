@@ -712,4 +712,16 @@
   :global([data-theme='dark'] .amt-neg) { color: #f87171; }
   :global(.mono) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; letter-spacing: 0.02em; }
   :global(.ts) { color: var(--sg-muted, #64748b); }
+  /* Phone: the 2fr / 1fr chart row is a fixed 152px, which left the region bars in
+     a 120px-wide tile that clipped them. Stack the tiles and size the row to
+     content; the sparkline tile keeps its original height. */
+  @media (max-width: 639px) {
+    .chart-row { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .chart-card { min-height: 152px; }
+  }
+  /* Landscape phone: same 152px row problem as portrait, without stacking the tiles. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .chart-row { height: auto; }
+    .chart-card { min-height: 152px; }
+  }
 </style>

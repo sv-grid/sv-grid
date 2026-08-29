@@ -752,4 +752,9 @@
     font-style: italic;
     font-size: 11.5px;
   }
+  /* Phone: content-sized rows so the history panel is not clipped under the grid. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .cq-body { grid-auto-rows: max-content; }
+    .cq-history { max-height: 50vh; }
+  }
 </style>

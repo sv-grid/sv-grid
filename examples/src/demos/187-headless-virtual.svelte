@@ -11,6 +11,7 @@
     createSvGrid,
     createCoreRowModel,
     createSvelteVirtualizer,
+    tableFeatures,
     type ColumnDef,
   } from '@svgrid/grid'
 
@@ -22,17 +23,19 @@
     city: CITIES[(i * 7) % CITIES.length]!,
     score: (i * 37) % 1000,
   }))
-  const columns: ColumnDef<Record<string, never>, Row>[] = [
+  const features = tableFeatures({})
+  const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'city', header: 'City' },
     { field: 'score', header: 'Score' },
   ]
 
   const table = createSvGrid({
+    _features: features,
     _rowModels: { coreRowModel: createCoreRowModel<Row>() },
     data,
     columns,
-  } as never)
+  })
   const rows = table.getRowModel().rows
 
   const ROW_H = 34

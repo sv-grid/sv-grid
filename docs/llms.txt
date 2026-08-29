@@ -242,24 +242,6 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Use SvGrid from React (custom-element bridge)](https://svgrid.com/docs/recipes/use-svgrid-from-react/): SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **custom element** wrapper. The wrapper publishes one <sv-grid-element> tag, React renders it like any other DOM element, …
 - [WebSocket streaming with backpressure](https://svgrid.com/docs/recipes/websocket-streaming/): Live tick stream with pause / resume / disconnect-and-replay and per-tick delta merge.
 
-### API reference
-
-- [Auto-generated reference](https://svgrid.com/docs/reference/auto/index/): _Generated from the published TypeScript sources. Do not edit by hand - rerun node tools/build-reference.mjs._
-- [`@svgrid/enterprise` · `ai.ts`](https://svgrid.com/docs/reference/auto/svgrid-enterprise-ai/): Auto-generated. Source: packages\enterprise\src\ai.ts.
-- [`@svgrid/enterprise` · `export.ts`](https://svgrid.com/docs/reference/auto/svgrid-enterprise-export/): Auto-generated. Source: packages\enterprise\src\export.ts.
-- [`@svgrid/enterprise` · `import.ts`](https://svgrid.com/docs/reference/auto/svgrid-enterprise-import/): Auto-generated. Source: packages\enterprise\src\import.ts.
-- [`@svgrid/enterprise` · `install.ts`](https://svgrid.com/docs/reference/auto/svgrid-enterprise-install/): Auto-generated. Source: packages\enterprise\src\install.ts.
-- [`@svgrid/enterprise` · `pivot.ts`](https://svgrid.com/docs/reference/auto/svgrid-enterprise-pivot/): Auto-generated. Source: packages\enterprise\src\pivot.ts.
-- [`@svgrid/grid` · `core.ts`](https://svgrid.com/docs/reference/auto/svgrid-grid-core/): Auto-generated. Source: packages\grid\src\core.ts.
-- [`@svgrid/grid` · `svgrid-wrapper.types.ts`](https://svgrid.com/docs/reference/auto/svgrid-grid-svgrid-wrapper.types/): Auto-generated. Source: packages\grid\src\svgrid-wrapper.types.ts.
-- [Bundle size](https://svgrid.com/docs/reference/bundle-size/): What SvGrid costs in your bundle, how to reproduce the number on your branch, and what to do if size matters.
-- [`ColumnDef` reference](https://svgrid.com/docs/reference/ColumnDef/): A column definition is the contract between the grid and one column of data. Pass an array of these as the columns prop to <SvGrid>.
-- [Enterprise reference](https://svgrid.com/docs/reference/enterprise/): Everything that @svgrid/enterprise adds on top of the Community surface. Install + license: see Enterprise feature pack.
-- [Features reference](https://svgrid.com/docs/reference/features/): A "feature" is a small bundle of state + helpers the grid engine checks for when wiring its row-model pipeline. Register only what you use - each feature ships about 1-2 KB gzipped and adds a small…
-- [Headless engine](https://svgrid.com/docs/reference/headless-engine/): createSvGrid(options) returns a table object with:
-- [`<SvGrid>` reference](https://svgrid.com/docs/reference/SvGrid/): The render component. One <SvGrid> element per grid instance.
-- [`SvGridApi` reference](https://svgrid.com/docs/reference/SvGridApi/): The imperative API exposed via <SvGrid onApiReady={(api) => ...}>. Use it for data, column, filter, sort, group, selection, and visibility operations from outside the component.
-
 ## SvGrid Studio
 
 ### Studio
@@ -430,12 +412,3 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [HIPAA posture](https://svgrid.com/docs/compliance/hipaa/): sv-grid is **HIPAA-neutral**: the library does not transmit, store, or process PHI on its own. If your app is HIPAA-compliant before adding sv-grid, adding sv-grid does not break that compliance.
 - [SOC 2 posture](https://svgrid.com/docs/compliance/soc2/): sv-grid is a UI library, not a service - so it cannot itself hold a SOC 2 report. But it can sit inside a SOC 2-audited application, and the controls below describe the line where the library's res…
 - [Accessibility Conformance Report (VPAT 2.5Rev, INT)](https://svgrid.com/docs/compliance/vpat/): **Product:** SvGrid (@svgrid/grid, @svgrid/enterprise) **Report version:** 1.0 **Report date:** 2026-08-24 **Contact:** support@jqwidgets.com
-
-### Legal
-
-- [SVGRID END USER LICENSE AGREEMENT](https://svgrid.com/docs/legal/EULA/): Version 1.0
-
-### Brand
-
-- [SvGrid - Company / Brand Description](https://svgrid.com/docs/brand/company-description/): *About the company and brand behind SvGrid. For partner listings, press kits, marketplace profiles, and procurement forms. Product descriptions live elsewhere.*
-- [GitHub social preview images](https://svgrid.com/docs/brand/social/README/): On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings -> General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size), and well under the 1 MB upload limit.

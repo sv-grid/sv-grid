@@ -1,0 +1,18 @@
+{
+  "description": "SvProgress and SvCircularProgress are the Svelte 5 progress components in SvGrid UI: a linear bar and a ring, each determinate or indeterminate, with color intents, sizes, an optional label, a striped fill and a buffered track. Both expose the WAI-ARIA progressbar role, follow the theme tokens and respect reduced-motion settings.",
+  "keywords": ["svelte progress bar", "svelte circular progress", "svelte 5 progress component", "svelte loading indicator"],
+  "faq": [
+    {
+      "question": "How do I show an indeterminate progress bar in Svelte?",
+      "answer": "Render <SvProgress indeterminate /> (or <SvCircularProgress indeterminate />) while the total is unknown and drop the prop once it is. The bar animates on its own and exposes the progressbar role without a value, which is how indeterminate progress is conveyed to assistive technology."
+    },
+    {
+      "question": "Can the progress bar show a label and a buffer?",
+      "answer": "Yes. showLabel prints the percentage next to the bar, and buffer draws a second, lighter track behind the value, the pattern media players use for downloaded versus played."
+    },
+    {
+      "question": "Is the progress component free?",
+      "answer": "Yes. SvProgress and SvCircularProgress ship in @svgrid/grid under the MIT License, with no license key and no usage cap."
+    }
+  ]
+}

@@ -913,4 +913,17 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  /* Phone: an aggregate card is ~150px wide here; 18px values painted past it. */
+  @media (max-width: 639px) {
+    .rw-agg-card-value { font-size: 14px; overflow-wrap: anywhere; }
+  }
+  /* Phone: the card is ~150px wide, so an uppercase tracked label ran past it. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .rw-agg-card-label { letter-spacing: 0.02em; overflow-wrap: anywhere; }
+  }
+  /* Landscape phone: same 5-up KPI strip in ~150px cells. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .rw-kpi-label { letter-spacing: 0.02em; overflow-wrap: anywhere; }
+    .rw-kpi-value { font-size: 17px; overflow-wrap: anywhere; }
+  }
 </style>

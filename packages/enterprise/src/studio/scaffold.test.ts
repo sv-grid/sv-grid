@@ -27,6 +27,18 @@ describe('scaffold', () => {
     ])
   })
 
+  it('the page ships the theme tokens (default Ember) in a cascade layer so a host app keeps its own', () => {
+    const page = byPath['src/routes/customers/+page.svelte']!.contents
+    expect(page).toContain('<svelte:head><style>')
+    expect(page).toContain('@layer svgrid-studio {')
+    expect(page).toContain('--sg-header-bg: #fafaf9') // Ember light surface
+    expect(page).toContain(':root[data-theme="dark"]')
+    const themed = scaffold(schema, { theme: 'material', dark: true }).files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(themed).toContain('--sg-accent: #6750a4') // Material 3 accent
+    expect(themed).toMatch(/:root \{[^}]*color-scheme: dark;/)
+    expect(() => compile(themed, { filename: '+page.svelte', generate: 'client' })).not.toThrow()
+  })
+
   it('the schema file exports a typed EntitySchema literal and Row type', () => {
     const c = byPath['src/lib/customers.schema.ts']!.contents
     expect(c).toContain('export const customersSchema: EntitySchema<CustomersRow>')

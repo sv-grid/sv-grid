@@ -273,6 +273,12 @@
 
 <style>
   .console { display: flex; min-height: 500px; border: 1px solid color-mix(in srgb, currentColor 13%, transparent); border-radius: 16px; overflow: hidden; background: color-mix(in srgb, currentColor 2%, transparent); font-family: var(--sg-font, inherit); color: inherit; }
+  /* Phone: same as the sibling alert apps - a hidden-overflow flex item shrinks to
+     the stage (its automatic min-height is 0) and clipped the whole main pane
+     under the stacked nav. Keep the content height and let the page scroll. */
+  @media (max-width: 767px) {
+    .console { flex-shrink: 0; }
+  }
   .console-nav { width: 224px; flex: none; display: flex; flex-direction: column; border-right: 1px solid color-mix(in srgb, currentColor 10%, transparent); background: color-mix(in srgb, currentColor 3%, transparent); }
   .console-brand { display: flex; align-items: center; gap: 9px; padding: 15px 16px 10px; font-size: 14px; font-weight: 700; }
   .brand-dot { width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, var(--sg-accent, #4f46e5), #9333ea); box-shadow: 0 2px 8px -2px var(--sg-accent, #4f46e5); }

@@ -13,7 +13,7 @@
  * Token reference: https://svgrid.com/docs/getting-started/5-theme-and-density
  * ------------------------------------------------------------------------- */
 /* svgrid-theme:start */
-@import '@svgrid/grid/themes/shadcn.css';
+@import '@svgrid/grid/themes/ember.css';
 /* svgrid-theme:end */
 
 /* Which way the page leans, so scrollbars, form controls and the canvas behind

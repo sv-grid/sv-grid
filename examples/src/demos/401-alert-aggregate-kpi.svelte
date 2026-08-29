@@ -144,6 +144,12 @@
 
 <style>
   .app { border: 1px solid color-mix(in srgb, currentColor 13%, transparent); border-radius: 16px; overflow: hidden; background: color-mix(in srgb, currentColor 2%, transparent); font-family: var(--sg-font, inherit); color: inherit; }
+  /* Phone: this root hides overflow (rounded corners), which makes its automatic
+     min-height 0 - so as a flex item of the demo stage it shrank to the stage and
+     clipped its own footer. Keep its content height; the page scrolls instead. */
+  @media (max-width: 767px) {
+    .app { flex-shrink: 0; }
+  }
   .app-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 18px; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); flex-wrap: wrap; }
   .app-title { display: flex; align-items: center; gap: 13px; }
   .app-icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--sg-accent, #4f46e5) 15%, transparent); color: var(--sg-accent, #4f46e5); flex: none; }

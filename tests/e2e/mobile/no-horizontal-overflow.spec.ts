@@ -30,6 +30,11 @@ import { test, expect, type Page } from '@playwright/test'
  */
 
 const MIN_STAGE_H = 400
+// The demo PANE, not the stage: the `flex-1 min-h-0` child of the demo's root
+// section that holds the grid. The stage can be a healthy 700px while this is
+// 0px, because everything above it (a KPI strip, a chip toolbar) is `shrink-0`
+// and the pane alone absorbs the shortfall. mobile.css rule 4b floors it.
+const MIN_PANE_H = 300
 
 const DEMOS = [
   // plain grid
@@ -71,7 +76,7 @@ const DEMOS = [
 async function escapingElements(page: Page) {
   return page.evaluate(() => {
     const stage = document.querySelector('.demo-stage')
-    if (!stage) return { hasStage: false, escaping: [] as string[], stageH: 0, pageOverflow: 0 }
+    if (!stage) return { hasStage: false, escaping: [] as string[], stageH: 0, paneH: -1, pageOverflow: 0 }
 
     const right = stage.getBoundingClientRect().right
     const canPan = (el: Element) => {
@@ -113,10 +118,15 @@ async function escapingElements(page: Page) {
       )
     }
 
+    // -1 when the demo has no such pane (the `.wrap` UI-kit family, sheets),
+    // so the assertion on it is skipped rather than failed.
+    const pane = stage.querySelector(':scope > section > .flex-1.min-h-0')
+
     return {
       hasStage: true,
       escaping: [...new Set(escaping)].slice(0, 5),
       stageH: Math.round(stage.clientHeight),
+      paneH: pane ? Math.round(pane.clientHeight) : -1,
       pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     }
   })
@@ -146,8 +156,62 @@ for (const id of DEMOS) {
     expect(r.stageH, `demo pane starved to ${r.stageH}px by the chrome above it`).toBeGreaterThan(
       MIN_STAGE_H,
     )
+    if (r.paneH >= 0) {
+      expect(
+        r.paneH,
+        `the grid pane is only ${r.paneH}px tall - the demo's own chrome ate it (mobile.css 4b should floor it)`,
+      ).toBeGreaterThanOrEqual(MIN_PANE_H)
+    }
   })
 }
+
+/**
+ * Galaxy S24 Ultra in Chrome with the URL bar showing: 384x745. The trading
+ * desk is the hero demo, and its KPI strip + chip toolbar are `shrink-0` above
+ * a `flex-1 min-h-0` grid pane, so on this viewport the pane collapsed to ~0px
+ * and - with nothing overflowing - the page could not even scroll to it. Two
+ * things fix it and both are asserted: the pane floor (mobile.css 4b) gives
+ * the grid a real height and makes the shell's <main> scroll to it, and the
+ * demo's own phone trims keep its chrome small enough that the grid gets the
+ * screen rather than the floor.
+ */
+test.describe('Galaxy S24 Ultra portrait', () => {
+  test.use({
+    viewport: { width: 384, height: 745 },
+    deviceScaleFactor: 3.75,
+    hasTouch: true,
+    isMobile: true,
+  })
+
+  test('00-trading-desk: the grid keeps a real height and is reachable by scrolling', async ({ page }) => {
+    await page.goto('http://localhost:5174/#/00-trading-desk')
+    await page.waitForSelector('.demo-stage .sv-grid-root', { timeout: 20_000 })
+    await page.waitForTimeout(700)
+
+    const r = await page.evaluate(() => {
+      const grid = document.querySelector('.demo-stage .sv-grid-root')!
+      const main = document.querySelector('main')!
+      const h = (sel: string) => Math.round(document.querySelector(sel)!.getBoundingClientRect().height)
+      const chrome = { kpi: h('.td-kpi-strip'), toolbar: h('.td-toolbar') }
+      const scrollable = main.scrollHeight > main.clientHeight + 1
+      // The shell's <main> is the vertical scroller. Scroll it all the way
+      // down: the grid's bottom edge must then sit inside the viewport.
+      main.scrollTop = main.scrollHeight
+      const b = grid.getBoundingClientRect()
+      return { gridH: Math.round(b.height), gridBottom: Math.round(b.bottom), vh: innerHeight, chrome, scrollable }
+    })
+
+    expect(r.gridH, `grid is only ${r.gridH}px tall`).toBeGreaterThanOrEqual(MIN_PANE_H)
+    expect(
+      r.gridBottom,
+      `grid bottom (${r.gridBottom}px) is below the ${r.vh}px viewport even after scrolling <main> to the end`,
+    ).toBeLessThanOrEqual(r.vh + 1)
+    expect(
+      r.chrome.kpi + r.chrome.toolbar,
+      `KPI strip (${r.chrome.kpi}px) + toolbar (${r.chrome.toolbar}px) - the demo's phone trims are not applying`,
+    ).toBeLessThan(340)
+  })
+})
 
 test('long blurbs stay clamped so the demo keeps its height', async ({ page }) => {
   // 194-studio-supabase has one of the longest blurbs in the registry, so it is
@@ -185,9 +249,11 @@ test.describe('landscape phone', () => {
       const r = await page.evaluate(() => {
         const stage = document.querySelector('.demo-stage')
         const head = document.querySelector('.demo-head')
+        const pane = stage ? stage.querySelector(':scope > section > .flex-1.min-h-0') : null
         return {
           coarse: matchMedia('(pointer: coarse)').matches,
           stageH: stage ? Math.round(stage.clientHeight) : 0,
+          paneH: pane ? Math.round(pane.clientHeight) : -1,
           headH: head ? Math.round(head.getBoundingClientRect().height) : -1,
           pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         }
@@ -198,6 +264,11 @@ test.describe('landscape phone', () => {
       expect(r.coarse, 'needs touch emulation for the landscape CSS to apply').toBe(true)
       expect(r.headH, `header ate ${r.headH}px of a 390px screen`).toBeLessThan(120)
       expect(r.stageH, `demo pane is only ${r.stageH}px tall in landscape`).toBeGreaterThan(100)
+      // The landscape pane floor (240px in mobile.css); a KPI strip plus a
+      // two-line toolbar otherwise leave the grid 0px in a ~200px stage.
+      if (r.paneH >= 0) {
+        expect(r.paneH, `grid pane is only ${r.paneH}px tall in landscape`).toBeGreaterThanOrEqual(200)
+      }
       expect(r.pageOverflow, 'page scrolls sideways').toBeLessThanOrEqual(0)
     })
   }

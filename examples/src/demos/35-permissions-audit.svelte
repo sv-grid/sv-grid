@@ -1053,4 +1053,10 @@
     align-items: center;
     padding: 2px 0;
   }
+  /* Phone: the stacked body splits the leftover space between the grid row and the audit
+     row, which clipped the audit list. Size rows to content and let the list scroll. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .pa-body { grid-auto-rows: max-content; }
+    .pa-audit-list { max-height: 45vh; overflow-y: auto; }
+  }
 </style>

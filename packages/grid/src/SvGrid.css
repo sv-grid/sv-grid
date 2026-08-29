@@ -2495,12 +2495,52 @@ select.sv-grid-fr-editor {
   border-radius: 5px;
   background: var(--sg-input-bg, #fff);
 }
-.sv-grid-pagination-pagesize-dd .sv-grid-dropdown,
-.sv-grid-pagination-pagesize-dd .sv-grid-dropdown-trigger {
+/* The closed page-size trigger is plain markup until the real SvGridDropdown
+   chunk loads on the first click (GridFooter.svelte keeps that component lazy).
+   SvGridDropdown's own trigger rules are scoped to the component, so they never
+   reach the placeholder - it needs the same box here, or the pager shows a
+   stock <button> (UA border + padding, hugging the left) until the first click.
+   Keep these in step with the .sv-grid-dropdown* rules in SvGridDropdown.svelte. */
+.sv-grid-pagination-pagesize-dd .sv-grid-dropdown {
+  position: absolute;
+  inset: 0;
+  height: 100%;
   background: transparent;
   border-radius: 5px;
   font-size: 13px;
   color: var(--sg-fg, #0f172a);
+}
+.sv-grid-pagination-pagesize-dd .sv-grid-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  outline: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--sg-fg, #0f172a);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.sv-grid-pagination-pagesize-dd .sv-grid-dropdown-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sv-grid-pagination-pagesize-dd .sv-grid-dropdown-caret {
+  flex: 0 0 auto;
+  font-size: 10px;
+  opacity: 0.7;
+  line-height: 1;
 }
 .sv-grid-pagination-pagesize-dd:focus-within {
   border-color: var(--sg-accent, #2563eb);

@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Theme-matched xlsx export
 
 > Live in [demo 56-export-theme-matched](https://svgrid.com/demos/56-export-theme-matched/).

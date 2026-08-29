@@ -595,8 +595,13 @@ export function createSvGridController<
       ((props.selectionMode ?? "both") === "row" ||
         (props.selectionMode ?? "both") === "both"),
   );
+  // `selectable` is the shortcut alias, so it wins over the fine-grained prop,
+  // which in turn wins over `selectionMode` - the same precedence the other
+  // shortcuts use. Unlike them it starts ON (selectionMode defaults to 'both'),
+  // so its real work is `selectable={false}`.
   const enableCellSelectionEffective = $derived(
-    props.enableCellSelection ??
+    props.selectable ??
+      props.enableCellSelection ??
       ((props.selectionMode ?? "both") === "cell" ||
         (props.selectionMode ?? "both") === "both"),
   );
@@ -2543,7 +2548,53 @@ export function createSvGridController<
   // footer is correct on the first frame (no flicker).
   const SUMMARY_DEFER_CELL_LIMIT = 50_000;
 
-  let summaryByColumn = $state<Record<string, string>>({});
+  /** Deferred summaries for a grid too big to total inline. A grid under the
+   *  cell limit is handled by `eagerSummaries` below - synchronously, so the
+   *  totals are in the SERVER-rendered footer too. */
+  let deferredSummaries = $state<Record<string, string>>({});
+
+  /**
+   * The aggregator, handed over once `createSummaries(ctx)` has run - it needs
+   * `ctx`, which cannot exist this early. Held in `$state` so `eagerSummaries`
+   * recomputes when it lands.
+   *
+   * The whole dance is to keep the declaration ABOVE `ctx`: a `$derived`
+   * referenced before its declaration is mis-compiled (the binding is dropped
+   * and the `ctx` getter comes out with an empty body, so the footer read
+   * `undefined` and threw on the first column id).
+   */
+  let summarize = $state<
+    | null
+    | ((rows: ReadonlyArray<Row<TData>>, columns: ReadonlyArray<Column<TData>>) => Record<string, string>)
+  >(null);
+
+  /**
+   * Footer totals for a grid small enough to aggregate inline, derived rather
+   * than assigned from an `$effect`.
+   *
+   * Effects never run during SSR, so when the totals lived only in the effect
+   * the server emitted a summary row of EMPTY cells: the numbers appeared only
+   * after hydration (a visible pop-in), and never at all for a reader with
+   * JavaScript off - while the row still took up space and drew its border.
+   * A `$derived` runs on the server too, so the totals ship with the HTML.
+   *
+   * `null` above the cell limit - that case stays on the rAF-deferred effect,
+   * which keeps a huge grid painting before it totals.
+   */
+  const eagerSummaries = $derived.by(() => {
+    if (!summarize) return null;
+    if (!(props.enableRowSummaries ?? true)) return null;
+    const rows = allRows;
+    const columns = allColumns;
+    if (rows.length * columns.length > SUMMARY_DEFER_CELL_LIMIT) return null;
+    // `computeSummaries` reads `editedCellValues` through `ctx`, so an inline
+    // edit re-runs this too.
+    return summarize(rows, columns);
+  });
+
+  /** What the footer renders: the inline totals when the grid is small enough,
+   *  otherwise the rAF-deferred ones. */
+  const summaryByColumn = $derived(eagerSummaries ?? deferredSummaries);
   $effect(() => {
     // Re-aggregate whenever the data / columns / edits change. We depend on
     // `allRows` / `allColumns` / `editedCellValues` DIRECTLY - not the
@@ -2557,20 +2608,21 @@ export function createSvGridController<
     const rows = allRows;
     const columns = allColumns;
     if (!(props.enableRowSummaries ?? true)) {
-      summaryByColumn = {};
+      deferredSummaries = {};
       return;
     }
     if (
       rows.length * columns.length <= SUMMARY_DEFER_CELL_LIMIT ||
       typeof requestAnimationFrame === "undefined"
     ) {
-      summaryByColumn = computeSummaries(rows, columns);
+      // Small enough to total inline - `eagerSummaries` already did, and it
+      // wins in the getter, so there is nothing to recompute here.
       return;
     }
     // Large grid: paint first, total a frame later.
     let cancelled = false;
     const handle = requestAnimationFrame(() => {
-      if (!cancelled) summaryByColumn = computeSummaries(rows, columns);
+      if (!cancelled) deferredSummaries = computeSummaries(rows, columns);
     });
     return () => {
       cancelled = true;
@@ -2778,18 +2830,39 @@ export function createSvGridController<
   // width/height stays in sync. Always attached (window resize / parent
   // layout shift / sidebar collapse can change the size whether the
   // consumer passed a numeric or "100%" containerHeight).
-  /** True after the first ResizeObserver tick - i.e. once the grid has
-   *  measured its real container size and `fitColumns` has had a chance
-   *  to scale the columns to that width. Used to gate the scrollbar
-   *  visibility: rendering it before this flips paints a horizontal
-   *  scrollbar for ONE frame (based on the base column widths summing
-   *  larger than the viewport), then immediately hides it once fit
-   *  scaling kicks in - visible as a "flashing horizontal scrollbar"
-   *  every time a demo first loads. */
+  /** True once the grid has measured its real container size and `fitColumns`
+   *  has had a chance to scale the columns to that width. Gates the scrollbar
+   *  visibility, the scrollbar gutter on a trailing right-aligned column and
+   *  the top pager: rendering those before this flips paints a horizontal
+   *  scrollbar for ONE frame (based on the base column widths summing larger
+   *  than the viewport), then immediately hides it once fit scaling kicks in -
+   *  visible as a "flashing horizontal scrollbar" every time a demo first
+   *  loads. */
   let hasMeasured = $state(false);
 
   $effect(() => {
     if (!scrollContainer) return;
+    // Measure SYNCHRONOUSLY here, not just from the observer below. Effects run
+    // after the DOM is in place but before the browser paints, so reading the
+    // container now lets the very first painted frame already carry the
+    // scrollbars, the fit-scaled column widths, the 16px gutter on a trailing
+    // right-aligned column and the top pager (which has a `border-top`).
+    // `observeSizeRaf` has to defer its callback by a frame (or the
+    // ResizeObserver re-notifies within one delivery cycle), so relying on it
+    // alone guarantees one painted frame in the unmeasured state - a visible
+    // flash on EVERY mount, and therefore on every navigation in an app that
+    // recreates the grid (e.g. a `{#key}` around it, or a route that remounts).
+    // `untrack` keeps the writes below from making this effect depend on
+    // `viewportVersion` (it would then re-run and re-attach the observer).
+    untrack(() => {
+      // A zero-height container means the grid is not laid out yet (hidden
+      // ancestor, `display: none`); leave it unmeasured and let the observer
+      // flip it when the box becomes real.
+      if (scrollContainer && scrollContainer.clientHeight > 0) {
+        viewportVersion += 1;
+        hasMeasured = true;
+      }
+    });
     return observeSizeRaf(scrollContainer, () => {
       viewportVersion += 1;
       if (!hasMeasured) hasMeasured = true;
@@ -3705,7 +3778,6 @@ export function createSvGridController<
     get computeSummaries() { return computeSummaries; },
     get SUMMARY_DEFER_CELL_LIMIT() { return SUMMARY_DEFER_CELL_LIMIT; },
     get summaryByColumn() { return summaryByColumn; },
-    set summaryByColumn(v) { summaryByColumn = v as never; },
     get hasMeasured() { return hasMeasured; },
     set hasMeasured(v) { hasMeasured = v as never; },
     get scrollBottomArmed() { return scrollBottomArmed; },
@@ -3859,6 +3931,10 @@ export function createSvGridController<
   const { showTooltipFor, hideTooltip, flushScheduledScrollSync, scheduleScrollSync, onBodyScroll } = createScrollSync<TFeatures, TData>(ctx);
   const { onGridKeyDown, onWindowKeydown, onHeaderSortClick } = createKeyboard<TFeatures, TData>(ctx);
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
+  // Hand the aggregator to `eagerSummaries` (declared above `ctx`, which this
+  // needs). Plain assignment during init - no effect, so SSR gets it too.
+  summarize = computeSummaries;
+
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);

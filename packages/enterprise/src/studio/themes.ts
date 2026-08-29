@@ -9,7 +9,9 @@
  * shell, grids, charts, KPIs, forms - not just the accent.
  *
  * Pure + node-safe (studio subtree): plain data + helpers, so the same tokens
- * drive the browser preview and the emitted `+layout.svelte` / `app.css`.
+ * drive the browser preview and every emitted output - `app.css` for the full
+ * app and the fragment, the `<svelte:head>` of the CLI `add` scaffolds - via
+ * `themeTokenCss` below, the single place the token CSS is built.
  */
 import {
   themePresets,
@@ -52,6 +54,30 @@ export function resolveThemeTokens(theme?: ProjectTheme): Record<string, string>
 export function resolveThemeTokensFor(theme: ProjectTheme | undefined, mode: 'light' | 'dark'): Record<string, string> {
   const preset = getStudioTheme(theme?.preset) ?? defaultStudioTheme
   return resolveTokens(preset, mode, theme?.accent)
+}
+
+/**
+ * The `--sg-*` token rules for a project theme, as CSS text. `:root` carries
+ * the mode picked in Studio (what the server-rendered page shows before
+ * hydration), and both palettes are scoped by `[data-theme]` on `<html>` for
+ * the generated app's light/dark switcher. An explicit accent override is
+ * applied to both. No theme -> the default preset, so every output is themed.
+ *
+ * `layer` wraps the rules in a cascade layer. Use it for drop-in outputs (the
+ * fragment, `svgrid-studio add`): layered declarations lose to unlayered ones,
+ * so a host app that already defines its own `--sg-*` tokens keeps winning.
+ */
+export function themeTokenCss(theme?: ProjectTheme, opts: { layer?: string } = {}): string {
+  const decl = (m: Record<string, string>) => Object.entries(m).map(([k, v]) => `  ${k}: ${v};`).join('\n')
+  const mode: ThemeMode = isDarkTheme(theme) ? 'dark' : 'light'
+  const light = resolveThemeTokensFor(theme, 'light')
+  const dark = resolveThemeTokensFor(theme, 'dark')
+  const rules = [
+    `:root {\n${decl(mode === 'dark' ? dark : light)}\n  color-scheme: ${mode};\n}`,
+    `:root[data-theme="light"] {\n${decl(light)}\n  color-scheme: light;\n}`,
+    `:root[data-theme="dark"] {\n${decl(dark)}\n  color-scheme: dark;\n}`,
+  ].join('\n')
+  return opts.layer ? `@layer ${opts.layer} {\n${rules}\n}` : rules
 }
 
 /** An inline `style` string (`--sg-x: y; ...; color-scheme; font-family`) for previews. */

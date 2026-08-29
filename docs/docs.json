@@ -1,10 +1,10 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-26T22:34:22.738Z",
+  "generatedAt": "2026-08-29T07:01:53.536Z",
   "counts": {
-    "pages": 365,
-    "enterprise": 55,
+    "pages": 347,
+    "enterprise": 54,
     "withDemo": 209
   },
   "pillars": [
@@ -25,8 +25,7 @@
         "help/headless",
         "help/server",
         "help/state",
-        "recipes",
-        "reference"
+        "recipes"
       ]
     },
     {
@@ -51,9 +50,7 @@
       "blurb": "Licensing, support, compliance, legal.",
       "sections": [
         "enterprise",
-        "compliance",
-        "legal",
-        "brand"
+        "compliance"
       ]
     }
   ],
@@ -344,28 +341,6 @@
       ]
     },
     {
-      "id": "reference",
-      "title": "API reference",
-      "pillar": "grid",
-      "pages": [
-        "reference/auto/index.md",
-        "reference/auto/svgrid-enterprise-ai.md",
-        "reference/auto/svgrid-enterprise-export.md",
-        "reference/auto/svgrid-enterprise-import.md",
-        "reference/auto/svgrid-enterprise-install.md",
-        "reference/auto/svgrid-enterprise-pivot.md",
-        "reference/auto/svgrid-grid-core.md",
-        "reference/auto/svgrid-grid-svgrid-wrapper.types.md",
-        "reference/bundle-size.md",
-        "reference/ColumnDef.md",
-        "reference/enterprise.md",
-        "reference/features.md",
-        "reference/headless-engine.md",
-        "reference/SvGrid.md",
-        "reference/SvGridApi.md"
-      ]
-    },
-    {
       "id": "enterprise/studio",
       "title": "Studio",
       "pillar": "studio",
@@ -637,50 +612,9 @@
         "compliance/soc2.md",
         "compliance/vpat.md"
       ]
-    },
-    {
-      "id": "legal",
-      "title": "Legal",
-      "pillar": "company",
-      "pages": [
-        "legal/EULA.md"
-      ]
-    },
-    {
-      "id": "brand",
-      "title": "Brand",
-      "pillar": "company",
-      "pages": [
-        "brand/company-description.md",
-        "brand/social/README.md"
-      ]
     }
   ],
   "pages": [
-    {
-      "path": "brand/company-description.md",
-      "url": "/docs/brand/company-description/",
-      "title": "SvGrid - Company / Brand Description",
-      "summary": "*About the company and brand behind SvGrid. For partner listings, press kits, marketplace profiles, and procurement forms. Product descriptions live elsewhere.*",
-      "section": "brand",
-      "pillar": "company",
-      "tier": "community",
-      "words": 753,
-      "lastUpdated": "2026-07-21",
-      "demoIds": []
-    },
-    {
-      "path": "brand/social/README.md",
-      "url": "/docs/brand/social/README/",
-      "title": "GitHub social preview images",
-      "summary": "On-brand 1280x640 cards for GitHub's repo **Social preview** (Settings -> General -> Social preview). All are PNG, 1280x640 (GitHub's recommended size), and well under the 1 MB upload limit.",
-      "section": "brand",
-      "pillar": "company",
-      "tier": "community",
-      "words": 200,
-      "lastUpdated": "2026-06-29",
-      "demoIds": []
-    },
     {
       "path": "changelog.md",
       "url": "/docs/changelog/",
@@ -689,8 +623,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 1621,
-      "lastUpdated": "2026-08-03",
+      "words": 2139,
+      "lastUpdated": "2026-08-28",
       "demoIds": []
     },
     {
@@ -914,8 +848,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1182,
-      "lastUpdated": "2026-08-19",
+      "words": 1229,
+      "lastUpdated": "2026-08-27",
       "demoIds": []
     },
     {
@@ -1478,8 +1412,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 810,
-      "lastUpdated": "2026-08-18",
+      "words": 963,
+      "lastUpdated": "2026-08-29",
       "demoIds": []
     },
     {
@@ -1520,8 +1454,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 611,
-      "lastUpdated": "2026-08-18",
+      "words": 1020,
+      "lastUpdated": "2026-08-28",
       "demoIds": []
     },
     {
@@ -2451,8 +2385,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 580,
-      "lastUpdated": "2026-07-02",
+      "words": 578,
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "186-headless-table"
       ]
@@ -2465,8 +2399,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 510,
-      "lastUpdated": "2026-07-02",
+      "words": 500,
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "189-headless-shared-state"
       ]
@@ -2479,8 +2413,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 485,
-      "lastUpdated": "2026-07-21",
+      "words": 717,
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "186-headless-table"
       ]
@@ -2493,8 +2427,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 540,
-      "lastUpdated": "2026-07-03",
+      "words": 564,
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "190-headless-row-models"
       ]
@@ -2507,8 +2441,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 725,
-      "lastUpdated": "2026-07-03",
+      "words": 737,
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "191-headless-server-side"
       ]
@@ -2535,8 +2469,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 523,
-      "lastUpdated": "2026-07-02",
+      "words": 537,
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "187-headless-virtual"
       ]
@@ -4812,18 +4746,6 @@
       "demoIds": []
     },
     {
-      "path": "legal/EULA.md",
-      "url": "/docs/legal/EULA/",
-      "title": "SVGRID END USER LICENSE AGREEMENT",
-      "summary": "Version 1.0",
-      "section": "legal",
-      "pillar": "company",
-      "tier": "community",
-      "words": 1680,
-      "lastUpdated": "2026-08-15",
-      "demoIds": []
-    },
-    {
       "path": "recipes/autosave-with-debounce.md",
       "url": "/docs/recipes/autosave-with-debounce/",
       "title": "Auto-save edits with debounce",
@@ -4866,11 +4788,12 @@
       "url": "/docs/recipes/between-date-filter/",
       "title": "Between-operator filters for date ranges",
       "summary": "\"From / to\" date range as one filter, not two.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 99,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -4918,11 +4841,12 @@
       "url": "/docs/recipes/chartjs-sync/",
       "title": "Chart.js sync from grid filter state",
       "summary": "A chart that re-renders from api.getDisplayedRows() on every filter / sort change.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 100,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "73-chartjs-sync"
       ]
@@ -4932,11 +4856,12 @@
       "url": "/docs/recipes/conditional-row-coloring/",
       "title": "Conditional row coloring",
       "summary": "rowClass returns a class map per row; CSS does the rest.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "62-conditional-styling"
       ]
@@ -4982,11 +4907,12 @@
       "url": "/docs/recipes/drag-drop-columns/",
       "title": "Drag-drop columns to reorder",
       "summary": "Re-order columns by dragging them in a side panel; live grid reflects the new order.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 105,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "54-columns-hierarchy"
       ]
@@ -4996,11 +4922,12 @@
       "url": "/docs/recipes/external-search/",
       "title": "External search box with highlighted matches",
       "summary": "A search input outside the grid filters the visible rows AND highlights matched substrings inline.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 108,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "69-highlighted-search"
       ]
@@ -5034,11 +4961,12 @@
       "url": "/docs/recipes/heatmap-cells/",
       "title": "Heatmap-tinted numeric cells",
       "summary": "Bucket cell values into red/amber/neutral/green tints based on per-column min/max.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "60-pivot-expandable"
       ]
@@ -5062,11 +4990,12 @@
       "url": "/docs/recipes/lazy-load-expand/",
       "title": "Lazy-load expand on demand",
       "summary": "Tree rows where children are fetched only when the user expands their parent.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 103,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "31-lazy-tree-load"
       ]
@@ -5088,11 +5017,12 @@
       "url": "/docs/recipes/million-rows/",
       "title": "1 million rows with virtualization",
       "summary": "Row + column virtualization configured for very wide / very tall data.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 101,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "78-million-rows"
       ]
@@ -5102,11 +5032,12 @@
       "url": "/docs/recipes/mobile-card-pivot/",
       "title": "Mobile card view with grid-on-desktop",
       "summary": "Same data, two layouts. Auto-pivot below 720px or force one via a toolbar switch.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 106,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "81-mobile-card-view"
       ]
@@ -5116,11 +5047,12 @@
       "url": "/docs/recipes/multi-sheet-export/",
       "title": "Multi-sheet xlsx export",
       "summary": "One workbook, multiple tabs - one per group / region / period.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 102,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "59-export-multi-sheet"
       ]
@@ -5130,11 +5062,12 @@
       "url": "/docs/recipes/nl-filter/",
       "title": "NL filter wired to your LLM",
       "summary": "\"show last quarter > $10k sorted by date\" - one natural-language input drives setFilter + setSort.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 102,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -5156,11 +5089,12 @@
       "url": "/docs/recipes/pin-first-column/",
       "title": "Pin first column on horizontal scroll",
       "summary": "Wide grids where the row-label column must stay visible while the data scrolls horizontally.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 101,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "25-column-pinning"
       ]
@@ -5182,11 +5116,12 @@
       "url": "/docs/recipes/role-based-editing/",
       "title": "Role-based editable columns",
       "summary": "Different user roles can edit different cells; the grid hides editors per-row via the editable callback.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 100,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "41-healthcare-emr"
       ]
@@ -5196,11 +5131,12 @@
       "url": "/docs/recipes/saved-filter-sets/",
       "title": "Saved filter sets",
       "summary": "Name and recall named filter combinations; round-trip via api.getFilters / setFilter.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -5236,11 +5172,12 @@
       "url": "/docs/recipes/smart-paste/",
       "title": "Smart paste: CSV / TSV / free-form → typed rows",
       "summary": "Paste anything; the assistant infers columns and previews typed rows for accept/update/skip.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 110,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "75-ai-smart-paste"
       ]
@@ -5250,11 +5187,12 @@
       "url": "/docs/recipes/sparkline-cells/",
       "title": "Sparkline cell renderer",
       "summary": "In-cell mini-charts of a value series, rendered via inline SVG.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 95,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "11-stock-market"
       ]
@@ -5279,8 +5217,8 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 723,
-      "lastUpdated": "2026-08-18",
+      "words": 795,
+      "lastUpdated": "2026-08-28",
       "demoIds": []
     },
     {
@@ -5288,11 +5226,12 @@
       "url": "/docs/recipes/theme-matched-export/",
       "title": "Theme-matched xlsx export",
       "summary": "Excel file colours follow the same --sg-* tokens the grid renders with.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 100,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "56-export-theme-matched"
       ]
@@ -5302,11 +5241,12 @@
       "url": "/docs/recipes/theme-presets/",
       "title": "Theme tokens for Ant / MUI / Fluent / shadcn",
       "summary": "Map your design system's tokens to --sg-* and the grid re-skins.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 106,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "74-theme-integrations"
       ]
@@ -5330,11 +5270,12 @@
       "url": "/docs/recipes/undo-redo-edits/",
       "title": "Undo / redo for grid edits",
       "summary": "Maintain a history stack of cell edits; Ctrl+Z / Ctrl+Y replay backwards / forwards.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 107,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "55-state-maintenance"
       ]
@@ -5356,194 +5297,15 @@
       "url": "/docs/recipes/websocket-streaming/",
       "title": "WebSocket streaming with backpressure",
       "summary": "Live tick stream with pause / resume / disconnect-and-replay and per-tick delta merge.",
+      "noindex": true,
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
       "words": 103,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-08-28",
       "demoIds": [
         "34-realtime-orders"
       ]
-    },
-    {
-      "path": "reference/auto/index.md",
-      "url": "/docs/reference/auto/index/",
-      "title": "Auto-generated reference",
-      "summary": "_Generated from the published TypeScript sources. Do not edit by hand - rerun node tools/build-reference.mjs._",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 71,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-enterprise-ai.md",
-      "url": "/docs/reference/auto/svgrid-enterprise-ai/",
-      "title": "`@svgrid/enterprise` · `ai.ts`",
-      "summary": "Auto-generated. Source: packages\\enterprise\\src\\ai.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 908,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-enterprise-export.md",
-      "url": "/docs/reference/auto/svgrid-enterprise-export/",
-      "title": "`@svgrid/enterprise` · `export.ts`",
-      "summary": "Auto-generated. Source: packages\\enterprise\\src\\export.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 723,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-enterprise-import.md",
-      "url": "/docs/reference/auto/svgrid-enterprise-import/",
-      "title": "`@svgrid/enterprise` · `import.ts`",
-      "summary": "Auto-generated. Source: packages\\enterprise\\src\\import.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 474,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-enterprise-install.md",
-      "url": "/docs/reference/auto/svgrid-enterprise-install/",
-      "title": "`@svgrid/enterprise` · `install.ts`",
-      "summary": "Auto-generated. Source: packages\\enterprise\\src\\install.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 216,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-enterprise-pivot.md",
-      "url": "/docs/reference/auto/svgrid-enterprise-pivot/",
-      "title": "`@svgrid/enterprise` · `pivot.ts`",
-      "summary": "Auto-generated. Source: packages\\enterprise\\src\\pivot.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 545,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-grid-core.md",
-      "url": "/docs/reference/auto/svgrid-grid-core/",
-      "title": "`@svgrid/grid` · `core.ts`",
-      "summary": "Auto-generated. Source: packages\\grid\\src\\core.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 2791,
-      "lastUpdated": "2026-07-02",
-      "demoIds": []
-    },
-    {
-      "path": "reference/auto/svgrid-grid-svgrid-wrapper.types.md",
-      "url": "/docs/reference/auto/svgrid-grid-svgrid-wrapper.types/",
-      "title": "`@svgrid/grid` · `svgrid-wrapper.types.ts`",
-      "summary": "Auto-generated. Source: packages\\grid\\src\\svgrid-wrapper.types.ts.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 248,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/bundle-size.md",
-      "url": "/docs/reference/bundle-size/",
-      "title": "Bundle size",
-      "summary": "What SvGrid costs in your bundle, how to reproduce the number on your branch, and what to do if size matters.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 712,
-      "lastUpdated": "2026-08-25",
-      "demoIds": []
-    },
-    {
-      "path": "reference/ColumnDef.md",
-      "url": "/docs/reference/ColumnDef/",
-      "title": "`ColumnDef` reference",
-      "summary": "A column definition is the contract between the grid and one column of data. Pass an array of these as the columns prop to <SvGrid>.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 903,
-      "lastUpdated": "2026-07-02",
-      "demoIds": []
-    },
-    {
-      "path": "reference/enterprise.md",
-      "url": "/docs/reference/enterprise/",
-      "title": "Enterprise reference",
-      "summary": "Everything that @svgrid/enterprise adds on top of the Community surface. Install + license: see Enterprise feature pack.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "enterprise",
-      "words": 788,
-      "lastUpdated": "2026-08-19",
-      "demoIds": []
-    },
-    {
-      "path": "reference/features.md",
-      "url": "/docs/reference/features/",
-      "title": "Features reference",
-      "summary": "A \"feature\" is a small bundle of state + helpers the grid engine checks for when wiring its row-model pipeline. Register only what you use - each feature ships about 1-2 KB gzipped and adds a small per-update cost.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 634,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/headless-engine.md",
-      "url": "/docs/reference/headless-engine/",
-      "title": "Headless engine",
-      "summary": "createSvGrid(options) returns a table object with:",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 657,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
-    },
-    {
-      "path": "reference/SvGrid.md",
-      "url": "/docs/reference/SvGrid/",
-      "title": "`<SvGrid>` reference",
-      "summary": "The render component. One <SvGrid> element per grid instance.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 1184,
-      "lastUpdated": "2026-08-24",
-      "demoIds": []
-    },
-    {
-      "path": "reference/SvGridApi.md",
-      "url": "/docs/reference/SvGridApi/",
-      "title": "`SvGridApi` reference",
-      "summary": "The imperative API exposed via <SvGrid onApiReady={(api) => ...}>. Use it for data, column, filter, sort, group, selection, and visibility operations from outside the component.",
-      "section": "reference",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 520,
-      "lastUpdated": "2026-06-16",
-      "demoIds": []
     },
     {
       "path": "why-headless.md",

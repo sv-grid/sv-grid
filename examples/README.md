@@ -55,6 +55,17 @@ and runs as part of `pnpm lint`.
 
 Most demos need nothing - the shared layer handles collapsing KPI strips,
 wrapping toolbars, stacking fixed-px panel splits, and letting flex rows shrink.
+
+Height matters as much as width. The pane that holds the grid
+(`<div class="flex-1 min-h-0">` under the root section) is floored at 360px on
+phones: everything above it is `shrink-0`, so without the floor a tall KPI
+strip or a wrapped chip toolbar squeezes the grid to 0px inside the
+fixed-height shell - and since nothing overflows, the page cannot even scroll
+to it (the trading desk did exactly this on a Galaxy S24 Ultra). With the
+floor the surplus overflows into the shell's `<main>`, which scrolls. A demo
+with heavy chrome should still trim it on phones in its own `<style>` (see the
+`@media (max-width: 639px)` block in `00-trading-desk.svelte`) so the grid gets
+the screen rather than the floor.
 A demo that genuinely cannot fit a phone (a gantt canvas, a scheduler console)
 keeps its desktop layout and **pans inside the demo stage** instead of being cut
 off. Opt in from the demo's own `<style>`, and tag the element so the audit
@@ -79,7 +90,49 @@ pnpm test:e2e:mobile        # the phone-viewport regression gate
 
 `audit:mobile` fails if the page can scroll sideways, and separately lists
 content that an ancestor clips - correct for a carousel track, silent data loss
-for anything the reader needs.
+for anything the reader needs. It also reports a starved grid pane, content cut
+off at the bottom by a non-scrolling ancestor (`vcut`), and content wider than
+its own box (`spill`). Add `--shots=DIR` to save a phone screenshot per demo,
+and `--vp=384x745` to use a Galaxy S24 Ultra with the URL bar showing instead
+of the default iPhone 13 metrics.
+
+Sweep landscape too (`--vp=844x390`): a phone on its side matches no width
+query, only `(max-height: 500px) and (pointer: coarse)`, and a 390px-tall
+screen is where fixed-height shells clip the most. A demo-side rule that only
+fixes heights (not a stacking rule) should carry both guards:
+`@media (max-width: 639px), (max-height: 500px) and (pointer: coarse)`.
+
+And tablet portrait (`--vp=768x1024`). It is the same trap in a third shape:
+above every width query here, so none of this layer applies, while the stage
+is only ~720px. Both shells now drawer the sidebar there (it otherwise left a
+432px stage - narrower than on a phone), and the layer's last block restores
+just the contained pan, so the chart demos' 560px side panel stays reachable.
+All three extra shapes are gated on `pointer: coarse`, which is what makes
+them provably invisible to a desktop window of the same size.
+
+The audit's `starved` gate scales with viewport height, so at 1024px tall it
+wants a 364px pane; a demo reported at ~350px there is fine, not a regression.
+
+Two layout traps the sweep keeps finding, both fixed with a phone-only rule in
+the demo's `<style>`:
+
+- A card that hides overflow (rounded corners) and sits in a flex column has an
+  automatic minimum height of 0, so it shrinks to whatever the stage has left
+  and clips its own footer. Give it `flex-shrink: 0` (or `flex: 1 0 auto` if it
+  is the `flex-1` pane) on phones and let the page scroll.
+- A CSS-grid layout with a definite height hands its rows only the leftover
+  space, so once the grid row is floored the side panel's row gets cut. Use
+  `grid-auto-rows: max-content` on phones and cap the panel's list with a
+  `max-height` so it scrolls inside its card.
+
+Two more worth knowing, because the fix differs by orientation:
+
+- In **landscape** a stacking fix is the wrong tool - the layout is still a row
+  at 844px, so `flex: 1 0 auto` there sizes *widths*. Let the over-tall child
+  scroll instead (`overflow-y: auto`), which is what 122/124 do.
+- Width caps still matter in landscape even though it is 844px wide: an editor
+  sits in a panel or a form cell, not the viewport. That is why the fixed-width
+  control caps are repeated in the landscape block.
 
 ## Layout
 

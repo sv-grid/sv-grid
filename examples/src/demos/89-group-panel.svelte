@@ -478,4 +478,13 @@
   :global(td.region-americas) { color: #6366f1; font-weight: 600; }
   :global(td.region-emea)     { color: #14b8a6; font-weight: 600; }
   :global(td.region-apac)     { color: #ec4899; font-weight: 600; }
+  /* Phone: the row is label + drop zone + Expand/Collapse/Clear. The buttons keep
+     their width (and the shared layer gives them a 40px touch target), which left
+     the drop zone 14px wide with its chips painting over everything. Give the zone
+     a line of its own and let the chips keep their size. */
+  @media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+    .gp-row { flex-wrap: wrap; }
+    .gp-panel { flex-basis: 100%; }
+    .gp-chip { flex-shrink: 0; }
+  }
 </style>

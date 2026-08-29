@@ -1000,4 +1000,9 @@
   .drill-deal-amt    { font-weight: 600; font-variant-numeric: tabular-nums; }
   .drill-deal-units  { font-size: 11px; color: var(--sg-muted, #64748b); }
   .drill-empty       { font-size: 12px; color: var(--sg-muted, #64748b); padding: 6px 0; text-align: center; }
+  /* Phone: the card is a flex-basis-0 pane, so it stayed at the 360px floor while its
+     toolbar + grid + footer needed ~470 and the footer was clipped. Size it to content. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .pivot-card { flex: 1 0 auto; }
+  }
 </style>

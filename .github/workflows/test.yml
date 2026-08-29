@@ -82,7 +82,7 @@ jobs:
         # config includes them, so nothing ran them and all three drifted red.
         # studio-docs + ui-docs read website/src/lib/docs.ts, which needs the
         # private submodule checked out above.
-        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts
+        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts
 
       - name: Demo count + quoted claims
         # The registry and examples/src/demos/ must agree, and every "370+
@@ -106,6 +106,16 @@ jobs:
         # during SSR. Nothing tested it, so the docs claimed working SSR for a
         # long time while the server shipped an empty shell.
         run: pnpm ssr:check
+
+      - name: Headless entry runs under plain Node
+        # @svgrid/grid/core exists to run the pipeline where there is no DOM, and
+        # every such consumer is a bare Node process. The source is written for
+        # `moduleResolution: bundler`, so dist/ carried extensionless relative
+        # specifiers that Vite, SvelteKit and vitest all resolved and Node did
+        # not - `import('@svgrid/grid/core')` died with ERR_MODULE_NOT_FOUND while
+        # the whole suite stayed green, because nothing ran the built files
+        # outside a bundler.
+        run: pnpm node:check
 
       - name: Bundle size budget
         # Guards the lazy boundaries. A static import of something meant to load

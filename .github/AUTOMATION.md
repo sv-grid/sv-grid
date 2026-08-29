@@ -6,7 +6,7 @@ Three scheduled GitHub Actions keep the package and the blog moving without manu
 | --- | --- | --- | --- |
 | Daily blog post | [daily-blog.yml](workflows/daily-blog.yml) | 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
 | Publish npm package | [publish-npm.yml](workflows/publish-npm.yml) | 06:37 | Publishes `@svgrid/grid` to npm, but only when its source changed. |
-| Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Rebuilds the site so posts whose date has arrived go live. |
+| Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Regenerates the blog's SEO structure (tips pages, pillar hubs, "Related reading" blocks), then rebuilds the site so posts whose date has arrived go live. |
 
 ## Required secrets and variables
 
@@ -37,8 +37,24 @@ which leaves a long review window. The 1200x630 hero/social image is generated a
 build time from the post's frontmatter ([tools/blog-card.mjs](../tools/blog-card.mjs)), so no image
 file is committed.
 
-- Preview without committing: run the workflow manually with `dry_run: true`, or locally with `node tools/generate-blog-post.mjs --dry-run` (needs `ANTHROPIC_API_KEY` in your env).
+- The subject comes from [tools/blog-topics.json](../tools/blog-topics.json), a priority-ordered list of search queries. Each entry names the demos and docs the post has to link and the API identifiers its code has to use; the generator checks all of that before writing, and the post carries a keyword-led `seoTitle` / `seoDescription`. A topic counts as done once `website/src/content/blog/<slug>.md` exists, so the queue file never changes when a post ships. An empty queue is a no-op run. `node tools/generate-blog-post.mjs --list-topics` shows the queue; `tools/seo-guardrails.test.ts` fails CI when an entry points at a demo, doc or API name that does not exist.
+- Preview without committing: run the workflow manually with `dry_run: true`, or locally with `node tools/generate-blog-post.mjs --next --dry-run` (needs `ANTHROPIC_API_KEY` in your env). `--freeform` restores the old "model picks a topic" behaviour for one-offs.
 - House rules are enforced in the prompt and sanitized in the output: no em-dash glyphs, straight quotes only.
+
+## How the blog's SEO structure stays current
+
+The generated post is a bare article. Three scripts turn the pile of posts into a topic cluster,
+and the deploy runs them against the freshly cloned website before every build (`pnpm blog:seo`
+runs the same three locally):
+
+1. [tools/twitter/build-tips-pages.mjs](../tools/twitter/build-tips-pages.mjs) - the four tips pages the daily tip tweet deep-links into, from `tools/twitter/tips-data.mjs`.
+2. [tools/blog-pillars.mjs](../tools/blog-pillars.mjs) - the three pillar hubs (comparisons, integrations, guides) listing every published post.
+3. [tools/blog-internal-links.mjs](../tools/blog-internal-links.mjs) - a "Related reading" block on every post, linking only to posts already published.
+
+Their output is never committed: it is rebuilt from the day's post set on each deploy, so a post
+that goes live today is linked from its siblings and hubs the same day. Pillar and tips pages keep a
+fixed publish date so regenerating does not reset their age. The prerender also emits the blog's
+RSS feed at `/feed.xml` (latest 30 published posts, full content) and advertises it from every page.
 
 ## Note on the version-bump and blog commits
 

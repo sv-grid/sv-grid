@@ -43,6 +43,19 @@ describe('scaffoldApp', () => {
     expect(layout).toContain('CRM')
   })
 
+  it('the layout ships the theme tokens (default Ember) in a cascade layer so a host app keeps its own', () => {
+    const layout = byPath['src/routes/+layout.svelte']!.contents
+    expect(layout).toContain('<svelte:head><style>')
+    expect(layout).toContain('@layer svgrid-studio {')
+    expect(layout).toContain('--sg-header-bg: #fafaf9') // Ember light surface
+    expect(layout).toContain(':root[data-theme="dark"]')
+    // A picked preset + dark start mode flow through.
+    const dark = scaffoldApp([companies], { theme: 'material', dark: true }).files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    expect(dark).toContain('--sg-accent: #6750a4') // Material 3 accent
+    expect(dark).toMatch(/:root \{[^}]*color-scheme: dark;/)
+    expect(() => compile(dark, { filename: '+layout.svelte', generate: 'client' })).not.toThrow()
+  })
+
   it('the sidebar is collapsible and starts collapsed on tablet / phone', () => {
     const layout = byPath['src/routes/+layout.svelte']!.contents
     // Off-canvas drawer driven by a collapse toggle + a <= 1024px media query.

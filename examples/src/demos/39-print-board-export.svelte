@@ -702,4 +702,8 @@ ${coverHtml}
   /* Print uses a sandbox popup (see `doPrint`), so we don't need
    * `@media print` rules in this scoped stylesheet - every CSS the
    * paper view sees is embedded directly in the popup's document head. */
+  /* Phone: the grand-total figure is wider than its cell and painted over the label. */
+  @media (max-width: 639px), (max-height: 500px) and (pointer: coarse) {
+    .pb-grand-value { font-size: 14px; overflow-wrap: anywhere; }
+  }
 </style>

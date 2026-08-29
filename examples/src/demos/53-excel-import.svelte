@@ -813,4 +813,10 @@
     padding: 24px;
     gap: 4px;
   }
+  /* Landscape phone: the KPI strip stays 5-up (there is width for it) but each cell is
+     ~150px, so the tracked uppercase labels and the 22px figures ran past them. */
+  @media (max-height: 500px) and (pointer: coarse) {
+    .imp-kpi-label { letter-spacing: 0.02em; overflow-wrap: anywhere; }
+    .imp-kpi-value { font-size: 17px; overflow-wrap: anywhere; }
+  }
 </style>

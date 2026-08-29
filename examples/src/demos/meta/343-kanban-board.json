@@ -1,0 +1,18 @@
+{
+  "description": "Turn a Svelte data grid into a Kanban board with one prop. The same <SvGrid> rows and columns render as a table or as lanes bucketed by a status field; dragging a card to another lane fires onCardMove so you update your own data, and WIP limits, an add-card button and a rich card snippet with an avatar and a priority chip complete the board. The board renderer ships in @svgrid/enterprise.",
+  "keywords": ["svelte kanban board", "svelte kanban", "sveltekit kanban", "svelte drag and drop board", "kanban board component"],
+  "faq": [
+    {
+      "question": "How do I build a Kanban board in Svelte 5?",
+      "answer": "Give <SvGrid> the same data and columns you use for the table and set the board prop with the field to bucket lanes by (status in this demo). Cards are your rows, and the lane order follows that field's values."
+    },
+    {
+      "question": "What happens when a card is dragged to another lane?",
+      "answer": "SvGrid raises onCardMove with the card and the target lane. You assign the new status on your own row object (and reorder if you want), so the board never keeps a copy of your data."
+    },
+    {
+      "question": "Is the Kanban board free?",
+      "answer": "The grid and its data model are MIT in @svgrid/grid; the board renderer is part of @svgrid/enterprise. It runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

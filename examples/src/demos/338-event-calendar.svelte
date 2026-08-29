@@ -138,6 +138,12 @@
   .ev__time { flex: none; font-weight: 650; font-variant-numeric: tabular-nums; opacity: 0.85; }
   .ev__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ev__more { font-size: 10.5px; font-weight: 600; color: var(--sg-muted, #64748b); padding-inline-start: 2px; }
+  /* Phone: a day cell is ~45px wide, so dot + time + title only ever showed
+     "09:" - drop the time and let the title take what is left. */
+  @media (max-width: 639px) {
+    .ev { padding: 1px 4px; gap: 3px; }
+    .ev__time { display: none; }
+  }
 
   .detail {
     border: 1px solid var(--sg-border, #e2e8f0); border-radius: 12px; padding: 14px 16px;

@@ -34,7 +34,19 @@
     "headless",
     "headless-table",
     "virtual-scroll",
+    "virtual-scrolling",
+    "virtualization",
+    "sortable",
+    "filterable",
+    "pagination",
+    "tree-grid",
+    "pivot-table",
     "spreadsheet",
+    "ag-grid-alternative",
+    "tanstack-table",
+    "tanstack-table-alternative",
+    "svelte-headless-table",
+    "svelte-headless-table-alternative",
     "typescript",
     "svgrid"
   ],
@@ -110,7 +122,7 @@
     "test:types": "svelte-check --tsconfig ./tsconfig.json",
     "test:lib": "vitest run --coverage",
     "test:build": "publint --strict",
-    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-themes.mjs",
+    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-themes.mjs",
     "lint": "eslint ./src"
   },
   "devDependencies": {

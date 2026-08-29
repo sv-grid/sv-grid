@@ -418,14 +418,14 @@ async function askScreens(schemas: EntitySchema[], flags: InitFlags, prompts: Pr
 async function askTheme(flags: InitFlags, prompts: PromptIO): Promise<ProjectTheme | undefined> {
   let preset = flags.theme?.trim().toLowerCase()
   if (preset && !getStudioTheme(preset)) {
-    prompts.say(`  ! Unknown theme "${preset}" - using tailwind.`)
+    prompts.say(`  ! Unknown theme "${preset}" - using ember.`)
     preset = undefined
   }
   if (!preset && !flags.yes) {
     const i = await pick(prompts, 'Theme:', studioThemes.map((t) => ({ label: t.name, hint: t.id })))
     preset = studioThemes[i]?.id
   }
-  preset ??= 'tailwind'
+  preset ??= 'ember'
   const dark = flags.dark ?? (flags.yes ? false : isYes(await prompts.ask('Dark mode? (y/N)', 'n'), false))
   return { preset, mode: dark ? 'dark' : 'light' }
 }

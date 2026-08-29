@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Multi-sheet xlsx export
 
 > Live in [demo 59-export-multi-sheet](https://svgrid.com/demos/59-export-multi-sheet/).

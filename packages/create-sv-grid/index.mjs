@@ -34,6 +34,14 @@ const TEMPLATES = {
     // copy, fall back to the canonical source.
     fallback: join(__dirname, '..', '..', 'templates', 'sveltekit-admin-dashboard'),
   },
+  headless: {
+    label: 'Headless     - createSvGrid engine, your own <table> and CSS',
+    bundled: join(__dirname, 'templates', 'headless'),
+    // No <SvGrid>, so no preset stylesheet and nothing for --theme to write to.
+    // Asking the theme questions here would collect two answers and apply
+    // neither.
+    theme: false,
+  },
 }
 
 const RENAME_BACK = new Map([
@@ -84,7 +92,8 @@ ${Object.entries(TEMPLATES)
   .join('\n')}
 
 ${color('bold', 'Options')}
-  --theme <id>       One of: ${THEME_IDS.join(', ')} (default: tailwind).
+  --theme <id>       One of: ${THEME_IDS.join(', ')} (default: ember).
+                     Ignored by headless, which ships no stylesheet to theme.
   --dark / --light   Pin the starting mode. Left out, minimal and sveltekit
                      follow the visitor's OS; admin-dashboard starts dark.
   --force            Scaffold into a non-empty directory.
@@ -119,17 +128,17 @@ async function promptTheme(args, ask, interactive) {
 
   let themeId = args.theme ? args.theme.trim().toLowerCase() : null
   if (themeId && !themes.getThemePreset(themeId)) {
-    stdout.write(`${color('yellow', '!')} Unknown theme "${themeId}" - using tailwind. (${THEME_IDS.join(', ')})\n`)
+    stdout.write(`${color('yellow', '!')} Unknown theme "${themeId}" - using ember. (${THEME_IDS.join(', ')})\n`)
     themeId = null
   }
   if (!themeId && interactive) {
     const list = themes.themePresets.map((t, i) => `  ${i + 1}. ${t.name} ${color('dim', `(${t.id})`)}`).join('\n')
     stdout.write(`\n${color('bold', 'Theme')}\n${list}\n`)
-    const choice = await ask('Pick a number or id:', 'tailwind')
+    const choice = await ask('Pick a number or id:', 'ember')
     const byIndex = themes.themePresets[Number(choice) - 1]
-    themeId = byIndex ? byIndex.id : (themes.getThemePreset(choice.trim().toLowerCase())?.id ?? 'tailwind')
+    themeId = byIndex ? byIndex.id : (themes.getThemePreset(choice.trim().toLowerCase())?.id ?? 'ember')
   }
-  themeId ??= 'tailwind'
+  themeId ??= 'ember'
 
   let mode = args.mode
   if (!mode && interactive) {
@@ -427,9 +436,16 @@ async function main() {
     process.exit(1)
   }
 
-  // 3b. Theme + light/dark mode. Both templates carry the full --sg-* palette
-  // and a toggle, so both get asked.
-  const themeChoice = await promptTheme(args, ask, interactive)
+  // 3b. Theme + light/dark mode - only for templates that render <SvGrid> and
+  // therefore carry a --sg-* palette. headless has no stylesheet to write to,
+  // so it is neither asked nor told a theme; say so if flags implied otherwise.
+  const themed = TEMPLATES[template].theme !== false
+  if (!themed && (args.theme || args.mode)) {
+    stdout.write(
+      `${color('yellow', '!')} ${template} has no stylesheet to theme - ignoring --theme/--dark/--light.\n`,
+    )
+  }
+  const themeChoice = themed ? await promptTheme(args, ask, interactive) : null
   if (rl) rl.close()
 
   // 4. Scaffold.

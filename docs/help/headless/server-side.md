@@ -21,7 +21,7 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
 
 ```svelte
 <script lang="ts">
-  import { createSvGrid, createCoreRowModel, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
 
   type Row = { id: number; name: string; dept: string; salary: number }
 
@@ -56,17 +56,19 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
 
   // 3. The engine wraps ONLY the returned page - no filtered/sorted/paginated
   //    row model, because the server already did all of that.
-  const columns: ColumnDef<Record<string, never>, Row>[] = [
+  const features = tableFeatures({})   // the server sorts, filters and pages
+  const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'name', header: 'Name' },
     { field: 'dept', header: 'Department' },
     { field: 'salary', header: 'Salary' },
   ]
   const table = $derived.by(() =>
     createSvGrid({
+      _features: features,
       _rowModels: { coreRowModel: createCoreRowModel<Row>() },
       data: pageRows,
       columns,
-    } as never),
+    }),
   )
   const rows = $derived(table.getRowModel().rows)
   const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)))

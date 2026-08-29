@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # 1 million rows with virtualization
 
 > Live in [demo 78-million-rows](https://svgrid.com/demos/78-million-rows/).

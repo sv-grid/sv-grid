@@ -1,3 +1,7 @@
+---
+noindex: true
+---
+
 # Sparkline cell renderer
 
 > Live in [demo 11-stock-market](https://svgrid.com/demos/11-stock-market/).

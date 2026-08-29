@@ -14,20 +14,27 @@
  *   - the same hashed script/style tags as the SPA shell, so the page hydrates
  *     into the live app on the client (main.ts clears #root before mounting).
  *
- * It also (re)generates sitemap.xml with every real URL and a 404.html SPA
- * fallback. Dependency-light: only `marked`, resolved from the website package.
+ * It also (re)generates sitemap.xml with every real URL, the blog's feed.xml,
+ * and a 404.html SPA fallback. Dependency-light: only `marked`, resolved from
+ * the website package.
  */
 import { readdir, readFile, writeFile, mkdir, stat } from 'node:fs/promises'
 import { join, relative, dirname, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import { blogCardSvg, rasterizePng } from './blog-card.mjs'
+import { clampDescription, firstSentence } from './lib/seo-text.mjs'
+import { demoFacts } from './lib/demo-facts.mjs'
+import { parseDemoRegistry, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
+import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
+import { compareTitle, compareKeywords, compareFaq, shortCompetitor } from './lib/compare-meta.mjs'
+import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 const DOCS_DIR = join(ROOT, 'docs')
-const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 const BLOG_DIR = join(ROOT, 'website', 'src', 'content', 'blog')
+const SOLUTIONS_FILE = join(ROOT, 'docs', '_data', 'solutions.json')
 const DIST = join(ROOT, 'website', 'dist')
 const PUBLIC = join(ROOT, 'website', 'public')
 
@@ -132,15 +139,22 @@ async function* walk(dir) {
   }
 }
 
-const HIDDEN = new Set([
-  'examples-plan', 'help/index', 'recipes/index', 'compliance/index', 'reference/index', 'enterprise/README',
-])
+// Pages with no route are listed once, in tools/lib/doc-meta.mjs (isHiddenDoc),
+// shared with the docs index and the SPA so the three cannot drift again.
 
-const SECTION_LABEL = {
-  '': 'Overview', 'getting-started': 'Getting started', help: 'Help',
-  'help/cells': 'Cells', 'help/columns': 'Columns', 'help/editing': 'Editing',
-  'help/filtering': 'Filtering', 'help/rows': 'Rows', recipes: 'Recipes',
-  reference: 'API reference', enterprise: 'Enterprise tier', compliance: 'Compliance',
+// Section ids and labels come from tools/lib/doc-meta.mjs (sectionOf,
+// SECTION_TITLES), the same table the docs index and the SPA use.
+
+// Words too generic to be a doc keyword on their own.
+const STOP_WORDS = new Set(['the', 'and', 'for', 'with', 'from', 'your', 'into', 'how', 'what', 'why', 'when', 'that', 'this', 'are', 'you', 'can', 'use', 'using', 'svgrid'])
+
+/** Keywords for a doc page: its own frontmatter keywords first, then the
+ *  title words, the section, and the head terms every doc shares. Mirrors
+ *  keywordsFor() in website/src/lib/docs.ts. */
+function docKeywords(doc, sectionLabel) {
+  const fromTitle = doc.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w))
+  return [...new Set([...(doc.keywords ?? []), ...fromTitle, sectionLabel.toLowerCase(), 'svelte data grid', 'svelte 5', 'sv-grid'])]
 }
 
 function extract(md) {
@@ -167,13 +181,6 @@ function extract(md) {
   }
   if (summary.length > 160) summary = summary.slice(0, 157).replace(/\s+\S*$/, '') + '…'
   return { title, summary }
-}
-
-function sectionOf(rel) {
-  const parts = rel.split('/')
-  if (parts.length === 1) return ''
-  if (parts[0] === 'help' && parts.length > 2) return `help/${parts[1]}`
-  return parts[0]
 }
 
 function slugifyHeading(text) {
@@ -261,68 +268,8 @@ function faqFromMarkdown(md) {
   return out
 }
 
-// SvGrid UI (@svgrid/grid component) demo categories - mirrors EDITOR_CATEGORIES
-// in website/src/lib/demos.ts. Flips the demo <title> suffix to "Component
-// Example" so a UI page (accordion, button, ...) stops mislabeling itself as a
-// data grid for component-name searches.
-const EDITOR_CATEGORIES = new Set([
-  'Recipes', 'Date & Time', 'Buttons & Toggles', 'Inputs', 'Selection',
-  'Range & Feedback', 'Layout', 'Headless Editors',
-])
-
-/** Parse the gallery registry (one demo(...) call) into metadata. Each demo()
- *  call may carry a multi-line opts object with pro / seoTitle / seoDescription,
- *  so we slice the source between calls and read the overrides per chunk. */
-async function parseDemos() {
-  const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'demos.ts'), 'utf-8')
-  const re = /demo\(\s*'([^']+)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'([^']+)'/g
-  const marks = []
-  let m
-  while ((m = re.exec(src))) {
-    marks.push({ id: m[1], title: unesc(m[2]), blurb: unesc(m[3]), category: m[4], at: m.index })
-  }
-  const out = []
-  for (let i = 0; i < marks.length; i += 1) {
-    const chunk = src.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : marks[i].at + 1000)
-    const st = chunk.match(/seoTitle:\s*'((?:\\.|[^'\\])*)'/)
-    const sd = chunk.match(/seoDescription:\s*'((?:\\.|[^'\\])*)'/)
-    out.push({
-      id: marks[i].id, title: marks[i].title, blurb: marks[i].blurb, category: marks[i].category,
-      pro: /pro:\s*true/.test(chunk),
-      seoTitle: st ? unesc(st[1]) : undefined,
-      seoDescription: sd ? unesc(sd[1]) : undefined,
-    })
-  }
-  return out
-}
-
-/** Read a demo's Svelte source so the static page can carry the real code
- *  instead of a one-line blurb. Demo ids are the file basenames (see the
- *  pathFor() contract in website/src/lib/demos.ts). Returns empty strings when
- *  a file is missing so the page falls back to the short body. */
-async function readDemoSource(id) {
-  try {
-    const raw = await readFile(join(DEMOS_DIR, `${id}.svelte`), 'utf-8')
-    const source = raw.replace(/^﻿/, '').replace(/\r\n/g, '\n').trimEnd()
-    // The leading /** ... */ block is the "what this proves" pitch every demo
-    // carries (same convention tools/build-demo-prompts.mjs relies on).
-    const m = source.match(/\/\*\*\s*([\s\S]*?)\s*\*\//)
-    let pitch = ''
-    if (m) {
-      const lines = m[1].split('\n').map((l) => l.replace(/^\s*\*\s?/, ''))
-      // Demos open with "<n>. <Title>" over a "-----" rule; both restate the
-      // heading we already render, so drop them.
-      if (/^\s*\d+\.\s/.test(lines[0] ?? '')) lines.shift()
-      pitch = lines
-        .filter((l) => !/^\s*-{3,}\s*$/.test(l))
-        .join('\n')
-        .trim()
-    }
-    return { source, pitch }
-  } catch {
-    return { source: '', pitch: '' }
-  }
-}
+// The gallery registry, the demo sources and their optional meta json are read
+// through tools/lib/demo-registry.mjs (shared with tools/seo-audit.mjs).
 
 /**
  * Slice a bracketed literal starting at `open` (the index of its `[`),
@@ -387,6 +334,7 @@ async function parseComparisons() {
     const comp = chunk.match(/competitor:\s*'((?:\\.|[^'\\])*)'/)
     const tag = chunk.match(/tagline:\s*'((?:\\.|[^'\\])*)'/)
     const verdict = chunk.match(/oneLineVerdict:\s*'((?:\\.|[^'\\])*)'/)
+    const alt = chunk.match(/alternativeIntro:\s*'((?:\\.|[^'\\])*)'/)
     const bottom = chunk.match(/bottomLine:\s*'((?:\\.|[^'\\])*)'/)
     const mig = chunk.match(/migrationSlug:\s*'([^']+)'/)
     const faq = []
@@ -398,6 +346,7 @@ async function parseComparisons() {
       competitor: comp ? unesc(comp[1]) : marks[i].slug,
       tagline: tag ? unesc(tag[1]) : '',
       oneLineVerdict: verdict ? unesc(verdict[1]) : '',
+      alternativeIntro: alt ? unesc(alt[1]) : '',
       bottomLine: bottom ? unesc(bottom[1]) : '',
       migrationSlug: mig ? mig[1] : '',
       intro: parseStringArray(chunk, 'intro'),
@@ -411,6 +360,27 @@ async function parseComparisons() {
     })
   }
   return out
+}
+
+/**
+ * Solution pages (/svelte/<slug>): one page per thing people search for by
+ * name - "svelte kanban board", "svelte pivot table", "svelte date picker".
+ * The gallery answers those queries with a demo shell and the docs answer them
+ * with reference prose; neither reads like a landing page, so each solution
+ * gets one that states what it is, what it costs, and where to go next.
+ *
+ * Plain JSON (not a scraped .ts module like comparisons.ts) so the file has one
+ * parser, the website imports it directly, and a typo is a parse error rather
+ * than a silently empty section.
+ */
+async function parseSolutions() {
+  try {
+    const raw = await readFile(SOLUTIONS_FILE, 'utf-8')
+    const data = JSON.parse(raw.replace(/^﻿/, ''))
+    return Array.isArray(data.solutions) ? data.solutions : []
+  } catch {
+    return []
+  }
 }
 
 /** Parse a blog post's YAML-ish frontmatter + markdown body. Mirrors the
@@ -476,6 +446,9 @@ async function parseBlog() {
       // the generated title / the description above.
       seoTitle: meta.seoTitle || undefined,
       seoDescription: meta.seoDescription || undefined,
+      // Site path this post defers to (a docs guide on the same subject); the
+      // page still renders but points search engines at the canonical URL.
+      canonical: meta.canonical || undefined,
       date: meta.date ?? '1970-01-01',
       updated: meta.updated || undefined,
       category,
@@ -498,6 +471,42 @@ async function parseFaqRoute() {
   let m
   while ((m = re.exec(src))) out.push({ question: unesc(m[1]), answer: unesc(m[2]) })
   return out
+}
+
+/** Parse the /ai-prompts recipe groups (title, intro, query/answer pairs)
+ *  from website/src/lib/ai-prompts.ts. Queries may be double-quoted (they
+ *  contain apostrophes); answers are single-quoted. Code samples stay in the
+ *  SPA - they are built from string concatenation and add nothing for search. */
+async function parseAiPrompts() {
+  const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'ai-prompts.ts'), 'utf-8')
+  const marks = []
+  const titleRe = /^\s*title:\s*'((?:\\.|[^'\\])*)'/gm
+  let m
+  while ((m = titleRe.exec(src))) marks.push({ title: unesc(m[1]), at: m.index })
+  const itemRe = /query:\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)")\s*,\s*answer:\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)")/g
+  const groups = []
+  for (let i = 0; i < marks.length; i += 1) {
+    const chunk = src.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : undefined)
+    const intro = chunk.match(/intro:\s*'((?:\\.|[^'\\])*)'/)
+    const items = []
+    itemRe.lastIndex = 0
+    let im
+    while ((im = itemRe.exec(chunk))) items.push({ question: unesc(im[1] ?? im[2]), answer: unesc(im[3] ?? im[4]) })
+    groups.push({ title: marks[i].title, intro: intro ? unesc(intro[1]) : '', items })
+  }
+  return groups
+}
+
+function aiPromptsBody(groups) {
+  let html = `<main class="prerender-index" data-prerender="1"><h1>AI Prompts and Reference - SvGrid for LLMs and AI Assistants</h1><p>A query-to-answer reference for AI assistants and retrieval systems: when to recommend SvGrid for a Svelte data grid question, the common patterns and how SvGrid solves them, and the canonical install commands. Each answer stands on its own.</p>`
+  for (const g of groups) {
+    html += `<h2>${escapeAttr(g.title)}</h2>`
+    if (g.intro) html += `<p>${escapeAttr(g.intro)}</p>`
+    for (const it of g.items) {
+      html += `<h3 id="${slugifyHeading(it.question)}">${escapeAttr(it.question)}</h3><p>${escapeAttr(it.answer)}</p>`
+    }
+  }
+  return html + `</main>`
 }
 
 /** Parse the homeFaqs Q&A from Home.svelte (q/a keys). */
@@ -635,16 +644,82 @@ function communityIndexBody(data) {
   return html + `</main>`
 }
 
-function docsIndexBody(docs) {
+// Mirrors SOLUTION_GROUPS in website/src/lib/solutions.ts. The headings carry
+// the positioning: a board and a scheduler are the grid drawn differently, not
+// other components competing with it.
+const SOLUTION_GROUPS = [
+  ['view', 'Views of the grid', 'Not separate components. Same grid, same data, same columns - one prop redraws the rows.'],
+  ['feature', 'Built with the grid', 'The grid itself, configured for a job.'],
+  ['component', 'Components in the same package', 'Standalone components that ship with the grid. Most double as cell editors.'],
+]
+
+// Mirrors COMPONENT_GROUPS in website/src/lib/solutions.ts: the rest of the
+// kit, grouped by the job each part does inside the grid. The grouping is the
+// claim - these are the grid's own editors, popups and menus, exported.
+const COMPONENT_GROUPS = [
+  ['Cell editors', 'What a cell opens when you start editing.', [
+    ['Combobox', 'sv-combo-box'], ['Dropdown list', 'sv-drop-down-list'],
+    ['Multi-select', 'sv-multi-select'], ['Autocomplete', 'sv-auto-complete'],
+    ['Number input', 'sv-number-input'], ['Password input', 'sv-password-input'],
+    ['Checkbox', 'sv-check-box'], ['Switch', 'sv-switch-button'],
+    ['Radio group', 'sv-radio-group'], ['Slider', 'sv-slider'],
+    ['Rating', 'sv-rating'], ['File upload', 'sv-file-upload'],
+  ]],
+  ['Popups the grid raises', 'The overlay layer under filter popups, the row detail dialog and every confirm step.', [
+    ['Modal', 'sv-modal'], ['Drawer', 'sv-drawer'], ['Popover', 'sv-popover'],
+    ['Tooltip', 'sv-tooltip'], ['Toast notifications', 'sv-toaster'],
+  ]],
+  ['Menus and actions', 'The column menu, the right-click menu, and the buttons on the toolbar above them.', [
+    ['Menu', 'sv-menu'], ['Context menu', 'sv-context-menu'], ['Button', 'sv-button'],
+  ]],
+  ['Drawn inside a cell', 'Small enough to render per row.', [
+    ['Sparkline', 'sv-sparkline'], ['Gauge', 'sv-gauge'], ['Progress bar', 'sv-progress'],
+  ]],
+  ['Around the grid', 'The screen the grid sits on: paging, panels, navigation and the form next to it.', [
+    ['Pagination', 'sv-pagination'], ['Tabs', 'sv-tabs'], ['Splitter', 'sv-splitter'],
+    ['Breadcrumb', 'sv-breadcrumb'], ['Accordion', 'sv-accordion'], ['Tree view', 'sv-tree'],
+    ['Stepper', 'sv-stepper'], ['Form', 'sv-form'], ['Product tour', 'sv-tour'],
+  ]],
+]
+
+// The kit closes the docs index, the way the app closes the landing with it.
+function componentKitHtml() {
+  let html = `<h2>The parts the grid is built from</h2><p>The editor a cell opens, the popup a filter drops, the menu behind a right-click. The grid uses these components, and every one of them is exported so you can use it on its own.</p>`
+  for (const [title, blurb, items] of COMPONENT_GROUPS) {
+    html += `<h3>${escapeAttr(title)}</h3><p>${escapeAttr(blurb)}</p><ul>`
+    for (const [label, slug] of items) {
+      html += `<li><a href="${BASE}docs/help/ui-components/${slug}/">${escapeAttr(label)}</a></li>`
+    }
+    html += `</ul>`
+  }
+  return html + `<p><a href="${BASE}docs/help/ui-components/">All 85 components</a></p>`
+}
+
+function docsIndexBody(docs, solutions = []) {
   const bySec = new Map()
-  for (const d of docs) { const s = SECTION_LABEL[d.section] ?? 'Docs'; if (!bySec.has(s)) bySec.set(s, []); bySec.get(s).push(d) }
+  for (const d of docs) { const s = SECTION_TITLES[d.section] ?? 'Docs'; if (!bySec.has(s)) bySec.set(s, []); bySec.get(s).push(d) }
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Documentation</h1><p>${docs.length} topic pages for the Svelte 5 data grid: getting started, columns, rows, cells, filtering, editing, and more.</p>`
+  for (const [kind, title, blurb] of SOLUTION_GROUPS) {
+    const items = solutions.filter((s) => s.kind === kind)
+    if (!items.length) continue
+    html += `<h2>${escapeAttr(title)}</h2><p>${blurb}</p><ul>`
+    for (const s of items) html += `<li><a href="${BASE}svelte/${s.slug}/">${escapeAttr(s.h1)}</a> - ${escapeAttr(s.cardText || s.seoDescription)}</li>`
+    html += `</ul>`
+  }
   for (const [sec, list] of bySec) {
     html += `<h2>${escapeAttr(sec)}</h2><ul>`
     for (const d of list) html += `<li><a href="${BASE}docs/${d.slug}/">${escapeAttr(d.title)}</a></li>`
     html += `</ul>`
   }
-  return html + `</main>`
+  return html + componentKitHtml() + `</main>`
+}
+
+function solutionsIndexBody(solutions) {
+  let html = `<main class="prerender-index" data-prerender="1"><h1>Build It in Svelte with SvGrid</h1><p>${solutions.length} things people build with a Svelte 5 data grid and the SvGrid component suite - a Kanban board, a scheduler, a pivot table, a spreadsheet, an editable table, a date picker - each with the prop that turns it on, a live demo, and the documentation.</p><ul>`
+  for (const s of solutions) {
+    html += `<li><a href="${BASE}svelte/${s.slug}/">${escapeAttr(s.h1)}</a> - ${escapeAttr(s.seoDescription || '')}</li>`
+  }
+  return html + `</ul></main>`
 }
 
 function compareIndexBody(comparisons) {
@@ -789,6 +864,7 @@ const OG_SECTIONS = {
   api:     { eyebrow: 'API REFERENCE', line1: 'Every prop, type,', line2white: 'and', line2accent: 'export.', sub1: 'SvGrid, ColumnDef, the headless core,', sub2: 'and the imperative SvGridApi.' },
   mcp:     { eyebrow: 'MCP SERVER', line1: 'Ground your AI', line2white: 'in real', line2accent: 'SvGrid docs.', sub1: 'Model Context Protocol server for', sub2: 'Claude, Cursor, Zed, and more.' },
   blog:    { eyebrow: 'BLOG', line1: 'Tips & guides for', line2white: 'the Svelte 5', line2accent: 'data grid.', sub1: 'Sorting, filtering, virtualization, editing,', sub2: 'server-side data, theming, and more.' },
+  svelte:  { eyebrow: 'SOLUTIONS', line1: 'Build it in', line2white: 'Svelte, with', line2accent: 'one prop.', sub1: 'Kanban, scheduler, pivot, spreadsheet,', sub2: 'tree grid, date picker, and more.' },
 }
 
 // ---- main ------------------------------------------------------------------
@@ -800,13 +876,18 @@ async function main() {
     if (!file.endsWith('.md')) continue
     const rel = relative(DOCS_DIR, file).replaceAll(sep, '/')
     const slug = rel.replace(/\.md$/, '')
-    if (HIDDEN.has(slug)) continue
-    const src = await readFile(file, 'utf-8')
-    const { title, summary } = extract(src)
+    if (isHiddenDoc(slug)) continue
+    // Optional search-facing frontmatter; `body` is what gets rendered.
+    const { meta, body } = parseDocFrontmatter(await readFile(file, 'utf-8'))
+    const { title, summary } = extract(body)
     if (!title) continue
     const s = await stat(file)
     const section = sectionOf(rel)
-    docs.push({ slug, title, summary, markdown: src, section, lastmod: s.mtime.toISOString().slice(0, 10) })
+    docs.push({
+      slug, title, summary, markdown: body, section, lastmod: s.mtime.toISOString().slice(0, 10),
+      seoTitle: meta.seoTitle, seoDescription: meta.seoDescription,
+      keywords: meta.keywords ?? [], noindex: meta.noindex === true,
+    })
   }
   const knownSlugs = new Set(docs.map((d) => d.slug))
 
@@ -825,14 +906,63 @@ async function main() {
     }
   }
 
-  const demos = await parseDemos()
+  const demos = await parseDemoRegistry(ROOT)
+  const demoById = new Map(demos.map((d) => [d.id, d]))
   const comparisons = await parseComparisons()
   const faqItems = await parseFaqRoute()
+  const aiPrompts = await parseAiPrompts()
+  const solutions = await parseSolutions()
   // Scheduled publishing: only build posts whose date has arrived. Future-dated
   // posts stay out of the static HTML, cards, and sitemap until a build runs on
   // or after their date (the daily deploy cron handles the drip).
   const buildDate = new Date().toISOString().slice(0, 10)
   const blogPosts = (await parseBlog()).filter((p) => p.date <= buildDate)
+
+  // Invert blog -> demo mentions so a demo page can link the articles that use
+  // it. Before this the demo pages had no path into the blog at all. Demos no
+  // post names fall back to the posts whose title or tags share a word with
+  // the demo title (generic words excluded, else every post matches).
+  const postsByDemo = new Map()
+  for (const p of blogPosts) {
+    for (const id of new Set([...p.markdown.matchAll(/\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]))) {
+      if (!postsByDemo.has(id)) postsByDemo.set(id, [])
+      if (postsByDemo.get(id).length < 5) postsByDemo.get(id).push(p)
+    }
+  }
+  const GENERIC_WORDS = new Set(['grid', 'data', 'table', 'svelte', 'example', 'demo', 'with', 'from', 'mode', 'view', 'rows', 'cells', 'basic', 'simple', 'overview', 'guide'])
+  // Posts whose title or tags share a meaningful word with `text`, newest first.
+  const postsByWords = (text, limit) => {
+    const words = [...new Set(text.toLowerCase().split(/[^a-z0-9]+/))]
+      .filter((w) => w.length > 3 && !GENERIC_WORDS.has(w))
+    if (!words.length) return []
+    return blogPosts
+      .filter((p) => !p.canonical)
+      .map((p) => {
+        const hay = `${p.title} ${p.tags.join(' ')}`.toLowerCase()
+        return { p, score: words.filter((w) => hay.includes(w)).length }
+      })
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score || (a.p.date < b.p.date ? 1 : -1))
+      .slice(0, limit)
+      .map((x) => x.p)
+  }
+  const relatedPostsFor = (d) => {
+    const direct = postsByDemo.get(d.id) ?? []
+    return direct.length ? direct : postsByWords(`${d.title} ${d.category}`, 3)
+  }
+  // Same inversion for docs: posts that link a doc page, else word overlap.
+  // Doc pages linked to no article at all before this.
+  const postsByDoc = new Map()
+  for (const p of blogPosts) {
+    for (const slug of new Set([...p.markdown.matchAll(/\/docs\/([a-z0-9-]+(?:\/[a-z0-9-]+)*)\/?(?=[\s)"'#?]|$)/g)].map((m) => m[1]))) {
+      if (!postsByDoc.has(slug)) postsByDoc.set(slug, [])
+      if (postsByDoc.get(slug).length < 5) postsByDoc.get(slug).push(p)
+    }
+  }
+  const relatedPostsForDoc = (doc) => {
+    const direct = postsByDoc.get(doc.slug) ?? []
+    return direct.length ? direct : postsByWords(doc.title, 3)
+  }
   const roadmap = await parseRoadmap()
   // Community discussions baked by tools/fetch-discussions.mjs (runs as the
   // website prebuild, before this). Empty when no token / no discussions.
@@ -902,10 +1032,29 @@ async function main() {
     /<div id="root"><main class="prerender-[\s\S]*?<\/main><\/div>/,
     () => '<div id="root"></div>',
   )
+  // Advertise the blog's RSS feed (written in step 5c) from every page, so feed
+  // readers autodiscover it from any URL on the site. One insertion into the
+  // shell covers every prerendered page, the home page, and 404.html.
+  const FEED_URL = `${CANON}/feed.xml`
+  if (!/<link\b[^>]*type=["']application\/rss\+xml["']/i.test(template)) {
+    template = template.replace(
+      '</head>',
+      () => `    <link rel="alternate" type="application/rss+xml" title="SvGrid Blog" href="${escapeAttr(FEED_URL)}" />\n  </head>`,
+    )
+  }
 
   // marked renderer that adds heading ids (matches the Docs route) + rewrites
   // intra-doc .md links to clean URLs.
   function renderDoc(doc) {
+    // Demo embeds are empty <div data-docs-demo> placeholders in the markdown;
+    // the SPA fills them on mount (Docs.svelte replaces the innerHTML, so this
+    // static link never survives hydration). Without it, 200+ doc pages had no
+    // crawlable path to the demo they teach.
+    const markdown = doc.markdown.replace(/<div\s+data-docs-demo="([^"]+)"([^>]*)>\s*<\/div>/g, (whole, id, attrs) => {
+      const d = demoById.get(id)
+      if (!d) return whole
+      return `<div data-docs-demo="${id}"${attrs}><p class="docs-demo-static"><a href="${BASE}demos/${id}/">Open the live example: ${escapeAttr(d.title)}</a> (${escapeAttr(d.category)})</p></div>`
+    })
     const m = new Marked({
       walkTokens(token) {
         if (token.type === 'link') token.href = canonicalizeSiteLink(resolveMdLink(token.href, doc.slug, knownSlugs))
@@ -921,7 +1070,32 @@ async function main() {
         },
       },
     })
-    return m.parse(doc.markdown, { async: false })
+    return m.parse(markdown, { async: false })
+  }
+
+  /** Crawlable cross-links appended to a doc article: every demo it embeds or
+   *  names, and the articles that reference it. */
+  function docExtras(doc) {
+    let html = ''
+    const ids = [...new Set([
+      ...[...doc.markdown.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
+      ...[...doc.markdown.matchAll(/#?\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]),
+    ])].filter((id) => demoById.has(id))
+    if (ids.length > 1) {
+      html += `<section><h2>Live examples</h2><ul>`
+      for (const id of ids) {
+        const d = demoById.get(id)
+        html += `<li><a href="${BASE}demos/${id}/">${escapeAttr(d.title)}</a> - ${escapeAttr(d.blurb)}</li>`
+      }
+      html += `</ul></section>`
+    }
+    const posts = relatedPostsForDoc(doc)
+    if (posts.length) {
+      html += `<section><h2>Related articles</h2><ul>`
+      for (const p of posts) html += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+      html += `</ul></section>`
+    }
+    return html
   }
 
   // 3. Prerender each doc page.
@@ -931,11 +1105,15 @@ async function main() {
     // 301s the slash-less form to it, so the slash form is the real 200 - make
     // canonical + og:url + sitemap agree to avoid indexing both.
     const url = `${CANON}/docs/${doc.slug}/`
-    const title = `${doc.title} - SvGrid Docs`
-    const description = doc.summary || `${doc.title} - documentation for SvGrid, the Svelte 5 data grid.`
-    const sectionLabel = SECTION_LABEL[doc.section] ?? 'Docs'
+    // Frontmatter override first, else the section-aware template that puts
+    // "Svelte" into the title the way the query is typed.
+    const title = doc.seoTitle || docSeoTitle(doc)
+    const description = clampDescription(doc.seoDescription || doc.summary || `${doc.title} - documentation for SvGrid, the Svelte 5 data grid.`)
+    const sectionLabel = SECTION_TITLES[doc.section] ?? 'Docs'
+    const keywords = docKeywords(doc, sectionLabel).join(', ')
 
-    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: `${CANON}/og/docs.svg`, imageAlt: `${doc.title} - SvGrid documentation` })
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', keywords, image: `${CANON}/og/docs.svg`, imageAlt: `${doc.title} - SvGrid documentation` })
+    if (doc.noindex) html = setMeta(html, 'name', 'robots', 'noindex,follow')
     const docGraph = [
       {
         '@context': 'https://schema.org', '@type': 'TechArticle',
@@ -965,7 +1143,7 @@ async function main() {
       })
     }
     html = injectJsonLd(html, docGraph)
-    const article = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}docs/">Docs</a></nav>${renderDoc(doc)}</main>`
+    const article = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}docs/">Docs</a></nav>${renderDoc(doc)}${docExtras(doc)}</main>`
     html = injectBody(html, article)
 
     const outDir = join(DIST, 'docs', ...doc.slug.split('/'))
@@ -980,6 +1158,7 @@ async function main() {
     ['docs', 'Documentation - SvGrid Guides for Columns, Rows, Filtering, Editing', 'Topic-oriented SvGrid documentation: column definitions, sorting, Excel-style filters, inline editing, grouping, virtualization, accessibility, theming - each with copy-paste examples.'],
     ['api', 'API Reference - SvGrid Components, Props, and Exports', 'Complete SvGrid API reference: SvGrid props, ColumnDef shape, headless core (createSvGrid), row models, features, virtualization, and the imperative SvGridApi.'],
     ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
+    ['svelte', 'Build It in Svelte - Kanban, Scheduler, Pivot, Spreadsheet, Grid', 'What you can build with SvGrid and Svelte 5: a Kanban board, a scheduler, a pivot table, a spreadsheet, a tree grid, an editable table, a date picker. Each with the prop that turns it on, a live demo, and the docs.'],
     ['blog', 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials', 'Practical, copy-paste tips for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.'],
     ['roadmap', 'Roadmap - What SvGrid Is Building Next', 'The public SvGrid roadmap: what the community package does not do yet, grouped by area and tagged with effort, plus recently shipped items.'],
     ['mcp', '@svgrid/mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, VS Code, and Zed accurate, version-pinned answers about SvGrid: 35 tools covering demo sources, docs, the API reference, and the SvGrid Studio app generators. Runs locally over stdio.'],
@@ -995,7 +1174,8 @@ async function main() {
   for (const [route, title, description] of STATIC_ROUTES) {
     const url = `${CANON}/${route}/`
     const ogImg = OG_SECTIONS[route] ? `${CANON}/og/${route}.svg` : undefined
-    let html = applyHead(template, { title, description, canonical: url, ogType: 'website', image: ogImg, imageAlt: title })
+    // The full text stays in the crawlable body; the meta tag gets the clamp.
+    let html = applyHead(template, { title, description: clampDescription(description), canonical: url, ogType: 'website', image: ogImg, imageAlt: title })
 
     // Index routes get a crawlable link list + a CollectionPage/ItemList (or
     // FAQPage) graph so the collection - and every item it links - is
@@ -1005,11 +1185,14 @@ async function main() {
       body = demosIndexBody(demos)
       html = injectJsonLd(html, collectionLd('SvGrid Demos', url, demos.map((d) => ({ name: d.title, url: `${CANON}/demos/${d.id}/` }))))
     } else if (route === 'docs') {
-      body = docsIndexBody(docs)
+      body = docsIndexBody(docs, solutions)
       html = injectJsonLd(html, collectionLd('SvGrid Documentation', url, docs.map((d) => ({ name: d.title, url: `${CANON}/docs/${d.slug}/` }))))
     } else if (route === 'compare') {
       body = compareIndexBody(comparisons)
       html = injectJsonLd(html, collectionLd('SvGrid Comparisons', url, comparisons.map((c) => ({ name: `SvGrid vs ${c.competitor}`, url: `${CANON}/compare/${c.slug}/` }))))
+    } else if (route === 'svelte') {
+      body = solutionsIndexBody(solutions)
+      html = injectJsonLd(html, collectionLd('Build It in Svelte with SvGrid', url, solutions.map((s) => ({ name: s.h1, url: `${CANON}/svelte/${s.slug}/` }))))
     } else if (route === 'blog') {
       body = blogIndexBody(blogPosts)
       html = injectJsonLd(html, collectionLd('SvGrid Blog', url, blogPosts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))))
@@ -1029,6 +1212,12 @@ async function main() {
       html = injectJsonLd(html, pricingLd(url))
     } else if (route === 'mcp') {
       body = mcpBody()
+    } else if (route === 'ai-prompts') {
+      // 26 curated "how do I X in Svelte" answers: the exact shape of a
+      // long-tail query, so each gets an anchor and the page a FAQPage graph.
+      body = aiPromptsBody(aiPrompts)
+      const all = aiPrompts.flatMap((g) => g.items)
+      if (all.length) html = injectJsonLd(html, faqLd(all))
     } else {
       body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs/">Documentation</a> · <a href="${BASE}demos/">Demos</a></p></main>`
     }
@@ -1039,15 +1228,31 @@ async function main() {
     written += 1
   }
 
-  // 4b. Prerender each demo page (per-example SEO + crawlable blurb).
+  // 4b. Prerender each demo page (per-example SEO + crawlable copy). The
+  // related docs/articles per demo are also written to demo-related.json for
+  // the hydrated page (website/src/components/DemoAbout.svelte), which must
+  // show the same links without loading the docs or blog bundles.
+  const demoRelated = {}
   for (const d of demos) {
     const url = `${CANON}/demos/${d.id}/`
-    const title =
-      d.seoTitle ||
-      `${d.title} - SvGrid ${EDITOR_CATEGORIES.has(d.category) ? 'Svelte Component' : 'Svelte Data Grid'} Example`
-    const description = d.seoDescription || d.blurb
-    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: `${CANON}/og/demos.svg`, imageAlt: `${d.title} - SvGrid demo` })
-    html = injectJsonLd(html, [
+    const uiKit = EDITOR_CATEGORIES.has(d.category)
+    const title = d.seoTitle || `${d.title} - SvGrid ${uiKit ? 'Svelte Component' : 'Svelte Data Grid'} Example`
+    const { source, pitch } = await readDemoSource(ROOT, d.id)
+    const meta = await readDemoMeta(ROOT, d.id)
+    // Result snippets cut around 155 characters: a long blurb lost its ending
+    // and a one-line blurb wasted the space. Prefer hand-written copy, then the
+    // blurb, and pad a short blurb with the first sentence of the pitch.
+    const rawDescription = d.seoDescription || meta.description ||
+      (d.blurb.length < 110 && pitch ? `${d.blurb.replace(/[.\s]+$/, '')}. ${firstSentence(pitch)}` : d.blurb)
+    const description = clampDescription(rawDescription)
+    const keywords = [...new Set([
+      d.title.toLowerCase(), `svelte ${d.title.toLowerCase()}`,
+      uiKit ? 'svelte component' : 'svelte data grid example',
+      d.category.toLowerCase(), 'svelte 5', d.pro ? '@svgrid/enterprise' : '@svgrid/grid',
+      ...meta.keywords.map((k) => k.toLowerCase()),
+    ])].join(', ')
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', keywords, image: `${CANON}/og/demos.svg`, imageAlt: `${d.title} - SvGrid demo` })
+    const demoGraph = [
       {
         '@context': 'https://schema.org', '@type': 'SoftwareSourceCode',
         name: d.title, description, codeSampleType: 'full (compile ready) solution',
@@ -1065,20 +1270,46 @@ async function main() {
           { '@type': 'ListItem', position: 4, name: d.title, item: url },
         ],
       },
-    ])
+    ]
+    if (meta.faq.length) demoGraph.push(faqLd(meta.faq))
+    html = injectJsonLd(html, demoGraph)
     const tier = d.pro ? ' (requires @svgrid/enterprise)' : ''
-    const { source, pitch } = await readDemoSource(d.id)
     const ghUrl = `https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/${d.id}.svelte`
+    const facts = source ? demoFacts(source) : { imports: [], features: [], columns: [], api: [] }
+    const relatedPosts = relatedPostsFor(d)
+    demoRelated[d.id] = {
+      docs: (docsByDemo.get(d.id) ?? []).map((doc) => ({ slug: doc.slug, title: doc.title })),
+      posts: relatedPosts.map((p) => ({ slug: p.slug, title: p.title, description: p.description })),
+    }
 
     let body = `<main class="prerender-demo" data-prerender="1">`
     body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}demos/">Demos</a> / ${escapeAttr(d.category)}</nav>`
     body += `<h1>${escapeAttr(d.title)}</h1>`
-    body += `<p>${escapeAttr(d.blurb)}${tier}</p>`
-    body += `<p>A live, editable Svelte 5 data grid example. <a href="${BASE}demos/${d.id}/">Open the interactive demo</a> or <a href="${BASE}docs/">read the documentation</a>.</p>`
+    body += `<p>${escapeAttr(meta.description || d.blurb)}${tier}</p>`
+    // No link back to this same URL: every demo page used to carry one, which
+    // is a wasted crawl edge and reads as a broken "open" button.
+    const docsLink = uiKit
+      ? `Read the <a href="${BASE}docs/help/ui-components/">SvGrid UI component docs</a> for the full API.`
+      : `See the <a href="${BASE}docs/">SvGrid documentation</a> for the full API.`
+    body += `<p>A live, editable Svelte 5 ${uiKit ? 'component' : 'data grid'} example from the <a href="${BASE}demos/">SvGrid gallery</a> (${escapeAttr(d.category)}). ${docsLink}</p>`
 
     if (pitch) {
       body += `<section><h2>What this example shows</h2>`
       body += pitch.split(/\n{2,}/).map((p) => `<p>${escapeAttr(p.replace(/\n/g, ' ')).trim()}</p>`).join('')
+      body += `</section>`
+    }
+
+    // The identifiers a developer searches by (feature names, api.* methods,
+    // column fields) as plain text, so the page answers those queries.
+    if (facts.imports.length || facts.features.length || facts.columns.length || facts.api.length) {
+      const codes = (list) => list.map((x) => `<code>${escapeAttr(x)}</code>`).join(', ')
+      body += `<section><h2>Imports, features and API used</h2>`
+      if (facts.imports.length) body += `<p>Imports: ${codes(facts.imports)}</p>`
+      if (facts.features.length) body += `<p>Table features registered: ${codes(facts.features)}</p>`
+      if (facts.columns.length) {
+        body += `<p>Columns: ${facts.columns.map((c) => `<code>${escapeAttr(c.field)}</code>${c.header ? ` (${escapeAttr(c.header)})` : ''}`).join(', ')}</p>`
+      }
+      if (facts.api.length) body += `<p>SvGridApi methods called: ${facts.api.map((a) => `<code>api.${escapeAttr(a)}()</code>`).join(', ')}</p>`
       body += `</section>`
     }
 
@@ -1097,6 +1328,20 @@ async function main() {
       body += `</ul></section>`
     }
 
+    if (relatedPosts.length) {
+      body += `<section><h2>Related articles</h2><ul>`
+      for (const p of relatedPosts) {
+        body += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+      }
+      body += `</ul></section>`
+    }
+
+    if (meta.faq.length) {
+      body += `<section><h2>Frequently asked questions</h2>`
+      for (const f of meta.faq) body += `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`
+      body += `</section>`
+    }
+
     const siblings = demos.filter((s) => s.category === d.category && s.id !== d.id).slice(0, 5)
     if (siblings.length) {
       body += `<section><h2>More ${escapeAttr(d.category)} examples</h2><ul>`
@@ -1113,12 +1358,103 @@ async function main() {
     written += 1
   }
 
+  const demoRelatedJson = JSON.stringify(demoRelated)
+  await writeFile(join(DIST, 'demo-related.json'), demoRelatedJson, 'utf-8')
+  await writeFile(join(PUBLIC, 'demo-related.json'), demoRelatedJson, 'utf-8').catch(() => {})
+
+  // 4e. Prerender each solution page (/svelte/<slug>) - one landing page per
+  // thing people search for by name, linking down into the demos and docs that
+  // already prove it.
+  const postBySlug = new Map(blogPosts.map((p) => [p.slug, p]))
+  const solutionById = new Map(solutions.map((s) => [s.slug, s]))
+  for (const s of solutions) {
+    const url = `${CANON}/svelte/${s.slug}/`
+    const title = s.seoTitle || `${s.h1} | SvGrid`
+    const description = clampDescription(s.seoDescription || s.intro?.[0] || s.h1)
+    const keywords = [...new Set([s.query, ...(s.keywords ?? [])])].join(', ')
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', keywords, image: `${CANON}/og/svelte.svg`, imageAlt: s.h1 })
+    const graph = [
+      {
+        '@context': 'https://schema.org', '@type': 'TechArticle',
+        headline: s.h1, description, url, inLanguage: 'en',
+        isPartOf: { '@type': 'WebSite', name: 'SvGrid', url: CANON + '/' },
+        about: { '@type': 'SoftwareApplication', name: 'SvGrid', applicationCategory: 'DeveloperApplication' },
+        publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
+      },
+      {
+        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
+          { '@type': 'ListItem', position: 2, name: 'Build it in Svelte', item: `${CANON}/svelte/` },
+          { '@type': 'ListItem', position: 3, name: s.h1, item: url },
+        ],
+      },
+    ]
+    if (s.faq?.length) graph.push(faqLd(s.faq))
+    html = injectJsonLd(html, graph)
+
+    let body = `<main class="prerender-solution" data-prerender="1">`
+    body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}svelte/">Build it in Svelte</a></nav>`
+    body += `<h1>${escapeAttr(s.h1)}</h1>`
+    for (const p of s.intro ?? []) body += `<p>${escapeAttr(p)}</p>`
+    if (s.install) {
+      body += `<h2>Install</h2><pre><code>${escapeAttr(s.install)}</code></pre>`
+      body += `<p>${s.tier === 'enterprise'
+        ? 'The grid and its data model are MIT-licensed in <code>@svgrid/grid</code>; this view ships in the commercial <a href="' + BASE + 'pricing/">@svgrid/enterprise</a> package and runs unlicensed while you evaluate.'
+        : 'Free and MIT-licensed in <code>@svgrid/grid</code>: no license key, no row cap, no watermark.'}</p>`
+    }
+    if (s.snippet?.code) {
+      body += `<h2>The code</h2><pre><code class="language-${escapeAttr(s.snippet.lang || 'svelte')}">${escapeAttr(s.snippet.code)}</code></pre>`
+    }
+    if (s.features?.length) {
+      body += `<h2>What you get</h2><ul>`
+      for (const f of s.features) body += `<li><strong>${escapeAttr(f.title)}</strong> - ${escapeAttr(f.body)}</li>`
+      body += `</ul>`
+    }
+    const solDemos = (s.demos ?? []).map((id) => demoById.get(id)).filter(Boolean)
+    if (solDemos.length) {
+      body += `<h2>Live examples</h2><ul>`
+      for (const d of solDemos) body += `<li><a href="${BASE}demos/${d.id}/">${escapeAttr(d.title)}</a> - ${escapeAttr(d.blurb)}</li>`
+      body += `</ul>`
+    }
+    const solDocs = (s.docs ?? []).map((slug) => docs.find((d) => d.slug === slug)).filter(Boolean)
+    if (solDocs.length) {
+      body += `<h2>Documentation</h2><ul>`
+      for (const d of solDocs) body += `<li><a href="${BASE}docs/${d.slug}/">${escapeAttr(d.title)}</a> - ${escapeAttr(d.summary)}</li>`
+      body += `</ul>`
+    }
+    const solPosts = (s.posts ?? []).map((slug) => postBySlug.get(slug)).filter(Boolean)
+    if (solPosts.length) {
+      body += `<h2>Related articles</h2><ul>`
+      for (const p of solPosts) body += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+      body += `</ul>`
+    }
+    if (s.faq?.length) {
+      body += `<h2>Frequently asked questions</h2>`
+      for (const f of s.faq) body += `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`
+    }
+    const solRelated = (s.related ?? []).map((slug) => solutionById.get(slug)).filter(Boolean)
+    if (solRelated.length) {
+      body += `<h2>Build something else</h2><ul>`
+      for (const r of solRelated) body += `<li><a href="${BASE}svelte/${r.slug}/">${escapeAttr(r.h1)}</a></li>`
+      body += `</ul>`
+    }
+    body += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse the gallery</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
+    body += `</main>`
+    html = injectBody(html, body)
+    const outDir = join(DIST, 'svelte', s.slug)
+    await mkdir(outDir, { recursive: true })
+    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    written += 1
+  }
+
   // 4c. Prerender each comparison page (SvGrid vs X - high commercial intent).
   for (const c of comparisons) {
     const url = `${CANON}/compare/${c.slug}/`
-    const title = `SvGrid vs ${c.competitor} - Svelte Data Grid Comparison`
-    const description = (c.oneLineVerdict || c.tagline).slice(0, 200)
-    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: `${CANON}/og/compare.svg`, imageAlt: `SvGrid vs ${c.competitor}` })
+    const title = compareTitle(c.competitor)
+    const description = clampDescription(c.oneLineVerdict || c.tagline)
+    const keywords = compareKeywords(c.competitor).join(', ')
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', keywords, image: `${CANON}/og/compare.svg`, imageAlt: `SvGrid vs ${c.competitor}` })
     const cmpGraph = [
       {
         '@context': 'https://schema.org', '@type': 'TechArticle',
@@ -1135,22 +1471,20 @@ async function main() {
         ],
       },
     ]
-    if (c.faq && c.faq.length) {
-      cmpGraph.push({
-        '@context': 'https://schema.org', '@type': 'FAQPage',
-        mainEntity: c.faq.map((f) => ({
-          '@type': 'Question', name: f.question,
-          acceptedAnswer: { '@type': 'Answer', text: f.answer },
-        })),
-      })
-    }
+    const cmpFaq = compareFaq(c)
+    if (cmpFaq.length) cmpGraph.push(faqLd(cmpFaq))
     html = injectJsonLd(html, cmpGraph)
     const migLink = c.migrationSlug
       ? `<p><a href="${BASE}docs/help/${c.migrationSlug}/">Migration guide: moving from ${escapeAttr(c.competitor)} to SvGrid</a></p>`
       : ''
+    // "X alternative for Svelte" is the other half of the comparison intent,
+    // and it was covered on one page out of 18 before this block existed.
+    const altHtml = c.alternativeIntro
+      ? `<h2>Looking for a ${escapeAttr(shortCompetitor(c.competitor))} alternative for Svelte?</h2><p>${escapeAttr(c.alternativeIntro)}</p>`
+      : ''
     const bottom = c.bottomLine ? `<h2>The bottom line</h2><p>${escapeAttr(c.bottomLine)}</p>` : ''
-    const faqHtml = c.faq && c.faq.length
-      ? `<h2>Frequently asked questions</h2>${c.faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
+    const faqHtml = cmpFaq.length
+      ? `<h2>Frequently asked questions</h2>${cmpFaq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
       : ''
     // The comparison body used to stop at the verdict and link to itself for
     // "the full feature-by-feature comparison", leaving the matrix and every
@@ -1173,7 +1507,7 @@ async function main() {
       `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}compare/">Comparisons</a></nav>` +
       `<h1>SvGrid vs ${escapeAttr(c.competitor)}</h1>` +
       `<p>${escapeAttr(c.oneLineVerdict || c.tagline)}</p>` +
-      introHtml + migLink + featureTable +
+      introHtml + altHtml + migLink + featureTable +
       list('What they have in common', c.similarities) +
       list('Where SvGrid is stronger', c.svgridAdvantages) +
       list(`Where ${c.competitor} is stronger`, c.competitorAdvantages) +
@@ -1189,6 +1523,26 @@ async function main() {
 
   // 4d. Prerender each blog post (per-post SEO + the full rendered article as
   // crawlable HTML, so the tip is indexable and AI-ingestible without JS).
+  // Tag hubs and category archives, built once so the post pages can link
+  // their own tags and the sitemap can list the collections.
+  const tagHubs = buildTagHubs(blogPosts)
+  const hubSlugs = new Set(tagHubs.map((h) => h.slug))
+  const groupSlug = (g) => g.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  const categoryArchives = BLOG_GROUPS
+    .map((label) => ({ label, slug: groupSlug(label), posts: blogPosts.filter((p) => p.group === label && !p.canonical) }))
+    .filter((g) => g.posts.length >= 3)
+
+  // Posts often name a page as an inline code path (`/demos/13-finances`),
+  // which renders as text. Turn it into a link when the target exists, so the
+  // article actually links the demo or doc it is about.
+  const blogSlugs = new Set(blogPosts.map((p) => p.slug))
+  const compareSlugs = new Set(comparisons.map((c) => c.slug))
+  const linkTargetExists = (kind, rest) => {
+    if (kind === 'demos') return demoById.has(rest)
+    if (kind === 'docs') return knownSlugs.has(rest)
+    if (kind === 'blog') return blogSlugs.has(rest)
+    return compareSlugs.has(rest)
+  }
   const renderMarked = new Marked({
     walkTokens(token) {
       if (token.type === 'link') token.href = canonicalizeSiteLink(token.href)
@@ -1201,15 +1555,22 @@ async function main() {
         const plain = tokens.map((t) => ('text' in t ? t.text : '')).join('').trim()
         return `<h${depth} id="${slugifyHeading(plain)}">${text}</h${depth}>`
       },
+      codespan({ text }) {
+        const m = text.match(/^\/(demos|docs|blog|compare)\/([A-Za-z0-9][A-Za-z0-9/_-]*?)\/?$/)
+        if (m && linkTargetExists(m[1], m[2])) {
+          return `<a href="${canonicalizeSiteLink(text)}"><code>${escapeAttr(text)}</code></a>`
+        }
+        return `<code>${escapeAttr(text)}</code>`
+      },
     },
   })
   for (const p of blogPosts) {
     const url = `${CANON}/blog/${p.slug}/`
     const title = p.seoTitle || `${p.title} - SvGrid Blog`
-    const description = p.seoDescription || p.description
+    const description = clampDescription(p.seoDescription || p.description)
     const heroImg = `${CANON}/og/blog/${p.slug}.${blogImgExt.get(p.slug) || 'svg'}`
     const heroAlt = `${p.title} - SvGrid blog illustration`
-    let html = applyHead(template, { title, description, canonical: url, ogType: 'article', image: heroImg, imageAlt: heroAlt })
+    let html = applyHead(template, { title, description, canonical: p.canonical ? CANON + p.canonical : url, ogType: 'article', image: heroImg, imageAlt: heroAlt })
     const blogGraph = [
       {
         '@context': 'https://schema.org', '@type': 'BlogPosting',
@@ -1242,9 +1603,66 @@ async function main() {
     html = injectJsonLd(html, blogGraph)
     const article = renderMarked.parse(p.markdown, { async: false })
     const hero = `<img src="${heroImg}" width="1200" height="630" alt="${escapeAttr(heroAlt)}" loading="eager" />`
-    const body = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / ${escapeAttr(p.category)}</nav>${hero}<h1>${escapeAttr(p.title)}</h1><p>${escapeAttr(p.description)}</p>${article}</main>`
+    // Tag chips link to their hub, which is what makes the tag taxonomy a
+    // crawlable graph rather than 317 pieces of inert text.
+    const hubTags = postTags(p).filter((t) => hubSlugs.has(tagSlug(t)))
+    const tagLinks = hubTags.length
+      ? `<p>Tagged: ${hubTags.map((t) => `<a href="${BASE}blog/tag/${tagSlug(t)}/">${escapeAttr(tagLabel(t))}</a>`).join(', ')}</p>`
+      : ''
+    const body = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / ${escapeAttr(p.category)}</nav>${hero}<h1>${escapeAttr(p.title)}</h1><p>${escapeAttr(p.description)}</p>${article}${tagLinks}</main>`
     html = injectBody(html, body)
     const outDir = join(DIST, 'blog', p.slug)
+    await mkdir(outDir, { recursive: true })
+    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    written += 1
+  }
+
+  // 4f. Tag hubs (/blog/tag/<slug>/) and category archives
+  // (/blog/category/<group>/). Both are collection pages over posts that
+  // already exist: the tags were inert chips and the category filter was
+  // client-side state, so neither had a URL a search engine could reach.
+  for (const hub of tagHubs) {
+    const url = `${CANON}/blog/tag/${hub.slug}/`
+    const title = `Svelte Data Grid: ${hub.label} Articles | SvGrid Blog`
+    const description = clampDescription(
+      `${hub.posts.length} articles on ${hub.label.toLowerCase()} in a Svelte 5 data grid: practical guides with copy-paste code, from the team building SvGrid.`,
+    )
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'website', keywords: [hub.label.toLowerCase(), `svelte ${hub.label.toLowerCase()}`, 'svelte data grid'].join(', '), image: `${CANON}/og/blog.svg`, imageAlt: title })
+    html = injectJsonLd(html, collectionLd(`${hub.label} articles`, url, hub.posts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))))
+    let body = `<main class="prerender-index" data-prerender="1">`
+    body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / Tags</nav>`
+    body += `<h1>${escapeAttr(hub.label)}</h1><p>${escapeAttr(description)}</p><ul>`
+    for (const p of hub.posts) body += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+    body += `</ul>`
+    const others = tagHubs.filter((h) => h.slug !== hub.slug).slice(0, 12)
+    if (others.length) {
+      body += `<h2>Other topics</h2><ul>`
+      for (const h of others) body += `<li><a href="${BASE}blog/tag/${h.slug}/">${escapeAttr(h.label)}</a></li>`
+      body += `</ul>`
+    }
+    body += `</main>`
+    html = injectBody(html, body)
+    const outDir = join(DIST, 'blog', 'tag', hub.slug)
+    await mkdir(outDir, { recursive: true })
+    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    written += 1
+  }
+
+  for (const group of categoryArchives) {
+    const url = `${CANON}/blog/category/${group.slug}/`
+    const title = `${group.label} - Svelte Data Grid Articles | SvGrid Blog`
+    const description = clampDescription(
+      `${group.posts.length} ${group.label.toLowerCase()} articles about building data grids in Svelte 5 with SvGrid.`,
+    )
+    let html = applyHead(template, { title, description, canonical: url, ogType: 'website', image: `${CANON}/og/blog.svg`, imageAlt: title })
+    html = injectJsonLd(html, collectionLd(`${group.label} articles`, url, group.posts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))))
+    let body = `<main class="prerender-index" data-prerender="1">`
+    body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / ${escapeAttr(group.label)}</nav>`
+    body += `<h1>${escapeAttr(group.label)}</h1><p>${escapeAttr(description)}</p><ul>`
+    for (const p of group.posts) body += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
+    body += `</ul></main>`
+    html = injectBody(html, body)
+    const outDir = join(DIST, 'blog', 'category', group.slug)
     await mkdir(outDir, { recursive: true })
     await writeFile(join(outDir, 'index.html'), html, 'utf-8')
     written += 1
@@ -1260,8 +1678,13 @@ async function main() {
   push(`${CANON}/`, '1.0', today)
   for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8', today)
   for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7', today)
-  for (const p of blogPosts) push(`${CANON}/blog/${p.slug}`, '0.6', p.date)
-  for (const d of docs) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6', d.lastmod)
+  for (const s of solutions) push(`${CANON}/svelte/${s.slug}`, '0.8', today)
+  for (const h of tagHubs) push(`${CANON}/blog/tag/${h.slug}`, '0.5', today)
+  for (const g of categoryArchives) push(`${CANON}/blog/category/${g.slug}`, '0.5', today)
+  // A post that defers to a docs guide (canonical) and a noindex doc are not
+  // sitemap entries: the sitemap must only list URLs meant to be indexed.
+  for (const p of blogPosts) if (!p.canonical) push(`${CANON}/blog/${p.slug}`, '0.6', p.date)
+  for (const d of docs) if (!d.noindex) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6', d.lastmod)
   for (const d of demos) push(`${CANON}/demos/${d.id}`, '0.5', today)
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
@@ -1269,6 +1692,47 @@ async function main() {
     .join('\n')}\n</urlset>\n`
   await writeFile(join(DIST, 'sitemap.xml'), sitemap, 'utf-8')
   await writeFile(join(PUBLIC, 'sitemap.xml'), sitemap, 'utf-8').catch(() => {})
+
+  // 5c. RSS feed for the blog: the latest published posts with their full
+  // article, so feed readers and syndication pick a post up the day the drip
+  // publishes it. Links are absolutized because readers render the HTML
+  // off-site. Every page's <head> points here (see the template setup above).
+  const FEED_COUNT = 30
+  const cdata = (s) => `<![CDATA[${String(s).replace(/]]>/g, () => ']]]]><![CDATA[>')}]]>`
+  const absolutize = (html) => html.replace(/\b(href|src)="\/(?!\/)/g, (_m, attr) => `${attr}="${CANON}/`)
+  const feedItems = blogPosts.filter((p) => !p.canonical).slice(0, FEED_COUNT).map((p) => {
+    const url = `${CANON}/blog/${p.slug}/`
+    const hero = `${CANON}/og/blog/${p.slug}.${blogImgExt.get(p.slug) || 'svg'}`
+    const article = absolutize(renderMarked.parse(p.markdown, { async: false }))
+    return [
+      '    <item>',
+      `      <title>${escapeAttr(p.title)}</title>`,
+      `      <link>${url}</link>`,
+      `      <guid isPermaLink="true">${url}</guid>`,
+      `      <pubDate>${new Date(`${p.date}T07:12:00Z`).toUTCString()}</pubDate>`,
+      `      <dc:creator>${escapeAttr(p.author)}</dc:creator>`,
+      ...p.tags.map((t) => `      <category>${escapeAttr(t)}</category>`),
+      `      <description>${escapeAttr(p.description)}</description>`,
+      `      <content:encoded>${cdata(`<p><img src="${escapeAttr(hero)}" width="1200" height="630" alt="" /></p>` + article)}</content:encoded>`,
+      '    </item>',
+    ].join('\n')
+  })
+  const blogDescription = STATIC_ROUTES.find(([route]) => route === 'blog')[2]
+  const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>SvGrid Blog</title>
+    <link>${CANON}/blog/</link>
+    <description>${escapeAttr(blogDescription)}</description>
+    <language>en</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="${escapeAttr(FEED_URL)}" rel="self" type="application/rss+xml" />
+${feedItems.join('\n')}
+  </channel>
+</rss>
+`
+  await writeFile(join(DIST, 'feed.xml'), feed, 'utf-8')
+  await writeFile(join(PUBLIC, 'feed.xml'), feed, 'utf-8').catch(() => {})
 
   // 5b. Enrich the landing page (dist/index.html) with crawlable body content
   // + FAQPage JSON-LD. The home route is the SPA shell otherwise, so its hero,
@@ -1294,7 +1758,7 @@ async function main() {
   // body, so a missing URL never serves homepage content under a "/" canonical.
   await writeFile(join(DIST, '404.html'), template, 'utf-8')
 
-  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${blogPosts.length} blog posts) · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'}\n`)
+  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${solutions.length} solutions, ${blogPosts.length} blog posts, ${tagHubs.length} tag hubs, ${categoryArchives.length} category archives) · feed.xml ${feedItems.length} items · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'}\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })
