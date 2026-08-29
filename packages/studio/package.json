@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "SvGrid Studio CLI: scaffold a full CRUD screen (grid + edit panel + SvelteKit API route) from a Drizzle schema in one command.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",

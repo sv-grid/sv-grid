@@ -6654,7 +6654,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "sortable",
         "label": "Sortable",
         "type": "boolean",
-        "description": "Convenience shortcuts to switch a whole capability on without wiring `features` or the finer-grained props by hand. Every capability is OFF by default - a bare grid is a plain read-only table - so set the shortcut `true` to opt in. (`false` / omitted both leave it off; the shortcut is mainly there to turn things ON.) `sortable` - column sorting (injects `rowSortingFeature`) `filterable` - column filtering (injects `columnFilteringFeature`) `editable` - inline cell editing (alias of `enableInlineEditing`) `groupable` - row grouping controls(alias of `showGroupingControls`, also injects `columnGroupingFeature`) `pageable` - pagination footer (alias of `showPagination`) Fine-grained props (`enableInlineEditing`, `showPagination`, ...) still work; the shortcut wins only when it is explicitly set.",
+        "description": "Convenience shortcuts to switch a whole capability on without wiring `features` or the finer-grained props by hand. Every capability is OFF by default - a bare grid is a plain read-only table - so set the shortcut `true` to opt in. (`false` / omitted both leave it off; the shortcut is mainly there to turn things ON.) `sortable` - column sorting (injects `rowSortingFeature`) `filterable` - column filtering (injects `columnFilteringFeature`) `editable` - inline cell editing (alias of `enableInlineEditing`) `selectable` - cell selection (alias of `enableCellSelection`) `groupable` - row grouping controls(alias of `showGroupingControls`, also injects `columnGroupingFeature`) `pageable` - pagination footer (alias of `showPagination`) Fine-grained props (`enableInlineEditing`, `showPagination`, ...) still work; the shortcut wins only when it is explicitly set.",
         "group": "common"
       },
       {
@@ -6667,6 +6667,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "editable",
         "label": "Editable",
         "type": "boolean",
+        "group": "common"
+      },
+      {
+        "key": "selectable",
+        "label": "Selectable",
+        "type": "boolean",
+        "description": "Cell selection - click a cell to select it, drag or shift-click to extend the selection to a range. Alias of `enableCellSelection`, and the highest priority of the three inputs that decide it: `selectable` -> `enableCellSelection` -> `selectionMode`. NOTE the asymmetry with its siblings, which are all off until you opt in: this one is **ON by default**, because `selectionMode` defaults to `'both'`. It is named here so the capability is discoverable next to the other shortcuts, and so `selectable={false}` is a one-word way to turn cell selection off (the longhand being `selectionMode=\"none\"`, which also removes the row-selection surface). This is the CELL surface only. The selection **checkbox column** is the other half of `selectionMode`, controlled by `showRowSelection` - also on by default, and it needs no feature import (verified: the column renders and toggles rows with an empty `features` set). Use `selectionMode` when you want to move both surfaces at once.",
         "group": "common"
       },
       {
