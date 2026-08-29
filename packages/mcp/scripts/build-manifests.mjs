@@ -5,7 +5,8 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseDocFrontmatter } from '../../../tools/lib/doc-meta.mjs'
+import { parseDocFrontmatter, sectionOf, SECTION_TITLES } from '../../../tools/lib/doc-meta.mjs'
+import { parseDemoRegistry } from '../../../tools/lib/demo-registry.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkgRoot = join(__dirname, '..')
@@ -28,6 +29,20 @@ function readAll(dir, ext) {
 const demosDir = join(repoRoot, 'examples', 'src', 'demos')
 const docsDir = join(repoRoot, 'docs')
 
+// Gallery categories, so `list_examples` can be filtered instead of returning
+// all 373 demos. The registry lives in the PRIVATE website submodule, which an
+// outside contributor will not have checked out, so a missing registry costs
+// the categories and nothing else.
+const categoryById = await (async () => {
+  try {
+    const entries = await parseDemoRegistry(repoRoot)
+    return new Map(entries.map((e) => [e.id, e.category]))
+  } catch {
+    console.warn('build-manifests: demo registry unreadable, examples will have no category')
+    return new Map()
+  }
+})()
+
 const examples = readAll(demosDir, '.svelte').map((path) => {
   const base = path.split(/[\\/]/).pop().replace('.svelte', '')
   const source = readFileSync(path, 'utf8')
@@ -48,6 +63,7 @@ const examples = readAll(demosDir, '.svelte').map((path) => {
       .replace(/^\d+-/, '')
       .replace(/-/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase()),
+    category: categoryById.get(base) ?? 'Other',
     blurb,
     source,
   }
@@ -61,10 +77,14 @@ const docs = readAll(docsDir, '.md')
     const markdown = parseDocFrontmatter(readFileSync(path, 'utf8')).body
     const slug = relative(docsDir, path).replaceAll('\\', '/').replace(/\.md$/, '')
     const titleMatch = markdown.replace(/^﻿/, '').match(/^#\s+(.+?)\s*$/m)
+    const section = sectionOf(slug)
     return {
       slug,
       path: 'docs/' + slug + '.md',
       title: titleMatch ? titleMatch[1].trim() : slug,
+      // Readable group name, so `list_docs` can be browsed a section at a time
+      // rather than dumping all 370 pages.
+      section: SECTION_TITLES[section] ?? (section || 'Overview'),
       markdown,
     }
   })

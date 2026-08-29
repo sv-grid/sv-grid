@@ -127,6 +127,11 @@ jobs:
       - name: Build MCP server (smoke check)
         run: pnpm --filter @svgrid/mcp build
 
+      # Runs here rather than with the other guardrails because it drives the
+      # built server over stdio, so it needs the dist from the step above.
+      - name: MCP tool guardrails
+        run: pnpm vitest run tools/mcp-tools.test.ts
+
       # NOTE: the website is now a PRIVATE submodule, absent on public/fork
       # checkouts, so its build smoke-check moved to the website repo's own CI
       # (and to deploy-website.yml, which has the WEBSITE_TOKEN).

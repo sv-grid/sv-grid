@@ -23,11 +23,7 @@ on:
         type: boolean
         default: false
   schedule:
-    # TEST: twice a day (06:37 + 18:37 UTC) to verify the cron actually fires,
-    # forcing a publish each run (see the Detect step's TEST-MODE note). To
-    # return to normal, drop the 18:37 line and the `--force` bit below.
     - cron: '37 6 * * *'
-    - cron: '37 18 * * *'
 
 # Push the version-bump commit + release tag back to main.
 permissions:
@@ -73,11 +69,11 @@ jobs:
 
       - name: Detect changes and bump version
         id: release
-        # TEST MODE: scheduled runs (and manual force) always bump + publish, so
-        # the twice-daily cron produces a visible publish even with no changes.
-        # Remove `--force` here (plus the 18:37 cron) to return to "publish only
-        # when packages/grid changed".
-        run: node tools/release-grid.mjs ${{ (github.event_name == 'schedule' || inputs.force == true) && '--force' || '' }}
+        # Only the manual `force` input publishes without changes. A scheduled run
+        # on an unchanged tree is a no-op: forcing it here is what took the package
+        # to 125 published versions and drowned the download stats in mirror
+        # traffic that refetches every version.
+        run: node tools/release-grid.mjs ${{ inputs.force == true && '--force' || '' }}
 
       # First run lays down the baseline tag at the current version without
       # publishing (the package is already on npm at this version).

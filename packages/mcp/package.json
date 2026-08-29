@@ -1,11 +1,11 @@
-﻿{
+{
   "name": "@svgrid/mcp",
   "mcpName": "com.svgrid/svgrid",
   "funding": {
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.6.4",
+  "version": "2.6.5",
   "description": "Model Context Protocol (MCP) server for SvGrid. Exposes example sources, docs, and API reference to AI assistants.",
   "license": "MIT",
   "author": "jQWidgets <sales@jqwidgets.com>",
