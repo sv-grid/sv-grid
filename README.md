@@ -5,7 +5,6 @@
 # SvGrid
 
 [![npm version](https://img.shields.io/npm/v/%40svgrid%2Fgrid.svg?label=%40svgrid%2Fgrid)](https://www.npmjs.com/package/@svgrid/grid)
-[![npm downloads](https://img.shields.io/npm/dm/%40svgrid%2Fgrid.svg)](https://www.npmjs.com/package/@svgrid/grid)
 [![CI](https://github.com/sv-grid/sv-grid/actions/workflows/test.yml/badge.svg)](https://github.com/sv-grid/sv-grid/actions/workflows/test.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](packages/grid/LICENSE)
 [![TypeScript](https://img.shields.io/badge/types-included-blue.svg)](https://www.npmjs.com/package/@svgrid/grid)
@@ -27,6 +26,16 @@ usable in SvelteKit with SSR.
 </p>
 
 **Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [370+ Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [npm](https://www.npmjs.com/package/@svgrid/grid)
+
+### Your coding agent can use it too
+
+SvGrid ships an [MCP server](https://svgrid.com/docs/help/mcp-server/) carrying the real API
+surface, every demo's source, and the full docs. Point Claude, Cursor or Zed at it and they
+write SvGrid code that compiles, instead of inventing props from a stale blog post:
+
+```bash
+npx -y @svgrid/mcp
+```
 
 ---
 
@@ -378,3 +387,7 @@ code only; they grant no rights to the **SvGrid** / **sv-grid** names or logos. 
 redistribute the MIT-licensed code, but you may not reuse the project's name or branding in a way that
 implies endorsement by, or affiliation with, jQWidgets Ltd, nor redistribute it under a confusingly
 similar name.
+
+---
+
+If SvGrid saved you some work, a star helps other Svelte developers find it.
