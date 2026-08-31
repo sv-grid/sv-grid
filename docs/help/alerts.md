@@ -28,7 +28,7 @@ so each pass costs only the rows that actually changed.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid } from '@svgrid/grid'
   import type { ConditionalFormat } from '@svgrid/grid/format'
   import { SvGridAlerts, enableAlerts, setLicenseKey, type ExprColumn } from '@svgrid/enterprise'
 

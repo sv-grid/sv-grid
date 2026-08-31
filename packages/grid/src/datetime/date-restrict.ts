@@ -5,6 +5,7 @@
  */
 import { compareDay, isSameDay, toDate, type DateLike } from './date-core'
 
+/** Which dates a picker allows: bounds, an explicit disabled set, and disabled weekdays. */
 export type RestrictOptions = {
   min?: DateLike | null
   max?: DateLike | null

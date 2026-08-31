@@ -52,7 +52,7 @@
     Win/loss sparkline of the last 7 days, plus streak and weekly progress. A community-contributed demo.
   </div>
   <div class="flex-1 min-h-0">
-    <SvGrid data={rows} columns={columns} features={features} showRowNumbers={false} showPagination={false} rowHeight={42} containerHeight="100%" fitColumns={true} />
+    <SvGrid data={rows} columns={columns} features={features} showRowNumbers={false} rowHeight={42} containerHeight="100%" fitColumns={true} />
   </div>
 </section>
 

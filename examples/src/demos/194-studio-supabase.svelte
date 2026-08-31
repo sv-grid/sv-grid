@@ -491,7 +491,6 @@ create policy "svgrid demo access" on customers
       {columns}
       loading={view.loading}
       fitColumns
-      enableRowSummaries={false}
       rowClass={(ctx) => (schema && flashIds.has(String(ctx.row[schema.idField!])) ? 'sb-flash' : '')}
       showRowSelection
       sortable

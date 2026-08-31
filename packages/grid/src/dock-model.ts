@@ -13,6 +13,7 @@
  * without a browser. Modelled on Smart's `smart-layout` group/item structure.
  */
 
+/** One dockable pane: its id, title, and the state a tab needs to render. */
 export type DockPane = {
   id: string
   title: string
@@ -40,15 +41,18 @@ export type DockGroup = {
   sizes: number[]
 }
 
+/** A node in the layout tree - either a split group or a tabbed leaf. */
 export type DockNode = DockGroup | DockTabs
 
 /** Where a dragged pane lands relative to a target leaf. */
 export type DockZone = 'left' | 'right' | 'top' | 'bottom' | 'center'
 
+/** Supplies ids for newly created nodes, so layouts stay deterministic in tests. */
 export type IdGen = () => string
 
 // ---- construction helpers -------------------------------------------------
 
+/** Build a {@link DockPane}. */
 export function pane(id: string, title: string, closable = true): DockPane {
   return { id, title, closable }
 }
@@ -58,10 +62,12 @@ export function leafMinSize(node: DockTabs): number {
   return node.panes.reduce((m, p) => Math.max(m, p.minSize ?? 0), 0)
 }
 
+/** Build a tabbed leaf holding the given panes. */
 export function tabs(genId: IdGen, panes: DockPane[], active = 0): DockTabs {
   return { type: 'tabs', id: genId(), panes, active: clampIndex(active, panes.length) }
 }
 
+/** Build a split group: panes or nested groups laid out in a row or column. */
 export function group(
   genId: IdGen,
   direction: 'row' | 'column',

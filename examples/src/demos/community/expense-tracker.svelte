@@ -79,7 +79,6 @@
       groupable
       selectionMode="none"
       showRowNumbers={false}
-      showPagination={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}

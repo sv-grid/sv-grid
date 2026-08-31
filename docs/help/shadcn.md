@@ -76,6 +76,24 @@ a ready-made preset that mirrors shadcn's zinc-neutral palette in light
 and dark, toggled by the same `[data-theme='dark']` attribute you
 already use. Import it once and you are done.
 
+## Install it with the CLI you already have
+
+SvGrid publishes a shadcn-svelte registry item, so the grid installs the
+same way the rest of your components did:
+
+```sh
+npx shadcn-svelte@latest add https://svgrid.com/r/data-table.json
+```
+
+That writes a ready-to-edit `data-table.svelte` into
+`$lib/components/ui/data-table/` and installs `@svgrid/grid`. Your
+`components.json` aliases are respected, and the file is yours - the
+difference from a copied recipe is that the behaviour behind it lives in a
+package you version-bump.
+
+Already have the TanStack-based data table from the shadcn docs? See
+[Migrating from the shadcn-svelte data table](./migrating-from-shadcn-data-table.md).
+
 ## Inherit your *exact* theme with the live token bridge
 
 The preset matches the default shadcn look. If you have customized your

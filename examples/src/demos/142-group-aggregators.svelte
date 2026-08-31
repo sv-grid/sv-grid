@@ -110,7 +110,6 @@
       features={features}
       groupable
       selectionMode="none"
-      enableRowSummaries={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}

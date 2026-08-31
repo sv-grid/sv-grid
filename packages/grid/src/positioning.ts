@@ -35,6 +35,7 @@ export type Rect = { x: number; y: number; width: number; height: number }
 /** The available viewport (defaults to `window` in the browser). */
 export type Viewport = { width: number; height: number }
 
+/** Where to put a floating element: its preferred side, offsets, and collision behaviour. */
 export type ComputePositionOptions = {
   /** Preferred placement. Default `'bottom-start'`. */
   placement?: Placement
@@ -58,6 +59,7 @@ export type ComputePositionOptions = {
   minMainAxis?: number
 }
 
+/** The resolved position, including the side actually used after collision handling. */
 export type ComputePositionResult = {
   /** Floating left, in viewport (fixed-position) coordinates. */
   x: number

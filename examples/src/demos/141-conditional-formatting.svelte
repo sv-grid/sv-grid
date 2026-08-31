@@ -244,7 +244,6 @@
       conditionalStatScope={statScope}
       filterMode="menu"
       selectionMode="none"
-      enableRowSummaries={false}
       rowHeight={38}
       containerHeight="100%"
       fitColumns={true}

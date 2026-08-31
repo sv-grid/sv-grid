@@ -138,5 +138,8 @@
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
+  },
+  "dependencies": {
+    "esm-env": "^1.2.2"
   }
 }

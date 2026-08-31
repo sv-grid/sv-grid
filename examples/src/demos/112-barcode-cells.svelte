@@ -200,7 +200,6 @@
       columns={columns}
       features={features}
       filterMode="menu"
-      showPagination={false}
       rowHeight={62}
       containerHeight="100%"
       fitColumns={true}

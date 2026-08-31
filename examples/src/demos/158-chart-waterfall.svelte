@@ -102,7 +102,6 @@
         sortable
         filterable
         selectionMode="none"
-        enableRowSummaries={false}
         rowHeight={32}
         containerHeight="100%"
         fitColumns={true}

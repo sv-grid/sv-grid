@@ -1,6 +1,6 @@
 # 4. Features
 
-> Step 4 of 6 Â· [â† Data and columns](./3-data-and-columns.md) Â· [Next: Theme and density â†’](./5-theme-and-density.md)
+> Step 4 of 6 · [← Data and columns](./3-data-and-columns.md) · [Next: Theme and density →](./5-theme-and-density.md)
 
 Every capability is **off by default** - a bare `<SvGrid>` is a plain,
 read-only table. Opt in with boolean props. No imports, no feature
@@ -163,7 +163,7 @@ URL sync, a server fetch).
 
 For server-side data or tree data the wrapper records the sort + filter
 UI state but does **not** re-order the rows - you do. See
-[Going to production Â§1](./6-going-to-production.md#1-server-side-data).
+[Going to production §1](./6-going-to-production.md#1-server-side-data).
 
 ## Selection + editing
 

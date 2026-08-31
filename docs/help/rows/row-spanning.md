@@ -23,7 +23,7 @@ If you simply want the *display* of repeated values to be blanked, render
 the value only when it differs from the row above:
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   {
     field: 'department',
     header: 'Department',

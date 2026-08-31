@@ -240,7 +240,6 @@
       pageSize={20}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={48}
       containerHeight="100%"
       fitColumns={true}

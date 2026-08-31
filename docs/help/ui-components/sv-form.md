@@ -116,7 +116,7 @@ type FormField = {
 Beyond the basics, `SvForm` maps each rich `type` to the matching kit editor:
 `radio`, `slider`, `tags`, `phone`, `country`, `mask`, `datetime`, `combobox`
 (with remote `loadOptions`) and `file`. See the
-[rich field types demo](../../examples).
+[rich field types demo](https://svgrid.com/demos/).
 
 **Cascading fields:** give a child a function `options` (derived from the current
 `values`) and a `dependsOn` naming its parent(s). When the parent changes, the

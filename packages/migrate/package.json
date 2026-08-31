@@ -1,7 +1,7 @@
 {
   "name": "@svgrid/migrate",
   "version": "0.1.1",
-  "description": "Codemod that ports a svelte-headless-table component to SvGrid: translates column definitions and plugins, and removes the Subscribe/Render scaffolding.",
+  "description": "Codemod that ports a svelte-headless-table or TanStack Table v9 component (including the shadcn-svelte data table) to SvGrid: translates column definitions and feature config, and removes the scaffolding SvGrid renders for you.",
   "type": "module",
   "license": "MIT",
   "author": "jQWidgets Ltd",
@@ -23,7 +23,12 @@
     "data-grid",
     "datagrid",
     "table",
-    "svgrid"
+    "svgrid",
+    "tanstack",
+    "tanstack-table",
+    "shadcn",
+    "shadcn-svelte",
+    "data-table"
   ],
   "bin": "index.mjs",
   "files": [

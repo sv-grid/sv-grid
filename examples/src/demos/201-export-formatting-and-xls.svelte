@@ -175,7 +175,6 @@
       selectionMode="both"
       showRowSelection={true}
       showRowNumbers={true}
-      showPagination={false}
       enableCellSelection={true}
       rowHeight={36}
       containerHeight="100%"

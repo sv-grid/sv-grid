@@ -14,7 +14,7 @@ import type { ColumnDef } from '@svgrid/grid'
 
 type Person = { firstName: string; age: number; status: string }
 
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName', header: 'First name' },
   { field: 'age',       header: 'Age' },
   { field: 'status',    header: 'Status' },
@@ -45,7 +45,7 @@ See [`packages/grid/src/core.ts`](../../../packages/grid/src/core.ts).
 computed or comes from a nested object:
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName', header: 'First' },
   {
     id: 'fullName',
@@ -91,7 +91,7 @@ Pass the row type as the second generic; the column's `field` is then
 checked against the row's keys:
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName' },   // ✅
   // { field: 'first_name' } // ✗ compile error
 ]

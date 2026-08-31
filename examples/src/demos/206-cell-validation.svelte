@@ -124,8 +124,6 @@
       enableInlineEditing={true}
       enableRowHover={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
-      showPagination={false}
       rowHeight={40}
       containerHeight="100%"
       fitColumns={true}

@@ -582,10 +582,8 @@
         features={features}
         filterMode="none"
         selectionMode="cell"
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={true}
-        enableRowSummaries={false}
         rowClass={({ row }) => {
           const k = (row as PivotRow).__pivotKind
           return {

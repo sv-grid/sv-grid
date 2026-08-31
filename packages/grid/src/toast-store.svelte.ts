@@ -16,6 +16,7 @@
 import type { Snippet } from 'svelte'
 import { announce } from './a11y/live-region'
 
+/** A toast's severity, which selects its colour and icon. */
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error'
 
 /** A button rendered inside a toast (a primary `action` or a secondary `cancel`). */
@@ -27,6 +28,7 @@ export type ToastAction = {
   keepOpen?: boolean
 }
 
+/** Options for one toast: its variant, how long it stays, and any action button. */
 export type ToastOptions = {
   variant?: ToastVariant
   /** Auto-dismiss after N ms. `0` = sticky (dismiss manually). Default 4000. */
@@ -43,6 +45,7 @@ export type ToastOptions = {
   render?: Snippet<[Toast]>
 }
 
+/** A live toast: its options plus the id needed to dismiss it. */
 export type Toast = {
   id: number
   message: string
@@ -67,6 +70,7 @@ export type PromiseMessages<T> = {
 
 type VariantOptions = Omit<ToastOptions, 'variant'>
 
+/** The callable toast API - `toast(msg)` plus `.success` / `.error` / friends. */
 export type ToastFn = {
   (message: string, options?: ToastOptions): number
   info: (message: string, options?: VariantOptions) => number

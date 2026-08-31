@@ -4,7 +4,9 @@ Auto-generated. Source: `packages\grid\src\core.ts`.
 
 ### `type RowData`
 
-_No JSDoc yet._
+The constraint every row type satisfies: an object keyed by string. Your own
+row type (`type Person = { name: string }`) is what flows through the generics
+below; this is only the lower bound they are declared against.
 
 ```ts
 export type RowData = Record<string, unknown>
@@ -12,7 +14,12 @@ export type RowData = Record<string, unknown>
 
 ### `type Updater`
 
-_No JSDoc yet._
+A new value, or a function that derives it from the previous one - the shape
+every `set*` on the grid accepts, so callers can update state without first
+reading it.
+
+  api.setSorting([{ id: 'name', desc: false }])
+  api.setSorting((prev) => [...prev, { id: 'age', desc: true }])
 
 ```ts
 export type Updater<T> = T | ((prev: T) => T)
@@ -20,7 +27,7 @@ export type Updater<T> = T | ((prev: T) => T)
 
 ### `type SortingState`
 
-_No JSDoc yet._
+Active sort clauses, outermost first. `desc: false` is ascending. */
 
 ```ts
 export type SortingState = Array<{ id: string; desc: boolean }>
@@ -28,7 +35,9 @@ export type SortingState = Array<{ id: string; desc: boolean }>
 
 ### `type ColumnFilter`
 
-_No JSDoc yet._
+One column's filter: the column `id`, the `value` being matched, and
+optionally which comparison to use. `fn` defaults to the column's own type -
+see {@link filterFns} for the available names.
 
 ```ts
 export type ColumnFilter = { id: string; value: unknown; fn?: keyof typeof filterFns }
@@ -36,7 +45,7 @@ export type ColumnFilter = { id: string; value: unknown; fn?: keyof typeof filte
 
 ### `type ColumnFiltersState`
 
-_No JSDoc yet._
+Every active column filter. A column with no entry here is unfiltered. */
 
 ```ts
 export type ColumnFiltersState = Array<ColumnFilter>
@@ -44,7 +53,7 @@ export type ColumnFiltersState = Array<ColumnFilter>
 
 ### `type PaginationState`
 
-_No JSDoc yet._
+Current page position. `pageIndex` is 0-based, so page 1 is index 0. */
 
 ```ts
 export type PaginationState = { pageIndex: number; pageSize: number }
@@ -52,7 +61,7 @@ export type PaginationState = { pageIndex: number; pageSize: number }
 
 ### `type GroupingState`
 
-_No JSDoc yet._
+Column ids the rows are grouped by, outermost first. */
 
 ```ts
 export type GroupingState = Array<string>
@@ -60,7 +69,7 @@ export type GroupingState = Array<string>
 
 ### `type ExpandedState`
 
-_No JSDoc yet._
+Which rows are expanded, keyed by row id. Absent means collapsed. */
 
 ```ts
 export type ExpandedState = Record<string, boolean>
@@ -68,7 +77,7 @@ export type ExpandedState = Record<string, boolean>
 
 ### `type RowSelectionState`
 
-_No JSDoc yet._
+Which rows are selected, keyed by row id. Absent means unselected. */
 
 ```ts
 export type RowSelectionState = Record<string, boolean>
@@ -76,7 +85,8 @@ export type RowSelectionState = Record<string, boolean>
 
 ### `type ActiveCellState`
 
-_No JSDoc yet._
+Where keyboard focus sits. The indices address the *displayed* grid (after
+sorting, filtering and paging), not the source data.
 
 ```ts
 export type ActiveCellState = {
@@ -88,7 +98,9 @@ export type ActiveCellState = {
 
 ### `type TableFeatures`
 
-_No JSDoc yet._
+The set of features a grid has registered, as built by {@link tableFeatures}.
+Deliberately open: a feature is identified by its key, so the type carries
+which ones are on without enumerating them.
 
 ```ts
 export type TableFeatures = Record<string, unknown>
@@ -96,7 +108,7 @@ export type TableFeatures = Record<string, unknown>
 
 ### `type CellData`
 
-_No JSDoc yet._
+A cell's value. Unconstrained - a column can hold anything. */
 
 ```ts
 export type CellData = unknown
@@ -104,7 +116,7 @@ export type CellData = unknown
 
 ### `type HeaderContext`
 
-_No JSDoc yet._
+What a column's `header` render function receives. */
 
 ```ts
 export type HeaderContext<TData extends RowData> = {
@@ -116,7 +128,8 @@ export type HeaderContext<TData extends RowData> = {
 
 ### `type CellContext`
 
-_No JSDoc yet._
+What a column's `cell` render function receives. `getValue()` applies the
+column's accessor (`field` or `fieldFn`); `row.original` is the raw object.
 
 ```ts
 export type CellContext<TData extends RowData> = {
@@ -125,6 +138,51 @@ export type CellContext<TData extends RowData> = {
   column: Column<TData>
   table: SvGrid<TData>
   getValue: () => unknown
+}
+```
+
+### `type CellSpanParams`
+
+Params passed to a column's `colSpan(...)` / `rowSpan(...)` callbacks. */
+
+```ts
+export type CellSpanParams<TData extends RowData = RowData> = {
+  /** The row's underlying data object. */
+  data: TData
+  /** Display-row index in the current (filtered/sorted) row set. */
+  rowIndex: number
+  /** The column's id. */
+  columnId: string
+  /** The cell's base value for this column. */
+  value: unknown
+}
+```
+
+### `type EditorOptionSource`
+
+The raw option list a column's `editorOptions` can supply. */
+
+```ts
+export type EditorOptionSource = ReadonlyArray<
+  string | number | { value: string | number; label?: string; color?: string }
+```
+
+### `type ValueParserParams`
+
+Params passed to a column's `valueParser(...)` on edit commit. */
+
+```ts
+export type ValueParserParams<TData extends RowData = RowData> = {
+  /** The value after built-in per-`editorType` coercion. */
+  newValue: unknown
+  /** The cell's previous value. */
+  oldValue: unknown
+  /** The raw string the editor produced (pre-coercion). */
+  rawInput: string
+  /** The row's underlying data object. */
+  data: TData
+  /** The column's id. */
+  columnId: string
 }
 ```
 
@@ -153,15 +211,51 @@ export type EditorContext<TData extends RowData> = CellContext<TData> & {
 
 ### `type CellFormatConfig`
 
-_No JSDoc yet._
+Declarative cell formatting, applied through `Intl` - number, currency,
+percent, date and datetime. Prefer this over a `formatter` function: it is
+locale-aware, and export and the clipboard reuse the same configuration.
 
 ```ts
 export type CellFormatConfig =
+  | {
+      type: 'number'
+      locales?: string | Array<string>
+      options?: Intl.NumberFormatOptions
+    }
+  | {
+      type: 'currency'
+      /** ISO 4217 (default USD) */
+      currency?: string
+      locales?: string | Array<string>
+      options?: Omit<Intl.NumberFormatOptions, 'style' | 'currency'>
+    }
+  | {
+      type: 'percent'
+      locales?: string | Array<string>
+      options?: Omit<Intl.NumberFormatOptions, 'style'>
+      /**
+       * If true, numeric cell values are 0–100 (e.g. 42 → 42%) instead of Intl’s 0–1 fraction (0.42 → 42%).
+       * Default false.
+       */
+      valueIsPercentPoints?: boolean
+    }
+  | {
+      type: 'date' | 'datetime'
+      locales?: string | Array<string>
+      /**
+       * Shortcut patterns merged with `options`:
+       * `'d'` short numeric date, `'D'` long date, `'y-m-d'` yyyy/mm/dd-style,
+       * `'short'`|`'medium'`|`'long'` use dateStyle/timeStyle presets.
+       */
+      pattern?: string
+      options?: Intl.DateTimeFormatOptions
+    }
 ```
 
 ### `type CellFormatter`
 
-_No JSDoc yet._
+A column's custom display function, for anything {@link CellFormatConfig}
+cannot express. Returns a string - to render markup, use `cell` instead.
 
 ```ts
 export type CellFormatter<TData extends RowData> = (context: {
@@ -174,7 +268,7 @@ export type CellFormatter<TData extends RowData> = (context: {
 
 ### `type ColumnDefTemplate`
 
-_No JSDoc yet._
+A header or cell slot: a literal string, or a function returning renderable content. */
 
 ```ts
 export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
@@ -189,6 +283,15 @@ The function receives the finite numeric values AND the raw leaf rows.
 
 ```ts
 export type GroupAggregator<TData = any> =
+  | 'sum'
+  | 'avg'
+  | 'min'
+  | 'max'
+  | 'count'
+  | 'countDistinct'
+  | 'extent'
+  | 'first'
+  | ((values: number[], rows: Array<TData>) => unknown)
 ```
 
 ### `function applyGroupAggregate`
@@ -197,11 +300,47 @@ Apply a group aggregator over a bucket's leaf rows for one column. */
 
 ```ts
 export function applyGroupAggregate<TData extends RowData>(
+  agg: GroupAggregator<TData>,
+  columnId: string,
+  rows: ReadonlyArray<Row<TData>>,
+): unknown {
+  const raw = rows.map((r) => r.getCellValueByColumnId(columnId))
+  if (typeof agg === 'function') {
+    const nums = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+    return agg(nums, rows.map((r) => r.original))
+  }
+  if (agg === 'count') return rows.length
+  if (agg === 'countDistinct') return new Set(raw.map((v) => String(v ?? ''))).size
+  if (agg === 'first') return raw[0]
+  const nums = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+  if (!nums.length) return undefined
+  switch (agg) {
+    case 'sum':
+      return nums.reduce((a, b) => a + b, 0)
+    case 'avg':
+      return nums.reduce((a, b) => a + b, 0) / nums.length
+    case 'min':
+      return Math.min(...nums)
+    case 'max':
+      return Math.max(...nums)
+    case 'extent':
+      return `${Math.min(...nums)} – ${Math.max(...nums)}`
+    default:
+      return undefined
+  }
+}
 ```
 
 ### `type ColumnDef`
 
-_No JSDoc yet._
+A column definition.
+
+`TFeatures` is a phantom parameter - it is threaded through nested
+`columns` groups but no member depends on it, so `{}`, `TableFeatures` and
+`typeof features` are all interchangeable here. It is deliberately left
+WITHOUT a default: `ColumnDef<Row>` would otherwise bind `Row` to this slot
+and silently type your data as `RowData`, losing every field-name check.
+Prefer {@link GridColumns} / {@link GridColumnDef} for the common case.
 
 ```ts
 export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = {
@@ -212,21 +351,74 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
   columns?: Array<ColumnDef<TFeatures, TData>>
+  /**
+   * Declarative cell spanning (merged cells). Return how many COLUMNS this
+   * cell spans to the right (1 = no span). Value-driven, AG-Grid-style. Feed
+   * `spansToMerges(rows, columns)` into `spreadsheetLayout` to apply - it uses
+   * the same real `colspan`/`rowspan` merge engine (no separate code path).
+   */
+  colSpan?: (params: CellSpanParams<TData>) => number
+  /**
+   * Declarative cell spanning (merged cells). Return how many ROWS this cell
+   * spans downward (1 = no span). See `colSpan` for how to apply.
+   */
+  rowSpan?: (params: CellSpanParams<TData>) => number
+  /**
+   * High-level data type for the column. A convenience that resolves to the
+   * right `editorType`, alignment, date `format`, and filter operators without
+   * setting each by hand:
+   *   'text' → text editor, left-aligned
+   *   'number' → number editor, right-aligned, numeric filter operators
+   *   'boolean' → checkbox editor, centered
+   *   'date' → date editor (Date values), right-aligned, `{ type: 'date' }` format
+   *   'dateString' → date editor for ISO date STRINGS (e.g. '2026-06-27')
+   * Anything you set explicitly (`editorType`, `align`, `format`) still wins -
+   * `cellDataType` only fills the gaps. Grid-level `inferColumnTypes` infers
+   * this from the first data row for columns that declare neither.
+   */
+  cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
+  /**
+   * Hide this column when the grid's `responsive` mode is on and the grid is
+   * narrower than this many pixels - drop low-priority columns on small
+   * screens. No effect unless the grid has `responsive` set.
+   */
+  hideBelow?: number
+  /**
+   * For a column INSIDE a collapsible column group: `'open'` shows this column
+   * only while the group is expanded, `'closed'` only while collapsed. Omit to
+   * always show it. Setting it on any direct child gives the parent group a
+   * collapse toggle. Pair with `openByDefault` on the group.
+   */
+  columnGroupShow?: 'open' | 'closed'
+  /**
+   * For a GROUP column (one with `columns: [...]`): start the group expanded.
+   * Defaults to `false` (collapsed), matching AG Grid - so only the always-on
+   * and `columnGroupShow: 'closed'` children show until the user expands it.
+   */
+  openByDefault?: boolean
   editorType?:
     | 'text'
     | 'number'
-    | 'date'
-    | 'datetime'
-    | 'time'         // native <input type="time"> - HH:MM or HH:MM:SS
+    | 'date'         // rich SvCalendar popover (opt out with 'date-native')
+    | 'datetime'     // rich SvDateTimePicker (opt out with 'datetime-native')
+    | 'time'         // rich SvTimePicker dial (opt out with 'time-native')
+    | 'date-native'      // plain <input type="date">
+    | 'datetime-native'  // plain <input type="datetime-local">
+    | 'time-native'      // plain <input type="time"> - HH:MM or HH:MM:SS
     | 'password'     // native <input type="password"> with masked rendering
     | 'checkbox'
     | 'list'
     | 'chips'
     | 'select'       // custom dropdown - single value, no typeahead
     | 'rich-select'  // custom dropdown with a typeahead search input
+    | 'autocomplete' // free-text input with a live-filtered suggestion list (accepts any value)
     | 'textarea'     // multi-line editor; Tab or Ctrl+Enter commits, plain Enter inserts a newline
     | 'color'        // native <input type="color"> swatch
     | 'rating'       // 5-star rating control
+    // Any other string names a CUSTOM editor registered via `registerCellEditor`
+    // (or `registerBuiltinEditors`). `(string & {})` keeps the literals above
+    // autocompleting while allowing arbitrary custom type names.
+    | (string & {})
   /**
    * Custom in-cell editor. Receives the cell context PLUS a `commit(value)`
    * and `cancel()` helper. Use when none of the built-in `editorType`s fit;
@@ -245,6 +437,27 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   tooltip?: string | ((ctx: CellContext<TData>) => string | null | undefined)
   /**
+   * Declarative per-cell validation (Handsontable-style). Runs for EVERY
+   * rendered cell - including values already present in `data` on load, not
+   * just on edit - so bad data is flagged immediately. Invalid cells get the
+   * `sv-grid-cell-invalid` class (red highlight) and the returned message as
+   * their tooltip.
+   *
+   * Return value:
+   *   - `null` / `undefined` / `true` → valid (no highlight)
+   *   - `false`                       → invalid, no message
+   *   - a non-empty `string`          → invalid, string is the tooltip
+   *
+   * The value keeps rendering as-is (the grid does NOT roll it back); pair
+   * with `onCellValueChange` if you also want to reject the commit.
+   */
+  validate?: (params: {
+    value: unknown
+    row: TData
+    rowIndex: number
+    column: Column<TData>
+  }) => string | boolean | null | undefined
+  /**
    * Gate editing per column or per cell.
    *
    *   - `true` (or omitted): the column is fully editable.
@@ -259,6 +472,19 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * `false`.
    */
   editable?: boolean | ((context: CellContext<TData>) => boolean)
+  /**
+   * Transform the committed edit value before it is written to the row.
+   * Runs after the built-in per-`editorType` coercion, so `newValue` is
+   * already type-parsed; return the final value to store (e.g. round a
+   * number, uppercase a code, look up an id). AG-Grid-style `valueParser`.
+   */
+  valueParser?: (params: ValueParserParams<TData>) => unknown
+  /**
+   * Briefly flash / highlight this column's cell when its value changes
+   * (streaming feeds, edits, server pushes). `true` uses the default flash;
+   * pass `{ className }` to apply your own animation class instead.
+   */
+  cellFlash?: boolean | { className?: string }
   /**
    * When `false`, this column never shows a sort indicator and clicking
    * its header is a no-op - `api.setSort(thisColumn, ...)` is also
@@ -281,16 +507,20 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    *
    * Pass a function `(row) => options` for row-dependent (cascading)
    * options - e.g. City options that depend on Country in the same row.
+   *
+   * Either form may return a **Promise**, for options that come from the
+   * server. While it resolves, the editor shows a loading state and the cell
+   * renders its raw value.
+   *
+   * Results are cached so reopening an editor does not refetch: a static source
+   * per column, a per-row source per row AND per that row's data - so a cascade
+   * reloads by itself when the cell it depends on is edited. Call
+   * `api.refreshEditorOptions(columnId?)` when the list changes server-side.
    */
   editorOptions?:
-    | ReadonlyArray<
-        string | number | { value: string | number; label?: string; color?: string }
-      >
-    | ((
-        row: TData,
-      ) => ReadonlyArray<
-        string | number | { value: string | number; label?: string; color?: string }
-      >)
+    | EditorOptionSource
+    | Promise<EditorOptionSource>
+    | ((row: TData) => EditorOptionSource | Promise<EditorOptionSource>)
   /** When true, list/chips allow multiple selections. Cell value becomes an array. */
   editorMultiple?: boolean
   /** Separator used when joining array values for the readonly cell display. Defaults to ', '. */
@@ -304,6 +534,20 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * is formatted with this column's `format` and shown in the group header.
    */
   aggregate?: GroupAggregator<TData>
+  /**
+   * What this column contributes to the grid's footer summary row (the one
+   * turned on with `summary` / `enableRowSummaries`). Takes the same
+   * aggregators as {@link aggregate}, and the result is formatted with this
+   * column's `format`.
+   *
+   * Without it the footer falls back to its default: the sum of a numeric
+   * column, `Count: N` otherwise. Set `false` to leave the cell blank, which is
+   * usually what an actions or checkbox column wants.
+   *
+   *   { field: 'amount', summary: 'avg' }
+   *   { id: 'actions', summary: false }
+   */
+  summary?: GroupAggregator<TData> | false
   /**
    * Render the cell as an in-cell sparkline chart. The cell value should be
    * an array of numbers (or a comma/space separated string). Mutually
@@ -319,6 +563,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   sparkline?: SparklineConfig
   /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
   width?: number
+  /**
+   * Initial visibility. Set `false` to start the column hidden while still
+   * listing it in the Choose Columns UI for the user to re-enable. Applied
+   * once at mount; after that `api.setColumnVisible` / user toggles win.
+   * On a group column, `false` hides the whole group's leaf columns.
+   */
+  visible?: boolean
   /**
    * Horizontal alignment for header and body cells. When omitted, the
    * default is inferred from `editorType`:
@@ -348,9 +599,37 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
 }
 ```
 
+### `type GridColumnDef`
+
+A column definition keyed only by your row type - the ergonomic form of
+{@link ColumnDef}, whose first parameter is a phantom feature bag that is
+almost always `{}`.
+
+```ts
+const columns: GridColumns<Person> = [{ field: 'firstName', header: 'Name' }]
+```
+
+Interchangeable with `ColumnDef<{}, TData>` and `ColumnDef<typeof features,
+TData>` in both directions, so it mixes freely with existing code.
+
+```ts
+export type GridColumnDef<TData extends RowData = RowData> = ColumnDef<TableFeatures, TData>
+```
+
+### `type GridColumns`
+
+An array of {@link GridColumnDef} - what you pass to `<SvGrid columns={...}>`. */
+
+```ts
+export type GridColumns<TData extends RowData = RowData> = Array<GridColumnDef<TData>>
+```
+
 ### `type Column`
 
-_No JSDoc yet._
+A resolved column: your {@link ColumnDef} plus everything the grid computed
+from it - its id, its depth under any group header, and the sort handlers a
+header needs. This is what you receive in render contexts; the `ColumnDef`
+is what you wrote.
 
 ```ts
 export type Column<TData extends RowData> = {
@@ -367,7 +646,9 @@ export type Column<TData extends RowData> = {
 
 ### `type Header`
 
-_No JSDoc yet._
+One header cell. `colSpan` is how many leaf columns it covers, and
+`isPlaceholder` marks the empty cells that pad a group-header row so the
+levels line up.
 
 ```ts
 export type Header<TData extends RowData> = {
@@ -381,7 +662,7 @@ export type Header<TData extends RowData> = {
 
 ### `type HeaderGroup`
 
-_No JSDoc yet._
+One row of header cells. A grid with grouped columns has several, outermost first. */
 
 ```ts
 export type HeaderGroup<TData extends RowData> = {
@@ -392,7 +673,7 @@ export type HeaderGroup<TData extends RowData> = {
 
 ### `type Cell`
 
-_No JSDoc yet._
+One cell: the intersection of a {@link Row} and a {@link Column}. */
 
 ```ts
 export type Cell<TData extends RowData> = {
@@ -406,7 +687,11 @@ export type Cell<TData extends RowData> = {
 
 ### `type Row`
 
-_No JSDoc yet._
+A row in the display model. `original` is your untouched data object;
+everything else is grid-computed. `index` is the position in the displayed
+set, so it shifts as sorting and filtering change - key on `id`, not index.
+
+Group rows and tree parents carry `subRows`; a plain data row does not.
 
 ```ts
 export type Row<TData extends RowData> = {
@@ -429,7 +714,7 @@ export type Row<TData extends RowData> = {
 
 ### `type RowModel`
 
-_No JSDoc yet._
+The output of the row pipeline: the rows to display, in order. */
 
 ```ts
 export type RowModel<TData extends RowData> = {
@@ -439,7 +724,12 @@ export type RowModel<TData extends RowData> = {
 
 ### `type Store`
 
-_No JSDoc yet._
+The minimal reactive store behind the headless core - read `state`, write
+through `setState`, and `subscribe` for changes. Deliberately framework
+free, which is what lets the core run under plain Node.
+
+In Svelte you rarely touch this: `subscribeGrid` wraps it with fine-grained
+selectors so a component only re-runs for the slice it read.
 
 ```ts
 export type Store<T> = {
@@ -451,7 +741,17 @@ export type Store<T> = {
 
 ### `const rowSortingFeature`
 
-_No JSDoc yet._
+Click-to-sort. Injected by the `sortable` shortcut.
+
+This and the five features below are opaque markers: pass the ones you want
+to {@link tableFeatures} and the grid wires up the matching row model. With
+`<SvGrid>` you rarely name them - the boolean shortcuts (`sortable`,
+`filterable`, `pageable`, `groupable`) inject them for you. Reach for them
+directly when driving the headless core, or when you want a feature on
+without its UI.
+
+The names match TanStack Table v9, so a features object written for it works
+here unchanged.
 
 ```ts
 export const rowSortingFeature = { key: 'rowSortingFeature' }
@@ -459,7 +759,7 @@ export const rowSortingFeature = { key: 'rowSortingFeature' }
 
 ### `const columnFilteringFeature`
 
-_No JSDoc yet._
+Per-column filtering. Injected by the `filterable` shortcut. */
 
 ```ts
 export const columnFilteringFeature = { key: 'columnFilteringFeature' }
@@ -467,7 +767,7 @@ export const columnFilteringFeature = { key: 'columnFilteringFeature' }
 
 ### `const rowPaginationFeature`
 
-_No JSDoc yet._
+Paging of the row model. Injected by the `pageable` shortcut. */
 
 ```ts
 export const rowPaginationFeature = { key: 'rowPaginationFeature' }
@@ -475,7 +775,7 @@ export const rowPaginationFeature = { key: 'rowPaginationFeature' }
 
 ### `const columnGroupingFeature`
 
-_No JSDoc yet._
+Row grouping with aggregation. Injected by the `groupable` shortcut. */
 
 ```ts
 export const columnGroupingFeature = { key: 'columnGroupingFeature' }
@@ -483,7 +783,7 @@ export const columnGroupingFeature = { key: 'columnGroupingFeature' }
 
 ### `const rowSelectionFeature`
 
-_No JSDoc yet._
+Row selection state (the checkbox column reads it). */
 
 ```ts
 export const rowSelectionFeature = { key: 'rowSelectionFeature' }
@@ -491,7 +791,7 @@ export const rowSelectionFeature = { key: 'rowSelectionFeature' }
 
 ### `const rowExpandingFeature`
 
-_No JSDoc yet._
+Expand / collapse, for tree rows and master-detail. */
 
 ```ts
 export const rowExpandingFeature = { key: 'rowExpandingFeature' }
@@ -499,7 +799,16 @@ export const rowExpandingFeature = { key: 'rowExpandingFeature' }
 
 ### `function tableFeatures`
 
-_No JSDoc yet._
+Declare which features a grid uses. Identity at runtime - its whole job is to
+capture the exact set in the type, so `ColumnDef<typeof features, Row>` knows
+what is registered and anything you did not register is tree-shaken out.
+
+```ts
+const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+```
+
+Same call signature as TanStack Table v9, so a features object written for it
+transfers unchanged.
 
 ```ts
 export function tableFeatures<T extends TableFeatures>(features: T): T {
@@ -509,7 +818,8 @@ export function tableFeatures<T extends TableFeatures>(features: T): T {
 
 ### `const sortFns`
 
-_No JSDoc yet._
+Built-in comparators, chosen per column by its data type. `auto` compares as
+text; set a column's type or supply your own comparator to override.
 
 ```ts
 export const sortFns = {
@@ -525,7 +835,8 @@ export const sortFns = {
 
 ### `const filterFns`
 
-_No JSDoc yet._
+Built-in match functions, named by {@link ColumnFilter}'s `fn`.
+`includesString` is case-insensitive substring; `equals` is strict identity.
 
 ```ts
 export const filterFns = {
@@ -537,7 +848,9 @@ export const filterFns = {
 
 ### `type RowModelFactory`
 
-_No JSDoc yet._
+One stage of the row pipeline: takes the rows produced so far and returns the
+next set. Stages compose in the order given to `_rowModels`, so filtering
+before sorting sorts only what survived the filter.
 
 ```ts
 export type RowModelFactory<TData extends RowData> = (args: {
@@ -548,7 +861,8 @@ export type RowModelFactory<TData extends RowData> = (args: {
 
 ### `function createCoreRowModel`
 
-_No JSDoc yet._
+The identity stage that starts every pipeline. Always required, even when no
+other stage is: it is what turns your data into rows.
 
 ```ts
 export function createCoreRowModel<TData extends RowData>(): RowModelFactory<TData> {
@@ -558,7 +872,8 @@ export function createCoreRowModel<TData extends RowData>(): RowModelFactory<TDa
 
 ### `function createFilteredRowModel`
 
-_No JSDoc yet._
+Drops rows that fail the active {@link ColumnFiltersState}. Pairs with
+`columnFilteringFeature`; without it there are no filters to apply.
 
 ```ts
 export function createFilteredRowModel<TData extends RowData>(): RowModelFactory<TData> {
@@ -581,7 +896,8 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
 
 ### `function createPaginatedRowModel`
 
-_No JSDoc yet._
+Narrows the rows to the current page. Put it LAST: anything after it would
+only ever see one page of data.
 
 ```ts
 export function createPaginatedRowModel<TData extends RowData>(): RowModelFactory<TData> {
@@ -595,7 +911,8 @@ export function createPaginatedRowModel<TData extends RowData>(): RowModelFactor
 
 ### `function createGroupedRowModel`
 
-_No JSDoc yet._
+Buckets rows by the active {@link GroupingState} and inserts a group row
+ahead of each bucket, carrying that bucket's aggregates.
 
 ```ts
 export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<TData> {
@@ -703,9 +1020,148 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
 }
 ```
 
+### `type TreeRowModelOptions`
+
+How to read a hierarchy out of FLAT rows: each row names its parent, and the
+grid reconstructs the tree. Rows whose parent id matches nothing become roots
+rather than disappearing.
+
+For nested source data (`children: [...]`), flatten it first with
+{@link flattenTreeData}.
+
+```ts
+export type TreeRowModelOptions = {
+  /** Field holding each row's parent id. Rows with no parent are roots. */
+  parentField: string
+  /** Field holding the row's own id. Defaults to `'id'`. */
+  idField?: string
+}
+```
+
+### `function createTreeRowModel`
+
+Client-side tree data: nest the grid's own flat rows into a parent/child
+hierarchy that `createExpandedRowModel` then walks.
+
+This works on the rows the grid already built rather than on raw data, so
+tree rows keep their cells, editing, selection and formatting - they are real
+data rows that happen to have children, not synthetic banners like grouping's.
+That is also why the model is parent-id based: nested source arrays never
+become rows (the grid only builds rows for `data`), so nested input is
+flattened first with {@link flattenTreeData}. One code path, no duplicated
+row construction.
+
+Rows are tagged `__treeRow` so `isGroupRow` does not mistake an expandable
+data row for a full-width group banner.
+
+```ts
+export function createTreeRowModel<TData extends RowData>(
+  options: TreeRowModelOptions,
+): RowModelFactory<TData> {
+  const { parentField, idField = 'id' } = options
+  return ({ table, rows }) => {
+    if (!rows.length) return rows
+    const keyOf = (row: Row<TData>) => (row.original as any)?.[idField]
+    const parentOf = (row: Row<TData>) => (row.original as any)?.[parentField]
+
+    const present = new Set<unknown>()
+    for (const row of rows) present.add(keyOf(row))
+
+    const childrenByParent = new Map<unknown, Array<Row<TData>>>()
+    const roots: Array<Row<TData>> = []
+    for (const row of rows) {
+      const parent = parentOf(row)
+      // A row whose parent is absent (filtered out, or never existed) becomes a
+      // root rather than disappearing - silently dropping rows is worse than a
+      // shallower tree. Self-parenting is treated the same way.
+      if (parent == null || parent === keyOf(row) || !present.has(parent)) {
+        roots.push(row)
+        continue
+      }
+      const list = childrenByParent.get(parent) ?? []
+      list.push(row)
+      childrenByParent.set(parent, list)
+    }
+
+    // Guards a cycle in the parent chain from recursing forever.
+    const seen = new Set<unknown>()
+    const build = (row: Row<TData>, depth: number): Row<TData> => {
+      const key = keyOf(row)
+      const id = row.id
+      if (seen.has(key)) {
+        return { ...row, depth, subRows: [], getCanExpand: () => false } as Row<TData>
+      }
+      seen.add(key)
+      const subRows = (childrenByParent.get(key) ?? []).map((child) => build(child, depth + 1))
+      return {
+        ...row,
+        depth,
+        subRows,
+        leafCount: subRows.reduce((n, sub) => n + 1 + (sub.leafCount ?? 0), 0),
+        __treeRow: true,
+        getCanExpand: () => subRows.length > 0,
+        getIsExpanded: () => Boolean((table.getState().expanded ?? {})[id]),
+        toggleExpanded: () => {
+          table.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+        },
+      } as Row<TData>
+    }
+
+    return roots.map((root) => build(root, 0))
+  }
+}
+```
+
+### `type FlattenTreeOptions`
+
+How to flatten NESTED source data into the parent-id shape tree rows need.
+`parentField` is written onto each row, so point `treeData.parentField` at
+the same name afterwards.
+
+```ts
+export type FlattenTreeOptions = {
+  /** Field holding an array of child objects. */
+  childrenField: string
+  /** Field holding each object's id. Defaults to `'id'`. */
+  idField?: string
+  /** Field to WRITE the resolved parent id onto. Defaults to `'__parentId'`. */
+  parentField?: string
+}
+```
+
+### `function flattenTreeData`
+
+Flatten nested tree data into the flat parent-id shape `createTreeRowModel`
+consumes, stamping each child with its parent's id.
+
+Children are emitted directly after their parent so the natural order already
+matches the rendered tree. The `childrenField` array is left on the objects
+(harmless, and callers often still want it); only the parent link is added.
+
+```ts
+export function flattenTreeData<T extends RowData>(
+  data: ReadonlyArray<T>,
+  options: FlattenTreeOptions,
+): T[] {
+  const { childrenField, idField = 'id', parentField = '__parentId' } = options
+  const out: T[] = []
+  const walk = (nodes: ReadonlyArray<T>, parentId: unknown) => {
+    for (const node of nodes) {
+      const flat = { ...node, [parentField]: parentId } as T
+      out.push(flat)
+      const kids = (node as any)[childrenField]
+      if (Array.isArray(kids) && kids.length) walk(kids as ReadonlyArray<T>, (node as any)[idField])
+    }
+  }
+  walk(data, null)
+  return out
+}
+```
+
 ### `function createExpandedRowModel`
 
-_No JSDoc yet._
+Hides the descendants of collapsed rows. Needed for grouping, tree data and
+master-detail alike - all three are the same expand/collapse mechanism.
 
 ```ts
 export function createExpandedRowModel<TData extends RowData>(): RowModelFactory<TData> {
@@ -726,15 +1182,50 @@ export function createExpandedRowModel<TData extends RowData>(): RowModelFactory
 
 ### `function createSortedRowModel`
 
-_No JSDoc yet._
+Orders rows by the active {@link SortingState}. Pass your own comparators to
+override the built-in {@link sortFns} - useful for locale-aware or
+domain-specific ordering.
 
 ```ts
 export function createSortedRowModel<TData extends RowData>(
+  localSortFns: typeof sortFns = sortFns,
+): RowModelFactory<TData> {
+  return ({ table, rows }) => {
+    const sorting = table.getState().sorting ?? []
+    if (!sorting.length) return rows
+
+    const sorted = [...rows].sort((a, b) => {
+      for (const clause of sorting) {
+        const column = table.getAllColumns().find((col) => col.id === clause.id)
+        if (!column) continue
+        const editorType = column.columnDef.editorType
+        const comparator =
+          editorType === 'number'
+            ? localSortFns.number
+            : editorType === 'date' || editorType === 'datetime'
+              ? localSortFns.date
+              : localSortFns.auto
+        const result = comparator(
+          a.getCellValueByColumnId(column.id),
+          b.getCellValueByColumnId(column.id),
+        )
+        if (result !== 0) return clause.desc ? -result : result
+      }
+      return 0
+    })
+    return sorted
+  }
+}
 ```
 
 ### `type SvGridOptions`
 
-_No JSDoc yet._
+Everything {@link createSvGridCore} accepts: the data and columns, the
+features and row models that make up the pipeline, and an `on*Change`
+callback per piece of state for controlled use.
+
+`<SvGrid>` builds this for you from its props - you only construct it
+directly when driving the headless core.
 
 ```ts
 export type SvGridOptions<TFeatures extends TableFeatures, TData extends RowData> = {
@@ -769,7 +1260,11 @@ export type SvGridOptions<TFeatures extends TableFeatures, TData extends RowData
 
 ### `type SvGrid`
 
-_No JSDoc yet._
+The headless grid instance: the state stores plus the read methods a renderer
+needs (`getHeaderGroups()`, `getRowModel()`, the `set*` writers).
+
+Framework free by design - `<SvGrid>` is one renderer over this, and you can
+write another. See the "Why headless?" guide.
 
 ```ts
 export type SvGrid<TData extends RowData> = {
@@ -794,15 +1289,382 @@ export type SvGrid<TData extends RowData> = {
 
 ### `function createSvGridCore`
 
-_No JSDoc yet._
+Build a headless grid: state, the row pipeline, and the read methods, with no
+DOM and no Svelte. This is the engine `<SvGrid>` renders.
+
+Most callers want `createSvGrid` (the runes-aware wrapper) or the component
+itself; reach for this when you are writing your own renderer or running the
+pipeline outside a browser.
 
 ```ts
 export function createSvGridCore<TFeatures extends TableFeatures, TData extends RowData>(
+  options: SvGridOptions<TFeatures, TData>,
+): SvGrid<TData> {
+  const internalState: Record<string, any> = {
+    sorting: [],
+    columnFilters: [],
+    pagination: { pageIndex: 0, pageSize: options.data.length || 10 },
+    grouping: [],
+    expanded: {},
+    rowSelection: {},
+    activeCell: { rowIndex: 0, colIndex: 0, cellId: null },
+    ...(options.state ?? {}),
+  }
+  const store = createStore(internalState)
+  const optionsStore = createStore(options as Record<string, any>)
+  let cachedColumnsInput: Array<ColumnDef<TFeatures, TData>> | null = null
+  let cachedColumns: Array<Column<TData>> = []
+  let cachedHeaderGroups: Array<HeaderGroup<TData>> = []
+  let cachedBaseRowsInput: ReadonlyArray<TData> | null = null
+  let cachedBaseRowsColumns: Array<Column<TData>> | null = null
+  let cachedBaseRows: Array<Row<TData>> = []
+  let cachedRowModel: RowModel<TData> | null = null
+  let cachedRowModelBaseRows: Array<Row<TData>> | null = null
+  let cachedPipeline = options._rowModels
+  let cachedSlices: {
+    sorting: SortingState | undefined
+    columnFilters: ColumnFiltersState | undefined
+    pagination: PaginationState | undefined
+    grouping: GroupingState | undefined
+    expanded: ExpandedState | undefined
+    rowSelection: RowSelectionState | undefined
+  } | null = null
+
+  const grid = {
+    store,
+    optionsStore,
+    get state() {
+      return store.state
+    },
+    getState() {
+      return store.state
+    },
+    setOptions(updater: Updater<Record<string, any>>) {
+      optionsStore.setState((prev) =>
+        typeof updater === 'function' ? (updater as any)(prev) : updater,
+      )
+    },
+    setColumnFilters(updater: Updater<ColumnFiltersState>) {
+      store.setState((prev) => ({
+        ...prev,
+        columnFilters:
+          typeof updater === 'function' ? (updater as any)(prev.columnFilters ?? []) : updater,
+      }))
+      options.onColumnFiltersChange?.(updater)
+    },
+    setPagination(updater: Updater<PaginationState>) {
+      store.setState((prev) => ({
+        ...prev,
+        pagination:
+          typeof updater === 'function'
+            ? (updater as any)(prev.pagination ?? { pageIndex: 0, pageSize: 10 })
+            : updater,
+      }))
+      options.onPaginationChange?.(updater)
+    },
+    setGrouping(updater: Updater<GroupingState>) {
+      store.setState((prev) => ({
+        ...prev,
+        grouping: typeof updater === 'function' ? (updater as any)(prev.grouping ?? []) : updater,
+      }))
+      options.onGroupingChange?.(updater)
+    },
+    setExpanded(updater: Updater<ExpandedState>) {
+      store.setState((prev) => ({
+        ...prev,
+        expanded: typeof updater === 'function' ? (updater as any)(prev.expanded ?? {}) : updater,
+      }))
+      options.onExpandedChange?.(updater)
+    },
+    setRowSelection(updater: Updater<RowSelectionState>) {
+      store.setState((prev) => ({
+        ...prev,
+        rowSelection:
+          typeof updater === 'function' ? (updater as any)(prev.rowSelection ?? {}) : updater,
+      }))
+      options.onRowSelectionChange?.(updater)
+    },
+    setActiveCell(updater: Updater<ActiveCellState>) {
+      store.setState((prev) => {
+        const previous: ActiveCellState = prev.activeCell ?? {
+          rowIndex: 0,
+          colIndex: 0,
+          cellId: null,
+        }
+        const nextActive =
+          typeof updater === 'function' ? updater(previous) : updater
+        return {
+          ...prev,
+          activeCell: nextActive,
+        }
+      })
+      options.onActiveCellChange?.(updater)
+    },
+    moveActiveCell(next: { rowDelta?: number; colDelta?: number }) {
+      const rows = grid.getRowModel().rows
+      const columns = grid.getAllColumns()
+      const maxRow = Math.max(rows.length - 1, 0)
+      const maxCol = Math.max(columns.length - 1, 0)
+      const current: ActiveCellState = grid.getState().activeCell ?? {
+        rowIndex: 0,
+        colIndex: 0,
+        cellId: null,
+      }
+
+      const rowIndex = Math.min(
+        Math.max(current.rowIndex + (next.rowDelta ?? 0), 0),
+        maxRow,
+      )
+      const colIndex = Math.min(
+        Math.max(current.colIndex + (next.colDelta ?? 0), 0),
+        maxCol,
+      )
+      const columnId = columns[colIndex]?.id ?? 'col_0'
+      grid.setActiveCell({
+        rowIndex,
+        colIndex,
+        cellId: `${rowIndex}_${columnId}`,
+      })
+    },
+    getAllColumns() {
+      // Cache hit: referentially identical columns array.
+      if (cachedColumnsInput === options.columns && cachedColumns.length) {
+        return cachedColumns
+      }
+      // Soft cache hit: consumers commonly recreate the columns array
+      // inline on every render (e.g. `columns={[...]}`). If the new
+      // array has the same length AND each entry has the same `field` /
+      // `id` / `header` (the visibility-affecting structure of a
+      // column), trust the previous build. Mutable inner fields like
+      // `cell` and `editorOptions` are still picked up on the next real
+      // render that bumps an actual data dep - they're read at cell-
+      // render time, not at this top-level cache.
+      if (
+        cachedColumnsInput &&
+        options.columns.length === cachedColumnsInput.length &&
+        cachedColumns.length === options.columns.length &&
+        options.columns.every((c, i) => {
+          const prev = cachedColumnsInput![i]!
+          return (
+            c.field === prev.field &&
+            c.id === prev.id &&
+            c.header === prev.header &&
+            c.editorType === prev.editorType
+          )
+        })
+      ) {
+        // Update the stored input reference so the strict check hits
+        // next time, but reuse the built column model.
+        cachedColumnsInput = options.columns
+        return cachedColumns
+      }
+
+      cachedColumnsInput = options.columns
+      cachedHeaderGroups = []
+      const build = (
+        defs: Array<ColumnDef<TFeatures, TData>>,
+        depth: number,
+        parentId?: string,
+      ): Array<Column<TData>> => {
+        const leaves: Array<Column<TData>> = []
+        defs.forEach((columnDef, index) => {
+          const id = resolveColumnId(columnDef, parentId, depth, index)
+          if (columnDef.columns?.length) {
+            leaves.push(...build(columnDef.columns, depth + 1, id))
+            return
+          }
+          leaves.push({
+            id,
+            depth,
+            parentId,
+            columnDef,
+            getCanSort: () =>
+              Boolean((options._features as any).rowSortingFeature) &&
+              columnDef.sortable !== false,
+            getCanFilter: () =>
+              Boolean((options._features as any).columnFilteringFeature) &&
+              columnDef.filterable !== false,
+            getIsSorted: () => {
+              const entry = store.state.sorting?.find((s: any) => s.id === id)
+              if (!entry) return false
+              return entry.desc ? 'desc' : 'asc'
+            },
+            getToggleSortingHandler: () => () => {
+              const clauses: SortingState = store.state.sorting ?? []
+              const current = clauses.find((s: any) => s.id === id)
+              const nextClause: SortingState = !current
+                ? [...clauses, { id, desc: false }]
+                : current.desc
+                  ? clauses.filter((s) => s.id !== id)
+                  : clauses.map((s) => (s.id === id ? { ...s, desc: true } : s))
+              store.setState((prev) => ({ ...prev, sorting: nextClause }))
+              options.onSortingChange?.(nextClause)
+            },
+          })
+        })
+        return leaves
+      }
+      cachedColumns = build(options.columns, 0)
+      return cachedColumns
+    },
+    getHeaderGroups() {
+      if (cachedHeaderGroups.length) return cachedHeaderGroups
+      const headers = grid.getAllColumns().map((column) => {
+        const header: Header<TData> = {
+          id: column.id,
+          isPlaceholder: false,
+          colSpan: 1,
+          column,
+          getContext: () => ({ header, column, table: grid }),
+        }
+        return header
+      })
+      cachedHeaderGroups = [{ id: 'header_group_0', headers }]
+      return cachedHeaderGroups
+    },
+    getFooterGroups() {
+      return grid.getHeaderGroups()
+    },
+    getRowModel() {
+      const columns = grid.getAllColumns()
+      if (cachedBaseRowsInput !== options.data || cachedBaseRowsColumns !== columns) {
+        cachedBaseRowsInput = options.data
+        cachedBaseRowsColumns = columns
+        // O(1) column-id → index lookup so getCellValueByColumnId doesn't do
+        // a linear `findIndex` on every cell read (was O(rows × cells × cols)).
+        const columnIndexById = new Map<string, number>()
+        for (let i = 0; i < columns.length; i++) columnIndexById.set(columns[i]!.id, i)
+        const columnCount = columns.length
+
+        cachedBaseRows = new Array(options.data.length)
+        const getRowId = options.getRowId
+        for (let index = 0; index < options.data.length; index++) {
+          const original = options.data[index]!
+          const id = getRowId ? getRowId(original, index) : String(index)
+          // `values` and `cells` are computed lazily - for a 100k-row grid
+          // with only ~20 visible rows we don't want to materialise every
+          // row's full value array or cell objects up front.
+          let cachedValues: Array<unknown> | null = null
+          let cachedCells: Array<Cell<TData>> | null = null
+
+          function computeValues(): Array<unknown> {
+            const values = new Array<unknown>(columnCount)
+            for (let i = 0; i < columnCount; i++) {
+              const column = columns[i]!
+              if (column.columnDef.fieldFn) {
+                values[i] = column.columnDef.fieldFn(original)
+              } else if (column.columnDef.field) {
+                values[i] = (original as any)[column.columnDef.field]
+              } else {
+                values[i] = undefined
+              }
+            }
+            return values
+          }
+
+          const row: Row<TData> = {
+            id,
+            index,
+            original,
+            depth: 0,
+            getCanExpand: () => false,
+            getIsExpanded: () => Boolean((store.state.expanded ?? {})[id]),
+            toggleExpanded: () => {
+              grid.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+            },
+            getIsSelected: () => Boolean((store.state.rowSelection ?? {})[id]),
+            toggleSelected: () => {
+              grid.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
+            },
+            getAllCells: () => {
+              if (cachedCells) return cachedCells
+              const built = new Array<Cell<TData>>(columnCount)
+              for (let i = 0; i < columnCount; i++) {
+                const column = columns[i]!
+                const colIndex = i
+                const cell: Cell<TData> = {
+                  id: `${id}_${column.id}`,
+                  row,
+                  column,
+                  getValue: () => {
+                    if (!cachedValues) cachedValues = computeValues()
+                    return cachedValues[colIndex]
+                  },
+                  getContext: () => ({
+                    cell,
+                    row,
+                    column,
+                    table: grid,
+                    getValue: () => cell.getValue(),
+                  }),
+                }
+                built[i] = cell
+              }
+              cachedCells = built
+              return built
+            },
+            getCellValueByColumnId: (columnId: string) => {
+              const idx = columnIndexById.get(columnId)
+              if (idx === undefined) return undefined
+              if (!cachedValues) cachedValues = computeValues()
+              return cachedValues[idx]
+            },
+          }
+          cachedBaseRows[index] = row
+        }
+      }
+
+      const currentSlices = {
+        sorting: store.state.sorting,
+        columnFilters: store.state.columnFilters,
+        pagination: store.state.pagination,
+        grouping: store.state.grouping,
+        expanded: store.state.expanded,
+        rowSelection: store.state.rowSelection,
+      }
+      if (
+        cachedRowModel &&
+        cachedRowModelBaseRows === cachedBaseRows &&
+        cachedPipeline === options._rowModels &&
+        cachedSlices?.sorting === currentSlices.sorting &&
+        cachedSlices?.columnFilters === currentSlices.columnFilters &&
+        cachedSlices?.pagination === currentSlices.pagination &&
+        cachedSlices?.grouping === currentSlices.grouping &&
+        cachedSlices?.expanded === currentSlices.expanded &&
+        cachedSlices?.rowSelection === currentSlices.rowSelection
+      ) {
+        return cachedRowModel
+      }
+
+      let rows: Array<Row<TData>> = cachedBaseRows
+
+      const pipeline = options._rowModels ?? {}
+      const ordered: Array<RowModelFactory<TData> | undefined> = [
+        pipeline.coreRowModel,
+        pipeline.filteredRowModel,
+        pipeline.sortedRowModel,
+        pipeline.groupedRowModel,
+        pipeline.expandedRowModel,
+        pipeline.paginatedRowModel,
+      ]
+      ordered.forEach((fn) => {
+        if (fn) rows = fn({ table: grid, rows })
+      })
+      cachedPipeline = options._rowModels
+      cachedSlices = currentSlices
+      cachedRowModelBaseRows = cachedBaseRows
+      cachedRowModel = { rows }
+      return cachedRowModel
+    },
+  } as InternalGrid<TData>
+
+  return grid
+}
 ```
 
 ### `function isFunction`
 
-_No JSDoc yet._
+Narrowing helper for the many options that accept a value or a function. */
 
 ```ts
 export function isFunction(value: unknown): value is (...args: Array<any>) => any {

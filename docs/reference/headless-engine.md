@@ -26,7 +26,7 @@ markup.
 
 | Want to...                                       | Use                                         |
 | ------------------------------------------------ | ------------------------------------------- |
-| Render with a different framework (React, Vue)   | Embed via [`@svgrid/grid-wc`](../help/wc.md) or wrap `createSvGrid` yourself |
+| Render with a different framework (React, Vue)   | Embed via [`@svgrid/grid-wc`](../help/web-components.md) or wrap `createSvGrid` yourself |
 | Render as `<table>` for print / email export     | Headless                                    |
 | Drive a server-side row model from Node          | Headless                                    |
 | Unit-test sort / filter / aggregator logic       | Headless                                    |

@@ -19,8 +19,7 @@ the Formulas section below).
 + import {
 +   SvGrid, tableFeatures,
 +   rowSortingFeature, columnFilteringFeature, rowSelectionFeature,
-+   type ColumnDef,
-+ } from '@svgrid/grid'
++   + } from '@svgrid/grid'
 ```
 
 ## Schema → columns

@@ -1,7 +1,9 @@
 # @svgrid/migrate
 
-Codemod that ports a [svelte-headless-table](https://www.npmjs.com/package/svelte-headless-table)
-component to [SvGrid](https://svgrid.com).
+Codemod that ports a table to [SvGrid](https://svgrid.com), from either
+[svelte-headless-table](https://www.npmjs.com/package/svelte-headless-table)
+or [TanStack Table v9](https://www.npmjs.com/package/@tanstack/svelte-table) -
+including the shadcn-svelte data-table recipe, which is built on it.
 
 ```bash
 npx @svgrid/migrate            # preview what would change (default)
@@ -49,6 +51,41 @@ These are reported as warnings, never silently dropped:
 
 Anything hand-written in the original `<script>` beyond the table wiring is not
 carried across. Preview first, and move that code over yourself.
+
+## From TanStack Table v9 (and the shadcn-svelte data table)
+
+This port is unusually shallow, because `@svgrid/grid` exports the same v9
+vocabulary: `tableFeatures`, `rowSortingFeature`, `columnFilteringFeature`,
+`rowPaginationFeature`, `rowSelectionFeature`, `rowExpandingFeature` and
+`columnGroupingFeature`. Your `features` object is not translated at all - its
+import is re-pointed and the features SvGrid does not have are removed.
+
+| Source | Becomes |
+| --- | --- |
+| `accessorKey: 'x'` | `field: 'x'` |
+| `accessorFn: (row) => ...` | `fieldFn: (row) => ...` |
+| `size: 140` | `width: 140` |
+| `enableSorting: false` | `sortable: false` |
+| `enableColumnFilter: false` | `filterable: false` |
+| `ColumnDef<Row>[]` | `GridColumns<Row>` (SvGrid's takes two type params) |
+| `rowSortingFeature` | kept, plus `sortable` on the element |
+| `rowPaginationFeature` | kept, plus `pageable showPagination` |
+| `rowSelectionFeature` | kept, plus `showRowSelection` |
+| `columnVisibilityFeature` | removed - use `visible: false` per column |
+| `columnResizingFeature` | removed - resizing is built in |
+| `let sorting = $state([])` + `onSortingChange` | deleted; SvGrid owns that state |
+| `createSvelteTable(...)`, `<Table.Root>`, `FlexRender` | deleted |
+
+Because the shadcn layout keeps `features` in its own module, the codemod
+follows that import to work out which props the component needs. Point it at
+the whole route directory, not just the `.svelte` file:
+
+```bash
+npx @svgrid/migrate src/routes/payments
+```
+
+`meta` is dropped (no equivalent), and custom `cell` / `header` render
+functions are kept and reported rather than guessed at.
 
 ## After running it
 

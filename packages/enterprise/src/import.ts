@@ -31,8 +31,10 @@ import { assertEnterpriseLicensed } from './license'
 // Public types
 // ---------------------------------------------------------------------------
 
+/** Source formats `importGrid` reads. `'auto'` picks one from the file extension. */
 export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
 
+/** Maps a source header to the row field it populates, for files whose columns do not match your data. */
 export type ImportColumnMap = Record<string, string>
 
 /**
@@ -50,6 +52,7 @@ export type ImportFieldType =
   | 'datetime'  // returns ISO yyyy-mm-ddThh:mm:ss
   | 'json'      // parses the cell as JSON (object / array / primitive)
 
+/** Per-field coercion, so a column of `"42"` strings arrives as numbers. */
 export type ImportColumnTypes = Record<string, ImportFieldType>
 
 /**
@@ -76,6 +79,7 @@ export type ImportProgress = {
   total: number
 }
 
+/** One row that failed validation, with the reason and where it came from. */
 export type ImportRowError = {
   /** 0-based row index in the SOURCE file (excluding the header). */
   rowIndex: number
@@ -84,11 +88,13 @@ export type ImportRowError = {
   message: string
 }
 
+/** Per-row check run during import. Return an error message to reject the row, or nothing to accept it. */
 export type ImportValidator<TData> = (
   row: TData,
   rowIndex: number,
 ) => Array<{ field: string; message: string }>
 
+/** Everything `importGrid` accepts: the format, the column mapping and types, and the validator. */
 export type ImportOptions<TData> = {
   /** The file to read. A `File`/`Blob` works for xlsx; a string is treated as
    *  inline CSV/TSV/JSON text. */
@@ -162,6 +168,7 @@ export type ImportOptions<TData> = {
   onProgress?: (progress: ImportProgress) => void
 }
 
+/** The outcome of an import: the rows that parsed, and the ones that did not with their errors. */
 export type ImportResult<TData> = {
   /** Source headers as found in the file, in their original order. */
   headers: string[]

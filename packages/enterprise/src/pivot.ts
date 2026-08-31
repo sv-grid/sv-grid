@@ -33,6 +33,7 @@ import type { ColumnDef, CellFormatConfig, RowData, TableFeatures } from '@svgri
 
 // ---------------------------------------------------------------- types
 
+/** Built-in pivot measures, named in {@link PivotValueConfig}. */
 export type PivotAggregatorId =
   | 'sum'
   | 'avg'
@@ -43,8 +44,10 @@ export type PivotAggregatorId =
   | 'first'
   | 'last'
 
+/** A custom measure: reduce the values under one cell to the number to display. */
 export type PivotAggregator = (values: ReadonlyArray<unknown>) => unknown
 
+/** One measure: the field to aggregate and how to aggregate it. */
 export type PivotValueConfig<TData> = {
   /** Row field whose values get aggregated. */
   field: keyof TData & string
@@ -56,6 +59,7 @@ export type PivotValueConfig<TData> = {
   format?: CellFormatConfig
 }
 
+/** A pivot definition: the row axis, the column axis, and the measures at their intersections. */
 export type PivotConfig<TData> = {
   /** Outer-most first. Each entry becomes one level of row grouping. */
   rows: ReadonlyArray<keyof TData & string>
@@ -75,6 +79,7 @@ export type PivotConfig<TData> = {
   rowSort?: (a: unknown, b: unknown, level: number) => number
 }
 
+/** What a pivot row represents - a group header, a subtotal, a leaf, or the grand total. */
 export type PivotRowKind = 'group' | 'subtotal' | 'leaf' | 'grandTotal'
 
 /**
@@ -104,6 +109,7 @@ export type PivotRow = {
   [columnId: string]: unknown
 }
 
+/** A built pivot: the rows to display, and the generated column definitions for its column axis. */
 export type PivotResult<TFeatures extends TableFeatures> = {
   rows: PivotRow[]
   columns: Array<ColumnDef<TFeatures, PivotRow>>
@@ -451,6 +457,11 @@ function walkRowTree(
 
 // ------------------------------------------------------------ public API
 
+/**
+ * Build a pivot table from flat rows: cross the row axis with the column axis,
+ * aggregate each intersection, and return rows plus generated columns ready to
+ * hand to `<SvGrid>`.
+ */
 export function createPivotModel<
   TFeatures extends TableFeatures,
   TData extends RowData,

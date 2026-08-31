@@ -69,7 +69,6 @@
       showGroupingControls={false}
       enableInlineEditing={false}
       enableCellSelection={false}
-      enableRowSummaries={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}

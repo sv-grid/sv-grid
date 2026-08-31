@@ -11,9 +11,9 @@ For any cell whose content is more than a string, use `cell:` with
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from '@svgrid/grid'
+  import { renderSnippet, type GridColumns } from '@svgrid/grid'
 
-  const columns: ColumnDef<{}, Person>[] = [
+  const columns: GridColumns<Person> = [
     {
       field: 'status',
       header: 'Status',

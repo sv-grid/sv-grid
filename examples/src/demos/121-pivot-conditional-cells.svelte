@@ -364,13 +364,11 @@
       {columns}
       {features}
       showRowSelection={false}
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={false}
-      enableRowSummaries={false}
     />
   </div>
 </section>

@@ -94,7 +94,7 @@ Pass a `leading` / `trailing` snippet for an icon or button, or `prefix` /
 <SvTextInput bind:value={price} label="Price" prefix="$" suffix="USD" />
 ```
 
-See the [Input adornments demo](../../examples) for the full matrix of icons,
+See the [Input adornments demo](https://svgrid.com/demos/) for the full matrix of icons,
 affixes, sizes and states.
 
 ### Typed variants

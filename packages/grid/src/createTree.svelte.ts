@@ -31,6 +31,7 @@ export type TreeNode = {
   lazy?: boolean
 }
 
+/** A node's checkbox state. `'indeterminate'` means some but not all descendants are checked. */
 export type CheckState = 'checked' | 'indeterminate' | 'unchecked'
 
 /** A single visible (flattened) tree row. */
@@ -145,6 +146,7 @@ export type TreeConfig = {
   filter?: () => string | undefined
 }
 
+/** Build the headless tree model: expansion, selection and checkbox cascading, with no markup. */
 export function createTree(config: TreeConfig) {
   const nodes = () => config.nodes()
   const checkable = () => config.checkable?.() ?? false
@@ -316,4 +318,5 @@ export function createTree(config: TreeConfig) {
   }
 }
 
+/** The headless tree instance returned by {@link createTree}. */
 export type Tree = ReturnType<typeof createTree>

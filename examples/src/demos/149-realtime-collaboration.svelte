@@ -146,7 +146,6 @@
       editable
       enableCellSelection
       selectionMode="cell"
-      enableRowSummaries={false}
       getRowId={(r) => r.id}
       rowHeight={38}
       containerHeight="100%"

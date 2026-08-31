@@ -162,13 +162,11 @@
       showRowNumbers={true}
       rowNumberWidth={46}
       showColumnFilters={false}
-      showPagination={false}
       showRowSelection={false}
       enableInlineEditing={true}
       enableRowHover={false}
       enableCellSelection={true}
       contextMenu={['copy', 'cut', 'paste', 'clear']}
-      enableRowSummaries={false}
       rowHeight={rowHeight}
       containerHeight="100%"
       fitColumns={false}

@@ -1,6 +1,12 @@
 {
   "$schema": "./registry.schema.json",
   "groups": {
+    "data": {
+      "title": "Data table & grid",
+      "items": [
+        "data-table"
+      ]
+    },
     "date-time": {
       "title": "Date & time family",
       "items": [
@@ -131,6 +137,28 @@
     }
   },
   "items": [
+    {
+      "id": "data-table",
+      "title": "Data table",
+      "export": "SvGrid",
+      "description": "Sortable, filterable, paginated table with row selection - declared, not hand-wired.",
+      "aliases": [
+        "datatable",
+        "table",
+        "grid",
+        "svgrid"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "data-table.svelte",
+          "from": "data/data-table.svelte"
+        }
+      ],
+      "group": "data"
+    },
     {
       "id": "calendar",
       "title": "Calendar",

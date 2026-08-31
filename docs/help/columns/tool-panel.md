@@ -24,8 +24,8 @@ the Filters tab:
 For every column:
 
 - a **visibility** checkbox (show / hide the column),
-- **â†‘ / â†“** to reorder the column,
-- **âŠž** to group / ungroup by that column (when grouping is enabled).
+- **↑ / ↓** to reorder the column,
+- **⊞** to group / ungroup by that column (when grouping is enabled).
 
 ## Filters tab
 
@@ -37,7 +37,7 @@ For every filterable column, an inline filter control:
   [`cellDataType`](../cells/cell-data-types.md)),
 - a **value** input matched to the column type, plus a second **To** input for
   `between`,
-- a **âœ•** to clear that column's filter.
+- a **✕** to clear that column's filter.
 
 The Filters tab writes the **same** filter state as the column menu and the
 filter row, so all three surfaces stay in sync - filter from whichever is handy.

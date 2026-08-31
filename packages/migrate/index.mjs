@@ -8,8 +8,9 @@
  */
 
 import { readFileSync, writeFileSync, statSync, readdirSync } from 'node:fs'
-import { join, relative, extname } from 'node:path'
+import { join, relative, extname, dirname } from 'node:path'
 import { migrate, SOURCE_PACKAGES } from './transform.mjs'
+import { migrateTanstack, TANSTACK_PACKAGES } from './tanstack.mjs'
 
 const args = process.argv.slice(2)
 const flags = new Set(args.filter((a) => a.startsWith('-')))
@@ -28,12 +29,23 @@ if (flags.has('--help') || flags.has('-h')) {
     -w, --write     rewrite the files instead of printing the result
     -h, --help      show this
 
-  Defaults to scanning ./src. Only .svelte files that import
-  ${SOURCE_PACKAGES.map((p) => '`' + p + '`').join(' or ')} are touched.
+  Defaults to scanning ./src. Only .svelte and .ts files that import one of
+  these are touched:
 
-  The transform translates column definitions and plugin config, and deletes
-  the <Subscribe>/<Render> scaffolding that SvGrid's renderer replaces. Custom
-  cell renderers are preserved as TODO comments, never dropped silently.
+    ${SOURCE_PACKAGES.map((p) => '`' + p + '`').join(', ')}
+    ${TANSTACK_PACKAGES.map((p) => '`' + p + '`').join(', ')}
+
+  From svelte-headless-table, the transform translates column definitions and
+  plugin config, and deletes the <Subscribe>/<Render> scaffolding that SvGrid's
+  renderer replaces.
+
+  From TanStack Table v9 - including the shadcn-svelte data-table recipe - the
+  \`features\` object is kept as-is, because @svgrid/grid exports the same
+  feature names. Column definitions are renamed (accessorKey -> field), and the
+  markup plus the $state/onXChange pairs that only held state SvGrid owns are
+  removed.
+
+  Custom cell renderers are preserved and reported, never dropped silently.
 `)
   process.exit(0)
 }
@@ -58,7 +70,7 @@ function collect(target, out = []) {
     return out
   }
   if (st.isFile()) {
-    if (extname(target) === '.svelte') out.push(target)
+    if (SCANNED.has(extname(target))) out.push(target)
     return out
   }
   for (const entry of readdirSync(target, { withFileTypes: true })) {
@@ -68,11 +80,32 @@ function collect(target, out = []) {
   return out
 }
 
+/** A svelte-headless-table port only touches components; a TanStack one also
+ *  has to reach `columns.ts` / `data-table-features.ts`. */
+const SCANNED = new Set(['.svelte', '.ts'])
+
+/**
+ * Read a relative import's source, trying the extensions a Svelte project omits.
+ * Only relative specifiers: a bare package name is not ours to read.
+ */
+function readRelativeModule(fromFile, specifier) {
+  if (!specifier.startsWith('.')) return null
+  const base = join(dirname(fromFile), specifier)
+  for (const candidate of [base, base + '.ts', base + '.js', join(base, 'index.ts')]) {
+    try {
+      if (statSync(candidate).isFile()) return readFileSync(candidate, 'utf8')
+    } catch {
+      /* try the next candidate */
+    }
+  }
+  return null
+}
+
 const roots = inputs.length ? inputs : ['src']
 const files = roots.flatMap((r) => collect(r))
 
 if (!files.length) {
-  console.log(`No .svelte files found under ${roots.join(', ')}.`)
+  console.log(`No .svelte or .ts files found under ${roots.join(', ')}.`)
   // Leave process.exitCode alone: collect() sets it to 1 for a path that does
   // not exist, and a typo'd path must not look like a clean run to a script.
   process.exit(process.exitCode ?? 0)
@@ -83,9 +116,20 @@ let totalWarnings = 0
 
 for (const file of files) {
   const source = readFileSync(file, 'utf8')
-  if (!SOURCE_PACKAGES.some((p) => source.includes(p))) continue
+  const isHeadless = SOURCE_PACKAGES.some((p) => source.includes(p))
+  const isTanstack = TANSTACK_PACKAGES.some((p) => source.includes(p))
+  if (!isHeadless && !isTanstack) continue
 
-  const result = migrate(source)
+  // A file importing both is a half-finished migration. The source library it
+  // still renders with wins, so the same markup is never translated twice.
+  const result = isHeadless
+    ? migrate(source)
+    : migrateTanstack(source, {
+        svelte: extname(file) === '.svelte',
+        // The shadcn layout puts `features` in its own module, so the component
+        // has to be able to look it up to know which props to set.
+        readImport: (spec) => readRelativeModule(file, spec),
+      })
   const rel = relative(process.cwd(), file) || file
 
   if (!result.applicable) {

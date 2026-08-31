@@ -71,8 +71,6 @@
       sortable
       showRowSelection={false}
       showColumnFilters={false}
-      showPagination={false}
-      enableRowSummaries={false}
       rowHeight={32}
       containerHeight="100%"
     />

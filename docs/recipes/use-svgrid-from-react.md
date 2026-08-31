@@ -248,5 +248,5 @@ api?.setColumnOrder(['id', 'salary', 'name', 'status'])
 ## See also
 
 - [Architecture](../help/architecture.md) - why the engine is headless.
-- [Use SvGrid imperatively from outside the component](../help/api-reference.md) - the same API the wrapper hands back.
+- [Use SvGrid imperatively from outside the component](https://svgrid.com/api/) - the same API the wrapper hands back.
 - [htmlelements.com](https://www.htmlelements.com) - the recommended option for React-first apps.

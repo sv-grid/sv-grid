@@ -67,7 +67,7 @@
     Double-click a Task or Pts cell to edit; toggle Done. A community-contributed demo.
   </div>
   <div class="flex-1 min-h-0">
-    <SvGrid data={rows} columns={columns} features={features} enableInlineEditing showRowNumbers={false} showPagination={false} rowHeight={40} containerHeight="100%" fitColumns={true} />
+    <SvGrid data={rows} columns={columns} features={features} enableInlineEditing showRowNumbers={false} rowHeight={40} containerHeight="100%" fitColumns={true} />
   </div>
 </section>
 

@@ -58,8 +58,8 @@ layout **outside** those markers and they survive. See
 ### Columns don't fill the width, or a summary row appears
 
 Add `fitColumns` to scale columns to the grid width, and
-`enableRowSummaries={false}` to remove the aggregate footer (it is on by
-default). The generated screens set both.
+`enableRowSummaries={false}` to remove the aggregate footer. The generated
+screens set both, which is why they carry that second prop.
 
 ### Sorting / filtering / paging does nothing
 

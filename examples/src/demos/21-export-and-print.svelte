@@ -170,7 +170,6 @@
       selectionMode="both"
       showRowSelection={true}
       showRowNumbers={true}
-      showPagination={false}
       showGroupingControls={false}
       enableCellSelection={true}
       enableInlineEditing={false}

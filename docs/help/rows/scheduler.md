@@ -410,7 +410,7 @@ non-bookable time and can reject double-bookings:
 ```
 
 Shading is purely visual unless `restrictToBusinessHours` is set; `disableConflicts`
-is always enforced. Use the pure [`hasConflict`](../../api) helper to check a
+is always enforced. Use the pure [`hasConflict`](https://svgrid.com/api/) helper to check a
 placement yourself.
 
 ### Per-resource availability
@@ -521,7 +521,7 @@ UTC / offset ISO (`'2026-08-01T13:00:00Z'`, `'…+02:00'`) or epoch ms; a bare
 local string (`'2026-08-01T09:00'`) is read as the browser instant then shown in
 the zone. Edits made in the calendar are written back as real instants, so store
 them offset-aware (e.g. `date.toISOString()`); the display zone never mutates the
-stored value - toggle Table on the [time-zones demo](../../examples) to see the
+stored value - toggle Table on the [time-zones demo](https://svgrid.com/demos/) to see the
 UTC strings stay put while the calendar shifts. The tz math is DST-aware and uses
 `Intl` only (no date library).
 

@@ -1029,7 +1029,21 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * work; the shortcut wins only when it is explicitly set.
    */
   sortable?: boolean;
+  /**
+   * Click a header to filter that column. Injects `columnFilteringFeature`,
+   * so you do not import it yourself. Which filter surface appears is a
+   * separate question - see `filterMode` (default `'menu'`).
+   *
+   *   <SvGrid {data} {columns} filterable />
+   */
   filterable?: boolean;
+  /**
+   * Inline cell editing. Alias of `enableInlineEditing`, and wins over it when
+   * both are set. A column also needs an `editorType` to be editable; without
+   * one it falls back to a text editor.
+   *
+   *   <SvGrid {data} {columns} editable />
+   */
   editable?: boolean;
   /**
    * Cell selection - click a cell to select it, drag or shift-click to extend
@@ -1081,6 +1095,16 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     /** Indent per depth level, in px. Default `12`. */
     indentPx?: number;
   };
+  /**
+   * Show the grouping controls: "Group by this column" in the column menu, and
+   * the group panel when `showGroupPanel` is on. Alias of
+   * `showGroupingControls`, and also injects `columnGroupingFeature`.
+   *
+   * This turns on the UI for grouping. To group without asking the user, set
+   * `groupBy` instead.
+   *
+   *   <SvGrid {data} {columns} groupable />
+   */
   groupable?: boolean;
   /**
    * Group the rows by these column ids, outermost first - `['region',
@@ -1158,7 +1182,19 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   autoGroupColumnHeader?: string;
   /** Width (px) of each auto-group column. Default `220`. */
   autoGroupColumnWidth?: number;
+  /**
+   * Show the pagination footer. Alias of `showPagination`, and wins over it
+   * when both are set. Page size starts at `pageSize` (default 10).
+   *
+   *   <SvGrid {data} {columns} pageable pageSize={25} />
+   */
   pageable?: boolean;
+  /**
+   * Show the loading state instead of the rows. By default this replaces the
+   * grid body with "Loading..."; set `loadingOverlay` to keep the current rows
+   * visible under a dimmed overlay instead, which is what you usually want for
+   * a server-paged grid.
+   */
   loading?: boolean;
   /**
    * Render `loading` as a non-blocking overlay instead of replacing the
@@ -1170,7 +1206,16 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   loadingOverlay?: boolean;
   /** Skeleton placeholder rows to show on first load. Defaults to 8. */
   loadingSkeletonRows?: number;
+  /**
+   * Render an error message in place of the rows. `null` or omitted means no
+   * error. Takes precedence over `loading` and over the empty state.
+   */
   error?: string | null;
+  /**
+   * Text shown when there are no rows to display - either the data is empty or
+   * a filter matched nothing. Defaults to the localized `noRows` string, so
+   * prefer `localization.text.noRows` when you are translating the whole grid.
+   */
   emptyMessage?: string;
   /**
    * The single place to localize the grid. One object with two fields:
@@ -1190,7 +1235,21 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * Omitting it (or any field) is a no-op. See {@link GridMessages}.
    */
   localization?: GridLocalization;
+  /**
+   * Show the single search box that filters across every column. Explicitly
+   * setting this wins over `filterMode`; leaving it unset means it appears only
+   * when `filterMode` is `'global'`.
+   */
   showGlobalFilter?: boolean;
+  /**
+   * Show the filter section inside each column's menu. Explicitly setting this
+   * wins over `filterMode`; unset, it follows `filterMode` (default `'menu'`,
+   * so this is normally on).
+   *
+   * Setting it `true` also adds the inline "floating filter" input under each
+   * header - that surface requires the explicit opt-in, since it otherwise
+   * duplicates the menu's own filter popover.
+   */
   showColumnFilters?: boolean;
   /**
    * Quick way to pick a single filtering UI. When set it controls which of
@@ -1199,8 +1258,23 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * Defaults to `'menu'` (only the column menu's filter section is shown).
    */
   filterMode?: "row" | "menu" | "global" | "none";
+  /**
+   * Show the grouping affordances (the column menu's "Group by this column",
+   * and the group panel). The `groupable` shortcut sets this and registers the
+   * grouping feature in one go; prefer that unless you have already registered
+   * `columnGroupingFeature` yourself.
+   */
   showGroupingControls?: boolean;
+  /**
+   * Show the row-selection checkbox column, including the select-all checkbox
+   * in the header. Unset, it follows `selectionMode` (default `'both'`, so
+   * row selection is on).
+   */
   showRowSelection?: boolean;
+  /**
+   * Show the pagination footer. Off by default. `pageable` is the shortcut
+   * alias and wins when both are set.
+   */
   showPagination?: boolean;
   /** Initial page size when pagination is enabled. Defaults to 10. */
   pageSize?: number;
@@ -1230,6 +1304,14 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * is on. Fetch that page and update `data` / `rowCount` / `pageIndex`.
    */
   onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void;
+  /**
+   * Render only the rows in view instead of all of them. **On by default** -
+   * this is what keeps a 100,000-row grid responsive.
+   *
+   * Turn it off when a row's height cannot be known up front and must not be
+   * clipped, such as a variable-height master-detail panel. Expect the DOM to
+   * hold every row when you do.
+   */
   virtualization?: boolean;
   /** Row height in pixels. Pass a function `(rowIndex) => px` for
    *  per-row variable heights (e.g. an interactive row-resize feature).
@@ -1254,6 +1336,11 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * to their content (the default). Does not affect the filter row.
    */
   headerHeight?: number;
+  /**
+   * Extra rows rendered above and below the viewport, so fast scrolling does
+   * not reach empty space before the next batch renders. Defaults to 8.
+   * Raise it for very tall rows, lower it to trim DOM work.
+   */
   overscan?: number;
   /**
    * Height of the grid's scrollable shell. A number is treated as pixels;
@@ -1261,8 +1348,24 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * make the grid fill its parent. Defaults to 520 px.
    */
   containerHeight?: number | string;
+  /**
+   * Render only the columns in view, the horizontal counterpart of
+   * `virtualization`. **On by default**, which is what makes a 100-column grid
+   * scroll smoothly.
+   *
+   * It recycles column DOM nodes, so it cannot coexist with sticky pinned
+   * columns - turn it off if you need pinning to survive horizontal scrolling.
+   */
   columnVirtualization?: boolean;
+  /**
+   * Extra columns rendered either side of the viewport when
+   * `columnVirtualization` is on. Defaults to 3.
+   */
   columnOverscan?: number;
+  /**
+   * Fallback width in pixels for columns whose `ColumnDef` sets no `width`.
+   * Defaults to 140.
+   */
   columnWidth?: number;
   /**
    * Columns pinned to the left/right edge on mount. Each entry is a
@@ -1293,8 +1396,24 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * breakpoint; pass `{ breakpoint }` to change it. Off by default.
    */
   responsive?: boolean | { breakpoint?: number };
+  /**
+   * @deprecated Has no effect - nothing in the grid reads this prop. It is kept
+   * only so existing code keeps compiling. The column menu's filter section is
+   * controlled by `showColumnFilters`, or by `filterMode="menu"` (the default).
+   */
   showFilterMenu?: boolean;
+  /**
+   * Show the always-visible filter row under the header. Explicitly setting
+   * this wins over `filterMode`; unset, it appears only when `filterMode` is
+   * `'row'`.
+   */
   showFilterRow?: boolean;
+  /**
+   * Cell selection - click to select, drag or shift-click to extend to a range,
+   * which is what clipboard copy and the range fill handle operate on. Unset,
+   * it follows `selectionMode` (default `'both'`, so this is on). `selectable`
+   * is the shortcut alias and wins over it.
+   */
   enableCellSelection?: boolean;
   /**
    * Highlight the row under the pointer. Default **false** - the hover tint can
@@ -1320,6 +1439,14 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     rowIndex: number;
     columnId: string;
   }) => unknown;
+  /**
+   * Inline cell editing: F2 or double-click opens an editor in the active cell,
+   * Enter commits, Esc cancels. Off by default.
+   *
+   * A column still needs an `editorType` to pick its editor (text, number,
+   * date, checkbox, list, ...); without one it gets a plain text editor.
+   * `editable` is the shortcut alias and wins over this.
+   */
   enableInlineEditing?: boolean;
   /**
    * Full-row editing. When `true`, starting an edit puts the WHOLE row into
@@ -1329,7 +1456,22 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * text / number / date / datetime / checkbox / list-select editor types.
    */
   fullRowEditing?: boolean;
+  /**
+   * Append a sticky footer row aggregating every filtered row: the sum of a
+   * numeric column, `Count: N` otherwise. Choose a different aggregate per
+   * column with that column's own `summary` option, or set it to `false` there
+   * to leave the cell blank.
+   *
+   * Off by default. `summary` is the shortcut alias and wins when both are set.
+   *
+   *   <SvGrid {data} {columns} summary />
+   */
   enableRowSummaries?: boolean;
+  /**
+   * Shortcut alias for {@link enableRowSummaries}. Wins over it when both are
+   * set, the same precedence `selectable` has over `enableCellSelection`.
+   */
+  summary?: boolean;
   /**
    * Excel-style status bar under the grid showing live aggregates of the
    * selected cell range (count, numeric count, sum, average, min, max).
@@ -1544,6 +1686,14 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    *   filter.
    */
   conditionalStatScope?: "filtered" | "visible" | "all";
+  /**
+   * Fires after an inline edit commits, with the cell's old and new value and
+   * the row it belongs to. This is where you persist the change.
+   *
+   * The grid has already applied the edit to its own state by the time this
+   * runs, so it is a notification, not a veto - reject a value with the
+   * column's `valueParser` or a validation rule instead.
+   */
   onCellValueChange?: (event: {
     rowIndex: number;
     columnId: string;

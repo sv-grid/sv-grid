@@ -7,6 +7,12 @@ virtualization, and editing are yours to write by hand. Moving to SvGrid
 replaces that hand-rolled logic with built-in features - while still
 letting you match the design system.
 
+> **Not the shadcn-svelte data table.** That one is a separate recipe
+> built on TanStack Table v9, and it already does sorting, filtering,
+> pagination, and row selection. If that is what you have, read
+> [Migrating from the shadcn-svelte data table](./migrating-from-shadcn-data-table.md)
+> instead - the port is different, and smaller.
+
 > Estimated effort: **30 min - 1 hour** per table. You are mostly
 > deleting `{#each}` markup and the sort / filter state you wrote
 > yourself.
@@ -101,8 +107,10 @@ shadcn:
 ### When should I replace a Flowbite / Skeleton / shadcn table with a data grid?
 
 When the table needs sorting, filtering, virtualization, inline editing, or
-large datasets. UI-kit tables are presentation components; once you are
-hand-writing table behaviour, a data grid like SvGrid removes that code.
+large datasets. These styled `<Table>` components are presentation only;
+once you are hand-writing table behaviour, a data grid like SvGrid removes
+that code. (shadcn-svelte also ships a separate TanStack-based data table -
+see [that migration guide](./migrating-from-shadcn-data-table.md).)
 
 ### Can SvGrid match my existing UI-kit styling?
 

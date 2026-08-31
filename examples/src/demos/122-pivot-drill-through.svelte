@@ -268,7 +268,6 @@
             columns={drillCols}
             features={drillFeatures}
             showRowSelection={false}
-            showPagination={false}
             enableInlineEditing={false}
             enableCellSelection={false}
             rowHeight={28}

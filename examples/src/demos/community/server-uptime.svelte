@@ -63,7 +63,7 @@
     Filter by region or status from the column menus. A community-contributed demo.
   </div>
   <div class="flex-1 min-h-0">
-    <SvGrid data={rows} columns={columns} features={features} filterMode="menu" showRowNumbers={false} showPagination={false} rowHeight={38} containerHeight="100%" fitColumns={true} />
+    <SvGrid data={rows} columns={columns} features={features} filterMode="menu" showRowNumbers={false} rowHeight={38} containerHeight="100%" fitColumns={true} />
   </div>
 </section>
 

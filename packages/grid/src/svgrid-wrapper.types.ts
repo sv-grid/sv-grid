@@ -9,6 +9,7 @@ import type { GridPredicateExpr } from './filtering/predicate-expr'
 // Aliased to the core union rather than restated: the API surfaces below hand
 // back whatever the grid actually filtered with, so a hand-maintained subset
 // here silently mistypes operators like 'endsWith' that reach callers at runtime.
+/** The comparisons a column filter can use, as shown in the filter menu. */
 export type SvGridFilterOperator = FilterOperator
 
 /**
@@ -79,6 +80,7 @@ export type SvGridTransaction<TData> = {
   remove?: ReadonlyArray<TData | string>
 }
 
+/** What a batched `applyTransaction` did: how many rows were added, updated and removed. */
 export type SvGridTransactionResult = {
   added: number
   updated: number
@@ -503,6 +505,7 @@ export type SvGridApi<
   refresh(): void
 }
 
+/** The props `<SvGrid>` accepts. See the SvGrid reference for the full list with defaults. */
 export type SvGridWrapperProps<
   TFeatures extends TableFeatures,
   TData extends RowData,
@@ -553,6 +556,8 @@ export type SvGridWrapperProps<
   enableCellSelection?: boolean
   enableInlineEditing?: boolean
   enableRowSummaries?: boolean
+  /** Shortcut alias for `enableRowSummaries`; wins when both are set. */
+  summary?: boolean
   /** Receives the imperative grid API when the component is ready. */
   onApiReady?: (api: SvGridApi<TFeatures, TData>) => void
 }

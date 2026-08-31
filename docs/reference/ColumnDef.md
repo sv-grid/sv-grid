@@ -4,11 +4,11 @@ A column definition is the contract between the grid and one column of
 data. Pass an array of these as the `columns` prop to `<SvGrid>`.
 
 ```ts
-import type { ColumnDef } from '@svgrid/grid'
+import type { GridColumns } from '@svgrid/grid'
 
 type Row = { id: string; firstName: string; salary: number; joinedAt: string }
 
-const columns: ColumnDef<{}, Row>[] = [
+const columns: GridColumns<Row> = [
   { field: 'firstName', header: 'First name' },
   {
     field: 'salary',
@@ -137,7 +137,7 @@ numeric or date-typed.
 Example:
 
 ```ts
-const columns: ColumnDef<{}, Row>[] = [
+const columns: GridColumns<Row> = [
   {
     id: 'name',
     header: 'Name',

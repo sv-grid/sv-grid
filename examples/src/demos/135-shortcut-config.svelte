@@ -125,7 +125,6 @@
       {pageable}
       pageSize={25}
       selectionMode="none"
-      enableRowSummaries={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}

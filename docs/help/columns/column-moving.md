@@ -11,9 +11,9 @@ There are two ways to move columns in sv-grid:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, rowSortingFeature, type GridColumns } from '@svgrid/grid'
 
-  let columns: ColumnDef<{}, Person>[] = [
+  let columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name' },
     { field: 'lastName',  header: 'Last name' },
     { field: 'age',       header: 'Age' },
@@ -90,7 +90,7 @@ If you prefer to own the order entirely in user-land (e.g. a dropdown picker rat
 
 ```svelte
 <script lang="ts">
-  let columns = $state<ColumnDef<{}, Person>[]>([
+  let columns = $state<GridColumns<Person>>([
     { field: 'firstName', header: 'First name' },
     { field: 'lastName',  header: 'Last name' },
     { field: 'age',       header: 'Age' },

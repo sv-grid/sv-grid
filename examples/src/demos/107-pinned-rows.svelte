@@ -180,10 +180,8 @@
         features={features}
         filterMode="none"
         selectionMode="none"
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={36}
         containerHeight={70}
         fitColumns={true}
@@ -202,10 +200,8 @@
       features={features}
       filterMode="menu"
       selectionMode="cell"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}
@@ -226,10 +222,8 @@
         features={features}
         filterMode="none"
         selectionMode="none"
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={36}
         containerHeight={Math.min(220, 36 * bottomPinnedData.length + 12)}
         fitColumns={true}

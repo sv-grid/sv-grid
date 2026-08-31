@@ -103,7 +103,7 @@ something deprecated and removing it - often two.
   (jumping from v2 to v4) happen only if a major change is so
   invasive the bridge isn't worth the maintenance cost.
 
-The changelog ([`CHANGELOG.md`](../../CHANGELOG.md)) is canonical.
+The changelog ([`CHANGELOG.md`](../changelog.md)) is canonical.
 Every release has a dated entry with three sections: Breaking,
 Features, Fixes. Breaking changes carry a migration paragraph.
 
@@ -163,7 +163,7 @@ months on a case-by-case basis - contact `sales@jqwidgets.com`.
 
 ## See also
 
-- [API reference](./api-reference.md) - every export with its tier
+- [API reference](https://svgrid.com/api/) - every export with its tier
   badge.
 - [Error reference](./errors.md) - the stable error class + message
   inventory.

@@ -395,7 +395,7 @@ async function cmdAdd(registry, tokens, args) {
         `  ${color('dim', 'Start an app:')} ${color('cyan', 'npm create @svgrid@latest')} ${color('dim', '(then run add inside it)')}\n`,
     )
   } else {
-    stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first.id)} } from '@svgrid/grid'\n`)
+    stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first)} } from '@svgrid/grid'\n`)
     // "See it" - skip when we already wrote preview routes just above.
     if (!(args.preview && isSvelteKit(projectRoot))) {
       stdout.write(`  ${color('dim', 'See it:')}  ${color('cyan', `npx @svgrid/ui try ${ids}`)} ${color('dim', '(opens in your browser)')}\n`)
@@ -546,9 +546,11 @@ ${sections.join('\n')}
 }
 
 /** Component export name from its id (calendar -> SvCalendar, time-picker ->
- *  SvTimePicker). */
-function exportName(id) {
-  return 'Sv' + id.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join('')
+ *  SvTimePicker). A registry item can override it with `export` when the id and
+ *  the component name diverge (data-table -> SvGrid). */
+function exportName(item) {
+  if (item.export) return item.export
+  return 'Sv' + item.id.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join('')
 }
 
 function relFromCwd(cwd, p) {

@@ -139,7 +139,6 @@
       {columns}
       loading={view.loading}
       fitColumns
-      enableRowSummaries={false}
       showRowSelection={active.editable}
       sortable
       externalSort

@@ -90,7 +90,7 @@ ask for the API via `onApiReady`:
 />
 ```
 
-See the [API reference](./api-reference.md) for the full surface.
+See the [API reference](https://svgrid.com/api/) for the full surface.
 
 ## State ownership
 
@@ -145,7 +145,7 @@ mutate DOM nodes during a sort.
 
 - [Why headless?](../why-headless.md) - the design rationale for the
   Layer 2 / Layer 3 split.
-- [API reference](./api-reference.md) - every export with its layer
+- [API reference](https://svgrid.com/api/) - every export with its layer
   noted.
 - [Performance benchmarks](./benchmarks.md) - numbers from each layer
   in isolation.

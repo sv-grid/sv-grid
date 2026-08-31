@@ -10,7 +10,7 @@ Quarter wraps measure:
 
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName', header: 'First name' },
   { field: 'lastName',  header: 'Last name' },
   {

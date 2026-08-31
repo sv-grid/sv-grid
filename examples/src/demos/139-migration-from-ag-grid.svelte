@@ -218,7 +218,6 @@ $: filtered = deals.filter(d =>
           columns={svColumns}
           {features}
           showRowSelection={false}
-          showPagination={false}
           enableInlineEditing={false}
           enableCellSelection={false}
           rowHeight={32}

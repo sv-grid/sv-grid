@@ -281,10 +281,8 @@
       selectionMode="cell"
       showRowNumbers={true}
       showGroupingControls={true}
-      showPagination={false}
       enableInlineEditing={true}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={44}
       containerHeight="100%"
       fitColumns={false}

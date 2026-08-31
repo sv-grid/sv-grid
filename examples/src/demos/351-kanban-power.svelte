@@ -133,7 +133,6 @@
         sortable
         filterable
         enableInlineEditing
-        showPagination={false}
         rowHeight={36}
         containerHeight="100%"
         fitColumns

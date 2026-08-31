@@ -7,6 +7,7 @@
  */
 import type { RecurrenceRule } from './recurrence'
 
+/** One VEVENT: the fields SvGrid reads from and writes to an iCalendar feed. */
 export type ICalEvent = {
   uid?: string
   title: string

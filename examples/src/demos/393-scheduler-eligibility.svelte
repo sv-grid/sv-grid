@@ -93,7 +93,7 @@
     {#if view === 'timeline'}
       <SvGrid data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" scheduler={schedulerCfg} />
     {:else}
-      <SvGrid data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" editable showPagination={false} />
+      <SvGrid data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" editable />
     {/if}
   </div>
 </section>

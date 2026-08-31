@@ -106,6 +106,8 @@ function getNumberFormatter(
 
 /** Cache of `Intl.DateTimeFormat` by `(locale, options)` signature. */
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>()
+/** A cached `Intl.DateTimeFormat` for the locale and options given. Cached because
+ *  constructing one per cell is the dominant cost when formatting a date column. */
 export function getDateFormatter(
   locales: string | readonly string[] | undefined,
   options: Intl.DateTimeFormatOptions,

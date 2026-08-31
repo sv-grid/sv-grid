@@ -6,7 +6,7 @@ set: `equals`, `notEquals`, `greaterThan`, `lessThan`, **`between`**, `in`,
 <div data-docs-demo="64-filter-between-operator" data-height="540"></div>
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'age',    header: 'Age',    editorType: 'number' },
   {
     field: 'salary', header: 'Salary', editorType: 'number',

@@ -153,7 +153,6 @@
       selectionMode="row"
       showRowSelection={true}
       showRowNumbers={true}
-      showPagination={false}
       enableInlineEditing={false}
       rowHeight={36}
       containerHeight="100%"

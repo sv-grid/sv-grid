@@ -68,8 +68,6 @@
           features={features}
           alignedGridGroup="finance"
           selectionMode="none"
-          showPagination={false}
-          enableRowSummaries={false}
           rowHeight={36}
           containerHeight="100%"
         />
@@ -85,8 +83,6 @@
           features={features}
           alignedGridGroup="finance"
           selectionMode="none"
-          showPagination={false}
-          enableRowSummaries={false}
           rowHeight={36}
           containerHeight="100%"
         />

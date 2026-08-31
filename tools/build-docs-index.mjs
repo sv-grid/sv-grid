@@ -3,8 +3,13 @@
  * Build the AI-era doc indexes:
  *
  *   docs/llms.txt        — topic map (one-line summaries, grouped by section)
- *   docs/llms-full.txt   — concatenated full text of every doc page
+ *   docs/llms-full.txt   — concatenated full text of every doc page, PLUS the
+ *                          unrouted API reference (see isLlmOnlyDoc)
  *   docs/docs.json       — machine-readable route manifest with metadata
+ *
+ * Routed pages and LLM-only pages are collected separately on purpose:
+ * docs.json, llms.txt and the sitemap are all built from the routed list, so
+ * the reference cannot leak into them and advertise URLs that 404.
  *
  * Run it from anywhere: `node tools/build-docs-index.mjs`.
  *
@@ -14,7 +19,7 @@
 import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
 import { join, relative, sep, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isHiddenDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
+import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
@@ -193,12 +198,24 @@ function sectionOf(relPath) {
 
 async function main() {
   const docs = []
+  // Unrouted pages that still belong in the LLM bundle - the full API
+  // reference. Kept in its own list so it can never leak into docs.json,
+  // llms.txt or the sitemap, all of which are built from `docs`.
+  const llmOnly = []
   for await (const file of walk(DOCS_DIR)) {
     if (!file.endsWith('.md')) continue
     const rel = relative(DOCS_DIR, file).replaceAll('\\', '/')
+    const slug = rel.replace(/\.md$/, '')
     // Pages the site cannot route (shared with the prerenderer and the SPA via
     // tools/lib/doc-meta.mjs); listing them would advertise 404s to crawlers.
-    if (isHiddenDoc(rel.replace(/\.md$/, ''))) continue
+    if (isHiddenDoc(slug)) {
+      if (isLlmOnlyDoc(slug)) {
+        const { body } = parseDocFrontmatter(await readFile(file, 'utf-8'))
+        const { title } = extract(body)
+        if (title) llmOnly.push({ path: rel, title, body })
+      }
+      continue
+    }
     // Optional search-facing frontmatter (seoTitle, seoDescription, keywords,
     // noindex); the body is what every consumer renders and indexes.
     const { meta, body } = parseDocFrontmatter(await readFile(file, 'utf-8'))
@@ -322,7 +339,10 @@ async function main() {
   const llmsFullLines = []
   llmsFullLines.push('# sv-grid - full documentation')
   llmsFullLines.push('')
-  llmsFullLines.push(`Generated ${new Date().toISOString().slice(0, 10)} from ${docs.length} pages.`)
+  llmsFullLines.push(
+    `Generated ${new Date().toISOString().slice(0, 10)} from ${docs.length} pages` +
+      (llmOnly.length ? `, plus ${llmOnly.length} API reference pages.` : '.'),
+  )
   llmsFullLines.push('')
   for (const d of docs) {
     const { body } = parseDocFrontmatter(await readFile(join(DOCS_DIR, d.path), 'utf-8'))
@@ -332,6 +352,23 @@ async function main() {
     llmsFullLines.push('')
     llmsFullLines.push(body.trim())
     llmsFullLines.push('')
+  }
+  // The full typed API surface. It has no route - the /api page is the
+  // human-facing one and routing both would be duplicate content - but a model
+  // answering an API question has nothing else to read, so it ships here.
+  // Marked as unrouted so nothing cites a URL that would 404.
+  if (llmOnly.length) {
+    llmsFullLines.push(`<!-- =================================================================`)
+    llmsFullLines.push(`     API REFERENCE - source of truth for signatures and types.`)
+    llmsFullLines.push(`     Not routed on the site: cite ${SITE}/api/ instead of a /docs URL.`)
+    llmsFullLines.push(`     ================================================================== -->`)
+    llmsFullLines.push('')
+    for (const d of llmOnly.sort((a, b) => a.path.localeCompare(b.path))) {
+      llmsFullLines.push(`<!-- docs/${d.path}  (unrouted) -->`)
+      llmsFullLines.push('')
+      llmsFullLines.push(d.body.trim())
+      llmsFullLines.push('')
+    }
   }
   await writeFile(join(DOCS_DIR, 'llms-full.txt'), llmsFullLines.join('\n'), 'utf-8')
 

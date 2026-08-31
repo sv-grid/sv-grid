@@ -125,5 +125,5 @@ type SvGridApi<…> = {
 
 - Demo 111: [Set filter - tree / async / Excel mode](#/demos/111-set-filter-advanced)
 - Demo 102: [Tree checkbox cascade](#/demos/102-tree-checkbox-cascade) - the cascade recipe used inside the tree filter
-- [`api.setFacetFilter`](../api-reference.md#setfacetfilter)
+- [`api.setFacetFilter`](https://svgrid.com/api/#setfacetfilter)
 - [Filter API overview](./filter-api.md)

@@ -208,6 +208,12 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
         return fire ? `(${param}) => { ${base}${fire} }` : `(${param}) => ${base}`
       }
       const lines = [`data={${dataExpr}}`, `columns={${colVar}}`, `loading={${tree || grouped ? '!allRowsReady' : 'view.loading'}}`, `loadingOverlay`, `emptyMessage=${JSON.stringify(emptyMsg)}`, `fitColumns`]
+      // Emitted explicitly in BOTH directions on purpose. The grid now defaults
+      // this off and takes `summary` as a shortcut, but generated apps install
+      // the PUBLISHED @svgrid/grid, where the default is still on and `summary`
+      // does not exist yet. Switching to `summary` (or dropping the `false`)
+      // before that release would silently give every generated screen the
+      // wrong footer. Revisit once the grid carrying the flip is published.
       lines.push(`enableRowSummaries={${cfg.rowSummaries ? 'true' : 'false'}}`)
       if (cfg.striped) lines.push(`zebraRows`)
       if (cfg.cellSelection) lines.push(`enableCellSelection`)

@@ -91,14 +91,14 @@ a semantic `variant` in one place:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, SvBadge, renderSnippet, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, SvBadge, renderSnippet, type GridColumns } from '@svgrid/grid'
 
   type Order = { id: number; status: 'active' | 'pending' | 'failed' }
 
   const variantOf = (s: Order['status']) =>
     s === 'active' ? 'success' : s === 'pending' ? 'warning' : 'danger'
 
-  const columns: ColumnDef<{}, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'id', header: 'Order' },
     {
       field: 'status',

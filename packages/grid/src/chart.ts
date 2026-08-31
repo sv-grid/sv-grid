@@ -36,9 +36,8 @@ export type SeriesOverlay = 'linear' | `sma:${number}` | `ema:${number}`
 /** A texture fill applied in addition to (and on top of) the series color.
  *  Helps colorblind readers distinguish series at a glance. */
 export type SeriesPattern = 'solid' | 'stripe' | 'crosshatch' | 'dots' | 'diagonal'
-/** Cycle used when `ChartSpec.patternFallback` is true and a series has no
- *  explicit `pattern` set. Skips `'solid'` so every series gets a texture. */
 
+/** One plotted series: its label, its values (one per category), and how to draw it. */
 export type ChartSeries = {
   label: string
   values: number[]
@@ -95,6 +94,12 @@ export type ChartReferenceLine = {
   dashed?: boolean
 }
 
+/**
+ * What to plot - the input you build and hand to a chart. Categories are the
+ * x-axis labels and every series supplies one value per category.
+ *
+ * {@link buildChart} turns this into a {@link ChartGeometry} for rendering.
+ */
 export type ChartSpec = {
   /** Default type for series that don't set their own `type`. */
   type: ChartType
@@ -326,6 +331,7 @@ export type ChartHeatmapCell = {
   colLabel: string
 }
 
+/** A computed bar rectangle in SVG coordinates. Output of {@link buildChart}, not an input. */
 export type ChartBar = {
   x: number
   y: number
@@ -338,6 +344,7 @@ export type ChartBar = {
   series: string
   value: number
 }
+/** One computed point on a line, with whether the series has a value there. */
 export type ChartLinePoint = {
   x: number
   y: number
@@ -346,6 +353,7 @@ export type ChartLinePoint = {
   /** False for null / NaN values - the line breaks (gap), no dot is drawn. */
   defined: boolean
 }
+/** A computed line series: its points and the path drawn through them. */
 export type ChartLine = {
   path: string
   areaPath: string
@@ -356,6 +364,7 @@ export type ChartLine = {
    *  series, when both arrays are supplied. Empty otherwise. */
   bandPath?: string
 }
+/** A computed pie slice, as an SVG arc plus its label placement. */
 export type ChartPieSlice = {
   path: string
   color: string
@@ -366,12 +375,17 @@ export type ChartPieSlice = {
   cx: number
   cy: number
 }
+/** A value-axis tick: the number, where it sits vertically, and its label. */
 export type ChartAxisTick = { value: number; y: number; label: string }
+/** A category-axis tick: the label and its horizontal position. */
 export type ChartCategoryTick = { label: string; x: number }
+/** One legend entry, paired with the series colour it stands for. */
 export type ChartLegendItem = { label: string; color: string }
+/** A computed reference line (target, average, threshold) at its plotted height. */
 export type ChartRefLineGeo = { y: number; label: string; color: string; dashed: boolean }
 /** A vertical reference line (horizontal bar charts) positioned by `x`. */
 export type ChartRefLineGeoV = { x: number; label: string; color: string; dashed: boolean }
+/** A computed scatter point in SVG coordinates. */
 export type ChartScatterDot = {
   cx: number
   cy: number
@@ -383,6 +397,11 @@ export type ChartScatterDot = {
   y: number
 }
 
+/**
+ * Everything needed to render a chart: the plot rectangle plus every mark
+ * already positioned in SVG coordinates. Produced by {@link buildChart} from a
+ * {@link ChartSpec}, so a renderer does no maths of its own.
+ */
 export type ChartGeometry = {
   type: ChartType
   width: number
@@ -455,6 +474,7 @@ export type ChartGeometry = {
   sankeyLinks: ChartSankeyLink[]
 }
 
+/** Series colours used when a {@link ChartSeries} sets none, in order. */
 export const DEFAULT_PALETTE = [
   '#2563eb',
   '#16a34a',
@@ -480,6 +500,7 @@ function niceNum(range: number, roundIt: boolean): number {
   return nf * Math.pow(10, exp)
 }
 
+/** An axis range rounded to human-friendly bounds and tick spacing. */
 export type NiceScale = { min: number; max: number; step: number; ticks: number[] }
 
 // ---- Color helpers for heatmap / pattern fills ----------------------
@@ -574,9 +595,6 @@ function project(value: number, min: number, max: number, isLog: boolean): numbe
 
 // ---- Overlay math: trendline + moving averages -----------------------
 
-/** Ordinary least-squares regression on (i, values[i]) pairs (i = x index).
- *  Returns the fitted value at each x index, or NaN where the source value
- *  was non-finite. */
 /** Build an SVG path from a list of (x,y) pairs, optionally smoothed via
  *  monotone cubic interpolation (preserves local extrema - no overshoots).
  *  Breaks the path at `defined === false` gaps. */
@@ -655,6 +673,9 @@ function monotoneCubicPath(pts: Array<{ x: number; y: number }>): string {
   return path
 }
 
+/** Ordinary least-squares regression on (i, values[i]) pairs (i = x index).
+ *  Returns the fitted value at each x index, or NaN where the source value
+ *  was non-finite. */
 export function linearTrend(values: number[]): number[] {
   let n = 0, sumX = 0, sumY = 0, sumXX = 0, sumXY = 0
   for (let i = 0; i < values.length; i += 1) {
@@ -835,6 +856,11 @@ function axisDomain(
   return isLog ? niceLogScale(dMin, dMax) : niceScale(dMin, dMax)
 }
 
+/**
+ * Lay out a {@link ChartSpec} into renderable {@link ChartGeometry} - scales,
+ * ticks, and the position of every bar, line, slice and dot. Pure: no DOM, so
+ * it runs during SSR and can be unit-tested directly.
+ */
 export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): ChartGeometry {
   const width = spec.width ?? 520
   const height = spec.height ?? 300

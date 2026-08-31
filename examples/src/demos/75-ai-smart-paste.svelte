@@ -990,10 +990,8 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
       filterMode="menu"
       selectionMode="row"
       showRowNumbers={true}
-      showPagination={false}
       enableInlineEditing={true}
       enableCellSelection={false}
-      enableRowSummaries={false}
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}

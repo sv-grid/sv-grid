@@ -33,6 +33,7 @@ import { enableBoardView } from './board'
 import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
 
+/** The `api.ai.*` namespace added by the enterprise install. */
 export type EnterpriseAIApi<TData extends RowData> = {
   /** Natural-language -> filter + sort plan (and optionally apply it). */
   filter(query: string, opts?: AIFilterOptions): Promise<AIFilterResult>
@@ -54,6 +55,7 @@ export type EnterpriseAIApi<TData extends RowData> = {
   readonly _rowType?: TData
 }
 
+/** The `api.pivot.*` namespace added by the enterprise install. */
 export type EnterprisePivotApi<
   TFeatures extends TableFeatures,
   TData extends RowData,
@@ -76,6 +78,7 @@ export type EnterprisePivotApi<
   ): PivotResult<TFeatures>
 }
 
+/** The grid API plus everything enterprise adds - what `installEnterprise` hands back. */
 export type EnterpriseGridApi<
   TFeatures extends TableFeatures,
   TData extends RowData,

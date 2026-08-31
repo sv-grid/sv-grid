@@ -122,7 +122,6 @@
       columns={columns}
       features={features}
       selectionMode="none"
-      enableRowSummaries={false}
       rowHeight={40}
       containerHeight="100%"
       fitColumns={true}

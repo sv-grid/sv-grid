@@ -12,6 +12,7 @@
  * headless contexts that forbid `Date.now()`).
  */
 
+/** A wall-clock time broken into fields, as it reads in a specific time zone. */
 export type ZoneParts = {
   year: number
   month: number // 1-12

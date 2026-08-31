@@ -266,7 +266,7 @@ data within a boundary before it reaches a provider.
 | `search_docs`, `get_doc`, `list_examples`, `get_example_source`, `get_api_reference`, `list_docs` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls. |
 | `introspect_source`, `scaffold_entity`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). |
 
-Auto-generated per-symbol reference: [`@svgrid/enterprise` · `ai.ts`](../reference/auto/svgrid-enterprise-ai.md).
+Auto-generated per-symbol reference: [`@svgrid/grid` · `ai.ts`](../reference/auto/svgrid-grid-ai.md).
 
 ## See also
 

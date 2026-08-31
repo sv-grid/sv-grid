@@ -132,10 +132,8 @@
       filterMode="menu"
       selectionMode="row"
       showRowNumbers={true}
-      showPagination={false}
       enableInlineEditing={true}
       enableCellSelection={false}
-      enableRowSummaries={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}

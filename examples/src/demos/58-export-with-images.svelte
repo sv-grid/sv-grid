@@ -182,10 +182,8 @@
       filterMode="none"
       selectionMode="cell"
       showRowNumbers={true}
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={44}
       containerHeight="100%"
       fitColumns={true}

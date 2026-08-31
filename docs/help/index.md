@@ -40,6 +40,7 @@ real-world scale:
   [svelte-headless-table](./migrating-from-svelte-headless-table.md) ·
   [SVAR Svelte DataGrid](./migrating-from-svar-svelte-datagrid.md) ·
   [@vincjo/datatables](./migrating-from-vincjo-datatables.md) ·
+  [shadcn-svelte data table](./migrating-from-shadcn-data-table.md) ·
   [Flowbite / Skeleton / shadcn tables](./migrating-from-ui-kit-tables.md) ·
   [Tabulator](./migrating-from-tabulator.md) ·
   [Grid.js](./migrating-from-gridjs.md) ·
@@ -76,7 +77,7 @@ real-world scale:
 - [Testing your grid](./testing.md) - unit tests against the engine, jsdom component tests, Playwright e2e, axe-core for a11y regressions
 - [API stability & semver policy](./api-stability.md) - the promise we make to you about breaking changes + deprecation lifecycle
 - [**API reference**](../reference/index.md) - exhaustive prop/method/type tables for `<SvGrid>`, `SvGridApi`, `ColumnDef`, features, and the Enterprise surface
-- [API stability badges](./api-reference.md) - flat index of every Stable export with its tier badge
+- [API stability badges](https://svgrid.com/api/) - flat index of every Stable export with its tier badge
 - [Changelog](../changelog.md) - reverse-chronological log of every shipped change
 - [Error reference](./errors.md) - every typed error this surface throws, with the trigger and the fix
 

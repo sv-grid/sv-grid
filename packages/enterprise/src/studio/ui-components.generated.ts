@@ -6661,12 +6661,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "filterable",
         "label": "Filterable",
         "type": "boolean",
+        "description": "Click a header to filter that column. Injects `columnFilteringFeature`, so you do not import it yourself. Which filter surface appears is a separate question - see `filterMode` (default `'menu'`). <SvGrid {data} {columns} filterable />",
         "group": "common"
       },
       {
         "key": "editable",
         "label": "Editable",
         "type": "boolean",
+        "description": "Inline cell editing. Alias of `enableInlineEditing`, and wins over it when both are set. A column also needs an `editorType` to be editable; without one it falls back to a text editor. <SvGrid {data} {columns} editable />",
         "group": "common"
       },
       {
@@ -6687,6 +6689,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "groupable",
         "label": "Groupable",
         "type": "boolean",
+        "description": "Show the grouping controls: \"Group by this column\" in the column menu, and the group panel when `showGroupPanel` is on. Alias of `showGroupingControls`, and also injects `columnGroupingFeature`. This turns on the UI for grouping. To group without asking the user, set `groupBy` instead. <SvGrid {data} {columns} groupable />",
         "group": "common"
       },
       {
@@ -6742,12 +6745,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "pageable",
         "label": "Pageable",
         "type": "boolean",
+        "description": "Show the pagination footer. Alias of `showPagination`, and wins over it when both are set. Page size starts at `pageSize` (default 10). <SvGrid {data} {columns} pageable pageSize={25} />",
         "group": "common"
       },
       {
         "key": "loading",
         "label": "Loading",
         "type": "boolean",
+        "description": "Show the loading state instead of the rows. By default this replaces the grid body with \"Loading...\"; set `loadingOverlay` to keep the current rows visible under a dimmed overlay instead, which is what you usually want for a server-paged grid.",
         "group": "behavior"
       },
       {
@@ -6768,12 +6773,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "error",
         "label": "Error",
         "type": "string",
+        "description": "Render an error message in place of the rows. `null` or omitted means no error. Takes precedence over `loading` and over the empty state.",
         "group": "common"
       },
       {
         "key": "emptyMessage",
         "label": "Empty Message",
         "type": "string",
+        "description": "Text shown when there are no rows to display - either the data is empty or a filter matched nothing. Defaults to the localized `noRows` string, so prefer `localization.text.noRows` when you are translating the whole grid.",
         "group": "common"
       },
       {
@@ -6787,12 +6794,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "showGlobalFilter",
         "label": "Show Global Filter",
         "type": "boolean",
+        "description": "Show the single search box that filters across every column. Explicitly setting this wins over `filterMode`; leaving it unset means it appears only when `filterMode` is `'global'`.",
         "group": "common"
       },
       {
         "key": "showColumnFilters",
         "label": "Show Column Filters",
         "type": "boolean",
+        "description": "Show the filter section inside each column's menu. Explicitly setting this wins over `filterMode`; unset, it follows `filterMode` (default `'menu'`, so this is normally on). Setting it `true` also adds the inline \"floating filter\" input under each header - that surface requires the explicit opt-in, since it otherwise duplicates the menu's own filter popover.",
         "group": "common"
       },
       {
@@ -6812,18 +6821,21 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "showGroupingControls",
         "label": "Show Grouping Controls",
         "type": "boolean",
+        "description": "Show the grouping affordances (the column menu's \"Group by this column\", and the group panel). The `groupable` shortcut sets this and registers the grouping feature in one go; prefer that unless you have already registered `columnGroupingFeature` yourself.",
         "group": "common"
       },
       {
         "key": "showRowSelection",
         "label": "Show Row Selection",
         "type": "boolean",
+        "description": "Show the row-selection checkbox column, including the select-all checkbox in the header. Unset, it follows `selectionMode` (default `'both'`, so row selection is on).",
         "group": "common"
       },
       {
         "key": "showPagination",
         "label": "Show Pagination",
         "type": "boolean",
+        "description": "Show the pagination footer. Off by default. `pageable` is the shortcut alias and wins when both are set.",
         "group": "common"
       },
       {
@@ -6877,6 +6889,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "virtualization",
         "label": "Virtualization",
         "type": "boolean",
+        "description": "Render only the rows in view instead of all of them. **On by default** - this is what keeps a 100,000-row grid responsive. Turn it off when a row's height cannot be known up front and must not be clipped, such as a variable-height master-detail panel. Expect the DOM to hold every row when you do.",
         "group": "common"
       },
       {
@@ -6904,6 +6917,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "overscan",
         "label": "Overscan",
         "type": "number",
+        "description": "Extra rows rendered above and below the viewport, so fast scrolling does not reach empty space before the next batch renders. Defaults to 8. Raise it for very tall rows, lower it to trim DOM work.",
         "group": "common"
       },
       {
@@ -6917,18 +6931,21 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "columnVirtualization",
         "label": "Column Virtualization",
         "type": "boolean",
+        "description": "Render only the columns in view, the horizontal counterpart of `virtualization`. **On by default**, which is what makes a 100-column grid scroll smoothly. It recycles column DOM nodes, so it cannot coexist with sticky pinned columns - turn it off if you need pinning to survive horizontal scrolling.",
         "group": "common"
       },
       {
         "key": "columnOverscan",
         "label": "Column Overscan",
         "type": "number",
+        "description": "Extra columns rendered either side of the viewport when `columnVirtualization` is on. Defaults to 3.",
         "group": "common"
       },
       {
         "key": "columnWidth",
         "label": "Column Width",
         "type": "number",
+        "description": "Fallback width in pixels for columns whose `ColumnDef` sets no `width`. Defaults to 140.",
         "group": "common"
       },
       {
@@ -6962,12 +6979,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "showFilterRow",
         "label": "Show Filter Row",
         "type": "boolean",
+        "description": "Show the always-visible filter row under the header. Explicitly setting this wins over `filterMode`; unset, it appears only when `filterMode` is `'row'`.",
         "group": "common"
       },
       {
         "key": "enableCellSelection",
         "label": "Enable Cell Selection",
         "type": "boolean",
+        "description": "Cell selection - click to select, drag or shift-click to extend to a range, which is what clipboard copy and the range fill handle operate on. Unset, it follows `selectionMode` (default `'both'`, so this is on). `selectable` is the shortcut alias and wins over it.",
         "group": "common"
       },
       {
@@ -6996,6 +7015,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "enableInlineEditing",
         "label": "Enable Inline Editing",
         "type": "boolean",
+        "description": "Inline cell editing: F2 or double-click opens an editor in the active cell, Enter commits, Esc cancels. Off by default. A column still needs an `editorType` to pick its editor (text, number, date, checkbox, list, ...); without one it gets a plain text editor. `editable` is the shortcut alias and wins over this.",
         "group": "common"
       },
       {
@@ -7009,6 +7029,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "enableRowSummaries",
         "label": "Enable Row Summaries",
         "type": "boolean",
+        "description": "Append a sticky footer row aggregating every filtered row: the sum of a numeric column, `Count: N` otherwise. Choose a different aggregate per column with that column's own `summary` option, or set it to `false` there to leave the cell blank. Off by default. `summary` is the shortcut alias and wins when both are set. <SvGrid {data} {columns} summary />",
+        "group": "common"
+      },
+      {
+        "key": "summary",
+        "label": "Summary",
+        "type": "boolean",
+        "description": "Shortcut alias for . Wins over it when both are set, the same precedence `selectable` has over `enableCellSelection`.",
         "group": "common"
       },
       {
@@ -7319,7 +7347,8 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
       {
         "key": "cellValueChange",
         "label": "Cell Value Change",
-        "prop": "onCellValueChange"
+        "prop": "onCellValueChange",
+        "description": "Fires after an inline edit commits, with the cell's old and new value and the row it belongs to. This is where you persist the change. The grid has already applied the edit to its own state by the time this runs, so it is a notification, not a veto - reject a value with the column's `valueParser` or a validation rule instead."
       },
       {
         "key": "activeCellChange",

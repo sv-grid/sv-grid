@@ -255,10 +255,8 @@
         features={featuresFs}
         filterMode="none"
         selectionMode="cell"
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={32}
         containerHeight={380}
         fitColumns={true}
@@ -298,10 +296,8 @@
             features={featuresOrders}
             filterMode="none"
             selectionMode="none"
-            showPagination={false}
             enableInlineEditing={false}
             enableCellSelection={false}
-            enableRowSummaries={false}
             rowHeight={32}
             containerHeight={220}
           />

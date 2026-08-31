@@ -10,6 +10,7 @@
  *   `firstDayOfWeek`.
  */
 
+/** Anything the date helpers accept: a `Date`, epoch milliseconds, or a parseable string. */
 export type DateLike = Date | number | string
 
 /** Coerce a Date | epoch-ms | parseable string to a Date, or null if invalid. */
@@ -137,6 +138,7 @@ export function centuryRange(year: number): { start: number; end: number } {
   return { start, end: start + 99 }
 }
 
+/** One cell of a month grid, including the leading and trailing days from adjacent months. */
 export type MonthMatrixCell = {
   date: Date
   /** In the displayed month (vs. leading/trailing days of adjacent months). */

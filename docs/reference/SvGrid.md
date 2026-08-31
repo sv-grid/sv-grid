@@ -75,7 +75,7 @@ The render component. One `<SvGrid>` element per grid instance.
 | Prop                  | Type      | Default | Notes                                                  |
 | --------------------- | --------- | ------- | ------------------------------------------------------ |
 | `enableInlineEditing` | `boolean` | `false` | Per-column `editorType` still required for a column to be editable. |
-| `enableRowSummaries`  | `boolean` | `false` | Footer row with sum/avg/count summaries.               |
+| `enableRowSummaries`  | `boolean` | `false` | Footer row aggregating every filtered row. Alias: `summary`. |
 
 ## Sort
 

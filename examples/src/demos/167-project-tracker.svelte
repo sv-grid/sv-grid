@@ -643,11 +643,9 @@
       showRowSelection={true}
       showFilterRow={showFilters}
       showColumnFilters={false}
-      showPagination={false}
       showGroupingControls={false}
       enableInlineEditing={true}
       enableCellSelection={false}
-      enableRowSummaries={false}
       rowHeight={52}
       containerHeight="100%"
       fitColumns={false}

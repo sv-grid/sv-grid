@@ -21,6 +21,7 @@ function cssVar(el: Element, name: string, fallback: string): string {
   return v || fallback
 }
 
+/** Options for exporting a chart: the filename, and the background to paint behind it. */
 export type ChartExportOptions = {
   /** Background color of the exported image. Default: the grid background. */
   background?: string

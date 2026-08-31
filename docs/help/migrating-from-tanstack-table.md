@@ -8,6 +8,11 @@ explicit row-model pipelines. If you already think in
 > Estimated effort: **30 min** per grid for read-only views, **2-4
 > hours** for editing-heavy grids.
 
+> **On v9?** SvGrid exports the same feature vocabulary, so most of this
+> page is automated. Run `npx @svgrid/migrate src` to preview the port, and
+> see [Migrating from the shadcn-svelte data table](./migrating-from-shadcn-data-table.md)
+> if that is where your table came from.
+
 ## Vocabulary cheat sheet
 
 | TanStack Table                  | sv-grid                                  |
@@ -35,7 +40,7 @@ explicit row-model pipelines. If you already think in
 
 + import {
 +   SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-+   renderSnippet, type ColumnDef,
++   renderSnippet,
 + } from '@svgrid/grid'
 ```
 

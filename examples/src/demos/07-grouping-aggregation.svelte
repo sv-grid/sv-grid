@@ -82,7 +82,6 @@
       features={features}
       filterMode="menu"
       selectionMode="cell"
-      showPagination={false}
       showGroupingControls={true}
       enableInlineEditing={false}
       enableCellSelection={true}

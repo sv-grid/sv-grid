@@ -712,13 +712,11 @@
           {columns}
           {features}
           showRowSelection={false}
-          showPagination={false}
           enableInlineEditing={false}
           enableCellSelection={false}
           rowHeight={density === 'compact' ? 28 : 34}
           containerHeight="100%"
           fitColumns={false}
-          enableRowSummaries={false}
           onApiReady={onApiReady}
         />
       </div>

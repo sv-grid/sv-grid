@@ -127,7 +127,6 @@
       columns={columns}
       features={features}
       enableInlineEditing={true}
-      showPagination={false}
       rowHeight={34}
       containerHeight="100%"
       fitColumns={true}

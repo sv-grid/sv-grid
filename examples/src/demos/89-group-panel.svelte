@@ -331,7 +331,6 @@
       features={features}
       filterMode="menu"
       selectionMode="cell"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
       enableRowSummaries={true}

@@ -71,6 +71,7 @@ export type VirtualListRow =
   | { type: 'group'; label: string; size: number }
   | { type: 'option'; opt: IndexedOption; size: number }
 
+/** A flattened option list plus its measurements, for virtualizing long dropdowns. */
 export type FlatVirtualModel = {
   /** Group headings + options in render order, each with its px height. */
   entries: VirtualListRow[]

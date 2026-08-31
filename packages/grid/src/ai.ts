@@ -48,6 +48,7 @@ type ExportFormat = 'xlsx' | 'xls' | 'pdf' | 'csv' | 'tsv' | 'html' | 'json' | '
  */
 export type AIProvider = (request: AIRequest) => Promise<string>
 
+/** One call out to the model, as the grid builds it. Providers receive this. */
 export type AIRequest = {
   /** Full prompt the grid built for the model. Already includes column
    *  schema and any sampled rows where applicable. */
@@ -66,6 +67,7 @@ export type AIRequest = {
   maxOutputTokens?: number
 }
 
+/** Which helper produced a request - carried on {@link AIRequest} for routing and telemetry. */
 export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly' | 'chart'
 
 let provider: AIProvider | null = null
@@ -79,10 +81,12 @@ export function setAIProvider(p: AIProvider | null): void {
   provider = p
 }
 
+/** The provider registered with `setAIProvider`, or null when none is. */
 export function getAIProvider(): AIProvider | null {
   return provider
 }
 
+/** Whether an AI provider is registered. Gate AI affordances on this so the UI stays honest. */
 export function hasAIProvider(): boolean {
   return provider != null
 }
@@ -198,13 +202,16 @@ function schemaToPromptBlock(schema: ColumnSchemaEntry[]): string {
 // 1. Natural-language filter / sort
 // ---------------------------------------------------------------------------
 
+/** One condition in a filter plan: a column, a comparison, and the value to match. */
 export type AIFilterClause = {
   field: string
   operator: 'contains' | 'equals' | 'startsWith' | 'greaterThan' | 'lessThan' | 'isBlank'
   value?: string
 }
+/** One ordering clause in a filter plan. */
 export type AISortClause = { field: string; desc: boolean }
 
+/** A natural-language query turned into filters and sorting, plus the model's reasoning. */
 export type AIFilterResult = {
   filters: AIFilterClause[]
   sort: AISortClause[]
@@ -213,6 +220,7 @@ export type AIFilterResult = {
   rationale: string
 }
 
+/** Options for `aiFilter` - preview the plan, or apply it straight to the grid. */
 export type AIFilterOptions = {
   /**
    * When true, the helper not only RETURNS the plan but also applies it
@@ -284,14 +292,17 @@ export async function aiFilter<
 // 2. Smart fill
 // ---------------------------------------------------------------------------
 
+/** One worked example teaching smart-fill what to produce for a row. */
 export type AISmartFillExample = { input: Record<string, unknown>; output: unknown }
 
+/** Proposed values for the blank cells of one column, each with a confidence score. */
 export type AISmartFillResult<TValue = unknown> = {
   field: string
   predictions: Array<{ rowIndex: number; value: TValue; confidence: number }>
   rationale: string
 }
 
+/** Options for `aiSmartFill` - which column to fill, which rows, and the examples to learn from. */
 export type AISmartFillOptions = {
   /** Target column - the one whose values we want filled. */
   field: string
@@ -379,12 +390,14 @@ export async function aiSmartFill<
 // 3. Summarise
 // ---------------------------------------------------------------------------
 
+/** What to summarise: one row, the selection, a group, or the whole set. */
 export type AISummarizeTarget =
   | { kind: 'row'; rowIndex: number }
   | { kind: 'all' }
   | { kind: 'selection'; rowIndices: number[] }
   | { kind: 'group'; field: string; value: unknown }
 
+/** A generated summary: prose, bullets, and the columns the model leaned on. */
 export type AISummary = {
   text: string
   bullets: string[]
@@ -393,6 +406,7 @@ export type AISummary = {
   highlightedFields: string[]
 }
 
+/** Options for `aiSummarize` - the target, and optionally the question to answer. */
 export type AISummarizeOptions = {
   target: AISummarizeTarget
   /** Optional question the user is trying to answer. Helps the model
@@ -468,6 +482,7 @@ export async function aiSummarize<
 // 4. Classify (free-text -> bucketed value)
 // ---------------------------------------------------------------------------
 
+/** Options for `aiClassify` - the column to label and the categories to choose from. */
 export type AIClassifyOptions = {
   /** Column whose free-text we're classifying. */
   inputField: string
@@ -482,6 +497,7 @@ export type AIClassifyOptions = {
   signal?: AbortSignal
 }
 
+/** Proposed category labels per row, with the model's reasoning. */
 export type AIClassifyResult = {
   inputField: string
   outputField: string
@@ -545,6 +561,7 @@ export async function aiClassify<
 
 const EXPORT_FORMATS: ExportFormat[] = ['xlsx', 'xls', 'pdf', 'csv', 'tsv', 'html', 'json', 'xml', 'md']
 
+/** An export the model derived from a request: format, columns, and scope. */
 export type AIExportPlan = {
   format: ExportFormat
   filters: AIFilterClause[]
@@ -554,6 +571,7 @@ export type AIExportPlan = {
   rationale: string
 }
 
+/** Options for `aiExport` - preview the plan, or run the export it describes. */
 export type AIExportOptions = {
   /**
    * Also apply the filter / sort / grouping to the grid (mutating the view) so
@@ -719,6 +737,7 @@ function applyPlanToRows<TData extends RowData>(
 // 6. Find anomalies
 // ---------------------------------------------------------------------------
 
+/** One flagged value, with why it stands out and how strongly. */
 export type AIAnomaly = {
   /** Index into the SCANNED rows (target order), when the model pins one row. */
   rowIndex?: number
@@ -728,11 +747,13 @@ export type AIAnomaly = {
   severity: 'low' | 'medium' | 'high'
 }
 
+/** Everything an anomaly scan flagged across the rows it looked at. */
 export type AIAnomalyResult = {
   anomalies: AIAnomaly[]
   summary: string
 }
 
+/** Options for `aiFindAnomalies` - which rows and columns to scan. */
 export type AIAnomalyOptions = {
   /** Which rows to scan. Defaults to the whole dataset. */
   target?: AISummarizeTarget
@@ -814,8 +835,10 @@ export async function aiFindAnomalies<
 // 7. Natural-language chart ("chart this")
 // ---------------------------------------------------------------------------
 
+/** Chart shapes the model may choose from when planning a visualisation. */
 export type AIChartType = 'bar' | 'line' | 'area' | 'pie'
 
+/** A chart the model proposed: its type, and the fields to plot. */
 export type AIChartPlan = {
   type: AIChartType
   /** Group-by (category-axis) column field, or null. */
@@ -832,6 +855,7 @@ export type AIChartPlan = {
   rationale: string
 }
 
+/** Options for `aiChart` - preview the plan, or render it into the grid. */
 export type AIChartOptions = {
   /** Apply the plan to the grid's chart panel (open + configure). Default false. */
   apply?: boolean
@@ -951,6 +975,10 @@ export function enableAiCharting<
   })
 }
 
+/**
+ * Remove the natural-language chart handler, hiding the AI button in the chart
+ * panel. The inverse of `enableAiCharting`; safe to call when none was set.
+ */
 export function disableAiCharting<
   TFeatures extends TableFeatures,
   TData extends RowData,

@@ -196,7 +196,7 @@ import type {
 
 // 1. Constrain ColumnDef to your row type so editors and accessors stay typed.
 type Row = { id: string; firstName: string; age: number }
-const columns: ColumnDef<{}, Row>[] = [
+const columns: GridColumns<Row> = [
   { field: 'firstName', header: 'First' },   // OK
   { field: 'middleName', header: 'Mid' },    // ✗ "middleName" not on Row
 ]

@@ -240,10 +240,8 @@
       features={features}
       filterMode="none"
       selectionMode="cell"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}

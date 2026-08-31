@@ -139,10 +139,8 @@
         features={features}
         filterMode="menu"
         selectionMode="cell"
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={true}
-        enableRowSummaries={false}
         showRowNumbers={true}
         virtualization={true}
         columnVirtualization={true}

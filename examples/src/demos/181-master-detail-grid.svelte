@@ -149,8 +149,6 @@
           columns={detailColumns}
           features={detailFeatures}
           selectionMode="none"
-          showPagination={false}
-          enableRowSummaries={false}
           rowHeight={34}
           containerHeight="100%"
           fitColumns={true}
@@ -181,8 +179,6 @@
       features={features}
       filterMode="menu"
       selectionMode="none"
-      showPagination={false}
-      enableRowSummaries={false}
       rowHeight={44}
       containerHeight="100%"
       fitColumns={true}

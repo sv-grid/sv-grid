@@ -31,6 +31,7 @@ import {
   type IdGen,
 } from './dock-model'
 
+/** Which edge a pane docks against when dropped. */
 export type DockSide = Exclude<DockZone, 'center'>
 
 /** A floating window: one tabs leaf shown in a movable/resizable frame. */
@@ -58,6 +59,7 @@ export type AutoHideEntry = {
   size: number
 }
 
+/** The whole dock manager: its layout tree plus floating and pinned panes. */
 export type DockManagerState = {
   main: DockNode | null
   floating: FloatWindow[]
@@ -74,6 +76,7 @@ export type PaneLocation =
   | { kind: 'floating'; windowId: string }
   | { kind: 'autoHide'; entryId: string }
 
+/** Find a pane in the layout tree by id, returning it with its parent for mutation. */
 export function locatePane(state: DockManagerState, paneId: string): PaneLocation | null {
   if (state.main && findTabsWithPane(state.main, paneId)) return { kind: 'main' }
   for (const w of state.floating) {

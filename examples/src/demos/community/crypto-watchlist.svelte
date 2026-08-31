@@ -56,7 +56,7 @@
 <section class="flex flex-col flex-1 min-h-0 gap-3">
   <div class="text-sm shrink-0" style="color: var(--sg-muted)">Click a header to sort. A community-contributed demo.</div>
   <div class="flex-1 min-h-0">
-    <SvGrid data={rows} columns={columns} features={features} showRowNumbers={false} showPagination={false} rowHeight={46} containerHeight="100%" fitColumns={true} />
+    <SvGrid data={rows} columns={columns} features={features} showRowNumbers={false} rowHeight={46} containerHeight="100%" fitColumns={true} />
   </div>
 </section>
 

@@ -238,7 +238,6 @@
         filterable
         selectionMode="both"
         showRowSelection={true}
-        enableRowSummaries={false}
         rowHeight={32}
         containerHeight="100%"
         fitColumns={true}

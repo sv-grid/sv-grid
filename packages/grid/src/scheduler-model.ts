@@ -444,6 +444,7 @@ export type DayLayout<TData = unknown> = {
   overflows: OverflowMarker<TData>[]
 }
 
+/** Tuning for event layout: how overlapping events share horizontal space. */
 export type LayoutOptions = {
   dayStartHour?: number
   dayEndHour?: number

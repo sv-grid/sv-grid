@@ -9,7 +9,7 @@ array) and the grid re-derives its internal columns.
 
 ```svelte
 <script lang="ts">
-  let columns = $state<ColumnDef<{}, Person>[]>([
+  let columns = $state<GridColumns<Person>>([
     { field: 'firstName', header: 'First name' },
     { field: 'age', header: 'Age' },
   ])

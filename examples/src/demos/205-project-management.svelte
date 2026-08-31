@@ -216,7 +216,6 @@
       rowDragManaged={true}
       enableInlineEditing={true}
       enableCellSelection={false}
-      enableRowSummaries={false}
       showPagination={true}
       pageSize={10}
       pageSizeOptions={[10, 25, 50]}

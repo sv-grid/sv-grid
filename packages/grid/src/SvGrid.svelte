@@ -184,6 +184,7 @@
     ctrl.showInlineColumnFilterEffective,
   );
   const showRowSelectionEffective = $derived(ctrl.showRowSelectionEffective);
+  const rowSummariesEnabled = $derived(ctrl.rowSummariesEnabled);
   const grid = $derived(ctrl.grid);
   const allColumns = $derived(ctrl.allColumns);
   const headerGroups = $derived(ctrl.headerGroups);
@@ -2519,7 +2520,7 @@
               {/each}
             </tbody>
           {/if}
-          {#if opt.enableRowSummaries ?? true}
+          {#if rowSummariesEnabled}
             <!-- svelte-ignore a11y_no_redundant_roles -->
             <tfoot class="sv-grid-foot" role="rowgroup">
               <tr

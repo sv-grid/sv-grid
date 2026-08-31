@@ -141,7 +141,7 @@
         }}
       />
     {:else}
-      <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing showPagination={false} rowHeight={36} containerHeight="100%" fitColumns />
+      <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing rowHeight={36} containerHeight="100%" fitColumns />
     {/if}
   </div>
 

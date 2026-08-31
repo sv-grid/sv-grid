@@ -21,7 +21,7 @@ cell value (sum, avg, count, min, max, custom). Used by
 
 **API (`SvGridApi`).** The imperative interface exposed via
 `<SvGrid onApiReady>`. Methods like `setSort`, `setFilter`, `addRow`,
-`getDisplayedRows`. See [API reference](./api-reference.md).
+`getDisplayedRows`. See [API reference](https://svgrid.com/api/).
 
 ## C
 
@@ -213,5 +213,5 @@ nudge only).
 
 - [Architecture overview](./architecture.md) - where each piece
   above sits.
-- [API reference](./api-reference.md) - every export with its tier
+- [API reference](https://svgrid.com/api/) - every export with its tier
   badge.

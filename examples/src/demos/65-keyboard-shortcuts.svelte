@@ -207,11 +207,9 @@
       filterMode="menu"
       selectionMode="cell"
       showRowNumbers={true}
-      showPagination={false}
       virtualization={false}
       enableInlineEditing={true}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}

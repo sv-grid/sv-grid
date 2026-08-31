@@ -95,7 +95,6 @@
     {columns}
     loading={view.loading}
     fitColumns
-    enableRowSummaries={false}
     sortable
     externalSort
     onSortingChange={(s) => controller.setSort(s)}

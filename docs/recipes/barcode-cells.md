@@ -23,7 +23,7 @@ CSP-clean runtime intact.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
 
   // --- EAN-13 encoder (the actual GS1 spec - the output scans) ----------
   const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011']
@@ -62,7 +62,7 @@ CSP-clean runtime intact.
     { sku: 'MUG-LOGO-12OZ', name: 'Logo mug 12 oz', ean12: '500100000062' },
   ]
 
-  const columns: ColumnDef<{}, Product>[] = [
+  const columns: GridColumns<Product> = [
     { field: 'sku', header: 'SKU', width: 150 },
     { field: 'name', header: 'Product', width: 230 },
     {

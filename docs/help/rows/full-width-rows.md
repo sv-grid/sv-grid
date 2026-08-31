@@ -22,7 +22,15 @@ snippet - a nested grid, a form, timelines, anything.
 See [Master / detail (nested grids)](./master-detail.md) for the full
 expand/collapse pattern, and demo `106-detail-rows` for a multi-panel detail.
 
-A single sticky footer row is also available via `enableRowSummaries={true}`.
+A single sticky footer row is also available via `summary` (off by default):
+
+```svelte
+<SvGrid {data} {columns} summary />
+```
+
+It sums a numeric column and counts the rest. Pick a different aggregate per
+column with that column's own `summary` option (`'avg'`, `'min'`, `'max'`,
+`'count'`, a custom function), or `summary: false` to leave the cell blank.
 
 ## See also
 

@@ -2,6 +2,7 @@
 // reading/writing controller state via the `ctx` handle; the reactive core
 // ($state/$derived/$effect) stays in the controller.
 import {
+  applyGroupAggregate,
   type Column,
   type Row,
   type RowData,
@@ -45,6 +46,26 @@ export function createSummaries<
       const fieldFn = def.fieldFn;
       const field = def.field;
       const columnId = column.id;
+
+      // A column that declares its own `summary` opts out of the default
+      // sum/count below. Only that column pays for the aggregator dispatch, so
+      // a grid that declares none keeps the original hot loop exactly as it was.
+      const declared = def.summary;
+      if (declared !== undefined) {
+        if (declared === false) {
+          summary[columnId] = "";
+          continue;
+        }
+        const value = applyGroupAggregate(declared, columnId, rows);
+        summary[columnId] =
+          typeof value === "number" && Number.isFinite(value)
+            ? formatSummaryNumeric(column, value)
+            : value == null
+              ? ""
+              : String(value);
+        continue;
+      }
+
       let numericSum = 0;
       let numericCount = 0;
       for (let i = 0; i < rowCount; i += 1) {

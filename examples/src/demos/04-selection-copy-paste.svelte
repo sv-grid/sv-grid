@@ -85,11 +85,9 @@
       features={features}
       filterMode="menu"
       selectionMode="both"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
       contextMenu={true}
-      enableRowSummaries={false}
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}

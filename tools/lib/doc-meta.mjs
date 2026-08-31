@@ -26,6 +26,27 @@ export function isHiddenDoc(slug) {
   return HIDDEN_SLUGS.has(slug) || HIDDEN_PREFIXES.some((p) => slug.startsWith(p))
 }
 
+/**
+ * Trees that stay unrouted for humans but ARE handed to models in
+ * llms-full.txt.
+ *
+ * `docs/reference/` is the full typed API surface, every symbol documented. It
+ * has no route on purpose - the /api page is the human-facing one, and routing
+ * both would be duplicate content. But an assistant answering "what does
+ * `tableFeatures` take" has nothing to read otherwise, so it goes in the LLM
+ * bundle only: no route, no sitemap entry, no docs.json entry.
+ */
+export const LLM_ONLY_PREFIXES = ['reference/']
+
+/**
+ * Include in llms-full.txt despite having no route. Index pages are excluded -
+ * they are sidebars, and repeating them adds noise without content.
+ */
+export function isLlmOnlyDoc(slug) {
+  if (!LLM_ONLY_PREFIXES.some((p) => slug.startsWith(p))) return false
+  return !slug.endsWith('/index') && !HIDDEN_SLUGS.has(slug)
+}
+
 export const SECTION_TITLES = {
   '': 'Overview',
   'getting-started': 'Getting started',

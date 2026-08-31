@@ -500,11 +500,9 @@
       filterable={false}
       selectionMode="cell"
       showColumnFilters={false}
-      showPagination={false}
       showRowSelection={false}
       enableInlineEditing={true}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={getRowHeight}
       containerHeight="100%"
       fitColumns={false}

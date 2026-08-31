@@ -4,15 +4,23 @@ Auto-generated. Source: `packages\enterprise\src\pivot.ts`.
 
 ### `type PivotAggregatorId`
 
-_No JSDoc yet._
+Built-in pivot measures, named in {@link PivotValueConfig}. */
 
 ```ts
 export type PivotAggregatorId =
+  | 'sum'
+  | 'avg'
+  | 'min'
+  | 'max'
+  | 'count'
+  | 'countDistinct'
+  | 'first'
+  | 'last'
 ```
 
 ### `type PivotAggregator`
 
-_No JSDoc yet._
+A custom measure: reduce the values under one cell to the number to display. */
 
 ```ts
 export type PivotAggregator = (values: ReadonlyArray<unknown>) => unknown
@@ -20,7 +28,7 @@ export type PivotAggregator = (values: ReadonlyArray<unknown>) => unknown
 
 ### `type PivotValueConfig`
 
-_No JSDoc yet._
+One measure: the field to aggregate and how to aggregate it. */
 
 ```ts
 export type PivotValueConfig<TData> = {
@@ -37,7 +45,7 @@ export type PivotValueConfig<TData> = {
 
 ### `type PivotConfig`
 
-_No JSDoc yet._
+A pivot definition: the row axis, the column axis, and the measures at their intersections. */
 
 ```ts
 export type PivotConfig<TData> = {
@@ -62,7 +70,7 @@ export type PivotConfig<TData> = {
 
 ### `type PivotRowKind`
 
-_No JSDoc yet._
+What a pivot row represents - a group header, a subtotal, a leaf, or the grand total. */
 
 ```ts
 export type PivotRowKind = 'group' | 'subtotal' | 'leaf' | 'grandTotal'
@@ -100,7 +108,7 @@ export type PivotRow = {
 
 ### `type PivotResult`
 
-_No JSDoc yet._
+A built pivot: the rows to display, and the generated column definitions for its column axis. */
 
 ```ts
 export type PivotResult<TFeatures extends TableFeatures> = {
@@ -111,10 +119,89 @@ export type PivotResult<TFeatures extends TableFeatures> = {
 
 ### `function createPivotModel`
 
-_No JSDoc yet._
+Build a pivot table from flat rows: cross the row axis with the column axis,
+aggregate each intersection, and return rows plus generated columns ready to
+hand to `<SvGrid>`.
 
 ```ts
 export function createPivotModel<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  data: ReadonlyArray<TData>,
+  config: PivotConfig<TData>,
+): PivotResult<TFeatures> {
+  if (config.values.length === 0) {
+    throw new Error('pivot: at least one value config is required')
+  }
+
+  const rowFields = config.rows as ReadonlyArray<string>
+  const colFields = config.cols as ReadonlyArray<string>
+  const values    = config.values as ReadonlyArray<PivotValueConfig<unknown>>
+
+  // 1. axis trees
+  const rowRoot = buildAxisTree(data, rowFields, config.rowSort)
+  const colRoot = buildAxisTree(data, colFields, config.colSort)
+
+  // 2. collect col-axis leaf paths (one per value column header chain)
+  const colLeafPaths: Array<ReadonlyArray<unknown>> = []
+  collectColLeafPaths(colRoot, colLeafPaths)
+
+  // 3. flatten row-axis to pivot rows
+  const rows: PivotRow[] = []
+  if (rowFields.length === 0) {
+    // No row dims: one synthetic "All" row.
+    rows.push({
+      __pivotId: 'row__all',
+      __pivotKind: 'leaf',
+      __pivotDepth: 0,
+      __pivotLabel: '(All)',
+      __pivotParentId: null,
+      __pivotExpandable: false,
+      ...computeRowValues(
+        data as unknown as ReadonlyArray<Record<string, unknown>>,
+        colLeafPaths,
+        colFields,
+        values,
+        config.grandTotalCol !== false,
+      ),
+    })
+  } else {
+    walkRowTree(
+      rowRoot, rows, colLeafPaths, colFields, values,
+      config as PivotConfig<unknown>, rowFields, null,
+    )
+  }
+
+  // 4. grand-total row at bottom
+  if (config.grandTotalRow !== false) {
+    rows.push({
+      __pivotId: 'row__grand_total',
+      __pivotKind: 'grandTotal',
+      __pivotDepth: 0,
+      __pivotLabel: 'Grand total',
+      __pivotParentId: null,
+      __pivotExpandable: false,
+      ...computeRowValues(
+        data as unknown as ReadonlyArray<Record<string, unknown>>,
+        colLeafPaths,
+        colFields,
+        values,
+        config.grandTotalCol !== false,
+      ),
+    })
+  }
+
+  // 5. column tree
+  const columns = buildColumnTree<TFeatures>(
+    colRoot,
+    values,
+    config as PivotConfig<unknown>,
+    rowFields.length > 0 ? rowFields.join(' / ') : '',
+  )
+
+  return { rows, columns }
+}
 ```
 
 ### `const pivotAggregators`
@@ -140,4 +227,32 @@ The result is a new array; the input is not mutated.
 
 ```ts
 export function filterCollapsedPivotRows(
+  rows: ReadonlyArray<PivotRow>,
+  expandedIds: ReadonlyArray<string> | Set<string> | true,
+): PivotRow[] {
+  if (expandedIds === true) return rows.slice()
+  const expanded =
+    expandedIds instanceof Set ? expandedIds : new Set(expandedIds)
+  // Parent-of index so the ancestor walk is O(depth) instead of O(rows × depth).
+  const parentOf = new Map<string, string | null>()
+  for (const r of rows) parentOf.set(r.__pivotId, r.__pivotParentId)
+
+  const out: PivotRow[] = []
+  for (const row of rows) {
+    // The grand-total row, top-level groups, and the (All) row are
+    // always visible (their parent is null).
+    if (row.__pivotParentId === null) {
+      out.push(row)
+      continue
+    }
+    let parentId: string | null = row.__pivotParentId
+    let visible = true
+    while (parentId !== null) {
+      if (!expanded.has(parentId)) { visible = false; break }
+      parentId = parentOf.get(parentId) ?? null
+    }
+    if (visible) out.push(row)
+  }
+  return out
+}
 ```

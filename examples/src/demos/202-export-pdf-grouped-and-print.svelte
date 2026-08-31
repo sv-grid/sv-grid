@@ -157,7 +157,6 @@
       columns={columns}
       features={features}
       showGroupingControls={true}
-      showPagination={false}
       rowHeight={34}
       containerHeight="100%"
       fitColumns={true}

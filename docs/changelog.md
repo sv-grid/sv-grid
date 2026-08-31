@@ -46,8 +46,41 @@ For machine-readable releases, fetch
   drawer leaves the DOM.
 - **`loading` on `SvField`**, and **`locked`** on `SvDockLayout` /
   `SvDockManager`.
+- **`summary` on `<SvGrid>`** - shortcut alias for `enableRowSummaries`,
+  which turns on the footer row that aggregates every filtered row. It wins
+  when both are set, the same precedence `selectable` has over
+  `enableCellSelection`.
+- **`summary` on a column** - choose that column's footer aggregate
+  (`'sum'`, `'avg'`, `'min'`, `'max'`, `'count'`, `'countDistinct'`,
+  `'extent'`, `'first'`, or a custom function), or `false` to leave the cell
+  blank. Without it a column keeps the old default: sum a numeric column,
+  `Count: N` otherwise.
+- **Development-time configuration checks.** The grid used to fail silently on
+  the most common mistakes - a misspelled `field` rendered a column of blank
+  cells and printed nothing. It now warns once per problem, in dev builds only:
+
+  - a column `field`, `groupBy` entry, `treeData.parentField` / `idField` or
+    `treeData.column` that does not exist (with a "did you mean" for near misses),
+  - two columns resolving to the same id,
+  - `pageSize` set when pagination was never turned on,
+  - a column marked `sortable` while sorting is not enabled,
+  - `initialColumnPinning` while column virtualization is on, which silently
+    prevents the columns from sticking,
+  - `externalPagination` without `rowCount`, `externalSort` without
+    `onSortingChange`, and `externalFilter` without `onFiltersChange`.
+
+  The checks live in a lazy chunk behind a dev-only branch, so a production
+  build never loads them and the base bundle is unchanged.
 
 #### Changed
+
+- **BREAKING: the footer summary row is now off by default.**
+  `enableRowSummaries` used to default to `true`, so a plain
+  `<SvGrid {data} {columns} />` grew an aggregate footer nobody asked for and
+  every caller that did not want one had to opt out - 375 call sites in this
+  repo passed `enableRowSummaries={false}` against 6 that opted in, and the
+  API reference already documented the default as `false`. If you were
+  relying on the old behaviour, add `summary` (or `enableRowSummaries`).
 
 - **Ember is now the default theme preset** (`defaultThemePreset` in
   `@svgrid/grid/themes`). It is what the demo gallery and svgrid.com open on, so

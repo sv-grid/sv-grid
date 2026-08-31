@@ -81,8 +81,6 @@
       columns={columns}
       features={features}
       selectionMode="none"
-      showPagination={false}
-      enableRowSummaries={false}
       rowHeight={38}
       containerHeight="100%"
     />

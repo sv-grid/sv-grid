@@ -321,11 +321,9 @@
       filterable={false}
       selectionMode="cell"
       showColumnFilters={false}
-      showPagination={false}
       showRowSelection={false}
       enableInlineEditing={true}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={28}
       containerHeight="100%"
       fitColumns={false}

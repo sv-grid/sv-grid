@@ -186,10 +186,8 @@
       features={features}
       filterMode="none"
       selectionMode="cell"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={density === 'compact' ? 28 : density === 'comfortable' ? 48 : 36}
       containerHeight="100%"
     />

@@ -87,8 +87,7 @@ hand to the server.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-           type ColumnDef, type SvGridApi } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature, type SvGridApi } from '@svgrid/grid'
 
   let rows = $state<Order[]>([])
   let total = $state(0)

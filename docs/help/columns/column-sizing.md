@@ -6,7 +6,7 @@ Each column has a pixel width. The default for all columns is the grid's
 <div data-docs-demo="63-column-layout-api" data-height="540"></div>
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName',  header: 'First name', width: 150 },
   { field: 'department', header: 'Department', width: 180 },
   { field: 'salary',     header: 'Salary',     width: 120 },

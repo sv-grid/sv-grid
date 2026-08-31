@@ -1,30 +1,79 @@
 ﻿import type { SparklineConfig } from './sparkline'
 import { resolveColumnId } from './column-id'
 
+/**
+ * The constraint every row type satisfies: an object keyed by string. Your own
+ * row type (`type Person = { name: string }`) is what flows through the generics
+ * below; this is only the lower bound they are declared against.
+ */
 export type RowData = Record<string, unknown>
+
+/**
+ * A new value, or a function that derives it from the previous one - the shape
+ * every `set*` on the grid accepts, so callers can update state without first
+ * reading it.
+ *
+ *   api.setSorting([{ id: 'name', desc: false }])
+ *   api.setSorting((prev) => [...prev, { id: 'age', desc: true }])
+ */
 export type Updater<T> = T | ((prev: T) => T)
+
+/** Active sort clauses, outermost first. `desc: false` is ascending. */
 export type SortingState = Array<{ id: string; desc: boolean }>
+
+/**
+ * One column's filter: the column `id`, the `value` being matched, and
+ * optionally which comparison to use. `fn` defaults to the column's own type -
+ * see {@link filterFns} for the available names.
+ */
 export type ColumnFilter = { id: string; value: unknown; fn?: keyof typeof filterFns }
+
+/** Every active column filter. A column with no entry here is unfiltered. */
 export type ColumnFiltersState = Array<ColumnFilter>
+
+/** Current page position. `pageIndex` is 0-based, so page 1 is index 0. */
 export type PaginationState = { pageIndex: number; pageSize: number }
+
+/** Column ids the rows are grouped by, outermost first. */
 export type GroupingState = Array<string>
+
+/** Which rows are expanded, keyed by row id. Absent means collapsed. */
 export type ExpandedState = Record<string, boolean>
+
+/** Which rows are selected, keyed by row id. Absent means unselected. */
 export type RowSelectionState = Record<string, boolean>
+
+/**
+ * Where keyboard focus sits. The indices address the *displayed* grid (after
+ * sorting, filtering and paging), not the source data.
+ */
 export type ActiveCellState = {
   rowIndex: number
   colIndex: number
   cellId: string | null
 }
+
+/**
+ * The set of features a grid has registered, as built by {@link tableFeatures}.
+ * Deliberately open: a feature is identified by its key, so the type carries
+ * which ones are on without enumerating them.
+ */
 export type TableFeatures = Record<string, unknown>
 
+/** A cell's value. Unconstrained - a column can hold anything. */
 export type CellData = unknown
 
+/** What a column's `header` render function receives. */
 export type HeaderContext<TData extends RowData> = {
   header: Header<TData>
   column: Column<TData>
   table: SvGrid<TData>
 }
 
+/**
+ * What a column's `cell` render function receives. `getValue()` applies the
+ * column's accessor (`field` or `fieldFn`); `row.original` is the raw object.
+ */
 export type CellContext<TData extends RowData> = {
   cell: Cell<TData>
   row: Row<TData>
@@ -84,6 +133,11 @@ export type EditorContext<TData extends RowData> = CellContext<TData> & {
   cancel: () => void
 }
 
+/**
+ * Declarative cell formatting, applied through `Intl` - number, currency,
+ * percent, date and datetime. Prefer this over a `formatter` function: it is
+ * locale-aware, and export and the clipboard reuse the same configuration.
+ */
 export type CellFormatConfig =
   | {
       type: 'number'
@@ -119,6 +173,10 @@ export type CellFormatConfig =
       options?: Intl.DateTimeFormatOptions
     }
 
+/**
+ * A column's custom display function, for anything {@link CellFormatConfig}
+ * cannot express. Returns a string - to render markup, use `cell` instead.
+ */
 export type CellFormatter<TData extends RowData> = (context: {
   value: unknown
   row: Row<TData>
@@ -126,6 +184,7 @@ export type CellFormatter<TData extends RowData> = (context: {
   table: SvGrid<TData>
 }) => string
 
+/** A header or cell slot: a literal string, or a function returning renderable content. */
 export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
 
 /**
@@ -379,6 +438,20 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   aggregate?: GroupAggregator<TData>
   /**
+   * What this column contributes to the grid's footer summary row (the one
+   * turned on with `summary` / `enableRowSummaries`). Takes the same
+   * aggregators as {@link aggregate}, and the result is formatted with this
+   * column's `format`.
+   *
+   * Without it the footer falls back to its default: the sum of a numeric
+   * column, `Count: N` otherwise. Set `false` to leave the cell blank, which is
+   * usually what an actions or checkbox column wants.
+   *
+   *   { field: 'amount', summary: 'avg' }
+   *   { id: 'actions', summary: false }
+   */
+  summary?: GroupAggregator<TData> | false
+  /**
    * Render the cell as an in-cell sparkline chart. The cell value should be
    * an array of numbers (or a comma/space separated string). Mutually
    * exclusive with a custom `cell` renderer (a `cell` wins if both are set).
@@ -445,6 +518,12 @@ export type GridColumnDef<TData extends RowData = RowData> = ColumnDef<TableFeat
 /** An array of {@link GridColumnDef} - what you pass to `<SvGrid columns={...}>`. */
 export type GridColumns<TData extends RowData = RowData> = Array<GridColumnDef<TData>>
 
+/**
+ * A resolved column: your {@link ColumnDef} plus everything the grid computed
+ * from it - its id, its depth under any group header, and the sort handlers a
+ * header needs. This is what you receive in render contexts; the `ColumnDef`
+ * is what you wrote.
+ */
 export type Column<TData extends RowData> = {
   id: string
   columnDef: ColumnDef<any, TData>
@@ -456,6 +535,11 @@ export type Column<TData extends RowData> = {
   getToggleSortingHandler: () => () => void
 }
 
+/**
+ * One header cell. `colSpan` is how many leaf columns it covers, and
+ * `isPlaceholder` marks the empty cells that pad a group-header row so the
+ * levels line up.
+ */
 export type Header<TData extends RowData> = {
   id: string
   isPlaceholder: boolean
@@ -464,11 +548,13 @@ export type Header<TData extends RowData> = {
   getContext: () => HeaderContext<TData>
 }
 
+/** One row of header cells. A grid with grouped columns has several, outermost first. */
 export type HeaderGroup<TData extends RowData> = {
   id: string
   headers: Array<Header<TData>>
 }
 
+/** One cell: the intersection of a {@link Row} and a {@link Column}. */
 export type Cell<TData extends RowData> = {
   id: string
   row: Row<TData>
@@ -477,6 +563,13 @@ export type Cell<TData extends RowData> = {
   getContext: () => CellContext<TData>
 }
 
+/**
+ * A row in the display model. `original` is your untouched data object;
+ * everything else is grid-computed. `index` is the position in the displayed
+ * set, so it shifts as sorting and filtering change - key on `id`, not index.
+ *
+ * Group rows and tree parents carry `subRows`; a plain data row does not.
+ */
 export type Row<TData extends RowData> = {
   id: string
   index: number
@@ -494,10 +587,19 @@ export type Row<TData extends RowData> = {
   getCellValueByColumnId: (columnId: string) => unknown
 }
 
+/** The output of the row pipeline: the rows to display, in order. */
 export type RowModel<TData extends RowData> = {
   rows: Array<Row<TData>>
 }
 
+/**
+ * The minimal reactive store behind the headless core - read `state`, write
+ * through `setState`, and `subscribe` for changes. Deliberately framework
+ * free, which is what lets the core run under plain Node.
+ *
+ * In Svelte you rarely touch this: `subscribeGrid` wraps it with fine-grained
+ * selectors so a component only re-runs for the slice it read.
+ */
 export type Store<T> = {
   readonly state: T
   setState: (updater: (prev: T) => T) => void
@@ -522,17 +624,51 @@ function createStore<T>(initial: T): Store<T> {
   }
 }
 
+/**
+ * Click-to-sort. Injected by the `sortable` shortcut.
+ *
+ * This and the five features below are opaque markers: pass the ones you want
+ * to {@link tableFeatures} and the grid wires up the matching row model. With
+ * `<SvGrid>` you rarely name them - the boolean shortcuts (`sortable`,
+ * `filterable`, `pageable`, `groupable`) inject them for you. Reach for them
+ * directly when driving the headless core, or when you want a feature on
+ * without its UI.
+ *
+ * The names match TanStack Table v9, so a features object written for it works
+ * here unchanged.
+ */
 export const rowSortingFeature = { key: 'rowSortingFeature' }
+/** Per-column filtering. Injected by the `filterable` shortcut. */
 export const columnFilteringFeature = { key: 'columnFilteringFeature' }
+/** Paging of the row model. Injected by the `pageable` shortcut. */
 export const rowPaginationFeature = { key: 'rowPaginationFeature' }
+/** Row grouping with aggregation. Injected by the `groupable` shortcut. */
 export const columnGroupingFeature = { key: 'columnGroupingFeature' }
+/** Row selection state (the checkbox column reads it). */
 export const rowSelectionFeature = { key: 'rowSelectionFeature' }
+/** Expand / collapse, for tree rows and master-detail. */
 export const rowExpandingFeature = { key: 'rowExpandingFeature' }
 
+/**
+ * Declare which features a grid uses. Identity at runtime - its whole job is to
+ * capture the exact set in the type, so `ColumnDef<typeof features, Row>` knows
+ * what is registered and anything you did not register is tree-shaken out.
+ *
+ * ```ts
+ * const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+ * ```
+ *
+ * Same call signature as TanStack Table v9, so a features object written for it
+ * transfers unchanged.
+ */
 export function tableFeatures<T extends TableFeatures>(features: T): T {
   return features
 }
 
+/**
+ * Built-in comparators, chosen per column by its data type. `auto` compares as
+ * text; set a column's type or supply your own comparator to override.
+ */
 export const sortFns = {
   auto: (a: unknown, b: unknown) => String(a).localeCompare(String(b)),
   number: (a: unknown, b: unknown) => Number(a ?? 0) - Number(b ?? 0),
@@ -543,20 +679,37 @@ export const sortFns = {
   },
 }
 
+/**
+ * Built-in match functions, named by {@link ColumnFilter}'s `fn`.
+ * `includesString` is case-insensitive substring; `equals` is strict identity.
+ */
 export const filterFns = {
   includesString: (value: unknown, query: string) =>
     String(value).toLowerCase().includes(query.toLowerCase()),
   equals: (value: unknown, query: unknown) => value === query,
 }
 
+/**
+ * One stage of the row pipeline: takes the rows produced so far and returns the
+ * next set. Stages compose in the order given to `_rowModels`, so filtering
+ * before sorting sorts only what survived the filter.
+ */
 export type RowModelFactory<TData extends RowData> = (args: {
   table: SvGrid<TData>
   rows: Array<Row<TData>>
 }) => Array<Row<TData>>
 
+/**
+ * The identity stage that starts every pipeline. Always required, even when no
+ * other stage is: it is what turns your data into rows.
+ */
 export function createCoreRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ rows }) => rows
 }
+/**
+ * Drops rows that fail the active {@link ColumnFiltersState}. Pairs with
+ * `columnFilteringFeature`; without it there are no filters to apply.
+ */
 export function createFilteredRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const filters: ColumnFiltersState = table.getState().columnFilters ?? []
@@ -573,6 +726,10 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
     })
   }
 }
+/**
+ * Narrows the rows to the current page. Put it LAST: anything after it would
+ * only ever see one page of data.
+ */
 export function createPaginatedRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const pagination = table.getState().pagination ?? { pageIndex: 0, pageSize: rows.length || 10 }
@@ -580,6 +737,10 @@ export function createPaginatedRowModel<TData extends RowData>(): RowModelFactor
     return rows.slice(start, start + pagination.pageSize)
   }
 }
+/**
+ * Buckets rows by the active {@link GroupingState} and inserts a group row
+ * ahead of each bucket, carrying that bucket's aggregates.
+ */
 export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const grouping: GroupingState = table.getState().grouping ?? []
@@ -683,6 +844,14 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
     return buildGroups(rows, 0, 0, 'group')
   }
 }
+/**
+ * How to read a hierarchy out of FLAT rows: each row names its parent, and the
+ * grid reconstructs the tree. Rows whose parent id matches nothing become roots
+ * rather than disappearing.
+ *
+ * For nested source data (`children: [...]`), flatten it first with
+ * {@link flattenTreeData}.
+ */
 export type TreeRowModelOptions = {
   /** Field holding each row's parent id. Rows with no parent are roots. */
   parentField: string
@@ -761,6 +930,11 @@ export function createTreeRowModel<TData extends RowData>(
   }
 }
 
+/**
+ * How to flatten NESTED source data into the parent-id shape tree rows need.
+ * `parentField` is written onto each row, so point `treeData.parentField` at
+ * the same name afterwards.
+ */
 export type FlattenTreeOptions = {
   /** Field holding an array of child objects. */
   childrenField: string
@@ -796,6 +970,10 @@ export function flattenTreeData<T extends RowData>(
   return out
 }
 
+/**
+ * Hides the descendants of collapsed rows. Needed for grouping, tree data and
+ * master-detail alike - all three are the same expand/collapse mechanism.
+ */
 export function createExpandedRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const expanded: ExpandedState = table.getState().expanded ?? {}
@@ -810,6 +988,11 @@ export function createExpandedRowModel<TData extends RowData>(): RowModelFactory
     return flattened
   }
 }
+/**
+ * Orders rows by the active {@link SortingState}. Pass your own comparators to
+ * override the built-in {@link sortFns} - useful for locale-aware or
+ * domain-specific ordering.
+ */
 export function createSortedRowModel<TData extends RowData>(
   localSortFns: typeof sortFns = sortFns,
 ): RowModelFactory<TData> {
@@ -840,6 +1023,14 @@ export function createSortedRowModel<TData extends RowData>(
   }
 }
 
+/**
+ * Everything {@link createSvGridCore} accepts: the data and columns, the
+ * features and row models that make up the pipeline, and an `on*Change`
+ * callback per piece of state for controlled use.
+ *
+ * `<SvGrid>` builds this for you from its props - you only construct it
+ * directly when driving the headless core.
+ */
 export type SvGridOptions<TFeatures extends TableFeatures, TData extends RowData> = {
   _features: TFeatures
   _rowModels?: {
@@ -869,6 +1060,13 @@ export type SvGridOptions<TFeatures extends TableFeatures, TData extends RowData
   onActiveCellChange?: (updater: Updater<ActiveCellState>) => void
 }
 
+/**
+ * The headless grid instance: the state stores plus the read methods a renderer
+ * needs (`getHeaderGroups()`, `getRowModel()`, the `set*` writers).
+ *
+ * Framework free by design - `<SvGrid>` is one renderer over this, and you can
+ * write another. See the "Why headless?" guide.
+ */
 export type SvGrid<TData extends RowData> = {
   store: Store<Record<string, any>>
   optionsStore: Store<Record<string, any>>
@@ -892,6 +1090,14 @@ type InternalGrid<TData extends RowData> = SvGrid<TData> & {
   getAllColumns: () => Array<Column<TData>>
 }
 
+/**
+ * Build a headless grid: state, the row pipeline, and the read methods, with no
+ * DOM and no Svelte. This is the engine `<SvGrid>` renders.
+ *
+ * Most callers want `createSvGrid` (the runes-aware wrapper) or the component
+ * itself; reach for this when you are writing your own renderer or running the
+ * pipeline outside a browser.
+ */
 export function createSvGridCore<TFeatures extends TableFeatures, TData extends RowData>(
   options: SvGridOptions<TFeatures, TData>,
 ): SvGrid<TData> {
@@ -1256,6 +1462,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
   return grid
 }
 
+/** Narrowing helper for the many options that accept a value or a function. */
 export function isFunction(value: unknown): value is (...args: Array<any>) => any {
   return typeof value === 'function'
 }

@@ -566,10 +566,8 @@
         filterMode="menu"
         selectionMode="row"
         showRowSelection={true}
-        showPagination={false}
         enableInlineEditing={true}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={56}
         containerHeight="100%"
         fitColumns={true}
@@ -594,10 +592,8 @@
         filterMode="menu"
         selectionMode="row"
         showRowSelection={false}
-        showPagination={false}
         enableInlineEditing={true}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={56}
         containerHeight="100%"
         fitColumns={true}
@@ -624,10 +620,8 @@
         filterMode="menu"
         selectionMode="row"
         showRowSelection={false}
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={56}
         containerHeight="100%"
         fitColumns={true}
@@ -655,10 +649,8 @@
         filterMode="menu"
         selectionMode="row"
         showRowSelection={false}
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={false}
-        enableRowSummaries={false}
         rowHeight={56}
         containerHeight="100%"
         fitColumns={true}

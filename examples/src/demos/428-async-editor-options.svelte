@@ -159,7 +159,6 @@
       {features}
       editable
       selectionMode="none"
-      enableRowSummaries={false}
       rowHeight={34}
       containerHeight="100%"
       fitColumns={true}

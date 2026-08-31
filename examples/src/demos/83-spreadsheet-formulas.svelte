@@ -578,11 +578,9 @@
       features={features}
       filterMode="none"
       selectionMode="cell"
-      showPagination={false}
       showRowNumbers={true}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={32}
       rowNumberWidth={48}
       containerHeight="100%"

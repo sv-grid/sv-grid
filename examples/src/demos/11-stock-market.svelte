@@ -481,10 +481,8 @@
       features={features}
       filterMode="none"
       selectionMode="cell"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={40}
       containerHeight="100%"
       initialColumnPinning={{ left: ['symbol'] }}

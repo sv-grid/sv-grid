@@ -562,10 +562,8 @@
         features={features}
         filterMode="menu"
         selectionMode="cell"
-        showPagination={false}
         enableInlineEditing={!complianceLock}
         enableCellSelection={true}
-        enableRowSummaries={false}
         rowHeight={40}
         containerHeight="100%"
         fitColumns={false}

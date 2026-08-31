@@ -512,7 +512,6 @@
                 rowHeight={34}
                 containerHeight="100%"
                 fitColumns={true}
-                showPagination={false}
                 showGroupingControls={false}
               />
             </div>
@@ -684,7 +683,6 @@
                 features={features}
                 filterMode="menu"
                 showRowNumbers={true}
-                showPagination={false}
                 showGroupingControls={false}
                 enableCellSelection={true}
                 enableInlineEditing={true}
@@ -728,10 +726,8 @@
                 features={features}
                 filterMode="none"
                 showRowNumbers={false}
-                showPagination={false}
                 showGroupingControls={false}
                 enableCellSelection={true}
-                enableRowSummaries={false}
                 rowHeight={40}
                 containerHeight="100%"
                 fitColumns={true}

@@ -68,7 +68,7 @@ type Person = {
   active: boolean
 }
 
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   // Simple accessor by field name
   { field: 'firstName', header: 'First name' },
 
@@ -136,7 +136,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
 
   type Person = { firstName: string; lastName: string; age: number }
   const rows: Person[] = [/* ... */]
@@ -159,7 +159,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
       cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
     },
     { field: 'age', header: 'Age' },
-  ] satisfies ColumnDef<{}, Person>[]}
+  ] satisfies GridColumns<Person>}
 />
 ```
 

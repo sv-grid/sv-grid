@@ -13,7 +13,7 @@ three different behaviours:
 ## Setting it
 
 ```ts
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName',  header: 'First',    editorType: 'text' },
   { field: 'age',        header: 'Age',      editorType: 'number' },
   { field: 'joinedAt',   header: 'Joined',   editorType: 'date' },

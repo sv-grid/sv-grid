@@ -9,5 +9,8 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["recipes/**/*.svelte"]
+  "include": [
+    "recipes/**/*.svelte",
+    "css-modules.d.ts"
+  ]
 }

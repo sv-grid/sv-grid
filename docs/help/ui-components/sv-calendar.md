@@ -30,7 +30,7 @@ import { SvCalendar } from '@svgrid/grid'
 ## Example
 
 `SvCalendar` is a thin styled renderer over the headless `createCalendar` core,
-the same split as [SvGrid](../getting-started.md): the core owns reactive state,
+the same split as [SvGrid](../../getting-started.md): the core owns reactive state,
 selection, navigation, keyboard and ARIA, while the component keeps render-only
 concerns. Every color comes from the grid's `--sg-*` tokens, so it matches your
 grid and edit forms in light and dark. It is the editor SvGrid mounts for a

@@ -107,7 +107,6 @@
       features={features}
       getRowId={(o) => o.id}
       selectionMode="none"
-      enableRowSummaries={false}
       rowHeight={32}
       containerHeight="100%"
       fitColumns={true}

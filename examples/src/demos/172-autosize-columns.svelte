@@ -94,10 +94,8 @@
       selectionMode="cell"
       showRowSelection={false}
       showColumnFilters={false}
-      showPagination={false}
       enableInlineEditing={true}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={30}
       containerHeight="100%"
       fitColumns={false}

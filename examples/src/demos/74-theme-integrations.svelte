@@ -248,10 +248,8 @@ ${dark}
         filterMode="menu"
         selectionMode="cell"
         showRowNumbers={true}
-        showPagination={false}
         enableInlineEditing={false}
         enableCellSelection={true}
-        enableRowSummaries={false}
         virtualization={true}
         rowHeight={36}
         containerHeight="100%"

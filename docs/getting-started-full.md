@@ -50,7 +50,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -60,7 +60,7 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
     { firstName: 'Grace', age: 85, status: 'inactive' },
   ]
 
-  const columns: ColumnDef<{}, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name' },
     { field: 'age',       header: 'Age' },
     { field: 'status',    header: 'Status' },
@@ -105,8 +105,7 @@ import {
   SvGrid,
   tableFeatures,
   rowSortingFeature,
-  columnFilteringFeature,
-  type ColumnDef,
+  columnFilteringFeature, type GridColumns,
 } from '@svgrid/grid'
 ```
 
@@ -177,7 +176,7 @@ type Person = {
   active: boolean
 }
 
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   // Simple accessor by key
   { field: 'firstName', header: 'First name' },
 
@@ -258,8 +257,7 @@ with `tableFeatures(...)` and the matching `create*RowModel` factory.
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    rowSelectionFeature,
-    type ColumnDef,
+    rowSelectionFeature, type GridColumns,
   } from '@svgrid/grid'
 
   const features = tableFeatures({
@@ -389,7 +387,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from '@svgrid/grid'
+  import { renderSnippet, type GridColumns } from '@svgrid/grid'
 </script>
 
 {#snippet StatusCell({ value }: { value: string })}
@@ -397,7 +395,7 @@ For anything beyond a stringified value, render with `FlexRender`,
 {/snippet}
 
 <script lang="ts">
-  const columns: ColumnDef<{}, Person>[] = [
+  const columns: GridColumns<Person> = [
     {
       field: 'status',
       header: 'Status',
@@ -763,7 +761,7 @@ flow it through:
 ```ts
 type Person = { id: string; firstName: string; age: number }
 
-const columns: ColumnDef<{}, Person>[] = [
+const columns: GridColumns<Person> = [
   { field: 'firstName', header: 'First name' }, // ✅ key checked
   // { field: 'first_name', header: '…' },      // ✗ TS error
 ]

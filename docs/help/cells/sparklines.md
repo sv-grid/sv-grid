@@ -9,11 +9,11 @@ library, no custom cell snippet.
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
   type Row = { product: string; revenue: number[] }
 
-  const columns: ColumnDef<{}, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'product', header: 'Product' },
     { field: 'revenue', header: 'Trend', sparkline: { type: 'line' } },
   ]

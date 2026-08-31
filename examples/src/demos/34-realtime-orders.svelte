@@ -615,10 +615,8 @@
         features={features}
         filterMode="menu"
         selectionMode="cell"
-        showPagination={false}
         enableInlineEditing={true}
         enableCellSelection={true}
-        enableRowSummaries={false}
         rowHeight={36}
         containerHeight="100%"
         fitColumns={false}

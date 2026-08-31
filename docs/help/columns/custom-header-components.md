@@ -13,9 +13,9 @@ each measure header (with its icon) is rendered from a snippet via
 
 ```svelte
 <script lang="ts">
-  import { renderSnippet, type ColumnDef } from '@svgrid/grid'
+  import { renderSnippet, type GridColumns } from '@svgrid/grid'
 
-  const columns: ColumnDef<{}, Person>[] = [
+  const columns: GridColumns<Person> = [
     {
       field: 'salary',
       header: (ctx) => renderSnippet(SalaryHeader, { sorted: ctx.column.getIsSorted() }),

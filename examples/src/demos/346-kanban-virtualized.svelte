@@ -103,7 +103,6 @@
         features={features}
         getRowId={(r) => String(r.id)}
         sortable
-        showPagination={false}
         rowHeight={34}
         containerHeight="100%"
         fitColumns

@@ -167,7 +167,7 @@
           </div>
         {:else if p.id === 'grid'}
           <div class="fin-pane">
-            <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%" sortable enableInlineEditing showPagination={false} rowHeight={30} fitColumns />
+            <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%" sortable enableInlineEditing rowHeight={30} fitColumns />
           </div>
         {:else if p.id === 'chart'}
           <div class="fin-pane fin-chartwrap" bind:clientWidth={chartW} bind:clientHeight={chartH}>

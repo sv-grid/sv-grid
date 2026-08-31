@@ -6,7 +6,7 @@
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
   type Person = { firstName: string; age: number; status: string }
 
@@ -16,7 +16,7 @@
     { firstName: 'Grace', age: 85, status: 'inactive' },
   ]
 
-  const columns: ColumnDef<{}, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name' },
     { field: 'age',       header: 'Age' },
     { field: 'status',    header: 'Status' },

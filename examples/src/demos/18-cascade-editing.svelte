@@ -291,6 +291,7 @@
       rowHeight={36}
       containerHeight="100%"
       fitColumns={true}
+      summary={true}
       onApiReady={(next) => (api = next)}
       onCellValueChange={onCellValueChange}
     />

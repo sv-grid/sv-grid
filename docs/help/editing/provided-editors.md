@@ -325,5 +325,5 @@ recipe.
 - [Cell data types](../cells/cell-data-types.md)
 - [Parsing values](./parsing-values.md)
 - [Validation](./validation.md)
-- [Demo 80 - Cell types showcase](../../examples/src/demos/80-cell-types-showcase.svelte) - every editor in one enterprise grid
-- [Demo 66 - Custom cell editors](../../examples/src/demos/66-custom-cell-editors.svelte) - feature-health board using color, rating, and mood
+- [Demo 80 - Cell types showcase](../../../examples/src/demos/80-cell-types-showcase.svelte) - every editor in one enterprise grid
+- [Demo 66 - Custom cell editors](../../../examples/src/demos/66-custom-cell-editors.svelte) - feature-health board using color, rating, and mood

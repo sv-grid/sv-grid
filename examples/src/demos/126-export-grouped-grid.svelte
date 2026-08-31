@@ -251,7 +251,6 @@
         {columns}
         {features}
         showRowSelection={false}
-        showPagination={false}
         showGroupingControls={true}
         enableInlineEditing={false}
         enableCellSelection={true}

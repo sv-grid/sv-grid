@@ -32,6 +32,7 @@ import {
   resolveMaxDomHeight,
 } from "./virtualization/scroll-scaling";
 import { buildPreMeasureItems } from "./virtualization/virtualizer";
+import { DEV } from "esm-env";
 import "./sv-grid-scrollbar";
 import {
     computeColumnStat,
@@ -61,6 +62,7 @@ import {
 import {
     createSummaries,
   } from "./summaries";
+
 import {
     createMenus,
   } from "./menus";
@@ -604,6 +606,17 @@ export function createSvGridController<
       props.enableCellSelection ??
       ((props.selectionMode ?? "both") === "cell" ||
         (props.selectionMode ?? "both") === "both"),
+  );
+
+  // The aggregate footer row. `summary` is the shortcut alias, so it wins over
+  // the fine-grained prop - the same precedence `selectable` uses.
+  //
+  // It starts OFF. It used to default ON, which meant a plain
+  // `<SvGrid {data} {columns} />` grew a totals row nobody asked for, and every
+  // caller that did not want one had to say so: 375 call sites in this repo
+  // passed `enableRowSummaries={false}` against 6 that opted in.
+  const rowSummariesEnabled = $derived(
+    props.summary ?? props.enableRowSummaries ?? false,
   );
 
 
@@ -2583,7 +2596,7 @@ export function createSvGridController<
    */
   const eagerSummaries = $derived.by(() => {
     if (!summarize) return null;
-    if (!(props.enableRowSummaries ?? true)) return null;
+    if (!rowSummariesEnabled) return null;
     const rows = allRows;
     const columns = allColumns;
     if (rows.length * columns.length > SUMMARY_DEFER_CELL_LIMIT) return null;
@@ -2607,7 +2620,7 @@ export function createSvGridController<
     void editedCellValues;
     const rows = allRows;
     const columns = allColumns;
-    if (!(props.enableRowSummaries ?? true)) {
+    if (!rowSummariesEnabled) {
       deferredSummaries = {};
       return;
     }
@@ -3499,6 +3512,7 @@ export function createSvGridController<
     get showColumnFiltersEffective() { return showColumnFiltersEffective; },
     get showInlineColumnFilterEffective() { return showInlineColumnFilterEffective; },
     get showRowSelectionEffective() { return showRowSelectionEffective; },
+    get rowSummariesEnabled() { return rowSummariesEnabled; },
     get enableCellSelectionEffective() { return enableCellSelectionEffective; },
     get flushScheduledScrollSync() { return flushScheduledScrollSync; },
     get scheduleScrollSync() { return scheduleScrollSync; },
@@ -3944,6 +3958,58 @@ export function createSvGridController<
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
   const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
+
+  // Dev-time configuration checks. Silent misconfiguration was the grid's
+  // biggest usability gap - a misspelled `field` rendered a column of blank
+  // cells and printed nothing, and an inert `pageSize` was simply ignored.
+  //
+  // `validateGridConfig` is pure (see validate.ts) so it can be unit-tested;
+  // this only decides when to run it, and prints each distinct message once.
+  //
+  // It is loaded with `import()` rather than a static import so the checks live
+  // in a lazy chunk. The base bundle is size-budgeted and already sits at its
+  // limit, so a static import cost ~1 KB gzip that a production app would carry
+  // and never execute.
+  //
+  // `DEV` comes from `esm-env` because the alternatives do not work here:
+  // `process.env.NODE_ENV` is undefined in Vite's browser runtime (the checks
+  // silently never ran), and Vite's own flag makes svelte-package warn that it
+  // only works for Vite consumers. esm-env resolves through export conditions,
+  // so it is correct in dev and folds to `false` in a production build. It is
+  // already a direct dependency of Svelte, so it adds nothing to an install.
+  if (DEV) {
+    const warnedConfig = new Set<string>();
+    $effect(() => {
+      // Read the reactive values synchronously so the effect tracks them; the
+      // module load below is async and would otherwise register no dependencies.
+      const snapshot = {
+        data: internalData,
+        columns: internalColumns,
+        features: resolveEffectiveFeatures() as Record<string, unknown>,
+        sortable: props.sortable,
+        pageable: props.pageable,
+        showPagination: props.showPagination,
+        pageSize: props.pageSize,
+        groupBy: props.groupBy,
+        treeData: props.treeData,
+        initialColumnPinning: props.initialColumnPinning,
+        columnVirtualization: props.columnVirtualization,
+        externalPagination: props.externalPagination,
+        rowCount: props.rowCount,
+        externalSort: props.externalSort,
+        onSortingChange: props.onSortingChange,
+        externalFilter: props.externalFilter,
+        onFiltersChange: props.onFiltersChange,
+      };
+      void import("./validate").then(({ validateGridConfig }) => {
+        for (const message of validateGridConfig(snapshot as never)) {
+          if (warnedConfig.has(message)) continue;
+          warnedConfig.add(message);
+          console.warn(message);
+        }
+      });
+    });
+  }
 
   // Aligned grids: register in the shared group on mount, and mirror column
   // resizes to peers whenever columnWidths changes. Horizontal-scroll mirroring

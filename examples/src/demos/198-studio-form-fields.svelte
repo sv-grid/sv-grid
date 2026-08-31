@@ -83,7 +83,6 @@
     columns={columns.map((c) => (c.field === 'avatar' ? { ...c, cell: (ctx) => renderSnippet(AvatarCell, { row: ctx.row.original as Member }) } : c))}
     loading={view.loading}
     fitColumns
-    enableRowSummaries={false}
     onRowDoubleClick={(e) => (editing = e.row)}
     containerHeight={280}
   />

@@ -62,6 +62,37 @@ const columns = [
 ]
 ```
 
+## The footer summary row
+
+The same reducers drive the grid's footer row, which totals the whole filtered
+set rather than a group. It is **off by default** - turn it on with `summary`:
+
+```svelte
+<SvGrid {data} {columns} summary />
+```
+
+Out of the box each column falls back to a sensible guess: the sum of a numeric
+column, `Count: N` otherwise. Give a column its own `summary` to choose, using
+the reducer names from the table above:
+
+```svelte
+<script lang="ts">
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'region', header: 'Region' },
+    { field: 'revenue', header: 'Revenue', summary: 'sum', format: { type: 'currency', currency: 'USD' } },
+    { field: 'winRate', header: 'Win rate', summary: 'avg', format: { type: 'percent' } },
+    // Nothing worth totalling in this one.
+    { id: 'actions', header: '', summary: false },
+  ]
+</script>
+
+<SvGrid {data} {columns} summary />
+```
+
+`summary` is independent of `aggregate`: one feeds the footer, the other feeds
+group rows, and a column can set both to different reducers. `enableRowSummaries`
+is the long-form name for the grid prop; `summary` wins when both are set.
+
 ## Notes
 
 - Aggregates roll up **all leaf rows** under a group, at every nesting level.

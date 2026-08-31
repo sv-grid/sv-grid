@@ -51,6 +51,7 @@ const NATIVE_TEXT_FORMATS: ReadonlyArray<ExportFormat> = [
   'md',
 ]
 
+/** One column in an export: which field to read, and how to label and format it. */
 export type ExportColumn<TData = RowData> = {
   /** Data field name on the row object. */
   field: string
@@ -146,6 +147,7 @@ export type ExportHeaderFooterLine =
   | { image: string; width?: number; height?: number }
   | { left?: string; center?: string; right?: string }
 
+/** One tab of a multi-sheet workbook. Only formats with sheets (xlsx, xls) use these. */
 export type ExportSheet<TData> = {
   /** Sheet/tab label. Required. */
   label: string
@@ -166,6 +168,7 @@ export type ExportSheet<TData> = {
  */
 export type ExportRowSource<TData> = ReadonlyArray<TData> | 'displayed' | 'selected' | 'all'
 
+/** Everything `exportGrid` accepts: the format, the filename, which rows and columns, and per-format tuning. */
 export type ExportOptions<TData> = {
   format: ExportFormat
   /** Base filename (extension is appended if missing). Defaults to "grid". */
@@ -1408,6 +1411,7 @@ export async function exportGrid<
 /** Native formats that can be placed on the clipboard. */
 export type ClipboardFormat = 'csv' | 'tsv' | 'html' | 'json' | 'xml' | 'md'
 
+/** Options for copying a range to the clipboard, as opposed to writing a file. */
 export type ClipboardExportOptions<TData> = {
   /** Clipboard payload format. Default 'tsv' (pastes cleanly into Excel / Sheets). */
   format?: ClipboardFormat

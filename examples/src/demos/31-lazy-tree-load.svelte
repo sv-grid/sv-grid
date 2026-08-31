@@ -359,10 +359,8 @@
       columns={columns}
       features={features}
       filterMode="none"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={42}
       containerHeight="100%"
       fitColumns={true}

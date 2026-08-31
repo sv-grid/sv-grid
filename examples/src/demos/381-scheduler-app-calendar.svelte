@@ -389,7 +389,7 @@
               </div>
             {:else if p.id === 'upcoming'}
               <div class="hz-pane">
-                <SvGrid data={shown} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing showPagination={false} rowHeight={32} containerHeight="100%" fitColumns />
+                <SvGrid data={shown} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing rowHeight={32} containerHeight="100%" fitColumns />
               </div>
             {:else if p.id === 'inbox'}
               <div class="hz-inbox">

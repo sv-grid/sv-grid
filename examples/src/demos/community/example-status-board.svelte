@@ -88,7 +88,6 @@
       features={features}
       filterMode="menu"
       showRowNumbers={true}
-      showPagination={false}
       enableInlineEditing={true}
       rowHeight={38}
       containerHeight="100%"

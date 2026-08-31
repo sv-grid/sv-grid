@@ -273,10 +273,8 @@
       loading={loading}
       filterMode="none"
       selectionMode="cell"
-      showPagination={false}
       enableInlineEditing={false}
       enableCellSelection={true}
-      enableRowSummaries={false}
       rowHeight={36}
       containerHeight={Math.min(360, 60 + serverRows.length * 36)}
       fitColumns={true}
@@ -302,10 +300,8 @@
           features={features}
           filterMode="none"
           selectionMode="cell"
-          showPagination={false}
           enableInlineEditing={false}
           enableCellSelection={true}
-          enableRowSummaries={false}
           rowHeight={28}
           containerHeight={Math.min(280, 38 + detailRows.length * 28)}
           fitColumns={true}

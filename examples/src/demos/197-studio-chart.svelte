@@ -98,7 +98,6 @@
         {columns}
         loading={view.loading}
         fitColumns
-        enableRowSummaries={false}
         showRowSelection
         sortable
         externalSort

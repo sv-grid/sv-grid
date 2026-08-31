@@ -371,7 +371,6 @@
       filterMode="menu"
       selectionMode="row"
       showRowSelection={true}
-      showPagination={false}
       rowHeight={46}
       containerHeight="100%"
       fitColumns={true}

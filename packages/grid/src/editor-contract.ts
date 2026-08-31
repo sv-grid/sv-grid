@@ -10,6 +10,7 @@
  * Framework-free (no Svelte, no DOM) so it can be unit-tested and reused.
  */
 
+/** How much room a cell editor asks for, so the grid can size its overlay. */
 export type EditorSize = 'sm' | 'md' | 'lg'
 
 /**
