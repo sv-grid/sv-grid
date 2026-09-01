@@ -418,6 +418,7 @@ const CATEGORY_TO_GROUP = {
   Formatting: 'Tutorials', Data: 'Tutorials', 'Use cases': 'Tutorials', Comparisons: 'Compare',
   Performance: 'Performance', Engineering: 'Engineering', Architecture: 'Engineering',
   Accessibility: 'Guides', Theming: 'Guides', Integration: 'Guides', Concepts: 'Guides', Reference: 'Guides',
+  'UI components': 'Tutorials',
   AI: 'AI', Enterprise: 'Enterprise', Export: 'Enterprise', Product: 'Enterprise', Company: 'Company',
 }
 const blogGroupOf = (cat) => CATEGORY_TO_GROUP[cat] ?? 'Guides'

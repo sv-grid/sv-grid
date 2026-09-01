@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-08-31 from 348 pages, plus 39 API reference pages.
+Generated 2026-09-01 from 348 pages, plus 39 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -23385,6 +23385,40 @@ The package is [`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp)
 on npm, and it is listed in the official MCP registry as
 `com.svgrid/svgrid`.
 
+## Two ways to connect
+
+**Hosted (nothing to install).** Point any MCP client at the URL:
+
+```
+https://mcp.svgrid.com/mcp
+```
+
+```bash
+claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
+```
+
+One click:
+[Add to Cursor](https://cursor.com/en/install-mcp?name=svgrid&config=eyJ1cmwiOiJodHRwczovL21jcC5zdmdyaWQuY29tL21jcCJ9)
+· [Add to VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=svgrid&config=%7B%22name%22%3A%22svgrid%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.svgrid.com%2Fmcp%22%7D)
+
+It carries six tools - `search`, `fetch`, `list_examples`,
+`get_example_source`, `get_api_reference` and `check_svgrid_code` - and
+needs no Node, no config file, and no key.
+
+**Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
+the 27 `studio_*` tools, and `check_svgrid_code` additionally *compiles*
+the file with the Svelte compiler rather than checking it statically.
+Use it when you want the compile pass, the Studio tools, or no
+third-party endpoint in the loop.
+
+|  | Hosted | Local |
+| --- | --- | --- |
+| Setup | a URL | `npx @svgrid/mcp` |
+| Needs Node | no | yes |
+| `check_svgrid_code` compiles | no, static checks only | yes |
+| `studio_*` tools | no | yes (27) |
+| Works offline | no | yes |
+
 ## Install
 
 No install step is required - `npx` fetches it on demand:
@@ -23495,10 +23529,61 @@ Any client that speaks MCP stdio works.
 
 ## Tools exposed
 
-The server registers 35 tools: 8 for documentation, examples, and
-scaffolding, plus 27 `studio_*` tools that drive the SvGrid Studio
-project model. All run locally; none require an API key or a network
-call.
+The server registers 36 tools: 9 for verification, documentation,
+examples, and scaffolding, plus 27 `studio_*` tools that drive the
+SvGrid Studio project model. All run locally; none require an API key
+or a network call.
+
+### Verification
+
+#### `check_svgrid_code`
+
+Checks a file **against the version you have installed** and returns
+line-numbered diagnostics with the exact replacement for each. Run it
+on SvGrid code before you accept it; fix what it reports and run it
+again.
+
+```ts
+check_svgrid_code(source: string, filename?: string): string
+```
+
+```jsonc
+{
+  "ok": false,
+  "checkedAgainst": "@svgrid/grid@2.6.20",
+  "compiler": "svelte",
+  "counts": { "errors": 2, "warnings": 0, "info": 0 },
+  "diagnostics": [
+    { "rule": "svgrid/renamed-prop", "severity": "error", "line": 24,
+      "message": "`rowData` is not a SvGrid prop.", "fix": "Use `data`." },
+    { "rule": "svgrid/renamed-column-key", "severity": "error", "line": 10,
+      "message": "`accessorKey` is not a SvGrid column key.", "fix": "Use `field`." }
+  ]
+}
+```
+
+It checks four things:
+
+- **Names, against the installed version.** Importable symbols,
+  `<SvGrid>` props, `ColumnDef` keys, grid API methods, theme
+  stylesheets. The list is generated from the package sources at build
+  time, so it cannot drift from what the package exports; an unknown
+  name comes back with the nearest real one.
+- **Cross-package mistakes.** A symbol that lives in
+  `@svgrid/enterprise`, or an api method that only exists after
+  `installEnterprise(api)`.
+- **Svelte 5 rules.** `export let` and `$:` in a runes file (compiler
+  errors), `on:` / `<slot>` / `createEventDispatcher` (deprecations),
+  and a plain `let` array that is mutated and so never re-renders.
+- **The file, compiled.** When a Svelte compiler is reachable - your
+  project's copy first, then the one bundled here - real parse errors
+  come back too. The `compiler` field says which ran, so `"ok": true`
+  is never mistaken for "this compiles".
+
+It is tuned to stay silent on correct code: it reports nothing across
+all 373 demos in the SvGrid repo, which a CI test asserts on every
+commit. A checker that cries wolf is worse than none, because a model
+will rewrite working code to satisfy it.
 
 ### Documentation and examples
 
@@ -23825,7 +23910,7 @@ const columns: ColumnDef<typeof features, Row>[] = [
 | `editable: true` | `enableInlineEditing` prop on `<SvGrid>` | Per-grid, not per-column. (Per-column control on the roadmap.) |
 | `pinned: 'left'` / `'right'` | Right-click column menu → Pin | Set programmatically via the api. |
 | `rowGroup: true` | Via `setGroupBy([colId])` | See Grouping below. |
-| `aggFunc: 'sum'` | `aggregation: 'sum'` | Built-in: `sum`, `avg`, `min`, `max`, `count`. |
+| `aggFunc: 'sum'` | `aggregate: 'sum'` | Built-in: `sum`, `avg`, `min`, `max`, `count`. |
 
 ## Feature registration - the one new thing
 
@@ -23949,7 +24034,7 @@ to mutate (or not) on the `rows` array you passed in.
   const columns = [
     { field: 'department', header: 'Department' },
     { field: 'team',       header: 'Team' },
-    { field: 'salary',     header: 'Salary', aggregation: 'sum',
+    { field: 'salary',     header: 'Salary', aggregate: 'sum',
       format: { type: 'currency', currency: 'USD' } },
   ]
 
@@ -32023,7 +32108,7 @@ sort/filter only the visible page, which is wrong.
   <button disabled={(page + 1) * pageSize >= total} onclick={() => (page += 1)}>Next</button>
 </div>
 
-<SvGrid {rows} {columns} {features} loading={busy} showPagination={false} />
+<SvGrid data={rows} {columns} {features} loading={busy} showPagination={false} />
 ```
 
 Performance: O(pageSize) work in the browser; the server does the
@@ -34188,6 +34273,24 @@ the MCP tools - so its answers track the version you actually have
 installed.
 
 ## Install
+
+### Claude Code: the plugin (skill + MCP server in one)
+
+Two commands, and you get the skill *and* the MCP server that checks the
+code it produces:
+
+```
+/plugin marketplace add sv-grid/sv-grid
+/plugin install svgrid@svgrid
+```
+
+The plugin wires up the hosted MCP server at `https://mcp.svgrid.com/mcp`,
+so there is nothing to install and no key to configure. The skill supplies
+the house style; the server's `check_svgrid_code` tool verifies each file
+against the real API surface before you see it. Prefer this over installing
+the two separately.
+
+### Any other client: the skill on its own
 
 With the [`skills`](https://www.npmjs.com/package/skills) CLI, pointed at
 the SvGrid repository:
@@ -39308,7 +39411,7 @@ header keeps its own inset:
 
 ```svelte
 <SvCard title="Transactions" flush>
-  <SvGrid {columns} {rows} />
+  <SvGrid data={rows} {columns} />
 </SvCard>
 ```
 
@@ -45530,7 +45633,16 @@ can build a custom-styled pager on the same math.
 Keep the grid's page and the pager in one piece of state:
 
 ```svelte
-<SvGrid {columns} {rows} bind:page pageSize={25} />
+<SvGrid
+  data={rows}
+  {columns}
+  externalPagination
+  rowCount={total}
+  pageIndex={page - 1}
+  pageSize={25}
+  showPagination={false}
+  onPaginationChange={(p) => (page = p.pageIndex + 1)}
+/>
 <SvPagination {page} pageCount={Math.ceil(total / 25)} onChange={(n) => (page = n)} />
 ```
 
@@ -45581,7 +45693,7 @@ from the row count the API returns:
   const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)))
 </script>
 
-<SvGrid {columns} {rows} />
+<SvGrid data={rows} {columns} />
 <SvPagination {page} {pageCount} showFirstLast onChange={(n) => (page = n)} />
 ```
 
@@ -53528,6 +53640,20 @@ cell with an aria-live summary panel.
     }
     return m
   })
+
+  // `cellClass` is a COLUMN key - there is no grid-wide version - so the
+  // highlight is mapped onto every column.
+  const highlight = (ctx) =>
+    errorsByRow().get(ctx.row.original.id)?.has(ctx.column.id) ? 'cell-invalid' : ''
+
+  const columns = $derived(
+    ['company', 'email', 'phone'].map((field) => ({
+      field,
+      header: field[0].toUpperCase() + field.slice(1),
+      editable: true,
+      cellClass: highlight,
+    })),
+  )
 </script>
 
 <button onclick={submit}>Submit</button>
@@ -53539,9 +53665,7 @@ cell with an aria-live summary panel.
   </div>
 {/if}
 
-<SvGrid {data} {columns} features={features}
-  cellClass={(ctx) => errorsByRow().get(ctx.row.original.id)?.has(ctx.column.id) ? 'cell-invalid' : ''}
-/>
+<SvGrid {data} {columns} {features} />
 ```
 
 ```css

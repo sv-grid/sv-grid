@@ -121,7 +121,7 @@ const columns: ColumnDef<typeof features, Row>[] = [
 | `editable: true` | `enableInlineEditing` prop on `<SvGrid>` | Per-grid, not per-column. (Per-column control on the roadmap.) |
 | `pinned: 'left'` / `'right'` | Right-click column menu → Pin | Set programmatically via the api. |
 | `rowGroup: true` | Via `setGroupBy([colId])` | See Grouping below. |
-| `aggFunc: 'sum'` | `aggregation: 'sum'` | Built-in: `sum`, `avg`, `min`, `max`, `count`. |
+| `aggFunc: 'sum'` | `aggregate: 'sum'` | Built-in: `sum`, `avg`, `min`, `max`, `count`. |
 
 ## Feature registration - the one new thing
 
@@ -245,7 +245,7 @@ to mutate (or not) on the `rows` array you passed in.
   const columns = [
     { field: 'department', header: 'Department' },
     { field: 'team',       header: 'Team' },
-    { field: 'salary',     header: 'Salary', aggregation: 'sum',
+    { field: 'salary',     header: 'Salary', aggregate: 'sum',
       format: { type: 'currency', currency: 'USD' } },
   ]
 

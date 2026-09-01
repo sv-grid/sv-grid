@@ -132,6 +132,22 @@ jobs:
       - name: MCP tool guardrails
         run: pnpm vitest run tools/mcp-tools.test.ts
 
+      # The remote server is a Cloudflare Worker in workers/, which is outside
+      # the pnpm workspace, so nothing installs or builds it by default. Its
+      # corpus is generated from the MCP dist built two steps up.
+      - name: Build remote MCP worker corpus
+        run: node workers/svgrid-mcp/scripts/build-data.mjs
+
+      - name: Remote MCP worker guardrails
+        run: pnpm vitest run tools/mcp-worker.test.ts
+
+      # plugins/svgrid/ mirrors skills/svgrid/ because a plugin install copies
+      # the plugin directory, and pointing it at the repo root drags
+      # node_modules in (and dies on pnpm's symlinks). The mirror is generated,
+      # so it can silently go stale after a skill edit; this catches that.
+      - name: Claude Code plugin is in sync with the skill
+        run: pnpm plugin:check
+
       # NOTE: the website is now a PRIVATE submodule, absent on public/fork
       # checkouts, so its build smoke-check moved to the website repo's own CI
       # (and to deploy-website.yml, which has the WEBSITE_TOKEN).

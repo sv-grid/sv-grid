@@ -78,7 +78,7 @@ header keeps its own inset:
 
 ```svelte
 <SvCard title="Transactions" flush>
-  <SvGrid {columns} {rows} />
+  <SvGrid data={rows} {columns} />
 </SvCard>
 ```
 

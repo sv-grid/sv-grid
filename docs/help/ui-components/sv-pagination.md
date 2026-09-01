@@ -69,7 +69,16 @@ can build a custom-styled pager on the same math.
 Keep the grid's page and the pager in one piece of state:
 
 ```svelte
-<SvGrid {columns} {rows} bind:page pageSize={25} />
+<SvGrid
+  data={rows}
+  {columns}
+  externalPagination
+  rowCount={total}
+  pageIndex={page - 1}
+  pageSize={25}
+  showPagination={false}
+  onPaginationChange={(p) => (page = p.pageIndex + 1)}
+/>
 <SvPagination {page} pageCount={Math.ceil(total / 25)} onChange={(n) => (page = n)} />
 ```
 
@@ -120,7 +129,7 @@ from the row count the API returns:
   const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)))
 </script>
 
-<SvGrid {columns} {rows} />
+<SvGrid data={rows} {columns} />
 <SvPagination {page} {pageCount} showFirstLast onChange={(n) => (page = n)} />
 ```
 

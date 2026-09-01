@@ -38,6 +38,24 @@ installed.
 
 ## Install
 
+### Claude Code: the plugin (skill + MCP server in one)
+
+Two commands, and you get the skill *and* the MCP server that checks the
+code it produces:
+
+```
+/plugin marketplace add sv-grid/sv-grid
+/plugin install svgrid@svgrid
+```
+
+The plugin wires up the hosted MCP server at `https://mcp.svgrid.com/mcp`,
+so there is nothing to install and no key to configure. The skill supplies
+the house style; the server's `check_svgrid_code` tool verifies each file
+against the real API surface before you see it. Prefer this over installing
+the two separately.
+
+### Any other client: the skill on its own
+
 With the [`skills`](https://www.npmjs.com/package/skills) CLI, pointed at
 the SvGrid repository:
 

@@ -1,0 +1,40 @@
+{
+  "name": "svgrid",
+  "owner": {
+    "name": "jQWidgets",
+    "email": "sales@jqwidgets.com",
+    "url": "https://svgrid.com"
+  },
+  "metadata": {
+    "description": "SvGrid - the Svelte 5 data grid. Skills and MCP tooling for writing grid code that actually runs.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "svgrid",
+      "source": "./plugins/svgrid",
+      "description": "Write SvGrid code that runs: the house-style skill plus the MCP server that checks every file against the real API surface before you see it.",
+      "version": "2.6.7",
+      "author": {
+        "name": "jQWidgets",
+        "email": "sales@jqwidgets.com",
+        "url": "https://svgrid.com"
+      },
+      "homepage": "https://svgrid.com/docs/help/mcp-server/",
+      "repository": "https://github.com/sv-grid/sv-grid",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "svelte",
+        "svelte5",
+        "sveltekit",
+        "data grid",
+        "datagrid",
+        "data table",
+        "svgrid",
+        "mcp",
+        "code verification"
+      ]
+    }
+  ]
+}

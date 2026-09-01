@@ -49,6 +49,11 @@
  * Required env:
  *   ANTHROPIC_API_KEY - Anthropic API key.
  * Optional env:
+ *   ANTHROPIC_WORKSPACE_ID - required when the key above is an IDENTITY-LINKED
+ *                     key, which rejects every request without it:
+ *                     "anthropic-workspace-id is required when authenticating
+ *                     with an identity-linked API key". Find it in the Console
+ *                     under Settings -> Workspaces. A plain key ignores it.
  *   BLOG_MODEL        - model id (default: claude-sonnet-4-6).
  *   BLOG_MAX_RETRIES  - retries on validation failure (default: 1).
  */
@@ -68,6 +73,8 @@ const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 const DRY_RUN = process.argv.includes('--dry-run')
 const MODEL = process.env.BLOG_MODEL || 'claude-sonnet-4-6'
 const API_KEY = process.env.ANTHROPIC_API_KEY
+// Required when ANTHROPIC_API_KEY is an identity-linked key; ignored otherwise.
+const WORKSPACE_ID = process.env.ANTHROPIC_WORKSPACE_ID
 const MAX_RETRIES = Number.parseInt(process.env.BLOG_MAX_RETRIES ?? '1', 10)
 const AUTHOR = 'Boyko Markov'
 
@@ -178,7 +185,20 @@ function loadRelevantDemos(tags, title, required = []) {
       .filter((l) => l.trim() && !l.trim().startsWith('//'))
       .slice(0, 60)
       .join('\n')
-    scored.push({ file: f, score, script: compact })
+    // The <SvGrid ...> element lives in the MARKUP, not the script, so a
+    // script-only sample showed the model setup code and hid the thing a post
+    // actually has to demonstrate: which props exist and how they nest. Left
+    // out, the model invents plausible ones - a generated kanban post used
+    // `rows`, `laneField` and `cardSnippet`, none of which exist, and none of
+    // which would have compiled.
+    const markup = raw.slice(scriptMatch.index + scriptMatch[0].length)
+    const usage = [...markup.matchAll(/<SvGrid\b[\s\S]*?(?:\/>|<\/SvGrid>)/g)]
+      .map((m) => m[0])
+      .join('\n\n')
+      .split('\n')
+      .slice(0, 60)
+      .join('\n')
+    scored.push({ file: f, score, script: compact, usage })
   }
   scored.sort((a, b) => b.score - a.score)
   return scored.slice(0, Math.max(3, required.length))
@@ -210,6 +230,13 @@ function buildGrounding({ tags = [], title = '', demos: required = [] } = {}) {
       lines.push('')
       lines.push('```svelte (excerpt from examples/src/demos/' + d.file + ')')
       lines.push(d.script)
+      if (d.usage) {
+        // The element itself, verbatim. These are the ONLY prop names that
+        // exist; anything else the model reaches for is invented.
+        lines.push('')
+        lines.push('<!-- how the component is actually called in this demo -->')
+        lines.push(d.usage)
+      }
       lines.push('```')
     }
     lines.push('')
@@ -250,20 +277,36 @@ STRUCTURE GUIDANCE (not a strict template)
   distinct questions readers ask; otherwise omit it.
 - Not every post needs a "Where to look next" section. A trailing link line
   is fine.
-- Length: aim for 900-1600 words but let the topic decide. If the topic is
-  a one-line trick, 700 words is right. If it is architecture, 1800 is fine.
+- Length: 900-1600 words of PROSE, counted with every code block removed. 900
+  is a hard floor and a post under it is rejected and rewritten, so do not aim
+  at the floor - aim at 1100 and let the topic pull it up. Architecture pieces
+  can run to 1800.
+  Earn the words rather than padding: the failure mode is a post that shows six
+  snippets and explains none of them. For each block, say why it is shaped that
+  way, what it costs, and what breaks without it. A paragraph on the mistake
+  you would otherwise make is worth more than another snippet.
 - Paragraph rhythm: mix short and long. Sentence fragments are OK when they
   land. Occasional first person ("I hit this last quarter", "we ended up
   reverting") makes the post feel like a person.
 
 CODE REQUIREMENTS (still hard)
 
-- At least THREE fenced code blocks with a combined >= 40 lines of real
-  code (not comments). \`\`\`svelte for components, \`\`\`ts for logic.
-  Never \`\`\`js.
+- At least THREE fenced code blocks with a combined >= 90 lines of real
+  code (>= 45 for a comparison post, where prose does more of the work).
+  \`\`\`svelte for components, \`\`\`ts for logic. Never \`\`\`js.
+  Show the whole component once - imports, types, columns, the element - so a
+  reader can paste it and run it. Elided fragments full of "..." are what make
+  a post useless; the existing posts on this blog average 130 lines and that is
+  the bar.
 - Every code block MUST use real SvGrid API names from the grounding
   facts. Do NOT invent APIs. If a code sample would need something SvGrid
   does not have, restructure the post to use what SvGrid does have.
+- The two required props are \`data\` and \`columns\`. If your local variable is
+  called \`rows\`, write \`data={rows}\` - NOT \`{rows}\`, which would be a prop
+  named "rows" and does not exist. Copy prop names from the "how the component
+  is actually called" block in the reference snippets; every <SvGrid> prop you
+  write is checked against the real type, and a post using an invented one is
+  rejected and rewritten.
 - Show imports at least once per post so a reader knows where things
   come from. Elide the SAME imports on repeat blocks with a comment.
 
@@ -286,6 +329,21 @@ Never use ANY of these openings or transitions:
 - Every gotcha as a bulleted list with bold leaders. Prose is fine.
 - Ending every post with a Q&A section. Skip when it feels forced.
 
+BANNED SENTENCE SHAPES (hard - the words are innocent, the shape is the tell)
+
+- The reframe: "not just X, it's Y" / "not only X but also Y". Say the one
+  thing that is true.
+- The audience hedge: "whether you're a beginner or a veteran ...". Write for
+  one reader.
+- "In today's ...", "gone are the days", "at its core", "the beauty of".
+- Booster adjectives standing in for a measurement: seamless, effortless,
+  blazing-fast, cutting-edge, game-changer. If it is fast, give the number.
+- Marketing verbs: supercharge, unlock, elevate, delve, empower.
+
+These are checked mechanically, so a post using one is rejected and rewritten.
+Note the check is on shape: "this is not just any grid" is fine, and so is
+"ask whether you need pagination at all".
+
 VOICE
 
 - Write like a working engineer explaining to a peer over coffee. Occasional
@@ -301,6 +359,23 @@ STYLE RULES (hard)
 - Use straight ASCII quotes only.
 - Do not mention or cite National Instruments / NI.
 - No top-level H1 title (frontmatter carries the title).
+- Naming rivals depends on the category, and the two cases are opposite:
+
+  * Category "Comparisons": you MUST name the real alternatives, at least
+    two, and say specifically where each one wins. A comparison that names
+    nobody is not a comparison - it is a pitch, and a reader looking for
+    options leaves with none. Be accurate about their strengths even when
+    that is inconvenient; the page is worthless the moment a reader who
+    knows the field catches it shading.
+  * Every other category: do NOT name rival data-grid products (AG Grid,
+    TanStack Table, MUI X, Kendo, Syncfusion, Handsontable, DevExtreme,
+    Tabulator, SVAR, Glide, Smart.Grid, jqxGrid, react-data-grid, PrimeVue
+    DataTable, svelte-headless-table). Describe the technique on its own
+    terms - a post about a modal has no reason to invoke a grid vendor,
+    and anchoring to a rival advertises them.
+
+  Frameworks and integration tools are never rivals: Svelte, SvelteKit,
+  React, Vite, Tailwind and TanStack Query are fine to name anywhere.
 `
 
 // Delimiter-based output format. The markdown body contains fenced code
@@ -347,6 +422,15 @@ function topicContract(topic) {
     '- The primary query, or a close natural variant of it, appears in the title, in the first 100 words, and in at least one H2. Write it the way a developer types it; never stuff it.',
   ]
   if (demos.length) lines.push(`- Link each of these demos at least once with a real markdown link and descriptive link text: ${demos.map((id) => `[...](/demos/${id}/)`).join(', ')}`)
+  if (demos.length) {
+    // Every demo has a captured thumbnail under website/public/thumbs, so the
+    // image is a real screenshot of the thing the post is about rather than
+    // decoration. Only these paths are allowed: anything invented would 404.
+    lines.push(
+      `- Include at least one screenshot, using EXACTLY one of these paths (they exist; do not invent an image path): ${demos.map((id) => `![alt](/thumbs/${id}.webp)`).join(', ')}`,
+      '- Place the screenshot where it earns its place - after the first code block that produces something visible, not stacked at the top. Write real alt text describing what is on screen, not "screenshot of the component".',
+    )
+  }
   if (docs.length) lines.push(`- Link each of these docs the same way: ${docs.map((s) => `[...](/docs/${s}/)`).join(', ')}`)
   if (api.length) lines.push(`- Use these identifiers in the code, spelled exactly: ${api.join(', ')}`)
   lines.push(
@@ -412,6 +496,10 @@ async function callModel(prompt) {
       'content-type': 'application/json',
       'x-api-key': API_KEY,
       'anthropic-version': '2023-06-01',
+      // An identity-linked key must say which workspace the request acts in,
+      // and is rejected with a 400 otherwise. A plain key ignores the header,
+      // so sending it whenever it is configured is safe either way.
+      ...(WORKSPACE_ID ? { 'anthropic-workspace-id': WORKSPACE_ID } : {}),
     },
     body: JSON.stringify({
       model: MODEL,
@@ -501,22 +589,156 @@ const BANNED_PHRASES = [
   'that is why we',
 ]
 
+/**
+ * Structural AI tells that a plain substring list cannot catch, because the
+ * words are innocent on their own. It is the SHAPE that reads as machine copy:
+ * the pseudo-profound reframe, the audience-hedge, the booster adjective doing
+ * the work a concrete number should do.
+ *
+ * Found by auditing the existing 175 posts: "not just" appeared in 23 and
+ * "whether you" in 16, and they are the two loudest tells in the corpus.
+ * Deliberately pattern-based - "not just any grid" is fine English; "not just
+ * fast, it's simple" is the tell.
+ */
+/**
+ * Every prop `<SvGrid>` actually accepts, read from the Props type at run time
+ * so this can never drift from the component. Used to reject invented props in
+ * generated code.
+ */
+const GRID_PROPS = (() => {
+  const names = new Set(['data', 'columns'])
+  try {
+    const types = readFileSync(join(ROOT, 'packages', 'grid', 'src', 'SvGrid.types.ts'), 'utf-8')
+    // The Props interface is the last big block; take every 2-space-indented
+    // optional member across the file and let the extras be harmless - a prop
+    // that exists on a nested config type is still a real name.
+    for (const [, name] of types.matchAll(/^ {2}([a-zA-Z][a-zA-Z0-9]*)\??:/gm)) names.add(name)
+  } catch {
+    /* fall through: an empty-ish set only disables the check, never fails a post */
+  }
+  return names
+})()
+
+const STYLE_TELLS = [
+  [/\bnot just\b[^.]{0,50}\b(it'?s|they'?re|but)\b/i, 'the "not just X, it\'s Y" reframe'],
+  [/\bnot only\b[^.]{0,70}\bbut also\b/i, 'the "not only ... but also" reframe'],
+  [/\bwhether you(?:'re| are)\b/i, 'the "whether you\'re X or Y" audience hedge'],
+  [/\bin today'?s\b/i, '"in today\'s ..." opener'],
+  [/\bgone are the days\b/i, '"gone are the days"'],
+  [/\bat its core\b/i, '"at its core"'],
+  [/\bthe beauty of\b/i, '"the beauty of"'],
+  [/\b(seamless(ly)?|effortless(ly)?|blazing[- ]fast|cutting[- ]edge|game[- ]changer)\b/i, 'booster adjective (say the number instead)'],
+  [/\b(supercharge|unlock|elevate|delve|empower)s?\b/i, 'marketing verb'],
+]
+
+/**
+ * Rival data-grid products. Named only in "Comparisons" posts (the comparison
+ * and migration guides); anywhere else the technique gets described on its own
+ * terms. Deliberately NOT here: Svelte, SvelteKit, React, Vite, Tailwind,
+ * shadcn-svelte, Bits UI and TanStack Query - frameworks and integration tools
+ * are not competitors. Note `TanStack Table` is matched in full: TanStack Query
+ * is an integration we are happy to name.
+ */
+/**
+ * Svelte UI kits. Not rivals to the GRID, so they are never banned - but they
+ * ARE the alternatives a "which Svelte UI component library" comparison has to
+ * weigh, so they count toward that post's requirement to name competitors.
+ * Every one of these is already named in docs/help/migrating-from-ui-kit-tables.md.
+ */
+const UI_KIT_ALTERNATIVES = [
+  /\bskeleton(?:\s*(?:ui|labs))?\b/i,
+  /\bflowbite(?:-svelte)?\b/i,
+  /\bshadcn-svelte\b/i,
+  /\bbits\s*ui\b/i,
+  /\bmelt\s*ui\b/i,
+  /\bcarbon\s+components?\s+svelte\b/i,
+  // Not UI kits, but the alternatives the board and scheduler briefs name, and
+  // the counter has to recognise what the brief asked for. Leaving these out
+  // failed a kanban post that had correctly named svelte-dnd-action.
+  /\bsvelte-dnd-action\b/i,
+  /\bdndzone\b/i,
+  /\bfullcalendar\b/i,
+  /\bschedule-?x\b/i,
+  /\bdhtmlx\b/i,
+  /\bfrappe\s+gantt\b/i,
+]
+
+const RIVAL_VENDORS = [
+  /\bag[- ]?grid\b/i,
+  /\btanstack\s+table\b/i,
+  /\bmui\s*x\b/i,
+  /\bkendo\b/i,
+  /\bsyncfusion\b/i,
+  /\bhandsontable\b/i,
+  /\bdevextreme\b/i,
+  /\btabulator\b/i,
+  /\bsvar\b/i,
+  /\bglide\s+data\s+grid\b/i,
+  /\bsmart\.?grid\b/i,
+  /\bjqx[- ]?grid\b/i,
+  /\breact-data-grid\b/i,
+  /\bprimevue\b/i,
+  /\bsvelte-headless-table\b/i,
+]
+
 /** Verify the body meets minimum quality bars WITHOUT forcing a fixed
  *  section skeleton. Returns null on pass, or a string describing what
  *  needs to change (used to retry). */
 function validateBody(body, topic = null) {
   const errs = []
   const wc = wordCount(body)
-  if (wc < 700) errs.push(`Body is ${wc} words; expand to 900-1600 (topic-dependent).`)
+  if (wc < 900) errs.push(`Body is ${wc} words of prose; expand to 900-1600. Do not pad - explain why each snippet is shaped the way it is, and what breaks without it.`)
   const blocks = countCodeBlocks(body)
-  if (blocks < 3) errs.push(`Only ${blocks} code blocks; need >= 3.`)
+  // Same reasoning as the code-line floor below: a comparison post argues in
+  // prose and shows less code, so holding it to a how-to's block count just
+  // forces filler. Relaxing the line count but not the block count was an
+  // inconsistency on my part, and it failed two otherwise-good posts.
+  const blockFloor = topic?.intent === 'comparison' ? 2 : 3
+  if (blocks < blockFloor) errs.push(`Only ${blocks} code blocks; need >= ${blockFloor}.`)
   const codeLines = codeLineCount(body)
-  if (codeLines < 40) errs.push(`Only ${codeLines} lines of code; need >= 40.`)
+  // The existing corpus runs a median of 132 lines of code per post, and the
+  // first generated batch came in at ~73 - thinner than what readers already
+  // get. A comparison post legitimately carries less code than a how-to, so
+  // the floor follows the intent rather than being one number for everything.
+  const codeFloor = topic?.intent === 'comparison' ? 45 : 90
+  if (codeLines < codeFloor) {
+    errs.push(`Only ${codeLines} lines of code; need >= ${codeFloor}. Show the fuller example rather than an elided fragment.`)
+  }
   if (/[—–]/.test(body)) errs.push('Body contains em/en-dashes; replace with plain hyphen.')
   if (/^#\s/m.test(body)) errs.push('Body contains an H1; only H2/H3 allowed.')
   const lower = body.toLowerCase()
   const hits = BANNED_PHRASES.filter((p) => lower.includes(p))
   if (hits.length) errs.push('Body contains banned AI-tell phrases (rewrite without them): ' + hits.join(', '))
+  // Invented props. Grounding alone did not stop this: a generated kanban post
+  // used `rows`, `laneField`, `view` and `cardSnippet` on <SvGrid>, none of
+  // which exist, so none of its code would have compiled. Checking the element
+  // mechanically is the backstop.
+  const invented = new Set()
+  for (const [, attrs] of body.matchAll(/<SvGrid\b([\s\S]*?)(?:\/>|>)/g)) {
+    for (const [, name] of attrs.matchAll(/(?:^|\s)([a-zA-Z][a-zA-Z0-9]*)\s*=/g)) {
+      if (!GRID_PROPS.has(name)) invented.add(name)
+    }
+    // `{shorthand}` form. Strip `name={...}` pairs first, or the VALUE gets
+    // read as a prop name: `data={rows}` would report a prop called "rows" and
+    // `responsive={true}` one called "true".
+    const shorthandOnly = attrs.replace(/[a-zA-Z][a-zA-Z0-9]*\s*=\s*(\{[\s\S]*?\}|"[^"]*"|'[^']*')/g, ' ')
+    for (const [, name] of shorthandOnly.matchAll(/\{\s*([a-zA-Z][a-zA-Z0-9]*)\s*\}/g)) {
+      if (!GRID_PROPS.has(name)) invented.add(name)
+    }
+  }
+  if (invented.size) {
+    errs.push(
+      'Code uses <SvGrid> props that do not exist: ' + [...invented].join(', ') +
+        '. Use only props shown in the reference snippets.',
+    )
+  }
+  // Structural tells. Checked against prose only: a string literal or an
+  // identifier in a code block should never trip a style rule.
+  const prose = body.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '')
+  const tells = STYLE_TELLS.filter(([re]) => re.test(prose)).map(([, label]) => label)
+  if (tells.length) {
+    errs.push('Body uses AI-tell sentence shapes (rewrite the sentence, do not just swap a word): ' + tells.join('; '))
+  }
   // Structural anti-tell: three of the four "default AI skeleton" headers
   // showing up together is a strong signal the model reverted to the old
   // template. We flag it so the retry produces a different shape.
@@ -525,7 +747,56 @@ function validateBody(body, topic = null) {
   if (skeleton.length >= 3) {
     errs.push('Post uses the default AI skeleton (setup / full example / gotchas / FAQ). Restructure around the specific topic; use topic-specific headings.')
   }
+  // Rival grid vendors belong in comparison and migration posts, which are the
+  // "Comparisons" category, and nowhere else - a post about a modal that
+  // name-drops a grid vendor is advertising them. Kept here as well as in the
+  // prompt so a post that slips through is retried rather than published.
+  if (!topic || topic.category !== 'Comparisons') {
+    const named = RIVAL_VENDORS.filter((v) => v.test(body))
+    if (named.length) {
+      errs.push(
+        'Body names rival grid vendors outside a Comparisons post (' +
+          named.map((v) => v.source.replace(/\\[sb]\*?/g, ' ').trim()).join(', ') +
+          '). Describe the technique on its own terms instead.',
+      )
+    }
+  } else if (topic.intent === 'comparison') {
+    // The inverse failure, and the one that actually happened: a "best Svelte
+    // data grid" post that named nobody, built a decision framework, and
+    // recommended only our own tiers. Useless to a reader weighing options,
+    // and useless as something an assistant can quote back.
+    const named = [...RIVAL_VENDORS, ...UI_KIT_ALTERNATIVES].filter((v) => v.test(body))
+    if (named.length < 2) {
+      errs.push(
+        `A comparison post has to name the real alternatives; this one names ${named.length}. ` +
+          'Name at least two competing libraries and say where each one wins.',
+      )
+    }
+  }
   if (topic) {
+    // A post about a UI component with no picture of it is worse than the docs
+    // page it links to. Every referenced demo has a thumbnail, so the only
+    // reason to be missing one is that the model skipped it.
+    const demoIds = topic.demos ?? []
+    if (demoIds.length) {
+      const images = [...body.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)]
+      if (!images.length) {
+        errs.push(
+          'Post has no screenshot. Embed one of: ' +
+            demoIds.map((id) => `/thumbs/${id}.webp`).join(', '),
+        )
+      } else {
+        const bad = images.filter(([, , src]) => !/^\/(thumbs|blog-media|docs-media)\//.test(src))
+        if (bad.length) {
+          errs.push(
+            'Image path does not exist: ' + bad.map(([, , src]) => src).join(', ') +
+              '. Use one of: ' + demoIds.map((id) => `/thumbs/${id}.webp`).join(', '),
+          )
+        }
+        const lazyAlt = images.filter(([, alt]) => !alt.trim() || /^(screenshot|image)\b/i.test(alt.trim()))
+        if (lazyAlt.length) errs.push('Image alt text must describe what is on screen, not "screenshot of ...".')
+      }
+    }
     // The contract is what makes the post rank: the query's words, the demo
     // and doc links, the identifiers. Each is checked mechanically.
     const words = topic.query.toLowerCase().split(/\s+/).filter((w) => w.length > 2)

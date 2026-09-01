@@ -28,14 +28,60 @@ Point any MCP-capable client - Claude Desktop, Claude Code, Cursor, Zed - at thi
 
 | Tool | Purpose |
 | --- | --- |
+| `check_svgrid_code` | **Verify** a file against the real API surface + the Svelte compiler. |
 | `list_examples` | Every demo: id, title, and one-line blurb. |
 | `get_example_source` | Full `.svelte` source for a demo by id. |
 | `list_docs` | Every documentation page (slug + title). |
 | `get_doc` | Markdown for a single doc by slug. |
-| `search_docs` | Case-insensitive substring search across the docs. |
+| `search_docs` | Ranked full-text search across the docs. |
 | `get_api_reference` | The curated public-API surface, grouped by category. |
 | `introspect_source` | Studio: infer an `EntitySchema` from a Drizzle file or sample rows. |
 | `scaffold_entity` | Studio: generate SvelteKit files for a single entity. |
+
+### `check_svgrid_code` - the one a retrieval server cannot do
+
+Reading the docs makes a model *likelier* to be right. This makes it *checkable*.
+Hand it a file and it answers with line-numbered diagnostics and the exact
+replacement for each:
+
+```jsonc
+{
+  "ok": false,
+  "checkedAgainst": "@svgrid/grid@2.6.20",
+  "compiler": "svelte",
+  "counts": { "errors": 3, "warnings": 0, "info": 0 },
+  "diagnostics": [
+    { "rule": "svgrid/renamed-prop", "severity": "error", "line": 24,
+      "message": "`rowData` is not a SvGrid prop.", "fix": "Use `data`." },
+    { "rule": "svgrid/renamed-column-key", "severity": "error", "line": 10,
+      "message": "`accessorKey` is not a SvGrid column key.", "fix": "Use `field`." },
+    { "rule": "svelte/legacy-event-directive", "severity": "error", "line": 30,
+      "message": "`on:rowClick` never fires: SvGrid dispatches no component events, it takes callback props.",
+      "fix": "Use `onRowClick={...}`." }
+  ]
+}
+```
+
+What it checks:
+
+- **Every name, against the installed version.** Importable symbols, `<SvGrid>`
+  props, `ColumnDef` keys, grid API methods, theme stylesheets. The list is
+  generated from the package sources at build time, so it cannot drift from
+  what the package exports, and an unknown name comes back with the nearest
+  real one.
+- **Cross-package mistakes.** A symbol that lives in `@svgrid/enterprise`, or an
+  api method that only exists after `installEnterprise(api)`.
+- **Svelte 5 rules.** `export let` and `$:` in a runes file (compiler errors),
+  `on:` / `<slot>` / `createEventDispatcher` (deprecations), and a plain `let`
+  array that gets mutated and silently never re-renders.
+- **The file, compiled.** When a Svelte compiler is reachable - the user's
+  project copy first, then the one shipped here - real parse errors come back
+  too. The result says which of the two ran in its `compiler` field, so
+  "no errors" is never mistaken for "this compiles".
+
+It is tuned to shut up when the code is right: it reports **nothing** across all
+373 demos in this repo, which is what a CI test asserts. A verifier that cries
+wolf is worse than none, because a model will happily "fix" working code.
 
 ### Studio: drive the app model (agent co-designer)
 
@@ -54,6 +100,31 @@ The `studio_*` tools let an agent build and edit the **same validated project mo
 | `studio_generate_app` | Emit every file of the runnable SvelteKit app. |
 
 A typical session: `studio_new_project` → `studio_add_entity` (×N) → `studio_set_entity_source` → `studio_set_data_layer` → `studio_set_auth` → `studio_generate_app` → write the files and run `svelte-check`.
+
+## Two ways to run it
+
+| | stdio (this package) | remote HTTP |
+| --- | --- | --- |
+| Install | `npx @svgrid/mcp` | `https://mcp.svgrid.com/mcp` |
+| Needs Node | yes | no |
+| `check_svgrid_code` compiles | yes | static checks only |
+| Studio `studio_*` tools | yes (27) | no |
+| Works offline | yes | no |
+
+```bash
+# No install: point any MCP client at the hosted server
+claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
+```
+
+<p align="center">
+  <a href="https://cursor.com/en/install-mcp?name=svgrid&config=eyJ1cmwiOiJodHRwczovL21jcC5zdmdyaWQuY29tL21jcCJ9"><img src="https://img.shields.io/badge/Add%20to-Cursor-000000?logo=cursor&logoColor=white" alt="Add to Cursor" /></a>
+  <a href="https://insiders.vscode.dev/redirect/mcp/install?name=svgrid&config=%7B%22name%22%3A%22svgrid%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.svgrid.com%2Fmcp%22%7D"><img src="https://img.shields.io/badge/Add%20to-VS%20Code-0098FF?logo=visualstudiocode&logoColor=white" alt="Add to VS Code" /></a>
+</p>
+
+The remote server is live at **https://mcp.svgrid.com/mcp** and carries the six
+docs + verification tools ([source](../../workers/svgrid-mcp)). Use stdio when
+you want the compiler pass, the Studio tools, or no third-party endpoint in the
+loop.
 
 ## Run
 

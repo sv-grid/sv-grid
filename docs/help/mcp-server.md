@@ -18,6 +18,40 @@ The package is [`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp)
 on npm, and it is listed in the official MCP registry as
 `com.svgrid/svgrid`.
 
+## Two ways to connect
+
+**Hosted (nothing to install).** Point any MCP client at the URL:
+
+```
+https://mcp.svgrid.com/mcp
+```
+
+```bash
+claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
+```
+
+One click:
+[Add to Cursor](https://cursor.com/en/install-mcp?name=svgrid&config=eyJ1cmwiOiJodHRwczovL21jcC5zdmdyaWQuY29tL21jcCJ9)
+· [Add to VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=svgrid&config=%7B%22name%22%3A%22svgrid%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.svgrid.com%2Fmcp%22%7D)
+
+It carries six tools - `search`, `fetch`, `list_examples`,
+`get_example_source`, `get_api_reference` and `check_svgrid_code` - and
+needs no Node, no config file, and no key.
+
+**Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
+the 27 `studio_*` tools, and `check_svgrid_code` additionally *compiles*
+the file with the Svelte compiler rather than checking it statically.
+Use it when you want the compile pass, the Studio tools, or no
+third-party endpoint in the loop.
+
+|  | Hosted | Local |
+| --- | --- | --- |
+| Setup | a URL | `npx @svgrid/mcp` |
+| Needs Node | no | yes |
+| `check_svgrid_code` compiles | no, static checks only | yes |
+| `studio_*` tools | no | yes (27) |
+| Works offline | no | yes |
+
 ## Install
 
 No install step is required - `npx` fetches it on demand:
@@ -128,10 +162,61 @@ Any client that speaks MCP stdio works.
 
 ## Tools exposed
 
-The server registers 35 tools: 8 for documentation, examples, and
-scaffolding, plus 27 `studio_*` tools that drive the SvGrid Studio
-project model. All run locally; none require an API key or a network
-call.
+The server registers 36 tools: 9 for verification, documentation,
+examples, and scaffolding, plus 27 `studio_*` tools that drive the
+SvGrid Studio project model. All run locally; none require an API key
+or a network call.
+
+### Verification
+
+#### `check_svgrid_code`
+
+Checks a file **against the version you have installed** and returns
+line-numbered diagnostics with the exact replacement for each. Run it
+on SvGrid code before you accept it; fix what it reports and run it
+again.
+
+```ts
+check_svgrid_code(source: string, filename?: string): string
+```
+
+```jsonc
+{
+  "ok": false,
+  "checkedAgainst": "@svgrid/grid@2.6.20",
+  "compiler": "svelte",
+  "counts": { "errors": 2, "warnings": 0, "info": 0 },
+  "diagnostics": [
+    { "rule": "svgrid/renamed-prop", "severity": "error", "line": 24,
+      "message": "`rowData` is not a SvGrid prop.", "fix": "Use `data`." },
+    { "rule": "svgrid/renamed-column-key", "severity": "error", "line": 10,
+      "message": "`accessorKey` is not a SvGrid column key.", "fix": "Use `field`." }
+  ]
+}
+```
+
+It checks four things:
+
+- **Names, against the installed version.** Importable symbols,
+  `<SvGrid>` props, `ColumnDef` keys, grid API methods, theme
+  stylesheets. The list is generated from the package sources at build
+  time, so it cannot drift from what the package exports; an unknown
+  name comes back with the nearest real one.
+- **Cross-package mistakes.** A symbol that lives in
+  `@svgrid/enterprise`, or an api method that only exists after
+  `installEnterprise(api)`.
+- **Svelte 5 rules.** `export let` and `$:` in a runes file (compiler
+  errors), `on:` / `<slot>` / `createEventDispatcher` (deprecations),
+  and a plain `let` array that is mutated and so never re-renders.
+- **The file, compiled.** When a Svelte compiler is reachable - your
+  project's copy first, then the one bundled here - real parse errors
+  come back too. The `compiler` field says which ran, so `"ok": true`
+  is never mistaken for "this compiles".
+
+It is tuned to stay silent on correct code: it reports nothing across
+all 373 demos in the SvGrid repo, which a CI test asserts on every
+commit. A checker that cries wolf is worse than none, because a model
+will rewrite working code to satisfy it.
 
 ### Documentation and examples
 

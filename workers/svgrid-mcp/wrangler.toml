@@ -1,0 +1,30 @@
+name = "svgrid-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+# No `workers_dev = true` here: this account has never registered a
+# workers.dev subdomain, and asking for one fails the deploy outright in a
+# non-interactive shell. The custom domain below is the only entry point.
+
+# Doc bodies and demo sources are served from here, not bundled into the
+# script: 6 MB of JS object literal would blow the startup CPU budget on every
+# cold start. `scripts/build-data.mjs` regenerates this directory, and
+# `pnpm deploy` runs it first. Nothing in public/ is hand-written.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[vars]
+# Shown in the landing page and in the MCP `initialize` response.
+PUBLIC_URL = "https://mcp.svgrid.com"
+
+[observability]
+enabled = true
+
+# svgrid.com is on Cloudflare, so this hostname is provisioned by the deploy
+# itself. `custom_domain` (rather than a pattern + zone_name route) is what
+# makes wrangler create the DNS record and the certificate - the pattern form
+# fails on a hostname that has no record yet, which this one does not.
+[[routes]]
+pattern = "mcp.svgrid.com"
+custom_domain = true

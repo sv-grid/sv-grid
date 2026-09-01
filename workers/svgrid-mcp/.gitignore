@@ -1,0 +1,4 @@
+public/
+src/generated/
+node_modules/
+.wrangler/

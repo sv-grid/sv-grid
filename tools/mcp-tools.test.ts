@@ -168,3 +168,95 @@ describe.skipIf(!hasDist)('search_docs ranks the canonical page first', () => {
     expect(body.hits.some((h: { slug: string }) => h.slug.includes('virtualization') || h.slug === 'recipes/million-rows')).toBe(true)
   }, 30_000)
 })
+
+describe.skipIf(!hasDist)('check_svgrid_code catches what a model gets wrong', () => {
+  // One file carrying every mistake a model makes when it writes SvGrid from
+  // memory instead of from the docs.
+  const WRONG = [
+    '<script lang="ts">',
+    "  import { SvGrid, getSortedRowModel } from '@svgrid/grid'",
+    "  import '@svgrid/grid/themes/shadcm.css'",
+    '  let rows = [{ id: 1, name: "Ada" }]',
+    '  const columns = [{ accessorKey: "name", headerName: "Name", pinned: "left" }]',
+    '  function go(api: SvGridApi) { api.exportExcel() }',
+    '  function add() { rows.push({ id: 2, name: "Grace" }) }',
+    '</script>',
+    '',
+    '<SvGrid rowData={rows} {columns} sortable="false" on:rowClick={go} />',
+  ].join('\n')
+
+  it('reports the wrong prop, column key, import and api method with the fix', async () => {
+    const body = await callJson('check_svgrid_code', { source: WRONG, filename: 'People.svelte' })
+    expect(body.ok).toBe(false)
+
+    const rules = body.diagnostics.map((d: { rule: string }) => d.rule)
+    expect(rules).toContain('svgrid/renamed-prop')          // rowData -> data
+    expect(rules).toContain('svgrid/renamed-column-key')    // accessorKey -> field
+    expect(rules).toContain('svgrid/unknown-import')        // getSortedRowModel
+    expect(rules).toContain('svgrid/unknown-theme')         // shadcm.css
+    expect(rules).toContain('svgrid/unknown-api-method')    // exportExcel
+    expect(rules).toContain('svgrid/boolean-prop-string')   // sortable="false"
+    expect(rules).toContain('svelte/legacy-event-directive')// on:rowClick
+
+    // Every finding has to be actionable, or the model just guesses again.
+    for (const d of body.diagnostics) {
+      expect(d.line, `${d.rule} has no line`).toBeGreaterThan(0)
+      expect(typeof d.message).toBe('string')
+    }
+    const prop = body.diagnostics.find((d: { rule: string }) => d.rule === 'svgrid/renamed-prop')
+    expect(prop.fix).toContain('data')
+    const theme = body.diagnostics.find((d: { rule: string }) => d.rule === 'svgrid/unknown-theme')
+    expect(theme.fix).toContain('shadcn.css')
+  }, 30_000)
+
+  it('passes correct code, and says which version it checked against', async () => {
+    const good = [
+      '<script lang="ts">',
+      "  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'",
+      '  type Person = { id: number; name: string }',
+      '  const features = tableFeatures({ rowSortingFeature })',
+      '  let rows = $state<Person[]>([{ id: 1, name: "Ada" }])',
+      '  const columns: ColumnDef<typeof features, Person>[] = [{ field: "name", header: "Name" }]',
+      '</script>',
+      '',
+      '<SvGrid data={rows} {columns} {features} sortable />',
+    ].join('\n')
+
+    const body = await callJson('check_svgrid_code', { source: good, filename: 'People.svelte' })
+    expect(body.diagnostics, JSON.stringify(body.diagnostics)).toHaveLength(0)
+    expect(body.ok).toBe(true)
+    expect(body.checkedAgainst).toMatch(/^@svgrid\/grid@\d+\.\d+\.\d+$/)
+  }, 30_000)
+
+  it('reports a parse error from the real compiler, not just the static rules', async () => {
+    const broken = '<script lang="ts">\n  let a = $state(1)\n</script>\n\n{#if a}\n  <p>yes</p>\n'
+    const body = await callJson('check_svgrid_code', { source: broken, filename: 'Broken.svelte' })
+    expect(body.ok).toBe(false)
+    // The MCP package is built inside the workspace, so svelte resolves here.
+    expect(body.compiler).toBe('svelte')
+    expect(body.diagnostics.some((d: { severity: string }) => d.severity === 'error')).toBe(true)
+  }, 30_000)
+})
+
+describe.skipIf(!hasDist)('check_svgrid_code stays quiet on code that is already right', () => {
+  // The whole tool is worthless the moment it cries wolf: a model that gets a
+  // false finding "fixes" working code. Every demo in the repo is known-good,
+  // so the validator must be silent on all 365 of them.
+  it('reports nothing across every demo in examples/', async () => {
+    const { checkStatic } = await import(join(ROOT, 'packages/mcp/dist/validate.js') as string)
+    const { apiSurface } = await import(join(ROOT, 'packages/mcp/dist/data.js') as string)
+    const { readdirSync, readFileSync } = await import('node:fs')
+
+    const dir = join(ROOT, 'examples', 'src', 'demos')
+    const files = readdirSync(dir).filter((f) => f.endsWith('.svelte'))
+    expect(files.length).toBeGreaterThan(300)
+
+    const findings: string[] = []
+    for (const file of files) {
+      for (const d of checkStatic(readFileSync(join(dir, file), 'utf8'), apiSurface, file)) {
+        findings.push(`${file}:${d.line} [${d.rule}] ${d.message}`)
+      }
+    }
+    expect(findings, findings.slice(0, 10).join('\n')).toHaveLength(0)
+  }, 120_000)
+})

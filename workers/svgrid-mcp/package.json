@@ -1,0 +1,18 @@
+{
+  "name": "svgrid-mcp-worker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Worker: the SvGrid MCP server over remote HTTP, so clients can connect with a URL instead of a local Node install.",
+  "type": "module",
+  "scripts": {
+    "build:data": "node ./scripts/build-data.mjs",
+    "dev": "pnpm build:data && wrangler dev",
+    "deploy": "pnpm build:data && wrangler deploy",
+    "test:types": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "6.0.3",
+    "wrangler": "^4.127.1"
+  }
+}

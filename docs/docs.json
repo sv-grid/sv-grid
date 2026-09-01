@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-08-31T05:15:26.521Z",
+  "generatedAt": "2026-09-01T00:01:27.191Z",
   "counts": {
     "pages": 348,
     "enterprise": 54,
@@ -625,7 +625,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2433,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1315,7 +1315,7 @@
       "tier": "enterprise",
       "group": "Reference & help",
       "words": 809,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1352,7 +1352,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3454,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1388,7 +1388,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 325,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "01-quick-start"
       ]
@@ -1402,7 +1402,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 737,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1414,7 +1414,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 982,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1440,7 +1440,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 960,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
@@ -1520,7 +1520,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2088,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -1548,7 +1548,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 1319,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "399-alert-rules-engine"
       ]
@@ -1562,7 +1562,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1175,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1574,7 +1574,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1040,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -1612,7 +1612,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 354,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -1626,7 +1626,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 550,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "01-quick-start"
       ]
@@ -1654,7 +1654,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 953,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "141-conditional-formatting"
       ]
@@ -1710,7 +1710,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 439,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "140-sparkline-cells"
       ]
@@ -1830,7 +1830,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 588,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "01-quick-start"
       ]
@@ -1844,7 +1844,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 441,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "52-pivot-table",
         "183-collapsible-column-groups"
@@ -1887,7 +1887,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 567,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "109-column-reorder-engine"
       ]
@@ -1915,7 +1915,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 384,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "63-column-layout-api"
       ]
@@ -1957,7 +1957,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 432,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "121-pivot-conditional-cells"
       ]
@@ -1971,7 +1971,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 323,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "146-tool-panel"
       ]
@@ -1985,7 +1985,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 386,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2080,7 +2080,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1272,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "26-list-chips-editors",
         "428-async-editor-options"
@@ -2232,7 +2232,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 273,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -2289,7 +2289,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 260,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -2317,7 +2317,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 786,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "111-set-filter-advanced",
         "102-tree-checkbox-cascade"
@@ -2347,7 +2347,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1183,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2373,7 +2373,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 585,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "142-group-aggregators"
       ]
@@ -2525,8 +2525,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1379,
-      "lastUpdated": "2026-08-23",
+      "words": 1841,
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2538,7 +2538,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2177,
-      "lastUpdated": "2026-08-25",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2586,7 +2586,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 968,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2730,7 +2730,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 911,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2742,7 +2742,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 709,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -2897,7 +2897,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 170,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "08-tree-and-master-detail"
       ]
@@ -2982,7 +2982,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 239,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "02-sort-filter-paginate"
       ]
@@ -3024,7 +3024,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 188,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -3036,7 +3036,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 6784,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3153,7 +3153,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1538,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "33-server-infinite"
       ]
@@ -3260,7 +3260,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1076,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -3271,8 +3271,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 654,
-      "lastUpdated": "2026-07-30",
+      "words": 750,
+      "lastUpdated": "2026-09-01",
       "demoIds": []
     },
     {
@@ -3620,7 +3620,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 605,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -3676,7 +3676,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 1452,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "250-calendar",
         "258-calendar-range",
@@ -3693,7 +3693,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 615,
-      "lastUpdated": "2026-08-03",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "333-app-feedback"
       ]
@@ -4016,7 +4016,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 2175,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "322-form",
         "323-form-dynamic",
@@ -4268,8 +4268,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 744,
-      "lastUpdated": "2026-08-03",
+      "words": 756,
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "332-app-navigation"
       ]
@@ -4603,7 +4603,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 906,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "334-input-editors"
       ]
@@ -4779,7 +4779,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 972,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": [
         "112-barcode-cells"
       ]
@@ -5218,8 +5218,8 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 249,
-      "lastUpdated": "2026-08-15",
+      "words": 294,
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {
@@ -5302,7 +5302,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1382,
-      "lastUpdated": "2026-08-30",
+      "lastUpdated": "2026-08-31",
       "demoIds": []
     },
     {

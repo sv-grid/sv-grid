@@ -73,7 +73,7 @@ sort/filter only the visible page, which is wrong.
   <button disabled={(page + 1) * pageSize >= total} onclick={() => (page += 1)}>Next</button>
 </div>
 
-<SvGrid {rows} {columns} {features} loading={busy} showPagination={false} />
+<SvGrid data={rows} {columns} {features} loading={busy} showPagination={false} />
 ```
 
 Performance: O(pageSize) work in the browser; the server does the

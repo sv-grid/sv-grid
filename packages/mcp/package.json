@@ -5,8 +5,8 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.6.5",
-  "description": "Model Context Protocol (MCP) server for SvGrid. Exposes example sources, docs, and API reference to AI assistants.",
+  "version": "2.6.7",
+  "description": "Model Context Protocol server for SvGrid, the Svelte 5 data grid: checks the code your AI writes against the real API surface, plus version-pinned docs, API reference and 373 demo sources.",
   "license": "MIT",
   "author": "jQWidgets <sales@jqwidgets.com>",
   "homepage": "https://svgrid.com/docs/help/mcp-server/",
@@ -42,6 +42,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@svgrid/enterprise": "workspace:^",
+    "svelte": "^5.55.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -67,6 +68,30 @@
     "svgrid",
     "sv-grid",
     "codegen",
-    "agent"
-  ]
+    "agent",
+    "validation",
+    "verify",
+    "lint",
+    "svelte-check",
+    "code-verification"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js"
+    },
+    "./search": {
+      "types": "./dist/search.d.ts",
+      "import": "./dist/search.js"
+    },
+    "./data": {
+      "types": "./dist/data.d.ts",
+      "import": "./dist/data.js"
+    },
+    "./package.json": "./package.json"
+  }
 }

@@ -22,6 +22,7 @@ export const BLOG_CATEGORIES = [
   'Concepts', 'Editing', 'Selection', 'Columns', 'Rows', 'Filtering',
   'Data', 'Export', 'Grouping', 'Architecture', 'Formatting', 'Sorting',
   'Getting started', 'Integration', 'Theming', 'Performance', 'AI',
+  'UI components',
 ]
 
 export const TOPIC_INTENTS = ['how-to', 'concept', 'comparison', 'integration', 'reference']

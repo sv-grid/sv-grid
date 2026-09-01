@@ -19,8 +19,11 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { apiReference, docs, examples } from './data.js'
+import { apiReference, apiSurface, docs, examples } from './data.js'
 import { projectTools, handleProjectTool } from './project-tools.js'
+import { checkSvGridCode, type ApiSurface } from './validate.js'
+import { compileWithSvelte } from './compile-svelte.js'
+import { rankDocs } from './search.js'
 import {
   checkLicenseKey,
   introspectDrizzle,
@@ -81,37 +84,6 @@ function countBy<T>(rows: readonly T[], key: (row: T) => string): Record<string,
     counts.set(k, (counts.get(k) ?? 0) + 1)
   }
   return Object.fromEntries([...counts].sort((a, b) => b[1] - a[1]))
-}
-
-function occurrences(haystack: string, needle: string): number {
-  if (!needle) return 0
-  let n = 0
-  let i = haystack.indexOf(needle)
-  while (i !== -1) {
-    n += 1
-    i = haystack.indexOf(needle, i + needle.length)
-  }
-  return n
-}
-
-/** Split a query into distinct lowercase terms, dropping one-character noise. */
-function queryTokens(query: string): string[] {
-  const tokens = [...new Set(query.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 1))]
-  return tokens.length ? tokens : [query.toLowerCase().trim()]
-}
-
-/** A window of text around the first needle that appears, for search results. */
-function excerptAround(markdown: string, needles: string[]): string {
-  const lower = markdown.toLowerCase()
-  let idx = -1
-  for (const n of needles) {
-    idx = lower.indexOf(n)
-    if (idx >= 0) break
-  }
-  if (idx < 0) idx = 0
-  const start = Math.max(0, idx - 60)
-  const end = Math.min(markdown.length, idx + 180)
-  return markdown.slice(start, end).replace(/\s+/g, ' ').trim()
 }
 
 // Report the real package version to MCP clients (read from package.json, which
@@ -215,6 +187,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description:
           'Return the curated SvGrid public-API surface, grouped by category (components, headless, scheduler, data ops, export, row models, features, virtualization, accessibility, utilities).',
         inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'check_svgrid_code',
+        description:
+          'Verify SvGrid code BEFORE handing it to the user. Checks the source against the real exported surface of the installed version - <SvGrid> prop names, ColumnDef keys, grid API methods, importable symbols and theme files - plus Svelte 5 runes rules, and compiles it with the Svelte compiler when one is reachable. Returns line-numbered diagnostics with the exact replacement for each. Run this on every .svelte or .ts file you write that uses SvGrid, then fix what it reports and run it again.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            source: { type: 'string', description: 'The full file contents to check.' },
+            filename: {
+              type: 'string',
+              description:
+                'File name, used to pick the rules that apply. Defaults to "Component.svelte". Use the real name when you have one (e.g. "src/routes/+page.svelte", "state.svelte.ts").',
+            },
+          },
+          required: ['source'],
+        },
       },
       {
         name: 'introspect_source',
@@ -373,69 +362,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       if (!query) {
         return { isError: true, content: [{ type: 'text', text: 'query is required' }] }
       }
-      // Previously this matched the query only as one contiguous substring and
-      // returned hits in directory order, so the canonical page for a topic
-      // routinely lost to an incidental mention. Score per doc, rank, and treat
-      // the query as terms so word order and joining words stop mattering.
-      const phrase = query.toLowerCase()
-      const tokens = queryTokens(query)
-
-      const scored: { d: (typeof docs)[number]; score: number; complete: boolean }[] = []
-      for (const d of docs) {
-        const title = d.title.toLowerCase()
-        const markdown = d.markdown.toLowerCase()
-        const headings = (d.markdown.match(/^#{1,6}\s+.*$/gm) ?? []).join('\n').toLowerCase()
-        // "help/rows/kanban-board" -> "help rows kanban board". The slug is the
-        // strongest canonical signal there is: a page named after the topic is
-        // the reference page for it, where a recipe merely mentioning it is not.
-        const slugWords = d.slug.toLowerCase().replace(/[/-]/g, ' ')
-
-        let score = 0
-        // Whole-phrase hits are the strongest signal, title strongest of all.
-        if (title.includes(phrase)) score += 100
-        if (slugWords.includes(phrase)) score += 60
-        if (headings.includes(phrase)) score += 30
-        if (markdown.includes(phrase)) score += 20
-
-        let matched = 0
-        for (const t of tokens) {
-          const inTitle = title.includes(t)
-          const inHeading = headings.includes(t)
-          const count = occurrences(markdown, t)
-          if (inTitle || inHeading || count > 0) matched += 1
-          if (inTitle) score += 25
-          if (slugWords.includes(t)) score += 10
-          if (inHeading) score += 8
-          // Capped so a long page cannot outrank a precise one on bulk alone.
-          score += Math.min(count, 5)
-        }
-        if (score > 0) scored.push({ d, score, complete: matched === tokens.length })
-      }
-
-      // Prefer pages containing every term; fall back to partial matches only
-      // when nothing covers the whole query.
-      const complete = scored.filter((s) => s.complete)
-      const ranked = (complete.length ? complete : scored)
-        .sort((a, b) => b.score - a.score || a.d.slug.localeCompare(b.d.slug))
-        .slice(0, limit)
-
-      const hits = ranked.map((s) => ({
-        slug: s.d.slug,
-        title: s.d.title,
-        section: s.d.section,
-        score: s.score,
-        excerpt: excerptAround(s.d.markdown, [phrase, ...tokens]),
-      }))
-      const matchedTotal = complete.length || scored.length
+      // Ranking lives in ./search.ts so the remote server answers the same
+      // query the same way.
+      const { hits, total, partial } = rankDocs(docs, query, limit)
       return withDocs(
         JSON.stringify(
-          {
-            query,
-            total: matchedTotal,
-            shown: hits.length,
-            partial: complete.length === 0 && scored.length > 0 ? true : undefined,
-            hits,
-          },
+          { query, total, shown: hits.length, partial: partial || undefined, hits },
           null,
           2,
         ),
@@ -444,6 +376,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
     case 'get_api_reference': {
       return withDocs(JSON.stringify(apiReference, null, 2))
+    }
+
+    case 'check_svgrid_code': {
+      const a = (args ?? {}) as { source?: string; filename?: string }
+      if (typeof a.source !== 'string' || !a.source.trim()) {
+        return errText('source (the file contents to check) is required')
+      }
+      const result = await checkSvGridCode(a.source, apiSurface as ApiSurface, {
+        filename: a.filename,
+        compile: compileWithSvelte,
+      })
+      // No docs footer: this output is a work list, and a marketing line at the
+      // end of it is noise the model has to read past on every iteration.
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     }
 
     case 'introspect_source': {

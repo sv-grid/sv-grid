@@ -170,10 +170,19 @@ project so assistants cite real props, methods, and events instead of inventing 
 }
 ```
 
-Claude Code users can skip the config file:
+Claude Code users get both in one plugin - the house-style skill plus the
+server whose `check_svgrid_code` tool verifies each file against the real API
+surface before you see it:
+
+```
+/plugin marketplace add sv-grid/sv-grid
+/plugin install svgrid@svgrid
+```
+
+Or wire them up separately, with no install at all on the server side:
 
 ```bash
-claude mcp add svgrid -- npx -y @svgrid/mcp
+claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
 npx skills add sv-grid/sv-grid    # always-on house-style rules
 ```
 

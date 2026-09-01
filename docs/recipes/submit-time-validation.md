@@ -33,6 +33,20 @@ cell with an aria-live summary panel.
     }
     return m
   })
+
+  // `cellClass` is a COLUMN key - there is no grid-wide version - so the
+  // highlight is mapped onto every column.
+  const highlight = (ctx) =>
+    errorsByRow().get(ctx.row.original.id)?.has(ctx.column.id) ? 'cell-invalid' : ''
+
+  const columns = $derived(
+    ['company', 'email', 'phone'].map((field) => ({
+      field,
+      header: field[0].toUpperCase() + field.slice(1),
+      editable: true,
+      cellClass: highlight,
+    })),
+  )
 </script>
 
 <button onclick={submit}>Submit</button>
@@ -44,9 +58,7 @@ cell with an aria-live summary panel.
   </div>
 {/if}
 
-<SvGrid {data} {columns} features={features}
-  cellClass={(ctx) => errorsByRow().get(ctx.row.original.id)?.has(ctx.column.id) ? 'cell-invalid' : ''}
-/>
+<SvGrid {data} {columns} {features} />
 ```
 
 ```css

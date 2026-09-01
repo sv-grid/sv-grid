@@ -13,6 +13,8 @@ name: Daily blog post
 #   ANTHROPIC_API_KEY - Anthropic API key.
 # Optional repo variable:
 #   BLOG_MODEL - model id (default: claude-sonnet-4-6).
+#   ANTHROPIC_WORKSPACE_ID - required when the key is an identity-linked key,
+#     which rejects every request without it. Console -> Settings -> Workspaces.
 #
 # 05:23 UTC: off-peak, non-round minute, before the npm publish (06:37) and the
 # website rebuild (07:12).
@@ -69,6 +71,7 @@ jobs:
         run: node tools/generate-blog-post.mjs --next ${{ inputs.dry_run && '--dry-run' || '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
           BLOG_MODEL: ${{ vars.BLOG_MODEL }}
 
       - name: Commit and push

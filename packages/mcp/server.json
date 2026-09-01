@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.svgrid/svgrid",
   "title": "SvGrid",
-  "description": "Version-pinned Svelte 5 data grid APIs, 373 demo sources, and SvelteKit app scaffolding.",
-  "version": "2.6.5",
+  "description": "Checks AI-written SvGrid code against the real API, plus version-pinned Svelte 5 grid docs.",
+  "version": "2.6.7",
   "websiteUrl": "https://svgrid.com/docs/help/mcp-server/",
   "repository": {
     "url": "https://github.com/sv-grid/sv-grid",
@@ -15,11 +15,17 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@svgrid/mcp",
-      "version": "2.6.5",
+      "version": "2.6.7",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.svgrid.com/mcp"
     }
   ]
 }

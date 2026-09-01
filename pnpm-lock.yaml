@@ -208,6 +208,9 @@ importers:
       '@svgrid/enterprise':
         specifier: workspace:^
         version: link:../enterprise
+      svelte:
+        specifier: ^5.55.5
+        version: 5.55.9(@typescript-eslint/types@8.67.0)
       zod:
         specifier: ^3.23.8
         version: 3.25.76

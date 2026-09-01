@@ -24,6 +24,8 @@
     "size": "node packages/grid/scripts/measure-size.mjs",
     "sbom": "node tools/build-sbom.mjs",
     "sbom:check": "node tools/build-sbom.mjs --check",
+    "plugin:sync": "node tools/sync-plugin.mjs",
+    "plugin:check": "node tools/sync-plugin.mjs --check",
     "verify:app": "node tools/verify-generated-app.mjs",
     "demos:count": "node tools/count-demos.mjs",
     "thumbs": "node tools/capture-demo-thumbs.mjs",

@@ -1,0 +1,30 @@
+{
+  "name": "svgrid",
+  "version": "2.6.7",
+  "description": "Write SvGrid code that runs: the house-style skill plus the MCP server that checks every file against the real API surface before you see it.",
+  "author": {
+    "name": "jQWidgets",
+    "email": "sales@jqwidgets.com",
+    "url": "https://svgrid.com"
+  },
+  "homepage": "https://svgrid.com/docs/help/mcp-server/",
+  "repository": "https://github.com/sv-grid/sv-grid",
+  "license": "MIT",
+  "keywords": [
+    "svelte",
+    "svelte5",
+    "sveltekit",
+    "data grid",
+    "datagrid",
+    "data table",
+    "svgrid",
+    "mcp",
+    "code verification"
+  ],
+  "mcpServers": {
+    "svgrid": {
+      "type": "http",
+      "url": "https://mcp.svgrid.com/mcp"
+    }
+  }
+}
