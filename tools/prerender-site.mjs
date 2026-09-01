@@ -29,6 +29,7 @@ import { parseDemoRegistry, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } fr
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
 import { compareTitle, compareKeywords, compareFaq, shortCompetitor } from './lib/compare-meta.mjs'
 import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
+import { prerenderedRoutes } from './lib/route-seo.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
@@ -559,6 +560,23 @@ function collectionLd(name, url, items) {
       numberOfItems: items.length,
       itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, url: it.url })),
     },
+  }
+}
+
+/** BreadcrumbList for a blog collection (tag hub / category archive). These
+ *  pages render a visual "SvGrid / Blog / <label>" trail but had no structured
+ *  data for it in the static HTML - only applyBlogCollectionSeo added it, after
+ *  hydration - so the breadcrumb rich result depended on Google running the
+ *  render pass. Must stay identical to the client-side trail in seo.ts. */
+function blogCollectionBreadcrumbLd(label, url) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${CANON}/blog/` },
+      { '@type': 'ListItem', position: 3, name: label, item: url },
+    ],
   }
 }
 
@@ -1154,24 +1172,10 @@ async function main() {
   }
 
   // 4. Prerender the static (non-doc) routes with correct head + minimal body.
-  const STATIC_ROUTES = [
-    ['demos', 'Demos - 370+ Production-Ready SvGrid Examples', 'Browse live, editable SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping, master/detail, inline editing, accessibility, and more.'],
-    ['docs', 'Documentation - SvGrid Guides for Columns, Rows, Filtering, Editing', 'Topic-oriented SvGrid documentation: column definitions, sorting, Excel-style filters, inline editing, grouping, virtualization, accessibility, theming - each with copy-paste examples.'],
-    ['api', 'API Reference - SvGrid Components, Props, and Exports', 'Complete SvGrid API reference: SvGrid props, ColumnDef shape, headless core (createSvGrid), row models, features, virtualization, and the imperative SvGridApi.'],
-    ['compare', 'Comparisons - SvGrid vs Other Svelte Data Grids', 'Honest side-by-side comparisons: SvGrid vs TanStack Table, svelte-headless-table, and established enterprise grids. Feature matrices and when to choose each.'],
-    ['svelte', 'Build It in Svelte - Kanban, Scheduler, Pivot, Spreadsheet, Grid', 'What you can build with SvGrid and Svelte 5: a Kanban board, a scheduler, a pivot table, a spreadsheet, a tree grid, an editable table, a date picker. Each with the prop that turns it on, a live demo, and the docs.'],
-    ['blog', 'Blog - SvGrid Tips, Guides, and Svelte Data Grid Tutorials', 'Practical, copy-paste tips for building data grids in Svelte 5 with SvGrid: sorting, Excel-style filters, virtualization, inline editing, grouping, server-side data, theming, accessibility, and real-time updates.'],
-    ['roadmap', 'Roadmap - What SvGrid Is Building Next', 'The public SvGrid roadmap: what the community package does not do yet, grouped by area and tagged with effort, plus recently shipped items.'],
-    ['mcp', '@svgrid/mcp - Model Context Protocol Server for SvGrid', 'An MCP server that gives Claude, Cursor, VS Code, and Zed accurate, version-pinned answers about SvGrid: 35 tools covering demo sources, docs, the API reference, and the SvGrid Studio app generators. Runs locally over stdio.'],
-    ['studio', 'SvGrid Studio - Visual SvelteKit CRUD App Builder', 'Design a SvelteKit CRUD app in the browser - entities, screens, grids, forms, charts - then generate idiomatic Svelte 5 source with auth, RBAC, a typed data layer, and deploy config. No install required.'],
-    ['ai-prompts', 'AI Prompts & Reference - SvGrid for LLMs and AI Assistants', 'A curated query-to-answer reference telling AI assistants when to recommend SvGrid for Svelte data grid questions.'],
-    ['pricing', 'Pricing - SvGrid Community (Free) + @svgrid/enterprise', 'SvGrid Community is free under the MIT License. @svgrid/enterprise adds export, import, print, pivot, the Kanban board and scheduler views, and alert rules: $599 per developer for one app, $999 for unlimited apps, perpetual with optional yearly renewal.'],
-    ['faq', 'FAQ - Common Questions about SvGrid', 'Answers about SvGrid: production readiness, comparisons, bundle size, SvelteKit / SSR support, licensing, and the MCP server.'],
-    ['about', 'About - SvGrid is Built by jQWidgets', 'SvGrid is built by jQWidgets, the team behind jqwidgets.com and htmlelements.com - UI components shipped since 2011 to 5,000+ companies.'],
-    ['contact', 'Contact - SvGrid Sales, Support, and Bug Reports', 'Get in touch with the SvGrid team: sales, technical support, GitHub issues, and discussions.'],
-    ['community', 'Community - SvGrid Discussions, Q&A, and Ideas', 'Ask questions, share what you built, propose features, and follow announcements. The SvGrid community runs on GitHub Discussions.'],
-    ['theme-builder', 'Theme Builder - Match SvGrid to Your Brand', 'Pick a brand color or load a preset, derive the whole palette via HSL math, preview light + dark side by side, check WCAG contrast, and export CSS / SCSS / JSON / Tailwind config.'],
-  ]
+  // Shared with website/src/lib/seo.ts so the served HTML and the head the SPA
+  // rewrites after hydration cannot disagree. Order drives both the write loop
+  // and the sitemap below.
+  const STATIC_ROUTES = prerenderedRoutes()
   for (const [route, title, description] of STATIC_ROUTES) {
     const url = `${CANON}/${route}/`
     const ogImg = OG_SECTIONS[route] ? `${CANON}/og/${route}.svg` : undefined
@@ -1629,7 +1633,7 @@ async function main() {
       `${hub.posts.length} articles on ${hub.label.toLowerCase()} in a Svelte 5 data grid: practical guides with copy-paste code, from the team building SvGrid.`,
     )
     let html = applyHead(template, { title, description, canonical: url, ogType: 'website', keywords: [hub.label.toLowerCase(), `svelte ${hub.label.toLowerCase()}`, 'svelte data grid'].join(', '), image: `${CANON}/og/blog.svg`, imageAlt: title })
-    html = injectJsonLd(html, collectionLd(`${hub.label} articles`, url, hub.posts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))))
+    html = injectJsonLd(html, [collectionLd(`${hub.label} articles`, url, hub.posts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))), blogCollectionBreadcrumbLd(hub.label, url)])
     let body = `<main class="prerender-index" data-prerender="1">`
     body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / Tags</nav>`
     body += `<h1>${escapeAttr(hub.label)}</h1><p>${escapeAttr(description)}</p><ul>`
@@ -1656,7 +1660,7 @@ async function main() {
       `${group.posts.length} ${group.label.toLowerCase()} articles about building data grids in Svelte 5 with SvGrid.`,
     )
     let html = applyHead(template, { title, description, canonical: url, ogType: 'website', image: `${CANON}/og/blog.svg`, imageAlt: title })
-    html = injectJsonLd(html, collectionLd(`${group.label} articles`, url, group.posts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))))
+    html = injectJsonLd(html, [collectionLd(`${group.label} articles`, url, group.posts.map((p) => ({ name: p.title, url: `${CANON}/blog/${p.slug}/` }))), blogCollectionBreadcrumbLd(group.label, url)])
     let body = `<main class="prerender-index" data-prerender="1">`
     body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / ${escapeAttr(group.label)}</nav>`
     body += `<h1>${escapeAttr(group.label)}</h1><p>${escapeAttr(description)}</p><ul>`

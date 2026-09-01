@@ -19,6 +19,7 @@ import { describe, it, expect } from 'vitest'
 import { loadTopics } from './lib/blog-topics.mjs'
 import { docSeoTitle, isHiddenDoc, parseDocFrontmatter, sectionOf } from './lib/doc-meta.mjs'
 import { clampDescription } from './lib/seo-text.mjs'
+import { ROUTE_SEO, prerenderedRoutes } from './lib/route-seo.mjs'
 
 const ROOT = process.cwd()
 const DOCS_DIR = join(ROOT, 'docs')
@@ -26,6 +27,10 @@ const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 const META_DIR = join(DEMOS_DIR, 'meta')
 const DIST = join(ROOT, 'website', 'dist')
 const DASH = /[—–]/
+// A vite-only dist already carries sitemap.xml (Vite copies it from public/),
+// so gating on that file let these guardrails pass without the prerender ever
+// having run. Gate on a page only the prerenderer writes.
+const hasPrerenderedDist = existsSync(join(DIST, 'about', 'index.html'))
 const TITLE_EXEMPT = new Set(['enterprise', 'compliance', 'legal'])
 
 /** Attribute text as a reader sees it: `&lt;SvGrid&gt;` is 8 characters, not 12. */
@@ -168,8 +173,7 @@ describe('clampDescription', () => {
 })
 
 describe('prerendered output', () => {
-  const hasDist = existsSync(join(DIST, 'sitemap.xml'))
-  it.skipIf(!hasDist)('keeps every meta description under 160 chars and no demo self-link', async () => {
+  it.skipIf(!hasPrerenderedDist)('keeps every meta description under 160 chars and no demo self-link', async () => {
     const offenders: string[] = []
     for await (const file of walk(DIST)) {
       if (!file.endsWith('index.html')) continue
@@ -182,5 +186,62 @@ describe('prerendered output', () => {
       if (demo && html.includes(`href="/demos/${demo[1]}/"`)) offenders.push(`${rel}: links to itself`)
     }
     expect(offenders).toEqual([])
+  })
+})
+
+describe('static route SEO table', () => {
+  it('gives every prerendered route its own entry and a matching path', () => {
+    const problems: string[] = []
+    for (const [section] of prerenderedRoutes()) {
+      const entry = ROUTE_SEO[section]
+      // A missing entry is the /studio/ bug: getRouteSeo falls back to the
+      // homepage, so hydrating the page rewrites its canonical to "/" and asks
+      // Google to drop it. A wrong path does the same thing more quietly.
+      if (!entry) problems.push(`${section}: prerendered but absent from ROUTE_SEO`)
+      else if (entry.path !== `/${section}`) problems.push(`${section}: path is ${entry.path}`)
+    }
+    expect(problems).toEqual([])
+  })
+
+  it('keeps titles free of dashes that the house style forbids', () => {
+    const offenders = Object.entries(ROUTE_SEO)
+      .filter(([, r]) => DASH.test(r.title) || DASH.test(r.description))
+      .map(([section]) => section)
+    expect(offenders).toEqual([])
+  })
+})
+
+describe('prerendered head matches the shared table', () => {
+  it.skipIf(!hasPrerenderedDist)('serves each static route its own title and self canonical', async () => {
+    const problems: string[] = []
+    for (const [section, title] of prerenderedRoutes()) {
+      const file = join(DIST, section, 'index.html')
+      if (!existsSync(file)) {
+        problems.push(`${section}: no index.html written`)
+        continue
+      }
+      const html = await readFile(file, 'utf-8')
+      const gotTitle = unescapeAttr(html.match(/<title>([^<]*)<\/title>/)?.[1] ?? '')
+      const canonical = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''
+      if (gotTitle !== title) problems.push(`${section}: title is "${gotTitle}"`)
+      if (canonical !== `https://svgrid.com/${section}/`) problems.push(`${section}: canonical is "${canonical}"`)
+    }
+    expect(problems).toEqual([])
+  })
+
+  it.skipIf(!hasPrerenderedDist)('gives every blog collection a static BreadcrumbList', async () => {
+    const missing: string[] = []
+    for (const kind of ['tag', 'category']) {
+      const dir = join(DIST, 'blog', kind)
+      if (!existsSync(dir)) continue
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue
+        const html = await readFile(join(dir, entry.name, 'index.html'), 'utf-8')
+        // Client-side only markup is invisible unless Google runs the render
+        // pass, which is what dropped these out of the breadcrumbs report.
+        if (!html.includes('"BreadcrumbList"')) missing.push(`blog/${kind}/${entry.name}`)
+      }
+    }
+    expect(missing).toEqual([])
   })
 })

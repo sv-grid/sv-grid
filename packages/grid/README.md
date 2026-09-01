@@ -165,6 +165,28 @@ on the export- and analytics-heavy features teams tend to need last:
 
 OSS projects receive an Enterprise key free. See [Pricing](https://svgrid.com/pricing/).
 
+## Also in the box
+
+The grid is the hero, but it is not everything in the package. The component suite below already ships
+inside `@svgrid/grid`; the tools after it install separately and are entirely optional.
+
+- **[SvGrid UI](https://svgrid.com/docs/help/ui-components/index/)** (MIT) - 84 Svelte 5 components
+  already inside this package, no extra install: `SvButton`, `SvCalendar`, `SvDateTimePicker`,
+  `SvDockLayout`, `SvToaster`, selects, dialogs, split panes. Import them the same way you import
+  `SvGrid`. If you would rather own and edit the source, `npx @svgrid/ui try calendar` previews a
+  component and copies it into your project, shadcn-style.
+- **[`@svgrid/grid-wc`](https://www.npmjs.com/package/@svgrid/grid-wc)** (MIT) - the same grid as a
+  `<sv-grid>` custom element for React, Vue, Angular, or plain HTML. No build step.
+- **[`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp)** (MIT) - MCP server that checks the code
+  your AI writes against the real API surface, with version-pinned docs and every demo source.
+- **[`@svgrid/migrate`](https://www.npmjs.com/package/@svgrid/migrate)** (MIT) - codemod that ports a
+  `svelte-headless-table` or TanStack Table v9 component to SvGrid, including the shadcn-svelte data
+  table.
+- **[`@svgrid/sv`](https://www.npmjs.com/package/@svgrid/sv)** (MIT) - `npx sv add @svgrid` add-on for
+  the Svelte CLI.
+- **[SvGrid Studio](https://svgrid.com/docs/studio/)** (commercial) - visual designer that generates a
+  SvelteKit CRUD app from a database schema: screens, forms, API routes, auth. Code you own, no runtime.
+
 ## Comparison
 
 | | SvGrid | AG Grid Community | TanStack Table |

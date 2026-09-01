@@ -179,16 +179,7 @@ For machine-readable releases, fetch
   ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
   shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
 - **See a component before you wire it in** (`@svgrid/ui` 0.3.x).
-  `npx @svgrid/ui try <component>` spins
-
-#### Changed
-
-- **`npm create @svgrid` starts on Ember** (the demo theme) instead of Tailwind,
-  for every template; `--theme <id>` still picks any preset. The `sveltekit`
-  template is now listed on the starters page, and the `sv add @svgrid` demo route
-  imports the Ember stylesheet so it no longer renders unthemed.
-
- up a zero-setup Vite + Svelte sandbox and
+  `npx @svgrid/ui try <component>` spins up a zero-setup Vite + Svelte sandbox and
   opens the component in your browser; `add --preview` writes a
   `src/routes/preview/<id>` route (plus a `/preview` index) in a SvelteKit app.
   `add` now installs `@svgrid/grid` by default (`--no-install` to opt out) and
@@ -197,6 +188,20 @@ For machine-readable releases, fetch
 - **AI coding Skill** (`skills/svgrid`, installable with
   `npx skills add sv-grid/sv-grid`) - an always-on house-style guidance layer
   that complements `@svgrid/mcp`.
+- **The rest of the toolkit is findable.** `packages/grid/README.md` gained an
+  "Also in the box" section, and the site footer gained a **Toolkit** column
+  (SvGrid UI, Kanban board, Scheduler, Dock layout, Studio, Web components).
+  The 84 SvGrid UI components have always been exported from `@svgrid/grid`
+  itself - `SvButton`, `SvCalendar`, `SvDateTimePicker`, `SvDockLayout`,
+  `SvToaster` and the rest are already installed for every grid user - but
+  nothing on the highest-traffic surfaces said so.
+
+#### Changed
+
+- **`npm create @svgrid` starts on Ember** (the demo theme) instead of Tailwind,
+  for every template; `--theme <id>` still picks any preset. The `sveltekit`
+  template is now listed on the starters page, and the `sv add @svgrid` demo route
+  imports the Ember stylesheet so it no longer renders unthemed.
 
 #### Fixed
 
