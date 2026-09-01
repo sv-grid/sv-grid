@@ -5,6 +5,7 @@
 # SvGrid
 
 [![npm version](https://img.shields.io/npm/v/%40svgrid%2Fgrid.svg?label=%40svgrid%2Fgrid)](https://www.npmjs.com/package/@svgrid/grid)
+[![npm downloads](https://img.shields.io/npm/dm/%40svgrid%2Fgrid.svg)](https://www.npmjs.com/package/@svgrid/grid)
 [![CI](https://github.com/sv-grid/sv-grid/actions/workflows/test.yml/badge.svg)](https://github.com/sv-grid/sv-grid/actions/workflows/test.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](packages/grid/LICENSE)
 [![TypeScript](https://img.shields.io/badge/types-included-blue.svg)](https://www.npmjs.com/package/@svgrid/grid)

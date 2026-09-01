@@ -42,7 +42,16 @@ const BUDGET_KB = {
   // has to watch the gesture itself while its module is being fetched. The
   // touch implementation proper is a lazy chunk (`row-drag-touch`), so this is
   // the irreducible base half of two bug fixes, not drift.
-  'full render component (SvGrid)': 78.2,
+  //
+  // 78.1 -> 78.2 with the per-column `summary` aggregator: createSummaries now
+  // dispatches through applyGroupAggregate for a column that declares its own
+  // summary, and the `summary` shortcut prop carries a derived + a ctx getter.
+  // createSummaries is on the static path, so both land in base. The budget
+  // goes to 78.5 to restore the ~0.3 KB of headroom this file has always kept -
+  // it had been ratcheted flush against the measurement, so a one-byte feature
+  // failed CI. The dev-only config checks from the same batch cost base nothing:
+  // `DEV` folds to false in a production build and Rollup drops the block.
+  'full render component (SvGrid)': 78.5,
   'headless core (createGrid)': 3.0,
   'headless subpath (@svgrid/grid/core)': 5.0,
 }
