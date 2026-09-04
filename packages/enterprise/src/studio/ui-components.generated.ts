@@ -6907,6 +6907,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "rowResize",
+        "label": "Row Resize",
+        "type": "boolean",
+        "description": "Let the user drag a row's bottom edge to change its height. **Off by default**, because a resizable row needs somewhere to grab and most grids do not want a drag target on every row. The grid remembers the heights itself, so this works as a bare boolean - no `rowHeight` function required. Drag, or focus the grip and use Up/Down (Shift for 1px steps). Turning this on also turns on the **row header column** (* showRowNumbers), because that is where the grip lives and where a spreadsheet puts it - a drag target on the edge of a data cell works but reads as an accident. An explicit `showRowNumbers={false}` still wins; the grip then falls back to the row's first cell, and a column of your own carrying `cellClass: 'sv-row-gutter'` is used ahead of either. Ignored under `autoRowHeight`, where the content decides the height and a manual one would immediately be overwritten. For full control of the heights - persisting them, sharing them between grids - pass a function-valued and use the `rowResize` action directly.",
+        "group": "common"
+      },
+      {
         "key": "headerHeight",
         "label": "Header Height",
         "type": "number",
@@ -6960,6 +6967,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Fit Columns",
         "type": "boolean",
         "description": "When `true`, columns are scaled proportionally so their total width fills the viewport (no empty space on the right). Disabled by default - explicit `width` values are used as-is. User resizes still win once they happen.",
+        "group": "common"
+      },
+      {
+        "key": "columnResize",
+        "label": "Column Resize",
+        "type": "boolean",
+        "description": "Let the user drag a column's edge to change its width. **Off by default**, so `width` means the width you asked for until you say otherwise. Turn it on for grids the reader is meant to arrange - a spreadsheet, a dense report, anything with columns whose content varies in length. Leave it off for layouts you control, and for columns that must keep their size: a row-number gutter, a checkbox column, an icon column. It is grid-wide rather than per-column: there is no `resizable: false` on a single column definition. `api.autosizeColumn()`, `fitColumns` and programmatic width changes work either way - this only governs the drag handle. The handles come from the `columnResize` action, loaded on demand: a grid that leaves this off never fetches that code.",
         "group": "common"
       },
       {

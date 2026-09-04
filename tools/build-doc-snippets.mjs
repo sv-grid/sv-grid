@@ -18,12 +18,17 @@
  *                                                   # candidates that passed
  */
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 // @ts-expect-error - plain .mjs helper with a sibling .d.mts
 import { extractFences, isComponentShaped, splitComponent, mergePreamble, blockKey } from './lib/md-snippets.mjs'
 
-const DOCS = 'docs'
-const OUT = 'examples/src/doc-snippets'
+// Anchored to this file, not to cwd: the website's `prebuild` runs this from
+// `website/`, where a relative 'docs' resolves to website/docs and the whole
+// deploy dies on ENOENT. Same approach as build-docs-index.mjs beside it.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const DOCS = join(ROOT, 'docs')
+const OUT = join(ROOT, 'examples/src/doc-snippets')
 const MANIFEST = join(OUT, 'manifest.json')
 
 /** Generated API reference is a declaration dump, never a runnable example. */
