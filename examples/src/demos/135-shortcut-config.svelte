@@ -8,12 +8,17 @@
    * shortcut prop, with no `tableFeatures({ ... })` import and no
    * fine-grained prop juggling:
    *
-   *   sortable    -> click headers to sort
-   *   filterable  -> per-column filter menu
-   *   editable    -> double-click a cell to edit
-   *   selectable  -> click a cell, drag for a range
-   *   groupable   -> "Group by this column" in the column menu
-   *   pageable    -> pagination footer
+   *   sortable     -> click headers to sort
+   *   filterable   -> per-column filter menu
+   *   editable     -> double-click a cell to edit
+   *   selectable   -> click a cell, drag for a range
+   *   groupable    -> "Group by this column" in the column menu
+   *   pageable     -> pagination footer
+   *   columnResize -> drag a header edge; double-click it to autosize
+   *   rowResize    -> drag a row's bottom edge
+   *
+   * The last two also show what "off by default" buys: their code is loaded
+   * on demand, so a grid that never switches them on never downloads it.
    *
    * Toggle the switches below and watch the same grid gain each capability.
    * The `features` set is EMPTY - there is no `rowSortingFeature` /
@@ -56,6 +61,8 @@
   let selectable = $state(false)
   let groupable = $state(false)
   let pageable = $state(false)
+  let columnResize = $state(false)
+  let rowResize = $state(false)
 
   const toggles = [
     { key: 'sortable',   get: () => sortable,   set: (v: boolean) => (sortable = v),   hint: 'Click a header to sort' },
@@ -64,13 +71,26 @@
     { key: 'selectable', get: () => selectable, set: (v: boolean) => (selectable = v), hint: 'Click a cell, drag for a range' },
     { key: 'groupable',  get: () => groupable,  set: (v: boolean) => (groupable = v),  hint: 'Column menu -> Group by this column' },
     { key: 'pageable',   get: () => pageable,   set: (v: boolean) => (pageable = v),   hint: 'Pagination footer appears' },
+    { key: 'columnResize', get: () => columnResize, set: (v: boolean) => (columnResize = v), hint: 'Drag a header edge; double-click it to autosize' },
+    { key: 'rowResize',    get: () => rowResize,    set: (v: boolean) => (rowResize = v),    hint: "Drag a row's bottom edge" },
   ]
 
-  function allOn() { sortable = filterable = editable = selectable = groupable = pageable = true }
-  function allOff() { sortable = filterable = editable = selectable = groupable = pageable = false }
+  const ALL = [
+    (v: boolean) => (sortable = v),
+    (v: boolean) => (filterable = v),
+    (v: boolean) => (editable = v),
+    (v: boolean) => (selectable = v),
+    (v: boolean) => (groupable = v),
+    (v: boolean) => (pageable = v),
+    (v: boolean) => (columnResize = v),
+    (v: boolean) => (rowResize = v),
+  ]
+  function allOn() { for (const set of ALL) set(true) }
+  function allOff() { for (const set of ALL) set(false) }
 
   const enabledCount = $derived(
-    [sortable, filterable, editable, selectable, groupable, pageable].filter(Boolean).length,
+    [sortable, filterable, editable, selectable, groupable, pageable, columnResize, rowResize]
+      .filter(Boolean).length,
   )
 </script>
 
@@ -108,7 +128,7 @@
     </div>
 
     <pre class="sc-code mt-3"><code>&lt;SvGrid
-  data=&lbrace;rows&rbrace; columns=&lbrace;columns&rbrace;{sortable ? '\n  sortable' : ''}{filterable ? '\n  filterable' : ''}{editable ? '\n  editable' : ''}{groupable ? '\n  groupable' : ''}{pageable ? '\n  pageable' : ''}
+  data=&lbrace;rows&rbrace; columns=&lbrace;columns&rbrace;{sortable ? '\n  sortable' : ''}{filterable ? '\n  filterable' : ''}{editable ? '\n  editable' : ''}{selectable ? '\n  selectable' : ''}{groupable ? '\n  groupable' : ''}{pageable ? '\n  pageable' : ''}{columnResize ? '\n  columnResize' : ''}{rowResize ? '\n  rowResize' : ''}
 /&gt;</code></pre>
   </div>
 
@@ -123,6 +143,8 @@
       {selectable}
       {groupable}
       {pageable}
+      {columnResize}
+      {rowResize}
       pageSize={25}
       selectionMode="none"
       rowHeight={36}

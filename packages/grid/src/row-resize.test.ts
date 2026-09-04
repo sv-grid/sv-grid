@@ -130,6 +130,37 @@ describe('rowResize - strip injection', () => {
     action.destroy()
   })
 
+  it("anchor 'row' falls back to the first body cell when there is no gutter", () => {
+    // What `<SvGrid rowResize>` relies on: most grids have no row-number
+    // column, and without the fallback the prop would be inert on them.
+    const { host, rows } = buildGrid([{ gutter: false }, { gutter: false }])
+    track(host)
+    const action = rowResize(host, { onResize: vi.fn(), anchor: 'row' })
+    expect(stripOf(rows[0]!)).not.toBeNull()
+    expect(stripOf(rows[1]!)).not.toBeNull()
+    // The strip hangs off the row's first cell, since that is all there is.
+    expect(stripOf(rows[0]!)!.parentElement).toBe(rows[0]!.querySelector('.sv-grid-cell'))
+    action.destroy()
+  })
+
+  it("anchor 'row' still prefers a real gutter when the row has one", () => {
+    const { host, rows } = buildGrid([{ gutter: true }])
+    track(host)
+    const action = rowResize(host, { onResize: vi.fn(), anchor: 'row' })
+    expect(stripOf(rows[0]!)!.parentElement).toBe(gutterOf(rows[0]!))
+    action.destroy()
+  })
+
+  it("defaults to anchor 'gutter', leaving gutterless rows alone", () => {
+    // The exported action's existing contract. Adding the fallback must not
+    // start decorating rows for consumers who never asked for it.
+    const { host, rows } = buildGrid([{ gutter: false }])
+    track(host)
+    const action = rowResize(host, { onResize: vi.fn() })
+    expect(stripOf(rows[0]!)).toBeNull()
+    action.destroy()
+  })
+
   it('also injects a strip into the built-in row-number gutter (showRowNumbers)', () => {
     // The native gutter cell is `.sv-grid-cell.sv-grid-row-number-cell`, NOT
     // `.sv-row-gutter`; the action must recognise it so `showRowNumbers` grids

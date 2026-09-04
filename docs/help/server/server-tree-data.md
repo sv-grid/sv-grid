@@ -22,6 +22,39 @@ node can expand). It owns the lazy expand/collapse, per-node caching, and
 race-safety; each expand calls `getRows` with `groupKeys` set to the path of
 node ids, and you return that node's direct children:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { SvGrid, createServerGroupModel, serverGroupRows, SvGroupCell, renderComponent } from '@svgrid/grid'
@@ -224,6 +257,62 @@ would write for a fully-seeded tree. The only difference is that
 `allNodes` grows over time. There is no server-tree mode to configure and
 no contract to satisfy; you own the fetch, the cache, and the shape of
 the rows.
+
+## More examples
+
+### Server grouping (first-class)
+
+First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.
+
+<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+
+## Try it
+
+Server tree data is the same flat parent/child shape as the client version - the
+only difference is where the rows come from. Loading a branch means appending
+its children to the array you already hold.
+
+```svelte {runnable}
+<script lang="ts">
+  type Node = { id: string; parentId: string | null; name: string; size: string }
+
+  // What the server has. A real one returns only the requested branch.
+  const store: Node[] = [
+    { id: 'src',      parentId: null,  name: 'src',        size: '-' },
+    { id: 'src/app',  parentId: 'src', name: 'app.ts',     size: '4 KB' },
+    { id: 'src/lib',  parentId: 'src', name: 'lib',        size: '-' },
+    { id: 'src/lib/a',parentId: 'src/lib', name: 'api.ts', size: '9 KB' },
+    { id: 'pub',      parentId: null,  name: 'public',     size: '-' },
+    { id: 'pub/ico',  parentId: 'pub', name: 'favicon.ico', size: '1 KB' },
+  ]
+
+  // Start with the roots; "fetch" pulls a branch in on demand.
+  let loaded = $state<Node[]>(store.filter((n) => n.parentId === null))
+
+  function load(parentId: string) {
+    const kids = store.filter((n) => n.parentId === parentId)
+    const have = new Set(loaded.map((n) => n.id))
+    loaded = [...loaded, ...kids.filter((k) => !have.has(k.id))]
+  }
+
+  const cols: GridColumns<Node> = [
+    { field: 'name', header: 'Name', width: 260 },
+    { field: 'size', header: 'Size', width: 100 },
+  ]
+</script>
+
+<div>
+  <button type="button" onclick={() => load('src')}>Load src/</button>
+  <button type="button" onclick={() => load('src/lib')}>Load src/lib/</button>
+  <button type="button" onclick={() => load('pub')}>Load public/</button>
+</div>
+
+<SvGrid
+  data={loaded}
+  columns={cols}
+  treeData={{ parentField: 'parentId', idField: 'id', column: 'name' }}
+/>
+```
 
 ## See also
 

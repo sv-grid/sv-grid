@@ -23,6 +23,14 @@ Or install the package and import it directly. `SvBadge` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvBadge, SvGrid } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvBadge } from '@svgrid/grid'
 ```
@@ -31,7 +39,7 @@ import { SvBadge } from '@svgrid/grid'
 
 <div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvBadge } from '@svgrid/grid'
 </script>
@@ -72,7 +80,7 @@ Map a record status to a semantic variant so the color carries meaning:
 Drop the label and keep `dot` for a compact presence or health marker next to a
 name or row:
 
-```svelte
+```svelte {runnable}
 <SvBadge variant="success" dot /> Ada Lovelace
 ```
 
@@ -80,7 +88,7 @@ name or row:
 
 Badges shine as unread or overflow counts in toolbars and tabs:
 
-```svelte
+```svelte {runnable}
 Notifications <SvBadge variant="accent" size="sm">12</SvBadge>
 ```
 

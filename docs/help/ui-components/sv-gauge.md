@@ -24,6 +24,19 @@ Or install the package and import it directly. `SvGauge` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGauge } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let cpu = $state(0)
+  let used = $state(0)
+  let score = $state(0)
+</script>
+```
+
 ```ts
 import { SvGauge } from '@svgrid/grid'
 ```
@@ -32,7 +45,7 @@ import { SvGauge } from '@svgrid/grid'
 
 <div data-docs-demo="319-gauge" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGauge } from '@svgrid/grid'
 </script>
@@ -77,7 +90,7 @@ import { SvGauge } from '@svgrid/grid'
 Pass `bands` covering the full range to color the arc by zone. Bands replace the
 plain accent fill, so the dial reads good/warning/critical at a glance:
 
-```svelte
+```svelte {runnable}
 <SvGauge
   value={cpu} unit="%"
   bands={[
@@ -93,7 +106,7 @@ plain accent fill, so the dial reads good/warning/critical at a glance:
 Drop `sweep` to `180` for a semicircle and turn the `needle` off for a compact
 progress-style tile with just the value arc:
 
-```svelte
+```svelte {runnable}
 <SvGauge value={used} max={512} sweep={180} needle={false} unit=" GB" />
 ```
 
@@ -102,7 +115,7 @@ progress-style tile with just the value arc:
 Override the auto label to show something other than the raw number - a rating,
 a status word, or a formatted metric:
 
-```svelte
+```svelte {runnable}
 <SvGauge value={score} max={10} label={`${score}/10`} />
 ```
 
@@ -111,7 +124,7 @@ a status word, or a formatted metric:
 Bind `value` to reactive state and the arc tracks the number as it changes; add
 `formatValue` to render the reading in its own units and `ariaLabel` to name it:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGauge } from '@svgrid/grid'
   let rpm = $state(3200)
@@ -142,6 +155,36 @@ full scale rather than sweeping past the end of the arc.
 - Set `ariaLabel` to name what the gauge measures - the visual label alone is
   not announced as the meter's name.
 - Purely presentational: it is a display, not a control, and takes no focus.
+
+## More examples
+
+### Gauge - headless
+
+createGauge drives styled SvGauge plus a custom SVG meter sharing the same arc / needle geometry.
+
+<div data-docs-demo="282-headless-gauge" data-height="420"></div>
+
+### Gauge dial (KPI dashboard)
+
+type: gauge renders a semicircle with track + value arcs, optional red/amber/green range bands, and a target tick. Click any row in the KPI grid to drive the dial; bands auto-flip direction based on whether higher or lower is better.
+
+<div data-docs-demo="163-chart-gauge" data-height="560"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvGauge } from '@svgrid/grid'
+
+  let cpu = $state(1)
+</script>
+
+<SvGauge value={cpu} size="sm" />
+<SvGauge value={cpu} size="md" />
+<SvGauge value={cpu} size="lg" />
+```
 
 ## See also
 

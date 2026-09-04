@@ -75,6 +75,107 @@ relative to themselves.
   cost of re-deriving headers each time. Memoise it (build once with
   `$state.raw` or a one-time IIFE) for hot-loop components.
 
+## More examples
+
+### Autosize columns
+
+api.autosizeColumn(id) and api.autosizeAllColumns() snap columns to the widest visible cell via canvas-based text measurement. The column header menu has an "Autosize" item that calls the same code. Manual drag-resize still works.
+
+<div data-docs-demo="172-autosize-columns" data-height="460"></div>
+
+## Columns that change at runtime
+
+The column list is an ordinary prop, so deriving it from state is all a
+"choose your columns" control needs. Rebuild the array and the grid follows -
+no api call involved.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  const ALL = ['name', 'email', 'city', 'age', 'salary'] as const
+  let shown = $state<string[]>(['name', 'city', 'age'])
+
+  const columns = $derived<GridColumns<Person>>(
+    ALL.filter((f) => shown.includes(f)).map((f) => ({
+      field: f,
+      header: f[0].toUpperCase() + f.slice(1),
+      width: 150,
+    })),
+  )
+
+  function toggle(f: string) {
+    shown = shown.includes(f) ? shown.filter((x) => x !== f) : [...shown, f]
+  }
+</script>
+
+<div>
+  {#each ALL as f}
+    <button type="button" aria-pressed={shown.includes(f)} onclick={() => toggle(f)}>{f}</button>
+  {/each}
+</div>
+
+<SvGrid data={seed} {columns} sortable />
+```
+
+## Reordering the same columns
+
+Because the array is the source of truth, changing its order changes the grid.
+That is the cheap version of column reordering when you want the order to come
+from your own state rather than from a drag.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  let order = $state<string[]>(['name', 'city', 'age'])
+
+  const LABEL: Record<string, string> = { name: 'Name', city: 'City', age: 'Age' }
+
+  const columns = $derived<GridColumns<Person>>(
+    order.map((f) => ({ field: f as keyof Person & string, header: LABEL[f], width: 150 })),
+  )
+
+  function rotate() {
+    order = [...order.slice(1), order[0]!]
+  }
+</script>
+
+<button type="button" onclick={rotate}>Rotate columns</button>
+
+<SvGrid data={seed} {columns} />
+```
+
 ## See also
 
 - [Column state](./column-state.md)

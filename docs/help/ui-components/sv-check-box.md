@@ -23,6 +23,18 @@ Or install the package and import it directly. `SvCheckBox` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvCheckBox } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let agree = $state(false)
+  let isAdmin = $state(false)
+</script>
+```
+
 ```ts
 import { SvCheckBox } from '@svgrid/grid'
 ```
@@ -31,7 +43,7 @@ import { SvCheckBox } from '@svgrid/grid'
 
 <div data-docs-demo="309-checkbox" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCheckBox } from '@svgrid/grid'
   let agree = $state(false)
@@ -69,7 +81,7 @@ import { SvCheckBox } from '@svgrid/grid'
 Compute the parent's `checked` and `indeterminate` from the children so it goes
 half-checked when the selection is partial:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let items = $state([true, false, true])
   const all = $derived(items.every(Boolean))
@@ -84,26 +96,20 @@ half-checked when the selection is partial:
 
 Mark it `required` and set `invalid` + `error` until it is ticked:
 
-```svelte
+```svelte {runnable}
 <SvCheckBox required checked={agree} invalid={!agree}
   error={!agree ? 'You must accept to continue' : undefined}
   onChange={(v) => (agree = v)}>I accept the terms</SvCheckBox>
 ```
 
-### In a form
-
-Give a `name` and `value` and a plain form submit carries the ticked value:
-
-```svelte
-<SvCheckBox name="roles" value="admin" checked={isAdmin} onChange={(v) => (isAdmin = v)}>Admin</SvCheckBox>
-```
+#
 
 ### Multi-select checklist
 
 Render one box per option and keep the ticked values in an array, adding or
 removing each in `onChange` - the classic permissions or filter list:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCheckBox } from '@svgrid/grid'
   const perms = ['read', 'write', 'delete']
@@ -125,6 +131,47 @@ removing each in `onChange` - the classic permissions or filter list:
   also toggles.
 - When you provide no label children, set `ariaLabel` (it falls back to
   `checkbox`) so the control still announces a name.
+
+## More examples
+
+### Checkbox - headless
+
+Styled SvCheckBox plus a custom card checkbox, one bound checked value with a readout.
+
+<div data-docs-demo="273-headless-checkbox" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCheckBox } from '@svgrid/grid'
+
+  let agree = $state(false)
+</script>
+
+<SvCheckBox checked={agree} size="sm" />
+<SvCheckBox checked={agree} size="md" />
+<SvCheckBox checked={agree} size="lg" />
+```
+
+
+## Disabled and read-only
+
+Disabled takes the control out of the tab order; read-only keeps it focusable and copyable. Reach for read-only when the value still matters to the reader.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCheckBox } from '@svgrid/grid'
+
+  let agree = $state(false)
+</script>
+
+<SvCheckBox checked={agree} disabled />
+
+<SvCheckBox checked={agree} readonly />
+```
 
 ## See also
 

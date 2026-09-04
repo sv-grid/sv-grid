@@ -569,6 +569,7 @@
   <div class="rt-body">
     <div class="rt-grid-wrap">
       <SvGrid responsive={true}
+      columnResize
         data={orderList}
         columns={[
           {

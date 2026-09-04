@@ -4,6 +4,68 @@ Releases above 1.2.3 are generated from the commit subjects in each release tag 
 (`node tools/build-changelog.mjs`), so they describe what changed rather than
 reading as polished release notes. Entries from 1.2.3 down are hand-written.
 
+## 2.6.21
+
+_2026-08-31_
+
+- mobile fixes and 2 more property shortcuts
+- Add a stars scorecard, drop the misleading downloads badge, add a code of conduct
+- Make the MCP discovery tools usable, and stop the twice-daily version churn
+
+## 2.6.18
+
+_2026-08-29_
+
+- Ship @svgrid/mcp as 2.6.4 after npm stalled the 2.6.3 publish
+
+## 2.6.17
+
+_2026-08-29_
+
+- mobile demo fixes
+
+## 2.6.13
+
+_2026-08-28_
+
+- mobile demos fixes
+- Update image width attributes in README.md
+- Enhance README with SvGrid props details
+
+## 2.6.12
+
+_2026-08-27_
+
+- Advance the website gitlink to today's SEO commit
+
+## 2.6.10
+
+_2026-08-26_
+
+- chore: untrack Claude Code auto-memory leaked into the repo
+- chore: untrack maintainer-only scripts in tools/
+- small fixes
+
+## 2.6.9
+
+_2026-08-25_
+
+- SvelteKit with SvGrid Quick Start template
+- Fix the red CI step, and give the SvelteKit guide a runnable example
+- Correct the CSV-as-paid claim and the stale testing numbers in docs
+
+## 2.6.8
+
+_2026-08-25_
+
+- Server-render grid rows, and a SvelteKit tutorial
+
+## 2.6.7
+
+_2026-08-25_
+
+- Headless subpath, lazy cell editor, row-drag fixes, MIT MCP
+
 ## 2.6.5
 
 _2026-08-24_

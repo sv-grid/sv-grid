@@ -242,6 +242,7 @@ ${dark}
     <!-- The theme tokens live on this wrapper. -->
     <div data-theme-preset={theme.id} style={inlineStyle} class="themed-host theme-grid-wrap">
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={columns}
         features={features}

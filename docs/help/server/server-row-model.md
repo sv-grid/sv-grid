@@ -244,6 +244,38 @@ Being honest about the edges so you pick the right tool:
   pre-grouped rows if you need server-driven grouping.
 - **Writes are non-optimistic unless you opt in** (above).
 
+## More examples
+
+### Server grouping (first-class)
+
+First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.
+
+<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+
+### Server-side infinite scroll
+
+100k-event audit log behind a mock API. Sparse chunked load on scroll; sort + filter + search pushed to the server.
+
+<div data-docs-demo="33-server-infinite" data-height="560"></div>
+
+### Server-side grouping + aggregates
+
+GROUP BY + SUM/AVG pushed to the server; pre-aggregated buckets with on-demand drill-in.
+
+<div data-docs-demo="114-server-grouping" data-height="560"></div>
+
+### Server-side data
+
+Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.
+
+<div data-docs-demo="09-server-side" data-height="560"></div>
+
+### Server-side rendering
+
+SvelteKit-style SSR with a sandboxed pre-hydration snapshot.
+
+<div data-docs-demo="19-ssr" data-height="460"></div>
+
 ## See also
 
 - [Tutorial: a Postgres CRUD grid](../../enterprise/studio/postgres-grid.md) - a complete server route + query builder.

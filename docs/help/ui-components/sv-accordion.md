@@ -32,7 +32,7 @@ import { SvAccordion } from '@svgrid/grid'
 
 <div data-docs-demo="285-accordion" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAccordion, type AccordionItem } from '@svgrid/grid'
   const items: AccordionItem[] = [
@@ -125,6 +125,35 @@ in the list while its data loads.
 - Roving header focus: `ArrowUp` / `ArrowDown` move between headers, `Home` /
   `End` jump to the ends; `Enter` / `Space` toggle.
 - `disabled` items are skipped by keyboard navigation and cannot be toggled.
+
+## One panel or many
+
+`expandMode` is the whole difference between an FAQ and a settings list.
+`single` closes the previous panel; `multiple` lets a reader keep two open to
+compare them.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvAccordion, type AccordionItem } from '@svgrid/grid'
+
+  const items: AccordionItem[] = [
+    { id: 'ship',   label: 'How long does delivery take?' },
+    { id: 'return', label: 'What is the return window?' },
+    { id: 'vat',    label: 'Do prices include VAT?', disabled: true },
+  ]
+
+  let open = $state<string[]>(['ship'])
+</script>
+
+<SvAccordion {items} expanded={open} expandMode="single" onChange={(ids) => (open = ids)}>
+  {#snippet panel(item)}
+    <p>Answer for <strong>{item.label}</strong></p>
+  {/snippet}
+</SvAccordion>
+```
+
+The third item is `disabled`, which keeps it visible and out of the tab order -
+the right treatment for a question that does not apply yet.
 
 ## See also
 

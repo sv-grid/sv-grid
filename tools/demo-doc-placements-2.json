@@ -1,0 +1,80 @@
+{
+  "docs/help/editing/undo-redo.md": [
+    "86-undo-redo"
+  ],
+  "docs/help/filtering/advanced-filter.md": [
+    "111-set-filter-advanced"
+  ],
+  "docs/help/grouping-aggregation.md": [
+    "427-group-footers"
+  ],
+  "docs/help/headless/server-side.md": [
+    "19-ssr"
+  ],
+  "docs/help/migrating-from-smart-grid.md": [
+    "77-smart-chart"
+  ],
+  "docs/help/rows/master-detail.md": [
+    "08-tree-and-master-detail"
+  ],
+  "docs/help/rows/row-pinning.md": [
+    "107-pinned-rows"
+  ],
+  "docs/help/rows/tree-rows.md": [
+    "31-lazy-tree-load"
+  ],
+  "docs/help/server/server-editing.md": [
+    "115-optimistic-updates",
+    "33-server-infinite",
+    "148-server-row-model",
+    "114-server-grouping",
+    "09-server-side",
+    "19-ssr"
+  ],
+  "docs/help/server/server-row-model.md": [
+    "344-server-grouping-model",
+    "33-server-infinite",
+    "114-server-grouping",
+    "09-server-side",
+    "19-ssr"
+  ],
+  "docs/help/server/server-sorting.md": [
+    "148-server-row-model",
+    "344-server-grouping-model"
+  ],
+  "docs/help/server/server-tree-data.md": [
+    "344-server-grouping-model"
+  ],
+  "docs/help/ui-components/date-time.md": [
+    "278-headless-datetimepicker"
+  ],
+  "docs/help/ui-components/feedback.md": [
+    "333-app-feedback",
+    "339-status-display",
+    "410-typography-display"
+  ],
+  "docs/help/ui-components/i18n-rtl.md": [
+    "38-rtl-i18n"
+  ],
+  "docs/help/ui-components/inputs.md": [
+    "254-text-inputs"
+  ],
+  "docs/help/ui-components/overlays.md": [
+    "331-app-overlays",
+    "288-overlays",
+    "289-overlays-hovercard-menubar"
+  ],
+  "docs/help/ui-components/sv-otp-input.md": [
+    "422-block-otp"
+  ],
+  "docs/recipes/dependent-dropdowns.md": [
+    "209-data-validation"
+  ],
+  "docs/recipes/loading-data.md": [
+    "79-loading-from-rest"
+  ],
+  "docs/recipes/undo-redo-edits.md": [
+    "86-undo-redo"
+  ],
+  "$comment": "Pass 2: confident-only (score >= 10) proposals from tools/demo-doc-suggest.mjs, reviewed by hand. One match (77-smart-chart -> shadcn.md) was dropped as a false positive on the word \"smart\"."
+}

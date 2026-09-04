@@ -143,6 +143,20 @@ handler without unwrapping the region.
   off-screen or is clipped by an ancestor.
 - A page scroll closes the menu, since a moved anchor would leave it stranded.
 
+## More examples
+
+### Right-click context menu
+
+Custom row context menu (copy, duplicate, move up/down, delete) wired via a contextmenu listener + the wrapper\'s data-svgrid-row attribute.
+
+<div data-docs-demo="67-context-menu" data-height="460"></div>
+
+### Chart a selection (context menu)
+
+With integrated charting enabled, the right-click menu gains a Chart selected range item: select a block of cells, right-click, and the chart panel opens scoped to that range - the Excel chart-this gesture, built in. The item appears only when charting is on and is appended to the default context menu automatically.
+
+<div data-docs-demo="406-chart-context-menu" data-height="560"></div>
+
 ## See also
 
 - [Overlays overview](overlays.md) - the whole floating-surface family.

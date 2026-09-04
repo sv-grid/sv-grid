@@ -65,3 +65,51 @@ fires for edits from **other** users only (never echoes your own).
 
 See the live [Real-time collaboration](https://svgrid.com/demos/149-realtime-collaboration/)
 demo (open it in two tabs).
+
+## Try it
+
+There is no `collab` prop: collaboration is a pattern you assemble from the
+grid's own callbacks. This wires the local half of it - the cursor broadcast -
+against a stub transport, so you can see the shape without a server.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; department: string; salary: number }
+
+  const data: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    salary: 155000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 160, editorType: 'text' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number' },
+  ]
+
+  // Stands in for the transport. A real one is a WebSocket or a Yjs awareness
+  // channel; the grid does not care which, it only produces the events.
+  let broadcast = $state<string[]>([])
+  const send = (line: string) => (broadcast = [line, ...broadcast].slice(0, 5))
+</script>
+
+<SvGrid
+  {data}
+  {columns}
+  editable
+  onActiveCellChange={(cell) => send('cursor -> row ' + cell.rowIndex + ', ' + cell.columnId)}
+  onCellValueChange={(e) => send('edit -> ' + e.columnId + ' = ' + String(e.newValue))}
+/>
+
+<p>Would be broadcast to peers:</p>
+<ul>
+  {#each broadcast as line}<li><code>{line}</code></li>{/each}
+</ul>
+```
+
+Everything a peer needs is in those two callbacks. The half this page cannot
+demonstrate in one browser tab is the receiving side - rendering other people's
+cursors - which is the controller API above.

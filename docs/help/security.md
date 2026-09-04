@@ -153,14 +153,6 @@ on-prem model, or hash sensitive fields.
 - **No reflection-driven config.** Column definitions are plain
   objects; the grid never reads metadata via `eval` or `with`.
 
-## See also
-
-- [Browser support](./browser-support.md) - tested target matrix.
-- [Testing and quality](./testing-and-quality.md) - the test suite that
-  underwrites this page's claims.
-- [API stability](./api-stability.md) - semver policy, deprecation
-  lifecycle.
-
 ## Frequently asked questions
 
 ### Is SvGrid safe to use in a regulated or enterprise environment?
@@ -180,3 +172,11 @@ app are ones you write.
 The Community core has a minimal dependency surface; Enterprise export/import features
 lazy-load their dependencies only when used. See this page for the full
 dependency and runtime-call accounting procurement asks for.
+
+## See also
+
+- [Browser support](./browser-support.md) - tested target matrix.
+- [Testing and quality](./testing-and-quality.md) - the test suite that
+  underwrites this page's claims.
+- [API stability](./api-stability.md) - semver policy, deprecation
+  lifecycle.

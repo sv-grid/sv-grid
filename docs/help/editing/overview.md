@@ -60,14 +60,6 @@ To round-trip edits to your source, attach a callback:
 See [Saving values](./saving-values.md) for the full patterns
 (per-edit, batch-from-snapshot, cascade recompute).
 
-## See also
-
-- [Start / stop editing](./start-stop-editing.md)
-- [Parsing values](./parsing-values.md)
-- [Saving values](./saving-values.md)
-- [Provided editors](./provided-editors.md)
-- [Validation](./validation.md)
-
 ## Frequently asked questions
 
 ### How do I enable inline editing in SvGrid?
@@ -87,3 +79,25 @@ editor through the `cellEditor` slot.
 No. Commits are written to the grid's internal working copy, not the array you
 passed in, so cancel/undo is possible. Subscribe to `onCellValueChange` to
 persist edits to your own state or backend.
+
+## More examples
+
+### Cell validation (validate hook)
+
+Declarative per-column `validate()` hook, Handsontable-style. Invalid cells - including bad data already in the source on load - highlight red with the reason as a tooltip, and re-check live as you edit.
+
+<div data-docs-demo="206-cell-validation" data-height="460"></div>
+
+### Excel-style fill handle
+
+Walks through every fill pattern the engine detects: numeric series, date series, weekday sequence, reverse-fill, horizontal fill, copy-mode.
+
+<div data-docs-demo="95-fill-handle" data-height="460"></div>
+
+## See also
+
+- [Start / stop editing](./start-stop-editing.md)
+- [Parsing values](./parsing-values.md)
+- [Saving values](./saving-values.md)
+- [Provided editors](./provided-editors.md)
+- [Validation](./validation.md)

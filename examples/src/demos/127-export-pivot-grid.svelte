@@ -340,6 +340,7 @@
   <div class="ep-split flex flex-1 min-h-0 gap-3">
     <div class="ep-grid-wrap flex-1 min-w-0">
       <SvGrid responsive={true}
+      columnResize
         data={pivot.rows}
         {columns}
         {features}

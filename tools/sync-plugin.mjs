@@ -67,9 +67,39 @@ function walk(dir, base = dir, out = []) {
   return out
 }
 
+const REPO_URL = 'https://github.com/sv-grid/sv-grid/tree/main'
+
+/**
+ * Links like `](../../packages/mcp)` resolve from skills/svgrid/ but not from
+ * plugins/svgrid/skills/svgrid/ - and once the plugin is installed under
+ * ~/.claude/plugins/, a relative path into this repo means nothing at all.
+ * Rewrite anything that escapes the skill directory to a GitHub URL; leave
+ * `./rules/*.md` alone, since those travel with the copy.
+ */
+function absolutizeRepoLinks(text, relDepth) {
+  return text.replace(/\]\((\.\.\/[^)]*)\)/g, (whole, target) => {
+    const parts = target.split('/')
+    let up = 0
+    while (parts[0] === '..') {
+      parts.shift()
+      up++
+    }
+    // Only rewrite links that climb out of the skill folder itself.
+    if (up <= relDepth) return whole
+    return `](${REPO_URL}/${parts.join('/')})`
+  })
+}
+
 const files = walk(SKILL_SRC)
 const wanted = new Map()
-for (const rel of files) wanted.set(join('skills', 'svgrid', rel), readFileSync(join(SKILL_SRC, rel)))
+for (const rel of files) {
+  const depth = rel.split('/').length - 1
+  const body = readFileSync(join(SKILL_SRC, rel))
+  wanted.set(
+    join('skills', 'svgrid', rel),
+    rel.endsWith('.md') ? Buffer.from(absolutizeRepoLinks(body.toString('utf8'), depth)) : body,
+  )
+}
 wanted.set(join('.claude-plugin', 'plugin.json'), Buffer.from(JSON.stringify(manifest, null, 2) + '\n'))
 wanted.set(
   'README.md',

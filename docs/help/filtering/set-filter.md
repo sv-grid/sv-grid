@@ -121,6 +121,98 @@ type SvGridApi<…> = {
 }
 ```
 
+## Filtering to a set of values
+
+A set filter is a checklist of the distinct values in the column, which is
+the right shape when the domain is small and closed - a department, a status, a
+country. Typing an operator for those is slower than ticking a box.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 180 },
+    { field: 'department', header: 'Department', width: 170 },
+    { field: 'city',       header: 'City',       width: 150 },
+  ]
+</script>
+
+<SvGrid data={people} {columns} filterable filterMode="menu" />
+```
+
+
+## Building the value list yourself
+
+When the choices should come from your domain rather than from whatever
+happens to be loaded, derive them and filter the array. A set the user can see
+but not currently reach is often the point - it tells them the value exists.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, active: true },
+  ]
+
+  const DEPARTMENTS = ['Engineering', 'Platform', 'Networking', 'Design'] as const
+
+  let picked = $state<string[]>([])
+
+  const shown = $derived(
+    picked.length === 0 ? people : people.filter((p) => picked.includes(p.department)),
+  )
+
+  function toggle(d: string) {
+    picked = picked.includes(d) ? picked.filter((x) => x !== d) : [...picked, d]
+  }
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 180 },
+    { field: 'department', header: 'Department', width: 170 },
+  ]
+</script>
+
+<div>
+  {#each DEPARTMENTS as d}
+    <label><input type="checkbox" checked={picked.includes(d)} onchange={() => toggle(d)} /> {d}</label>
+  {/each}
+</div>
+
+<SvGrid data={shown} {columns} />
+```
+
 ## See also
 
 - Demo 111: [Set filter - tree / async / Excel mode](#/demos/111-set-filter-advanced)

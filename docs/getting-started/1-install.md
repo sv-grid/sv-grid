@@ -52,14 +52,21 @@ There's no monolithic entry that pulls everything.
 
 A 5-line smoke test:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
-  import { SvGrid } from '@svgrid/grid'
-  const rows = [{ name: 'Ada' }, { name: 'Linus' }]
-  const columns = [{ field: 'name', header: 'Name' }]
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { name: string }
+
+  const rows: Person[] = [{ name: 'Ada' }, { name: 'Linus' }]
+
+  // Annotate the array. Without `GridColumns<Person>` TypeScript widens `field`
+  // to `string`, and the grid - which types `field` as a key of your row - then
+  // rejects it. This is the one type annotation worth writing every time.
+  const columns: GridColumns<Person> = [{ field: 'name', header: 'Name' }]
 </script>
 
-<SvGrid data={rows} columns={columns} />
+<SvGrid data={rows} {columns} />
 ```
 
 If you see a styled `<table>` with two rows, you're done.

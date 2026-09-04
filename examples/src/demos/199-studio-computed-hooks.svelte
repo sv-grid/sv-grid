@@ -91,6 +91,7 @@
   {/snippet}
 
   <SvGrid responsive={true}
+      columnResize
     data={view.rows}
     {columns}
     loading={view.loading}

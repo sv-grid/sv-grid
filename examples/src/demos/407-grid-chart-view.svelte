@@ -71,9 +71,11 @@
 
   <div class="stage">
     {#if view === 'chart'}
-      <SvGrid {data} {columns} {features} {chart} containerHeight={380} />
+      <SvGrid
+      columnResize {data} {columns} {features} {chart} containerHeight={380} />
     {:else}
-      <SvGrid {data} {columns} {features} containerHeight={380} />
+      <SvGrid
+      columnResize {data} {columns} {features} containerHeight={380} />
     {/if}
   </div>
 </div>

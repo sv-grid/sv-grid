@@ -79,6 +79,99 @@ Wrap whichever subset you need into your own helper if you do this often.
 - Column **pinning** is controlled by the column menu; there is no public
   setter on the API today. Same caveat as above.
 
+## Hiding a column from code
+
+There is no `hide` flag on a column definition - visibility is runtime state,
+so it lives on the api. That is what lets a user's choice survive a column list
+that changes underneath it.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+  let showSalary = $state(true)
+
+  function toggle() {
+    showSalary = !showSalary
+    api?.setColumnVisible('salary', showSalary)
+  }
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'salary',     header: 'Salary',     width: 140,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<button type="button" onclick={toggle}>{showSalary ? 'Hide' : 'Show'} salary</button>
+
+<SvGrid data={people} {columns} onApiReady={(next) => (api = next)} />
+```
+
+
+## Sizing to the content
+
+`autosizeColumn` measures the rendered cells and fits the column to them.
+`autosizeAllColumns` does the lot - worth wiring to a toolbar button rather than
+running on load, since it costs a measure pass.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 80 },
+    { field: 'department', header: 'Department', width: 80 },
+    { field: 'city',       header: 'City',       width: 80 },
+  ]
+</script>
+
+<div>
+  <button type="button" onclick={() => api?.autosizeColumn('name')}>Fit Name</button>
+  <button type="button" onclick={() => api?.autosizeAllColumns()}>Fit all</button>
+</div>
+
+<SvGrid data={people} {columns} onApiReady={(next) => (api = next)} />
+```
+
 ## See also
 
 - [Column moving](./column-moving.md)

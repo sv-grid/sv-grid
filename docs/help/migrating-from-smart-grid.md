@@ -27,6 +27,41 @@ maps a Smart.Grid setup onto SvGrid.
 
 ## Before / after
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - <smart-grid id="grid" sorting filtering paging></smart-grid>
 - <script>
@@ -68,12 +103,6 @@ is *idiomatic* Svelte: runes, snippets, and an MIT core. If you need one
 grid across Angular, React, Vue, Svelte, and vanilla, Smart.Grid is the
 right call.
 
-## See also
-
-- [SvGrid vs Smart.Grid](https://svgrid.com/compare/smart-grid/) - the side-by-side comparison
-- [About SvGrid](https://svgrid.com/about/) - built by jQWidgets / htmlelements.com
-- [Cell components](./cells/cell-components.md) - snippet-based custom cells
-
 ## Frequently asked questions
 
 ### Is SvGrid from the same team as Smart.Grid?
@@ -92,3 +121,61 @@ element bound through properties.
 `label` becomes `header`, `dataField` becomes `field`, and element templates
 become `renderSnippet` cells. Sorting / filtering / grouping move to registered
 features.
+
+## More examples
+
+### Smart.Chart integration
+
+Mounts a <smart-chart> web component (htmlelements.com) and pipes the grid\'s displayed rows into its dataSource. Re-aggregates on every filter / sort.
+
+<div data-docs-demo="77-smart-chart" data-height="460"></div>
+
+## What you end up with
+
+Sorting, filtering and editing with a footer summary.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable editable summary />
+```
+
+## The ported grid, running
+
+Sorting, filtering, editing and a totals row - the working set a Smart grid
+usually carries, as props.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180, editorType: 'text' },
+    { field: 'city',   header: 'City',   width: 150, editorType: 'text' },
+    { field: 'salary', header: 'Salary', width: 150, editorType: 'number', summary: 'sum',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={rows} {columns} sortable filterable editable summary />
+```
+
+## See also
+
+- [SvGrid vs Smart.Grid](https://svgrid.com/compare/smart-grid/) - the side-by-side comparison
+- [About SvGrid](https://svgrid.com/about/) - built by jQWidgets / htmlelements.com
+- [Cell components](./cells/cell-components.md) - snippet-based custom cells

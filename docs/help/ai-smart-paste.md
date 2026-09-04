@@ -49,7 +49,7 @@ A minimal contact list with the Smart Paste panel above the grid.
 Paste any of the formats below into the textarea and click
 **Parse with AI**.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid,
@@ -258,6 +258,43 @@ On the server side, the model receives the raw paste and a schema for
 The bundled parser stays the deterministic fallback - call it client-side
 when the network call fails or for the 90% of cases that don't need a
 model.
+
+## Pasting a block of cells
+
+Copy a rectangle from a spreadsheet and paste it onto a cell - the grid maps
+the block from the anchor outward. Select a range and copy, and it goes back out
+as TSV, which is what a spreadsheet expects.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180, editorType: 'text' },
+    { field: 'city',   header: 'City',   width: 150, editorType: 'text' },
+    { field: 'age',    header: 'Age',    width: 90,  editorType: 'number' },
+    { field: 'salary', header: 'Salary', width: 140, editorType: 'number' },
+  ]
+</script>
+
+<SvGrid data={rows} {columns} editable enableCellSelection />
+```
 
 ## See also
 

@@ -50,6 +50,7 @@
   </p>
   <div style="flex: 1; min-height: 0;">
     <SvGrid
+      columnResize
       data={rows}
       columns={columns}
       features={features}

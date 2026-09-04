@@ -28,6 +28,14 @@ Or install the package and import it directly. `SvTooltip` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvTooltip } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvTooltip } from '@svgrid/grid'
 ```
@@ -36,7 +44,7 @@ import { SvTooltip } from '@svgrid/grid'
 
 <div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTooltip, SvButton } from '@svgrid/grid'
 </script>
@@ -67,7 +75,7 @@ The most common use: give a wordless control an accessible label the pointer and
 keyboard can both reveal. Pair it with an `ariaLabel` on the button so the name
 is announced even before the tip appears:
 
-```svelte
+```svelte {runnable}
 <SvTooltip text="Export CSV">
   <SvButton ariaLabel="Export CSV">⬇</SvButton>
 </SvTooltip>
@@ -78,7 +86,7 @@ is announced even before the tip appears:
 Flip the tip below a control near the top edge, and shorten the delay for dense
 toolbars where hover intent is obvious:
 
-```svelte
+```svelte {runnable}
 <SvTooltip text="Filter" placement="bottom" delay={120}>
   <SvButton ariaLabel="Filter">⧩</SvButton>
 </SvTooltip>
@@ -90,7 +98,7 @@ Give every tooltip in a cluster the same `group`. The first one waits the normal
 `delay`; while the group stays warm (a member is open, or one just closed) the
 rest open instantly, so scanning a row of icon buttons feels immediate:
 
-```svelte
+```svelte {runnable}
 <SvTooltip text="Bold" group="format"><SvButton ariaLabel="Bold">B</SvButton></SvTooltip>
 <SvTooltip text="Italic" group="format"><SvButton ariaLabel="Italic">I</SvButton></SvTooltip>
 <SvTooltip text="Underline" group="format"><SvButton ariaLabel="Underline">U</SvButton></SvTooltip>
@@ -101,7 +109,7 @@ rest open instantly, so scanning a row of icon buttons feels immediate:
 When the tip holds something to click (a link, a shortcut), set `interactive` so
 the pointer can travel onto it without it closing (it gets a short `closeDelay`):
 
-```svelte
+```svelte {runnable}
 <SvTooltip interactive placement="right" text="Opens the full report">
   <SvButton ariaLabel="Report">📊</SvButton>
 </SvTooltip>

@@ -25,6 +25,41 @@ port is mostly about deciding how much markup you want to keep.
 
 ## Before / after
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - <script>
 -   import { TableHandler, ThSort, ThFilter, Pagination } from '@vincjo/datatables'
@@ -91,12 +126,6 @@ port is mostly about deciding how much markup you want to keep.
 - **Total markup control.** SvGrid renders the table; you theme it with
   `--sg-*` tokens and Tailwind rather than writing every `<td>`.
 
-## See also
-
-- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/) - the side-by-side comparison
-- [Migrating from svelte-headless-table](./migrating-from-svelte-headless-table.md) - sibling Svelte guide
-- [Why headless?](../why-headless.md) - keep your own markup if you want to
-
 ## Frequently asked questions
 
 ### Should I move from @vincjo/datatables to SvGrid?
@@ -116,3 +145,17 @@ optional paid `@svgrid/enterprise` pack (export, import, pivot, AI).
 Yes. SvGrid has a headless core (`createSvGrid` + row-model factories) you can
 drive with your own markup, the same way `@vincjo/datatables` lets you. Most
 teams use the `<SvGrid>` component instead because it removes the boilerplate.
+
+## What you end up with
+
+Sorting, filtering and pagination without the hand-written table around it.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable pageable pageSize={3} />
+```
+
+## See also
+
+- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/) - the side-by-side comparison
+- [Migrating from svelte-headless-table](./migrating-from-svelte-headless-table.md) - sibling Svelte guide
+- [Why headless?](../why-headless.md) - keep your own markup if you want to

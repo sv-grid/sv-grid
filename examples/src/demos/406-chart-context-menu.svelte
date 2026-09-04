@@ -198,6 +198,7 @@
 
   <div class="cc-grid">
     <SvGrid
+      columnResize
       {data}
       {columns}
       {features}

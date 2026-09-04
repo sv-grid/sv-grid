@@ -10,13 +10,103 @@ data.
 
 <div data-docs-demo="343-kanban-board" data-height="620"></div>
 
+Every example below runs against this setup. The board *renderer* ships in
+`@svgrid/enterprise`, so `enableBoardView()` is what lights the view up - the
+`board` prop itself is part of the free grid.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, SvAvatar, SvChip, type GridColumns } from '@svgrid/grid'
+  import { enableBoardView } from '@svgrid/enterprise'
+
+  enableBoardView()
+
+  // Wider than the minimum on purpose: the later examples reach for swimlanes,
+  // facets, flags and cover images, and one shared row type keeps every block
+  // on this page runnable against the same data.
+  type Task = {
+    id: number
+    title: string
+    status: 'backlog' | 'in_progress' | 'review' | 'done'
+    assignee: string
+    priority: 'Low' | 'Medium' | 'High'
+    points: number
+    tags: string[]
+    labels: string[]
+    blocked: boolean
+    comments: number
+    attachments: number
+    due: string
+    created: string
+    cover?: string
+    stories?: Task[]
+    assignees: string[]
+  }
+
+  const task = (
+    id: number,
+    title: string,
+    status: Task['status'],
+    assignee: string,
+    priority: Task['priority'],
+    points: number,
+    extra: Partial<Task> = {},
+  ): Task => ({
+    id, title, status, assignee, priority, points,
+    tags: [], labels: [], blocked: false, comments: 0, attachments: 0, assignees: [assignee],
+    due: '2026-07-01', created: '2026-06-01',
+    ...extra,
+  })
+
+  let data = $state<Task[]>([
+    task(1, 'API auth flow',       'backlog',     'Sam', 'High',   5, { tags: ['api'] }),
+    task(2, 'Board drag-and-drop', 'in_progress', 'Lee', 'High',   8, { comments: 3, blocked: true }),
+    task(3, 'Empty states',        'in_progress', 'Sam', 'Low',    2, { tags: ['ui'] }),
+    task(4, 'Dark theme audit',    'review',      'Ada', 'Medium', 3, { attachments: 2 }),
+    task(5, 'Release 1.3.0',       'done',        'Ada', 'High',   5),
+  ])
+
+  // Referenced by the selection example.
+  let count = $state(0)
+
+  const columns: GridColumns<Task> = [
+    { field: 'title',    header: 'Task',     width: 240 },
+    { field: 'assignee', header: 'Assignee', width: 140 },
+    { field: 'priority', header: 'Priority', width: 110 },
+    { field: 'points',   header: 'Points',   width: 90 },
+    { field: 'status',   header: 'Status',   width: 130 },
+  ]
+
+  let nextId = 100
+  const uid = () => ++nextId
+  const addRow = (laneId: Task["status"]) => {
+    data.push(task(uid(), "New task", laneId, "Sam", "Low", 1))
+  }
+  const remove = (row: Task) => {
+    data = data.filter((r) => r !== row)
+  }
+  const clearLane = (laneId: Task["status"]) => {
+    data = data.filter((r) => r.status !== laneId)
+  }
+  const save = (row: Task) => console.log("save", row.id)
+  const row = data[0]!
+
+  const lanes = [
+    { id: 'backlog',     title: 'Backlog' },
+    { id: 'in_progress', title: 'In progress', color: '#f59e0b', wipLimit: 3 },
+    { id: 'review',      title: 'Review',      color: '#8b5cf6' },
+    { id: 'done',        title: 'Done',        color: '#22c55e' },
+  ]
+</script>
+```
+
 ## The minimum
 
 Point `board.groupBy` at the field that decides the lane. With nothing else,
 lanes are derived from the distinct values found in the data (first-seen
 order), and each row renders as a default card built from your columns.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns} board={{ groupBy: 'status' }} />
 ```
 
@@ -26,7 +116,7 @@ Pass an explicit `lanes` array to fix the order, give friendly titles, and add
 an accent color or a work-in-progress limit. A lane id equals the `groupBy`
 field value of the cards it holds; a lane with no cards shows a placeholder.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{
     groupBy: 'status',
@@ -44,7 +134,7 @@ it is flagged (shown as `count/limit`). Set **`enforceWip`** to make the limit
 hard - a drag or keyboard move that would push a lane past its limit is
 rejected and the card snaps back (announced to screen readers).
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{ groupBy: 'status', enforceWip: true, lanes }} />
 ```
@@ -56,7 +146,7 @@ dollar sum, anything. It receives the lane's cards (the current swimlane's when
 `swimlaneBy` is set) and returns a short string. `swimlaneSummary` does the same
 for a whole swimlane band.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{
     groupBy: 'status',
@@ -72,7 +162,7 @@ data - so column filters, the grid's sort, and the built-in search box all flow
 through to the lanes. A search box shows above the board by default; set
 `searchable: false` to hide it, or `searchPlaceholder` to change its text.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns} sortable
   board={{ groupBy: 'status', searchPlaceholder: 'Find a task...' }} />
 ```
@@ -102,7 +192,7 @@ too - `onCardMove` then carries `fromSwimlane` / `toSwimlane`. Add
 Set `collapsibleLanes` and each lane header gets a chevron that collapses the
 lane to a slim strip - handy for wide boards.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns} board={{ groupBy: 'status', collapsibleLanes: true }} />
 ```
 
@@ -114,7 +204,7 @@ helpers - `moveTo(laneId)` and `edit()` - plus the lane list, so a "Move to"
 submenu is a one-liner. Items use the same `MenuItem` shape as `SvContextMenu`
 (label / icon / shortcut / `children` submenus / `separator` / `onSelect`).
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{
     groupBy: 'status',
@@ -157,7 +247,7 @@ A cluster of "power" options, all on the built-in default card:
 - **`flagField`** - a truthy field paints a red **blocked** corner.
 - **`ageField`** - a created/started date renders a relative **age** badge (`3d`).
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{
     groupBy: 'status',
@@ -175,7 +265,7 @@ Point `childrenField` at a row's child rows and each card gains a children
 count that **expands to show its sub-cards** inline, each with its own title
 and `groupBy` value - the epic -> stories shape.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{ groupBy: 'status', childrenField: 'stories' }} />
 ```
@@ -205,7 +295,7 @@ per-card edits, and collapsed lanes - to `localStorage` under that key, and
 restores it on load. It needs `getRowId` so the saved keys line up with the
 right rows after a reload.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   getRowId={(r) => String(r.id)}
   board={{ groupBy: 'status', persistKey: 'my-board' }} />
@@ -225,7 +315,7 @@ only keeps the cards in view in the DOM. Windowing is fixed-height, so set
 and search all keep working - keyboard focus scrolls an off-screen card into
 view before landing on it.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{ groupBy: 'status', virtualized: true, cardHeight: 72 }} />
 ```
@@ -364,7 +454,7 @@ lane id so you can append a new row in that lane. Add `composer` for a nicer
 The default card can show a rich badge row without a custom snippet - point the
 board at your fields:
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   board={{
     groupBy: 'status',
@@ -480,6 +570,62 @@ of a card's fields (see demo 349).
   the pagination footer, the filter row) does not apply while `board` is set.
 - Moving a card is tracked as an overlay on top of your data - the board never
   mutates your rows. Mirror via `onCardMove` if other views must agree.
+
+## More examples
+
+### Sprint board (swimlanes + WIP)
+
+An agile sprint board: status lanes crossed with a swimlane per assignee, an enforced WIP limit on In progress, and a story-point roll-up in every lane header via board.laneSummary. Drag across a band to reassign the owner; double-click to edit. Collapsible lanes.
+
+<div data-docs-demo="344-kanban-sprint" data-height="560"></div>
+
+### Sales pipeline (deal board)
+
+A CRM deal board: stages as lanes with a live total-value roll-up per stage (board.laneSummary). Rich deal cards; drag to advance a deal, double-click to edit. Moves and edits persist to localStorage via onCardMove / onCardCommit, so a reload restores the board.
+
+<div data-docs-demo="345-kanban-pipeline" data-height="560"></div>
+
+### Large board (virtualized)
+
+Thousands of cards per lane kept smooth with board.virtualized - only the cards in view are in the DOM. A slider scales the board from 1k to 50k cards; drag-and-drop and keyboard move still work across the whole window.
+
+<div data-docs-demo="346-kanban-virtualized" data-height="560"></div>
+
+### Support triage board
+
+A helpdesk triage board: status lanes crossed with a priority swimlane, a search box front-and-center, and an SLA colour bar on each card driven by ticket age. Drag across a band to re-triage a ticket priority.
+
+<div data-docs-demo="347-kanban-support" data-height="560"></div>
+
+### Content calendar
+
+An editorial pipeline: stage lanes crossed with a swimlane per channel. Rich cards carry a cover glyph, author and target date. Drag a piece down the pipeline, or across a band to move it to another channel; double-click to edit.
+
+<div data-docs-demo="348-kanban-content" data-height="560"></div>
+
+### Cards with sub-tasks & badges
+
+The default board card made rich by config alone: label / due / assignee badges, a sub-task checklist with a progress bar (expand to tick items or add more), and a quick-add composer at the bottom of each lane. Double-click a card for the BUILT-IN detail drawer (board.drawer -> SvDrawer + SvForm with the UI-kit editors); toggle all fields vs a customized subset. Board / Table switcher.
+
+<div data-docs-demo="349-kanban-subtasks" data-height="560"></div>
+
+### Group-by switch + reorderable lanes
+
+Board structure, live: switch the lane axis at runtime (Status / Assignee / Priority) and the board re-buckets, and drag a lane header to reorder the columns. Both built-in - the group-by switch resets card positions to the new field; lane order is tracked and persists with persistKey. Board / Table switcher.
+
+<div data-docs-demo="350-kanban-structure" data-height="560"></div>
+
+### Board power tools (filters, multi-select, menus)
+
+A facet filter bar (by tag + assignee), card multi-select with bulk move (click / Ctrl-click then drag the group), a blocked flag, a card-age badge, and both card + lane right-click menus - all from board config on the built-in default card. Board / Table switcher.
+
+<div data-docs-demo="351-kanban-power" data-height="560"></div>
+
+### Epics -> stories (hierarchical cards)
+
+Point board.childrenField at a row child rows and each card gains a children count that expands to show its sub-cards inline (Jira epic -> stories). Each child shows its own title + status. Board / Table switcher.
+
+<div data-docs-demo="352-kanban-epics" data-height="560"></div>
 
 ## See also
 

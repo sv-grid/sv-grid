@@ -140,6 +140,173 @@ Track the sort/filter state via the change handlers and re-fetch on change - see
 [Server-side data (load on demand)](./server-side.md) for a complete, runnable
 example with paging, sorting, filtering and a race-safe fetch.
 
+
+## Pagination, running
+
+`paginatedRowModel` is the last stage, so `getRowModel().rows` is already the
+current page - there is no slicing left for you to do. Page state is yours, which
+is why the buttons below just assign to it.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createPaginatedRowModel,
+    tableFeatures,
+    rowPaginationFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Repo = { name: string; lang: string; stars: number }
+
+  const data: Repo[] = [
+    { name: 'svelte',   lang: 'JavaScript', stars: 78000 },
+    { name: 'vite',     lang: 'TypeScript', stars: 68000 },
+    { name: 'sv-grid',  lang: 'TypeScript', stars: 172 },
+    { name: 'rollup',   lang: 'JavaScript', stars: 25000 },
+    { name: 'esbuild',  lang: 'Go',         stars: 38000 },
+    { name: 'tinygo',   lang: 'Go',         stars: 15000 },
+    { name: 'bun',      lang: 'Zig',        stars: 74000 },
+    { name: 'zig',      lang: 'Zig',        stars: 35000 },
+  ]
+
+  const features = tableFeatures({ rowPaginationFeature })
+
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+    { field: 'stars', header: 'Stars' },
+  ]
+
+  let pagination = $state({ pageIndex: 0, pageSize: 3 })
+
+  const table = $derived.by(() =>
+    createSvGrid({
+      _features: features,
+      _rowModels: {
+        coreRowModel: createCoreRowModel<Repo>(),
+        paginatedRowModel: createPaginatedRowModel<Repo>(),
+      },
+      data,
+      columns,
+      state: { pagination },
+      onPaginationChange: (u) => (pagination = typeof u === 'function' ? u(pagination) : u),
+    }),
+  )
+
+  const rows = $derived(table.getRowModel().rows)
+  const pages = $derived(Math.ceil(data.length / pagination.pageSize))
+
+  function go(delta: number) {
+    const next = Math.min(pages - 1, Math.max(0, pagination.pageIndex + delta))
+    pagination = { ...pagination, pageIndex: next }
+  }
+</script>
+
+<div>
+  <button type="button" onclick={() => go(-1)} disabled={pagination.pageIndex === 0}>Prev</button>
+  <span>Page {pagination.pageIndex + 1} of {pages}</span>
+  <button type="button" onclick={() => go(1)} disabled={pagination.pageIndex >= pages - 1}>Next</button>
+</div>
+
+<ul>
+  {#each rows as r (r.id)}
+    {@const repo = r.original as Repo}
+    <li>{repo.name} - {repo.lang} - {repo.stars.toLocaleString()}</li>
+  {/each}
+</ul>
+```
+
+## Grouping, running
+
+`groupedRowModel` inserts parent rows; `expandedRowModel` decides which
+children survive. A parent is the row where `getCanExpand()` is true, and its
+aggregated cells come from the column's `aggregate` setting - so a group row and
+a leaf row are two different shapes in the same list, and your markup has to
+branch on it.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createGroupedRowModel,
+    createExpandedRowModel,
+    tableFeatures,
+    columnGroupingFeature,
+    rowExpandingFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Repo = { name: string; lang: string; stars: number }
+
+  const data: Repo[] = [
+    { name: 'svelte',   lang: 'JavaScript', stars: 78000 },
+    { name: 'vite',     lang: 'TypeScript', stars: 68000 },
+    { name: 'sv-grid',  lang: 'TypeScript', stars: 172 },
+    { name: 'rollup',   lang: 'JavaScript', stars: 25000 },
+    { name: 'esbuild',  lang: 'Go',         stars: 38000 },
+    { name: 'tinygo',   lang: 'Go',         stars: 15000 },
+    { name: 'bun',      lang: 'Zig',        stars: 74000 },
+    { name: 'zig',      lang: 'Zig',        stars: 35000 },
+  ]
+
+  const features = tableFeatures({ columnGroupingFeature, rowExpandingFeature })
+
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+    { field: 'stars', header: 'Stars', aggregate: 'sum' },
+  ]
+
+  let grouping = $state<string[]>(['lang'])
+  let expanded = $state<Record<string, boolean>>({})
+
+  const table = $derived.by(() =>
+    createSvGrid({
+      _features: features,
+      _rowModels: {
+        coreRowModel: createCoreRowModel<Repo>(),
+        groupedRowModel: createGroupedRowModel<Repo>(),
+        expandedRowModel: createExpandedRowModel<Repo>(),
+      },
+      data,
+      columns,
+      state: { grouping, expanded },
+      onExpandedChange: (u) => (expanded = typeof u === 'function' ? u(expanded) : u),
+    }),
+  )
+
+  const rows = $derived(table.getRowModel().rows)
+
+  // Feature-conditional members: present because rowExpandingFeature is on.
+  const isGroup = (r: any) => typeof r.getCanExpand === 'function' && r.getCanExpand()
+</script>
+
+<table>
+  <tbody>
+    {#each rows as r (r.id)}
+      {#if isGroup(r)}
+        <tr onclick={() => (r as any).toggleExpanded?.()} style="cursor: pointer; font-weight: 600;">
+          <td colspan="2">
+            {(r as any).getIsExpanded?.() ? '- ' : '+ '}{(r as any).getCellValueByColumnId('lang')}
+          </td>
+          <td>{Number((r as any).getCellValueByColumnId('stars') ?? 0).toLocaleString()}</td>
+        </tr>
+      {:else}
+        {@const repo = r.original as Repo}
+        <tr>
+          <td style="padding-left: 18px;">{repo.name}</td>
+          <td>{repo.lang}</td>
+          <td>{repo.stars.toLocaleString()}</td>
+        </tr>
+      {/if}
+    {/each}
+  </tbody>
+</table>
+```
+
 ## See also
 
 - [Build a table from scratch](./build-a-table.md)

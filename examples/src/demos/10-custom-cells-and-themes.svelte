@@ -181,6 +181,7 @@
     style={`--sg-row-height: ${density === 'compact' ? '28px' : density === 'comfortable' ? '48px' : '36px'}; ${themeStyle}`}
   >
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={columns}
       features={features}

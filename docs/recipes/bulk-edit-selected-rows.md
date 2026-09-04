@@ -16,7 +16,40 @@ The recipe is three pieces:
 3. A toolbar above the grid commits the bulk change to `internalData`
    via the api's `setCellValue` (one call per selected row).
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
@@ -175,6 +208,61 @@ async function applyBulkAndPersist() {
   immutable updates that keep most row references stable preserve it.
 - **Keyboard**: Shift-click to extend, Ctrl/Cmd-click to toggle, the
   header checkbox toggles all visible. Standard a11y - no extra work.
+
+## Try it
+
+Tick some rows, then apply. `onRowSelectionChange` hands you the selection map
+and the rows themselves - the rows are the second argument, and they are what a
+bulk action actually wants.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+
+  let rows = $state<Person[]>(people.map((p) => ({ ...p })))
+  let picked = $state<Person[]>([])
+
+  function raise() {
+    const ids = new Set(picked.map((p) => p.id))
+    // New objects rather than in-place edits, so the grid sees the change.
+    rows = rows.map((r) => (ids.has(r.id) ? { ...r, salary: Math.round(r.salary * 1.1) } : r))
+  }
+</script>
+
+<button type="button" disabled={picked.length === 0} onclick={raise}>
+  Raise {picked.length} selected by 10%
+</button>
+
+<SvGrid
+  data={rows}
+  {columns}
+  selectable
+  onRowSelectionChange={(_selection, selected) => (picked = selected)}
+/>
+```
 
 ## See also
 

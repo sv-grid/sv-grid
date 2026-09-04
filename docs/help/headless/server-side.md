@@ -128,6 +128,77 @@ the same as everywhere else.
 - **Debounce the search** if each keystroke hits a real network. A short
   `setTimeout` on `q` keeps you from firing a request per character.
 
+## More examples
+
+### Server-side rendering
+
+SvelteKit-style SSR with a sandboxed pre-hydration snapshot.
+
+<div data-docs-demo="19-ssr" data-height="460"></div>
+
+## Sort, filter and page on the server
+
+The three `external*` flags say "report, do not apply". The grid then renders
+exactly the rows you hand it, and `rowCount` is what lets the pager show a total
+it cannot count itself.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Order = { id: string; customer: string; total: number }
+
+  // Stands in for the database.
+  const ALL: Order[] = Array.from({ length: 87 }, (_, i) => ({
+    id: 'A-' + String(1000 + i),
+    customer: ['Northwind', 'Contoso', 'Fabrikam'][i % 3]!,
+    total: 60 + ((i * 53) % 800),
+  }))
+
+  const columns: GridColumns<Order> = [
+    { field: 'id',       header: 'Ref',      width: 110 },
+    { field: 'customer', header: 'Customer', width: 170 },
+    { field: 'total',    header: 'Total',    width: 130,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+
+  let pageIndex = $state(0)
+  let pageSize = $state(10)
+  let sorting = $state<Array<{ id: string; desc: boolean }>>([])
+
+  // What a real endpoint would do, minus the network.
+  const view = $derived.by(() => {
+    let rows = [...ALL]
+    const s = sorting[0]
+    if (s) {
+      rows.sort((a, b) => {
+        const av = a[s.id as keyof Order], bv = b[s.id as keyof Order]
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0
+        return s.desc ? -cmp : cmp
+      })
+    }
+    return rows.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
+  })
+</script>
+
+<SvGrid
+  data={view}
+  {columns}
+  getRowId={(r) => r.id}
+  sortable
+  externalSort
+  onSortingChange={(next) => { sorting = next; pageIndex = 0 }}
+  pageable
+  externalPagination
+  rowCount={ALL.length}
+  {pageIndex}
+  {pageSize}
+  onPaginationChange={(p) => { pageIndex = p.pageIndex; pageSize = p.pageSize }}
+/>
+
+<p>Serving rows {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, ALL.length)} of {ALL.length}</p>
+```
+
 ## See also
 
 - [Row models](./row-models.md) - the local pipeline, for when the client owns the data

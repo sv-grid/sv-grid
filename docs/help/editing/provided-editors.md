@@ -167,7 +167,7 @@ A minimal grid where each row has its own swatch. The custom `cell`
 snippet shows the colour next to the hex value while not editing; the
 editor takes over on double-click.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid,
@@ -232,7 +232,7 @@ integer 0-5. Clicking a star commits immediately - no blur required.
 
 ### Complete example
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid,

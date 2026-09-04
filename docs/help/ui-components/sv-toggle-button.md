@@ -24,6 +24,36 @@ Or install the package and import it directly. `SvToggleButton` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  let rows = $state<Person[]>(people)
+</script>
+```
+
 ```ts
 import { SvToggleButton } from '@svgrid/grid'
 ```
@@ -32,7 +62,7 @@ import { SvToggleButton } from '@svgrid/grid'
 
 <div data-docs-demo="307-toggle-button" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvToggleButton } from '@svgrid/grid'
   let bold = $state(false)
@@ -111,6 +141,20 @@ only" filter - the button stays lit while the filter is active:
   screen readers announce it as a toggle button.
 - `Enter` and `Space` flip the state; focus and `Tab` order are the browser's.
 - Icon-only toggles must set `ariaLabel` - there is no visible text to announce.
+
+## More examples
+
+### Toggle button - headless
+
+Styled SvToggleButton plus a custom on/off pill, one bound pressed value with a readout.
+
+<div data-docs-demo="271-headless-togglebutton" data-height="420"></div>
+
+### Buttons & toggles
+
+The UI kit press/toggle primitives: SvButton (variants/sizes/loading), SvRepeatButton (hold-to-repeat), SvToggleButton, SvSwitchButton, SvCheckBox (+ indeterminate), SvRadioGroup (arrow-key nav) and SvRating (half stars). Theme-driven, standalone or as grid cell controls.
+
+<div data-docs-demo="253-buttons-toggles" data-height="420"></div>
 
 ## See also
 

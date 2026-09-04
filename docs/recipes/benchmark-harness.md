@@ -21,7 +21,7 @@ The pattern: a tiny `<SvGrid>` mounted in an off-screen probe div,
 wrapped in `performance.now()` brackets. The probe unmounts between
 measurements so each cell starts from a clean state.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid, tableFeatures,
@@ -185,13 +185,14 @@ something - bisect with a smaller matrix.
 
 ## Run in CI
 
-The same harness runs headless in Playwright. Mount the matrix page,
-click "Run all", read the cells, fail the job if any cell exceeds the
-threshold:
+The same harness runs headless in Playwright. Mount the matrix page at
+whatever route you put it on, click "Run all", read the cells, fail the
+job if any cell exceeds the threshold. Substitute your own route below -
+`/dev/stress-matrix` is a placeholder, not a route this package ships:
 
 ```ts
 test('grid time-to-first-paint regression gate', async ({ page }) => {
-  await page.goto('/dev/stress-matrix')
+  await page.goto('/dev/stress-matrix') // your route, wherever you mounted the matrix
   await page.getByRole('button', { name: /Run all/ }).click()
   await page.waitForFunction(() => !document.querySelector('button[disabled]'))
   const cells = await page.locator('td button').allTextContents()
@@ -204,6 +205,63 @@ test('grid time-to-first-paint regression gate', async ({ page }) => {
 ```
 
 ## Demo
+
+Two shipped demos already instrument themselves with `performance.now()`
+and make reasonable targets to point a harness at:
+
+<div data-docs-demo="06-large-dataset" data-height="460"></div>
+
+`06-large-dataset` builds up to 100,000 rows x 95 columns and prints its
+own mount time. `78-million-rows` goes to 1,000,000 rows, chunking the
+build at 50,000 per animation frame; it is the one driven by
+`tests/e2e/million-rows-scroll.spec.ts`.
+
+## Timing a render
+
+The number worth measuring is the one your users feel: how long from handing
+the grid new rows to the browser painting them. `requestAnimationFrame` after
+the assignment brackets exactly that.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Row = { id: number; a: string; b: number; c: number }
+
+  const make = (n: number): Row[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: i, a: 'row ' + i, b: (i * 37) % 1000, c: (i * 91) % 500,
+    }))
+
+  const columns: GridColumns<Row> = [
+    { field: 'a', header: 'Label', width: 160 },
+    { field: 'b', header: 'B', width: 100 },
+    { field: 'c', header: 'C', width: 100 },
+  ]
+
+  let rows = $state<Row[]>(make(1000))
+  let last = $state('(not measured)')
+
+  function measure(n: number) {
+    const t0 = performance.now()
+    rows = make(n)
+    // One frame later the browser has painted the new rows.
+    requestAnimationFrame(() => {
+      last = n.toLocaleString() + ' rows in ' + Math.round(performance.now() - t0) + ' ms'
+    })
+  }
+</script>
+
+<div>
+  <button type="button" onclick={() => measure(1000)}>1,000 rows</button>
+  <button type="button" onclick={() => measure(10000)}>10,000 rows</button>
+  <button type="button" onclick={() => measure(50000)}>50,000 rows</button>
+</div>
+
+<p>{last}</p>
+
+<SvGrid data={rows} {columns} sortable />
+```
 
 ## See also
 

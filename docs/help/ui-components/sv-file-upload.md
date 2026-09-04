@@ -33,7 +33,7 @@ import { SvFileUpload } from '@svgrid/grid'
 
 <div data-docs-demo="287-file-upload" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvFileUpload, type FileRejection } from '@svgrid/grid'
   let files = $state<File[]>([])
@@ -115,7 +115,7 @@ Override any of the prompt / browse / remove / accepted-types labels via
 Accept several images, cap the count and size, and turn the `reason` on each
 rejection into readable copy:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvFileUpload, type FileRejection } from '@svgrid/grid'
   let files = $state<File[]>([])

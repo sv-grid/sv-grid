@@ -26,6 +26,78 @@ data.
 
 <div data-docs-demo="363-scheduler-intro" data-height="620"></div>
 
+Every example below runs against this setup. `enableSchedulerView()` registers
+the enterprise renderer; the `scheduler` prop itself is part of the free grid.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type RecurrenceRule } from '@svgrid/grid'
+  import { enableSchedulerView } from '@svgrid/enterprise'
+
+  enableSchedulerView()
+
+  // One row type wide enough for every example on this page - resources,
+  // recurrence, per-event colour and the booking-rule samples all read from it.
+  type Event = {
+    id: number
+    title: string
+    start: string
+    end: string
+    allDay?: boolean
+    color?: string
+    staffColor?: string
+    roleColor?: string
+    room?: string
+    machine?: string
+    provider?: string
+    team?: string
+    assignees?: string[]
+    repeat?: RecurrenceRule | RecurrenceRule[] | null
+    exceptions?: unknown[]
+  }
+
+  // Anchored on today, so the calendar always opens with events in view.
+  const at = (dayOffset: number, hour: number, mins = 0) => {
+    const d = new Date()
+    d.setDate(d.getDate() + dayOffset)
+    d.setHours(hour, mins, 0, 0)
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+  }
+
+  let data = $state<Event[]>([
+    { id: 1, title: 'Standup',     start: at(0, 9),  end: at(0, 9, 15),  color: '#3b82f6', room: 'Aurora',  team: 'Platform' },
+    { id: 2, title: 'Design review', start: at(0, 11), end: at(0, 12),   color: '#8b5cf6', room: 'Borealis', team: 'Design' },
+    { id: 3, title: 'Team offsite', start: at(1, 0),  end: at(3, 0),     allDay: true,     color: '#22c55e', team: 'Platform' },
+    { id: 4, title: '1:1',         start: at(2, 15), end: at(2, 15, 30), color: '#f59e0b', room: 'Aurora',  team: 'Design' },
+  ])
+
+  const rows = data
+  const iso = at
+  const makeEvent = (start: Date, end: Date): Event => ({
+    id: Math.max(0, ...data.map((e) => e.id)) + 1,
+    title: "New event",
+    start: at(0, start.getHours(), start.getMinutes()),
+    end: at(0, end.getHours(), end.getMinutes()),
+  })
+  const rooms = [
+    { id: "Aurora", label: "Aurora" },
+    { id: "Borealis", label: "Borealis" },
+  ]
+  const resources = rooms
+  const tasks = data
+  let selected = $state<Event | null>(null)
+  const initials = (name: string) =>
+    name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+
+  const columns: GridColumns<Event> = [
+    { field: 'title', header: 'Event', width: 220 },
+    { field: 'start', header: 'Start', width: 170 },
+    { field: 'end',   header: 'End',   width: 170 },
+  ]
+</script>
+```
+
 ## The minimum
 
 Point `scheduler.startField` at the field that holds each event's start. That
@@ -33,7 +105,7 @@ is the only required option. With an `endField` too, events get their real
 duration; without one they use `defaultDurationMin` (60 by default). The title
 defaults to the first column's field.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns} scheduler={{ startField: 'start', endField: 'end' }} />
 ```
 
@@ -46,7 +118,7 @@ The toolbar offers **Month**, **Week**, **Day**, and **Agenda**. Restrict or
 reorder them with `views`, and pick the one shown first with `initialView`.
 Open on a specific date with `initialDate` (defaults to today).
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{
     startField: 'start', endField: 'end',
@@ -89,7 +161,7 @@ When events overlap in the time-grid, `collisionMode` decides how they're shown:
   instead of shrinking, so each stays wide and readable; hovering brings one to
   the front.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{ startField: 'start', endField: 'end', collisionMode: 'cap', maxColumns: 3 }} />
 ```
@@ -102,7 +174,7 @@ events, then a **`+N more`** button that opens the day's full list in a popover.
 `titleField` sets the event label; `colorField` gives each event an accent
 color (any CSS color), or set one `color` for all of them.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{ startField: 'start', endField: 'end', titleField: 'title', colorField: 'color' }} />
 ```
@@ -112,7 +184,7 @@ on the **left edge** of each event, distinct from the main fill. A shift roster,
 for instance, can fill each event with the **person**'s color (matching the
 resource legend) while the left strip shows the **role**:
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{
     startField: 'start', endField: 'end',
@@ -170,7 +242,7 @@ Set **`groupByDate: true`** to flip the grouping to date-major (each day groups
 the resources) instead of the default resource-major (each resource groups the
 days) - the same choice as Smart's `groupByDate`.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{
     startField: 'start', endField: 'end',
@@ -200,7 +272,7 @@ lane-packed so overlaps stack. Add any of them to `views` (and pick one with
 - **`timelineMonth`** - day ticks across a month.
 - **`timelineYear`** - month ticks across a year (grouped into quarters).
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{
     startField: 'start', endField: 'end',
@@ -507,7 +579,7 @@ hour ruler, event positions, day boundaries, all-day grouping and the now-line -
 is rendered in that zone instead of the browser's. `secondaryTimeZones` adds
 read-only "world clock" rulers to the left of the primary gutter.
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns}
   scheduler={{
     startField: 'start', endField: 'end',
@@ -917,3 +989,47 @@ const windows = commonFree(attendees.map(busyOf), day8, day18, 60)
 | `bookable` / `onSlotPick` | Show open bookable slots of a duration on the Day timeline (`{ durationMin, stepMin? }`); click to book. |
 | `calendars` / `calendarField` | Overlay several colour-coded calendars with a toggleable legend; map events via `calendarField`. |
 | `freeBusyOf` | External busy intervals to shade on a resource row (for find-a-time). Pair with the `commonFree` export. |
+
+## More examples
+
+### Scheduling rules & policies
+
+Every booking policy the scheduler can enforce: business hours + a hard-blocked lunch band, a closed date, a highlighted holiday, min/max navigable dates, room capacity, a per-doctor day off, free/busy statuses, per-event reminders, drag-to-unschedule, and This / This-and-following / All recurrence edits.
+
+<div data-docs-demo="386-scheduler-rules" data-height="560"></div>
+
+### Sequenced bookings
+
+A service centre where a job flows through stations in order - a booking can only start once the one it depends on finishes. Drag or resize a booking and the steps that follow slide forward (opening-hours aware). Dependencies are an optional convenience for ordered bookings. Toggle to the Table - same grid rows, just a view.
+
+<div data-docs-demo="389-scheduler-dependencies" data-height="560"></div>
+
+### Staffing board - assignments & utilization
+
+A weekly staffing timeline where one shift can cover several people (it appears under each). A per-person utilization histogram sits under each row (red where over-booked) and a sticky summary strip totals shifts per day. Drag a shift onto another person to reassign.
+
+<div data-docs-demo="390-scheduler-capacity" data-height="560"></div>
+
+### Operations timeline - collapse & zoom
+
+A shop-floor timeline that collapses non-working time: nights fold to a thin gap and weekends to a marker, so working hours fill the width. A zoom stepper scales the axis from hourly detail out to weekly; bars, drag and the now-line all map through the compressed axis.
+
+<div data-docs-demo="391-scheduler-zoom" data-height="560"></div>
+
+### Grouped resources
+
+A clinic day where providers are organised into a collapsible tree in the gutter - buildings to departments to providers/rooms. Click a group to collapse it (persisted); appointments schedule onto the leaf providers. Toggle to the Table - the groups just read the same grid rows.
+
+<div data-docs-demo="392-scheduler-resource-tree" data-height="560"></div>
+
+### Utilization heatmap
+
+A support centre where each queue has a capacity and calls overlap through the day. The row background is tinted by how loaded the queue is each hour - light when quiet, hot near capacity, red when over. A glance shows where the pressure is.
+
+<div data-docs-demo="394-scheduler-heatmap" data-height="560"></div>
+
+### Multi-calendar overlay
+
+Several calendars overlaid on one week - Work, Personal, Family, Holidays - each colour-coded from a legend you can toggle. Turning a calendar off hides its events across every view; an event takes its calendar colour.
+
+<div data-docs-demo="397-scheduler-multi-calendar" data-height="560"></div>

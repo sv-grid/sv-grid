@@ -276,6 +276,7 @@
     <div class="ct-stage">
       {#if view === 'calendar'}
         <SvGrid
+      columnResize
           data={rows}
           columns={columns}
           getRowId={(r) => String(r.id)}
@@ -292,6 +293,7 @@
         />
       {:else}
         <SvGrid
+      columnResize
           data={rows}
           columns={columns}
           getRowId={(r) => String(r.id)}

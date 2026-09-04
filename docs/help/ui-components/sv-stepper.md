@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvStepper` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvStepper } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvStepper } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvStepper } from '@svgrid/grid'
 
 <div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvStepper } from '@svgrid/grid'
   let current = $state(0)
@@ -95,7 +103,7 @@ Keep `linear` on (the default) and gate the Next button on the active step being
 valid. The stepper still lets the user click back to any finished step, but they
 cannot jump ahead until the current one passes:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvStepper, SvButton, type StepItem } from '@svgrid/grid'
 

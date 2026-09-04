@@ -112,6 +112,7 @@
   <div class="flex-1 min-h-0">
     {#if view === 'calendar'}
       <SvGrid
+      columnResize
         data={rows}
         columns={columns}
         getRowId={(r) => String(r.id)}
@@ -141,7 +142,8 @@
         }}
       />
     {:else}
-      <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing rowHeight={36} containerHeight="100%" fitColumns />
+      <SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing rowHeight={36} containerHeight="100%" fitColumns />
     {/if}
   </div>
 

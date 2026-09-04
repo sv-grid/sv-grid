@@ -88,6 +88,56 @@ virtualizer.setViewportHeight(scrollEl.clientHeight)
 
 See [`packages/grid/src/virtualization/`](../../../packages/grid/src/virtualization/).
 
+## Letting the user drag it (`rowResize`)
+
+The three options above all decide the height for the user. `rowResize` hands
+it to them: drag a row's bottom edge, or focus the grip and use Up/Down
+(Shift for 1px steps). It is **off by default**, because it puts a drag target
+on every row and most grids do not want one.
+
+The grid stores the dragged heights itself, keyed by row index, so this works as
+a bare boolean - you do not need a function-valued `rowHeight` as well:
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; note: string }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace', note: 'Drag the bottom edge of this row.' },
+    { id: 2, name: 'Grace Hopper', note: 'Or focus the grip and press Down.' },
+    { id: 3, name: 'Linus Torvalds', note: 'Each row keeps its own height.' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 170 },
+    { field: 'note', header: 'Note', width: 320 },
+  ]
+</script>
+
+<SvGrid data={people} {columns} rowResize containerHeight={200} />
+```
+
+Note that the grid above never asks for `showRowNumbers`. Switching on `rowResize`
+brings the row header column with it, because that is where the grip belongs -
+a drag target on the edge of a data cell works, but reads as an accident.
+
+You can still override it. An explicit `showRowNumbers={false}` wins, and the
+grip falls back to the row's first cell; a column of your own carrying
+`cellClass: 'sv-row-gutter'` is used ahead of either.
+
+Two things to know:
+
+- **`autoRowHeight` wins.** Under auto height the content decides the size, so a
+  dragged height would be overwritten by the next measurement pass. The grid
+  suppresses the grips rather than letting the two fight.
+- **Heights are keyed by row index, and reset when the data changes.** Index 3 is
+  a different row after a filter, so keeping the height would size the new row by
+  the old one. If you need heights that survive - persisted per record, restored
+  on reload - own them yourself with a function-valued `rowHeight` and the
+  `rowResize` action, which reports every change to you.
+
 ## Header height
 
 Header height is independent of row height. See
@@ -123,6 +173,85 @@ Rule of thumb: budget ~ 8 px per digit plus 14 px of padding. So:
 
 Demo 78 ("1 million rows") uses 92 px so the millionth row's index
 stays legible at the bottom of the scroll.
+
+## One height for every row
+
+`rowHeight` is the density control: a fixed number the virtualizer can rely
+on. Because every row is the same height, the grid can work out what is on
+screen with arithmetic rather than measurement, which is why this is the fast
+path.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    salary: number
+    bio: string
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   salary: 142000,
+      bio: 'Wrote the first algorithm intended for a machine, and the first account of what a general-purpose computer could do beyond arithmetic.' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', salary: 168000,
+      bio: 'Built the first compiler and argued that programs should be written in something closer to English than to machine code.' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', salary: 155000,
+      bio: 'Wrote a kernel and, later, the version control system that most of the industry now runs on.' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 180 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'city',       header: 'City',       width: 140 },
+  ]
+</script>
+
+<SvGrid data={seed} {columns} rowHeight={28} />
+
+<SvGrid data={seed} {columns} rowHeight={52} />
+```
+
+
+## Letting the content decide
+
+`autoRowHeight` sizes each row to its own content, so long text wraps instead
+of being clipped. It costs a measurement pass per row - worth it for prose, not
+worth it for a hundred thousand numbers.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    salary: number
+    bio: string
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   salary: 142000,
+      bio: 'Wrote the first algorithm intended for a machine, and the first account of what a general-purpose computer could do beyond arithmetic.' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', salary: 168000,
+      bio: 'Built the first compiler and argued that programs should be written in something closer to English than to machine code.' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', salary: 155000,
+      bio: 'Wrote a kernel and, later, the version control system that most of the industry now runs on.' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 170 },
+    { field: 'bio',  header: 'Bio',  width: 380 },
+  ]
+</script>
+
+<SvGrid data={seed} {columns} autoRowHeight />
+```
 
 ## See also
 

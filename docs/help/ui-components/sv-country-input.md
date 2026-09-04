@@ -34,7 +34,7 @@ import { SvCountryInput } from '@svgrid/grid'
 
 <div data-docs-demo="317-country-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCountryInput } from '@svgrid/grid'
   let value = $state<string | null>(null)
@@ -101,7 +101,7 @@ Because it emits a stable ISO code, validation is a simple presence check:
 The emitted ISO code is a stable key, so drive dependent state off it - preset a
 currency or locale, or reset a region field when the country changes:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCountryInput } from '@svgrid/grid'
   let country = $state<string | null>(null)
@@ -128,6 +128,57 @@ currency or locale, or reset a region field when the country changes:
   dismiss; flags are decorative (`aria-hidden`) so the country name is announced.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## More examples
+
+### Country input - headless
+
+createCountryInput drives SvCountryInput and a custom searchable picker, sharing one ISO code.
+
+<div data-docs-demo="265-headless-countryinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCountryInput } from '@svgrid/grid'
+
+  let country = $state('')
+</script>
+
+<SvCountryInput value={country} size="sm" />
+<SvCountryInput value={country} size="md" />
+<SvCountryInput value={country} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCountryInput } from '@svgrid/grid'
+
+  let country = $state('')
+</script>
+
+<SvCountryInput
+  value={country}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvCountryInput
+  value={country}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

@@ -34,7 +34,7 @@ import { SvCollapsible } from '@svgrid/grid'
 
 <div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCollapsible } from '@svgrid/grid'
   let advanced = $state(false)
@@ -68,6 +68,32 @@ import { SvCollapsible } from '@svgrid/grid'
   the accessibility tree until it opens.
 - Toggling is via Space/Enter (native button); `disabled` blocks the toggle.
 - The height animation is skipped under `prefers-reduced-motion: reduce`.
+
+## Controlled or not
+
+Leave `open` alone and the component manages itself. Bind it and you decide -
+which is what you want when several sections should collapse together, or when
+the state has to survive a route change.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCollapsible, SvButton } from '@svgrid/grid'
+
+  let advanced = $state(false)
+</script>
+
+<SvButton size="sm" variant="outline" onclick={() => (advanced = !advanced)}>
+  {advanced ? 'Hide' : 'Show'} advanced
+</SvButton>
+
+<SvCollapsible title="Advanced options" open={advanced} onOpenChange={(v) => (advanced = v)}>
+  <p>Retries, timeouts and the things most people never touch.</p>
+</SvCollapsible>
+
+<SvCollapsible title="Not available yet" disabled>
+  <p>You will not see this.</p>
+</SvCollapsible>
+```
 
 ## See also
 

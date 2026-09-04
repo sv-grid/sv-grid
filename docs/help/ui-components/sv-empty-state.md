@@ -23,6 +23,14 @@ Or install the package and import it directly. `SvEmptyState` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvEmptyState, SvGrid } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvEmptyState } from '@svgrid/grid'
 ```
@@ -31,7 +39,7 @@ import { SvEmptyState } from '@svgrid/grid'
 
 <div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvEmptyState, SvButton } from '@svgrid/grid'
 </script>
@@ -74,7 +82,7 @@ matching action:
 
 Swap the default glyph for a brand illustration through the `icon` snippet:
 
-```svelte
+```svelte {runnable}
 <SvEmptyState title="Inbox zero" description="You are all caught up.">
   {#snippet icon()}<img src="/illustrations/inbox.svg" alt="" width="64" />{/snippet}
 </SvEmptyState>
@@ -84,7 +92,7 @@ Swap the default glyph for a brand illustration through the `icon` snippet:
 
 Use `compact` when the empty state lives inside a card, sidebar, or dropdown:
 
-```svelte
+```svelte {runnable}
 <SvEmptyState compact title="No tags" description="Type to create one." />
 ```
 

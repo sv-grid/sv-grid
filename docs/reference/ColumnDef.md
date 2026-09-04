@@ -114,6 +114,7 @@ Example: `{ type: 'date', pattern: 'y-m-d' }` ⇒ `2026-06-05`.
 | Field   | Type                                 | Notes                                                                                 |
 | ------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
 | `width`   | `number`                             | Initial width in pixels. Falls back to the wrapper's `columnWidth` prop (default 140). |
+| `resizable` | `boolean`                          | Default `true`. Only consulted when the grid has `columnResize` on - it narrows that, it never enables anything. `false` removes this column's drag handle, so pointer drag, the arrow keys and double-click-to-autosize all go with it, and the column menu drops its Autosize item. Programmatic sizing still applies. |
 | `visible` | `boolean`                            | Initial visibility. Set `false` to start the column hidden while still listing it in the Choose Columns / tool panel for the user to re-enable. Applied once at mount; after that `api.setColumnVisible` and user toggles win. On a group column, `false` hides the whole group's leaf columns. |
 | `align`   | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
 

@@ -9,6 +9,38 @@ There are two ways to move columns in sv-grid:
 
 ## Built-in drag-to-reorder
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  let rows = $state<Person[]>(people)
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type GridColumns } from '@svgrid/grid'
@@ -113,6 +145,90 @@ The emitted `string[]` is JSON-serialisable, so the most common pattern is:
 - Save to `localStorage` for "remember my last layout".
 - Save under a name for "Saved views" feature (combine with column widths, pinning, and filter state).
 - Serialise to a URL param for shareable views.
+
+## Dragging a column
+
+`enableColumnReorder` lets a user drag a header into a new position. The order
+they choose is state, not configuration - the column list you pass stays the
+starting point, not the law.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20' },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05' },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000, joined: '2018-11-11' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 180 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'salary',     header: 'Salary',     width: 140,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} {columns} enableColumnReorder sortable />
+```
+
+
+## Reordering with pinned edges
+
+A pinned column stays pinned while the rest reorder around it, which is what
+makes "keep the name visible, arrange the rest" work without extra handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20' },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05' },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000, joined: '2018-11-11' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 180 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+  ]
+</script>
+
+<SvGrid
+  data={people}
+  {columns}
+  enableColumnReorder
+  initialColumnPinning={{ left: ['name'] }}
+/>
+```
 
 ## See also
 

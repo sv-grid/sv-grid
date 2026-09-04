@@ -24,6 +24,17 @@ Or install the package and import it directly. `SvPasswordInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvPasswordInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let pw = $state('')
+</script>
+```
+
 ```ts
 import { SvPasswordInput } from '@svgrid/grid'
 ```
@@ -32,7 +43,7 @@ import { SvPasswordInput } from '@svgrid/grid'
 
 <div data-docs-demo="301-password-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPasswordInput } from '@svgrid/grid'
   let pw = $state('')
@@ -78,7 +89,7 @@ meter renders below the field.
 Turn on `showStrength` and set `autocomplete="new-password"` so browsers offer to
 generate and store a strong secret:
 
-```svelte
+```svelte {runnable}
 <SvPasswordInput label="New password" bind:value={pw} showStrength autocomplete="new-password" />
 ```
 
@@ -87,7 +98,7 @@ generate and store a strong secret:
 Pass a partial `messages` object; only the keys you set are replaced, the rest
 keep their defaults:
 
-```svelte
+```svelte {runnable}
 <SvPasswordInput
   bind:value={pw}
   showStrength
@@ -100,7 +111,7 @@ keep their defaults:
 Compare two fields with a `$derived` check and mark only the confirm field
 invalid. Turn off `revealable` on the confirm field so the value cannot be peeked:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPasswordInput } from '@svgrid/grid'
   let pw = $state('')
@@ -136,6 +147,57 @@ or `error` text - that is the part assistive tech actually reads.
   and `invalid` add `aria-required` / `aria-invalid`.
 - The strength meter is `aria-hidden`; convey requirements through `hint` or
   `error` text so they reach assistive tech.
+
+## More examples
+
+### Password input - headless
+
+createPasswordInput drives SvPasswordInput and a custom reveal field + strength meter.
+
+<div data-docs-demo="270-headless-passwordinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvPasswordInput } from '@svgrid/grid'
+
+  let pw = $state('')
+</script>
+
+<SvPasswordInput bind:value={pw} size="sm" />
+<SvPasswordInput bind:value={pw} size="md" />
+<SvPasswordInput bind:value={pw} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvPasswordInput } from '@svgrid/grid'
+
+  let pw = $state('')
+</script>
+
+<SvPasswordInput
+  bind:value={pw}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvPasswordInput
+  bind:value={pw}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

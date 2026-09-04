@@ -110,6 +110,7 @@
     {#if view === 'board'}
       {#key resetToken}
         <SvGrid responsive={true}
+      columnResize
           data={rows}
           columns={columns}
           getRowId={(r) => String(r.id)}
@@ -129,6 +130,7 @@
       {/key}
     {:else}
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={columns}
         features={features}

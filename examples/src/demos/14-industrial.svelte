@@ -267,6 +267,7 @@
 
   <div class="flex-1 min-h-0">
     <SvGrid responsive={true}
+      columnResize
       data={sensors}
       columns={[
         { field: 'id',       header: 'ID',       editorType: 'text', width: 110 },

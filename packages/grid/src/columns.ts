@@ -167,61 +167,6 @@ export function createColumns<
     return getColumnBaseWidth(columnId);
   }
 
-  function startColumnResize(event: PointerEvent, columnId: string) {
-    event.stopPropagation();
-    event.preventDefault();
-    ctx.resizingColumnId = columnId;
-    ctx.resizeStartX = event.clientX;
-    ctx.resizeStartWidth = getColumnWidth(columnId);
-    // Capture the pointer so the drag keeps tracking when it leaves the 4px
-    // handle - without this, touch (and fast mouse) drags drop mid-resize (#59).
-    try {
-      (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
-    } catch { /* capture is best-effort */ }
-    document.addEventListener("pointermove", onColumnResizeMove);
-    document.addEventListener("pointerup", endColumnResize);
-    document.addEventListener("pointercancel", endColumnResize);
-  }
-
-  function onColumnResizeMove(event: PointerEvent) {
-    if (!ctx.resizingColumnId) return;
-    // Coalesce updates onto the animation frame: pointermove can fire many
-    // times per frame, and each $state mutation triggers a full reactive
-    // recompute of the column-layout pipeline. Without rAF coalescing the
-    // grid stutters during the drag.
-    ctx.resizePendingWidth = Math.max(
-      ctx.MIN_COLUMN_WIDTH,
-      ctx.resizeStartWidth + (event.clientX - ctx.resizeStartX),
-    );
-    if (ctx.resizeRaf !== null) return;
-    ctx.resizeRaf = requestAnimationFrame(() => {
-      ctx.resizeRaf = null;
-      if (!ctx.resizingColumnId) return;
-      ctx.columnWidths = {
-        ...ctx.columnWidths,
-        [ctx.resizingColumnId]: ctx.resizePendingWidth,
-      };
-    });
-  }
-
-  function endColumnResize() {
-    if (ctx.resizeRaf !== null) {
-      cancelAnimationFrame(ctx.resizeRaf);
-      ctx.resizeRaf = null;
-    }
-    if (ctx.resizingColumnId && ctx.resizePendingWidth) {
-      // Make sure the final width is committed even if the last rAF was
-      // canceled mid-flight.
-      ctx.columnWidths = {
-        ...ctx.columnWidths,
-        [ctx.resizingColumnId]: ctx.resizePendingWidth,
-      };
-    }
-    ctx.resizingColumnId = null;
-    document.removeEventListener("pointermove", onColumnResizeMove);
-    document.removeEventListener("pointerup", endColumnResize);
-    document.removeEventListener("pointercancel", endColumnResize);
-  }
 
   function measureText(text: string, font: string): number {
     if (!text) return 0;
@@ -304,9 +249,6 @@ export function createColumns<
     toggleGroupInPanel,
     getColumnBaseWidth,
     getColumnWidth,
-    startColumnResize,
-    onColumnResizeMove,
-    endColumnResize,
     measureText,
     autosizeColumn,
     autosizeAllColumns,

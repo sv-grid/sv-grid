@@ -151,7 +151,8 @@
       {#snippet pane(p)}
         {#if p.id === 'calendar'}
           <div class="hr-pane">
-            <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%"
+            <SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%"
               scheduler={{
                 startField: 'start', endField: 'end', titleField: 'name', colorField: 'color',
                 resourceField: 'interviewer', resources,
@@ -162,12 +163,14 @@
           </div>
         {:else if p.id === 'board'}
           <div class="hr-pane">
-            <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%"
+            <SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%"
               board={{ groupBy: 'stage', lanes: stages.map((s) => ({ id: s, title: s, color: STAGE[s] })), editable: true, card, onCardMove, onCardCommit }} />
           </div>
         {:else if p.id === 'grid'}
           <div class="hr-pane">
-            <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%" sortable enableInlineEditing rowHeight={30} fitColumns />
+            <SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="100%" sortable enableInlineEditing rowHeight={30} fitColumns />
           </div>
         {:else if p.id === 'chart'}
           <div class="hr-pane hr-chartwrap" bind:clientWidth={chartW} bind:clientHeight={chartH}>

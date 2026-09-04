@@ -32,7 +32,7 @@ import { SvSkeleton } from '@svgrid/grid'
 
 <div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSkeleton } from '@svgrid/grid'
 </script>
@@ -125,6 +125,30 @@ request is in flight, then swap in the real cards:
   with a visually hidden "Loading" label so assistive tech announces the wait.
 - The individual shimmer boxes are `aria-hidden` - they are decoration, not content.
 - Animation is disabled under `prefers-reduced-motion`, leaving a static tint.
+
+## The three shapes
+
+A skeleton should trace the thing it is standing in for: `text` for copy (with
+`lines`), `circle` for an avatar, `rect` for a card or an image. A single grey
+box for all three is what makes a loading state feel cheap.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSkeleton } from '@svgrid/grid'
+</script>
+
+<div style="display: flex; gap: 14px; align-items: flex-start;">
+  <SvSkeleton variant="circle" width="44px" height="44px" />
+  <div style="flex: 1;">
+    <SvSkeleton variant="text" lines={3} />
+  </div>
+</div>
+
+<SvSkeleton variant="rect" height="120px" radius="8px" />
+```
+
+Set `animated={false}` where a shimmer would be noise - inside a panel that is
+already animating in, for instance.
 
 ## See also
 

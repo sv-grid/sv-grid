@@ -28,6 +28,14 @@ Or install the package and import it directly. `SvPopover` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvNumberInput, SvPopover } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvPopover } from '@svgrid/grid'
 ```
@@ -36,7 +44,7 @@ import { SvPopover } from '@svgrid/grid'
 
 <div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPopover, SvButton } from '@svgrid/grid'
 </script>
@@ -74,7 +82,7 @@ Pick any side and alignment with `placement`; the engine flips to the opposite
 side when there is no room and shifts along the cross axis to stay in view. The
 arrow points at the trigger and is clamped inside the panel:
 
-```svelte
+```svelte {runnable}
 <SvPopover placement="right-start">
   {#snippet anchor()}<SvButton>Details</SvButton>{/snippet}
   <p>Anchored to the right, aligned to the trigger's top edge.</p>
@@ -93,7 +101,7 @@ Set `trigger="hover"` to reveal the panel on pointer-enter. Tune `openDelay` and
 `closeDelay` so a quick pass does not flash it open and moving between the anchor
 and panel keeps it open (the panel is hoverable):
 
-```svelte
+```svelte {runnable}
 <SvPopover trigger="hover" openDelay={120} closeDelay={160}>
   {#snippet anchor()}<a href="/u/ada">@ada</a>{/snippet}
   <strong>Ada Lovelace</strong>
@@ -106,7 +114,7 @@ and panel keeps it open (the panel is hoverable):
 With `trigger="manual"` the panel only follows `open`, so you can drive it from
 elsewhere and react through `onOpenChange`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let open = $state(false)
 </script>
@@ -129,7 +137,7 @@ A popover is the natural home for a small form that acts on the surface behind
 it - a column filter, a quick-add, a settings cluster. Bind `open` so an action
 inside the panel can close it once applied:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPopover, SvButton, SvNumberInput } from '@svgrid/grid'
   let open = $state(false)

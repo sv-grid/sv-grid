@@ -21,6 +21,41 @@ filters, editing, grouping - when you outgrow the basics.
 
 ## Before / after
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - import { Grid } from 'gridjs'
 - import 'gridjs/dist/theme/mermaid.css'
@@ -55,12 +90,6 @@ filters, editing, grouping - when you outgrow the basics.
 - **Reactive data** - no `.render(el)` re-instantiation.
 - A **headless engine** and an **imperative API** plus `@svgrid/mcp`.
 
-## See also
-
-- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/) - the side-by-side comparison
-- [Getting started](../getting-started.md) - a working grid in ~15 lines
-- [Server-side data](./server-side-data.md) - the external-data pattern
-
 ## Frequently asked questions
 
 ### When should I move from Grid.js to SvGrid?
@@ -77,3 +106,17 @@ Yes. `@svgrid/grid` is MIT. Only the optional `@svgrid/enterprise` add-on is pai
 
 Yes. Set `externalSort` / `externalFilter` and refetch on the
 `onSortingChange` / `onFiltersChange` events.
+
+## What you end up with
+
+Search, sort and pagination - the whole Grid.js surface, plus editing.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable pageable pageSize={3} editable />
+```
+
+## See also
+
+- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/) - the side-by-side comparison
+- [Getting started](../getting-started.md) - a working grid in ~15 lines
+- [Server-side data](./server-side-data.md) - the external-data pattern

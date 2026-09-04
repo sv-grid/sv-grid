@@ -132,6 +132,7 @@
   <div class="grid gap-3 flex-1 min-h-0 lg:grid-cols-[minmax(0,1fr)_280px]">
     <div class="min-h-0 min-w-0">
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={columns}
         features={features}

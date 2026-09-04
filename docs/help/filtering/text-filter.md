@@ -32,6 +32,39 @@ press Enter. The grid filters as you type (with a 150ms debounce).
 
 ## Through the filter row
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <SvGrid {data} {columns} features={features} filterMode="row" />
 ```
@@ -142,6 +175,20 @@ filter the data yourself before passing it in:
   filterMode="none"
   externalFilter={true}
 />
+```
+
+## Try it
+
+`filterMode="row"` puts a persistent input under every header, which suits a
+screen people filter constantly. The menu mode hides the same operators behind
+a header button and keeps the header row compact.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} filterable filterMode="row" />
+```
+
+```svelte {runnable}
+<SvGrid data={people} {columns} filterable filterMode="menu" />
 ```
 
 ## See also

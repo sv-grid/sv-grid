@@ -16,6 +16,41 @@ asks you for each visible cell on demand. Sv-grid wants the
 **whole data array up front** (`<SvGrid data={rows}>`); the engine
 slices for virtualization.
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - function getCellContent([col, row]) {
 -   const r = rows[row]
@@ -162,13 +197,6 @@ covers everything; Glide's theme has ~40).
 - **Per-pixel cell drawing.** DOM cells are sub-pixel-uniform but
   not arbitrarily drawn.
 
-## See also
-
-- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/) - the side-by-side comparison
-- [Performance benchmarks](./benchmarks.md) - measured numbers
-- [Server-side data](./server-side-data.md) - the >100k-row pattern
-- [Accessibility](./accessibility.md) - the standards compliance Glide doesn't ship
-
 ## Frequently asked questions
 
 ### Should I move from Glide Data Grid to SvGrid?
@@ -189,3 +217,18 @@ plain data-array model, so the mental flip takes the most time, not the code.
 DOM, with row and column virtualization. That is what gives you WAI-ARIA roles,
 keyboard navigation, screen-reader support, and selectable/indexable text -
 things a canvas grid like Glide cannot offer.
+
+## What you end up with
+
+Inline editing over a virtualized body, without a canvas to draw into.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} editable enableCellSelection sortable />
+```
+
+## See also
+
+- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/) - the side-by-side comparison
+- [Performance benchmarks](./benchmarks.md) - measured numbers
+- [Server-side data](./server-side-data.md) - the >100k-row pattern
+- [Accessibility](./accessibility.md) - the standards compliance Glide doesn't ship

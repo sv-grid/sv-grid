@@ -135,6 +135,7 @@
     <div class="live__sql"><span>SQL</span> <code>{lastSql}</code></div>
 
     <SvGrid responsive={true}
+      columnResize
       data={view.rows}
       {columns}
       loading={view.loading}

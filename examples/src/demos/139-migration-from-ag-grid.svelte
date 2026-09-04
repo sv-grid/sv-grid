@@ -214,6 +214,7 @@ $: filtered = deals.filter(d =>
       </header>
       <div class="mg-grid">
         <SvGrid responsive={true}
+      columnResize
           data={svRows}
           columns={svColumns}
           {features}

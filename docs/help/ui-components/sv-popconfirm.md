@@ -25,6 +25,14 @@ Or install the package and import it directly. `SvPopconfirm` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvPopconfirm } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvPopconfirm } from '@svgrid/grid'
 ```

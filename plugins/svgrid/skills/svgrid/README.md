@@ -7,7 +7,7 @@ code: the `ColumnDef` and `<SvGrid>` API, feature toggles, `--sg-*`
 theming, server-side data, and the enterprise add-on - plus
 correct-vs-incorrect patterns.
 
-It complements the [`@svgrid/mcp`](../../packages/mcp) server: the skill is
+It complements the [`@svgrid/mcp`](https://github.com/sv-grid/sv-grid/tree/main/packages/mcp) server: the skill is
 the always-on knowledge and house style; the MCP server is the live,
 version-pinned lookup (demos, docs, schemas).
 

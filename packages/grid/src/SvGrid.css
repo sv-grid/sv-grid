@@ -1573,7 +1573,7 @@ select.sv-grid-fr-editor {
   position: relative;
 }
 /* Declarative cell validation (column `validate` hook). Invalid cells get a
- * soft red wash and a red inset ring - Handsontable's `htInvalid` look. The
+ * soft red wash and a red inset ring - the conventional spreadsheet invalid-cell look. The
  * value keeps rendering as-is; the message (if any) shows as the tooltip. */
 .sv-grid-cell-invalid {
   background-color: var(--sg-invalid-bg, rgba(239, 68, 68, 0.14)) !important;

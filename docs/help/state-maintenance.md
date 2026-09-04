@@ -27,6 +27,39 @@ snapshot with a `label`, persisted server-side.
 
 ## The snapshot shape
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 export type GridStateSnapshot = {
   v: 1                                                 // schema version
@@ -250,6 +283,41 @@ that any storage backend accepts.
   jarring. Capture them by all means, but consider not applying them.
 - **Editor session state.** "I was mid-edit on a cell" doesn't
   survive a reload cleanly.
+
+## More examples
+
+### State maintenance (auto)
+
+CRM contacts grid with editable cells. attachAutoSavedView reserves one slot inside createNamedViews + localStorageViews and mirrors the grid view to it: sort / filter / hide / reorder / resize a column, reload the tab, the layout is right where you left it. Same store is reusable for additional named layouts.
+
+<div data-docs-demo="171-persistent-state" data-height="460"></div>
+
+## Try it
+
+Sort, filter and page state are reported through callbacks, which is what lets
+you persist them. Change the grid below and the snapshot underneath is what you
+would store.
+
+```svelte {runnable}
+<script lang="ts">
+  let sorting = $state<Array<{ id: string; desc: boolean }>>([])
+  let page = $state({ pageIndex: 0, pageSize: 3 })
+
+  const snapshot = $derived(JSON.stringify({ sorting, ...page }))
+</script>
+
+<SvGrid
+  data={people}
+  {columns}
+  sortable
+  pageable
+  pageSize={3}
+  onSortingChange={(s) => (sorting = s)}
+  onPaginationChange={(p) => (page = p)}
+/>
+
+<pre>{snapshot}</pre>
+```
 
 ## See also
 

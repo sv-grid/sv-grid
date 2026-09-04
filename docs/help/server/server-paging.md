@@ -236,6 +236,129 @@ Now pair it with the "Load more" pattern above: `hasMore` (derived from
 which point `rowCount` settles to the real running total and the button hides.
 Avoid a numbered pager in this mode - the page numbers would be fictional.
 
+
+## A paged grid against a fake endpoint
+
+`externalPagination` means the footer stops slicing and starts reporting. You
+give it `rowCount`, `pageIndex` and `pageSize`; it gives you
+`onPaginationChange`, and everything else - the range text, the page count, the
+disabled arrows - it works out from those three numbers.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Row = { id: number; name: string; city: string }
+
+  const CITIES = ['London', 'New York', 'Portland', 'Seattle', 'Berlin']
+  const ALL: Row[] = Array.from({ length: 137 }, (_, i) => ({
+    id: i + 1,
+    name: 'Person ' + (i + 1),
+    city: CITIES[i % CITIES.length]!,
+  }))
+
+  // Stands in for GET /people?offset=&limit=
+  async function fetchPage(pageIndex: number, pageSize: number) {
+    await new Promise((r) => setTimeout(r, 150))
+    const offset = pageIndex * pageSize
+    return { rows: ALL.slice(offset, offset + pageSize), total: ALL.length }
+  }
+
+  let rows = $state<Row[]>([])
+  let total = $state(0)
+  let pageIndex = $state(0)
+  let pageSize = $state(10)
+  let loading = $state(false)
+
+  const columns: GridColumns<Row> = [
+    { field: 'id',   header: 'ID',   width: 80 },
+    { field: 'name', header: 'Name', width: 180 },
+    { field: 'city', header: 'City', width: 150 },
+  ]
+
+  async function load() {
+    loading = true
+    const page = await fetchPage(pageIndex, pageSize)
+    rows = page.rows
+    total = page.total
+    loading = false
+  }
+
+  $effect(() => {
+    void pageIndex
+    void pageSize
+    load()
+  })
+</script>
+
+<p>{loading ? 'Loading...' : total + ' rows on the server'}</p>
+
+<SvGrid
+  data={rows}
+  {columns}
+  showPagination
+  externalPagination
+  rowCount={total}
+  {pageIndex}
+  {pageSize}
+  onPaginationChange={(p) => {
+    pageIndex = p.pageIndex
+    pageSize = p.pageSize
+  }}
+/>
+```
+
+## Load more, when a page number is the wrong idea
+
+A feed has no page 7. Keep the grid unpaged, append to the array, and let the
+button carry the state - the grid never needs to know there is a server behind
+it. The trade is that you lose the range text, so show a count yourself.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Event_ = { id: number; at: string; kind: string; actor: string }
+
+  const KINDS = ['deploy', 'rollback', 'scale', 'alert']
+  const ALL: Event_[] = Array.from({ length: 60 }, (_, i) => ({
+    id: i + 1,
+    at: '2026-06-' + String((i % 28) + 1).padStart(2, '0'),
+    kind: KINDS[i % KINDS.length]!,
+    actor: 'svc-' + ((i % 5) + 1),
+  }))
+
+  const PAGE = 12
+
+  let rows = $state<Event_[]>(ALL.slice(0, PAGE))
+  let loading = $state(false)
+
+  const done = $derived(rows.length >= ALL.length)
+
+  const columns: GridColumns<Event_> = [
+    { field: 'at',    header: 'Date',  width: 130 },
+    { field: 'kind',  header: 'Event', width: 130 },
+    { field: 'actor', header: 'Actor', width: 130 },
+  ]
+
+  async function more() {
+    loading = true
+    await new Promise((r) => setTimeout(r, 200))
+    rows = [...rows, ...ALL.slice(rows.length, rows.length + PAGE)]
+    loading = false
+  }
+</script>
+
+<SvGrid data={rows} {columns} containerHeight={220} />
+
+<div>
+  <button type="button" onclick={more} disabled={loading || done}>
+    {done ? 'All loaded' : loading ? 'Loading...' : 'Load more'}
+  </button>
+  <span>{rows.length} of {ALL.length}</span>
+</div>
+```
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the full datasource contract, controller methods, writes, and race safety.

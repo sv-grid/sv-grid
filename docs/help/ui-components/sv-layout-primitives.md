@@ -23,6 +23,14 @@ Or install the package and import them directly. They ship free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGroup, SvSimpleGrid, SvStack } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvStack, SvGroup, SvSimpleGrid } from '@svgrid/grid'
 ```

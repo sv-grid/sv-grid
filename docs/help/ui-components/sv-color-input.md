@@ -26,6 +26,17 @@ Or install the package and import it directly. `SvColorInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvColorInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let accent = $state('')
+</script>
+```
+
 ```ts
 import { SvColorInput } from '@svgrid/grid'
 ```
@@ -34,7 +45,7 @@ import { SvColorInput } from '@svgrid/grid'
 
 <div data-docs-demo="304-color-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvColorInput } from '@svgrid/grid'
   let color = $state('#3b82f6')
@@ -70,7 +81,7 @@ shared `frame` chrome.
 Pass your brand's swatches as `palette` so the popover offers on-brand choices
 first:
 
-```svelte
+```svelte {runnable}
 <SvColorInput
   bind:value={accent}
   palette={['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444']}
@@ -91,7 +102,7 @@ editing starts:
 The component emits a normalized hex, so wire `onChange` straight into the grid's
 `--sg-accent` token for an instant theme preview:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvColorInput } from '@svgrid/grid'
   let accent = $state('#2563eb')
@@ -120,6 +131,57 @@ value before storing it.
   `aria-label`s; the active swatch is outlined.
 - The popover closes on outside pointer-down and repositions on scroll and
   resize, so it stays anchored to the swatch.
+
+## More examples
+
+### Color input - headless
+
+createColorInput drives the portalled SvColorInput and a custom inline swatch + palette panel.
+
+<div data-docs-demo="269-headless-colorinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvColorInput } from '@svgrid/grid'
+
+  let color = $state('')
+</script>
+
+<SvColorInput bind:value={color} size="sm" />
+<SvColorInput bind:value={color} size="md" />
+<SvColorInput bind:value={color} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvColorInput } from '@svgrid/grid'
+
+  let color = $state('')
+</script>
+
+<SvColorInput
+  bind:value={color}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvColorInput
+  bind:value={color}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

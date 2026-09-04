@@ -17,7 +17,10 @@ const body = raw.slice(fm[0].length)
 const src = readFileSync('tools/generate-blog-post.mjs', 'utf-8')
 const parseList = (name) => {
   const b = new RegExp(`const ${name} = \\[([\\s\\S]*?)\\n\\]`).exec(src)
-  return b[1].split('\n').map((l) => l.trim().replace(/,$/, '')).filter((l) => l.startsWith('/'))
+  // `startsWith('/')` alone also matches the `//` comments inside these lists,
+  // which then fail the literal match below and throw.
+  return b[1].split('\n').map((l) => l.trim().replace(/,$/, ''))
+    .filter((l) => l.startsWith('/') && !l.startsWith('//'))
     .map((l) => { const m = /^\/((?:\\.|\[[^\]]*\]|[^/])+)\/([a-z]*)$/.exec(l); return new RegExp(m[1], m[2]) })
 }
 const BANNED = [
@@ -41,16 +44,23 @@ for (const [, attrs] of body.matchAll(/<SvGrid\b([\s\S]*?)(?:\/>|>)/g)) {
 }
 
 const errs = []
+// Mirror the generator: a comparison post argues in prose, so its code floor is
+// lower (blockFloor 2 / codeFloor 45 in tools/generate-blog-post.mjs).
+const isComparison = meta.category === 'Comparisons'
+const blockFloor = isComparison ? 2 : 3
+const codeFloor = isComparison ? 45 : 90
 if (words < 900) errs.push(`prose ${words} words, need >= 900`)
-if (code.length < 3) errs.push(`${code.length} code blocks, need >= 3`)
-if (codeLines < 90) errs.push(`${codeLines} code lines, need >= 90`)
+if (code.length < blockFloor) errs.push(`${code.length} code blocks, need >= ${blockFloor}`)
+if (codeLines < codeFloor) errs.push(`${codeLines} code lines, need >= ${codeFloor}`)
 if (!images.length) errs.push('no image')
 for (const [, alt, srcPath] of images) {
   if (!/^\/(thumbs|blog-media|docs-media)\//.test(srcPath)) errs.push(`bad image path ${srcPath}`)
   if (!alt.trim() || /^(screenshot|image)\b/i.test(alt.trim())) errs.push('lazy alt text')
 }
 if (/[—–]/.test(raw)) errs.push('em/en dash')
-if (/^#\s/m.test(body)) errs.push('H1 in body')
+// Against prose, not body: a `# comment` at column 0 inside a shell block is
+// not a heading. Same fix applied in tools/generate-blog-post.mjs.
+if (/^#\s/m.test(prose)) errs.push('H1 in body')
 const lower = body.toLowerCase()
 for (const p of BANNED) if (lower.includes(p)) errs.push(`banned phrase "${p}"`)
 for (const [re, label] of [[/\bnot just\b[^.]{0,50}\b(it'?s|they'?re|but)\b/i, 'not-just reframe'],
@@ -65,9 +75,14 @@ else if (meta.seoTitle.length > 60) errs.push(`seoTitle ${meta.seoTitle.length} 
 if (!meta.seoDescription) errs.push('no seoDescription')
 else if (meta.seoDescription.length > 155) errs.push(`seoDescription ${meta.seoDescription.length} chars, max 155`)
 if (!prose.slice(0, 700).toLowerCase().includes(process.argv[3] ?? '')) errs.push('primary query missing from the opening')
-if (meta.category !== 'Comparisons') {
+if (!isComparison) {
   const named = parseList('RIVAL_VENDORS').filter((r) => r.test(body))
   if (named.length) errs.push(`names rivals outside Comparisons: ${named.length}`)
+} else {
+  // The inverse failure the generator guards: a comparison that names nobody.
+  const named = [...parseList('RIVAL_VENDORS'), ...parseList('UI_KIT_ALTERNATIVES')]
+    .filter((r) => r.test(body))
+  if (named.length < 2) errs.push(`comparison names ${named.length} alternatives, need >= 2`)
 }
 
 console.log(`${slug}`)

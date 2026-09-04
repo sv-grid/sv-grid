@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvCarousel` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvCarousel } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvCarousel } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvCarousel } from '@svgrid/grid'
 
 <div data-docs-demo="342-carousel-tour" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCarousel } from '@svgrid/grid'
   const imgs = ['/a.jpg', '/b.jpg', '/c.jpg']
@@ -146,6 +154,37 @@ show a "Get started" button once the reader reaches the last slide:
 - Autoplay pauses on hover and focus so keyboard and pointer users are not
   fighting a moving target. Consider omitting `autoplay` for motion-sensitive
   contexts.
+
+## Slides come from a count
+
+You pass how many slides there are and a snippet that renders one by index -
+so the content can be anything, and nothing has to be an array of components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCarousel } from '@svgrid/grid'
+
+  const panels = [
+    { title: 'Sort and filter', body: 'Click a header, type in the filter row.' },
+    { title: 'Group', body: 'Drag a column into the group panel.' },
+    { title: 'Export', body: 'CSV, TSV or JSON from the api.' },
+  ]
+
+  let current = $state(0)
+</script>
+
+<SvCarousel count={panels.length} current={current} arrows dots loop>
+  {#snippet slide(i)}
+    <div style="padding: 24px;">
+      <h3>{panels[i].title}</h3>
+      <p>{panels[i].body}</p>
+    </div>
+  {/snippet}
+</SvCarousel>
+```
+
+Add `autoplay` for a hero, and leave it off anywhere the reader is trying to
+read - motion they did not ask for is the fastest way to lose them.
 
 ## See also
 

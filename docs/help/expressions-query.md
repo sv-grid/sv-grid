@@ -93,6 +93,41 @@ Advanced scalar functions can be injected per evaluation via the context's
 `functions` map (for example, to delegate a formula to HyperFormula) without
 making it a hard dependency.
 
+## Try it
+
+Build a predicate in the visual editor and watch the AST underneath. The same
+value round-trips through the text mode, which is what makes it storable.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvExpressionEditor } from '@svgrid/enterprise'
+  import type { ExprColumn, PredicateExpr } from '@svgrid/enterprise'
+
+  const columns: ExprColumn[] = [
+    { id: 'name',       name: 'Name',       type: 'text' },
+    { id: 'department', name: 'Department', type: 'text' },
+    { id: 'age',        name: 'Age',        type: 'number' },
+    { id: 'salary',     name: 'Salary',     type: 'number' },
+  ]
+
+  const rows = [
+    { name: 'Ada Lovelace',   department: 'Engineering', age: 36, salary: 142000 },
+    { name: 'Grace Hopper',   department: 'Engineering', age: 45, salary: 168000 },
+    { name: 'Linus Torvalds', department: 'Platform',    age: 54, salary: 155000 },
+  ]
+
+  let expr = $state<PredicateExpr>({ kind: 'const', value: true })
+</script>
+
+<SvExpressionEditor {columns} {rows} bind:value={expr} />
+
+<pre>{JSON.stringify(expr, null, 2)}</pre>
+```
+
+The AST is plain JSON, so a rule authored here is something you can put in a
+database and evaluate later - which is exactly what [alerts](./alerts.md) do
+with it.
+
 ## See also
 
 - [Alerts](./alerts.md) - the flagship consumer of this language.

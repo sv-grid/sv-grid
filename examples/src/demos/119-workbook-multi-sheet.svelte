@@ -838,6 +838,7 @@
       <div class="wb-grid-row">
         <div class="wb-grid-host">
           <SvGrid responsive={true}
+      columnResize
             data={gridRows}
             columns={columns}
             features={features}

@@ -21,6 +21,17 @@ built-in date-time editor:
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvDateTimePicker } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let cell = $state<Date | null>(null)
+</script>
+```
+
 ```ts
 import { SvDateTimePicker } from '@svgrid/grid'
 ```
@@ -38,7 +49,7 @@ SvGrid mounts for a `datetime` cell.
 
 <div data-docs-demo="252-datetimepicker" data-height="460" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDateTimePicker } from '@svgrid/grid'
   let value = $state<Date | null>(new Date())
@@ -99,7 +110,7 @@ form:
 
 <div data-docs-demo="259-datetimepicker-forms" data-height="520" data-code></div>
 
-```svelte
+```svelte {runnable}
 <SvDateTimePicker dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" />
 <SvDateTimePicker dropDownDisplayMode="time" formatString="HH:mm" hourFormat="12-hour" />
 ```
@@ -158,6 +169,57 @@ on `onChange`.
 - The popover portals to `<body>` and repositions on scroll / resize, so it is
   never clipped inside a scrolling grid.
 - `onCommit` / `onCancel` map Enter and Escape for in-grid cell editing.
+
+## More examples
+
+### Date-time picker - headless
+
+Styled SvDateTimePicker (portalled dropdown) and a custom masked field, sharing one value.
+
+<div data-docs-demo="278-headless-datetimepicker" data-height="420"></div>
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvDateTimePicker } from '@svgrid/grid'
+
+  let cell = $state<Date | null>(null)
+</script>
+
+<SvDateTimePicker
+  value={cell}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvDateTimePicker
+  value={cell}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
+
+
+## Disabled and read-only
+
+Disabled takes the control out of the tab order; read-only keeps it focusable and copyable. Reach for read-only when the value still matters to the reader.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvDateTimePicker } from '@svgrid/grid'
+
+  let cell = $state<Date | null>(null)
+</script>
+
+<SvDateTimePicker value={cell} disabled />
+
+<SvDateTimePicker value={cell} readonly />
+```
 
 ## See also
 

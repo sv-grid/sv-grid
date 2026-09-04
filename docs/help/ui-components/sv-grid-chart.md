@@ -160,6 +160,38 @@ so pass `onSelect` (or `onDrill`) when the chart should be keyboard-operable.
 - Pie slices, funnel segments, and heatmap cells become focusable buttons when a
   selection handler is provided.
 
+## More examples
+
+### Chart view of the grid
+
+The `chart` prop turns the same <SvGrid> into a chart, driven by the grid’s filtered + sorted rows (search + sort flow through). A view of the grid like board and scheduler, but the renderer is free: the grid lazy-loads a built-in view wrapping the standalone SvChart via rowsToChartSpec. Flip Table <-> Chart (bar / line / area) over one source of truth.
+
+<div data-docs-demo="407-grid-chart-view" data-height="560"></div>
+
+### Built-in charting (one prop)
+
+Turn on the built-in Chart panel with a single charting prop - no external library. Pick Group by / Value, choose a type, filter a column or click a bar, and the chart re-aggregates over the grid\'s current (filtered / sorted) rows live.
+
+<div data-docs-demo="353-built-in-charting" data-height="560"></div>
+
+### Built-in charting: multi-series
+
+The same charting prop, now multi-series: Group by Region, Split by Product, and toggle Stacked for a stacked / grouped chart. Change the pickers or filter a column and every series re-aggregates from the live grid rows.
+
+<div data-docs-demo="354-charting-multi-series" data-height="560"></div>
+
+### Built-in charting: custom buildSpec
+
+When group-by / split-by can\'t express the chart, charting.buildSpec hands you the current rows and you return any ChartSpec - here a custom sankey rendered right in the built-in Chart panel. Filter the flow table and the ribbons redraw.
+
+<div data-docs-demo="355-charting-custom-buildspec" data-height="560"></div>
+
+### Built-in charting: date axis
+
+Group by a real date column and the built-in Chart panel adds a Date axis toggle - proportional time gaps + real date ticks - alongside Log scale. A daily-signups sheet you can retype, re-pick, or filter live.
+
+<div data-docs-demo="358-charting-by-date" data-height="560"></div>
+
 ## See also
 
 - [SvCard](sv-card.md) - a surface to frame a chart on a dashboard.

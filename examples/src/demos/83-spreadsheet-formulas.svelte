@@ -23,6 +23,11 @@
    * Bridges the gap with Excel-like products without bundling HyperFormula -
    * good enough for budgets, scorecards, conditional reports, lightweight
    * planning, and any use case that needs in-cell calc.
+   *
+   * Rows resize the way a spreadsheet's do: drag the bottom edge of a row's
+   * number in the gutter, or focus that grip and use Up/Down (Shift = 1px).
+   * That is the `rowResize` prop - the grid keeps the heights itself, so no
+   * `rowHeight` function is needed here.
    */
   import {
     SvGrid,
@@ -573,6 +578,7 @@
 
   <div class="flex-1 min-h-0">
     <SvGrid responsive={true}
+      columnResize
       data={gridRows}
       columns={columns}
       features={features}
@@ -582,6 +588,7 @@
       enableInlineEditing={false}
       enableCellSelection={true}
       rowHeight={32}
+      rowResize={true}
       rowNumberWidth={48}
       containerHeight="100%"
       fitColumns={false}

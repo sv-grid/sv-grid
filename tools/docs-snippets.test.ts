@@ -16,6 +16,8 @@ import { createHash } from 'node:crypto'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
+// @ts-expect-error - plain .mjs helper with a sibling .d.mts
+import { extractFences } from './lib/md-snippets.mjs'
 
 /** Stable id for a snippet body: survives the block moving down a page, changes
  *  the moment the code itself does. Line endings and trailing whitespace are
@@ -39,26 +41,12 @@ async function* walk(dir: string): AsyncGenerator<string> {
 
 type Snippet = { file: string; line: number; lang: string; flags: Set<string>; code: string }
 
+/** Type-checkable languages. The shared scanner returns every fence, including
+ *  bash/css/json, so the filter that used to live inside it lives here now. */
+const CHECKED_LANGS = new Set(['ts', 'typescript', 'tsx', 'svelte'])
+
 function extractSnippets(file: string, src: string): Snippet[] {
-  // Strip a UTF-8 BOM if present.
-  if (src.charCodeAt(0) === 0xFEFF) src = src.slice(1)
-  const out: Snippet[] = []
-  const lines = src.split(/\r?\n/)
-  let i = 0
-  while (i < lines.length) {
-    const m = /^```([a-zA-Z]+)(?:\s+\{([^}]*)\})?\s*$/.exec(lines[i] ?? '')
-    if (!m) { i += 1; continue }
-    const lang  = m[1]!.toLowerCase()
-    const flags = new Set((m[2] ?? '').split(/[,\s]+/).filter(Boolean))
-    const start = i + 1
-    let j = start
-    while (j < lines.length && !/^```\s*$/.test(lines[j] ?? '')) j += 1
-    if (lang === 'ts' || lang === 'typescript' || lang === 'tsx' || lang === 'svelte') {
-      out.push({ file, line: start, lang, flags, code: lines.slice(start, j).join('\n') })
-    }
-    i = j + 1
-  }
-  return out
+  return extractFences(file, src).filter((s) => CHECKED_LANGS.has(s.lang))
 }
 
 // Ambient declarations shared by every snippet: the Svelte 5 runes, a component

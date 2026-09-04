@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvResult` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvResult } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvResult } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvResult } from '@svgrid/grid'
 
 <div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvResult, SvButton } from '@svgrid/grid'
 </script>
@@ -65,6 +73,34 @@ import { SvResult } from '@svgrid/grid'
 - The container is `role="status"` so the outcome is announced when it renders.
 - The status icon is `aria-hidden` - the meaning comes from the `title` /
   `description` text, not colour or icon alone.
+
+## The five statuses
+
+`status` picks the icon and tone. `actions` is the part people forget: an error
+screen with no way forward is a dead end, and the retry button belongs here
+rather than somewhere else on the page.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvResult, SvButton } from '@svgrid/grid'
+
+  let attempts = $state(0)
+</script>
+
+<SvResult
+  status="error"
+  title="Could not load the report"
+  description="The server did not respond in time."
+>
+  {#snippet actions()}
+    <SvButton variant="primary" onclick={() => (attempts += 1)}>
+      Retry{attempts ? ' (' + attempts + ')' : ''}
+    </SvButton>
+  {/snippet}
+</SvResult>
+
+<SvResult status="notfound" title="No such report" description="It may have been deleted." />
+```
 
 ## See also
 

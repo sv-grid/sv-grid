@@ -24,6 +24,18 @@ Or install the package and import it directly. `SvTagsInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvTagsInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let recipients = $state<string[]>([])
+  let labels = $state<string[]>([])
+</script>
+```
+
 ```ts
 import { SvTagsInput } from '@svgrid/grid'
 ```
@@ -32,7 +44,7 @@ import { SvTagsInput } from '@svgrid/grid'
 
 <div data-docs-demo="316-tags-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTagsInput } from '@svgrid/grid'
   let skills = $state(['Svelte', 'TypeScript'])
@@ -64,7 +76,7 @@ import { SvTagsInput } from '@svgrid/grid'
 Combine `max` with the default `unique` to keep a bounded, clean set - useful for
 recipients or a small skill list:
 
-```svelte
+```svelte {runnable}
 <SvTagsInput label="To" bind:value={recipients} max={5} />
 ```
 
@@ -81,7 +93,7 @@ Use `onChange` to persist or validate as tags come and go:
 Since the value is a `string[]`, validation is just its `length`. Combine
 `required` with a `$derived` floor and cap the total with `max`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTagsInput } from '@svgrid/grid'
   let topics = $state<string[]>([])
@@ -114,6 +126,57 @@ Tip: `unique` is on by default, so duplicate entries are silently rejected -
   ARIA.
 - A `name` emits a hidden input with the tags joined by commas, so plain form
   posts carry the value.
+
+## More examples
+
+### Tags input - headless
+
+createTagsInput drives SvTagsInput and a custom chip-cloud render, both editing one string array.
+
+<div data-docs-demo="264-headless-tagsinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTagsInput } from '@svgrid/grid'
+
+  let skills = $state<string[]>([])
+</script>
+
+<SvTagsInput bind:value={skills} size="sm" />
+<SvTagsInput bind:value={skills} size="md" />
+<SvTagsInput bind:value={skills} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTagsInput } from '@svgrid/grid'
+
+  let skills = $state<string[]>([])
+</script>
+
+<SvTagsInput
+  bind:value={skills}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvTagsInput
+  bind:value={skills}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

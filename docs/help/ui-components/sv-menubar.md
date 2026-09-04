@@ -32,7 +32,7 @@ import { SvMenubar } from '@svgrid/grid'
 
 <div data-docs-demo="289-overlays-hovercard-menubar" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvMenubar, type MenubarMenu, type MenuItem } from '@svgrid/grid'
 
@@ -108,6 +108,46 @@ match the reading direction:
   application menu bars.
 - Each dropdown is drawn by [SvMenuList](sv-menu-list.md), so it inherits its full
   keyboard contract and type-ahead, and is positioned to flip and stay on screen.
+
+## An application menu bar
+
+Each menu is a label plus ordinary `MenuItem` entries, so submenus, separators
+and shortcuts all work without a second API. `onSelect` fires once, with the
+item that was chosen.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvMenubar, type MenubarMenu } from '@svgrid/grid'
+
+  let last = $state('(nothing yet)')
+
+  const menus: MenubarMenu[] = [
+    { label: 'File', items: [
+      { label: 'New grid', shortcut: 'Cmd N' },
+      { label: 'Open...', shortcut: 'Cmd O' },
+      { separator: true },
+      { label: 'Export', children: [
+        { label: 'CSV' },
+        { label: 'Excel' },
+      ] },
+    ] },
+    { label: 'Edit', items: [
+      { label: 'Undo', shortcut: 'Cmd Z' },
+      { label: 'Redo', shortcut: 'Cmd Shift Z' },
+      { separator: true },
+      { label: 'Delete rows', disabled: true },
+    ] },
+    { label: 'Help', items: [{ label: 'Documentation' }] },
+  ]
+</script>
+
+<SvMenubar {menus} onSelect={(item) => (last = item.label ?? '(separator)')} />
+
+<p>Last chosen: <code>{last}</code></p>
+```
+
+Arrow keys move along the bar, Down opens a menu, and the whole thing is one tab
+stop.
 
 ## See also
 

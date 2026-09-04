@@ -21,7 +21,40 @@ you would render any custom cell. Because it is SVG (not a canvas bitmap) it
 stays crisp when zoomed, themes with the grid, prints perfectly, and keeps your
 CSP-clean runtime intact.
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
 
@@ -138,6 +171,65 @@ reader decodes it.
 
 Yes. The grid virtualizes rows, so only the barcodes in the visible window are
 in the DOM regardless of how many products the grid holds.
+
+## Try it
+
+A barcode is a cell renderer like any other. The bars here are drawn from the
+value so the example runs without a font or a library - swap them for your
+encoder and nothing else changes.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+
+  // Deterministic bar widths from the id, standing in for a real encoder.
+  const bars = (n: number) => Array.from({ length: 14 }, (_, i) => ((n * (i + 3)) % 4) + 1)
+</script>
+
+{#snippet Barcode(props: { row: Person })}
+  <span style="display: inline-flex; align-items: flex-end; gap: 1px; height: 20px;">
+    {#each bars(props.row.id) as w}
+      <span style="width: {w}px; height: 100%; background: currentColor;"></span>
+    {/each}
+    <span style="margin-left: 6px; font-size: 11px; font-variant-numeric: tabular-nums;">
+      {String(props.row.id).padStart(6, '0')}
+    </span>
+  </span>
+{/snippet}
+
+<SvGrid
+  data={people}
+  columns={[
+    { field: 'name', header: 'Name', width: 190 },
+    { id: 'code', header: 'Barcode', width: 200,
+      cell: (ctx) => renderSnippet(Barcode, { row: ctx.row.original }) },
+  ] satisfies GridColumns<Person>}
+  rowHeight={38}
+/>
+```
 
 ## See also
 

@@ -31,7 +31,7 @@ import { SvAvatarGroup } from '@svgrid/grid'
 
 <div data-docs-demo="340-command-palette" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAvatarGroup } from '@svgrid/grid'
 </script>
@@ -103,7 +103,7 @@ in the same stack:
 Map your own member objects to the compact entry shape, then let `max` collapse
 the tail into "+N" - ideal for an "assigned to" cell or a card footer:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAvatarGroup } from '@svgrid/grid'
 

@@ -213,7 +213,8 @@
 
     <div class="console-body">
       <div class="app-grid">
-        <SvGrid data={displayed} {columns} getRowId={(r) => r.host} conditionalFormats={formats} onRowClick={(e) => (selectedId = e.row.host)} containerHeight={330} />
+        <SvGrid
+      columnResize data={displayed} {columns} getRowId={(r) => r.host} conditionalFormats={formats} onRowClick={(e) => (selectedId = e.row.host)} containerHeight={330} />
       </div>
 
       {#if selected}

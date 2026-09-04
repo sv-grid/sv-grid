@@ -210,27 +210,69 @@ export function applyGroupAggregate<TData extends RowData>(
   columnId: string,
   rows: ReadonlyArray<Row<TData>>,
 ): unknown {
-  const raw = rows.map((r) => r.getCellValueByColumnId(columnId))
+  // One pass, no intermediate arrays.
+  //
+  // This used to build a `raw` array, then a coerced one, then a filtered one -
+  // three allocations per aggregated column PER GROUP - before reducing. On a
+  // 100k-row grid grouped two levels deep, aggregation was about two thirds of
+  // the total grouping cost (213ms with three aggregators against 81ms with
+  // none), and each additional aggregated column added roughly 80ms.
+  //
+  // `count` first: it never needs to look at a value at all.
+  if (agg === 'count') return rows.length
+
+  if (agg === 'first') {
+    return rows.length ? rows[0]!.getCellValueByColumnId(columnId) : undefined
+  }
+
+  if (agg === 'countDistinct') {
+    const seen = new Set<string>()
+    for (const row of rows) seen.add(String(row.getCellValueByColumnId(columnId) ?? ''))
+    return seen.size
+  }
+
   if (typeof agg === 'function') {
-    const nums = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+    // Custom aggregators keep their contract: the finite numbers, then the
+    // original row objects. Note `Number(null)` is 0 and therefore finite, so
+    // nulls DO reach the callback as zeros - long-standing behaviour.
+    const nums: number[] = []
+    for (const row of rows) {
+      const n = Number(row.getCellValueByColumnId(columnId))
+      if (Number.isFinite(n)) nums.push(n)
+    }
     return agg(nums, rows.map((r) => r.original))
   }
-  if (agg === 'count') return rows.length
-  if (agg === 'countDistinct') return new Set(raw.map((v) => String(v ?? ''))).size
-  if (agg === 'first') return raw[0]
-  const nums = raw.map((v) => Number(v)).filter((n) => Number.isFinite(n))
-  if (!nums.length) return undefined
+
+  // sum / avg / min / max / extent share one accumulation pass.
+  let count = 0
+  let sum = 0
+  let min = Infinity
+  let max = -Infinity
+  for (const row of rows) {
+    const n = Number(row.getCellValueByColumnId(columnId))
+    if (!Number.isFinite(n)) continue
+    count++
+    // Left-to-right, matching the previous `reduce`, so float rounding is
+    // bit-identical rather than merely close.
+    sum += n
+    // Math.min/max on scalars rather than `<`, which differs on -0, and rather
+    // than the old `Math.min(...nums)` - spreading a whole group throws
+    // RangeError once the bucket is big enough to exhaust the argument stack.
+    min = Math.min(min, n)
+    max = Math.max(max, n)
+  }
+  if (!count) return undefined
   switch (agg) {
     case 'sum':
-      return nums.reduce((a, b) => a + b, 0)
+      return sum
     case 'avg':
-      return nums.reduce((a, b) => a + b, 0) / nums.length
+      return sum / count
     case 'min':
-      return Math.min(...nums)
+      return min
     case 'max':
-      return Math.max(...nums)
+      return max
     case 'extent':
-      return `${Math.min(...nums)} – ${Math.max(...nums)}`
+      return `${min} – ${max}`
     default:
       return undefined
   }
@@ -256,7 +298,7 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   columns?: Array<ColumnDef<TFeatures, TData>>
   /**
    * Declarative cell spanning (merged cells). Return how many COLUMNS this
-   * cell spans to the right (1 = no span). Value-driven, AG-Grid-style. Feed
+   * cell spans to the right (1 = no span). Value-driven. Feed
    * `spansToMerges(rows, columns)` into `spreadsheetLayout` to apply - it uses
    * the same real `colspan`/`rowspan` merge engine (no separate code path).
    */
@@ -295,7 +337,7 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   columnGroupShow?: 'open' | 'closed'
   /**
    * For a GROUP column (one with `columns: [...]`): start the group expanded.
-   * Defaults to `false` (collapsed), matching AG Grid - so only the always-on
+   * Defaults to `false` (collapsed), the conventional default - so only the always-on
    * and `columnGroupShow: 'closed'` children show until the user expands it.
    */
   openByDefault?: boolean
@@ -340,7 +382,7 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   tooltip?: string | ((ctx: CellContext<TData>) => string | null | undefined)
   /**
-   * Declarative per-cell validation (Handsontable-style). Runs for EVERY
+   * Declarative per-cell validation. Runs for EVERY
    * rendered cell - including values already present in `data` on load, not
    * just on edit - so bad data is flagged immediately. Invalid cells get the
    * `sv-grid-cell-invalid` class (red highlight) and the returned message as
@@ -379,7 +421,7 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * Transform the committed edit value before it is written to the row.
    * Runs after the built-in per-`editorType` coercion, so `newValue` is
    * already type-parsed; return the final value to store (e.g. round a
-   * number, uppercase a code, look up an id). AG-Grid-style `valueParser`.
+   * number, uppercase a code, look up an id). A `valueParser` hook.
    */
   valueParser?: (params: ValueParserParams<TData>) => unknown
   /**
@@ -466,6 +508,21 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   sparkline?: SparklineConfig
   /** Initial column width in pixels. Falls back to the grid's `columnWidth` prop. */
   width?: number
+  /**
+   * Whether the user may resize this column. Only consulted when the grid has
+   * `columnResize` on - it narrows that, it does not enable anything.
+   *
+   * `false` removes the column's drag handle entirely, so pointer drag, the
+   * keyboard arrows and double-click-to-autosize are all gone with it, and the
+   * column menu drops its Autosize item. Use it for the columns whose width is
+   * part of the layout rather than a preference: a row-number gutter, a
+   * checkbox column, a fixed icon column.
+   *
+   * Programmatic sizing is unaffected - `api.autosizeColumn()`,
+   * `api.setColumnWidth()` and `fitColumns` all still apply, the same way they
+   * do when `columnResize` is off. This governs the user affordance only.
+   */
+  resizable?: boolean
   /**
    * Initial visibility. Set `false` to start the column hidden while still
    * listing it in the Choose Columns UI for the user to re-enable. Applied
@@ -690,6 +747,143 @@ export const filterFns = {
 }
 
 /**
+ * Everything a base row needs that is the same for every row in the table.
+ *
+ * One object per table, referenced by every row, instead of one closure scope
+ * per row. See {@link BASE_ROW_METHODS}.
+ */
+type BaseRowCtx<TData extends RowData> = {
+  grid: SvGrid<TData>
+  store: { state: Record<string, any> }
+  columns: Array<Column<TData>>
+  columnCount: number
+  columnIndexById: Map<string, number>
+}
+
+/**
+ * Keys for a base row's private fields.
+ *
+ * Symbols, not string keys, and that is load-bearing. A row's shared methods
+ * need a pointer back to the table, but `_ctx` as a normal property made every
+ * row serialise the entire grid: `JSON.stringify(oneRow)` grew with the dataset
+ * (981 chars at 3 rows, 67,719 at 3,000) because `options.data` is reachable
+ * through it, so stringifying a row model was quadratic. Rows used to serialise
+ * to a small constant and must again.
+ *
+ * A symbol key is invisible to `JSON.stringify`, `Object.keys` and `for...in`,
+ * yet IS copied by object spread - which matters because several row models
+ * legitimately do `{ ...row, depth }` and the clone needs these to work.
+ * Non-enumerable string keys would have hidden them from JSON but also from the
+ * spread, silently breaking every cloned row.
+ */
+const ROW_CTX = Symbol('svgrid.row.ctx')
+const ROW_VALUES = Symbol('svgrid.row.values')
+const ROW_CELLS = Symbol('svgrid.row.cells')
+
+/** A base row's private fields, on top of the public {@link Row} surface. */
+type BaseRowState<TData extends RowData> = Row<TData> & {
+  [ROW_CTX]: BaseRowCtx<TData>
+  [ROW_VALUES]: Array<unknown> | null
+  [ROW_CELLS]: Array<Cell<TData>> | null
+}
+
+/**
+ * The methods every base row carries, defined ONCE and assigned by reference.
+ *
+ * Rows used to be built as object literals whose methods were closures, which
+ * meant a 100k-row grid allocated 700k closures and a closure scope per row
+ * before painting anything. Measured at 100k x 9: 13.8 ms and 56.5 MB to build,
+ * against 2.0 ms and 14.5 MB for this shape - the single largest cost in
+ * mounting a large grid.
+ *
+ * They read their row through `this` rather than a captured variable, which is
+ * why they can be shared. Note they are assigned as OWN properties rather than
+ * put on a prototype: `Row` is public, several row models legitimately do
+ * `{ ...row, depth }`, and a spread copies own properties but not a prototype.
+ * A class here would silently strip every method off a cloned row.
+ */
+const BASE_ROW_METHODS = {
+  getCanExpand(this: BaseRowState<RowData>) {
+    return false
+  },
+  getIsExpanded(this: BaseRowState<RowData>) {
+    return Boolean((this[ROW_CTX].store.state.expanded ?? {})[this.id])
+  },
+  toggleExpanded(this: BaseRowState<RowData>) {
+    const id = this.id
+    this[ROW_CTX].grid.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+  },
+  getIsSelected(this: BaseRowState<RowData>) {
+    return Boolean((this[ROW_CTX].store.state.rowSelection ?? {})[this.id])
+  },
+  toggleSelected(this: BaseRowState<RowData>) {
+    const id = this.id
+    this[ROW_CTX].grid.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
+  },
+  getAllCells(this: BaseRowState<RowData>) {
+    return this[ROW_CELLS] ?? buildBaseRowCells(this)
+  },
+  getCellValueByColumnId(this: BaseRowState<RowData>, columnId: string) {
+    const idx = this[ROW_CTX].columnIndexById.get(columnId)
+    if (idx === undefined) return undefined
+    if (!this[ROW_VALUES]) this[ROW_VALUES] = baseRowValues(this)
+    return this[ROW_VALUES][idx]
+  },
+}
+
+/**
+ * Materialise one row's `Cell[]`, memoised on the row.
+ *
+ * A free function taking the row rather than a method using `this`, because the
+ * cell closures need a stable reference to it and aliasing `this` inside a
+ * method is exactly the pattern that produces `self`/`that` bugs.
+ */
+function buildBaseRowCells<TData extends RowData>(row: BaseRowState<TData>): Array<Cell<TData>> {
+  const { columns, columnCount, grid } = row[ROW_CTX]
+  const built = new Array<Cell<TData>>(columnCount)
+  for (let i = 0; i < columnCount; i++) {
+    const column = columns[i]!
+    const colIndex = i
+    const cell: Cell<TData> = {
+      id: `${row.id}_${column.id}`,
+      row,
+      column,
+      getValue: () => {
+        if (!row[ROW_VALUES]) row[ROW_VALUES] = baseRowValues(row)
+        return row[ROW_VALUES][colIndex]
+      },
+      getContext: () => ({
+        cell,
+        row,
+        column,
+        table: grid,
+        getValue: () => cell.getValue(),
+      }),
+    }
+    built[i] = cell
+  }
+  row[ROW_CELLS] = built
+  return built
+}
+
+/**
+ * Resolve every column's value for one row. Kept lazy: a 100k-row grid showing
+ * twenty rows must not materialise 900k values to paint.
+ */
+function baseRowValues<TData extends RowData>(row: BaseRowState<TData>): Array<unknown> {
+  const { columns, columnCount } = row[ROW_CTX]
+  const original = row.original as Record<string, unknown>
+  const values = new Array<unknown>(columnCount)
+  for (let i = 0; i < columnCount; i++) {
+    const def = columns[i]!.columnDef
+    if (def.fieldFn) values[i] = def.fieldFn(original as TData)
+    else if (def.field) values[i] = original[def.field]
+    else values[i] = undefined
+  }
+  return values
+}
+
+/**
  * One stage of the row pipeline: takes the rows produced so far and returns the
  * next set. Stages compose in the order given to `_rowModels`, so filtering
  * before sorting sorts only what survived the filter.
@@ -714,15 +908,26 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
   return ({ table, rows }) => {
     const filters: ColumnFiltersState = table.getState().columnFilters ?? []
     if (!filters.length) return rows
+
+    // Resolve each filter's match function once, outside the row loop.
+    const compiled = filters.map((filter) => ({
+      id: filter.id,
+      value: filter.value,
+      fn: filter.fn ? filterFns[filter.fn] : filterFns.includesString,
+    }))
+
     return rows.filter((row) => {
-      return filters.every((filter) => {
-        const cellValue = row
-          .getAllCells()
-          .find((cell) => cell.column.id === filter.id)
-          ?.getValue()
-        const filterFn = filter.fn ? filterFns[filter.fn] : filterFns.includesString
-        return filterFn(cellValue, filter.value as any)
-      })
+      for (let i = 0; i < compiled.length; i++) {
+        const filter = compiled[i]!
+        // `getCellValueByColumnId` rather than `getAllCells().find(...)`.
+        // Both read the same lazily-built `cachedValues` array, but the latter
+        // also builds and caches the row's whole `Cell[]` - one object per
+        // column - purely to reach one field. On a 100k-row grid that is
+        // 100,000 cell arrays the filter never looks at again, and it defeats
+        // the laziness the row factory exists to provide.
+        if (!filter.fn(row.getCellValueByColumnId(filter.id), filter.value as any)) return false
+      }
+      return true
     })
   }
 }
@@ -756,6 +961,9 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       levelIndex: number,
       depth: number,
       idPrefix: string,
+      /** Grouping columns already fixed by an ancestor bucket, and their raw
+       *  values - `undefined` where that bucket mixed several. */
+      fixedValues: ReadonlyMap<string, unknown>,
     ): Array<Row<TData>> {
       if (levelIndex >= grouping.length) {
         // Leaves: actual data rows, with their nesting depth recorded.
@@ -764,27 +972,60 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       const groupKey = grouping[levelIndex]
       if (!groupKey) return input
 
-      const buckets = new Map<string, Array<Row<TData>>>()
+      // Buckets carry the RAW grouping value alongside the rows, plus whether
+      // the bucket saw more than one distinct raw value. Both are needed to let
+      // deeper levels skip re-scanning this column: buckets are keyed by
+      // `String(value ?? '')`, so `null`, `undefined` and `''` collapse into one
+      // bucket, and a scan of such a bucket would report disagreement. Tracking
+      // it here costs one comparison per row and keeps the shortcut honest.
+      type Bucket = { rows: Array<Row<TData>>; raw: unknown; mixed: boolean }
+      const buckets = new Map<string, Bucket>()
       for (const row of input) {
         const value = row.getCellValueByColumnId(groupKey)
         const key = String(value ?? '')
-        const list = buckets.get(key) ?? []
-        list.push(row)
-        buckets.set(key, list)
+        const bucket = buckets.get(key)
+        if (bucket) {
+          bucket.rows.push(row)
+          if (!bucket.mixed && bucket.raw !== value) bucket.mixed = true
+        } else {
+          buckets.set(key, { rows: [row], raw: value, mixed: false })
+        }
       }
 
       const groupRows: Array<Row<TData>> = []
       let index = 0
-      buckets.forEach((children, key) => {
+      buckets.forEach((bucket, key) => {
+        const children = bucket.rows
         const id = `${idPrefix}_${groupKey}_${key}`
-        const subRows = buildGroups(children, levelIndex + 1, depth + 1, id)
+        // Record this column as fixed for deeper levels ONLY when the bucket is
+        // homogeneous. If all rows here share a raw value, so does every subset
+        // of them, which is what makes the shortcut sound.
+        //
+        // A MIXED bucket must not be recorded at all - not even as "undefined".
+        // `null`, `undefined` and `''` share a bucket key, so a mixed bucket can
+        // still split into homogeneous children one level down, and those
+        // children have a real shared value that a scan would find. Marking the
+        // column resolved here would hand them the parent's disagreement.
+        const nextFixed = bucket.mixed ? fixedValues : new Map(fixedValues).set(groupKey, bucket.raw)
+        const subRows = buildGroups(children, levelIndex + 1, depth + 1, id, nextFixed)
         const isDeepest = levelIndex + 1 >= grouping.length
         const leafCount = isDeepest
           ? subRows.length
           : subRows.reduce((sum, sub) => sum + (sub.leafCount ?? 0), 0)
 
+        // Every grouping column ABOVE this level is already resolved: bucketing
+        // by it is what made it constant, so scanning the children to rediscover
+        // it is pure waste. Only the current level's key short-circuited before,
+        // so a second-level group walked all of its children to re-derive the
+        // first level's value - about 100,000 reads on the 100k x 9 two-level
+        // case, for an answer already in hand.
+        //
+        // The current level still returns the stringified bucket key rather than
+        // the raw value, because that is what it has always returned and the
+        // group row's display depends on it.
         const resolveColumnValue = (columnId: string): unknown => {
           if (columnId === groupKey) return key
+          if (fixedValues.has(columnId)) return fixedValues.get(columnId)
           let resolved: unknown
           let hasResolved = false
           for (const child of children) {
@@ -841,7 +1082,7 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       return groupRows
     }
 
-    return buildGroups(rows, 0, 0, 'group')
+    return buildGroups(rows, 0, 0, 'group', new Map())
   }
 }
 /**
@@ -996,31 +1237,209 @@ export function createExpandedRowModel<TData extends RowData>(): RowModelFactory
 export function createSortedRowModel<TData extends RowData>(
   localSortFns: typeof sortFns = sortFns,
 ): RowModelFactory<TData> {
-  return ({ table, rows }) => {
+  return function sortedRowModelStage({ table, rows }) {
     const sorting = table.getState().sorting ?? []
     if (!sorting.length) return rows
 
-    const sorted = [...rows].sort((a, b) => {
-      for (const clause of sorting) {
-        const column = table.getAllColumns().find((col) => col.id === clause.id)
-        if (!column) continue
-        const editorType = column.columnDef.editorType
-        const comparator =
-          editorType === 'number'
-            ? localSortFns.number
-            : editorType === 'date' || editorType === 'datetime'
-              ? localSortFns.date
-              : localSortFns.auto
-        const result = comparator(
-          a.getCellValueByColumnId(column.id),
-          b.getCellValueByColumnId(column.id),
-        )
-        if (result !== 0) return clause.desc ? -result : result
+    // Resolve every clause ONCE, before sorting.
+    //
+    // This used to live inside the comparator, so `getAllColumns().find(...)`
+    // ran per comparison per clause: a single-clause sort of 100k rows made
+    // 1,528,947 array scans, and a three-clause sort made 3,933,751 (measured;
+    // `pnpm bench --case=sort-1col`). The comparator is called O(n log n)
+    // times, so anything inside it that is not O(1) sets the cost of the sort.
+    const allColumns = table.getAllColumns()
+    const clauses: Array<{
+      keys: Array<any>
+      desc: boolean
+      compare: (a: any, b: any) => number
+    }> = []
+
+    for (const clause of sorting) {
+      const column = allColumns.find((col) => col.id === clause.id)
+      if (!column) continue
+      const editorType = column.columnDef.editorType
+      const comparator =
+        editorType === 'number'
+          ? localSortFns.number
+          : editorType === 'date' || editorType === 'datetime'
+            ? localSortFns.date
+            : localSortFns.auto
+
+      // Precompute one sort key per row, so the comparator reads an array slot
+      // instead of walking the row's column index on every comparison. For the
+      // three built-in comparators the key is also cheaper to compare than the
+      // raw value: a timestamp rather than two `new Date()` allocations, a
+      // number rather than two `Number()` coercions, a collator rather than a
+      // fresh one per `localeCompare` call.
+      //
+      // The identity checks against `sortFns` matter: `localSortFns` is a
+      // public parameter, so a caller can substitute their own comparators.
+      // When they have, we fall through to calling their function with the raw
+      // values - still hoisted, just not specialised.
+      const columnId = column.id
+      const n = rows.length
+      let keys: Array<any> = new Array(n)
+      let compare: (a: any, b: any) => number
+
+      if (comparator === sortFns.number) {
+        for (let i = 0; i < n; i++) keys[i] = Number(rows[i]!.getCellValueByColumnId(columnId) ?? 0)
+        compare = compareNumericKeys
+      } else if (comparator === sortFns.date) {
+        for (let i = 0; i < n; i++) {
+          keys[i] = new Date(rows[i]!.getCellValueByColumnId(columnId) as any).getTime()
+        }
+        compare = compareNumericKeys
+      } else if (comparator === sortFns.auto) {
+        const strings: string[] = new Array(n)
+        // Decide whether ranking is worth attempting BEFORE paying for it.
+        //
+        // Building the distinct set and then discarding it costs about 9 ms on
+        // a 100k-row column where nearly every value is unique, and ranking
+        // saves about 19 ms where they repeat - so guessing wrong in either
+        // direction is measurable. A small stride sample answers it for well
+        // under a millisecond.
+        //
+        // Strided rather than the first N rows: data arrives sorted or
+        // clustered often enough that a prefix is a bad estimator of the whole
+        // column. Reading every k-th row is no more expensive and does not care
+        // how the rows are arranged.
+        const rankLimit = n >> 1
+        let distinct: Set<string> | null = null
+        if (n > 0) {
+          const sampleTarget = Math.min(n, 256)
+          const stride = Math.max(1, Math.floor(n / sampleTarget))
+          const sample = new Set<string>()
+          let sampled = 0
+          for (let i = 0; i < n; i += stride) {
+            sample.add(String(rows[i]!.getCellValueByColumnId(columnId)))
+            sampled++
+          }
+          // Only attempt ranking when the sample suggests real repetition.
+          if (sample.size * 2 <= sampled) distinct = new Set()
+        }
+
+        for (let i = 0; i < n; i++) {
+          const s = String(rows[i]!.getCellValueByColumnId(columnId))
+          strings[i] = s
+          if (distinct) {
+            distinct.add(s)
+            if (distinct.size > rankLimit) distinct = null
+          }
+        }
+
+        // Collation is by far the most expensive comparison we do - a CPU
+        // profile of a 100k text sort put 65% of the whole operation inside the
+        // collator. But a column's DISTINCT values are usually far fewer than
+        // its rows (statuses, regions, categories, owners), so rank the
+        // distinct values once and sort by rank afterwards. That turns
+        // O(n log n) collator calls into O(u log u), where u is the number of
+        // distinct values, and the resulting order is identical because rank is
+        // a monotone relabelling of the collated order - equal strings share a
+        // rank, so ties still fall through to the stable sort exactly as before.
+        //
+        // Guarded on the uniqueness ratio: when nearly every value is distinct
+        // the ranking pass cannot save any collator calls and would just add an
+        // O(n) Map build, so that case keeps comparing directly.
+        if (distinct) {
+          const ordered = Array.from(distinct).sort(compareCollatedKeys)
+          const rankOf = new Map<string, number>()
+          for (let i = 0; i < ordered.length; i++) rankOf.set(ordered[i]!, i)
+          for (let i = 0; i < n; i++) keys[i] = rankOf.get(strings[i]!)!
+          compare = compareNumericKeys
+        } else {
+          keys = strings
+          compare = compareCollatedKeys
+        }
+      } else {
+        for (let i = 0; i < n; i++) keys[i] = rows[i]!.getCellValueByColumnId(columnId)
+        compare = comparator
       }
-      return 0
-    })
+
+      clauses.push({ keys, desc: clause.desc, compare })
+    }
+
+    if (!clauses.length) return rows
+
+    // Sort an index array, then materialise. `Array.prototype.sort` is stable,
+    // so equal keys keep their original relative order exactly as the previous
+    // `[...rows].sort(...)` did.
+    const order = new Array<number>(rows.length)
+    for (let i = 0; i < order.length; i++) order[i] = i
+
+    // Single-clause sorts get a specialised comparator.
+    //
+    // Most sorts are one column, and that path runs O(n log n) times - 1.66
+    // million comparisons for 100k rows. The general loop pays a clause-array
+    // index, three property loads and an indirect call on every one of them,
+    // none of which vary once the clause list is fixed. Hoisting them into a
+    // closure and, for the numeric comparator, inlining the subtraction removes
+    // the call entirely.
+    //
+    // `keys[ib] - keys[ia]` for descending is exactly `-(keys[ia] - keys[ib])`
+    // as far as sorting is concerned: both are NaN for unorderable values,
+    // which the spec coerces to 0, and they differ only in producing 0 versus
+    // -0 for equal keys, which sorts identically.
+    if (clauses.length === 1) {
+      const { keys, compare, desc } = clauses[0]!
+      if (compare === compareNumericKeys) {
+        order.sort(
+          desc
+            ? function compareOneNumericDesc(ia, ib) { return keys[ib] - keys[ia] }
+            : function compareOneNumericAsc(ia, ib) { return keys[ia] - keys[ib] },
+        )
+      } else {
+        order.sort(
+          desc
+            ? function compareOneDesc(ia, ib) { return -compare(keys[ia], keys[ib]) }
+            : function compareOneAsc(ia, ib) { return compare(keys[ia], keys[ib]) },
+        )
+      }
+    } else {
+      order.sort(function compareRowsByClauses(ia, ib) {
+        for (let k = 0; k < clauses.length; k++) {
+          const clause = clauses[k]!
+          const result = clause.compare(clause.keys[ia], clause.keys[ib])
+          if (result !== 0) return clause.desc ? -result : result
+        }
+        return 0
+      })
+    }
+
+    const sorted = new Array<Row<TData>>(rows.length)
+    for (let i = 0; i < order.length; i++) sorted[i] = rows[order[i]!]!
     return sorted
   }
+}
+
+/**
+ * Numeric key comparison for the built-in `number` and `date` comparators.
+ * Subtraction rather than `<`/`>` on purpose: it reproduces the originals
+ * exactly, NaN included. An unparseable date or a non-numeric value yields NaN,
+ * and the sort spec turns a NaN comparison result into 0 (SortCompare coerces
+ * it), which is the behaviour callers already depend on.
+ */
+function compareNumericKeys(a: number, b: number): number {
+  return a - b
+}
+
+/**
+ * Text key comparison for the built-in `auto` comparator.
+ *
+ * `localeCompare`, NOT a hoisted `Intl.Collator`. The specification defines
+ * `localeCompare` with no locale or options as constructing a default collator
+ * per call, so hoisting one looks like the obvious optimisation - and it is
+ * measurably slower. V8 fast-paths `String.prototype.localeCompare` for the
+ * default locale; going through a collator object misses that path. Measured
+ * sorting 100k strings: 33 ms via `localeCompare` against 83 ms via a cached
+ * collator on ASCII, 58 ms against 99 ms with accents mixed in, and the two
+ * produce byte-identical orderings across all 100k positions.
+ *
+ * Left as its own function so the sort path has one place to change if that
+ * ever stops being true. Re-measure before "optimising" this again.
+ */
+function compareCollatedKeys(a: string, b: string): number {
+  return a.localeCompare(b)
 }
 
 /**
@@ -1128,7 +1547,6 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
     pagination: PaginationState | undefined
     grouping: GroupingState | undefined
     expanded: ExpandedState | undefined
-    rowSelection: RowSelectionState | undefined
   } | null = null
 
   const grid = {
@@ -1337,91 +1755,71 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         for (let i = 0; i < columns.length; i++) columnIndexById.set(columns[i]!.id, i)
         const columnCount = columns.length
 
+        // One shared context for every row in this table, so a row carries a
+        // pointer rather than a closure scope. See BASE_ROW_METHODS.
+        const rowCtx: BaseRowCtx<TData> = {
+          grid: grid as SvGrid<TData>,
+          store,
+          columns,
+          columnCount,
+          columnIndexById,
+        }
+
         cachedBaseRows = new Array(options.data.length)
         const getRowId = options.getRowId
+        const m = BASE_ROW_METHODS as unknown as {
+          getCanExpand: Row<TData>['getCanExpand']
+          getIsExpanded: Row<TData>['getIsExpanded']
+          toggleExpanded: Row<TData>['toggleExpanded']
+          getIsSelected: Row<TData>['getIsSelected']
+          toggleSelected: Row<TData>['toggleSelected']
+          getAllCells: Row<TData>['getAllCells']
+          getCellValueByColumnId: Row<TData>['getCellValueByColumnId']
+        }
         for (let index = 0; index < options.data.length; index++) {
           const original = options.data[index]!
-          const id = getRowId ? getRowId(original, index) : String(index)
-          // `values` and `cells` are computed lazily - for a 100k-row grid
-          // with only ~20 visible rows we don't want to materialise every
-          // row's full value array or cell objects up front.
-          let cachedValues: Array<unknown> | null = null
-          let cachedCells: Array<Cell<TData>> | null = null
-
-          function computeValues(): Array<unknown> {
-            const values = new Array<unknown>(columnCount)
-            for (let i = 0; i < columnCount; i++) {
-              const column = columns[i]!
-              if (column.columnDef.fieldFn) {
-                values[i] = column.columnDef.fieldFn(original)
-              } else if (column.columnDef.field) {
-                values[i] = (original as any)[column.columnDef.field]
-              } else {
-                values[i] = undefined
-              }
-            }
-            return values
-          }
-
-          const row: Row<TData> = {
-            id,
+          // `_values` and `_cells` stay null until something reads them - a
+          // 100k-row grid showing twenty rows must not materialise every row's
+          // values or cell objects to paint.
+          const row: BaseRowState<TData> = {
+            id: getRowId ? getRowId(original, index) : String(index),
             index,
             original,
             depth: 0,
-            getCanExpand: () => false,
-            getIsExpanded: () => Boolean((store.state.expanded ?? {})[id]),
-            toggleExpanded: () => {
-              grid.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
-            },
-            getIsSelected: () => Boolean((store.state.rowSelection ?? {})[id]),
-            toggleSelected: () => {
-              grid.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
-            },
-            getAllCells: () => {
-              if (cachedCells) return cachedCells
-              const built = new Array<Cell<TData>>(columnCount)
-              for (let i = 0; i < columnCount; i++) {
-                const column = columns[i]!
-                const colIndex = i
-                const cell: Cell<TData> = {
-                  id: `${id}_${column.id}`,
-                  row,
-                  column,
-                  getValue: () => {
-                    if (!cachedValues) cachedValues = computeValues()
-                    return cachedValues[colIndex]
-                  },
-                  getContext: () => ({
-                    cell,
-                    row,
-                    column,
-                    table: grid,
-                    getValue: () => cell.getValue(),
-                  }),
-                }
-                built[i] = cell
-              }
-              cachedCells = built
-              return built
-            },
-            getCellValueByColumnId: (columnId: string) => {
-              const idx = columnIndexById.get(columnId)
-              if (idx === undefined) return undefined
-              if (!cachedValues) cachedValues = computeValues()
-              return cachedValues[idx]
-            },
+            [ROW_CTX]: rowCtx,
+            [ROW_VALUES]: null,
+            [ROW_CELLS]: null,
+            getCanExpand: m.getCanExpand,
+            getIsExpanded: m.getIsExpanded,
+            toggleExpanded: m.toggleExpanded,
+            getIsSelected: m.getIsSelected,
+            toggleSelected: m.toggleSelected,
+            getAllCells: m.getAllCells,
+            getCellValueByColumnId: m.getCellValueByColumnId,
           }
           cachedBaseRows[index] = row
         }
       }
 
+      // Only the slices a pipeline stage actually READS belong in this key.
+      //
+      // `rowSelection` used to be here, which meant ticking one checkbox on a
+      // 100k-row grid re-filtered and re-sorted the entire dataset to rebuild a
+      // row array that was identical by construction. Nothing reads it: the two
+      // consumers are `getIsSelected` closures (on data rows and on group rows)
+      // that read `store.state` when called, so they observe a selection change
+      // without the model being rebuilt.
+      //
+      // `_rowModels` is a closed set of six named slots, so no consumer stage
+      // can be inserted that might read selection. A caller CAN supply a custom
+      // function for one of those slots; if one ever needs a slice that is not
+      // listed here, add it here rather than reinstating all of them.
       const currentSlices = {
         sorting: store.state.sorting,
         columnFilters: store.state.columnFilters,
         pagination: store.state.pagination,
         grouping: store.state.grouping,
         expanded: store.state.expanded,
-        rowSelection: store.state.rowSelection,
       }
       if (
         cachedRowModel &&
@@ -1431,8 +1829,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         cachedSlices?.columnFilters === currentSlices.columnFilters &&
         cachedSlices?.pagination === currentSlices.pagination &&
         cachedSlices?.grouping === currentSlices.grouping &&
-        cachedSlices?.expanded === currentSlices.expanded &&
-        cachedSlices?.rowSelection === currentSlices.rowSelection
+        cachedSlices?.expanded === currentSlices.expanded
       ) {
         return cachedRowModel
       }

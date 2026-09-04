@@ -137,6 +137,38 @@ how the value looks in the cell when it is not being edited.
 - The panel is portalled to `<body>` and auto-flips upward when there is no room
   below the trigger, so it is never clipped by the grid.
 
+## Try it
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGridDropdown } from '@svgrid/grid'
+  import type { CellEditorOption } from '@svgrid/grid'
+
+  const options: CellEditorOption[] = [
+    { value: 'backlog', label: 'Backlog' },
+    { value: 'active',  label: 'Active',  color: '#f59e0b' },
+    { value: 'done',    label: 'Done',    color: '#22c55e' },
+  ]
+
+  let value = $state<unknown>('active')
+  let picked = $state<unknown>(['active'])
+</script>
+
+<SvGridDropdown {options} {value} autoOpen={false} onChange={(v) => (value = v)} />
+
+<SvGridDropdown
+  {options}
+  value={picked}
+  multiple
+  renderChipsInTrigger
+  autoOpen={false}
+  onChange={(v) => (picked = v)}
+/>
+```
+
+`autoOpen` defaults to `true` because the grid mounts this the moment a cell
+enters edit mode. Standalone you almost always want it off, as above.
+
 ## See also
 
 - [Selection overview](selection.md) - the whole picker family at a glance.

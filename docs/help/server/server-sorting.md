@@ -16,6 +16,39 @@ index on the sorted columns.
 The controller carries the sort as a `ServerSortModel` - an array of column
 clauses, each an `id` and a direction:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 type ServerSortModel = Array<{ id: string; desc: boolean }>
 ```
@@ -171,6 +204,48 @@ order to be usable. If users can sort by many different columns, index the few
 common ones rather than every permutation, and lean on `LIMIT` keeping each page
 small. When you combine sorting with filtering, an index that leads with the
 filtered column and continues with the sort columns serves both at once.
+
+## More examples
+
+### Server-Side Row Model (SSRM)
+
+One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page.
+
+<div data-docs-demo="148-server-row-model" data-height="560"></div>
+
+### Server grouping (first-class)
+
+First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.
+
+<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+
+## Try it
+
+With `externalSort` the grid reports the sort and renders whatever you hand
+back. The stand-in below sorts locally so the round trip is visible without a
+backend; swap the body of `query` for a fetch and nothing else changes.
+
+```svelte {runnable}
+<script lang="ts">
+  let shown = $state(people)
+  let sent = $state('(none)')
+
+  function query(sorting: Array<{ id: string; desc: boolean }>) {
+    sent = JSON.stringify(sorting)
+    const s = sorting[0]
+    if (!s) { shown = people; return }
+    shown = [...people].sort((a, b) => {
+      const av = a[s.id as keyof Person], bv = b[s.id as keyof Person]
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0
+      return s.desc ? -cmp : cmp
+    })
+  }
+</script>
+
+<SvGrid data={shown} {columns} sortable externalSort onSortingChange={query} />
+
+<p>Sort model sent to the server: <code>{sent}</code></p>
+```
 
 ## See also
 

@@ -92,6 +92,97 @@ table[role='grid'] th[aria-sort] [data-sort-indicator] {
 }
 ```
 
+## A header that is not a string
+
+`header` takes a string or a function, so a unit, an icon or a two-line label
+needs no special API. Keep it short: the header row sets the column's practical
+minimum width.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180 },
+    { field: 'salary', width: 160,
+      header: () => renderSnippet(SalaryHeader, {}),
+      format: { type: 'currency', currency: 'USD' } },
+    { field: 'age', header: 'Age', width: 90 },
+  ]
+</script>
+
+{#snippet SalaryHeader()}
+  <span style="display: inline-flex; flex-direction: column; line-height: 1.15;">
+    <span>Salary</span>
+    <span style="font-size: 10px; opacity: 0.6; font-weight: 400;">USD / year</span>
+  </span>
+{/snippet}
+
+<SvGrid data={seed} {columns} sortable rowHeight={34} />
+```
+
+
+## Grouped headers
+
+A group is a column with `columns` instead of a `field`. Give it an explicit
+`id` - without a field there is nothing else for the grid to key it on. The
+header row count follows the deepest branch, so a grouped column next to a plain
+one lines up without spacer rows.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180 },
+    {
+      id: 'employment',
+      header: 'Employment',
+      columns: [
+        { field: 'department', header: 'Department', width: 160 },
+        { field: 'salary', header: 'Salary', width: 140,
+          format: { type: 'currency', currency: 'USD' } },
+      ],
+    },
+    { field: 'city', header: 'City', width: 140 },
+  ]
+</script>
+
+<SvGrid data={seed} {columns} sortable />
+```
+
 ## See also
 
 - [Custom header components](./custom-header-components.md)

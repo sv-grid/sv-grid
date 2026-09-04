@@ -49,10 +49,40 @@ export function normalizeForFilter(
   locale?: string | ReadonlyArray<string>,
 ): string {
   if (!s) return ''
+
+  // Fast path for pure-ASCII input, which is the overwhelming majority of what
+  // a grid filters. Both of the expensive steps are provably no-ops there:
+  // ASCII is already NFD-normalised, and the combining-marks block this strips
+  // (U+0300..U+036F) contains no ASCII. So lowercasing alone is the same
+  // answer, and `normalize-fast-path.test.ts` checks that exhaustively over
+  // every ASCII code point rather than taking the argument on trust.
+  //
+  // Worth the branch: this runs once per cell per filter - 100,000 times for a
+  // one-column filter over a 100k grid - and a CPU profile of a browser filter
+  // put more time in this function than in any other.
+  //
+  // Note the locale still routes through toLocaleLowerCase even on the fast
+  // path: 'I'.toLocaleLowerCase('tr') is 'ı', so ASCII does NOT imply the
+  // locale can be ignored.
+  if (isAsciiOnly(s)) {
+    return locale ? s.toLocaleLowerCase(locale as string | string[]) : s.toLowerCase()
+  }
+
   const stripped = s.normalize('NFD').replace(DIACRITIC_RE, '')
   return locale
     ? stripped.toLocaleLowerCase(locale as string | string[])
     : stripped.toLowerCase()
+}
+
+/**
+ * True when every code unit is ASCII. A plain char-code scan, which is far
+ * cheaper than the `normalize()` + regex pass it lets us skip.
+ */
+function isAsciiOnly(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) > 127) return false
+  }
+  return true
 }
 
 /**

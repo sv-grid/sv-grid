@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvSplitter` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvScrollArea, SvSplitter } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvSplitter } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvSplitter } from '@svgrid/grid'
 
 <div data-docs-demo="286-splitter" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSplitter } from '@svgrid/grid'
   let fraction = $state(0.3)
@@ -126,6 +134,43 @@ can still size the panes.
 - Arrow keys resize by `step`; `Home` / `End` jump to the `min` / `max` bounds.
 - Pointer drags use pointer capture so a fast drag outside the element keeps
   tracking; `disabled` blocks both pointer and keyboard resize.
+
+## A resizable pane
+
+`fraction` is a 0-1 split rather than a pixel width, so the panes keep their
+proportion when the window resizes. `min` and `max` stop either side being
+dragged to nothing.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSplitter, SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { name: string; city: string }
+
+  const people: Person[] = [
+    { name: 'Ada Lovelace', city: 'London' },
+    { name: 'Grace Hopper', city: 'New York' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 160 },
+    { field: 'city', header: 'City', width: 120 },
+  ]
+
+  let split = $state(0.6)
+</script>
+
+<div style="height: 260px;">
+  <SvSplitter fraction={split} onChange={(f) => (split = f)} min={0.25} max={0.8}>
+    {#snippet start()}
+      <SvGrid data={people} {columns} />
+    {/snippet}
+    {#snippet end()}
+      <div style="padding: 12px;">Detail pane - {Math.round(split * 100)}% / {Math.round((1 - split) * 100)}%</div>
+    {/snippet}
+  </SvSplitter>
+</div>
+```
 
 ## See also
 

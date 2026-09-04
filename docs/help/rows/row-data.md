@@ -78,6 +78,90 @@ overlay layer):
 For controlled skeleton-row UX in virtualized server-side grids, see
 [demos/09-server-side.svelte](../../../examples/src/demos/09-server-side.svelte).
 
+
+## Replacing the array
+
+Assigning a new array is the ordinary way to load data, and the grid re-derives
+its row model from the new reference. Sort or filter state survives, because
+neither is stored on the rows.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; city: string; salary: number }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  city: 'Seattle',  salary: 161000 },
+  ]
+
+  let rows = $state<Person[]>([])
+  let status = $state('empty')
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180 },
+    { field: 'city',   header: 'City',   width: 150 },
+    { field: 'salary', header: 'Salary', width: 140,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+
+  // Stands in for a fetch. The grid never sees the difference.
+  async function load() {
+    status = 'loading'
+    await new Promise((r) => setTimeout(r, 350))
+    rows = seed.map((p) => ({ ...p }))
+    status = rows.length + ' rows'
+  }
+
+  // Load once on mount, the way a page would.
+  $effect(() => {
+    load()
+  })
+</script>
+
+<button type="button" onclick={load}>Load</button>
+<button type="button" onclick={() => { rows = []; status = 'empty' }}>Clear</button>
+<span>{status}</span>
+
+<SvGrid data={rows} {columns} sortable />
+```
+
+## What getRowId buys you
+
+Select a row in each grid, then sort by salary. The left grid keys rows by
+array position, so the selection follows the slot rather than the person; the
+right one keys by `id` and keeps hold of who you picked.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; city: string; salary: number }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  city: 'Seattle',  salary: 161000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 160 },
+    { field: 'salary', header: 'Salary', width: 130,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<p>No <code>getRowId</code> - selection is tied to the row index:</p>
+<SvGrid data={seed} {columns} sortable selectionMode="row" />
+
+<p>With <code>getRowId</code> - selection is tied to the person:</p>
+<SvGrid data={seed} {columns} sortable selectionMode="row" getRowId={(r) => String(r.id)} />
+```
+
 ## See also
 
 - [Accessing rows](./accessing-rows.md)

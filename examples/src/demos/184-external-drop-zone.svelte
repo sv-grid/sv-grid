@@ -41,6 +41,7 @@
   <div class="edz-layout flex-1 min-h-0">
     <div class="edz-grid">
       <SvGrid responsive={true}
+      columnResize
         data={tasks}
         columns={columns}
         showRowNumbers={true}

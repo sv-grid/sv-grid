@@ -19,6 +19,14 @@ import them directly:
 A single or dual-thumb range slider (ARIA slider) with steps, tick marks,
 keyboard and pointer drag; horizontal or vertical.
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGauge, SvSlider } from '@svgrid/grid'
+</script>
+```
+
 ```svelte
 <!-- single -->
 <SvSlider value={volume} onChange={(v) => (volume = v)} showValue ticks={5} />
@@ -38,7 +46,7 @@ PageUp/Down step ×10, Home/End jump to bounds.
 A radial arc gauge (SVG) rendering a value within `[min, max]`, with optional
 colored threshold bands, a needle and a center label. A display control.
 
-```svelte
+```svelte {runnable}
 <SvGauge value={72} unit="°" />
 
 <SvGauge value={72} bands={[
@@ -63,3 +71,40 @@ recipes:
 - [SvCircularProgress](./sv-circular-progress.md) - a circular ring progress indicator.
 - [SvSparkline](./sv-sparkline.md) - a tiny inline line/area/bar chart.
 - [SvStat](./sv-stat.md) - a KPI card with an auto-coloured delta.
+
+## More examples
+
+### Range & feedback
+
+SvSlider (single or dual-thumb range, ticks, keyboard, vertical) and SvGauge (radial arc with threshold bands, needle, half sweep). Theme-driven value controls, standalone or in-grid.
+
+<div data-docs-demo="256-range-feedback" data-height="420"></div>
+
+## A two-handle range
+
+`range` turns one handle into two and the value into a pair. `formatValue` is
+what makes the readout mean something - a raw number beside a slider rarely
+does.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSlider } from '@svgrid/grid'
+
+  let budget = $state<[number, number]>([120000, 165000])
+
+  const money = (n: number) =>
+    n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+</script>
+
+<SvSlider
+  value={budget}
+  onChange={(v) => (budget = v as [number, number])}
+  range
+  min={80000}
+  max={200000}
+  step={5000}
+  showValue
+  formatValue={money}
+  label="Salary band"
+/>
+```

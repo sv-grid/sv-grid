@@ -184,6 +184,108 @@ work afterward (~1-2 ms). Mutating the tree state at interactive rates
   automatically when the leaf becomes visible again.
 - **Saved views** should serialise `treeState` alongside sort + filter.
 
+## Nested header groups
+
+A group is a column with `columns` instead of a `field`, and it nests as deep as
+you need. The header row count follows the deepest branch, so a two-level group
+next to a plain column lines up without spacers.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20' },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05' },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000, joined: '2018-11-11' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180 },
+    {
+      header: 'Employment',
+      columns: [
+        { field: 'department', header: 'Department', width: 150 },
+        {
+          header: 'Compensation',
+          columns: [
+            { field: 'salary', header: 'Salary', width: 130,
+              format: { type: 'currency', currency: 'USD' } },
+            { field: 'joined', header: 'Since', width: 120 },
+          ],
+        },
+      ],
+    },
+    { field: 'city', header: 'City', width: 130 },
+  ]
+</script>
+
+<SvGrid data={people} {columns} sortable />
+```
+
+
+## Groups and pinning together
+
+Pinning names a leaf column, not a group. Pin a leaf and its group header
+travels with it - which is why the pinned region can show a header spanning one
+column.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20' },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05' },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000, joined: '2018-11-11' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    {
+      header: 'Identity',
+      columns: [
+        { field: 'name', header: 'Name', width: 170 },
+        { field: 'city', header: 'City', width: 130 },
+      ],
+    },
+    {
+      header: 'Employment',
+      columns: [
+        { field: 'department', header: 'Department', width: 160 },
+        { field: 'salary', header: 'Salary', width: 140,
+          format: { type: 'currency', currency: 'USD' } },
+      ],
+    },
+  ]
+</script>
+
+<SvGrid data={people} {columns} initialColumnPinning={{ left: ['name'] }} />
+```
+
 ## See also
 
 - [Column groups](./columns/column-groups.md) - the nested-header

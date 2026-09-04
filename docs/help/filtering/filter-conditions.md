@@ -6,6 +6,39 @@ stores filter conditions in `state.columnFilters`.
 
 ## Shape
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 type ColumnFilter = {
   id: string                         // column id
@@ -89,6 +122,16 @@ list of currently-filtered columns is reported by `onFiltersChange`.
 
 ```ts
 columnFilters = []
+```
+
+## Try it
+
+Open a column's filter menu and the operator list is typed to the column: the
+text columns offer contains / equals / starts with, and Age and Salary offer the
+numeric comparisons and between. Nothing configures that - it follows the value.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} filterable filterMode="menu" sortable />
 ```
 
 ## See also

@@ -106,6 +106,145 @@ const rows = table.getRowModel().rows   // sorted, no DOM involved
 `ReferenceError: $state is not defined` - that is the compiler missing, not a
 bug. Reach for the core function there.
 
+## The engine with no grid
+
+No `<SvGrid>` anywhere. The engine owns sorting and hands back a row model;
+every element below is markup you wrote, which is the whole proposition.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Repo = { name: string; lang: string; stars: number }
+
+  const data: Repo[] = [
+    { name: 'svelte',   lang: 'JavaScript', stars: 78000 },
+    { name: 'vite',     lang: 'TypeScript', stars: 68000 },
+    { name: 'sv-grid',  lang: 'TypeScript', stars: 172 },
+    { name: 'rollup',   lang: 'JavaScript', stars: 25000 },
+    { name: 'esbuild',  lang: 'Go',         stars: 38000 },
+  ]
+
+  const features = tableFeatures({ rowSortingFeature })
+
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+    { field: 'stars', header: 'Stars' },
+  ]
+
+  let sorting = $state([{ id: 'stars', desc: true }])
+
+  const table = createSvGrid({
+    _features: features,
+    _rowModels: {
+      coreRowModel: createCoreRowModel<Repo>(),
+      sortedRowModel: createSortedRowModel<Repo>(),
+    },
+    data,
+    columns,
+    state: { sorting },
+    onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+  })
+
+  const rows = $derived(table.getRowModel().rows)
+</script>
+
+<table>
+  <thead>
+    {#each table.getHeaderGroups() as hg (hg.id)}
+      <tr>
+        {#each hg.headers as h (h.id)}
+          <th onclick={h.column.getToggleSortingHandler()}>{h.column.columnDef.header}</th>
+        {/each}
+      </tr>
+    {/each}
+  </thead>
+  <tbody>
+    {#each rows as r (r.id)}
+      {@const repo = r.original as Repo}
+      <tr>
+        <td>{repo.name}</td>
+        <td>{repo.lang}</td>
+        <td>{repo.stars.toLocaleString()}</td>
+      </tr>
+    {/each}
+  </tbody>
+</table>
+```
+
+
+## Adding a stage
+
+Each row model is a pipeline stage you opt into. Register the filtered model
+and a filter starts applying; leave it out and the code for it never ships.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createFilteredRowModel,
+    tableFeatures,
+    columnFilteringFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Repo = { name: string; lang: string; stars: number }
+
+  const data: Repo[] = [
+    { name: 'svelte',   lang: 'JavaScript', stars: 78000 },
+    { name: 'vite',     lang: 'TypeScript', stars: 68000 },
+    { name: 'sv-grid',  lang: 'TypeScript', stars: 172 },
+    { name: 'rollup',   lang: 'JavaScript', stars: 25000 },
+    { name: 'esbuild',  lang: 'Go',         stars: 38000 },
+  ]
+
+  const features = tableFeatures({ columnFilteringFeature })
+
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+  ]
+
+  let columnFilters = $state<Array<{ id: string; value: unknown }>>([])
+
+  const table = createSvGrid({
+    _features: features,
+    _rowModels: {
+      coreRowModel: createCoreRowModel<Repo>(),
+      filteredRowModel: createFilteredRowModel<Repo>(),
+    },
+    data,
+    columns,
+    state: { columnFilters },
+    onColumnFiltersChange: (u) =>
+      (columnFilters = typeof u === 'function' ? u(columnFilters) : u),
+  })
+
+  const rows = $derived(table.getRowModel().rows)
+</script>
+
+<input
+  placeholder="Filter language"
+  oninput={(e) => (columnFilters = [{ id: 'lang', value: e.currentTarget.value }])}
+/>
+
+<ul>
+  {#each rows as r (r.id)}
+    {@const repo = r.original as Repo}
+    <li>{repo.name} - {repo.lang}</li>
+  {/each}
+</ul>
+```
+
 ## See also
 
 - [Build a `<table>` from scratch](./build-a-table.md) - a complete 30-line renderer

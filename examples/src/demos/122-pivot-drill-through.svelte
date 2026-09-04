@@ -264,6 +264,7 @@
 
         <div class="dt-rail-grid">
           <SvGrid responsive={true}
+      columnResize
             data={drill.facts}
             columns={drillCols}
             features={drillFeatures}

@@ -26,6 +26,41 @@ cells are snippets, and there is no manual mount / teardown.
 
 ## Before / after
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - import { TabulatorFull as Tabulator } from 'tabulator-tables'
 -
@@ -64,12 +99,6 @@ cells are snippets, and there is no manual mount / teardown.
 - **Mount / teardown disappears.** No `new Tabulator(el)` and no manual
   destroy on unmount.
 
-## See also
-
-- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/) - the side-by-side comparison
-- [Cell components](./cells/cell-components.md) - snippet-based custom cells
-- [Architecture](./architecture.md) - engine + render-component split
-
 ## Frequently asked questions
 
 ### Is migrating from Tabulator to SvGrid hard?
@@ -87,3 +116,17 @@ Yes. `@svgrid/grid` is MIT-licensed like Tabulator. The optional
 
 You re-create them as Svelte snippets via `renderSnippet`. Any Svelte
 component or markup works, not just an HTML string.
+
+## What you end up with
+
+Sort, filter and edit, with pagination underneath.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable editable pageable pageSize={3} />
+```
+
+## See also
+
+- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/) - the side-by-side comparison
+- [Cell components](./cells/cell-components.md) - snippet-based custom cells
+- [Architecture](./architecture.md) - engine + render-component split

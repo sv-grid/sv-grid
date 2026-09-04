@@ -1,4 +1,4 @@
-// Collapsible column groups (AG-Grid `columnGroupShow`). A column group can
+// Collapsible column groups (a per-column `columnGroupShow` flag). A column group can
 // carry a collapse toggle: its child columns tagged `columnGroupShow: 'open'`
 // show only when the group is expanded, `'closed'` show only when collapsed,
 // and untagged children always show.

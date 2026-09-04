@@ -60,6 +60,7 @@
     aria-label={mode === 'contrast' ? 'Grid in high-contrast mode' : 'Grid in standard mode'}
   >
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={columns}
       features={features}

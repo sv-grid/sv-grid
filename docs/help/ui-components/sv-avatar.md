@@ -31,7 +31,7 @@ import { SvAvatar } from '@svgrid/grid'
 
 <div data-docs-demo="333-app-feedback" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAvatar } from '@svgrid/grid'
 </script>
@@ -96,7 +96,7 @@ The same helpers that drive the fallback are exported, so you can render a
 matching initials chip anywhere - for example a compact mention token - without
 mounting an avatar:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { avatarInitials, avatarColorHue } from '@svgrid/grid'
 

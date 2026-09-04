@@ -207,6 +207,7 @@
     <!-- Grid pane -->
     <div class="smart-grid-pane">
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={columns}
         features={features}

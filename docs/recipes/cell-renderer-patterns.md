@@ -20,6 +20,16 @@ is your `TData` row.
 
 ## 1. Literal string
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+</script>
+```
+
 ```ts
 { field: 'amount', header: 'Amount', cell: 'TBD' }
 ```
@@ -50,7 +60,7 @@ runs through `Intl.NumberFormat` cached per locale.
 
 ## 3. Inline snippet
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { renderSnippet, type ColumnDef } from '@svgrid/grid'
 
@@ -99,7 +109,7 @@ grid's body, not the consumer's component subtree.
 </script>
 ```
 
-```svelte
+```svelte {runnable}
 <!-- BadgeCell.svelte -->
 <script lang="ts">
   let { label, tone }: { label: string; tone: 'good' | 'bad' } = $props()
@@ -120,6 +130,64 @@ you can plug your own `<HeaderToolbar />` component without forking
 Custom inline editors use `cellEditor:` and follow the
 `(ctx) => renderSnippet(...)` pattern - see the [`84-editor-types`
 demo](https://svgrid.com/demos/84-editor-types/).
+
+## Try it
+
+`renderSnippet(snippet, params)` is the whole custom-cell API. The snippet gets
+whatever you pass it, so a cell can read the row rather than just the value -
+which is what a status pill or a coloured figure needs.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+{#snippet Money(props: { row: Person })}
+  <span style="font-variant-numeric: tabular-nums; color: {props.row.salary > 160000 ? '#b45309' : 'inherit'}">
+    {props.row.salary.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+  </span>
+{/snippet}
+
+{#snippet Dept(props: { row: Person })}
+  <span style="padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, currentColor 10%, transparent); font-size: 12px;">
+    {props.row.department}
+  </span>
+{/snippet}
+
+<SvGrid
+  data={people}
+  columns={[
+    { field: 'name', header: 'Name', width: 190 },
+    { field: 'department', header: 'Department', width: 160,
+      cell: (ctx) => renderSnippet(Dept, { row: ctx.row.original }) },
+    { field: 'salary', header: 'Salary', width: 140,
+      cell: (ctx) => renderSnippet(Money, { row: ctx.row.original }) },
+  ] satisfies GridColumns<Person>}
+/>
+```
 
 ## See also
 

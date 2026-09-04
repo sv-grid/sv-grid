@@ -100,7 +100,7 @@
      * grid. `'top'` (default) keeps the classic Excel layout: left rail +
      * a horizontal row of wells above the grid. `'right'` docks everything
      * as a single vertical tool panel on the right of the grid - the
-     * "enterprise data grid" / AG-Grid pivot-panel arrangement.
+     * conventional "enterprise data grid" pivot-panel arrangement.
      */
     panelPosition?: 'top' | 'right'
     /** Width of the docked panel when `panelPosition='right'`. Default 280. */
@@ -131,7 +131,7 @@
      */
     columnVirtualization?: boolean
     /**
-     * Render the field picker as an AG-Grid-style **Columns** tool panel: a
+     * Render the field picker as a **Columns** tool panel: a
      * collapsible column-group TREE whose checkboxes toggle column VISIBILITY
      * (with a select-all), instead of the flat "tick to add to a well" list.
      * Fields still drag into the Rows / Columns / Values wells. The embedded
@@ -144,7 +144,7 @@
     onHiddenFieldsChange?: (hidden: string[]) => void
     /**
      * Show a vertical Columns / Filters tab rail on the docked panel
-     * (`panelPosition='right'`). The Filters tab is an AG-Grid-style set-filter
+     * (`panelPosition='right'`). The Filters tab is a set-filter
      * builder: "Add Filter" -> pick a column -> tick which values pass. Filters
      * narrow the source rows (they drive `layout.filters`). Default false.
      */

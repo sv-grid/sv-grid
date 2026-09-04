@@ -84,6 +84,15 @@ jobs:
         # private submodule checked out above.
         run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts
 
+      - name: Documented commands exist
+        # docs/help/benchmarks.md told readers to run `pnpm bench --json` and
+        # `--baseline=`, and claimed regressions over 10% failed CI on main.
+        # There was no bench script in any package.json and no such CI step -
+        # the whole reproduction section was fiction, and it survived releases
+        # because docs-snippets.test.ts only ever looked at TS fences. Pasting
+        # the repro command is the first thing an evaluator does.
+        run: pnpm vitest run tools/docs-commands.test.ts
+
       - name: Demo count + quoted claims
         # The registry and examples/src/demos/ must agree, and every "370+
         # demos" style number quoted in a README, the website, or the MCP
@@ -123,6 +132,23 @@ jobs:
         # existing import() of the same module - that has happened before and
         # nothing caught it. Budgets live in packages/grid/scripts/measure-size.mjs.
         run: pnpm size:check
+
+      - name: Engine work-counter budget
+        # Guards the row pipeline's algorithmic cost. Wall-clock is far too
+        # noisy on a shared runner to gate - a flaky perf gate gets disabled
+        # within a month and then protects nothing - so this counts work
+        # instead, which is identical on every machine.
+        #
+        # All three budgets here are things that regressed unnoticed and were
+        # only found by building the harness: the sort comparator resolved its
+        # column with an Array.find PER COMPARISON (1,528,947 scans for a
+        # single-clause 100k sort), the filter materialised every row's full
+        # Cell[] to read one field (100,000 of them), and `rowSelection` sat in
+        # the row-model cache key so ticking one checkbox re-filtered and
+        # re-sorted the whole dataset. Budgets live in tools/bench/cases.mjs.
+        #
+        # Needs the built engine: the bench imports dist/, like node:check.
+        run: pnpm bench:check
 
       - name: Build MCP server (smoke check)
         run: pnpm --filter @svgrid/mcp build

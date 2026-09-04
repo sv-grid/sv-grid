@@ -19,6 +19,54 @@ than in the URL - they're per-user, not per-link. See
 
 ## Implementation
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  type Order = {
+    id: string
+    customer: string
+    product: string
+    quantity: number
+    total: number
+    status: 'pending' | 'shipped' | 'delivered'
+    orderedAt: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import {
@@ -105,6 +153,53 @@ than in the URL - they're per-user, not per-link. See
 - **Sharing tip**: add a "Copy link" button next to the grid header
   that does `navigator.clipboard.writeText(window.location.href)`. The
   link is already the view.
+
+## Try it
+
+The sort state round-trips through a query string. Change the sort, watch the
+link update; the parse direction is the same code read backwards.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; department: string; salary: number }
+
+  const data: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    salary: 155000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'salary',     header: 'Salary',     width: 130 },
+  ]
+
+  let sorting = $state<Array<{ id: string; desc: boolean }>>([])
+
+  // Encoded compactly on purpose: "salary:desc" survives being pasted into
+  // chat, which a JSON blob does not.
+  const query = $derived(
+    sorting.length
+      ? '?sort=' + sorting.map((s) => s.id + (s.desc ? ':desc' : ':asc')).join(',')
+      : '(no sort)',
+  )
+</script>
+
+<SvGrid
+  {data}
+  {columns}
+  sortable
+  onSortingChange={(next) => (sorting = next)}
+/>
+
+<p>Shareable link: <code>{query}</code></p>
+```
+
+In a real app the `$derived` becomes a `replaceState` so the address bar tracks
+the grid, and a `+page.ts` reads it back on load.
 
 ## See also
 

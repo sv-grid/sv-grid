@@ -25,6 +25,18 @@ Or install the package and import it directly. `SvProgress` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvProgress } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let played = $state(0)
+  let done = $state(0)
+</script>
+```
+
 ```ts
 import { SvProgress } from '@svgrid/grid'
 ```
@@ -33,7 +45,7 @@ import { SvProgress } from '@svgrid/grid'
 
 <div data-docs-demo="330-progress" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvProgress } from '@svgrid/grid'
 </script>
@@ -75,7 +87,7 @@ When you cannot measure progress, set `indeterminate`. The bar animates
 continuously and drops the value ARIA so screen readers announce it as busy, not
 a specific percentage:
 
-```svelte
+```svelte {runnable}
 <SvProgress indeterminate ariaLabel="Loading results" />
 ```
 
@@ -95,7 +107,7 @@ Show absolute units instead of a percent with `formatLabel`:
 Drive `color` from the value so the bar shifts intent as it fills - accent while
 low, warning then danger as it nears the cap (a quota or storage meter):
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvProgress } from '@svgrid/grid'
   let used = $state(72)
@@ -115,6 +127,22 @@ reserve the label for bars that actually have a `value` to report.
 - Indeterminate mode omits the value attributes so it announces as busy rather
   than a false percentage.
 - Set `ariaLabel` to name what is progressing when there is no nearby text.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvProgress } from '@svgrid/grid'
+
+  let played = $state(1)
+</script>
+
+<SvProgress value={played} size="sm" />
+<SvProgress value={played} size="md" />
+<SvProgress value={played} size="lg" />
+```
 
 ## See also
 

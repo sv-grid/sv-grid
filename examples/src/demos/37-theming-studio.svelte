@@ -370,6 +370,7 @@
   <div class="ts-main flex flex-col flex-1 min-h-0 gap-3">
     <div class="flex-1 min-h-0 ts-grid-host">
       <SvGrid responsive={true}
+      columnResize
         data={people}
         columns={[
           { field: 'id', header: 'ID', width: 110, editable: false },

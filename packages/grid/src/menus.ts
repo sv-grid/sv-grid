@@ -151,7 +151,7 @@ export function createMenus<
   function openChooseColumns(event: MouseEvent) {
     event.stopPropagation();
     // Submenu behavior: keep the parent operations menu open and float the
-    // Choose Columns panel out to the right of it (AG-Grid style). Falls
+    // Choose Columns panel out to the right of it, submenu-style. Falls
     // back to below the item if the popover would clip the viewport.
     const trigger = event.currentTarget as HTMLElement;
     const menuEl = trigger.closest(".sv-grid-menu") as HTMLElement | null;

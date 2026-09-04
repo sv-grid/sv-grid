@@ -246,6 +246,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="sheet" use:rowResize={{ onResize: onRowResize, min: 20, max: 320 }}>
     <SvGrid responsive={true}
+      columnResize
       data={raw}
       columns={columns}
       features={features}

@@ -25,6 +25,14 @@ Or install the package and import it directly. `SvRichText` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvRichText } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvRichText } from '@svgrid/grid'
 ```
@@ -33,7 +41,7 @@ import { SvRichText } from '@svgrid/grid'
 
 <div data-docs-demo="341-rich-text-editor" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRichText } from '@svgrid/grid'
   let html = $state('<p>Hello</p>')
@@ -95,7 +103,7 @@ Bind `value` straight to a field on your state object so edits flow back into th
 model. Track a `dirty` flag from `onChange` to gate the Save button, then flip to
 `readonly` to preview the exact HTML the editor produced:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRichText, SvButton } from '@svgrid/grid'
 
@@ -140,6 +148,22 @@ toolbar and renders the same HTML, making it a zero-cost preview of what you sav
 - The toolbar is a `role="toolbar"` wired to the body via `aria-controls`.
 - Toggle tools (bold, italic, lists) expose `aria-pressed` reflecting the current
   caret state; every button has a descriptive label.
+
+## Disabled and read-only
+
+Disabled takes the control out of the tab order; read-only keeps it focusable and copyable. Reach for read-only when the value still matters to the reader.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvRichText } from '@svgrid/grid'
+
+  let html = $state('')
+</script>
+
+<SvRichText bind:value={html} disabled />
+
+<SvRichText bind:value={html} readonly />
+```
 
 ## See also
 

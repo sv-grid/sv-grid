@@ -33,7 +33,7 @@ import { SvListBox } from '@svgrid/grid'
 
 <div data-docs-demo="312-listbox" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvListBox, type ListOption } from '@svgrid/grid'
   const options: ListOption[] = [
@@ -135,7 +135,7 @@ CSS). Only the visible rows hit the DOM, so scrolling never reflows:
 Derive the second list from the first pick, and clear the child when the parent
 changes so a stale value never lingers:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvListBox, type ListOption } from '@svgrid/grid'
   const teams: ListOption[] = [
@@ -165,6 +165,57 @@ changes so a stale value never lingers:
   `aria-multiselectable`.
 - `label`, `hint`, and `error` are wired through `aria-describedby`; pass
   `ariaLabel` when there is no visible label.
+
+## More examples
+
+### Virtualized list
+
+SvListBox scaling to 50,000 options via fixed-row windowing (only visible rows in the DOM) - scroll + type-ahead stay instant. Plus a custom itemTemplate row (avatar + role). Just add virtual.
+
+<div data-docs-demo="323-list-virtualization" data-height="460"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvListBox } from '@svgrid/grid'
+
+  let picked = $state('')
+</script>
+
+<SvListBox value={picked} size="sm" />
+<SvListBox value={picked} size="md" />
+<SvListBox value={picked} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvListBox } from '@svgrid/grid'
+
+  let picked = $state('')
+</script>
+
+<SvListBox
+  value={picked}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvListBox
+  value={picked}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

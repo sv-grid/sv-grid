@@ -32,7 +32,7 @@ import { SvLoadingOverlay } from '@svgrid/grid'
 
 <div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvLoadingOverlay } from '@svgrid/grid'
   let loading = $state(false)
@@ -64,6 +64,44 @@ itself to that box with `inset: 0`.
   focus.
 - It does not trap focus. If the underlying content must be non-interactive while
   loading, disable those controls or set `inert` on the wrapper yourself.
+
+## Over live content
+
+The overlay covers its children rather than replacing them, so the layout does
+not jump when loading ends. `blur` is what stops the content behind reading as
+still-interactive.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvLoadingOverlay, SvGrid, SvButton, type GridColumns } from '@svgrid/grid'
+
+  type Person = { name: string; city: string }
+
+  const people: Person[] = [
+    { name: 'Ada Lovelace', city: 'London' },
+    { name: 'Grace Hopper', city: 'New York' },
+    { name: 'Linus Torvalds', city: 'Portland' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180 },
+    { field: 'city', header: 'City', width: 140 },
+  ]
+
+  let busy = $state(false)
+
+  function refresh() {
+    busy = true
+    setTimeout(() => (busy = false), 1200)
+  }
+</script>
+
+<SvButton onclick={refresh}>Refresh</SvButton>
+
+<SvLoadingOverlay visible={busy} label="Fetching rows..." blur>
+  <SvGrid data={people} {columns} />
+</SvLoadingOverlay>
+```
 
 ## See also
 

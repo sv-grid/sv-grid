@@ -26,6 +26,14 @@ Or install the package and import it directly. `SvNavPane` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvNavPane } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvNavPane } from '@svgrid/grid'
 ```

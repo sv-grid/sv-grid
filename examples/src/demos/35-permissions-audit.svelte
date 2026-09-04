@@ -494,6 +494,7 @@
   <div class="pa-body">
     <div class="pa-grid-wrap">
       <SvGrid responsive={true}
+      columnResize
         data={visibleDeals}
         columns={[
           {

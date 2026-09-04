@@ -245,17 +245,6 @@ A few patterns that pay off in production:
   fetch; the server can return cached results if it sees the same id
   twice in a row.
 
-## See also
-
-- [Architecture](./architecture.md) - where the engine sits in the
-  pipeline.
-- [Row pagination](./rows/row-pagination.md) - controlled vs
-  uncontrolled pagination state.
-- [Real-time streaming](./real-time.md) - the live-update pattern (a
-  different beast: pushes from the server, not polls).
-- [Performance benchmarks](./benchmarks.md) - the chunk-loader's
-  measured behaviour in demo #33.
-
 ## Frequently asked questions
 
 ### How does SvGrid handle server-side data?
@@ -278,3 +267,52 @@ server using the patterns on this page.
 Yes. The grid is transport-agnostic: it emits sort/filter/page state and
 consumes rows, so you can back it with REST, GraphQL, or TanStack Query. See the
 related recipes for worked examples.
+
+## More examples
+
+### Loading from REST
+
+Fetches rows from a public REST API with loading skeleton, retry, error surface, and a Reload button.
+
+<div data-docs-demo="79-loading-from-rest" data-height="560"></div>
+
+### Cursor (keyset) pagination
+
+Modern alternative to offset paging: prev / next cursor tokens, stable under writes, O(log N) deep pages.
+
+<div data-docs-demo="113-cursor-pagination" data-height="560"></div>
+
+### Optimistic updates + rollback
+
+UI updates immediately; server validates async; on reject the value rolls back with a toast.
+
+<div data-docs-demo="115-optimistic-updates" data-height="560"></div>
+
+### WebSocket live updates
+
+Insert / update / delete deltas merged by id, cell-flash on update, pause / resume, throughput slider.
+
+<div data-docs-demo="116-websocket-live-updates" data-height="560"></div>
+
+### Bulk server operations
+
+Multi-row bulk action with configurable concurrency, live progress bar, per-row outcome chip, mid-flight cancel.
+
+<div data-docs-demo="117-bulk-operations" data-height="560"></div>
+
+### Live 10M-row dashboard
+
+10,000,000-transaction stream behind a mock API: server-side paging, sort, filter, a 1-second live feed, and inline SVG throughput/distribution charts.
+
+<div data-docs-demo="118-live-dashboard" data-height="560"></div>
+
+## See also
+
+- [Architecture](./architecture.md) - where the engine sits in the
+  pipeline.
+- [Row pagination](./rows/row-pagination.md) - controlled vs
+  uncontrolled pagination state.
+- [Real-time streaming](./real-time.md) - the live-update pattern (a
+  different beast: pushes from the server, not polls).
+- [Performance benchmarks](./benchmarks.md) - the chunk-loader's
+  measured behaviour in demo #33.

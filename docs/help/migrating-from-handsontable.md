@@ -12,6 +12,41 @@ the Formulas section below).
 
 ## Imports
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - import Handsontable from 'handsontable'
 - import 'handsontable/dist/handsontable.full.min.css'
@@ -153,14 +188,6 @@ a watermark for unlicensed builds) - no hard cutoff to plan around.
 - **Merge cells UI.** Sv-grid supports column groups + row spanning
   but no drag-to-merge UI yet.
 
-## See also
-
-- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/) - the side-by-side comparison
-- [Spreadsheet formulas](./spreadsheet-formulas.md) - sv-grid's
-  built-in formula engine
-- [Demo 27 (Spreadsheet + Ribbon)](https://svgrid.com/demos/27-spreadsheet-ribbon/) - live
-- [Migrating from AG Grid](./migrating-from-ag-grid.md)
-
 ## Frequently asked questions
 
 ### Can SvGrid replace Handsontable's spreadsheet features?
@@ -182,3 +209,19 @@ functions before porting.
 The `@svgrid/grid` core is MIT and free for commercial use - no per-seat
 license key. The optional `@svgrid/enterprise` pack (export, pivot, import) is priced
 per developer.
+
+## What you end up with
+
+Spreadsheet behaviour: inline edit, drag a cell range, copy it out as TSV.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} editable enableCellSelection statusBar />
+```
+
+## See also
+
+- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/) - the side-by-side comparison
+- [Spreadsheet formulas](./spreadsheet-formulas.md) - sv-grid's
+  built-in formula engine
+- [Demo 27 (Spreadsheet + Ribbon)](https://svgrid.com/demos/27-spreadsheet-ribbon/) - live
+- [Migrating from AG Grid](./migrating-from-ag-grid.md)

@@ -54,6 +54,14 @@ Live in [demo 68 (Dependent dropdowns)](https://svgrid.com/demos/68-dependent-dr
 - includes a typeahead combobox + a one-click "Fix" button when seed
 data leaves the cascade in an inconsistent state.
 
+## More examples
+
+### Data validation (dropdowns)
+
+Excel Data Validation on a plain <SvGrid>: Status / Priority / Owner / Sprint columns are list-constrained (double-click for a dropdown), and Estimate must be a whole number 0-40. Four cells arrive invalid and light up red with the reason as a tooltip; fix one and it clears live. Dropdowns are editorType:list + editorOptions; the flag is the declarative validate() hook.
+
+<div data-docs-demo="209-data-validation" data-height="560"></div>
+
 ## See also
 
 - [Provided cell editors](../help/editing/provided-editors.md) - the built-in editor set

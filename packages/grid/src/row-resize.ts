@@ -39,6 +39,17 @@ export type RowResizeOptions = {
   max?: number
   /** When true, the action removes its strips and ignores events. */
   disabled?: boolean
+  /**
+   * Where the drag strip is anchored.
+   * - `'gutter'` (default) - only rows that have a row-header gutter cell get
+   *   a strip: the built-in row-number column (`showRowNumbers`) or a column
+   *   tagged `cellClass: 'sv-row-gutter'`. Rows without one are skipped, so on
+   *   a plain grid the action does nothing.
+   * - `'row'` - use the gutter when there is one, otherwise fall back to the
+   *   row's first body cell. This is what `<SvGrid rowResize>` passes, so the
+   *   prop works without also asking for a gutter column.
+   */
+  anchor?: 'gutter' | 'row'
 }
 
 type ActiveDrag = {
@@ -150,9 +161,16 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
       // A row-header gutter cell: either a user column tagged
       // `sv-row-gutter`, or the grid's built-in row-number gutter
       // (`showRowNumbers`), whose cell is `.sv-grid-row-number-cell`.
-      const gutter = tr.querySelector<HTMLTableCellElement>(
-        '.sv-grid-cell.sv-row-gutter, .sv-grid-cell.sv-grid-row-number-cell',
-      )
+      const gutter =
+        tr.querySelector<HTMLTableCellElement>(
+          '.sv-grid-cell.sv-row-gutter, .sv-grid-cell.sv-grid-row-number-cell',
+        ) ??
+        // `anchor: 'row'` - no gutter on this grid, so hang the strip off the
+        // first body cell instead. Without this a grid with no row-number
+        // column would silently not resize.
+        (current.anchor === 'row'
+          ? tr.querySelector<HTMLTableCellElement>('.sv-grid-cell')
+          : null)
       if (!gutter) continue
       if (gutter.querySelector(`:scope > .${STRIP_CLASS}`)) continue
       // Anchor the strip to the gutter cell + allow it to overflow

@@ -175,6 +175,7 @@
     <div class="pin-tag pin-tag-top">TOP · ALL ACCOUNTS</div>
     <div class="pin-grid">
       <SvGrid responsive={true}
+      columnResize
         data={topPinnedData}
         columns={baseColumns}
         features={features}
@@ -195,6 +196,7 @@
     role="presentation"
   >
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={baseColumns}
       features={features}
@@ -217,6 +219,7 @@
     </div>
     <div class="pin-grid">
       <SvGrid responsive={true}
+      columnResize
         data={bottomPinnedData}
         columns={baseColumns}
         features={features}

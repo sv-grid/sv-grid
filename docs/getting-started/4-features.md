@@ -6,7 +6,49 @@ Every capability is **off by default** - a bare `<SvGrid>` is a plain,
 read-only table. Opt in with boolean props. No imports, no feature
 constants:
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  const data = people
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <SvGrid
   data={rows}
   columns={columns}
@@ -22,7 +64,7 @@ constants:
 [the exception](#the-exception-selection-is-already-on) below, since selection
 is already on:
 
-```svelte
+```svelte {runnable}
 <SvGrid data={rows} columns={columns} selectable={false} />
 ```
 
@@ -70,7 +112,7 @@ shortcut props above just inject these for you.
 Register them yourself when you need the fine-grained props alongside -
 `filterMode`, `pageSize`, per-column `sortable: false`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid,
@@ -126,7 +168,7 @@ ordering).
 
 The wrapper owns the state. Pass the start config via props:
 
-```svelte
+```svelte {runnable}
 <SvGrid
   data={rows}
   columns={columns}
@@ -143,7 +185,7 @@ The wrapper still owns the state, but emits callbacks. Use this when
 something outside the grid needs to react (a "X rows selected" pill,
 URL sync, a server fetch).
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let sorting = $state<Array<{ id: string; desc: boolean }>>([])
   let filters = $state<Array<{ id: string; operator: string; value: string }>>([])

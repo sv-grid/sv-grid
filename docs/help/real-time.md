@@ -22,7 +22,35 @@ disconnect / reconnect, configurable throughput slider:
 The simplest reactive pattern. Poll every N seconds, hand the new
 array down.
 
-```svelte
+Every example below runs against this setup:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
+
+  type Order = { id: string; symbol: string; qty: number; price: number; updatedAt: number }
+
+  const features = tableFeatures({ rowSortingFeature })
+
+  const fmtMoney = (n: number) =>
+    n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+
+  let rows = $state<Order[]>([
+    { id: 'o1', symbol: 'AAPL', qty: 120, price: 231.4, updatedAt: Date.now() },
+    { id: 'o2', symbol: 'MSFT', qty: 80,  price: 418.9, updatedAt: Date.now() },
+    { id: 'o3', symbol: 'NVDA', qty: 45,  price: 902.1, updatedAt: Date.now() },
+  ])
+  const data = rows
+
+  const columns: ColumnDef<typeof features, Order>[] = [
+    { field: 'symbol', header: 'Symbol', width: 110 },
+    { field: 'qty',    header: 'Qty',    width: 90 },
+    { field: 'price',  header: 'Price',  width: 120, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   let rows = $state<Order[]>([])
 
@@ -52,7 +80,7 @@ will close the editor. Pause your refresh while
 Same swap, but each cell snippet tracks its previous value and renders
 a brief highlight when it differs.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   // Track per-row, per-field last-seen values.
   let lastSeen = new Map<string, Record<string, unknown>>()
@@ -95,7 +123,7 @@ The grown-up pattern for higher-rate updates. The server pushes
 individual row patches; you maintain an in-memory map and reassign the
 array when needed.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   type OrderId = string
   let rowsMap = $state(new Map<OrderId, Order>())
@@ -251,15 +279,6 @@ If you're using a side detail panel keyed on row id (not index),
 this is a non-issue - the detail stays bound to the order even as
 the row moves.
 
-## See also
-
-- [Server-side data](./server-side-data.md) - the pull side of
-  remote data.
-- [Saved views](./saved-views.md) - persist a "live mode on / off"
-  toggle alongside the rest of the view config.
-- [Performance benchmarks](./benchmarks.md) - measured per-frame cost
-  of the patterns above.
-
 ## Frequently asked questions
 
 ### How do I show real-time data in SvGrid?
@@ -280,3 +299,12 @@ Fast enough for tick-by-tick feeds - the stock-market demo updates 25 symbols
 every 250 ms with green/red cell flashes while sorting and selection stay live.
 For very high rates, patch only changed rows rather than swapping the whole
 array.
+
+## See also
+
+- [Server-side data](./server-side-data.md) - the pull side of
+  remote data.
+- [Saved views](./saved-views.md) - persist a "live mode on / off"
+  toggle alongside the rest of the view config.
+- [Performance benchmarks](./benchmarks.md) - measured per-frame cost
+  of the patterns above.

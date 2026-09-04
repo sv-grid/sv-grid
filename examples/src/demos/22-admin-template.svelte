@@ -506,6 +506,7 @@
             </div>
             <div class="flex-1 min-h-0">
               <SvGrid responsive={true}
+      columnResize
                 data={recentOrders}
                 columns={dashboardColumns}
                 features={features}
@@ -569,6 +570,7 @@
             {/if}
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
               <SvGrid responsive={true}
+      columnResize
                 data={orders}
                 columns={ordersColumns}
                 features={features}
@@ -599,6 +601,7 @@
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
               <SvGrid responsive={true}
+      columnResize
                 data={customers}
                 columns={customerColumns}
                 features={features}
@@ -642,6 +645,7 @@
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
               <SvGrid responsive={true}
+      columnResize
                 data={products}
                 columns={productColumns}
                 features={features}
@@ -678,6 +682,7 @@
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
               <SvGrid responsive={true}
+      columnResize
                 data={users}
                 columns={userColumns}
                 features={features}
@@ -721,6 +726,7 @@
             </div>
             <div class="sg-panel flex-1 min-h-0 overflow-hidden">
               <SvGrid responsive={true}
+      columnResize
                 data={reportRows}
                 columns={reportColumns}
                 features={features}

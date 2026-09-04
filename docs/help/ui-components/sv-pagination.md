@@ -33,7 +33,7 @@ import { SvPagination } from '@svgrid/grid'
 
 <div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPagination } from '@svgrid/grid'
   let page = $state(1)
@@ -143,6 +143,26 @@ Prev on the first is a no-op - you never issue a redundant or out-of-range fetch
 - The current page button carries `aria-current="page"`.
 - Prev/next/first/last buttons disable themselves at the range ends.
 - Each button has an explicit label (`Page 3`, `Next page`, and so on).
+
+## Controlling the window
+
+`siblingCount` and `boundaryCount` decide how wide the number strip gets before
+it collapses into ellipses. Two siblings is comfortable on desktop; drop to one
+where the control shares a row with anything else.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvPagination } from '@svgrid/grid'
+
+  let page = $state(7)
+</script>
+
+<SvPagination {page} pageCount={20} onChange={(p) => (page = p)} siblingCount={2} showFirstLast />
+
+<SvPagination {page} pageCount={20} onChange={(p) => (page = p)} siblingCount={0} size="sm" />
+
+<p>Page {page} of 20</p>
+```
 
 ## See also
 

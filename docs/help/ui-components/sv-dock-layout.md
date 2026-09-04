@@ -152,6 +152,26 @@ functions, and render your own chrome around the panes - the component only adds
 the styled tabs, splitters and drop zones. See
 [Headless editors](headless-editors.md#data-model-cores-dock).
 
+## More examples
+
+### Docking: header positions
+
+SvDockManager headerPosition: put the tab strip on any side of a panel (top / bottom / left / right - left & right render vertical tabs) and toggle tab reordering.
+
+<div data-docs-demo="363-dock-headers" data-height="520"></div>
+
+### Docking: analytics workspace
+
+SvDockManager as a BI workspace: per-pane minSize stops splitters crushing panels, and Save / Load persist the whole (tiled + floating + auto-hidden) layout to localStorage.
+
+<div data-docs-demo="365-dock-dashboard" data-height="520"></div>
+
+### Docking: keep-alive tabs
+
+SvDockManager keepAlive: keep inactive tabs mounted (hidden) so their DOM state - scroll position, unsaved form input - survives a tab switch instead of being unmounted.
+
+<div data-docs-demo="366-dock-keepalive" data-height="520"></div>
+
 ## See also
 
 - [SvDockManager](sv-dock-manager.md) - docking with floating windows, reorder and auto-hide.

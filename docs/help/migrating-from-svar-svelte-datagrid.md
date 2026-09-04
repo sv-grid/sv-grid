@@ -30,6 +30,41 @@ also exposes a headless engine and an MCP server).
 
 ## Before / after (shape, not exact prop names)
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - <script>
 -   import { Grid } from 'wx-svelte-grid'
@@ -84,12 +119,6 @@ you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
 - Any **SVAR-specific column features** you rely on; map each to a SvGrid
   `cell` snippet, `editorType`, or feature before porting.
 
-## See also
-
-- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/) - the side-by-side comparison
-- [Architecture](./architecture.md) - the engine + render-component split
-- [Cell components](./cells/cell-components.md) - custom cells and editors
-
 ## Frequently asked questions
 
 ### Why move from SVAR Svelte DataGrid to SvGrid?
@@ -112,3 +141,17 @@ Yes. `@svgrid/grid` and the SVAR DataGrid are both MIT and free for
 commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
 Gantt; on SvGrid, only the optional `@svgrid/enterprise` add-on (advanced export,
 pivot, import, AI, support) is paid.
+
+## What you end up with
+
+Grouping with aggregation and a totals row, the main capability step up.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} groupBy={['department']} summary groupable sortable filterable />
+```
+
+## See also
+
+- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/) - the side-by-side comparison
+- [Architecture](./architecture.md) - the engine + render-component split
+- [Cell components](./cells/cell-components.md) - custom cells and editors

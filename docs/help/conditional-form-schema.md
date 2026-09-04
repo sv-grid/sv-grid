@@ -83,7 +83,7 @@ nonprofit) and a four-state workflow (draft → pending → approved /
 rejected). Every column's visibility and editability comes from the
 schema.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid,
@@ -274,6 +274,58 @@ For OR semantics, write it directly:
   [Validation](./editing/validation.md).
 - **Mobile card view** - the same schema works inside the card-mode
   edit panel; just import the helpers and skip rendering hidden fields.
+
+## Rules that lock a cell
+
+The schema is a thin layer over `editable: (ctx) => boolean`, which is a real
+per-column callback. Keeping the rules in one object rather than spread across
+column definitions is the only thing the recipe adds - and it is what makes them
+reviewable.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  type Record_ = { id: number; kind: 'draft' | 'approved'; owner: string; amount: number }
+
+  const records: Record_[] = [
+    { id: 1, kind: 'draft',    owner: 'Ada',   amount: 1200 },
+    { id: 2, kind: 'approved', owner: 'Grace', amount: 4800 },
+    { id: 3, kind: 'draft',    owner: 'Linus', amount: 300 },
+  ]
+
+  // The rules, in one place, next to each other rather than in the columns.
+  const schema = {
+    owner:  { editable: (r: Record_) => r.kind === 'draft' },
+    amount: { editable: (r: Record_) => r.kind === 'draft' },
+  }
+
+  const columns: GridColumns<Record_> = [
+    { field: 'kind',   header: 'State',  width: 130 },
+    { field: 'owner',  header: 'Owner',  width: 160, editorType: 'text',
+      editable: (ctx) => schema.owner.editable(ctx.row.original) },
+    { field: 'amount', header: 'Amount', width: 140, editorType: 'number',
+      editable: (ctx) => schema.amount.editable(ctx.row.original),
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={records} {columns} editable />
+```
 
 ## See also
 

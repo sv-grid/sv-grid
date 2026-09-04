@@ -325,6 +325,32 @@ must also be present.
 - `dir="rtl"` mirrors the layout, and every generated string is overridable via
   `messages` for localization.
 
+## More examples
+
+### Form: rich field types
+
+SvForm reaching the whole input suite from one schema - phone, country, mask, combobox, radio, slider, tags, datetime and file - plus per-field help text, a readonly field, column span, and a promise toast on submit.
+
+<div data-docs-demo="404-form-rich-fields" data-height="520"></div>
+
+### Form: cascading fields
+
+SvForm dependent selects - a child list derives from the parent value via a function `options`, and `dependsOn` clears the child when the parent changes so a stale selection never lingers. Country -> State -> City.
+
+<div data-docs-demo="405-form-cascading" data-height="520"></div>
+
+### Checkout form
+
+A real payment form built entirely from SvGrid UI: SvMaskedInput (card number + expiry + CVC), SvCountryInput (billing country), SvNumberInput (amount), SvSwitchButton (save card) and SvButton - with live card-brand detection and validation. Copy the file and ship it.
+
+<div data-docs-demo="334-checkout-form" data-height="560"></div>
+
+### Appointment booking
+
+A scheduling form from SvGrid UI: SvComboBox (service), SvCalendar (date), SvTimePicker (slot), SvButtonGroup (duration), SvNumberInput (guests) and a live summary. The same components SvGrid uses to edit cells, composed into a page.
+
+<div data-docs-demo="335-booking-form" data-height="560"></div>
+
 ## See also
 
 - [SvField](sv-field.md) - the shared label / hint / error wrapper for building custom form rows.

@@ -94,6 +94,7 @@
   </header>
   <div class="cs-cal">
     <SvGrid
+      columnResize
       data={rows}
       columns={columns}
       getRowId={(r) => String(r.id)}

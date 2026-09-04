@@ -3,6 +3,40 @@
 List and overlay pickers. The overlay controls portal their panel to `<body>`
 (carrying theme tokens) so they never clip, and share a common option shape:
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvAutoComplete, SvComboBox, SvCountryInput, SvDropDownList, SvGridSelect, SvListBox, SvMultiSelect, SvTagsInput, SvTreeSelect } from '@svgrid/grid'
+  import type { ListOption } from '@svgrid/grid'
+
+  // The bound value / option list behind each example below.
+  let picked = $state<string[]>([])
+  let sel = $state("")
+  let id = $state("")
+  let text = $state("")
+  let city = $state("")
+  let country = $state("US")
+  let tags = $state<string[]>([])
+  let assignee = $state("")
+
+  const topics: ListOption[] = [
+    { value: "svelte", label: "Svelte" },
+    { value: "grid", label: "Data grid" },
+    { value: "a11y", label: "Accessibility" },
+  ]
+  const fruit: ListOption[] = [
+    { value: "apple", label: "Apple" },
+    { value: "pear", label: "Pear" },
+    { value: "plum", label: "Plum" },
+  ]
+  const people = [
+    { id: "u1", name: "Ada Lovelace", email: "ada@example.com" },
+    { id: "u2", name: "Grace Hopper", email: "grace@example.com" },
+  ]
+</script>
+```
+
 ```ts
 type ListOption = { value: string | number; label: string; disabled?: boolean; group?: string }
 ```
@@ -91,7 +125,7 @@ helper `filterGridRows` is exported. Like `SvMultiSelect`, it accepts
 An inline single/multi-select list (ARIA listbox) with roving highlight and full
 keyboard (arrows, Home/End, Space/Enter).
 
-```svelte
+```svelte {runnable}
 <SvListBox options={fruit} value={picked} multiple onChange={(v) => (picked = v)} rows={7} />
 ```
 
@@ -123,7 +157,7 @@ Unmatched typed text reverts on blur.
 A free-text input with a suggestion list. Unlike the combobox it accepts **any**
 value; suggestions are shortcuts.
 
-```svelte
+```svelte {runnable}
 <SvAutoComplete value={text} suggestions={['Svelte','React','Vue']}
   onChange={(v) => (text = v)} />
 ```
@@ -135,7 +169,7 @@ Props: `value`, `suggestions` (string[] or ListOption[]), `minChars`, `onChange(
 An editable chips input. Enter or comma adds; Backspace removes the last; click × on
 a chip to remove it.
 
-```svelte
+```svelte {runnable}
 <SvTagsInput value={tags} onChange={(t) => (tags = t)} />
 ```
 
@@ -145,7 +179,7 @@ Props: `value` (string[]), `onChange(tags)`, `unique` (default true), `max`, `di
 
 A searchable country picker (flag + name + dial code) emitting the ISO alpha-2 code.
 
-```svelte
+```svelte {runnable}
 <SvCountryInput value={country} showDial onChange={(code) => (country = code)} />
 ```
 
@@ -165,3 +199,11 @@ recipes:
 - [SvGridSelect](./sv-grid-select.md) - a multi-column grid in a dropdown.
 - [SvGridDropdown](./sv-grid-dropdown.md) - the themeable listbox behind grid cell editors.
 - [SvCountryInput](./sv-country-input.md) - a searchable country picker with flags.
+
+## More examples
+
+### Selection controls
+
+List and overlay pickers: SvListBox (inline multi-select), SvDropDownList, SvComboBox (type to filter), SvAutoComplete (free text + suggestions), SvTagsInput (chips) and SvCountryInput (searchable, flags). Every popover portals out of the scroll container. Grid cell editors, standalone too.
+
+<div data-docs-demo="255-selection" data-height="460"></div>

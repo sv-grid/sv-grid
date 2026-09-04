@@ -9,6 +9,26 @@ For any cell whose content is more than a string, use `cell:` with
 
 ## Snippet
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { renderSnippet, type GridColumns } from '@svgrid/grid'
@@ -87,6 +107,103 @@ virtualized grids, keep them cheap:
 - **Status pill** - class-derived background. See demo 10.
 - **Inline progress bar** - `<div role="progressbar" aria-valuenow>`. See demo 10.
 - **Hyperlink** - `<a href="/people/{ctx.row.original.id}">{ctx.getValue()}</a>`.
+
+## A cell that reads the whole row
+
+`renderSnippet` passes whatever you give it, so the cell can use fields the
+column does not name. That is the difference between rendering a value and
+rendering a record.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Person', width: 260,
+      cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }) },
+    { field: 'salary', header: 'Salary', width: 140,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+{#snippet PersonCell(props: { row: Person })}
+  <span style="display: inline-flex; align-items: center; gap: 8px;">
+    <span style="width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, currentColor 12%, transparent); font-size: 11px;">
+      {props.row.name.split(' ').map((w) => w[0]).join('')}
+    </span>
+    <span>
+      <span style="display: block;">{props.row.name}</span>
+      <span style="display: block; font-size: 11px; opacity: 0.6;">{props.row.department}</span>
+    </span>
+  </span>
+{/snippet}
+
+<SvGrid data={people} {columns} rowHeight={44} />
+```
+
+
+## Falling back when there is nothing to show
+
+A renderer runs for every row including the empty ones, so decide what an
+absent value looks like. A dash reads as "none"; a blank cell reads as a bug.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, active: true },
+  ]
+
+  const withGaps = people.map((p, i) => ({ ...p, city: i % 2 ? '' : p.city }))
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 190 },
+    { field: 'city', header: 'City', width: 160,
+      cell: (ctx) => renderSnippet(CityCell, { value: String(ctx.getValue() ?? '') }) },
+  ]
+</script>
+
+{#snippet CityCell(props: { value: string })}
+  {#if props.value}
+    <span>{props.value}</span>
+  {:else}
+    <span style="opacity: 0.4;">-</span>
+  {/if}
+{/snippet}
+
+<SvGrid data={withGaps} {columns} />
+```
 
 ## See also
 

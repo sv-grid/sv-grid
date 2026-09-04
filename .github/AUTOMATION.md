@@ -4,7 +4,7 @@ Three scheduled GitHub Actions keep the package and the blog moving without manu
 
 | Workflow | File | Schedule (UTC) | What it does |
 | --- | --- | --- | --- |
-| Daily blog post | [daily-blog.yml](workflows/daily-blog.yml) | 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
+| Blog post (twice weekly) | [daily-blog.yml](workflows/daily-blog.yml) | Tue + Fri 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
 | Publish npm package | [publish-npm.yml](workflows/publish-npm.yml) | 06:37 | Publishes `@svgrid/grid` to npm, but only when its source changed. |
 | Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Regenerates the blog's SEO structure (tips pages, pillar hubs, "Related reading" blocks), then rebuilds the site so posts whose date has arrived go live. |
 
@@ -27,10 +27,12 @@ git tag and, on the next run, only bumps the patch (build) number and republishe
 - `@svgrid/enterprise` is the paid SKU and is deliberately **not** auto-published. To add another public package later, give it the same detect/bump/tag treatment in `publish-npm.yml`.
 - Run manually any time from the Actions tab; `force: true` publishes even with no detected change.
 
-## How the daily blog post works
+## How the blog drip works
 
 [tools/generate-blog-post.mjs](../tools/generate-blog-post.mjs) writes one post per run and
-**appends it to the end of the queue** - its `date` is one day after the latest existing post.
+**appends it to the end of the queue** - its `date` is a random 2 to 5 days after the latest
+existing post, which averages 3.5 and so publishes twice a week at uneven intervals. Generation
+runs on the same twice-weekly cadence, so the queue neither grows nor drains.
 Future-dated posts are hidden until their day arrives ([website/src/lib/blog.ts](../website/src/lib/blog.ts)),
 so a generated post is never public the same day; it queues behind the already-scheduled backlog,
 which leaves a long review window. The 1200x630 hero/social image is generated automatically at

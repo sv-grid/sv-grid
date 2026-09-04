@@ -30,6 +30,41 @@ That is the moment a styled `<Table>` stops paying for itself.
 
 ## Before / after
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - <script>
 -   import { Table, TableHead, TableHeadCell, TableBody, TableBodyRow, TableBodyCell } from 'flowbite-svelte'
@@ -96,12 +131,6 @@ shadcn:
 - A **pixel-perfect**, zero-config match with the rest of the kit - you
   re-create the look with tokens instead (a one-time setup).
 
-## See also
-
-- [SvGrid vs UI-kit tables](https://svgrid.com/compare/svelte-ui-kit-tables/) - the side-by-side comparison
-- [Tailwind integration](./tailwind.md) - match your design system
-- [Getting started](../getting-started.md) - a working grid in ~15 lines
-
 ## Frequently asked questions
 
 ### When should I replace a Flowbite / Skeleton / shadcn table with a data grid?
@@ -123,3 +152,17 @@ shadcn-svelte.
 For a small, static table that never sorts or filters, a styled `<table>` is
 lighter and fine. Switch when the behaviour - not just the styling - becomes the
 work.
+
+## What you end up with
+
+Everything the presentational table could not do: sort, filter, page, edit.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable pageable pageSize={3} editable />
+```
+
+## See also
+
+- [SvGrid vs UI-kit tables](https://svgrid.com/compare/svelte-ui-kit-tables/) - the side-by-side comparison
+- [Tailwind integration](./tailwind.md) - match your design system
+- [Getting started](../getting-started.md) - a working grid in ~15 lines

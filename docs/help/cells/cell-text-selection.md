@@ -69,6 +69,20 @@ currency symbols, expand codes to labels, redact, etc.
 - A grid in `selectionMode='both'` (default) does too - the cell selection
   layer takes precedence.
 
+## More examples
+
+### Selection API + events
+
+Drive cell selection with api.selectCells / api.getSelected; subscribe to changes via onCellSelectionChange. Live SUM/AVG/MIN/MAX panel + event log + copy-as-TSV.
+
+<div data-docs-demo="90-selection-api" data-height="460"></div>
+
+### Range selection (Excel-style)
+
+Drag any rectangle of cells, or Ctrl/Cmd+drag to add MORE ranges - all stay highlighted and copy together. Toolbar issues common ranges; live SUM/AVG/MIN/MAX/COUNT status bar; copy as TSV.
+
+<div data-docs-demo="118-range-selection" data-height="460"></div>
+
 ## See also
 
 - [Selection demo](../../../examples/src/demos/04-selection-copy-paste.svelte)

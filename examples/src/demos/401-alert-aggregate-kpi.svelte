@@ -131,7 +131,8 @@
   </div>
 
   <div class="app-grid">
-    <SvGrid data={rows} {columns} getRowId={(r) => r.region} conditionalFormats={formats} onApiReady={(a) => (api = a)} containerHeight={280} />
+    <SvGrid
+      columnResize data={rows} {columns} getRowId={(r) => r.region} conditionalFormats={formats} onApiReady={(a) => (api = a)} containerHeight={280} />
   </div>
 
   <footer class="app-foot">

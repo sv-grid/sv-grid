@@ -34,7 +34,15 @@ props table and accessibility notes:
 
 A month / year / decade calendar with every selection mode.
 
-```svelte
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvCalendar, SvDateTimePicker, SvTimePicker } from '@svgrid/grid'
+</script>
+```
+
+```svelte {runnable}
 <script>
   import { SvCalendar } from '@svgrid/grid'
   let value = $state([new Date()])
@@ -132,3 +140,33 @@ for grid editing.
 
 See the [component guides above](#the-family-at-a-glance) for each control's full
 tutorial, live example and props.
+
+## More examples
+
+### Date-time picker - headless
+
+Styled SvDateTimePicker (portalled dropdown) and a custom masked field, sharing one value.
+
+<div data-docs-demo="278-headless-datetimepicker" data-height="420"></div>
+
+## The three date controls together
+
+A calendar for picking a day, a time picker for a clock value, and the
+combined control when you need both. They share the same value contract, so
+swapping one for another is a component change and nothing else.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCalendar, SvTimePicker, SvDateTimePicker } from '@svgrid/grid'
+
+  let day = $state<Date | null>(new Date())
+  let clock = $state<Date | null>(new Date())
+  let both = $state<Date | null>(new Date())
+</script>
+
+<SvCalendar value={day} label="Day" onChange={(dates) => (day = dates[0] ?? null)} />
+
+<SvTimePicker value={clock} label="Time" onChange={(v) => (clock = v)} />
+
+<SvDateTimePicker value={both} label="Day and time" onChange={(v) => (both = v)} />
+```

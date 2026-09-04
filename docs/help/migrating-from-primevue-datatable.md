@@ -24,6 +24,41 @@ component.
 
 ## Before / after
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - <DataTable :value="rows" paginator :rows="25" sortMode="multiple">
 -   <Column field="name"   header="Name" sortable />
@@ -55,12 +90,6 @@ component.
   dependency.
 - **`lazy` → `externalSort` / `externalFilter`** with refetch on events.
 
-## See also
-
-- [SvGrid vs Prime DataTable](https://svgrid.com/compare/primevue-datatable/) - the side-by-side comparison
-- [Tailwind integration](./tailwind.md) - match your design system
-- [Cell components](./cells/cell-components.md) - snippet cells + editors
-
 ## Frequently asked questions
 
 ### How do Prime `<Column>` definitions map to SvGrid?
@@ -79,3 +108,17 @@ is framework: SvGrid is Svelte 5, not Vue / Angular / React.
 
 You re-create the look with `--sg-*` tokens (optionally driven by your Tailwind
 theme), so the grid matches your design system without a Prime theme dependency.
+
+## What you end up with
+
+Sorting, filtering, pagination and row selection in one pass.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable pageable pageSize={3} selectable />
+```
+
+## See also
+
+- [SvGrid vs Prime DataTable](https://svgrid.com/compare/primevue-datatable/) - the side-by-side comparison
+- [Tailwind integration](./tailwind.md) - match your design system
+- [Cell components](./cells/cell-components.md) - snippet cells + editors

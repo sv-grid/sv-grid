@@ -25,6 +25,19 @@ Or install the package and import it directly. `SvSwitchButton` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvSwitchButton } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let mfa = $state(false)
+  let live = $state(false)
+  let optIn = $state(false)
+</script>
+```
+
 ```ts
 import { SvSwitchButton } from '@svgrid/grid'
 ```
@@ -33,7 +46,7 @@ import { SvSwitchButton } from '@svgrid/grid'
 
 <div data-docs-demo="308-switch" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSwitchButton } from '@svgrid/grid'
   let notify = $state(true)
@@ -72,7 +85,7 @@ import { SvSwitchButton } from '@svgrid/grid'
 
 Pair the switch with a `label` and `hint` for a self-describing preferences row:
 
-```svelte
+```svelte {runnable}
 <SvSwitchButton
   label="Two-factor auth"
   hint="Require a code at sign-in"
@@ -86,20 +99,11 @@ Pair the switch with a `label` and `hint` for a self-describing preferences row:
 Add short `onLabel` / `offLabel` text for a switch that reads its state at a
 glance:
 
-```svelte
+```svelte {runnable}
 <SvSwitchButton onLabel="ON" offLabel="OFF" checked={live} onChange={(v) => (live = v)} />
 ```
 
-### In a form
-
-Give it a `name` and it emits a hidden input, so a plain form submit carries the
-value:
-
-```svelte
-<form>
-  <SvSwitchButton name="marketing" label="Marketing emails" checked={optIn} onChange={(v) => (optIn = v)} />
-</form>
-```
+#
 
 ### Setting that applies immediately
 
@@ -107,7 +111,7 @@ The `switch` role signals a change that takes effect at once, so do the work
 right in `onChange` rather than waiting for a save - here, toggling a theme
 class on the document root:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSwitchButton } from '@svgrid/grid'
   let dark = $state(false)
@@ -126,6 +130,57 @@ class on the document root:
 - `Enter` and `Space` toggle it; the focus ring lands on the track.
 - A visible `label` (or `ariaLabel`) names the switch for assistive tech; the
   on/off labels are decorative.
+
+## More examples
+
+### Switch button - headless
+
+Styled SvSwitchButton plus a custom sliding knob, one bound checked value with a readout.
+
+<div data-docs-demo="272-headless-switchbutton" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSwitchButton } from '@svgrid/grid'
+
+  let notify = $state(false)
+</script>
+
+<SvSwitchButton checked={notify} size="sm" />
+<SvSwitchButton checked={notify} size="md" />
+<SvSwitchButton checked={notify} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSwitchButton } from '@svgrid/grid'
+
+  let notify = $state(false)
+</script>
+
+<SvSwitchButton
+  checked={notify}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvSwitchButton
+  checked={notify}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

@@ -33,7 +33,7 @@ import { SvRepeatButton } from '@svgrid/grid'
 
 <div data-docs-demo="306-repeat-button" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRepeatButton } from '@svgrid/grid'
   let qty = $state(1)
@@ -90,7 +90,7 @@ Omit the label and pass `ariaLabel` so the button still announces:
 Because `onclick` runs on every repeat, clamp the value inside the handler so a
 long hold stops cleanly at the limits instead of running past them:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRepeatButton } from '@svgrid/grid'
   let zoom = $state(100)

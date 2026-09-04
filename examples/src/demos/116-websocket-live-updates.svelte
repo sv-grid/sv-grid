@@ -303,6 +303,7 @@
 
   <div class="flex-1 min-h-0" bind:this={gridHost}>
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={columns}
       features={features}

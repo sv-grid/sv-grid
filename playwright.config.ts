@@ -55,6 +55,25 @@ export default defineConfig({
       use: { ...devices['iPhone 13'], browserName: 'chromium' },
       testMatch: /[\\/]mobile[\\/].*\.spec\.ts$/,
     },
+    {
+      // Performance measurement, run on demand rather than in CI: `pnpm bench:dom`.
+      // Deliberately NOT a gate. Browser wall-clock on a shared runner is noisier
+      // than Node's, and a perf gate that flakes gets switched off within a month
+      // - at which point it protects nothing. The gate CI actually runs is
+      // `pnpm bench:check`, which counts algorithmic work and so is identical on
+      // every machine.
+      //
+      // `testDir` overrides the top-level `tests/e2e`, which is also what keeps
+      // these out of the chromium project. One worker so a parallel test cannot
+      // contend for CPU with the thing being measured. Targets the gallery on
+      // :5174, so it needs no private submodule.
+      name: 'perf',
+      testDir: 'tests/perf',
+      use: { ...devices['Desktop Chrome'] },
+      workers: 1,
+      fullyParallel: false,
+      retries: 0,
+    },
   ],
 
   webServer: [{

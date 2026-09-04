@@ -294,6 +294,7 @@
 
     <div class="rm-cal">
       <SvGrid
+      columnResize
         data={filtered}
         columns={columns}
         getRowId={(r) => String(r.id)}
@@ -314,7 +315,8 @@
       <summary>All initiatives ({rows.length})</summary>
       {#if tableOpen}
         <div class="rm-table-grid">
-          <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="260px" fitColumns />
+          <SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="260px" fitColumns />
         </div>
       {/if}
     </details>
@@ -352,8 +354,12 @@
   .rm-sub { font-size: 0.76rem; color: var(--sg-muted, #6b7280); }
 
   /* Portfolio-health strip */
-  .rm-health { display: grid; grid-template-columns: 1.25fr 1.1fr 1.2fr 0.85fr; gap: 10px; padding: 4px 14px 8px; }
-  .rm-hcard { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 12px; background: var(--sg-bg, #fff); min-width: 0; }
+  /* The timeline is this app's centrepiece, and the chrome above it was taking
+     400px of a 638px pane - leaving the calendar 240px, of which only ~114px
+     reached the squad rows. Two of four squads were cut off below the fold on a
+     1040px viewport. These are the same cards, just denser. */
+  .rm-health { display: grid; grid-template-columns: 1.25fr 1.1fr 1.2fr 0.85fr; gap: 8px; padding: 2px 14px 6px; }
+  .rm-hcard { display: flex; flex-direction: column; gap: 5px; padding: 7px 10px; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 12px; background: var(--sg-bg, #fff); min-width: 0; }
   .rm-hcard-title { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sg-muted, #94a3b8); }
   .rm-hcard-note { font-weight: 700; color: var(--sg-fg, #334155); letter-spacing: 0; text-transform: none; font-size: 0.7rem; }
   .rm-hcard-cap { font-size: 0.7rem; color: var(--sg-muted, #6b7280); text-align: center; }
@@ -367,7 +373,7 @@
   .rm-mini-leg b { color: var(--sg-fg, #334155); font-variant-numeric: tabular-nums; }
 
   /* Chart 2: capacity bars */
-  .rm-bars { display: flex; align-items: stretch; gap: 8px; height: 58px; }
+  .rm-bars { display: flex; align-items: stretch; gap: 8px; height: 42px; }
   .rm-bar-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .rm-bar-off { opacity: 0.45; }
   .rm-bar-val { font-size: 0.62rem; font-weight: 700; color: var(--sg-fg, #334155); font-variant-numeric: tabular-nums; }

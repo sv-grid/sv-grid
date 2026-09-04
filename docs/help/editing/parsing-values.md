@@ -5,6 +5,39 @@ number / date inputs, a boolean for checkboxes) is parsed by
 `parseEditorValue` into the canonical value for the column's type.
 <div data-docs-demo="24-validation" data-height="540"></div>
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 130, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 80,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 import { parseEditorValue } from '@svgrid/grid'
 
@@ -66,6 +99,38 @@ type ValueParserParams<TData> = {
 treats `null` as an empty value and writes it into the cell. If you want
 **invalid input rejected** (the value reverts to its pre-edit state),
 intercept before the write - see [Validation](./validation.md).
+
+## Try it
+
+`valueParser` runs after the editor's own coercion and before the value reaches
+your row, so it is the place to normalise input. Type a name in lower case, or
+a salary with a `k` suffix.
+
+```svelte {runnable}
+<script lang="ts">
+  const parsed: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 220, editorType: 'text',
+      // Title-case whatever they typed.
+      valueParser: (p) =>
+        String(p.newValue ?? '')
+          .toLowerCase()
+          .replace(/\b[a-z]/g, (c) => c.toUpperCase()) },
+
+    { field: 'salary', header: 'Salary', width: 150, editorType: 'text',
+      // "142k" -> 142000. rawInput is the string before coercion, which is the
+      // only place the k is still visible.
+      valueParser: (p) => {
+        const raw = p.rawInput.trim().toLowerCase()
+        const n = Number.parseFloat(raw)
+        if (Number.isNaN(n)) return p.oldValue
+        return raw.endsWith('k') ? n * 1000 : n
+      },
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} columns={parsed} editable />
+```
 
 ## See also
 

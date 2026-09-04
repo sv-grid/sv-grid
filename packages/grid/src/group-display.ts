@@ -14,7 +14,7 @@
  * they are trivially unit-testable and carry no dependency on the grid runtime.
  */
 
-/** AG-Grid-style grouping display variants. */
+/** Grouping display variants. */
 export type GroupDisplayType = 'groupRows' | 'singleColumn' | 'multipleColumns'
 
 export type GroupFooterOptions<R> = {

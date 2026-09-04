@@ -24,6 +24,18 @@ Or install the package and import it directly. `SvSegmented` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvSegmented } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let align = $state('')
+  let period = $state('')
+</script>
+```
+
 ```ts
 import { SvSegmented } from '@svgrid/grid'
 ```
@@ -32,7 +44,7 @@ import { SvSegmented } from '@svgrid/grid'
 
 <div data-docs-demo="408-segmented" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSegmented } from '@svgrid/grid'
   let view = $state('board')
@@ -82,7 +94,7 @@ Set `block` to split the track evenly, and give options an `icon` snippet:
 
 Pass `label` / `hint` / `error` to wrap it in the shared field chrome:
 
-```svelte
+```svelte {runnable}
 <SvSegmented label="Billing period" bind:value={period} required
   error={period ? undefined : 'Pick a period'}
   options={[{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }]} />
@@ -95,6 +107,49 @@ Pass `label` / `hint` / `error` to wrap it in the shared field chrome:
 - Keyboard: Left/Right (and Up/Down) move between options and select them; Space
   or Enter selects the focused option; disabled options are skipped.
 - Give it a `label` (or `ariaLabel`) so the group is named for assistive tech.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvSegmented } from '@svgrid/grid'
+
+  let view = $state('')
+</script>
+
+<SvSegmented bind:value={view} size="sm" />
+<SvSegmented bind:value={view} size="md" />
+<SvSegmented bind:value={view} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvSegmented } from '@svgrid/grid'
+
+  let view = $state('')
+</script>
+
+<SvSegmented
+  bind:value={view}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvSegmented
+  bind:value={view}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

@@ -25,6 +25,14 @@ Or install the package and import it directly. `SvDrawer` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvDrawer } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvDrawer } from '@svgrid/grid'
 ```
@@ -33,7 +41,7 @@ import { SvDrawer } from '@svgrid/grid'
 
 <div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDrawer, SvButton } from '@svgrid/grid'
   let open = $state(false)
@@ -140,6 +148,32 @@ surfaces; `size` accepts any CSS length along the panel's axis.
   as in [SvModal](sv-modal.md).
 - Escape and backdrop dismissal follow `closeOnEsc` / `closeOnBackdrop` through
   the shared layer stack.
+
+## Which edge, and how much of it
+
+`side` picks the edge and `size` the extent. A right drawer reads as a detail
+panel; a bottom one reads as a sheet on a phone, which is what `sheet` styles it
+as.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvDrawer, SvButton } from '@svgrid/grid'
+
+  let right = $state(false)
+  let bottom = $state(false)
+</script>
+
+<SvButton onclick={() => (right = true)}>Open detail panel</SvButton>
+<SvButton variant="outline" onclick={() => (bottom = true)}>Open sheet</SvButton>
+
+<SvDrawer open={right} onClose={() => (right = false)} side="right" size="360px" title="Row detail">
+  <p>Everything about the selected row.</p>
+</SvDrawer>
+
+<SvDrawer open={bottom} onClose={() => (bottom = false)} side="bottom" size="45%" sheet title="Actions">
+  <p>The phone-shaped version of the same idea.</p>
+</SvDrawer>
+```
 
 ## See also
 

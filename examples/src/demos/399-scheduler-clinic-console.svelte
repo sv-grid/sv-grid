@@ -252,18 +252,21 @@
         <SvDockManager bind:workspace minSize={120}>
           {#snippet pane(p)}
             {#if p.id === 'scheduler'}
-              <div class="cx-pane"><SvGrid data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" scheduler={schedulerCfg} /></div>
+              <div class="cx-pane"><SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" scheduler={schedulerCfg} /></div>
             {:else if p.id === 'load'}
               <div class="cx-pane cx-chartwrap" bind:clientWidth={loadW} bind:clientHeight={loadH}>{@render chartPane(byHour)}</div>
             {:else if p.id === 'upcoming'}
-              <div class="cx-pane"><SvGrid data={rows} columns={columns} getRowId={(r) => r.id} sortable enableInlineEditing rowHeight={30} containerHeight="100%" fitColumns /></div>
+              <div class="cx-pane"><SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => r.id} sortable enableInlineEditing rowHeight={30} containerHeight="100%" fitColumns /></div>
             {/if}
           {/snippet}
         </SvDockManager>
       </div>
     {:else if activeModule === 'patients'}
       <div class="cx-toolbar"><div class="cx-title">Patients <span class="cx-title-sub">{patients.length} records</span></div></div>
-      <div class="cx-plain"><SvGrid data={patients} columns={patientColumns} getRowId={(r) => r.id} sortable filterable containerHeight="100%" fitColumns /></div>
+      <div class="cx-plain"><SvGrid
+      columnResize data={patients} columns={patientColumns} getRowId={(r) => r.id} sortable filterable containerHeight="100%" fitColumns /></div>
     {:else if activeModule === 'insights'}
       <div class="cx-toolbar"><div class="cx-title">Insights <span class="cx-title-sub">today at a glance</span></div></div>
       <div class="cx-insights">

@@ -276,13 +276,6 @@ final write step: emitting an enterprise format (xlsx / pdf) goes through
 watermark until a `SVENTERPRISE-` key is set. Planning the export, and every
 other AI helper, is unconditionally free.
 
-## See also
-
-- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the
-  Enterprise export engine that `aiExport` writes through when it is installed.
-- [Demo 51 - AI assistant](../../examples/src/demos/51-ai-assistant.svelte) - the full demo this
-  page documents, with all four helpers wired to the mock provider.
-
 ## Frequently asked questions
 
 ### What AI features does SvGrid have?
@@ -303,3 +296,30 @@ provider so you can evaluate the flow without an API key.
 Only if you wire one up and invoke a helper. SvGrid itself makes no network
 calls; the AI helpers send exactly the prompt you construct to the adapter you
 configure, so you control what leaves the browser.
+
+## More examples
+
+### NL filter bar (AI)
+
+Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; production wiring needs an AI Platform key.
+
+<div data-docs-demo="92-nl-filter-bar" data-height="460"></div>
+
+### AI: chart this
+
+Open the Chart panel, press the AI button, and describe the chart in words - the model reads the grid\'s column schema and returns a ChartSpec the built-in panel renders. Ships with a deterministic mock provider; swap in your own via setAIProvider.
+
+<div data-docs-demo="357-ai-chart-this" data-height="560"></div>
+
+### AI export + anomaly scan
+
+Natural-language export: describe an export in English and the AI provider turns it into a filter + group + format plan, applies it, and downloads. Plus a one-click anomaly scan. Runs on the bundled mock model.
+
+<div data-docs-demo="203-ai-export-and-anomalies" data-height="460"></div>
+
+## See also
+
+- [Demo 21 - Export + Print](../../examples/src/demos/21-export-and-print.svelte) - the
+  Enterprise export engine that `aiExport` writes through when it is installed.
+- [Demo 51 - AI assistant](../../examples/src/demos/51-ai-assistant.svelte) - the full demo this
+  page documents, with all four helpers wired to the mock provider.

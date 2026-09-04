@@ -12,7 +12,43 @@ Pair `externalSort` + `externalFilter` with the corresponding callbacks
 so the grid records the user's intent but doesn't try to re-order rows
 it didn't fetch.
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
            columnFilteringFeature } from '@svgrid/grid'
@@ -126,7 +162,7 @@ SvelteKit `+page.server.ts` load, the grid's markup hits the browser
 already filled with data - first paint shows the table, hydration only
 attaches event listeners.
 
-```svelte
+```svelte {runnable}
 <!-- +page.svelte -->
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'

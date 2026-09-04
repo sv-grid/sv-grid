@@ -23,6 +23,14 @@ Or install the package and import it directly. `SvAlert` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvAlert, SvButton } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvAlert } from '@svgrid/grid'
 ```
@@ -31,7 +39,7 @@ import { SvAlert } from '@svgrid/grid'
 
 <div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAlert, SvButton } from '@svgrid/grid'
 </script>
@@ -75,7 +83,7 @@ Give `dismissible` and react to `onDismiss` to persist the dismissal:
 The `actions` snippet renders a button row below the message - ideal for
 retry / undo / view-details flows:
 
-```svelte
+```svelte {runnable}
 <SvAlert variant="warning" title="Unsaved changes">
   You have edits that are not saved.
   {#snippet actions()}
@@ -89,7 +97,7 @@ retry / undo / view-details flows:
 
 `soft` drops the border for a lighter tint that sits inside cards and forms:
 
-```svelte
+```svelte {runnable}
 <SvAlert variant="neutral" soft hideIcon>Read-only while syncing.</SvAlert>
 ```
 
@@ -98,7 +106,7 @@ retry / undo / view-details flows:
 Show a single danger alert above a form when submission fails, listing the
 fields that need attention:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAlert } from '@svgrid/grid'
   let errors = $state<string[]>([])
@@ -121,7 +129,7 @@ it appears after a failed submit.
 Combine `dismissible`, `onDismiss`, and an `actions` snippet for a one-time
 notice the user can act on or clear:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAlert, SvButton } from '@svgrid/grid'
   let dismissed = $state(localStorage.getItem('trial-seen') === '1')

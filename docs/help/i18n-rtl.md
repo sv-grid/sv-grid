@@ -32,6 +32,39 @@ package itself emits, and both are off when a license key is set.)
 The built-in `format` config calls `Intl` under the hood. Locale is
 inherited from `<html lang="...">` by default; override per-column:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 const columns: ColumnDef<F, Order>[] = [
   // Inherits the document locale (most apps want this).
@@ -193,11 +226,26 @@ Two options:
 
 ## Date / time picker editors
 
-The `editorType: 'date'` editor uses the browser's native
-`<input type="date">`. Locale + first-day-of-week + 24h vs 12h come
-from the browser. If you need locked-down behaviour across locales,
-swap in a custom editor via [Custom header components](./columns/custom-header-components.md)
-+ a custom cell snippet for the editing path.
+There are two families, and the difference matters for localisation.
+
+`editorType: 'date' | 'datetime' | 'time'` mount the built-in
+`SvDateTimePicker` - a formatted text input plus a calendar / clock
+popover the package draws itself. It renders identically in every
+browser, and it reads the locale you pass on the grid's `localization`
+prop rather than the browser's.
+
+`editorType: 'date-native' | 'datetime-native' | 'time-native'` fall
+back to the browser's own `<input type="date">` / `datetime-local` /
+`time`. Locale, first day of week, and 24h vs 12h then come from the
+user's OS and browser settings, which you cannot control or test. Pick
+these when matching the platform's own picker matters more than
+consistency - typically on mobile, where the native wheel is what users
+expect.
+
+If neither fits, register your own against the editor registry with
+`registerCellEditor('my-date', Component)` and set
+`editorType: 'my-date'`; the type is open, so custom names still
+typecheck.
 
 ## A11y interaction with i18n
 
@@ -206,16 +254,6 @@ swap in a custom editor via [Custom header components](./columns/custom-header-c
 - Update `<html dir="...">` whenever the script flips.
 - Keep `aria-label`s in the user's locale; the grid never overrides
   yours.
-
-## See also
-
-- [Tailwind integration](./tailwind.md) - the `--sg-*` tokens and how
-  they interact with `dir="rtl"`.
-- [Accessibility](./accessibility.md) - all of the above respects
-  forced-colors / reduced-motion / screen-reader announcements per
-  locale.
-- [Demo #38 RTL + i18n](https://svgrid.com/demos/38-rtl-i18n/)
-  - full locale + direction toggle reference.
 
 ## Frequently asked questions
 
@@ -236,3 +274,64 @@ locale you pass. Wire your own i18n strings into headers and custom cells.
 Yes, through cached `Intl` formatters. Set a column's `format` and the locale,
 and values render with the correct separators, currency symbols, and date
 patterns automatically.
+
+## More examples
+
+### Localization
+
+Same data re-rendered as locale + currency change - headers, dates, numbers, RTL.
+
+<div data-docs-demo="15-localization" data-height="460"></div>
+
+## Try it
+
+Formatting is `Intl`-driven, so a locale change is a data change rather than a
+translation file. The same rows, three ways:
+
+```svelte {runnable}
+<script lang="ts">
+  let locale = $state('en-US')
+  let currency = $state('USD')
+
+  const localised = $derived<GridColumns<Person>>([
+    { field: 'name',   header: 'Name',   width: 190 },
+    { field: 'city',   header: 'City',   width: 130 },
+    { field: 'salary', header: 'Salary', width: 150,
+      format: { type: 'currency', currency, locales: locale } },
+  ])
+
+  const pick = (l: string, c: string) => { locale = l; currency = c }
+</script>
+
+<div>
+  <button type="button" onclick={() => pick('en-US', 'USD')}>en-US</button>
+  <button type="button" onclick={() => pick('de-DE', 'EUR')}>de-DE</button>
+  <button type="button" onclick={() => pick('ja-JP', 'JPY')}>ja-JP</button>
+</div>
+
+<SvGrid data={people} columns={localised} />
+```
+
+Watch the thousands separator and the symbol position move together - that is
+`Intl.NumberFormat` doing the work, not a lookup table we maintain.
+
+## Right to left
+
+`dir="rtl"` mirrors the whole grid: column order, header alignment, the scroll
+origin and the resize handles.
+
+```svelte {runnable}
+<div dir="rtl">
+  <SvGrid data={people} {columns} sortable />
+</div>
+```
+
+## See also
+
+- [Tailwind integration](./tailwind.md) - the `--sg-*` tokens and how
+  they interact with `dir="rtl"`.
+- [Accessibility](./accessibility.md) - all of the above respects
+  forced-colors / reduced-motion / screen-reader announcements per
+  locale.
+- [Demo #38 RTL + i18n](https://svgrid.com/demos/38-rtl-i18n/)
+  - full locale + direction toggle reference.

@@ -24,6 +24,18 @@ Or install the package and import it directly. `SvDurationInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvDurationInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let runtime = $state(0)
+  let estimate = $state(0)
+</script>
+```
+
 ```ts
 import { SvDurationInput } from '@svgrid/grid'
 ```
@@ -32,7 +44,7 @@ import { SvDurationInput } from '@svgrid/grid'
 
 <div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDurationInput } from '@svgrid/grid'
   let minutes = $state<number | null>(90)
@@ -73,7 +85,7 @@ shared `frame` chrome.
 Pick the resting format that fits your domain - `colon` reads like a clock,
 `units` reads like an estimate:
 
-```svelte
+```svelte {runnable}
 <SvDurationInput style="colon" bind:value={runtime} />
 <SvDurationInput style="units" bind:value={estimate} />
 ```
@@ -88,7 +100,7 @@ and `1h 30m` all resolve to the same 90 minutes. Empty input yields `null`.
 Because each field stores plain minutes, a running total is just arithmetic -
 no parsing of `1h 30m` strings on your side:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDurationInput } from '@svgrid/grid'
   let mon = $state<number | null>(480)
@@ -113,6 +125,49 @@ for calculations rather than trying to read the mid-edit text.
   [SvField](sv-field.md); `required` and `invalid` add the matching ARIA.
 - Parsing happens on blur and `Enter`, so assistive tech reads the committed,
   formatted value rather than mid-edit text.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvDurationInput } from '@svgrid/grid'
+
+  let minutes = $state(1)
+</script>
+
+<SvDurationInput bind:value={minutes} size="sm" />
+<SvDurationInput bind:value={minutes} size="md" />
+<SvDurationInput bind:value={minutes} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvDurationInput } from '@svgrid/grid'
+
+  let minutes = $state(1)
+</script>
+
+<SvDurationInput
+  bind:value={minutes}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvDurationInput
+  bind:value={minutes}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

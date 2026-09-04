@@ -48,7 +48,7 @@ edit modal, designer, and generated grid re-theme instantly.
 Flip `data-theme` on `<html>` and every Studio surface re-themes with no component
 re-render:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let dark = $state(false)
   $effect(() => {

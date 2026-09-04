@@ -188,16 +188,6 @@ theme(colors.slate.50)`) are more predictable.
 max-width: Npx;"` and the layout will not respond to a Tailwind utility
 on the `<th>`.
 
-## See also
-
-- [Why headless?](../why-headless.md) - the architectural reason the
-  theming surface looks like this
-- [Getting started](../getting-started.md) - end-to-end gallery setup
-- [Styling cells](./cells/styling-cells.md) - cell-level overrides
-- [Styling rows](./rows/styling-rows.md) - row-level overrides
-- Demo [`10-custom-cells-and-themes`](../../examples/src/demos/10-custom-cells-and-themes.svelte) -
-  three palettes applied via `style="--sg-*: ..."`
-
 ## Frequently asked questions
 
 ### Does SvGrid work with Tailwind CSS?
@@ -216,3 +206,13 @@ selection, and density, including dark mode.
 
 No. The grid ships a default theme and depends only on its own CSS variables.
 Tailwind is one convenient way to style around it, not a requirement.
+
+## See also
+
+- [Why headless?](../why-headless.md) - the architectural reason the
+  theming surface looks like this
+- [Getting started](../getting-started.md) - end-to-end gallery setup
+- [Styling cells](./cells/styling-cells.md) - cell-level overrides
+- [Styling rows](./rows/styling-rows.md) - row-level overrides
+- Demo [`10-custom-cells-and-themes`](../../examples/src/demos/10-custom-cells-and-themes.svelte) -
+  three palettes applied via `style="--sg-*: ..."`

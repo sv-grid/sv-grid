@@ -25,6 +25,20 @@ Or install the package and import it directly. `SvTextInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvTextInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let query = $state('')
+  let price = $state('')
+  let site = $state('')
+  let name = $state('')
+</script>
+```
+
 ```ts
 import { SvTextInput } from '@svgrid/grid'
 ```
@@ -33,7 +47,7 @@ import { SvTextInput } from '@svgrid/grid'
 
 <div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTextInput } from '@svgrid/grid'
   let email = $state('')
@@ -101,7 +115,7 @@ affixes, sizes and states.
 
 Set `type` to pick the right on-screen keyboard and native validation:
 
-```svelte
+```svelte {runnable}
 <SvTextInput type="url" label="Website" placeholder="https://…" bind:value={site} />
 ```
 
@@ -131,7 +145,7 @@ Drive `invalid` / `error` from a `$derived` check and only surface the message
 once the field has been touched via `onChange`. The error text is wired to the
 input by [SvField](sv-field.md), so screen readers hear it too:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTextInput } from '@svgrid/grid'
   let email = $state('')
@@ -163,6 +177,63 @@ extra keystrokes rather than just flagging them after the fact.
   `aria-invalid`.
 - The clear button is `tabindex="-1"` with an `aria-label`, so it does not
   interrupt keyboard flow.
+
+## More examples
+
+### Text inputs
+
+Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.
+
+<div data-docs-demo="254-text-inputs" data-height="420"></div>
+
+### Input adornments
+
+Leading/trailing icon snippets and prefix/suffix text affixes on SvTextInput, plus the shared clear button, sizes and invalid/readonly/disabled states - all owned by SvField\'s frame chrome so the whole text-input family behaves identically.
+
+<div data-docs-demo="290-input-adornments" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTextInput } from '@svgrid/grid'
+
+  let email = $state('')
+</script>
+
+<SvTextInput bind:value={email} size="sm" />
+<SvTextInput bind:value={email} size="md" />
+<SvTextInput bind:value={email} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTextInput } from '@svgrid/grid'
+
+  let email = $state('')
+</script>
+
+<SvTextInput
+  bind:value={email}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvTextInput
+  bind:value={email}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

@@ -18,6 +18,41 @@ a real form (long-text + validation + dependent dropdowns).
 
 ## The pattern
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 130, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 80,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```
 ┌──────────────────┐         setCellValue(idx, field, v)         ┌──────────┐
 │  Inline editor   │ ──────────────────────────────────────────► │  data[]  │
@@ -149,6 +184,35 @@ Two valid strategies:
    More accurate, more expensive.
 
 Most apps want #1.
+
+## Try it
+
+`api.setCellValue` is the single write surface. A plain form funnelling through
+it stays consistent with inline editing - edit either way and both agree.
+
+```svelte {runnable}
+<script lang="ts">
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+  let city = $state('Berlin')
+
+  // Row 0, the city column. Going through the api rather than mutating the
+  // array means the grid's dirty tracking and observers see the write.
+  function apply(e: Event) {
+    e.preventDefault()
+    api?.setCellValue(0, 'city', city)
+  }
+</script>
+
+<form onsubmit={apply}>
+  <label>
+    City for row 1
+    <input bind:value={city} />
+  </label>
+  <button type="submit">Apply</button>
+</form>
+
+<SvGrid data={rows} {columns} editable onApiReady={(next) => (api = next)} />
+```
 
 ## See also
 

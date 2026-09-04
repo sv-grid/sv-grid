@@ -206,13 +206,6 @@ and [demo 52 (Pivot designer)](https://svgrid.com/demos/52-pivot-table/)
 | Multi-step chain forgets the row count drops | Each tool call doesn't return the new visible row count    | Return `api.getDisplayedRows().length` from each handler                    |
 | Agent loops forever                        | No max-turns bound                                          | Always cap the loop (5-10 turns is plenty for grid manipulation)            |
 
-## See also
-
-- [LLM grounding](./llm-grounding.md) - the static doc files agents read
-- [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
-- [AI assistant](./ai.md) - the in-grid NL features, free in @svgrid/grid (not the agent layer)
-- [Architecture](./architecture.md) - what state lives where (agents need to know)
-
 ## Frequently asked questions
 
 ### Can an AI agent control the SvGrid data grid?
@@ -232,3 +225,10 @@ action would trigger, so validation and dirty-tracking still apply.
 No. The MCP server is a turnkey integration for desktop AI clients; for a custom
 in-app agent you call `SvGridApi` directly. Both are documented here and in the
 MCP server guide.
+
+## See also
+
+- [LLM grounding](./llm-grounding.md) - the static doc files agents read
+- [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
+- [AI assistant](./ai.md) - the in-grid NL features, free in @svgrid/grid (not the agent layer)
+- [Architecture](./architecture.md) - what state lives where (agents need to know)

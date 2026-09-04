@@ -115,7 +115,8 @@
     holds only what you expand.
   </p>
   <SvRowGroupPanel columns={groupCols} groupBy={view?.groupBy ?? []} onChange={(g) => ctl.setGroupBy(g)} />
-  <div class="grid"><SvGrid responsive={true} data={rows} {columns} {features} serverGroup={nav} /></div>
+  <div class="grid"><SvGrid responsive={true}
+      columnResize data={rows} {columns} {features} serverGroup={nav} /></div>
 </div>
 
 <style>

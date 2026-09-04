@@ -14,6 +14,42 @@ synthetic full-width banner standing in for its children.
 The model nests by parent id, so data that already carries one needs no
 preparation:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { SvGrid } from '@svgrid/grid'
@@ -98,6 +134,20 @@ For hierarchies too large to send at once, load children on demand with
 `serverGroup` and `ServerDataSource` instead - see
 [Server-side data](../server-side-data.md). The two share the same treegrid
 keyboard and ARIA contract.
+
+## More examples
+
+### Project WBS tree
+
+Phase → task → subtask with % complete that rolls up via effort-weighted average when you edit any leaf.
+
+<div data-docs-demo="29-wbs-project-tree" data-height="460"></div>
+
+### Bill of Materials
+
+Bicycle BOM, 4 levels deep. Edit any leaf part\'s qty or unit cost; subtotals roll up through the assembly chain to the grand total.
+
+<div data-docs-demo="30-bom-tree" data-height="460"></div>
 
 ## See also
 

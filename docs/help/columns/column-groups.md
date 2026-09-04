@@ -9,6 +9,42 @@ Quarter wraps measure:
 
 
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 const columns: GridColumns<Person> = [
   { field: 'firstName', header: 'First name' },
@@ -101,6 +137,35 @@ headers. The `ctx.header.colSpan` value will be the rendered span.
 - Hidden columns (`api.setColumnVisible(id, false)`) shrink their group's
   `colSpan` automatically.
 - A group cannot be sorted or filtered - only its leaves can.
+
+## Try it
+
+A group is a column with `columns` instead of a `field`. Nest as deep as you
+need; the header row count follows the deepest branch.
+
+```svelte {runnable}
+<script lang="ts">
+  const grouped: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 200 },
+    {
+      header: 'Employment',
+      columns: [
+        { field: 'department', header: 'Department', width: 150 },
+        { field: 'salary', header: 'Salary', width: 130, format: { type: 'currency', currency: 'USD' } },
+      ],
+    },
+    {
+      header: 'Personal',
+      columns: [
+        { field: 'city', header: 'City', width: 140 },
+        { field: 'age', header: 'Age', width: 90 },
+      ],
+    },
+  ]
+</script>
+
+<SvGrid data={people} columns={grouped} />
+```
 
 ## See also
 

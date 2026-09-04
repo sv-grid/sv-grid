@@ -456,9 +456,6 @@ export function createSvGridController<
   let editorSelectAll = true;
   /** Per-column width overrides set by the resize handles. */
   let columnWidths = $state<Record<string, number>>({});
-  let resizingColumnId = $state<string | null>(null);
-  let resizeStartX = 0;
-  let resizeStartWidth = 0;
   const MIN_COLUMN_WIDTH = 40;
   /** Columns pinned to the left or right edge of the grid (sticky positioning).
    *  Seeded from `props.initialColumnPinning` so demos / tests can show the
@@ -475,7 +472,28 @@ export function createSvGridController<
   let dataStateVersion = $state(0);
   const selectionColumnWidth = 44;
   const rowNumberColumnWidth = $derived(props.rowNumberWidth ?? 56);
-  const showRowNumbersEffective = $derived(props.showRowNumbers ?? false);
+  // A per-row `rowHeight` function already supplies heights, so auto-measuring
+  // would fight it. Fixed numbers are fine - they become the pre-measure estimate.
+  const autoRowHeightOn = $derived(
+    props.autoRowHeight === true && typeof props.rowHeight !== "function",
+  );
+  // Auto height measures the row from its content, so a dragged height would be
+  // overwritten on the next measurement pass. Let auto height win rather than
+  // having the two fight.
+  const rowResizeOn = $derived(props.rowResize === true && !autoRowHeightOn);
+  /**
+   * The row-number gutter. Explicit `showRowNumbers` always wins; otherwise
+   * `rowResize` brings it in, because a resizable row needs a row header to
+   * grab - that is where the drag strip lives, and it is where a spreadsheet
+   * puts it. Dragging the edge of a data cell instead works but reads as an
+   * accident.
+   *
+   * Both derived above are declared here rather than beside the rest of the
+   * row-resize state further down: a `$derived` referenced before its
+   * declaration in a .svelte.ts silently compiles to an empty getter, so this
+   * gate would have read `undefined` and the gutter would never appear.
+   */
+  const showRowNumbersEffective = $derived(props.showRowNumbers ?? rowResizeOn);
   let columnMenuFor = $state<string | null>(null);
   let columnMenuTab = $state<"general" | "filter" | "columns">("general");
   let columnMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
@@ -499,11 +517,11 @@ export function createSvGridController<
   let commentEditFor = $state<{ rowId: string; columnId: string; x: number; y: number } | null>(null);
   let commentDraft = $state("");
   let valueFilters = $state<Record<string, Set<string>>>({});
-  const viewportWidth = $derived.by(() => {
+  const viewportWidth = $derived.by(function viewportWidth_d() {
     viewportVersion;
     return scrollContainer ? scrollContainer.clientWidth : 0;
   });
-  const viewportHeight = $derived.by(() => {
+  const viewportHeight = $derived.by(function viewportHeight_d() {
     viewportVersion;
     return scrollContainer ? scrollContainer.clientHeight : 0;
   });
@@ -529,7 +547,7 @@ export function createSvGridController<
     const hb = column.columnDef?.hideBelow;
     return hb != null && viewportWidth > 0 && viewportWidth < hb;
   }
-  const scrollMetrics = $derived.by(() => {
+  const scrollMetrics = $derived.by(function scrollMetrics_d() {
     scrollVersion;
     viewportVersion;
     // Track the virtualizers' versions too so when data loads or row /
@@ -563,7 +581,7 @@ export function createSvGridController<
    *  - virtualizer.getTotalSize(): correct at initial load (before first paint)
    *  - scrollMetrics.scrollHeight: correct after detail rows expand (DOM is live,
    *    ResizeObserver on gridRootEl already bumps scrollVersion at that point) */
-  const hasVerticalOverflow = $derived.by(() => {
+  const hasVerticalOverflow = $derived.by(function hasVerticalOverflow_d() {
     virtualizer.version;
     const virtualizerSize = virtualizer.getTotalSize();
     // scrollMetrics.scrollHeight is 0 before initial paint; once the table
@@ -856,7 +874,7 @@ export function createSvGridController<
   // Declared here rather than beside the other pagination/state derivations:
   // the auto-group column pipeline below reads it, and a `const` used above its
   // declaration is a type error even though `$derived` is lazy enough at runtime.
-  const groupingColumns = $derived.by(() => {
+  const groupingColumns = $derived.by(function groupingColumns_d() {
     gridStateVersion;
     return grid.getState().grouping ?? [];
   });
@@ -881,7 +899,7 @@ export function createSvGridController<
    * any other column. They carry no `field` - their cell content is resolved
    * from the row's group state at render time.
    */
-  const autoGroupColumns = $derived.by(() => {
+  const autoGroupColumns = $derived.by(function autoGroupColumns_d() {
     if (!groupColumnMode) return [] as Column<TData>[];
     const sourceById = new Map(grid.getAllColumns().map((c) => [c.id, c]));
     return autoGroupSpec.autoColumns.map((spec) => {
@@ -950,7 +968,7 @@ export function createSvGridController<
     };
   }
 
-  const allColumns = $derived.by(() => {
+  const allColumns = $derived.by(function allColumns_d() {
     let raw = grid
       .getAllColumns()
       .filter(
@@ -996,7 +1014,7 @@ export function createSvGridController<
   });
 
   /** Header groups reordered to match {@link allColumns}. */
-  const headerGroups = $derived.by(() => {
+  const headerGroups = $derived.by(function headerGroups_d() {
     const base = grid.getHeaderGroups();
     if (!base.length) return base;
     const byId = new Map(
@@ -1054,7 +1072,7 @@ export function createSvGridController<
     collapsible: boolean;
     collapsed: boolean;
   };
-  const groupHeaderRows = $derived.by(() => {
+  const groupHeaderRows = $derived.by(function groupHeaderRows_d() {
     const userCols: Array<ColumnDef<any, TData>> =
       (props.columns as unknown as Array<ColumnDef<any, TData>>) ?? [];
 
@@ -1184,7 +1202,7 @@ export function createSvGridController<
   });
 
   /** Cumulative pixel offsets for left- and right-pinned columns. */
-  const pinnedOffsets = $derived.by(() => {
+  const pinnedOffsets = $derived.by(function pinnedOffsets_d() {
     const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
     const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
     const left: Record<string, number> = {};
@@ -1241,7 +1259,7 @@ export function createSvGridController<
   );
   // Per-column numeric min/max, needed only by colorScale / dataBar formats.
   // Lazy: this derived never runs unless `conditionalFormats` is set.
-  const conditionalColumnStats = $derived.by(() => {
+  const conditionalColumnStats = $derived.by(function conditionalColumnStats_d() {
     const map = new Map<string, ColumnStat>();
     const formats = props.conditionalFormats;
     if (!formats?.length || !formatsNeedingStats(formats)) return map;
@@ -1288,7 +1306,7 @@ export function createSvGridController<
 
 
 
-  const sortDirectionByColumn = $derived.by(() => {
+  const sortDirectionByColumn = $derived.by(function sortDirectionByColumn_d() {
     gridStateVersion;
     const directions: Record<string, false | "asc" | "desc"> = {};
     for (const column of allColumns)
@@ -1297,7 +1315,7 @@ export function createSvGridController<
   });
 
 
-  const paginationState = $derived.by(() => {
+  const paginationState = $derived.by(function paginationState_d() {
     gridStateVersion;
     return grid.getState().pagination ?? { pageIndex: 0, pageSize: 10 };
   });
@@ -1308,7 +1326,7 @@ export function createSvGridController<
    * compute the correct "X to Y of Z" range and total page count when
    * filters reduce the dataset.
    */
-  const allRowsBeforePagination = $derived.by(() => {
+  const allRowsBeforePagination = $derived.by(function allRowsBeforePagination_d() {
     // Depend on dataStateVersion (row-model-affecting store changes) NOT
     // gridStateVersion - so moving the active cell / selection does not force
     // this O(rows) pipeline to re-run. Filter-input state (globalFilter etc.)
@@ -1336,6 +1354,26 @@ export function createSvGridController<
           ),
       );
     }
+
+    /**
+     * Resolve a column ONCE and return a reader for it.
+     *
+     * `getRowColumnValue` finds the column with a linear scan over every
+     * column, which is fine for a one-off read and wrong inside a loop over
+     * 100,000 rows - it made each filtered column cost O(rows x columns).
+     * The id is fixed for the life of a filter, so the scan is hoisted here and
+     * the row loop gets a closure that only reads.
+     *
+     * Falls back to the row's own accessor when the id names no column, which
+     * is also what `getRowColumnValue` does - group rows override
+     * `getCellValueByColumnId` to return their aggregate.
+     */
+    const makeColumnReader = (columnId: string) => {
+      const column = allColumns.find((entry: any) => entry.id === columnId);
+      return column
+        ? (row: Row<TData>) => getColumnBaseValue(row, column)
+        : (row: Row<TData>) => row.getCellValueByColumnId(columnId);
+    };
 
     // A single condition is "active" if it has the value(s) it needs.
     const condActive = (op: FilterOperator, value: string, valueTo?: string): boolean => {
@@ -1368,6 +1406,11 @@ export function createSvGridController<
       // become compiled predicates before a single row is tested.
       const compiledMenuFilters = menuFilters.map(([columnId, f]) => ({
         columnId,
+        // The column, resolved once. `getRowColumnValue` looks it up with a
+        // linear scan of every column, and the id is fixed per filter, so
+        // leaving that inside the row loop made it O(rows x columns) per
+        // filtered column for no reason.
+        readValue: makeColumnReader(columnId),
         join: f.join,
         a: condActive(f.operator, f.value, f.valueTo)
           ? compileCond(columnId, f.operator, f.value, f.valueTo)
@@ -1377,8 +1420,8 @@ export function createSvGridController<
           : null,
       }));
       rows = rows.filter((row) =>
-        compiledMenuFilters.every(({ columnId, join, a, b }) => {
-          const cellValue = getRowColumnValue(row, columnId);
+        compiledMenuFilters.every(({ readValue, join, a, b }) => {
+          const cellValue = readValue(row);
           const ra = a ? a(cellValue) : null;
           const rb = b ? b(cellValue) : null;
           if (ra === null) return rb ?? true;
@@ -1396,11 +1439,12 @@ export function createSvGridController<
       const bucketEntries = valueFilterEntries.map(([columnId, allowed]) => ({
         columnId,
         allowed,
+        readValue: makeColumnReader(columnId),
         buckets: facetBucketsByColumn.get(columnId) ?? null,
       }));
       rows = rows.filter((row) =>
-        bucketEntries.every(({ columnId, allowed, buckets }) => {
-          const raw = getRowColumnValue(row, columnId);
+        bucketEntries.every(({ allowed, buckets, readValue }) => {
+          const raw = readValue(row);
           if (buckets) {
             // Range-bucketed filter: find which bucket this row's value
             // falls into and check whether that bucket's label is allowed.
@@ -1458,7 +1502,7 @@ export function createSvGridController<
    * is active we page by DATA rows and reprint each page's ancestor banners.
    * Null when grouping is off, so the flat path stays a cheap slice.
    */
-  const groupedPage = $derived.by(() => {
+  const groupedPage = $derived.by(function groupedPage_d() {
     if (!paginationEnabled || externalPaginationEnabled) return null;
     if (!groupingColumns.length) return null;
     const { pageIndex, pageSize } = paginationState;
@@ -1525,7 +1569,7 @@ export function createSvGridController<
    * the full dataset rather than the current page (see the comment above
    * `_rowModels`).
    */
-  const allRows = $derived.by(() => {
+  const allRows = $derived.by(function allRows_d() {
     const paged = (() => {
       const rows = allRowsBeforePagination;
       // External pagination: `data` already IS the current page - never slice.
@@ -1598,7 +1642,7 @@ export function createSvGridController<
   const paginationPageSize = $derived(
     externalPaginationEnabled ? (props.pageSize ?? 10) : paginationState.pageSize,
   );
-  const rowSelectionState = $derived.by(() => {
+  const rowSelectionState = $derived.by(function rowSelectionState_d() {
     gridStateVersion;
     return grid.getState().rowSelection ?? {};
   });
@@ -1654,7 +1698,7 @@ export function createSvGridController<
       ? props.statusBar.aggregates
       : (["count", "sum", "avg", "min", "max"] as const),
   );
-  const statusBarStats = $derived.by(() => {
+  const statusBarStats = $derived.by(function statusBarStats_d() {
     if (!statusBarEnabled) return null;
     const a = selectionRange.anchor;
     const f = selectionRange.focus;
@@ -1706,7 +1750,7 @@ export function createSvGridController<
   const toolPanelEnabled = $derived(props.toolPanel === true);
   // Every column (including hidden ones) in the user's current order, so the
   // panel can toggle/reorder anything. Group columns are flagged live.
-  const toolPanelColumns = $derived.by(() => {
+  const toolPanelColumns = $derived.by(function toolPanelColumns_d() {
     gridStateVersion;
     const all = grid.getAllColumns();
     if (!userColumnOrder.length) return all;
@@ -1743,7 +1787,7 @@ export function createSvGridController<
   // unsaid, and why saying it would make the grid talk over itself.
 
   /** Data rows before any local filtering - the denominator in "12 of 250". */
-  const unfilteredRowTotal = $derived.by(() => {
+  const unfilteredRowTotal = $derived.by(function unfilteredRowTotal_d() {
     dataStateVersion;
     void internalData;
     return grid.getRowModel().rows.length;
@@ -1840,7 +1884,7 @@ export function createSvGridController<
     props.onPivotModeChange?.(next);
   }
   const pivotActive = $derived(!!pivotConfig && pivotModeOn && hasPivotEngine());
-  const pivotResult = $derived.by(() => {
+  const pivotResult = $derived.by(function pivotResult_d() {
     if (!pivotActive || !pivotConfig) return null;
     const engine = getPivotEngine();
     if (!engine) return null;
@@ -1944,7 +1988,7 @@ export function createSvGridController<
     const h = col.columnDef.header;
     return typeof h === "string" && h ? h : (col.columnDef.field ?? col.id);
   };
-  const chartableColumns = $derived.by(() => {
+  const chartableColumns = $derived.by(function chartableColumns_d() {
     const dims: Array<{ id: string; field: string; label: string }> = [];
     const measures: Array<{ id: string; field: string; label: string }> = [];
     for (const col of allColumns) {
@@ -1956,7 +2000,7 @@ export function createSvGridController<
     }
     return { dims, measures };
   });
-  const chartColumnDefaults = $derived.by(() => {
+  const chartColumnDefaults = $derived.by(function chartColumnDefaults_d() {
     const { dims, measures } = chartableColumns;
     let dimId = dims[0]?.id ?? null;
     let seriesId: string | null = null;
@@ -2315,7 +2359,7 @@ export function createSvGridController<
     typeof props.containerHeight === "number" ? props.containerHeight : 520,
   );
 
-  const virtualRows = $derived.by(() => {
+  const virtualRows = $derived.by(function virtualRows_d() {
     virtualizer.version;
     const items = virtualizer.getVirtualItems();
     if (items.length || allRows.length === 0) return items;
@@ -2330,7 +2374,7 @@ export function createSvGridController<
       props.overscan ?? 8,
     );
   });
-  const virtualRowTotalSize = $derived.by(() => {
+  const virtualRowTotalSize = $derived.by(function virtualRowTotalSize_d() {
     virtualizer.version;
     const size = virtualizer.getTotalSize();
     // Keep the scroll height honest during the pre-measurement render, so the
@@ -2389,7 +2433,7 @@ export function createSvGridController<
   // OWN committed scroll offset - not the live DOM scrollTop - so the spacer
   // shift and the rendered window are always computed from the same state and
   // can never skew by a frame (which would jitter at extreme scale).
-  const rowOffsetAdjustment = $derived.by(() => {
+  const rowOffsetAdjustment = $derived.by(function rowOffsetAdjustment_d() {
     if (!rowScrollScalingActive) return 0;
     virtualizer.version;
     const logical = virtualizer.getState().scrollOffset;
@@ -2401,11 +2445,11 @@ export function createSvGridController<
   const rowBottomSpacer = $derived(
     Math.max(rowDomTotalSize - (virtualRowEnd - rowOffsetAdjustment), 0),
   );
-  const virtualColumns = $derived.by(() => {
+  const virtualColumns = $derived.by(function virtualColumns_d() {
     columnVirtualizerVersion;
     return columnVirtualizer.getVirtualItems();
   });
-  const virtualColumnTotalSize = $derived.by(() => {
+  const virtualColumnTotalSize = $derived.by(function virtualColumnTotalSize_d() {
     columnVirtualizerVersion;
     return columnVirtualizer.getTotalSize();
   });
@@ -2421,7 +2465,7 @@ export function createSvGridController<
     });
   };
 
-  const renderedColumnItems = $derived.by(() => {
+  const renderedColumnItems = $derived.by(function renderedColumnItems_d() {
     if (!columnVirtualizationEnabled) return allColumnItems();
     // Column virtualization is ON by default and its virtualizer, like the row
     // one, only learns `count` from an effect - which never runs on a server.
@@ -2466,7 +2510,7 @@ export function createSvGridController<
       .map((item) => ({ item, column: allColumns[item.index] }))
       .filter(hasRenderedColumn),
   );
-  const totalColumnWidth = $derived.by(() => {
+  const totalColumnWidth = $derived.by(function totalColumnWidth_d() {
     if (columnVirtualizationEnabled) return virtualColumnTotalSize;
     let total = 0;
     for (const column of allColumns) total += getColumnWidth(column.id);
@@ -2481,7 +2525,7 @@ export function createSvGridController<
    *  column instead is reactive to both `columnWidths` and
    *  `fittedColumnWidths`, so the overflow decision settles in the same
    *  render where fit-scaling lands - no race, no scrollbar flash. */
-  const hasHorizontalOverflow = $derived.by(() => {
+  const hasHorizontalOverflow = $derived.by(function hasHorizontalOverflow_d() {
     const fixedCols =
       (showRowNumbersEffective ? rowNumberColumnWidth : 0) +
       (showRowSelectionEffective ? selectionColumnWidth : 0);
@@ -2514,7 +2558,7 @@ export function createSvGridController<
    * everything stays pixel-aligned. When virtualization is off this is a
    * pass-through.
    */
-  const groupHeaderRowsWindowed = $derived.by(() => {
+  const groupHeaderRowsWindowed = $derived.by(function groupHeaderRowsWindowed_d() {
     const base = groupHeaderRows;
     if (!columnVirtualizationEnabled || base.length === 0) return base;
     const items = renderedColumnItems;
@@ -2537,14 +2581,14 @@ export function createSvGridController<
     });
   });
 
-  const activeCell = $derived.by(() => {
+  const activeCell = $derived.by(function activeCell_d() {
     gridStateVersion;
     return (
       grid.getState().activeCell ?? { rowIndex: 0, colIndex: 0, cellId: null }
     );
   });
 
-  const activeDescendantId = $derived.by(() => {
+  const activeDescendantId = $derived.by(function activeDescendantId_d() {
     const active = activeCell;
     const inRows = active.rowIndex >= 0 && active.rowIndex < allRows.length;
     const inCols = active.colIndex >= 0 && active.colIndex < allColumns.length;
@@ -2594,7 +2638,7 @@ export function createSvGridController<
    * `null` above the cell limit - that case stays on the rAF-deferred effect,
    * which keeps a huge grid painting before it totals.
    */
-  const eagerSummaries = $derived.by(() => {
+  const eagerSummaries = $derived.by(function eagerSummaries_d() {
     if (!summarize) return null;
     if (!rowSummariesEnabled) return null;
     const rows = allRows;
@@ -2746,14 +2790,40 @@ export function createSvGridController<
   // is the reactive signal instead, bumped only when a height actually changes.
   const measuredRowHeights = new Map<number, number>();
   let autoRowHeightVersion = $state(0);
-  // A per-row `rowHeight` function already supplies heights, so auto-measuring
-  // would fight it. Fixed numbers are fine - they become the pre-measure estimate.
-  const autoRowHeightOn = $derived(
-    props.autoRowHeight === true && typeof props.rowHeight !== "function",
-  );
   const autoRowHeightFallback = $derived(
     typeof props.rowHeight === "number" ? props.rowHeight : 30,
   );
+
+  // ----- Interactive row resize (`rowResize` prop) -----
+  // Heights the user has dragged, by row index. A plain Map plus a version
+  // counter, exactly like `measuredRowHeights` above and for the same reason:
+  // the reset effect below has to read this collection to know whether there is
+  // anything to clear, and if the collection were reactive that read would make
+  // every resize re-trigger the reset and wipe the height it just stored.
+  const rowResizeHeights = new Map<number, number>();
+  let rowResizeVersion = $state(0);
+
+  function setRowResizeHeight(index: number, height: number): void {
+    if (!rowResizeOn || !Number.isFinite(index) || height <= 0) return;
+    rowResizeHeights.set(index, Math.round(height));
+    rowResizeVersion += 1;
+  }
+  /** A user-dragged height for this row, or undefined when it has not been
+   *  resized. Read by the view AND by the virtualizer's `estimateSize`. */
+  function rowResizeHeightPx(index: number): number | undefined {
+    return rowResizeOn ? rowResizeHeights.get(index) : undefined;
+  }
+
+  // A row index means a different row once the data changes, so keeping the
+  // heights would size new rows by the old ones - the same reasoning as the
+  // measured-height reset below.
+  $effect(() => {
+    void allRows.length;
+    void internalData;
+    if (rowResizeHeights.size === 0) return;
+    rowResizeHeights.clear();
+    rowResizeVersion += 1;
+  });
 
   /** Report a row's measured height. Called by the view's measuring action.
    *  Sub-pixel churn is ignored so a fractional layout can't loop. */
@@ -2825,11 +2895,20 @@ export function createSvGridController<
     // the estimate for rows that have not rendered yet. Touch the version so a
     // new measurement re-runs this effect (the Map itself is not reactive).
     autoRowHeightVersion;
-    const estimateSize = autoRowHeightOn
+    // Touch the version so a resize re-runs this effect: the virtualizer has to
+    // know the new size or every row below the resized one is positioned
+    // against a stale offset.
+    rowResizeVersion;
+    const base = autoRowHeightOn
       ? (index: number) => measuredRowHeights.get(index) ?? autoRowHeightFallback
       : typeof rh === "function"
         ? rh
         : (rh ?? 30);
+    const estimateSize = rowResizeOn
+      ? (index: number) =>
+          rowResizeHeights.get(index) ??
+          (typeof base === "function" ? base(index) : base)
+      : base;
     virtualizer.setOptions({
       count: allRows.length,
       estimateSize,
@@ -2956,7 +3035,7 @@ export function createSvGridController<
 
 
 
-  const headerSelectionState = $derived.by(() => {
+  const headerSelectionState = $derived.by(function headerSelectionState_d() {
     gridStateVersion;
     const selectable = allRows.filter((row) => !isGroupRow(row));
     if (!selectable.length) return "none";
@@ -2991,7 +3070,7 @@ export function createSvGridController<
    * Returns `null` when fit scaling is not in effect (off, no room, total
    * already >= target). Callers then fall back to the base width.
    */
-  const fittedColumnWidths = $derived.by(() => {
+  const fittedColumnWidths = $derived.by(function fittedColumnWidths_d() {
     // Track viewport size (not scrollVersion) so we don't recompute on
     // every scroll - only when the container actually resizes.
     viewportVersion;
@@ -3057,8 +3136,6 @@ export function createSvGridController<
   });
 
 
-  let resizePendingWidth = 0;
-  let resizeRaf: number | null = null;
 
 
 
@@ -3070,7 +3147,7 @@ export function createSvGridController<
   /** Where the fill handle should render: the bottom-right cell of the
    *  selection range (or the active cell if there's no range). Returns
    *  null when cell selection is off or there is no anchored selection. */
-  const fillHandleCell = $derived.by(() => {
+  const fillHandleCell = $derived.by(function fillHandleCell_d() {
     if (!(props.enableCellSelection ?? false)) return null;
     const anchor = selectionRange.anchor;
     const focus = selectionRange.focus;
@@ -3175,7 +3252,7 @@ export function createSvGridController<
    *  reused by both the facet UI and the row filter. Computing them lazily
    *  in a $derived means columns with no filter menu open and no active
    *  filter never pay the iteration cost. */
-  const facetBucketsByColumn = $derived.by(() => {
+  const facetBucketsByColumn = $derived.by(function facetBucketsByColumn_d() {
     const map = new Map<string, Array<FacetBucket>>();
     for (const column of allColumns) {
       const meta = isBucketableColumn(column);
@@ -3262,7 +3339,7 @@ export function createSvGridController<
     source: Array<string> | null;
     values: Array<string>;
   } | null = null;
-  const columnMenuFacetValues = $derived.by(() => {
+  const columnMenuFacetValues = $derived.by(function columnMenuFacetValues_d() {
     // The funnel popover drives via `filterMenuFor`; the column menu's Filter
     // tab drives via `columnMenuFor`. Support whichever is open.
     const columnId = filterMenuFor ?? columnMenuFor;
@@ -3292,7 +3369,7 @@ export function createSvGridController<
     if (!(filterMenuFor ?? columnMenuFor)) facetCache = null;
   });
 
-  const columnMenuVisibleFacets = $derived.by(() => {
+  const columnMenuVisibleFacets = $derived.by(function columnMenuVisibleFacets_d() {
     const query = columnMenuSearch.trim().toLowerCase();
     if (!query) return columnMenuFacetValues;
     return columnMenuFacetValues.filter((value) =>
@@ -3313,7 +3390,7 @@ export function createSvGridController<
    * "everything checked", so that case materializes the set once here rather
    * than every consumer re-deriving it.
    */
-  const columnMenuSelectedFacets = $derived.by(() => {
+  const columnMenuSelectedFacets = $derived.by(function columnMenuSelectedFacets_d() {
     const columnId = filterMenuFor ?? columnMenuFor;
     if (!columnId) return EMPTY_FACET_SET;
     return valueFilters[columnId] ?? new Set(columnMenuFacetValues);
@@ -3323,7 +3400,7 @@ export function createSvGridController<
   // active chip input, narrowed by whatever the user has typed. Uncapped - the
   // dropdown windows its rows, so a high-cardinality column costs a list of
   // strings, not thousands of nodes.
-  const inSuggestValues = $derived.by(() => {
+  const inSuggestValues = $derived.by(function inSuggestValues_d() {
     if (!inSuggestFor) return EMPTY_FACETS;
     const query = inSuggestQuery.trim().toLowerCase();
     const all = facetValuesForColumn(inSuggestFor);
@@ -3441,12 +3518,6 @@ export function createSvGridController<
     set editorSelectAll(v) { editorSelectAll = v as never; },
     get columnWidths() { return columnWidths; },
     set columnWidths(v) { columnWidths = v as never; },
-    get resizingColumnId() { return resizingColumnId; },
-    set resizingColumnId(v) { resizingColumnId = v as never; },
-    get resizeStartX() { return resizeStartX; },
-    set resizeStartX(v) { resizeStartX = v as never; },
-    get resizeStartWidth() { return resizeStartWidth; },
-    set resizeStartWidth(v) { resizeStartWidth = v as never; },
     get MIN_COLUMN_WIDTH() { return MIN_COLUMN_WIDTH; },
     get columnPinning() { return columnPinning; },
     set columnPinning(v) { columnPinning = v as never; },
@@ -3765,6 +3836,15 @@ export function createSvGridController<
       autoRowHeightVersion;
       return (index: number): number | undefined => measuredRowHeights.get(index);
     },
+    /** True when the `rowResize` prop is on and nothing overrides it. */
+    get rowResizeOn() { return rowResizeOn; },
+    /** Record the height the user dragged a row to. */
+    get setRowResizeHeight() { return setRowResizeHeight; },
+    /** A row's dragged height, or undefined when it has not been resized. */
+    get rowResizeHeightPx() {
+      rowResizeVersion;
+      return rowResizeHeightPx;
+    },
     get virtualRowTotalSize() { return virtualRowTotalSize; },
     get virtualRowStart() { return virtualRowStart; },
     get virtualRowEnd() { return virtualRowEnd; },
@@ -3827,13 +3907,6 @@ export function createSvGridController<
     get getColumnBaseWidth() { return getColumnBaseWidth; },
     get fittedColumnWidths() { return fittedColumnWidths; },
     get getColumnWidth() { return getColumnWidth; },
-    get resizePendingWidth() { return resizePendingWidth; },
-    set resizePendingWidth(v) { resizePendingWidth = v as never; },
-    get resizeRaf() { return resizeRaf; },
-    set resizeRaf(v) { resizeRaf = v as never; },
-    get startColumnResize() { return startColumnResize; },
-    get onColumnResizeMove() { return onColumnResizeMove; },
-    get endColumnResize() { return endColumnResize; },
     get setSelection() { return setSelection; },
     get extendSelection() { return extendSelection; },
     get isCellInSelectedRange() { return isCellInSelectedRange; },
@@ -3843,6 +3916,15 @@ export function createSvGridController<
     get isInFillPreview() { return isInFillPreview; },
     get fillMarqueeEdges() { return fillMarqueeEdges; },
     get findColumnById() { return findColumnById; },
+    /**
+     * Whether this column may be resized by the user, from its
+     * `ColumnDef.resizable`. Defaults to true, so a column only opts out by
+     * saying so; the grid-wide `columnResize` prop gates all of them above
+     * this. Used by the resize action and by the column menu's Autosize item.
+     */
+    columnResizable(columnId: string): boolean {
+      return findColumnById(columnId)?.columnDef?.resizable !== false;
+    },
     get readCellRaw() { return readCellRaw; },
     get writeCellRaw() { return writeCellRaw; },
     get applyFillPattern() { return applyFillPattern; },
@@ -3953,7 +4035,7 @@ export function createSvGridController<
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
-  const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, startColumnResize, onColumnResizeMove, endColumnResize, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
+  const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
@@ -4030,7 +4112,6 @@ export function createSvGridController<
   // this grid still owns (#68). Each of these is a no-op when idle.
   $effect(() => {
     return () => {
-      endColumnResize();
       hideTooltip();
       destroyRowDrag();
     };

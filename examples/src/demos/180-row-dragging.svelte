@@ -62,6 +62,7 @@
       <h3 class="text-sm font-semibold mb-1 shrink-0" style="color: var(--sg-fg);">Backlog</h3>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
+      columnResize
           data={backlog}
           columns={columns}
           showRowNumbers={true}
@@ -79,6 +80,7 @@
       <h3 class="text-sm font-semibold mb-1 shrink-0" style="color: var(--sg-fg);">Sprint</h3>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
+      columnResize
           data={sprint}
           columns={columns}
           showRowNumbers={true}

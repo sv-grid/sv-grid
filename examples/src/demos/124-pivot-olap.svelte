@@ -708,6 +708,7 @@
       </div>
       <div class="cube-grid-wrap">
         <SvGrid responsive={true}
+      columnResize
           data={visibleRows}
           {columns}
           {features}

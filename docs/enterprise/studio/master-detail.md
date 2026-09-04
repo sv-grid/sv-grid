@@ -44,7 +44,7 @@ Two schemas and two flat arrays joined by a foreign key is all it takes. The
 detail grid inherits the child schema's columns, types, and formatting, so a
 `currency` field renders as currency in the nested grid with no extra work.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGridMasterDetail, type EntitySchema } from '@svgrid/enterprise'
 

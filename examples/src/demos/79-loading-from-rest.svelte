@@ -188,6 +188,7 @@
       </div>
     {:else}
       <SvGrid responsive={true}
+      columnResize
         data={state.rows}
         columns={columns}
         features={features}

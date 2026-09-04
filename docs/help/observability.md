@@ -27,6 +27,42 @@ measure server latency.
 
 ## Recipe 1: Datadog Browser RUM
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { datadogRum } from '@datadog/browser-rum'
@@ -165,6 +201,31 @@ See [security](./security.md) for the broader posture.
   adapter does. Measure at the adapter.
 - **Memory.** Use Chrome DevTools Performance Monitor for live RSS;
   there's no in-library hook.
+
+## Try it
+
+Every callback the grid exposes is a hook you can forward to your telemetry.
+This one just writes to the page so you can watch the stream.
+
+```svelte {runnable}
+<script lang="ts">
+  let log = $state<string[]>([])
+  const note = (line: string) => (log = [line, ...log].slice(0, 6))
+</script>
+
+<SvGrid
+  data={people}
+  {columns}
+  sortable
+  filterable
+  onSortingChange={(s) => note("sort: " + JSON.stringify(s))}
+  onFiltersChange={(f) => note("filter: " + JSON.stringify(f))}
+/>
+
+<ul>
+  {#each log as line}<li><code>{line}</code></li>{/each}
+</ul>
+```
 
 ## See also
 

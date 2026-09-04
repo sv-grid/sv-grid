@@ -31,7 +31,7 @@ import { SvField } from '@svgrid/grid'
 
 ## Example
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvField } from '@svgrid/grid'
   const id = 'ticket-priority'
@@ -115,7 +115,7 @@ width.
 Give a plain `<select>` the same label, required marker, hint, and full-width
 behaviour every kit editor has by sharing one `id`, and drive `error` reactively:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvField } from '@svgrid/grid'
   let role = $state('')
@@ -143,6 +143,29 @@ automatically.
 - The hint and error ids follow the editor contract, so a control that sets
   `aria-describedby` to them has its helper or error text announced.
 - The error line uses `role="alert"` so it is read out when it appears.
+
+## Wrapping a control you own
+
+`SvField` is the label / hint / error chrome without an input of its own, so a
+native control or a third-party widget gets the same treatment as the built-in
+editors. Match `id` to the control's `id` and the label points at the right
+thing.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvField } from '@svgrid/grid'
+
+  let colour = $state('#2563eb')
+</script>
+
+<SvField id="brand" label="Brand colour" hint="Any CSS colour" required>
+  <input id="brand" type="color" bind:value={colour} />
+</SvField>
+
+<SvField id="notes" label="Notes" error="Say something before saving">
+  <textarea id="notes" rows="3"></textarea>
+</SvField>
+```
 
 ## See also
 

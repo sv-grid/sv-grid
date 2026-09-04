@@ -13,7 +13,40 @@ per column:
 
 ## Minimal example
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnGroupingFeature,
@@ -216,16 +249,6 @@ dimensions, also pick aggregators per measure" - that's a pivot. The
 optimised for that shape. Use group-by when you only roll up rows;
 use pivot when you also roll up columns.
 
-## See also
-
-- [Architecture overview](./architecture.md) - where grouping sits in
-  the pipeline.
-- [Pivot tables](./pivot.md) - the column-axis version.
-- [Row pagination](./rows/row-pagination.md) - the paging stage runs
-  AFTER grouping, so group rows count toward the page size.
-- [Demo #07 Grouping + aggregation](https://svgrid.com/demos/07-grouping-aggregation/)
-  - the source for the example above.
-
 ## Display modes
 
 `groupDisplayMode` decides where group state is drawn:
@@ -330,3 +353,68 @@ at each group level and at the grand-total footer.
 No. Grouping rolls rows up along the row axis. A pivot table also spreads a
 field across the column axis with nested headers - that is the `@svgrid/enterprise`
 pivot model. See [Pivot tables](./pivot.md) for the column-axis version.
+
+## More examples
+
+### Group display modes + footers
+
+Switch between groupRows banners, a single combined Group column, and one column per grouped field. groupFooters closes each group with a subtotal row under the real columns. Paging counts DATA rows, so pageSize means what it says: a page reprints the banners its rows sit under, and footers never eat the budget.
+
+<div data-docs-demo="427-group-footers" data-height="460"></div>
+
+
+### Group panel (drag & drop)
+
+DevExpress / Kendo-style Group Panel: drag chips into the panel to group, drag inside to reorder grouping levels, × to ungroup. Drives api.setGroupBy() under the hood.
+
+<div data-docs-demo="89-group-panel" data-height="460"></div>
+
+## Try it
+
+Grouping is a prop, and the aggregate shown on each group header comes from the
+column. Add `summary` and the same reducers total the whole filtered set in the
+footer.
+
+```svelte {runnable}
+<script lang="ts">
+  const agg: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80,  aggregate: 'avg', summary: 'avg' },
+    { field: 'salary',     header: 'Salary',     width: 130, aggregate: 'sum', summary: 'sum',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} columns={agg} groupBy={['department']} groupable summary sortable />
+```
+
+## Two levels deep
+
+`groupBy` is an array, and the order is the nesting order. Every level gets its
+own aggregate row, computed over the leaf rows beneath it rather than over the
+level above.
+
+```svelte {runnable}
+<script lang="ts">
+  const nested: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 190 },
+    { field: 'age',    header: 'Age',    width: 80,  aggregate: 'avg' },
+    { field: 'salary', header: 'Salary', width: 130, aggregate: 'sum',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} columns={nested} groupBy={['department', 'city']} groupable summary />
+```
+
+## See also
+
+- [Architecture overview](./architecture.md) - where grouping sits in
+  the pipeline.
+- [Pivot tables](./pivot.md) - the column-axis version.
+- [Row pagination](./rows/row-pagination.md) - the paging stage runs
+  AFTER grouping, so group rows count toward the page size.
+- [Demo #07 Grouping + aggregation](https://svgrid.com/demos/07-grouping-aggregation/)
+  - the source for the example above.

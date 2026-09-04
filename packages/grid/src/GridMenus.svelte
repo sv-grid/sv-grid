@@ -450,18 +450,23 @@
         </button>
       {/if}
       <div class="sv-grid-menu-sep"></div>
-      <button
-        type="button"
-        class="sv-grid-menu-item"
-        role="menuitem"
-        onclick={() => {
-          autosizeColumn(menuColumnId);
-          closeMenus();
-        }}
-      >
-        <span class="sv-grid-header-icon">{@render icon("autosize")}</span> Autosize
-        this column
-      </button>
+      <!-- `resizable: false` means the width is part of the layout, so the
+           menu must not offer to change it either - otherwise removing the
+           drag handle just moves the same action one click away. -->
+      {#if ctrl.columnResizable(menuColumnId)}
+        <button
+          type="button"
+          class="sv-grid-menu-item"
+          role="menuitem"
+          onclick={() => {
+            autosizeColumn(menuColumnId);
+            closeMenus();
+          }}
+        >
+          <span class="sv-grid-header-icon">{@render icon("autosize")}</span> Autosize
+          this column
+        </button>
+      {/if}
       <button
         type="button"
         class="sv-grid-menu-item"

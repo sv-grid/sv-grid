@@ -21,6 +21,14 @@ Or install the package and import them directly. They ship free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvAspectRatio, SvCode, SvKbd, SvVisuallyHidden } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden } from '@svgrid/grid'
 ```
@@ -29,7 +37,7 @@ import { SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden } from '@svgrid/grid'
 
 <div data-docs-demo="410-typography-display" data-height="520" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden } from '@svgrid/grid'
 </script>
@@ -92,6 +100,32 @@ child fills the box (`object-fit: cover`).
   `aria-hidden` so screen readers announce the keys, not the "+".
 - **SvAspectRatio** is presentational - always give the media inside it a real
   `alt` (or `aria-hidden` when decorative).
+
+## Keys, code and a fixed ratio
+
+Small pieces that show up constantly in documentation and settings screens.
+`SvKbd` takes the keys as data rather than as pre-joined text, so the separator
+is presentation and can differ per platform.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvKbd, SvCode, SvAspectRatio, SvText } from '@svgrid/grid'
+</script>
+
+<SvText>Press <SvKbd keys={['Cmd', 'K']} /> to open the palette.</SvText>
+
+<SvText>Install with <SvCode code="npm i @svgrid/grid" />.</SvText>
+
+<SvCode block code={`const columns = [
+  { field: "name", header: "Name" },
+]`} />
+
+<SvAspectRatio ratio={16 / 9}>
+  <div style="width: 100%; height: 100%; display: grid; place-items: center; background: color-mix(in srgb, currentColor 8%, transparent);">
+    16 : 9
+  </div>
+</SvAspectRatio>
+```
 
 ## See also
 

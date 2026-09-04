@@ -98,6 +98,85 @@ parseEditorValue('checkbox', 'true')    // true
 parseEditorValue('date',     '2026-05-27')  // '2026-05-27'
 ```
 
+## Telling the grid what a string holds
+
+A date that arrives as a string sorts alphabetically unless you say otherwise.
+`cellDataType: 'dateString'` is that declaration, and it changes sorting and the
+filter operators together.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+    active: boolean
+    trend: number[]
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01', active: true,  trend: [4, 6, 5, 9, 12, 11, 15] },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15', active: true,  trend: [9, 8, 11, 10, 14, 16, 15] },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20', active: false, trend: [12, 10, 9, 7, 6, 6, 4] },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05', active: true,  trend: [3, 5, 4, 8, 7, 11, 13] },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180 },
+    // Without cellDataType this sorts as text, which puts 2019 after 2021-03.
+    { field: 'joined', header: 'Joined', width: 150, cellDataType: 'dateString',
+      format: { type: 'date', options: { dateStyle: 'medium' } } },
+  ]
+</script>
+
+<SvGrid data={people} {columns} sortable filterable filterMode="menu" />
+```
+
+
+## Booleans
+
+`cellDataType: 'boolean'` gives the column the true/false filter rather than a
+text box, and pairs with the checkbox editor so reading and writing agree.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+    active: boolean
+    trend: number[]
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01', active: true,  trend: [4, 6, 5, 9, 12, 11, 15] },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15', active: true,  trend: [9, 8, 11, 10, 14, 16, 15] },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20', active: false, trend: [12, 10, 9, 7, 6, 6, 4] },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05', active: true,  trend: [3, 5, 4, 8, 7, 11, 13] },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 190 },
+    { field: 'active', header: 'Active', width: 120,
+      cellDataType: 'boolean', editorType: 'checkbox' },
+  ]
+</script>
+
+<SvGrid data={people} {columns} filterable filterMode="menu" editable />
+```
+
 ## See also
 
 - [Provided cell editors](../editing/provided-editors.md)

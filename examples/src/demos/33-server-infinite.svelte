@@ -815,6 +815,7 @@
   <!-- Grid -->
   <div class="flex-1 min-h-0 srv-grid-wrap" bind:this={gridWrapperEl}>
     <SvGrid
+      columnResize
       data={rows as Transaction[]}
       columns={[
         {

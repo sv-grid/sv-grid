@@ -288,6 +288,7 @@
 
     <div class="dp-cal">
       <SvGrid
+      columnResize
         data={boardRows}
         columns={columns}
         getRowId={(r) => String(r.id)}
@@ -308,7 +309,8 @@
     <details class="dp-table">
       <summary>All jobs this week ({rows.length})</summary>
       <div class="dp-table-grid">
-        <SvGrid data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="260px" />
+        <SvGrid
+      columnResize data={rows} columns={columns} getRowId={(r) => String(r.id)} containerHeight="260px" />
       </div>
     </details>
   </div>

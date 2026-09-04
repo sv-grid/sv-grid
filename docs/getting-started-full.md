@@ -48,7 +48,33 @@ assumes you've finished this one. Estimated reading time: 15 minutes.
 
 ## 1. Your first grid in 60 seconds
 
-```svelte
+Every example below runs against this setup:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature, rowPaginationFeature, type ColumnDef } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; email: string; age: number; city: string }
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowPaginationFeature })
+
+  let rows = $state<Person[]>([
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   age: 36, city: 'London' },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', age: 45, city: 'New York' },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', age: 54, city: 'Portland' },
+  ])
+  const data = rows
+
+  const columns: ColumnDef<typeof features, Person>[] = [
+    { field: 'name',  header: 'Name' },
+    { field: 'email', header: 'Email' },
+    { field: 'age',   header: 'Age', width: 90 },
+    { field: 'city',  header: 'City' },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, type GridColumns } from '@svgrid/grid'
 
@@ -177,10 +203,10 @@ type Person = {
 }
 
 const columns: GridColumns<Person> = [
-  // Simple accessor by key
+  // `field`: read a key straight off the row
   { field: 'firstName', header: 'First name' },
 
-  // Computed accessor
+  // `fieldFn`: compute the value; needs an explicit `id`
   {
     id: 'fullName',
     header: 'Full name',
@@ -344,7 +370,7 @@ The grid's scroll shell is sized by `containerHeight`, which defaults to
 520 px. A number is pixels; a string is passed through to CSS, so `'100%'`
 fills the parent and `'auto'` grows to the content.
 
-```svelte
+```svelte {runnable}
 <!-- Fixed: 600px tall. The typical choice. -->
 <SvGrid data={rows} columns={columns} containerHeight={600} />
 
@@ -365,7 +391,7 @@ rows you can let the grid grow to its content. Turn row virtualization
 off as well - a shell with no fixed height gives the virtualizer nothing
 to measure against:
 
-```svelte
+```svelte {runnable}
 <SvGrid
   data={rows}
   columns={columns}
@@ -437,7 +463,7 @@ required. `sortable` and `filterable` inject the matching feature for you;
 `editable`, `groupable`, and `pageable` alias `enableInlineEditing`,
 `showGroupingControls`, and `showPagination`:
 
-```svelte
+```svelte {runnable}
 <SvGrid data={rows} columns={columns} sortable filterable editable groupable pageable />
 ```
 
@@ -450,7 +476,7 @@ The wrapper owns sort, filter, pagination, selection, and expansion
 state by default. Set the initial page size and which filter UI to
 show via props:
 
-```svelte
+```svelte {runnable}
 <SvGrid
   data={rows}
   columns={columns}
@@ -467,7 +493,7 @@ The wrapper still owns the state, but emits callbacks on every change.
 Use this when an outside piece of UI needs to react (a "X rows
 selected" pill, a router that syncs sort to the URL, a server fetch).
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let sorting = $state<Array<{ id: string; desc: boolean }>>([])
   let filters = $state<Array<{ id: string; operator: string; value: string }>>([])
@@ -511,7 +537,7 @@ For Excel-style filter operators and the active-filter chip UI, see
 
 ### Row selection
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let selected = $state<Person[]>([])
 </script>
@@ -678,7 +704,7 @@ every row / column, which is what you want for a short grid you intend to
 print, or when sticky column pinning has to survive (the column virtualizer
 recycles DOM nodes, so the two cannot co-exist).
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid } from '@svgrid/grid'
 </script>

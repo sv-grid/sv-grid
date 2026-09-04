@@ -257,6 +257,7 @@
 
   <div class="ps-wrap">
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={columns}
       features={features}

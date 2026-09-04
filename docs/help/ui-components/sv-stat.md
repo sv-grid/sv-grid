@@ -25,6 +25,14 @@ Or install the package and import it directly. `SvStat` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvSparkline, SvStat } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvStat } from '@svgrid/grid'
 ```
@@ -33,7 +41,7 @@ import { SvStat } from '@svgrid/grid'
 
 <div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvStat } from '@svgrid/grid'
 </script>
@@ -62,7 +70,7 @@ import { SvStat } from '@svgrid/grid'
 A numeric `delta` auto-signs (`+12.4%`) and colors itself - green for up, red for
 down. Use `invert` where a drop is the win, and the colors flip:
 
-```svelte
+```svelte {runnable}
 <SvStat label="Signups" value="1,284" delta={8.2} />
 <SvStat label="Latency" value="180ms" delta={-6.1} invert />
 ```
@@ -72,7 +80,7 @@ down. Use `invert` where a drop is the win, and the colors flip:
 Pass a string `delta` when you want full control of the text, and set `trend`
 explicitly to drive the arrow and color:
 
-```svelte
+```svelte {runnable}
 <SvStat label="Uptime" value="99.98%" delta="+0.02pt" trend="up" />
 ```
 
@@ -93,7 +101,7 @@ and a trend line in the footer:
 `SvStat` cards tile cleanly in a CSS grid for a KPI strip; feed each from your
 data and let a numeric `delta` sign and color itself:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvStat } from '@svgrid/grid'
   const kpis = [

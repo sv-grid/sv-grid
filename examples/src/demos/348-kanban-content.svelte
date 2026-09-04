@@ -78,6 +78,7 @@
   <div class="flex-1 min-h-0">
     {#if view === 'board'}
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={columns}
         getRowId={(r) => String(r.id)}
@@ -96,6 +97,7 @@
       />
     {:else}
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={columns}
         features={features}

@@ -41,6 +41,84 @@ There is no `editable: (row) => boolean` callback. Closest approximation:
 swap the column between an editable and a read-only version by reassigning
 `columns`.
 
+## The editor follows the column
+
+`editorType` picks the editor, and the value it commits is already the right
+type - a number editor produces a number, not a string. That is why validation
+here usually only has to check range, not shape.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+  ]
+
+  let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
+  let last = $state('(nothing edited yet)')
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180, editorType: 'text' },
+    { field: 'age',  header: 'Age',  width: 90,  editorType: 'number' },
+    { field: 'city', header: 'City', width: 150, editorType: 'text' },
+  ]
+</script>
+
+<SvGrid
+  data={rows}
+  {columns}
+  editable
+  onCellValueChange={(e) =>
+    (last = e.columnId + ' = ' + JSON.stringify(e.newValue) + '  (' + typeof e.newValue + ')')}
+/>
+
+<p><code>{last}</code></p>
+```
+
+
+## A date picker and a checkbox
+
+The richer editors are the same one-word opt-in. `editorType: 'date'` opens
+the same `SvCalendar` the forms use, so a date picked in a cell and one picked in
+a form behave identically. Drop to `'date-native'` when you want the browser's
+own control instead.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Task = { id: number; title: string; due: string; done: boolean }
+
+  let tasks = $state<Task[]>([
+    { id: 1, title: 'Ship the docs',   due: '2026-07-01', done: false },
+    { id: 2, title: 'Review the plan', due: '2026-07-08', done: true },
+    { id: 3, title: 'Cut the release', due: '2026-07-15', done: false },
+  ])
+
+  const columns: GridColumns<Task> = [
+    { field: 'title', header: 'Task', width: 220, editorType: 'text' },
+    { field: 'due',   header: 'Due',  width: 170, editorType: 'date', cellDataType: 'dateString',
+      format: { type: 'date', options: { dateStyle: 'medium' } } },
+    { field: 'done',  header: 'Done', width: 90,  editorType: 'checkbox' },
+  ]
+</script>
+
+<SvGrid data={tasks} {columns} editable />
+```
+
 ## See also
 
 - [Provided editors](./provided-editors.md)

@@ -26,6 +26,41 @@ for a Svelte-5-native grid with an unconditional MIT core.
 
 ## Shape of the change
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - <ejs-grid [dataSource]="rows" [allowSorting]="true" [allowFiltering]="true"
 -           [allowPaging]="true" [editSettings]="{ allowEditing: true }">
@@ -58,12 +93,6 @@ for a Svelte-5-native grid with an unconditional MIT core.
   available, plus Blazor support. If you need that breadth or Blazor,
   weigh it against the Svelte-native fit.
 
-## See also
-
-- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/) - the side-by-side comparison
-- [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
-- [Getting started](../getting-started.md) - a working grid in ~15 lines
-
 ## Frequently asked questions
 
 ### Is SvGrid free, unlike the Syncfusion commercial license?
@@ -82,3 +111,17 @@ features.
 
 No - SvGrid is Svelte 5 only. If you need Blazor, that is a genuine reason to
 stay on Syncfusion. For a Svelte stack, SvGrid is the native fit.
+
+## What you end up with
+
+Sort, filter, group and inline edit - the four things a Syncfusion grid is usually doing.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} groupBy={['department']} groupable sortable filterable editable />
+```
+
+## See also
+
+- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/) - the side-by-side comparison
+- [Data export and printing - Enterprise](./export.md) - the Enterprise export pack
+- [Getting started](../getting-started.md) - a working grid in ~15 lines

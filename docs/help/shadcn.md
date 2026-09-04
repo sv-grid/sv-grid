@@ -81,6 +81,42 @@ already use. Import it once and you are done.
 SvGrid publishes a shadcn-svelte registry item, so the grid installs the
 same way the rest of your components did:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```sh
 npx shadcn-svelte@latest add https://svgrid.com/r/data-table.json
 ```
@@ -127,7 +163,7 @@ point of assignment:
 }
 ```
 
-```svelte
+```svelte {runnable}
 <div class="sg-shadcn">
   <SvGrid {data} {columns} sortable filterable rowHeight={40} />
 </div>
@@ -204,6 +240,77 @@ them.
 No, as long as your bridge expresses `--sg-*` in terms of shadcn tokens
 (`hsl(var(--background))`) rather than hard-coded colours. The cascade
 handles the flip.
+
+## Try it
+
+The grid reads `--sg-*` custom properties, so matching a design system is a
+block of variables rather than a theme file. Change one and the grid follows.
+
+```svelte {runnable}
+<div class="shadcn-scope">
+  <SvGrid data={people} {columns} sortable />
+</div>
+
+<style>
+  .shadcn-scope {
+    --sg-accent: hsl(240 5.9% 10%);
+    --sg-border: hsl(240 5.9% 90%);
+    --sg-header-bg: hsl(240 4.8% 95.9%);
+    --sg-row-hover: hsl(240 4.8% 97%);
+    --sg-radius: 8px;
+    --sg-font-size: 13px;
+  }
+</style>
+```
+
+## Matching a light shadcn surface
+
+The same grid under a light token block. Because the tokens are plain custom
+properties, a theme switch is a class change rather than a rebuild.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180 },
+    { field: 'city',   header: 'City',   width: 150 },
+    { field: 'salary', header: 'Salary', width: 150,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<div class="shadcn-light">
+  <SvGrid data={seed} {columns} sortable />
+</div>
+
+<style>
+  .shadcn-light {
+    --sg-bg: hsl(0 0% 100%);
+    --sg-fg: hsl(240 10% 3.9%);
+    --sg-border: hsl(240 5.9% 90%);
+    --sg-header-bg: hsl(240 4.8% 95.9%);
+    --sg-header-fg: hsl(240 3.8% 46.1%);
+    --sg-row-hover: hsl(240 4.8% 97.5%);
+    --sg-accent: hsl(240 5.9% 10%);
+    --sg-radius: 8px;
+  }
+</style>
+```
 
 ## See also
 

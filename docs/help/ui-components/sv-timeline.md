@@ -31,7 +31,7 @@ import { SvTimeline } from '@svgrid/grid'
 
 <div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTimeline } from '@svgrid/grid'
 </script>
@@ -108,7 +108,7 @@ Build `items` from your data before passing it in:
 Type the feed with `TimelineItem` and use the `item` snippet to add the actor's
 avatar beside each event while the rail and markers stay consistent:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTimeline, SvAvatar, type TimelineItem } from '@svgrid/grid'
 

@@ -37,6 +37,14 @@ layout; each block is a pane rendered by id. The rest of the screen - data
 source, editing, actions - is unchanged, so a grid in a pane keeps all its
 features (sorting, editing, its own data):
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvDockManager, SvGrid } from '@svgrid/grid'
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { SvDockManager, type DockManagerState } from '@svgrid/grid'

@@ -34,7 +34,7 @@ import { SvAutoComplete } from '@svgrid/grid'
 
 <div data-docs-demo="315-autocomplete" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAutoComplete } from '@svgrid/grid'
   const cities = ['Amsterdam', 'Berlin', 'Copenhagen', 'Dublin']
@@ -103,7 +103,7 @@ The control just takes a `suggestions` array, so build it reactively from any
 source - recent searches, a fetched list, deduped history - while the user can
 still type anything:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvAutoComplete } from '@svgrid/grid'
   let value = $state('')
@@ -143,6 +143,57 @@ an upward flip. The same prop is on [SvComboBox](sv-combo-box.md) and
   suggestion, `Escape` to dismiss - typed text is kept either way.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## More examples
+
+### Autocomplete - headless
+
+createAutocomplete drives SvAutoComplete and a custom suggestion-list render over one text value.
+
+<div data-docs-demo="263-headless-autocomplete" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvAutoComplete } from '@svgrid/grid'
+
+  let autoComplete = $state('')
+</script>
+
+<SvAutoComplete bind:value={autoComplete} size="sm" />
+<SvAutoComplete bind:value={autoComplete} size="md" />
+<SvAutoComplete bind:value={autoComplete} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvAutoComplete } from '@svgrid/grid'
+
+  let autoComplete = $state('')
+</script>
+
+<SvAutoComplete
+  bind:value={autoComplete}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvAutoComplete
+  bind:value={autoComplete}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

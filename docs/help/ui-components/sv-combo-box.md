@@ -112,7 +112,7 @@ Set a `group` on options and the filtered panel keeps its section headings.
 Close `loadOptions` over another field so the query is scoped by an earlier pick -
 here cities are searched within the chosen country:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvComboBox, type ListOption } from '@svgrid/grid'
   let countryId = $state<string | null>(null)
@@ -151,6 +151,63 @@ The same prop works on [SvDropDownList](sv-drop-down-list.md) and
   dismiss; unmatched text reverts on blur so the value stays valid.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## More examples
+
+### Combobox - headless
+
+createCombobox drives the styled SvComboBox and a custom filter-input render, both bound to one value with a readout.
+
+<div data-docs-demo="261-headless-combobox" data-height="420"></div>
+
+### Remote combo box
+
+SvComboBox with a remote dataSource: debounced server search (loadOptions), a loading state, latest-response-wins race handling and a type-to-search hint. Local filtering off.
+
+<div data-docs-demo="329-combobox-remote" data-height="460"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvComboBox } from '@svgrid/grid'
+
+  let cityId = $state('')
+</script>
+
+<SvComboBox value={cityId} size="sm" />
+<SvComboBox value={cityId} size="md" />
+<SvComboBox value={cityId} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvComboBox } from '@svgrid/grid'
+
+  let cityId = $state('')
+</script>
+
+<SvComboBox
+  value={cityId}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvComboBox
+  value={cityId}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

@@ -282,6 +282,7 @@
       <div class="ind-muted mb-1 text-xs uppercase tracking-wide shrink-0">Production lines</div>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
+      columnResize
           data={lines}
           columns={[
             { field: 'id',     header: 'Line', editorType: 'text', width: 90 },
@@ -318,6 +319,7 @@
       <div class="ind-muted mb-1 text-xs uppercase tracking-wide shrink-0">Active alarms</div>
       <div class="flex-1 min-h-0">
         <SvGrid responsive={true}
+      columnResize
           data={alarms}
           columns={[
             { field: 'at', header: 'Time', editorType: 'text', width: 90 },

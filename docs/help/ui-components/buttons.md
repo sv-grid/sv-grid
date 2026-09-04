@@ -19,7 +19,27 @@ import them directly:
 
 ## SvButton
 
-```svelte
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvCheckBox, SvRadioGroup, SvRating, SvRepeatButton, SvSwitchButton, SvToggleButton } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let on = $state(false)
+  let bold = $state(false)
+  let agree = $state(false)
+  let count = $state(0)
+  let stars = $state(3)
+  let plan = $state('pro')
+
+  const save = async () => {
+    await new Promise((r) => setTimeout(r, 600))
+  }
+</script>
+```
+
+```svelte {runnable}
 <SvButton variant="primary" onclick={save}>Save</SvButton>
 <SvButton variant="outline" loading>Saving…</SvButton>
 ```
@@ -33,7 +53,7 @@ Props: `variant` (`primary` `secondary` `outline` `ghost` `danger`), `size`,
 Fires `onclick` repeatedly while held (after `delay`, then every `interval` ms).
 Used for steppers and spinners.
 
-```svelte
+```svelte {runnable}
 <SvRepeatButton onclick={() => count++}>+</SvRepeatButton>
 ```
 
@@ -44,7 +64,7 @@ Props: `onclick`, `delay` (default 300), `interval` (default 60), `variant`,
 
 A button with a pressed on/off state (`aria-pressed`).
 
-```svelte
+```svelte {runnable}
 <SvToggleButton pressed={bold} onChange={(v) => (bold = v)}><strong>B</strong></SvToggleButton>
 ```
 
@@ -54,7 +74,7 @@ Props: `pressed`, `onChange(pressed)`, `size`, `disabled`.
 
 An on/off sliding switch (ARIA `switch`), keyboard togglable.
 
-```svelte
+```svelte {runnable}
 <SvSwitchButton checked={on} onChange={(v) => (on = v)} />
 ```
 
@@ -64,7 +84,7 @@ Props: `checked`, `onChange(checked)`, `size`, `onLabel` / `offLabel`, `disabled
 
 Checkbox with an indeterminate state and optional label child.
 
-```svelte
+```svelte {runnable}
 <SvCheckBox checked={agree} onChange={(v) => (agree = v)}>I agree</SvCheckBox>
 <SvCheckBox indeterminate />
 ```
@@ -87,7 +107,7 @@ Props: `options` ({ value, label, disabled? }), `value`, `onChange(value)`,
 
 A star rating (ARIA slider) with hover preview, half steps and keyboard.
 
-```svelte
+```svelte {runnable}
 <SvRating value={stars} onChange={(v) => (stars = v)} allowHalf />
 ```
 
@@ -107,3 +127,11 @@ recipes:
 - [SvCheckBox](./sv-check-box.md) - a checkbox with an indeterminate state.
 - [SvRadioGroup](./sv-radio-group.md) - an accessible single-choice radio group.
 - [SvRating](./sv-rating.md) - a star rating with half steps.
+
+## More examples
+
+### Buttons & toggles
+
+The UI kit press/toggle primitives: SvButton (variants/sizes/loading), SvRepeatButton (hold-to-repeat), SvToggleButton, SvSwitchButton, SvCheckBox (+ indeterminate), SvRadioGroup (arrow-key nav) and SvRating (half stars). Theme-driven, standalone or as grid cell controls.
+
+<div data-docs-demo="253-buttons-toggles" data-height="420"></div>

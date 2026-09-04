@@ -243,6 +243,15 @@ export function createSelection<
    * outline wins on overlap). Returns null when the cell is in no range.
    */
   function getCellRangeEdges(rowIndex: number, colIndex: number) {
+    // Bail before `getSelectionRects()`, which allocates an array and resolves
+    // every range. This runs once per rendered CELL on every render - about 250
+    // times per frame on a default grid - and with nothing selected it did all
+    // that work to return null every time. An anchored active range or a
+    // committed one is the only way any rect can exist.
+    const active = ctx.selectionRange as SelectionRange | undefined;
+    const committed = ctx.selectionRanges as SelectionRange[] | undefined;
+    if (!committed?.length && !(active?.anchor && active?.focus)) return null;
+
     for (const rect of getSelectionRects()) {
       if (
         rowIndex < rect.minRow ||

@@ -8,6 +8,39 @@ Before hand-writing any tokens: 20 design-system presets ship with the package,
 each a single stylesheet with a full light + dark palette. One import re-themes
 the whole grid.
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 import '@svgrid/grid/themes/shadcn.css'
 ```
@@ -86,7 +119,7 @@ html[data-theme='dark'] {
 
 Toggling is one line in the app shell:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let theme = $state<'light' | 'dark'>('dark')
   $effect(() => document.documentElement.setAttribute('data-theme', theme))
@@ -187,3 +220,38 @@ modifier follows `data-theme`, the override hooks for the stable
 `.sv-grid-*` class names, and the anti-patterns (don't `@apply` inside
 grid selectors, don't put utility classes on grid children, don't
 fight column widths in CSS).
+
+## Try it
+
+There is no `density` prop - row height is the density control, and it is one
+number. Compact for a screen someone scans all day, comfortable for one they
+read.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} rowHeight={28} showRowNumbers />
+
+<SvGrid data={people} {columns} rowHeight={48} showRowNumbers />
+```
+
+## Re-theming with tokens
+
+The grid reads `--sg-*` custom properties, so a theme is a block of variables on
+any ancestor - no theme file, no build step.
+
+```svelte {runnable}
+<div class="midnight">
+  <SvGrid data={people} {columns} sortable />
+</div>
+
+<style>
+  .midnight {
+    --sg-bg: #0f172a;
+    --sg-fg: #e2e8f0;
+    --sg-border: #1e293b;
+    --sg-header-bg: #111c33;
+    --sg-header-fg: #93c5fd;
+    --sg-accent: #38bdf8;
+    --sg-row-hover: #16233d;
+  }
+</style>
+```

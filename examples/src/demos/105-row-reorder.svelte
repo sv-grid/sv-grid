@@ -219,6 +219,7 @@
     role="presentation"
   >
     <SvGrid responsive={true}
+      columnResize
       data={tasks}
       columns={columns}
       features={features}

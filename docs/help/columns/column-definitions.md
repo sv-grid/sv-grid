@@ -107,6 +107,86 @@ type Features = typeof features
 const columns: ColumnDef<Features, Person>[] = [/* … */]
 ```
 
+## Alignment follows the data
+
+`align` is inferred from the editor type when you leave it out, which is why
+numbers land right without being told. Set it explicitly only when you disagree
+- a right-aligned code, a centred status.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 190 },
+    { field: 'city',   header: 'City',   width: 130, align: 'center' },
+    { field: 'age',    header: 'Age',    width: 90,  editorType: 'number' },
+    { field: 'salary', header: 'Salary', width: 140, align: 'right',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} {columns} />
+```
+
+
+## Per-column opt-outs
+
+Turning a capability on at the grid level does not force it on every column.
+`sortable: false` and `filterable: false` take a column out - useful for an
+actions column, or a note nobody should sort by.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 160 },
+    // Sortable everywhere except here.
+    { field: 'city',       header: 'City',       width: 140, sortable: false, filterable: false },
+    { field: 'salary',     header: 'Salary',     width: 140,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} {columns} sortable filterable filterMode="row" />
+```
+
 ## See also
 
 - [Updating definitions](./updating-definitions.md)

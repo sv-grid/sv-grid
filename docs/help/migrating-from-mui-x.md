@@ -17,6 +17,41 @@ split very similar to sv-grid's. The port is mostly mechanical.
 
 ## Imports
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - import { DataGrid, GridColDef, GridRowsProp } from '@mui/x-data-grid'
 
@@ -170,13 +205,6 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 - **MUI form-field integration.** Bind directly to your own MUI
   inputs in custom cell components if you want them.
 
-## See also
-
-- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/) - the side-by-side comparison
-- [Migrating from AG Grid](./migrating-from-ag-grid.md)
-- [Migrating from TanStack Table](./migrating-from-tanstack-table.md)
-- [Design tokens](./tokens.md)
-
 ## Frequently asked questions
 
 ### How hard is it to migrate from MUI X DataGrid to SvGrid?
@@ -197,3 +225,18 @@ SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterpr
 is priced per developer ($599 single-app / $999 multi-app) rather than
 per seat with Premium add-ons. Compare your team size and feature needs against
 the [pricing page](https://svgrid.com/pricing/).
+
+## What you end up with
+
+Sorting, filtering, pagination and inline editing - the MUI X DataGrid feature set.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable editable pageable pageSize={3} />
+```
+
+## See also
+
+- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/) - the side-by-side comparison
+- [Migrating from AG Grid](./migrating-from-ag-grid.md)
+- [Migrating from TanStack Table](./migrating-from-tanstack-table.md)
+- [Design tokens](./tokens.md)

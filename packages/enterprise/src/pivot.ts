@@ -420,7 +420,7 @@ function walkRowTree(
   // regardless of `rowSubtotals` so the grouping hierarchy and the
   // expand/collapse parent chain stay intact; the flag only controls whether
   // the header carries its aggregate (subtotal) values or renders as a
-  // label-only row. This matches Excel / AG Grid, where hiding subtotals never
+  // label-only row. This matches Excel, where hiding subtotals never
   // removes a grouping level from the row axis.
   const isRealGroup = node.level > 0 && node.level < rowFields.length
   let nextParentId: string | null = parentId

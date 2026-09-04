@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvMenu` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvMenu } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvMenu } from '@svgrid/grid'
 ```

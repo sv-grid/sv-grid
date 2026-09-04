@@ -136,6 +136,39 @@ carries makes the grid talk over itself:
 Announcements are full sentences, so unlike the single-word labels elsewhere in
 `localeText` they take `{placeholders}` and you control the word order:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <SvGrid
   localization={{
@@ -234,14 +267,6 @@ The grid can't know:
    await checkA11y(page, '.sv-grid-shell', { detailedReport: false })
    ```
 
-## See also
-
-- [Browser support](./browser-support.md) - the `ResizeObserver` /
-  Pointer Events floor every assistive-tech tool relies on.
-- [Tailwind integration](./tailwind.md) - the `--sg-*` tokens that
-  control contrast.
-- [Testing your grid](./testing.md) - includes an axe-core recipe.
-
 ## Frequently asked questions
 
 ### Is SvGrid accessible / WCAG compliant?
@@ -264,3 +289,65 @@ also selectable and machine-readable.
 Run axe-core against the rendered grid (recipe in the testing guide) and test
 keyboard-only navigation. Pair it with the high-contrast focus toggle and the
 `--sg-*` contrast tokens to meet your target contrast ratios.
+
+## More examples
+
+### Keyboard shortcuts + a11y
+
+Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid\'s WAI-ARIA grid pattern + roving tabindex.
+
+<div data-docs-demo="65-keyboard-shortcuts" data-height="460"></div>
+
+### High-contrast theme
+
+WCAG 2.2 AAA-grade preset for accessibility procurement. Token block opts a subtree into the high-contrast skin while the rest of the page stays standard. Light + dark.
+
+<div data-docs-demo="96-high-contrast-theme" data-height="460"></div>
+
+## Try the keyboard
+
+Everything below is keyboard-reachable. Tab once to enter the grid, then arrow
+between cells - the grid is a single tab stop, not one per cell, which is what
+makes a 10,000-row table usable without a mouse.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} sortable filterable enableCellSelection editable />
+```
+
+Try: Tab in, arrows to move, Enter to edit, Escape to cancel, Shift+arrows to
+extend a range, Ctrl/Cmd+C to copy it.
+
+## What a screen reader is told
+
+The grid root carries `role="grid"` with `aria-rowcount` and `aria-colcount`,
+headers carry `aria-sort`, and rows and cells carry their index. Sort a column
+in the example above and inspect the header: the `aria-sort` attribute flips
+with it, which is how a screen reader user knows the order changed at all.
+
+```svelte {runnable}
+<script lang="ts">
+  let report = $state('(sort a column)')
+
+  function inspect() {
+    const grid = document.querySelector('[role="grid"], [role="treegrid"]')
+    const sorted = document.querySelectorAll('[role="columnheader"][aria-sort]')
+    report =
+      'role=' + (grid?.getAttribute('role') ?? 'missing') +
+      ' | aria-rowcount=' + (grid?.getAttribute('aria-rowcount') ?? 'missing') +
+      ' | headers with aria-sort: ' + sorted.length
+  }
+</script>
+
+<SvGrid data={people} {columns} sortable />
+
+<button type="button" onclick={inspect}>Inspect the ARIA</button>
+<p><code>{report}</code></p>
+```
+
+## See also
+
+- [Browser support](./browser-support.md) - the `ResizeObserver` /
+  Pointer Events floor every assistive-tech tool relies on.
+- [Tailwind integration](./tailwind.md) - the `--sg-*` tokens that
+  control contrast.
+- [Testing your grid](./testing.md) - includes an axe-core recipe.

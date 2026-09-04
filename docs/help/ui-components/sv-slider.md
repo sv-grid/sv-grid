@@ -26,6 +26,18 @@ Or install the package and import it directly. `SvSlider` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvSlider } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let band = $state(0)
+  let gain = $state(0)
+</script>
+```
+
 ```ts
 import { SvSlider } from '@svgrid/grid'
 ```
@@ -34,7 +46,7 @@ import { SvSlider } from '@svgrid/grid'
 
 <div data-docs-demo="318-slider" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSlider } from '@svgrid/grid'
   let volume = $state(40)
@@ -90,7 +102,7 @@ import { SvSlider } from '@svgrid/grid'
 Turn on `range` and pass `ticks` plus `formatValue` for a filter-style price
 band that reads back in its own units:
 
-```svelte
+```svelte {runnable}
 <SvSlider
   range
   min={0} max={500} step={10}
@@ -105,7 +117,7 @@ band that reads back in its own units:
 Set `orientation="vertical"` for mixer-style controls. Ticks and thumbs mirror
 onto the vertical axis; scale labels render on horizontal tracks only:
 
-```svelte
+```svelte {runnable}
 <SvSlider orientation="vertical" value={gain} onChange={(v) => (gain = v)} />
 ```
 
@@ -119,7 +131,7 @@ plain `<form>` - `lo,hi` for a range, or the number for a single thumb.
 Pass `ticks` an array to place marks at specific values instead of evenly spaced
 ones - handy for a rating or a milestone scale:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSlider } from '@svgrid/grid'
   let quality = $state(50)
@@ -144,6 +156,57 @@ to `min` / `max` when there are none), so a custom tick set doubles as the label
   `aria-valuenow`, supplied by the `createSlider` core.
 - Keyboard: arrow keys step by `step`, and the thumb takes a visible focus ring.
 - Set `ariaLabel` (or a visible `label`) so the slider announces its purpose.
+
+## More examples
+
+### Slider - headless
+
+createSlider drives styled SvSlider plus a custom draggable bar (rect measured in the component), one number.
+
+<div data-docs-demo="281-headless-slider" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSlider } from '@svgrid/grid'
+
+  let volume = $state(1)
+</script>
+
+<SvSlider value={volume} size="sm" />
+<SvSlider value={volume} size="md" />
+<SvSlider value={volume} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSlider } from '@svgrid/grid'
+
+  let volume = $state(1)
+</script>
+
+<SvSlider
+  value={volume}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvSlider
+  value={volume}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

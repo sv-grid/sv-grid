@@ -23,6 +23,36 @@ Or install the package and import it directly. `SvCard` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  let rows = $state<Person[]>(people)
+</script>
+```
+
 ```ts
 import { SvCard } from '@svgrid/grid'
 ```
@@ -31,7 +61,7 @@ import { SvCard } from '@svgrid/grid'
 
 <div data-docs-demo="333-app-feedback" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCard } from '@svgrid/grid'
 </script>
@@ -117,6 +147,33 @@ needs.
 - When the whole card is clickable, wrap it in a real `<a>` or `<button>` so
   keyboard and screen-reader users get proper activation.
 - `hoverable` lift is suppressed under `prefers-reduced-motion`.
+
+## Header, body, footer
+
+The three slots are independent: a card with only `title` is fine, and `header`
+takes over when you need a control up there. `flush` drops the body padding for
+content that brings its own - a table or an image.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvCard, SvButton, SvBadge } from '@svgrid/grid'
+</script>
+
+<SvCard title="Revenue" subtitle="Last 30 days" hoverable>
+  <p>EUR 128,400 across 1,204 orders.</p>
+  {#snippet footer()}
+    <SvButton size="sm" variant="outline">View report</SvButton>
+  {/snippet}
+</SvCard>
+
+<SvCard>
+  {#snippet header()}
+    <span>Deploys</span>
+    <SvBadge variant="success">passing</SvBadge>
+  {/snippet}
+  <p>Last deploy 14 minutes ago.</p>
+</SvCard>
+```
 
 ## See also
 

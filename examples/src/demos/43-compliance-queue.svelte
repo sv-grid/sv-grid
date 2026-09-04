@@ -412,6 +412,7 @@
   <div class="cq-body">
     <div class="cq-grid-wrap">
       <SvGrid responsive={true}
+      columnResize
         data={cases}
         columns={[
           { field: 'id', header: 'Case', width: 130, editable: false,

@@ -13,6 +13,39 @@ Pin specific rows to the **top** or **bottom** of the grid so they stay visible 
 
 `<SvGrid>` accepts two props:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 pinnedTopRows?:    ReadonlyArray<TData>
 pinnedBottomRows?: ReadonlyArray<TData>
@@ -151,6 +184,24 @@ For per-row styling, target the row's class directly:
 ```
 
 Each row also carries `data-pinned-row="top" | "bottom"` and `data-pinned-index="0..N"` so you can paint distinct ranks differently.
+
+## More examples
+
+### Pinned rows (top / bottom)
+
+Frozen "Account totals" row at the top + sticky "Page totals" at the bottom that reacts to filters. Right-click any row to pin it.
+
+<div data-docs-demo="107-pinned-rows" data-height="460"></div>
+
+## Pinned rows and row numbers
+
+Pinned rows sit outside the scrolling body, so they survive sorting and paging.
+Row numbers count the scrolling rows only, which is what makes a pinned total
+read as a total rather than as row 6.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} showRowNumbers sortable pageable pageSize={3} />
+```
 
 ## See also
 

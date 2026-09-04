@@ -1,0 +1,73 @@
+{
+  "$comment": "Curated demo -> doc page placements. Applied by tools/demo-doc-embed.mjs, which inserts a `data-docs-demo` host into each page. A demo may appear on more than one page when it genuinely illustrates both topics; it must appear at least once. Verified against the doc tree, so every target path here exists.",
+
+  "docs/help/ui-components/headless-editors.md": ["260-headless-editors"],
+  "docs/help/ui-components/sv-combo-box.md": ["261-headless-combobox", "329-combobox-remote"],
+  "docs/help/ui-components/sv-drop-down-list.md": ["262-headless-dropdownlist"],
+  "docs/help/ui-components/sv-auto-complete.md": ["263-headless-autocomplete"],
+  "docs/help/ui-components/sv-tags-input.md": ["264-headless-tagsinput"],
+  "docs/help/ui-components/sv-country-input.md": ["265-headless-countryinput"],
+  "docs/help/ui-components/sv-number-input.md": ["266-headless-numberinput"],
+  "docs/help/ui-components/sv-masked-input.md": ["267-headless-maskedinput"],
+  "docs/help/ui-components/sv-phone-input.md": ["268-headless-phoneinput"],
+  "docs/help/ui-components/sv-color-input.md": ["269-headless-colorinput"],
+  "docs/help/ui-components/sv-password-input.md": ["270-headless-passwordinput"],
+  "docs/help/ui-components/sv-toggle-button.md": ["271-headless-togglebutton", "253-buttons-toggles"],
+  "docs/help/ui-components/sv-switch-button.md": ["272-headless-switchbutton"],
+  "docs/help/ui-components/sv-check-box.md": ["273-headless-checkbox"],
+  "docs/help/ui-components/sv-radio-group.md": ["274-headless-radiogroup"],
+  "docs/help/ui-components/sv-rating.md": ["275-headless-rating"],
+  "docs/help/ui-components/sv-calendar.md": ["276-headless-calendar"],
+  "docs/help/ui-components/sv-time-picker.md": ["277-headless-timepicker"],
+  "docs/help/ui-components/sv-date-time-picker.md": ["278-headless-datetimepicker"],
+  "docs/help/ui-components/sv-tabs.md": ["279-headless-tabs", "325-tabs-advanced", "257-tabs-tree-form"],
+  "docs/help/ui-components/sv-tree.md": ["280-headless-tree", "324-tree-scale", "328-tree-editable"],
+  "docs/help/ui-components/sv-slider.md": ["281-headless-slider"],
+  "docs/help/ui-components/sv-gauge.md": ["282-headless-gauge", "163-chart-gauge"],
+  "docs/help/ui-components/sv-text-input.md": ["254-text-inputs", "290-input-adornments"],
+  "docs/help/ui-components/range.md": ["256-range-feedback"],
+  "docs/help/ui-components/buttons.md": ["253-buttons-toggles"],
+  "docs/help/ui-components/sv-form.md": ["404-form-rich-fields", "405-form-cascading", "334-checkout-form", "335-booking-form"],
+  "docs/help/ui-components/sv-context-menu.md": ["67-context-menu", "406-chart-context-menu"],
+  "docs/help/ui-components/sv-list-box.md": ["323-list-virtualization"],
+  "docs/help/ui-components/layout.md": ["337-account-settings-console", "345-ops-dashboard"],
+  "docs/help/ui-components/sv-dock-layout.md": ["363-dock-headers", "365-dock-dashboard", "366-dock-keepalive"],
+  "docs/help/ui-components/sv-dock-manager.md": ["364-dock-api", "367-dock-popout"],
+  "docs/help/ui-components/sv-grid-chart.md": ["407-grid-chart-view", "353-built-in-charting", "354-charting-multi-series", "355-charting-custom-buildspec", "358-charting-by-date"],
+  "docs/help/ui-components/index.md": ["420-block-login", "421-block-signup", "422-block-otp", "423-block-dashboard", "424-block-app-shell", "425-block-pricing"],
+
+  "docs/help/charts.md": ["150-scatter-bubble", "151-time-series-chart", "153-chart-zoom-brush", "154-chart-heatmap", "155-chart-analytics", "156-chart-patterns", "157-chart-forecast-band", "158-chart-waterfall", "159-chart-streaming", "160-chart-funnel", "161-chart-radar", "162-chart-calendar", "164-chart-treemap", "165-chart-sankey"],
+
+  "docs/help/rows/kanban-board.md": ["344-kanban-sprint", "345-kanban-pipeline", "346-kanban-virtualized", "347-kanban-support", "348-kanban-content", "349-kanban-subtasks", "350-kanban-structure", "351-kanban-power", "352-kanban-epics"],
+
+  "docs/help/rows/scheduler.md": ["386-scheduler-rules", "389-scheduler-dependencies", "390-scheduler-capacity", "391-scheduler-zoom", "392-scheduler-resource-tree", "394-scheduler-heatmap", "397-scheduler-multi-calendar"],
+  "docs/help/scheduling.md": ["387-scheduler-financial", "388-scheduler-hr", "393-scheduler-eligibility", "395-scheduler-booking-rules", "396-scheduler-bookable-slots", "398-scheduler-find-a-time", "399-scheduler-clinic-console"],
+
+  "docs/help/pivot.md": ["360-pivot-mode-grid", "122-pivot-drill-through", "123-pivot-totals", "124-pivot-olap", "125-pivot-charts", "166-pivot-analysis-workspace", "168-pivot-designer", "359-pivot-chart"],
+
+  "docs/help/export.md": ["93-password-protected-export", "101-formulas-in-xlsx", "126-export-grouped-grid", "127-export-pivot-grid", "201-export-formatting-and-xls", "202-export-pdf-grouped-and-print"],
+  "docs/recipes/multi-sheet-export.md": ["119-workbook-multi-sheet"],
+
+  "docs/help/spreadsheet-formulas.md": ["207-blank-sheet", "208-freeze-panes", "209-data-validation", "210-format-cells", "211-financial-model", "212-dashboard-sheet", "356-spreadsheet-chart", "169-cell-borders"],
+
+  "docs/help/server-side-data.md": ["79-loading-from-rest", "113-cursor-pagination", "115-optimistic-updates", "116-websocket-live-updates", "117-bulk-operations", "118-live-dashboard"],
+
+  "docs/help/alerts.md": ["400-alert-styling-rules", "401-alert-aggregate-kpi", "402-alert-validation-guardrails", "403-alert-console-navpane"],
+
+  "docs/help/cells/conditional-formatting.md": ["94-conditional-formatting", "100-anomaly-highlights"],
+  "docs/help/rows/styling-rows.md": ["174-zebra-rows"],
+  "docs/help/state-maintenance.md": ["171-persistent-state"],
+  "docs/help/columns/updating-definitions.md": ["172-autosize-columns"],
+  "docs/help/rows/tree-data.md": ["29-wbs-project-tree", "30-bom-tree"],
+  "docs/help/cells/cell-text-selection.md": ["90-selection-api", "118-range-selection"],
+  "docs/help/ui-components/selection.md": ["255-selection"],
+  "docs/help/editing/overview.md": ["206-cell-validation", "95-fill-handle"],
+  "docs/help/filtering/applying-filters.md": ["99-top-n-filter", "336-filter-bar"],
+  "docs/help/grouping-aggregation.md": ["89-group-panel"],
+  "docs/help/accessibility.md": ["65-keyboard-shortcuts", "96-high-contrast-theme"],
+  "docs/help/ai.md": ["92-nl-filter-bar", "357-ai-chart-this", "203-ai-export-and-anomalies"],
+  "docs/help/i18n-rtl.md": ["15-localization"],
+  "docs/help/migrating-from-ag-grid.md": ["139-migration-from-ag-grid"],
+
+  "docs/recipes/index.md": ["12-hr-team", "32-manufacturing-ops", "205-project-management", "120-test-systems-monitor", "167-project-tracker", "343-invoice-builder", "14-industrial", "20-industrial-dashboard"]
+}

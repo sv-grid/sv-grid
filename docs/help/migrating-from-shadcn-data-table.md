@@ -18,6 +18,41 @@ instead.
 SvGrid speaks the same vocabulary TanStack Table v9 introduced. These are
 real exports from `@svgrid/grid`, not lookalikes:
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 import {
   tableFeatures,
@@ -205,15 +240,6 @@ repo. In SvGrid each of these is a prop:
 - **Weight.** For a short static list that never sorts, the copied
   recipe is smaller.
 
-## See also
-
-- [shadcn-svelte integration](./shadcn.md) - matching the theme
-- [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - the
-  underlying API map
-- [Migrating from a UI-kit table](./migrating-from-ui-kit-tables.md) - for
-  the plain styled `<Table>`
-- [Why headless?](../why-headless.md) - keeping your own markup
-
 ## Frequently asked questions
 
 ### Does SvGrid replace shadcn-svelte?
@@ -238,3 +264,20 @@ row-model plumbing, which is the part that broke on the v8 to v9 upgrade.
 Probably not, unless you want editing, grouping, or export later. The
 case gets strong when the table grows past what fits on a page, or when
 the next feature request is one you would otherwise hand-build.
+
+## What you end up with
+
+Sorting, filtering, pagination and selection - the shadcn data-table demo, as props.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable pageable pageSize={3} selectable />
+```
+
+## See also
+
+- [shadcn-svelte integration](./shadcn.md) - matching the theme
+- [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - the
+  underlying API map
+- [Migrating from a UI-kit table](./migrating-from-ui-kit-tables.md) - for
+  the plain styled `<Table>`
+- [Why headless?](../why-headless.md) - keeping your own markup

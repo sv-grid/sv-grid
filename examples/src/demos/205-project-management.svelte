@@ -207,6 +207,7 @@
 
   <div class="pm-grid-wrap">
     <SvGrid responsive={true}
+      columnResize
       data={data}
       columns={columns}
       features={features}

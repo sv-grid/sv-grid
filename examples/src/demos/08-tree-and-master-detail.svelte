@@ -250,6 +250,7 @@
     </p>
     <div bind:this={treeContainerEl}>
       <SvGrid responsive={true}
+      columnResize
         data={fsRows}
         columns={fsColumns}
         features={featuresFs}
@@ -291,6 +292,7 @@
         <h4 class="mb-1 text-xs uppercase tracking-wide tm-eyebrow">Line items - {selectedOrder}</h4>
         {#key selectedOrder}
           <SvGrid responsive={true}
+      columnResize
             data={detailRows}
             columns={lineColumns}
             features={featuresOrders}

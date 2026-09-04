@@ -54,7 +54,7 @@ column-mapping, validation, error preview - not the parser itself.
 
 ## Minimal example
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
   import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
@@ -413,16 +413,6 @@ back via the same `addRows` call. The importer's review UX still works
 - **Blank rows are skipped.** A row whose every cell is empty is
   counted in `skipped`, not `rows`.
 
-## See also
-
-- [Data export and printing](./export.md) - the round-trip partner.
-- [Validation while editing](./editing/validation.md) - the same
-  validator shape works for inline grid edits.
-- [Demo 53 - Excel / CSV import](../../examples/src/demos/53-excel-import.svelte) - the low-level
-  `importData` + validator flow.
-- [Demo 204 - Import dialog + auto-mapping](../../examples/src/demos/204-import-dialog.svelte) - the
-  drop-in `SvImportDialog` with drag-drop, paste, and grid-aware mapping.
-
 ## Frequently asked questions
 
 ### How do I import an Excel or CSV file into the grid?
@@ -443,3 +433,13 @@ them before committing.
 No. Import ships in `@svgrid/enterprise`, alongside export and pivot. The free
 Community package handles displaying and editing data you already have in
 memory.
+
+## See also
+
+- [Data export and printing](./export.md) - the round-trip partner.
+- [Validation while editing](./editing/validation.md) - the same
+  validator shape works for inline grid edits.
+- [Demo 53 - Excel / CSV import](../../examples/src/demos/53-excel-import.svelte) - the low-level
+  `importData` + validator flow.
+- [Demo 204 - Import dialog + auto-mapping](../../examples/src/demos/204-import-dialog.svelte) - the
+  drop-in `SvImportDialog` with drag-drop, paste, and grid-aware mapping.

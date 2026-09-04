@@ -24,13 +24,21 @@ Or install the package and import it directly. `SvSparkline` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvSparkline, SvStat } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvSparkline } from '@svgrid/grid'
 ```
 
 ## Example
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSparkline } from '@svgrid/grid'
 </script>
@@ -95,7 +103,7 @@ with a trend:
 Keep a fixed-length window of recent readings in `$state` and the chart redraws
 as you push new points - a lightweight live monitor:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSparkline } from '@svgrid/grid'
   let series = $state<number[]>([])
@@ -117,6 +125,31 @@ rescaling every time a new high or low arrives.
 - Set a descriptive `ariaLabel` (e.g. the metric and direction); the default is
   just `"sparkline"`.
 - Purely decorative in most layouts - pair it with the numeric value it trends.
+
+## The four types
+
+`line` and `area` read as a trend, `bar` as discrete periods, and `winloss`
+throws the magnitude away to show only the sign - which is the right chart when
+the question is "how often were we up".
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSparkline } from '@svgrid/grid'
+
+  const trend = [4, 7, 5, 9, 12, 10, 14, 13, 17]
+  const swing = [3, -2, 5, -1, 4, -6, 2, 8, -3]
+</script>
+
+<div style="display: grid; gap: 10px;">
+  <SvSparkline data={trend} type="line" width={160} height={36} lastPoint />
+  <SvSparkline data={trend} type="area" width={160} height={36} />
+  <SvSparkline data={swing} type="bar" width={160} height={36} negativeColor="#dc2626" />
+  <SvSparkline data={swing} type="winloss" width={160} height={36} negativeColor="#dc2626" />
+</div>
+```
+
+`lastPoint` marks the current value, which is what makes a sparkline in a table
+row readable at a glance.
 
 ## See also
 

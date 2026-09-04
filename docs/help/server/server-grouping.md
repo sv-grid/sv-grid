@@ -25,6 +25,14 @@ One `getRows`. When `groupKeys.length < groupBy.length` the server returns
 its aggregates); when they are equal it returns the **leaf rows** under that
 path.
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, SvRowGroupPanel } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 async function getRows(req) {
   const level = req.groupKeys.length
@@ -223,6 +231,62 @@ is a third option for a single flat, indented list. `createServerGroupModel` is
 the batteries-included version of exactly this.
 
 <div data-docs-demo="114-server-grouping" data-height="480"></div>
+
+## Try it
+
+Grouping on the client is a prop; the point of the server version is that the
+rollup happens where the rows are. This runs the same shape locally so the
+group model is visible - your `query` returns pre-grouped rows instead.
+
+```svelte
+<SvGrid
+  data={people}
+  {columns}
+  groupBy={['department']}
+  groupable
+  summary
+  sortable
+/>
+```
+
+Compare that with what a server has to return: one row per group with its
+aggregate already computed, plus the leaves for whichever groups are expanded.
+
+## Group headers the server computed
+
+When the server does the rollup it sends group rows and leaf rows in one flat
+list, already ordered. Rendering that is tree data with a parent field - the
+grid does not need to know a group was computed elsewhere.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Row = { id: string; parentId: string | null; label: string; total: number }
+
+  // What the endpoint returned: two group rows with their totals, plus leaves.
+  const fromServer: Row[] = [
+    { id: 'g-eng',  parentId: null,    label: 'Engineering', total: 310000 },
+    { id: 'p-ada',  parentId: 'g-eng', label: 'Ada Lovelace', total: 142000 },
+    { id: 'p-grace',parentId: 'g-eng', label: 'Grace Hopper', total: 168000 },
+    { id: 'g-plat', parentId: null,    label: 'Platform',     total: 327000 },
+    { id: 'p-linus',parentId: 'g-plat',label: 'Linus Torvalds', total: 155000 },
+    { id: 'p-barb', parentId: 'g-plat',label: 'Barbara Liskov', total: 172000 },
+  ]
+
+  const columns: GridColumns<Row> = [
+    { field: 'label', header: 'Group / person', width: 240 },
+    { field: 'total', header: 'Total', width: 140,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid
+  data={fromServer}
+  {columns}
+  treeData={{ parentField: 'parentId', idField: 'id', column: 'label' }}
+/>
+```
 
 ## See also
 

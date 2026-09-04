@@ -1,10 +1,10 @@
 # MCP server
 
-The SvGrid MCP server lets AI clients (Claude Code, Claude Desktop,
-Cursor, Zed, Codex, custom agents) query the documentation, read real
-demo source, and scaffold SvelteKit CRUD apps - all grounded in the
-files this repository ships. No API key required; everything runs
-locally over stdio.
+The SvGrid MCP server does two things for an AI client (Claude Code,
+Claude Desktop, Cursor, Zed, Codex, custom agents): it answers questions
+about SvGrid from the files this repository ships, and it **checks the
+code the model writes** against the real exported surface of the version
+you have installed. No API key either way.
 
 ![An AI coding agent calls the @svgrid/mcp server over the Model Context Protocol, which runs grid tools and returns structured JSON results back to the agent.](/docs-media/grid-mcp.svg)
 
@@ -14,9 +14,10 @@ locally over stdio.
 > model your team already uses can "see" the grid without you having
 > to copy-paste docs into prompts.
 
-The package is [`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp)
-on npm, and it is listed in the official MCP registry as
-`com.svgrid/svgrid`.
+It runs either way you like: as a local process
+([`@svgrid/mcp`](https://www.npmjs.com/package/@svgrid/mcp) on npm), or as
+a hosted endpoint at `https://mcp.svgrid.com/mcp` that needs no install at
+all. Both are listed in the official MCP registry as `com.svgrid/svgrid`.
 
 ## Two ways to connect
 
@@ -67,16 +68,34 @@ To pin it as a dev dependency instead:
 pnpm add -D @svgrid/mcp
 ```
 
-The server is a Node binary (`svgrid-mcp`) that speaks MCP over stdio.
-There is no daemon to maintain.
+The local server is a Node binary (`svgrid-mcp`) that speaks MCP over
+stdio. There is no daemon to maintain. The hosted server needs no install
+step at all - skip to [Wire it into your AI client](#wire-it-into-your-ai-client)
+and use the URL.
 
 ## Wire it into your AI client
 
+Every snippet below shows the local (stdio) form and the hosted (HTTP)
+form. Pick one - running both connects the same tools twice.
+
 ### Claude Code
 
-One command:
+The plugin is the shortest path: it installs the
+[Agent Skill](./skill.md) and the hosted server together, so the model
+gets the house style *and* the checker in one step.
+
+```
+/plugin marketplace add sv-grid/sv-grid
+/plugin install svgrid@svgrid
+```
+
+Or add the server on its own:
 
 ```bash
+# hosted, nothing to install
+claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
+
+# or local
 claude mcp add svgrid -- npx -y @svgrid/mcp
 ```
 
@@ -106,12 +125,32 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 }
 ```
 
+Or the hosted server, with nothing to install:
+
+```json
+{
+  "mcpServers": {
+    "svgrid": {
+      "type": "http",
+      "url": "https://mcp.svgrid.com/mcp"
+    }
+  }
+}
+```
+
 Restart Claude Desktop, then ask *"using svgrid, build me a grid that
 groups by department"* to confirm the tools are exposed.
 
 ### Cursor
 
-`Settings -> MCP -> Add new MCP server`:
+One click:
+[Add to Cursor](https://cursor.com/en/install-mcp?name=svgrid&config=eyJ1cmwiOiJodHRwczovL21jcC5zdmdyaWQuY29tL21jcCJ9)
+
+Or by hand, in `Settings -> MCP -> Add new MCP server`:
+
+```json
+{ "url": "https://mcp.svgrid.com/mcp" }
+```
 
 ```json
 { "command": "npx", "args": ["-y", "@svgrid/mcp"] }
@@ -135,8 +174,22 @@ groups by department"* to confirm the tools are exposed.
 
 ### VS Code
 
-Create `.vscode/mcp.json` in the workspace. Note that VS Code uses
+One click:
+[Add to VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=svgrid&config=%7B%22name%22%3A%22svgrid%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.svgrid.com%2Fmcp%22%7D)
+
+Or create `.vscode/mcp.json` in the workspace. Note that VS Code uses
 `servers` rather than the `mcpServers` wrapper:
+
+```json
+{
+  "servers": {
+    "svgrid": {
+      "type": "http",
+      "url": "https://mcp.svgrid.com/mcp"
+    }
+  }
+}
+```
 
 ```json
 {
@@ -152,20 +205,25 @@ Create `.vscode/mcp.json` in the workspace. Note that VS Code uses
 
 ### Custom agents (OpenAI Agents SDK, Anthropic SDK, LangChain)
 
-Point your client's MCP stdio transport at:
+Point your client's MCP stdio transport at `npx -y @svgrid/mcp`, or its
+streamable-HTTP transport at `https://mcp.svgrid.com/mcp`. Any client that
+speaks either transport works.
 
-```
-npx -y @svgrid/mcp
-```
-
-Any client that speaks MCP stdio works.
+The hosted server names its two retrieval tools `search` and `fetch`
+exactly, which is what a connector needs to index it.
 
 ## Tools exposed
 
-The server registers 36 tools: 9 for verification, documentation,
-examples, and scaffolding, plus 27 `studio_*` tools that drive the
-SvGrid Studio project model. All run locally; none require an API key
-or a network call.
+The **local** server registers 36 tools: 9 for verification,
+documentation, examples, and scaffolding, plus 27 `studio_*` tools that
+drive the SvGrid Studio project model. None require an API key.
+
+The **hosted** server carries 6 of them: `check_svgrid_code`,
+`list_examples`, `get_example_source`, `get_api_reference`, and the
+retrieval pair `search` / `fetch` (which stand in for `search_docs`,
+`list_docs` and `get_doc`). The Studio tools need a filesystem, so they
+stay local - and a model that just wants a data grid should not spend
+context on an app builder it will never call.
 
 ### Verification
 
@@ -357,21 +415,55 @@ the key in your MCP client's server config:
 
 ## Verifying it works
 
-After wiring the server, ask your model: *"What MCP tools do you have
-from svgrid?"* You should see the documentation tools and the
-`studio_*` set. If not, check your client's MCP log; the most common
-issue is `npx` not being on PATH (use the absolute path to the binary
-instead).
+Ask your model: *"What MCP tools do you have from svgrid?"* The local
+server answers with 36, including `check_svgrid_code` and the `studio_*`
+set; the hosted server answers with 6.
+
+Then give it something to catch:
+
+> Check this with svgrid: `<SvGrid rowData={rows} {columns} />`
+
+It should come back with `rowData` is not a SvGrid prop, use `data`. If
+it explains the code instead of calling a tool, the server is not
+connected.
+
+If nothing is listed at all, check your client's MCP log. For the local
+server the usual cause is `npx` not being on PATH - use the absolute path
+to the binary. For the hosted one, confirm the endpoint answers:
+
+```bash
+curl https://mcp.svgrid.com/health
+```
 
 ## Security model
 
-- The server runs **locally** over stdio. No telemetry, no outbound
-  network calls, no API key.
-- It serves a documentation and example corpus bundled into the
-  package at build time, so answers are pinned to the version you
-  installed.
-- The Studio tools return generated files as data. Writing them to
-  disk is your client's decision, not the server's.
+The two ways of running it differ here, so pick deliberately.
+
+**Local (`npx @svgrid/mcp`)**
+
+- Runs on your machine over stdio. No telemetry, no outbound network
+  calls, no API key.
+- Serves a documentation and example corpus bundled into the package at
+  build time, so answers are pinned to the version you installed.
+- `check_svgrid_code` reads the source you pass it in-process and never
+  sends it anywhere.
+
+**Hosted (`https://mcp.svgrid.com/mcp`)**
+
+- Your client sends tool arguments to a Cloudflare Worker we operate.
+  Anything you pass to a tool leaves your machine, and for
+  `check_svgrid_code` that means **the source you ask it to check**.
+- Each call is logged: tool name, duration, whether it succeeded, and the
+  query or id it was given. For `check_svgrid_code` only the **byte
+  length** of the submitted source is recorded, never the source itself.
+- No account, no key, no cookies. Requests are not tied to a user.
+- If your code cannot leave the building, use the local server. That is
+  what it is for.
+
+**Both**
+
+- The Studio tools return generated files as data. Writing them to disk
+  is your client's decision, not the server's.
 - See [security](./security.md) for the general supply-chain posture.
 
 ## Building your own MCP integrations
@@ -388,30 +480,49 @@ const llms    = await fetch('https://svgrid.com/llms-full.txt').then((r) => r.te
 If you do not want to run the MCP server, building these into your
 agent's system prompt gives most of the same grounding.
 
-## See also
-
-- [LLM grounding](./llm-grounding.md) - the same files used by the MCP server, but documented for direct LLM consumption
-- [Agents](./agents.md) - how to build an AI agent that drives the live grid
-- [AI assistant](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise), free in @svgrid/grid
-
 ## Frequently asked questions
 
 ### What is the SvGrid MCP server?
 
 A Model Context Protocol server that lets AI clients (Claude Code, Claude
 Desktop, Cursor, Zed, custom agents) query SvGrid's documentation, read real
-demo source, and scaffold SvelteKit CRUD apps - grounded in the files the
-package ships, so the model answers from current facts instead of guessing.
+demo source, scaffold SvelteKit CRUD apps, and check the code they write
+against the real API - grounded in the files the package ships, so the model
+answers from current facts instead of guessing.
 
 ### Do I need an API key to run it?
 
-No. The MCP server runs locally over stdio. There is no key and no external
-call. A `SVGRID_LICENSE_KEY` is optional and only affects the commercial
-Studio code generators.
+No, on either transport. A `SVGRID_LICENSE_KEY` is optional and only affects
+the commercial Studio code generators.
+
+### Local or hosted - which should I use?
+
+Hosted (`https://mcp.svgrid.com/mcp`) if you want it working in one paste,
+with no Node and no config file. Local (`npx @svgrid/mcp`) if you want the
+Svelte compiler pass in `check_svgrid_code`, the 27 Studio tools, offline
+use, or your source never leaving the machine. See
+[Security model](#security-model) for what each one sends.
 
 ### How does it help AI assistants write better SvGrid code?
 
-It exposes example sources, the docs, and the API reference as MCP tools, so
-the assistant retrieves accurate, version-pinned answers rather than
-hallucinating an API from training data. That matters most for Svelte 5, where
-models routinely mix in outdated Svelte 4 syntax.
+Two ways. It exposes the docs, example sources, and API reference as tools,
+so the assistant retrieves version-pinned answers instead of hallucinating an
+API from training data. And `check_svgrid_code` closes the loop: the model
+runs what it wrote past the real exported surface and gets told exactly what
+is wrong before you see it. That matters most for Svelte 5, where models
+routinely mix in outdated Svelte 4 syntax.
+
+### Does it work with a version of SvGrid I have not upgraded to?
+
+The local server answers for the version bundled in the `@svgrid/mcp` release
+you install, so pin it alongside `@svgrid/grid` if you are behind. The hosted
+server always tracks the current release. Either way, every
+`check_svgrid_code` result names the version it checked against in its
+`checkedAgainst` field.
+
+## See also
+
+- [Agent Skill](./skill.md) - the always-on house-style layer; the Claude Code plugin installs it together with this server
+- [LLM grounding](./llm-grounding.md) - the same files used by the MCP server, but documented for direct LLM consumption
+- [Agents](./agents.md) - how to build an AI agent that drives the live grid
+- [AI assistant](./ai.md) - the in-grid AI features (filter / smart-fill / classify / summarise), free in @svgrid/grid

@@ -27,6 +27,14 @@ Or install the package and import it directly. `SvHoverCard` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvAvatar, SvHoverCard } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvHoverCard } from '@svgrid/grid'
 ```
@@ -35,7 +43,7 @@ import { SvHoverCard } from '@svgrid/grid'
 
 <div data-docs-demo="289-overlays-hovercard-menubar" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvHoverCard, SvAvatar } from '@svgrid/grid'
 </script>
@@ -74,7 +82,7 @@ import { SvHoverCard } from '@svgrid/grid'
 Slow the open a touch so a quick pass does not flash the card, and keep it open
 long enough to move onto it:
 
-```svelte
+```svelte {runnable}
 <SvHoverCard openDelay={350} closeDelay={220} placement="top">
   {#snippet anchor()}<button class="chip">#design</button>{/snippet}
   <p>42 open issues in <strong>Design</strong>.</p>

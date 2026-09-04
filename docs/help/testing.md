@@ -229,7 +229,16 @@ your team's various GPUs don't churn the baseline.
 
 ## Performance regression
 
-The benchmark script (`pnpm bench`) is meant to be run on every release.
+The engine suite (`pnpm bench`) runs the row pipeline against the built
+package. Its `--check` mode is what CI gates, and it deliberately gates
+*work counters* rather than elapsed time: how many times the sort
+comparator resolves a column, how many rows materialise their cell array
+during a filter. Those are identical on every machine, so the gate cannot
+flake; wall-clock on a shared runner can and does.
+
+Worth stealing for your own suite - a perf gate that fails on a busy
+runner gets disabled, and then it protects nothing.
+
 For your own app, capture two numbers in CI:
 
 1. **Time to first paint** on your largest grid - run a Playwright
@@ -238,9 +247,13 @@ For your own app, capture two numbers in CI:
    `page.evaluate(() => performance.timing)` or the Chrome DevTools
    protocol's `Performance.getMetrics`.
 
-Both can fail your CI with a 10% deviation threshold. See
-[Performance benchmarks](./benchmarks.md) for the documented numbers
-on the published package.
+Both can fail your CI with a 10% deviation threshold. Pick the threshold
+from your own baseline spread over a few runs - a shared CI runner is
+noisy enough that a tight gate on wall-clock will flake.
+
+See [Performance benchmarks](./benchmarks.md) for what the published
+package measures, and for which figures there are estimates rather than
+measured output.
 
 ## Test data fixtures
 

@@ -272,6 +272,7 @@
     {:else}
       <div class="mb-grid-host">
         <SvGrid responsive={true}
+      columnResize
           data={rows}
           columns={columns}
           features={features}

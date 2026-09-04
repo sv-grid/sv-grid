@@ -4,6 +4,9 @@
 > last-frame budget, and live DOM row count - every animation frame.
 > Behind a dev-only flag in production.
 
+This is a copy-paste pattern, not a component the package ships. Nothing
+to install: paste the code below into your own app.
+
 ## When
 
 You're trying to figure out:
@@ -27,7 +30,7 @@ Three pieces:
 
 ## Implementation
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   /** Number of recent frames to average over. ~60 = 1s @ 60Hz. */
   const WINDOW = 60

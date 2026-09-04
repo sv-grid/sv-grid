@@ -6,9 +6,13 @@ issue.
 
 ## A
 
-**Accessor.** A function on a `ColumnDef` (`fieldFn`) that computes
-a cell value from the row instead of reading a property by `field`.
-Used heavily by pivot tables and computed columns.
+**Accessor.** How a column gets its value out of a row. There are two
+forms: `field`, a key on the row (`row[field]`, no dot paths), and
+`fieldFn`, a function that computes the value. `getValue()` applies
+whichever the column declares. Reach for `fieldFn` when the value is
+nested or derived - it is what pivot tables and computed columns use,
+and a `fieldFn` column needs an explicit `id`, since there is no
+`field` to name it after.
 
 **Active cell.** The cell with focus. Tracked through every keyboard
 move + click; exposed via `onActiveCellChange`. At most one cell is

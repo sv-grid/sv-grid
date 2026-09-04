@@ -169,3 +169,41 @@ const columns = [
 It's opt-in (so the components tree-shake when unused). Option/structured editors
 (`SvMultiSelect`, `SvTreeSelect`, `SvGridSelect`) need their `options`/`nodes`/
 `columns`, so register those yourself with a `props` mapping as shown above.
+
+## More examples
+
+### Login block
+
+A two-column authentication page: a branded gradient panel beside a sign-in SvCard with social SvButtons, SvTextInput + SvPasswordInput (reveal), remember-me SvCheckBox, an "or" SvDivider and forgot-password link. Drops into any route as-is.
+
+<div data-docs-demo="420-block-login" data-height="520"></div>
+
+### Sign-up block
+
+A centered account-creation card: two-up name fields, work email, a password with the live strength meter, a plan SvSegmented switch, terms SvCheckBox and a benefits rail. Submit fires a promise toast. Pure UI-kit.
+
+<div data-docs-demo="421-block-signup" data-height="520"></div>
+
+### Two-factor / OTP block
+
+The verification step of a sign-in flow: SvOtpInput (6 digits, auto-advance + onComplete), a resend cooldown timer, and the waiting -> verifying -> verified states. Enter 000000 to see the error path.
+
+<div data-docs-demo="422-block-otp" data-height="520"></div>
+
+### Analytics dashboard block
+
+A full overview page: a range SvSegmented + actions header, a KPI grid (SvStat + SvSparkline), a revenue bar panel, a recent-activity SvTimeline and a top-products list with SvProgress bars. No grid dependency.
+
+<div data-docs-demo="423-block-dashboard" data-height="520"></div>
+
+### App shell block
+
+A complete application layout: a SvNavPane sidebar with sections + badges, a top bar with SvBreadcrumb, search and an account SvMenu, and a routed content area. Nav swaps the page; the toggle collapses the rail to an icon rail.
+
+<div data-docs-demo="424-block-app-shell" data-height="520"></div>
+
+### Pricing block
+
+A three-tier plan grid with a monthly/annual SvSegmented toggle (annual applies the discount live), a highlighted "most popular" card, per-plan feature SvLists with check marks, and a CTA SvButton on each.
+
+<div data-docs-demo="425-block-pricing" data-height="520"></div>

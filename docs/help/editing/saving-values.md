@@ -94,6 +94,114 @@ use `onCellValueChange`:
   onCellValueChange={onCellValueChange} />
 ```
 
+## Persisting one cell
+
+The event tells you exactly what changed - which row, which column, from what
+to what. That is enough for a PATCH, and it is why you rarely need to diff the
+whole row.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
+  let log = $state<string[]>([])
+
+  // What you would send. A real one awaits fetch and reverts on failure.
+  function save(field: string, id: number, value: unknown) {
+    log = ['PATCH /people/' + id + ' { ' + field + ': ' + JSON.stringify(value) + ' }', ...log].slice(0, 4)
+  }
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180, editorType: 'text' },
+    { field: 'city', header: 'City', width: 150, editorType: 'text' },
+    { field: 'age',  header: 'Age',  width: 90,  editorType: 'number' },
+  ]
+</script>
+
+<SvGrid
+  data={rows}
+  {columns}
+  getRowId={(r) => String(r.id)}
+  editable
+  onCellValueChange={(e) => save(e.columnId, e.row.id, e.newValue)}
+/>
+
+<ul>
+  {#each log as line}<li><code>{line}</code></li>{/each}
+</ul>
+```
+
+## Rolling back a failed save
+
+A save that fails has to put the value back, or the screen quietly disagrees
+with the server. Holding the old value across the await is the whole trick.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
+  let status = $state('idle')
+
+  // Fails on purpose for anything under 18, to show the rollback path.
+  async function persist(row: Person, field: string, value: unknown, previous: unknown) {
+    status = 'saving'
+    await new Promise((r) => setTimeout(r, 500))
+    if (field === 'age' && Number(value) < 18) {
+      (row as Record<string, unknown>)[field] = previous
+      status = 'rejected by server, rolled back'
+      return
+    }
+    status = 'saved'
+  }
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 180, editorType: 'text' },
+    { field: 'age',  header: 'Age',  width: 100, editorType: 'number' },
+  ]
+</script>
+
+<SvGrid
+  data={rows}
+  {columns}
+  editable
+  onCellValueChange={(e) => persist(e.row, e.columnId, e.newValue, e.oldValue)}
+/>
+
+<p>Status: <strong>{status}</strong> (try an age under 18)</p>
+```
+
 ## See also
 
 - [Parsing values](./parsing-values.md)

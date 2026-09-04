@@ -25,6 +25,17 @@ Or install the package and import it directly. `SvPhoneInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvPhoneInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let phone = $state('')
+</script>
+```
+
 ```ts
 import { SvPhoneInput } from '@svgrid/grid'
 ```
@@ -33,7 +44,7 @@ import { SvPhoneInput } from '@svgrid/grid'
 
 <div data-docs-demo="303-phone-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPhoneInput } from '@svgrid/grid'
   let phone = $state('')
@@ -84,7 +95,7 @@ re-parsing the string yourself:
 Set `country` to the ISO code that fits your audience; the dial code and
 formatting follow it until the user picks another:
 
-```svelte
+```svelte {runnable}
 <SvPhoneInput country="GB" bind:value={phone} />
 ```
 
@@ -93,7 +104,7 @@ formatting follow it until the user picks another:
 Capture the parsed `parts` from `onChange` and drive the error off `parts.valid`,
 so the field only complains once the user has typed something incomplete:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvPhoneInput } from '@svgrid/grid'
   let phone = $state('')
@@ -124,6 +135,57 @@ can store the pieces separately without re-parsing the combined string yourself.
   and `invalid` add `aria-required` / `aria-invalid`.
 - The country list lives in `countries.ts`; extend it for the full set your app
   needs.
+
+## More examples
+
+### Phone input - headless
+
+createPhoneInput drives SvPhoneInput and a custom country picker + national field; dial-code / E.164 parsing from the core.
+
+<div data-docs-demo="268-headless-phoneinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvPhoneInput } from '@svgrid/grid'
+
+  let phone = $state('')
+</script>
+
+<SvPhoneInput bind:value={phone} size="sm" />
+<SvPhoneInput bind:value={phone} size="md" />
+<SvPhoneInput bind:value={phone} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvPhoneInput } from '@svgrid/grid'
+
+  let phone = $state('')
+</script>
+
+<SvPhoneInput
+  bind:value={phone}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvPhoneInput
+  bind:value={phone}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

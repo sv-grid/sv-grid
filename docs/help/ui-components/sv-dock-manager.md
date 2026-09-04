@@ -251,6 +251,20 @@ edge strips. Reach for `SvDockLayout` directly when you only need a tiled,
 in-place docking layout; reach for `SvDockManager` when you need floating
 windows, reordering, or auto-hide.
 
+## More examples
+
+### Docking: API & events
+
+SvDockManager imperative API (onReady) + event stream (onEvent): a toolbar floats / pops out / maximizes / auto-hides / focuses panes from code, with every action logged live.
+
+<div data-docs-demo="364-dock-api" data-height="520"></div>
+
+### Docking: pop out to a window
+
+SvDockManager allowPopout (off by default): pop a panel out to a real OS window for a second monitor - a live monitoring console where Live log / Metrics keep streaming in the popped-out window, and closing it docks the panel back. Falls back to an in-app floating window when pop-ups are blocked.
+
+<div data-docs-demo="367-dock-popout" data-height="520"></div>
+
 ## See also
 
 - [SvDockLayout](sv-dock-layout.md) - the tiled docking layout underneath.

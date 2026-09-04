@@ -493,6 +493,7 @@
     use:rowResize={{ onResize: onRowResize, min: 22, max: 240, disabled: !resizeEnabled }}
   >
     <SvGrid responsive={true}
+      columnResize
       data={raw}
       columns={columns}
       features={features}

@@ -268,15 +268,6 @@ data within a boundary before it reaches a provider.
 
 Auto-generated per-symbol reference: [`@svgrid/grid` · `ai.ts`](../reference/auto/svgrid-grid-ai.md).
 
-## See also
-
-- [AI assistant](./ai.md) - the in-grid helpers in full, with response shapes
-- [Agents](./agents.md) - build an agent that drives the live grid
-- [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
-- [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
-- [LLM grounding](./llm-grounding.md) - the static files any model reads
-- [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema
-
 ## Frequently asked questions
 
 ### What AI features does SvGrid have?
@@ -306,3 +297,12 @@ through your own backend first.
 No. The in-grid helpers and the grounding files work without it. The MCP
 server is the turnkey path for desktop AI clients; for a custom in-app
 agent you call `SvGridApi` directly.
+
+## See also
+
+- [AI assistant](./ai.md) - the in-grid helpers in full, with response shapes
+- [Agents](./agents.md) - build an agent that drives the live grid
+- [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
+- [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
+- [LLM grounding](./llm-grounding.md) - the static files any model reads
+- [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema

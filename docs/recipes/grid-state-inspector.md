@@ -40,7 +40,7 @@ panel to fill the gap.
 
 ## Implementation
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid, tableFeatures,

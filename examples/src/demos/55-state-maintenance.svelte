@@ -360,6 +360,7 @@
   <div class="sm-body flex flex-1 min-h-0 gap-3">
     <div class="sm-grid-wrap flex-1 min-w-0">
       <SvGrid responsive={true}
+      columnResize
         data={rows}
         columns={visibleColumns}
         features={features}

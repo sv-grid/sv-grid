@@ -21,6 +21,18 @@ time editor:
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvTimePicker } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let slot = $state<Date | null>(null)
+  let existing = $state<Date | null>(null)
+</script>
+```
+
 ```ts
 import { SvTimePicker } from '@svgrid/grid'
 ```
@@ -36,7 +48,7 @@ anywhere.
 
 <div data-docs-demo="251-timepicker" data-height="460" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTimePicker } from '@svgrid/grid'
   let time = $state(new Date())
@@ -86,7 +98,7 @@ inside [SvDateTimePicker](sv-date-time-picker.md)'s popover.
 Constrain to coarse steps with `minuteInterval` so bookings land on clean
 boundaries; the dial snaps the hand to the nearest allowed minute:
 
-```svelte
+```svelte {runnable}
 <SvTimePicker value={slot} minuteInterval={15} onChange={(d) => (slot = d)} />
 ```
 
@@ -95,7 +107,7 @@ boundaries; the dial snaps the hand to the nearest allowed minute:
 Feed a plain `"HH:MM"` string (handy for form state) and read a `Date` back from
 `onChange`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let raw = $state('09:30')
 </script>
@@ -118,7 +130,7 @@ Open the minute dial directly with `selection="minute"`, and keep it there by
 turning off the hour-to-minute auto-switch, so a small tweak to an existing value
 does not jump dials:
 
-```svelte
+```svelte {runnable}
 <SvTimePicker
   value={existing}
   selection="minute"
@@ -140,6 +152,57 @@ even when you feed a `"HH:MM"` string in - convert back with
 - Pointer drag uses pointer capture, so dragging the hand keeps tracking outside
   the dial and works with touch.
 - `disabled` and `readonly` block interaction; `dir="rtl"` mirrors the layout.
+
+## More examples
+
+### Time picker - headless
+
+Styled analog SvTimePicker and a custom digital readout, sharing one value.
+
+<div data-docs-demo="277-headless-timepicker" data-height="420"></div>
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTimePicker } from '@svgrid/grid'
+
+  let time = $state<Date | null>(null)
+</script>
+
+<SvTimePicker
+  value={time}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvTimePicker
+  value={time}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
+
+
+## Disabled and read-only
+
+Disabled takes the control out of the tab order; read-only keeps it focusable and copyable. Reach for read-only when the value still matters to the reader.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTimePicker } from '@svgrid/grid'
+
+  let time = $state<Date | null>(null)
+</script>
+
+<SvTimePicker value={time} disabled />
+
+<SvTimePicker value={time} readonly />
+```
 
 ## See also
 

@@ -565,8 +565,13 @@ function codeLineCount(body) {
   }
   return count
 }
+/** Body with fenced code removed - the view every prose-level check wants. */
+function stripCode(body) {
+  return body.replace(/```[\s\S]*?```/g, ' ')
+}
+
 function wordCount(body) {
-  return body.replace(/```[\s\S]*?```/g, ' ').split(/\s+/).filter(Boolean).length
+  return stripCode(body).split(/\s+/).filter(Boolean).length
 }
 
 // Banned phrases: the most reliable AI tells. Case-insensitive substring
@@ -705,7 +710,9 @@ function validateBody(body, topic = null) {
     errs.push(`Only ${codeLines} lines of code; need >= ${codeFloor}. Show the fuller example rather than an elided fragment.`)
   }
   if (/[—–]/.test(body)) errs.push('Body contains em/en-dashes; replace with plain hyphen.')
-  if (/^#\s/m.test(body)) errs.push('Body contains an H1; only H2/H3 allowed.')
+  // Strip fenced code first: a `# comment` at column 0 in a shell or Python
+  // block is not a heading, and failing the post for one is a false positive.
+  if (/^#\s/m.test(stripCode(body))) errs.push('Body contains an H1; only H2/H3 allowed.')
   const lower = body.toLowerCase()
   const hits = BANNED_PHRASES.filter((p) => lower.includes(p))
   if (hits.length) errs.push('Body contains banned AI-tell phrases (rewrite without them): ' + hits.join(', '))
@@ -860,7 +867,11 @@ async function generateNew({ topic = null } = {}) {
   const titles = posts.map((p) => p.meta.title).filter(Boolean)
   const slugs = new Set(posts.map((p) => p.slug))
   const maxDate = posts.reduce((m, p) => (p.meta.date && p.meta.date > m ? p.meta.date : m), todayISO())
-  const date = addDays(maxDate, 1)
+  // Two posts a week, not one a day. Publishing ~900 URLs into a domain with
+  // little authority left most of them crawled and not indexed, so the drip is
+  // deliberately slower. A uniform pick over 2..5 days averages 3.5, which is
+  // exactly two a week, while keeping the interval from looking machine-timed.
+  const date = addDays(maxDate, [2, 3, 4, 5][Math.floor(Math.random() * 4)])
   if (topic && slugs.has(topic.slug)) throw new Error(`Topic "${topic.slug}" already has a post; it is consumed.`)
 
   const grounding = buildGrounding(topic ? { tags: topic.tags, title: topic.workingTitle, demos: topic.demos ?? [] } : {})

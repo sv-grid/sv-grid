@@ -25,6 +25,17 @@ Or install the package and import it directly. `SvCircularProgress` ships free i
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvCircularProgress } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let done = $state(0)
+</script>
+```
+
 ```ts
 import { SvCircularProgress } from '@svgrid/grid'
 ```
@@ -33,7 +44,7 @@ import { SvCircularProgress } from '@svgrid/grid'
 
 <div data-docs-demo="330-progress" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCircularProgress } from '@svgrid/grid'
 </script>
@@ -73,7 +84,7 @@ fit a card or a KPI tile:
 Pass a `children` snippet to put anything in the middle - an icon, a fraction,
 or a stacked label - instead of the percent:
 
-```svelte
+```svelte {runnable}
 <SvCircularProgress value={4} max={5} size={64}>
   <strong>4/5</strong>
 </SvCircularProgress>
@@ -83,7 +94,7 @@ or a stacked label - instead of the percent:
 
 Set `indeterminate` at a small size for a button or toolbar busy indicator:
 
-```svelte
+```svelte {runnable}
 <SvCircularProgress indeterminate size={20} thickness={3} ariaLabel="Saving" />
 ```
 
@@ -92,7 +103,7 @@ Set `indeterminate` at a small size for a button or toolbar busy indicator:
 Bind `value` to a ticking count and the arc shrinks as time runs out; a
 `children` snippet shows the seconds left, and `color` turns danger near zero:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCircularProgress } from '@svgrid/grid'
   let left = $state(30)
@@ -116,6 +127,22 @@ in the snippet and leave `showLabel` off.
   `aria-valuenow` and an `aria-valuetext` label when determinate.
 - Indeterminate mode omits the value attributes so it announces as busy.
 - Set `ariaLabel` to name the task; custom `children` are visual only.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvCircularProgress } from '@svgrid/grid'
+
+  let done = $state(1)
+</script>
+
+<SvCircularProgress value={done} size="sm" />
+<SvCircularProgress value={done} size="md" />
+<SvCircularProgress value={done} size="lg" />
+```
 
 ## See also
 

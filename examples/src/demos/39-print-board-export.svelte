@@ -473,6 +473,7 @@ ${coverHtml}
   <!-- Grid -->
   <div class="flex-1 min-h-0 pb-grid-host">
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={[
         { field: 'department', header: 'Department', width: 180, editable: false,

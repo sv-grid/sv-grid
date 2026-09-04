@@ -127,7 +127,8 @@
   </div>
 
   <div class="app-grid">
-    <SvGrid data={rows} {columns} getRowId={(r) => r.id} conditionalFormats={baseBars} enableInlineEditing={true} containerHeight={300} />
+    <SvGrid
+      columnResize data={rows} {columns} getRowId={(r) => r.id} conditionalFormats={baseBars} enableInlineEditing={true} containerHeight={300} />
   </div>
 
   <footer class="app-foot">

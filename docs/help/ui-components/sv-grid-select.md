@@ -34,7 +34,7 @@ import { SvGridSelect } from '@svgrid/grid'
 
 <div data-docs-demo="336-grid-select" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGridSelect, type GridSelectColumn } from '@svgrid/grid'
   const columns: GridSelectColumn[] = [
@@ -123,7 +123,7 @@ still resolve the trigger label for an off-page selection:
 `onChange` hands you the whole row, not just the id - use it to populate related
 fields the moment a record is chosen:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGridSelect, type GridSelectColumn } from '@svgrid/grid'
   const columns: GridSelectColumn[] = [
@@ -156,6 +156,37 @@ fields the moment a record is chosen:
   `Escape` dismisses, and focus returns to the trigger.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<SvGridSelect options={recent} size="sm" />
+<SvGridSelect options={recent} size="md" />
+<SvGridSelect options={recent} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<SvGridSelect
+  options={recent}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvGridSelect
+  options={recent}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

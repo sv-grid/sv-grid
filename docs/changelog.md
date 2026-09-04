@@ -25,6 +25,24 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **Row and column resizing, both opt-in** (`rowResize`, `columnResize`).
+  `columnResize` gives every header a drag handle: drag the edge, double-click
+  it to size the column to its content, or focus it and use Left/Right (Shift
+  for a 1px step). `rowResize` does the same vertically and brings the
+  row-header column with it, since that is where the grip belongs; the grid
+  stores the heights itself, so neither needs a function-valued `rowHeight`.
+  Both load their code on demand, so a grid that leaves them off downloads
+  neither.
+- **`ColumnDef.resizable`** - per-column opt-out, consulted only when the grid
+  has `columnResize` on. `resizable: false` removes that column's handle
+  entirely, so the drag, the arrow keys and double-click-to-autosize all go with
+  it, and the column menu drops its Autosize item. For the columns whose width
+  is part of the layout: a row-number gutter, a checkbox column, a fixed icon
+  column. Programmatic sizing (`api.setColumnWidth`, `api.autosizeColumn`,
+  `fitColumns`) still applies.
+- **`SvGridViewState` is exported.** It is the return type of the public
+  `api.getState()`, so writing a typed "named views" feature previously meant
+  either re-declaring the shape or reaching into an internal path.
 - **Form layer depth in `SvForm` / `createForm`.** Schema-driven forms gained:
   conditional / dependent fields (`visible` and `disabled` accept a
   `(values) => boolean` predicate; hidden fields drop out of validation and the
@@ -74,6 +92,12 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **BREAKING: column resizing is now off by default.** Every column used to have
+  a drag handle unconditionally - there was no prop, no per-column option and no
+  way to turn it off, so a `width` you set was only ever a starting value a user
+  could drag away. Set `columnResize` to get the handles back; the 241 demos in
+  this repo that want them now say so. Sorting and filtering have always been
+  opt-in behind `sortable` / `filterable`, and resizing was the odd one out.
 - **BREAKING: the footer summary row is now off by default.**
   `enableRowSummaries` used to default to `true`, so a plain
   `<SvGrid {data} {columns} />` grew an aggregate footer nobody asked for and
@@ -167,6 +191,12 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **The docs run.** A `svelte` code fence tagged `{runnable}` is extracted at build time
+  into a real component, so a doc page shows the source and the working result
+  together rather than highlighted text. 504 examples across the corpus, taking
+  the median doc page from 1 example to 3; each one is compiled by `svelte-check`
+  in CI, so an example that stops working fails the build instead of rotting in
+  place.
 - **`@svgrid/ui` recipe scaffolder** - `npx @svgrid/ui add <component>` drops a
   ready-to-edit starter (e.g. `add calendar`) into your app, complementing the
   shadcn-style component pages (Preview / Code, install tabs) across the UI kit.
@@ -190,6 +220,11 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **Doc examples show code and result at once.** The runnable card used to be a
+  Preview / Code toggle with an in-page editor; it is now the source above the
+  live example, both visible, with Copy. A tab hides half of a teaching example
+  and makes comparing the two a click, and dropping the editor took the
+  on-demand TypeScript compiler chunk off every docs page with it.
 - **`npm create @svgrid` starts on Ember** (the demo theme) instead of Tailwind,
   for every template; `--theme <id>` still picks any preset. The `sveltekit`
   template is now listed on the starters page, and the `sv add @svgrid` demo route
@@ -197,6 +232,19 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **181 doc pages had content stranded below "See also".** Authoring passes
+  appended new sections to the end of the file, which buried them under what
+  reads as the page footer: on `help/filtering/number-filter`, for instance, the
+  `between` example sat below the link list and a reader would never reach it.
+  The footer is back at the bottom on every page, and a test now fails if a
+  section lands under it.
+- **The documented way to lock one column's width never worked.**
+  `docs/help/columns/column-sizing.md` matched headers on `data-col-id`, which is
+  the attribute on *body* cells - the selector matched nothing. Header cells
+  carry `data-svgrid-header-col`. (`ColumnDef.resizable` is now the real answer.)
+- **`blockKey` was missing from `tools/lib/md-snippets.d.mts`.** The function was
+  exported from the `.mjs` and worked at runtime, so nothing caught it until the
+  website was type-checked.
 - **`@svgrid/mcp` reports its real version.** The MCP server's
   `serverInfo.version` was hardcoded to `0.1.0`; it now reads the package version.
 - **`@svgrid/create-studio` scaffold builds out of the box.** The generated app

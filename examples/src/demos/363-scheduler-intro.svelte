@@ -160,6 +160,7 @@
   <div class="flex-1 min-h-0">
     {#if view === 'calendar'}
       <SvGrid
+      columnResize
         data={rows}
         columns={columns}
         getRowId={(r) => String(r.id)}
@@ -186,6 +187,7 @@
       />
     {:else}
       <SvGrid
+      columnResize
         data={rows}
         columns={tableColumns}
         getRowId={(r) => String(r.id)}

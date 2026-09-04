@@ -222,6 +222,7 @@
 
     <div class="mc-cal">
       <SvGrid
+      columnResize
         data={boardRows}
         columns={columns}
         getRowId={(r) => String(r.id)}

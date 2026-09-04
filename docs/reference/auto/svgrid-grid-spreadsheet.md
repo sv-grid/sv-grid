@@ -55,7 +55,7 @@ export type SpanColumn<TData = Record<string, unknown>> = {
 
 Turn declarative per-column `colSpan` / `rowSpan` callbacks into a
 `MergeSpec[]` you can hand to `spreadsheetLayout` - so value-driven,
-AG-Grid-style spanning runs on the SAME real colspan/rowspan merge engine
+Declarative spanning runs on the SAME real colspan/rowspan merge engine
 instead of a second code path. Recompute after sort/filter (indexes are
 display-row indexes). A common pattern is "merge runs of equal values":
 

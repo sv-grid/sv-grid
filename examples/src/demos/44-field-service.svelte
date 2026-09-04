@@ -416,6 +416,7 @@
   <div class="fs-body">
     <div class="fs-grid-wrap">
       <SvGrid responsive={true}
+      columnResize
         data={jobs}
         columns={[
           { field: 'id', header: 'Work order', width: 130, editable: false,

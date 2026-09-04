@@ -249,7 +249,7 @@ localStorage.setItem('schedules', JSON.stringify(schedules))
 schedule - everything a management UI needs. Here is the panel from the image
 above, wired to the same `schedules` array the scheduler runs:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { nextRun, type Schedule } from '@svgrid/enterprise'
 
@@ -329,3 +329,47 @@ always-on dashboard. Reach for a real backend job when you need delivery with
 **authoritative audit trail**, or **fan-out to many recipients**. The two
 compose cleanly: run the interactive, always-on schedules here and let the server
 own the guaranteed ones.
+
+## More examples
+
+### Meridian Capital - research & earnings desk
+
+One dataset, four synced views in a dockable workspace (SvDockManager): the same research events as a Scheduler, a Grid, a Kanban pipeline (by workflow stage), and a stacked exposure Chart. Edit in any view - it writes back to one array.
+
+<div data-docs-demo="387-scheduler-financial" data-height="560"></div>
+
+### Northwind People - recruiting pipeline
+
+One dataset, four synced views in a dockable workspace (SvDockManager): the same candidates as an interview Scheduler, a Grid, a Kanban hiring pipeline (Applied to Hired), and a stacked hiring-funnel Chart. Edit in any view - it writes back to one array.
+
+<div data-docs-demo="388-scheduler-hr" data-height="560"></div>
+
+### Skill-based eligibility
+
+A dispatch board where each job needs a skill and each technician has a set. A job only drops on a qualified technician - drag one to someone who lacks the skill and it snaps back with a "Not eligible" flash; ineligible rows hatch while you drag.
+
+<div data-docs-demo="393-scheduler-eligibility" data-height="560"></div>
+
+### Booking rules - buffers & lead time
+
+A salon day where every appointment needs a 15-minute cleanup buffer around it, must be booked an hour ahead, and runs 30-90 minutes. Drag two back-to-back and it snaps back with the reason; the rules gate create and resize too.
+
+<div data-docs-demo="395-scheduler-booking-rules" data-height="560"></div>
+
+### Bookable slots - find a time
+
+A Calendly-style booking page: pick a service (which sets the duration) and every open slot lights up on each provider - the free time after existing appointments, provider hours and a cleanup buffer. Click a slot to book it.
+
+<div data-docs-demo="396-scheduler-bookable-slots" data-height="560"></div>
+
+### Free/busy - find a time
+
+Schedule a meeting across attendees: each person busy time (their events plus an external free/busy feed shown as a hatch) is combined, and find-a-time surfaces the windows when everyone is free for the chosen length. Click a suggestion to book it for all.
+
+<div data-docs-demo="398-scheduler-find-a-time" data-height="560"></div>
+
+### Clinic operations console
+
+A whole clinic on the Scheduler: a NavPane switches modules; Schedule is a dockable workspace (SvDockManager) with the day scheduler as the hero over a live load chart and an Upcoming grid, providers grouped by department, every open slot bookable. Insights is a charting dashboard; Patients a records grid. Live KPIs.
+
+<div data-docs-demo="399-scheduler-clinic-console" data-height="560"></div>

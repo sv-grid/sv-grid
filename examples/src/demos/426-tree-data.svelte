@@ -179,6 +179,7 @@
   <div class="flex-1 min-h-0">
     {#if source === 'org'}
       <SvGrid
+      columnResize
         responsive={true}
         data={people}
         columns={orgColumns}
@@ -192,6 +193,7 @@
       />
     {:else}
       <SvGrid
+      columnResize
         responsive={true}
         data={flattenedFiles}
         columns={fileColumns}

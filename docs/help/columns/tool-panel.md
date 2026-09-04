@@ -6,6 +6,42 @@ on with the `toolPanel` prop:
 
 <div data-docs-demo="146-tool-panel" data-height="480"></div>
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <SvGrid {data} {columns} {features} toolPanel />
 ```
@@ -57,3 +93,21 @@ It works whenever `columnFilteringFeature` is enabled.
 
 See the live [Columns tool panel](https://svgrid.com/demos/146-tool-panel/)
 demo.
+
+## Try it
+
+`toolPanel` adds the side panel that lists every column with a visibility
+toggle, so users can hide what they do not need without you building the UI.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} toolPanel />
+```
+
+## With the rest of the chrome
+
+The tool panel sits alongside the other opt-in chrome rather than replacing it:
+here it runs with a filter row and pagination on the same grid.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} toolPanel filterable filterMode="row" pageable pageSize={3} sortable />
+```

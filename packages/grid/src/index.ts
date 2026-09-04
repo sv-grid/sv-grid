@@ -588,7 +588,13 @@ export {
   type CellBorderSpec,
   type BorderSpec,
 } from './spreadsheet'
+// The two resize actions, exported as a matched pair. `<SvGrid>` drives both
+// through the `rowResize` / `columnResize` props - both default OFF, both are
+// turned on by setting them true, and the grid `import()`s the module itself so
+// a grid that leaves them off carries neither. Import them directly only for a
+// headless table, which renders its own rows and headers.
 export { rowResize, type RowResizeOptions } from './row-resize'
+export { columnResize, type ColumnResizeOptions } from './column-resize'
 export { rowDropZone, type RowDragEndEvent, type RowDropZoneOptions } from './row-drag'
 export { resolveColumnTypes, inferCellDataType, type CellDataType } from './column-types'
 export {
@@ -690,7 +696,12 @@ export { createVirtualizer } from './virtualization/virtualizer'
 export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
 export { createColumnVirtualizer } from './virtualization/column-virtualizer'
 export type { VirtualItem, VirtualizerOptions, VirtualizerState } from './virtualization/types'
-export type { SvGridApi, SvGridFilterOperator, SvGridWrapperProps } from './svgrid-wrapper.types'
+export type {
+  SvGridApi,
+  SvGridFilterOperator,
+  SvGridViewState,
+  SvGridWrapperProps,
+} from './svgrid-wrapper.types'
 export {
   parseEditorValue,
   normalizeEditorOptions,

@@ -23,6 +23,14 @@ Or install the package and import it directly. `SvDivider` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvDivider } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvDivider } from '@svgrid/grid'
 ```
@@ -31,7 +39,7 @@ import { SvDivider } from '@svgrid/grid'
 
 <div data-docs-demo="339-status-display" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDivider } from '@svgrid/grid'
 </script>
@@ -57,7 +65,7 @@ import { SvDivider } from '@svgrid/grid'
 
 Split a form into named sections with a start-aligned caption:
 
-```svelte
+```svelte {runnable}
 <SvDivider label="Billing address" align="start" />
 ```
 
@@ -66,7 +74,7 @@ Split a form into named sections with a start-aligned caption:
 Use a `vertical` divider to group buttons in a flex row - it stretches to the row
 height on its own:
 
-```svelte
+```svelte {runnable}
 <div style="display: flex; align-items: center; gap: 8px">
   <SvButton>Cut</SvButton>
   <SvDivider orientation="vertical" />

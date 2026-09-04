@@ -24,6 +24,39 @@ visible depends on its ancestors' expanded state.
 
 Three pieces of state, the third one derived:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 type Node = { id: string; parentId: string | null; childIds: string[]; depth: number }
 
@@ -231,6 +264,45 @@ async function toggle(id: string) {
 ```
 
 Render a placeholder spinner row in `visibleRows` while `loadState === 'loading'`.
+
+## More examples
+
+### Lazy tree (load on expand)
+
+Region → Country → State → City. Children fetched async on first expand with a "Loading…" placeholder row; subtrees cached on second expand.
+
+<div data-docs-demo="31-lazy-tree-load" data-height="460"></div>
+
+## Try it
+
+Tree data is flat: every row carries its own id and its parent's. The grid
+builds the hierarchy, so the same array still sorts and filters.
+
+```svelte {runnable}
+<script lang="ts">
+  type Node = { id: string; parentId: string | null; name: string; headcount: number }
+
+  const org: Node[] = [
+    { id: 'eng',      parentId: null,  name: 'Engineering', headcount: 42 },
+    { id: 'eng-web',  parentId: 'eng', name: 'Web',         headcount: 18 },
+    { id: 'eng-core', parentId: 'eng', name: 'Core',        headcount: 14 },
+    { id: 'eng-infra',parentId: 'eng', name: 'Infra',       headcount: 10 },
+    { id: 'des',      parentId: null,  name: 'Design',      headcount: 9 },
+    { id: 'des-brand',parentId: 'des', name: 'Brand',       headcount: 4 },
+  ]
+
+  const orgColumns: GridColumns<Node> = [
+    { field: 'name',      header: 'Team',      width: 240 },
+    { field: 'headcount', header: 'Headcount', width: 120 },
+  ]
+</script>
+
+<SvGrid
+  data={org}
+  columns={orgColumns}
+  treeData={{ parentField: 'parentId', idField: 'id', column: 'name' }}
+/>
+```
 
 ## See also
 

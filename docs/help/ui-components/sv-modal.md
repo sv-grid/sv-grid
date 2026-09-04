@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvModal` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvModal, SvTextInput } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvModal } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvModal } from '@svgrid/grid'
 
 <div data-docs-demo="288-overlays" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvModal, SvButton } from '@svgrid/grid'
   let open = $state(false)
@@ -130,6 +138,42 @@ focusable element receives focus on open, so lead with the field the user edits.
   close through the shared primitives.
 - Escape and backdrop clicks are honoured per `closeOnEsc` / `closeOnBackdrop`
   and routed through the dismissable layer stack, so a nested overlay closes first.
+
+## Draggable, resizable, and the escape hatches
+
+`closeOnBackdrop` and `closeOnEsc` are on by default. Turn them off for a
+destructive confirm, where a stray click should not dismiss the question -
+and then make sure the footer gives an explicit way out.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvModal, SvButton } from '@svgrid/grid'
+
+  let open = $state(false)
+  let confirm = $state(false)
+</script>
+
+<SvButton onclick={() => (open = true)}>Open a working modal</SvButton>
+<SvButton variant="danger" onclick={() => (confirm = true)}>Delete something</SvButton>
+
+<SvModal open={open} onClose={() => (open = false)} title="Filters" size="md" draggable resizable>
+  <p>Drag the header, or pull the bottom-right corner.</p>
+</SvModal>
+
+<SvModal
+  open={confirm}
+  onClose={() => (confirm = false)}
+  title="Delete 4 rows?"
+  closeOnBackdrop={false}
+  closeOnEsc={false}
+>
+  <p>This cannot be undone.</p>
+  {#snippet footer()}
+    <SvButton variant="outline" onclick={() => (confirm = false)}>Cancel</SvButton>
+    <SvButton variant="danger" onclick={() => (confirm = false)}>Delete</SvButton>
+  {/snippet}
+</SvModal>
+```
 
 ## See also
 

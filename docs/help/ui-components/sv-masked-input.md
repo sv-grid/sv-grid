@@ -26,6 +26,17 @@ Or install the package and import it directly. `SvMaskedInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvMaskedInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let phone = $state('')
+</script>
+```
+
 ```ts
 import { SvMaskedInput } from '@svgrid/grid'
 ```
@@ -34,7 +45,7 @@ import { SvMaskedInput } from '@svgrid/grid'
 
 <div data-docs-demo="302-masked-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvMaskedInput } from '@svgrid/grid'
   let card = $state('')
@@ -106,7 +117,7 @@ Keep the raw (unmasked) value for storage, flag an incomplete entry through
 `invalid` / `error`, and disable the action until every slot is filled. The `*`
 token accepts any alphanumeric character:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvMaskedInput } from '@svgrid/grid'
   let display = $state('')
@@ -136,6 +147,57 @@ the display value), so a plain form post submits clean digits/letters.
   and `invalid` add `aria-required` / `aria-invalid`.
 - A `name` emits a hidden input carrying the unmasked value, so forms submit
   clean data.
+
+## More examples
+
+### Masked input - headless
+
+One createMaskedInput drives the styled field and a custom boxed field with a complete/partial badge.
+
+<div data-docs-demo="267-headless-maskedinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvMaskedInput } from '@svgrid/grid'
+
+  let card = $state('')
+</script>
+
+<SvMaskedInput bind:value={card} size="sm" />
+<SvMaskedInput bind:value={card} size="md" />
+<SvMaskedInput bind:value={card} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvMaskedInput } from '@svgrid/grid'
+
+  let card = $state('')
+</script>
+
+<SvMaskedInput
+  bind:value={card}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvMaskedInput
+  bind:value={card}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

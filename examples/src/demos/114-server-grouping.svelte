@@ -267,6 +267,7 @@
   <!-- Grouped rows ------------------------------------------------ -->
   <div class="group-grid">
     <SvGrid responsive={true}
+      columnResize
       data={serverRows}
       columns={groupColumns}
       features={features}
@@ -295,6 +296,7 @@
       </div>
       <div class="drill-grid">
         <SvGrid responsive={true}
+      columnResize
           data={detailRows}
           columns={detailColumns}
           features={features}

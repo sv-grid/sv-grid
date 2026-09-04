@@ -19,6 +19,42 @@ Every column header has a menu (the `⋮` button). The menu has "Pin left" /
 `SvGridApi` exposes `setColumnPinning` and `getColumnPinning` for
 read / write from outside the grid:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import type { SvGridApi } from '@svgrid/grid'
@@ -151,6 +187,33 @@ column is the outermost.
   there is no horizontal scrollbar within the pinned regions - the user
   loses access to the non-pinned middle. Pin only "anchor" columns
   (identifier, action, status) and keep the count single-digit.
+
+## Try it
+
+Pinning is a grid-level prop naming column ids, not a flag on the column.
+Scroll the grid sideways: Name stays at the left edge, Salary at the right.
+
+```svelte {runnable}
+<SvGrid
+  data={people}
+  {columns}
+  initialColumnPinning={{ left: ['name'], right: ['salary'] }}
+/>
+```
+
+## Pinning both edges
+
+Pinned columns stay put while the middle scrolls. Narrow the browser and the
+two pinned columns hold their edges while Department and City pan between them.
+
+```svelte {runnable}
+<SvGrid
+  data={people}
+  {columns}
+  initialColumnPinning={{ left: ['name'], right: ['salary'] }}
+  sortable
+/>
+```
 
 ## See also
 

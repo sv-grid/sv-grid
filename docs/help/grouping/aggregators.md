@@ -7,7 +7,34 @@ result, formatted with that column's own `format`.
 
 <div data-docs-demo="142-group-aggregators" data-height="480"></div>
 
-```svelte
+Every example on this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from '@svgrid/grid'
+
+  type Row = { region: string; rep: string; revenue: number; winRate: number }
+
+  const data: Row[] = [
+    { region: 'EMEA',     rep: 'Ada',   revenue: 82_000, winRate: 0.42 },
+    { region: 'EMEA',     rep: 'Linus', revenue: 61_500, winRate: 0.31 },
+    { region: 'Americas', rep: 'Grace', revenue: 94_200, winRate: 0.55 },
+    { region: 'Americas', rep: 'Alan',  revenue: 47_800, winRate: 0.28 },
+    { region: 'APAC',     rep: 'Mei',   revenue: 73_400, winRate: 0.47 },
+  ]
+
+  const features = tableFeatures({ columnGroupingFeature })
+
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'region', header: 'Region' },
+    { field: 'rep', header: 'Rep' },
+    { field: 'revenue', header: 'Revenue', format: { type: 'currency', currency: 'USD' } },
+    { field: 'winRate', header: 'Win rate', format: { type: 'percent' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, columnGroupingFeature, type ColumnDef } from '@svgrid/grid'
 
@@ -67,7 +94,7 @@ const columns = [
 The same reducers drive the grid's footer row, which totals the whole filtered
 set rather than a group. It is **off by default** - turn it on with `summary`:
 
-```svelte
+```svelte {runnable}
 <SvGrid {data} {columns} summary />
 ```
 
@@ -75,7 +102,7 @@ Out of the box each column falls back to a sensible guess: the sum of a numeric
 column, `Count: N` otherwise. Give a column its own `summary` to choose, using
 the reducer names from the table above:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   const columns: ColumnDef<typeof features, Row>[] = [
     { field: 'region', header: 'Region' },

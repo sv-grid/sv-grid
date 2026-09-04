@@ -301,6 +301,56 @@ If you need full Excel parity, integrate
 add-on that drops in alongside SvGrid. Reach for it only when you
 actually need it; the bundled engine is < 5 KB minified.
 
+## More examples
+
+### Blank sheet - just type
+
+An empty Excel-style sheet on a plain <SvGrid>: column-letter headers (A..Z), a built-in 1..N row gutter, a name box + formula bar with a browsable function picker, gridlines, range selection and a fill handle. A real HyperFormula engine underneath: type a literal or a formula like =SUM(B2:D2) / =IF(...) and every dependent cell recalculates live. Drag a row or column border to resize; right-click for Cut / Copy / Paste / Clear.
+
+<div data-docs-demo="207-blank-sheet" data-height="560"></div>
+
+### Freeze panes
+
+The Excel Freeze Panes corner on a plain <SvGrid>: the Account and Owner columns stay pinned while you scroll across a full year of months, and the sticky column-letter + row-number headers stay put as you scroll down. HyperFormula keeps each row total (column O) and the bottom Total row live as you edit any month. Pinning those two columns is one prop: initialColumnPinning.
+
+<div data-docs-demo="208-freeze-panes" data-height="560"></div>
+
+### Data validation (dropdowns)
+
+Excel Data Validation on a plain <SvGrid>: Status / Priority / Owner / Sprint columns are list-constrained (double-click for a dropdown), and Estimate must be a whole number 0-40. Four cells arrive invalid and light up red with the reason as a tooltip; fix one and it clears live. Dropdowns are editorType:list + editorOptions; the flag is the declarative validate() hook.
+
+<div data-docs-demo="209-data-validation" data-height="560"></div>
+
+### Format Cells
+
+The Excel Home -> Number experience: select a range and apply a display format - Currency, Percent, Thousands, Number, Date, or General - and only the rendering changes; the stored value and every formula are untouched. HyperFormula keeps Gross profit, Margin and the Total column live, so a computed % formats exactly like a typed number.
+
+<div data-docs-demo="210-format-cells" data-height="560"></div>
+
+### Financial model (amortization)
+
+A real analyst model on the sheet: three blue INPUT cells (Principal, APR, Term) drive a full 360-month amortization schedule built entirely from formulas - PMT for the fixed payment, then per-period interest / principal / running balance that each reference the row above. Change an input and all 360 rows plus the summary recompute instantly. Blue = you type, black = computed.
+
+<div data-docs-demo="211-financial-model" data-height="560"></div>
+
+### Dashboard sheet
+
+A spreadsheet that reads like an Excel dashboard: each channel row carries an inline SVG trend sparkline and an eight-week heatmap shaded by volume. Total and Avg are live =SUM / =AVERAGE formulas - edit any weekly cell and the sparkline reshapes, the heatmap re-shades, and the totals update at once. Sparklines are a per-column custom cell; the heatmap is value-driven cellClass.
+
+<div data-docs-demo="212-dashboard-sheet" data-height="560"></div>
+
+### Chart a spreadsheet
+
+A live formula sheet wired to the built-in Chart panel: edit a Units or Revenue cell and the chart redraws. Customize it in-panel - change Type, swap Group by / Split by / Value, aggregate, Stack, or add data labels.
+
+<div data-docs-demo="356-spreadsheet-chart" data-height="560"></div>
+
+### Per-cell custom borders (KPI)
+
+Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.
+
+<div data-docs-demo="169-cell-borders" data-height="560"></div>
+
 ## See also
 
 - [Demo 83 - Spreadsheet + formulas](../../examples/src/demos/83-spreadsheet-formulas.svelte) - the full engine source

@@ -24,6 +24,14 @@ Or install the package and import them directly. They ship free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvAnchor, SvMark, SvText, SvTitle } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList } from '@svgrid
 
 <div data-docs-demo="410-typography-display" data-height="520" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTitle, SvText, SvMark, SvAnchor } from '@svgrid/grid'
 </script>
@@ -113,6 +121,28 @@ full control.
   the behaviour is announced, and shows a focus ring on keyboard focus.
 - **SvMark** conveys emphasis visually; do not rely on the highlight colour alone
   to carry meaning.
+
+## A heading, body and a link
+
+These carry the type scale so a page reads consistently without a stylesheet
+per screen. `SvTitle` takes `order` for the heading level, which keeps the
+document outline correct even when the visual size does not match.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTitle, SvText, SvAnchor, SvMark } from '@svgrid/grid'
+</script>
+
+<SvTitle order={2}>Release notes</SvTitle>
+
+<SvText>
+  This release adds <SvMark>row spanning</SvMark> and a faster filter pass.
+</SvText>
+
+<SvText size="sm" tone="muted">
+  Read the <SvAnchor href="/docs/">documentation</SvAnchor> for the full list.
+</SvText>
+```
 
 ## See also
 

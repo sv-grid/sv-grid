@@ -14,17 +14,22 @@ array, a derived store, an SWR/TanStack-Query cache, a `+page.ts` load
 result, a plain literal - the grid doesn't care, as long as the array
 reference changes when the rows change.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
-  import { SvGrid } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
-  type Person = { id: string; firstName: string; age: number }
+  type Staff = { id: string; firstName: string; age: number }
 
   // Reactive: pushing into `rows` updates the grid automatically.
-  let rows = $state<Person[]>([
+  let rows = $state<Staff[]>([
     { id: '1', firstName: 'Ada',   age: 36 },
     { id: '2', firstName: 'Linus', age: 54 },
   ])
+
+  const staffColumns: GridColumns<Staff> = [
+    { field: 'firstName', header: 'First name', width: 180 },
+    { field: 'age',       header: 'Age',        width: 90 },
+  ]
 
   function addRow() {
     rows.push({ id: crypto.randomUUID(), firstName: 'New', age: 0 })
@@ -32,7 +37,7 @@ reference changes when the rows change.
 </script>
 
 <button onclick={addRow}>Add row</button>
-<SvGrid data={rows} columns={columns} />
+<SvGrid data={rows} columns={staffColumns} />
 ```
 
 ### Identity
@@ -69,10 +74,10 @@ type Person = {
 }
 
 const columns: GridColumns<Person> = [
-  // Simple accessor by field name
+  // `field`: read a key straight off the row
   { field: 'firstName', header: 'First name' },
 
-  // Computed value
+  // `fieldFn`: compute the value; needs an explicit `id`
   {
     id: 'fullName',
     header: 'Full name',
@@ -134,15 +139,20 @@ features. Per-column flags (`enableSorting: false`, etc.) are on the
 
 For anything beyond a stringified value, render with `renderSnippet`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
 
-  type Person = { firstName: string; lastName: string; age: number }
-  const rows: Person[] = [/* ... */]
+  type Named = { firstName: string; lastName: string; age: number }
+
+  const named: Named[] = [
+    { firstName: 'Ada',   lastName: 'Lovelace', age: 36 },
+    { firstName: 'Grace', lastName: 'Hopper',   age: 45 },
+    { firstName: 'Linus', lastName: 'Torvalds', age: 54 },
+  ]
 </script>
 
-{#snippet PersonCell(props: { row: Person })}
+{#snippet PersonCell(props: { row: Named })}
   <span class="inline-flex items-center gap-2">
     <span class="initials">{props.row.firstName[0]}{props.row.lastName[0]}</span>
     <span>{props.row.firstName} {props.row.lastName}</span>
@@ -150,7 +160,7 @@ For anything beyond a stringified value, render with `renderSnippet`:
 {/snippet}
 
 <SvGrid
-  data={rows}
+  data={named}
   columns={[
     {
       id: 'person',
@@ -159,9 +169,54 @@ For anything beyond a stringified value, render with `renderSnippet`:
       cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
     },
     { field: 'age', header: 'Age' },
-  ] satisfies GridColumns<Person>}
+  ] satisfies GridColumns<Named>}
 />
 ```
 
 [Cell components](../help/cells/cell-components.md) has the full
 patterns: avatars, sparklines, progress bars, status badges.
+
+## Formats on the columns you already have
+
+`format` is declarative and locale-aware, so a currency, a percentage and a
+date all come from the same place rather than from three helper functions.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', age: 54, salary: 155000 },
+  ]
+
+  type Row = { product: string; price: number; margin: number; shipped: string }
+
+  const rows: Row[] = [
+    { product: 'Cycling cap',  price: 29,  margin: 0.42, shipped: '2026-05-02' },
+    { product: 'Patch kit',    price: 12.8, margin: 0.31, shipped: '2026-05-11' },
+    { product: 'Road bottle',  price: 8.5, margin: 0.55, shipped: '2026-05-19' },
+  ]
+
+  const columns: GridColumns<Row> = [
+    { field: 'product', header: 'Product', width: 170 },
+    { field: 'price',   header: 'Price',   width: 120,
+      format: { type: 'currency', currency: 'USD' } },
+    { field: 'margin',  header: 'Margin',  width: 110,
+      format: { type: 'percent' } },
+    { field: 'shipped', header: 'Shipped', width: 150, cellDataType: 'dateString',
+      format: { type: 'date', options: { dateStyle: 'medium' } } },
+  ]
+</script>
+
+<SvGrid data={rows} {columns} sortable />
+```

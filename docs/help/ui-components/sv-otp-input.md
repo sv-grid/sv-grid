@@ -25,6 +25,18 @@ Or install the package and import it directly. `SvOtpInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvOtpInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let code = $state('')
+  let pin = $state('')
+</script>
+```
+
 ```ts
 import { SvOtpInput } from '@svgrid/grid'
 ```
@@ -78,7 +90,7 @@ without a separate button:
 Turn off `numeric` for letters-and-digits codes, or turn on `mask` for a
 sensitive PIN:
 
-```svelte
+```svelte {runnable}
 <SvOtpInput length={4} numeric={false} mask bind:value={pin} />
 ```
 
@@ -126,6 +138,57 @@ so phones show a digit keypad, and the first cell carries
 - Each cell announces its position ("Character 2 of 6") via `aria-label`.
 - The first cell carries `autocomplete="one-time-code"`, so mobile keyboards can
   offer the SMS code.
+
+## More examples
+
+### Two-factor / OTP block
+
+The verification step of a sign-in flow: SvOtpInput (6 digits, auto-advance + onComplete), a resend cooldown timer, and the waiting -> verifying -> verified states. Enter 000000 to see the error path.
+
+<div data-docs-demo="422-block-otp" data-height="520"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvOtpInput } from '@svgrid/grid'
+
+  let code = $state('')
+</script>
+
+<SvOtpInput bind:value={code} size="sm" />
+<SvOtpInput bind:value={code} size="md" />
+<SvOtpInput bind:value={code} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvOtpInput } from '@svgrid/grid'
+
+  let code = $state('')
+</script>
+
+<SvOtpInput
+  bind:value={code}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvOtpInput
+  bind:value={code}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

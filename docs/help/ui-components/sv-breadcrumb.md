@@ -33,7 +33,7 @@ import { SvBreadcrumb } from '@svgrid/grid'
 
 <div data-docs-demo="332-app-navigation" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvBreadcrumb } from '@svgrid/grid'
 </script>
@@ -133,6 +133,30 @@ it a step above your typical depth so shallow pages never sprout an ellipsis.
 - The final crumb is marked `aria-current="page"` and is never a link or button.
 - Separators are `aria-hidden` so they are not announced.
 - The collapse control is a real `<button>` with an accessible label.
+
+## Collapsing a deep trail
+
+`maxItems` keeps the first and last crumbs and folds the middle, so a deep path
+does not wrap onto a second line. Items take an `href` or an `onClick` -
+whichever your router wants.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvBreadcrumb, type BreadcrumbItem } from '@svgrid/grid'
+
+  const trail: BreadcrumbItem[] = [
+    { label: 'Home', href: '/', icon: '*' },
+    { label: 'Reports', href: '/reports' },
+    { label: 'Finance', href: '/reports/finance' },
+    { label: 'Q3', href: '/reports/finance/q3' },
+    { label: 'Revenue' },
+  ]
+</script>
+
+<SvBreadcrumb items={trail} />
+
+<SvBreadcrumb items={trail} maxItems={3} separator="/" />
+```
 
 ## See also
 

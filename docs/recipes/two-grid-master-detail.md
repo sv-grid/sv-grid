@@ -12,7 +12,40 @@ Both halves are plain `<SvGrid>` instances; the wiring is one
 
 ## Implementation
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid, tableFeatures, rowSortingFeature, rowSelectionFeature,
@@ -133,6 +166,71 @@ const detailColumns = [
   { field: 'orderId', header: 'Order', width: 120 },
   // ...
 ]
+```
+
+## Try it
+
+Two grids, one selection. The second grid's `data` is derived from what the
+first has selected, which is all the coupling this pattern needs.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+
+  type Project = { id: number; name: string; owner: string }
+
+  const projects: Record<number, Project[]> = {
+    1: [{ id: 11, name: 'Analytical engine', owner: 'Ada Lovelace' }],
+    2: [
+      { id: 21, name: 'COBOL', owner: 'Grace Hopper' },
+      { id: 22, name: 'Compiler', owner: 'Grace Hopper' },
+    ],
+    3: [{ id: 31, name: 'Kernel', owner: 'Linus Torvalds' }],
+  }
+
+  let picked = $state<Person[]>([])
+
+  const detail = $derived(picked.flatMap((p) => projects[p.id] ?? []))
+
+  const projectColumns: GridColumns<Project> = [
+    { field: 'name',  header: 'Project', width: 200 },
+    { field: 'owner', header: 'Owner',   width: 180 },
+  ]
+</script>
+
+<SvGrid
+  data={people}
+  {columns}
+  selectable
+  onRowSelectionChange={(_selection, selected) => (picked = selected)}
+/>
+
+<p>{detail.length} project(s) for {picked.length} selected person(s)</p>
+
+<SvGrid data={detail} columns={projectColumns} />
 ```
 
 ## See also

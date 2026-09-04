@@ -4,6 +4,42 @@ The status bar is the strip under the grid that shows live aggregates of the
 **selected cell range** - count, sum, average, min, max - the way Excel does at
 the bottom-right when you select a block of numbers.
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <SvGrid {data} {columns} {features} enableCellSelection statusBar />
 ```
@@ -40,3 +76,11 @@ Pass an object to pick which:
 - Group rows are skipped.
 
 See the live [Status bar](https://svgrid.com/demos/144-status-bar/) demo.
+
+## Try it
+
+Drag a rectangle across the Age or Salary column and watch the bar total it.
+
+```svelte {runnable}
+<SvGrid {data} {columns} enableCellSelection statusBar />
+```

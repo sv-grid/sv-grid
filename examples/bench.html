@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Grid comparison harness</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        color: #1c1917;
+        background: #fafaf9;
+      }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      .dim { color: #78716c; font-size: 12px; }
+      .err { color: #b91c1c; }
+      button {
+        font: inherit; font-weight: 600; cursor: pointer;
+        padding: 7px 16px; border-radius: 8px;
+        border: 1px solid #d6d3d1; background: #fff;
+      }
+      button:disabled { opacity: 0.5; cursor: default; }
+      table { border-collapse: collapse; margin-top: 16px; font-variant-numeric: tabular-nums; }
+      th, td { border: 1px solid #e7e5e4; padding: 7px 12px; text-align: right; }
+      th:first-child, td:first-child { text-align: left; }
+      thead th { background: #f5f5f4; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+      .note { max-width: 70ch; color: #57534e; font-size: 13px; }
+      /* The grid under test mounts here. Fixed size so every grid gets the same
+         viewport, and therefore the same number of visible rows to render. */
+      #stage { width: 1000px; height: 520px; margin-top: 20px; border: 1px solid #e7e5e4; background: #fff; }
+      header p { margin: 4px 0 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Grid comparison harness</h1>
+      <p class="dim">
+        Same data, same operations, same container, one adapter per grid.
+        Configure with <code>?rows=100000&amp;repeats=3&amp;grids=svgrid,aggrid</code>.
+      </p>
+      <p class="dim">Config: <span id="config"></span></p>
+      <button id="run" type="button">Run benchmark</button>
+      <span id="status" class="dim"></span>
+    </header>
+    <div id="out"></div>
+    <div id="stage"></div>
+    <script type="module" src="/src/bench/main.ts"></script>
+  </body>
+</html>

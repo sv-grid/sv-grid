@@ -25,6 +25,14 @@ Or install the package and import it directly. `SvTour` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvTour } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvTour } from '@svgrid/grid'
 ```
@@ -33,7 +41,7 @@ import { SvTour } from '@svgrid/grid'
 
 <div data-docs-demo="342-carousel-tour" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTour } from '@svgrid/grid'
   let open = $state(false)
@@ -102,7 +110,7 @@ outro, auto-start on first visit, and a Help button to replay it later. Start it
 from `onMount` so the target elements exist before the first step measures them,
 and persist the "seen" flag from both `onFinish` and `onSkip`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTour, SvButton, type TourStep } from '@svgrid/grid'
   import { onMount } from 'svelte'

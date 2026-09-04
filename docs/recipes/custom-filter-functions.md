@@ -26,6 +26,41 @@ Each filter is a pure `(value, spec) => boolean` function. Compose
 them in a `$derived` that filters the data array before it reaches
 `<SvGrid data={...}>`.
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 130, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 80,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
@@ -136,6 +171,36 @@ const regexMatch: FilterFn = (value, filterValue) => {
 - Debounce the input bindings if a filter is heavy. `bind:value` fires
   every keystroke; wrap it in a `$derived` keyed off a debounced
   `$state` mirror if needed.
+
+## Try it
+
+There is no per-column `filterFn`, so a custom predicate lives outside the
+grid: filter the array, hand the result to `data`. Everything downstream -
+sort, selection, the row count - follows the filtered set.
+
+```svelte {runnable}
+<script lang="ts">
+  let query = $state('')
+
+  // A fuzzy subsequence match: "gh" finds "Grace Hopper". Nothing the built-in
+  // string operators express, and about six lines to write.
+  function fuzzy(needle: string, haystack: string) {
+    const n = needle.toLowerCase()
+    const h = haystack.toLowerCase()
+    let i = 0
+    for (const ch of h) if (ch === n[i]) i += 1
+    return i === n.length
+  }
+
+  const shown = $derived(
+    query.trim() ? rows.filter((r) => fuzzy(query.trim(), r.name)) : rows,
+  )
+</script>
+
+<input placeholder="Try: gh" bind:value={query} />
+
+<SvGrid data={shown} {columns} sortable />
+```
 
 ## See also
 

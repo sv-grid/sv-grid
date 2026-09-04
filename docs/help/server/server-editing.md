@@ -208,6 +208,44 @@ back automatically and your `catch` shows the conflict. Return the fresh row
 (with its new version) from a successful write so the next edit carries the
 current token.
 
+## More examples
+
+### Optimistic updates + rollback
+
+UI updates immediately; server validates async; on reject the value rolls back with a toast.
+
+<div data-docs-demo="115-optimistic-updates" data-height="560"></div>
+
+### Server-side infinite scroll
+
+100k-event audit log behind a mock API. Sparse chunked load on scroll; sort + filter + search pushed to the server.
+
+<div data-docs-demo="33-server-infinite" data-height="560"></div>
+
+### Server-Side Row Model (SSRM)
+
+One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page.
+
+<div data-docs-demo="148-server-row-model" data-height="560"></div>
+
+### Server-side grouping + aggregates
+
+GROUP BY + SUM/AVG pushed to the server; pre-aggregated buckets with on-demand drill-in.
+
+<div data-docs-demo="114-server-grouping" data-height="560"></div>
+
+### Server-side data
+
+Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.
+
+<div data-docs-demo="09-server-side" data-height="560"></div>
+
+### Server-side rendering
+
+SvelteKit-style SSR with a sandboxed pre-hydration snapshot.
+
+<div data-docs-demo="19-ssr" data-height="460"></div>
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the datasource contract, request lifecycle, and race safety.

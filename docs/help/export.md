@@ -23,6 +23,58 @@ which reuses the exact same serializers so the two tiers feel like one product.
 The community grid's `SvGridApi` carries four zero-dependency methods - no
 license, no peer deps:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  type Order = {
+    id: string
+    customer: string
+    product: string
+    quantity: number
+    total: number
+    status: 'pending' | 'shipped' | 'delivered'
+    orderedAt: string
+  }
+
+  type Row = Person
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 await api.exportCsv({ filename: 'orders' })   // orders.csv (BOM + Excel-friendly)
 await api.exportTsv()                         // grid.tsv
@@ -41,7 +93,7 @@ Every method:
 - returns the serialized text; pass `download: false` to skip the download
   and just get the string.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, type SvGridApi } from '@svgrid/grid'
   let api = $state<SvGridApi<any, Row> | null>(null)
@@ -84,7 +136,7 @@ when the recipient expects formatted documents.
 
 ## Minimal example
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
   import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
@@ -574,3 +626,88 @@ editing, virtualization) but not export/print/pivot/import.
 
 No. The ~50 KB exporter is lazy-loaded on the first export call, so users who
 never export never download it.
+
+## More examples
+
+### Password-protected export
+
+PBKDF2 (100k iters) + AES-GCM 256 client-side. Strength meter, encrypt + download, in-page decrypt tool to verify the round-trip. Enterprise pack maps to ECMA-376 Agile encryption.
+
+<div data-docs-demo="93-password-protected-export" data-height="460"></div>
+
+### Formulas preserved in xlsx
+
+Builds a real OOXML workbook in the browser via JSZip; computed columns export as <f>...</f> formula cells. Open in Excel and the math recomputes when you edit a number.
+
+<div data-docs-demo="101-formulas-in-xlsx" data-height="460"></div>
+
+### Export grouped grid to Excel
+
+A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.
+
+<div data-docs-demo="126-export-grouped-grid" data-height="460"></div>
+
+### Export pivot grid to Excel
+
+createPivotModel leaves projected into an xlsx via api.exportData with groupBy: ["region"] - each region becomes an Excel outline group. Engine column ids ("pv__Q1__m0") translate to readable headers ("Q1 · Revenue").
+
+<div data-docs-demo="127-export-pivot-grid" data-height="460"></div>
+
+### Export - Formatting, scope + XLS
+
+Faithful export: currency / date / percent render as shown (toggle raw values), pick a row scope (view / selected / all), legacy .xls (Excel 2003 XML, no jszip), an exportValue hook, and the drop-in SvExportMenu.
+
+<div data-docs-demo="201-export-formatting-and-xls" data-height="460"></div>
+
+### Export - Grouped PDF + Print
+
+Group the grid and export: the PDF + xlsx carry bold group headers and per-cluster subtotal rows (auto-carried from grouping state). Polished Print is the zero-dependency "Save as PDF" route with a repeated header and title.
+
+<div data-docs-demo="202-export-pdf-grouped-and-print" data-height="460"></div>
+
+## Try the export API
+
+Every exporter is on the grid api and takes the same
+`GridExportOptions`. `rows: 'displayed'` is the default and is almost always
+what a user means by "export this" - it follows their filter and sort.
+
+```svelte
+<script lang="ts">
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+</script>
+
+<div>
+  <button type="button" onclick={() => api?.exportCsv({ filename: 'people' })}>CSV</button>
+  <button type="button" onclick={() => api?.exportTsv({ filename: 'people' })}>TSV</button>
+  <button type="button" onclick={() => api?.exportJson({ filename: 'people' })}>JSON</button>
+  <button type="button" onclick={() => api?.print()}>Print</button>
+</div>
+
+<SvGrid data={people} {columns} sortable filterable onApiReady={(next) => (api = next)} />
+```
+
+Sort or filter first, then export: the file follows the view.
+
+## Exporting a subset
+
+`columns` restricts the fields and fixes their order, and `rawValues` decides
+whether the file carries what the screen shows or what the row holds. The
+salary column is the one to watch - formatted it is `$142,000`, raw it is
+`142000`, and a spreadsheet can only do arithmetic on the second.
+
+```svelte
+<script lang="ts">
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+</script>
+
+<div>
+  <button type="button" onclick={() => api?.exportCsv({ filename: 'formatted', columns: ['name', 'salary'] })}>
+    Name + salary, as displayed
+  </button>
+  <button type="button" onclick={() => api?.exportCsv({ filename: 'raw', columns: ['name', 'salary'], rawValues: true })}>
+    Name + salary, raw values
+  </button>
+</div>
+
+<SvGrid data={people} {columns} onApiReady={(next) => (api = next)} />
+```

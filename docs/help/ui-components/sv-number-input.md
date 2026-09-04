@@ -25,6 +25,18 @@ Or install the package and import it directly. `SvNumberInput` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvNumberInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let weight = $state(0)
+  let qty = $state(0)
+</script>
+```
+
 ```ts
 import { SvNumberInput } from '@svgrid/grid'
 ```
@@ -33,7 +45,7 @@ import { SvNumberInput } from '@svgrid/grid'
 
 <div data-docs-demo="300-number-input" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvNumberInput } from '@svgrid/grid'
   let price = $state<number | null>(1299.5)
@@ -92,7 +104,7 @@ the display/edit duality is built in.
 Combine `prefix` / `suffix` with `precision` and `grouping` for money or
 measurements without a separate formatter:
 
-```svelte
+```svelte {runnable}
 <SvNumberInput bind:value={weight} suffix=" kg" precision={1} step={0.1} />
 ```
 
@@ -101,7 +113,7 @@ measurements without a separate formatter:
 `min`, `max`, and `step` drive both the spinner buttons and the arrow keys, and
 the value is clamped on commit so it never leaves the range:
 
-```svelte
+```svelte {runnable}
 <SvNumberInput label="Quantity" bind:value={qty} min={1} max={99} />
 ```
 
@@ -110,7 +122,7 @@ the value is clamped on commit so it never leaves the range:
 Because the value is a real `number | null`, a `$derived` total falls out of the
 two fields with no formatter of its own. Guard the `null` empty state with `??`:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvNumberInput } from '@svgrid/grid'
   let qty = $state<number | null>(1)
@@ -133,6 +145,57 @@ reliable empty check and `value ?? 0` is the safe way to fold it into arithmetic
 - `label`, `hint`, and `error` are wired via [SvField](sv-field.md); `required`
   and `invalid` add `aria-required` / `aria-invalid`.
 - Arrow keys step the value by `step`, matching a native number spinner.
+
+## More examples
+
+### Number input - headless
+
+createNumberInput drives SvNumberInput and a custom stepper; parse, clamp, spinner and keyboard all from the core.
+
+<div data-docs-demo="266-headless-numberinput" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvNumberInput } from '@svgrid/grid'
+
+  let price = $state(1)
+</script>
+
+<SvNumberInput bind:value={price} size="sm" />
+<SvNumberInput bind:value={price} size="md" />
+<SvNumberInput bind:value={price} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvNumberInput } from '@svgrid/grid'
+
+  let price = $state(1)
+</script>
+
+<SvNumberInput
+  bind:value={price}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvNumberInput
+  bind:value={price}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

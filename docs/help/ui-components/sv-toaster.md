@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvToaster` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButton, SvToaster } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvToaster } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvToaster } from '@svgrid/grid'
 
 <div data-docs-demo="331-app-overlays" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvToaster, toast } from '@svgrid/grid'
 </script>
@@ -157,7 +165,7 @@ receives the `Toast` and replaces the default icon/title/message:
 Anchor the stack where it suits the layout and cap how many show at once; extras
 stay queued and appear as room frees:
 
-```svelte
+```svelte {runnable}
 <SvToaster position="top-center" max={3} />
 ```
 

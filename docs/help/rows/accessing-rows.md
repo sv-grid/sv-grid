@@ -78,6 +78,107 @@ for (let i = 0; i < data.length; i++) {
 }
 ```
 
+## Source rows versus displayed rows
+
+`getData` returns what you handed the grid. `getDisplayedRows` returns what
+survived the filter and the sort. Confusing the two is behind most wrong export
+counts and most "select all" bugs.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    salary: number
+    bio: string
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   salary: 142000,
+      bio: 'Wrote the first algorithm intended for a machine, and the first account of what a general-purpose computer could do beyond arithmetic.' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', salary: 168000,
+      bio: 'Built the first compiler and argued that programs should be written in something closer to English than to machine code.' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', salary: 155000,
+      bio: 'Wrote a kernel and, later, the version control system that most of the industry now runs on.' },
+  ]
+
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+  let counts = $state('(filter something, then read)')
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 170 },
+  ]
+
+  function read() {
+    const all = api?.getData() ?? []
+    const shown = api?.getDisplayedRows() ?? []
+    counts = 'source ' + all.length + ', displayed ' + shown.length
+  }
+</script>
+
+<button type="button" onclick={read}>Compare</button>
+
+<SvGrid data={seed} {columns} filterable filterMode="row" sortable onApiReady={(next) => (api = next)} />
+
+<p>{counts}</p>
+```
+
+## Reaching one row by id
+
+Once `getRowId` is set, a row is addressable by something stable rather than
+by where it currently sits. Sort the grid first and the lookup still finds the
+same person, which is the whole reason to bother with an id.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const seed: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+  ]
+
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+  let found = $state('(nothing looked up)')
+
+  const columns: GridColumns<Person> = [
+    { field: 'id',   header: 'ID',   width: 80 },
+    { field: 'name', header: 'Name', width: 190 },
+    { field: 'city', header: 'City', width: 150 },
+  ]
+
+  function lookup(id: string) {
+    const row = (api?.getData() ?? []).find((r) => String(r.id) === id)
+    found = row ? row.name + ' - ' + row.city : 'no row with id ' + id
+  }
+</script>
+
+<div>
+  <button type="button" onclick={() => lookup('2')}>Find id 2</button>
+  <button type="button" onclick={() => lookup('9')}>Find id 9</button>
+</div>
+
+<SvGrid data={seed} {columns} getRowId={(r) => String(r.id)} sortable onApiReady={(next) => (api = next)} />
+
+<p>{found}</p>
+```
+
 ## See also
 
 - [Row data](./row-data.md)

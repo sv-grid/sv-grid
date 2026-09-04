@@ -25,6 +25,17 @@ Or install the package and import it directly. `SvButtonGroup` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvButtonGroup } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let view = $state('')
+</script>
+```
+
 ```ts
 import { SvButtonGroup } from '@svgrid/grid'
 ```
@@ -33,7 +44,7 @@ import { SvButtonGroup } from '@svgrid/grid'
 
 <div data-docs-demo="284-button-group" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvButtonGroup, type ButtonGroupItem } from '@svgrid/grid'
 
@@ -94,7 +105,7 @@ and select in one step, and the selected segment is the only tab stop.
 `mode="multiple"` turns each segment into an independent toggle. `value` is an
 array, and `onChange` hands you the full set:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let formats = $state<Array<string | number>>(['bold'])
 </script>
@@ -147,6 +158,49 @@ with the `outline` variant for a lighter toolbar look:
   activate.
 - Disabled items are skipped by keyboard navigation; a visible `label` names the
   group for screen readers.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvButtonGroup } from '@svgrid/grid'
+
+  let view = $state('')
+</script>
+
+<SvButtonGroup value={view} size="sm" />
+<SvButtonGroup value={view} size="md" />
+<SvButtonGroup value={view} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvButtonGroup } from '@svgrid/grid'
+
+  let view = $state('')
+</script>
+
+<SvButtonGroup
+  value={view}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvButtonGroup
+  value={view}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

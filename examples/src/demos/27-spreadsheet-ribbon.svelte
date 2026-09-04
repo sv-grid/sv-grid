@@ -30,6 +30,12 @@
    *   displays the computed result. Otherwise it commits as a literal
    *   number. The formula bar above the grid lets you inspect or edit
    *   the active cell's formula at any time.
+   *
+   * Row sizing
+   *   Drag the bottom edge of a row's number in the gutter to resize it,
+   *   or focus that grip and use Up/Down (Shift = 1px). Columns already
+   *   resized from their header edge; `rowResize` gives rows the same,
+   *   and the grid stores the heights so no `rowHeight` function is needed.
    */
   import {
     SvGrid,
@@ -1217,6 +1223,7 @@
   <!-- ============ GRID ============ -->
   <div class="flex-1 min-h-0 mt-2 sheet-active-host" bind:this={gridShellEl} oncontextmenu={openCtxMenu}>
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={[
         {
@@ -1248,6 +1255,7 @@
       enableInlineEditing={true}
       enableCellSelection={true}
       rowHeight={32}
+      rowResize={true}
       containerHeight="100%"
       fitColumns={false}
       onApiReady={(next) => (api = next)}

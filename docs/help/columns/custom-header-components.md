@@ -11,7 +11,27 @@ each measure header (with its icon) is rendered from a snippet via
 
 ## With a snippet
 
-```svelte
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+</script>
+```
+
+```svelte {runnable}
 <script lang="ts">
   import { renderSnippet, type GridColumns } from '@svgrid/grid'
 
@@ -99,6 +119,60 @@ without fighting the sort handler:
   position - block layout will misalign with the sort indicator and
   pin-handle decorations the grid adds around it.
 - Snippet/component props are recomputed on every render. Keep them cheap.
+
+## Try it
+
+`header` takes a snippet as readily as a string, so a header can carry a unit or
+a second line without a separate API.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+{#snippet SalaryHeader()}
+  <span style="display: inline-flex; flex-direction: column; line-height: 1.2;">
+    <span>Salary</span>
+    <span style="font-size: 10px; opacity: 0.6; font-weight: 400;">USD / year</span>
+  </span>
+{/snippet}
+
+<SvGrid
+  data={people}
+  columns={[
+    { field: 'name', header: 'Name', width: 190 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'salary', width: 150,
+      header: () => renderSnippet(SalaryHeader, {}),
+      format: { type: 'currency', currency: 'USD' } },
+  ] satisfies GridColumns<Person>}
+  sortable
+  rowHeight={34}
+/>
+```
 
 ## See also
 

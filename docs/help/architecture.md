@@ -141,15 +141,6 @@ mutate DOM nodes during a sort.
 | 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~77 kB gzip + 9 kB CSS) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
-## See also
-
-- [Why headless?](../why-headless.md) - the design rationale for the
-  Layer 2 / Layer 3 split.
-- [API reference](https://svgrid.com/api/) - every export with its layer
-  noted.
-- [Performance benchmarks](./benchmarks.md) - numbers from each layer
-  in isolation.
-
 ## Frequently asked questions
 
 ### How is SvGrid architected?
@@ -170,3 +161,91 @@ batteries-included `<SvGrid>` component that renders on top of the same engine.
 Yes. Use `createSvGrid` and the row-model factories directly to build a custom
 rendering layer. The render component is optional sugar over the same public
 engine API.
+
+## Layer 2 in practice
+
+The headless engine with no `<SvGrid>` anywhere: it owns sorting and filtering
+and hands back a row model, and the markup below is an ordinary table you wrote.
+This is the same engine layer 3 renders.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    type ColumnDef,
+  } from '@svgrid/grid'
+
+  type Repo = { name: string; lang: string; stars: number }
+
+  const features = tableFeatures({ rowSortingFeature })
+
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+    { field: 'stars', header: 'Stars' },
+  ]
+
+  const data: Repo[] = [
+    { name: 'svelte',   lang: 'JavaScript', stars: 78000 },
+    { name: 'sv-grid',  lang: 'TypeScript', stars: 172 },
+    { name: 'vite',     lang: 'TypeScript', stars: 68000 },
+  ]
+
+  let sorting = $state([{ id: 'stars', desc: true }])
+
+  const table = createSvGrid({
+    _features: features,
+    _rowModels: {
+      coreRowModel: createCoreRowModel<Repo>(),
+      sortedRowModel: createSortedRowModel<Repo>(),
+    },
+    data,
+    columns,
+    state: { sorting },
+    onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+  })
+
+  const rows = $derived(table.getRowModel().rows)
+</script>
+
+<table>
+  <thead>
+    {#each table.getHeaderGroups() as hg (hg.id)}
+      <tr>
+        {#each hg.headers as h (h.id)}
+          <th onclick={h.column.getToggleSortingHandler()}>
+            {h.column.columnDef.header}
+            {h.column.getIsSorted() === 'desc' ? ' v' : h.column.getIsSorted() ? ' ^' : ''}
+          </th>
+        {/each}
+      </tr>
+    {/each}
+  </thead>
+  <tbody>
+    {#each rows as r (r.id)}
+      {@const repo = r.original as Repo}
+      <tr>
+        <td>{repo.name}</td>
+        <td>{repo.lang}</td>
+        <td>{repo.stars.toLocaleString()}</td>
+      </tr>
+    {/each}
+  </tbody>
+</table>
+```
+
+Click a header. The sort lives in your `$state`, the engine derives the row
+model from it, and nothing about the markup came from us.
+
+## See also
+
+- [Why headless?](../why-headless.md) - the design rationale for the
+  Layer 2 / Layer 3 split.
+- [API reference](https://svgrid.com/api/) - every export with its layer
+  noted.
+- [Performance benchmarks](./benchmarks.md) - numbers from each layer
+  in isolation.

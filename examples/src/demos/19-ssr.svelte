@@ -138,7 +138,8 @@ export async function load() {
   import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
   let { data } = $props()
 <\/script>
-<SvGrid responsive={true} data={data.rows} columns={columns} features={tableFeatures({ rowSortingFeature })} />`}</code></pre>
+<SvGrid responsive={true}
+      columnResize data={data.rows} columns={columns} features={tableFeatures({ rowSortingFeature })} />`}</code></pre>
     <p class="ssr-muted mt-2 text-xs">
       SvelteKit calls <code>{'render(Page, { props: { data } })'}</code> server-side and ships the resulting HTML.
       The user sees data on first paint; hydration only attaches event listeners.
@@ -170,6 +171,7 @@ export async function load() {
       </div>
       <div id="ssr-live-grid" class="flex-1 min-h-0">
         <SvGrid responsive={true}
+      columnResize
           data={rows}
           columns={columns}
           features={features}

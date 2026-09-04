@@ -58,6 +58,85 @@ The same pattern, but via the `header:` field - see
 - A long tooltip inside an Excel-style filter dropdown can occlude the
   filter input. Detach the tooltip from cells inside an open filter menu.
 
+## A tooltip from the row
+
+`tooltip` takes a string or a function. The function form gets the cell context,
+so the tip can say something the cell cannot fit - which is the only good reason
+to have one.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05', active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 190,
+      tooltip: (ctx) => ctx.row.original.department + ' - joined ' + ctx.row.original.joined },
+    { field: 'salary', header: 'Salary', width: 140,
+      format: { type: 'currency', currency: 'USD' },
+      tooltip: (ctx) => 'Reviewed annually' },
+  ]
+</script>
+
+<SvGrid data={people} {columns} />
+```
+
+
+## Returning nothing
+
+Return `null` or `undefined` and no tooltip appears. That is how you give one
+only to the rows that need it, instead of training people to ignore them.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05', active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name', width: 190 },
+    { field: 'active', header: 'Active', width: 120,
+      // Only the inactive rows explain themselves.
+      tooltip: (ctx) => (ctx.row.original.active ? null : 'Left the company') },
+  ]
+</script>
+
+<SvGrid data={people} {columns} />
+```
+
 ## See also
 
 - [Cell components](./cell-components.md)

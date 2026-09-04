@@ -33,7 +33,7 @@ import { SvSpinner } from '@svgrid/grid'
 
 <div data-docs-demo="409-layout-feedback" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvSpinner } from '@svgrid/grid'
 </script>
@@ -57,6 +57,23 @@ import { SvSpinner } from '@svgrid/grid'
   readers announce it. Without a `label` it is `aria-hidden` (decorative) - use
   this when a nearby visible element already conveys the loading state.
 - The animation is disabled under `prefers-reduced-motion: reduce`.
+
+## Sizes and a label
+
+The `label` is not decoration - it is what a screen reader announces. A spinner
+with no label is a busy indicator nobody can hear.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvSpinner } from '@svgrid/grid'
+</script>
+
+<div style="display: flex; gap: 18px; align-items: center;">
+  <SvSpinner size="sm" label="Loading" />
+  <SvSpinner size="md" label="Loading" />
+  <SvSpinner size="lg" label="Loading rows" />
+</div>
+```
 
 ## See also
 

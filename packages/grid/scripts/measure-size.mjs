@@ -51,9 +51,60 @@ const BUDGET_KB = {
   // it had been ratcheted flush against the measurement, so a one-byte feature
   // failed CI. The dev-only config checks from the same batch cost base nothing:
   // `DEV` folds to false in a production build and Rollup drops the block.
-  'full render component (SvGrid)': 78.5,
+  //
+  // 78.5 -> 78.9 for the row-pipeline rewrite. `createSortedRowModel` now
+  // resolves each sort clause once and precomputes a key array instead of
+  // resolving the column inside the comparator (that was 1,528,947 array scans
+  // for a single-clause 100k sort), plus a distinct-value ranking path so text
+  // columns collate O(distinct log distinct) times rather than O(n log n).
+  // `applyGroupAggregate` became a single pass. Measured payoff: single-column
+  // sort 351 ms -> 35 ms, three-column 569 ms -> 49 ms, grouping 229 ms ->
+  // 106 ms, and a latent RangeError crash on large groups gone. All of it is
+  // engine code on the static path, so it lands in base. 0.1 KB measured, and
+  // the budget goes to 78.9 to keep the usual 0.3 KB of headroom rather than
+  // sitting flush against the measurement again.
+  //
+  // 78.9 -> 79.3 for the sort / filter / group round. A stride sample decides
+  // whether text sorting should rank distinct values before paying to collect
+  // them; grouping tracks each bucket's raw value so deeper levels stop
+  // re-scanning a column an ancestor already fixed; the Excel filter's fold
+  // takes an ASCII fast path. Measured: text sort 117 -> 63 ms, grouping
+  // 57 -> 49 ms, the compiled filter 21 -> 3 ms on ASCII. 0.1 KB measured,
+  // budget set 0.3 KB above it to keep the usual headroom.
+  //
+  // 79.3 -> 79.6 for the three symbol keys that hold a row's private fields.
+  // They replaced plain `_ctx` / `_values` / `_cells` properties, which were
+  // enumerable and therefore serialised: `JSON.stringify(oneRow)` reached
+  // `options.data` through the context pointer and grew with the dataset
+  // (981 chars at 3 rows, 67,719 at 3,000), making stringifying a row model
+  // quadratic. Symbols are skipped by JSON, `Object.keys` and `for...in` while
+  // still being copied by object spread, which the grouping and tree row models
+  // depend on. Pinned by core.row-shape.test.ts.
+  //
+  // 79.6 -> 80.0 for the `columnResize` / `rowResize` props. Measured 79.4
+  // without either, 79.7 with both, so 0.3 KB. The row-resize ACTION is not in
+  // that number - importing it statically cost a further 1.1 KB and put the
+  // base over on its own, so SvGrid pulls it through `import()` and it lands in
+  // the lazy chunks (84.2 -> 85.5 KB); a grid that never sets `rowResize` never
+  // fetches it.
+  //
+  // 80.0 -> 79.4, BELOW where this all started, when `columnResize` flipped to
+  // off-by-default and the column drag moved out to a `columnResize` action of
+  // its own. The handles are injected by that action instead of rendered by
+  // SvGrid, so the markup, the keyboard handler, the pointer/rAF drag and five
+  // pieces of controller state all left the base graph together: 79.7 -> 79.1,
+  // with the lazy chunks going 85.5 -> 86.9. Ratcheted to 0.3 KB above the new
+  // measurement rather than left slack at 80.0 - a budget that no longer
+  // tracks the code stops catching the next static import.
+  'full render component (SvGrid)': 79.4,
   'headless core (createGrid)': 3.0,
-  'headless subpath (@svgrid/grid/core)': 5.0,
+  // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
+  // are one column, and that comparator runs O(n log n) times - 1.66M calls for
+  // 100k rows - so hoisting the clause lookup out of it and inlining the
+  // numeric subtraction is worth the four extra closures: a single-column sort
+  // went 32 ms -> 27 ms and a text sort 62 ms -> 59 ms. The budget keeps the
+  // usual ~0.3 KB of headroom above the measurement.
+  'headless subpath (@svgrid/grid/core)': 5.3,
 }
 
 const CHECK = process.argv.includes('--check')

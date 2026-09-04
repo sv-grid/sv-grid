@@ -10,6 +10,42 @@ matters.
 
 ## 1. Pin your versions
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    email: string
+    department: string
+    age: number
+    salary: number
+    city: string
+    startDate: string
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
+    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```json
 {
   "dependencies": {
@@ -159,7 +195,7 @@ export async function load() {
 }
 ```
 
-```svelte
+```svelte {runnable}
 <!-- +page.svelte -->
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'
@@ -223,6 +259,47 @@ function track(event: string, payload: object) {
   onSortingChange={(s)     => track('grid.sort',   { clauses: s })}
   onFiltersChange={(f)     => track('grid.filter', { columns: f.columns.length })}
   onCellValueChange={(e)   => track('grid.edit',   { column: e.columnId })}
+/>
+```
+
+## A production-shaped grid
+
+Everything a real screen tends to turn on at once: virtualization for the row
+count, a stable `getRowId` so selection survives a refetch, and the footer
+totals people ask for on day two.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Order = { id: string; customer: string; status: string; total: number }
+
+  // Enough rows that virtualization is doing real work.
+  const orders: Order[] = Array.from({ length: 500 }, (_, i) => ({
+    id: 'A-' + String(1000 + i),
+    customer: ['Northwind', 'Contoso', 'Fabrikam', 'Adventure'][i % 4]!,
+    status: ['pending', 'shipped', 'delivered'][i % 3]!,
+    total: 80 + ((i * 37) % 900),
+  }))
+
+  const columns: GridColumns<Order> = [
+    { field: 'id',       header: 'Ref',      width: 110 },
+    { field: 'customer', header: 'Customer', width: 170 },
+    { field: 'status',   header: 'Status',   width: 130 },
+    { field: 'total',    header: 'Total',    width: 130, summary: 'sum',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid
+  data={orders}
+  {columns}
+  getRowId={(r) => r.id}
+  sortable
+  filterable
+  summary
+  pageable
+  pageSize={25}
 />
 ```
 

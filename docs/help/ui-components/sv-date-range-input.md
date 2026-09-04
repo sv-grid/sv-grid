@@ -37,7 +37,7 @@ portals to `<body>` so it is never clipped by a scrolling grid.
 
 <div data-docs-demo="283-daterange-input" data-height="460" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDateRangeInput } from '@svgrid/grid'
   let range = $state<[Date, Date] | null>(null)
@@ -123,7 +123,7 @@ like any other field editor:
 Keep the tuple in your own `$state` and derive from it - here a night count for a
 booking. `min={new Date()}` blocks past check-in dates:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDateRangeInput, type DateRangeValue } from '@svgrid/grid'
   let stay = $state<DateRangeValue>(null)
@@ -152,6 +152,49 @@ subtracting the two timestamps gives whole nights without time-of-day drift.
 - The popover is a `role="dialog"` containing the full [SvCalendar](sv-calendar.md)
   keyboard model for range selection.
 - `disabled` / `readonly` block interaction; `dir="rtl"` mirrors the layout.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvDateRangeInput } from '@svgrid/grid'
+
+  let range = $state<Date | null>(null)
+</script>
+
+<SvDateRangeInput value={range} size="sm" />
+<SvDateRangeInput value={range} size="md" />
+<SvDateRangeInput value={range} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvDateRangeInput } from '@svgrid/grid'
+
+  let range = $state<Date | null>(null)
+</script>
+
+<SvDateRangeInput
+  value={range}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvDateRangeInput
+  value={range}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

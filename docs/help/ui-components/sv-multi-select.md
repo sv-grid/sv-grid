@@ -34,7 +34,7 @@ import { SvMultiSelect } from '@svgrid/grid'
 
 <div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvMultiSelect, type MultiSelectOption } from '@svgrid/grid'
   const options: MultiSelectOption[] = [
@@ -160,6 +160,82 @@ array when the user presses `Done`.
   arrow keys move, `Enter` / `Space` toggle, `Escape` dismisses.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvMultiSelect } from '@svgrid/grid'
+
+  let selected = $state<string[]>([])
+</script>
+
+<SvMultiSelect bind:value={selected} size="sm" />
+<SvMultiSelect bind:value={selected} size="md" />
+<SvMultiSelect bind:value={selected} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvMultiSelect } from '@svgrid/grid'
+
+  let selected = $state<string[]>([])
+</script>
+
+<SvMultiSelect
+  bind:value={selected}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvMultiSelect
+  bind:value={selected}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
+
+## Tag overflow and clearing
+
+`maxTagCount` decides when the chips collapse into a "+N" counter, which is
+what keeps a multi-select from growing taller than the field around it.
+`clearable` adds the escape hatch for a selection someone regrets.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvMultiSelect } from '@svgrid/grid'
+  import type { ListOption } from '@svgrid/grid'
+
+  const options: ListOption[] = [
+    { value: 'svelte', label: 'Svelte' },
+    { value: 'grid',   label: 'Data grid' },
+    { value: 'a11y',   label: 'Accessibility' },
+    { value: 'perf',   label: 'Performance' },
+    { value: 'i18n',   label: 'Internationalisation' },
+  ]
+
+  let picked = $state<string[]>(['svelte', 'grid', 'a11y'])
+</script>
+
+<SvMultiSelect
+  {options}
+  value={picked}
+  onChange={(v) => (picked = v as string[])}
+  label="Topics"
+  searchable
+  clearable
+  maxTagCount={2}
+/>
+```
 
 ## See also
 

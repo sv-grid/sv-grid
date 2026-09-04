@@ -7064,7 +7064,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "columnMenuTabs",
         "label": "Column Menu Tabs",
         "type": "boolean",
-        "description": "Render the header column menu (⋮) as a tabbed popover - **General**, **Filter**, and **Columns** tabs (the AG-Grid layout). Defaults to `false`, which keeps the flat menu (actions list + \"Choose columns\" submenu).",
+        "description": "Render the header column menu (⋮) as a tabbed popover - **General**, **Filter**, and **Columns** tabs (the tabbed layout). Defaults to `false`, which keeps the flat menu (actions list + \"Choose columns\" submenu).",
         "group": "common"
       },
       {

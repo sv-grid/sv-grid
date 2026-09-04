@@ -323,6 +323,7 @@
     use:spreadsheetLayout={{ merges, borders, columnOrder }}
   >
     <SvGrid responsive={true}
+      columnResize
       data={rows}
       columns={columns}
       features={features}

@@ -38,6 +38,31 @@ component** (`<SvGrid>`) on top - the same split TanStack Table made
 popular. You can use either layer; most projects use the render
 component.
 
+Every example below runs against this setup:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature, type ColumnDef } from '@svgrid/grid'
+
+  type Row = { id: number; make: string; model: string; price: number }
+
+  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+
+  let rows = $state<Row[]>([
+    { id: 1, make: 'Toyota', model: 'Celica', price: 35000 },
+    { id: 2, make: 'Ford',   model: 'Mondeo', price: 32000 },
+    { id: 3, make: 'Porsche', model: 'Boxster', price: 72000 },
+  ])
+  const data = rows
+
+  const columns: ColumnDef<typeof features, Row>[] = [
+    { field: 'make',  header: 'Make' },
+    { field: 'model', header: 'Model' },
+    { field: 'price', header: 'Price', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <!-- AG Grid (via a Svelte wrapper) -->
 <AgGridSvelte
@@ -357,13 +382,6 @@ Enterprise customers get **migration help included** with the support plan
 `support@jqwidgets.com` after purchase, or `sales@jqwidgets.com` for
 pre-sales questions.
 
-## See also
-
-- [Getting started](../getting-started.md) - full SvGrid walkthrough
-- [Why headless?](../why-headless.md) - the headless / render-component split
-- [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
-- [SvGrid vs AG Grid comparison page](https://svgrid.com/compare/ag-grid/)
-
 ## Frequently asked questions
 
 ### Is SvGrid a drop-in replacement for AG Grid in Svelte?
@@ -393,3 +411,18 @@ Almost always. SvGrid's full render component is ~77 KB gzipped (or ~2 KB
 for the headless core) versus a much heavier AG Grid Community bundle, and you
 only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
 the JavaScript.
+
+## More examples
+
+### AG Grid ↔ sv-grid side-by-side
+
+Two real grids over the same dataset: AG Grid Community v35 on the left, sv-grid on the right. Same global filter drives both. Source code panels for either side.
+
+<div data-docs-demo="139-migration-from-ag-grid" data-height="460"></div>
+
+## See also
+
+- [Getting started](../getting-started.md) - full SvGrid walkthrough
+- [Why headless?](../why-headless.md) - the headless / render-component split
+- [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
+- [SvGrid vs AG Grid comparison page](https://svgrid.com/compare/ag-grid/)

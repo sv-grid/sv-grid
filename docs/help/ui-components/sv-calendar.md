@@ -38,7 +38,7 @@ grid and edit forms in light and dark. It is the editor SvGrid mounts for a
 
 <div data-docs-demo="250-calendar" data-height="460" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCalendar } from '@svgrid/grid'
   let value = $state<Date[]>([new Date()])
@@ -61,7 +61,7 @@ The component is render-only; the reactive model lives in the headless
 wires it for you - but you can build a fully custom calendar on the same engine
 (see [Headless editors](headless-editors.md)):
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCalendar } from '@svgrid/grid'
   let value = $state<Date[]>([])
@@ -161,7 +161,7 @@ selectable but carry an indicator:
 shift days or blackout dates. Bind your own `$state` and assign the list back in
 `onChange`; `min` blocks past days:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvCalendar, type CalendarValue } from '@svgrid/grid'
   let days = $state<Date[]>([])
@@ -236,6 +236,57 @@ does inside [SvDateTimePicker](sv-date-time-picker.md)'s popover.
 - `disabled` sets `aria-disabled` and blocks interaction; `restrictedDates`
   render as disabled day buttons.
 - `dir="rtl"` mirrors the layout and flips the navigation chevrons.
+
+## More examples
+
+### Calendar - headless
+
+Styled SvCalendar and a compact custom day-grid built from panels / dayState / dayProps, sharing one value.
+
+<div data-docs-demo="276-headless-calendar" data-height="420"></div>
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvCalendar } from '@svgrid/grid'
+
+  let calendar = $state<Date | null>(null)
+</script>
+
+<SvCalendar
+  bind:value={calendar}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvCalendar
+  bind:value={calendar}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
+
+
+## Disabled and read-only
+
+Disabled takes the control out of the tab order; read-only keeps it focusable and copyable. Reach for read-only when the value still matters to the reader.
+
+```svelte
+<script lang="ts">
+  import { SvCalendar } from '@svgrid/grid'
+
+  let calendar = $state<Date | null>(null)
+</script>
+
+<SvCalendar bind:value={calendar} disabled />
+
+<SvCalendar bind:value={calendar} readonly />
+```
 
 ## See also
 

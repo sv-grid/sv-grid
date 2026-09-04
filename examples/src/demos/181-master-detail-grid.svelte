@@ -145,6 +145,7 @@
       </div>
       <div class="md-detail-grid">
         <SvGrid responsive={true}
+      columnResize
           data={props.row.callRecords}
           columns={detailColumns}
           features={detailFeatures}
@@ -174,6 +175,7 @@
 
   <div class="flex-1 min-h-0">
     <SvGrid responsive={true}
+      columnResize
       data={visible}
       columns={columns}
       features={features}

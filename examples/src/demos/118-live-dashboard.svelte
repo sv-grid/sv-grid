@@ -511,6 +511,7 @@
   <div class="grid-wrap flex-1 min-h-0">
     {#if loading}<div class="grid-loading"><span class="spinner"></span></div>{/if}
     <SvGrid
+      columnResize
       data={displayedRows}
       columns={[
         { field: 'id', header: 'Transaction', width: 200, editable: false, cell: (ctx) => renderSnippet(IdCell, { txn: ctx.row.original }) },

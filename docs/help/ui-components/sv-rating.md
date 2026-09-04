@@ -25,6 +25,17 @@ Or install the package and import it directly. `SvRating` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvRating } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let score = $state(0)
+</script>
+```
+
 ```ts
 import { SvRating } from '@svgrid/grid'
 ```
@@ -33,7 +44,7 @@ import { SvRating } from '@svgrid/grid'
 
 <div data-docs-demo="311-rating" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRating } from '@svgrid/grid'
   let score = $state(4)
@@ -73,7 +84,7 @@ Helper type: `RatingMessages = { label: string; star: string; stars: string }` (
 
 Read `value` back to show the picked score as the user hovers and clicks:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   let score = $state(0)
 </script>
@@ -86,7 +97,7 @@ Read `value` back to show the picked score as the user hovers and clicks:
 
 Combine `readonly` and `allowHalf` to render an average like 4.5:
 
-```svelte
+```svelte {runnable}
 <SvRating readonly allowHalf value={4.5} label="Average rating" />
 ```
 
@@ -94,7 +105,7 @@ Combine `readonly` and `allowHalf` to render an average like 4.5:
 
 Override `messages` to translate the group name and per-star announcements:
 
-```svelte
+```svelte {runnable}
 <SvRating value={score} onChange={(v) => (score = v)}
   messages={{ label: 'Bewertung', star: 'Stern', stars: 'Sterne' }} />
 ```
@@ -104,7 +115,7 @@ Override `messages` to translate the group name and per-star announcements:
 `max` is not fixed at five - raise it for a 10-point scale, and give it a `name`
 so a plain form submit carries the numeric value in a hidden input:
 
-```svelte
+```svelte {runnable}
 <form>
   <SvRating
     name="nps"
@@ -128,6 +139,57 @@ standalone rating stays visually in sync with one shown in a cell.
   from `messages.star` / `messages.stars`.
 - `readonly` and `disabled` remove the pointer affordance; disabled also dims the
   stars. Half fills render via a per-star gradient so aggregates read precisely.
+
+## More examples
+
+### Rating - headless
+
+Styled SvRating (half stars) plus a custom segmented meter, one bound numeric value with live preview.
+
+<div data-docs-demo="275-headless-rating" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvRating } from '@svgrid/grid'
+
+  let score = $state(1)
+</script>
+
+<SvRating value={score} size="sm" />
+<SvRating value={score} size="md" />
+<SvRating value={score} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvRating } from '@svgrid/grid'
+
+  let score = $state(1)
+</script>
+
+<SvRating
+  value={score}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvRating
+  value={score}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

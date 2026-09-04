@@ -355,6 +355,7 @@
 
   <div class="flex-1 min-h-0 t31-grid-wrap">
     <SvGrid responsive={true}
+      columnResize
       data={visibleRows}
       columns={columns}
       features={features}

@@ -79,6 +79,7 @@
   {/snippet}
 
   <SvGrid responsive={true}
+      columnResize
     data={view.rows}
     columns={columns.map((c) => (c.field === 'avatar' ? { ...c, cell: (ctx) => renderSnippet(AvatarCell, { row: ctx.row.original as Member }) } : c))}
     loading={view.loading}

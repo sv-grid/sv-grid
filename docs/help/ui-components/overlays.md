@@ -25,6 +25,14 @@ import them directly:
 An edge-anchored side sheet (right / left / top / bottom): backdrop, sliding
 panel, focus trap, scroll lock, and Escape / backdrop dismissal.
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvCommand, SvContextMenu, SvDrawer, SvToaster, SvTour } from '@svgrid/grid'
+</script>
+```
+
 ```svelte
 <SvDrawer bind:open side="right" title="Filters">
   <p>Body content</p>
@@ -60,7 +68,7 @@ A singleton queue plus a renderer. Mount one `<SvToaster />` near the app root,
 then call `toast()` from anywhere. Every toast is also pushed to the shared ARIA
 live region, so screen-reader users hear it (errors / warnings are assertive).
 
-```svelte
+```svelte {runnable}
 <script>
   import { toast } from '@svgrid/grid'
 </script>
@@ -126,3 +134,23 @@ recipes:
 - [SvMenubar](./sv-menubar.md) - an app-style row of dropdown menus.
 - [SvHoverCard](./sv-hover-card.md) - a rich preview card that opens on hover.
 - [SvPopconfirm](./sv-popconfirm.md) - a quick confirm step in a popover.
+
+## More examples
+
+### App overlays: drawer, context menu, toasts
+
+SvDrawer (edge side-sheet), SvContextMenu (right-click menu) and the toast() API + SvToaster - all built on the shared focus-trap, scroll-lock and dismissable-layer primitives, so nested overlays close top-first and every toast is announced to screen readers.
+
+<div data-docs-demo="331-app-overlays" data-height="520"></div>
+
+### Overlays: popover, tooltip, modal
+
+SvPopover (anchored floating panel, click/hover/manual), SvTooltip (delayed hover/focus tip, aria-describedby) and SvModal (focus-trapped dialog, Escape / backdrop close, optionally draggable + resizable). All portal to <body>, animate in, and respect reduced-motion.
+
+<div data-docs-demo="288-overlays" data-height="520"></div>
+
+### HoverCard, Popconfirm, Menubar
+
+SvHoverCard (rich hover preview), SvPopconfirm (quick confirm-in-popover for low-stakes destructive actions) and SvMenubar (app-style row of dropdown menus with roving focus, ArrowLeft/Right to switch, ArrowDown to open). All built on the shared positioning engine - flip, shift, arrow, autoUpdate.
+
+<div data-docs-demo="289-overlays-hovercard-menubar" data-height="520"></div>

@@ -24,6 +24,18 @@ Or install the package and import it directly. `SvTabs` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvTabs } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let view = $state('')
+  let active = $state('')
+</script>
+```
+
 ```ts
 import { SvTabs } from '@svgrid/grid'
 ```
@@ -137,6 +149,26 @@ waits for `Enter` / `Space` instead of eagerly mounting each one.
   `disabled` ones), `Home` / `End` jump to the ends.
 - `activation="manual"` waits for `Enter` / `Space` so arrow-keying past a heavy
   panel does not eagerly load each one.
+
+## More examples
+
+### Tabs - headless
+
+createTabs drives styled SvTabs plus a custom segmented control, one active id with a readout.
+
+<div data-docs-demo="279-headless-tabs" data-height="420"></div>
+
+### Tabs: closable + positions
+
+SvTabs with closable tabs (browser-style, add button, Delete key) and the four tabPositions - top, bottom, left, right.
+
+<div data-docs-demo="325-tabs-advanced" data-height="520"></div>
+
+### Tabs, tree & form
+
+Composite controls: SvTabs (line + pill, roving keyboard), SvTree (expand/collapse, single-select + cascading tri-state checkboxes) and a schema-driven SvForm that wires the whole kit (inputs, select, switch, date, textarea) with required + custom validation.
+
+<div data-docs-demo="257-tabs-tree-form" data-height="520"></div>
 
 ## See also
 

@@ -75,6 +75,91 @@ That is usually what people want for **calendar** dates. For timezone-
 sensitive datetimes, store with `Z` suffix and use the `datetime` editor
 type.
 
+## Date operators
+
+Declare the column a date and the filter menu offers before / after / between
+instead of the string comparisons. Without `cellDataType` an ISO string is just
+text, and "after 2020" becomes a substring match.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20' },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05' },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000, joined: '2018-11-11' },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 190 },
+    { field: 'joined', header: 'Joined', width: 160, cellDataType: 'dateString',
+      format: { type: 'date', options: { dateStyle: 'medium' } } },
+  ]
+</script>
+
+<SvGrid data={people} {columns} filterable filterMode="menu" sortable />
+```
+
+
+## Filtering a date from code
+
+`setFilter` takes the same operators the menu uses, so a "this year" shortcut
+and the menu end up in one state rather than fighting.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    joined: string
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, joined: '2021-03-01' },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, joined: '2019-07-15' },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, joined: '2020-01-20' },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, joined: '2022-09-05' },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000, joined: '2018-11-11' },
+  ]
+
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 190 },
+    { field: 'joined', header: 'Joined', width: 160, cellDataType: 'dateString',
+      format: { type: 'date', options: { dateStyle: 'medium' } } },
+  ]
+</script>
+
+<div>
+  <button type="button" onclick={() => api?.setFilter('joined', { operator: 'greaterThan', value: '2020-12-31' })}>
+    Joined after 2020
+  </button>
+  <button type="button" onclick={() => api?.setFilter('joined', null)}>Clear</button>
+</div>
+
+<SvGrid data={people} {columns} filterable filterMode="menu" onApiReady={(next) => (api = next)} />
+```
+
 ## See also
 
 - [Filter conditions](./filter-conditions.md)

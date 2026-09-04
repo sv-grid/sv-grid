@@ -34,6 +34,41 @@ cannot do is pass slotted content to a component that renders with
 
 ## Run the codemod
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```bash
 npx @svgrid/migrate             # preview the result
 npx @svgrid/migrate src --write # apply it
@@ -169,13 +204,6 @@ is the shortest form; a bare `GridColumns` widens the row to
 - You depend on custom plugins. That is a rewrite, not a migration.
 - You only need Svelte 5 support. Use the fork.
 
-## See also
-
-- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison
-- [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide
-- [Why headless?](../why-headless.md) - the design rationale
-- [Architecture](./architecture.md) - the engine + render-component split
-
 ## Frequently asked questions
 
 ### How hard is it to move from svelte-headless-table to SvGrid?
@@ -203,3 +231,18 @@ The original has not published since 0.18.3 in October 2024 and targets Svelte
 4. A community fork, `@humanspeak/svelte-headless-table`, is maintained and runs
 on Svelte 5 with the same API, which is the lowest-effort option if you are
 happy with the library and only need Svelte 5.
+
+## What you end up with
+
+Sorting, filtering and selection, on a library that still ships for Svelte 5.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable selectable />
+```
+
+## See also
+
+- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison
+- [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide
+- [Why headless?](../why-headless.md) - the design rationale
+- [Architecture](./architecture.md) - the engine + render-component split

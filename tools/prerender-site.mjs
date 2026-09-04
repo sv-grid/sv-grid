@@ -22,6 +22,7 @@ import { readdir, readFile, writeFile, mkdir, stat } from 'node:fs/promises'
 import { join, relative, dirname, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
+import { createHash } from 'node:crypto'
 import { blogCardSvg, rasterizePng } from './blog-card.mjs'
 import { clampDescription, firstSentence } from './lib/seo-text.mjs'
 import { demoFacts } from './lib/demo-facts.mjs'
@@ -99,6 +100,83 @@ function injectBody(html, bodyHtml) {
   // Function replacement: a string replacement would treat $$, $&, $` and $'
   // in the body as substitution patterns and silently corrupt the output.
   return html.replace('<div id="root"></div>', () => `<div id="root">${bodyHtml}</div>`)
+}
+
+// ---- sitemap lastmod -------------------------------------------------------
+//
+// A <lastmod> has to say when the page's CONTENT last changed, and neither
+// obvious source can: the build date marks every page as changed on every
+// deploy, and file mtime is no better because a fresh CI checkout rewrites it
+// to now. Both told Google that most of the site changed daily, and Google
+// stops trusting the field site-wide once it proves unreliable - which loses
+// the main signal it uses to decide what to recrawl.
+//
+// So each page's crawlable content is hashed and the hash is kept in
+// tools/sitemap-lastmod.json. A date only moves when its hash does. The file is
+// committed, so a shallow CI clone - no git history, no real mtimes - still
+// emits truthful dates, and a reformat that rewrites files without changing
+// what a reader sees moves nothing.
+const LASTMOD_FILE = join(ROOT, 'tools', 'sitemap-lastmod.json')
+const TODAY = new Date().toISOString().slice(0, 10)
+
+/** Previous build's hashes, keyed by site-relative path. */
+let lastmodPrev = {}
+/** This build's hashes. Replaces the file, so a deleted page drops out. */
+const lastmodNext = {}
+
+async function loadLastmod() {
+  try {
+    lastmodPrev = JSON.parse(await readFile(LASTMOD_FILE, 'utf-8'))
+  } catch {
+    // First run, or the file was removed. Every page then looks new and falls
+    // back to its seed date, which is why the seeds matter.
+    lastmodPrev = {}
+  }
+}
+
+async function saveLastmod() {
+  const sorted = Object.fromEntries(Object.keys(lastmodNext).sort().map((k) => [k, lastmodNext[k]]))
+  await writeFile(LASTMOD_FILE, JSON.stringify(sorted, null, 2) + '\n', 'utf-8')
+}
+
+/** Site-relative, trailing-slash key: "https://svgrid.com/demos/x/" -> "/demos/x/". */
+function lastmodKey(loc) {
+  const path = loc.replace(CANON, '') || '/'
+  return path.endsWith('/') ? path : path + '/'
+}
+
+/**
+ * Record a page and return the date its content last changed.
+ *
+ * `seed` is the best real date available when a page is new to the map (a doc's
+ * mtime, a post's front-matter date). Without one a new page gets today, which
+ * is honest: the build genuinely does not know when it last changed.
+ */
+function recordLastmod(loc, html, body, seed) {
+  const title = html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''
+  const description = html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? ''
+  const hash = createHash('sha1').update(`${title}\n${description}\n${body}`).digest('hex').slice(0, 12)
+  const key = lastmodKey(loc)
+  const prev = lastmodPrev[key]
+  const date = prev ? (prev.hash === hash ? prev.date : TODAY) : seed || TODAY
+  lastmodNext[key] = { hash, date }
+  return date
+}
+
+/** A source file's mtime as YYYY-MM-DD, or undefined when it cannot be read. */
+async function fileDate(path) {
+  try {
+    return (await stat(path)).mtime.toISOString().slice(0, 10)
+  } catch {
+    return undefined
+  }
+}
+
+/** Hash the page, then write it. Every prerendered page goes through here. */
+async function writePage(outDir, html, loc, body, seed) {
+  recordLastmod(loc, html, body, seed)
+  await mkdir(outDir, { recursive: true })
+  await writeFile(join(outDir, 'index.html'), html, 'utf-8')
 }
 
 function applyHead(html, { title, description, canonical, ogType, keywords, image, imageAlt }) {
@@ -194,6 +272,12 @@ function resolveMdLink(href, currentSlug, knownSlugs) {
   const m = href.match(/^([^#?]*)([#?].*)?$/)
   let pathPart = m ? m[1] : href
   const tail = m && m[2] ? m[2] : ''
+  // A demo's SOURCE path. Docs are authored from inside the repo and link to
+  // `../../examples/src/demos/<id>.svelte`, which is right in a checkout and
+  // dead on the site. Mirrors the client-side rule in website/src/lib/docs-links.ts;
+  // both are needed because this output is what crawlers and no-JS readers get.
+  const demo = /(?:^|\/)examples\/src\/demos\/([A-Za-z0-9._-]+)\.svelte$/.exec(pathPart)
+  if (demo) return `${BASE}demos/${demo[1]}/${tail}`
   if (!pathPart.endsWith('.md')) return href
   pathPart = pathPart.replace(/\.md$/, '')
   let segs
@@ -466,14 +550,7 @@ async function parseBlog() {
 }
 
 /** Parse the /faq route's Q&A pairs from Faq.svelte. */
-async function parseFaqRoute() {
-  const src = await readFile(join(ROOT, 'website', 'src', 'routes', 'Faq.svelte'), 'utf-8')
-  const re = /q:\s*'((?:\\.|[^'\\])*)'\s*,\s*a:\s*'((?:\\.|[^'\\])*)'/g
-  const out = []
-  let m
-  while ((m = re.exec(src))) out.push({ question: unesc(m[1]), answer: unesc(m[2]) })
-  return out
-}
+const parseFaqRoute = () => parseQaPairs(['website', 'src', 'routes', 'Faq.svelte'])
 
 /** Parse the /ai-prompts recipe groups (title, intro, query/answer pairs)
  *  from website/src/lib/ai-prompts.ts. Queries may be double-quoted (they
@@ -511,15 +588,34 @@ function aiPromptsBody(groups) {
   return html + `</main>`
 }
 
-/** Parse the homeFaqs Q&A from Home.svelte (q/a keys). */
-async function parseHomeFaqs() {
-  const src = await readFile(join(ROOT, 'website', 'src', 'routes', 'Home.svelte'), 'utf-8')
-  const re = /q:\s*'((?:\\.|[^'\\])*)'\s*,\s*a:\s*'((?:\\.|[^'\\])*)'/g
+/**
+ * Parse `q: "...", a: "..."` pairs out of a Svelte route.
+ *
+ * Either quote style is accepted, and an empty result throws. Both matter: the
+ * regex used to require single quotes, so when a reformat rewrote Home.svelte
+ * and Faq.svelte to double quotes (2026-08-17) both parsers silently returned
+ * nothing. That dropped the FAQPage graph from the home page and left /faq/ as
+ * a bare heading - invisible to every crawler that does not execute JavaScript,
+ * which is all of the AI crawlers. These pages are known to have questions, so
+ * an empty parse is a bug and never a valid state.
+ */
+async function parseQaPairs(relPath) {
+  const src = await readFile(join(ROOT, ...relPath), 'utf-8')
+  const re = /q:\s*(['"])((?:\\.|(?!\1)[^\\])*)\1\s*,\s*a:\s*(['"])((?:\\.|(?!\3)[^\\])*)\3/g
   const out = []
   let m
-  while ((m = re.exec(src))) out.push({ question: unesc(m[1]), answer: unesc(m[2]) })
+  while ((m = re.exec(src))) out.push({ question: unesc(m[2]), answer: unesc(m[4]) })
+  if (!out.length) {
+    throw new Error(
+      `prerender: no q/a pairs found in ${relPath.join('/')} - the FAQ markup shape changed. ` +
+      'Fix the parser; do not ship the page without its questions.',
+    )
+  }
   return out
 }
+
+/** Parse the homeFaqs Q&A from Home.svelte (q/a keys). */
+const parseHomeFaqs = () => parseQaPairs(['website', 'src', 'routes', 'Home.svelte'])
 
 /** Crawlable body for the landing page - hero, features, comparisons, FAQ. */
 function homeCrawlBody(faq) {
@@ -588,15 +684,21 @@ async function parseRoadmap() {
   const pEnd = src.indexOf('const shipped', pStart)
   const groups = []
   let cur = null
+  // Either quote style, like the shipped block below and parseQaPairs: a
+  // reformat that swaps the quotes must not silently empty the page.
+  const quoted = (key) => new RegExp(`${key}:\\s*(['"])((?:\\\\.|(?!\\1)[^\\\\])*)\\1`)
   for (const line of src.slice(pStart, pEnd).split('\n')) {
-    const am = line.match(/area:\s*'((?:\\.|[^'\\])*)'/)
-    if (am) { cur = { area: unesc(am[1]), items: [] }; groups.push(cur); continue }
-    const tm = line.match(/title:\s*'((?:\\.|[^'\\])*)'/)
-    const em = line.match(/effort:\s*'([SML])'/)
+    const am = line.match(quoted('area'))
+    if (am) { cur = { area: unesc(am[2]), items: [] }; groups.push(cur); continue }
+    const tm = line.match(quoted('title'))
+    const em = line.match(/effort:\s*['"]([SML])['"]/)
     if (tm && em && cur) {
-      const nm = line.match(/note:\s*'((?:\\.|[^'\\])*)'/)
-      cur.items.push({ title: unesc(tm[1]), effort: em[1], note: nm ? unesc(nm[1]) : '' })
+      const nm = line.match(quoted('note'))
+      cur.items.push({ title: unesc(tm[2]), effort: em[1], note: nm ? unesc(nm[2]) : '' })
     }
+  }
+  if (!groups.some((g) => g.items.length)) {
+    throw new Error('prerender: no roadmap items parsed from Roadmap.svelte - the item shape changed. Fix the parser; do not ship an empty roadmap.')
   }
   // Shipped titles can be single- OR double-quoted (some contain apostrophes).
   const sBlock = src.slice(src.indexOf('const shipped'), src.indexOf('const effortLabel'))
@@ -785,6 +887,7 @@ const PRICING_TIERS = [
 // The MCP page's audience is largely AI assistants reading the site, so it gets
 // a real crawlable body rather than the generic title + description stub.
 const MCP_DOC_TOOLS = [
+  ['check_svgrid_code', 'Check a file against the real exported surface of the installed version and return line-numbered diagnostics, each with the exact replacement.'],
   ['list_examples', 'List every demo with id, title, and a one-line blurb.'],
   ['get_example_source', 'Return the full .svelte source of one demo, verbatim, including imports.'],
   ['list_docs', 'List every documentation page (slug + title).'],
@@ -795,13 +898,14 @@ const MCP_DOC_TOOLS = [
 
 function mcpBody() {
   let html = `<main class="prerender-route" data-prerender="1"><h1>@svgrid/mcp - Model Context Protocol server for SvGrid</h1>`
-  html += `<p>The SvGrid MCP server gives an AI coding agent real demo source, current documentation, the curated API reference, and the SvGrid Studio app generators as callable tools. It runs locally over stdio: no telemetry, no outbound network calls, and no API key. It is listed in the official MCP registry as <code>com.svgrid/svgrid</code>.</p>`
-  html += `<h2>Install</h2><p>No install step is required. Add it to Claude Code with <code>claude mcp add svgrid -- npx -y @svgrid/mcp</code>, or point any MCP stdio client at <code>npx -y @svgrid/mcp</code>. Claude Desktop, Cursor, VS Code, and Zed each take the same command in their own config format.</p>`
-  html += `<h2>Tools</h2><p>The server exposes 35 tools. The six documentation and example tools are free; the SvGrid Studio generators are commercial.</p><ul>`
+  html += `<p>The SvGrid MCP server gives an AI coding agent real demo source, current documentation, and the curated API reference as callable tools - and then checks the code the agent writes against the real exported surface of the installed version, returning the exact replacement for every wrong prop, column key, and piece of Svelte 4 syntax. No API key. It is listed in the official MCP registry as <code>com.svgrid/svgrid</code>.</p>`
+  html += `<h2>Connect</h2><p>Hosted, with nothing to install: point any MCP client at <code>https://mcp.svgrid.com/mcp</code>, or run <code>claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp</code>. Locally over stdio, which adds the Svelte compiler pass and the SvGrid Studio tools and keeps every byte on your machine: <code>claude mcp add svgrid -- npx -y @svgrid/mcp</code>. Claude Desktop, Cursor, VS Code, and Zed each take the same thing in their own config format.</p>`
+  html += `<h2>Tools</h2><p>The local server exposes 36 tools and the hosted endpoint six. The verification, documentation and example tools are free; the SvGrid Studio generators are commercial.</p><ul>`
   for (const [name, desc] of MCP_DOC_TOOLS) html += `<li><code>${name}</code> - ${escapeAttr(desc)}</li>`
   html += `</ul>`
   html += `<p>The Studio generators are <code>introspect_source</code> (infer an EntitySchema from a Drizzle schema file or sample JSON rows) and <code>scaffold_entity</code> (generate runnable SvelteKit files from that schema), plus 27 <code>studio_*</code> tools that drive the same validated project model the visual designer uses: entities, screens, blocks, forms, auth, access, tenancy, data layer, deploy target, theme, and app generation.</p>`
-  html += `<h2>Licensing</h2><p>The documentation tools are free and need no key. The Studio generators run unlicensed but prepend a notice comment to generated files; set <code>SVGRID_LICENSE_KEY</code> in the MCP server's environment for licensed use.</p>`
+  html += `<h2>Licensing</h2><p>The verification and documentation tools are free and need no key. The Studio generators run unlicensed but prepend a notice comment to generated files; set <code>SVGRID_LICENSE_KEY</code> in the MCP server's environment for licensed use.</p>`
+  html += `<h2>Privacy</h2><p>Run locally and nothing leaves the machine: no telemetry, no outbound network calls, no key. The hosted endpoint receives whatever you pass a tool - including the source you give <code>check_svgrid_code</code> - and logs the tool name, duration and query, but never the submitted source itself. Use the local server if your code cannot leave the building.</p>`
   html += `<p><a href="${BASE}docs/help/mcp-server/">MCP server documentation</a> · <a href="${BASE}docs/help/llm-grounding/">LLM grounding</a> · <a href="${BASE}pricing/">Pricing</a></p>`
   return html + `</main>`
 }
@@ -881,7 +985,7 @@ const OG_SECTIONS = {
   roadmap: { eyebrow: 'ROADMAP', line1: 'What SvGrid is', line2white: 'building', line2accent: 'next.', sub1: 'An honest, living feature list,', sub2: 'plus a recently-shipped track record.' },
   faq:     { eyebrow: 'FAQ', line1: 'Common questions', line2white: 'about', line2accent: 'SvGrid.', sub1: 'Production readiness, licensing, SSR,', sub2: 'bundle size, and the MCP server.' },
   api:     { eyebrow: 'API REFERENCE', line1: 'Every prop, type,', line2white: 'and', line2accent: 'export.', sub1: 'SvGrid, ColumnDef, the headless core,', sub2: 'and the imperative SvGridApi.' },
-  mcp:     { eyebrow: 'MCP SERVER', line1: 'Ground your AI', line2white: 'in real', line2accent: 'SvGrid docs.', sub1: 'Model Context Protocol server for', sub2: 'Claude, Cursor, Zed, and more.' },
+  mcp:     { eyebrow: 'MCP SERVER', line1: 'Your agent writes it.', line2white: 'This', line2accent: 'checks it.', sub1: 'Model Context Protocol server for', sub2: 'Claude, Cursor, Zed, and more.' },
   blog:    { eyebrow: 'BLOG', line1: 'Tips & guides for', line2white: 'the Svelte 5', line2accent: 'data grid.', sub1: 'Sorting, filtering, virtualization, editing,', sub2: 'server-side data, theming, and more.' },
   svelte:  { eyebrow: 'SOLUTIONS', line1: 'Build it in', line2white: 'Svelte, with', line2accent: 'one prop.', sub1: 'Kanban, scheduler, pivot, spreadsheet,', sub2: 'tree grid, date picker, and more.' },
 }
@@ -1036,6 +1140,9 @@ async function main() {
     // dist/og-image.svg is not present yet (e.g. first build) - skip silently.
   }
 
+  // Previous build's content hashes, so an unchanged page keeps its date.
+  await loadLastmod()
+
   // 2. Load the built SPA shell as the template.
   let template
   try {
@@ -1165,9 +1272,7 @@ async function main() {
     const article = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}docs/">Docs</a></nav>${renderDoc(doc)}${docExtras(doc)}</main>`
     html = injectBody(html, article)
 
-    const outDir = join(DIST, 'docs', ...doc.slug.split('/'))
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'docs', ...doc.slug.split('/')), html, url, article, doc.lastmod)
     written += 1
   }
 
@@ -1227,9 +1332,7 @@ async function main() {
       body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs/">Documentation</a> · <a href="${BASE}demos/">Demos</a></p></main>`
     }
     html = injectBody(html, body)
-    const outDir = join(DIST, route)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, route), html, url, body)
     written += 1
   }
 
@@ -1357,9 +1460,7 @@ async function main() {
     }
     body += `</main>`
     html = injectBody(html, body)
-    const outDir = join(DIST, 'demos', d.id)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'demos', d.id), html, url, body, await fileDate(join(ROOT, 'examples', 'src', 'demos', `${d.id}.svelte`)))
     written += 1
   }
 
@@ -1447,9 +1548,7 @@ async function main() {
     body += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse the gallery</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
     body += `</main>`
     html = injectBody(html, body)
-    const outDir = join(DIST, 'svelte', s.slug)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'svelte', s.slug), html, url, body)
     written += 1
   }
 
@@ -1520,9 +1619,7 @@ async function main() {
       list(`Choose ${c.competitor} when`, c.whenToChooseCompetitor) +
       bottom + faqHtml + `</main>`
     html = injectBody(html, body)
-    const outDir = join(DIST, 'compare', c.slug)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'compare', c.slug), html, url, body)
     written += 1
   }
 
@@ -1616,9 +1713,7 @@ async function main() {
       : ''
     const body = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}blog/">Blog</a> / ${escapeAttr(p.category)}</nav>${hero}<h1>${escapeAttr(p.title)}</h1><p>${escapeAttr(p.description)}</p>${article}${tagLinks}</main>`
     html = injectBody(html, body)
-    const outDir = join(DIST, 'blog', p.slug)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'blog', p.slug), html, url, body, p.updated || p.date)
     written += 1
   }
 
@@ -1647,9 +1742,7 @@ async function main() {
     }
     body += `</main>`
     html = injectBody(html, body)
-    const outDir = join(DIST, 'blog', 'tag', hub.slug)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'blog', 'tag', hub.slug), html, url, body)
     written += 1
   }
 
@@ -1667,30 +1760,51 @@ async function main() {
     for (const p of group.posts) body += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
     body += `</ul></main>`
     html = injectBody(html, body)
-    const outDir = join(DIST, 'blog', 'category', group.slug)
-    await mkdir(outDir, { recursive: true })
-    await writeFile(join(outDir, 'index.html'), html, 'utf-8')
+    await writePage(join(DIST, 'blog', 'category', group.slug), html, url, body)
     written += 1
   }
 
-  // 5. Sitemap with every real URL.
-  const today = new Date().toISOString().slice(0, 10)
+  // 4h. The landing page (dist/index.html) gets crawlable body content +
+  // FAQPage JSON-LD. The home route is the SPA shell otherwise, so its hero,
+  // features, comparisons, and FAQ would never reach a non-JS crawler. Runs
+  // before the sitemap so "/" has a recorded lastmod like every other page.
+  const homeFaqs = await parseHomeFaqs()
+  // Build from `template` (the normalized clean shell), not by re-reading
+  // dist/index.html - that file is this step's own output, so re-reading it
+  // makes a second prerender run over the same dist non-idempotent.
+  const homeBody = homeCrawlBody(homeFaqs)
+  let homeHtml = injectBody(template, homeBody)
+  if (homeFaqs.length) {
+    homeHtml = injectJsonLd(homeHtml, {
+      '@context': 'https://schema.org', '@type': 'FAQPage',
+      mainEntity: homeFaqs.map((f) => ({
+        '@type': 'Question', name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer },
+      })),
+    })
+  }
+  await writePage(DIST, homeHtml, `${CANON}/`, homeBody)
+
+  // 5. Sitemap with every real URL. Dates come from the hashes recorded as each
+  // page was written, so <lastmod> tracks the content and not the build clock.
   const urls = []
   // Normalize to the trailing-slash form GitHub Pages serves as 200 (see the
   // per-page canonicals above), so the sitemap never lists a URL that 301s.
-  const push = (loc, priority, lastmod) =>
-    urls.push({ loc: loc.endsWith('/') ? loc : loc + '/', priority, lastmod })
-  push(`${CANON}/`, '1.0', today)
-  for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8', today)
-  for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7', today)
-  for (const s of solutions) push(`${CANON}/svelte/${s.slug}`, '0.8', today)
-  for (const h of tagHubs) push(`${CANON}/blog/tag/${h.slug}`, '0.5', today)
-  for (const g of categoryArchives) push(`${CANON}/blog/category/${g.slug}`, '0.5', today)
+  const push = (loc, priority) => {
+    const norm = loc.endsWith('/') ? loc : loc + '/'
+    urls.push({ loc: norm, priority, lastmod: lastmodNext[lastmodKey(norm)]?.date ?? TODAY })
+  }
+  push(`${CANON}/`, '1.0')
+  for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8')
+  for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7')
+  for (const s of solutions) push(`${CANON}/svelte/${s.slug}`, '0.8')
+  for (const h of tagHubs) push(`${CANON}/blog/tag/${h.slug}`, '0.5')
+  for (const g of categoryArchives) push(`${CANON}/blog/category/${g.slug}`, '0.5')
   // A post that defers to a docs guide (canonical) and a noindex doc are not
   // sitemap entries: the sitemap must only list URLs meant to be indexed.
-  for (const p of blogPosts) if (!p.canonical) push(`${CANON}/blog/${p.slug}`, '0.6', p.date)
-  for (const d of docs) if (!d.noindex) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6', d.lastmod)
-  for (const d of demos) push(`${CANON}/demos/${d.id}`, '0.5', today)
+  for (const p of blogPosts) if (!p.canonical) push(`${CANON}/blog/${p.slug}`, '0.6')
+  for (const d of docs) if (!d.noindex) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6')
+  for (const d of demos) push(`${CANON}/demos/${d.id}`, '0.5')
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
     .map((u) => `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`)
@@ -1739,31 +1853,16 @@ ${feedItems.join('\n')}
   await writeFile(join(DIST, 'feed.xml'), feed, 'utf-8')
   await writeFile(join(PUBLIC, 'feed.xml'), feed, 'utf-8').catch(() => {})
 
-  // 5b. Enrich the landing page (dist/index.html) with crawlable body content
-  // + FAQPage JSON-LD. The home route is the SPA shell otherwise, so its hero,
-  // features, comparisons, and FAQ would never reach a non-JS crawler.
-  const homeFaqs = await parseHomeFaqs()
-  // Build from `template` (the normalized clean shell), not by re-reading
-  // dist/index.html - that file is this step's own output, so re-reading it
-  // makes a second prerender run over the same dist non-idempotent.
-  let homeHtml = template
-  homeHtml = injectBody(homeHtml, homeCrawlBody(homeFaqs))
-  if (homeFaqs.length) {
-    homeHtml = injectJsonLd(homeHtml, {
-      '@context': 'https://schema.org', '@type': 'FAQPage',
-      mainEntity: homeFaqs.map((f) => ({
-        '@type': 'Question', name: f.question,
-        acceptedAnswer: { '@type': 'Answer', text: f.answer },
-      })),
-    })
-  }
-  await writeFile(join(DIST, 'index.html'), homeHtml, 'utf-8')
-
   // 6. SPA 404 fallback. Uses the clean shell template, not the enriched home
   // body, so a missing URL never serves homepage content under a "/" canonical.
   await writeFile(join(DIST, '404.html'), template, 'utf-8')
 
-  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${solutions.length} solutions, ${blogPosts.length} blog posts, ${tagHubs.length} tag hubs, ${categoryArchives.length} category archives) · feed.xml ${feedItems.length} items · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'}\n`)
+  // 7. Persist the hashes. Written last so a failed build cannot leave the map
+  // claiming pages are current when their HTML was never produced.
+  await saveLastmod()
+  const movedDates = Object.entries(lastmodNext).filter(([k, v]) => lastmodPrev[k]?.date !== v.date).length
+
+  process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${solutions.length} solutions, ${blogPosts.length} blog posts, ${tagHubs.length} tag hubs, ${categoryArchives.length} category archives) · feed.xml ${feedItems.length} items · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'} · lastmod ${movedDates} moved\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

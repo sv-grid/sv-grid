@@ -23,6 +23,14 @@ Or install the package and import it directly. `SvChip` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvAvatar, SvButton, SvChip } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvChip } from '@svgrid/grid'
 ```
@@ -31,7 +39,7 @@ import { SvChip } from '@svgrid/grid'
 
 <div data-docs-demo="339-status-display" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvChip } from '@svgrid/grid'
   let tags = $state(['design', 'urgent'])
@@ -94,7 +102,7 @@ The `leading` snippet slots an [SvAvatar](sv-avatar.md) for people and entities:
 Reflect the current filters as a removable chip set: each chip clears its own
 filter, and a trailing action resets them all:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvChip, SvButton } from '@svgrid/grid'
   type Filter = { key: string; label: string; variant: 'accent' | 'info' | 'danger' }

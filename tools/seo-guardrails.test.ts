@@ -20,6 +20,7 @@ import { loadTopics } from './lib/blog-topics.mjs'
 import { docSeoTitle, isHiddenDoc, parseDocFrontmatter, sectionOf } from './lib/doc-meta.mjs'
 import { clampDescription } from './lib/seo-text.mjs'
 import { ROUTE_SEO, prerenderedRoutes } from './lib/route-seo.mjs'
+import { carriedLdNodes } from '../website/src/lib/ld-carry'
 
 const ROOT = process.cwd()
 const DOCS_DIR = join(ROOT, 'docs')
@@ -243,5 +244,135 @@ describe('prerendered head matches the shared table', () => {
       }
     }
     expect(missing).toEqual([])
+  })
+})
+
+describe('prerendered JSON-LD carried across hydration', () => {
+  const COLLECTION = '{"@context":"https://schema.org","@type":"CollectionPage","name":"SvGrid Demos"}'
+  const graph = (...nodes: string[]) => `[${nodes.join(',')}]`
+
+  it('keeps the collection nodes when the route still matches', () => {
+    const kept = carriedLdNodes(graph(COLLECTION), '/demos/', '/demos/')
+    expect(kept).toHaveLength(1)
+    expect((kept[0] as { '@type': string })['@type']).toBe('CollectionPage')
+  })
+
+  it('ignores a trailing slash on either side', () => {
+    expect(carriedLdNodes(graph(COLLECTION), '/demos', '/demos/')).toHaveLength(1)
+    expect(carriedLdNodes(graph(COLLECTION), '/demos/', '/demos')).toHaveLength(1)
+  })
+
+  it('drops everything once the user navigates elsewhere', () => {
+    // Carrying /demos/'s ItemList onto /pricing/ would describe the wrong page.
+    expect(carriedLdNodes(graph(COLLECTION), '/demos/', '/pricing/')).toEqual([])
+  })
+
+  it('keeps only the types no client graph rebuilds', () => {
+    const article = '{"@type":"TechArticle","headline":"x"}'
+    const crumbs = '{"@type":"BreadcrumbList","itemListElement":[]}'
+    const kept = carriedLdNodes(graph(COLLECTION, article, crumbs), '/demos/', '/demos/')
+    expect(kept.map((n) => (n as { '@type': string })['@type'])).toEqual(['CollectionPage'])
+  })
+
+  it('survives a missing, empty or malformed graph', () => {
+    expect(carriedLdNodes(null, '/demos/', '/demos/')).toEqual([])
+    expect(carriedLdNodes('', '/demos/', '/demos/')).toEqual([])
+    expect(carriedLdNodes('{not json', '/demos/', '/demos/')).toEqual([])
+    expect(carriedLdNodes('[null,3,"x"]', '/demos/', '/demos/')).toEqual([])
+  })
+
+  it('accepts a single node as well as an array', () => {
+    expect(carriedLdNodes(COLLECTION, '/demos/', '/demos/')).toHaveLength(1)
+  })
+})
+
+describe('index routes keep their crawlable inventory', () => {
+  it.skipIf(!hasPrerenderedDist)('prerenders a CollectionPage + ItemList', async () => {
+    // These are the pages whose ItemList hydration used to delete outright.
+    const INDEX_ROUTES = ['demos', 'docs', 'compare', 'svelte', 'blog', 'community', 'roadmap']
+    const missing: string[] = []
+    for (const route of INDEX_ROUTES) {
+      const html = await readFile(join(DIST, route, 'index.html'), 'utf-8')
+      if (!html.includes('"CollectionPage"')) missing.push(`${route}: no CollectionPage`)
+      if (!html.includes('"ItemList"')) missing.push(`${route}: no ItemList`)
+    }
+    expect(missing).toEqual([])
+  })
+})
+
+describe('the carry filter against real prerendered output', () => {
+  it.skipIf(!hasPrerenderedDist)('keeps the ItemList the prerenderer actually wrote', async () => {
+    const html = await readFile(join(DIST, 'demos', 'index.html'), 'utf-8')
+    // EVERY script applyRouteSeo removes on hydration, not just the first.
+    // The prerenderer emits one per injectJsonLd call, so an index route
+    // carries two - and reading only the first is the bug this caught:
+    // /demos/ lost its CollectionPage + 365-item ItemList on hydration.
+    const raws = [
+      ...html.matchAll(/<script type="application\/ld\+json" data-seo="prerender">([\s\S]*?)<\/script>/g),
+    ].map((m) => m[1]!)
+    expect(raws.length, 'no prerendered graph on /demos/').toBeGreaterThan(0)
+    const kept = raws.flatMap((raw) =>
+      carriedLdNodes(raw.replace(/\u003c/g, '<'), '/demos/', '/demos/'),
+    )
+    const types = kept.map((n) => (n as { '@type': string })['@type'])
+    expect(types).toContain('CollectionPage')
+    const list = kept.find((n) => (n as { mainEntity?: { '@type': string } }).mainEntity?.['@type'] === 'ItemList')
+    expect(list, 'CollectionPage carried without its ItemList').toBeTruthy()
+    expect((list as { mainEntity: { numberOfItems: number } }).mainEntity.numberOfItems).toBeGreaterThan(300)
+  })
+})
+
+describe('sitemap lastmod', () => {
+  const SITEMAP = join(ROOT, 'website', 'public', 'sitemap.xml')
+  const MANIFEST = join(ROOT, 'tools', 'sitemap-lastmod.json')
+  const hasBoth = existsSync(SITEMAP) && existsSync(MANIFEST)
+
+  it.skipIf(!hasBoth)('comes from recorded content hashes, not the build clock', async () => {
+    const manifest = JSON.parse(await readFile(MANIFEST, 'utf-8')) as Record<string, { hash: string; date: string }>
+    const xml = await readFile(SITEMAP, 'utf-8')
+    const entries = [...xml.matchAll(/<loc>([^<]*)<\/loc>\s*<lastmod>([^<]*)<\/lastmod>/g)]
+    expect(entries.length).toBeGreaterThan(100)
+
+    const problems: string[] = []
+    const today = new Date().toISOString().slice(0, 10)
+    for (const [, loc, lastmod] of entries) {
+      const key = loc.replace('https://svgrid.com', '') || '/'
+      const rec = manifest[key]
+      // A URL with no recorded hash falls back to the build date, which is the
+      // behaviour this whole mechanism exists to remove.
+      if (!rec) problems.push(`${key}: no entry in sitemap-lastmod.json`)
+      else if (rec.date !== lastmod) problems.push(`${key}: sitemap ${lastmod} but manifest ${rec.date}`)
+      else if (!rec.hash) problems.push(`${key}: recorded without a content hash`)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(lastmod)) problems.push(`${key}: "${lastmod}" is not a date`)
+      if (lastmod > today) problems.push(`${key}: lastmod ${lastmod} is in the future`)
+    }
+    expect(problems).toEqual([])
+  })
+
+  it.skipIf(!hasBoth)('does not stamp the whole site with one date', async () => {
+    const xml = await readFile(SITEMAP, 'utf-8')
+    const dates = [...xml.matchAll(/<lastmod>([^<]*)<\/lastmod>/g)].map((m) => m[1])
+    const biggest = Math.max(...[...new Set(dates)].map((d) => dates.filter((x) => x === d).length))
+    // The regression this replaced put ~50% of URLs on the build date. Real
+    // content dates spread out; a single date owning most of the sitemap means
+    // something has fallen back to the clock again.
+    expect(biggest / dates.length).toBeLessThan(0.5)
+  })
+})
+
+describe('FAQ content reaches non-JS crawlers', () => {
+  // The AI crawlers (GPTBot, ClaudeBot, PerplexityBot, CCBot) do not execute
+  // JavaScript, so anything only the SPA renders is invisible to them. A
+  // reformat once silently emptied both of these parsers; the prerenderer now
+  // throws on an empty parse, and these assert the output end to end.
+  it.skipIf(!hasPrerenderedDist)('puts the questions and FAQPage in the static HTML', async () => {
+    const problems: string[] = []
+    for (const page of ['faq', '']) {
+      const html = await readFile(join(DIST, page, 'index.html'), 'utf-8')
+      const body = html.match(/<main[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
+      if (!html.includes('"FAQPage"')) problems.push(`/${page}: no FAQPage graph`)
+      if (!/<(h[23]|dt|summary)[^>]*>[^<]*\?/.test(body)) problems.push(`/${page}: no question text in the body`)
+    }
+    expect(problems).toEqual([])
   })
 })

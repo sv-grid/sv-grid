@@ -487,6 +487,7 @@ create policy "svgrid demo access" on customers
     {/if}
 
     <SvGrid responsive={true}
+      columnResize
       data={view.rows}
       {columns}
       loading={view.loading}

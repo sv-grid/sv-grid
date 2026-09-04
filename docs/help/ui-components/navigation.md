@@ -23,7 +23,15 @@ A navigation trail. Each item is a link (`href`), a button (`onClick`), or plain
 text; the last item is the current page and is never interactive. Long trails
 collapse the middle to an expandable ellipsis.
 
-```svelte
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvBreadcrumb, SvPagination, SvStepper } from '@svgrid/grid'
+</script>
+```
+
+```svelte {runnable}
 <SvBreadcrumb items={[
   { label: 'Home', href: '/' },
   { label: 'Orders', href: '/orders' },

@@ -24,6 +24,27 @@ Or install the package and import it directly. `SvRadioGroup` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvRadioGroup } from '@svgrid/grid'
+  import type { ListOption } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  const sizes: ListOption[] = [
+    { value: 'a', label: 'Option A' },
+    { value: 'b', label: 'Option B' },
+  ]
+  let size = $state('')
+  const plans: ListOption[] = [
+    { value: 'a', label: 'Option A' },
+    { value: 'b', label: 'Option B' },
+  ]
+  let plan = $state('')
+</script>
+```
+
 ```ts
 import { SvRadioGroup } from '@svgrid/grid'
 ```
@@ -32,7 +53,7 @@ import { SvRadioGroup } from '@svgrid/grid'
 
 <div data-docs-demo="310-radio-group" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRadioGroup, type RadioOption } from '@svgrid/grid'
 
@@ -115,7 +136,7 @@ Mark the group `required` and set `invalid` + `error` until a choice is made:
 The selected `value` is just state, so a `$derived` can react to it - a plan
 picker that updates the price beneath it as you choose:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvRadioGroup, type RadioOption } from '@svgrid/grid'
   const plans: RadioOption[] = [
@@ -139,6 +160,45 @@ picker that updates the price beneath it as you choose:
   tabbable. Arrow keys move and select in one step, wrapping around and skipping
   disabled options; `Space` selects the focused radio.
 - Under `dir="rtl"` the horizontal arrow direction follows reading order.
+
+## More examples
+
+### Radio group - headless
+
+Styled SvRadioGroup plus a custom segmented control (with a disabled option), one bound value.
+
+<div data-docs-demo="274-headless-radiogroup" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<SvRadioGroup options={plans} size="sm" />
+<SvRadioGroup options={plans} size="md" />
+<SvRadioGroup options={plans} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<SvRadioGroup
+  options={plans}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvRadioGroup
+  options={plans}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

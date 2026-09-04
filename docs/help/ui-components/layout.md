@@ -19,6 +19,14 @@ import them directly:
 A WAI-ARIA tabs widget with roving tabindex and arrow-key navigation. The active
 panel is rendered through the `panel` snippet (receives the active id).
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvCarousel, SvDivider, SvDockLayout, SvDockManager, SvForm, SvScrollArea, SvTabs, SvTree } from '@svgrid/grid'
+</script>
+```
+
 ```svelte
 <SvTabs tabs={[{id:'a',label:'Overview'},{id:'b',label:'Activity'}]}
   value={tab} onChange={(id) => (tab = id)} variant="line">
@@ -85,7 +93,7 @@ Props: `fields`, `initial`, `onSubmit(values)`, `onChange(values)`, `columns`,
 
 A separator line, horizontal or vertical, optionally with a label.
 
-```svelte
+```svelte {runnable}
 <SvDivider label="OR" />
 <SvDivider orientation="vertical" />
 ```
@@ -98,7 +106,7 @@ A scroll container with the kit's themed custom scrollbars (consumes the
 `--sg-scrollbar-*` tokens with `--sg-fg`-derived fallbacks) - so a panel matches
 the grid/demos without hand-rolling `::-webkit-scrollbar` CSS.
 
-```svelte
+```svelte {runnable}
 <SvScrollArea maxHeight="240px">…long content…</SvScrollArea>
 ```
 
@@ -174,3 +182,17 @@ recipes:
 - [SvForm](./sv-form.md) - a schema-driven form of kit controls.
 - [SvField](./sv-field.md) - the shared label/hint/error chrome for editors.
 - [SvFileUpload](./sv-file-upload.md) - a drag-and-drop file field with validation.
+
+## More examples
+
+### Account & security settings console
+
+A real SaaS settings surface composed from the UI kit: SvMenubar app bar, promise + Undo-action toasts on save, SvPopconfirm on destructive rows, SvHoverCard teammate previews, and frame input adornments (leading icons, prefix affixes, masked API key). Profile / Team / Security tabs over SvCard + SvStat.
+
+<div data-docs-demo="337-account-settings-console" data-height="520"></div>
+
+### Operations KPI dashboard
+
+A KPI console: SvStat + SvSparkline tiles, an SvGauge SLA dial, SvHoverCard drill-down previews per service, an SvMenubar toolbar (View / Range / Actions) and a promise toast on Refresh. Pure UI-kit composition, no grid dependency.
+
+<div data-docs-demo="345-ops-dashboard" data-height="520"></div>

@@ -30,13 +30,16 @@ usable in SvelteKit with SSR.
 
 ### Your coding agent can use it too
 
-SvGrid ships an [MCP server](https://svgrid.com/docs/help/mcp-server/) carrying the real API
-surface, every demo's source, and the full docs. Point Claude, Cursor or Zed at it and they
-write SvGrid code that compiles, instead of inventing props from a stale blog post:
+SvGrid ships an [MCP server](https://svgrid.com/docs/help/mcp-server/) that carries the real API
+surface, every demo's source, and the full docs - and then **checks the code your agent writes**
+against that surface before you see it. Wrong prop, wrong column key, Svelte 4 syntax: it comes
+back with the exact replacement, not a guess. Nothing to install:
 
 ```bash
-npx -y @svgrid/mcp
+claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
 ```
+
+Or run it locally with `npx -y @svgrid/mcp`, which adds the Svelte compiler pass.
 
 ---
 

@@ -30,6 +30,39 @@ The cell must also be **editable** - its column must have an
 
 Drive the editor from outside the grid with the `SvGridApi`:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 130, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 80,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 // begin editing a cell (as a double-click would); returns true if it started
 api.startEditing(rowIndex, columnId)
@@ -66,6 +99,26 @@ form-style / guided-entry flows entirely on the API:
 ```
 
 <div data-docs-demo="176-programmatic-editing" data-height="520"></div>
+
+## Try it
+
+`startEditing(rowIndex, columnId)` opens an editor without a click, which is how
+you wire "edit this row" from a toolbar or a keyboard shortcut.
+`stopEditing(true)` cancels rather than commits.
+
+```svelte {runnable}
+<script lang="ts">
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+</script>
+
+<div>
+  <button type="button" onclick={() => api?.startEditing(0, 'name')}>Edit first name</button>
+  <button type="button" onclick={() => api?.stopEditing(false)}>Commit</button>
+  <button type="button" onclick={() => api?.stopEditing(true)}>Cancel</button>
+</div>
+
+<SvGrid data={people} {columns} editable onApiReady={(next) => (api = next)} />
+```
 
 ## See also
 

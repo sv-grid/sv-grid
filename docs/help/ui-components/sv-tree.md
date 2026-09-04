@@ -167,6 +167,26 @@ thousands of rows.
 - Checkboxes expose their tri-state; disabled nodes are not focusable.
 - Inline rename opens on F2 and commits on Enter, cancels on Escape.
 
+## More examples
+
+### Tree - headless
+
+createTree drives styled SvTree plus a custom compact file explorer, one selected id with a readout.
+
+<div data-docs-demo="280-headless-tree" data-height="420"></div>
+
+### Tree at scale (virtual + lazy)
+
+SvTree scaling to 10,100 nodes via fixed-row virtualization (only ~15 rows in the DOM), plus a lazy-loading tree that fetches each folder’s children on first expand with a spinner. Keyboard, selection and cascading checkboxes intact.
+
+<div data-docs-demo="324-tree-scale" data-height="520"></div>
+
+### Tree editing (drag / rename / sort)
+
+SvTree with drag-drop reorder (drop before / after / inside), inline rename (double-click or F2) and sortable siblings. Uses the moveTreeNode helper.
+
+<div data-docs-demo="328-tree-editable" data-height="520"></div>
+
 ## See also
 
 - [Navigation overview](navigation.md) - the wayfinding family at a glance.

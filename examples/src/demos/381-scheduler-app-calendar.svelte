@@ -370,6 +370,7 @@
             {#if p.id === 'calendar'}
               <div class="hz-pane">
                 <SvGrid
+      columnResize
                   data={shown}
                   columns={columns}
                   getRowId={(r) => String(r.id)}
@@ -389,7 +390,8 @@
               </div>
             {:else if p.id === 'upcoming'}
               <div class="hz-pane">
-                <SvGrid data={shown} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing rowHeight={32} containerHeight="100%" fitColumns />
+                <SvGrid
+      columnResize data={shown} columns={columns} getRowId={(r) => String(r.id)} sortable enableInlineEditing rowHeight={32} containerHeight="100%" fitColumns />
               </div>
             {:else if p.id === 'inbox'}
               <div class="hz-inbox">

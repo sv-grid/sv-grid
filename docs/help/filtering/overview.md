@@ -78,16 +78,6 @@ filterFns.includesString(cellValue, query)
 filterFns.equals(cellValue, query)
 ```
 
-## See also
-
-- [Text filter](./text-filter.md)
-- [Number filter](./number-filter.md)
-- [Date filter](./date-filter.md)
-- [Set filter](./set-filter.md)
-- [Advanced filter](./advanced-filter.md) - OR across columns, nested groups, and comparisons against an aggregate
-- [Filter API](./filter-api.md)
-- [demos/03-excel-filters.svelte](../../../examples/src/demos/03-excel-filters.svelte)
-
 ## Frequently asked questions
 
 ### How do I filter a column in SvGrid?
@@ -108,3 +98,89 @@ range-bucket their values so the list stays usable on large datasets.
 Yes. Set `externalFilter` so the grid records filter state but your API does the
 filtering. The grid emits the consolidated filter payload via `onFiltersChange`
 for you to forward to the server.
+
+## Row mode
+
+The filter row is the low-friction option: one input per column, always
+visible, no click to reach it. Best when filtering is the main verb on the
+screen.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 180 },
+    { field: 'department', header: 'Department', width: 160 },
+    { field: 'city',       header: 'City',       width: 140 },
+  ]
+</script>
+
+<SvGrid data={people} {columns} filterable filterMode="row" />
+```
+
+
+## Menu mode
+
+The menu trades a click for a header row and gives the full operator list.
+Best when the grid is short, or when the operators matter more than the speed of
+reaching them.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+    active: boolean
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000, active: true },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000, active: true },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000, active: false },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000, active: true },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180 },
+    { field: 'age',    header: 'Age',    width: 90, editorType: 'number' },
+    { field: 'salary', header: 'Salary', width: 150, editorType: 'number',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid data={people} {columns} filterable filterMode="menu" sortable />
+```
+
+## See also
+
+- [Text filter](./text-filter.md)
+- [Number filter](./number-filter.md)
+- [Date filter](./date-filter.md)
+- [Set filter](./set-filter.md)
+- [Advanced filter](./advanced-filter.md) - OR across columns, nested groups, and comparisons against an aggregate
+- [Filter API](./filter-api.md)
+- [demos/03-excel-filters.svelte](../../../examples/src/demos/03-excel-filters.svelte)

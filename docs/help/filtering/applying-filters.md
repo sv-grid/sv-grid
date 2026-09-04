@@ -57,6 +57,20 @@ const filteredData = api.getData().filter(myPredicate)
 This works when you want to render the filtered result inside an
 export-friendly grid that's independent of the user's current filters.
 
+## More examples
+
+### Top N / Bottom N filter
+
+BI-style "show me top 10 by revenue" toolbar: pick a metric, pick N, top vs bottom. Live KPI strip shows revenue coverage of the slice.
+
+<div data-docs-demo="99-top-n-filter" data-height="460"></div>
+
+### Product filter bar
+
+A faceted filter/search bar from SvGrid UI: SvComboBox (search), SvButtonGroup (category), SvTagsInput (tags), SvSlider (price range), SvSwitchButton (in stock) and SvDropDownList (sort) - filtering a live product list as you go.
+
+<div data-docs-demo="336-filter-bar" data-height="560"></div>
+
 ## See also
 
 - [Applying filters - server-side variant](../../getting-started.md#11-server-side-data)

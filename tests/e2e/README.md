@@ -6,6 +6,7 @@ Real-browser tests for the parts jsdom can't exercise:
 - `position: sticky` measurements after a real scroll (pinned rows).
 - Keystroke-driven filter inputs (locale-aware filter).
 - Async loaders + cascading checkboxes (set filter).
+- Whether the /api reference's examples actually run (`pnpm api:check` proves they compile; only a browser proves they mount and execute).
 
 ## Setup
 
@@ -43,6 +44,7 @@ pnpm test:e2e column-reorder
 | `pinned-rows.spec.ts` | Top/bottom pinned tbodies, sticky-after-scroll, computed CSS |
 | `locale-filter.spec.ts` | Real keystrokes in the global filter, locale switcher |
 | `set-filter.spec.ts` | Async-loaded values, tree-list cascade, Excel funnel discoverability |
+| `api-examples.spec.ts` | Every /api member's example compiles, mounts, and runs; plus the "Open in playground" hand-off |
 
 ## Conventions
 

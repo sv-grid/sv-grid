@@ -205,12 +205,26 @@ test.describe('scheduler roadmap timeline - Month / Year (demo 384)', () => {
     const coreRow = page.locator('.sv-sched-tl-row', { hasText: 'Core Platform' })
     await expect(growthRow.locator('.sv-sched-tl-bar', { hasText: 'Referral program' })).toHaveCount(1)
     const b = bar(page, 'Referral program').first()
+    // Bring the bar into the timeline's own scroll viewport first. `.sv-sched-tl`
+    // is a scroll container and `boundingBox()` reports geometry whether or not
+    // the element is clipped, so on a short calendar pane this used to grab a
+    // point below the fold - the page section underneath took the pointerdown
+    // and no drag ever started. A user scrolls to the bar before dragging it.
+    await b.scrollIntoViewIfNeeded()
     const box = (await b.boundingBox())!
     const target = (await coreRow.boundingBox())!
-    // The initiative bar spans several weeks, so its centre is off-screen; grab
-    // its (visible) left portion - past the ~8px start-resize handle so this is a
-    // move, not a resize - and drag straight up onto the Core row.
-    const grabX = box.x + 40
+    // Grab a point that is inside the bar, on screen, and not behind the sticky
+    // resource gutter. Three things make `box.x + 40` wrong on its own: the bar
+    // spans several weeks so its centre is off-screen; a horizontal scroll can
+    // put the bar's own left edge behind the gutter; and the gutter is
+    // `position: sticky`, so it paints over the lane area rather than sitting
+    // beside it - a point can be inside the lanes' box and still hit the gutter.
+    const gutter = (await growthRow.locator('.sv-sched-tl-resgutter').boundingBox())!
+    const tl = (await page.locator('.sv-sched-tl').first().boundingBox())!
+    const grabX = Math.min(
+      Math.max(box.x + 40, gutter.x + gutter.width + 20),
+      Math.min(box.x + box.width, tl.x + tl.width) - 20,
+    )
     await drag(page, grabX, box.y + box.height / 2, grabX, target.y + target.height / 2)
     await expect(coreRow.locator('.sv-sched-tl-bar', { hasText: 'Referral program' })).toHaveCount(1)
     await expect(growthRow.locator('.sv-sched-tl-bar', { hasText: 'Referral program' })).toHaveCount(0)

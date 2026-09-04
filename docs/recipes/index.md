@@ -74,6 +74,56 @@ the [gallery](https://svgrid.com/demos/).
 - [Benchmark harness](./benchmark-harness.md) - measure paint time across (rows × cols) on your machine
 - [Grid state inspector](./grid-state-inspector.md) - dev-only side panel polling every public api reader
 
+## More examples
+
+### HR team directory
+
+Employee directory with avatars, status badges, group by team / location / status.
+
+<div data-docs-demo="12-hr-team" data-height="560"></div>
+
+### Manufacturing operations
+
+Plant-floor view: KPI cards + active-runs grid with progress bars, status pills, live 5-second tick.
+
+<div data-docs-demo="32-manufacturing-ops" data-height="560"></div>
+
+### Project management board
+
+Nested, collapsible column groups (Task / Details / Timeline / Progress), status + priority + assignee dropdowns, date cells, a custom progress-bar renderer, drag-to-reorder rows, and client pagination - all from stock props.
+
+<div data-docs-demo="205-project-management" data-height="560"></div>
+
+### Test systems monitor (live ops)
+
+Operations console for a fleet of connected test & measurement systems: live status, utilization sparklines, temperature, alarms, firmware, and calibration with stable row identity (getRowId). Select systems for bulk actions (acknowledge alarms, schedule calibration), group by site, KPI strip, search + filters, and master-detail with live instrument tags. Virtualized to fleet scale.
+
+<div data-docs-demo="120-test-systems-monitor" data-height="560"></div>
+
+### Project tracker (PM workspace)
+
+Linear-style project workspace: KPI strip (Projects / In progress / Ready / Blocked / Budget), bulk-action toolbar (Mark ready, Block, Move to launch, Delete) that enables on selection, phase-grouped rows with per-phase aggregate cards, NEW pill + SVG progress ring on the name column, avatar owner, colour-block Status / Priority / Risk cells, Department chip, multi-skills chips, inline filter row.
+
+<div data-docs-demo="167-project-tracker" data-height="560"></div>
+
+### Invoice builder
+
+An adornment-heavy money form: currency prefixes, % suffixes, masked tax IDs (frame adornments), line items with SvPopconfirm delete + Undo action toasts, live SvStat totals, an SvHoverCard tax hint, and a promise toast on Send. Pure UI-kit composition.
+
+<div data-docs-demo="343-invoice-builder" data-height="520"></div>
+
+### Industrial - IoT sensors
+
+Live sensor floor: threshold-driven status, sparkline trends, group by line.
+
+<div data-docs-demo="14-industrial" data-height="460"></div>
+
+### Industrial dashboard
+
+KPI cards plus live line-status and active-alarms grids, on a 2-second tick.
+
+<div data-docs-demo="20-industrial-dashboard" data-height="460"></div>
+
 ## See also
 
 - [Help topic pages](../help/index.md) - the conceptual story behind each recipe

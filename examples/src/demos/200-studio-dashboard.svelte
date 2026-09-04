@@ -113,6 +113,7 @@
     <SvSchemaDashboard {schema} getAggregate={(req) => source.getAggregate(req)} refreshKey={rev} spec={dashboard} onDrill={drill} />
 
     <SvGrid responsive={true}
+      columnResize
       data={view.rows}
       {columns}
       loading={view.loading}

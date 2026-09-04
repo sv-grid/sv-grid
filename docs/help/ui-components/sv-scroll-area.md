@@ -24,6 +24,14 @@ Or install the package and import it directly. `SvScrollArea` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvCard, SvScrollArea } from '@svgrid/grid'
+</script>
+```
+
 ```ts
 import { SvScrollArea } from '@svgrid/grid'
 ```
@@ -32,7 +40,7 @@ import { SvScrollArea } from '@svgrid/grid'
 
 <div data-docs-demo="340-command-palette" data-height="440" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvScrollArea } from '@svgrid/grid'
 </script>
@@ -69,7 +77,7 @@ Give a `maxHeight` so a long list scrolls in place instead of growing the page:
 Use `height` when the area must fill a known space - for example a pane inside an
 [SvSplitter](sv-splitter.md):
 
-```svelte
+```svelte {runnable}
 <SvScrollArea height="100%">…detail…</SvScrollArea>
 ```
 

@@ -18,6 +18,42 @@ Every `getRows(request)` call receives the current filter as
 `request.filterModel`. It has two parts: a `global` quick-search string and a
 `columns` map keyed by column id.
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+  const data = people
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 140 },
+    { field: 'age',        header: 'Age',        width: 90 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```ts
 type ServerFilterModel = {
   global?: string                 // the quick-filter search box
@@ -299,6 +335,144 @@ if (plan.expression) {
   // Safe to translate: every column is on the schema.
   // Translate it in full, or do not acknowledge it.
 }
+```
+
+
+## Watching the filter model come out
+
+Before you wire a query builder, look at what the grid actually reports. Type
+in the filter row below and the model appears underneath: a `global` string plus
+one entry per active column, each with the operator the user picked. That object
+is the whole contract - everything else on this page is a way of turning it into
+SQL.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; city: string; salary: number }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', salary: 155000 },
+  ]
+
+  let model = $state('{}')
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180 },
+    { field: 'city',   header: 'City',   width: 150 },
+    { field: 'salary', header: 'Salary', width: 140, editorType: 'number',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<SvGrid
+  data={people}
+  {columns}
+  filterable
+  filterMode="row"
+  onFiltersChange={(f) => (model = JSON.stringify(f, null, 2))}
+/>
+
+<pre>{model}</pre>
+```
+
+## externalFilter, end to end
+
+With `externalFilter` the grid stops narrowing the rows itself and hands the
+model to you instead. The query below runs in the page rather than on a server,
+but the seam is identical: model in, rows out, `data` reassigned. Note that the
+grid keeps showing whatever you give it - forget to apply the filter and it will
+sit there displaying everything, with the filter row full.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; city: string; salary: number }
+
+  const ALL: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   city: 'London',   salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   city: 'New York', salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', city: 'Portland', salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  city: 'Seattle',  salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', city: 'Boston',   salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(ALL)
+  let sql = $state('SELECT * FROM people')
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',   header: 'Name',   width: 180 },
+    { field: 'city',   header: 'City',   width: 150 },
+    { field: 'salary', header: 'Salary', width: 140, editorType: 'number',
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+
+  // The "server". One operator per branch, everything else falls through.
+  function apply(f: { global: string; columns: Array<{ id: string; operator: string; value: string }> }) {
+    const where: string[] = []
+    let out = ALL
+
+    if (f.global.trim()) {
+      const q = f.global.trim().toLowerCase()
+      out = out.filter((p) => (p.name + ' ' + p.city).toLowerCase().includes(q))
+      where.push("search(:q)")
+    }
+
+    for (const c of f.columns) {
+      if (!c.value) continue
+      const v = c.value.toLowerCase()
+      if (c.operator === 'greaterThan') {
+        out = out.filter((p) => Number(p[c.id as keyof Person]) > Number(c.value))
+        where.push(c.id + ' > :' + c.id)
+      } else {
+        out = out.filter((p) => String(p[c.id as keyof Person]).toLowerCase().includes(v))
+        where.push(c.id + ' LIKE :' + c.id)
+      }
+    }
+
+    rows = out
+    sql = 'SELECT * FROM people' + (where.length ? ' WHERE ' + where.join(' AND ') : '')
+  }
+</script>
+
+<SvGrid
+  data={rows}
+  {columns}
+  filterable
+  filterMode="row"
+  externalFilter
+  onFiltersChange={apply}
+/>
+
+<p><code>{sql}</code> - {rows.length} row(s)</p>
+```
+
+## Try it
+
+The grid renders whatever rows you hand it and reports the filter model instead
+of applying it. Here the "server" is a local function, so the round trip is
+visible without a backend.
+
+```svelte {runnable}
+<script lang="ts">
+  let shown = $state(people)
+  let lastModel = $state("(none)")
+
+  // Stands in for the fetch: same shape, no network.
+  function query(model: Record<string, unknown>) {
+    lastModel = JSON.stringify(model)
+    const term = String((Object.values(model)[0] as { filter?: string })?.filter ?? "").toLowerCase()
+    shown = term ? people.filter((p) => p.name.toLowerCase().includes(term)) : people
+  }
+</script>
+
+<SvGrid data={shown} {columns} filterable externalFilter onFiltersChange={query} />
+
+<p>Filter model sent to the server: <code>{lastModel}</code></p>
 ```
 
 ## See also

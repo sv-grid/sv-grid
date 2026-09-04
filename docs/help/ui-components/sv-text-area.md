@@ -24,6 +24,18 @@ Or install the package and import it directly. `SvTextArea` ships free in
 
 <div data-docs-install="@svgrid/grid"></div>
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvTextArea } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let comment = $state('')
+  let address = $state('')
+</script>
+```
+
 ```ts
 import { SvTextArea } from '@svgrid/grid'
 ```
@@ -32,7 +44,7 @@ import { SvTextArea } from '@svgrid/grid'
 
 <div data-docs-demo="334-input-editors" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTextArea } from '@svgrid/grid'
   let notes = $state('')
@@ -74,7 +86,7 @@ import { SvTextArea } from '@svgrid/grid'
 Combine `autoGrow`, `maxlength`, and `showCount` for a comment box that expands
 as the user types and shows how much room is left:
 
-```svelte
+```svelte {runnable}
 <SvTextArea bind:value={comment} autoGrow maxlength={500} showCount />
 ```
 
@@ -83,7 +95,7 @@ as the user types and shows how much room is left:
 Leave `autoGrow` off and set `rows`; the box stays put and scrolls internally.
 The user can still drag the native resize handle.
 
-```svelte
+```svelte {runnable}
 <SvTextArea label="Address" rows={4} bind:value={address} />
 ```
 
@@ -92,7 +104,7 @@ The user can still drag the native resize handle.
 Pair `required` with a `$derived` length check so the field asks for enough
 detail, and keep `showCount` so the user sees the cap while typing:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTextArea } from '@svgrid/grid'
   let reason = $state('')
@@ -121,6 +133,49 @@ does nothing - always pass both together.
   by [SvField](sv-field.md); `required` and `invalid` add the matching ARIA.
 - The character counter is `aria-hidden`, so it does not spam screen readers on
   every keystroke.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTextArea } from '@svgrid/grid'
+
+  let notes = $state('')
+</script>
+
+<SvTextArea bind:value={notes} size="sm" />
+<SvTextArea bind:value={notes} size="md" />
+<SvTextArea bind:value={notes} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvTextArea } from '@svgrid/grid'
+
+  let notes = $state('')
+</script>
+
+<SvTextArea
+  bind:value={notes}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvTextArea
+  bind:value={notes}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

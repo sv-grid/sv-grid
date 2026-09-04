@@ -155,7 +155,7 @@ The same `resizable` prop works on [SvComboBox](sv-combo-box.md) and
 Feed the second dropdown from the first, and reset the child on every parent
 change so it can never keep a value from the old branch:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvDropDownList, type ListOption } from '@svgrid/grid'
   const countries: ListOption[] = [
@@ -188,6 +188,45 @@ change so it can never keep a value from the old branch:
   commit or dismiss, and focus returns to the trigger on close.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## More examples
+
+### Dropdown list - headless
+
+createDropdownList drives SvDropDownList and a custom trigger+menu render, sharing one value.
+
+<div data-docs-demo="262-headless-dropdownlist" data-height="420"></div>
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<SvDropDownList options={countries} size="sm" />
+<SvDropDownList options={countries} size="md" />
+<SvDropDownList options={countries} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<SvDropDownList
+  options={countries}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvDropDownList
+  options={countries}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

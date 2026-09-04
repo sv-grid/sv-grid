@@ -1,0 +1,135 @@
+{
+  "generatedAt": "2026-09-02T17:32:33.607Z",
+  "node": "v24.18.0",
+  "platform": "win32 x64",
+  "rows": 100000,
+  "runs": 9,
+  "results": {
+    "rowmodel-build": {
+      "label": "Build row model, 100k x 9, no stages",
+      "time": {
+        "ms": 0.0016999999999995907,
+        "min": 0.0009000000000014552,
+        "max": 0.021299999999996544
+      },
+      "heap": {
+        "bytes": 16806488
+      }
+    },
+    "sort-1col": {
+      "label": "Sort 100k rows by 1 column",
+      "time": {
+        "ms": 27.60759999999999,
+        "min": 24.488099999999974,
+        "max": 32.79900000000001
+      },
+      "counts": {
+        "core.runs": 1,
+        "sort.runs": 1,
+        "sort.getAllColumns": 1,
+        "sort.getCellValueByColumnId": 100000
+      }
+    },
+    "sort-3col": {
+      "label": "Sort 100k rows by 3 columns",
+      "time": {
+        "ms": 44.9756000000001,
+        "min": 40.36700000000002,
+        "max": 60.38129999999998
+      },
+      "counts": {
+        "core.runs": 1,
+        "sort.runs": 1,
+        "sort.getAllColumns": 1,
+        "sort.getCellValueByColumnId": 300514
+      }
+    },
+    "sort-text": {
+      "label": "Sort 100k rows by a text column (collated)",
+      "time": {
+        "ms": 59.03550000000001,
+        "min": 54.057000000000016,
+        "max": 64.84680000000003
+      }
+    },
+    "sort-date": {
+      "label": "Sort 100k rows by a date column",
+      "time": {
+        "ms": 39.32069999999999,
+        "min": 36.22109999999998,
+        "max": 48.08279999999999
+      }
+    },
+    "filter-1op": {
+      "label": "Filter 100k rows, 1 operator",
+      "time": {
+        "ms": 3.978699999999975,
+        "min": 3.7456999999999994,
+        "max": 10.5822
+      },
+      "counts": {
+        "core.runs": 1,
+        "filter.runs": 1,
+        "filter.getCellValueByColumnId": 100000
+      }
+    },
+    "filter-5op": {
+      "label": "Filter 100k rows, 5 operators ANDed",
+      "time": {
+        "ms": 6.0160999999999945,
+        "min": 5.746600000000001,
+        "max": 12.429100000000005
+      },
+      "counts": {
+        "core.runs": 1,
+        "filter.runs": 1,
+        "filter.getCellValueByColumnId": 134702
+      }
+    },
+    "group-2col-3agg": {
+      "label": "Group 100k rows by 2 columns, 3 aggregators",
+      "time": {
+        "ms": 48.75160000000005,
+        "min": 45.96160000000009,
+        "max": 58.51640000000003
+      }
+    },
+    "selection-toggle": {
+      "label": "Toggle one row checkbox on a filtered + sorted 100k grid",
+      "time": {
+        "ms": 0.0018000000000029104,
+        "min": 0.0009000000000014552,
+        "max": 0.06440000000000623
+      },
+      "counts": {
+        "selection.initialRuns": 2,
+        "selection.filterReruns": 0,
+        "selection.sortReruns": 0
+      }
+    },
+    "filter-excel-contains": {
+      "label": "Filter 100k rows via the compiled Excel filter (contains)",
+      "time": {
+        "ms": 3.1820999999999913,
+        "min": 2.9162000000000035,
+        "max": 6.27770000000001
+      }
+    },
+    "filter-excel-accented": {
+      "label": "Filter 100k accented rows via the compiled Excel filter",
+      "time": {
+        "ms": 20.272899999999993,
+        "min": 19.722399999999993,
+        "max": 24.38220000000001
+      }
+    },
+    "csv-export": {
+      "label": "Export CSV, 10k rows x 9 cols",
+      "time": {
+        "ms": 9.326999999999998,
+        "min": 8.11160000000001,
+        "max": 10.949000000000012
+      }
+    }
+  }
+}

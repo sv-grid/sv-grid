@@ -267,6 +267,7 @@
 
     <div class="flex-1 min-h-0">
       <SvGrid responsive={true}
+      columnResize
         data={tasks}
         columns={[
           { field: 'id', header: 'ID', width: LEFT_W.id, editable: false,

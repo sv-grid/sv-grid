@@ -34,7 +34,7 @@ import { SvTreeSelect } from '@svgrid/grid'
 
 <div data-docs-demo="335-tree-select" data-height="420" data-code></div>
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTreeSelect, type TreeSelectNode } from '@svgrid/grid'
   const nodes: TreeSelectNode[] = [
@@ -110,7 +110,7 @@ its children.
 Hierarchies usually arrive flat (a `parentId` column). Fold them into
 `TreeSelectNode[]` once, then bind the selected leaf:
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { SvTreeSelect, type TreeSelectNode } from '@svgrid/grid'
   const flat = [
@@ -143,6 +143,49 @@ Hierarchies usually arrive flat (a `parentId` column). Fold them into
   `Enter` picks a leaf, `Escape` dismisses, and focus returns to the trigger.
 - `label`, `hint`, and `error` are wired via `aria-describedby`; pass `ariaLabel`
   when there is no visible label.
+
+## Sizes
+
+Every control takes the same three sizes, so a dense toolbar and a roomy form can share components.
+
+```svelte
+<script lang="ts">
+  import { SvTreeSelect } from '@svgrid/grid'
+
+  let treeSelect = $state('')
+</script>
+
+<SvTreeSelect bind:value={treeSelect} size="sm" />
+<SvTreeSelect bind:value={treeSelect} size="md" />
+<SvTreeSelect bind:value={treeSelect} size="lg" />
+```
+
+
+## In a form
+
+The shared field props behave the same on every editor: `label` names it, `hint` explains it, and `error` plus `invalid` mark it - which is why a validated form does not need per-component handling.
+
+```svelte
+<script lang="ts">
+  import { SvTreeSelect } from '@svgrid/grid'
+
+  let treeSelect = $state('')
+</script>
+
+<SvTreeSelect
+  bind:value={treeSelect}
+  label="Label"
+  hint="A short hint"
+  required
+/>
+
+<SvTreeSelect
+  bind:value={treeSelect}
+  label="Label"
+  error="Something is wrong"
+  invalid
+/>
+```
 
 ## See also
 

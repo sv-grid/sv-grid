@@ -32,6 +32,41 @@ explicit row-model pipelines. If you already think in
 
 ## Imports
 
+The example at the end of this page runs against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  let rows = $state<Person[]>(people)
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 200, editorType: 'text' },
+    { field: 'department', header: 'Department', width: 150, editorType: 'text' },
+    { field: 'city',       header: 'City',       width: 140, editorType: 'text' },
+    { field: 'age',        header: 'Age',        width: 90,  editorType: 'number' },
+    { field: 'salary',     header: 'Salary',     width: 130, editorType: 'number', format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```diff
 - import {
 -   useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel,
@@ -161,13 +196,6 @@ accepts a regular component if you prefer SFCs.
   matcher in via the column's `cell` snippet or use
   `externalFilter={true}` and run the matcher yourself.
 
-## See also
-
-- [Architecture](./architecture.md) - the headless engine + render
-  component split
-- [Migrating from AG Grid](./migrating-from-ag-grid.md) - sibling guide
-- [Why headless?](../why-headless.md) - the design rationale
-
 ## Frequently asked questions
 
 ### How long does it take to migrate from TanStack Table to SvGrid?
@@ -190,3 +218,18 @@ in one prop pass.
 Yes - `@svgrid/grid` is MIT-licensed, like TanStack Table. SvGrid
 additionally offers an optional paid `@svgrid/enterprise` pack for export, pivot, and
 import, which TanStack Table does not provide at all.
+
+## What you end up with
+
+The same model you had, with the rendering already written.
+
+```svelte {runnable}
+<SvGrid data={rows} {columns} sortable filterable pageable pageSize={3} selectable />
+```
+
+## See also
+
+- [Architecture](./architecture.md) - the headless engine + render
+  component split
+- [Migrating from AG Grid](./migrating-from-ag-grid.md) - sibling guide
+- [Why headless?](../why-headless.md) - the design rationale

@@ -15,6 +15,14 @@ filtered, sorted data - the "chart from the grid" enterprise feature.
 
 ![The grid's filtered and sorted rows flow through rowsToChartSpec into SvGridChart, which re-renders whenever the grid's filters or sorting change.](/docs-media/grid-charts.svg)
 
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, SvGridChart } from '@svgrid/grid'
+</script>
+```
+
 ```svelte
 <script lang="ts">
   import { SvGrid, SvGridChart, rowsToChartSpec, type SvGridApi } from '@svgrid/grid'
@@ -213,3 +221,89 @@ See the live [Integrated charts](https://svgrid.com/demos/147-integrated-charts/
 demo, or the [Chart wizard panel](https://svgrid.com/demos/152-chart-wizard/) -
 a pick-a-chart dialog whose type-gallery thumbnails are themselves live
 `SvGridChart` previews.
+
+## More examples
+
+### Scatter / bubble chart
+
+A scatter plot maps two numeric measures (x vs y); a bubble chart adds a third via dot radius. type: scatter with series points [{ x, y, r }]. Spend vs revenue, sized by deals, coloured by region, with an average-revenue reference line. Filter the grid and the cloud re-plots.
+
+<div data-docs-demo="150-scatter-bubble" data-height="560"></div>
+
+### Time-series chart (date axis)
+
+xType: time spaces points by ACTUAL time - irregular date gaps render proportionally - and shows real date ticks. A referenceLines target/SLA line spans the plot; toggle 100% stacked to read each day as a share of its total. Line, stacked area, or stacked bar.
+
+<div data-docs-demo="151-time-series-chart" data-height="560"></div>
+
+### Chart zoom + brush mini-map
+
+Drag a rectangle over a 180-day series to zoom in; double-click resets. A compact brush below shows the full range with a draggable window - drag the body to pan, edges to resize. Pairs with the crosshair tooltip + PNG/SVG export.
+
+<div data-docs-demo="153-chart-zoom-brush" data-height="560"></div>
+
+### Heatmap chart
+
+type: heatmap renders a colored grid (one cell per row/column) from the same categories + series shape. Choose a sequential or diverging color ramp; cell text auto-contrasts black/white. Filter the grid Channel column and the heatmap re-renders.
+
+<div data-docs-demo="154-chart-heatmap" data-height="560"></div>
+
+### Analytics: trend, log, drill
+
+Four story-telling chart features at once: overlay (SMA/EMA/linear regression), annotations pinned at named events, yScale: log for wide-range data, and onDrill that filters the grid to the rowIds of the clicked category. Click any day to drill.
+
+<div data-docs-demo="155-chart-analytics" data-height="560"></div>
+
+### Color-blind-safe pattern fills
+
+patternFallback: true layers a texture (stripe / crosshatch / dots / diagonal) on every series so two series with similar hues still read as distinct in grayscale or for readers with color-vision deficiency. Works on bars and area stacks.
+
+<div data-docs-demo="156-chart-patterns" data-height="560"></div>
+
+### Forecast: smooth + confidence band
+
+smooth: true bends the polyline into a monotone cubic curve that still passes through every point but flows between them. upperValues + lowerValues shade a translucent envelope around the forecast for at-a-glance uncertainty. 12 weeks actuals + 8 weeks forecast.
+
+<div data-docs-demo="157-chart-forecast-band" data-height="560"></div>
+
+### Waterfall (signed P&L)
+
+type: waterfall renders each bar starting where the previous one ended. waterfallTotals marks subtotal/total bars that span from 0. Bars colour-code by sign (green / red); total bars get a neutral slate. Connector lines link bar tops so the cumulative trend reads at a glance.
+
+<div data-docs-demo="158-chart-waterfall" data-height="560"></div>
+
+### Streaming chart (rolling window)
+
+Hit Start - prices stream in at 4 Hz. The buffer holds the last 60 ticks; older points drop off the left as new ones appear on the right. Re-aggregates via rowsToChartSpec so smoothing, brush, zoom all stay in play.
+
+<div data-docs-demo="159-chart-streaming" data-height="560"></div>
+
+### Funnel chart (signup conversion)
+
+type: funnel renders strictly-decreasing values as a stack of trapezoids. Each segment shows conversion vs. the top of the funnel inline; hover for the step drop-off. Click a segment to record a drill selection.
+
+<div data-docs-demo="160-chart-funnel" data-height="560"></div>
+
+### Radar chart (product comparison)
+
+type: radar plots each category as a spoke; every series draws a polygon connecting its values across the spokes. Shared scale makes two products read against each other directly. Click the legend to isolate one.
+
+<div data-docs-demo="161-chart-radar" data-height="560"></div>
+
+### Calendar heatmap (year of days)
+
+type: calendar renders a GitHub-commit-style 7-row x ~53-column grid. Each cell shaded by its value; days with no value render as outlined blanks so missing data reads as missing. Filter the grid Type column and the heatmap re-aggregates.
+
+<div data-docs-demo="162-chart-calendar" data-height="560"></div>
+
+### Tree-map (sales by region·category)
+
+The canonical BI tree-map: revenue broken down hierarchically into nested rectangles - bigger value = bigger rectangle. The squarified algorithm keeps every cell close to a square so labels stay readable. Switch the drill order (Region → Category vs. Category → Region) to compare the same data two ways.
+
+<div data-docs-demo="164-chart-treemap" data-height="560"></div>
+
+### Sankey diagram (user flow)
+
+type: sankey lays nodes out in columns by longest-path depth and renders flow links as bezier ribbons whose width = link value in pixels. User journey from acquisition channel through onboarding to outcome. Hover any ribbon for the source -> target value.
+
+<div data-docs-demo="165-chart-sankey" data-height="560"></div>

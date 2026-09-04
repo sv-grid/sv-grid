@@ -1,6 +1,6 @@
-name: Daily blog post
+name: Blog post (twice weekly)
 
-# Generate one brand-new blog post per day with the Anthropic API and commit it.
+# Generate a brand-new blog post twice a week with the Anthropic API and commit it.
 # The subject is the next unwritten entry of tools/blog-topics.json (a search
 # query with the demos and docs the post must link); an empty queue is a
 # no-op run. The post is appended to the END of the publish queue (dated after
@@ -16,8 +16,10 @@ name: Daily blog post
 #   ANTHROPIC_WORKSPACE_ID - required when the key is an identity-linked key,
 #     which rejects every request without it. Console -> Settings -> Workspaces.
 #
-# 05:23 UTC: off-peak, non-round minute, before the npm publish (06:37) and the
-# website rebuild (07:12).
+# Tue + Fri 05:23 UTC: two a week, at uneven gaps of 3 and 4 days. Off-peak and
+# a non-round minute, before the npm publish (06:37) and the website rebuild
+# (07:12). The publish drip is spaced to match, so the queue neither grows nor
+# drains - see the date pick in tools/generate-blog-post.mjs.
 
 on:
   workflow_dispatch:
@@ -27,7 +29,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: '23 5 * * *'
+    - cron: '23 5 * * 2,5'
 
 permissions:
   contents: write

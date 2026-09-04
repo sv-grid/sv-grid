@@ -23,7 +23,28 @@ error / RTL / a11y). Handles `text`, `email`, `url`, `tel` and `search`. As a
 grid cell editor it honours the interaction contract: Enter commits, Escape
 cancels.
 
-```svelte
+The examples on this page import from `@svgrid/grid`:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvColorInput, SvDurationInput, SvMaskedInput, SvNumberInput, SvOtpInput, SvPasswordInput, SvPhoneInput, SvRichText, SvTextArea, SvTextInput } from '@svgrid/grid'
+
+  // The bound value behind each example below.
+  let name = $state('')
+  let notes = $state('')
+  let qty = $state(1)
+  let pw = $state('')
+  let code = $state('')
+  let color = $state('#2563eb')
+  let mins = $state(90)
+  let phone = $state('')
+  let sku = $state('')
+  let note = $state('')
+  let html = $state('<p>Release notes</p>')
+</script>
+```
+
+```svelte {runnable}
 <SvTextInput value={name} onChange={(v) => (name = v)} placeholder="Full name" clearable />
 ```
 
@@ -37,7 +58,7 @@ editor-contract props (`label`, `hint`, `error`, `required`, `invalid`, `size`,
 A multi-line text editor with optional auto-grow and a character counter. In a
 cell: Escape cancels; Ctrl/Cmd+Enter commits (a bare Enter inserts a newline).
 
-```svelte
+```svelte {runnable}
 <SvTextArea value={notes} onChange={(v) => (notes = v)} rows={4} autoGrow maxlength={280} showCount />
 ```
 
@@ -92,7 +113,7 @@ Props: `value` (number | null), `onChange(value)`, `min`, `max`, `step`,
 
 Password field with a reveal toggle and an optional 4-level strength meter.
 
-```svelte
+```svelte {runnable}
 <SvPasswordInput value={pw} onChange={(v) => (pw = v)} showStrength />
 ```
 
@@ -115,7 +136,7 @@ Props: `value`, `mask`, `onChange(masked, raw, complete)`, `size`, `disabled`.
 A country dial-code selector plus a national number field; emits an E.164-style
 string (`+<dial><digits>`). Country data is bundled (`COUNTRIES`) and extensible.
 
-```svelte
+```svelte {runnable}
 <SvPhoneInput value={phone} country="US"
   onChange={(v, parts) => (phone = v)} />
 ```
@@ -128,7 +149,7 @@ Props: `value`, `country` (ISO code), `onChange(value, { country, dial, national
 A color swatch that opens a portalled popover with a hex field, native picker and
 preset palette. Emits a `#rrggbb` string.
 
-```svelte
+```svelte {runnable}
 <SvColorInput value={color} onChange={(hex) => (color = hex)} />
 ```
 
@@ -140,7 +161,7 @@ A lightweight WYSIWYG editor over a `contentEditable` region, emitting HTML.
 Bold / italic / underline / strike, headings, lists, quote, code block,
 alignment, links, undo/redo; configurable toolbar. Bindable `value` (HTML).
 
-```svelte
+```svelte {runnable}
 <SvRichText bind:value={html} placeholder="Write something…" />
 <SvRichText bind:value={note} tools={['bold', 'italic', '|', 'ul', 'ol', '|', 'link', 'clear']} />
 ```
@@ -164,3 +185,11 @@ recipes:
 - [SvOtpInput](./sv-otp-input.md) - a segmented one-time-code / PIN entry.
 - [SvDurationInput](./sv-duration-input.md) - a human-friendly duration-in-minutes editor.
 - [SvTagsInput](./sv-tags-input.md) - an editable free-form chips input.
+
+## More examples
+
+### Text inputs
+
+Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners), SvPasswordInput (reveal + strength), SvMaskedInput (pattern mask), SvPhoneInput (country dial code + national mask) and SvColorInput (swatch + palette popover). Each a SvGrid cell editor, standalone too.
+
+<div data-docs-demo="254-text-inputs" data-height="420"></div>

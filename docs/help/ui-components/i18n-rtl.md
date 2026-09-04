@@ -75,3 +75,11 @@ weekday names, number grouping and separators follow the `locale` you pass:
 ```
 
 The same three levers - `dir`, `messages`, `locale` - localize the entire kit.
+
+## More examples
+
+### RTL + i18n stress
+
+Six locales (en, de, fr-CA, ja, ar, he). Direction flips, full string translation, Intl-driven currency/date/number, mixed-direction safe via <bdi>.
+
+<div data-docs-demo="38-rtl-i18n" data-height="460"></div>

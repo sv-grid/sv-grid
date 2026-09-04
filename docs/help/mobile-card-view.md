@@ -23,6 +23,39 @@ table* and stop being unusable on a phone - pinned columns eating the
 viewport, `fitColumns` crushing every column to nothing, no touch
 scroll. For that, flip one opt-in prop:
 
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+
+  type Person = {
+    id: number
+    name: string
+    department: string
+    city: string
+    age: number
+    salary: number
+  }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   department: 'Engineering', city: 'London',   age: 36, salary: 142000 },
+    { id: 2, name: 'Grace Hopper',   department: 'Engineering', city: 'New York', age: 45, salary: 168000 },
+    { id: 3, name: 'Linus Torvalds', department: 'Platform',    city: 'Portland', age: 54, salary: 155000 },
+    { id: 4, name: 'Radia Perlman',  department: 'Networking',  city: 'Seattle',  age: 49, salary: 161000 },
+    { id: 5, name: 'Barbara Liskov', department: 'Platform',    city: 'Boston',   age: 52, salary: 172000 },
+  ]
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150 },
+    { field: 'city',       header: 'City',       width: 130 },
+    { field: 'age',        header: 'Age',        width: 80 },
+    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+```
+
 ```svelte
 <SvGrid data={rows} columns={columns} responsive={true} />
 ```
@@ -102,7 +135,7 @@ A ticket board that renders as a SvGrid on desktop and as a card list
 on mobile. Both views write through the same `setCell` helper so the
 data layer doesn't care which one is active.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import {
     SvGrid,
@@ -313,12 +346,6 @@ card. If your grid is denser, pick a card height closer to your row
 height (e.g. 56 px for compact grids), and put the title + meta in
 one line.
 
-## See also
-
-- [Demo 81 - Mobile card view](../../examples/src/demos/81-mobile-card-view.svelte) - full source with KPI strip, view-mode toggle, and per-priority colour bars
-- [Kanban board mode](./rows/kanban-board.md) - the grid's built-in `board` prop renders rows as cards in lanes with drag-and-drop
-- [Conditional form schema](./conditional-form-schema.md) - if your card form needs declarative field-visibility rules
-
 ## Frequently asked questions
 
 ### Is SvGrid responsive / mobile-friendly?
@@ -351,3 +378,37 @@ regardless of which view produced it.
 Yes. The headless engine can drive multiple views from one data source - the
 mobile card view and the Kanban demo are the same pattern with different
 rendering.
+
+## Try it
+
+`responsive` measures the grid, not the window, so it fires for a grid in a
+narrow panel on a wide screen too. Drag the divider: below the breakpoint the
+`hideBelow` columns drop out.
+
+```svelte {runnable}
+<script lang="ts">
+  const responsiveCols: GridColumns<Person> = [
+    { field: 'name',       header: 'Name',       width: 190 },
+    { field: 'department', header: 'Department', width: 150, hideBelow: 820 },
+    { field: 'city',       header: 'City',       width: 130, hideBelow: 700 },
+    { field: 'age',        header: 'Age',        width: 80,  hideBelow: 620 },
+    { field: 'salary',     header: 'Salary',     width: 130, hideBelow: 560,
+      format: { type: 'currency', currency: 'USD' } },
+  ]
+</script>
+
+<div class="pane">
+  <SvGrid data={people} columns={responsiveCols} responsive={{ breakpoint: 900 }} />
+</div>
+
+<style>
+  /* Resizable, so the breakpoint is reachable without touching the window. */
+  .pane { resize: horizontal; overflow: auto; min-width: 320px; max-width: 100%; }
+</style>
+```
+
+## See also
+
+- [Demo 81 - Mobile card view](../../examples/src/demos/81-mobile-card-view.svelte) - full source with KPI strip, view-mode toggle, and per-priority colour bars
+- [Kanban board mode](./rows/kanban-board.md) - the grid's built-in `board` prop renders rows as cards in lanes with drag-and-drop
+- [Conditional form schema](./conditional-form-schema.md) - if your card form needs declarative field-visibility rules

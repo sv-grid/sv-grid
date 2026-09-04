@@ -10,7 +10,7 @@ the kit's state machine, keyboard handling and ARIA - and none of its styles.
 A core is a factory that takes **reactive getters** for its inputs and returns
 reactive state, actions, and **prop-getters** you spread onto your own elements.
 
-```svelte
+```svelte {runnable}
 <script lang="ts">
   import { createListbox, type ListboxValue } from '@svgrid/grid'
 
@@ -179,3 +179,45 @@ The styled editors also share a small props contract (`SvEditorProps`):
 into the right `aria-invalid` / `aria-required` / `aria-describedby` attributes,
 and `<SvField>` renders the label + hint + error chrome - both exported if you
 want them on your own markup.
+
+## More examples
+
+### Headless editors
+
+Headless-first, like the grid: createListbox is the state machine behind SvListBox (roving focus, single/multi selection, keyboard, ARIA) exposed as prop-getters you spread onto YOUR own markup. One core drives both the styled SvListBox and a custom chip-cloud render, bound to one value.
+
+<div data-docs-demo="260-headless-editors" data-height="420"></div>
+
+## Building your own checkbox
+
+A headless factory takes its reactive inputs as **getters**, not values -
+that is how it tracks your state without owning it. It hands back the state to
+read and a props bag to spread, and you write every element yourself.
+
+```svelte {runnable}
+<script lang="ts">
+  import { createCheckbox } from '@svgrid/grid'
+
+  let agreed = $state(false)
+
+  // Getters, not values: passing the value would capture false forever.
+  const box = createCheckbox({
+    checked: () => agreed,
+    onChange: (v) => (agreed = v),
+  })
+</script>
+
+<button {...box.boxProps()} class="my-box" onclick={box.toggle}>
+  {box.checked ? 'x' : ''}
+</button>
+<span>Terms accepted: {agreed}</span>
+
+<style>
+  .my-box {
+    width: 20px; height: 20px;
+    display: grid; place-items: center;
+    border: 1px solid currentColor; border-radius: 4px;
+    background: transparent; cursor: pointer; font: 12px/1 monospace;
+  }
+</style>
+```

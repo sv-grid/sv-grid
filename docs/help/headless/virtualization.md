@@ -112,6 +112,66 @@ const colVirtualizer = createColumnVirtualizer({
 `VirtualItem`, `VirtualizerOptions`, and `VirtualizerState` are exported for
 type annotations.
 
+## It is already on
+
+Row virtualization is the default, which is why a large grid needs no
+configuration to stay responsive. The DOM holds the visible window, not the row
+count - open the inspector on the grid below and you will find a few dozen rows,
+not five thousand.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Row = { id: number; label: string; n: number }
+
+  const many: Row[] = Array.from({ length: 5000 }, (_, i) => ({
+    id: i,
+    label: 'Row ' + i,
+    n: (i * 37) % 1000,
+  }))
+
+  const columns: GridColumns<Row> = [
+    { field: 'label', header: 'Label', width: 200 },
+    { field: 'n',     header: 'Value', width: 120 },
+  ]
+</script>
+
+<SvGrid data={many} {columns} sortable />
+```
+
+
+## Columns need their own opt-in
+
+Row virtualization still renders every column of every visible row, so a wide
+grid stays slow until you add `columnVirtualization`. The trade is real:
+off-screen columns are not in the DOM, so anything that walks the row's cells -
+a stylesheet selecting the nth child, a screenshot test - sees only the window.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Wide = Record<string, number>
+
+  const names = Array.from({ length: 60 }, (_, i) => 'c' + i)
+
+  const wide: Wide[] = Array.from({ length: 2000 }, (_, r) => {
+    const row: Wide = { id: r }
+    names.forEach((name, c) => (row[name] = (r * (c + 1)) % 500))
+    return row
+  })
+
+  const columns: GridColumns<Wide> = names.map((name) => ({
+    field: name,
+    header: name.toUpperCase(),
+    width: 90,
+  }))
+</script>
+
+<SvGrid data={wide} {columns} columnVirtualization />
+```
+
 ## See also
 
 - [Build a table from scratch](./build-a-table.md) - render non-virtualized first

@@ -223,14 +223,6 @@ configs. In practice that means a 100k-row source pivots in under
 million-row sources, run the pivot on the server and pass the result
 straight into `data` / `columns`.
 
-## See also
-
-- [Column groups](./columns/column-groups.md) - multi-level column
-  headers; pivot uses these for the column-axis tree.
-- [Demo 52 - Pivot table + Designer](../../examples/src/demos/52-pivot-table.svelte)
-- [Data export and printing - Enterprise](./export.md) - the result of
-  `createPivotModel` exports like any other grid view.
-
 ## Frequently asked questions
 
 ### Does SvGrid support pivot tables?
@@ -250,3 +242,61 @@ each row/column intersection.
 
 Yes. A pivot view exports to Excel/PDF/CSV like any other grid view through the
 same `@svgrid/enterprise` export helpers.
+
+## More examples
+
+### Pivot mode grid
+
+Built on <SvPivotDesigner panelPosition="right">: a docked tool panel with a PIVOT MODE toggle, field checklist, and Columns / Rows / Values wells (drag-and-drop). OFF renders the flat participant grid (column groups, flags, ratings, inline filter row); ON pivots Language -> Country x Game with heat-mapped avg measures.
+
+<div data-docs-demo="360-pivot-mode-grid" data-height="560"></div>
+
+### Pivot - Drill-through
+
+Click any pivot value cell - leaf, subtotal, or grand total - and the right rail opens with the source facts behind the aggregate. Total + count + average always match the cell.
+
+<div data-docs-demo="122-pivot-drill-through" data-height="560"></div>
+
+### Pivot - Totals + Subtotals
+
+Live toggles for grandTotalRow / grandTotalCol / rowSubtotals on createPivotModel. Subtotals get a Σ badge, the grand-total row is tinted accent, the grand-total column is an amber stripe.
+
+<div data-docs-demo="123-pivot-totals" data-height="560"></div>
+
+### Pivot - OLAP cube
+
+Full BI dashboard around an OLAP cube: page header, 5 KPI tiles with QoQ sparklines, left slicer rail (region multi-select, year picker, country search, view-mode, density, heatmap toggle), cube in Tabular form (one column per row dim), right insights rail (top YoY movers, top contributors).
+
+<div data-docs-demo="124-pivot-olap" data-height="560"></div>
+
+### Pivot - Linked charts
+
+Pivot cube wired to a horizontal bar chart + multi-year line chart. Click any cube row to drill the charts one level deeper (region → country → product); scope KPI strip tracks selection; charts are zero-dep inline SVG.
+
+<div data-docs-demo="125-pivot-charts" data-height="560"></div>
+
+### Pivot - Analysis workspace
+
+Excel-style pivot analysis: left-rail field picker (search + checkboxes) feeding four wells (Rows / Columns / Data / Filters), live re-pivot on every layout change, click-to-cycle aggregator chips, data-bar Total Spend cells + amber Avg Rating strips, subtotal + grand-total row tints.
+
+<div data-docs-demo="166-pivot-analysis-workspace" data-height="560"></div>
+
+### Pivot - Designer component
+
+SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-rail field picker (search + grouped), four drop wells (Filters / Columns / Rows / Values), drag-and-drop between wells, per-chip aggregator + filter menus, presets toolbar, and an inline pivot grid driven by createPivotModel. Single bindable `layout` prop so the page can persist or restore it.
+
+<div data-docs-demo="168-pivot-designer" data-height="560"></div>
+
+### Pivot chart
+
+One drag-drop pivot layout, two synced views: <SvPivotDesigner chartable> renders the SAME Rows / Columns / Values as either an expandable pivot grid or a chart (Columns -> series, Values -> measure). Powered by the enterprise pivot engine.
+
+<div data-docs-demo="359-pivot-chart" data-height="560"></div>
+
+## See also
+
+- [Column groups](./columns/column-groups.md) - multi-level column
+  headers; pivot uses these for the column-axis tree.
+- [Demo 52 - Pivot table + Designer](../../examples/src/demos/52-pivot-table.svelte)
+- [Data export and printing - Enterprise](./export.md) - the result of
+  `createPivotModel` exports like any other grid view.
