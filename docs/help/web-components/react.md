@@ -544,174 +544,41 @@ export default function App() {
 
 <!-- END generated examples -->
 
-## Using the raw element instead
+## Rendering into cells
 
-The wrapper is a thin layer over `<sv-grid>`; nothing stops you using the
-element directly, and the rest of this page shows how. Do that if you want to
-avoid the extra dependency edge, or if you are already managing the element
-yourself.
+You cannot put a React component inside a cell: cell rendering is a Svelte
+compile-time feature, and there is nothing to hand across the boundary. Column
+`format` options, `fieldFn` and HTML-string renderers cover badges, links and
+formatted values.
 
-### The React version matters
-
-- **React 19+** passes non-primitive props to a custom element as
-  **properties**. `<sv-grid columns={cols} data={rows} />` works directly.
-- **React 18 and earlier** stringify every prop onto an **attribute**, so
-  `columns` arrives as `"[object Object]"` and the grid renders empty. You must
-  assign objects through a ref.
-
-The ref approach works on both, so it is what the examples below use.
-
-## A working grid
-
-The editing grid the code below builds, running as the Svelte component.
-
-<div data-docs-demo="05-inline-editing" data-height="470"></div>
-
-```tsx
-import { useEffect, useRef, useState } from 'react'
-import '@svgrid/grid-wc' // side effect: registers <sv-grid>
-
-type Row = { id: string; name: string; status: 'active' | 'inactive'; salary: number }
-
-declare module 'react' {
-  namespace JSX {
-    interface IntrinsicElements {
-      'sv-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        sortable?: boolean
-        filterable?: boolean
-        'enable-inline-editing'?: boolean
-      }
-    }
-  }
-}
-
-export default function GridScreen() {
-  const ref = useRef<HTMLElement | null>(null)
-  const [rows, setRows] = useState<Row[]>([
-    { id: 'P-1', name: 'Ada Lovelace', status: 'active', salary: 145_000 },
-    { id: 'P-2', name: 'Linus Torvalds', status: 'active', salary: 188_000 },
-    { id: 'P-3', name: 'Grace Hopper', status: 'inactive', salary: 152_000 },
-  ])
-
-  // Arrays and objects are PROPERTIES. There is no attribute form for them.
-  useEffect(() => {
-    const el = ref.current as never as { data: Row[]; columns: unknown[] } | null
-    if (!el) return
-    el.columns = [
-      { field: 'id', header: 'ID', width: 100, editable: false },
-      { field: 'name', header: 'Name', width: 220, editorType: 'text' },
-      {
-        field: 'status',
-        header: 'Status',
-        width: 130,
-        editorType: 'select',
-        editorOptions: ['active', 'inactive'],
-      },
-      {
-        field: 'salary',
-        header: 'Salary',
-        width: 140,
-        align: 'right',
-        format: { type: 'number', options: { style: 'currency', currency: 'USD' } },
-      },
-    ]
-    el.data = rows
-  }, [rows])
-
-  // Grid callbacks arrive as DOM CustomEvents; detail is the callback argument.
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const onEdit = (e: Event) => {
-      const { rowIndex, columnId, newValue } = (e as CustomEvent).detail
-      setRows((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, [columnId]: newValue } : r)))
-    }
-    el.addEventListener('cellvaluechange', onEdit)
-    return () => el.removeEventListener('cellvaluechange', onEdit)
-  }, [])
-
-  return (
-    <div style={{ height: 480 }}>
-      {/* Primitives can stay in JSX as attributes. */}
-      <sv-grid ref={ref as React.RefObject<HTMLElement>} sortable filterable enable-inline-editing />
-    </div>
-  )
-}
-```
-
-
-## A small hook, if you set many props
-
-`groupBy` and `pinnedTopRows` are arrays, which is exactly what the hook is for.
-
-<div data-docs-demo="07-grouping-aggregation" data-height="470"></div>
-
-Rather than one `useEffect` per prop, assign a bag of them:
-
-```ts
-function useGridProps(ref: React.RefObject<HTMLElement | null>, props: Record<string, unknown>) {
-  useEffect(() => {
-    const el = ref.current as never as Record<string, unknown> | null
-    if (!el) return
-    for (const [k, v] of Object.entries(props)) el[k] = v
-  }, [ref, props])
-}
-```
-
-```tsx
-useGridProps(ref, {
-  columns,
-  data: rows,
-  groupBy: ['status'],
-  pageable: true,
-  pinnedTopRows: [totals],
-})
-```
-
-Memoise the object (`useMemo`) or it re-assigns on every render.
-
-
-## Calling the grid
-
-```tsx
-useEffect(() => {
-  const el = ref.current as never as { api?: { exportCsv(): void } } | null
-  el?.api?.exportCsv()
-}, [])
-```
-
-`apiready` fires once at mount, and the handle is also parked on the element, so
-reading `el.api` later works even if you never bound a listener.
-
-## Style isolation
-
-If the grid is going into a page whose CSS you do not control - a host app with
-aggressive global resets, a CMS template - swap the tag for
-[`<sv-grid-shadow>`](./shadow-dom.md). Same props, same events; page CSS stops
-at the boundary.
-
-
-## What you give up
-
-Column `format` and HTML-string renderers: the substitute for a React component in a cell.
+Column `format` and HTML-string renderers, which is what to reach for instead:
 
 <div data-docs-demo="10-custom-cells-and-themes" data-height="480"></div>
 
-You cannot render a React component inside a cell. Column `format` options,
-`fieldFn` and HTML-string renderers cover badges, links and formatted values;
-anything richer needs the Svelte component. See
-[limitations](./limitations.md).
+If a grid's cells must render your own components, use the Svelte component
+directly. See [limitations](./limitations.md).
 
 ## Why it lives in `@svgrid/grid-wc`
 
 Rather than a separate `@svgrid/react` package: one version to keep in step
 with the element instead of two, and `react` is an OPTIONAL peer dependency, so
-a plain-HTML consumer of `@svgrid/grid-wc` never installs React. The wrapper is
-a subpath import and about 1.5 KB - it reuses the one element bundle rather
-than shipping a second copy of the grid.
+a plain-HTML consumer never installs React. The wrapper is a subpath import and
+about 1.4 KB - it reuses the one element bundle rather than shipping a second
+copy of the grid.
+
+## The raw element
+
+`<SvGrid>` wraps `<sv-grid>`, and nothing stops you using the element
+directly - it is the same grid, and the wrapper is a thin layer over it. You
+would be taking on the property assignment, the event binding and the two
+ordering problems the wrapper handles, so do it only if you have a reason to.
+
+[Quick start](./quick-start.md) covers the element, and the
+[reference](./sv-grid.md) lists every property, attribute and event.
 
 ## See also
 
+- [All frameworks](./frameworks.md) - the same examples in Vue and Angular.
 - [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
-- [TypeScript](./typescript.md) - typing the element and its events.
-- [Vue](./vue.md) and [Angular](./angular.md).
+- [TypeScript](./typescript.md) - typing the element, if you use it directly.
+- [Limitations](./limitations.md) - what cannot cross the boundary.

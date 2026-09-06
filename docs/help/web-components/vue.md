@@ -440,123 +440,37 @@ async function exportXlsx() {
 
 <!-- END generated examples -->
 
-## Using the raw element instead
-
-Vue binds properties to custom elements natively, so the element works directly
-too - it just needs the build config and the modifiers the wrapper removes.
-
-## Tell Vue the tag is a custom element
-
-Otherwise Vue warns about an unknown component.
-
-```js
-// vite.config.js
-import vue from '@vitejs/plugin-vue'
-
-export default {
-  plugins: [
-    vue({
-      template: {
-        compilerOptions: {
-          isCustomElement: (tag) => tag.startsWith('sv-grid'),
-        },
-      },
-    }),
-  ],
-}
-```
-
-## A working grid
-
-What `enable-inline-editing` and `@cellvaluechange` give you.
-
-<div data-docs-demo="05-inline-editing" data-height="470"></div>
-
-`.prop` is the whole trick: it forces a property assignment instead of an
-attribute, which is what arrays and objects need.
-
-```vue
-<script setup>
-import { ref } from 'vue'
-import '@svgrid/grid-wc'
-
-const columns = [
-  { field: 'name', header: 'Name', editorType: 'text' },
-  { field: 'country', header: 'Country' },
-  {
-    field: 'amount',
-    header: 'Amount',
-    align: 'right',
-    format: { type: 'number', options: { style: 'currency', currency: 'EUR' } },
-  },
-]
-
-const rows = ref([
-  { name: 'Ada', country: 'UK', amount: 145000 },
-  { name: 'Linus', country: 'FI', amount: 188000 },
-])
-
-function onCellValueChange(e) {
-  const { rowIndex, columnId, newValue } = e.detail
-  rows.value[rowIndex][columnId] = newValue
-}
-</script>
-
-<template>
-  <!-- Objects and arrays: `.prop` modifier. Primitives: plain attributes. -->
-  <sv-grid
-    :columns.prop="columns"
-    :data.prop="rows"
-    sortable
-    filterable
-    enable-inline-editing
-    style="display: block; height: 480px"
-    @cellvaluechange="onCellValueChange"
-  />
-</template>
-```
-
-Vue's `@event` binding works on `CustomEvent` directly, so every one of the
-grid's events is available with no adapter.
-
-
-## Calling the grid
-
-The api reached through a template ref.
-
-<div data-docs-demo="90-selection-api" data-height="460"></div>
-
-```vue
-<script setup>
-import { ref, onMounted } from 'vue'
-const grid = ref(null)
-onMounted(() => grid.value.api.exportCsv())
-</script>
-
-<template>
-  <sv-grid ref="grid" />
-</template>
-```
-
-
 ## Nuxt
 
-The grid a `<ClientOnly>` block renders once hydrated.
-
-<div data-docs-demo="02-sort-filter-paginate" data-height="460"></div>
-
-Custom elements are client-only. Register the import in a client plugin, or
-wrap the grid in `<ClientOnly>`:
+Custom elements are client-only, and so is the wrapper that renders one. Import
+it in a client plugin, or keep the grid inside `<ClientOnly>`:
 
 ```vue
 <ClientOnly>
-  <sv-grid :columns.prop="columns" :data.prop="rows" />
+  <SvGrid :data="rows" :columns="columns" sortable filterable />
 </ClientOnly>
 ```
 
+<div data-docs-demo="02-sort-filter-paginate" data-height="460"></div>
+
+## Rendering into cells
+
+You cannot put a Vue component inside a cell: cell rendering is a Svelte
+compile-time feature. Column `format` options, `fieldFn` and HTML-string
+renderers cover badges, links and formatted values - see
+[limitations](./limitations.md).
+
+## The raw element
+
+Vue binds properties to custom elements natively, so `<sv-grid>` works
+directly too. The difference is what you take on: the `isCustomElement` build
+config, and a `.prop` modifier on every object binding.
+
+[Quick start](./quick-start.md) covers the element, and the
+[reference](./sv-grid.md) lists every property, attribute and event.
 
 ## See also
 
+- [All frameworks](./frameworks.md) - the same examples in React and Angular.
 - [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
-- [Limitations](./limitations.md) - no Vue components inside cells.
-- [Shadow DOM](./shadow-dom.md) - style isolation for embedded grids.
+- [Limitations](./limitations.md) - what cannot cross the boundary.

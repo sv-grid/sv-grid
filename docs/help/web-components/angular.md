@@ -534,127 +534,43 @@ export class AppComponent {
 
 <!-- END generated examples -->
 
-## Using the raw element instead
-
-Angular binds `[prop]` and `(event)` to custom elements natively, so
-`<sv-grid>` works directly too - it just needs `CUSTOM_ELEMENTS_SCHEMA` in
-every component that shows one, and no inputs are typed.
-
-## Allow custom elements
-
-Without `CUSTOM_ELEMENTS_SCHEMA`, Angular treats `<sv-grid>` as an unknown
-component and fails the build.
-
-```ts
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
-
-@Component({
-  standalone: true,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  // ...
-})
-export class GridScreen {}
-```
-
-## A working grid
-
-The editing grid the component below builds.
-
-<div data-docs-demo="05-inline-editing" data-height="470"></div>
-
-Angular's `[prop]` binding assigns a **property**, which is exactly what arrays
-and objects need. Primitives can be attributes or bindings.
-
-```ts
-import { Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core'
-import '@svgrid/grid-wc'
-
-@Component({
-  selector: 'app-grid-screen',
-  standalone: true,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  template: `
-    <sv-grid
-      [columns]="columns"
-      [data]="rows()"
-      sortable
-      filterable
-      enable-inline-editing
-      style="display:block;height:480px"
-      (cellvaluechange)="onCellValueChange($event)"
-    ></sv-grid>
-  `,
-})
-export class GridScreen {
-  columns = [
-    { field: 'name', header: 'Name', editorType: 'text' },
-    { field: 'country', header: 'Country' },
-    {
-      field: 'amount',
-      header: 'Amount',
-      align: 'right',
-      format: { type: 'number', options: { style: 'currency', currency: 'EUR' } },
-    },
-  ]
-
-  rows = signal([
-    { name: 'Ada', country: 'UK', amount: 145000 },
-    { name: 'Linus', country: 'FI', amount: 188000 },
-  ])
-
-  onCellValueChange(e: Event) {
-    const { rowIndex, columnId, newValue } = (e as CustomEvent).detail
-    this.rows.update((rs) => rs.map((r, i) => (i === rowIndex ? { ...r, [columnId]: newValue } : r)))
-  }
-}
-```
-
-`(eventname)` binds to the `CustomEvent` directly, so every grid event is
-available with no adapter.
-
-## Calling the grid
-
-The api reached through `@ViewChild`.
-
-<div data-docs-demo="90-selection-api" data-height="460"></div>
-
-```ts
-import { ElementRef, ViewChild, AfterViewInit } from '@angular/core'
-
-export class GridScreen implements AfterViewInit {
-  @ViewChild('grid') gridRef!: ElementRef<HTMLElement & { api?: { exportCsv(): void } }>
-
-  ngAfterViewInit() {
-    this.gridRef.nativeElement.api?.exportCsv()
-  }
-}
-```
-
-```html
-<sv-grid #grid [columns]="columns" [data]="rows()"></sv-grid>
-```
-
-
 ## Change detection
 
-Grouping through `[groupBy]`: replace the array, do not mutate it.
+The element manages its own rendering, so Angular's change detection does not
+need to see inside it. Replace arrays rather than mutating them -
+`rows.update(...)`, not `rows().push(...)` - so the property assignment
+actually changes and the grid sees new data.
+
+Grouping through `[groupBy]` is the clearest case: replace the array.
 
 <div data-docs-demo="07-grouping-aggregation" data-height="470"></div>
-
-The element manages its own rendering, so Angular's change detection does not
-need to see inside it. Replace arrays rather than mutating them - `rows.update`
-above, not `rows().push(...)` - so the property assignment actually changes and
-the grid sees new data.
-
 
 ## Server-side rendering
 
 A custom element only exists in the browser. Under Angular Universal, import
-`@svgrid/grid-wc` in a browser-only path or guard on `isPlatformBrowser`.
+`@svgrid/grid-wc/angular` in a browser-only path, or guard on
+`isPlatformBrowser`.
 
+## Rendering into cells
+
+You cannot put an Angular component inside a cell: cell rendering is a Svelte
+compile-time feature. Column `format` options, `fieldFn` and HTML-string
+renderers cover badges, links and formatted values - see
+[limitations](./limitations.md).
+
+## The raw element
+
+Angular binds `[prop]` and `(event)` to custom elements natively, so
+`<sv-grid>` works without the wrapper - but then it is an unknown element:
+every component that shows one needs `CUSTOM_ELEMENTS_SCHEMA`, and no input
+is typed. Importing `SvGridComponent` is what removes both, which is why the
+selector is the element's own tag.
+
+[Quick start](./quick-start.md) covers the element, and the
+[reference](./sv-grid.md) lists every property, attribute and event.
 
 ## See also
 
+- [All frameworks](./frameworks.md) - the same examples in React and Vue.
 - [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
-- [Limitations](./limitations.md) - no Angular components inside cells.
-- [Shadow DOM](./shadow-dom.md) - style isolation for embedded grids.
+- [Limitations](./limitations.md) - what cannot cross the boundary.
