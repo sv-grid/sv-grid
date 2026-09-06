@@ -43,16 +43,27 @@ the same component matches. `.api` on the component gives the grid api.
 
 ## Examples
 
-Nine complete apps, each one click from running. **Open in StackBlitz**
-boots a full editable project - no local install, nothing to configure - and
-every one is compiled in this repository's CI, so what you open is what works.
+Nine complete apps. Each one is **running on this page** - sort it,
+filter it, edit a cell - above the code that produces it. **Open in StackBlitz**
+then boots the whole project, editable, with no local install and nothing to
+configure, and every one is compiled in this repository's CI, so what you open
+is what works.
 
 They all share the same typed `data.ts`, so the only thing that changes
 between recipes is the grid.
 
+A note on the previews: the grid you can touch is driven by a Svelte host
+rather than a Angular one. It is not a recording or a
+lookalike - it renders through the same component `<sv-grid>` renders, with
+the same data and the same props as the listing below it, so the only thing
+that differs from the Angular app is who sets those props. Click **Open in
+StackBlitz** to run the real Angular one.
+
 ### A first grid
 
 Rows, columns, and the two features almost every table wants.
+
+<div data-docs-mirror="basic" data-height="420"></div>
 
 <div data-docs-sandbox="angular:basic" data-title="A first grid"></div>
 
@@ -80,6 +91,8 @@ export class AppComponent {
 ### Sorting and filtering
 
 A filter row under the headers, multi-column sort, and the current sort read back into your own state.
+
+<div data-docs-mirror="sorting-filtering" data-height="460"></div>
 
 <div data-docs-sandbox="angular:sorting-filtering" data-title="Sorting and filtering"></div>
 
@@ -126,6 +139,8 @@ export class AppComponent {
 ### Editing and saving
 
 Inline editing, with each committed edit arriving through `cellvaluechange`. Swap the local update for your save call.
+
+<div data-docs-mirror="editing" data-height="460"></div>
 
 <div data-docs-sandbox="angular:editing" data-title="Editing and saving"></div>
 
@@ -178,6 +193,8 @@ export class AppComponent {
 
 Checkboxes, with the selected rows handed straight to you - both the selection map and the rows themselves.
 
+<div data-docs-mirror="selection" data-height="460"></div>
+
 <div data-docs-sandbox="angular:selection" data-title="Row selection"></div>
 
 ```ts {nocheck}
@@ -228,6 +245,8 @@ export class AppComponent {
 
 Group by one or two columns with an aggregate in the group row. `groupBy` is an array, so it is one of the props that can only be a property.
 
+<div data-docs-mirror="grouping" data-height="470"></div>
+
 <div data-docs-sandbox="angular:grouping" data-title="Grouping and totals"></div>
 
 ```ts {nocheck}
@@ -271,13 +290,15 @@ export class AppComponent {
   readonly columns = columns
   readonly choices: string[][] = [['team'], ['country'], ['team', 'country'], []]
   readonly groupBy = signal<string[]>(['team'])
-  readonly withTotals = columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c))
+  readonly withTotals = columns.map((c) => (c.id === 'amount' ? { ...c, aggregate: 'sum' } : c))
 }
 ```
 
 ### Pagination
 
 Client-side paging. `pageSize` is the INITIAL page size, read once at mount.
+
+<div data-docs-mirror="pagination" data-height="440"></div>
 
 <div data-docs-sandbox="angular:pagination" data-title="Pagination"></div>
 
@@ -314,6 +335,8 @@ export class AppComponent {
 ### Server-side data
 
 The grid renders the page you hand it and tells you when the user wants another. `externalSort` and `externalPagination` stop it doing the work locally; `rowCount` is how it knows how many pages exist.
+
+<div data-docs-mirror="server-data" data-height="440"></div>
 
 <div data-docs-sandbox="angular:server-data" data-title="Server-side data"></div>
 
@@ -406,6 +429,8 @@ export class AppComponent {
 
 The `--sg-*` custom properties. Ordinary CSS custom properties, so they cascade from any ancestor - which is why they also reach inside `<sv-grid-shadow>`.
 
+<div data-docs-mirror="theming" data-height="470"></div>
+
 <div data-docs-sandbox="angular:theming" data-title="Theming"></div>
 
 ```ts {nocheck}
@@ -478,6 +503,8 @@ export class AppComponent {
 ### Excel export (Enterprise)
 
 The paid pack from a non-Svelte host. `@svgrid/enterprise/export` is plain JavaScript, so it needs no Svelte in your build - the same goes for `/import`, `/print`, `/pivot` and `/license`. See [Enterprise features](./enterprise.md) for what those subpaths cover and what needs a Svelte-aware bundler.
+
+<div data-docs-mirror="enterprise" data-height="460"></div>
 
 <div data-docs-sandbox="angular:enterprise" data-title="Excel export (Enterprise)"></div>
 

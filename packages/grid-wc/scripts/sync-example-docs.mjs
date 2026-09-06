@@ -30,48 +30,66 @@ const docs = join(pkgRoot, '..', '..', 'docs', 'help', 'web-components')
 const BEGIN = '<!-- BEGIN generated examples - packages/grid-wc/scripts/sync-example-docs.mjs -->'
 const END = '<!-- END generated examples -->'
 
-/** Recipe order and prose. The order is the reading order on the page. */
+/**
+ * Recipe order, prose, and how tall its preview needs to be.
+ *
+ * Reading order, not alphabetical. Each entry is `[id, title, blurb, height]`.
+ *
+ * The preview is `examples/svelte/<id>/App.svelte` - the same app as the React,
+ * Vue and Angular ones, rendered through the same `GridBody` the custom element
+ * renders. Pairing each listing with an existing gallery demo would have been
+ * quicker, but those are different apps with different data and features, so
+ * "this is what that code renders" would have been a lie.
+ */
 const RECIPES = [
-  ['basic', 'A first grid', 'Rows, columns, and the two features almost every table wants.'],
+  ['basic', 'A first grid', 'Rows, columns, and the two features almost every table wants.', 420],
   [
     'sorting-filtering',
     'Sorting and filtering',
     'A filter row under the headers, multi-column sort, and the current sort read back into your own state.',
+    460,
   ],
   [
     'editing',
     'Editing and saving',
     'Inline editing, with each committed edit arriving through `cellvaluechange`. Swap the local update for your save call.',
+    460,
   ],
   [
     'selection',
     'Row selection',
     'Checkboxes, with the selected rows handed straight to you - both the selection map and the rows themselves.',
+    460,
   ],
   [
     'grouping',
     'Grouping and totals',
     'Group by one or two columns with an aggregate in the group row. `groupBy` is an array, so it is one of the props that can only be a property.',
+    470,
   ],
   [
     'pagination',
     'Pagination',
     'Client-side paging. `pageSize` is the INITIAL page size, read once at mount.',
+    440,
   ],
   [
     'server-data',
     'Server-side data',
     'The grid renders the page you hand it and tells you when the user wants another. `externalSort` and `externalPagination` stop it doing the work locally; `rowCount` is how it knows how many pages exist.',
+    440,
   ],
   [
     'theming',
     'Theming',
     'The `--sg-*` custom properties. Ordinary CSS custom properties, so they cascade from any ancestor - which is why they also reach inside `<sv-grid-shadow>`.',
+    470,
   ],
   [
     'enterprise',
     'Excel export (Enterprise)',
     'The paid pack from a non-Svelte host. `@svgrid/enterprise/export` is plain JavaScript, so it needs no Svelte in your build - the same goes for `/import`, `/print`, `/pivot` and `/license`. See [Enterprise features](./enterprise.md) for what those subpaths cover and what needs a Svelte-aware bundler.',
+    460,
   ],
 ]
 
@@ -111,11 +129,16 @@ function section(framework, eol) {
         `Add them to RECIPES in this script.`,
     )
 
-  const blocks = RECIPES.map(([recipe, title, blurb]) =>
+  const blocks = RECIPES.map(([recipe, title, blurb, height]) =>
     [
       `### ${title}`,
       '',
       blurb,
+      '',
+      // The running grid first, then the code that produces it, then the button
+      // that opens the whole project. A reader who scrolls past a section has
+      // still seen the feature work, which a code block alone never gives them.
+      `<div data-docs-mirror="${recipe}" data-height="${height}"></div>`,
       '',
       `<div data-docs-sandbox="${framework}:${recipe}" data-title="${title}"></div>`,
       '',
@@ -133,12 +156,21 @@ function section(framework, eol) {
     // Counted, not written out. "Eight complete apps" went stale the moment a
     // ninth recipe landed, which is the whole reason these sections are
     // generated rather than pasted.
-    `${countWord(RECIPES.length)} complete apps, each one click from running. **Open in StackBlitz**`,
-    'boots a full editable project - no local install, nothing to configure - and',
-    "every one is compiled in this repository's CI, so what you open is what works.",
+    `${countWord(RECIPES.length)} complete apps. Each one is **running on this page** - sort it,`,
+    'filter it, edit a cell - above the code that produces it. **Open in StackBlitz**',
+    'then boots the whole project, editable, with no local install and nothing to',
+    "configure, and every one is compiled in this repository's CI, so what you open",
+    'is what works.',
     '',
     'They all share the same typed `data.ts`, so the only thing that changes',
     'between recipes is the grid.',
+    '',
+    'A note on the previews: the grid you can touch is driven by a Svelte host',
+    `rather than a ${FRAMEWORK_LABEL[framework]} one. It is not a recording or a`,
+    'lookalike - it renders through the same component `<sv-grid>` renders, with',
+    'the same data and the same props as the listing below it, so the only thing',
+    `that differs from the ${FRAMEWORK_LABEL[framework]} app is who sets those props. Click **Open in`,
+    `StackBlitz** to run the real ${FRAMEWORK_LABEL[framework]} one.`,
     '',
     blocks,
     '',

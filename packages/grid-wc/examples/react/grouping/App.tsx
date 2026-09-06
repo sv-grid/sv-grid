@@ -33,7 +33,7 @@ export default function App() {
       <div style={{ flex: 1, minHeight: 0 }}>
         <SvGrid
           data={people}
-          columns={columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c))}
+          columns={columns.map((c) => (c.id === 'amount' ? { ...c, aggregate: 'sum' } : c))}
           sortable
           filterable
           groupable

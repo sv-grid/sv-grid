@@ -41,5 +41,5 @@ export class AppComponent {
   readonly columns = columns
   readonly choices: string[][] = [['team'], ['country'], ['team', 'country'], []]
   readonly groupBy = signal<string[]>(['team'])
-  readonly withTotals = columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c))
+  readonly withTotals = columns.map((c) => (c.id === 'amount' ? { ...c, aggregate: 'sum' } : c))
 }

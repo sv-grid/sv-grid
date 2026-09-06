@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-06T16:54:14.170Z",
+  "generatedAt": "2026-09-06T17:40:06.347Z",
   "counts": {
     "pages": 360,
     "enterprise": 55,
@@ -5055,7 +5055,7 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
-      "words": 1846,
+      "words": 1967,
       "lastUpdated": "2026-09-06",
       "demoIds": [
         "07-grouping-aggregation"
@@ -5129,7 +5129,7 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
-      "words": 2426,
+      "words": 2547,
       "lastUpdated": "2026-09-06",
       "demoIds": [
         "10-custom-cells-and-themes"
@@ -5192,7 +5192,7 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
-      "words": 1645,
+      "words": 1766,
       "lastUpdated": "2026-09-06",
       "demoIds": [
         "02-sort-filter-paginate"

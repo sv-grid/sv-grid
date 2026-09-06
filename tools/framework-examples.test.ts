@@ -21,6 +21,17 @@ const ENTRY: Record<string, string> = {
   angular: 'app.component.ts',
 }
 
+/**
+ * The fourth copy, which is not a fourth framework page.
+ *
+ * `examples/svelte/` exists so each listing on the three framework pages has a
+ * RUNNING grid above it - the website mounts these through
+ * `data-docs-mirror="<recipe>"`. They have to track the other three exactly, or
+ * a reader is shown one app and handed the code for another.
+ */
+const MIRROR = 'svelte'
+const MIRROR_ENTRY = 'App.svelte'
+
 function recipesOf(framework: string): string[] {
   const dir = join(EXAMPLES, framework)
   if (!existsSync(dir)) return []
@@ -66,6 +77,66 @@ describe('framework examples exist', () => {
     for (const fw of FRAMEWORKS)
       expect(existsSync(join(EXAMPLES, fw, 'data.ts')), fw).toBe(true)
   })
+
+  it('the Svelte previews cover exactly the same recipes', () => {
+    // The failure this catches: a tenth recipe added to all three frameworks
+    // and not to the previews, so its doc section renders "Unknown example"
+    // above a listing that is otherwise fine.
+    expect(recipesOf(MIRROR), `${MIRROR} differs from ${FRAMEWORKS[0]}`).toEqual(
+      recipesOf(FRAMEWORKS[0]),
+    )
+    for (const recipe of recipesOf(MIRROR))
+      expect(existsSync(join(EXAMPLES, MIRROR, recipe, MIRROR_ENTRY)), recipe).toBe(true)
+  })
+
+  it('every copy of data.ts is byte-identical', () => {
+    // "The same app, four ways" only means anything if the rows are the same
+    // rows. A preview seeded differently from its listing is worse than no
+    // preview: it looks authoritative and is wrong.
+    const read = (fw: string) => readFileSync(join(EXAMPLES, fw, 'data.ts'), 'utf8')
+    const baseline = read(FRAMEWORKS[0])
+    for (const fw of [...FRAMEWORKS.slice(1), MIRROR])
+      expect(read(fw), `${fw}/data.ts has drifted from ${FRAMEWORKS[0]}/data.ts`).toBe(baseline)
+  })
+
+  it('no preview uses a class name the site already defines', () => {
+    // The previews mount into a Tailwind page, and a Svelte component's scoped
+    // styles do not stop a global rule from also matching. A wrapper named
+    // `class="grid"` picked up Tailwind's `.grid { display: grid }`, turned into
+    // a grid container, and its `min-width: auto` child blew out to min-content
+    // - so the grid rendered ~130px wider than its card and was silently
+    // clipped, worse at every viewport. Nothing failed; it just looked wrong.
+    const UTILITIES = [
+      'grid', 'flex', 'block', 'inline', 'hidden', 'container', 'table', 'border',
+      'absolute', 'relative', 'fixed', 'static', 'sticky', 'group', 'peer',
+    ]
+    const clashes: string[] = []
+    for (const recipe of recipesOf(MIRROR)) {
+      const src = readFileSync(join(EXAMPLES, MIRROR, recipe, MIRROR_ENTRY), 'utf8')
+      for (const m of src.matchAll(/class="([^"{}]+)"/g))
+        for (const name of m[1]!.split(/\s+/))
+          if (UTILITIES.includes(name)) clashes.push(`${recipe}: class="${name}"`)
+    }
+    expect(clashes).toEqual([])
+  })
+
+  it('every preview renders through the element body, not a hand-rolled grid', () => {
+    // The preview's whole claim is "this is what that code renders". It holds
+    // only because these mount GridBody.svelte - the component <sv-grid> and
+    // <sv-grid-shadow> render. Reaching for <SvGrid> directly would quietly
+    // drop the element's own defaults (filterMode, selectionMode, fitColumns)
+    // and the picture would stop matching the listing.
+    for (const recipe of recipesOf(MIRROR)) {
+      const src = readFileSync(join(EXAMPLES, MIRROR, recipe, MIRROR_ENTRY), 'utf8')
+      expect(src, `${recipe} does not import GridBody`).toContain(
+        "import GridBody from '../../../src/GridBody.svelte'",
+      )
+      // GridBody calls `emit` from every callback it forwards; omitting it
+      // throws on the first event the grid fires, which for most recipes is
+      // `apiready` at mount.
+      expect(src, `${recipe} does not pass emit`).toMatch(/emit=\{/)
+    }
+  })
 })
 
 describe('the docs point at examples that exist', () => {
@@ -87,6 +158,37 @@ describe('the docs point at examples that exist', () => {
       existsSync(join(EXAMPLES, framework!, recipe!, ENTRY[framework!]!)),
       `${file}: no example for ${spec}`,
     ).toBe(true)
+  })
+
+  it('every preview placeholder resolves', () => {
+    // Same failure as a bad sandbox spec, one step earlier: the reader sees
+    // "Unknown example" where the running grid should be, and there is nothing
+    // in the markdown or the build to say so.
+    const mirrors = docFiles().flatMap(([file, text]) =>
+      [...text.matchAll(/data-docs-mirror="([^"]+)"/g)].map((m) => ({ file, recipe: m[1]! })),
+    )
+    expect(mirrors.length, 'no preview placeholders found at all').toBeGreaterThan(20)
+    const bad = mirrors
+      .filter((m) => !existsSync(join(EXAMPLES, MIRROR, m.recipe, MIRROR_ENTRY)))
+      .map((m) => `${m.file}: ${m.recipe}`)
+    expect(bad).toEqual([])
+  })
+
+  it('every section pairs a preview with its own listing', () => {
+    // A mirror pointing at a different recipe than the sandbox beside it would
+    // caption one app with another's code - exactly the thing the previews
+    // exist to avoid, and invisible on the rendered page.
+    const mismatched: string[] = []
+    for (const [file, text] of docFiles()) {
+      const fw = file.replace(/.*\//, '').replace(/\.md$/, '')
+      if (!(FRAMEWORKS as readonly string[]).includes(fw)) continue
+      for (const m of text.matchAll(
+        /data-docs-mirror="([^"]+)"[\s\S]{0,200}?data-docs-sandbox="([^"]+)"/g,
+      )) {
+        if (m[2] !== `${fw}:${m[1]}`) mismatched.push(`${file}: ${m[1]} paired with ${m[2]}`)
+      }
+    }
+    expect(mismatched).toEqual([])
   })
 
   it('every recipe is reachable from the docs', () => {

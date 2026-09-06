@@ -126,15 +126,17 @@ describe('demo <-> docs coverage', () => {
     const counts = docs
       .map(([path, text]) => {
         const doc = path.replace(/^docs\//, '').replace(/\.md$/, '')
-        // Three kinds of example count, because all three are one: an embedded
-        // gallery demo, an extracted {runnable} snippet, and a
-        // `data-docs-sandbox` placeholder - which opens a complete, editable
-        // project in a framework of the reader's choice. Counting only the
-        // first two scored the framework pages at 1 while they carry nine
-        // runnable apps each, which is the opposite of what this metric is for.
+        // Four kinds of example count, because all four are one: an embedded
+        // gallery demo, an extracted {runnable} snippet, a `data-docs-sandbox`
+        // placeholder - which opens a complete, editable project in a framework
+        // of the reader's choice - and a `data-docs-mirror`, the running grid
+        // above each framework listing. Counting only the first two scored the
+        // framework pages at 1 while they carry nine runnable apps each, which
+        // is the opposite of what this metric is for.
         const demos = (text.match(/data-docs-demo="/g) ?? []).length
         const sandboxes = (text.match(/data-docs-sandbox="/g) ?? []).length
-        return demos + sandboxes + (perDoc.get(doc) ?? 0)
+        const mirrors = (text.match(/data-docs-mirror="/g) ?? []).length
+        return demos + sandboxes + mirrors + (perDoc.get(doc) ?? 0)
       })
       .sort((a, b) => a - b)
 

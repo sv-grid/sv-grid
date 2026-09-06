@@ -9,7 +9,7 @@ import { people, columns } from '../data'
 const groupBy = ref<string[]>(['team'])
 const choices: string[][] = [['team'], ['country'], ['team', 'country'], []]
 const withTotals = computed(() =>
-  columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c)),
+  columns.map((c) => (c.id === 'amount' ? { ...c, aggregate: 'sum' } : c)),
 )
 </script>
 
