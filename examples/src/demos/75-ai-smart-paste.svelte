@@ -27,7 +27,7 @@
     tableFeatures,
     rowSortingFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
 
@@ -827,7 +827,7 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
   }
   const FIELD_ORDER: Field[] = ['fullName', 'email', 'company', 'role', 'phone']
 
-  const columns: ColumnDef<typeof features, Contact>[] = [
+  const columns: GridColumns<Contact> = [
     { field: 'fullName', header: 'Name',    editorType: 'text', width: 180 },
     { field: 'email',    header: 'Email',   editorType: 'text', width: 220 },
     { field: 'company',  header: 'Company', editorType: 'text', width: 180 },

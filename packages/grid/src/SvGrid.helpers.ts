@@ -113,6 +113,93 @@ export function getEditorInputType(editorType: CellEditorType) {
   return "text";
 }
 
+/**
+ * Input type for the CELL EDITOR specifically, which differs from
+ * {@link getEditorInputType} in one place: `number` becomes a text input.
+ *
+ * `<input type="number">` runs the HTML value-sanitization algorithm, so it
+ * only ever reports a value that parses as a valid float. Every intermediate
+ * state on the way to `12.5` - `12.` - is not one, and the element reports the
+ * empty string instead. The editor reads `event.currentTarget.value` into its
+ * draft, so the decimal point the user just typed disappeared. Same for a lone
+ * `-` on the way to a negative and `1e` on the way to `1e3`.
+ *
+ * A text input keeps the raw keystrokes, and the draft is coerced to a number
+ * at commit by `parseEditorValue` - which the editor already did. Pair it with
+ * `inputmode="decimal"` for the mobile keypad and
+ * {@link isNumericEditorInput} for the character filtering that
+ * `type="number"` used to provide.
+ *
+ * The filter-row and filter-menu inputs deliberately still use
+ * {@link getEditorInputType}: they feed a different pipeline, and changing
+ * them is a separate decision.
+ */
+/**
+ * Should this column filter with the grid own date picker rather than the
+ * browser one?
+ *
+ * The grid convention is rich-by-default with an explicit `-native` opt-out,
+ * which the cell editor follows. The filter row did not: a `date` column
+ * edited through SvDateTimePicker was FILTERED through a native
+ * `<input type="date">`, so the same column offered two different date UIs.
+ */
+/**
+ * A Date to the 'YYYY-MM-DD' a date filter compares against, using LOCAL
+ * parts. `toISOString()` would convert through UTC, so picking the 1st in a
+ * negative-offset zone would filter for the 31st of the month before.
+ */
+export function toIsoDateLocal(value: Date | null | undefined): string {
+  if (!value || Number.isNaN(value.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+}
+
+/**
+ * The inverse of {@link toIsoDateLocal}: read a 'YYYY-MM-DD' filter value back
+ * as that LOCAL calendar day. `new Date('2026-09-10')` is parsed as UTC
+ * midnight, which is the 9th anywhere west of Greenwich - so handing the raw
+ * string to a date control and writing it back through `toIsoDateLocal` walks
+ * the value backwards a day per round trip.
+ */
+export function fromIsoDateLocal(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const parts = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!parts) {
+    const loose = new Date(value);
+    return Number.isNaN(loose.getTime()) ? null : loose;
+  }
+  const local = new Date(
+    Number(parts[1]),
+    Number(parts[2]) - 1,
+    Number(parts[3]),
+  );
+  return Number.isNaN(local.getTime()) ? null : local;
+}
+
+export function usesRichDateFilter(editorType: CellEditorType | undefined): boolean {
+  if (!editorType) return false;
+  if (String(editorType).endsWith("-native")) return false;
+  const base = baseEditor(editorType);
+  return base === "date" || base === "datetime" || base === "time";
+}
+
+export function getCellEditorInputType(editorType: CellEditorType) {
+  if (baseEditor(editorType) === "number") return "text";
+  return getEditorInputType(editorType);
+}
+
+/**
+ * Is `value` something the user could still be typing towards a number?
+ *
+ * Deliberately permissive about INTERMEDIATE states - `''`, `'-'`, `'12.'` and
+ * `'1e'` all pass, because rejecting them is the exact bug this replaces. It
+ * only rejects text that can never become a number, which is the guarantee
+ * `type="number"` used to give.
+ */
+export function isNumericEditorInput(value: string): boolean {
+  return /^-?(\d*\.?\d*)(e-?\d*)?$/i.test(value);
+}
+
 /** Resolve a stored value to an array form (for list/chips multi-select). */
 export function toValueArray(value: unknown): Array<string | number> {
   if (value == null || value === "") return [];

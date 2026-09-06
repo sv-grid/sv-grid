@@ -23,7 +23,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   // ---- Domain model ----------------------------------------------------
@@ -191,7 +191,7 @@
   // ---- Columns ---------------------------------------------------------
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const groupColumns: ColumnDef<typeof features, GroupedRow>[] = [
+  const groupColumns: GridColumns<GroupedRow> = [
     {
       id: 'expand', header: '', width: 36, editable: false,
       cell: (ctx) => renderSnippet(ChevronCell, { id: ctx.row.original.id }),
@@ -211,7 +211,7 @@
       format: { type: 'number', options: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 } } },
   ]
 
-  const detailColumns: ColumnDef<typeof features, Sale>[] = [
+  const detailColumns: GridColumns<Sale> = [
     { field: 'id',          header: 'Sale id',   width: 110, editable: false },
     { field: 'region',      header: 'Region',    width: 110, editable: false },
     { field: 'industry',    header: 'Industry',  width: 130, editable: false },

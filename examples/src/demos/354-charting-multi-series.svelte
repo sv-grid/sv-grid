@@ -13,7 +13,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -53,7 +53,7 @@
       }
 
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
-  const columns: ColumnDef<typeof features, Sale>[] = [
+  const columns: GridColumns<Sale> = [
     { field: 'region', header: 'Region', width: 120 },
     { field: 'product', header: 'Product', width: 120 },
     { field: 'quarter', header: 'Quarter', width: 100 },

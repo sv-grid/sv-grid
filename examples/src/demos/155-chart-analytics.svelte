@@ -23,7 +23,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
     type ChartSelection,
@@ -52,7 +52,7 @@
     }
   })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'day', header: 'Day', width: 130 },
     { field: 'channel', header: 'Channel', width: 130 },
     { field: 'signups', header: 'Signups', width: 120, align: 'right' },

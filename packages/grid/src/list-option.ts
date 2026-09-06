@@ -7,6 +7,12 @@ export type ListOption = {
   group?: string
   /** Optional color swatch (any CSS color) shown before the label. */
   color?: string
+  /**
+   * Optional muted text pinned to the trailing edge of the row - a count, a
+   * shortcut, a unit. Not part of the label, so it does not affect matching
+   * or the accessible name.
+   */
+  hint?: string
 }
 
 /**

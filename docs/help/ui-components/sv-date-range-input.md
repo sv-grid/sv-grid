@@ -149,6 +149,10 @@ subtracting the two timestamps gives whole nights without time-of-day drift.
   `for` / `aria-describedby`; `invalid` sets `aria-invalid`.
 - The read-only field exposes `aria-haspopup="dialog"` and `aria-expanded`;
   `ArrowDown` (or Alt+ArrowDown) opens the popover, `Escape` closes it.
+- The whole field is the click target, not just the text - the icon, the
+  padding and the range label all open the popover. That matters when the
+  control is squeezed into a narrow container, where the input itself shrinks
+  to a sliver.
 - The popover is a `role="dialog"` containing the full [SvCalendar](sv-calendar.md)
   keyboard model for range selection.
 - `disabled` / `readonly` block interaction; `dir="rtl"` mirrors the layout.

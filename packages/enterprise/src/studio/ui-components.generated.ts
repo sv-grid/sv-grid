@@ -1044,6 +1044,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "block",
         "label": "Block",
         "type": "boolean",
+        "default": false,
         "description": "Fill the container instead of the control's own default width. A default width is right for a control sitting on its own; in a form grid a row of inputs each stopping at a different width reads as broken.",
         "group": "appearance"
       },
@@ -4070,6 +4071,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "block",
         "label": "Block",
         "type": "boolean",
+        "default": false,
         "description": "Fill the container instead of the control's own default width. A default width is right for a control sitting on its own; in a form grid a row of inputs each stopping at a different width reads as broken.",
         "group": "appearance"
       },
@@ -4260,6 +4262,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "block",
         "label": "Block",
         "type": "boolean",
+        "default": false,
         "description": "Fill the container instead of the control's own default width. A default width is right for a control sitting on its own; in a form grid a row of inputs each stopping at a different width reads as broken.",
         "group": "appearance"
       },
@@ -4456,6 +4459,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "block",
         "label": "Block",
         "type": "boolean",
+        "default": false,
         "description": "Fill the container instead of the control's own default width. A default width is right for a control sitting on its own; in a form grid a row of inputs each stopping at a different width reads as broken.",
         "group": "appearance"
       },
@@ -6149,6 +6153,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "block",
         "label": "Block",
         "type": "boolean",
+        "default": false,
         "description": "Fill the container instead of the control's own default width. A default width is right for a control sitting on its own; in a form grid a row of inputs each stopping at a different width reads as broken.",
         "group": "appearance"
       },
@@ -6644,6 +6649,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "selectionBar",
+        "label": "Selection Bar",
+        "type": "boolean",
+        "description": "Floating bar that appears over the grid while rows are selected, showing the count and the actions that apply to the whole selection - the pattern an issue tracker uses for bulk edit. `true` gives the count and a Clear button. An array is the shorthand for `{ actions }`. Pass to also set `position` (`'bottom'` default, or `'top'`), `maxVisible` and `hideClear`. Omitted / `false` is off. Default **off**. This is chrome that floats over your content, not a gesture: it overlaps a row, and what belongs on it is specific to the app. **The prop and its types are free; the bar itself is an Enterprise feature.** Install `@svgrid/enterprise` and call `enableSelectionBar()` (or `installEnterprise`, which does it for you) to render it - without that the grid shows a short upsell note in its place, the same way the scheduler and board views do.",
+        "group": "common"
+      },
+      {
         "key": "features",
         "label": "Features",
         "type": "json",
@@ -7001,6 +7013,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Enable Cell Selection",
         "type": "boolean",
         "description": "Cell selection - click to select, drag or shift-click to extend to a range, which is what clipboard copy and the range fill handle operate on. Unset, it follows `selectionMode` (default `'both'`, so this is on). `selectable` is the shortcut alias and wins over it.",
+        "group": "common"
+      },
+      {
+        "key": "moveCells",
+        "label": "Move Cells",
+        "type": "boolean",
+        "description": "Excel-style drag-and-drop of a selected cell range: grab the range's border and drag it somewhere else to MOVE the values there, or hold Ctrl (Cmd on macOS) to COPY them instead. The modifier is read at drop time, so it can be pressed or released mid-drag. On by default whenever cell selection is on, matching the fill handle. Set `false` to keep a border pointerdown starting a fresh selection, which is what it did before this existed. The grab strip is the outer 4px of the range border, so a pointerdown anywhere further inside still starts a new selection. A drop is refused outright - nothing changes - when the destination would fall outside the grid, or when any source or destination cell is read-only. It does not move the part that fits and silently drop the rest.",
         "group": "common"
       },
       {

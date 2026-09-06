@@ -15,13 +15,13 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Repo = { name: string; lang: string; stars: number }
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  const columns: ColumnDef<typeof features, Repo>[] = [
+  const columns: GridColumns<Repo> = [
     { field: 'name', header: 'Repository' },
     { field: 'lang', header: 'Language' },
     { field: 'stars', header: 'Stars' },

@@ -242,15 +242,22 @@ export function createSelection<
    * that contains the cell are returned (active range checked last so its
    * outline wins on overlap). Returns null when the cell is in no range.
    */
+  /** Could `getSelectionRects()` return anything? An anchored active range or
+   *  a committed one is the only way a rect can exist, and both are plain
+   *  property reads - so this is the cheap guard in front of anything that
+   *  would otherwise allocate a rect array to discover there is nothing. */
+  function hasAnySelectionRect() {
+    const active = ctx.selectionRange as SelectionRange | undefined;
+    const committed = ctx.selectionRanges as SelectionRange[] | undefined;
+    return Boolean(committed?.length) || Boolean(active?.anchor && active?.focus);
+  }
+
   function getCellRangeEdges(rowIndex: number, colIndex: number) {
     // Bail before `getSelectionRects()`, which allocates an array and resolves
     // every range. This runs once per rendered CELL on every render - about 250
     // times per frame on a default grid - and with nothing selected it did all
-    // that work to return null every time. An anchored active range or a
-    // committed one is the only way any rect can exist.
-    const active = ctx.selectionRange as SelectionRange | undefined;
-    const committed = ctx.selectionRanges as SelectionRange[] | undefined;
-    if (!committed?.length && !(active?.anchor && active?.focus)) return null;
+    // that work to return null every time.
+    if (!hasAnySelectionRect()) return null;
 
     for (const rect of getSelectionRects()) {
       if (
@@ -271,10 +278,40 @@ export function createSelection<
     return null;
   }
 
+  /**
+   * The rectangle a drag is currently promising, or null when no drag is in
+   * flight. A fill grows the source rectangle out to the pointer; a move
+   * detaches an identically-sized rectangle and drops it at the offset the
+   * pointer has travelled. Both feed the same preview tint and marquee, so a
+   * range move looks like the fill handle users already know.
+   */
+  function dragPreviewRect() {
+    const m = ctx.moveDrag;
+    if (m) return ctx.moveDestRect(m);
+    const d = ctx.fillDrag;
+    if (!d) return null;
+    return {
+      minRow: Math.min(d.sourceMinRow, d.targetRow),
+      maxRow: Math.max(d.sourceMaxRow, d.targetRow),
+      minCol: Math.min(d.sourceMinCol, d.targetCol),
+      maxCol: Math.max(d.sourceMaxCol, d.targetCol),
+    };
+  }
+
   /** Returns true when the given cell is inside the fill-drag preview
    *  range BUT outside the original source range. Used to paint a
    *  dashed-outline preview while the user is dragging the handle. */
   function isInFillPreview(rowIndex: number, colIndex: number) {
+    if (ctx.moveDrag) {
+      const rect = dragPreviewRect();
+      if (!rect) return false;
+      return (
+        rowIndex >= rect.minRow &&
+        rowIndex <= rect.maxRow &&
+        colIndex >= rect.minCol &&
+        colIndex <= rect.maxCol
+      );
+    }
     const d = ctx.fillDrag;
     if (!d) return false;
     const minR = Math.min(d.sourceMinRow, d.targetRow);
@@ -303,12 +340,12 @@ export function createSelection<
    * border. Returns null when the cell isn't on the rectangle's boundary.
    */
   function fillMarqueeEdges(rowIndex: number, colIndex: number) {
-    const d = ctx.fillDrag;
-    if (!d) return null;
-    const minR = Math.min(d.sourceMinRow, d.targetRow);
-    const maxR = Math.max(d.sourceMaxRow, d.targetRow);
-    const minC = Math.min(d.sourceMinCol, d.targetCol);
-    const maxC = Math.max(d.sourceMaxCol, d.targetCol);
+    // Cheap bail before the shared rect helper, which allocates: this runs
+    // once per rendered cell and no drag is in flight almost all the time.
+    if (!ctx.fillDrag && !ctx.moveDrag) return null;
+    const rect = dragPreviewRect();
+    if (!rect) return null;
+    const { minRow: minR, maxRow: maxR, minCol: minC, maxCol: maxC } = rect;
     if (rowIndex < minR || rowIndex > maxR || colIndex < minC || colIndex > maxC) {
       return null;
     }
@@ -335,6 +372,18 @@ export function createSelection<
     const row = ctx.allRows[rowIndex];
     const column = ctx.allColumns[colIndex];
     if (!row || !column || isGroupRow(row)) return;
+    // A pointerdown on the outer few pixels of a selection border grabs the
+    // range to move it. Checked before anything else, because everything below
+    // would first collapse the selection this drag is about to relocate.
+    // Returns false unless the pointer really was on the strip, so a click
+    // anywhere further inside falls straight through to the old behaviour.
+    if (ctx.startMoveDrag(event, rowIndex, colIndex)) {
+      // A grab that never moves still ends in a `click` on the cell under the
+      // border. Left alone that click would collapse the range the user was
+      // clearly reaching for, and on a checkbox column it would flip the value.
+      moveGrabSwallowsClick = true;
+      return;
+    }
     // NOTE: we no longer bail for checkbox columns. Bailing here meant a
     // range drag could never START on a checkbox cell. A plain click still
     // toggles the checkbox via onCellClick (a same-cell click), while a
@@ -369,27 +418,95 @@ export function createSelection<
     setActiveCell(rowIndex, colIndex);
   }
 
-  function endDragSelection() {
+  /** `event` is the window `pointerup` when this comes from the real gesture,
+   *  and absent when `onWindowPointerMove` calls it to recover from a release
+   *  it never saw. A range move reads its copy modifier from it, so holding
+   *  Ctrl between the last movement and the release still copies. */
+  function endDragSelection(event?: PointerEvent) {
     ctx.isDraggingSelection = false;
+    // Every drag shares one edge-scroll loop, and it exits on its own once no
+    // drag is live - but stopping it here cancels the pending frame rather
+    // than letting one more fire after the gesture is over.
+    ctx.stopEdgeScroll();
     // Also commit a fill-handle drag if one was in progress - the user
     // released the mouse, time to apply the pattern.
     if (ctx.fillDrag) ctx.onFillPointerUp();
+    if (ctx.moveDrag) ctx.onMovePointerUp(event);
   }
 
   function onWindowPointerMove(event: PointerEvent) {
+    if (ctx.moveDrag) {
+      ctx.onMovePointerMove(event);
+      return;
+    }
     if (ctx.fillDrag) {
       ctx.onFillPointerMove(event);
       return;
     }
-    if (!ctx.isDraggingSelection) return;
+    if (!ctx.isDraggingSelection) {
+      updateMoveGrabHover(event);
+      return;
+    }
     // Safety: if no mouse button is held the drag is over (we may have
     // missed pointerup because the user lifted outside the window).
     if (event.buttons === 0) {
       endDragSelection();
+      return;
     }
+    // Drag-select past the viewport edge scrolls the grid, same as the fill
+    // and move drags. Without it a range can only ever cover what was already
+    // on screen when the drag started. `onCellPointerEnter` keeps extending
+    // the range for cells the pointer actually crosses; this covers the case
+    // where the pointer has stopped at the edge and the CELLS are moving.
+    ctx.trackEdgeScroll(event);
   }
 
+  /**
+   * Switch the grid to a move cursor while the pointer sits on the grab strip
+   * of a selection border - without it the feature is invisible, since the
+   * border is painted, not a hit target.
+   *
+   * This runs on every window pointermove, so the order of the guards is the
+   * point: `moveCellsEffective` and the already-hovering flag are plain
+   * property reads, and `isOnMoveGrabStrip` bails on `getCellRangeEdges`
+   * before measuring anything when no range is selected.
+   */
+  function updateMoveGrabHover(event: PointerEvent) {
+    const wasHovering = ctx.moveGrabHover;
+    // Two property reads before anything touches the DOM. `closest()` walks
+    // ancestors on EVERY pointer move over the page, so it has to sit behind
+    // both "the feature is on" and "there is a range to grab".
+    if (!ctx.moveCellsEffective || !hasAnySelectionRect()) {
+      if (wasHovering) ctx.moveGrabHover = false;
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    const cell = target?.closest?.(
+      "td[data-svgrid-row][data-svgrid-col]",
+    ) as HTMLElement | null;
+    let hovering = false;
+    if (cell) {
+      const r = Number(cell.dataset.svgridRow);
+      const c = Number(cell.dataset.svgridCol);
+      if (Number.isFinite(r) && Number.isFinite(c)) {
+        hovering = ctx.isOnMoveGrabStrip(cell, r, c, event.clientX, event.clientY);
+      }
+    }
+    if (hovering !== wasHovering) ctx.moveGrabHover = hovering;
+  }
+
+  /** Set when a pointerdown started a range move, so the `click` that
+   *  follows a zero-distance grab is discarded instead of collapsing the
+   *  selection it grabbed. One gesture, one flag - cleared on the next click
+   *  whether or not the grab turned into a real drag. */
+  let moveGrabSwallowsClick = false;
+
   function onCellClick(rowIndex: number, colIndex: number) {
+    if (moveGrabSwallowsClick) {
+      moveGrabSwallowsClick = false;
+      ctx.gridRootEl?.focus({ preventScroll: true });
+      return;
+    }
     const row = ctx.allRows[rowIndex];
     const column = ctx.allColumns[colIndex];
     if (!row || !column) return;
@@ -489,6 +606,7 @@ export function createSelection<
     fillMarqueeEdges,
     getSelectionRects,
     isInFillPreview,
+    dragPreviewRect,
     findColumnById,
     onCellPointerDown,
     onCellPointerEnter,

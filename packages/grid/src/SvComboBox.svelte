@@ -63,6 +63,7 @@
     size = 'md',
     ariaLabel,
     invalid = false,
+    block = false,
     required = false,
     error,
     label,
@@ -182,7 +183,8 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
-  <div bind:this={fieldEl} class="sv-combo sv-combo--{size}" class:is-open={combo.open} class:is-disabled={disabled} class:is-invalid={invalid}>
+  <div bind:this={fieldEl} class="sv-combo sv-combo--{size}"
+    class:is-block={block} class:is-open={combo.open} class:is-disabled={disabled} class:is-invalid={invalid}>
     <input
       bind:this={inputEl}
       class="sv-combo__input"
@@ -272,4 +274,6 @@
     background-size: 6px 4px; background-position: center; background-repeat: repeat-x;
   }
   :global(.sv-ddl__grip:hover .sv-ddl__grip-dots) { opacity: 1; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-combo.is-block { width: 100%; max-width: 100%; }
 </style>

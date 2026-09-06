@@ -20,7 +20,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -95,7 +95,7 @@
     return n
   })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'case',   header: 'Try this case',         width: 240, editable: false },
     { field: 'seed1',  header: 'Source 1',              width: 90,  align: 'right' },
     { field: 'seed2',  header: 'Source 2',              width: 90,  align: 'right' },

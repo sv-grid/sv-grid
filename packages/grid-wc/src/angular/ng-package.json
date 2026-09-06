@@ -1,0 +1,5 @@
+{
+  "dest": "../../dist/angular",
+  "lib": { "entryFile": "public-api.ts" },
+  "allowedNonPeerDependencies": ["@svgrid/grid-wc"]
+}

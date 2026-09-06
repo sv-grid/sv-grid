@@ -24,7 +24,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -45,7 +45,7 @@
   }
   let rows = $state<Row[]>(Array.from({ length: 20 }, () => tick()))
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 't',     header: 'Tick',  width: 110 },
     { field: 'price', header: 'Price', width: 110, align: 'right',
       format: { type: 'number', options: { minimumFractionDigits: 2, maximumFractionDigits: 2 } } },

@@ -260,7 +260,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   if (projectResult) return projectResult
 
   switch (name) {
-    // Returning all 373 demos cost ~31k tokens on the call this tool's own
+    // Returning all 375 demos cost ~31k tokens on the call this tool's own
     // description invites a model to start with. Filtered and capped instead,
     // and a bare call answers with the category index to drill into.
     case 'list_examples': {

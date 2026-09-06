@@ -9,7 +9,7 @@
    */
   import {
     SvGrid, tableFeatures, rowSortingFeature, columnFilteringFeature,
-    SvSegmented, type ColumnDef, type ChartViewConfig,
+    SvSegmented, type GridColumns, type ChartViewConfig,
   } from '@svgrid/grid'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -30,7 +30,7 @@
     { month: 'Apr', region: 'APAC', revenue: 30000, units: 92 },
   ]
 
-  const columns: ColumnDef<typeof features, Sale>[] = [
+  const columns: GridColumns<Sale> = [
     { field: 'month', header: 'Month', width: 120 },
     { field: 'region', header: 'Region', width: 120 },
     { field: 'revenue', header: 'Revenue', width: 140 },

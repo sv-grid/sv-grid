@@ -17,7 +17,7 @@
     columnFilteringFeature,
     columnGroupingFeature,
     rowExpandingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -134,7 +134,7 @@
     rowExpandingFeature,
   })
 
-  const columns: ColumnDef<typeof features, MillionRow>[] = [
+  const columns: GridColumns<MillionRow> = [
     { field: 'id',         header: 'ID',         editorType: 'text',   width: 110, editable: false },
     { field: 'firstName',  header: 'First name', editorType: 'text',   width: 130 },
     { field: 'lastName',   header: 'Last name',  editorType: 'text',   width: 140 },

@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makeOrders, type Order } from '../shared/seed'
@@ -72,7 +72,7 @@
     for (const id of Object.keys(api.getFilters())) api.setFilter(id, null)
   }
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'orderId',  header: 'Order ID', editorType: 'text',   width: 140 },
     { field: 'company',  header: 'Company',  editorType: 'text',   width: 180 },
     { field: 'product',  header: 'Product',  editorType: 'text',   width: 180 },

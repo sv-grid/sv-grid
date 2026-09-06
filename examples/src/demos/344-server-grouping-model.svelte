@@ -18,7 +18,7 @@
     SvRowGroupPanel,
     renderComponent,
     tableFeatures,
-    type ColumnDef,
+    type GridColumns,
     type ServerDataSource,
     type ServerGroupState,
     type ServerGroupGridRow,
@@ -96,7 +96,7 @@
   const rows = $derived<GridRow[]>(serverGroupRows(view))
 
   const usd = { type: 'number' as const, options: { style: 'currency' as const, currency: 'USD', maximumFractionDigits: 0 } }
-  const columns: ColumnDef<typeof features, GridRow>[] = [
+  const columns: GridColumns<GridRow> = [
     {
       field: 'region',
       header: 'Group',

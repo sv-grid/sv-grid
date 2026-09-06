@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "experimentalDecorators": false,
+    "useDefineForClassFields": false,
+    "paths": {
+      "@svgrid/grid-wc": ["./dist/sv-grid-element.d.ts"],
+      "@svgrid/grid-wc/shadow": ["./dist/shadow/sv-grid-shadow-element.d.ts"],
+      "@svgrid/grid-wc/angular": ["./dist/angular/types/svgrid-grid-wc-angular.d.ts"]
+    }
+  },
+  "angularCompilerOptions": { "strictTemplates": true },
+  "include": ["examples/angular/**/*.ts"]
+}

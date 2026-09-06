@@ -15,7 +15,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -52,7 +52,7 @@
   let busy = $state<string | null>(null)
   let errorMsg = $state<string | null>(null)
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'company',  header: 'Company',  width: 140 },
     { field: 'product',  header: 'Product',  width: 170 },
     { field: 'sellDate', header: 'Sell date', width: 110,

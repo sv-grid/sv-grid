@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.6.4",
+  "version": "2.7.0",
   "description": "Enterprise feature pack for SvGrid: Excel (xlsx) and PDF export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler renderers, no-code alerts and batch editing. CSV, TSV and JSON export are already free in @svgrid/grid. Requires a paid license key.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "jQWidgets <sales@jqwidgets.com>",
@@ -38,6 +38,11 @@
       "types": "./dist/pivot.d.ts",
       "svelte": "./dist/pivot.js",
       "import": "./dist/pivot.js"
+    },
+    "./license": {
+      "types": "./dist/license.d.ts",
+      "svelte": "./dist/license.js",
+      "import": "./dist/license.js"
     },
     "./studio": {
       "types": "./dist/studio/index.d.ts",

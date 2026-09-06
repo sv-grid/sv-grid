@@ -20,6 +20,12 @@ interface FakeOptions {
   groupRows?: Set<number>
   /** Predicate for editability; default true. */
   editableAt?: (r: number, c: number) => boolean
+  /**
+   * Data indices in DISPLAY order, i.e. what a sort/filter produces. Default is
+   * `[0, 1, 2, …]`, where display and data order coincide - which is exactly
+   * the case that hides row-index bugs, so the ordering tests pass a permutation.
+   */
+  displayOrder?: number[]
 }
 
 function makeCtx(opts: FakeOptions = {}) {
@@ -41,15 +47,22 @@ function makeCtx(opts: FakeOptions = {}) {
     },
   }))
 
-  // allRows mirror internalData by index; row.id === index as a string.
-  const buildRows = () =>
-    data.map((row, index) => ({
-      id: String(index),
-      original: row,
-      getCanExpand: () => opts.groupRows?.has(index) ?? false,
-      getCellValueByColumnId: (colId: string) =>
-        (row as Record<string, unknown>)[colId],
-    }))
+  // allRows are the rows AS DISPLAYED. By default that mirrors internalData by
+  // index (row.id === index as a string); `displayOrder` reorders them the way
+  // a sort or filter would, leaving `original` pointing at the same objects.
+  const rowsFrom = (source: Array<Record<string, unknown>>) => {
+    const order = opts.displayOrder ?? source.map((_, i) => i)
+    return order
+      .filter((dataIndex) => source[dataIndex] !== undefined)
+      .map((dataIndex) => ({
+        id: String(dataIndex),
+        original: source[dataIndex],
+        getCanExpand: () => opts.groupRows?.has(dataIndex) ?? false,
+        getCellValueByColumnId: (colId: string) =>
+          (source[dataIndex] as Record<string, unknown>)[colId],
+      }))
+  }
+  const buildRows = () => rowsFrom(data)
 
   let activeCell: { rowIndex: number; colIndex: number } | null = null
 
@@ -107,13 +120,7 @@ function makeCtx(opts: FakeOptions = {}) {
     get: () => backing,
     set: (next: Array<Record<string, unknown>>) => {
       backing = next
-      ctx._rows = next.map((row, index) => ({
-        id: String(index),
-        original: row,
-        getCanExpand: () => opts.groupRows?.has(index) ?? false,
-        getCellValueByColumnId: (colId: string) =>
-          (row as Record<string, unknown>)[colId],
-      }))
+      ctx._rows = rowsFrom(next)
     },
   })
 
@@ -194,6 +201,53 @@ describe('writeCellRaw', () => {
     const cb = createClipboard(ctx)
     cb.writeCellRaw(0, 'noField', 5)
     expect(ctx.internalData[0]).toEqual({ a: 1 })
+  })
+
+  describe('when the view is sorted or filtered (display order != data order)', () => {
+    // `rowIndex` is a DISPLAY index. These functions used to index
+    // `internalData` with it, which is the same row only while the two orders
+    // coincide - so the fill handle and enterprise bulk edit read from one row
+    // and wrote to another as soon as a column was sorted.
+    const sorted = () =>
+      makeCtx({
+        columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+        data: [{ a: 'data0' }, { a: 'data1' }, { a: 'data2' }],
+        displayOrder: [2, 0, 1],
+      })
+
+    it('readCellRaw reads the row shown at that position', () => {
+      const cb = createClipboard(sorted())
+      expect(cb.readCellRaw(0, 'a')).toBe('data2')
+      expect(cb.readCellRaw(1, 'a')).toBe('data0')
+      expect(cb.readCellRaw(2, 'a')).toBe('data1')
+    })
+
+    it('writeCellRaw writes the row shown at that position', () => {
+      const ctx = sorted()
+      const cb = createClipboard(ctx)
+      cb.writeCellRaw(0, 'a', 'WRITTEN')
+      expect(ctx.internalData.map((d: any) => d.a)).toEqual([
+        'data0',
+        'data1',
+        'WRITTEN',
+      ])
+    })
+
+    it('reports the position in props.data to onCellValueChange', () => {
+      const ctx = sorted()
+      const onCellValueChange = vi.fn()
+      ctx.props.onCellValueChange = onCellValueChange
+      createClipboard(ctx).writeCellRaw(0, 'a', 'WRITTEN')
+      expect(onCellValueChange).toHaveBeenCalledWith(
+        expect.objectContaining({ rowIndex: 2, oldValue: 'data2', newValue: 'WRITTEN' }),
+      )
+    })
+
+    it('records the edit under the displayed row id', () => {
+      const ctx = sorted()
+      createClipboard(ctx).writeCellRaw(1, 'a', 'WRITTEN')
+      expect(ctx.editedCellValues['0:a']).toBe('WRITTEN')
+    })
   })
 })
 
@@ -753,14 +807,14 @@ describe('clearSelectedCells', () => {
     expect(ctx.internalData[0].a).toBe('x')
   })
 
-  it('skips rows whose id maps outside the data bounds', () => {
+  it('skips a row whose data object is not in the data array', () => {
     const ctx = makeCtx({
       columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
       data: [{ a: 'x' }],
     })
-    // Force the row's id to a non-numeric value so Number(id) is NaN
-    // and the integer/bounds guard skips it.
-    ctx._rows[0].id = 'not-a-number'
+    // A row model pointing at an object that is no longer in `internalData`
+    // (a stale model after data was replaced) has no slot to write to.
+    ctx._rows[0].original = { a: 'stale' }
     ctx.selectionRange = {
       anchor: { rowIndex: 0, colIndex: 0 },
       focus: { rowIndex: 0, colIndex: 0 },
@@ -768,6 +822,25 @@ describe('clearSelectedCells', () => {
     const cb = createClipboard(ctx)
     expect(cb.clearSelectedCells()).toBe(false)
     expect(ctx.internalData[0].a).toBe('x')
+  })
+
+  it('clears the selected row when getRowId does not return the array index', () => {
+    // The bug this guards: the row -> data-slot lookup used to be
+    // `Number(row.id)`, which is the array index only under the DEFAULT
+    // getRowId. Ids that are 1-based (or not numbers at all) cleared the row
+    // below the selection, or silently cleared nothing.
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+      data: [{ a: 'x0' }, { a: 'x1' }, { a: 'x2' }],
+    })
+    ctx._rows.forEach((r: any, i: number) => { r.id = `PLAT-${i + 1}` })
+    ctx.selectionRange = {
+      anchor: { rowIndex: 1, colIndex: 0 },
+      focus: { rowIndex: 1, colIndex: 0 },
+    }
+    const cb = createClipboard(ctx)
+    expect(cb.clearSelectedCells()).toBe(true)
+    expect(ctx.internalData.map((d: any) => d.a)).toEqual(['x0', '', 'x2'])
   })
 })
 

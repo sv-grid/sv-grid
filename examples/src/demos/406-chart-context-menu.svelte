@@ -18,7 +18,7 @@
     SvGrid,
     tableFeatures,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type ConditionalFormat,
   } from '@svgrid/grid'
 
@@ -99,7 +99,7 @@
   const statusColor = (v: string) => STATUS_COLOR[v] ?? '#94a3b8'
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     {
       field: 'product',
       header: 'Product',

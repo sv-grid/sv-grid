@@ -28,7 +28,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status = 'placed' | 'paid' | 'picking' | 'shipped' | 'delivered' | 'cancelled'
@@ -241,7 +241,7 @@
     }
   }
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'id',       header: 'Order',    width: 110, editable: false,
       cellClass: flashClass('id') },
     { field: 'customer', header: 'Customer', width: 130, editable: false,

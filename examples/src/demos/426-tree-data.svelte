@@ -21,7 +21,7 @@
     flattenTreeData,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -100,7 +100,7 @@
   type Source = 'org' | 'files'
   let source = $state<Source>('org')
 
-  const orgColumns: ColumnDef<typeof features, Person>[] = [
+  const orgColumns: GridColumns<Person> = [
     { field: 'name',     header: 'Name',     width: 240 },
     { field: 'title',    header: 'Title',    width: 190 },
     { field: 'location', header: 'Location', width: 130 },
@@ -111,7 +111,7 @@
     },
   ]
 
-  const fileColumns: ColumnDef<typeof features, Node>[] = [
+  const fileColumns: GridColumns<Node> = [
     { field: 'name',     header: 'Name',    width: 280 },
     { field: 'title',    header: 'Kind',    width: 140 },
     { field: 'location', header: 'Size',    width: 120, align: 'right' },

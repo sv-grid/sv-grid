@@ -19,7 +19,7 @@
     rowSortingFeature,
     columnGroupingFeature,
     rowExpandingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Repo = { name: string; lang: string; stars: number }
@@ -40,7 +40,7 @@
     columnGroupingFeature,
     rowExpandingFeature,
   })
-  const columns: ColumnDef<typeof features, Repo>[] = [
+  const columns: GridColumns<Repo> = [
     { field: 'name', header: 'Name' },
     { field: 'lang', header: 'Lang' },
     { field: 'stars', header: 'Stars', aggregate: 'sum' }, // rolled up per group

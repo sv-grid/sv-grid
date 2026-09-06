@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-04 from 348 pages, plus 39 API reference pages.
+Generated 2026-09-06 from 360 pages, plus 39 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -33,6 +33,27 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`moveCells` - drag a selected range to move or copy it.** Grab a selected
+  range by its border and drop it somewhere else. Move by default, copy with
+  Ctrl / Cmd, and the modifier is read at DROP time so it can be pressed or
+  released mid-drag. On whenever cell selection is on; `moveCells={false}`
+  opts out. A drop is refused outright - nothing changes - when it would land
+  off-grid or when any source or destination cell is read-only, rather than
+  moving the part that fits and silently dropping the rest.
+- **`selectionBar` - a floating bar over the grid while rows are selected**,
+  showing the count and the actions that apply to the whole selection. `true`
+  gives the count and a Clear button; an array is shorthand for `{ actions }`;
+  the object form also sets `position` (`'bottom'` default, or `'top'`),
+  `maxVisible` and `hideClear`. The prop and its types are free; the bar
+  itself is an Enterprise renderer, and without it the grid shows a short upsell
+  in its place, the same way the scheduler and board views do.
+- **Edge auto-scroll for every drag that extends a rectangle** - the fill
+  handle, the range move, and plain drag-select. All three were previously
+  capped at whatever was already on screen when the drag began, which on a grid
+  built for 100k rows meant the gesture mostly did not work. One shared rAF loop
+  scrolls the container when the pointer is inside a 40px edge band, on a linear
+  ramp to 20px/frame, in both axes. It keeps scrolling with the pointer parked
+  still, which is the whole point of holding at an edge.
 - **Row and column resizing, both opt-in** (`rowResize`, `columnResize`).
   `columnResize` gives every header a drag handle: drag the edge, double-click
   it to size the column to its content, or focus it and use Left/Right (Shift
@@ -113,7 +134,6 @@ For machine-readable releases, fetch
   repo passed `enableRowSummaries={false}` against 6 that opted in, and the
   API reference already documented the default as `false`. If you were
   relying on the old behaviour, add `summary` (or `enableRowSummaries`).
-
 - **Ember is now the default theme preset** (`defaultThemePreset` in
   `@svgrid/grid/themes`). It is what the demo gallery and svgrid.com open on, so
   a scaffolded or Studio-generated app now looks like the demos unless you pick
@@ -128,6 +148,36 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **`block` did nothing on eight editors.** The prop is declared once in
+  `SvEditorProps`, and its own doc comment describes the symptom: "in a form
+  grid a row of inputs each stopping at a different width reads as broken".
+  `SvDropDownList`, `SvComboBox`, `SvMultiSelect`, `SvTreeSelect`,
+  `SvGridSelect`, `SvAutoComplete`, `SvTextArea` and `SvDateRangeInput`
+  accepted it by type and ignored it, so they stopped at their own 200-280px
+  default while the text inputs beside them filled the row. `<SvForm>` was
+  also not passing it to seven of the controls it mounts - both halves had to be
+  fixed for a form row to line up.
+- **`cellDataType: 'dateString'` stored a timestamp after an edit.**
+  Committing ran through the shared date coercion (`new Date(v).toISOString()`),
+  so picking Christmas stored `2026-12-25T01:00:00.000Z` and the cell showed a
+  timestamp beside neighbours showing plain dates - on a calendar day that
+  depended on the user's timezone, since the conversion went through UTC. The
+  picked date is now kept as the picked date.
+- **The filter row mounted a native date input** while the cell editor mounted
+  the grid's own picker, so one column looked like two different products
+  depending on where you touched it. Both use the grid's picker now.
+- **`editorType: 'number'` dropped the character you were typing.** The
+  editor mounted `<input type="number">`, whose value sanitization reports
+  `""` for anything not already a valid float - so `12.` read as empty, and
+  typing `12.5` produced `125`. Same for a lone `-` and `1e`. It is a
+  text input with `inputmode="decimal"` and a digit filter now; the trade is
+  the native spinner.
+- **Cell context menus and the comment editor floated at stale coordinates
+  after a scroll.** Both are positioned at raw cursor coordinates and rendered
+  `position: fixed`, but neither was in the scroll effect's gate, so they hung
+  over unrelated cells. The comment editor SAVES on scroll rather than
+  discarding - backdrop-click and Escape are the gestures that mean "throw this
+  away"; a scroll is not, and must not destroy typed text.
 - **The footer summary row server-rendered as empty cells.** The totals were
   assigned from an `$effect`, and effects never run during SSR - so the server
   emitted a summary row that took up space and drew its border but held no
@@ -168,6 +218,14 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **The selection bar renderer, plus bulk edit.** `enableSelectionBar()`
+  (or `installEnterprise`) registers the renderer behind the free
+  `selectionBar` prop. The bar carries a count chip, your actions, an overflow
+  menu past `maxVisible`, and Clear; at phone width it collapses to icons and
+  keeps an accessible name on each. **Edit fields** opens a drawer that edits
+  one or many rows at once: a field the selection disagrees on opens blank and
+  stays per-row unless you touch it, so applying to 40 rows does not flatten the
+  values you did not mean to change.
 - **Scheduler booking rules and conflict detection.** New model helpers
   (`overlapCount` for per-resource overlaps, `overlapsBands` for working-hours
   bands) back resource double-booking checks and business-hours enforcement.
@@ -195,10 +253,132 @@ For machine-readable releases, fetch
   `src`, this had surfaced as a stray `svelte-check` error in consuming apps - a
   clean app now type-checks with zero errors.
 
+### @svgrid/grid-wc
+
+#### Added
+
+- **Typed event handlers.** Each wrapper's `on<Event>` prop used to be
+  `(detail: unknown) => void`, so reading `newValue` meant casting first -
+  a poor advertisement for a typed wrapper. The detail type is now lifted from
+  the grid's own callback signature, so 16 of the 19 events arrive fully typed
+  (`TData` degrades to `Record<string, unknown>`; anything referring to a
+  type that only exists inside `@svgrid/grid` stays `unknown` rather than
+  naming something a consumer cannot resolve).
+
+- **React, Vue and Angular components**, as subpath imports:
+  `@svgrid/grid-wc/react`, `/vue` and `/angular`. Each is generated from the
+  same surface as the elements, so all 98 properties and 20 events are typed
+  props on every one of them and none can drift from the grid. Each framework is
+  an OPTIONAL peer dependency, so a plain-HTML consumer installs none of them,
+  and the wrappers are 1.3-3.7 KB gzip because they reuse the one element bundle
+  rather than shipping a second copy of the grid.
+
+  They exist because a raw custom element is genuinely awkward in each:
+  **React 18 and earlier stringify object props onto attributes**, so
+  `columns={cols}` silently becomes `"[object Object]"` and the grid renders
+  empty; **Vue** needs `isCustomElement` build config and a `.prop` modifier
+  on every object binding; **Angular** needs `CUSTOM_ELEMENTS_SCHEMA` in every
+  component that shows a grid, and gets no typed inputs. The Angular wrapper is
+  compiled with ng-packagr in partial-Ivy mode, so it is consumable by a normal
+  Angular build, and its selector is the element's own tag - `<sv-grid>` and
+  `<sv-grid-shadow>` - with no template of its own, so there is no extra wrapper
+  element in the DOM and the tag is the same one you write in plain HTML.
+
+  All three also handle two ordering problems a hand-written wrapper meets:
+  the element renders BEFORE a framework assigns properties in an effect, and
+  `apiready` fires once during that first mount - before React can bind a
+  listener at all. The handle is parked on the element and each wrapper replays
+  it.
+- **The package ships TypeScript declarations.** It previously had none, so
+  `import '@svgrid/grid-wc'` was an error under `moduleResolution: bundler`
+  and `document.querySelector('sv-grid')` came back as a bare `Element`. The
+  generated `.d.ts` augments `HTMLElementTagNameMap` and
+  `HTMLElementEventMap`, so the element and its events are typed without
+  hand-written declarations.
+- **`<sv-grid-shadow>` - the grid in an open shadow root**, so a host page's
+  CSS cannot reach it. Same properties, attributes and events as `<sv-grid>`;
+  a separate element rather than an attribute because Svelte resolves
+  `customElement.shadow` at compile time, so no runtime flag can switch it.
+  Isolation is one-directional and the docs say so: page CSS stops at the
+  boundary, but the grid's own stylesheet is still injected into the document,
+  because about twenty overlay surfaces portal to `document.body` on purpose
+  to escape ancestor clipping. `--sg-*` theme tokens reach in unchanged,
+  including a theme file's dark variant - custom properties are inherited, and
+  inheritance crosses a shadow boundary.
+- **The elements now expose the whole grid.** `<sv-grid>` declared **7 props
+  and 2 events** by hand against a `Props` type with 100 props and 19
+  callbacks, so grouping, pagination, pinning, tree data, master/detail, board,
+  scheduler and every Enterprise feature were unreachable from a non-Svelte
+  host - while the docs said they "all come along". The surface is now
+  **generated** from `<SvGrid>`'s own types: **98 properties** (72 with
+  kebab-case attributes, 26 property-only) and **20 events**, with CI failing if
+  the two drift. Costs 1.6 KiB gzip.
+- **Every grid callback is a DOM `CustomEvent`**, `detail` being the
+  callback's argument - or, for the one callback taking two, an object keyed by
+  its parameter names. `onApiReady` also parks the imperative handle on the
+  element as `el.api`, because an event fires once and a host binding a
+  listener later would otherwise never reach it.
+
+#### Fixed
+
+- **The React wrapper re-did all its work on every parent render.** Both of its
+  effects had no dependency array, so any state change anywhere in the parent
+  reassigned all 98 properties and rebound all 20 event listeners - 40 listener
+  mutations per keystroke. It now writes only values that actually changed and
+  binds listeners once through a handler ref. Measured: 20 no-op re-renders
+  produce 0 listener adds, 0 removes and 0 property writes.
+
+- **The element threw when it rendered before its props were assigned.**
+  Generating the prop list replaced the elements' own `data = []` /
+  `columns = []` defaults with a bare `$props()`, so a consumer that assigns
+  properties AFTER the element upgrades - which is what React and Angular both
+  do, in an effect - got
+  `TypeError: Cannot read properties of undefined (reading 'map')` and a grid
+  that never rendered. Only a real framework app was late enough to reproduce
+  it; an HTML fixture sets the properties in the same tick and never sees it.
+
+#### Changed
+
+- **Only arrays, objects and functions changed shape: they are property-only.**
+  An HTML attribute is a string, so `columns='[object Object]'` cannot work
+  and no attribute is offered for the 26 props that are not primitives. The
+  published `rowclick` and `selectionchange` events keep the exact
+  `detail` they shipped with, and `selectable` keeps meaning row-selection
+  checkboxes - `<SvGrid>`'s prop of that name is an alias of
+  `enableCellSelection`, and forwarding it would have silently repointed a
+  published attribute at a different feature.
+
 ### Tooling & docs
 
 #### Added
 
+- **27 runnable framework examples**, nine each for React, Vue and Angular:
+  a first grid, sorting and filtering, editing and saving, row selection,
+  grouping and totals, pagination, server-side data, theming, and Excel export
+  from the Enterprise pack. Every one has
+  an **Open in StackBlitz** button that boots a full editable project - no local
+  install - and a new
+  [React, Vue or Angular](/docs/help/web-components/frameworks) landing page
+  puts the thirty-second path first.
+
+  They are real apps in the repository (`packages/grid-wc/examples/`), not
+  snippets, and CI compiles all of them with each framework's own compiler -
+  including `ngc --strictTemplates`, so a wrong Angular binding fails the
+  build. The doc listings are generated from those files, so a page cannot
+  describe a version of an example that no longer exists.
+
+  The Vue templates get an extra check of their own: Vue treats an unknown
+  attribute as a legal fallthrough, so `<SvGrid sortabel />` type-checks
+  cleanly and silently does nothing. Verified - the same typo fails the React
+  and Angular compilers and passes `vue-tsc` - so the Vue examples are also
+  checked against the generated surface.
+
+- **A Web Components docs category.** Eight pages under
+  `help/web-components/` - quick start, a generated `<sv-grid>` reference,
+  shadow DOM, React, Vue, Angular, TypeScript and limitations - replacing a
+  single page that was filed under "Layout & Styling". The reference tables are
+  generated from the grid's types, and a guard checks that the counts quoted in
+  prose still match the surface.
 - **The docs run.** A `svelte` code fence tagged `{runnable}` is extracted at build time
   into a real component, so a doc page shows the source and the working result
   together rather than highlighted text. 504 examples across the corpus, taking
@@ -12112,6 +12292,9 @@ npm create @svgrid@latest my-app -- --template minimal
 # Full SvelteKit admin dashboard
 npm create @svgrid@latest my-admin -- --template admin-dashboard
 
+# Pivot cube + linked chart + drill-through (needs @svgrid/enterprise)
+npm create @svgrid@latest my-cube -- --template pivot-dashboard
+
 # The engine only - your own markup and CSS
 npm create @svgrid@latest my-table -- --template headless
 ```
@@ -12129,11 +12312,12 @@ npm run dev
 | Template | Stack | Best for |
 | --- | --- | --- |
 | `minimal` | Vite + Svelte 5 + `@svgrid/grid`, one page | Dropping a grid into something quickly |
-| `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, theme picker | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
+| `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, cookie sessions with role gating | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
 | `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
+| `pivot-dashboard` | SvelteKit + `@svgrid/enterprise`: a pivot cube, a linked chart and a drill-through rail over one fact table | Reporting screens where a number has to be traceable to its rows |
 | `headless` | Vite + Svelte 5 + `@svgrid/grid/core`: the engine driving a hand-written `<table>` | Your own renderer and your own CSS |
 
-The three `<SvGrid>` templates start on the Ember theme, the same one the demos
+The four `<SvGrid>` templates start on the Ember theme, the same one the demos
 and svgrid.com use, unless you pass `--theme <id>`. `headless` loads no grid
 stylesheet at all, so it has no theme to pick.
 
@@ -12141,7 +12325,7 @@ stylesheet at all, so it has no theme to pick.
 
 | Flag | Alias | Description |
 | --- | --- | --- |
-| `--template <name>` | `-t` | `minimal`, `sveltekit`, `admin-dashboard`, or `headless` |
+| `--template <name>` | `-t` | `minimal`, `sveltekit`, `pivot-dashboard`, `admin-dashboard`, or `headless` |
 | `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` |
 | `--dark` / `--light` | | Pin the starting mode. Left out, `minimal` and `sveltekit` follow the visitor's OS and `admin-dashboard` starts dark |
 | `--force` | `-f` | Scaffold into a non-empty directory |
@@ -12181,6 +12365,26 @@ If you're deploying the template straight from this monorepo's
 subfolder, set the Vercel **Root Directory** to
 `templates/sveltekit-admin-dashboard`. Scaffolding a standalone copy
 first (above) avoids that step.
+
+## The pivot dashboard starter
+
+`pivot-dashboard` is the one template built on `@svgrid/enterprise` rather than the
+free package, because the pivot designer is a paid feature. It runs unlicensed
+(it nudges rather than stopping), so you can evaluate it before buying.
+
+It puts three panes over a single fact table:
+
+- a **pivot cube** you can re-shape by dragging fields between wells,
+- a **chart** that re-aggregates the same facts along the first row dimension,
+- a **drill-through rail** that opens when you click any aggregated cell and
+  lists the exact rows behind that number.
+
+The point is that they cannot disagree. The rail recomputes its total from the
+rows it lists rather than reading the grid, so if the two ever diverged the
+drill filter and the pivot aggregation would have drifted apart.
+
+The drill maths lives in `src/lib/drill.ts`, deliberately free of Svelte and of the
+grid packages, so you can unit-test your own reporting rules against it.
 
 ## The headless starter
 
@@ -12630,6 +12834,11 @@ Three things to try, in this order:
   built on `resolveThemeTokens` from `@svgrid/grid/themes`, which is the short
   way to see the pattern. [Theme and density](./5-theme-and-density.md) covers
   it properly.
+- **Gating it behind a login.** The `sveltekit` template ships an auth scaffold:
+  a cookie session, PBKDF2 password hashing over Web Crypto (so it still runs on
+  an edge adapter), and one `PROTECTED` list in `hooks.server.ts` that gates routes
+  before any load runs. The role check sits in the form action, not only in the
+  UI - hiding an edit button stops nobody from posting the action by hand.
 - **Deployment.** SvGrid is a normal client dependency with no build step or
   server runtime of its own, so any SvelteKit adapter works unchanged.
 
@@ -16673,6 +16882,132 @@ the usual next request, and it is CSS rather than configuration.
 
 - [Cell components](./cell-components.md)
 - [demos/05-inline-editing.svelte](../../../examples/src/demos/05-inline-editing.svelte)
+
+<!-- =================================================================
+     /docs/help/cells/rich-text-cells/  (community)
+     ================================================================== -->
+
+# Rich text and Markdown cells
+
+Some columns hold formatted text: a note with a bold phrase and a link, a
+description written in Markdown, a comment pasted out of another system. Render
+those with `SvRichCell`, which sanitizes the value before painting it.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, SvRichCell, renderSnippet, type ColumnDef } from '@svgrid/grid'
+
+  type Note = { id: number; author: string; body: string }
+
+  const rows: Note[] = [
+    { id: 1, author: 'Ada', body: '<p>Shipped the <strong>parser</strong> - see <a href="/docs/">docs</a>.</p>' },
+    { id: 2, author: 'Linus', body: '<p>Reverted <code>a1b2c3</code>, the build was red.</p>' },
+  ]
+</script>
+```
+
+## Rendering
+
+`SvRichCell` takes the value, sanitizes it, and paints the result:
+
+```svelte
+{#snippet bodyCell({ getValue })}
+  <SvRichCell value={getValue()} />
+{/snippet}
+
+<SvGrid {rows} columns={[
+  { field: 'author', header: 'Author' },
+  { field: 'body', header: 'Note', cell: renderSnippet(bodyCell) },
+]} />
+```
+
+A grid row is one line tall, so the content is clamped to a single line with an
+ellipsis and the flattened text goes onto the `title` attribute. Give it more
+room with `clamp`, or turn the clamp off entirely inside a master/detail panel:
+
+```svelte
+<SvRichCell value={getValue()} clamp={3} />
+<SvRichCell value={getValue()} clamp={0} />
+```
+
+Set `clamp={0}` only where the row can actually grow. With a fixed row height
+the overflow is hidden, and with `rowHeight` as a function the row has to be
+tall enough for the content.
+
+## Markdown
+
+Pass `format="markdown"` for values stored as Markdown source rather than HTML:
+
+```svelte
+<SvRichCell value={getValue()} format="markdown" />
+```
+
+This covers the common subset - headings, `**bold**`, `*italic*`, `~~strike~~`,
+`` `code` ``, links, images, and bullet or ordered lists. It is not a full
+CommonMark parser: a cell shows a line or two, and a complete parser is a
+dependency the package does not take. For full Markdown, convert with your own
+library and pass the resulting HTML.
+
+## Editing
+
+`registerBuiltinEditors()` registers `richtext`, which edits the value with
+`SvRichText`:
+
+```svelte
+<script lang="ts">
+  import { registerBuiltinEditors } from '@svgrid/grid'
+  registerBuiltinEditors()
+</script>
+
+<SvGrid {rows} columns={[
+  { field: 'body', header: 'Note', editorType: 'richtext', cell: renderSnippet(bodyCell) },
+]} />
+```
+
+The editor carries a formatting toolbar, so give the column a taller row or edit
+it from a detail panel rather than a default single-line row.
+
+## Sanitization
+
+Everything `SvRichCell` paints goes through `sanitizeHtml` first, and the
+`richtext` editor sanitizes both the value it receives and the value it commits.
+Cleaning on the way in means pasted markup never reaches your row data.
+
+The allowlist is deliberately narrow - the tags `SvRichText` produces, plus
+links and images. Dropped:
+
+- `<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>` and their contents
+- every `on*` event handler attribute
+- `style` attributes, which are the classic sanitizer hole
+- `javascript:` and `vbscript:` URLs, including whitespace-obfuscated forms
+- `data:` URLs, except base64 images on an `<img src>`
+
+Unknown tags are unwrapped rather than dropped, so an unrecognized wrapper never
+costs you the text inside it. A link with `target` gets `rel="noopener
+noreferrer"` added.
+
+Call it directly when you need the same guarantee elsewhere:
+
+```ts
+import { sanitizeHtml, renderMarkdown, htmlToText } from '@svgrid/grid'
+
+sanitizeHtml('<p onclick="steal()">hi</p>')  // '<p>hi</p>'
+renderMarkdown('**bold** and [a link](https://svgrid.com)')
+htmlToText('<p>one</p><p>two</p>')           // 'one two'
+```
+
+`htmlToText` is what you want for exports, tooltips and accessible names, where
+a cell's markup has to collapse to one plain string.
+
+> `sanitizeHtml` is a narrow allowlist for cell content, not a general-purpose
+> sanitizer for arbitrary third-party HTML. If you are rendering untrusted
+> documents rather than cell values, use a dedicated library.
+
+## Server rendering
+
+During SSR there is no DOM to parse with, so a stricter regex pass runs instead:
+allowlisted tags survive, but every attribute is stripped. The markup is plainer
+for one paint, and the client re-sanitizes with the real parser on hydration.
 
 <!-- =================================================================
      /docs/help/cells/sparklines/  (community)
@@ -21244,7 +21579,7 @@ The grid ships with five inline editors. Each is selected by the column's
 | `editorType` | DOM element | Notes |
 | ------------ | ----------- | ----- |
 | `'text'`     | `<input type="text">`     | default |
-| `'number'`   | `<input type="number">`   | parsed with `parseEditorValue('number', ...)` |
+| `'number'`   | `<input type="text" inputmode="decimal">` | parsed with `parseEditorValue('number', ...)` |
 | `'date'`     | `<input type="date">`     | round-trips to ISO `YYYY-MM-DD` |
 | `'datetime'` | `<input type="datetime-local">` | round-trips to ISO 8601 |
 | `'checkbox'` | `<input type="checkbox">` | toggled on `Enter` / `Space` |
@@ -21498,6 +21833,170 @@ tab through a name they did not intend to change.
 - [Validation](./validation.md)
 
 <!-- =================================================================
+     /docs/help/editing/move-cells/  (community)
+     ================================================================== -->
+
+# Drag a range to move or copy it
+
+Select a block of cells, put the pointer on the block's **border**, and drag it
+somewhere else. The values move. Hold `Ctrl` (`Cmd` on macOS) as you release and
+they are copied instead.
+
+This is the gesture people bring with them from a spreadsheet, and it is on by
+default wherever cell selection is on - the same deal as the fill handle. There
+is no prop to remember.
+
+<div data-docs-demo="429-move-cells" data-height="480"></div>
+
+The examples on this page run against these rows:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Shift = {
+    id: number
+    week: string
+    mon: number | null
+    tue: number | null
+    wed: number | null
+  }
+
+  const shifts: Shift[] = [
+    { id: 1, week: 'Week 1', mon: 6, tue: 8, wed: 7 },
+    { id: 2, week: 'Week 2', mon: 5, tue: 9, wed: 8 },
+    { id: 3, week: 'Week 3', mon: 7, tue: 6, wed: 9 },
+    { id: 4, week: 'Week 4', mon: null, tue: null, wed: null },
+    { id: 5, week: 'Week 5', mon: null, tue: null, wed: null },
+  ]
+
+  const columns: GridColumns<Shift> = [
+    { field: 'week', header: 'Week', width: 130 },
+    { field: 'mon',  header: 'Mon',  width: 90, align: 'right' },
+    { field: 'tue',  header: 'Tue',  width: 90, align: 'right' },
+    { field: 'wed',  header: 'Wed',  width: 90, align: 'right' },
+  ]
+</script>
+```
+
+## The gesture
+
+| Action | Result |
+| --- | --- |
+| Drag the border | Move: the values land at the drop point, the source cells go blank |
+| `Ctrl` / `Cmd` held at drop | Copy: the source keeps its values |
+| `Ctrl` + `Z` afterwards | Walks the move back one cell at a time |
+
+The modifier is read when you **drop**, not when you start, so you can change
+your mind mid-drag. The dashed outline that follows the pointer is the same
+marquee the fill handle draws, and it shows exactly where the block will land.
+
+The grab strip is the outer 4px of the border. A pointerdown anywhere further
+inside the range still starts a fresh selection, so nothing about clicking
+changes.
+
+Select `Mon`-`Wed` on the first three rows here, then drag the block's edge
+down onto the empty weeks:
+
+```svelte {runnable}
+<SvGrid data={shifts} {columns} editable enableCellSelection />
+```
+
+## Turning it off
+
+With `moveCells={false}` a pointerdown on the border starts a new selection,
+which is what it did before this existed. Everything else about cell selection
+is unchanged - shift-click, drag-select and the fill handle all still work:
+
+```svelte {runnable}
+<SvGrid data={shifts} {columns} editable enableCellSelection moveCells={false} />
+```
+
+## What it refuses to do
+
+A range moves whole or not at all. The drop is rejected - nothing changes,
+nothing is written - when:
+
+- the destination would run off the top, bottom or side of the grid,
+- any destination cell is read-only (a column with `editable: false`, a group
+  row, or a cell your `editable` callback rejects),
+- a move (not a copy) would have to blank a read-only source cell,
+- any column on either side has no `field` to write back to.
+
+The alternative is applying the part that fits and dropping the rest, which
+leaves the range split across two places with nothing on screen to say which
+half landed. Refusing is the recoverable outcome.
+
+A **copy** out of a read-only column is allowed, because nothing is written to
+the source - only read.
+
+Try dropping a block onto the `Week` column below. Nothing happens, and the
+values stay where they were:
+
+```svelte {runnable}
+<script lang="ts">
+  const locked: GridColumns<Shift> = [
+    { field: 'week', header: 'Week (read-only)', width: 160, editable: false },
+    { field: 'mon',  header: 'Mon', width: 90, align: 'right' },
+    { field: 'tue',  header: 'Tue', width: 90, align: 'right' },
+    { field: 'wed',  header: 'Wed', width: 90, align: 'right' },
+  ]
+</script>
+
+<SvGrid data={shifts} columns={locked} editable enableCellSelection />
+```
+
+## Dragging past the edge
+
+Park the pointer near the edge of the grid mid-drag and it scrolls to follow,
+faster the closer you get to the edge. The destination does not have to be on
+screen when the drag starts, which on a long list is most of the time.
+
+The same applies to the fill handle and to plain drag-select.
+
+## Overlapping drops
+
+Nudging a block one row down is a normal thing to do, and the source and
+destination rectangles then overlap. The values are snapshotted before the
+first write, so the block shifts cleanly instead of smearing the first row's
+value through the rest.
+
+## What the consumer sees
+
+Every cell the move touches fires `onCellValueChange` - the blanked source
+cells first, then the destination writes:
+
+```svelte {runnable}
+<script lang="ts">
+  let log = $state<string[]>([])
+</script>
+
+<SvGrid
+  data={shifts}
+  {columns}
+  editable
+  enableCellSelection
+  onCellValueChange={(e) => {
+    log = [`${e.columnId}: ${e.oldValue ?? '-'} -> ${e.newValue ?? '-'}`, ...log].slice(0, 8)
+  }}
+/>
+
+<ul>
+  {#each log as line, i (i)}<li>{line}</li>{/each}
+</ul>
+```
+
+Each of those is also one entry in the undo history, appended together, so a
+single `api.undo()` per cell walks the move back. After the drop the moved
+range stays selected where it landed, so a second drag can chain off the first.
+
+## See also
+
+- [Undo / redo](./undo-redo.md)
+- [Editing overview](./overview.md)
+- [Saving values](./saving-values.md)
+
+<!-- =================================================================
      /docs/help/editing/overview/  (community)
      ================================================================== -->
 
@@ -21597,6 +22096,14 @@ Walks through every fill pattern the engine detects: numeric series, date series
 
 <div data-docs-demo="95-fill-handle" data-height="460"></div>
 
+### Drag a range to move or copy it
+
+Grab the border of a selected block and drag it somewhere else and the values
+move; hold Ctrl (Cmd) as you drop and they are copied. On by default with cell
+selection - see [Drag a range to move or copy it](./move-cells.md).
+
+<div data-docs-demo="429-move-cells" data-height="480"></div>
+
 ## See also
 
 - [Start / stop editing](./start-stop-editing.md)
@@ -21604,6 +22111,7 @@ Walks through every fill pattern the engine detects: numeric series, date series
 - [Saving values](./saving-values.md)
 - [Provided editors](./provided-editors.md)
 - [Validation](./validation.md)
+- [Drag a range to move or copy it](./move-cells.md)
 
 <!-- =================================================================
      /docs/help/editing/parsing-values/  (community)
@@ -21763,7 +22271,7 @@ the cell is read-only.
 | `editorType`  | Renders                              | Stored value            |
 |---------------|--------------------------------------|-------------------------|
 | `'text'`      | `<input type="text">`                | `string`                |
-| `'number'`    | `<input type="number">`              | `number \| null`        |
+| `'number'`    | `<input type="text" inputmode="decimal">` | `number \| null`   |
 | `'date'`      | `<input type="date">`                | ISO `YYYY-MM-DD` string |
 | `'datetime'`  | `<input type="datetime-local">`      | ISO 8601 string         |
 | `'checkbox'`  | Themed checkbox button               | `boolean`               |
@@ -21783,9 +22291,29 @@ stored.
 
 ## Number editor - `editorType: 'number'`
 
-`<input type="number">` with browser-native increment buttons.
-Non-numeric input is rejected at commit (`parseEditorValue` returns
+A text input with `inputmode="decimal"`, coerced to a number at commit.
+
+It is deliberately **not** `<input type="number">`. That element runs the HTML
+value-sanitization algorithm, so it only ever reports a value that parses as a
+valid float - and every intermediate state on the way to `12.5` is not one. The
+element reported `""` for `12.`, the editor read that into its draft, and the
+decimal point the user had just typed disappeared: typing `12.5` produced
+`125`. The same applied to a lone `-` on the way to a negative, and `1e` on the
+way to `1e3`.
+
+A text input keeps the raw keystrokes, and `parseEditorValue` coerces at commit
+exactly as it already did. Characters that can never be part of a number are
+rejected as you type, which is the one guarantee `type="number"` did provide.
+
+The trade-off is the native increment buttons, which a text input cannot
+render. `inputmode="decimal"` keeps the numeric keypad on mobile.
+
+Non-numeric input is still rejected at commit (`parseEditorValue` returns
 `null` and the cell stays at its previous value).
+
+The filter row and filter menu still use `<input type="number">` for numeric
+columns, so a decimal is awkward to type there for the same reason. That is a
+separate surface and a separate decision, not an oversight.
 
 ```ts
 { field: 'age', header: 'Age', editorType: 'number' }
@@ -21831,6 +22359,9 @@ in the cell.
 ```ts
 { field: 'active', header: 'Active', editorType: 'checkbox' }
 ```
+
+The editor takes focus when it opens, so it works from the keyboard alone:
+`Space` or `Enter` toggles and commits, `Esc` leaves the value as it was.
 
 ## List editor - `editorType: 'list'`
 
@@ -21983,6 +22514,10 @@ integer 0-5. Clicking a star commits immediately - no blur required.
 ```ts
 { field: 'csat', header: 'CSAT', editorType: 'rating' }
 ```
+
+It is a radiogroup, so it also works from the keyboard: the star holding the
+current value takes focus when the editor opens, the arrow keys (plus `Home`
+and `End`) move across the five, `Enter` commits and `Esc` cancels.
 
 ### Complete example
 
@@ -24427,6 +24962,10 @@ For `'datetime'`, use full ISO 8601: `2026-05-27T14:32:00Z`.
 
 ## Date range
 
+Both surfaces use the same controls: a date picker for the single-value
+operators, and one range field for **Between** - two-month calendar, both ends
+in a single gesture. A range needs both ends before it filters anything.
+
 Pick **Between** in the column menu's operator picker. The wrapper
 renders two date inputs (From / To); both endpoints are **inclusive**.
 
@@ -24922,7 +25461,10 @@ the column's type, and `between` shows a second inline "To" input.
   column a date picker, text a text input. This is driven by the column's
   `editorType`.
 - **`between` inline** - selecting Between shows a second **To** input right in
-  the row, so ranges work without opening the full menu.
+  the row, so ranges work without opening the full menu. A date column swaps in
+  a single **range field** instead: one popover, two-month calendar, both ends
+  picked in one gesture. A range needs both ends - the filter stays inactive
+  until the second one is picked.
 
 ```ts
 const columns = [
@@ -25502,6 +26044,19 @@ A set filter is a checklist of the distinct values in the column, which is
 the right shape when the domain is small and closed - a department, a status, a
 country. Typing an operator for those is slower than ticking a box.
 
+Three things the checklist does on its own:
+
+- **It counts.** Each row shows how many rows that value would keep, so you can
+  see the shape of the column before touching it.
+- **It offers only what is reachable.** The values are taken from the rows that
+  pass every *other* column's filters, not from the whole dataset - narrow
+  Country to Germany and the City list stops offering cities that would leave
+  you with an empty grid. The column's own filter is excluded, so unticking one
+  value never makes the rest of the list move.
+- **Search then "select all" means the results.** With a query typed the row
+  reads *(Select all results)* and applies to the matches only, leaving the
+  rest of your selection alone.
+
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'
@@ -25682,9 +26237,11 @@ substrings).
 
 **Pick from the column's values.** When you focus the `in` / `notIn` chip
 input, a dropdown of the column's **distinct values** opens beneath it (the same
-values the [set filter](./set-filter.md) checklist uses). Typing narrows the
-list; click a value to toggle it in or out. In the funnel menu and tool panel
-the plain text input offers the same values as native autocomplete suggestions.
+values the [set filter](./set-filter.md) checklist uses, with the same match
+counts, and likewise limited to what the other columns' filters still leave
+reachable). Typing narrows the list; click a value to toggle it in or out. In
+the funnel menu and tool panel the plain text input offers the same values as
+native autocomplete suggestions.
 
 Through the API, pass the list as a newline- or comma-separated string:
 
@@ -30924,6 +31481,7 @@ const rows = raw.slice(1).map((cells) =>
 | `getSelected()`                         | Combine `onActiveCellChange` + `onRowSelectionChange`    |
 | `copyPaste: true` (default)             | Ships built-in; `enableCellSelection={true}`             |
 | `fillHandle: true`                      | Ships built-in (drag-to-fill on selected range)          |
+| `moveCells: true`                       | `moveCells` - drag the range border to move it, Ctrl / Cmd to copy. On by default; see [move or copy a range](./editing/move-cells.md) |
 
 ## Frozen rows / columns
 
@@ -33596,6 +34154,9 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
+| ~~Drag a selected range to move / copy it~~ | **shipped** - `moveCells`, on by default with cell selection; demo `429-move-cells` | ✓ |
+| ~~Render inside a shadow root~~ | **shipped** - `<sv-grid-shadow>` in `@svgrid/grid-wc`. Open roots only; closed is unsupported, because a null `shadowRoot` leaves you unable to style, query or test your own grid | ✓ |
+| Eight draggable resize handles on a selection | **declined** - shift-click, shift-arrow, pointer drag and Ctrl+drag already resize a range four ways. Eight more hit targets per range in the hottest render path buys an interaction users already have. | - |
 
 ## Export / Print
 
@@ -33676,7 +34237,7 @@ multi), per-column filtering (menu + row + global) with a `between` range
 operator and set/tree/async filters, pagination, grouping + aggregation, tree
 data, master/detail + full-width detail rows, row + column virtualization
 (100k+ and a 1M-row demo), cell-range selection + copy/paste + Excel-style fill
-handle, inline editing with 14 editor types plus a custom `cellEditor` slot,
+handle + drag-the-border move/copy, inline editing with 14 editor types plus a custom `cellEditor` slot,
 undo/redo, staged editing, find-in-grid, notes + cell comments, tooltips,
 conditional formatting, sparklines, cell merging, column pinning/reorder/resize,
 row pinning, a formula engine (+ HyperFormula adapter), server-side row model,
@@ -37027,6 +37588,59 @@ into your own state (persistence, server sync):
 />
 ```
 
+## Touch
+
+Row dragging works on touch as well as with a mouse. It runs on pointer
+events with a long-press to start, so an ordinary swipe still scrolls the
+grid instead of picking a row up. Once a drag begins you get hit-testing
+against the row under the finger, autoscroll near the top and bottom edges,
+and the drop happening on lift.
+
+### What lifting your finger does
+
+A lift **commits** the drop to wherever the indicator was last showing, even
+if your finger has travelled outside the grid. Dragging to the bottom edge is
+how you move a row to the end on a phone, and cancelling there would throw
+away a move the interface was actively promising.
+
+Note this differs from the desktop path, where dropping outside a target
+cancels. What does abort a touch drag is a real interruption - an incoming
+call, the app switcher, a system edge swipe - which arrives as
+`pointercancel` and leaves the order untouched.
+
+### Automated coverage
+
+`tests/e2e/mobile/row-drag-touch.spec.ts` drives this with real touch input
+through Chromium's input pipeline (CDP `Input.dispatchTouchEvent`, not synthetic
+DOM events), so it exercises `touch-action` handling and compositor scrolling
+that jsdom cannot. It covers:
+
+- a swipe past the slop scrolls instead of picking a row up,
+- a long press followed by a move reorders on lift,
+- lifting past the bottom edge commits to the last indicated row,
+- an interrupted gesture aborts and leaves the order unchanged,
+- a second finger mid-drag loses or duplicates no row.
+
+Run it with `pnpm test:e2e:mobile`.
+
+### Still needs a real device
+
+Chromium with touch emulation is not iOS Safari. These are WebKit-on-hardware
+behaviours no emulator reproduces, so they have to be checked by hand:
+
+| Check | Expected |
+| --- | --- |
+| Swipe over rows with momentum, then let it coast | The grid keeps scrolling. No row is picked up mid-fling. |
+| Scroll to the very top and keep pulling | Rubber-banding, and no drag starts out of the bounce. |
+| Drag near the left screen edge on iOS | Back-swipe navigation does not fire mid-drag. |
+| Long-press a row on iOS | No text-selection callout or magnifier appears. |
+| Drag with the URL bar collapsing or expanding | The drop indicator stays aligned with the row under the finger. |
+| Rotate the device mid-drag | The drag cancels cleanly or keeps tracking. It must not leave a stuck row. |
+| With VoiceOver or TalkBack on | The handle is reachable and announces itself; keyboard reorder still works. |
+
+If any row fails, the detail belongs on [issue #66](https://github.com/sv-grid/sv-grid/issues/66)
+with the device and OS version, because that is what the fix has to be tested
+against.
 ## Notes
 
 - **Managed data.** On drop the grid updates its internal data directly, so
@@ -38949,6 +39563,290 @@ A support centre where each queue has a capacity and calls overlap through the d
 Several calendars overlaid on one week - Work, Personal, Family, Holidays - each colour-coded from a legend you can toggle. Turning a calendar off hides its events across every view; an event takes its calendar colour.
 
 <div data-docs-demo="397-scheduler-multi-calendar" data-height="560"></div>
+
+<!-- =================================================================
+     /docs/help/rows/selection-bar/  (community)
+     ================================================================== -->
+
+# Bulk-action bar
+
+Tick some rows and a bar floats over the grid holding the count, the actions
+that apply to the whole selection, and a way to clear it - the pattern an issue
+tracker uses for bulk edit.
+
+<div data-docs-demo="430-selection-bar" data-height="560"></div>
+
+Every example below runs against this setup. The bar *renderer* ships in
+`@svgrid/enterprise`, so `enableSelectionBar()` is what lights it up - the
+`selectionBar` prop and its types are part of the free grid. Without the
+renderer the grid shows a note in the bar's place saying it is an Enterprise
+feature and pointing at [licensing](https://svgrid.com/pricing/).
+
+Like the rest of Enterprise this is **soft-gated**: with the package installed
+the bar works whether or not a license key is set, and an unlicensed grid
+renders a watermark. Set one with `setLicenseKey()` before shipping.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type SelectionBarAction } from '@svgrid/grid'
+  import { enableSelectionBar } from '@svgrid/enterprise'
+
+  enableSelectionBar()
+
+  type Task = {
+    id: number
+    key: string
+    title: string
+    assignee: string
+    status: 'Open' | 'In progress' | 'Done'
+  }
+
+  const tasks: Task[] = [
+    { id: 1, key: 'PLAT-412', title: 'Virtualize the audit log',  assignee: 'A. Osei',      status: 'Open' },
+    { id: 2, key: 'PLAT-413', title: 'Retry webhook delivery',    assignee: 'R. Vance',     status: 'In progress' },
+    { id: 3, key: 'PLAT-414', title: 'Cache the tenant lookup',   assignee: 'M. Iqbal',     status: 'Done' },
+    { id: 4, key: 'PLAT-415', title: 'Fix timezone drift',        assignee: 'J. Lindqvist', status: 'Open' },
+    { id: 5, key: 'PLAT-416', title: 'Batch the settings writes', assignee: 'D. Okonkwo',   status: 'Done' },
+  ]
+
+  const columns: GridColumns<Task> = [
+    { field: 'key',      header: 'Key',      width: 110 },
+    { field: 'title',    header: 'Summary',  width: 240 },
+    { field: 'assignee', header: 'Assignee', width: 150 },
+    { field: 'status',   header: 'Status',   width: 130 },
+  ]
+</script>
+```
+
+## The smallest version
+
+`selectionBar` on its own gives the count and a clear button. Nothing else is
+required - `showRowSelection` puts the checkboxes there, and the bar reacts to
+whatever ends up selected:
+
+```svelte {runnable}
+<SvGrid data={tasks} {columns} getRowId={(t) => String(t.id)} showRowSelection selectionBar />
+```
+
+## Adding actions
+
+An array is the shorthand for `{ actions }`. Each action gets the whole
+selection as `{ rows, ids }`, in **display order** - so it reads the same order
+the user is looking at, even after a sort:
+
+```svelte {runnable}
+<script lang="ts">
+  let log = $state<string[]>([])
+
+  const actions: SelectionBarAction<Task>[] = [
+    {
+      key: 'done',
+      label: 'Mark done',
+      icon: 'M20 6 9 17l-5-5',
+      action: ({ ids }) => (log = [`Marked ${ids.length} done`, ...log]),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: 'M3 6h18M8 6V4h8v2m-1 0v14H9V6',
+      danger: true,
+      action: ({ ids }) => (log = [`Deleted ${ids.join(', ')}`, ...log]),
+    },
+  ]
+</script>
+
+<SvGrid data={tasks} {columns} getRowId={(t) => String(t.id)} showRowSelection selectionBar={actions} />
+
+<ul>
+  {#each log as line, i (i)}<li>{line}</li>{/each}
+</ul>
+```
+
+`icon` is the `d` of a single 24x24 SVG path, so an action array stays plain
+data you can lift into its own module next to the columns.
+
+## Built-in actions
+
+Strings in the array are built-ins, so the common buttons need no wiring:
+
+| Key | Does |
+| --- | --- |
+| `'selectAll'` | Selects every row in the view, then disables itself |
+| `'editFields'` | Opens the bulk-edit drawer - see below |
+| `'separator'` | Draws a divider. Not counted against `maxVisible` |
+
+Mix them with your own actions in one array:
+
+```svelte {runnable}
+<script lang="ts">
+  const bar: Array<SelectionBarAction<Task> | 'selectAll' | 'editFields' | 'separator'> = [
+    'selectAll',
+    'editFields',
+    'separator',
+    { key: 'watch', label: 'Watch', action: () => {} },
+  ]
+</script>
+
+<SvGrid data={tasks} {columns} getRowId={(t) => String(t.id)} showRowSelection selectionBar={bar} />
+```
+
+## Bulk edit
+
+`'editFields'` opens a **drawer** - the same `SvDrawer` + `SvForm` the grid
+uses for single-row editing - holding one control per editable column. Change
+as many fields as you like and they apply to **every selected row**, as a
+single undo run.
+
+The rule that makes that safe: **only fields you actually change are written.**
+
+| The field | Opens showing | Leave it alone and |
+| --- | --- | --- |
+| Every selected row agrees | That shared value | Nothing is written |
+| They disagree | Blank, labelled "Multiple values" | Each row keeps its own value |
+
+So editing Status across twelve issues does not flatten their summaries to
+whichever one happened to be first.
+
+The field list is the grid's own editable, field-backed columns. A column with
+`editable: false` is not offered, because writing it in bulk would be a
+footgun, and `editorOptions` carry over - a status column with a fixed set
+becomes a picker in the drawer rather than a free-text box.
+
+What it does per cell:
+
+- skips rows whose per-row `editable` rule refuses the write,
+- skips cells already holding the value, so they do not become empty undo steps,
+- fires `onCellValueChange` for every cell it does change,
+- appends the whole run's undo steps together, so `Ctrl+Z` walks the edit back
+  rather than needing one press per cell.
+
+The engine is exported if you want the same write from your own UI:
+
+```ts
+import { applyBulkEdit, bulkEditableFields, bulkEditInitialValues } from '@svgrid/enterprise'
+
+const fields = bulkEditableFields(ctrl)                    // what can be targeted
+const { values, mixed } = bulkEditInitialValues(ctrl, fields) // what to show
+const { changed, skipped, fields: n } = applyBulkEdit(ctrl, { status: 'Done', points: 8 })
+```
+
+## Where it floats
+
+`position` pins the bar to the `'bottom'` (default) or `'top'` edge of the
+grid.
+
+The bar **floats** - it never resizes the grid, so a layout holding one does
+not jump when a checkbox is ticked. To stop it hiding anything, the scroll area
+gains bottom padding the height of the bar while a selection is live: the last
+row can always be scrolled clear, and the bar overlays that padding rather than
+a row.
+
+```svelte {runnable}
+<SvGrid
+  data={tasks}
+  {columns}
+  getRowId={(t) => String(t.id)}
+  showRowSelection
+  selectionBar={{ position: 'top', actions: [{ key: 'x', label: 'Export', action: () => {} }] }}
+/>
+```
+
+## Buttons that come and go
+
+`hidden` and `disabled` are re-checked on every render against the live
+selection, so buttons appear and grey out as the set changes rather than
+freezing at first paint. Select one row and **Merge** is not there; select two
+and it appears:
+
+```svelte {runnable}
+<script lang="ts">
+  const conditional: SelectionBarAction<Task>[] = [
+    {
+      key: 'merge',
+      label: 'Merge',
+      // Merging one task into itself is meaningless.
+      hidden: ({ ids }) => ids.length < 2,
+      action: () => {},
+    },
+    {
+      key: 'close',
+      label: 'Close',
+      // Nothing to do when everything picked is already closed.
+      disabled: ({ rows }) => rows.every((t) => t.status === 'Done'),
+      action: () => {},
+    },
+  ]
+</script>
+
+<SvGrid data={tasks} {columns} getRowId={(t) => String(t.id)} showRowSelection selectionBar={conditional} />
+```
+
+## More actions than fit
+
+Past `maxVisible` (6 by default) the tail folds into a `···` menu, which opens
+**away** from the edge the bar is pinned to - upward from a bottom bar, downward
+from a top one - so it never falls off the grid. A bar wide enough to scroll is
+a bar whose last button nobody finds:
+
+```svelte {runnable}
+<script lang="ts">
+  const many: SelectionBarAction<Task>[] = [
+    'Mark done', 'Assign', 'Watch', 'Export', 'Move', 'Archive',
+  ].map((label) => ({ key: label, label, action: () => {} }))
+</script>
+
+<SvGrid
+  data={tasks}
+  {columns}
+  getRowId={(t) => String(t.id)}
+  showRowSelection
+  selectionBar={{ actions: many, maxVisible: 3 }}
+/>
+```
+
+## Keyboard and screen readers
+
+The bar is a `role="toolbar"`, which is a promise about how it behaves, so it
+keeps that promise:
+
+| Key | Does |
+| --- | --- |
+| `Tab` | One stop for the whole bar, not one per button |
+| `Left` / `Right` | Move between buttons, wrapping at each end |
+| `Esc` | Closes the overflow menu if it is open, otherwise clears the selection |
+
+These are handled on the bar, so they apply while focus is inside it. `Esc`
+pressed in the grid body still does whatever the grid does with it - the bar
+does not install a global key handler that would fight cell editing or an open
+menu.
+
+The count carries `aria-live="polite"` so it is read as the selection changes.
+The bar itself is not live - that would re-read every button on each tick.
+
+## Options
+
+| Option | Default | Does |
+| --- | --- | --- |
+| `actions` | `[]` | The buttons, left to right |
+| `position` | `'bottom'` | Which edge the bar floats against |
+| `maxVisible` | `6` | How many stay on the bar before the rest collapse. Separators do not count |
+| `hideClear` | `false` | Drop the trailing clear button |
+
+`selectionBar={true}` is shorthand for all defaults with no actions, and
+`selectionBar={[...]}` for `{ actions: [...] }`.
+
+## Related
+
+Demo `23-bulk-actions` builds the same idea by hand - a toolbar of your own
+markup driven by `onRowSelectionChange`. Reach for `selectionBar` when you want
+it working out of the box; hand-roll it when you want full control of the
+layout.
+
+## See also
+
+- [Row selection](../accessibility.md)
+- [Kanban board mode](./kanban-board.md)
+- [Scheduler](./scheduler.md)
 
 <!-- =================================================================
      /docs/help/rows/styling-rows/  (community)
@@ -45213,7 +46111,7 @@ test('Sort + filter + paginate together', async ({ page }) => {
 })
 ```
 
-The 53-demo gallery is the easiest target for e2e: every demo is a
+The demo gallery is the easiest target for e2e: every demo is a
 URL you can navigate, every behaviour is reachable from the keyboard.
 Mirror your in-app test flows against a paired demo first; it surfaces
 bugs at the API layer before they hit your app's code.
@@ -51576,6 +52474,10 @@ subtracting the two timestamps gives whole nights without time-of-day drift.
   `for` / `aria-describedby`; `invalid` sets `aria-invalid`.
 - The read-only field exposes `aria-haspopup="dialog"` and `aria-expanded`;
   `ArrowDown` (or Alt+ArrowDown) opens the popover, `Escape` closes it.
+- The whole field is the click target, not just the text - the icon, the
+  padding and the range label all open the popover. That matters when the
+  control is squeezed into a narrow container, where the input itself shrinks
+  to a sliver.
 - The popover is a `role="dialog"` containing the full [SvCalendar](sv-calendar.md)
   keyboard model for range selection.
 - `disabled` / `readonly` block interaction; `dir="rtl"` mirrors the layout.
@@ -63098,18 +64000,51 @@ reachable for the LTS window. We don't archive per-minor.
 
 # Web Components & Custom Elements
 
-Ship SvGrid as a framework-agnostic web component (custom element) and use
-the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte
-required in the host app.
+Ship SvGrid as a framework-agnostic web component and use the Svelte 5 data grid
+in React, Vue, Angular, or plain HTML - no Svelte required in the host app.
 
 ![React, Vue, Angular, and plain HTML each render the same sv-grid custom element, which wraps one shared SvGrid engine.](/docs-media/grid-web-components.svg)
 
 SvGrid is authored in Svelte 5, but Svelte compiles to standards-based
 [custom elements](https://developer.mozilla.org/en-US/docs/Web/API/Web_components).
-That means you can wrap `<SvGrid>` once, build it to a single `.js` file, and
-drop `<sv-grid>` into any page or framework - the same way you'd use a native
-HTML element. If you searched for a "web component data grid" or a
-"framework-agnostic Svelte table," this is the integration path.
+`@svgrid/grid-wc` publishes two of them, prebuilt: drop in one `<script>` tag
+and use `<sv-grid>` like any built-in element. If you searched for a "web
+component data grid" or a "framework-agnostic Svelte table", this is the
+integration path.
+
+## Start here
+
+| Page | What it covers |
+| --- | --- |
+| [**React, Vue or Angular**](./web-components/frameworks.md) | **Start here if you use one.** A running project in about thirty seconds, and 27 examples you can open and edit. |
+| [Quick start](./web-components/quick-start.md) | The CDN path, and the attribute-vs-property rule that trips everyone up once. |
+| [`<sv-grid>` reference](./web-components/sv-grid.md) | Every property, attribute and event. Generated from the grid's own types. |
+| [Shadow DOM](./web-components/shadow-dom.md) | `<sv-grid-shadow>`, for pages whose CSS you do not control. |
+| [React](./web-components/react.md) | The `@svgrid/grid-wc/react` component, and why React 18 needs it. |
+| [Vue](./web-components/vue.md) | The `@svgrid/grid-wc/vue` component - no `isCustomElement` config, no `.prop` modifiers. |
+| [Angular](./web-components/angular.md) | The `@svgrid/grid-wc/angular` standalone component, with typed inputs and outputs. |
+| [TypeScript](./web-components/typescript.md) | Typing the element, its properties and its events. |
+| [Enterprise features](./web-components/enterprise.md) | Excel / PDF export, import, print and pivot from a non-Svelte host - and the two views that need a Svelte-aware bundler. |
+| [Limitations](./web-components/limitations.md) | What cannot cross the boundary, and why. |
+
+## Framework wrappers
+
+The package ships a component for each of the three big frameworks, generated
+from the same types as the element, as subpath imports:
+
+| Framework | Import |
+| --- | --- |
+| React | `import { SvGrid } from '@svgrid/grid-wc/react'` |
+| Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` |
+| Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` |
+
+Each framework is an OPTIONAL peer dependency, so a plain-HTML consumer never
+installs any of them, and each wrapper is a couple of KB that reuses the one
+element bundle rather than shipping a second copy of the grid.
+
+**[Start here](./web-components/frameworks.md)** for the thirty-second path and
+nine runnable examples per framework - each one opens as a full editable
+project, with no local setup.
 
 ## Why a custom element
 
@@ -63118,19 +64053,1077 @@ HTML element. If you searched for a "web component data grid" or a
   `<sv-grid>` like any built-in element.
 - **One bundle, no framework lock-in.** Ship a single file to a CDN; consumers
   add one `<script type="module">` and a tag.
-- **Same engine.** The custom element wraps the real grid - virtualization,
-  Excel-style filters, inline editing, grouping, sorting, pagination all come
-  along.
+- **The whole grid.** 98 properties and 20 events, so virtualization,
+  Excel-style filters, inline editing, grouping, tree data, pinning, pagination
+  and the enterprise features are all reachable - not a hand-picked subset. The
+  surface is **generated** from `<SvGrid>`'s own `Props` type and CI fails if
+  the two drift. Exactly two props are left out, and the
+  [reference](./web-components/sv-grid.md) says why.
 
 If your team *is* on Svelte 5, use the component directly
-([First grid](../getting-started/2-first-grid.md)) - the custom element only
-exists to reach non-Svelte hosts.
+([First grid](../getting-started/2-first-grid.md)) - the custom element exists
+to reach non-Svelte hosts, and it costs you the Svelte runtime to do it.
 
-## Quick start (no build)
+## Quick look
 
-We publish a prebuilt, self-contained element as
-[`@svgrid/grid-wc`](https://www.npmjs.com/package/@svgrid/grid-wc). Drop it in from a CDN
-and you're done - no bundler, no Svelte in your app:
+```html
+<script type="module" src="https://unpkg.com/@svgrid/grid-wc"></script>
+
+<sv-grid id="grid" sortable filterable pageable page-size="25"
+         style="display:block;height:420px"></sv-grid>
+
+<script type="module">
+  const grid = document.getElementById('grid')
+  // Arrays and objects are properties; primitives can be attributes.
+  grid.columns = [{ field: 'name', header: 'Name' }, { field: 'role', header: 'Role' }]
+  grid.data = [{ name: 'Ada', role: 'Engineering' }, { name: 'Alan', role: 'Research' }]
+  grid.addEventListener('cellvaluechange', (e) => console.log(e.detail))
+</script>
+```
+
+Full walkthrough in [Quick start](./web-components/quick-start.md).
+
+## Building your own element
+
+The published package is the recommended path, but the wrapper is about sixty
+lines and you may want a narrower surface, your own tag name, or extra
+behaviour. The source is `packages/grid-wc/src` in the repository:
+`sv-grid-element.svelte` is the light-DOM wrapper, `GridBody.svelte` is the part
+both elements share, and `scripts/generate-surface.mjs` writes the prop and
+event declarations from `<SvGrid>`'s `Props` type.
+
+## See also
+
+- [Enterprise features from the element](./web-components/enterprise.md) -
+  export, import, print and pivot need no Svelte in your build; the board and
+  scheduler views do.
+- [Tailwind integration](./tailwind.md) - the full `--sg-*` token list.
+
+<!-- =================================================================
+     /docs/help/web-components/angular/  (community)
+     ================================================================== -->
+
+# SvGrid in Angular
+
+```bash
+npm install @svgrid/grid-wc
+```
+
+```ts
+import { Component } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+
+@Component({
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <sv-grid
+      [data]="rows"
+      [columns]="columns"
+      [sortable]="true"
+      [filterable]="true"
+      [editable]="true"
+      (cellvaluechange)="save($event)"
+      style="height:480px"
+    ></sv-grid>
+  `,
+})
+export class Screen {}
+```
+
+A standalone component, compiled with ng-packagr in partial-Ivy mode, generated
+from `<SvGrid>`'s own types: every property is an `@Input` and every event an
+`@Output`.
+
+**The selector is the element's own tag.** The component has no template of its
+own - its host element IS the `<sv-grid>` the browser upgrades - so there is no
+extra wrapper element in your DOM, and the tag is the same one you would write
+in plain HTML. Importing `SvGridComponent` is also what removes the need for
+`CUSTOM_ELEMENTS_SCHEMA`: Angular now knows the tag.
+
+For the style-isolated variant, write the other tag - `<sv-grid-shadow>` - which
+the same component matches. `.api` on the component gives the grid api.
+
+<!-- BEGIN generated examples - packages/grid-wc/scripts/sync-example-docs.mjs -->
+
+## Examples
+
+Nine complete apps, each one click from running. **Open in StackBlitz**
+boots a full editable project - no local install, nothing to configure - and
+every one is compiled in this repository's CI, so what you open is what works.
+
+They all share the same typed `data.ts`, so the only thing that changes
+between recipes is the grid.
+
+### A first grid
+
+Rows, columns, and the two features almost every table wants.
+
+<div data-docs-sandbox="angular:basic" data-title="A first grid"></div>
+
+```ts {nocheck}
+import { Component } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns } from '../data'
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px">
+      <sv-grid [data]="people" [columns]="columns" [sortable]="true" [filterable]="true"></sv-grid>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+}
+```
+
+### Sorting and filtering
+
+A filter row under the headers, multi-column sort, and the current sort read back into your own state.
+
+<div data-docs-sandbox="angular:sorting-filtering" data-title="Sorting and filtering"></div>
+
+```ts {nocheck}
+import { Component, signal } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns } from '../data'
+
+type Sort = { id: string; desc: boolean }
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <p style="margin:0;font:13px system-ui;color:#64748b">Sorted by: {{ summary() }}</p>
+      <div style="flex:1;min-height:0">
+        <sv-grid
+          [data]="people"
+          [columns]="columns"
+          [sortable]="true"
+          [filterable]="true"
+          [showFilterRow]="true"
+          (sortingchange)="sorting.set($any($event))"
+        ></sv-grid>
+      </div>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+  readonly sorting = signal<Sort[]>([])
+
+  summary(): string {
+    const s = this.sorting()
+    if (s.length === 0) return 'nothing yet - click a header, then shift-click a second one'
+    return s.map((x) => `${x.id} ${x.desc ? 'desc' : 'asc'}`).join(', ')
+  }
+}
+```
+
+### Editing and saving
+
+Inline editing, with each committed edit arriving through `cellvaluechange`. Swap the local update for your save call.
+
+<div data-docs-sandbox="angular:editing" data-title="Editing and saving"></div>
+
+```ts {nocheck}
+import { Component, signal } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns, type Person } from '../data'
+
+type CellEdit = { rowIndex: number; columnId: string; newValue: unknown }
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <p style="margin:0;font:13px system-ui;color:#64748b">
+        Double-click a Name or Amount cell. Last edits: {{ log().slice(-3).join(' · ') || 'none yet' }}
+      </p>
+      <div style="flex:1;min-height:0">
+        <sv-grid
+          [data]="rows()"
+          [columns]="editableColumns"
+          [sortable]="true"
+          [filterable]="true"
+          [editable]="true"
+          (cellvaluechange)="onEdit($any($event))"
+        ></sv-grid>
+      </div>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly rows = signal<Person[]>([...people])
+  readonly log = signal<string[]>([])
+  readonly editableColumns = columns.map((c) =>
+    c.id === 'name' || c.id === 'amount' ? { ...c, editable: true } : c,
+  )
+
+  onEdit(e: CellEdit): void {
+    this.rows.update((rows) =>
+      rows.map((row, i) => (i === e.rowIndex ? ({ ...row, [e.columnId]: e.newValue } as Person) : row)),
+    )
+    this.log.update((l) => [...l, `${e.columnId} = ${String(e.newValue)}`])
+  }
+}
+```
+
+### Row selection
+
+Checkboxes, with the selected rows handed straight to you - both the selection map and the rows themselves.
+
+<div data-docs-sandbox="angular:selection" data-title="Row selection"></div>
+
+```ts {nocheck}
+import { Component, computed, signal } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns, type Person } from '../data'
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="font:13px system-ui;color:#64748b">{{ summary() }}</div>
+      <div style="flex:1;min-height:0">
+        <sv-grid
+          [data]="people"
+          [columns]="columns"
+          [sortable]="true"
+          [filterable]="true"
+          [showRowSelection]="true"
+          (rowselectionchange)="selected.set($any($event).rows)"
+        ></sv-grid>
+      </div>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+  readonly selected = signal<Person[]>([])
+  readonly total = computed(() => this.selected().reduce((sum, r) => sum + r.amount, 0))
+
+  summary(): string {
+    const n = this.selected().length
+    if (n === 0) return 'Tick some rows to total them'
+    const money = this.total().toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    })
+    return `${n} selected · ${money}`
+  }
+}
+```
+
+### Grouping and totals
+
+Group by one or two columns with an aggregate in the group row. `groupBy` is an array, so it is one of the props that can only be a property.
+
+<div data-docs-sandbox="angular:grouping" data-title="Grouping and totals"></div>
+
+```ts {nocheck}
+import { Component, signal } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns } from '../data'
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px;font:13px system-ui">
+        @for (choice of choices; track choice.join('+')) {
+          <button
+            style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer"
+            [style.background]="groupBy().join() === choice.join() ? '#e2e8f0' : '#fff'"
+            (click)="groupBy.set(choice)"
+          >
+            {{ choice.join(' + ') || 'No grouping' }}
+          </button>
+        }
+      </div>
+      <div style="flex:1;min-height:0">
+        <sv-grid
+          [data]="people"
+          [columns]="withTotals"
+          [sortable]="true"
+          [filterable]="true"
+          [groupable]="true"
+          [groupBy]="groupBy()"
+          [groupFooters]="true"
+        ></sv-grid>
+      </div>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+  readonly choices: string[][] = [['team'], ['country'], ['team', 'country'], []]
+  readonly groupBy = signal<string[]>(['team'])
+  readonly withTotals = columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c))
+}
+```
+
+### Pagination
+
+Client-side paging. `pageSize` is the INITIAL page size, read once at mount.
+
+<div data-docs-sandbox="angular:pagination" data-title="Pagination"></div>
+
+```ts {nocheck}
+import { Component } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns } from '../data'
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px">
+      <sv-grid
+        [data]="people"
+        [columns]="columns"
+        [sortable]="true"
+        [filterable]="true"
+        [pageable]="true"
+        [pageSize]="25"
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        paginationPosition="bottom"
+      ></sv-grid>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+}
+```
+
+### Server-side data
+
+The grid renders the page you hand it and tells you when the user wants another. `externalSort` and `externalPagination` stop it doing the work locally; `rowCount` is how it knows how many pages exist.
+
+<div data-docs-sandbox="angular:server-data" data-title="Server-side data"></div>
+
+```ts {nocheck}
+import { Component, signal } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns, type Person } from '../data'
+
+const PAGE_SIZE = 25
+type Sort = { id: string; desc: boolean }
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px">
+      <sv-grid
+        [data]="rows()"
+        [columns]="columns"
+        [loading]="loading()"
+        [sortable]="true"
+        [externalSort]="true"
+        [externalPagination]="true"
+        [pageable]="true"
+        [pageSize]="pageSize"
+        [rowCount]="total()"
+        [pageIndex]="page()"
+        (sortingchange)="onSort($any($event))"
+        (paginationchange)="onPage($any($event).pageIndex)"
+      ></sv-grid>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly columns = columns
+  readonly pageSize = PAGE_SIZE
+  readonly rows = signal<Person[]>([])
+  readonly total = signal(0)
+  readonly loading = signal(true)
+  readonly page = signal(0)
+  private sort: Sort[] = []
+
+  constructor() {
+    void this.load()
+  }
+
+  onSort(sort: Sort[]): void {
+    this.sort = sort
+    this.page.set(0)
+    void this.load()
+  }
+
+  onPage(pageIndex: number): void {
+    this.page.set(pageIndex)
+    void this.load()
+  }
+
+  private async load(): Promise<void> {
+    this.loading.set(true)
+    const res = await this.fetchPage()
+    this.rows.set(res.rows)
+    this.total.set(res.total)
+    this.loading.set(false)
+  }
+
+  /** Pretend this is a network call. */
+  private fetchPage(): Promise<{ rows: Person[]; total: number }> {
+    const sorted = [...people].sort((a, b) => {
+      for (const s of this.sort) {
+        const av = a[s.id as keyof Person]
+        const bv = b[s.id as keyof Person]
+        if (av === bv) continue
+        return (av > bv ? 1 : -1) * (s.desc ? -1 : 1)
+      }
+      return 0
+    })
+    const start = this.page() * PAGE_SIZE
+    return new Promise((resolve) =>
+      setTimeout(
+        () => resolve({ rows: sorted.slice(start, start + PAGE_SIZE), total: sorted.length }),
+        250,
+      ),
+    )
+  }
+}
+```
+
+### Theming
+
+The `--sg-*` custom properties. Ordinary CSS custom properties, so they cascade from any ancestor - which is why they also reach inside `<sv-grid-shadow>`.
+
+<div data-docs-sandbox="angular:theming" data-title="Theming"></div>
+
+```ts {nocheck}
+import { Component, signal } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { people, columns } from '../data'
+
+const THEMES: Record<string, Record<string, string>> = {
+  Light: {},
+  Dark: {
+    '--sg-bg': '#0b1220',
+    '--sg-fg': '#e2e8f0',
+    '--sg-border': '#1e293b',
+    '--sg-header-bg': '#111a2e',
+    '--sg-row-hover': '#111a2e',
+  },
+  Warm: {
+    '--sg-bg': '#fffaf5',
+    '--sg-fg': '#42302a',
+    '--sg-border': '#f0dcc9',
+    '--sg-header-bg': '#fdf1e4',
+    '--sg-accent': '#c2410c',
+  },
+}
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div
+      style="height:100%;padding:16px;display:flex;flex-direction:column;gap:12px"
+      [style]="tokens()"
+    >
+      <div style="display:flex;gap:8px">
+        @for (name of themeNames; track name) {
+          <button
+            style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer"
+            [style.background]="theme() === name ? '#e2e8f0' : '#fff'"
+            (click)="theme.set(name)"
+          >
+            {{ name }}
+          </button>
+        }
+      </div>
+      <div style="flex:1;min-height:0">
+        <sv-grid
+          [data]="people"
+          [columns]="columns"
+          [sortable]="true"
+          [filterable]="true"
+          [zebraRows]="true"
+        ></sv-grid>
+      </div>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+  readonly themeNames = Object.keys(THEMES)
+  readonly theme = signal('Light')
+
+  tokens(): Record<string, string> {
+    return THEMES[this.theme()] ?? {}
+  }
+}
+```
+
+### Excel export (Enterprise)
+
+The paid pack from a non-Svelte host. `@svgrid/enterprise/export` is plain JavaScript, so it needs no Svelte in your build - the same goes for `/import`, `/print`, `/pivot` and `/license`. See [Enterprise features](./enterprise.md) for what those subpaths cover and what needs a Svelte-aware bundler.
+
+<div data-docs-sandbox="angular:enterprise" data-title="Excel export (Enterprise)"></div>
+
+```ts {nocheck}
+import { Component, ViewChild } from '@angular/core'
+import { SvGridComponent } from '@svgrid/grid-wc/angular'
+import { exportGrid } from '@svgrid/enterprise/export'
+import { people, columns } from '../data'
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [SvGridComponent],
+  template: `
+    <div style="height:100%;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <button type="button" [disabled]="!ready || busy" (click)="exportXlsx()">
+        {{ busy ? 'Building…' : 'Export to Excel' }}
+      </button>
+      <div style="flex:1;min-height:0">
+        <sv-grid
+          [data]="people"
+          [columns]="columns"
+          [sortable]="true"
+          [filterable]="true"
+          (apiready)="ready = true"
+        ></sv-grid>
+      </div>
+    </div>
+  `,
+})
+export class AppComponent {
+  readonly people = people
+  readonly columns = columns
+  ready = false
+  busy = false
+
+  @ViewChild(SvGridComponent) grid?: SvGridComponent
+
+  async exportXlsx(): Promise<void> {
+    const api = this.grid?.api
+    if (!api) return
+    this.busy = true
+    try {
+      await exportGrid(api as Parameters<typeof exportGrid>[0], {
+        format: 'xlsx',
+        filename: 'people',
+      })
+    } finally {
+      this.busy = false
+    }
+  }
+}
+```
+
+<!-- END generated examples -->
+
+## Using the raw element instead
+
+Angular binds `[prop]` and `(event)` to custom elements natively, so
+`<sv-grid>` works directly too - it just needs `CUSTOM_ELEMENTS_SCHEMA` in
+every component that shows one, and no inputs are typed.
+
+## Allow custom elements
+
+Without `CUSTOM_ELEMENTS_SCHEMA`, Angular treats `<sv-grid>` as an unknown
+component and fails the build.
+
+```ts
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+
+@Component({
+  standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  // ...
+})
+export class GridScreen {}
+```
+
+## A working grid
+
+The editing grid the component below builds.
+
+<div data-docs-demo="05-inline-editing" data-height="470"></div>
+
+Angular's `[prop]` binding assigns a **property**, which is exactly what arrays
+and objects need. Primitives can be attributes or bindings.
+
+```ts
+import { Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core'
+import '@svgrid/grid-wc'
+
+@Component({
+  selector: 'app-grid-screen',
+  standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: `
+    <sv-grid
+      [columns]="columns"
+      [data]="rows()"
+      sortable
+      filterable
+      enable-inline-editing
+      style="display:block;height:480px"
+      (cellvaluechange)="onCellValueChange($event)"
+    ></sv-grid>
+  `,
+})
+export class GridScreen {
+  columns = [
+    { field: 'name', header: 'Name', editorType: 'text' },
+    { field: 'country', header: 'Country' },
+    {
+      field: 'amount',
+      header: 'Amount',
+      align: 'right',
+      format: { type: 'number', options: { style: 'currency', currency: 'EUR' } },
+    },
+  ]
+
+  rows = signal([
+    { name: 'Ada', country: 'UK', amount: 145000 },
+    { name: 'Linus', country: 'FI', amount: 188000 },
+  ])
+
+  onCellValueChange(e: Event) {
+    const { rowIndex, columnId, newValue } = (e as CustomEvent).detail
+    this.rows.update((rs) => rs.map((r, i) => (i === rowIndex ? { ...r, [columnId]: newValue } : r)))
+  }
+}
+```
+
+`(eventname)` binds to the `CustomEvent` directly, so every grid event is
+available with no adapter.
+
+## Calling the grid
+
+The api reached through `@ViewChild`.
+
+<div data-docs-demo="90-selection-api" data-height="460"></div>
+
+```ts
+import { ElementRef, ViewChild, AfterViewInit } from '@angular/core'
+
+export class GridScreen implements AfterViewInit {
+  @ViewChild('grid') gridRef!: ElementRef<HTMLElement & { api?: { exportCsv(): void } }>
+
+  ngAfterViewInit() {
+    this.gridRef.nativeElement.api?.exportCsv()
+  }
+}
+```
+
+```html
+<sv-grid #grid [columns]="columns" [data]="rows()"></sv-grid>
+```
+
+
+## Change detection
+
+Grouping through `[groupBy]`: replace the array, do not mutate it.
+
+<div data-docs-demo="07-grouping-aggregation" data-height="470"></div>
+
+The element manages its own rendering, so Angular's change detection does not
+need to see inside it. Replace arrays rather than mutating them - `rows.update`
+above, not `rows().push(...)` - so the property assignment actually changes and
+the grid sees new data.
+
+
+## Server-side rendering
+
+A custom element only exists in the browser. Under Angular Universal, import
+`@svgrid/grid-wc` in a browser-only path or guard on `isPlatformBrowser`.
+
+
+## See also
+
+- [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
+- [Limitations](./limitations.md) - no Angular components inside cells.
+- [Shadow DOM](./shadow-dom.md) - style isolation for embedded grids.
+
+<!-- =================================================================
+     /docs/help/web-components/enterprise/  (enterprise)
+     ================================================================== -->
+
+# Enterprise features from the element
+
+`@svgrid/grid-wc` is MIT and complete on its own. The paid pack -
+[@svgrid/enterprise](https://svgrid.com/pricing/) - is a separate install, and
+most of it works from a React, Vue or Angular host with no Svelte in your build.
+
+Where the line falls is a packaging consequence, not a policy: four of the
+enterprise entry points are plain JavaScript, and the main entry pulls Svelte
+components with it.
+
+## The api handle
+
+Everything here needs the grid's imperative api. The element parks it on itself
+once the grid has mounted, and fires `apiready` at the same moment:
+
+```js
+const grid = document.querySelector('sv-grid')
+grid.addEventListener('apiready', () => {
+  // grid.api is now the SvGridApi
+})
+```
+
+In React the wrapper surfaces both:
+
+```tsx {nocheck}
+import { useRef, useState } from 'react'
+import { SvGrid, type SvGridHandle } from '@svgrid/grid-wc/react'
+
+const ref = useRef<SvGridHandle>(null)
+const [ready, setReady] = useState(false)
+
+<SvGrid ref={ref} data={rows} columns={columns} onApiReady={() => setReady(true)} />
+// ref.current.api  -  the same object `apiready` carries
+```
+
+## Works with no Svelte in your build
+
+These four entry points are plain JavaScript. Import them from any bundler,
+including Angular's, and pass them the element's api.
+
+### Excel, PDF, HTML, CSV and TSV export
+
+```js
+import { exportGrid } from '@svgrid/enterprise/export'
+
+await exportGrid(grid.api, { format: 'xlsx', filename: 'orders' })
+```
+
+`format` takes `xlsx`, `pdf`, `html`, `csv` or `tsv`. Pass `download: false` to
+get the file back instead of saving it - useful for uploading or attaching it:
+
+```js
+const { blob, filename, mime } = await exportGrid(grid.api, {
+  format: 'pdf',
+  download: false,
+})
+```
+
+CSV and TSV are already free in `@svgrid/grid`; `xlsx` and `pdf` are the paid
+formats.
+
+### Import
+
+```js
+import { importData } from '@svgrid/enterprise/import'
+
+const { rows, errors, total } = await importData(grid.api, {
+  file,            // a File, Blob, or inline CSV / TSV / JSON text
+  format: 'auto',  // sniffs xlsx vs text
+})
+```
+
+### Print
+
+```js
+import { printGrid } from '@svgrid/enterprise/print'
+
+await printGrid(grid.api, { title: 'Q3 orders', orientation: 'landscape' })
+```
+
+### Pivot model
+
+`createPivotModel` is a pure function - rows in, model out - so it needs no api
+at all, though the element's rows are the obvious input:
+
+```js
+import { createPivotModel } from '@svgrid/enterprise/pivot'
+
+const model = createPivotModel(grid.api.getData(), {
+  rows: ['region'],
+  cols: ['status'],
+  values: [{ field: 'total', agg: 'sum' }],
+})
+```
+
+Feed `model.rows` and `model.columns` into a second, read-only `<sv-grid>`.
+
+## The license key
+
+```js
+import { setLicenseKey } from '@svgrid/enterprise/license'
+
+setLicenseKey('SVENTERPRISE-...')
+```
+
+Call it once, before the first export. With **no** key nothing breaks: the paid
+features still run, the grid shows a small watermark, and the console carries a
+one-time notice.
+
+A **malformed** key is a different case - it throws rather than degrading, so a
+placeholder string is worse than no key at all. Keys carry an `SVENTERPRISE-`
+prefix.
+
+## Needs a Svelte-aware bundler
+
+The main entry - `@svgrid/enterprise` - imports the pack's Svelte components, so
+a host that cannot compile `.svelte` files cannot import it. With Vite plus
+[`@sveltejs/vite-plugin-svelte`](https://github.com/sveltejs/vite-plugin-svelte)
+it works, and three more things become available:
+
+```js
+import { installEnterprise, enableBoardView, enableSchedulerView } from '@svgrid/enterprise'
+
+installEnterprise(grid.api)   // adds api.exportData / importData / print / pivot / ai
+enableBoardView()             // makes the element's `board` prop render a Kanban board
+enableSchedulerView()         // makes its `scheduler` prop render a calendar
+```
+
+`installEnterprise` is a convenience: it hangs the same export, import, print
+and pivot functions off the api object rather than you importing them. The board
+and scheduler views are the part you cannot get any other way, because they are
+Svelte components rendered inside the element.
+
+Angular CLI builds have no Svelte compiler, so for Angular the four entry points
+above are the whole of what is reachable.
+
+## Summary
+
+| Feature | Any bundler | Needs a Svelte-aware build |
+| --- | --- | --- |
+| xlsx / pdf / html / csv / tsv export | ✓ | |
+| Import (xlsx / csv / tsv / json) | ✓ | |
+| Print | ✓ | |
+| Pivot model | ✓ | |
+| License key | ✓ | |
+| `installEnterprise(api)` | | ✓ |
+| Kanban board view | | ✓ |
+| Scheduler / calendar view | | ✓ |
+
+See also [limitations](./limitations.md) for what the element itself cannot do,
+regardless of licensing.
+
+<!-- =================================================================
+     /docs/help/web-components/frameworks/  (community)
+     ================================================================== -->
+
+# SvGrid with React, Vue or Angular
+
+Pick your framework and you have a running grid in about thirty seconds - no
+local setup, nothing to configure.
+
+## The 30-second path
+
+**1.** Install one package:
+
+<div data-docs-install="@svgrid/grid-wc"></div>
+
+**2.** Import the component for your framework and render it:
+
+| Framework | Import | Tag |
+| --- | --- | --- |
+| React | `import { SvGrid } from '@svgrid/grid-wc/react'` | `<SvGrid data={rows} columns={cols} sortable filterable />` |
+| Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` | `<SvGrid :data="rows" :columns="cols" sortable filterable />` |
+| Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` | `<sv-grid [data]="rows" [columns]="cols" [sortable]="true" />` |
+
+That is the whole integration. All 98 properties and 20 events of the grid are
+typed props on every one of them.
+
+**Or skip step 1** and open a working project right now:
+
+<div data-docs-sandbox="react:basic" data-title="A first grid"></div>
+<div data-docs-sandbox="vue:basic" data-title="A first grid"></div>
+<div data-docs-sandbox="angular:basic" data-title="A first grid"></div>
+
+## The examples
+
+<!-- BEGIN generated recipe table - packages/grid-wc/scripts/sync-example-docs.mjs -->
+
+The same nine apps in each framework, so you can compare them
+directly - only the framework differs, never the data or the grid
+configuration. Every one is compiled in CI, so what you open is what works.
+
+| Recipe | What it shows | React | Vue | Angular |
+| --- | --- | --- | --- | --- |
+| A first grid | Rows, columns, and the two features almost every table wants | [→](./react.md#a-first-grid) | [→](./vue.md#a-first-grid) | [→](./angular.md#a-first-grid) |
+| Sorting and filtering | A filter row under the headers, multi-column sort, and the current sort read back into your own state | [→](./react.md#sorting-and-filtering) | [→](./vue.md#sorting-and-filtering) | [→](./angular.md#sorting-and-filtering) |
+| Editing and saving | Inline editing, with each committed edit arriving through `cellvaluechange` | [→](./react.md#editing-and-saving) | [→](./vue.md#editing-and-saving) | [→](./angular.md#editing-and-saving) |
+| Row selection | Checkboxes, with the selected rows handed straight to you - both the selection map and the rows themselves | [→](./react.md#row-selection) | [→](./vue.md#row-selection) | [→](./angular.md#row-selection) |
+| Grouping and totals | Group by one or two columns with an aggregate in the group row | [→](./react.md#grouping-and-totals) | [→](./vue.md#grouping-and-totals) | [→](./angular.md#grouping-and-totals) |
+| Pagination | Client-side paging | [→](./react.md#pagination) | [→](./vue.md#pagination) | [→](./angular.md#pagination) |
+| Server-side data | The grid renders the page you hand it and tells you when the user wants another | [→](./react.md#server-side-data) | [→](./vue.md#server-side-data) | [→](./angular.md#server-side-data) |
+| Theming | The `--sg-*` custom properties | [→](./react.md#theming) | [→](./vue.md#theming) | [→](./angular.md#theming) |
+| Excel export (Enterprise) | The paid pack from a non-Svelte host | [→](./react.md#excel-export-enterprise) | [→](./vue.md#excel-export-enterprise) | [→](./angular.md#excel-export-enterprise) |
+
+<!-- END generated recipe table -->
+## What each wrapper is actually for
+
+The grid is a custom element underneath, and a custom element is awkward in each
+framework in a different way. Each wrapper removes exactly that awkwardness:
+
+- **React** - React 18 and earlier stringify object props onto **attributes**,
+  so `columns={cols}` silently becomes `"[object Object]"` and the grid renders
+  empty with no error. The wrapper assigns them as properties on every version.
+- **Vue** - removes the `isCustomElement` build config and the `.prop` modifier
+  that every object binding would otherwise need.
+- **Angular** - removes `CUSTOM_ELEMENTS_SCHEMA` from every component that shows
+  a grid, and gives you typed `@Input` / `@Output` instead of an untyped
+  element. Its selector is the element's own tag, so there is no extra wrapper
+  element in your DOM.
+
+All three also handle two ordering problems you would otherwise meet yourself:
+the element renders **before** a framework assigns properties in an effect, and
+`apiready` fires once during that first mount - before React can bind a listener
+at all.
+
+## The imperative api
+
+Every wrapper exposes the grid api once it is ready:
+
+- **React** - a ref: `grid.current?.api`
+- **Vue** - a template ref: `grid.value?.api`
+- **Angular** - the component instance: `grid.api`
+
+## Not using a framework?
+
+`<sv-grid>` works in plain HTML with one `<script>` tag - see
+[Quick start](./quick-start.md).
+
+## See also
+
+- [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
+- [Shadow DOM](./shadow-dom.md) - for pages whose CSS you do not control.
+- [TypeScript](./typescript.md) - typing the raw element, if you use it directly.
+- [Limitations](./limitations.md) - what cannot cross the boundary.
+
+<!-- =================================================================
+     /docs/help/web-components/limitations/  (community)
+     ================================================================== -->
+
+# Limitations of the custom element
+
+What the element cannot do, and why. Everything here is a consequence of the
+boundary between a compiled Svelte component and a host that is not Svelte -
+none of it is a to-do list.
+
+## Attributes cannot carry objects
+
+An HTML attribute is a string. `columns`, `data`, `groupBy`, `features`,
+`treeData` and 21 others are arrays, objects or functions, so they are settable
+only as properties:
+
+```js
+grid.columns = [...]   // works
+```
+
+```html
+<sv-grid columns="[...]"></sv-grid>   <!-- does not: it is the string "[...]" -->
+```
+
+The [reference](./sv-grid.md) lists exactly which props have an attribute (72)
+and which are property-only (26).
+
+## No React, Vue or Angular components inside a cell
+
+Column `format` and HTML-string renderers - what to use instead.
+
+<div data-docs-demo="10-custom-cells-and-themes" data-height="490"></div>
+
+`<SvGrid>`'s `renderDetailRow` prop takes a Svelte **snippet**, which is a
+compile-time construct. A host page has no way to author one, so the element
+does not expose it.
+
+For cell content, the substitutes are real and cover most cases:
+
+- Column `format` options for numbers, dates and currency.
+- `fieldFn` for a derived display value.
+- An HTML-string renderer on the column, for badges, links and inline SVG.
+- `cellClass` for styling, which is a plain function and crosses fine.
+
+What you cannot do is mount a framework component per cell. If a grid's cells
+must render your own components, use the Svelte component directly.
+
+
+## Initial-only props stay initial
+
+`pageSize` seeds state at mount; page changes go through the api, as here.
+
+<div data-docs-demo="113-cursor-pagination" data-height="460"></div>
+
+Some props seed state at mount rather than being live bindings - `pageSize` is
+documented as "Initial page size", and `initialSorting`, `initialColumnPinning`
+and `initialAdvancedFilter` say so in their names.
+
+```html
+<!-- works: read at mount -->
+<sv-grid pageable page-size="25"></sv-grid>
+```
+
+```js
+grid.pageSize = 25 // after mount: no effect, by design
+grid.api.setPageSize(25) // use the api instead
+```
+
+This is grid behaviour, not an element limitation, but it surprises people more
+here because a custom element invites setting properties after upgrade.
+
+
+## Bundle size
+
+The element bundles the grid **and** the Svelte runtime into one file, about
+104 KiB gzipped for the entry plus lazy chunks on demand. That is the price of
+a self-contained drop-in: a Svelte app importing `@svgrid/grid` shares the
+runtime it already has and ships less.
+
+If you are already on Svelte 5, use the component, not the element.
+
+## Type checking is on you
+
+The element is plain JavaScript at the boundary - assigning `grid.columns` is
+an untyped property write. [TypeScript](./typescript.md) shows how to declare
+the element so TSX and TS get completion back, but nothing checks a runtime
+property assignment for you the way `<SvGrid>` does in a Svelte file.
+
+## Two elements, not one switch
+
+`<sv-grid>` and `<sv-grid-shadow>` are separate elements because Svelte resolves
+`customElement.shadow` when the component is compiled. No attribute can switch a
+single element between light and shadow DOM. See [shadow DOM](./shadow-dom.md).
+
+
+## See also
+
+- [Quick start](./quick-start.md)
+- [`<sv-grid>` reference](./sv-grid.md)
+- [Enterprise features](./enterprise.md) - what the paid pack adds here, and
+  which half of it needs a Svelte-aware bundler.
+- [Missing features](../missing-features.md) - the grid's own honest gap list.
+
+<!-- =================================================================
+     /docs/help/web-components/quick-start/  (community)
+     ================================================================== -->
+
+# Quick start: the grid in any page
+
+`@svgrid/grid-wc` is a prebuilt custom element. One `<script>` tag, one HTML
+element, no bundler and no Svelte in your app.
 
 ```html
 <script type="module" src="https://unpkg.com/@svgrid/grid-wc"></script>
@@ -63144,278 +65137,1854 @@ and you're done - no bundler, no Svelte in your app:
 </script>
 ```
 
-Or via npm:
+Or from npm:
 
 ```bash
 npm install @svgrid/grid-wc
 ```
 
 ```js
-import '@svgrid/grid-wc' // registers <sv-grid> globally
+import '@svgrid/grid-wc' // side effect: registers <sv-grid>
 ```
 
-The rest of this page shows how that package is built, so you can fork it,
-trim it, or extend the attribute surface for your own element.
 
-## 1. The wrapper component
+## The one rule worth learning first
 
-Create one Svelte file that declares the custom element and maps its
-properties onto `<SvGrid>`. Complex inputs (`data`, `columns`) are passed as
-JavaScript **properties**; simple toggles are exposed as **attributes**.
+The grid the element wraps. Everything below configures this.
 
-```svelte
-<!-- src/sv-grid-element.svelte -->
-<svelte:options
-  customElement={{
-    tag: 'sv-grid',
-    shadow: 'none',
-    props: {
-      data: { type: 'Array' },
-      columns: { type: 'Array' },
-      sortable: { type: 'Boolean', attribute: 'sortable' },
-      filterable: { type: 'Boolean', attribute: 'filterable' },
-      selectable: { type: 'Boolean', attribute: 'selectable' },
-      editable: { type: 'Boolean', attribute: 'editable' },
-      rowHeight: { type: 'Number', attribute: 'row-height' },
-    },
-  }}
-/>
+<div data-docs-demo="01-quick-start" data-height="460"></div>
 
-<script lang="ts">
-  import {
-    SvGrid,
-    tableFeatures,
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowSelectionFeature,
-  } from '@svgrid/grid'
+**Attributes are strings; everything else is a property.**
 
-  let {
-    data = [],
-    columns = [],
-    sortable = true,
-    filterable = true,
-    selectable = false,
-    editable = false,
-    rowHeight = 36,
-  } = $props()
-
-  // Build the feature set from the boolean attributes.
-  const features = $derived(
-    tableFeatures({
-      ...(sortable ? { rowSortingFeature } : {}),
-      ...(filterable ? { columnFilteringFeature } : {}),
-      ...(selectable ? { rowSelectionFeature } : {}),
-    }),
-  )
-
-  // Re-emit grid callbacks as DOM CustomEvents so non-Svelte hosts can listen
-  // with addEventListener('rowclick', ...). $host() is the custom element.
-  function emit(name: string, detail: unknown) {
-    $host().dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }))
-  }
-</script>
-
-<div style="height: 100%; min-height: 320px;">
-  <SvGrid
-    {data}
-    {columns}
-    features={features}
-    filterMode="menu"
-    selectionMode="row"
-    showRowSelection={selectable}
-    enableInlineEditing={editable}
-    {rowHeight}
-    containerHeight="100%"
-    fitColumns={true}
-    onRowClick={(e) => emit('rowclick', e.row)}
-    onRowSelectionChange={(_e, sel) => emit('selectionchange', sel)}
-  />
-</div>
+```html
+<!-- Primitives: attribute or property, both fine -->
+<sv-grid sortable page-size="25" row-height="32"></sv-grid>
 ```
-
-`shadow: 'none'` keeps the grid in the light DOM so your page's CSS custom
-properties (`--sg-*`) theme it normally. See
-[Styling](#styling-and-shadow-dom) for the trade-offs.
-
-## 2. Build it to a single file
-
-Enable custom-element compilation **only** for the wrapper (compiling every
-component as a custom element would break the internal grid). With
-`@sveltejs/vite-plugin-svelte`:
 
 ```js
-// vite.config.js
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
+// Arrays, objects and functions: property only. There is no string form.
+grid.columns = [{ field: 'name', header: 'Name' }]
+grid.data = rows
+grid.groupBy = ['country']
+grid.getRowId = (row) => row.id
+```
 
-export default defineConfig({
-  plugins: [
-    svelte({
-      // Compile ONLY the wrapper as a custom element.
-      dynamicCompileOptions({ filename }) {
-        if (filename.endsWith('sv-grid-element.svelte')) {
-          return { customElement: true }
-        }
-      },
-    }),
-  ],
-  build: {
-    lib: {
-      entry: 'src/sv-grid-element.svelte',
-      formats: ['es'],
-      fileName: 'sv-grid-element',
-    },
+Setting `columns` as an attribute produces `columns="[object Object]"` and an
+empty grid. That is the single most common mistake with any custom element, and
+the [reference](./sv-grid.md) marks which props can be which.
+
+
+## Turning features on
+
+What `sortable`, `filterable`, `pageable` and `page-size` produce.
+
+<div data-docs-demo="02-sort-filter-paginate" data-height="480"></div>
+
+Every one of the grid's props is reachable. The 72 primitive ones have
+attributes, so a lot is configurable without any script at all:
+
+```html
+<sv-grid
+  sortable
+  filterable
+  pageable
+  page-size="25"
+  show-row-numbers
+  zebra-rows
+  enable-inline-editing
+  show-filter-row
+  group-display-mode="singleColumn"
+  style="display:block;height:480px"
+></sv-grid>
+```
+
+Anything array- or object-shaped goes through a property:
+
+```js
+grid.groupBy = ['country', 'city']
+grid.pinnedTopRows = [totalsRow]
+grid.initialSorting = [{ id: 'amount', desc: true }]
+grid.conditionalFormats = [{ when: { field: 'amount', op: 'gt', value: 1000 }, style: 'ok' }]
+```
+
+
+## Listening for changes
+
+Editing is where most events come from - `cellvaluechange` fires on every commit here.
+
+<div data-docs-demo="05-inline-editing" data-height="460"></div>
+
+Every grid callback is a DOM `CustomEvent`, so any host listens the standard
+way. `detail` is the callback's argument:
+
+```js
+grid.addEventListener('cellvaluechange', (e) => {
+  const { rowIndex, columnId, oldValue, newValue } = e.detail
+  save(rowIndex, columnId, newValue)
+})
+
+grid.addEventListener('sortingchange', (e) => console.log(e.detail))
+```
+
+## Calling the grid
+
+```js
+grid.addEventListener('apiready', (e) => e.detail.exportCsv())
+
+// The handle is also on the element, so binding late still works:
+grid.api.exportCsv()
+```
+
+## Two elements
+
+`<sv-grid>` renders in the light DOM, so your page's CSS applies to it. If you
+are dropping the grid into a page whose CSS you do not control, use
+[`<sv-grid-shadow>`](./shadow-dom.md) instead - same API, style-isolated.
+
+## Next
+
+- [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
+- [React](./react.md), [Vue](./vue.md), [Angular](./angular.md).
+- [TypeScript](./typescript.md) - typing the element in TSX and TS.
+- [Limitations](./limitations.md) - what cannot cross the boundary.
+
+<!-- =================================================================
+     /docs/help/web-components/react/  (community)
+     ================================================================== -->
+
+# SvGrid in React
+
+```bash
+npm install @svgrid/grid-wc
+```
+
+```tsx
+import { SvGrid } from '@svgrid/grid-wc/react'
+
+export default function Screen() {
+  return (
+    <div style={{ height: 480 }}>
+      <SvGrid
+        data={rows}
+        columns={columns}
+        sortable
+        filterable
+        editable
+        onCellValueChange={(e) => save(e)}
+      />
+    </div>
+  )
+}
+```
+
+That is the whole integration. The component is generated from `<SvGrid>`'s
+own types, so all 98 properties and 20 events are typed props, and it works the
+same on React 17, 18 and 19.
+
+## Why the wrapper rather than the raw element
+
+- **React 18 and earlier stringify object props onto attributes.**
+  `columns={cols}` becomes the attribute `"[object Object]"` and the grid
+  renders empty, with no error. React 19 assigns them as properties; the wrapper
+  does so on every version.
+- **The element renders before your props arrive.** Both React and Angular
+  create the element first and assign properties in an effect, so the grid
+  mounts once with nothing. The wrapper handles that ordering.
+- **`apiready` fires once, during that first mount** - before React can bind a
+  listener, so a raw `addEventListener` misses it entirely. The wrapper replays
+  it.
+- Typed props and handlers, instead of `el.columns = ...` on an `HTMLElement`.
+
+## Shadow DOM
+
+`shadow` picks the style-isolated element. Same props, same events; the extra
+bundle loads only when you ask for it.
+
+```tsx
+<SvGrid shadow data={rows} columns={columns} />
+```
+
+## The imperative api
+
+```tsx
+import { useRef } from 'react'
+import { SvGrid, type SvGridHandle } from '@svgrid/grid-wc/react'
+
+export function Screen() {
+  const grid = useRef<SvGridHandle>(null)
+
+  const exportCsv = () => {
+    // `api` is the grid api; `element` is the host custom element.
+    ;(grid.current?.api as { exportCsv(): void } | undefined)?.exportCsv()
+  }
+
+  return <SvGrid ref={grid} data={rows} columns={columns} />
+}
+```
+
+<!-- BEGIN generated examples - packages/grid-wc/scripts/sync-example-docs.mjs -->
+
+## Examples
+
+Nine complete apps, each one click from running. **Open in StackBlitz**
+boots a full editable project - no local install, nothing to configure - and
+every one is compiled in this repository's CI, so what you open is what works.
+
+They all share the same typed `data.ts`, so the only thing that changes
+between recipes is the grid.
+
+### A first grid
+
+Rows, columns, and the two features almost every table wants.
+
+<div data-docs-sandbox="react:basic" data-title="A first grid"></div>
+
+```tsx {nocheck}
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns } from '../data'
+
+/**
+ * The smallest useful grid: rows, columns, and the two features almost every
+ * table wants. `data` and `columns` are arrays, so they cross as properties -
+ * the wrapper handles that on every React version.
+ */
+export default function App() {
+  return (
+    <div style={{ height: '100%', padding: 16 }}>
+      <SvGrid data={people} columns={columns} sortable filterable />
+    </div>
+  )
+}
+```
+
+### Sorting and filtering
+
+A filter row under the headers, multi-column sort, and the current sort read back into your own state.
+
+<div data-docs-sandbox="react:sorting-filtering" data-title="Sorting and filtering"></div>
+
+```tsx {nocheck}
+import { useState } from 'react'
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns } from '../data'
+
+/**
+ * A filter row under the headers, multi-column sort, and the current sort read
+ * back into React state. `onSortingChange` hands you the same array the grid
+ * holds, so it can drive your own UI.
+ */
+export default function App() {
+  const [sorting, setSorting] = useState<Array<{ id: string; desc: boolean }>>([])
+
+  return (
+    <div style={{ height: '100%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <p style={{ margin: 0, font: '13px system-ui', color: '#64748b' }}>
+        Sorted by:{' '}
+        {sorting.length === 0
+          ? 'nothing yet - click a header, then shift-click a second one'
+          : sorting.map((s) => `${s.id} ${s.desc ? 'desc' : 'asc'}`).join(', ')}
+      </p>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SvGrid
+          data={people}
+          columns={columns}
+          sortable
+          filterable
+          showFilterRow
+          onSortingChange={setSorting}
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+### Editing and saving
+
+Inline editing, with each committed edit arriving through `cellvaluechange`. Swap the local update for your save call.
+
+<div data-docs-sandbox="react:editing" data-title="Editing and saving"></div>
+
+```tsx {nocheck}
+import { useState } from 'react'
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns, type Person } from '../data'
+
+/**
+ * Inline editing, with the change written back into React state.
+ *
+ * `cellvaluechange` fires once per committed edit and its detail is typed, so
+ * `rowIndex`, `columnId` and `newValue` come through without a cast. Replace
+ * the setState with your own save call.
+ */
+export default function App() {
+  const [rows, setRows] = useState<Person[]>(people)
+  const [log, setLog] = useState<string[]>([])
+
+  return (
+    <div style={{ height: '100%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <p style={{ margin: 0, font: '13px system-ui', color: '#64748b' }}>
+        Double-click a Name or Amount cell. Last edits: {log.slice(-3).join(' · ') || 'none yet'}
+      </p>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SvGrid
+          data={rows}
+          columns={columns.map((c) =>
+            c.id === 'name' || c.id === 'amount' ? { ...c, editable: true } : c,
+          )}
+          sortable
+          filterable
+          editable
+          onCellValueChange={(e) => {
+            setRows((prev) =>
+              prev.map((row, i) => (i === e.rowIndex ? { ...row, [e.columnId]: e.newValue } : row)),
+            )
+            setLog((prev) => [...prev, `${e.columnId} = ${String(e.newValue)}`])
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+### Row selection
+
+Checkboxes, with the selected rows handed straight to you - both the selection map and the rows themselves.
+
+<div data-docs-sandbox="react:selection" data-title="Row selection"></div>
+
+```tsx {nocheck}
+import { useState } from 'react'
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns, type Person } from '../data'
+
+/**
+ * Row checkboxes, with the selected rows handed to React so you can act on
+ * them. `rowselectionchange` carries both the selection map and the rows
+ * themselves, so you rarely need to look anything up.
+ */
+export default function App() {
+  const [selected, setSelected] = useState<Person[]>([])
+  const total = selected.reduce((sum, r) => sum + r.amount, 0)
+
+  return (
+    <div style={{ height: '100%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ font: '13px system-ui', color: '#64748b' }}>
+        {selected.length === 0
+          ? 'Tick some rows to total them'
+          : `${selected.length} selected · ${total.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`}
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SvGrid
+          data={people}
+          columns={columns}
+          sortable
+          filterable
+          showRowSelection
+          onRowSelectionChange={(e) => setSelected(e.rows as Person[])}
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+### Grouping and totals
+
+Group by one or two columns with an aggregate in the group row. `groupBy` is an array, so it is one of the props that can only be a property.
+
+<div data-docs-sandbox="react:grouping" data-title="Grouping and totals"></div>
+
+```tsx {nocheck}
+import { useState } from 'react'
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns } from '../data'
+
+/**
+ * Grouping by one or two columns, with an aggregate in the group row.
+ *
+ * `groupBy` is an array, so it is one of the props that can only be a
+ * property - which is the whole reason the React wrapper exists.
+ */
+export default function App() {
+  const [groupBy, setGroupBy] = useState<string[]>(['team'])
+
+  return (
+    <div style={{ height: '100%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 8, font: '13px system-ui' }}>
+        {[['team'], ['country'], ['team', 'country'], []].map((g) => (
+          <button
+            key={g.join('+') || 'none'}
+            onClick={() => setGroupBy(g)}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: '1px solid #cbd5e1',
+              background: groupBy.join() === g.join() ? '#e2e8f0' : '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            {g.join(' + ') || 'No grouping'}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SvGrid
+          data={people}
+          columns={columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c))}
+          sortable
+          filterable
+          groupable
+          groupBy={groupBy}
+          groupFooters
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+### Pagination
+
+Client-side paging. `pageSize` is the INITIAL page size, read once at mount.
+
+<div data-docs-sandbox="react:pagination" data-title="Pagination"></div>
+
+```tsx {nocheck}
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns } from '../data'
+
+/**
+ * Client-side paging. `pageSize` is read once at mount - it is the INITIAL
+ * page size - so change pages through the footer or the grid api rather than
+ * by reassigning the prop.
+ */
+export default function App() {
+  return (
+    <div style={{ height: '100%', padding: 16 }}>
+      <SvGrid
+        data={people}
+        columns={columns}
+        sortable
+        filterable
+        pageable
+        pageSize={25}
+        pageSizeOptions={[10, 25, 50, 100]}
+        paginationPosition="bottom"
+      />
+    </div>
+  )
+}
+```
+
+### Server-side data
+
+The grid renders the page you hand it and tells you when the user wants another. `externalSort` and `externalPagination` stop it doing the work locally; `rowCount` is how it knows how many pages exist.
+
+<div data-docs-sandbox="react:server-data" data-title="Server-side data"></div>
+
+```tsx {nocheck}
+import { useEffect, useState } from 'react'
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns, type Person } from '../data'
+
+type Query = { page: number; sort: Array<{ id: string; desc: boolean }> }
+
+/**
+ * Server-side data: the grid renders whatever page you hand it and tells you
+ * when the user wants a different one.
+ *
+ * `externalSort` and `externalPagination` stop the grid doing the work
+ * locally; `rowCount` is how it knows how many pages exist. `fetchPage` here
+ * stands in for your API call.
+ */
+const PAGE_SIZE = 25
+
+function fetchPage({ page, sort }: Query): Promise<{ rows: Person[]; total: number }> {
+  // Pretend this is a network call.
+  const sorted = [...people].sort((a, b) => {
+    for (const s of sort) {
+      const av = a[s.id as keyof Person]
+      const bv = b[s.id as keyof Person]
+      if (av === bv) continue
+      return (av > bv ? 1 : -1) * (s.desc ? -1 : 1)
+    }
+    return 0
+  })
+  const start = page * PAGE_SIZE
+  return new Promise((resolve) =>
+    setTimeout(() => resolve({ rows: sorted.slice(start, start + PAGE_SIZE), total: sorted.length }), 250),
+  )
+}
+
+export default function App() {
+  const [query, setQuery] = useState<Query>({ page: 0, sort: [] })
+  const [rows, setRows] = useState<Person[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    fetchPage(query).then((res) => {
+      if (cancelled) return
+      setRows(res.rows)
+      setTotal(res.total)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [query])
+
+  return (
+    <div style={{ height: '100%', padding: 16 }}>
+      <SvGrid
+        data={rows}
+        columns={columns}
+        loading={loading}
+        sortable
+        externalSort
+        externalPagination
+        pageable
+        pageSize={PAGE_SIZE}
+        rowCount={total}
+        pageIndex={query.page}
+        onSortingChange={(sort) => setQuery((q) => ({ ...q, sort, page: 0 }))}
+        onPaginationChange={(p) => setQuery((q) => ({ ...q, page: (p as { pageIndex: number }).pageIndex }))}
+      />
+    </div>
+  )
+}
+```
+
+### Theming
+
+The `--sg-*` custom properties. Ordinary CSS custom properties, so they cascade from any ancestor - which is why they also reach inside `<sv-grid-shadow>`.
+
+<div data-docs-sandbox="react:theming" data-title="Theming"></div>
+
+```tsx {nocheck}
+import { useState } from 'react'
+import { SvGrid } from '@svgrid/grid-wc/react'
+import { people, columns } from '../data'
+
+/**
+ * Theming through `--sg-*` custom properties.
+ *
+ * They are ordinary CSS custom properties, so they cascade: set them on any
+ * ancestor and the grid inherits. That is also why they reach into
+ * `<sv-grid-shadow>` - inheritance crosses a shadow boundary.
+ */
+const THEMES = {
+  Light: {},
+  Dark: {
+    '--sg-bg': '#0b1220',
+    '--sg-fg': '#e2e8f0',
+    '--sg-border': '#1e293b',
+    '--sg-header-bg': '#111a2e',
+    '--sg-row-hover': '#111a2e',
   },
+  Warm: {
+    '--sg-bg': '#fffaf5',
+    '--sg-fg': '#42302a',
+    '--sg-border': '#f0dcc9',
+    '--sg-header-bg': '#fdf1e4',
+    '--sg-accent': '#c2410c',
+  },
+} satisfies Record<string, Record<string, string>>
+
+export default function App() {
+  const [theme, setTheme] = useState<keyof typeof THEMES>('Light')
+
+  return (
+    <div
+      style={{
+        height: '100%',
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        ...THEMES[theme],
+      }}
+    >
+      <div style={{ display: 'flex', gap: 8 }}>
+        {(Object.keys(THEMES) as Array<keyof typeof THEMES>).map((name) => (
+          <button
+            key={name}
+            onClick={() => setTheme(name)}
+            style={{
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: '1px solid #cbd5e1',
+              background: theme === name ? '#e2e8f0' : '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SvGrid data={people} columns={columns} sortable filterable zebraRows />
+      </div>
+    </div>
+  )
+}
+```
+
+### Excel export (Enterprise)
+
+The paid pack from a non-Svelte host. `@svgrid/enterprise/export` is plain JavaScript, so it needs no Svelte in your build - the same goes for `/import`, `/print`, `/pivot` and `/license`. See [Enterprise features](./enterprise.md) for what those subpaths cover and what needs a Svelte-aware bundler.
+
+<div data-docs-sandbox="react:enterprise" data-title="Excel export (Enterprise)"></div>
+
+```tsx {nocheck}
+import { useRef, useState } from 'react'
+import { SvGrid, type SvGridHandle } from '@svgrid/grid-wc/react'
+import { exportGrid } from '@svgrid/enterprise/export'
+import { people, columns } from '../data'
+
+/**
+ * Excel export from a React host.
+ *
+ * `@svgrid/enterprise/export` is plain JavaScript - no Svelte in your build -
+ * so this works in any bundler. The same is true of `/import`, `/print`,
+ * `/pivot` and `/license`. The Kanban and scheduler views are the exception:
+ * they are Svelte components, so they need a Svelte-aware bundler.
+ *
+ * The api arrives on the handle once `apiready` has fired. It is typed
+ * `unknown` there because the wrapper does not depend on the grid's types, so
+ * the enterprise call needs a cast.
+ */
+export default function App() {
+  const grid = useRef<SvGridHandle>(null)
+  const [ready, setReady] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  async function exportXlsx() {
+    if (!grid.current?.api) return
+    setBusy(true)
+    try {
+      await exportGrid(grid.current.api as Parameters<typeof exportGrid>[0], {
+        format: 'xlsx',
+        filename: 'people',
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ height: '100%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <button type="button" onClick={exportXlsx} disabled={!ready || busy}>
+        {busy ? 'Building…' : 'Export to Excel'}
+      </button>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SvGrid
+          ref={grid}
+          data={people}
+          columns={columns}
+          sortable
+          filterable
+          onApiReady={() => setReady(true)}
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+<!-- END generated examples -->
+
+## Using the raw element instead
+
+The wrapper is a thin layer over `<sv-grid>`; nothing stops you using the
+element directly, and the rest of this page shows how. Do that if you want to
+avoid the extra dependency edge, or if you are already managing the element
+yourself.
+
+### The React version matters
+
+- **React 19+** passes non-primitive props to a custom element as
+  **properties**. `<sv-grid columns={cols} data={rows} />` works directly.
+- **React 18 and earlier** stringify every prop onto an **attribute**, so
+  `columns` arrives as `"[object Object]"` and the grid renders empty. You must
+  assign objects through a ref.
+
+The ref approach works on both, so it is what the examples below use.
+
+## A working grid
+
+The editing grid the code below builds, running as the Svelte component.
+
+<div data-docs-demo="05-inline-editing" data-height="470"></div>
+
+```tsx
+import { useEffect, useRef, useState } from 'react'
+import '@svgrid/grid-wc' // side effect: registers <sv-grid>
+
+type Row = { id: string; name: string; status: 'active' | 'inactive'; salary: number }
+
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'sv-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        sortable?: boolean
+        filterable?: boolean
+        'enable-inline-editing'?: boolean
+      }
+    }
+  }
+}
+
+export default function GridScreen() {
+  const ref = useRef<HTMLElement | null>(null)
+  const [rows, setRows] = useState<Row[]>([
+    { id: 'P-1', name: 'Ada Lovelace', status: 'active', salary: 145_000 },
+    { id: 'P-2', name: 'Linus Torvalds', status: 'active', salary: 188_000 },
+    { id: 'P-3', name: 'Grace Hopper', status: 'inactive', salary: 152_000 },
+  ])
+
+  // Arrays and objects are PROPERTIES. There is no attribute form for them.
+  useEffect(() => {
+    const el = ref.current as never as { data: Row[]; columns: unknown[] } | null
+    if (!el) return
+    el.columns = [
+      { field: 'id', header: 'ID', width: 100, editable: false },
+      { field: 'name', header: 'Name', width: 220, editorType: 'text' },
+      {
+        field: 'status',
+        header: 'Status',
+        width: 130,
+        editorType: 'select',
+        editorOptions: ['active', 'inactive'],
+      },
+      {
+        field: 'salary',
+        header: 'Salary',
+        width: 140,
+        align: 'right',
+        format: { type: 'number', options: { style: 'currency', currency: 'USD' } },
+      },
+    ]
+    el.data = rows
+  }, [rows])
+
+  // Grid callbacks arrive as DOM CustomEvents; detail is the callback argument.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onEdit = (e: Event) => {
+      const { rowIndex, columnId, newValue } = (e as CustomEvent).detail
+      setRows((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, [columnId]: newValue } : r)))
+    }
+    el.addEventListener('cellvaluechange', onEdit)
+    return () => el.removeEventListener('cellvaluechange', onEdit)
+  }, [])
+
+  return (
+    <div style={{ height: 480 }}>
+      {/* Primitives can stay in JSX as attributes. */}
+      <sv-grid ref={ref as React.RefObject<HTMLElement>} sortable filterable enable-inline-editing />
+    </div>
+  )
+}
+```
+
+
+## A small hook, if you set many props
+
+`groupBy` and `pinnedTopRows` are arrays, which is exactly what the hook is for.
+
+<div data-docs-demo="07-grouping-aggregation" data-height="470"></div>
+
+Rather than one `useEffect` per prop, assign a bag of them:
+
+```ts
+function useGridProps(ref: React.RefObject<HTMLElement | null>, props: Record<string, unknown>) {
+  useEffect(() => {
+    const el = ref.current as never as Record<string, unknown> | null
+    if (!el) return
+    for (const [k, v] of Object.entries(props)) el[k] = v
+  }, [ref, props])
+}
+```
+
+```tsx
+useGridProps(ref, {
+  columns,
+  data: rows,
+  groupBy: ['status'],
+  pageable: true,
+  pinnedTopRows: [totals],
 })
 ```
 
-```bash
-npm run build   # -> dist/sv-grid-element.js
+Memoise the object (`useMemo`) or it re-assigns on every render.
+
+
+## Calling the grid
+
+```tsx
+useEffect(() => {
+  const el = ref.current as never as { api?: { exportCsv(): void } } | null
+  el?.api?.exportCsv()
+}, [])
 ```
 
-Host the resulting `dist/sv-grid-element.js` on your own server or a CDN.
+`apiready` fires once at mount, and the handle is also parked on the element, so
+reading `el.api` later works even if you never bound a listener.
 
-## 3. Use it in plain HTML
+## Style isolation
 
-```html
-<script type="module" src="/sv-grid-element.js"></script>
+If the grid is going into a page whose CSS you do not control - a host app with
+aggressive global resets, a CMS template - swap the tag for
+[`<sv-grid-shadow>`](./shadow-dom.md). Same props, same events; page CSS stops
+at the boundary.
 
-<sv-grid id="grid" sortable filterable style="display:block;height:420px"></sv-grid>
 
-<script type="module">
-  const grid = document.getElementById('grid')
-  // Arrays/objects are set as properties, not attributes:
-  grid.columns = [
-    { field: 'name', header: 'Name', editorType: 'text', width: 200 },
-    { field: 'role', header: 'Role', width: 160 },
-    { field: 'salary', header: 'Salary', align: 'right',
-      format: { type: 'currency', currency: 'USD' } },
-  ]
-  grid.data = [
-    { name: 'Ada Lovelace', role: 'Engineering', salary: 145000 },
-    { name: 'Alan Turing', role: 'Research', salary: 160000 },
-  ]
-  grid.addEventListener('rowclick', (e) => console.log('clicked row', e.detail))
-</script>
-```
+## What you give up
 
-## 4. Use it in React, Vue, Angular
+Column `format` and HTML-string renderers: the substitute for a React component in a cell.
 
-The element is registered globally once you import the bundle. Each framework
-passes object props slightly differently:
+<div data-docs-demo="10-custom-cells-and-themes" data-height="480"></div>
 
-**React 19+** passes objects/arrays to custom elements directly:
+You cannot render a React component inside a cell. Column `format` options,
+`fieldFn` and HTML-string renderers cover badges, links and formatted values;
+anything richer needs the Svelte component. See
+[limitations](./limitations.md).
 
-```jsx
-import '/sv-grid-element.js'
+## Why it lives in `@svgrid/grid-wc`
 
-export function Grid({ rows, columns }) {
-  return <sv-grid sortable filterable .data={rows} .columns={columns} />
-}
-```
-
-On React 18 and earlier, set the properties via a `ref` instead
-(`ref.current.data = rows`), since older React serializes props to attributes.
-
-**Vue 3** - bind as a property with `.prop`, and tell Vue it's a custom
-element (`compilerOptions.isCustomElement` / `app.config` for `sv-`):
-
-```vue
-<sv-grid sortable filterable :data.prop="rows" :columns.prop="columns" />
-```
-
-**Angular** - add `CUSTOM_ELEMENTS_SCHEMA` to the module/component, then bind
-properties:
-
-```html
-<sv-grid [data]="rows" [columns]="columns" sortable filterable></sv-grid>
-```
-
-## Styling and shadow DOM
-
-| Mode | What happens | When to use |
-| --- | --- | --- |
-| `shadow: 'none'` (recommended) | Grid renders in the light DOM. Page CSS and `--sg-*` theme tokens apply normally. | Almost always - a data grid wants to inherit your app theme. |
-| `shadow: 'open'` (Svelte default) | Grid is encapsulated in a shadow root. Set `--sg-*` tokens on the `sv-grid` host; outside CSS won't leak in. | Strict style isolation / embedding in third-party pages. |
-
-Theme either mode with the same custom properties:
-
-```css
-sv-grid {
-  --sg-bg: #fff;
-  --sg-header-bg: #f8fafc;
-  --sg-border: #e2e8f0;
-}
-```
-
-See [Tailwind integration](./tailwind.md) for the full `--sg-*` token list.
-
-## Events
-
-The wrapper above re-emits grid callbacks as DOM `CustomEvent`s, so any host
-listens the standard way:
-
-```js
-grid.addEventListener('rowclick', (e) => { /* e.detail = the row */ })
-grid.addEventListener('selectionchange', (e) => { /* e.detail = selected rows */ })
-```
-
-Add more by calling `emit('yourevent', detail)` from any SvGrid callback.
-
-## Caveats
-
-- **Objects go through properties, not attributes.** `data` and `columns` are
-  arrays - set `el.data = [...]`, not `data="..."`. Only primitive toggles
-  (`sortable`, `row-height`) work as HTML attributes.
-- **Custom cell snippets** (`renderSnippet`) are a Svelte authoring feature.
-  Across the custom-element boundary, prefer column `format` options and
-  `fieldFn` for display, or build the snippet logic inside the wrapper.
-- **Bundle size.** The custom element ships the grid plus the Svelte runtime in
-  one file. That's expected for a self-contained drop-in element; native Svelte
-  consumers share the runtime and ship less.
-- **Enterprise features.** `installEnterprise` works the same inside the wrapper - import it
-  and augment the api in `onApiReady`. The license check is unchanged.
-
-## Frequently asked questions
-
-### Can I use SvGrid without Svelte?
-
-Yes. Compile it to a custom element (web component) and use `<sv-grid>` in
-React, Vue, Angular, or plain HTML. The host app does not need Svelte
-installed - the element ships the runtime inside its own bundle.
-
-### Does SvGrid work as a web component / custom element?
-
-Yes. Svelte 5 compiles components to standards-based custom elements. Wrap
-`<SvGrid>` in a file with `<svelte:options customElement="sv-grid">`, build it
-to a single `.js`, and register `<sv-grid>` globally.
-
-### How do I use SvGrid in React, Vue, or Angular?
-
-Build the custom element, import the bundle once, then render `<sv-grid>` and
-set `data` / `columns` as properties. React 19, Vue (`:data.prop`), and Angular
-(`CUSTOM_ELEMENTS_SCHEMA`) all support binding object properties to custom
-elements.
-
-### Should I use shadow DOM?
-
-For a data grid, usually no - build with `shadow: 'none'` so your app's CSS and
-`--sg-*` theme tokens apply. Use shadow DOM only when you need strict style
-isolation.
-
-### How do I pass columns and data to the `<sv-grid>` element?
-
-As JavaScript properties: `el.columns = [...]; el.data = [...]`. HTML
-attributes only carry strings, so arrays and objects must be set on the element
-instance.
+Rather than a separate `@svgrid/react` package: one version to keep in step
+with the element instead of two, and `react` is an OPTIONAL peer dependency, so
+a plain-HTML consumer of `@svgrid/grid-wc` never installs React. The wrapper is
+a subpath import and about 1.5 KB - it reuses the one element bundle rather
+than shipping a second copy of the grid.
 
 ## See also
 
-- [First grid](../getting-started/2-first-grid.md) - using SvGrid directly in Svelte
-- [Starters & scaffolding](../getting-started/starters.md) - `npm create @svgrid`
-- [Tailwind integration](./tailwind.md) - the `--sg-*` theme tokens
-- [Architecture](./architecture.md) - headless core vs. render component
+- [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
+- [TypeScript](./typescript.md) - typing the element and its events.
+- [Vue](./vue.md) and [Angular](./angular.md).
+
+<!-- =================================================================
+     /docs/help/web-components/shadow-dom/  (community)
+     ================================================================== -->
+
+# Shadow DOM: `<sv-grid-shadow>`
+
+Two elements ship, and which one you want is a styling decision:
+
+| Element | Renders in | Page CSS | Use when |
+| --- | --- | --- | --- |
+| `<sv-grid>` | the light DOM | applies normally | Almost always - a data grid usually wants to inherit your app's theme. |
+| `<sv-grid-shadow>` | an open shadow root | **cannot reach the grid** | You are embedding in a page whose CSS you do not control, or shipping into someone else's site. |
+
+They are two elements rather than one with a `shadow` attribute because Svelte's
+`customElement.shadow` is resolved when the component is COMPILED. No runtime
+flag can switch it, so no attribute can either.
+
+```html
+<script type="module" src="https://unpkg.com/@svgrid/grid-wc/dist/shadow/sv-grid-shadow-element.js"></script>
+
+<sv-grid-shadow id="grid" sortable filterable style="display:block;height:420px"></sv-grid-shadow>
+<script type="module">
+  const grid = document.getElementById('grid')
+  grid.columns = [{ field: 'name', header: 'Name' }, { field: 'city', header: 'City' }]
+  grid.data = [{ name: 'Ada', city: 'London' }, { name: 'Linus', city: 'Helsinki' }]
+</script>
+```
+
+Everything else is identical: the same 98 properties, the same 72 attributes,
+the same 20 events. Events are dispatched `composed: true`, so
+`addEventListener` on the host works exactly as it does on `<sv-grid>`.
+
+
+## What the shadow root does and does not isolate
+
+Theming with `--sg-*` tokens, which reach into the shadow root by inheritance.
+
+<div data-docs-demo="10-custom-cells-and-themes" data-height="500"></div>
+
+The root is **open**, never closed. A closed root leaves `el.shadowRoot` null,
+which would stop you styling, querying, or testing your own grid - so it is not
+offered.
+
+Isolation is one-directional, and worth being precise about:
+
+- **Page CSS cannot reach the grid.** A page rule like
+  `table td { background: fuchsia }` hits `<sv-grid>` and stops at
+  `<sv-grid-shadow>`'s boundary. That is the point of the element.
+- **The grid's CSS is still in your page.** About twenty overlay surfaces - the
+  cell dropdown, the date picker, tooltips, toasts, modals - portal to
+  `document.body` deliberately, so they escape every ancestor `overflow` and
+  clip. Those land outside the shadow root, so the bundle injects its stylesheet
+  into `document.head` as well as adopting it into the root. Every rule is
+  scoped to an `.sv-grid-*` class, so it does not style your page, but it is
+  present in it.
+
+## Theming
+
+`--sg-*` tokens work in both elements, unchanged:
+
+```css
+sv-grid, sv-grid-shadow {
+  --sg-bg: #fff;
+  --sg-header-bg: #f8fafc;
+}
+```
+
+A theme stylesheet works too, including its dark variant, even though its
+selectors are `:root` and `:root[data-theme='dark']` and neither can MATCH
+inside a shadow tree. Custom properties are *inherited* properties, and
+inheritance crosses a shadow boundary - so the values land on the host and are
+inherited by everything in the root. Verified in a browser rather than reasoned
+about: it was assumed to be broken for a while, and it is not.
+
+
+## Constraints
+
+Selection, clipboard and the menus that portal out of the root - all identical inside a shadow tree.
+
+<div data-docs-demo="04-selection-copy-paste" data-height="460"></div>
+
+- **The root is resolved on mount.** Moving a live `<sv-grid-shadow>` into a
+  different document needs a fresh element, not a reparent.
+- **Do not give the host a `transform`, `filter`, or `contain`.** Any of those
+  makes it a containing block for fixed positioning, and the grid's menus -
+  which are `position: fixed` - would anchor to the host instead of the
+  viewport.
+- **Closed roots are unsupported**, for the reason above.
+
+
+## See also
+
+- [Quick start](./quick-start.md)
+- [`<sv-grid>` reference](./sv-grid.md)
+- [Limitations](./limitations.md)
+
+<!-- =================================================================
+     /docs/help/web-components/sv-grid/  (community)
+     ================================================================== -->
+
+# `<sv-grid>` reference
+
+Every property, attribute and event of the custom element.
+
+**This page is generated** from `<SvGrid>`'s own `Props` type by
+`packages/grid-wc/scripts/generate-surface.mjs`, and CI fails if it drifts. The
+element used to declare 7 props and 2 events by hand while the docs claimed
+"grouping, sorting, pagination all come along" - a hand-written table is how
+that happens.
+
+## Attributes vs properties
+
+`groupable` is an attribute; `groupBy` is an array, so it is property-only. This grid uses both.
+
+<div data-docs-demo="07-grouping-aggregation" data-height="480"></div>
+
+The distinction matters more here than anywhere else in the API:
+
+- **An attribute is a string.** Primitives (`boolean`, `number`, `string`) can
+  be written in HTML: `<sv-grid page-size="25" show-row-numbers>`.
+- **Arrays, objects and functions cannot.** `columns='[object Object]'` is not
+  a thing. Assign them in script: `el.columns = [...]`.
+
+Both work through the property, so `el.pageSize = 25` is equally valid. The
+attribute is the extra convenience, offered only where it can work.
+
+```html
+<sv-grid id="grid" sortable filterable page-size="25" row-height="32"></sv-grid>
+<script type="module">
+  const grid = document.getElementById('grid')
+  grid.columns = [{ field: 'name', header: 'Name' }]   // property: an array
+  grid.data = rows                                      // property: an array
+</script>
+```
+
+<!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
+
+### Attributes (72)
+
+Primitives, so they work in plain HTML as well as through a property.
+
+| Attribute | Property | Type |
+| --- | --- | --- |
+| `pivot-mode` | `pivotMode` | `boolean` |
+| `context-menu` | `contextMenu` | `boolean \| ReadonlyArray<ContextMenuItem<TData>>` |
+| `selection-bar` | `selectionBar` | `\| boolean \| ReadonlyArray<SelectionBarAction<TData> \| SelectionBarBuiltin> \| SelectionB...` |
+| `sortable` | `sortable` | `boolean` |
+| `filterable` | `filterable` | `boolean` |
+| `editable` | `editable` | `boolean` |
+| `groupable` | `groupable` | `boolean` |
+| `group-footers` | `groupFooters` | `boolean` |
+| `grand-total-row` | `grandTotalRow` | `boolean` |
+| `group-display-mode` | `groupDisplayMode` | `GroupDisplayType` |
+| `auto-group-column-header` | `autoGroupColumnHeader` | `string` |
+| `auto-group-column-width` | `autoGroupColumnWidth` | `number` |
+| `pageable` | `pageable` | `boolean` |
+| `loading` | `loading` | `boolean` |
+| `loading-overlay` | `loadingOverlay` | `boolean` |
+| `loading-skeleton-rows` | `loadingSkeletonRows` | `number` |
+| `error` | `error` | `string \| null` |
+| `empty-message` | `emptyMessage` | `string` |
+| `show-global-filter` | `showGlobalFilter` | `boolean` |
+| `show-column-filters` | `showColumnFilters` | `boolean` |
+| `filter-mode` | `filterMode` | `"row" \| "menu" \| "global" \| "none"` |
+| `show-grouping-controls` | `showGroupingControls` | `boolean` |
+| `show-row-selection` | `showRowSelection` | `boolean` |
+| `show-pagination` | `showPagination` | `boolean` |
+| `page-size` | `pageSize` | `number` |
+| `pagination-position` | `paginationPosition` | `'top' \| 'bottom' \| 'both'` |
+| `external-pagination` | `externalPagination` | `boolean` |
+| `row-count` | `rowCount` | `number` |
+| `page-index` | `pageIndex` | `number` |
+| `virtualization` | `virtualization` | `boolean` |
+| `row-height` | `rowHeight` | `number \| ((rowIndex: number) => number)` |
+| `auto-row-height` | `autoRowHeight` | `boolean` |
+| `row-resize` | `rowResize` | `boolean` |
+| `header-height` | `headerHeight` | `number` |
+| `overscan` | `overscan` | `number` |
+| `container-height` | `containerHeight` | `number \| string` |
+| `column-virtualization` | `columnVirtualization` | `boolean` |
+| `column-overscan` | `columnOverscan` | `number` |
+| `column-width` | `columnWidth` | `number` |
+| `fit-columns` | `fitColumns` | `boolean` |
+| `column-resize` | `columnResize` | `boolean` |
+| `responsive` | `responsive` | `boolean \| { breakpoint?: number }` |
+| `show-filter-menu` | `showFilterMenu` | `boolean` |
+| `show-filter-row` | `showFilterRow` | `boolean` |
+| `enable-cell-selection` | `enableCellSelection` | `boolean` |
+| `move-cells` | `moveCells` | `boolean` |
+| `enable-row-hover` | `enableRowHover` | `boolean` |
+| `copy-headers-to-clipboard` | `copyHeadersToClipboard` | `boolean` |
+| `enable-inline-editing` | `enableInlineEditing` | `boolean` |
+| `full-row-editing` | `fullRowEditing` | `boolean` |
+| `enable-row-summaries` | `enableRowSummaries` | `boolean` |
+| `summary` | `summary` | `boolean` |
+| `status-bar` | `statusBar` | `\| boolean \| { ... }` |
+| `tool-panel` | `toolPanel` | `boolean` |
+| `charting` | `charting` | `boolean \| ChartingConfig<TData>` |
+| `column-menu-tabs` | `columnMenuTabs` | `boolean` |
+| `tool-panel-default-open` | `toolPanelDefaultOpen` | `boolean` |
+| `tool-panel-default-tab` | `toolPanelDefaultTab` | `"columns" \| "filters"` |
+| `selection-mode` | `selectionMode` | `"row" \| "cell" \| "both" \| "none"` |
+| `show-row-numbers` | `showRowNumbers` | `boolean` |
+| `zebra-rows` | `zebraRows` | `boolean` |
+| `row-number-width` | `rowNumberWidth` | `number` |
+| `external-sort` | `externalSort` | `boolean` |
+| `external-filter` | `externalFilter` | `boolean` |
+| `editable-comments` | `editableComments` | `boolean` |
+| `conditional-stat-scope` | `conditionalStatScope` | `"filtered" \| "visible" \| "all"` |
+| `enable-column-reorder` | `enableColumnReorder` | `boolean` |
+| `infer-column-types` | `inferColumnTypes` | `boolean` |
+| `row-drag-managed` | `rowDragManaged` | `boolean` |
+| `row-drag-group` | `rowDragGroup` | `string` |
+| `aligned-grid-group` | `alignedGridGroup` | `string` |
+| `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
+
+### Properties only (26)
+
+Arrays, objects and functions. An HTML attribute is a string, so these can
+only be assigned in script: `el.columns = [...]`.
+
+| Property | Type |
+| --- | --- |
+| `data` | `ReadonlyArray<TData>` |
+| `columns` | `Array<ColumnDef<TFeatures, TData>>` |
+| `board` | `BoardConfig<TFeatures, TData>` |
+| `scheduler` | `SchedulerConfig<TFeatures, TData>` |
+| `chart` | `ChartViewConfig<TFeatures, TData>` |
+| `pivot` | `GridPivotConfig<TData>` |
+| `features` | `TFeatures` |
+| `treeData` | `{ ... }` |
+| `groupBy` | `ReadonlyArray<string>` |
+| `expanded` | `Record<string, boolean>` |
+| `localization` | `GridLocalization` |
+| `pageSizeOptions` | `number[]` |
+| `initialColumnPinning` | `{ ... }` |
+| `processCellForClipboard` | `(params: { ... }) => unknown` |
+| `initialSorting` | `Array<{ id: string; desc: boolean }>` |
+| `initialAdvancedFilter` | `GridPredicateExpr \| null` |
+| `getRowId` | `(row: TData, index: number) => string` |
+| `rowClass` | `(ctx: { row: TData; rowIndex: number; }) => string \| ReadonlyArray<string> \| Record<str...` |
+| `notes` | `Record<string, Record<string, string>>` |
+| `conditionalFormats` | `ReadonlyArray<ConditionalFormat<TData>>` |
+| `isDetailRow` | `(row: TData, rowIndex: number) => boolean` |
+| `serverGroup` | `{ ... }` |
+| `serverFilterValues` | `(columnId: string) => Promise<string[]>` |
+| `pinnedTopRows` | `ReadonlyArray<TData>` |
+| `pinnedBottomRows` | `ReadonlyArray<TData>` |
+| `columnOrder` | `ReadonlyArray<string>` |
+
+### Events (19)
+
+`detail` is the callback's argument. The one callback that takes two carries
+an object keyed by its parameter names.
+
+| Event | From | `detail` |
+| --- | --- | --- |
+| `pivotmodechange` | `onPivotModeChange` | `on` |
+| `expandedchange` | `onExpandedChange` | `expanded` |
+| `paginationchange` | `onPaginationChange` | `pagination` |
+| `apiready` | `onApiReady` | `api` |
+| `rowselectionchange` | `onRowSelectionChange` | `{ selection, rows }` |
+| `cellselectionchange` | `onCellSelectionChange` | `ranges` |
+| `sortingchange` | `onSortingChange` | `sorting` |
+| `advancedfilterchange` | `onAdvancedFilterChange` | `expr` |
+| `filterschange` | `onFiltersChange` | `filters` |
+| `notechange` | `onNoteChange` | `event` |
+| `cellvaluechange` | `onCellValueChange` | `event` |
+| `activecellchange` | `onActiveCellChange` | `cell` |
+| `cellclick` | `onCellClick` | `event` |
+| `rowclick` | `onRowClick` | `row` - published detail is the row, not the whole click event |
+| `celldoubleclick` | `onCellDoubleClick` | `event` |
+| `rowdoubleclick` | `onRowDoubleClick` | `event` |
+| `scrollbottomreached` | `onScrollBottomReached` | `event` |
+| `columnorderchange` | `onColumnOrderChange` | `order` |
+| `rowdragend` | `onRowDragEnd` | `event` |
+
+Plus one alias kept from before the surface was generated:
+
+| Event | From | `detail` |
+| --- | --- | --- |
+| `selectionchange` | `onRowSelectionChange` | `rows` - published alias of rowselectionchange, detail is the selected rows |
+
+### Not exposed (2)
+
+| Prop | Why |
+| --- | --- |
+| `selectable` | element-level shorthand for row selection - see GridBody.svelte |
+| `renderDetailRow` | Svelte snippet - cannot cross the custom-element boundary |
+
+<!-- END generated reference -->
+
+
+## The imperative API
+
+The api surface `apiready` hands you.
+
+<div data-docs-demo="90-selection-api" data-height="460"></div>
+
+`onApiReady` fires once with the grid's api. Because a listener bound after
+mount would miss it, the handle is also parked on the element:
+
+```js
+grid.addEventListener('apiready', (e) => e.detail.exportCsv())
+// or, at any time later:
+grid.api.exportCsv()
+```
+
+
+## See also
+
+- [Quick start](./quick-start.md) - the CDN path, no build step.
+- [Limitations](./limitations.md) - what cannot cross the boundary.
+- [Shadow DOM](./shadow-dom.md) - `<sv-grid-shadow>` and style isolation.
+
+<!-- =================================================================
+     /docs/help/web-components/typescript/  (community)
+     ================================================================== -->
+
+# TypeScript with the custom element
+
+The element is plain JavaScript at the boundary, so TypeScript needs to be told
+it exists. Two declarations get completion and checking back.
+
+## Plain TypeScript
+
+The primitives worth declaring first - they are the ones you set most.
+
+<div data-docs-demo="02-sort-filter-paginate" data-height="460"></div>
+
+Add the element to `HTMLElementTagNameMap`, so `getElementById` and
+`querySelector` return something typed:
+
+`Row` must extend `RowData` (`Record<string, unknown>`), because that is the
+constraint `ColumnDef` and `SvGridApi` carry:
+
+```ts
+// svgrid-elements.d.ts
+import type { ColumnDef, RowData, SvGridApi } from '@svgrid/grid'
+
+interface SvGridElement<Row extends RowData = RowData> extends HTMLElement {
+  data: readonly Row[]
+  columns: ColumnDef<never, Row>[]
+  api: SvGridApi<never, Row>
+
+  // A few of the 72 primitives; add the ones you use.
+  sortable: boolean
+  filterable: boolean
+  pageable: boolean
+  pageSize: number
+  showRowNumbers: boolean
+  groupBy: readonly string[]
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'sv-grid': SvGridElement
+    'sv-grid-shadow': SvGridElement
+  }
+}
+
+// With that in scope, both of these are checked:
+const grid = document.querySelector('sv-grid')!
+grid.columns = [{ field: 'name', header: 'Name' }]
+grid.api.exportCsv()
+```
+
+The full property list is in the [reference](./sv-grid.md), which is generated
+from the grid's own `Props` type - copy the rows you need rather than trying to
+mirror all 98.
+
+## JSX (React, Solid, Preact)
+
+JSX needs the tag registered separately, because intrinsic elements are a
+different map:
+
+```tsx
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      'sv-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        sortable?: boolean
+        filterable?: boolean
+        'page-size'?: number
+      }
+      'sv-grid-shadow': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
+    }
+  }
+}
+```
+
+Attributes in JSX are strings, so only the primitives belong here. Arrays and
+objects go through a ref - see [React](./react.md).
+
+
+## Typed events
+
+`cellvaluechange` fires here; the map below types its `detail`.
+
+<div data-docs-demo="05-inline-editing" data-height="470"></div>
+
+`CustomEvent.detail` is `any` by default. Declare the map once:
+
+```ts
+interface SvGridEventMap {
+  cellvaluechange: CustomEvent<{
+    rowIndex: number
+    columnId: string
+    oldValue: unknown
+    newValue: unknown
+  }>
+  sortingchange: CustomEvent<Array<{ id: string; desc: boolean }>>
+  rowselectionchange: CustomEvent<{ selection: Record<string, boolean>; rows: unknown[] }>
+  // `rowclick` carries the ROW, not the click event - see the reference.
+  rowclick: CustomEvent<Record<string, unknown>>
+}
+
+declare global {
+  interface HTMLElementEventMap extends SvGridEventMap {}
+}
+
+// `HTMLElement`, so addEventListener resolves against HTMLElementEventMap.
+// (`querySelector('sv-grid')` gives you an `Element` unless you also add the
+// HTMLElementTagNameMap declaration above.)
+const el: HTMLElement = document.createElement('sv-grid')
+el.addEventListener('cellvaluechange', (e) => {
+  e.detail.newValue // typed
+})
+```
+
+Every event's `detail` shape is listed in the [reference](./sv-grid.md); it is
+the corresponding callback's argument, verbatim, with two documented exceptions
+kept for backwards compatibility.
+
+
+## Why these are not shipped
+
+A `.d.ts` in the package would have to be generated from the same source as the
+element, and kept correct across a version skew between `@svgrid/grid-wc` and
+whatever `@svgrid/grid` types a consumer has installed. Hand-copying the few
+props you use is more honest than a declaration file that can silently disagree
+with the element you loaded.
+
+
+## See also
+
+- [`<sv-grid>` reference](./sv-grid.md)
+- [React](./react.md) - where the typing matters most.
+
+<!-- =================================================================
+     /docs/help/web-components/vue/  (community)
+     ================================================================== -->
+
+# SvGrid in Vue
+
+```bash
+npm install @svgrid/grid-wc
+```
+
+```vue
+<script setup>
+import { SvGrid } from '@svgrid/grid-wc/vue'
+</script>
+
+<template>
+  <SvGrid
+    :data="rows"
+    :columns="columns"
+    sortable
+    filterable
+    editable
+    style="height: 480px"
+    @cellvaluechange="save"
+  />
+</template>
+```
+
+The component is generated from `<SvGrid>`'s own types, and it removes the two
+things a raw custom element needs in Vue: the `isCustomElement` build config,
+and a `.prop` modifier on every object binding.
+
+`shadow` picks the style-isolated element, and a template ref exposes
+`api` and `element`.
+
+<!-- BEGIN generated examples - packages/grid-wc/scripts/sync-example-docs.mjs -->
+
+## Examples
+
+Nine complete apps, each one click from running. **Open in StackBlitz**
+boots a full editable project - no local install, nothing to configure - and
+every one is compiled in this repository's CI, so what you open is what works.
+
+They all share the same typed `data.ts`, so the only thing that changes
+between recipes is the grid.
+
+### A first grid
+
+Rows, columns, and the two features almost every table wants.
+
+<div data-docs-sandbox="vue:basic" data-title="A first grid"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns } from '../data'
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px">
+    <SvGrid :data="people" :columns="columns" sortable filterable />
+  </div>
+</template>
+```
+
+### Sorting and filtering
+
+A filter row under the headers, multi-column sort, and the current sort read back into your own state.
+
+<div data-docs-sandbox="vue:sorting-filtering" data-title="Sorting and filtering"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { ref } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns } from '../data'
+
+const sorting = ref<Array<{ id: string; desc: boolean }>>([])
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <p style="margin: 0; font: 13px system-ui; color: #64748b">
+      Sorted by:
+      {{
+        sorting.length === 0
+          ? 'nothing yet - click a header, then shift-click a second one'
+          : sorting.map((s) => `${s.id} ${s.desc ? 'desc' : 'asc'}`).join(', ')
+      }}
+    </p>
+    <div style="flex: 1; min-height: 0">
+      <SvGrid
+        :data="people"
+        :columns="columns"
+        sortable
+        filterable
+        show-filter-row
+        @sortingchange="sorting = $event"
+      />
+    </div>
+  </div>
+</template>
+```
+
+### Editing and saving
+
+Inline editing, with each committed edit arriving through `cellvaluechange`. Swap the local update for your save call.
+
+<div data-docs-sandbox="vue:editing" data-title="Editing and saving"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns, type Person } from '../data'
+
+const rows = ref<Person[]>([...people])
+const log = ref<string[]>([])
+
+const editable = computed(() =>
+  columns.map((c) => (c.id === 'name' || c.id === 'amount' ? { ...c, editable: true } : c)),
+)
+
+function onEdit(e: { rowIndex: number; columnId: string; newValue: unknown }) {
+  const row = rows.value[e.rowIndex]
+  if (row) rows.value[e.rowIndex] = { ...row, [e.columnId]: e.newValue } as Person
+  log.value.push(`${e.columnId} = ${String(e.newValue)}`)
+}
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <p style="margin: 0; font: 13px system-ui; color: #64748b">
+      Double-click a Name or Amount cell. Last edits:
+      {{ log.slice(-3).join(' · ') || 'none yet' }}
+    </p>
+    <div style="flex: 1; min-height: 0">
+      <SvGrid
+        :data="rows"
+        :columns="editable"
+        sortable
+        filterable
+        editable
+        @cellvaluechange="onEdit"
+      />
+    </div>
+  </div>
+</template>
+```
+
+### Row selection
+
+Checkboxes, with the selected rows handed straight to you - both the selection map and the rows themselves.
+
+<div data-docs-sandbox="vue:selection" data-title="Row selection"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns, type Person } from '../data'
+
+const selected = ref<Person[]>([])
+const total = computed(() => selected.value.reduce((sum, r) => sum + r.amount, 0))
+const money = (n: number) =>
+  n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="font: 13px system-ui; color: #64748b">
+      {{
+        selected.length === 0
+          ? 'Tick some rows to total them'
+          : `${selected.length} selected · ${money(total)}`
+      }}
+    </div>
+    <div style="flex: 1; min-height: 0">
+      <SvGrid
+        :data="people"
+        :columns="columns"
+        sortable
+        filterable
+        show-row-selection
+        @rowselectionchange="selected = $event.rows as Person[]"
+      />
+    </div>
+  </div>
+</template>
+```
+
+### Grouping and totals
+
+Group by one or two columns with an aggregate in the group row. `groupBy` is an array, so it is one of the props that can only be a property.
+
+<div data-docs-sandbox="vue:grouping" data-title="Grouping and totals"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns } from '../data'
+
+const groupBy = ref<string[]>(['team'])
+const choices: string[][] = [['team'], ['country'], ['team', 'country'], []]
+const withTotals = computed(() =>
+  columns.map((c) => (c.id === 'amount' ? { ...c, summary: 'sum' } : c)),
+)
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; gap: 8px; font: 13px system-ui">
+      <button
+        v-for="choice in choices"
+        :key="choice.join('+') || 'none'"
+        style="padding: 4px 10px; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer"
+        :style="{ background: groupBy.join() === choice.join() ? '#e2e8f0' : '#fff' }"
+        @click="groupBy = choice"
+      >
+        {{ choice.join(' + ') || 'No grouping' }}
+      </button>
+    </div>
+    <div style="flex: 1; min-height: 0">
+      <SvGrid
+        :data="people"
+        :columns="withTotals"
+        sortable
+        filterable
+        groupable
+        :group-by="groupBy"
+        group-footers
+      />
+    </div>
+  </div>
+</template>
+```
+
+### Pagination
+
+Client-side paging. `pageSize` is the INITIAL page size, read once at mount.
+
+<div data-docs-sandbox="vue:pagination" data-title="Pagination"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns } from '../data'
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px">
+    <SvGrid
+      :data="people"
+      :columns="columns"
+      sortable
+      filterable
+      pageable
+      :page-size="25"
+      :page-size-options="[10, 25, 50, 100]"
+      pagination-position="bottom"
+    />
+  </div>
+</template>
+```
+
+### Server-side data
+
+The grid renders the page you hand it and tells you when the user wants another. `externalSort` and `externalPagination` stop it doing the work locally; `rowCount` is how it knows how many pages exist.
+
+<div data-docs-sandbox="vue:server-data" data-title="Server-side data"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { ref, watchEffect } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns, type Person } from '../data'
+
+const PAGE_SIZE = 25
+
+const page = ref(0)
+const sort = ref<Array<{ id: string; desc: boolean }>>([])
+const rows = ref<Person[]>([])
+const total = ref(0)
+const loading = ref(true)
+
+function fetchPage(): Promise<{ rows: Person[]; total: number }> {
+  // Pretend this is a network call.
+  const sorted = [...people].sort((a, b) => {
+    for (const s of sort.value) {
+      const av = a[s.id as keyof Person]
+      const bv = b[s.id as keyof Person]
+      if (av === bv) continue
+      return (av > bv ? 1 : -1) * (s.desc ? -1 : 1)
+    }
+    return 0
+  })
+  const start = page.value * PAGE_SIZE
+  return new Promise((resolve) =>
+    setTimeout(
+      () => resolve({ rows: sorted.slice(start, start + PAGE_SIZE), total: sorted.length }),
+      250,
+    ),
+  )
+}
+
+watchEffect(async () => {
+  loading.value = true
+  const res = await fetchPage()
+  rows.value = res.rows
+  total.value = res.total
+  loading.value = false
+})
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px">
+    <SvGrid
+      :data="rows"
+      :columns="columns"
+      :loading="loading"
+      sortable
+      external-sort
+      external-pagination
+      pageable
+      :page-size="PAGE_SIZE"
+      :row-count="total"
+      :page-index="page"
+      @sortingchange="((sort = $event), (page = 0))"
+      @paginationchange="page = $event.pageIndex"
+    />
+  </div>
+</template>
+```
+
+### Theming
+
+The `--sg-*` custom properties. Ordinary CSS custom properties, so they cascade from any ancestor - which is why they also reach inside `<sv-grid-shadow>`.
+
+<div data-docs-sandbox="vue:theming" data-title="Theming"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { ref } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { people, columns } from '../data'
+
+const THEMES: Record<string, Record<string, string>> = {
+  Light: {},
+  Dark: {
+    '--sg-bg': '#0b1220',
+    '--sg-fg': '#e2e8f0',
+    '--sg-border': '#1e293b',
+    '--sg-header-bg': '#111a2e',
+    '--sg-row-hover': '#111a2e',
+  },
+  Warm: {
+    '--sg-bg': '#fffaf5',
+    '--sg-fg': '#42302a',
+    '--sg-border': '#f0dcc9',
+    '--sg-header-bg': '#fdf1e4',
+    '--sg-accent': '#c2410c',
+  },
+}
+
+const theme = ref('Light')
+</script>
+
+<template>
+  <div
+    style="height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px"
+    :style="THEMES[theme]"
+  >
+    <div style="display: flex; gap: 8px">
+      <button
+        v-for="name in Object.keys(THEMES)"
+        :key="name"
+        style="padding: 4px 10px; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer"
+        :style="{ background: theme === name ? '#e2e8f0' : '#fff' }"
+        @click="theme = name"
+      >
+        {{ name }}
+      </button>
+    </div>
+    <div style="flex: 1; min-height: 0">
+      <SvGrid :data="people" :columns="columns" sortable filterable zebra-rows />
+    </div>
+  </div>
+</template>
+```
+
+### Excel export (Enterprise)
+
+The paid pack from a non-Svelte host. `@svgrid/enterprise/export` is plain JavaScript, so it needs no Svelte in your build - the same goes for `/import`, `/print`, `/pivot` and `/license`. See [Enterprise features](./enterprise.md) for what those subpaths cover and what needs a Svelte-aware bundler.
+
+<div data-docs-sandbox="vue:enterprise" data-title="Excel export (Enterprise)"></div>
+
+```vue {nocheck}
+<script setup lang="ts">
+import { ref } from 'vue'
+import { SvGrid } from '@svgrid/grid-wc/vue'
+import { exportGrid } from '@svgrid/enterprise/export'
+import { people, columns } from '../data'
+
+// The wrapper hands `api` over through `expose()`, which Vue does not thread
+// into `InstanceType`, so the template ref is typed by shape instead.
+const grid = ref<{ api: unknown } | null>(null)
+const ready = ref(false)
+const busy = ref(false)
+
+async function exportXlsx() {
+  const api = grid.value?.api
+  if (!api) return
+  busy.value = true
+  try {
+    await exportGrid(api as Parameters<typeof exportGrid>[0], {
+      format: 'xlsx',
+      filename: 'people',
+    })
+  } finally {
+    busy.value = false
+  }
+}
+</script>
+
+<template>
+  <div style="height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <button type="button" :disabled="!ready || busy" @click="exportXlsx">
+      {{ busy ? 'Building…' : 'Export to Excel' }}
+    </button>
+    <div style="flex: 1; min-height: 0">
+      <SvGrid
+        ref="grid"
+        :data="people"
+        :columns="columns"
+        sortable
+        filterable
+        @apiready="ready = true"
+      />
+    </div>
+  </div>
+</template>
+```
+
+<!-- END generated examples -->
+
+## Using the raw element instead
+
+Vue binds properties to custom elements natively, so the element works directly
+too - it just needs the build config and the modifiers the wrapper removes.
+
+## Tell Vue the tag is a custom element
+
+Otherwise Vue warns about an unknown component.
+
+```js
+// vite.config.js
+import vue from '@vitejs/plugin-vue'
+
+export default {
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith('sv-grid'),
+        },
+      },
+    }),
+  ],
+}
+```
+
+## A working grid
+
+What `enable-inline-editing` and `@cellvaluechange` give you.
+
+<div data-docs-demo="05-inline-editing" data-height="470"></div>
+
+`.prop` is the whole trick: it forces a property assignment instead of an
+attribute, which is what arrays and objects need.
+
+```vue
+<script setup>
+import { ref } from 'vue'
+import '@svgrid/grid-wc'
+
+const columns = [
+  { field: 'name', header: 'Name', editorType: 'text' },
+  { field: 'country', header: 'Country' },
+  {
+    field: 'amount',
+    header: 'Amount',
+    align: 'right',
+    format: { type: 'number', options: { style: 'currency', currency: 'EUR' } },
+  },
+]
+
+const rows = ref([
+  { name: 'Ada', country: 'UK', amount: 145000 },
+  { name: 'Linus', country: 'FI', amount: 188000 },
+])
+
+function onCellValueChange(e) {
+  const { rowIndex, columnId, newValue } = e.detail
+  rows.value[rowIndex][columnId] = newValue
+}
+</script>
+
+<template>
+  <!-- Objects and arrays: `.prop` modifier. Primitives: plain attributes. -->
+  <sv-grid
+    :columns.prop="columns"
+    :data.prop="rows"
+    sortable
+    filterable
+    enable-inline-editing
+    style="display: block; height: 480px"
+    @cellvaluechange="onCellValueChange"
+  />
+</template>
+```
+
+Vue's `@event` binding works on `CustomEvent` directly, so every one of the
+grid's events is available with no adapter.
+
+
+## Calling the grid
+
+The api reached through a template ref.
+
+<div data-docs-demo="90-selection-api" data-height="460"></div>
+
+```vue
+<script setup>
+import { ref, onMounted } from 'vue'
+const grid = ref(null)
+onMounted(() => grid.value.api.exportCsv())
+</script>
+
+<template>
+  <sv-grid ref="grid" />
+</template>
+```
+
+
+## Nuxt
+
+The grid a `<ClientOnly>` block renders once hydrated.
+
+<div data-docs-demo="02-sort-filter-paginate" data-height="460"></div>
+
+Custom elements are client-only. Register the import in a client plugin, or
+wrap the grid in `<ClientOnly>`:
+
+```vue
+<ClientOnly>
+  <sv-grid :columns.prop="columns" :data.prop="rows" />
+</ClientOnly>
+```
+
+
+## See also
+
+- [`<sv-grid>` reference](./sv-grid.md) - every property, attribute and event.
+- [Limitations](./limitations.md) - no Vue components inside cells.
+- [Shadow DOM](./shadow-dom.md) - style isolation for embedded grids.
 
 <!-- =================================================================
      /docs/recipes/autosave-with-debounce/  (community)
@@ -67876,263 +71445,6 @@ order you set them.
 - [Demo 55-state-maintenance source](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/55-state-maintenance.svelte)
 - [Demo 55-state-maintenance prompt sidecar](https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/prompts/55-state-maintenance.md) - drop into an LLM context window
 - [Recipes index](./index.md)
-
-<!-- =================================================================
-     /docs/recipes/use-svgrid-from-react/  (community)
-     ================================================================== -->
-
-# Use SvGrid from React (custom-element bridge)
-
-SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **custom element** wrapper. The wrapper publishes one `<sv-grid-element>` tag, React renders it like any other DOM element, and data + columns cross the boundary as serialised properties.
-
-> **When to choose this.** You have a React app and only need the grid in one place (an admin tool, a back-office screen). You want SvGrid's headless engine + virtualization + Excel-style filters without rewriting your stack in Svelte.
->
-> **When NOT to choose this.** You need rich JSX cell renderers, React-Query / Recoil / Redux state inside cells, or you'd want to embed React Suspense / Portals in cell bodies. For deeper React integration, use our sister product [htmlelements.com](https://www.htmlelements.com) - purpose-built for React/Angular/Vue/web-components.
-
-## What crosses the boundary
-
-| Across cleanly | Needs a workaround |
-| --- | --- |
-| `data` (array of plain objects) | Snippet-based cell renderers (`renderSnippet`) - use `cellClass` + `format` + the HTML-string renderer below instead |
-| `columns` (array of `ColumnDef` literals) | Svelte components as cell content |
-| All built-in editors (`text`, `number`, `select`, `date`, `checkbox`, `textarea`, `list`, `chips`, `rich-select`) | React components inside the grid |
-| Sort / filter / group / virtualization | React Suspense, Portals, Context inside cells |
-| `onCellValueChange`, `onCellSelectionChange`, `onSortingChange`, `onFiltersChange`, `onRowSelectionChange`, `onColumnOrderChange` → `CustomEvent`s | Two-way `bind:` (use one-way property + event readback) |
-
-## 1. Author the custom element
-
-In your Svelte package (a thin wrapper over `@svgrid/grid`):
-
-```svelte
-<!-- packages/sv-grid-element/src/SvGridElement.svelte -->
-<svelte:options customElement={{
-  tag: 'sv-grid-element',
-  // Map DOM attributes / JS properties onto Svelte props.
-  // 'json' types let React pass arrays / objects via .data = [...]
-  props: {
-    data:           { type: 'Object', reflect: false },  // Array<TData>
-    columns:        { type: 'Object', reflect: false },  // Array<ColumnDef>
-    rowHeight:      { type: 'Number', reflect: false },
-    enableInlineEditing: { type: 'Boolean', reflect: false },
-    enableCellSelection: { type: 'Boolean', reflect: false },
-    filterLocale:   { type: 'String',  reflect: false },
-    enableColumnReorder: { type: 'Boolean', reflect: false },
-  },
-}} />
-
-<script lang="ts">
-  import {
-    SvGrid, tableFeatures,
-    rowSortingFeature, columnFilteringFeature,
-    rowSelectionFeature, rowPaginationFeature,
-  } from '@svgrid/grid'
-
-  // Re-export every prop the React side might want to set.
-  let {
-    data = [],
-    columns = [],
-    rowHeight = 32,
-    enableInlineEditing = false,
-    enableCellSelection = true,
-    filterLocale = undefined,
-    enableColumnReorder = false,
-  }: {
-    data: ReadonlyArray<Record<string, unknown>>
-    columns: ReadonlyArray<unknown>
-    rowHeight?: number
-    enableInlineEditing?: boolean
-    enableCellSelection?: boolean
-    filterLocale?: string
-    enableColumnReorder?: boolean
-  } = $props()
-
-  const features = tableFeatures({
-    rowSortingFeature,
-    columnFilteringFeature,
-    rowSelectionFeature,
-    rowPaginationFeature,
-  })
-
-  // Bridge SvGrid's callback props onto DOM CustomEvents so the React
-  // side can do `el.addEventListener('cellvaluechange', ...)`.
-  function emit(name: string, detail: unknown) {
-    const host = (event?.currentTarget as HTMLElement | undefined) ?? document
-    host.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }))
-  }
-</script>
-
-<SvGrid
-  data={data as never[]}
-  columns={columns as never[]}
-  {features}
-  {rowHeight}
-  {enableInlineEditing}
-  {enableCellSelection}
-  {filterLocale}
-  {enableColumnReorder}
-  filterMode="menu"
-  containerHeight="100%"
-  showPagination={false}
-  enableRowSummaries={false}
-  onCellValueChange={(e) => emit('cellvaluechange', e)}
-  onCellSelectionChange={(ranges) => emit('cellselectionchange', { ranges })}
-  onSortingChange={(s) => emit('sortingchange', { sorting: s })}
-  onFiltersChange={(f) => emit('filterschange', f)}
-  onRowSelectionChange={(sel, rows) => emit('rowselectionchange', { selection: sel, rows })}
-  onColumnOrderChange={(order) => emit('columnorderchange', { order })}
-/>
-```
-
-Build it (`vite build --lib`, `svelte-package`, or any custom-element target):
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
-
-export default defineConfig({
-  plugins: [svelte({ compilerOptions: { customElement: true } })],
-  build: {
-    lib: {
-      entry: 'src/SvGridElement.svelte',
-      name:  'SvGridElement',
-      formats: ['es'],
-      fileName: 'sv-grid-element',
-    },
-  },
-})
-```
-
-Publish as `@your-org/sv-grid-element` (or vendor the built file straight into your React app).
-
-## 2. Use it from React
-
-```tsx
-// App.tsx
-import { useEffect, useRef, useState } from 'react'
-import '@your-org/sv-grid-element' // side-effect: registers <sv-grid-element>
-
-type Row = { id: string; name: string; status: 'active' | 'inactive'; salary: number }
-
-// Tell TypeScript the custom element is a valid JSX tag.
-declare module 'react' {
-  namespace JSX {
-    interface IntrinsicElements {
-      'sv-grid-element': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>
-    }
-  }
-}
-
-export default function GridScreen() {
-  const ref = useRef<HTMLElement | null>(null)
-  const [rows, setRows] = useState<Row[]>([
-    { id: 'P-1', name: 'Ada Lovelace',  status: 'active',   salary: 145_000 },
-    { id: 'P-2', name: 'Linus Torvalds', status: 'active',  salary: 188_000 },
-    { id: 'P-3', name: 'Grace Hopper',   status: 'inactive', salary: 152_000 },
-  ])
-
-  // Push data + columns onto the custom element via .properties (not
-  // attributes - attributes are strings, properties keep object identity).
-  useEffect(() => {
-    if (!ref.current) return
-    ;(ref.current as any).data = rows
-    ;(ref.current as any).columns = [
-      { field: 'id',     header: 'ID',     width: 100, editable: false },
-      { field: 'name',   header: 'Name',   width: 220, editorType: 'text' },
-      { field: 'status', header: 'Status', width: 130, editorType: 'select',
-        editorOptions: ['active', 'inactive'],
-        // Built-in styling via cellClass survives the boundary fine - it's
-        // a function, but plain JS without Svelte/React state inside.
-        cellClass: (ctx: { getValue: () => unknown }) =>
-          ctx.getValue() === 'active' ? 'pill ok' : 'pill bad' },
-      { field: 'salary', header: 'Salary', width: 140, editorType: 'number',
-        align: 'right',
-        format: { type: 'number', options: { style: 'currency', currency: 'USD' } } },
-    ]
-  }, [rows])
-
-  // Listen for grid events. CustomEvent.detail mirrors the callback
-  // payloads from the Svelte API verbatim.
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const onEdit = (e: Event) => {
-      const { rowIndex, columnId, newValue } = (e as CustomEvent).detail
-      setRows((prev) => prev.map((r, i) =>
-        i === rowIndex ? { ...r, [columnId]: newValue } : r))
-    }
-    el.addEventListener('cellvaluechange', onEdit)
-    return () => el.removeEventListener('cellvaluechange', onEdit)
-  }, [])
-
-  return (
-    <div style={{ height: 480 }}>
-      <sv-grid-element
-        ref={ref as React.RefObject<HTMLElement>}
-        // Boolean attrs in JSX: presence = true; pass strings for numbers
-        // for SSR safety, then re-apply via property in the effect above.
-      />
-    </div>
-  )
-}
-```
-
-## 3. Custom cell content (HTML-string renderer)
-
-The biggest constraint of the custom-element bridge is that you can't render a React component INSIDE a cell. For lightweight cases (badges, links, formatted numbers, sparklines built in inline SVG), declare an HTML-string renderer on the column:
-
-```ts
-{
-  field: 'status',
-  header: 'Status',
-  width: 110,
-  cell: (ctx: { getValue: () => unknown }) => {
-    // The grid accepts a returned string and renders it via {@html}.
-    const v = String(ctx.getValue())
-    const cls = v === 'active' ? 'pill ok' : 'pill bad'
-    return `<span class="${cls}">${v}</span>`
-  },
-}
-```
-
-CSS that styles `.pill` lives in your React app's stylesheet - the custom element inherits the page's CSS variables and global classes.
-
-For anything richer (a React `<Avatar>` with hover card, a `<MUI/Chip>`, etc.) you'd need to **portal a React tree into a placeholder element** the grid renders. That's possible but fiddly, and at that point you're better served by [htmlelements.com](https://www.htmlelements.com), which has first-class React bindings.
-
-## 4. Imperative API
-
-`SvGrid`'s API surface - `setFilter`, `setColumnPinning`, `setColumnOrder`, `selectCells`, `getDisplayedRows`, `undo`, `redo`, `openFind`, … - works through `onApiReady`. To expose it across the custom-element boundary, add a `getApi()` method to the wrapper:
-
-```svelte
-<!-- inside SvGridElement.svelte -->
-<script lang="ts">
-  let api: any = null
-  // Exposed on the host element as `el.getApi()`.
-  export function getApi() { return api }
-</script>
-
-<SvGrid ... onApiReady={(next) => (api = next)} />
-```
-
-```tsx
-// React side
-const api = (ref.current as any)?.getApi?.()
-api?.setColumnOrder(['id', 'salary', 'name', 'status'])
-```
-
-## Caveats - the honest version
-
-- **No React state inside cells.** Cell renderers are HTML strings or built-in formatters; if you need a React component per cell, this bridge isn't enough.
-- **No two-way `bind:`.** React sets properties; the wrapper emits `CustomEvent`s for changes. One-way data flow.
-- **Theme tokens leak both ways.** The custom element inherits page CSS via the `--sg-*` variables. That's usually a feature; if it isn't, scope the element with a wrapping `<div style="--sg-bg: ...">`.
-- **`composed: true` events** cross shadow boundaries. Make sure your React `addEventListener` is on the same element you handed to `ref` - otherwise events from other custom elements on the page can leak through bubbling.
-- **Re-renders are coarse.** Reassigning `el.data` is what triggers a re-render. For high-frequency updates (streaming feeds, 10+ updates / sec), prefer setting a single property once per animation frame rather than per delta.
-
-## See also
-
-- [Architecture](../help/architecture.md) - why the engine is headless.
-- [Use SvGrid imperatively from outside the component](https://svgrid.com/api/) - the same API the wrapper hands back.
-- [htmlelements.com](https://www.htmlelements.com) - the recommended option for React-first apps.
 
 <!-- =================================================================
      /docs/recipes/websocket-streaming/  (community)

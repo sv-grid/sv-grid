@@ -13,7 +13,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type ValueParserParams,
   } from '@svgrid/grid'
 
@@ -49,7 +49,7 @@
     }
   }
 
-  const columns: ColumnDef<typeof features, Product>[] = [
+  const columns: GridColumns<Product> = [
     {
       field: 'sku',
       header: 'SKU → UPPER-CASE',

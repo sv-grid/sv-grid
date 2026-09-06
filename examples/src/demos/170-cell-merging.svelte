@@ -18,7 +18,7 @@
     tableFeatures,
     renderSnippet,
     spreadsheetLayout,
-    type ColumnDef,
+    type GridColumns,
     type MergeSpec,
     type CellBorderSpec,
     type SvGridApi,
@@ -133,7 +133,7 @@
     return false
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'rn', header: '', width: 56, align: 'center', editable: false,
       cellClass: 'sv-row-gutter',
       cell: (ctx) => renderSnippet(RowNumCell, { row: ctx.row.original }) },

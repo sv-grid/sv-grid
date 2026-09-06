@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom"],
+    "strict": true,
+    "skipLibCheck": true,
+    "jsx": "react",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@svgrid/grid-wc": ["./dist/sv-grid-element.d.ts"],
+      "@svgrid/grid-wc/shadow": ["./dist/shadow/sv-grid-shadow-element.d.ts"]
+    }
+  },
+  "include": ["src/react/index.tsx", "src/vue/index.ts", "src/types/elements.d.ts"]
+}

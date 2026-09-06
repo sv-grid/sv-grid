@@ -29,6 +29,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 ### Help / topic pages
 
+- [Web Components & Custom Elements](https://svgrid.com/docs/help/web-components/): Ship SvGrid as a framework-agnostic web component and use the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte required in the host app.
 - [Accessibility](https://svgrid.com/docs/help/accessibility/): SvGrid implements the WAI-ARIA 1.2 grid pattern with full keyboard navigation and a screen-reader announcement layer. This page documents exactly what the grid does, where the responsibility line s…
 - [Build an AI agent that drives the grid](https://svgrid.com/docs/help/agents/): This is the "AI-native data grid" story end-to-end. Three patterns, in order of how much agency you hand to the LLM:
 - [AI Smart Paste](https://svgrid.com/docs/help/ai-smart-paste/): Drop any shape of contact / lead / row data into a text area - CSV, TSV, JSON, vCard, Markdown table, an email signature block, or a single line of prose - and the parser maps it into typed rows yo…
@@ -93,7 +94,6 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Testing your grid](https://svgrid.com/docs/help/testing/): How to write tests that catch regressions before they ship. SvGrid is designed for both **fast unit tests** (Layer 2, the headless engine, runs in pure node) and **slow but accurate browser tests**…
 - [Design tokens](https://svgrid.com/docs/help/tokens/): Every visual property the grid exposes for theming is a CSS custom property (--sg-*). Tokens cascade like any other CSS variable - override at :root, on a wrapper element, or per-grid; the closest …
 - [Doc versioning](https://svgrid.com/docs/help/versioning/): How sv-grid documentation tracks multiple shipping major versions.
-- [Web Components & Custom Elements](https://svgrid.com/docs/help/web-components/): Ship SvGrid as a framework-agnostic web component (custom element) and use the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte required in the host app.
 
 ### Cells
 
@@ -104,6 +104,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Expressions](https://svgrid.com/docs/help/cells/expressions/): SvGrid does not ship a formula / expression language for cells. Computed values are JavaScript - either via fieldFn or inside a cell callback.
 - [Getting values](https://svgrid.com/docs/help/cells/getting-values/): You get cell values in three ways depending on context.
 - [Highlighting changes](https://svgrid.com/docs/help/cells/highlighting-changes/): Set cellFlash on a column and the grid flashes that cell whenever its value changes - edits, streaming feeds, server pushes. It is keyed by row identity, so scrolling a virtualized grid (which recy…
+- [Rich text and Markdown cells](https://svgrid.com/docs/help/cells/rich-text-cells/): Some columns hold formatted text: a note with a bold phrase and a link, a description written in Markdown, a comment pasted out of another system. Render those with SvRichCell, which sanitizes the …
 - [Sparklines](https://svgrid.com/docs/help/cells/sparklines/): A sparkline is a tiny, word-sized chart drawn inside a single cell. SvGrid renders them as a first-class column type: set sparkline on a column whose value is an array of numbers and the grid paint…
 - [Styling cells](https://svgrid.com/docs/help/cells/styling-cells/): Cells render as <td> and pick up the same CSS variable tokens as the rest of the grid.
 - [Text formatting](https://svgrid.com/docs/help/cells/text-formatting/): The format field on a column produces locale-aware formatted strings without you writing a renderer.
@@ -140,6 +141,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Row sorting](https://svgrid.com/docs/help/rows/row-sorting/): Sorting is a feature you opt into. Try it live - click any column header to cycle none → asc → desc → none; shift-click adds the column to the sort key list (multi-sort):
 - [Row spanning](https://svgrid.com/docs/help/rows/row-spanning/): "Row spanning" lets one cell's content cover **multiple rows**, the way a merged cell does in a spreadsheet.
 - [Scheduler / calendar mode](https://svgrid.com/docs/help/rows/scheduler/): Set one scheduler prop and the grid renders its rows as **events on a calendar** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Events are p…
+- [Bulk-action bar](https://svgrid.com/docs/help/rows/selection-bar/): Tick some rows and a bar floats over the grid holding the count, the actions that apply to the whole selection, and a way to clear it - the pattern an issue tracker uses for bulk edit.
 - [Styling rows](https://svgrid.com/docs/help/rows/styling-rows/): Rows are <tr role="row"> elements inside the grid table. Style them with plain CSS.
 - [Transactions](https://svgrid.com/docs/help/rows/transactions/): api.applyTransaction({ add, update, remove }) applies a batch of row mutations in a **single** data update - one re-render for the whole batch, not one per row. It's the path to use for high-freque…
 - [Tree data](https://svgrid.com/docs/help/rows/tree-data/): Nest rows into an expandable hierarchy with the treeData prop.
@@ -149,6 +151,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 - [Edit components](https://svgrid.com/docs/help/editing/edit-components/): The grid ships with five inline editors. Each is selected by the column's editorType:
 - [Full-row editing](https://svgrid.com/docs/help/editing/full-row/): Full-row editing opens an **entire row** for edit at once: every editable cell shows an inline editor, a single Enter (or clicking away) commits all of them in one update, and Esc cancels the whole…
+- [Drag a range to move or copy it](https://svgrid.com/docs/help/editing/move-cells/): Select a block of cells, put the pointer on the block's **border**, and drag it somewhere else. The values move. Hold Ctrl (Cmd on macOS) as you release and they are copied instead.
 - [Editing - overview](https://svgrid.com/docs/help/editing/overview/): Inline editing is a single prop on <SvGrid>. Try it - double-click any cell, type to replace, hit Enter to commit. Tab moves to the next editable cell:
 - [Parsing values](https://svgrid.com/docs/help/editing/parsing-values/): When the user commits an edit, the editor's DOM value (a string for text / number / date inputs, a boolean for checkboxes) is parsed by parseEditorValue into the canonical value for the column's type.
 - [Provided cell editors](https://svgrid.com/docs/help/editing/provided-editors/): The grid ships nine built-in editors, selected via editorType on the column definition. Each editor renders inside the cell while editing and falls back to the default text render (or your cell sni…
@@ -199,6 +202,19 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 - [Named views](https://svgrid.com/docs/help/state/named-views/): A "view" is a saved snapshot of the grid's state - sort, filters, column order/width/visibility, page, grouping. Named views let a user save the layout they like and switch between them. SvGrid shi…
 
+### Web components
+
+- [SvGrid with React, Vue or Angular](https://svgrid.com/docs/help/web-components/frameworks/): Pick your framework and you have a running grid in about thirty seconds - no local setup, nothing to configure.
+- [Quick start: the grid in any page](https://svgrid.com/docs/help/web-components/quick-start/): @svgrid/grid-wc is a prebuilt custom element. One <script> tag, one HTML element, no bundler and no Svelte in your app.
+- [`<sv-grid>` reference](https://svgrid.com/docs/help/web-components/sv-grid/): Every property, attribute and event of the custom element.
+- [Shadow DOM: `<sv-grid-shadow>`](https://svgrid.com/docs/help/web-components/shadow-dom/): Two elements ship, and which one you want is a styling decision:
+- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 98 properties and 20 events are typed props, and it works the same on React 17, 18 and 19.
+- [SvGrid in Vue](https://svgrid.com/docs/help/web-components/vue/): The component is generated from <SvGrid>'s own types, and it removes the two things a raw custom element needs in Vue: the isCustomElement build config, and a .prop modifier on every object binding.
+- [SvGrid in Angular](https://svgrid.com/docs/help/web-components/angular/): A standalone component, compiled with ng-packagr in partial-Ivy mode, generated from <SvGrid>'s own types: every property is an @Input and every event an @Output.
+- [TypeScript with the custom element](https://svgrid.com/docs/help/web-components/typescript/): The element is plain JavaScript at the boundary, so TypeScript needs to be told it exists. Two declarations get completion and checking back.
+- [Enterprise features from the element](https://svgrid.com/docs/help/web-components/enterprise/): @svgrid/grid-wc is MIT and complete on its own. The paid pack - @svgrid/enterprise - is a separate install, and most of it works from a React, Vue or Angular host with no Svelte in your build.
+- [Limitations of the custom element](https://svgrid.com/docs/help/web-components/limitations/): What the element cannot do, and why. Everything here is a consequence of the boundary between a compiled Svelte component and a host that is not Svelte - none of it is a to-do list.
+
 ### Recipes / cookbook
 
 - [Auto-save edits with debounce](https://svgrid.com/docs/recipes/autosave-with-debounce/): Persist every cell edit to the server, debounced so a fast typer generates one save, not twenty.
@@ -240,7 +256,6 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Theme tokens for Ant / MUI / Fluent / shadcn](https://svgrid.com/docs/recipes/theme-presets/): Map your design system's tokens to --sg-* and the grid re-skins.
 - [Two-grid master / detail](https://svgrid.com/docs/recipes/two-grid-master-detail/): Goal: one grid shows the **master** (parents - orders, customers, projects, …), a second grid below shows the **detail** for whichever row is selected (line items, contacts, tasks, …).
 - [Undo / redo for grid edits](https://svgrid.com/docs/recipes/undo-redo-edits/): Maintain a history stack of cell edits; Ctrl+Z / Ctrl+Y replay backwards / forwards.
-- [Use SvGrid from React (custom-element bridge)](https://svgrid.com/docs/recipes/use-svgrid-from-react/): SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **custom element** wrapper. The wrapper publishes one <sv-grid-element> tag, React renders it like any other DOM element, …
 - [WebSocket streaming with backpressure](https://svgrid.com/docs/recipes/websocket-streaming/): Live tick stream with pause / resume / disconnect-and-replay and per-tick delta merge.
 
 ## SvGrid Studio

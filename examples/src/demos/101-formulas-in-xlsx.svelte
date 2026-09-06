@@ -26,7 +26,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import JSZip from 'jszip'
 
@@ -71,7 +71,7 @@
     return { sub, tx, tot }
   })
 
-  const columns: ColumnDef<typeof features, LineItem>[] = [
+  const columns: GridColumns<LineItem> = [
     { field: 'item',     header: 'Item',      editorType: 'text',   width: 220 },
     { field: 'unitCost', header: 'Unit cost', editorType: 'number', width: 110, align: 'right',
       format: { type: 'currency', currency: 'USD' } },

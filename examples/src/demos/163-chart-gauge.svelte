@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -37,7 +37,7 @@
     { id: 4, metric: 'Trial -> paid conversion',value:   8.4, target:  12.0, max: 25,   unit: '%'  },
   ]
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'metric', header: 'Metric', width: 200 },
     { field: 'value',  header: 'Value',  width: 100, align: 'right' },
     { field: 'target', header: 'Target', width: 100, align: 'right' },

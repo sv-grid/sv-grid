@@ -28,7 +28,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Deal = {
@@ -236,7 +236,7 @@
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   const fmtMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 
-  const columns: ColumnDef<typeof features, Deal>[] = [
+  const columns: GridColumns<Deal> = [
     { field: 'id',       header: 'Deal',       editorType: 'text',   width: 110, editable: false,
       cell: (ctx) => renderSnippet(CommentCell, { rowIndex: ctx.row.index, colId: 'id',          text: ctx.row.original.id }) },
     { field: 'customer', header: 'Customer',   editorType: 'text',   width: 200,

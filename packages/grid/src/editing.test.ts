@@ -925,6 +925,31 @@ describe('clipboard fallbacks (non-paste branches only)', () => {
     expect(ctx.internalData[1]).toMatchObject({ a: 'Z', b: 'W' })
   })
 
+  it('pastes into the selected row when getRowId does not return the array index', () => {
+    // Regression: the row -> data-slot lookup was `Number(row.id)`, which is
+    // the array index only under the DEFAULT getRowId. With 1-based ids
+    // (`getRowId={(t) => String(t.id)}`) every paste landed one row BELOW the
+    // selection; with non-numeric ids it parsed to NaN and wrote nothing.
+    Object.defineProperty(navigator, 'clipboard', {
+      value: undefined,
+      configurable: true,
+    })
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text', editable: true }],
+      data: [{ a: 'x0' }, { a: 'x1' }, { a: 'x2' }],
+    })
+    ctx._rows.forEach((r: any, i: number) => { r.id = String(i + 1) })
+    ctx.selectionRange = {
+      anchor: { rowIndex: 1, colIndex: 0 },
+      focus: { rowIndex: 1, colIndex: 0 },
+    }
+    ed.onGridPaste({
+      clipboardData: { getData: () => 'PASTED' },
+      preventDefault: vi.fn(),
+    } as unknown as ClipboardEvent)
+    expect(ctx.internalData.map((d: any) => d.a)).toEqual(['x0', 'PASTED', 'x2'])
+  })
+
   it('onGridPaste bails while a cell is being edited (native editor paste wins)', () => {
     Object.defineProperty(navigator, 'clipboard', {
       value: undefined, // fallback path (Firefox / insecure) - would otherwise hijack

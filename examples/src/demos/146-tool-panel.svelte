@@ -17,14 +17,14 @@
     columnGroupingFeature,
     columnFilteringFeature,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({ columnGroupingFeature, columnFilteringFeature, rowSortingFeature })
   const rows = makePeople(200)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name', width: 140 },
     { field: 'lastName', header: 'Last name', width: 140 },
     { field: 'department', header: 'Department', width: 150 },

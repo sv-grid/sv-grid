@@ -9,7 +9,7 @@ the cell is read-only.
 | `editorType`  | Renders                              | Stored value            |
 |---------------|--------------------------------------|-------------------------|
 | `'text'`      | `<input type="text">`                | `string`                |
-| `'number'`    | `<input type="number">`              | `number \| null`        |
+| `'number'`    | `<input type="text" inputmode="decimal">` | `number \| null`   |
 | `'date'`      | `<input type="date">`                | ISO `YYYY-MM-DD` string |
 | `'datetime'`  | `<input type="datetime-local">`      | ISO 8601 string         |
 | `'checkbox'`  | Themed checkbox button               | `boolean`               |
@@ -29,9 +29,29 @@ stored.
 
 ## Number editor - `editorType: 'number'`
 
-`<input type="number">` with browser-native increment buttons.
-Non-numeric input is rejected at commit (`parseEditorValue` returns
+A text input with `inputmode="decimal"`, coerced to a number at commit.
+
+It is deliberately **not** `<input type="number">`. That element runs the HTML
+value-sanitization algorithm, so it only ever reports a value that parses as a
+valid float - and every intermediate state on the way to `12.5` is not one. The
+element reported `""` for `12.`, the editor read that into its draft, and the
+decimal point the user had just typed disappeared: typing `12.5` produced
+`125`. The same applied to a lone `-` on the way to a negative, and `1e` on the
+way to `1e3`.
+
+A text input keeps the raw keystrokes, and `parseEditorValue` coerces at commit
+exactly as it already did. Characters that can never be part of a number are
+rejected as you type, which is the one guarantee `type="number"` did provide.
+
+The trade-off is the native increment buttons, which a text input cannot
+render. `inputmode="decimal"` keeps the numeric keypad on mobile.
+
+Non-numeric input is still rejected at commit (`parseEditorValue` returns
 `null` and the cell stays at its previous value).
+
+The filter row and filter menu still use `<input type="number">` for numeric
+columns, so a decimal is awkward to type there for the same reason. That is a
+separate surface and a separate decision, not an oversight.
 
 ```ts
 { field: 'age', header: 'Age', editorType: 'number' }
@@ -77,6 +97,9 @@ in the cell.
 ```ts
 { field: 'active', header: 'Active', editorType: 'checkbox' }
 ```
+
+The editor takes focus when it opens, so it works from the keyboard alone:
+`Space` or `Enter` toggles and commits, `Esc` leaves the value as it was.
 
 ## List editor - `editorType: 'list'`
 
@@ -229,6 +252,10 @@ integer 0-5. Clicking a star commits immediately - no blur required.
 ```ts
 { field: 'csat', header: 'CSAT', editorType: 'rating' }
 ```
+
+It is a radiogroup, so it also works from the keyboard: the star holding the
+current value takes focus when the editor opens, the arrow keys (plus `Home`
+and `End`) move across the five, `Enter` commits and `Esc` cancels.
 
 ### Complete example
 

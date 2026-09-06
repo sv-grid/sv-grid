@@ -23,6 +23,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
+    type GridColumns,
     type CellContext,
   } from '@svgrid/grid'
 
@@ -166,7 +167,7 @@
     } as ColumnDef<typeof features, Application>
   }
 
-  const columns: ColumnDef<typeof features, Application>[] = [
+  const columns: GridColumns<Application> = [
     { field: 'id', header: 'ID', editorType: 'text', width: 80, editable: false },
     condColumn('legalName', 'Legal name', 'text', { width: 200 }),
     {

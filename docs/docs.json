@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-04T08:04:57.480Z",
+  "generatedAt": "2026-09-06T13:32:50.077Z",
   "counts": {
-    "pages": 348,
-    "enterprise": 54,
-    "withDemo": 230
+    "pages": 360,
+    "enterprise": 55,
+    "withDemo": 240
   },
   "pillars": [
     {
@@ -25,6 +25,7 @@
         "help/headless",
         "help/server",
         "help/state",
+        "help/web-components",
         "recipes"
       ]
     },
@@ -86,6 +87,7 @@
       "title": "Help / topic pages",
       "pillar": "grid",
       "pages": [
+        "help/web-components.md",
         "help/accessibility.md",
         "help/agents.md",
         "help/ai-smart-paste.md",
@@ -149,8 +151,7 @@
         "help/testing-and-quality.md",
         "help/testing.md",
         "help/tokens.md",
-        "help/versioning.md",
-        "help/web-components.md"
+        "help/versioning.md"
       ]
     },
     {
@@ -165,6 +166,7 @@
         "help/cells/expressions.md",
         "help/cells/getting-values.md",
         "help/cells/highlighting-changes.md",
+        "help/cells/rich-text-cells.md",
         "help/cells/sparklines.md",
         "help/cells/styling-cells.md",
         "help/cells/text-formatting.md",
@@ -209,6 +211,7 @@
         "help/rows/row-sorting.md",
         "help/rows/row-spanning.md",
         "help/rows/scheduler.md",
+        "help/rows/selection-bar.md",
         "help/rows/styling-rows.md",
         "help/rows/transactions.md",
         "help/rows/tree-data.md",
@@ -222,6 +225,7 @@
       "pages": [
         "help/editing/edit-components.md",
         "help/editing/full-row.md",
+        "help/editing/move-cells.md",
         "help/editing/overview.md",
         "help/editing/parsing-values.md",
         "help/editing/provided-editors.md",
@@ -294,6 +298,50 @@
       ]
     },
     {
+      "id": "help/web-components",
+      "title": "Web components",
+      "pillar": "grid",
+      "pages": [
+        "help/web-components/frameworks.md",
+        "help/web-components/quick-start.md",
+        "help/web-components/sv-grid.md",
+        "help/web-components/shadow-dom.md",
+        "help/web-components/react.md",
+        "help/web-components/vue.md",
+        "help/web-components/angular.md",
+        "help/web-components/typescript.md",
+        "help/web-components/enterprise.md",
+        "help/web-components/limitations.md"
+      ],
+      "groups": [
+        {
+          "label": "Start here",
+          "pages": [
+            "help/web-components/frameworks.md",
+            "help/web-components/quick-start.md",
+            "help/web-components/sv-grid.md",
+            "help/web-components/shadow-dom.md"
+          ]
+        },
+        {
+          "label": "Frameworks",
+          "pages": [
+            "help/web-components/react.md",
+            "help/web-components/vue.md",
+            "help/web-components/angular.md"
+          ]
+        },
+        {
+          "label": "Reference",
+          "pages": [
+            "help/web-components/typescript.md",
+            "help/web-components/enterprise.md",
+            "help/web-components/limitations.md"
+          ]
+        }
+      ]
+    },
+    {
       "id": "recipes",
       "title": "Recipes / cookbook",
       "pillar": "grid",
@@ -337,7 +385,6 @@
         "recipes/theme-presets.md",
         "recipes/two-grid-master-detail.md",
         "recipes/undo-redo-edits.md",
-        "recipes/use-svgrid-from-react.md",
         "recipes/websocket-streaming.md"
       ]
     },
@@ -624,8 +671,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 3049,
-      "lastUpdated": "2026-09-04",
+      "words": 4866,
+      "lastUpdated": "2026-09-06",
       "demoIds": []
     },
     {
@@ -1455,8 +1502,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1020,
-      "lastUpdated": "2026-08-28",
+      "words": 1234,
+      "lastUpdated": "2026-09-06",
       "demoIds": []
     },
     {
@@ -1467,8 +1514,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1940,
-      "lastUpdated": "2026-08-25",
+      "words": 2009,
+      "lastUpdated": "2026-09-06",
       "demoIds": []
     },
     {
@@ -1713,6 +1760,18 @@
       "demoIds": [
         "11-stock-market"
       ]
+    },
+    {
+      "path": "help/cells/rich-text-cells.md",
+      "url": "/docs/help/cells/rich-text-cells/",
+      "title": "Rich text and Markdown cells",
+      "summary": "Some columns hold formatted text: a note with a bold phrase and a link, a description written in Markdown, a comment pasted out of another system. Render those with SvRichCell, which sanitizes the value before painting it.",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 625,
+      "lastUpdated": "2026-09-06",
+      "demoIds": []
     },
     {
       "path": "help/cells/sparklines.md",
@@ -2052,8 +2111,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 621,
-      "lastUpdated": "2026-09-03",
+      "words": 622,
+      "lastUpdated": "2026-09-04",
       "demoIds": [
         "66-custom-cell-editors"
       ]
@@ -2073,6 +2132,20 @@
       ]
     },
     {
+      "path": "help/editing/move-cells.md",
+      "url": "/docs/help/editing/move-cells/",
+      "title": "Drag a range to move or copy it",
+      "summary": "Select a block of cells, put the pointer on the block's **border**, and drag it somewhere else. The values move. Hold Ctrl (Cmd on macOS) as you release and they are copied instead.",
+      "section": "help/editing",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 893,
+      "lastUpdated": "2026-09-04",
+      "demoIds": [
+        "429-move-cells"
+      ]
+    },
+    {
       "path": "help/editing/overview.md",
       "url": "/docs/help/editing/overview/",
       "title": "Editing - overview",
@@ -2080,12 +2153,13 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 492,
-      "lastUpdated": "2026-09-03",
+      "words": 555,
+      "lastUpdated": "2026-09-04",
       "demoIds": [
         "05-inline-editing",
         "206-cell-validation",
-        "95-fill-handle"
+        "95-fill-handle",
+        "429-move-cells"
       ]
     },
     {
@@ -2111,8 +2185,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 1274,
-      "lastUpdated": "2026-09-03",
+      "words": 1529,
+      "lastUpdated": "2026-09-05",
       "demoIds": [
         "26-list-chips-editors",
         "428-async-editor-options"
@@ -2273,8 +2347,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 711,
-      "lastUpdated": "2026-09-03",
+      "words": 748,
+      "lastUpdated": "2026-09-06",
       "demoIds": [
         "64-filter-between-operator"
       ]
@@ -2316,8 +2390,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 709,
-      "lastUpdated": "2026-09-03",
+      "words": 745,
+      "lastUpdated": "2026-09-05",
       "demoIds": [
         "179-floating-filters"
       ]
@@ -2358,8 +2432,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 1228,
-      "lastUpdated": "2026-09-03",
+      "words": 1355,
+      "lastUpdated": "2026-09-06",
       "demoIds": [
         "111-set-filter-advanced",
         "102-tree-checkbox-cascade"
@@ -2373,8 +2447,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 928,
-      "lastUpdated": "2026-09-03",
+      "words": 945,
+      "lastUpdated": "2026-09-06",
       "demoIds": [
         "69-highlighted-search",
         "110-locale-aware-filter"
@@ -2633,8 +2707,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1189,
-      "lastUpdated": "2026-09-03",
+      "words": 1217,
+      "lastUpdated": "2026-09-04",
       "demoIds": []
     },
     {
@@ -2815,8 +2889,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1576,
-      "lastUpdated": "2026-09-03",
+      "words": 1683,
+      "lastUpdated": "2026-09-05",
       "demoIds": []
     },
     {
@@ -3020,8 +3094,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 744,
-      "lastUpdated": "2026-09-03",
+      "words": 1203,
+      "lastUpdated": "2026-09-06",
       "demoIds": [
         "180-row-dragging",
         "184-external-drop-zone"
@@ -3122,6 +3196,20 @@
         "392-scheduler-resource-tree",
         "394-scheduler-heatmap",
         "397-scheduler-multi-calendar"
+      ]
+    },
+    {
+      "path": "help/rows/selection-bar.md",
+      "url": "/docs/help/rows/selection-bar/",
+      "title": "Bulk-action bar",
+      "summary": "Tick some rows and a bar floats over the grid holding the count, the actions that apply to the whole selection, and a way to clear it - the pattern an issue tracker uses for bulk edit.",
+      "section": "help/rows",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1524,
+      "lastUpdated": "2026-09-05",
+      "demoIds": [
+        "430-selection-bar"
       ]
     },
     {
@@ -3483,7 +3571,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1423,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-04",
       "demoIds": [
         "02-sort-filter-paginate",
         "01-quick-start"
@@ -4007,8 +4095,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 969,
-      "lastUpdated": "2026-09-03",
+      "words": 1013,
+      "lastUpdated": "2026-09-05",
       "demoIds": [
         "283-daterange-input"
       ]
@@ -4950,13 +5038,171 @@
       "path": "help/web-components.md",
       "url": "/docs/help/web-components/",
       "title": "Web Components & Custom Elements",
-      "summary": "Ship SvGrid as a framework-agnostic web component (custom element) and use the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte required in the host app.",
+      "summary": "Ship SvGrid as a framework-agnostic web component and use the Svelte 5 data grid in React, Vue, Angular, or plain HTML - no Svelte required in the host app.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1444,
-      "lastUpdated": "2026-09-02",
+      "words": 725,
+      "lastUpdated": "2026-09-06",
       "demoIds": []
+    },
+    {
+      "path": "help/web-components/angular.md",
+      "url": "/docs/help/web-components/angular/",
+      "title": "SvGrid in Angular",
+      "summary": "A standalone component, compiled with ng-packagr in partial-Ivy mode, generated from <SvGrid>'s own types: every property is an @Input and every event an @Output.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Frameworks",
+      "words": 2038,
+      "lastUpdated": "2026-09-06",
+      "demoIds": [
+        "05-inline-editing",
+        "90-selection-api",
+        "07-grouping-aggregation"
+      ]
+    },
+    {
+      "path": "help/web-components/enterprise.md",
+      "url": "/docs/help/web-components/enterprise/",
+      "title": "Enterprise features from the element",
+      "summary": "@svgrid/grid-wc is MIT and complete on its own. The paid pack - @svgrid/enterprise - is a separate install, and most of it works from a React, Vue or Angular host with no Svelte in your build.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "group": "Reference",
+      "words": 725,
+      "lastUpdated": "2026-09-06",
+      "demoIds": []
+    },
+    {
+      "path": "help/web-components/frameworks.md",
+      "url": "/docs/help/web-components/frameworks/",
+      "title": "SvGrid with React, Vue or Angular",
+      "summary": "Pick your framework and you have a running grid in about thirty seconds - no local setup, nothing to configure.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 701,
+      "lastUpdated": "2026-09-06",
+      "demoIds": []
+    },
+    {
+      "path": "help/web-components/limitations.md",
+      "url": "/docs/help/web-components/limitations/",
+      "title": "Limitations of the custom element",
+      "summary": "What the element cannot do, and why. Everything here is a consequence of the boundary between a compiled Svelte component and a host that is not Svelte - none of it is a to-do list.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Reference",
+      "words": 526,
+      "lastUpdated": "2026-09-06",
+      "demoIds": [
+        "10-custom-cells-and-themes",
+        "113-cursor-pagination"
+      ]
+    },
+    {
+      "path": "help/web-components/quick-start.md",
+      "url": "/docs/help/web-components/quick-start/",
+      "title": "Quick start: the grid in any page",
+      "summary": "@svgrid/grid-wc is a prebuilt custom element. One <script> tag, one HTML element, no bundler and no Svelte in your app.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 446,
+      "lastUpdated": "2026-09-05",
+      "demoIds": [
+        "01-quick-start",
+        "02-sort-filter-paginate",
+        "05-inline-editing"
+      ]
+    },
+    {
+      "path": "help/web-components/react.md",
+      "url": "/docs/help/web-components/react/",
+      "title": "SvGrid in React",
+      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 98 properties and 20 events are typed props, and it works the same on React 17, 18 and 19.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Frameworks",
+      "words": 2947,
+      "lastUpdated": "2026-09-06",
+      "demoIds": [
+        "05-inline-editing",
+        "07-grouping-aggregation",
+        "10-custom-cells-and-themes"
+      ]
+    },
+    {
+      "path": "help/web-components/shadow-dom.md",
+      "url": "/docs/help/web-components/shadow-dom/",
+      "title": "Shadow DOM: `<sv-grid-shadow>`",
+      "summary": "Two elements ship, and which one you want is a styling decision:",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 573,
+      "lastUpdated": "2026-09-06",
+      "demoIds": [
+        "10-custom-cells-and-themes",
+        "04-selection-copy-paste"
+      ]
+    },
+    {
+      "path": "help/web-components/sv-grid.md",
+      "url": "/docs/help/web-components/sv-grid/",
+      "title": "`<sv-grid>` reference",
+      "summary": "Every property, attribute and event of the custom element.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 1344,
+      "lastUpdated": "2026-09-06",
+      "demoIds": [
+        "07-grouping-aggregation",
+        "90-selection-api"
+      ]
+    },
+    {
+      "path": "help/web-components/typescript.md",
+      "url": "/docs/help/web-components/typescript/",
+      "title": "TypeScript with the custom element",
+      "summary": "The element is plain JavaScript at the boundary, so TypeScript needs to be told it exists. Two declarations get completion and checking back.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Reference",
+      "words": 482,
+      "lastUpdated": "2026-09-05",
+      "demoIds": [
+        "02-sort-filter-paginate",
+        "05-inline-editing"
+      ]
+    },
+    {
+      "path": "help/web-components/vue.md",
+      "url": "/docs/help/web-components/vue/",
+      "title": "SvGrid in Vue",
+      "summary": "The component is generated from <SvGrid>'s own types, and it removes the two things a raw custom element needs in Vue: the isCustomElement build config, and a .prop modifier on every object binding.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Frameworks",
+      "words": 1835,
+      "lastUpdated": "2026-09-06",
+      "demoIds": [
+        "05-inline-editing",
+        "90-selection-api",
+        "02-sort-filter-paginate"
+      ]
     },
     {
       "path": "recipes/autosave-with-debounce.md",
@@ -5500,18 +5746,6 @@
         "55-state-maintenance",
         "86-undo-redo"
       ]
-    },
-    {
-      "path": "recipes/use-svgrid-from-react.md",
-      "url": "/docs/recipes/use-svgrid-from-react/",
-      "title": "Use SvGrid from React (custom-element bridge)",
-      "summary": "SvGrid is Svelte-5-native, but you can drop it into a React app via a thin **custom element** wrapper. The wrapper publishes one <sv-grid-element> tag, React renders it like any other DOM element, and data + columns cross the boundary as serialised properties.",
-      "section": "recipes",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 1382,
-      "lastUpdated": "2026-09-02",
-      "demoIds": []
     },
     {
       "path": "recipes/websocket-streaming.md",

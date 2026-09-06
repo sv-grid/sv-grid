@@ -23,7 +23,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   const features = tableFeatures({
@@ -118,7 +118,7 @@
 
   let rows = $state<Row[]>(makeRows(100))
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'name', header: 'Task', editorType: 'text', width: 200 },
     {
       field: 'priority',

@@ -24,8 +24,12 @@ const TEMPLATES = {
     bundled: join(__dirname, 'templates', 'minimal'),
   },
   sveltekit: {
-    label: 'SvelteKit    - server load, URL-driven sort, form-action edits, theme picker',
+    label: 'SvelteKit    - server load, URL-driven sort, form-action edits, cookie auth + roles',
     bundled: join(__dirname, 'templates', 'sveltekit'),
+  },
+  'pivot-dashboard': {
+    label: 'Pivot dashboard - pivot cube + linked chart + drill-through (needs @svgrid/enterprise)',
+    bundled: join(__dirname, 'templates', 'pivot-dashboard'),
   },
   'admin-dashboard': {
     label: 'Admin dashboard - SvelteKit shell, multiple grids, deploy to Vercel',

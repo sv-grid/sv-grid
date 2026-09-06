@@ -9,7 +9,8 @@
    * Groups start collapsed (AG-Grid default) - click a quarter header caret to
    * reveal its months. Q1 starts open via `openByDefault`.
    */
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef,
+    type GridColumns } from '@svgrid/grid'
 
   type Row = { region: string } & Record<string, number | string>
 
@@ -38,7 +39,7 @@
   const features = tableFeatures({ rowSortingFeature })
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'region', header: 'Region', width: 130 },
     ...QUARTERS.map(
       (q): ColumnDef<typeof features, Row> => ({

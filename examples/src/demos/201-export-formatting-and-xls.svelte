@@ -17,7 +17,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
     type ConditionalFormat,
     type SvGridApi,
   } from '@svgrid/grid'
@@ -51,7 +51,7 @@
 
   // Priced with a real number `format` so the export renders "$1,234.00",
   // a percent column stored as 0..100 points, and a formatted date.
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'company', header: 'Company', width: 150 },
     { field: 'product', header: 'Product', width: 160 },
     {

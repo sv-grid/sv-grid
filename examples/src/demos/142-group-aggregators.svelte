@@ -18,7 +18,7 @@
     SvGrid,
     tableFeatures,
     columnGroupingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -56,7 +56,7 @@
     return s[Math.floor(s.length / 2)]!
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'region', header: 'Region', width: 140 },
     { field: 'rep', header: 'Rep', width: 130 },
     {

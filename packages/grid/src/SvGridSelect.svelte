@@ -21,7 +21,7 @@
 
   type Props = Pick<
     SvEditorProps,
-    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
+    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'block' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
   > & {
     columns: ReadonlyArray<GridSelectColumn>
     options: ReadonlyArray<Row>
@@ -68,6 +68,7 @@
     error,
     required = false,
     invalid = false,
+    block = false,
     size = 'md',
     id,
     name,
@@ -133,7 +134,8 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
-  <div class="sv-gs sv-gs--{size}" class:is-disabled={disabled}>
+  <div class="sv-gs sv-gs--{size}"
+    class:is-block={block} class:is-disabled={disabled}>
     <button
       bind:this={triggerEl}
       type="button"
@@ -263,4 +265,6 @@
   :global(.sv-gs__row.is-selected) { color: var(--sg-accent, #2563eb); font-weight: 600; }
   :global(.sv-gs__cell) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   :global(.sv-gs__empty) { padding: 12px; text-align: center; color: var(--sg-muted, #94a3b8); }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-gs.is-block { width: 100%; max-width: 100%; }
 </style>

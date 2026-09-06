@@ -19,7 +19,7 @@
     tableFeatures,
     rowSortingFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
@@ -109,7 +109,7 @@
     menu = null
   }
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName',  header: 'First',      width: 120 },
     { field: 'lastName',   header: 'Last',       width: 140 },
     { field: 'department', header: 'Department', width: 140 },

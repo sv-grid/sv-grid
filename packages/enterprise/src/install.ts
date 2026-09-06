@@ -30,6 +30,7 @@ import {
 } from './pivot'
 import { enableSchedulerView } from './scheduler'
 import { enableBoardView } from './board'
+import { enableSelectionBar } from './selection-bar'
 import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
 
@@ -138,6 +139,7 @@ export function installEnterprise<
   enableSchedulerView()
   // Register the Kanban board view (no-op without the `board` prop).
   enableBoardView()
+  enableSelectionBar()
   // Register the export engine so built-in AI exports (aiExport) can write the
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
   registerExportProvider(exportGrid as never)

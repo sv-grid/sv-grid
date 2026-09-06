@@ -8,7 +8,7 @@
    * scale** toggle for the wide-range value axis. Both are one-click, live, and
    * persist in saved views. Filter or sort the grid and the line re-plots.
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, type GridColumns } from '@svgrid/grid'
 
   type Row = { date: string; channel: string; device: string; signups: number; revenue: number }
 
@@ -33,7 +33,7 @@
   let rows = $state<Row[]>(rows0)
   const features = tableFeatures({})
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'date', header: 'Date', width: 120, cellDataType: 'date' },
     { field: 'channel', header: 'Channel', width: 120 },
     { field: 'device', header: 'Device', width: 110 },

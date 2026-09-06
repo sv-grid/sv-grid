@@ -16,7 +16,7 @@
     columnFilteringFeature,
     createNamedViews,
     localStorageViews,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type SavedView,
   } from '@svgrid/grid'
@@ -25,7 +25,7 @@
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   const rows = makePeople(300)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name', width: 140 },
     { field: 'lastName', header: 'Last name', width: 140 },
     { field: 'department', header: 'Department', width: 150 },

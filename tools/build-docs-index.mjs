@@ -42,6 +42,7 @@ const SECTION_TITLES = {
   'help/server':       'Server data',
   'help/state':        'State & views',
   'help/ui-components':'UI components',
+  'help/web-components':'Web components',
   'recipes':           'Recipes / cookbook',
   'reference':         'API reference',
   'enterprise/studio': 'Studio',
@@ -79,6 +80,7 @@ const SECTION_PILLAR = {
   'reference':         'grid',
   'enterprise/studio': 'studio',
   'help/ui-components':'ui',
+  'help/web-components':'grid',
   'enterprise':        'company',
   'compliance':        'company',
   'legal':             'company',
@@ -92,7 +94,10 @@ const SECTION_ORDER = [
   'help/cells', 'help/columns', 'help/rows',
   'help/editing', 'help/filtering', 'help/grouping',
   'help/headless', 'help/server', 'help/state',
-  'recipes', 'reference',
+  // Before recipes, matching CATEGORY_ORDER in website/src/lib/docs.ts - this
+  // list drives docs.json and llms.txt, that one drives the visible sidebar,
+  // and a reader following the topic map should meet them in the same order.
+  'help/web-components', 'recipes', 'reference',
   'enterprise/studio',
   'help/ui-components',
   'enterprise', 'compliance', 'legal', 'brand',
@@ -104,6 +109,15 @@ const SECTION_ORDER = [
 // pages a section has that are not listed here sort after the curated ones,
 // alphabetically. Sections without an entry keep the alphabetical order.
 const PAGE_GROUPS = {
+  // Reading order, not alphabetical: the attribute-vs-property rule in
+  // `quick-start` is the thing every reader needs before anything else, and
+  // `limitations` reads as a conclusion rather than an opening.
+  'help/web-components': [
+    { label: '', pages: ['help/web-components.md'] },
+    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'shadow-dom'] },
+    { label: 'Frameworks', pages: ['react', 'vue', 'angular'] },
+    { label: 'Reference', pages: ['typescript', 'enterprise', 'limitations'] },
+  ],
   'enterprise/studio': [
     { label: '',                        pages: ['enterprise/studio.md'] },
     { label: 'Start here',              pages: ['getting-started', 'concepts', 'samples', 'tutorial-crm'] },

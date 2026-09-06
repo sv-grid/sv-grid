@@ -18,7 +18,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -41,7 +41,7 @@
   let lastImport = $state('')
   let copied = $state(false)
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'company', header: 'Company', width: 150 },
     { field: 'product', header: 'Product', width: 160 },
     { field: 'country', header: 'Country', width: 120 },

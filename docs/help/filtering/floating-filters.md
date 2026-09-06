@@ -22,7 +22,10 @@ the column's type, and `between` shows a second inline "To" input.
   column a date picker, text a text input. This is driven by the column's
   `editorType`.
 - **`between` inline** - selecting Between shows a second **To** input right in
-  the row, so ranges work without opening the full menu.
+  the row, so ranges work without opening the full menu. A date column swaps in
+  a single **range field** instead: one popover, two-month calendar, both ends
+  picked in one gesture. A range needs both ends - the filter stays inactive
+  until the second one is picked.
 
 ```ts
 const columns = [

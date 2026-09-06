@@ -17,7 +17,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type LoadState = 'unloaded' | 'loading' | 'loaded'
@@ -201,7 +201,7 @@
   })
 
   const features = tableFeatures({ rowSortingFeature })
-  const columns: ColumnDef<typeof features, ViewRow>[] = [
+  const columns: GridColumns<ViewRow> = [
     {
       id: 'name',
       header: 'Geography',

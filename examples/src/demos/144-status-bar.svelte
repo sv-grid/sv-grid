@@ -11,7 +11,8 @@
    *   <SvGrid responsive={true} enableCellSelection statusBar />
    *   <SvGrid responsive={true} enableCellSelection statusBar={{ aggregates: ['sum', 'avg'] }} />
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, type ColumnDef,
+    type GridColumns } from '@svgrid/grid'
 
   const features = tableFeatures({})
 
@@ -41,7 +42,7 @@
     currency: 'USD',
     options: { maximumFractionDigits: 0 },
   }
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'product', header: 'Product', width: 200 },
     { field: 'q1', header: 'Q1', width: 130, align: 'right', format: money },
     { field: 'q2', header: 'Q2', width: 130, align: 'right', format: money },

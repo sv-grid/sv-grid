@@ -28,6 +28,9 @@ npm create @svgrid@latest my-app -- --template minimal
 # Full SvelteKit admin dashboard
 npm create @svgrid@latest my-admin -- --template admin-dashboard
 
+# Pivot cube + linked chart + drill-through (needs @svgrid/enterprise)
+npm create @svgrid@latest my-cube -- --template pivot-dashboard
+
 # The engine only - your own markup and CSS
 npm create @svgrid@latest my-table -- --template headless
 ```
@@ -45,11 +48,12 @@ npm run dev
 | Template | Stack | Best for |
 | --- | --- | --- |
 | `minimal` | Vite + Svelte 5 + `@svgrid/grid`, one page | Dropping a grid into something quickly |
-| `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, theme picker | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
+| `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, cookie sessions with role gating | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
 | `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
+| `pivot-dashboard` | SvelteKit + `@svgrid/enterprise`: a pivot cube, a linked chart and a drill-through rail over one fact table | Reporting screens where a number has to be traceable to its rows |
 | `headless` | Vite + Svelte 5 + `@svgrid/grid/core`: the engine driving a hand-written `<table>` | Your own renderer and your own CSS |
 
-The three `<SvGrid>` templates start on the Ember theme, the same one the demos
+The four `<SvGrid>` templates start on the Ember theme, the same one the demos
 and svgrid.com use, unless you pass `--theme <id>`. `headless` loads no grid
 stylesheet at all, so it has no theme to pick.
 
@@ -57,7 +61,7 @@ stylesheet at all, so it has no theme to pick.
 
 | Flag | Alias | Description |
 | --- | --- | --- |
-| `--template <name>` | `-t` | `minimal`, `sveltekit`, `admin-dashboard`, or `headless` |
+| `--template <name>` | `-t` | `minimal`, `sveltekit`, `pivot-dashboard`, `admin-dashboard`, or `headless` |
 | `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` |
 | `--dark` / `--light` | | Pin the starting mode. Left out, `minimal` and `sveltekit` follow the visitor's OS and `admin-dashboard` starts dark |
 | `--force` | `-f` | Scaffold into a non-empty directory |
@@ -97,6 +101,26 @@ If you're deploying the template straight from this monorepo's
 subfolder, set the Vercel **Root Directory** to
 `templates/sveltekit-admin-dashboard`. Scaffolding a standalone copy
 first (above) avoids that step.
+
+## The pivot dashboard starter
+
+`pivot-dashboard` is the one template built on `@svgrid/enterprise` rather than the
+free package, because the pivot designer is a paid feature. It runs unlicensed
+(it nudges rather than stopping), so you can evaluate it before buying.
+
+It puts three panes over a single fact table:
+
+- a **pivot cube** you can re-shape by dragging fields between wells,
+- a **chart** that re-aggregates the same facts along the first row dimension,
+- a **drill-through rail** that opens when you click any aggregated cell and
+  lists the exact rows behind that number.
+
+The point is that they cannot disagree. The rail recomputes its total from the
+rows it lists rather than reading the grid, so if the two ever diverged the
+drill filter and the pivot aggregation would have drifted apart.
+
+The drill maths lives in `src/lib/drill.ts`, deliberately free of Svelte and of the
+grid packages, so you can unit-test your own reporting rules against it.
 
 ## The headless starter
 

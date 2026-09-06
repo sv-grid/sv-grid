@@ -16,6 +16,7 @@
     rowSortingFeature,
     renderSnippet,
     type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
@@ -58,7 +59,7 @@
     }
   }
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     textColumn('firstName',  'First',      120),
     textColumn('lastName',   'Last',       140),
     textColumn('department', 'Department', 160),

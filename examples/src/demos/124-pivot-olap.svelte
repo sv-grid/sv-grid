@@ -29,6 +29,7 @@
     tableFeatures,
     renderSnippet,
     type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -332,7 +333,7 @@
 
   // ---- Column tree: split row-header into N dim cols -----------------
   const columns = $derived.by(() => {
-    const out: ColumnDef<typeof features, PivotRow>[] = []
+    const out: GridColumns<PivotRow> = []
     for (let i = 0; i < ROW_FIELDS.length; i += 1) {
       const field = ROW_FIELDS[i]!
       out.push({

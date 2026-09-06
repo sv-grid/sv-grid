@@ -26,6 +26,10 @@ For `'datetime'`, use full ISO 8601: `2026-05-27T14:32:00Z`.
 
 ## Date range
 
+Both surfaces use the same controls: a date picker for the single-value
+operators, and one range field for **Between** - two-month calendar, both ends
+in a single gesture. A range needs both ends before it filters anything.
+
 Pick **Between** in the column menu's operator picker. The wrapper
 renders two date inputs (From / To); both endpoints are **inclusive**.
 

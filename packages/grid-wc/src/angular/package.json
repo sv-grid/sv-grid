@@ -1,0 +1,9 @@
+{
+  "name": "@svgrid/grid-wc-angular",
+  "version": "0.0.0",
+  "private": true,
+  "peerDependencies": {
+    "@angular/core": ">=18",
+    "@angular/common": ">=18"
+  }
+}

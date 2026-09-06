@@ -18,7 +18,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makeOrders, type Order } from '../shared/seed'
@@ -36,7 +36,7 @@
   // showRowNumbers prop, so we don't need to declare an `index` column here.
   // Widths are sized to keep the total under a typical sidebar+padding
   // viewport so the grid doesn't need a horizontal scrollbar.
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'company', header: 'Company',  editorType: 'text', width: 140 },
     { field: 'product', header: 'Name',     editorType: 'text', width: 170 },
     {

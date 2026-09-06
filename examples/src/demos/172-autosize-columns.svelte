@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -56,7 +56,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   // Start with cramped widths so the demo of autosize is obvious.
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'sku',     header: 'SKU',     width: 90,  editorType: 'text' },
     { field: 'product', header: 'Product', width: 110, editorType: 'text' },
     { field: 'vendor',  header: 'Vendor',  width: 110, editorType: 'list', editorOptions: VENDORS },

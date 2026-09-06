@@ -19,7 +19,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type KPI = {
@@ -151,7 +151,7 @@
     return `<span class="cf-icon"><span class="cf-dot" style="background:${color};box-shadow:0 0 0 4px ${color}26;"></span><span class="cf-icon-val">${value}%</span></span>`
   }
 
-  const columns: ColumnDef<typeof features, KPI>[] = [
+  const columns: GridColumns<KPI> = [
     { field: 'region',  header: 'Region',  width: 110 },
     { field: 'country', header: 'Country', width: 170 },
     {

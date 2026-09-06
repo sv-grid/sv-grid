@@ -24,7 +24,7 @@
     columnGroupingFeature,
     rowExpandingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -117,7 +117,7 @@
   const TIER_DROPDOWN = TIER_OPTIONS.map((t) => ({ value: t, label: TIER_LABEL[t] }))
   const MANAGERS = Array.from(new Set(rows.map((r) => r.accountManager))).sort()
 
-  const columns: ColumnDef<typeof features, Vendor>[] = [
+  const columns: GridColumns<Vendor> = [
     { field: 'name', header: 'Vendor', editorType: 'text', width: 180 },
     { field: 'contractValueUSD', header: 'Annual contract', editorType: 'number', width: 150,
       format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },

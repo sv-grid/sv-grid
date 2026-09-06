@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Kind = 'workspace' | 'resource' | 'action'
@@ -169,7 +169,7 @@
 
   const features = tableFeatures({ rowSortingFeature })
 
-  const columns: ColumnDef<typeof features, Node>[] = [
+  const columns: GridColumns<Node> = [
     {
       field: 'label', header: 'Name', width: 360, editable: false,
       cell: (ctx) => renderSnippet(TreeCell, { ctx: context(ctx.row.original) }),

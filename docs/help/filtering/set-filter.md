@@ -127,6 +127,19 @@ A set filter is a checklist of the distinct values in the column, which is
 the right shape when the domain is small and closed - a department, a status, a
 country. Typing an operator for those is slower than ticking a box.
 
+Three things the checklist does on its own:
+
+- **It counts.** Each row shows how many rows that value would keep, so you can
+  see the shape of the column before touching it.
+- **It offers only what is reachable.** The values are taken from the rows that
+  pass every *other* column's filters, not from the whole dataset - narrow
+  Country to Germany and the City list stops offering cities that would leave
+  you with an empty grid. The column's own filter is excluded, so unticking one
+  value never makes the rest of the list move.
+- **Search then "select all" means the results.** With a query typed the row
+  reads *(Select all results)* and applies to the matches only, leaving the
+  rest of your selection alone.
+
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, renderSnippet, type GridColumns, type SvGridApi } from '@svgrid/grid'

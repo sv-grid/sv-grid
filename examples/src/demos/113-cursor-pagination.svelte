@@ -24,7 +24,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Event = {
@@ -175,7 +175,7 @@
 
   // ---- Columns ---------------------------------------------------------
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  const columns: ColumnDef<typeof features, Event>[] = [
+  const columns: GridColumns<Event> = [
     { field: 'id',        header: 'Event id',  width: 200, editable: false,
       cellClass: () => 'mono-cell' },
     { field: 'createdAt', header: 'Created',   width: 200, editable: false,

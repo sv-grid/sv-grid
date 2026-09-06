@@ -140,6 +140,7 @@ and body and ranks matches by where they hit.
 - [Full-width rows](./rows/full-width-rows.md)
 - [Master / detail (nested grids)](./rows/master-detail.md)
 - [Tree rows (expand / collapse)](./rows/tree-rows.md)
+- [Bulk-action bar (selection)](./rows/selection-bar.md)
 
 ### Cells
 
@@ -177,6 +178,7 @@ and body and ranks matches by where they hit.
 - [Provided cell editors](./editing/provided-editors.md)
 - [Undo / redo](./editing/undo-redo.md)
 - [Full-row editing](./editing/full-row.md)
+- [Drag a range to move or copy it](./editing/move-cells.md)
 - [Validation](./editing/validation.md)
 
 ## Conventions

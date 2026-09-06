@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -199,7 +199,7 @@
     ]
   }
 
-  const columns: ColumnDef<typeof features, Region>[] = [
+  const columns: GridColumns<Region> = [
     {
       field: 'country', header: 'Country', editorType: 'text', width: 180,
       cell: (ctx) => renderSnippet(ComboCell, {

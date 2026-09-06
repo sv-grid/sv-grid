@@ -115,6 +115,59 @@ into your own state (persistence, server sync):
 />
 ```
 
+## Touch
+
+Row dragging works on touch as well as with a mouse. It runs on pointer
+events with a long-press to start, so an ordinary swipe still scrolls the
+grid instead of picking a row up. Once a drag begins you get hit-testing
+against the row under the finger, autoscroll near the top and bottom edges,
+and the drop happening on lift.
+
+### What lifting your finger does
+
+A lift **commits** the drop to wherever the indicator was last showing, even
+if your finger has travelled outside the grid. Dragging to the bottom edge is
+how you move a row to the end on a phone, and cancelling there would throw
+away a move the interface was actively promising.
+
+Note this differs from the desktop path, where dropping outside a target
+cancels. What does abort a touch drag is a real interruption - an incoming
+call, the app switcher, a system edge swipe - which arrives as
+`pointercancel` and leaves the order untouched.
+
+### Automated coverage
+
+`tests/e2e/mobile/row-drag-touch.spec.ts` drives this with real touch input
+through Chromium's input pipeline (CDP `Input.dispatchTouchEvent`, not synthetic
+DOM events), so it exercises `touch-action` handling and compositor scrolling
+that jsdom cannot. It covers:
+
+- a swipe past the slop scrolls instead of picking a row up,
+- a long press followed by a move reorders on lift,
+- lifting past the bottom edge commits to the last indicated row,
+- an interrupted gesture aborts and leaves the order unchanged,
+- a second finger mid-drag loses or duplicates no row.
+
+Run it with `pnpm test:e2e:mobile`.
+
+### Still needs a real device
+
+Chromium with touch emulation is not iOS Safari. These are WebKit-on-hardware
+behaviours no emulator reproduces, so they have to be checked by hand:
+
+| Check | Expected |
+| --- | --- |
+| Swipe over rows with momentum, then let it coast | The grid keeps scrolling. No row is picked up mid-fling. |
+| Scroll to the very top and keep pulling | Rubber-banding, and no drag starts out of the bounce. |
+| Drag near the left screen edge on iOS | Back-swipe navigation does not fire mid-drag. |
+| Long-press a row on iOS | No text-selection callout or magnifier appears. |
+| Drag with the URL bar collapsing or expanding | The drop indicator stays aligned with the row under the finger. |
+| Rotate the device mid-drag | The drag cancels cleanly or keeps tracking. It must not leave a stuck row. |
+| With VoiceOver or TalkBack on | The handle is reachable and announces itself; keyboard reorder still works. |
+
+If any row fails, the detail belongs on [issue #66](https://github.com/sv-grid/sv-grid/issues/66)
+with the device and OS version, because that is what the fix has to be tested
+against.
 ## Notes
 
 - **Managed data.** On drop the grid updates its internal data directly, so

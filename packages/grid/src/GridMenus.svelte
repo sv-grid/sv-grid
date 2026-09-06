@@ -16,6 +16,9 @@
   } from "./SvGrid.types";
   import {
     getEditorInputType,
+    usesRichDateFilter,
+    toIsoDateLocal,
+    fromIsoDateLocal,
   } from "./SvGrid.helpers";
 
   import type { SvGridController } from "./SvGrid.controller.svelte";
@@ -72,11 +75,45 @@
   // anything OUTSIDE them scrolls, or on resize. Scrolling the menu's own body
   // or its facet list has to keep it open - hence onScrollOutside rather than a
   // bare capture-phase listener.
+  //
+  // The cell context menu and the comment editor were missing from this gate.
+  // Both are positioned from a one-time cursor measurement and rendered
+  // `position: fixed`, so after a scroll they float over unrelated cells - the
+  // exact defect the effect exists to prevent. Their backdrop swallows a wheel
+  // over the grid, but it does not stop the PAGE scrolling underneath them, and
+  // it does not stop a programmatic scroll.
+  //
+  // The comment editor is dismissed by SAVING rather than discarding. Clicking
+  // the backdrop or pressing Escape throws the draft away, and that is fine -
+  // both are the user saying "away with this". A scroll is not a dismissal
+  // gesture, so it must not destroy text the user has typed.
   $effect(() => {
-    if (!(columnMenuFor || filterMenuFor || operatorMenuFor || chooseColumnsPos)) return;
-    const close = () => closeMenus();
+    if (
+      !(
+        columnMenuFor ||
+        filterMenuFor ||
+        operatorMenuFor ||
+        chooseColumnsPos ||
+        contextMenuFor ||
+        commentEditFor
+      )
+    )
+      return;
+    const close = () => {
+      closeMenus();
+      closeContextMenu();
+      if (ctrl.commentEditFor) saveComment();
+    };
     const offScroll = onScrollOutside(
-      () => Array.from(document.querySelectorAll<HTMLElement>('.sv-grid-menu')),
+      // Scoped to THIS grid's menus. A bare document query treats a second
+      // grid's open menu as "inside", so scrolling in that other menu would
+      // leave this one stranded at its stale coordinates.
+      () =>
+        Array.from(
+          document.querySelectorAll<HTMLElement>(
+            `.sv-grid-menu[data-svgrid-menu="${ctrl.gridDomId}"]`,
+          ),
+        ),
       close,
     );
     window.addEventListener('resize', close);
@@ -96,6 +133,71 @@
   const clearGroupingFromMenu = $derived(ctrl.clearGroupingFromMenu);
   const columnMenuFacetValues = $derived(ctrl.columnMenuFacetValues);
   const columnMenuVisibleFacets = $derived(ctrl.columnMenuVisibleFacets);
+
+  /**
+   * How many value rows the checklist shows. It was pinned at 7 regardless of
+   * the window, so a tall screen left most of the space under the menu empty
+   * while the list stayed a 7-row porthole over a few hundred values.
+   *
+   * Read once per open rather than on resize: the popover is transient, and
+   * the menu is already capped by its own `max-height`.
+   */
+  const FACET_ROW_HEIGHT = 24;
+  const facetRows = $derived.by(function facetRows_d() {
+    if (typeof window === "undefined") return 7;
+    const top = (filterMenuFor ? filterMenuPos.y : columnMenuPos.y) || 0;
+    // What is left under the menu's top edge once the condition block, the
+    // search row and the action bar have taken their share.
+    const room = window.innerHeight - top - 320;
+    return Math.max(7, Math.min(16, Math.floor(room / FACET_ROW_HEIGHT)));
+  });
+
+  /**
+   * The same date controls the filter ROW uses. Without them a date column
+   * offered two different date UIs depending on which surface you touched:
+   * a rich picker under the header, a bare `<input type="date">` in the menu.
+   *
+   * Lazy even though GridMenus is itself a lazy chunk - the picker drags in
+   * the date-format engine, and most grids that open a column menu have no
+   * date column at all.
+   */
+  let MenuDatePicker = $state<typeof import("./SvDateTimePicker.svelte").default | null>(null);
+  let MenuRangePicker = $state<typeof import("./SvDateRangeInput.svelte").default | null>(null);
+  $effect(() => {
+    const colId = filterMenuFor ?? columnMenuFor;
+    if (!colId) return;
+    const column = allColumns.find((c) => c.id === colId);
+    if (!usesRichDateFilter(column?.columnDef.editorType)) return;
+    if (!MenuDatePicker)
+      import("./SvDateTimePicker.svelte").then((m) => (MenuDatePicker = m.default));
+    if (!MenuRangePicker)
+      import("./SvDateRangeInput.svelte").then((m) => (MenuRangePicker = m.default));
+  });
+
+  /**
+   * Opening the filter popover used to leave focus on the funnel button
+   * outside it, so a keyboard user landed nowhere and had to tab in past the
+   * whole menu. Focus the first control instead - the condition value if the
+   * column has one, else the value search.
+   */
+  function focusFilterPanel(node: HTMLElement) {
+    requestAnimationFrame(() => {
+      const first = node.querySelector<HTMLElement>(
+        ".sv-grid-menu-condition-value, .sv-dtp__input, .sv-dri__input, .sv-grid-menu-search",
+      );
+      first?.focus({ preventScroll: true });
+    });
+  }
+
+  /** Enter anywhere in the panel means "done" - filtering is already live. */
+  function onFilterPanelKeydown(event: KeyboardEvent) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    const target = event.target as HTMLElement | null;
+    // Let the listbox and real buttons keep Enter for their own activation.
+    if (target?.closest(".sv-listbox") || target?.tagName === "BUTTON") return;
+    event.preventDefault();
+    closeMenus();
+  }
   const columnMenuFacetOptions = $derived(ctrl.columnMenuFacetOptions);
   const columnMenuSelectedFacets = $derived(ctrl.columnMenuSelectedFacets);
   const setFacetSelection = $derived(ctrl.setFacetSelection);
@@ -187,6 +289,21 @@
     {@const menuOperatorOptions = operatorsForColumn(menuColumn)}
     {@const menuActiveOperator = filterMenuValues[colId]?.operator ?? defaultOperatorFor(menuColumn)}
     {@const menuInputType = getEditorInputType((menuColumn?.columnDef.editorType ?? "text") as CellEditorType)}
+    {@const richDate =
+      usesRichDateFilter(menuColumn?.columnDef.editorType) &&
+      menuActiveOperator !== "isBlank" &&
+      menuActiveOperator !== "isNotBlank" &&
+      menuActiveOperator !== "regex" &&
+      menuActiveOperator !== "in" &&
+      menuActiveOperator !== "notIn"}
+    {@const searching =
+      columnMenuVisibleFacets.length !== columnMenuFacetValues.length}
+    {@const conditionActive =
+      menuActiveOperator === "isBlank" ||
+      menuActiveOperator === "isNotBlank" ||
+      (filterMenuValues[colId]?.value ?? "").trim().length > 0}
+    {@const pickedCount = columnMenuSelectedFacets.size}
+    {@const totalCount = columnMenuFacetValues.length}
     <div class="sv-grid-menu-filter">
       <div class="sv-grid-menu-filter-head">
         <span class="sv-grid-header-icon">{@render icon("filter")}</span> Filter
@@ -204,6 +321,40 @@
         {/each}
       </select>
       {#if menuActiveOperator !== "isBlank" && menuActiveOperator !== "isNotBlank"}
+      {#if richDate}
+        <!-- Same controls the filter row uses, so a date column behaves the
+             same wherever you touch it: a picker, or a range field for
+             `between`. `regex` and the set operators keep the text box - a
+             pattern and a token list are not dates. -->
+        {#if menuActiveOperator === "between"}
+          {#if MenuRangePicker}
+            {@const RangePicker = MenuRangePicker}
+            {@const from = fromIsoDateLocal(filterMenuValues[colId]?.value)}
+            {@const to = fromIsoDateLocal(filterMenuValues[colId]?.valueTo)}
+            <RangePicker
+              value={from && to ? [from, to] : null}
+              formatString="yyyy-MM-dd"
+              block
+              placeholder="Pick a range..."
+              onChange={(range) => {
+                updateFilterMenuValue(colId, range ? toIsoDateLocal(range[0]) : "");
+                updateFilterMenuValueTo(colId, range ? toIsoDateLocal(range[1]) : "");
+              }}
+            />
+          {/if}
+        {:else if MenuDatePicker}
+          {@const DatePicker = MenuDatePicker}
+          <DatePicker
+            value={(filterMenuValues[colId]?.value ?? "") || null}
+            formatString="yyyy-MM-dd"
+            dropDownDisplayMode="calendar"
+            block
+            nullable
+            placeholder="Filter value..."
+            onChange={(d) => updateFilterMenuValue(colId, toIsoDateLocal(d))}
+          />
+        {/if}
+      {:else}
         {@const isSetOp =
           menuActiveOperator === "in" || menuActiveOperator === "notIn"}
         <!-- in/notIn drives the shared value-suggestions dropdown (a windowed
@@ -239,6 +390,9 @@
             oninput={(event) => updateFilterMenuValueTo(colId, (event.currentTarget as HTMLInputElement).value)}
           />
         {/if}
+      {/if}
+        <!-- A second condition is offered for every column type, date
+             included, so this sits outside the value-control branch. -->
         {@const mf = filterMenuValues[colId]}
         {#if mf?.operator2}
           {@const op2 = mf.operator2 ?? defaultOperatorFor(menuColumn)}
@@ -288,7 +442,16 @@
         {/if}
       {/if}
       <div class="sv-grid-menu-sep"></div>
-      <div class="sv-grid-menu-filter-head">Values</div>
+      <div class="sv-grid-menu-filter-head">
+        Values
+        <!-- The condition above and this checklist are ANDed. Nothing said so,
+             so a row could vanish for a reason neither half showed on its own. -->
+        {#if conditionActive}
+          <span class="sv-grid-menu-head-note">and the condition above</span>
+        {:else if pickedCount < totalCount}
+          <span class="sv-grid-menu-head-note">{pickedCount} of {totalCount}</span>
+        {/if}
+      </div>
       <input
         class="sv-grid-menu-search"
         placeholder="Search values..."
@@ -296,7 +459,11 @@
       />
       <label class="sv-grid-facet sv-grid-facet-all">
         <input type="checkbox" checked={isAllFacetsChecked(colId)} onchange={() => toggleAllFacets(colId)} />
-        <span class="sv-grid-facet-label">(Select all)</span>
+        <!-- Says what it will actually do: with a query typed it acts on the
+             matches only, leaving the rest of the selection untouched. -->
+        <span class="sv-grid-facet-label"
+          >{searching ? "(Select all results)" : "(Select all)"}</span
+        >
       </label>
       <!-- Windowed checklist. A high-cardinality column (10k distinct symbols
            on a live feed) would otherwise mount a label + checkbox per value -
@@ -308,7 +475,7 @@
           checkbox
           multiple
           virtual={columnMenuFacetOptions.length > FACET_VIRTUAL_THRESHOLD}
-          rows={7}
+          rows={facetRows}
           rowHeight={24}
           size="sm"
           ariaLabel="Filter values"
@@ -348,6 +515,7 @@
     {@const menuTab = ctrl.columnMenuTab}
     <div
       class="sv-grid-menu sv-grid-column-menu"
+      data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${columnMenuPos.x}px; top: ${columnMenuPos.y}px; max-height: calc(100vh - ${columnMenuPos.y}px - 12px);`}
     >
@@ -535,10 +703,15 @@
   {/if}
 
   {#if filterMenuFor && showColumnFiltersEffective}
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="sv-grid-menu sv-grid-filter-menu"
+      data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${filterMenuPos.x}px; top: ${filterMenuPos.y}px; max-height: calc(100vh - ${filterMenuPos.y}px - 12px);`}
+      tabindex="-1"
+      use:focusFilterPanel
+      onkeydown={onFilterPanelKeydown}
     >
       {@render filterPanelBody(filterMenuFor)}
     </div>
@@ -548,6 +721,7 @@
     {@const everyColumn = grid.getAllColumns()}
     <div
       class="sv-grid-menu sv-grid-choose-columns-menu"
+      data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${chooseColumnsPos.x}px; top: ${chooseColumnsPos.y}px;`}
     >
@@ -576,6 +750,7 @@
       filterMenuValues[opColumnId]?.operator ?? defaultOperatorFor(opColumn)}
     <div
       class="sv-grid-menu sv-grid-operator-menu"
+      data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${operatorMenuPos.x}px; top: ${operatorMenuPos.y}px;`}
     >
@@ -613,6 +788,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="sv-grid-menu sv-grid-in-suggest"
+      data-svgrid-menu={ctrl.gridDomId}
       style={`left: ${inSuggestPos.x}px; top: ${inSuggestPos.y}px;`}
       onmousedown={(event) => event.preventDefault()}
     >
@@ -656,6 +832,7 @@
     ></div>
     <div
       class="sv-grid-menu sv-grid-context-menu"
+      data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${contextMenuPos.x}px; top: ${contextMenuPos.y}px;`}
     >
@@ -683,6 +860,7 @@
     ></div>
     <div
       class="sv-grid-menu sv-grid-comment-editor"
+      data-svgrid-menu={ctrl.gridDomId}
       role="dialog"
       aria-label="Edit comment"
       style={`left: ${commentEditFor.x}px; top: ${commentEditFor.y}px;`}

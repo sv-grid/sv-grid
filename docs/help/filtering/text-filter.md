@@ -81,9 +81,11 @@ substrings).
 
 **Pick from the column's values.** When you focus the `in` / `notIn` chip
 input, a dropdown of the column's **distinct values** opens beneath it (the same
-values the [set filter](./set-filter.md) checklist uses). Typing narrows the
-list; click a value to toggle it in or out. In the funnel menu and tool panel
-the plain text input offers the same values as native autocomplete suggestions.
+values the [set filter](./set-filter.md) checklist uses, with the same match
+counts, and likewise limited to what the other columns' filters still leave
+reachable). Typing narrows the list; click a value to toggle it in or out. In
+the funnel menu and tool panel the plain text input offers the same values as
+native autocomplete suggestions.
 
 Through the API, pass the list as a newline- or comma-separated string:
 

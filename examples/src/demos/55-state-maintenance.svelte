@@ -31,7 +31,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -95,7 +95,7 @@
   // ---- Grid columns ---------------------------------------------------
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  const ALL_COLUMNS: ColumnDef<typeof features, Order>[] = [
+  const ALL_COLUMNS: GridColumns<Order> = [
     { field: 'id',         header: 'Order ID',   width: 110 },
     { field: 'customer',   header: 'Customer',   width: 170 },
     { field: 'product',    header: 'Product',    width: 130, editorType: 'list',

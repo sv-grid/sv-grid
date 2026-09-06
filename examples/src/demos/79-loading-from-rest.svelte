@@ -22,7 +22,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   // The shape returned by https://jsonplaceholder.typicode.com/users
@@ -108,7 +108,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'id',       header: '#',        editorType: 'number', width: 60,  editable: false },
     { field: 'name',     header: 'Name',     editorType: 'text',   width: 180 },
     { field: 'username', header: 'Username', editorType: 'text',   width: 140 },

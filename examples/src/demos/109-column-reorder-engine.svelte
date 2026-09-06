@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -85,7 +85,7 @@
     api?.setColumnOrder(current.slice().sort())
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'symbol',     header: 'Symbol',      width: 90,  editable: false },
     { field: 'name',       header: 'Company',     width: 150, editable: false },
     { field: 'sector',     header: 'Sector',      width: 110, editable: false },

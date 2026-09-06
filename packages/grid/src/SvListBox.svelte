@@ -230,6 +230,7 @@
     <span class="sv-listbox__check" aria-hidden="true">{isSel(opt) ? '✓' : ''}</span>
   {/if}
   {#if item ?? itemTemplate}{@render (item ?? itemTemplate)!(opt)}{:else}<span class="sv-listbox__label">{opt.label}</span>{/if}
+  {#if opt.hint && !(item ?? itemTemplate)}<span class="sv-listbox__hint" aria-hidden="true">{opt.hint}</span>{/if}
 {/snippet}
 
 {#snippet optionRow(opt: IndexedOption, index: number, h?: number, top?: number)}
@@ -302,6 +303,13 @@
   }
   .sv-listbox__check { width: 14px; text-align: center; color: var(--_accent); }
   .sv-listbox__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Trailing muted text (a count, a unit). `flex: none` so it never gives up
+     width - the label ellipsises instead, which is the half you can guess. */
+  .sv-listbox__hint {
+    flex: none; margin-inline-start: 8px;
+    color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums;
+    font-size: 0.9em;
+  }
 
   /* ---- Checklist variant ---- */
   .sv-listbox__box {

@@ -17,7 +17,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type ServerDataSource,
     type ServerState,
   } from '@svgrid/grid'
@@ -80,7 +80,7 @@
     return [...set].sort()
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'id', header: 'ID', width: 90, align: 'right' },
     { field: 'name', header: 'Name', width: 200 },
     { field: 'team', header: 'Team', width: 140 },

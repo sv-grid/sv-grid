@@ -27,7 +27,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -251,7 +251,7 @@
   const fmtMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
   const fmtNum   = new Intl.NumberFormat('en-US')
 
-  const columns: ColumnDef<typeof features, Tick>[] = [
+  const columns: GridColumns<Tick> = [
     { field: 'symbol', header: 'Symbol', editorType: 'text', width: 90 },
     { field: 'sector', header: 'Sector', editorType: 'text', width: 100 },
     { field: 'price',  header: 'Price',  editorType: 'number', width: 110,

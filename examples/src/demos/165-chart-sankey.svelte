@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -44,7 +44,7 @@
     { id: 10, source: 'Activated',   target: 'Pending',       value:  380 },
   ]
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'source', header: 'From',  width: 150 },
     { field: 'target', header: 'To',    width: 150 },
     { field: 'value',  header: 'Users', width: 110, align: 'right' },

@@ -25,7 +25,7 @@
    * `columnFilteringFeature` wiring here. Every capability is switched on by
    * a single boolean shortcut, which injects whatever feature it needs.
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, type GridColumns } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   // Deliberately empty - the shortcuts below do all the wiring. (A typed
@@ -34,7 +34,7 @@
 
   const rows = makePeople(200)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName',  header: 'First name', editorType: 'text' },
     { field: 'lastName',   header: 'Last name',  editorType: 'text' },
     { field: 'department', header: 'Department', editorType: 'text' },

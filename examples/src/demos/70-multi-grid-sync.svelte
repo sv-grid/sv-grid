@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Inventory = {
@@ -41,7 +41,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const columns: ColumnDef<typeof features, Inventory>[] = [
+  const columns: GridColumns<Inventory> = [
     { field: 'sku',       header: 'SKU',       editorType: 'text',   width: 100 },
     { field: 'product',   header: 'Product',   editorType: 'text',   width: 180 },
     { field: 'warehouse', header: 'Warehouse', editorType: 'list',

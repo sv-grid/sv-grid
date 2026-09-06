@@ -84,11 +84,45 @@ export default defineConfig({
     // the command runs through cmd.exe on Windows, which has no such syntax.
     //
     // Note `website/` is a private submodule, so this suite only runs on a
-    // checkout that has it. It is not part of CI for that reason.
+    // checkout that has it. That kept it out of CI for a long time; the `e2e`
+    // job in .github/workflows/test.yml now checks the submodule out with
+    // WEBSITE_TOKEN, the same way the unit job already did, so these specs do
+    // gate. A fork PR without the secret cannot run them - accepted, and the
+    // same trade the unit job makes.
     command: 'pnpm --filter svgrid-website dev',
     env: { SVGRID_SITE_BASE: '/sv-grid/' },
     url: 'http://localhost:5180/sv-grid/',
     timeout: 60_000,
+    reuseExistingServer: !process.env.CI,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  }, {
+    // The BUILT grid-wc bundles, for tests/e2e/wc-shadow-dom.spec.ts.
+    //
+    // Built, not dev-served, and the build runs here rather than being
+    // assumed: the thing under test is a build-only vite plugin, which hoists
+    // the bundle CSS into a global for the shadow root to adopt AND into
+    // document.head for the popups that portal out of the root. A dev server
+    // has no such global, so a dev-served spec would pass while asserting
+    // nothing. Lives entirely in the parent repo, so it needs no submodule.
+    command: 'pnpm --filter @svgrid/grid-wc build && pnpm --filter @svgrid/grid-wc preview',
+    url: 'http://localhost:4205/test/shadow.html',
+    timeout: 120_000,
+    reuseExistingServer: !process.env.CI,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  }, {
+    // The React and Vue fixture APPS, for tests/e2e/wc-wrappers.spec.ts.
+    //
+    // Real framework apps built against the built wrappers. What they test is
+    // how each framework hands an object prop to a custom element and when it
+    // does so relative to the element upgrading - neither of which jsdom has.
+    // That is not hypothetical: this fixture caught the element throwing when
+    // it renders before `columns` is assigned, which is exactly the order
+    // React and Angular produce and which no HTML fixture reproduces.
+    command: 'pnpm --filter @svgrid/grid-wc build:test-apps && pnpm --filter @svgrid/grid-wc preview:test-apps',
+    url: 'http://localhost:4206/react/index.html',
+    timeout: 120_000,
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
     stderr: 'pipe',

@@ -62,7 +62,7 @@ the [gallery](https://svgrid.com/demos/).
 - [Lazy-load expand on demand](./lazy-load-expand.md)
 
 ### Framework interop
-- [Use SvGrid from React (custom-element bridge)](./use-svgrid-from-react.md)
+- [SvGrid in React](../help/web-components/react.md) - now part of the Web Components section, rewritten against the published element rather than a hand-authored one
 
 ### Developer recipes
 - [Build your own feature plugin](./build-a-feature-plugin.md) - extend `tableFeatures()` with a row-accent or audit hook

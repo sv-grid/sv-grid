@@ -20,7 +20,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -91,7 +91,7 @@
   // ---- Columns ----------------------------------------------------------
   // Every column is editable. Built-in editor types match the cell shape;
   // cell snippets render the polished read-only display.
-  const columns: ColumnDef<typeof features, Feature>[] = [
+  const columns: GridColumns<Feature> = [
     { field: 'title', header: 'Feature', editorType: 'text', width: 220 },
     { field: 'area',  header: 'Area',    editorType: 'text', width: 130 },
     { field: 'color', header: 'Swimlane',

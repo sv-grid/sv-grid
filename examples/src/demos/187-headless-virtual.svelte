@@ -12,7 +12,7 @@
     createCoreRowModel,
     createSvelteVirtualizer,
     tableFeatures,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Row = { id: number; name: string; city: string; score: number }
@@ -24,7 +24,7 @@
     score: (i * 37) % 1000,
   }))
   const features = tableFeatures({})
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'name', header: 'Name' },
     { field: 'city', header: 'City' },
     { field: 'score', header: 'Score' },

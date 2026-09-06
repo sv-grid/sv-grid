@@ -2,7 +2,7 @@
   import '../app.css'
   import { theme, presets } from '$lib/theme.svelte'
 
-  let { children } = $props()
+  let { children, data } = $props()
 
   // Apply on mount so the picker's starting value wins over the stylesheet, and
   // on every later change. Runs client-side only - the server-rendered HTML is
@@ -31,6 +31,14 @@
   <button type="button" onclick={() => theme.toggleMode()} aria-pressed={theme.mode === 'dark'}>
     {theme.mode === 'dark' ? 'Dark' : 'Light'}
   </button>
+
+  {#if data?.user}
+    <span class="who">{data.user.email} <em>({data.user.role})</em></span>
+    <!-- A form, not a link: see routes/logout/+page.server.ts for why. -->
+    <form class="out" method="POST" action="/logout"><button type="submit">Sign out</button></form>
+  {:else}
+    <a class="who" href="/login">Sign in</a>
+  {/if}
 </header>
 
 <main>
@@ -68,6 +76,13 @@
     cursor: pointer;
     min-width: 4.5rem;
   }
+  .who {
+    margin-inline-start: auto;
+    font-size: 0.875rem;
+    color: var(--sg-header-fg);
+  }
+  .who em { color: var(--sg-muted, #64748b); font-style: normal; }
+  .out { margin: 0; }
   main {
     padding: 1.25rem;
     font-family: system-ui, sans-serif;

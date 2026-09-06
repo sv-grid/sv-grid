@@ -18,6 +18,36 @@ export function getColumnBaseValue<TData extends RowData>(row: Row<TData>, colum
   return row.getCellValueByColumnId(column.id);
 }
 
+/**
+ * Map a visible row back to its slot in the data array.
+ *
+ * The bulk writers (paste, clear) rebuild `internalData` immutably, so unlike
+ * the inline editor - which mutates `row.original` in place and never needs an
+ * index - they have to locate the slot first. They used to read it as
+ * `Number(row.id)`, which is only the array index under the DEFAULT `getRowId`.
+ * A grid with `getRowId={(t) => String(t.id)}` over 1-based ids wrote one row
+ * BELOW the selection on every paste, and one with non-numeric ids ('PLAT-412')
+ * parsed to NaN and dropped the write silently.
+ *
+ * Identity is the reliable key: the row model's `original` IS the object in
+ * `data`. Returns a lookup rather than a per-row scan so a multi-row paste
+ * stays O(n) instead of O(n * rows).
+ */
+export function createDataIndexLookup<TData extends RowData>(
+  data: ReadonlyArray<TData>,
+): (row: Row<TData>) => number {
+  const byRef = new Map<unknown, number>();
+  for (let i = 0; i < data.length; i += 1) {
+    // First slot wins: with a duplicated object reference in `data`, writing
+    // the earlier one matches what the row model itself resolves to.
+    if (!byRef.has(data[i])) byRef.set(data[i], i);
+  }
+  return (row) => {
+    const hit = byRef.get(row?.original);
+    return hit === undefined ? -1 : hit;
+  };
+}
+
 export function isGroupRow<TData extends RowData>(row: Row<TData>) {
   // Tree rows are expandable too, but they are real data rows - rendering one as
   // a full-width banner would swallow its cells. Only grouping's synthetic rows

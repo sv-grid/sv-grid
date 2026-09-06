@@ -20,7 +20,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -42,7 +42,7 @@
     })),
   )
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'quarter', header: 'Quarter', width: 100 },
     { field: 'region', header: 'Region', width: 130 },
     { field: 'revenue', header: 'Revenue', width: 140, align: 'right',

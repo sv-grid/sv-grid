@@ -24,7 +24,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -74,7 +74,7 @@
     'Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Margaret Hamilton', 'Linus Torvalds', 'Barbara Liskov',
   ])
 
-  const columns: ColumnDef<typeof features, Ticket>[] = [
+  const columns: GridColumns<Ticket> = [
     { field: 'title', header: 'Ticket', width: 300 },
     {
       field: 'priority', header: 'Priority', width: 120,

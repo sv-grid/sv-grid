@@ -25,14 +25,14 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   let rows = $state<Person[]>(makePeople(40))
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName',  header: 'First',      width: 110 },
     { field: 'lastName',   header: 'Last',       width: 130 },
     { field: 'email',      header: 'Email',      width: 220 },

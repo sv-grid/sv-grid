@@ -7,7 +7,7 @@ The grid ships with five inline editors. Each is selected by the column's
 | `editorType` | DOM element | Notes |
 | ------------ | ----------- | ----- |
 | `'text'`     | `<input type="text">`     | default |
-| `'number'`   | `<input type="number">`   | parsed with `parseEditorValue('number', ...)` |
+| `'number'`   | `<input type="text" inputmode="decimal">` | parsed with `parseEditorValue('number', ...)` |
 | `'date'`     | `<input type="date">`     | round-trips to ISO `YYYY-MM-DD` |
 | `'datetime'` | `<input type="datetime-local">` | round-trips to ISO 8601 |
 | `'checkbox'` | `<input type="checkbox">` | toggled on `Enter` / `Space` |

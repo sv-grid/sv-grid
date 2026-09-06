@@ -33,7 +33,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
@@ -41,7 +41,7 @@
 
   const rows = makePeople(40)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName',  header: 'First name', editorType: 'text', width: 130 },
     { field: 'lastName',   header: 'Last name',  editorType: 'text', width: 130 },
     { field: 'department', header: 'Department', editorType: 'text', width: 140 },

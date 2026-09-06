@@ -63,6 +63,14 @@ export { enableSchedulerView, SvGridScheduler } from './scheduler'
 // Kanban board view (Pro). `enableBoardView()` registers the renderer so
 // `<SvGrid board={...}>` shows lanes of cards. Config types live in @svgrid/grid.
 export { enableBoardView, SvGridBoard } from './board'
+// Bulk-action bar over the row selection (Pro). `enableSelectionBar()` registers
+// the renderer so `<SvGrid selectionBar={...}>` floats a bar over the grid while
+// rows are selected. The prop + its config types live in @svgrid/grid.
+export { enableSelectionBar, SvGridSelectionBar } from './selection-bar'
+// Bulk edit engine behind the bar's `editFields` button - exported so an app
+// can drive the same write from its own UI.
+export { applyBulkEdit, bulkEditableFields, bulkEditInitialValues, coerceBulkValue, type BulkEditField, type BulkEditResult } from './bulk-edit'
+export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // In-grid pivot mode (Pro). `enablePivot()` registers the pivot engine so
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'

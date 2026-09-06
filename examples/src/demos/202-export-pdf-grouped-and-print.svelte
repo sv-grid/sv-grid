@@ -13,7 +13,7 @@
     rowSortingFeature,
     columnGroupingFeature,
     rowExpandingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -56,7 +56,7 @@
   let lastAction = $state('')
   let errorMsg = $state<string | null>(null)
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'country', header: 'Country', width: 110 },
     { field: 'company', header: 'Company', width: 150 },
     { field: 'product', header: 'Product', width: 160 },

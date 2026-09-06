@@ -20,7 +20,7 @@
 
   type Props = Pick<
     SvEditorProps,
-    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
+    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'block' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
   > & {
     nodes: ReadonlyArray<TreeSelectNode>
     value?: string | number | null
@@ -46,6 +46,7 @@
     error,
     required = false,
     invalid = false,
+    block = false,
     size = 'md',
     id,
     name,
@@ -129,7 +130,8 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir} {loading}>
-  <div class="sv-ts sv-ts--{size}" class:is-disabled={disabled}>
+  <div class="sv-ts sv-ts--{size}"
+    class:is-block={block} class:is-disabled={disabled}>
     <button
       bind:this={triggerEl}
       type="button"
@@ -232,4 +234,6 @@
   :global(.sv-ts__chev.is-open) { transform: rotate(90deg); }
   :global(.sv-ts__chev--leaf) { visibility: hidden; }
   :global(.sv-ts__label) { flex: 1; white-space: nowrap; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-ts.is-block { width: 100%; max-width: 100%; }
 </style>

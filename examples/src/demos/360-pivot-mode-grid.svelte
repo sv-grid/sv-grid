@@ -24,6 +24,7 @@
     columnFilteringFeature,
     renderSnippet,
     type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import {
     SvPivotDesigner,
@@ -129,7 +130,7 @@
 
   // ---- Flat (pivot-off) columns: AG-style groups + custom cells --------
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  const flatColumns: ColumnDef<typeof features, Participant>[] = [
+  const flatColumns: GridColumns<Participant> = [
     {
       id: 'g-participant', header: 'Participant', columns: [
         { field: 'name', header: 'Name', width: 150 },
@@ -192,9 +193,9 @@
     return 'heat-5'
   }
   // Right-align + heat-tint the value LEAF columns (nested under group cols).
-  function decorate(cols: ColumnDef<typeof features, PivotRow>[]): ColumnDef<typeof features, PivotRow>[] {
+  function decorate(cols: GridColumns<PivotRow>): GridColumns<PivotRow> {
     return cols.map((c) => {
-      const kids = (c as { columns?: ColumnDef<typeof features, PivotRow>[] }).columns
+      const kids = (c as { columns?: GridColumns<PivotRow> }).columns
       if (kids?.length) return { ...c, columns: decorate(kids) } as ColumnDef<typeof features, PivotRow>
       const colId = c.id ?? ''
       if (!/__m\d+$/.test(colId)) return c

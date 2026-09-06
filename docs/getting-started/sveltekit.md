@@ -376,6 +376,11 @@ Three things to try, in this order:
   built on `resolveThemeTokens` from `@svgrid/grid/themes`, which is the short
   way to see the pattern. [Theme and density](./5-theme-and-density.md) covers
   it properly.
+- **Gating it behind a login.** The `sveltekit` template ships an auth scaffold:
+  a cookie session, PBKDF2 password hashing over Web Crypto (so it still runs on
+  an edge adapter), and one `PROTECTED` list in `hooks.server.ts` that gates routes
+  before any load runs. The role check sits in the form action, not only in the
+  UI - hiding an edit button stops nobody from posting the action by hand.
 - **Deployment.** SvGrid is a normal client dependency with no build step or
   server runtime of its own, so any SvelteKit adapter works unchanged.
 

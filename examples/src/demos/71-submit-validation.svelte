@@ -15,7 +15,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Lead = {
@@ -75,7 +75,7 @@
 
   const features = tableFeatures({ rowSortingFeature })
 
-  const columns: ColumnDef<typeof features, Lead>[] = [
+  const columns: GridColumns<Lead> = [
     { field: 'id',      header: 'Lead',    editorType: 'text', width: 90 },
     {
       field: 'company', header: 'Company', editorType: 'text', width: 180,

@@ -12,7 +12,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type SvGridFilterOperator,
   } from '@svgrid/grid'
@@ -25,7 +25,7 @@
 
   const rows = makePeople(2_500)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName',  header: 'First name', editorType: 'text' },
     { field: 'lastName',   header: 'Last name',  editorType: 'text' },
     { field: 'department', header: 'Department', editorType: 'text' },

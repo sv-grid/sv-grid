@@ -10,7 +10,8 @@
    * must stay lined up. There are enough month columns here to force a
    * horizontal scrollbar so the sync is obvious.
    */
-  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef,
+    type GridColumns } from '@svgrid/grid'
 
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   type Row = { category: string } & Record<string, number | string>
@@ -31,7 +32,7 @@
   const features = tableFeatures({ rowSortingFeature })
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
 
-  function cols(): ColumnDef<typeof features, Row>[] {
+  function cols(): GridColumns<Row> {
     return [
       { field: 'category', header: 'Category', width: 150 },
       ...MONTHS.map(

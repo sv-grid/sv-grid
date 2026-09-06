@@ -14,7 +14,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
@@ -24,7 +24,7 @@
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
   let activePreset = $state<string>('band')
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name', width: 130 },
     { field: 'lastName', header: 'Last name', width: 130 },
     { field: 'department', header: 'Department', width: 150 },

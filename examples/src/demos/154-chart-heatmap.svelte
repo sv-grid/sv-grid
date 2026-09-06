@@ -19,7 +19,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -51,7 +51,7 @@
     ).flat(),
   )
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'day', header: 'Day', width: 90 },
     { field: 'hour', header: 'Hour', width: 80, align: 'right' },
     { field: 'channel', header: 'Channel', width: 110 },

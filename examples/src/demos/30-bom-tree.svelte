@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Part = {
@@ -179,7 +179,7 @@
   }
 
   const features = tableFeatures({ rowSortingFeature })
-  const columns: ColumnDef<typeof features, Part>[] = [
+  const columns: GridColumns<Part> = [
     {
       id: 'name',
       header: 'Part',

@@ -16,7 +16,7 @@
     renderSnippet,
     rowResize,
     createHyperFormulaSheet,
-    type ColumnDef,
+    type GridColumns,
     type HyperFormulaInstance,
     type HyperFormulaSheet,
   } from '@svgrid/grid'
@@ -88,7 +88,7 @@
     return String(v)
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = letters.map((letter) => ({
+  const columns: GridColumns<Row> = letters.map((letter) => ({
     field: letter,
     header: letter,
     width: letter === 'A' ? 150 : letter === 'B' ? 96 : 88,

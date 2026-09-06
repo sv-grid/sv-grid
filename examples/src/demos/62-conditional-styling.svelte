@@ -19,7 +19,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status   = 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed'
@@ -118,7 +118,7 @@
     rowSortingFeature, columnFilteringFeature,
   })
 
-  const columns: ColumnDef<typeof features, Ticket>[] = [
+  const columns: GridColumns<Ticket> = [
     {
       field: 'id', header: 'ID', editorType: 'text', width: 76,
       cellClass: (ctx) => `id-cell sla-${slaState(ctx.row.original)}`,

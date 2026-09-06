@@ -35,6 +35,17 @@ export type CellEditorOption = { value: string | number; label: string; color?: 
 export type ParseEditorValueOptions = {
   /** When true, list/chips return an array; otherwise a scalar. */
   multiple?: boolean
+  /**
+   * Keep a date as the plain `YYYY-MM-DD` string the user picked, instead of a
+   * full ISO timestamp. Set for `cellDataType: 'dateString'` columns, which
+   * exist precisely to hold ISO date strings.
+   *
+   * It is not only about shape. `new Date('2026-12-25').toISOString()` sends
+   * the value through UTC, so a local midnight becomes the previous or next
+   * day either side of the meridian - the stored DATE changes depending on
+   * where the user is sitting. Slicing the picked date avoids that entirely.
+   */
+  dateOnly?: boolean
 }
 
 /** Normalize the loose `editorOptions` ColumnDef prop into a uniform shape.
@@ -83,7 +94,22 @@ export function parseEditorValue(
     return s || '#000000'
   }
   if (type === 'date') {
-    const date = new Date(String(value))
+    const raw = String(value ?? '')
+    if (opts?.dateOnly) {
+      // Take the calendar date the editor produced as-is. It already arrives
+      // as `YYYY-MM-DD` (or that prefix on a datetime), so there is nothing to
+      // convert - and converting is exactly what shifts the day across a
+      // timezone boundary.
+      const match = /^(\d{4}-\d{2}-\d{2})/.exec(raw.trim())
+      if (match) return match[1]
+      const parsed = new Date(raw)
+      if (Number.isNaN(parsed.getTime())) return null
+      // A non-ISO input (a locale string) still has to become a date string.
+      // Use the LOCAL parts, so the day is the one the user saw.
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`
+    }
+    const date = new Date(raw)
     return Number.isNaN(date.getTime()) ? null : date.toISOString()
   }
   if (type === 'datetime') {

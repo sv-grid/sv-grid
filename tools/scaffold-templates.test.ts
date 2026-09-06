@@ -43,11 +43,11 @@ function shellOf(app: string) {
 }
 
 // Keep in step with TEMPLATES in packages/create-sv-grid/index.mjs.
-const templates = ['minimal', 'sveltekit', 'admin-dashboard', 'headless']
+const templates = ['minimal', 'sveltekit', 'pivot-dashboard', 'admin-dashboard', 'headless']
 // The subset that renders <SvGrid> and therefore has a --sg-* palette to write
 // a theme into. `headless` ships the engine and no CSS, so it is deliberately
 // never asked and never told which preset to use.
-const themedTemplates = ['minimal', 'sveltekit', 'admin-dashboard']
+const themedTemplates = ['minimal', 'sveltekit', 'pivot-dashboard', 'admin-dashboard']
 
 describe('create-sv-grid templates', () => {
   it.each(templates)('%s scaffolds with its dotfiles renamed back', (template) => {
@@ -115,6 +115,67 @@ describe('create-sv-grid templates', () => {
     // Sorting is the server's job here; a grid left to sort internally would
     // silently disagree with the URL.
     expect(pageSvelte).toContain('externalSort')
+  })
+
+  it('sveltekit ships an auth scaffold that gates on the server', () => {
+    const app = scaffold('sveltekit')
+    const read = (...p: string[]) => readFileSync(join(app, ...p), 'utf8')
+
+    // $lib/server is the folder SvelteKit refuses to bundle into the client, so
+    // the hashes cannot leak through an accidental component import.
+    const auth = read('src', 'lib', 'server', 'auth.ts')
+    expect(auth).toContain('PBKDF2')
+    expect(auth).toContain('httpOnly: true')
+    expect(auth).toContain("sameSite: 'lax'")
+    // Web Crypto, not node:crypto: the template ships no @types/node, and
+    // adapter-auto may land it on an edge runtime with no Node built-ins.
+    // Match the import, not the word - the header explains the choice in prose.
+    expect(auth).not.toMatch(/from ['"]node:crypto['"]/)
+    expect(auth).toContain('crypto.subtle')
+
+    // One list drives the gate, so a new protected route is an entry rather
+    // than a check somebody has to remember to copy.
+    expect(read('src', 'hooks.server.ts')).toContain('PROTECTED')
+
+    // Sign-out is POST-only. A GET logout fires from any prefetcher, and a
+    // +page.server.ts with no +page.svelte beside it returns 415.
+    const logoutDir = join(app, 'src', 'routes', 'logout')
+    expect(existsSync(join(logoutDir, '+server.ts'))).toBe(true)
+    expect(existsSync(join(logoutDir, '+page.server.ts'))).toBe(false)
+    expect(read('src', 'routes', 'logout', '+server.ts')).toContain('export const POST')
+
+    // The role check has to be in the action. `canEdit` only hides the UI, and
+    // hiding a button stops nobody from posting the form by hand.
+    const peopleServer = read('src', 'routes', 'people', '+page.server.ts')
+    expect(peopleServer).toContain("locals.user?.role !== 'admin'")
+    expect(peopleServer).toContain('error(403')
+  })
+
+  it('pivot-dashboard keeps its drill logic pure and its facts on the server', () => {
+    const app = scaffold('pivot-dashboard')
+    const read = (...p: string[]) => readFileSync(join(app, ...p), 'utf8')
+
+    // The drill module is the part worth unit-testing, which only stays true
+    // while it has no Svelte and no grid imports to drag a DOM in behind it.
+    const drill = read('src', 'lib', 'drill.ts')
+    expect(drill).toContain('export function drillThrough')
+    expect(drill).not.toMatch(/from ['"]@svgrid\//)
+    expect(drill).not.toMatch(/from ['"]svelte/)
+
+    // Facts are built in `load`, not in the component: the browser should get
+    // rows, not a database connection.
+    expect(read('src', 'routes', '+page.server.ts')).toContain('export const load')
+
+    // The cube needs the designer's rendered rows to walk a clicked cell up to
+    // its ancestors, and the enterprise entry point is where it comes from.
+    const page = read('src', 'routes', '+page.svelte')
+    expect(page).toContain('onPivot')
+    expect(page).toContain('onCellClick')
+    expect(page).toMatch(/from ['"]@svgrid\/enterprise['"]/)
+
+    // The seed must be deterministic or SSR and hydration disagree. Match the
+    // call - the header names Math.random in prose to explain why it is absent.
+    expect(read('src', 'lib', 'facts.ts')).not.toMatch(/Math\.random\s*\(/)
   })
 
   // The whole promise of this template is that no grid CSS arrives with it. A

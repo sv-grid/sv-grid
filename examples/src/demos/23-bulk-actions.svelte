@@ -10,6 +10,13 @@
    * The wiring is small: onRowSelectionChange tells you which rows are
    * selected; the toolbar reads that array and dispatches mutations back
    * to the rows state.
+   *
+   * This is the DIY version, and it is deliberately kept: the toolbar is your
+   * markup, in your layout, doing whatever you want. Demo 430 is the same idea
+   * built in - `selectionBar` floats a bar over the grid with a count chip,
+   * built-in Select all / Edit fields (a bulk-edit drawer), an overflow menu
+   * and top/bottom placement. Reach for 430 when you want it working out of
+   * the box; stay here when you want full control of the markup.
    */
   import {
     SvGrid,
@@ -17,7 +24,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makeOrders, type Order } from '../shared/seed'
@@ -33,7 +40,7 @@
   let api = $state<SvGridApi<typeof features, Order> | null>(null)
   let toast = $state<string>('')
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'company', header: 'Company', width: 160 },
     { field: 'product', header: 'Product', width: 200 },
     { field: 'country', header: 'Country', width: 110 },

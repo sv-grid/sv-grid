@@ -20,7 +20,7 @@
 
   type Props = Pick<
     SvEditorProps,
-    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
+    'disabled' | 'readonly' | 'label' | 'hint' | 'error' | 'required' | 'invalid' | 'block' | 'size' | 'id' | 'name' | 'dir' | 'ariaLabel' | 'loading'
   > & {
     options: ReadonlyArray<MultiSelectOption>
     value?: ReadonlyArray<string | number>
@@ -67,6 +67,7 @@
     error,
     required = false,
     invalid = false,
+    block = false,
     size = 'md',
     id,
     name,
@@ -143,7 +144,8 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
-  <div class="sv-ms sv-ms--{size}" class:is-disabled={disabled}>
+  <div class="sv-ms sv-ms--{size}"
+    class:is-block={block} class:is-disabled={disabled}>
     <button
       bind:this={triggerEl}
       type="button"
@@ -286,4 +288,6 @@
   :global(.sv-ms__loading) { padding: 8px 10px; color: var(--sg-muted, #94a3b8); font-size: 12px; text-align: center; }
   :global(.sv-ms__footer) { display: flex; justify-content: flex-end; padding: 6px 8px; border-top: 1px solid var(--sg-border, #e2e8f0); }
   :global(.sv-ms__done) { font: inherit; font-size: 12.5px; padding: 4px 12px; border: 0; border-radius: 6px; background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); cursor: pointer; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-ms.is-block { width: 100%; max-width: 100%; }
 </style>

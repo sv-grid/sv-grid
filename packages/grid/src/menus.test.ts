@@ -30,6 +30,11 @@ function makeCtx(overrides: any = {}) {
     commentDraft: '',
     noteOverrides: {},
     columnMenuFacetValues: [],
+    // The values currently SHOWN, i.e. after the search box narrows the list.
+    // Equal to `columnMenuFacetValues` when nothing is typed; the facet
+    // select-all reads both to tell "all" from "all results" apart.
+    columnMenuVisibleFacets: overrides.columnMenuVisibleFacets ??
+      overrides.columnMenuFacetValues ?? [],
     showColumnFiltersEffective: true,
     showFilterRowEffective: false,
     scrollContainer: null,
@@ -428,6 +433,44 @@ describe('createMenus - facet checkboxes', () => {
     const m = createMenus(ctx)
     m.toggleAllFacets('team') // was subset -> remove filter (all)
     expect(ctx.valueFilters.team).toBeUndefined()
+  })
+
+  describe('with a search query narrowing the list', () => {
+    // "Select all" means the RESULTS while a query is typed, the way it does
+    // in a spreadsheet. It used to mean the whole column regardless: with
+    // everything ticked (the default) it read as "on" and the click cleared
+    // the entire selection instead of keeping the matches.
+    const searched = (extra: any = {}) =>
+      makeCtx({
+        columnMenuFacetValues: ['Ada', 'Alan', 'Bram'],
+        columnMenuVisibleFacets: ['Ada', 'Alan'],
+        ...extra,
+      })
+
+    it('selects only the matches instead of clearing everything', () => {
+      const ctx = searched()
+      const m = createMenus(ctx)
+      // Default state is "all ticked", so the box shows checked for the
+      // matches; clicking it unticks THEM and leaves the rest alone.
+      expect(m.isAllFacetsChecked('team')).toBe(true)
+      m.toggleAllFacets('team')
+      expect([...ctx.valueFilters.team].sort()).toEqual(['Bram'])
+    })
+
+    it('ticking it back adds the matches to the existing selection', () => {
+      const ctx = searched({ valueFilters: { team: new Set(['Bram']) } })
+      const m = createMenus(ctx)
+      expect(m.isAllFacetsChecked('team')).toBe(false)
+      m.toggleAllFacets('team')
+      expect([...ctx.valueFilters.team].sort()).toEqual(['Ada', 'Alan', 'Bram'])
+    })
+
+    it('reports checked only when every match is selected', () => {
+      const partial = searched({ valueFilters: { team: new Set(['Ada']) } })
+      expect(createMenus(partial).isAllFacetsChecked('team')).toBe(false)
+      const both = searched({ valueFilters: { team: new Set(['Ada', 'Alan']) } })
+      expect(createMenus(both).isAllFacetsChecked('team')).toBe(true)
+    })
   })
 })
 

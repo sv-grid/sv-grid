@@ -9,7 +9,7 @@
    * pie), change what is on the axis (Group by / Split by / Value), aggregate,
    * stack the series, or turn on data labels - all live, no code.
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, type GridColumns } from '@svgrid/grid'
 
   type Row = { month: string; region: string; channel: string; units: number; revenue: number; cost: number }
 
@@ -32,7 +32,7 @@
   const features = tableFeatures({})
 
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'month', header: 'Month', width: 100 },
     { field: 'region', header: 'Region', width: 100 },
     { field: 'channel', header: 'Channel', width: 120 },

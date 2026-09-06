@@ -15,7 +15,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     rowPaginationFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
@@ -27,7 +27,7 @@
 
   const rows = makePeople(5_000)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName',  header: 'First name', editorType: 'text' },
     { field: 'lastName',   header: 'Last name',  editorType: 'text' },
     { field: 'department', header: 'Department', editorType: 'text' },

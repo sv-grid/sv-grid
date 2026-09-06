@@ -25,7 +25,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -79,7 +79,7 @@
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   let api = $state<SvGridApi<typeof features, Log> | null>(null)
 
-  const columns: ColumnDef<typeof features, Log>[] = [
+  const columns: GridColumns<Log> = [
     { field: 'id',        header: 'ID',       editable: false, width: 90 },
     { field: 'timestamp', header: 'When',     editable: false, width: 170 },
     { field: 'level',     header: 'Level',    width: 90,

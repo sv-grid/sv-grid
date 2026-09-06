@@ -121,6 +121,7 @@ const rows = raw.slice(1).map((cells) =>
 | `getSelected()`                         | Combine `onActiveCellChange` + `onRowSelectionChange`    |
 | `copyPaste: true` (default)             | Ships built-in; `enableCellSelection={true}`             |
 | `fillHandle: true`                      | Ships built-in (drag-to-fill on selected range)          |
+| `moveCells: true`                       | `moveCells` - drag the range border to move it, Ctrl / Cmd to copy. On by default; see [move or copy a range](./editing/move-cells.md) |
 
 ## Frozen rows / columns
 

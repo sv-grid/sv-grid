@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -61,7 +61,7 @@
 
   const fmtCurrency = (v: number | null) => v == null ? '' : v.toLocaleString('en-US', { maximumFractionDigits: 0 })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'week', header: 'Week', width: 130 },
     { field: 'actual',   header: 'Actual',   width: 110, align: 'right' },
     { field: 'forecast', header: 'Forecast', width: 110, align: 'right' },

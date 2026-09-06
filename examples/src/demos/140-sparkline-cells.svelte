@@ -14,7 +14,7 @@
    * Four types: line, area, bar, win/loss. Each takes color / negativeColor /
    * width / height and an optional fixed min/max scale.
    */
-  import { SvGrid, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, type GridColumns } from '@svgrid/grid'
 
   const features = tableFeatures({})
 
@@ -60,7 +60,7 @@
     streak: signs(14),
   }))
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'product', header: 'Product', width: 180 },
     {
       field: 'revenue',

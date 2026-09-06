@@ -24,7 +24,7 @@
     createNamedViews,
     localStorageViews,
     attachAutoSavedView,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -154,7 +154,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'id',           header: '#',                 width: 60,  align: 'right', editable: false },
     { field: 'name',         header: 'Contact',           width: 170, editorType: 'text',
       cell: (ctx) => renderSnippet(NameCell, { row: ctx.row.original }) },

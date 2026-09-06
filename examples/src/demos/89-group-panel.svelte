@@ -19,7 +19,7 @@
     columnGroupingFeature,
     rowExpandingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -208,7 +208,7 @@
     : n >= 1_000   ? `$${(n / 1_000).toFixed(0)}k`
                    : `$${n.toFixed(0)}`
 
-  const columns: ColumnDef<typeof features, Deal>[] = [
+  const columns: GridColumns<Deal> = [
     { field: 'id',       header: 'Deal',      width: 100, editable: false },
     { field: 'region',   header: 'Region',    width: 110,
       cellClass: (ctx) => `region-${String(ctx.getValue()).toLowerCase()}` },

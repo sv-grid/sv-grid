@@ -24,7 +24,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status = 'pending' | 'paid' | 'fulfilled' | 'returned' | 'refunded'
@@ -191,7 +191,7 @@
 
   // The first column owns the chevron; detail rows render full-width via the
   // grid's `isDetailRow` / `renderDetailRow` props (a real colspan row).
-  const columns: ColumnDef<typeof features, AnyRow>[] = [
+  const columns: GridColumns<AnyRow> = [
     {
       id: 'expand', header: '', width: 36, editable: false,
       cell: (ctx) => ctx.row.original.kind === 'order'

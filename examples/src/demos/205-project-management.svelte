@@ -25,7 +25,7 @@
     columnFilteringFeature,
     columnGroupingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status = 'Not Started' | 'In Progress' | 'In Review' | 'Completed' | 'Blocked'
@@ -103,7 +103,7 @@
   const dateFmt = { type: 'date', pattern: 'y-m-d' } as const
 
   // ---- Columns: four collapsible groups -------------------------------
-  const columns: ColumnDef<typeof features, Task>[] = [
+  const columns: GridColumns<Task> = [
     {
       id: 'g-task', header: 'Task', openByDefault: true,
       columns: [

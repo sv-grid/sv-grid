@@ -25,7 +25,7 @@
     rowExpandingFeature,
     rowSelectionFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -227,7 +227,7 @@
     if (grouped) queueMicrotask(() => api?.expandAllGroups())
   }
 
-  const columns: ColumnDef<typeof features, System>[] = [
+  const columns: GridColumns<System> = [
     { field: 'name',        header: 'System',       width: 180, cell: (c) => renderSnippet(SystemCell, { s: c.row.original }) },
     { field: 'site',        header: 'Site',         width: 130 },
     { field: 'status',      header: 'Status',       width: 120, cell: (c) => renderSnippet(StatusCell, { s: c.row.original }) },

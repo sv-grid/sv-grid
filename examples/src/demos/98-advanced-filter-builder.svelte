@@ -24,7 +24,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type GridPredicateExpr,
     type SvGridApi,
   } from '@svgrid/grid'
@@ -81,7 +81,7 @@
 
   // `editorType` is what tells the filter UI which operators a column offers -
   // numeric ranges for ARR, date comparison for contractEnd, text for the rest.
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'id',          header: 'Account',      width: 110, editable: false },
     { field: 'company',     header: 'Company',      width: 200, editable: false },
     { field: 'region',      header: 'Region',       width: 110, editable: false },

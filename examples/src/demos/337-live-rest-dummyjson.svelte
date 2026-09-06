@@ -19,7 +19,7 @@
     createServerDataSource,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type ServerState,
   } from '@svgrid/grid'
   import { createRestDataSource, dummyJsonAdapter } from '@svgrid/enterprise'
@@ -43,7 +43,7 @@
     ...dummyJsonAdapter<Product>(),
   })
 
-  const columns: ColumnDef<typeof features, Product>[] = [
+  const columns: GridColumns<Product> = [
     { field: 'id', header: 'ID', width: 70, align: 'right' },
     { field: 'title', header: 'Product', width: 240 },
     { field: 'brand', header: 'Brand', width: 150 },

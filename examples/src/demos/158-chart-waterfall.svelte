@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -44,7 +44,7 @@
   ]
   let rows = $state<Row[]>(seed)
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'label',   header: 'Line item', width: 220 },
     { field: 'value',   header: 'Amount',    width: 150, align: 'right',
       format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },

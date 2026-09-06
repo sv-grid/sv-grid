@@ -25,6 +25,27 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`moveCells` - drag a selected range to move or copy it.** Grab a selected
+  range by its border and drop it somewhere else. Move by default, copy with
+  Ctrl / Cmd, and the modifier is read at DROP time so it can be pressed or
+  released mid-drag. On whenever cell selection is on; `moveCells={false}`
+  opts out. A drop is refused outright - nothing changes - when it would land
+  off-grid or when any source or destination cell is read-only, rather than
+  moving the part that fits and silently dropping the rest.
+- **`selectionBar` - a floating bar over the grid while rows are selected**,
+  showing the count and the actions that apply to the whole selection. `true`
+  gives the count and a Clear button; an array is shorthand for `{ actions }`;
+  the object form also sets `position` (`'bottom'` default, or `'top'`),
+  `maxVisible` and `hideClear`. The prop and its types are free; the bar
+  itself is an Enterprise renderer, and without it the grid shows a short upsell
+  in its place, the same way the scheduler and board views do.
+- **Edge auto-scroll for every drag that extends a rectangle** - the fill
+  handle, the range move, and plain drag-select. All three were previously
+  capped at whatever was already on screen when the drag began, which on a grid
+  built for 100k rows meant the gesture mostly did not work. One shared rAF loop
+  scrolls the container when the pointer is inside a 40px edge band, on a linear
+  ramp to 20px/frame, in both axes. It keeps scrolling with the pointer parked
+  still, which is the whole point of holding at an edge.
 - **Row and column resizing, both opt-in** (`rowResize`, `columnResize`).
   `columnResize` gives every header a drag handle: drag the edge, double-click
   it to size the column to its content, or focus it and use Left/Right (Shift
@@ -105,7 +126,6 @@ For machine-readable releases, fetch
   repo passed `enableRowSummaries={false}` against 6 that opted in, and the
   API reference already documented the default as `false`. If you were
   relying on the old behaviour, add `summary` (or `enableRowSummaries`).
-
 - **Ember is now the default theme preset** (`defaultThemePreset` in
   `@svgrid/grid/themes`). It is what the demo gallery and svgrid.com open on, so
   a scaffolded or Studio-generated app now looks like the demos unless you pick
@@ -120,6 +140,36 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **`block` did nothing on eight editors.** The prop is declared once in
+  `SvEditorProps`, and its own doc comment describes the symptom: "in a form
+  grid a row of inputs each stopping at a different width reads as broken".
+  `SvDropDownList`, `SvComboBox`, `SvMultiSelect`, `SvTreeSelect`,
+  `SvGridSelect`, `SvAutoComplete`, `SvTextArea` and `SvDateRangeInput`
+  accepted it by type and ignored it, so they stopped at their own 200-280px
+  default while the text inputs beside them filled the row. `<SvForm>` was
+  also not passing it to seven of the controls it mounts - both halves had to be
+  fixed for a form row to line up.
+- **`cellDataType: 'dateString'` stored a timestamp after an edit.**
+  Committing ran through the shared date coercion (`new Date(v).toISOString()`),
+  so picking Christmas stored `2026-12-25T01:00:00.000Z` and the cell showed a
+  timestamp beside neighbours showing plain dates - on a calendar day that
+  depended on the user's timezone, since the conversion went through UTC. The
+  picked date is now kept as the picked date.
+- **The filter row mounted a native date input** while the cell editor mounted
+  the grid's own picker, so one column looked like two different products
+  depending on where you touched it. Both use the grid's picker now.
+- **`editorType: 'number'` dropped the character you were typing.** The
+  editor mounted `<input type="number">`, whose value sanitization reports
+  `""` for anything not already a valid float - so `12.` read as empty, and
+  typing `12.5` produced `125`. Same for a lone `-` and `1e`. It is a
+  text input with `inputmode="decimal"` and a digit filter now; the trade is
+  the native spinner.
+- **Cell context menus and the comment editor floated at stale coordinates
+  after a scroll.** Both are positioned at raw cursor coordinates and rendered
+  `position: fixed`, but neither was in the scroll effect's gate, so they hung
+  over unrelated cells. The comment editor SAVES on scroll rather than
+  discarding - backdrop-click and Escape are the gestures that mean "throw this
+  away"; a scroll is not, and must not destroy typed text.
 - **The footer summary row server-rendered as empty cells.** The totals were
   assigned from an `$effect`, and effects never run during SSR - so the server
   emitted a summary row that took up space and drew its border but held no
@@ -160,6 +210,14 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **The selection bar renderer, plus bulk edit.** `enableSelectionBar()`
+  (or `installEnterprise`) registers the renderer behind the free
+  `selectionBar` prop. The bar carries a count chip, your actions, an overflow
+  menu past `maxVisible`, and Clear; at phone width it collapses to icons and
+  keeps an accessible name on each. **Edit fields** opens a drawer that edits
+  one or many rows at once: a field the selection disagrees on opens blank and
+  stays per-row unless you touch it, so applying to 40 rows does not flatten the
+  values you did not mean to change.
 - **Scheduler booking rules and conflict detection.** New model helpers
   (`overlapCount` for per-resource overlaps, `overlapsBands` for working-hours
   bands) back resource double-booking checks and business-hours enforcement.
@@ -187,10 +245,132 @@ For machine-readable releases, fetch
   `src`, this had surfaced as a stray `svelte-check` error in consuming apps - a
   clean app now type-checks with zero errors.
 
+### @svgrid/grid-wc
+
+#### Added
+
+- **Typed event handlers.** Each wrapper's `on<Event>` prop used to be
+  `(detail: unknown) => void`, so reading `newValue` meant casting first -
+  a poor advertisement for a typed wrapper. The detail type is now lifted from
+  the grid's own callback signature, so 16 of the 19 events arrive fully typed
+  (`TData` degrades to `Record<string, unknown>`; anything referring to a
+  type that only exists inside `@svgrid/grid` stays `unknown` rather than
+  naming something a consumer cannot resolve).
+
+- **React, Vue and Angular components**, as subpath imports:
+  `@svgrid/grid-wc/react`, `/vue` and `/angular`. Each is generated from the
+  same surface as the elements, so all 98 properties and 20 events are typed
+  props on every one of them and none can drift from the grid. Each framework is
+  an OPTIONAL peer dependency, so a plain-HTML consumer installs none of them,
+  and the wrappers are 1.3-3.7 KB gzip because they reuse the one element bundle
+  rather than shipping a second copy of the grid.
+
+  They exist because a raw custom element is genuinely awkward in each:
+  **React 18 and earlier stringify object props onto attributes**, so
+  `columns={cols}` silently becomes `"[object Object]"` and the grid renders
+  empty; **Vue** needs `isCustomElement` build config and a `.prop` modifier
+  on every object binding; **Angular** needs `CUSTOM_ELEMENTS_SCHEMA` in every
+  component that shows a grid, and gets no typed inputs. The Angular wrapper is
+  compiled with ng-packagr in partial-Ivy mode, so it is consumable by a normal
+  Angular build, and its selector is the element's own tag - `<sv-grid>` and
+  `<sv-grid-shadow>` - with no template of its own, so there is no extra wrapper
+  element in the DOM and the tag is the same one you write in plain HTML.
+
+  All three also handle two ordering problems a hand-written wrapper meets:
+  the element renders BEFORE a framework assigns properties in an effect, and
+  `apiready` fires once during that first mount - before React can bind a
+  listener at all. The handle is parked on the element and each wrapper replays
+  it.
+- **The package ships TypeScript declarations.** It previously had none, so
+  `import '@svgrid/grid-wc'` was an error under `moduleResolution: bundler`
+  and `document.querySelector('sv-grid')` came back as a bare `Element`. The
+  generated `.d.ts` augments `HTMLElementTagNameMap` and
+  `HTMLElementEventMap`, so the element and its events are typed without
+  hand-written declarations.
+- **`<sv-grid-shadow>` - the grid in an open shadow root**, so a host page's
+  CSS cannot reach it. Same properties, attributes and events as `<sv-grid>`;
+  a separate element rather than an attribute because Svelte resolves
+  `customElement.shadow` at compile time, so no runtime flag can switch it.
+  Isolation is one-directional and the docs say so: page CSS stops at the
+  boundary, but the grid's own stylesheet is still injected into the document,
+  because about twenty overlay surfaces portal to `document.body` on purpose
+  to escape ancestor clipping. `--sg-*` theme tokens reach in unchanged,
+  including a theme file's dark variant - custom properties are inherited, and
+  inheritance crosses a shadow boundary.
+- **The elements now expose the whole grid.** `<sv-grid>` declared **7 props
+  and 2 events** by hand against a `Props` type with 100 props and 19
+  callbacks, so grouping, pagination, pinning, tree data, master/detail, board,
+  scheduler and every Enterprise feature were unreachable from a non-Svelte
+  host - while the docs said they "all come along". The surface is now
+  **generated** from `<SvGrid>`'s own types: **98 properties** (72 with
+  kebab-case attributes, 26 property-only) and **20 events**, with CI failing if
+  the two drift. Costs 1.6 KiB gzip.
+- **Every grid callback is a DOM `CustomEvent`**, `detail` being the
+  callback's argument - or, for the one callback taking two, an object keyed by
+  its parameter names. `onApiReady` also parks the imperative handle on the
+  element as `el.api`, because an event fires once and a host binding a
+  listener later would otherwise never reach it.
+
+#### Fixed
+
+- **The React wrapper re-did all its work on every parent render.** Both of its
+  effects had no dependency array, so any state change anywhere in the parent
+  reassigned all 98 properties and rebound all 20 event listeners - 40 listener
+  mutations per keystroke. It now writes only values that actually changed and
+  binds listeners once through a handler ref. Measured: 20 no-op re-renders
+  produce 0 listener adds, 0 removes and 0 property writes.
+
+- **The element threw when it rendered before its props were assigned.**
+  Generating the prop list replaced the elements' own `data = []` /
+  `columns = []` defaults with a bare `$props()`, so a consumer that assigns
+  properties AFTER the element upgrades - which is what React and Angular both
+  do, in an effect - got
+  `TypeError: Cannot read properties of undefined (reading 'map')` and a grid
+  that never rendered. Only a real framework app was late enough to reproduce
+  it; an HTML fixture sets the properties in the same tick and never sees it.
+
+#### Changed
+
+- **Only arrays, objects and functions changed shape: they are property-only.**
+  An HTML attribute is a string, so `columns='[object Object]'` cannot work
+  and no attribute is offered for the 26 props that are not primitives. The
+  published `rowclick` and `selectionchange` events keep the exact
+  `detail` they shipped with, and `selectable` keeps meaning row-selection
+  checkboxes - `<SvGrid>`'s prop of that name is an alias of
+  `enableCellSelection`, and forwarding it would have silently repointed a
+  published attribute at a different feature.
+
 ### Tooling & docs
 
 #### Added
 
+- **27 runnable framework examples**, nine each for React, Vue and Angular:
+  a first grid, sorting and filtering, editing and saving, row selection,
+  grouping and totals, pagination, server-side data, theming, and Excel export
+  from the Enterprise pack. Every one has
+  an **Open in StackBlitz** button that boots a full editable project - no local
+  install - and a new
+  [React, Vue or Angular](/docs/help/web-components/frameworks) landing page
+  puts the thirty-second path first.
+
+  They are real apps in the repository (`packages/grid-wc/examples/`), not
+  snippets, and CI compiles all of them with each framework's own compiler -
+  including `ngc --strictTemplates`, so a wrong Angular binding fails the
+  build. The doc listings are generated from those files, so a page cannot
+  describe a version of an example that no longer exists.
+
+  The Vue templates get an extra check of their own: Vue treats an unknown
+  attribute as a legal fallthrough, so `<SvGrid sortabel />` type-checks
+  cleanly and silently does nothing. Verified - the same typo fails the React
+  and Angular compilers and passes `vue-tsc` - so the Vue examples are also
+  checked against the generated surface.
+
+- **A Web Components docs category.** Eight pages under
+  `help/web-components/` - quick start, a generated `<sv-grid>` reference,
+  shadow DOM, React, Vue, Angular, TypeScript and limitations - replacing a
+  single page that was filed under "Layout & Styling". The reference tables are
+  generated from the grid's types, and a guard checks that the counts quoted in
+  prose still match the surface.
 - **The docs run.** A `svelte` code fence tagged `{runnable}` is extracted at build time
   into a real component, so a doc page shows the source and the working result
   together rather than highlighted text. 504 examples across the corpus, taking

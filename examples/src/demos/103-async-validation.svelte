@@ -23,7 +23,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -177,7 +177,7 @@
   const moneyFmt = (v: unknown) => `$${Number(v).toFixed(2)}`
   const plainFmt = (v: unknown) => String(v)
 
-  const columns: ColumnDef<typeof features, Listing>[] = [
+  const columns: GridColumns<Listing> = [
     { field: 'id',       header: 'Listing',  width: 100, editable: false },
     { field: 'title',    header: 'Title',    width: 240, editable: false },
     {

@@ -9,7 +9,7 @@
    * other 480 rows. Every state change fires one request; you watch the count
    * climb. The markup is a plain hand-styled <table>.
    */
-  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type GridColumns } from '@svgrid/grid'
 
   type Row = { id: number; name: string; dept: string; salary: number }
   type SortKey = 'name' | 'dept' | 'salary'
@@ -76,7 +76,7 @@
 
   // ---- Headless engine: wrap ONLY the returned page -----------------------
   const features = tableFeatures({})
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'name', header: 'Name' },
     { field: 'dept', header: 'Department' },
     { field: 'salary', header: 'Salary' },

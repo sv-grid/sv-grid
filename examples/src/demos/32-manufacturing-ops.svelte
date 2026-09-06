@@ -21,7 +21,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status = 'running' | 'changeover' | 'paused' | 'completed' | 'fault'
@@ -171,7 +171,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const columns: ColumnDef<typeof features, Run>[] = [
+  const columns: GridColumns<Run> = [
     { field: 'id', header: 'Run', width: 110 },
     { field: 'line', header: 'Line', width: 100 },
     { field: 'product', header: 'Product', width: 220 },

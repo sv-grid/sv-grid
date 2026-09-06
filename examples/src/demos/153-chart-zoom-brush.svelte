@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -43,7 +43,7 @@
     }
   })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'day', header: 'Day', width: 130 },
     { field: 'sessions', header: 'Sessions', width: 130, align: 'right' },
     { field: 'revenue', header: 'Revenue', width: 140, align: 'right',

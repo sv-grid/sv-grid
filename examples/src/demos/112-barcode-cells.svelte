@@ -20,7 +20,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   // ---- EAN-13 encoder ----------------------------------------------------
@@ -122,7 +122,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const columns: ColumnDef<typeof features, Product>[] = [
+  const columns: GridColumns<Product> = [
     { field: 'sku',   header: 'SKU',     width: 150 },
     { field: 'name',  header: 'Product', width: 230 },
     {

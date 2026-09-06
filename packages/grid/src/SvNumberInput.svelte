@@ -161,6 +161,10 @@
 
 <style>
   .sv-num__input { text-align: end; }
+  /* Digits line up on the right; a placeholder is prose, and right-aligning
+     it puts one field out of step with every other label-above-control row
+     in a form. */
+  .sv-num__input:placeholder-shown { text-align: start; }
   .sv-num__clear { display: grid; place-items: center; width: 20px; align-self: center; flex: none; background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; border-radius: 4px; }
   .sv-num__clear:hover { color: var(--sg-danger, #dc2626); }
   .sv-num__spin { display: flex; flex-direction: column; margin-inline-start: 2px; }

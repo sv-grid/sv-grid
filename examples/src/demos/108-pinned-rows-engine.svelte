@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -111,7 +111,7 @@
     return v >= 75 ? 'health-good' : v >= 50 ? 'health-warn' : 'health-bad'
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'id',          header: 'Account',   width: 130, editable: false },
     { field: 'account',     header: 'Name',      width: 230, editable: false },
     { field: 'region',      header: 'Region',    width: 100, editable: false },

@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -49,7 +49,7 @@
     }
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'date',  header: 'Date',  width: 130 },
     { field: 'type',  header: 'Type',  width: 110 },
     { field: 'count', header: 'Count', width: 90, align: 'right' },

@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type EditorContext,
   } from '@svgrid/grid'
 
@@ -67,7 +67,7 @@
     'Rasmus Lerdorf', 'Guido van Rossum', 'James Gosling', 'Brian Kernighan',
   ]
 
-  const columns: ColumnDef<typeof features, Issue>[] = [
+  const columns: GridColumns<Issue> = [
     { field: 'id',       header: 'ID',       editable: false, width: 110 },
     { field: 'title',    header: 'Title',    editorType: 'text', width: 280 },
     // editorType: 'select' - native <select>, smallest possible UI.

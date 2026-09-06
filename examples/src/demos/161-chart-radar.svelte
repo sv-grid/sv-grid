@@ -14,7 +14,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
   } from '@svgrid/grid'
@@ -29,7 +29,7 @@
   ]
   const AXES = ['speed', 'quality', 'price', 'durability', 'ergonomics', 'warranty'] as const
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'product',    header: 'Product',    width: 130 },
     { field: 'speed',      header: 'Speed',      width: 90, align: 'right' },
     { field: 'quality',    header: 'Quality',    width: 90, align: 'right' },

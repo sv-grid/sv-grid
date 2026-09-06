@@ -26,7 +26,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -166,7 +166,7 @@
 
   // ---- Columns ---------------------------------------------------------
   const moneyFmt = { type: 'number' as const, options: { style: 'currency' as const, currency: 'USD', maximumFractionDigits: 0 } }
-  const columns: ColumnDef<typeof features, Line>[] = [
+  const columns: GridColumns<Line> = [
     { field: 'id',       header: 'ID',       width:  80, editable: false },
     { field: 'category', header: 'Category', width: 220, editable: false },
     { field: 'type',     header: 'Type',     width: 100, editable: false,

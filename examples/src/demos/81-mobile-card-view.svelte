@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -120,7 +120,7 @@
   }
 
   // ---- Grid columns -----------------------------------------------------
-  const columns: ColumnDef<typeof features, Ticket>[] = [
+  const columns: GridColumns<Ticket> = [
     { field: 'id',       header: 'ID',       editorType: 'text', width: 80, editable: false },
     { field: 'title',    header: 'Title',    editorType: 'text', width: 220 },
     { field: 'assignee', header: 'Assignee', editorType: 'text', width: 180 },

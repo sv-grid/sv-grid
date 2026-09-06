@@ -19,7 +19,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type City = {
@@ -91,7 +91,7 @@
     { q: 'rhein',       why: '→ matches "Dom-Stadt am Rhein"' },
   ]
 
-  const columns: ColumnDef<typeof features, City>[] = [
+  const columns: GridColumns<City> = [
     { field: 'city',       header: 'City',       width: 180, editable: false },
     { field: 'country',    header: 'Country',    width: 160, editable: false },
     { field: 'region',     header: 'Region',     width: 110, editable: false },

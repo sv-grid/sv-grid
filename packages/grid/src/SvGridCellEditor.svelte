@@ -26,6 +26,8 @@
     getEditableInputValue,
     getEditorClass,
     getEditorInputType,
+    getCellEditorInputType,
+    isNumericEditorInput,
     timeStringToDate,
     toValueArray,
   } from "./SvGrid.helpers";
@@ -74,6 +76,22 @@
   const onEditorKeyDown = $derived(ctrl.onEditorKeyDown);
   const focusOnMount = $derived(ctrl.focusOnMount);
   const toggleCheckboxWithKeyboard = $derived(ctrl.toggleCheckboxWithKeyboard);
+
+  /**
+   * Focus a button-based editor on mount. `focusOnMount` is for text controls -
+   * it also places the caret - and the checkbox and rating editors, being
+   * <button>s, had no equivalent and so never took focus at all. Their own key
+   * handlers therefore never fired: neither could be operated from the
+   * keyboard, and Escape never reached them, so the cell stayed stuck in edit
+   * mode until the user clicked somewhere else.
+   *
+   * `enabled` lets a group of buttons (the rating stars) pick which one holds
+   * focus, since an action cannot be applied conditionally.
+   */
+  function focusControlOnMount(node: HTMLElement, enabled: boolean = true) {
+    if (!enabled) return;
+    requestAnimationFrame(() => node.focus({ preventScroll: true }));
+  }
 
   function fullRowKeydown(e: KeyboardEvent) {
     if (e.key === "Enter") {
@@ -337,6 +355,7 @@
       })}
     {:else if ctrl.editingCell?.editorType === "checkbox"}
       <button
+        use:focusControlOnMount
         type="button"
         class="sv-grid-checkbox"
         role="checkbox"
@@ -350,15 +369,23 @@
             : ctrl.editingCell;
           saveEditingCell();
         }}
-        onkeydown={(event) =>
-          toggleCheckboxWithKeyboard(event, () => {
-            event.stopPropagation();
-            const nextValue = !ctrl.editingCell?.value;
-            ctrl.editingCell = ctrl.editingCell
-              ? { ...ctrl.editingCell, value: nextValue }
-              : ctrl.editingCell;
-            saveEditingCell();
-          })}
+        onkeydown={(event) => {
+          // Enter / Space are the checkbox's own activation keys. Everything
+          // else - Escape to cancel, Tab to commit and move on - goes to the
+          // shared editor handler, which this editor used to bypass entirely.
+          if (event.key === "Enter" || event.key === " ") {
+            toggleCheckboxWithKeyboard(event, () => {
+              event.stopPropagation();
+              const nextValue = !ctrl.editingCell?.value;
+              ctrl.editingCell = ctrl.editingCell
+                ? { ...ctrl.editingCell, value: nextValue }
+                : ctrl.editingCell;
+              saveEditingCell();
+            });
+            return;
+          }
+          onEditorKeyDown(event);
+        }}
         onblur={() => saveEditingCell()}
       ></button>
     {:else if ctrl.editingCell?.editorType === "list"}
@@ -395,9 +422,15 @@
         0,
         Math.min(5, Math.round(Number(ctrl.editingCell?.value) || 0)),
       )}
+      <!-- Focus the star for the current rating (the first one when unrated),
+           the radio a radiogroup is expected to enter on. Without it nothing
+           in this editor held focus, so `onEditorKeyDown` below never ran and
+           Escape could not close the cell. -->
+      {@const focusStar = Math.min(5, Math.max(1, ratingVal))}
       <span class="sv-grid-rating-editor" role="radiogroup" aria-label="Rating">
         {#each [1, 2, 3, 4, 5] as n (n)}
           <button
+            use:focusControlOnMount={n === focusStar}
             type="button"
             role="radio"
             aria-checked={ratingVal >= n}
@@ -411,7 +444,43 @@
                 : ctrl.editingCell;
               saveEditingCell();
             }}
-            onkeydown={onEditorKeyDown}>★</button
+            onkeydown={(event) => {
+              // Arrows move between the stars, the way a radiogroup is
+              // expected to work - without them the editor takes focus (see
+              // focusControlOnMount) but Space can only re-pick the star that
+              // already holds the value. Enter / Escape / Tab still fall
+              // through to the shared handler.
+              const key = event.key;
+              if (
+                key !== "ArrowLeft" &&
+                key !== "ArrowRight" &&
+                key !== "Home" &&
+                key !== "End"
+              ) {
+                onEditorKeyDown(event);
+                return;
+              }
+              event.preventDefault();
+              event.stopPropagation();
+              const current = Math.min(5, Math.max(1, ratingVal));
+              const next =
+                key === "Home"
+                  ? 1
+                  : key === "End"
+                    ? 5
+                    : key === "ArrowLeft"
+                      ? Math.max(1, current - 1)
+                      : Math.min(5, current + 1);
+              ctrl.editingCell = ctrl.editingCell
+                ? { ...ctrl.editingCell, value: next }
+                : ctrl.editingCell;
+              const stars = (
+                event.currentTarget as HTMLElement
+              ).parentElement?.querySelectorAll<HTMLElement>(
+                ".sv-grid-rating-star",
+              );
+              stars?.[next - 1]?.focus({ preventScroll: true });
+            }}>★</button
           >
         {/each}
         <button
@@ -643,18 +712,31 @@
       {@const CustomCellEditor = _reg.component}
       <CustomCellEditor {...resolveEditorProps(_reg, buildRegisteredEditorContext())} />
     {:else}
+      {@const editorType = ctrl.editingCell?.editorType ?? "text"}
+      {@const isNumberEditor = getCellEditorInputType(editorType) === "text" &&
+        getEditorInputType(editorType) === "number"}
       <input
         use:focusOnMount
-        class={getEditorClass(ctrl.editingCell?.editorType ?? "text")}
-        type={getEditorInputType(ctrl.editingCell?.editorType ?? "text")}
+        class={getEditorClass(editorType)}
+        type={getCellEditorInputType(editorType)}
+        inputmode={isNumberEditor ? "decimal" : undefined}
         value={getEditableInputValue(
-          ctrl.editingCell?.editorType ?? "text",
+          editorType,
           ctrl.editingCell?.value,
         )}
-        oninput={(event) =>
-          updateEditingCellValue(
-            (event.currentTarget as HTMLInputElement).value,
-          )}
+        oninput={(event) => {
+          const input = event.currentTarget as HTMLInputElement;
+          // The number editor is a TEXT input so intermediate values survive
+          // (see getCellEditorInputType). That means nothing stops a letter
+          // being typed, which type="number" used to - so reject it here and
+          // put the last good draft back, rather than letting "12x" reach the
+          // commit and coerce to null.
+          if (isNumberEditor && !isNumericEditorInput(input.value)) {
+            input.value = String(ctrl.editingCell?.value ?? "");
+            return;
+          }
+          updateEditingCellValue(input.value);
+        }}
         onblur={() => saveEditingCell()}
         onkeydown={onEditorKeyDown}
       />

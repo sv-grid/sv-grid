@@ -80,6 +80,15 @@ export { default as SvGrid } from './SvGrid.svelte'
 // through this seam (see board-view.svelte.ts). Mirrors the scheduler-view seam.
 export type { BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
 export { registerBoardView, getBoardView, hasBoardView } from './board-view.svelte'
+// Bulk-action bar over the row selection (`selectionBar`), and the right-click
+// menu items - both are prop-shaped config a consumer has to be able to name
+// when they lift the array into its own module.
+export type {
+  SelectionBarAction,
+  SelectionBarTarget,
+  ContextMenuItem,
+  ContextMenuTarget,
+} from './SvGrid.types'
 // Built-in AI helpers (free): natural-language filter, smart-fill, summarize,
 // classify, anomaly detection, chart-this and export planning. They ship no
 // model client and no-op until you register one with `setAIProvider(...)`, so
@@ -111,6 +120,8 @@ export type {
   SchedulerOccurrenceChangeEvent,
 } from './SvGrid.types'
 export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './scheduler-view.svelte'
+// Bulk-action bar over the row selection. Prop + types free, renderer Pro.
+export { registerSelectionBarView, getSelectionBarView, hasSelectionBarView } from './selection-bar-view.svelte'
 // Chart view. The `chart` prop + its config live in the free grid AND so does the
 // renderer (SvGridChartView wraps the free SvChart) - so unlike board/scheduler
 // it works out of the box. This seam only lets a host OVERRIDE the built-in view.
@@ -254,6 +265,7 @@ export {
   type CellEditorRegistration,
 } from './editor-registry'
 export { registerBuiltinEditors } from './builtin-editors'
+export { sanitizeHtml, renderMarkdown, htmlToText } from './sanitize-html'
 // UI kit - shared field chrome (label + hint + error + direction wrapper)
 export { default as SvField } from './SvField.svelte'
 // UI kit - headless cores (state + prop-getters you render yourself, like createSvGrid)
@@ -441,6 +453,7 @@ export { default as SvAvatarGroup } from './SvAvatarGroup.svelte'
 export { default as SvCommand, type CommandItem } from './SvCommand.svelte'
 export { fuzzyScore, fuzzyMatch } from './fuzzy'
 export { default as SvRichText, type RichTextTool } from './SvRichText.svelte'
+export { default as SvRichCell } from './SvRichCell.svelte'
 export { default as SvCarousel } from './SvCarousel.svelte'
 export { default as SvTour, type TourStep } from './SvTour.svelte'
 export { default as SvPagination } from './SvPagination.svelte'

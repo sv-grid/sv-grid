@@ -23,7 +23,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Application = {
@@ -198,7 +198,7 @@
   // ---- Columns -------------------------------------------------------
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const columns: ColumnDef<typeof features, Application>[] = [
+  const columns: GridColumns<Application> = [
     {
       id: 'select', header: '', width: 36, editable: false,
       cell: (c) => renderSnippet(SelectCell, { id: c.row.original.id }),

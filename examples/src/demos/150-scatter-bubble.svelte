@@ -15,7 +15,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
     type ScatterPoint,
@@ -35,7 +35,7 @@
     return { id, rep, region: REGIONS[id % 3]!, spend, revenue: Math.max(8_000, revenue), deals: Math.round(3 + rnd() * 45) }
   })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'rep', header: 'Rep', width: 120 },
     { field: 'region', header: 'Region', width: 120 },
     { field: 'spend', header: 'Marketing', width: 130, align: 'right', format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },

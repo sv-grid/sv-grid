@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -159,7 +159,7 @@
 
   $effect(() => { void displayedRows; void chartType; if (chartEl) syncChart() })
 
-  const columns: ColumnDef<typeof features, Sale>[] = [
+  const columns: GridColumns<Sale> = [
     { field: 'id',      header: 'ID',      editorType: 'text', width: 80 },
     { field: 'region',  header: 'Region',  editorType: 'text', width: 100 },
     { field: 'quarter', header: 'Quarter', editorType: 'text', width: 100 },

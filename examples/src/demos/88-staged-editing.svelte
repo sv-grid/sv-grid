@@ -17,7 +17,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -132,7 +132,7 @@
     } as Record<string, string>)[id] ?? id
   }
 
-  const columns: ColumnDef<typeof features, Employee>[] = [
+  const columns: GridColumns<Employee> = [
     { field: 'name',     header: 'Employee', editable: false, width: 170, tooltip: 'Read-only - change through HRIS' },
     { field: 'team',     header: 'Team',     editable: false, width: 120 },
     { field: 'level',    header: 'Level',

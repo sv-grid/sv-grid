@@ -19,7 +19,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
@@ -99,7 +99,7 @@
     },
   }
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name *', editorType: 'text', width: 130 },
     { field: 'lastName',  header: 'Last name *',  editorType: 'text', width: 130 },
     { field: 'email',     header: 'Email (must be valid)', editorType: 'text', width: 230 },

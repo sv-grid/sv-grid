@@ -39,6 +39,7 @@
     size = 'md',
     ariaLabel,
     invalid = false,
+    block = false,
     required = false,
     error,
     label,
@@ -73,7 +74,8 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <div class="sv-ta sv-ta--{size}" class:is-disabled={disabled}>
+  <div class="sv-ta sv-ta--{size}"
+    class:is-block={block} class:is-disabled={disabled}>
     <textarea
       use:grow
       use:mountFocus
@@ -110,4 +112,6 @@
   .sv-ta__input:focus { border-color: var(--_accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--_accent) 22%, transparent); }
   .sv-ta__input.is-invalid { border-color: var(--sg-danger, #dc2626); }
   .sv-ta__count { align-self: flex-end; font-size: 11px; color: var(--sg-muted, #64748b); }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-ta.is-block { width: 100%; max-width: 100%; }
 </style>

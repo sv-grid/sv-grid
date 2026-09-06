@@ -20,7 +20,7 @@
     SvGrid,
     tableFeatures,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type ConditionalFormat,
     type SvGridApi,
   } from '@svgrid/grid'
@@ -96,7 +96,7 @@
     else api?.clearFilter('score')
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'rep', header: 'Rep', width: 130 },
     { field: 'region', header: 'Region', width: 110 },
     {

@@ -15,7 +15,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Sales = {
@@ -112,7 +112,7 @@
   function bumpN(d: number) { n = Math.max(1, Math.min(rows.length, n + d)) }
 
   // ---- Columns ---------------------------------------------------------
-  const columns: ColumnDef<typeof features, Sales>[] = [
+  const columns: GridColumns<Sales> = [
     { field: 'salesperson', header: 'Salesperson', width: 180, editable: false },
     { field: 'region',      header: 'Region',      width: 100, editable: false },
     { field: 'industry',    header: 'Industry',    width: 130, editable: false },

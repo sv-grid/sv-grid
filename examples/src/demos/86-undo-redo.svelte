@@ -19,7 +19,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -66,7 +66,7 @@
   const canUndo = $derived.by(() => { void stateTick; return api?.canUndo() ?? false })
   const canRedo = $derived.by(() => { void stateTick; return api?.canRedo() ?? false })
 
-  const columns: ColumnDef<typeof features, Inventory>[] = [
+  const columns: GridColumns<Inventory> = [
     { field: 'sku',      header: 'SKU',       editable: false, width: 110 },
     { field: 'name',     header: 'Name',      editorType: 'text', width: 180 },
     { field: 'location', header: 'Location',  editorType: 'select',

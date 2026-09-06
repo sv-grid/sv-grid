@@ -21,7 +21,7 @@
     createCollaboration,
     broadcastChannelTransport,
     tableFeatures,
-    type ColumnDef,
+    type GridColumns,
     type CellContext,
     type CollabPresence,
   } from '@svgrid/grid'
@@ -44,7 +44,7 @@
     return flashes[`${ctx.row.id}:${ctx.column.id}`] ? 'collab-flash' : ''
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'task', header: 'Task', width: 200, editorType: 'text', cellClass: flashClass },
     { field: 'owner', header: 'Owner', width: 130, editorType: 'text', cellClass: flashClass },
     {

@@ -22,7 +22,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -159,7 +159,7 @@
   const moneyFmt = (v: unknown) => `$${Number(v).toFixed(2)}`
   const plainFmt = (v: unknown) => String(v)
 
-  const columns: ColumnDef<typeof features, Item>[] = [
+  const columns: GridColumns<Item> = [
     { field: 'id',   header: 'Listing', width: 100, editable: false },
     { field: 'sku',  header: 'SKU',     width: 180, editorType: 'text',
       cell: (c) => renderSnippet(StatusCell, { rowIndex: c.row.index, field: 'sku', fmt: plainFmt }) },

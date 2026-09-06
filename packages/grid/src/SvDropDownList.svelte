@@ -57,6 +57,7 @@
     size = 'md',
     ariaLabel,
     invalid = false,
+    block = false,
     required = false,
     error,
     label,
@@ -231,6 +232,7 @@
   <button
     bind:this={triggerEl}
     class="sv-ddl sv-ddl--{size}"
+    class:is-block={block}
     class:is-open={ddl.open}
     class:is-disabled={disabled}
     class:is-invalid={invalid}
@@ -371,4 +373,6 @@
   :global(.sv-ddl__empty) { padding: 12px 12px; font-size: 13px; color: var(--sg-muted, #64748b); text-align: center; }
   :global(.sv-ddl__header) { padding: 8px 10px; border-bottom: 1px solid var(--sg-border, #e2e8f0); font-size: 12.5px; color: var(--sg-muted, #64748b); }
   :global(.sv-ddl__footer) { padding: 8px 10px; border-top: 1px solid var(--sg-border, #e2e8f0); font-size: 12.5px; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-ddl.is-block { width: 100%; max-width: 100%; }
 </style>

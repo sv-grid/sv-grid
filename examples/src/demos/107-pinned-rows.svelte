@@ -23,7 +23,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -138,7 +138,7 @@
   }
 
   // ---- Column defs (shared schema, three instances) -------------------
-  const baseColumns: ColumnDef<typeof features, Row>[] = [
+  const baseColumns: GridColumns<Row> = [
     { field: 'id',          header: 'Account',   width: 110, editable: false },
     { field: 'account',     header: 'Name',      width: 220, editable: false },
     { field: 'region',      header: 'Region',    width: 100, editable: false },

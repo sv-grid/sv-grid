@@ -15,7 +15,7 @@
     setAIProvider,
     mockAIProvider,
     enableAiCharting,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makeOrders } from '../shared/seed'
@@ -38,7 +38,7 @@
   )
 
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
-  const columns: ColumnDef<typeof features, Sale>[] = [
+  const columns: GridColumns<Sale> = [
     { field: 'country', header: 'Country', width: 120 },
     { field: 'product', header: 'Product', width: 150 },
     { field: 'company', header: 'Company', width: 150 },

@@ -14,7 +14,7 @@
     rowSortingFeature,
     columnGroupingFeature,
     rowExpandingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
@@ -27,7 +27,7 @@
 
   const rows = makePeople(500)
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'department', header: 'Department', editorType: 'text' },
     { field: 'country',    header: 'Country',    editorType: 'text' },
     { field: 'firstName',  header: 'First name', editorType: 'text' },

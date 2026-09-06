@@ -179,7 +179,7 @@ test('Sort + filter + paginate together', async ({ page }) => {
 })
 ```
 
-The 53-demo gallery is the easiest target for e2e: every demo is a
+The demo gallery is the easiest target for e2e: every demo is a
 URL you can navigate, every behaviour is reachable from the keyboard.
 Mirror your in-app test flows against a paired demo first; it surfaces
 bugs at the API layer before they hit your app's code.

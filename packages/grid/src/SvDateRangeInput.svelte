@@ -74,6 +74,7 @@
     size = 'md',
     ariaLabel,
     invalid = false,
+    block = false,
     required = false,
     error,
     label,
@@ -117,6 +118,7 @@
 
   // --- Portalled popover positioning (DOM-bound; stays in the component) -------
   let triggerEl = $state<HTMLDivElement | null>(null)
+  let inputEl = $state<HTMLInputElement | null>(null)
   let panelEl = $state<HTMLDivElement | null>(null)
   let panelRect = $state<AnchoredRect>({ top: 0, left: 0, width: 0, openUpward: false, maxHeight: 0, availHeight: 0 })
 
@@ -157,8 +159,26 @@
 </script>
 
 <SvField id={uid} {label} {hint} {error} {required} {dir}>
-<div class="sv-dri" class:sv-dri--disabled={disabled}>
-  <div class="sv-dri__field sv-dri__field--{size}" class:is-invalid={invalid} bind:this={triggerEl} dir={resolvedDir}>
+<div class="sv-dri" class:is-block={block} class:sv-dri--disabled={disabled}>
+  <!-- The whole field is the trigger, not just the <input>. The input is
+       readonly and carries the dialog semantics, but it is the flex child that
+       shrinks: squeezed into a narrow container (a grid filter cell, say) it
+       collapses to a couple of pixels and the icon, padding and range text
+       around it were all dead to a click. The input keeps the a11y role and
+       focus; this only widens the hit area. -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div
+    class="sv-dri__field sv-dri__field--{size}"
+    class:is-invalid={invalid}
+    bind:this={triggerEl}
+    dir={resolvedDir}
+    onclick={() => {
+      if (!isInteractive) return
+      inputEl?.focus()
+      toggle()
+    }}
+  >
     <svg class="sv-dri__icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
     <input
       id={uid}
@@ -171,8 +191,8 @@
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
       aria-haspopup="dialog"
       aria-expanded={open}
-      onclick={() => isInteractive && toggle()}
       onkeydown={onFieldKeydown}
+      bind:this={inputEl}
       use:focusOpen
     />
     {#if value && isInteractive}
@@ -253,4 +273,6 @@
     background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 12px; box-shadow: 0 16px 48px -12px rgba(15, 23, 42, 0.35);
   }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-dri.is-block, .sv-dri.is-block .sv-dri__field { width: 100%; max-width: 100%; }
 </style>

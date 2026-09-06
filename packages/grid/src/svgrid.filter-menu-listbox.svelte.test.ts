@@ -79,8 +79,10 @@ function mountGrid(data: Row[]) {
 }
 
 /** Open the funnel popover on the first column and return the menu element. */
-async function openFilterMenu(target: HTMLElement) {
-  const btn = target.querySelector('.sv-grid-col-filter-btn') as HTMLButtonElement
+async function openFilterMenu(target: HTMLElement, columnIndex = 0) {
+  const btn = target.querySelectorAll('.sv-grid-col-filter-btn')[
+    columnIndex
+  ] as HTMLButtonElement
   btn.click()
   // GridMenus is a lazy chunk, so poll until the popover mounts AND its value
   // checklist has rendered.
@@ -110,8 +112,21 @@ async function openFilterMenu(target: HTMLElement) {
   return target.querySelector('.sv-grid-filter-menu') as HTMLElement
 }
 
+// The LABEL only. The row also carries a trailing match count, which these
+// tests are not about - reading the whole row's text would couple them to it.
+const labelOf = (el: Element) =>
+  (el.querySelector('.sv-listbox__label') ?? el).textContent?.trim() ?? ''
+
 const optionLabels = (menu: HTMLElement) =>
-  Array.from(menu.querySelectorAll('[role="option"]')).map((el) => el.textContent?.trim() ?? '')
+  Array.from(menu.querySelectorAll('[role="option"]')).map(labelOf)
+
+const findOption = (menu: HTMLElement, label: string) => {
+  const hit = Array.from(menu.querySelectorAll('[role="option"]')).find(
+    (el) => labelOf(el) === label,
+  )
+  if (!hit) throw new Error(`no option labelled "${label}" in [${optionLabels(menu)}]`)
+  return hit as HTMLElement
+}
 
 describe('filter menu value checklist', () => {
   it('windows a high-cardinality column instead of mounting every value', async () => {
@@ -252,9 +267,7 @@ describe('filter menu value checklist', () => {
     expect(optionLabels(suggest).length).toBeGreaterThan(1)
 
     // Pick another: the fragment is consumed, not left beside it.
-    const pick = Array.from(suggest.querySelectorAll('[role="option"]')).find(
-      (el) => el.textContent?.trim() === 'SYM00005',
-    ) as HTMLElement
+    const pick = findOption(suggest, 'SYM00005')
     pick.click()
     await tick()
 
@@ -263,7 +276,7 @@ describe('filter menu value checklist', () => {
     // dropdown has no trailing separator, so anything that mistook the last
     // token for a half-typed fragment would show it unchecked.
     const checked = suggest.querySelectorAll('[role="option"][aria-selected="true"]')
-    expect(Array.from(checked).map((el) => el.textContent?.trim()).sort()).toEqual([
+    expect(Array.from(checked).map(labelOf).sort()).toEqual([
       'SYM00003',
       'SYM00005',
     ])
@@ -291,9 +304,7 @@ describe('filter menu value checklist', () => {
     await vi.waitFor(() => expect(target.querySelector('.sv-grid-in-suggest')).not.toBeNull())
     const suggest = target.querySelector('.sv-grid-in-suggest') as HTMLElement
 
-    const pick = Array.from(suggest.querySelectorAll('[role="option"]')).find(
-      (el) => el.textContent?.trim() === 'Aug 17, 2026',
-    ) as HTMLElement
+    const pick = findOption(suggest, 'Aug 17, 2026')
     pick.click()
     await tick()
 
@@ -325,6 +336,41 @@ describe('filter menu value checklist', () => {
     await tick()
 
     expect(api.getDisplayedRows().length).toBe(7)
+
+    destroy()
+  })
+
+  it('shows how many rows each value matches', async () => {
+    // 9 rows over teams A/B/C, so three each.
+    const { target, destroy } = await mountGrid(makeRows(9))
+    await tick()
+    const menu = await openFilterMenu(target, 1)
+    const rows = Array.from(menu.querySelectorAll('[role="option"]')).map((el) => ({
+      label: el.querySelector('.sv-listbox__label')?.textContent?.trim(),
+      hint: el.querySelector('.sv-listbox__hint')?.textContent?.trim(),
+    }))
+    expect(rows).toEqual([
+      { label: 'A', hint: '3' },
+      { label: 'B', hint: '3' },
+      { label: 'C', hint: '3' },
+    ])
+    destroy()
+  })
+
+  it('offers only the values still reachable under the other columns\' filters', async () => {
+    // Symbols SYM00000..2 are teams A, B, C in turn. Filtering Symbol down to
+    // one row must leave the Team list showing that row's team alone - the
+    // list used to be built from the whole dataset, so it offered every team
+    // and two of the three were a one-click route to an empty grid.
+    const { target, api, destroy } = await mountGrid(makeRows(9))
+    await tick()
+    api.setFilter('symbol', { operator: 'equals', value: 'SYM00001' })
+    await tick()
+    expect(api.getDisplayedRows().length).toBe(1)
+
+    const menu = await openFilterMenu(target, 1)
+    const labels = optionLabels(menu)
+    expect(labels).toEqual(['B'])
 
     destroy()
   })

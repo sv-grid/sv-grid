@@ -44,6 +44,9 @@ function makeCtx(overrides: any = {}) {
     selectionRange: { anchor: null, focus: null },
     isDraggingSelection: false,
     fillDrag: null,
+    moveDrag: null,
+    moveGrabHover: false,
+    moveCellsEffective: false,
     activeAtPointerDown: null,
     editingEnabled: false,
     editingCell: undefined,
@@ -61,6 +64,17 @@ function makeCtx(overrides: any = {}) {
     onCellDoubleClick: vi.fn(),
     onFillPointerUp: vi.fn(),
     onFillPointerMove: vi.fn(),
+    // Range drag-and-drop. `startMoveDrag` returning false is the "the pointer
+    // was not on the border" answer, which is what every test below assumes -
+    // override it to true to exercise the grab path.
+    startMoveDrag: vi.fn(() => false),
+    onMovePointerUp: vi.fn(),
+    onMovePointerMove: vi.fn(),
+    isOnMoveGrabStrip: vi.fn(() => false),
+    // Edge auto-scroll: one rAF loop in the clipboard module, driven from here
+    // for plain drag-select. Its own behaviour is covered in move-cells.test.ts.
+    trackEdgeScroll: vi.fn(),
+    stopEdgeScroll: vi.fn(),
     grid: {
       setRowSelection,
       setActiveCell,
@@ -427,6 +441,149 @@ describe('createSelection - endDragSelection / window move', () => {
     const sel = createSelection(ctx)
     sel.onWindowPointerMove({ buttons: 1 } as any)
     expect(ctx.isDraggingSelection).toBe(true)
+  })
+
+  it('endDragSelection cancels the edge-scroll loop', () => {
+    // The loop exits on its own once no drag is live, but cancelling the
+    // pending frame here stops one more from firing after the gesture ended.
+    const ctx = makeCtx({ isDraggingSelection: true })
+    const sel = createSelection(ctx)
+    sel.endDragSelection()
+    expect(ctx.stopEdgeScroll).toHaveBeenCalled()
+  })
+
+  it('feeds the edge-scroll loop while drag-selecting', () => {
+    // Drag-select had the same ceiling as the other two drags: a range could
+    // only ever cover cells that were on screen when it started.
+    const ctx = makeCtx({ isDraggingSelection: true })
+    const sel = createSelection(ctx)
+    const ev = { buttons: 1, clientX: 10, clientY: 10 } as any
+    sel.onWindowPointerMove(ev)
+    expect(ctx.trackEdgeScroll).toHaveBeenCalledWith(ev)
+  })
+
+  it('does not feed the loop once the button is released', () => {
+    const ctx = makeCtx({ isDraggingSelection: true })
+    const sel = createSelection(ctx)
+    sel.onWindowPointerMove({ buttons: 0 } as any)
+    expect(ctx.trackEdgeScroll).not.toHaveBeenCalled()
+  })
+
+  it('endDragSelection commits a pending range move', () => {
+    const ctx = makeCtx({ moveDrag: { x: 1 } })
+    const sel = createSelection(ctx)
+    sel.endDragSelection()
+    expect(ctx.onMovePointerUp).toHaveBeenCalled()
+  })
+
+  it('onWindowPointerMove delegates to the range move when one is in flight', () => {
+    // A move outranks a fill: they can never both be active, and checking it
+    // first keeps the fill path from swallowing the event.
+    const ctx = makeCtx({ moveDrag: { x: 1 }, fillDrag: { x: 1 } })
+    const sel = createSelection(ctx)
+    const ev = { buttons: 1 } as any
+    sel.onWindowPointerMove(ev)
+    expect(ctx.onMovePointerMove).toHaveBeenCalledWith(ev)
+    expect(ctx.onFillPointerMove).not.toHaveBeenCalled()
+  })
+})
+
+describe('createSelection - range move grab', () => {
+  /** A pointer event over a td that reports itself from `closest()`. */
+  function overCell() {
+    const cell: any = { dataset: { svgridRow: '1', svgridCol: '1' } }
+    cell.closest = () => cell
+    return { button: 0, clientX: 10, clientY: 10, target: cell, pointerType: 'mouse' } as any
+  }
+
+  it('hands the pointerdown to the move grab before touching the selection', () => {
+    const ctx = makeCtx({
+      allRows: [{ id: 'r0' }, { id: 'r1' }],
+      allColumns: [{ id: 'a' }, { id: 'b' }],
+      startMoveDrag: vi.fn(() => true),
+    })
+    const sel = createSelection(ctx)
+    sel.onCellPointerDown(1, 1, overCell())
+    expect(ctx.startMoveDrag).toHaveBeenCalled()
+    // The selection the user grabbed is still intact, and no drag-select began.
+    expect(ctx.selectionRange).toEqual({ anchor: null, focus: null })
+    expect(ctx.isDraggingSelection).toBe(false)
+  })
+
+  it('swallows the click that follows a grab, so the range survives', () => {
+    const onCellClick = vi.fn()
+    const ctx = makeCtx({
+      allRows: [makeDataRow('r0', { id: 0 }), makeDataRow('r1', { id: 1 })],
+      allColumns: [makeColumn('c0', { editorType: 'text' }), makeColumn('c1', { editorType: 'text' })],
+      gridRootEl: { focus: vi.fn() },
+      props: { onCellClick },
+      startMoveDrag: vi.fn(() => true),
+    })
+    const sel = createSelection(ctx)
+    sel.onCellPointerDown(1, 1, overCell())
+    sel.onCellClick(1, 1)
+    expect(onCellClick).not.toHaveBeenCalled()
+    // Only the one click is swallowed - the next behaves normally.
+    sel.onCellClick(1, 1)
+    expect(onCellClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls through to normal selection when the pointer misses the border', () => {
+    const ctx = makeCtx({
+      allRows: [{ id: 'r0' }, { id: 'r1' }],
+      allColumns: [{ id: 'a' }, { id: 'b' }],
+    })
+    const sel = createSelection(ctx)
+    sel.onCellPointerDown(1, 1, overCell())
+    expect(ctx.selectionRange.anchor).toEqual({ rowIndex: 1, colIndex: 1 })
+    expect(ctx.isDraggingSelection).toBe(true)
+  })
+
+  it('updateMoveGrabHover leaves the flag alone while moveCells is off', () => {
+    const ctx = makeCtx({ moveCellsEffective: false })
+    const sel = createSelection(ctx)
+    sel.onWindowPointerMove(overCell())
+    expect(ctx.isOnMoveGrabStrip).not.toHaveBeenCalled()
+    expect(ctx.moveGrabHover).toBe(false)
+  })
+
+  it('raises the hover flag on the border and drops it off it', () => {
+    const ctx = makeCtx({
+      moveCellsEffective: true,
+      // Without an anchored range the hover check bails before touching the
+      // DOM - correctly, since there is then no border to grab.
+      selectionRange: { anchor: { rowIndex: 1, colIndex: 1 }, focus: { rowIndex: 2, colIndex: 2 } },
+      isOnMoveGrabStrip: vi.fn(() => true),
+    })
+    const sel = createSelection(ctx)
+    sel.onWindowPointerMove(overCell())
+    expect(ctx.moveGrabHover).toBe(true)
+    ctx.isOnMoveGrabStrip = vi.fn(() => false)
+    sel.onWindowPointerMove(overCell())
+    expect(ctx.moveGrabHover).toBe(false)
+  })
+
+  it('never walks the DOM while nothing is selected', () => {
+    // This runs on every window pointermove, so the guard order matters:
+    // two property reads must come before any closest() call.
+    const closest = vi.fn(() => null)
+    const ctx = makeCtx({ moveCellsEffective: true, isOnMoveGrabStrip: vi.fn(() => true) })
+    const sel = createSelection(ctx)
+    sel.onWindowPointerMove({ target: { closest }, buttons: 0 } as any)
+    expect(closest).not.toHaveBeenCalled()
+    expect(ctx.isOnMoveGrabStrip).not.toHaveBeenCalled()
+  })
+
+  it('drops the hover flag when the pointer leaves the grid entirely', () => {
+    const ctx = makeCtx({
+      moveCellsEffective: true,
+      moveGrabHover: true,
+      selectionRange: { anchor: { rowIndex: 1, colIndex: 1 }, focus: { rowIndex: 2, colIndex: 2 } },
+      isOnMoveGrabStrip: vi.fn(() => true),
+    })
+    const sel = createSelection(ctx)
+    sel.onWindowPointerMove({ target: { closest: () => null }, buttons: 0 } as any)
+    expect(ctx.moveGrabHover).toBe(false)
   })
 })
 

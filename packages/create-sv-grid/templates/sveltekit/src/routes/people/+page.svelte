@@ -6,11 +6,13 @@
 
   let { data } = $props()
 
-  const columns: GridColumns<Person> = [
-    { field: 'name', header: 'Name', editable: true },
+  // Editing is offered only to an admin. The server enforces it either way
+  // (see the rename action) - this just avoids showing an edit that will fail.
+  const columns: GridColumns<Person> = $derived([
+    { field: 'name', header: 'Name', editable: data.canEdit },
     { field: 'role', header: 'Role' },
     { field: 'year', header: 'Year' },
-  ]
+  ])
 
   // Header click -> URL -> server sorts -> load returns ordered rows.
   function onSortingChange(sorting: Array<{ id: string; desc: boolean }>) {
@@ -27,7 +29,7 @@
 
   // Committed edit -> form action -> database.
   async function onCellValueChange(e: { row: Person; columnId: string; newValue: unknown }) {
-    if (e.columnId !== 'name') return
+    if (e.columnId !== 'name' || !data.canEdit) return
     const body = new FormData()
     body.set('id', String(e.row.id))
     body.set('name', String(e.newValue))
@@ -36,7 +38,10 @@
 </script>
 
 <h1>People</h1>
-<p>Click a header to sort - the order lives in the URL. Double-click a name to edit it.</p>
+<p>
+  Click a header to sort - the order lives in the URL.
+  {#if data.canEdit}Double-click a name to edit it.{:else}Sign in as an admin to edit names.{/if}
+</p>
 
 <SvGrid
   data={data.rows}

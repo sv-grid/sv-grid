@@ -14,7 +14,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type ChartSpec,
   } from '@svgrid/grid'
 
@@ -33,7 +33,7 @@
     { id: 8, from: 'Activated', to: 'Exit', users: 1600 },
   ]
 
-  const columns: ColumnDef<typeof features, Flow>[] = [
+  const columns: GridColumns<Flow> = [
     { field: 'from', header: 'From', width: 150 },
     { field: 'to', header: 'To', width: 150 },
     { field: 'users', header: 'Users', width: 130, align: 'right', cellDataType: 'number', format: { type: 'number' } },

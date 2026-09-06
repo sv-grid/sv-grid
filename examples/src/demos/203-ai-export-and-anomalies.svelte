@@ -19,7 +19,7 @@
     mockAIProvider,
     aiExport,
     aiFindAnomalies,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type AIExportPlan,
     type AIAnomaly,
@@ -56,7 +56,7 @@
   let scanned = $state(false)
   let errorMsg = $state<string | null>(null)
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'country', header: 'Country', width: 110 },
     { field: 'company', header: 'Company', width: 150 },
     { field: 'product', header: 'Product', width: 160 },

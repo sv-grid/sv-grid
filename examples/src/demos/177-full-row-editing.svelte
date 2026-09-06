@@ -12,7 +12,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Employee = {
@@ -34,7 +34,7 @@
 
   const features = tableFeatures({ rowSortingFeature })
 
-  const columns: ColumnDef<typeof features, Employee>[] = [
+  const columns: GridColumns<Employee> = [
     { field: 'name', header: 'Name', editorType: 'text', width: 180 },
     { field: 'role', header: 'Role', editorType: 'text', width: 160 },
     {

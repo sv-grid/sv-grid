@@ -16,7 +16,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Call = {
@@ -87,7 +87,7 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  const columns: ColumnDef<typeof features, AnyRow>[] = [
+  const columns: GridColumns<AnyRow> = [
     {
       id: 'expand', header: '', width: 40, editable: false, sortable: false, filterable: false,
       cell: (ctx) => ctx.row.original.kind === 'account'
@@ -113,7 +113,7 @@
 
   // Nested detail grid columns (the child grid).
   const detailFeatures = tableFeatures({ rowSortingFeature })
-  const detailColumns: ColumnDef<typeof detailFeatures, Call>[] = [
+  const detailColumns: GridColumns<Call> = [
     { field: 'callId', header: 'Call ID', width: 100, cellDataType: 'number' },
     { field: 'direction', header: 'Direction', width: 120 },
     { field: 'number', header: 'Number', width: 160 },

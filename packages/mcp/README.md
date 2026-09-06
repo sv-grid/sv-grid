@@ -80,7 +80,7 @@ What it checks:
   "no errors" is never mistaken for "this compiles".
 
 It is tuned to shut up when the code is right: it reports **nothing** across all
-373 demos in this repo, which is what a CI test asserts. A verifier that cries
+375 demos in this repo, which is what a CI test asserts. A verifier that cries
 wolf is worse than none, because a model will happily "fix" working code.
 
 ### Studio: drive the app model (agent co-designer)

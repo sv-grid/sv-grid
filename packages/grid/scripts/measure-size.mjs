@@ -96,7 +96,103 @@ const BUDGET_KB = {
   // with the lazy chunks going 85.5 -> 86.9. Ratcheted to 0.3 KB above the new
   // measurement rather than left slack at 80.0 - a budget that no longer
   // tracks the code stops catching the next static import.
-  'full render component (SvGrid)': 79.4,
+  //
+  // 79.4 -> 80.9 for `moveCells` - Excel-style drag-and-drop of a selected
+  // range. Measured 79.1 without it and 80.6 with, so 1.5 KB, the largest
+  // single feature bump this file records. It is all base by necessity: the
+  // grab test has to answer synchronously inside `onCellPointerDown` (it
+  // decides whether the pointerdown starts a move or a selection), the hover
+  // test runs on window pointermove before any button is pressed, and the drop
+  // preview reuses the fill marquee, which is evaluated per rendered cell.
+  //
+  // The obvious lazy boundary was tried and REJECTED on measurement. Moving
+  // the drop commit - the refusal rules, the snapshot, the writes and the undo
+  // append, the biggest single block - into its own `import()`ed module took
+  // base to 80.3 and pushed the lazy chunks 87.0 -> 87.7. 0.3 KB, bought with
+  // an async mutation path in a data grid and a race (however remote) between
+  // a fetch and a pointerup. Not a trade worth making; if someone revisits
+  // this, re-measure first rather than assuming the split pays.
+  //
+  // 80.9 -> 81.4 for drag edge auto-scroll. 80.6 -> 81.1 measured, so 0.5 KB
+  // for one rAF loop shared by all three drags that extend a rectangle: the
+  // fill handle, the range move, and plain drag-select. All three were capped
+  // at whatever was already on screen when the drag began, which on a grid
+  // built for 100k rows means the feature mostly did not work. Shared
+  // deliberately - three copies of the ramp and the re-target would have cost
+  // more than this and drifted apart.
+  //
+  // 81.4 -> 81.8 for the FREE half of `selectionBar`: the registry seam, the
+  // prop normalisation (three shapes down to one config), the derived selection
+  // target, and the upsell note shown when no renderer is registered. Measured
+  // 81.1 -> 81.5, so 0.4 KB.
+  //
+  // The bar itself is NOT in this number. It is a Pro renderer in
+  // @svgrid/enterprise, arriving through `registerSelectionBarView` the same
+  // way the scheduler and board views do, so a free grid pays for the prop and
+  // nothing else - and a paid one pays only once enterprise is imported.
+  //
+  // 81.8 -> 82.1 for the shared licensing line under every Enterprise upsell
+  // (board, scheduler, pivot, selection bar). One snippet plus two message
+  // strings, rendered four times - four hand-written paragraphs would have
+  // cost more AND drifted apart. Pinned by svgrid.upsell-license.test.ts.
+  //
+  // 82.1 -> 82.9 for the two `dateString` fixes. A `dateString` column holds
+  // an ISO date STRING, but committing an edit ran through the shared date
+  // coercion, which does `new Date(v).toISOString()` - so picking Christmas
+  // stored `2026-12-25T01:00:00.000Z` and the cell showed a timestamp beside
+  // neighbours showing plain dates, on a calendar day that depended on the
+  // user's timezone. And the filter row mounted a NATIVE date input while the
+  // cell editor mounted the grid's own picker, so one column looked like two
+  // different products depending on where you touched it.
+  //
+  // Measured 0.4 KB for the filter-row picker (82.2 with the branch and its
+  // lazy loader ablated, 82.6 with them) and 0.4 KB for the rest - the
+  // `dateOnly` coercion path, `toIsoDateLocal`, and `usesRichDateFilter`.
+  //
+  // The component itself is NOT in this number: it arrives through the same
+  // `import()` the cell editor uses, gated on a column actually declaring a
+  // date editor, because most grids never show a filter row and most that do
+  // have no date column. What is left in base is the template branch and the
+  // loader, and a template branch cannot be deferred - it is the thing that
+  // decides whether to load anything at all.
+  //
+  // 82.9 -> 83.2 for `between` on a date column. The operator picked Between
+  // and then filtered nothing: the rich-picker branch won for every operator,
+  // so the row got ONE date field, `valueTo` stayed empty, and `condActive`
+  // ignores a between whose second bound is unset. Between now swaps in a
+  // range field, which also fits a narrow date column - two single-date
+  // pickers plus their buttons did not, and the last button spilled onto the
+  // next column where no click could reach it.
+  //
+  // Measured 0.3 KB for the branch and its lazy loader (82.7 with both
+  // ablated, 83.0 with them); the rest of the same batch of filter/editor
+  // fixes fits under the old ceiling. Budget set 0.2 KB above the measurement
+  // rather than flush against it, because the previous flush ceiling turned an
+  // ordinary bug fix into a size failure.
+  //
+  // SvDateRangeInput itself is NOT in this number - it arrives through
+  // `import()`, gated on a date column actually being set to Between, so a
+  // grid that never picks the operator never pays for it. What stays in base
+  // is the template branch and the loader, and a template branch cannot be
+  // deferred: it is the thing that decides whether to load anything at all.
+  //
+  // 83.2 -> 83.6 for the filter-menu batch: the checklist now counts each
+  // value and offers only the ones still reachable under the OTHER columns'
+  // filters, and "select all" acts on the search results instead of silently
+  // clearing the column.
+  //
+  // Measured 83.3 with the counting/narrowing scan ablated and 83.4 with it,
+  // so that part is ~0.1 KB; the rest is lifting the per-column filter stages
+  // out of `allRowsBeforePagination` into `applyColumnFilters` (which is what
+  // lets the facet list reuse the pipeline rather than re-implement it) plus
+  // the select-all rework in menus.ts.
+  //
+  // The date controls the menu grew are NOT in this number, and neither is
+  // any of the menu markup: GridMenus is a lazy chunk and the pickers are a
+  // further `import()` inside it, gated on the open column being a date. The
+  // measurement confirms it - SvDateTimePicker, SvDateRangeInput and
+  // date-format all still report as lazy.
+  'full render component (SvGrid)': 83.6,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for

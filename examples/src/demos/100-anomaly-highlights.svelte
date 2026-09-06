@@ -26,7 +26,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status = 'active' | 'pending' | 'inactive' | 'flagged' | 'frozen'
@@ -195,7 +195,7 @@
   const fmtMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
   const fmtNum   = new Intl.NumberFormat('en-US')
 
-  const columns: ColumnDef<typeof features, Account>[] = [
+  const columns: GridColumns<Account> = [
     { field: 'id',          header: 'Account',  editorType: 'text',   width: 110, editable: false,
       cell: (ctx) => renderSnippet(Cell, { row: ctx.row, field: 'id', display: ctx.row.original.id }) },
     { field: 'customer',    header: 'Customer', editorType: 'text',   width: 200,

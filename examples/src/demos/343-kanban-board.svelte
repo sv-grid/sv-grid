@@ -18,7 +18,7 @@
     SvChip,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type BoardCardMoveEvent,
     type BoardCardCommitEvent,
   } from '@svgrid/grid'
@@ -47,7 +47,7 @@
 
   const features = tableFeatures({ rowSortingFeature })
 
-  const columns: ColumnDef<typeof features, Task>[] = [
+  const columns: GridColumns<Task> = [
     { field: 'title', header: 'Task', editorType: 'text', width: 240 },
     { field: 'assignee', header: 'Assignee', editorType: 'text', width: 140 },
     { field: 'priority', header: 'Priority', editorType: 'text', width: 110 },

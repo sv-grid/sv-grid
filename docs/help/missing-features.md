@@ -41,6 +41,9 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
+| ~~Drag a selected range to move / copy it~~ | **shipped** - `moveCells`, on by default with cell selection; demo `429-move-cells` | ✓ |
+| ~~Render inside a shadow root~~ | **shipped** - `<sv-grid-shadow>` in `@svgrid/grid-wc`. Open roots only; closed is unsupported, because a null `shadowRoot` leaves you unable to style, query or test your own grid | ✓ |
+| Eight draggable resize handles on a selection | **declined** - shift-click, shift-arrow, pointer drag and Ctrl+drag already resize a range four ways. Eight more hit targets per range in the hottest render path buys an interaction users already have. | - |
 
 ## Export / Print
 
@@ -121,7 +124,7 @@ multi), per-column filtering (menu + row + global) with a `between` range
 operator and set/tree/async filters, pagination, grouping + aggregation, tree
 data, master/detail + full-width detail rows, row + column virtualization
 (100k+ and a 1M-row demo), cell-range selection + copy/paste + Excel-style fill
-handle, inline editing with 14 editor types plus a custom `cellEditor` slot,
+handle + drag-the-border move/copy, inline editing with 14 editor types plus a custom `cellEditor` slot,
 undo/redo, staged editing, find-in-grid, notes + cell comments, tooltips,
 conditional formatting, sparklines, cell merging, column pinning/reorder/resize,
 row pinning, a formula engine (+ HyperFormula adapter), server-side row model,

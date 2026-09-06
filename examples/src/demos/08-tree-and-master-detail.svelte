@@ -17,7 +17,7 @@
     rowSortingFeature,
     rowExpandingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type FsNode = {
@@ -177,7 +177,7 @@
 
   const featuresOrders = tableFeatures({ rowSortingFeature })
 
-  const orderColumns: ColumnDef<typeof featuresOrders, Order>[] = [
+  const orderColumns: GridColumns<Order> = [
     { field: 'id',       header: 'Order' },
     { field: 'customer', header: 'Customer' },
     { field: 'date',     header: 'Date', format: { type: 'date', pattern: 'y-m-d' } },
@@ -188,7 +188,7 @@
     },
   ]
 
-  const lineColumns: ColumnDef<typeof featuresOrders, Line>[] = [
+  const lineColumns: GridColumns<Line> = [
     { field: 'sku',  header: 'SKU' },
     { field: 'name', header: 'Item' },
     { field: 'qty',  header: 'Qty' },
@@ -199,7 +199,7 @@
 
   // fsColumns is built lazily so it can reference the TreeName snippet
   // declared in markup below (snippet declarations hoist).
-  const fsColumns: ColumnDef<typeof featuresFs, FsNode>[] = (() => [
+  const fsColumns: GridColumns<FsNode> = (() => [
     {
       id: 'name',
       header: 'Name',

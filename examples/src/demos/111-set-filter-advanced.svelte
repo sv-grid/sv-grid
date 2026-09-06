@@ -26,7 +26,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -215,7 +215,7 @@
   })
 
   // ---- Columns ---------------------------------------------------------
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'id',       header: 'Order',     width: 110, editable: false },
     { field: 'customer', header: 'Customer',  width: 170, editable: false },
     { field: 'email',    header: 'Email',     width: 230, editable: false },

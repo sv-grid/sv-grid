@@ -33,6 +33,9 @@
   import {
     cfTextStyle,
     getEditorInputType,
+    usesRichDateFilter,
+    toIsoDateLocal,
+    fromIsoDateLocal,
     getOptionLabel,
     getOptionColor,
     colorfulChipStyle,
@@ -48,6 +51,7 @@
   // SvGridChartPanel (charting) and SvGridBoard (Kanban) are heavy, prop-gated
   // views - lazy-loaded below so they stay out of the base <SvGrid> bundle.
   import { getSchedulerView } from "./scheduler-view.svelte";
+  import { getSelectionBarView } from "./selection-bar-view.svelte";
   import { getBoardView } from "./board-view.svelte";
   import { getChartView } from "./chart-view.svelte";
   let props: Props<TFeatures, TData> = $props();
@@ -99,6 +103,37 @@
       import("./SvGridChartView.svelte").then((m) => (ChartView = m.default));
   });
   let MenusOverlay = $state<typeof import("./GridMenus.svelte").default | null>(null);
+  // The grid's own date picker, for date FILTER inputs. Lazy for the same
+  // reason the cell editor's copy is: most grids never show a filter row, and
+  // most that do have no date column.
+  let FilterDatePicker = $state<typeof import("./SvDateTimePicker.svelte").default | null>(null);
+  $effect(() => {
+    if (!showFilterRowEffective && !ctrl.filterMenuFor) return;
+    if (FilterDatePicker) return;
+    const wantsPicker = ctrl.allColumns.some((c: any) =>
+      usesRichDateFilter(c.columnDef?.editorType),
+    );
+    if (wantsPicker)
+      import("./SvDateTimePicker.svelte").then((m) => (FilterDatePicker = m.default));
+  });
+  // `between` on a date column filters with a RANGE control rather than two
+  // single-date fields: one field, one popover, both ends picked in a single
+  // gesture - and it fits a narrow date column, which two pickers plus their
+  // buttons do not. Loaded only once a date column is actually set to Between,
+  // so a grid that never uses the operator never pays for the chunk.
+  let FilterRangePicker = $state<typeof import("./SvDateRangeInput.svelte").default | null>(null);
+  $effect(() => {
+    if (!showFilterRowEffective) return;
+    if (FilterRangePicker) return;
+    const wantsRange = ctrl.allColumns.some(
+      (c: any) =>
+        usesRichDateFilter(c.columnDef?.editorType) &&
+        (ctrl.filterMenuValues[c.id]?.operator ??
+          ctrl.defaultOperatorFor(c)) === "between",
+    );
+    if (wantsRange)
+      import("./SvDateRangeInput.svelte").then((m) => (FilterRangePicker = m.default));
+  });
   $effect(() => {
     if (ctrl.chartingEnabled && ctrl.chartPanelOpen && !ChartPanelView)
       import("./SvGridChartPanel.svelte").then((m) => (ChartPanelView = m.default));
@@ -681,6 +716,24 @@
   onpointermove={onWindowPointerMove}
 />
 
+<!--
+  The licensing line every Enterprise upsell note carries. One snippet rather
+  than four copies: four gates worded four ways is how a product ends up
+  explaining its own licensing inconsistently.
+
+  Enterprise is SOFT-gated - the feature runs without a key and the grid shows
+  an unlicensed watermark - so this says exactly that rather than implying the
+  feature is inert without one.
+-->
+{#snippet enterpriseLicenseNote()}
+  <p class="sv-grid-upsell-license">
+    {messages.upsellLicense}
+    <a href="https://svgrid.com/pricing/" target="_blank" rel="noopener noreferrer">
+      {messages.upsellLicenseLink}
+    </a>
+  </p>
+{/snippet}
+
 {#if opt.loading && !opt.loadingOverlay && !hasMeasured}
   <!-- Full-screen loading state only on the *initial* load, before the grid
        has ever rendered. Once measured, a `loading` flip (from a server-mode
@@ -737,6 +790,7 @@
             <code>@svgrid/enterprise</code> and call <code>enableBoardView()</code>
             to render it.
           </p>
+          {@render enterpriseLicenseNote()}
         </div>
       {/if}
     </div>
@@ -784,6 +838,7 @@
             <code>@svgrid/enterprise</code> and call <code>enableSchedulerView()</code>
             to render it.
           </p>
+          {@render enterpriseLicenseNote()}
         </div>
       {/if}
     </div>
@@ -866,6 +921,7 @@
         <div class="sv-grid-scheduler-upsell sv-grid-pivot-upsell" role="note">
           <strong>{messages.pivotUpsellTitle}</strong>
           <p>{messages.pivotUpsellBody}</p>
+          {@render enterpriseLicenseNote()}
         </div>
       {/if}
     </div>
@@ -923,6 +979,13 @@
         <path d="M8 5l9 7-9 7" />
       {:else if name === "op-lessThan"}
         <path d="M16 5l-9 7 9 7" />
+      {:else if name === "op-between"}
+        <!-- Two bounds with the span between them. The catalogue has always
+             named this icon; the snippet had no case for it, so the Between
+             row in the operator menu drew an empty <svg>. -->
+        <path d="M5 5v14" />
+        <path d="M19 5v14" />
+        <path d="M9 12h6" />
       {:else if name === "op-isBlank"}
         <circle cx="12" cy="12" r="8" />
         <path d="M6.5 6.5l11 11" />
@@ -1351,6 +1414,12 @@
     class="sv-grid-root"
     class:sv-grid-root-fill={opt.containerHeight === "100%"}
     style={chartDockReserveStyle}
+    data-move-grab={ctrl.moveGrabHover || ctrl.moveDrag ? "true" : undefined}
+    data-selbar={
+      ctrl.selectionBarOn && ctrl.selectionBarTarget.ids.length > 0
+        ? (getSelectionBarView() ? ctrl.selectionBarPosition : `upsell-${ctrl.selectionBarPosition}`)
+        : undefined
+    }
     use:lazyRowResize={{
       disabled: !ctrl.rowResizeOn,
       // No gutter column on most grids, so fall back to the first body cell -
@@ -1951,6 +2020,57 @@
                               }}
                             />
                           </div>
+                        {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank" && activeOperator !== "regex" && FilterDatePicker && usesRichDateFilter(rendered.column.columnDef.editorType)}
+                          <!-- Same picker the cell editor uses, so a date
+                               column looks the same wherever you touch it.
+                               `regex` keeps the text box - a pattern is not
+                               a date. -->
+                          {#if activeOperator === "between"}
+                            <!-- `between` needs BOTH bounds - `condActive`
+                                 ignores the filter until `valueTo` is set too -
+                                 so this is one range field rather than two
+                                 single-date pickers: both ends come from a
+                                 single gesture in one popover, and it still
+                                 fits a narrow date column. It writes the same
+                                 pair of stores the plain text inputs use. -->
+                            {#if FilterRangePicker}
+                              {@const RangePicker = FilterRangePicker}
+                              {@const from = fromIsoDateLocal(
+                                filterRowValues[rendered.column.id],
+                              )}
+                              {@const to = fromIsoDateLocal(
+                                filterMenuValues[rendered.column.id]?.valueTo,
+                              )}
+                              <RangePicker
+                                value={from && to ? [from, to] : null}
+                                formatString="yyyy-MM-dd"
+                                block
+                                placeholder="Range…"
+                                onChange={(range) => {
+                                  updateFilterRow(
+                                    rendered.column.id,
+                                    range ? toIsoDateLocal(range[0]) : "",
+                                  );
+                                  updateFilterMenuValueTo(
+                                    rendered.column.id,
+                                    range ? toIsoDateLocal(range[1]) : "",
+                                  );
+                                }}
+                              />
+                            {/if}
+                          {:else}
+                            {@const FilterPicker = FilterDatePicker}
+                            <FilterPicker
+                              value={(filterRowValues[rendered.column.id] ?? "") || null}
+                              formatString="yyyy-MM-dd"
+                              dropDownDisplayMode="calendar"
+                              block
+                              nullable
+                              placeholder="Filter…"
+                              onChange={(d) =>
+                                updateFilterRow(rendered.column.id, toIsoDateLocal(d))}
+                            />
+                          {/if}
                         {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank"}
                           {@const frType = getEditorInputType(
                             rendered.column.columnDef.editorType ?? "text",
@@ -3001,6 +3121,31 @@
 
     {#if ctrl.chartingEnabled && ctrl.chartPanelOpen && ChartPanelView}
       <ChartPanelView {ctrl} />
+    {/if}
+
+    <!-- Bulk-action bar. INSIDE the root, unlike GridMenus: it is positioned
+         `absolute` against it, so moving it outside would anchor it to the
+         page. The renderer is Enterprise and arrives through the
+         selection-bar-view seam; without it, a short note in its place. -->
+    {#if ctrl.selectionBarOn && ctrl.selectionBarTarget.ids.length > 0}
+      {#if getSelectionBarView()}
+        {@const SelectionBarView = getSelectionBarView()}
+        <SelectionBarView {ctrl} />
+      {:else}
+        <div
+          class="sv-grid-scheduler-upsell sv-grid-selection-bar-upsell"
+          data-position={ctrl.selectionBarPosition}
+          role="note"
+        >
+          <strong>Bulk-action bar</strong>
+          <p>
+            The selection bar is an Enterprise feature. Install
+            <code>@svgrid/enterprise</code> and call <code>enableSelectionBar()</code>
+            to render it.
+          </p>
+          {@render enterpriseLicenseNote()}
+        </div>
+      {/if}
     {/if}
   </div>
   <!-- /.sv-grid-root -->

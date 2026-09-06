@@ -14,6 +14,34 @@
   position: relative;
   font-family: var(--sg-font, inherit);
 }
+
+/*
+ * Room for the selection bar, INSIDE the scroll area.
+ *
+ * The bar floats - it must not resize the grid, or every layout holding one
+ * jumps the moment a checkbox is ticked. So the grid keeps its exact size and
+ * the SCROLLER gains bottom padding instead: scrollable space under the last
+ * row, the height of the bar. The bar then floats over padding rather than
+ * over data, and every row can still be scrolled into clear view.
+ *
+ * Shrinking the grid instead (padding on the root) was the first attempt. It
+ * kept rows visible but made the table resize under the user, which is worse.
+ *
+ * Only while the bar is up, so an unselected grid scrolls exactly as before.
+ */
+.sv-grid-root[data-selbar] {
+  --sg-selbar-reserve: 68px;
+}
+/* The upsell note is prose, so it is taller than the bar it stands in for. */
+.sv-grid-root[data-selbar^='upsell'] {
+  --sg-selbar-reserve: 116px;
+}
+.sv-grid-root[data-selbar$='bottom'] .sv-grid-container {
+  padding-bottom: var(--sg-selbar-reserve);
+}
+.sv-grid-root[data-selbar$='top'] .sv-grid-container {
+  padding-top: var(--sg-selbar-reserve);
+}
 .sv-grid-sr-only {
   position: absolute;
   width: 1px;
@@ -928,6 +956,18 @@
   padding: 5px var(--sg-filter-cell-px, var(--sg-cell-px, 7px));
 }
 
+/* The rich date picker in the filter row. It enters `.sv-grid-filter-row-control`
+   as a `.sv-field`, which carries none of the flex sizing every other filter
+   control has, so it laid itself out at the full cell width NEXT TO the
+   operator button: the box was cut off at the column line and the calendar
+   toggle ended up outside the cell, underneath the next column's filter, where
+   no click could reach it. Size it like `.sv-grid-filter-value` so it shares
+   the row instead of overflowing it. */
+.sv-grid-filter-row-control > .sv-field {
+  flex: 3 1 0;
+  min-width: 0;
+}
+
 .sv-grid-filter-operator {
   flex: 2 1 0;
   min-width: 0;
@@ -1196,6 +1236,57 @@ select.sv-grid-fr-editor {
   overflow: visible;
 }
 
+/* ---- The editing cell's border -------------------------------------------
+   One ring for every editor, drawn by the CELL rather than by each editor.
+   They used to draw their own and they disagreed: the text/number/date inputs
+   put a 2px accent-at-30% halo OUTSIDE the cell, the dropdown trigger put a
+   solid 2px outline INSIDE it (outline-offset: -2px), and the checkbox drew
+   nothing - so the border was single, double or missing depending on which
+   column you happened to be editing.
+
+   Excel's shape: a 2px band centred on the cell's own grid line, so half of it
+   covers the line and half sits inside the cell. `inset: -1px` with a 2px
+   border straddles exactly that way. It is a pseudo-element, not the cell's
+   `box-shadow`, because every editor fills the cell with an opaque background
+   and would paint over an inset shadow; ::after is the cell's last child, so
+   it lands on top of the editor. `pointer-events: none` keeps it out of the
+   way of clicks on the editor underneath. */
+.sv-grid-cell.sv-grid-cell-editing::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--sg-accent, #0b63f3);
+  pointer-events: none;
+}
+/* The shared active/editing rule paints an inset ring. For an editing cell the
+   ::after above replaces it - keeping both would show two lines through any
+   editor that does not fill the cell (the checkbox). */
+.sv-grid-cell.sv-grid-cell-editing {
+  box-shadow: none;
+}
+/* Each editor's own focus ring, off while it is the in-cell editor. Elsewhere
+   (filter row, standalone use) they keep it. Three class selectors so these win
+   over the dropdown's and the picker's component-scoped `:focus` rules. */
+.sv-grid-cell.sv-grid-cell-editing .sv-grid-cell-editor:focus,
+.sv-grid-cell.sv-grid-cell-editing .sv-grid-dropdown-trigger:focus,
+.sv-grid-cell.sv-grid-cell-editing .sv-dtp__field:focus-within {
+  box-shadow: none;
+  outline: none;
+}
+/* The checkbox editor's own focus outline, plus any ring a host page puts on
+   focused buttons (both demo shells do, via a global `button:focus-visible`).
+   Either one is a second border around the only control in the cell, which the
+   cell already frames. Outside an editing cell - the row-selection checkbox,
+   read-only cells - the outline stays.
+
+   The rating stars deliberately keep their focus ring: with five buttons in a
+   radiogroup it is what shows which star the arrow keys are on. */
+.sv-grid-cell.sv-grid-cell-editing .sv-grid-checkbox:focus-visible {
+  box-shadow: none;
+  outline: none;
+}
+
+
 /* Excel-style fill handle: a 7×7 blue square anchored to the bottom-
    right corner of the active cell or selection range. The parent
    `.sv-grid-cell` is `position: relative` (sticky cells override
@@ -1244,6 +1335,44 @@ select.sv-grid-fr-editor {
 .sv-grid-fill-handle:hover {
   transform: scale(1.3);
   transform-origin: bottom right;
+}
+
+/* Placement for the selection-bar upsell note. The BAR itself is an Enterprise
+   component and carries its own scoped styles - this is only the stand-in the
+   free grid shows when no renderer is registered, positioned on the same edge
+   the real bar would use so the layout does not jump once it is installed. */
+.sv-grid-selection-bar-upsell {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Same slot as the real bar: above the custom scrollbars (40/41/42), below
+     find-in-grid (60) and the menus (900+). Sharing the value matters because
+     installing enterprise must not change where this sits in the stack. */
+  z-index: 45;
+  max-width: calc(100% - 24px);
+}
+.sv-grid-selection-bar-upsell[data-position="bottom"] { bottom: 16px; }
+.sv-grid-selection-bar-upsell[data-position="top"] { top: 16px; }
+
+/* Excel-style range drag-and-drop (`moveCells`). The grab target is the outer
+   4px of the selection border, which is PAINTED (an inset box-shadow) rather
+   than an element, so there is nothing to hang `cursor` off per cell. Instead
+   the controller flips one attribute on the root while the pointer is over the
+   strip, and this turns the whole grid's cursor for as long as that lasts -
+   the cursor is on the border anyway, so the effect is identical to a hit
+   target and costs nothing per cell. `!important` because several cell states
+   (editing, checkbox, link) set their own cursor at higher specificity, and
+   during a grab the move cursor has to win over all of them. */
+.sv-grid-root[data-move-grab="true"],
+.sv-grid-root[data-move-grab="true"] .sv-grid-cell {
+  cursor: move !important;
+}
+/* The fill handle keeps its own crosshair: it sits in the bottom-right corner,
+   inside the grab strip's territory, and it is a real element that captures
+   the pointerdown first. Letting it read as "move" would promise the wrong
+   gesture. */
+.sv-grid-root[data-move-grab="true"] .sv-grid-fill-handle {
+  cursor: crosshair !important;
 }
 
 /* Excel-style fill-handle drag marquee: ONE thin dashed rectangle around the
@@ -1433,6 +1562,76 @@ select.sv-grid-fr-editor {
 .sv-grid-cell-editor-datetime {
   width: 100%;
   height: 100%;
+}
+
+/* Rich date / datetime / time editor (SvDateTimePicker) inside a cell.
+   The picker is a standalone UI-kit control: a fixed 34px pill with its own
+   1px border, radius and outer focus ring. Dropped into a cell it stayed in
+   flow, so that pill drew a second, smaller box inside the cell's editing
+   ring, its radius pulled the corners away from the grid lines, and its ring
+   bled past the cell - the borders never lined up with the column. In-cell it
+   gets the same treatment as `.sv-grid-cell-editor`: taken out of flow, pinned
+   to the cell box and stripped of its own chrome - the cell draws the single
+   editing ring for every editor. Scoped to the editing cell, so the filter row
+   and standalone pickers keep their box.
+   Three class selectors (not two) so these win over the component's own
+   scoped rules whatever order the two stylesheets land in. */
+.sv-grid-cell.sv-grid-cell-editing .sv-dtp {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: auto;
+}
+.sv-grid-cell.sv-grid-cell-editing .sv-dtp__field {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  /* The compact buttons below carry their own breathing room. */
+  padding-inline: 0;
+}
+/* Match the cell's own type instead of the control's fixed 13px, so the value
+   doesn't change size the moment the cell goes into edit. */
+.sv-grid-cell.sv-grid-cell-editing .sv-dtp__input {
+  font: inherit;
+}
+/* Date columns are narrow and the two 26px buttons ate enough of them to clip
+   the value. Trimmed wherever the picker sits inside a column's width - the
+   cell editor and the filter row - but not for standalone pickers. */
+.sv-grid-cell.sv-grid-cell-editing .sv-dtp__clear,
+.sv-grid-cell.sv-grid-cell-editing .sv-dtp__toggle,
+.sv-grid-filter-row-control > .sv-field .sv-dtp__toggle {
+  width: 20px;
+  height: 20px;
+}
+/* Safety valve for a very narrow date column: the toggle keeps its 20px while
+   there is room and gives some back rather than spilling over the column line
+   onto the next filter, where no click could reach it. */
+.sv-grid-filter-row-control > .sv-field .sv-dtp__toggle {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+/* The filter row drops the picker's clear button. It costs ~20px of a filter
+   cell that has none to spare, next to the operator button and the calendar
+   toggle, and a date column is usually narrow. Nothing is lost: emptying the
+   text clears the filter, as does Clear filter in the column menu. */
+.sv-grid-filter-row-control > .sv-field .sv-dtp__clear {
+  display: none;
+}
+
+/* The range field `between` uses (SvDateRangeInput). Its stock chrome - a 10px
+   inset, a 15px icon, two 6px gaps and a 24px clear - adds up to more than a
+   narrow date column has, and the clear button hung out past the field's own
+   border. Trimmed to fit; the clear can shrink further before anything spills. */
+.sv-grid-filter-row-control > .sv-field .sv-dri__field {
+  padding-inline: 4px 2px;
+  gap: 3px;
+}
+.sv-grid-filter-row-control > .sv-field .sv-dri__clear {
+  width: 20px;
+  height: 20px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 /* List editor: native <select>. For multi-select it grows into a
@@ -1980,6 +2179,16 @@ select.sv-grid-fr-editor {
   padding: 2px 0 6px;
   font-weight: 600;
   color: var(--sg-muted, #475569);
+}
+/* Trailing status on a section heading: how much of the list is selected, or
+   that a condition is ANDed with it. Pushed to the far edge and de-emphasised
+   so it reads as state, not as part of the heading. */
+.sv-grid-menu-head-note {
+  margin-inline-start: auto;
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--sg-muted, #64748b);
+  opacity: 0.85;
 }
 
 .sv-grid-menu-search {
@@ -2745,6 +2954,18 @@ select.sv-grid-fr-editor {
 }
 .sv-grid-scheduler-upsell strong { font-size: 0.95rem; }
 .sv-grid-scheduler-upsell p { margin: 0; font-size: 0.85rem; max-width: 42ch; }
+/* The licensing line sits under the "how to install it" line, quieter than it:
+   the first sentence is what unblocks the developer looking at this, the second
+   is what they need before shipping. */
+.sv-grid-upsell-license {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+.sv-grid-upsell-license a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .sv-grid-scheduler-upsell code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.82em;

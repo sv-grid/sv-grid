@@ -30,9 +30,26 @@ afterEach(() => {
 describe('registerBuiltinEditors', () => {
   it('registers the config-free editor types', () => {
     const types = registerBuiltinEditors()
-    expect(types).toEqual(['otp', 'duration'])
+    expect(types).toEqual(['otp', 'duration', 'richtext'])
     expect(hasCellEditor('otp')).toBe(true)
     expect(hasCellEditor('duration')).toBe(true)
+    expect(hasCellEditor('richtext')).toBe(true)
+  })
+
+  it('sanitizes the rich-text value on the way in and on the way out', () => {
+    registerBuiltinEditors()
+    const onChange = vi.fn()
+    // Markup already sitting in the row data is cleaned before the editor sees
+    // it, so opening a poisoned cell cannot execute anything either.
+    const props = resolveEditorProps(
+      getCellEditor('richtext')!,
+      ctx({ value: '<p onclick="alert(1)">hi</p><script>alert(2)</script>', onChange }),
+    )
+    expect(props.value).toBe('<p>hi</p>')
+    ;(props.onChange as (v: string) => void)('<b>ok</b><img src=x onerror="alert(3)">')
+    const stored = onChange.mock.calls[0]![0] as string
+    expect(stored).toContain('<b>ok</b>')
+    expect(stored).not.toContain('onerror')
   })
 
   it("maps the OTP editor's onComplete to commit", () => {

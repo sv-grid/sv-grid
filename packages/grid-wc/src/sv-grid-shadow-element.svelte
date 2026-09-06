@@ -1,0 +1,148 @@
+<svelte:options
+  customElement={{
+    tag: 'sv-grid-shadow',
+    shadow: 'open',
+    props: {
+      /* This element's own, and NOT <SvGrid>'s prop of the same name:
+         here it means row-selection checkboxes, which is what 2.6.2
+         published. Cell selection is `enable-cell-selection`. */
+      selectable: { type: 'Boolean', attribute: 'selectable' },
+      /* BEGIN generated props - see scripts/generate-surface.mjs */
+      data: { type: 'Array' },
+      columns: { type: 'Array' },
+      board: { type: 'Object' },
+      scheduler: { type: 'Object' },
+      chart: { type: 'Object' },
+      pivot: { type: 'Object' },
+      pivotMode: { type: 'Boolean', attribute: 'pivot-mode' },
+      contextMenu: { type: 'Boolean', attribute: 'context-menu' },
+      selectionBar: { type: 'Boolean', attribute: 'selection-bar' },
+      features: { type: 'Object' },
+      sortable: { type: 'Boolean', attribute: 'sortable' },
+      filterable: { type: 'Boolean', attribute: 'filterable' },
+      editable: { type: 'Boolean', attribute: 'editable' },
+      treeData: { type: 'Object' },
+      groupable: { type: 'Boolean', attribute: 'groupable' },
+      groupBy: { type: 'Array' },
+      expanded: { type: 'Object' },
+      groupFooters: { type: 'Boolean', attribute: 'group-footers' },
+      grandTotalRow: { type: 'Boolean', attribute: 'grand-total-row' },
+      groupDisplayMode: { type: 'String', attribute: 'group-display-mode' },
+      autoGroupColumnHeader: { type: 'String', attribute: 'auto-group-column-header' },
+      autoGroupColumnWidth: { type: 'Number', attribute: 'auto-group-column-width' },
+      pageable: { type: 'Boolean', attribute: 'pageable' },
+      loading: { type: 'Boolean', attribute: 'loading' },
+      loadingOverlay: { type: 'Boolean', attribute: 'loading-overlay' },
+      loadingSkeletonRows: { type: 'Number', attribute: 'loading-skeleton-rows' },
+      error: { type: 'String', attribute: 'error' },
+      emptyMessage: { type: 'String', attribute: 'empty-message' },
+      localization: { type: 'Object' },
+      showGlobalFilter: { type: 'Boolean', attribute: 'show-global-filter' },
+      showColumnFilters: { type: 'Boolean', attribute: 'show-column-filters' },
+      filterMode: { type: 'String', attribute: 'filter-mode' },
+      showGroupingControls: { type: 'Boolean', attribute: 'show-grouping-controls' },
+      showRowSelection: { type: 'Boolean', attribute: 'show-row-selection' },
+      showPagination: { type: 'Boolean', attribute: 'show-pagination' },
+      pageSize: { type: 'Number', attribute: 'page-size' },
+      pageSizeOptions: { type: 'Array' },
+      paginationPosition: { type: 'String', attribute: 'pagination-position' },
+      externalPagination: { type: 'Boolean', attribute: 'external-pagination' },
+      rowCount: { type: 'Number', attribute: 'row-count' },
+      pageIndex: { type: 'Number', attribute: 'page-index' },
+      virtualization: { type: 'Boolean', attribute: 'virtualization' },
+      rowHeight: { type: 'Number', attribute: 'row-height' },
+      autoRowHeight: { type: 'Boolean', attribute: 'auto-row-height' },
+      rowResize: { type: 'Boolean', attribute: 'row-resize' },
+      headerHeight: { type: 'Number', attribute: 'header-height' },
+      overscan: { type: 'Number', attribute: 'overscan' },
+      containerHeight: { type: 'String', attribute: 'container-height' },
+      columnVirtualization: { type: 'Boolean', attribute: 'column-virtualization' },
+      columnOverscan: { type: 'Number', attribute: 'column-overscan' },
+      columnWidth: { type: 'Number', attribute: 'column-width' },
+      initialColumnPinning: { type: 'Object' },
+      fitColumns: { type: 'Boolean', attribute: 'fit-columns' },
+      columnResize: { type: 'Boolean', attribute: 'column-resize' },
+      responsive: { type: 'Boolean', attribute: 'responsive' },
+      showFilterMenu: { type: 'Boolean', attribute: 'show-filter-menu' },
+      showFilterRow: { type: 'Boolean', attribute: 'show-filter-row' },
+      enableCellSelection: { type: 'Boolean', attribute: 'enable-cell-selection' },
+      moveCells: { type: 'Boolean', attribute: 'move-cells' },
+      enableRowHover: { type: 'Boolean', attribute: 'enable-row-hover' },
+      copyHeadersToClipboard: { type: 'Boolean', attribute: 'copy-headers-to-clipboard' },
+      processCellForClipboard: { type: 'Object' },
+      enableInlineEditing: { type: 'Boolean', attribute: 'enable-inline-editing' },
+      fullRowEditing: { type: 'Boolean', attribute: 'full-row-editing' },
+      enableRowSummaries: { type: 'Boolean', attribute: 'enable-row-summaries' },
+      summary: { type: 'Boolean', attribute: 'summary' },
+      statusBar: { type: 'Boolean', attribute: 'status-bar' },
+      toolPanel: { type: 'Boolean', attribute: 'tool-panel' },
+      charting: { type: 'Boolean', attribute: 'charting' },
+      columnMenuTabs: { type: 'Boolean', attribute: 'column-menu-tabs' },
+      toolPanelDefaultOpen: { type: 'Boolean', attribute: 'tool-panel-default-open' },
+      toolPanelDefaultTab: { type: 'String', attribute: 'tool-panel-default-tab' },
+      selectionMode: { type: 'String', attribute: 'selection-mode' },
+      showRowNumbers: { type: 'Boolean', attribute: 'show-row-numbers' },
+      zebraRows: { type: 'Boolean', attribute: 'zebra-rows' },
+      rowNumberWidth: { type: 'Number', attribute: 'row-number-width' },
+      externalSort: { type: 'Boolean', attribute: 'external-sort' },
+      initialSorting: { type: 'Array' },
+      initialAdvancedFilter: { type: 'Object' },
+      externalFilter: { type: 'Boolean', attribute: 'external-filter' },
+      getRowId: { type: 'Object' },
+      rowClass: { type: 'Object' },
+      notes: { type: 'Object' },
+      editableComments: { type: 'Boolean', attribute: 'editable-comments' },
+      conditionalFormats: { type: 'Array' },
+      conditionalStatScope: { type: 'String', attribute: 'conditional-stat-scope' },
+      isDetailRow: { type: 'Object' },
+      serverGroup: { type: 'Object' },
+      serverFilterValues: { type: 'Object' },
+      pinnedTopRows: { type: 'Array' },
+      pinnedBottomRows: { type: 'Array' },
+      enableColumnReorder: { type: 'Boolean', attribute: 'enable-column-reorder' },
+      columnOrder: { type: 'Array' },
+      inferColumnTypes: { type: 'Boolean', attribute: 'infer-column-types' },
+      rowDragManaged: { type: 'Boolean', attribute: 'row-drag-managed' },
+      rowDragGroup: { type: 'String', attribute: 'row-drag-group' },
+      alignedGridGroup: { type: 'String', attribute: 'aligned-grid-group' },
+      filterLocale: { type: 'String', attribute: 'filter-locale' },
+      /* END generated props */
+    },
+  }}
+/>
+
+<!--
+  <sv-grid-shadow> - the same grid as <sv-grid>, encapsulated in an OPEN shadow
+  root so the host page's CSS cannot reach in.
+
+  A separate element rather than an attribute on <sv-grid>, because Svelte's
+  `customElement.shadow` is resolved at compile time: no runtime flag can switch
+  it.
+
+  `open`, never `closed`: a closed root leaves the consumer a null `shadowRoot`,
+  so they cannot adopt a stylesheet into it, cannot query their own grid, and
+  cannot test it. Unsupported here, and documented as such rather than left to
+  be discovered.
+-->
+<script>
+  import GridBody from './GridBody.svelte'
+  import { adoptGridStyles } from './adopt-styles.js'
+
+  let props = $props()
+
+  // A <style> in document.head does not cross the boundary, so the stylesheet
+  // has to be put in the root explicitly. `shadow: 'open'` is what makes
+  // `$host().shadowRoot` non-null and this possible at all.
+  $effect(() => {
+    adoptGridStyles($host().shadowRoot)
+  })
+
+  // Re-emit grid callbacks as DOM CustomEvents. `composed: true` matters more
+  // here than on the light element: without it an event stops at the shadow
+  // boundary and never reaches a listener on the host page.
+  function emit(name, detail) {
+    $host().dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }))
+  }
+</script>
+
+<GridBody {...props} {emit} host={$host()} />

@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
     type ChartType,
@@ -41,7 +41,7 @@
     })),
   )
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'date', header: 'Date', width: 130 },
     { field: 'channel', header: 'Channel', width: 130 },
     { field: 'sessions', header: 'Sessions', width: 130, align: 'right', format: { type: 'number', options: { maximumFractionDigits: 0 } } },

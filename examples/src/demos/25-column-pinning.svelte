@@ -28,7 +28,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makeOrders, type Order } from '../shared/seed'
 
@@ -43,7 +43,7 @@
   // on any normal monitor. Pinning is only meaningful when the grid
   // actually scrolls; the demo has to force that condition to demonstrate
   // the feature.
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'company',    header: 'Company',        width: 240 },
     { field: 'product',    header: 'Product',        width: 320 },
     { field: 'orderId',    header: 'Order ID',       width: 180 },

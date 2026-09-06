@@ -177,7 +177,7 @@
   {#if o.type === 'textarea'}
     <textarea id={o.id} class="sv-form__control sv-form__textarea" rows="3" disabled={o.disabled} readonly={o.readonly} placeholder={o.placeholder} value={o.value ?? ''} aria-invalid={o.invalid ? 'true' : undefined} aria-describedby={o.describedby} oninput={(e) => o.onChange(e.currentTarget.value)} onblur={o.onBlur}></textarea>
   {:else if o.type === 'number'}
-    <SvNumberInput id={o.id} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block min={o.field?.min ?? -Infinity} max={o.field?.max ?? Infinity} step={o.field?.step ?? 1} precision={o.field?.precision} prefix={o.field?.prefix ?? ''} suffix={o.field?.suffix ?? ''} onChange={o.onChange} />
+    <SvNumberInput id={o.id} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block placeholder={o.placeholder} min={o.field?.min ?? -Infinity} max={o.field?.max ?? Infinity} step={o.field?.step ?? 1} precision={o.field?.precision} prefix={o.field?.prefix ?? ''} suffix={o.field?.suffix ?? ''} onChange={o.onChange} />
   {:else if o.type === 'password'}
     <SvPasswordInput id={o.id} value={o.value ?? ''} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block onChange={o.onChange} />
   {:else if o.type === 'mask'}
@@ -185,17 +185,17 @@
   {:else if o.type === 'phone'}
     <SvPhoneInput id={o.id} value={o.value ?? ''} disabled={o.disabled} invalid={o.invalid} block placeholder={o.placeholder} onChange={(v) => o.onChange(v)} />
   {:else if o.type === 'country'}
-    <SvCountryInput id={o.id} value={o.value ?? null} disabled={o.disabled} invalid={o.invalid} onChange={o.onChange} />
+    <SvCountryInput id={o.id} value={o.value ?? null} disabled={o.disabled} invalid={o.invalid} block onChange={o.onChange} />
   {:else if o.type === 'select'}
-    <SvDropDownList id={o.id} options={o.options ?? []} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} placeholder={o.placeholder} onChange={o.onChange} />
+    <SvDropDownList id={o.id} options={o.options ?? []} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block placeholder={o.placeholder} onChange={o.onChange} />
   {:else if o.type === 'combobox'}
-    <SvComboBox id={o.id} options={o.options ?? []} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} clearable placeholder={o.placeholder} loadOptions={o.field?.loadOptions ? (q) => o.field!.loadOptions!(q, form.values) : undefined} onChange={o.onChange} />
+    <SvComboBox id={o.id} options={o.options ?? []} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block clearable placeholder={o.placeholder} loadOptions={o.field?.loadOptions ? (q) => o.field!.loadOptions!(q, form.values) : undefined} onChange={o.onChange} />
   {:else if o.type === 'multiselect'}
-    <SvMultiSelect id={o.id} options={o.options ?? []} value={Array.isArray(o.value) ? o.value : []} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} placeholder={o.placeholder} onChange={o.onChange} />
+    <SvMultiSelect id={o.id} options={o.options ?? []} value={Array.isArray(o.value) ? o.value : []} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block placeholder={o.placeholder} onChange={o.onChange} />
   {:else if o.type === 'radio'}
     <SvRadioGroup id={o.id} options={o.options ?? []} value={o.value ?? null} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} orientation="horizontal" onChange={o.onChange} />
   {:else if o.type === 'tags'}
-    <SvTagsInput id={o.id} value={Array.isArray(o.value) ? o.value : []} disabled={o.disabled} invalid={o.invalid} placeholder={o.placeholder} onChange={o.onChange} />
+    <SvTagsInput id={o.id} value={Array.isArray(o.value) ? o.value : []} disabled={o.disabled} invalid={o.invalid} block placeholder={o.placeholder} onChange={o.onChange} />
   {:else if o.type === 'slider'}
     <SvSlider id={o.id} value={o.value ?? o.field?.min ?? 0} min={o.field?.min ?? 0} max={o.field?.max ?? 100} step={o.field?.step ?? 1} disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} showValue onChange={o.onChange} />
   {:else if o.type === 'checkbox'}
@@ -203,9 +203,9 @@
   {:else if o.type === 'switch'}
     <div class="sv-form__inline"><SvSwitchButton checked={!!o.value} disabled={o.disabled} readonly={o.readonly} onChange={o.onChange} ariaLabel={o.label} /><span>{o.label}</span></div>
   {:else if o.type === 'date'}
-    <SvDateTimePicker value={dateVal(o.value)} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" disabled={o.disabled} onChange={o.onChange} />
+    <SvDateTimePicker id={o.id} value={dateVal(o.value)} dropDownDisplayMode="calendar" formatString="yyyy-MM-dd" disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block placeholder={o.placeholder ?? 'Select date'} onChange={o.onChange} />
   {:else if o.type === 'datetime'}
-    <SvDateTimePicker value={dateVal(o.value)} dropDownDisplayMode="both" disabled={o.disabled} onChange={o.onChange} />
+    <SvDateTimePicker id={o.id} value={dateVal(o.value)} dropDownDisplayMode="both" disabled={o.disabled} readonly={o.readonly} invalid={o.invalid} block placeholder={o.placeholder} onChange={o.onChange} />
   {:else if o.type === 'color'}
     <SvColorInput id={o.id} value={o.value ?? '#3b82f6'} disabled={o.disabled} invalid={o.invalid} onChange={o.onChange} />
   {:else if o.type === 'file'}

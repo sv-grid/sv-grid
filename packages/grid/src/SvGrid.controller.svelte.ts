@@ -390,6 +390,29 @@ export function createSvGridController<
     targetRow: number;
     targetCol: number;
   } | null>(null);
+  /** An in-flight Excel-style range MOVE (drag the selection's border to
+   *  relocate its values). Same source rectangle as `fillDrag`, plus where
+   *  inside that rectangle the pointer grabbed it - the drop offset is
+   *  `target - grab`, which is what lets a drag started on the range's LEFT
+   *  edge land the range where the pointer is rather than jumping it.
+   *  `copy` mirrors the Ctrl / Cmd key and is re-read on every move, so the
+   *  user can change their mind mid-drag exactly as in a spreadsheet. */
+  let moveDrag = $state<{
+    sourceMinRow: number;
+    sourceMaxRow: number;
+    sourceMinCol: number;
+    sourceMaxCol: number;
+    grabRow: number;
+    grabCol: number;
+    targetRow: number;
+    targetCol: number;
+    copy: boolean;
+  } | null>(null);
+  /** True while the pointer hovers the grab strip on a selection border, so
+   *  the root can switch to a move cursor. Kept as its own flag rather than
+   *  recomputed per cell: it flips at most twice per border crossing and only
+   *  one attribute on one element reads it. */
+  let moveGrabHover = $state(false);
   let activeAtPointerDown: { rowIndex: number; colIndex: number } | null = null;
   let editingCell = $state<CellEditState>(null);
   // Full-row editing: the row currently in whole-row edit + its per-column
@@ -624,6 +647,14 @@ export function createSvGridController<
       props.enableCellSelection ??
       ((props.selectionMode ?? "both") === "cell" ||
         (props.selectionMode ?? "both") === "both"),
+  );
+
+  // Range drag-and-drop rides on cell selection: there is no range to grab
+  // without it, so it can never be on alone. Default ON, matching the fill
+  // handle - both are spreadsheet affordances users arrive expecting, and
+  // neither is reachable until something is actually selected.
+  const moveCellsEffective = $derived(
+    (props.moveCells ?? true) && enableCellSelectionEffective,
   );
 
   // The aggregate footer row. `summary` is the shortcut alias, so it wins over
@@ -1326,35 +1357,22 @@ export function createSvGridController<
    * compute the correct "X to Y of Z" range and total page count when
    * filters reduce the dataset.
    */
-  const allRowsBeforePagination = $derived.by(function allRowsBeforePagination_d() {
-    // Depend on dataStateVersion (row-model-affecting store changes) NOT
-    // gridStateVersion - so moving the active cell / selection does not force
-    // this O(rows) pipeline to re-run. Filter-input state (globalFilter etc.)
-    // and internalData are read below and tracked as their own dependencies.
-    dataStateVersion;
-    // Touch internalData + internalColumns so the row model re-derives when
-    // the consumer replaces the data array (e.g. via a "Reset" button).
-    void internalData;
-    void internalColumns;
-    const rawRows = grid.getRowModel().rows;
-    // External-filter mode: the consumer fetched / pre-filtered the rows
-    // themselves (server-side data sources). Skip every local filter pass
-    // so the data isn't double-filtered against the visible page.
-    if (externalFilterEnabled) return rawRows;
-
-    let rows = rawRows;
-    if (globalFilter.trim()) {
-      const needle = normalizeForFilter(globalFilter, (props.filterLocale ?? props.localization?.locale));
-      rows = rows.filter((row) =>
-        row
-          .getAllCells()
-          .some((cell) =>
-            normalizeForFilter(String(cell.getValue() ?? ""), (props.filterLocale ?? props.localization?.locale))
-              .includes(needle),
-          ),
-      );
-    }
-
+  /**
+   * The per-column filter stages: the menu's (up to two) conditions, then the
+   * set-filter checklists. Split out of `allRowsBeforePagination` so the facet
+   * list can run the SAME pipeline with its own column left out - a checklist
+   * that offers values excluded by the other columns' filters sends you to an
+   * empty grid. Re-implementing the stages beside the original would have let
+   * the two drift.
+   *
+   * `excludeColumnId` omits that column's own filters, which is what "every
+   * other filter" means for the column whose menu is open.
+   */
+  function applyColumnFilters(
+    inputRows: Array<Row<TData>>,
+    excludeColumnId?: string,
+  ): Array<Row<TData>> {
+    let rows = inputRows;
     /**
      * Resolve a column ONCE and return a reader for it.
      *
@@ -1396,7 +1414,8 @@ export function createSvGridController<
         { locale: (props.filterLocale ?? props.localization?.locale) },
       );
     // A column filter is active if either of its (up to two) conditions is.
-    const menuFilters = Object.entries(filterMenuValues).filter(([_, f]) => {
+    const menuFilters = Object.entries(filterMenuValues).filter(([id, f]) => {
+      if (id === excludeColumnId) return false;
       const a = condActive(f.operator, f.value, f.valueTo);
       const b = !!f.operator2 && condActive(f.operator2, f.value2 ?? "", f.valueTo2);
       return a || b;
@@ -1431,7 +1450,9 @@ export function createSvGridController<
       );
     }
 
-    const valueFilterEntries = Object.entries(valueFilters);
+    const valueFilterEntries = Object.entries(valueFilters).filter(
+      ([id]) => id !== excludeColumnId,
+    );
     if (valueFilterEntries.length) {
       // Resolve bucket defs up front so we don't re-hit the derived map
       // for every row × column combination. Columns without bucketing
@@ -1460,6 +1481,40 @@ export function createSvGridController<
         }),
       );
     }
+
+    return rows;
+  }
+
+  const allRowsBeforePagination = $derived.by(function allRowsBeforePagination_d() {
+    // Depend on dataStateVersion (row-model-affecting store changes) NOT
+    // gridStateVersion - so moving the active cell / selection does not force
+    // this O(rows) pipeline to re-run. Filter-input state (globalFilter etc.)
+    // and internalData are read below and tracked as their own dependencies.
+    dataStateVersion;
+    // Touch internalData + internalColumns so the row model re-derives when
+    // the consumer replaces the data array (e.g. via a "Reset" button).
+    void internalData;
+    void internalColumns;
+    const rawRows = grid.getRowModel().rows;
+    // External-filter mode: the consumer fetched / pre-filtered the rows
+    // themselves (server-side data sources). Skip every local filter pass
+    // so the data isn't double-filtered against the visible page.
+    if (externalFilterEnabled) return rawRows;
+
+    let rows = rawRows;
+    if (globalFilter.trim()) {
+      const needle = normalizeForFilter(globalFilter, (props.filterLocale ?? props.localization?.locale));
+      rows = rows.filter((row) =>
+        row
+          .getAllCells()
+          .some((cell) =>
+            normalizeForFilter(String(cell.getValue() ?? ""), (props.filterLocale ?? props.localization?.locale))
+              .includes(needle),
+          ),
+      );
+    }
+
+    rows = applyColumnFilters(rows);
 
     // --- Advanced filter (Pro) ---------------------------------------------
     // Runs LAST for two reasons: it evaluates over the smallest row set, and
@@ -1645,6 +1700,48 @@ export function createSvGridController<
   const rowSelectionState = $derived.by(function rowSelectionState_d() {
     gridStateVersion;
     return grid.getState().rowSelection ?? {};
+  });
+
+  // ---- Selection bar ----------------------------------------------------
+  // The floating bulk-action bar. Off unless asked for: it overlaps a row, and
+  // what belongs on it is app-specific. The RENDERER is Enterprise and arrives
+  // through the selection-bar-view seam; everything here is free.
+  const selectionBarOn = $derived(props.selectionBar !== undefined && props.selectionBar !== false);
+  /** The prop in its three shapes - `true`, an action array, or a full config -
+   *  normalised to the config object the renderer reads. */
+  const selectionBarConfig = $derived.by(function selectionBarConfig_d() {
+    const raw = props.selectionBar;
+    if (Array.isArray(raw)) return { actions: raw };
+    if (raw && typeof raw === "object") return raw as Record<string, unknown>;
+    return {};
+  });
+  const selectionBarActions = $derived(
+    (selectionBarConfig.actions as unknown[] | undefined) ?? [],
+  );
+  const selectionBarPosition = $derived(
+    selectionBarConfig.position === "top" ? "top" : "bottom",
+  );
+  const selectionBarMaxVisible = $derived(
+    typeof selectionBarConfig.maxVisible === "number" && selectionBarConfig.maxVisible > 0
+      ? selectionBarConfig.maxVisible
+      : 6,
+  );
+  const selectionBarHideClear = $derived(selectionBarConfig.hideClear === true);
+  /** Selected rows in DISPLAY order, plus their ids - what every action on the
+   *  bar receives, and what its count shows. Built from `allRows` rather than
+   *  the selection map so the order matches what the user is looking at. */
+  const selectionBarTarget = $derived.by(function selectionBarTarget_d() {
+    const rows: TData[] = [];
+    const ids: string[] = [];
+    if (!selectionBarOn) return { rows, ids };
+    for (const row of allRows) {
+      if (isGroupRow(row)) continue;
+      if (rowSelectionState[row.id]) {
+        rows.push(row.original as TData);
+        ids.push(row.id);
+      }
+    }
+    return { rows, ids };
   });
 
   // Forward selection changes to the consumer. Skips the very first invocation
@@ -3297,22 +3394,60 @@ export function createSvGridController<
    * column id (not just the open menu) so the filter row can drive it too.
    */
   function facetValuesForColumn(columnId: string): Array<string> {
+    return facetEntriesForColumn(columnId).map((entry) => entry.value);
+  }
+
+  /**
+   * The values a column's checklist offers, with the row count behind each.
+   *
+   * Scoped to the rows passing every OTHER column's filters, not to the whole
+   * dataset. Offering the full set means a checklist full of values that
+   * cannot appear: filter Country to Germany and the City list still showed
+   * every city on file, most of them a one-click route to an empty grid.
+   * The column's OWN filter is excluded, so unticking a value never makes the
+   * rest of the list vanish underneath the pointer.
+   */
+  function facetEntriesForColumn(
+    columnId: string,
+  ): Array<{ value: string; count: number | null }> {
     if (!columnId) return [];
-    // Server-provided distinct values win (fetched + cached above).
-    if (props.serverFilterValues) return serverFacetValues[columnId] ?? [];
+    // Server-provided distinct values win (fetched + cached above). The grid
+    // has not seen the rows behind them, so there is nothing to count.
+    if (props.serverFilterValues)
+      return (serverFacetValues[columnId] ?? []).map((value) => ({
+        value,
+        count: null,
+      }));
     const column = allColumns.find((entry) => entry.id === columnId);
     if (!column) return [];
-    // Range-bucketed facets for numeric / date columns with many values.
+
+    const scope = applyColumnFilters(grid.getRowModel().rows, columnId);
     const buckets = facetBucketsByColumn.get(columnId);
-    if (buckets) return buckets.map((b) => b.label);
-    // Default: distinct-value facets.
-    const seen = new Set<string>();
-    for (const rowData of props.data) {
-      seen.add(String(getColumnAccessorValue(rowData, column) ?? ""));
+    if (buckets) {
+      // Range-bucketed facets for numeric / date columns with many values.
+      const counts = new Map<string, number>(buckets.map((b) => [b.label, 0]));
+      for (const row of scope) {
+        const num = rawToNumber(getColumnBaseValue(row, column), buckets[0]!.isDate);
+        if (!Number.isFinite(num)) continue;
+        for (const bucket of buckets) {
+          if (isInBucket(num, bucket)) {
+            counts.set(bucket.label, (counts.get(bucket.label) ?? 0) + 1);
+            break;
+          }
+        }
+      }
+      return buckets.map((b) => ({ value: b.label, count: counts.get(b.label) ?? 0 }));
     }
-    return Array.from(seen).sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true }),
-    );
+
+    // Default: distinct-value facets.
+    const counts = new Map<string, number>();
+    for (const row of scope) {
+      const value = String(getColumnBaseValue(row, column) ?? "");
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    return Array.from(counts.keys())
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .map((value) => ({ value, count: counts.get(value) ?? 0 }));
   }
 
   /**
@@ -3334,10 +3469,12 @@ export function createSvGridController<
   // out a fresh empty array/set on every read.
   const EMPTY_FACETS: Array<string> = [];
   const EMPTY_FACET_SET: ReadonlySet<string> = new Set<string>();
+  const EMPTY_FACET_ENTRIES: Array<{ value: string; count: number | null }> = [];
   let facetCache: {
     columnId: string;
     source: Array<string> | null;
     values: Array<string>;
+    counts: Map<string, number>;
   } | null = null;
   const columnMenuFacetValues = $derived.by(function columnMenuFacetValues_d() {
     // The funnel popover drives via `filterMenuFor`; the column menu's Filter
@@ -3353,10 +3490,14 @@ export function createSvGridController<
     if (facetCache?.columnId === columnId && facetCache.source === source) {
       return facetCache.values;
     }
+    const entries = untrack(() => facetEntriesForColumn(columnId));
     facetCache = {
       columnId,
       source,
-      values: untrack(() => facetValuesForColumn(columnId)),
+      values: entries.map((e) => e.value),
+      counts: new Map(
+        entries.flatMap((e) => (e.count == null ? [] : [[e.value, e.count] as const])),
+      ),
     };
     return facetCache.values;
   });
@@ -3378,12 +3519,22 @@ export function createSvGridController<
   });
 
   /** Visible facets as listbox options ((Blanks) label for the empty value). */
-  const columnMenuFacetOptions = $derived(
-    columnMenuVisibleFacets.map((value) => ({
-      value,
-      label: value === "" ? "(Blanks)" : value,
-    })),
-  );
+  const columnMenuFacetOptions = $derived.by(function columnMenuFacetOptions_d() {
+    // Reading the values first materializes the snapshot (and its counts).
+    const values = columnMenuVisibleFacets;
+    const counts = facetCache?.counts;
+    return values.map((value) => {
+      const count = counts?.get(value);
+      return {
+        value,
+        label: value === "" ? "(Blanks)" : value,
+        // How many rows this value would keep, given the other columns'
+        // filters. Absent in server-values mode, where the grid never sees
+        // the rows behind the list.
+        hint: count == null ? undefined : String(count),
+      };
+    });
+  });
 
   /**
    * Checked facets for the open menu. An ABSENT `valueFilters` entry means
@@ -3396,26 +3547,45 @@ export function createSvGridController<
     return valueFilters[columnId] ?? new Set(columnMenuFacetValues);
   });
 
+  /**
+   * The offered values, in their own derived so the QUERY does not re-run the
+   * scan. It used to sit in `inSuggestValues` beside the `inSuggestQuery`
+   * read, so every keystroke in a chip input rebuilt the distinct-value set -
+   * and once the scan started narrowing itself against the other columns'
+   * filters, every keystroke ran the filter pipeline too. Split out, it
+   * re-runs only when the dropdown moves to another column.
+   */
+  const inSuggestEntries = $derived.by(function inSuggestEntries_d() {
+    const columnId = inSuggestFor;
+    if (!columnId) return EMPTY_FACET_ENTRIES;
+    return untrack(() => facetEntriesForColumn(columnId));
+  });
+
   // Distinct values offered in the `in` / `notIn` suggestions dropdown for the
   // active chip input, narrowed by whatever the user has typed. Uncapped - the
   // dropdown windows its rows, so a high-cardinality column costs a list of
   // strings, not thousands of nodes.
   const inSuggestValues = $derived.by(function inSuggestValues_d() {
-    if (!inSuggestFor) return EMPTY_FACETS;
     const query = inSuggestQuery.trim().toLowerCase();
-    const all = facetValuesForColumn(inSuggestFor);
-    return query
-      ? all.filter((value) => value.toLowerCase().includes(query))
-      : all;
+    const all = inSuggestEntries;
+    return (
+      query ? all.filter((e) => e.value.toLowerCase().includes(query)) : all
+    ).map((e) => e.value);
   });
 
   /** `in` / `notIn` suggestions as listbox options. */
-  const inSuggestOptions = $derived(
-    inSuggestValues.map((value) => ({
-      value,
-      label: value === "" ? "(Blanks)" : value,
-    })),
-  );
+  const inSuggestOptions = $derived.by(function inSuggestOptions_d() {
+    const query = inSuggestQuery.trim().toLowerCase();
+    const shown = query
+      ? inSuggestEntries.filter((e) => e.value.toLowerCase().includes(query))
+      : inSuggestEntries;
+    return shown.map((e) => ({
+      value: e.value,
+      label: e.value === "" ? "(Blanks)" : e.value,
+      // Same match count the menu's checklist shows.
+      hint: e.count == null ? undefined : String(e.count),
+    }));
+  });
 
 
 
@@ -3482,6 +3652,10 @@ export function createSvGridController<
     set isDraggingSelection(v) { isDraggingSelection = v as never; },
     get fillDrag() { return fillDrag; },
     set fillDrag(v) { fillDrag = v as never; },
+    get moveDrag() { return moveDrag; },
+    set moveDrag(v) { moveDrag = v as never; },
+    get moveGrabHover() { return moveGrabHover; },
+    set moveGrabHover(v) { moveGrabHover = v as never; },
     get activeAtPointerDown() { return activeAtPointerDown; },
     set activeAtPointerDown(v) { activeAtPointerDown = v as never; },
     get editingCell() { return editingCell; },
@@ -3585,6 +3759,7 @@ export function createSvGridController<
     get showRowSelectionEffective() { return showRowSelectionEffective; },
     get rowSummariesEnabled() { return rowSummariesEnabled; },
     get enableCellSelectionEffective() { return enableCellSelectionEffective; },
+    get moveCellsEffective() { return moveCellsEffective; },
     get flushScheduledScrollSync() { return flushScheduledScrollSync; },
     get scheduleScrollSync() { return scheduleScrollSync; },
     get internalData() { return internalData; },
@@ -3666,6 +3841,12 @@ export function createSvGridController<
     get allRowsBeforePagination() { return allRowsBeforePagination; },
     get allRows() { return allRows; },
     get rowSelectionState() { return rowSelectionState; },
+    get selectionBarOn() { return selectionBarOn; },
+    get selectionBarActions() { return selectionBarActions; },
+    get selectionBarPosition() { return selectionBarPosition; },
+    get selectionBarMaxVisible() { return selectionBarMaxVisible; },
+    get selectionBarHideClear() { return selectionBarHideClear; },
+    get selectionBarTarget() { return selectionBarTarget; },
     get lastSelectionSerialized() { return lastSelectionSerialized; },
     set lastSelectionSerialized(v) { lastSelectionSerialized = v as never; },
     get lastCellRangeSerialized() { return lastCellRangeSerialized; },
@@ -3914,6 +4095,7 @@ export function createSvGridController<
     get getSelectionRects() { return getSelectionRects; },
     get fillHandleCell() { return fillHandleCell; },
     get isInFillPreview() { return isInFillPreview; },
+    get dragPreviewRect() { return dragPreviewRect; },
     get fillMarqueeEdges() { return fillMarqueeEdges; },
     get findColumnById() { return findColumnById; },
     /**
@@ -3932,6 +4114,14 @@ export function createSvGridController<
     get startFillDrag() { return startFillDrag; },
     get onFillPointerMove() { return onFillPointerMove; },
     get onFillPointerUp() { return onFillPointerUp; },
+    get isOnMoveGrabStrip() { return isOnMoveGrabStrip; },
+    get startMoveDrag() { return startMoveDrag; },
+    get onMovePointerMove() { return onMovePointerMove; },
+    get onMovePointerUp() { return onMovePointerUp; },
+    get trackEdgeScroll() { return trackEdgeScroll; },
+    get stopEdgeScroll() { return stopEdgeScroll; },
+    get applyMoveRange() { return applyMoveRange; },
+    get moveDestRect() { return moveDestRect; },
     get toggleBooleanCell() { return toggleBooleanCell; },
     get onCellPointerDown() { return onCellPointerDown; },
     get onCellPointerEnter() { return onCellPointerEnter; },
@@ -4034,12 +4224,12 @@ export function createSvGridController<
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
-  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
+  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
-  const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
+  const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
 
   // Dev-time configuration checks. Silent misconfiguration was the grid's
   // biggest usability gap - a misspelled `field` rendered a column of blank

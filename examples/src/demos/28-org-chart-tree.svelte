@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Role = 'CEO' | 'VP' | 'Director' | 'Manager' | 'IC'
@@ -160,7 +160,7 @@
     return name.split(' ').filter(Boolean).map((p) => p[0] ?? '').join('').slice(0, 2).toUpperCase()
   }
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     {
       id: 'name',
       header: 'Member',

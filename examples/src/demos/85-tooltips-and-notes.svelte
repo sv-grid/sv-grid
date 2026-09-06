@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -89,7 +89,7 @@
   const fmtPct   = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 })
   const fmtDate  = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'id',       header: 'Order ID',  tooltip: 'Internal order reference. Format: O-NNNN.',
       width: 110 },
     { field: 'company',  header: 'Company',   width: 160 },

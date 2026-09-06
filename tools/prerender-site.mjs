@@ -694,7 +694,10 @@ async function parseRoadmap() {
     const em = line.match(/effort:\s*['"]([SML])['"]/)
     if (tm && em && cur) {
       const nm = line.match(quoted('note'))
-      cur.items.push({ title: unesc(tm[2]), effort: em[1], note: nm ? unesc(nm[2]) : '' })
+      // The lane matters to a crawler too: "in progress" and "planned" are
+      // different claims, and only the hydrated page distinguished them.
+      const sm = line.match(/status:\s*['"]in_progress['"]/)
+      cur.items.push({ title: unesc(tm[2]), effort: em[1], note: nm ? unesc(nm[2]) : '', inProgress: Boolean(sm) })
     }
   }
   if (!groups.some((g) => g.items.length)) {
@@ -714,7 +717,7 @@ function roadmapIndexBody(roadmap) {
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Roadmap - What We Are Building Next</h1><p>${total} planned features for the SvGrid Svelte 5 data grid, grouped by area, plus ${roadmap.shipped.length} recently shipped. An honest, living account - the <a href="${BASE}docs/help/missing-features/">full accounting</a> lists workarounds available today.</p>`
   for (const g of roadmap.groups) {
     html += `<h2>${escapeAttr(g.area)}</h2><ul>`
-    for (const it of g.items) html += `<li>${escapeAttr(it.title)}${it.note ? ' - ' + escapeAttr(it.note) : ''}</li>`
+    for (const it of g.items) html += `<li>${it.inProgress ? '<strong>In progress:</strong> ' : ''}${escapeAttr(it.title)}${it.note ? ' - ' + escapeAttr(it.note) : ''}</li>`
     html += `</ul>`
   }
   if (roadmap.shipped.length) {

@@ -39,6 +39,7 @@
     size = 'md',
     ariaLabel,
     invalid = false,
+    block = false,
     required = false,
     error,
     label,
@@ -111,6 +112,7 @@
   <input
     bind:this={fieldEl}
     class="sv-ac sv-ac--{size}"
+    class:is-block={block}
     class:is-invalid={invalid}
     type="text"
     {placeholder}
@@ -162,4 +164,6 @@
     background-size: 6px 4px; background-position: center; background-repeat: repeat-x;
   }
   :global(.sv-ddl__grip:hover .sv-ddl__grip-dots) { opacity: 1; }
+  /* Fill the container - see `block` in SvEditorProps. */
+  .sv-ac.is-block { width: 100%; max-width: 100%; }
 </style>

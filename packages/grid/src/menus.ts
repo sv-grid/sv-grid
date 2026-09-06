@@ -294,19 +294,49 @@ export function createMenus<
     ctx.valueFilters = { ...ctx.valueFilters, [columnId]: new Set(next) };
   }
 
+  /**
+   * With a search query typed, "select all" means the RESULTS - the same thing
+   * it means in a spreadsheet. It used to mean the whole column regardless, so
+   * the standard flow (type a query, tick select-all, get just the matches)
+   * cleared the entire selection instead: `isAllFacetsChecked` saw every value
+   * ticked, read that as "on", and turned everything off.
+   */
   function isAllFacetsChecked(columnId: string) {
     const selected = ctx.valueFilters[columnId];
-    return !selected || selected.size >= ctx.columnMenuFacetValues.length;
+    const visible = ctx.columnMenuVisibleFacets as Array<string>;
+    const searching = visible.length !== ctx.columnMenuFacetValues.length;
+    if (!selected) return true;
+    if (searching) return visible.every((value) => selected.has(value));
+    return selected.size >= ctx.columnMenuFacetValues.length;
   }
 
   function toggleAllFacets(columnId: string) {
-    if (isAllFacetsChecked(columnId)) {
-      ctx.valueFilters = { ...ctx.valueFilters, [columnId]: new Set<string>() };
-    } else {
-      const copy = { ...ctx.valueFilters };
-      delete copy[columnId];
-      ctx.valueFilters = copy;
+    const visible = ctx.columnMenuVisibleFacets as Array<string>;
+    const all = ctx.columnMenuFacetValues as Array<string>;
+    const searching = visible.length !== all.length;
+    const on = isAllFacetsChecked(columnId);
+
+    if (!searching) {
+      if (on) {
+        ctx.valueFilters = { ...ctx.valueFilters, [columnId]: new Set<string>() };
+      } else {
+        const copy = { ...ctx.valueFilters };
+        delete copy[columnId];
+        ctx.valueFilters = copy;
+      }
+      return;
     }
+    // Searching: add or remove just the matches, leaving the rest of the
+    // selection alone. An absent entry means "everything", so it has to be
+    // materialized before a subtraction can mean anything.
+    const current = ctx.valueFilters[columnId]
+      ? new Set<string>(ctx.valueFilters[columnId])
+      : new Set<string>(all);
+    for (const value of visible) {
+      if (on) current.delete(value);
+      else current.add(value);
+    }
+    ctx.valueFilters = { ...ctx.valueFilters, [columnId]: current };
   }
 
   function clearColumnFilter(columnId: string) {

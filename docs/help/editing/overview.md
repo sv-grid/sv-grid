@@ -94,6 +94,14 @@ Walks through every fill pattern the engine detects: numeric series, date series
 
 <div data-docs-demo="95-fill-handle" data-height="460"></div>
 
+### Drag a range to move or copy it
+
+Grab the border of a selected block and drag it somewhere else and the values
+move; hold Ctrl (Cmd) as you drop and they are copied. On by default with cell
+selection - see [Drag a range to move or copy it](./move-cells.md).
+
+<div data-docs-demo="429-move-cells" data-height="480"></div>
+
 ## See also
 
 - [Start / stop editing](./start-stop-editing.md)
@@ -101,3 +109,4 @@ Walks through every fill pattern the engine detects: numeric series, date series
 - [Saving values](./saving-values.md)
 - [Provided editors](./provided-editors.md)
 - [Validation](./validation.md)
+- [Drag a range to move or copy it](./move-cells.md)

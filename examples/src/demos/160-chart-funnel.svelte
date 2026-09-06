@@ -15,7 +15,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
     type ChartSelection,
@@ -34,7 +34,7 @@
   ]
   const rows: Row[] = stages.map((s, id) => ({ id, ...s }))
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'stage', header: 'Stage', width: 160 },
     { field: 'users', header: 'Users', width: 110, align: 'right',
       format: { type: 'number', options: { maximumFractionDigits: 0 } } },

@@ -17,7 +17,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Status = 'planned' | 'in-progress' | 'blocked' | 'done'
@@ -207,7 +207,7 @@
 
   const features = tableFeatures({ rowSortingFeature })
 
-  const columns: ColumnDef<typeof features, Task>[] = [
+  const columns: GridColumns<Task> = [
     {
       id: 'name',
       header: 'Work item',

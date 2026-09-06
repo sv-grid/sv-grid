@@ -19,6 +19,7 @@
     renderSnippet,
     spreadsheetLayout,
     type ColumnDef,
+    type GridColumns,
     type CellBorderSpec,
     type SvGridApi,
   } from '@svgrid/grid'
@@ -148,7 +149,7 @@
 
   const features = tableFeatures({})
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'rn', header: '', width: 56, align: 'center', editable: false,
       cellClass: 'sv-row-gutter',
       cell: (ctx) => renderSnippet(RowNumCell, { row: ctx.row.original }) },

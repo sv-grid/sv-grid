@@ -21,7 +21,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { makePeople, type Person, type Status } from '../shared/seed'
@@ -63,7 +63,7 @@
   let api = $state<SvGridApi<typeof features, Person> | null>(null)
   let dirty = $state<Record<string, true>>({})
 
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name', editorType: 'text', width: 140 },
     { field: 'lastName',  header: 'Last name',  editorType: 'text', width: 140 },
     {

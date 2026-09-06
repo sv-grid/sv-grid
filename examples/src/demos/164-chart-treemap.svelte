@@ -19,7 +19,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
     type TreeNode,
@@ -67,7 +67,7 @@
     { id: 29, region: 'APAC',     category: 'Outdoors',    product: 'Camping Stove',  revenue:    70_000 },
   ]
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'region',   header: 'Region',   width: 120 },
     { field: 'category', header: 'Category', width: 130 },
     { field: 'product',  header: 'Product',  width: 180 },

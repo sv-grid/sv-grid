@@ -23,7 +23,7 @@
     rowSelectionFeature,
     rowPaginationFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
@@ -208,14 +208,14 @@
   ]
 
   // ------ Columns -------------------------------------------------------
-  const dashboardColumns: ColumnDef<typeof features, Order>[] = [
+  const dashboardColumns: GridColumns<Order> = [
     { field: 'company', header: 'Company', width: 150 },
     { field: 'product', header: 'Product', width: 200 },
     { field: 'price',   header: 'Price',   width: 110, format: { type: 'currency', currency: 'USD' } },
     { field: 'sellDate', header: 'Placed', width: 110, format: { type: 'date', pattern: 'y-m-d' } },
   ]
 
-  const ordersColumns: ColumnDef<typeof features, Order>[] = [
+  const ordersColumns: GridColumns<Order> = [
     { field: 'orderId',  header: 'Order ID', width: 130 },
     { field: 'company',  header: 'Company',  width: 170 },
     { field: 'product',  header: 'Product',  width: 200 },
@@ -227,7 +227,7 @@
     { field: 'sellDate', header: 'Sell date', width: 110, format: { type: 'date', pattern: 'y-m-d' } },
   ]
 
-  const customerColumns: ColumnDef<typeof features, Person>[] = [
+  const customerColumns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name', editorType: 'text',   width: 130 },
     { field: 'lastName',  header: 'Last name',  editorType: 'text',   width: 130 },
     { field: 'email',     header: 'Email',      editorType: 'text',   width: 220 },
@@ -296,7 +296,7 @@
   }
 
   // ------ Product / User column defs -----------------------------------
-  const productColumns: ColumnDef<typeof features, Product>[] = [
+  const productColumns: GridColumns<Product> = [
     { field: 'id',       header: 'ID',       width: 90 },
     { field: 'name',     header: 'Name',     width: 180, editorType: 'text' },
     { field: 'sku',      header: 'SKU',      width: 130 },
@@ -318,7 +318,7 @@
       format: { type: 'date', pattern: 'y-m-d' } },
   ]
 
-  const userColumns: ColumnDef<typeof features, User>[] = [
+  const userColumns: GridColumns<User> = [
     { field: 'id',    header: 'ID',    width: 90 },
     { field: 'name',  header: 'Name',  width: 180, editorType: 'text' },
     { field: 'email', header: 'Email', width: 240, editorType: 'text' },
@@ -334,7 +334,7 @@
     { field: 'active', header: 'Active', width: 80, editorType: 'checkbox' },
   ]
 
-  const reportColumns: ColumnDef<typeof features, RegionRow>[] = [
+  const reportColumns: GridColumns<RegionRow> = [
     { field: 'region', header: 'Region', width: 160 },
     { field: 'revenue', header: 'Revenue', width: 160, align: 'right',
       format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },

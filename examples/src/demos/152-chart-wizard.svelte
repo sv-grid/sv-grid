@@ -19,7 +19,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     rowSelectionFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
     type ChartSpec,
     type ChartType,
@@ -47,7 +47,7 @@
     }
   })
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'rep', header: 'Rep', width: 100 },
     { field: 'region', header: 'Region', width: 100 },
     { field: 'product', header: 'Product', width: 100 },

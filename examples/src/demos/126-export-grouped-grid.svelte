@@ -26,7 +26,7 @@
     columnFilteringFeature,
     columnGroupingFeature,
     rowExpandingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
   import {
@@ -98,7 +98,7 @@
     columnGroupingFeature,
     rowExpandingFeature,
   })
-  const columns: ColumnDef<typeof features, Deal>[] = [
+  const columns: GridColumns<Deal> = [
     { field: 'region',    header: 'Region',    width: 90  },
     { field: 'country',   header: 'Country',   width: 110 },
     { field: 'rep',       header: 'Sales rep', width: 170 },

@@ -14,7 +14,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   let zebraRows = $state(true)
@@ -38,7 +38,7 @@
   }]
 
   const features = tableFeatures({ rowSortingFeature })
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'region',  header: 'Region' },
     { field: 'rep',     header: 'Sales rep' },
     { field: 'deals',   header: 'Deals',   align: 'right', format: { type: 'number' } },

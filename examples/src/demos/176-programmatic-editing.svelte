@@ -12,7 +12,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -38,7 +38,7 @@
   let active = $state<{ rowIndex: number; columnId: string } | null>(null)
   let editing = $state(false)
 
-  const columns: ColumnDef<typeof features, Lead>[] = [
+  const columns: GridColumns<Lead> = [
     { field: 'company', header: 'Company', editorType: 'text', width: 160 },
     { field: 'contact', header: 'Contact', editorType: 'text', width: 160 },
     { field: 'email', header: 'Email', editorType: 'text', width: 220 },

@@ -26,7 +26,7 @@
     SvGrid,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -165,7 +165,7 @@
     traces = []
   }
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'id',      header: 'Order',   editorType: 'text', width: 110 },
     { field: 'product', header: 'Product', editorType: 'text', width: 220 },
     {

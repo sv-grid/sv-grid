@@ -12,7 +12,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makePeople, type Person } from '../shared/seed'
 
@@ -78,7 +78,7 @@
   )
 
   // Snippets defined below are hoisted, so they are usable here.
-  function buildColumns(): ColumnDef<typeof features, Person>[] {
+  function buildColumns(): GridColumns<Person> {
     return [
       {
         id: 'person',

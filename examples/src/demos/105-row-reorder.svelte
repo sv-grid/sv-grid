@@ -20,7 +20,7 @@
     tableFeatures,
     rowSortingFeature,
     renderSnippet,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Task = {
@@ -161,7 +161,7 @@
   // ---- Cell renderers --------------------------------------------------
   const features = tableFeatures({ rowSortingFeature })
 
-  const columns: ColumnDef<typeof features, Task>[] = [
+  const columns: GridColumns<Task> = [
     {
       id: 'handle', header: '', width: 36, editable: false,
       cell: (ctx) => renderSnippet(HandleCell, { taskId: ctx.row.original.id, checked: checked.has(ctx.row.original.id) }),

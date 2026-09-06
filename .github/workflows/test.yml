@@ -75,7 +75,31 @@ jobs:
 
       - name: Web component tests
         # Its suite loads the BUILT bundle, so the build is part of the test.
+        # `build` runs `generate-surface.mjs --check` first, so a prop added to
+        # <SvGrid> without regenerating fails here rather than silently going
+        # missing from <sv-grid> - which is how the element ended up exposing
+        # 7 of 100 props.
         run: pnpm --filter @svgrid/grid-wc build && pnpm --filter @svgrid/grid-wc test
+
+      - name: Framework wrapper build
+        # The React, Vue and Angular wrappers are generated from the same
+        # surface as the elements; `build` gates them with --check. Angular
+        # goes through ng-packagr, so a broken decorator fails here rather
+        # than in a consumer app.
+        run: pnpm --filter @svgrid/grid-wc build:test-apps
+
+      - name: Framework examples compile
+        # The docs ship these as "open this and it runs", so a broken example
+        # is worse than a missing one. Each framework is checked by its own
+        # compiler, and the Vue templates get an extra pass: Vue treats an
+        # unknown attribute as a legal fallthrough, so a misspelled prop
+        # type-checks cleanly and silently does nothing.
+        run: pnpm --filter @svgrid/grid-wc check:examples
+
+      - name: Web component size budget
+        # grid-wc had no budget, so nothing would have noticed the elements
+        # getting heavy any more than it noticed them being thin.
+        run: pnpm --filter @svgrid/grid-wc size:check
 
       - name: Docs guardrails
         # Orphaned for months: these live in tools/ and no package's vitest
@@ -83,6 +107,33 @@ jobs:
         # studio-docs + ui-docs read website/src/lib/docs.ts, which needs the
         # private submodule checked out above.
         run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts
+
+      - name: Docs structure + reference guards
+        # Same story as the step above: these live in tools/, no package's
+        # vitest config includes them, and CI names its tools tests one file at
+        # a time - so six of them ran nowhere. They cover the shape of the docs
+        # rather than their prose: every gallery demo reachable from a page, the
+        # examples-per-page floor, "See also" staying last (content had been
+        # appended below that footer on 181 pages, invisible to every other
+        # check), demo-source links resolving, no undocumented public export,
+        # and the docs.json / llms.txt split holding.
+        #
+        # `build-doc-snippets` runs FIRST on purpose. The snippet manifest is
+        # gitignored, and three assertions in demo-doc-coverage early-return
+        # when it is missing - without generating it the step would pass while
+        # testing nothing, which is worse than not running it at all.
+        run: |
+          node tools/build-doc-snippets.mjs
+          pnpm vitest run tools/demo-doc-coverage.test.ts tools/docs-links.test.ts tools/reference-coverage.test.ts tools/reference-defaults.test.ts tools/llm-only-docs.test.ts tools/shadcn-registry.test.ts
+
+      - name: Machine-readable changelog is current
+        # docs/changelog.md tells readers (and, through llms-full.txt, models)
+        # to fetch /changelog.json for the same content in a parseable shape.
+        # Nothing generated it, so that URL 404'd. It is generated in the
+        # website prebuild now; this fails when the committed copy has drifted
+        # from the markdown, the same way the reference and UI-surface files
+        # are gated.
+        run: node tools/build-changelog-json.mjs --check
 
       - name: Documented commands exist
         # docs/help/benchmarks.md told readers to run `pnpm bench --json` and
@@ -260,3 +311,63 @@ jobs:
                 body: fullBody,
               });
             }
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    # Independent of the unit job so the two run in parallel: this one is
+    # dominated by browser wall-clock, not by anything the unit job produces.
+    steps:
+      - uses: actions/checkout@v5
+
+      # Same private-submodule dance as the unit job. This is the reason the
+      # suite sat outside CI: playwright.config.ts still says "website/ is a
+      # private submodule, so this suite only runs on a checkout that has it.
+      # It is not part of CI for that reason." That stopped being true once the
+      # unit job started checking the submodule out with WEBSITE_TOKEN, and the
+      # 122 specs went on not running for nobody's benefit.
+      - name: Check out the private website submodule
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
+          git submodule update --init website
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build library (svelte-package)
+        # The website dev server resolves @svgrid/grid and @svgrid/enterprise
+        # through their published `exports`, i.e. dist/ - so the servers
+        # playwright.config.ts starts will not boot without these.
+        run: |
+          pnpm --filter @svgrid/grid build
+          pnpm --filter @svgrid/enterprise build:lib
+          pnpm --filter @svgrid/enterprise build:node
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser specs
+        # `chromium` is the behavioural suite against the website's demo routes;
+        # `mobile` is the phone-viewport overflow guard against the gallery.
+        # The `perf` project is deliberately excluded - its own comment explains
+        # why browser wall-clock on a shared runner is not a gate.
+        run: pnpm exec playwright test --project=chromium --project=mobile
+
+      - name: Upload the report when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

@@ -22,7 +22,7 @@
     tableFeatures,
     rowSortingFeature,
     columnGroupingFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -53,7 +53,7 @@
     revenue: Math.round(5_000 + rnd() * 95_000),
   }))
 
-  const columns: ColumnDef<typeof features, Sale>[] = [
+  const columns: GridColumns<Sale> = [
     { field: 'region', header: 'Region', width: 140 },
     { field: 'tier',   header: 'Tier',   width: 140 },
     { field: 'rep',    header: 'Rep',    width: 150 },

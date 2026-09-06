@@ -15,12 +15,12 @@
     createGridState,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Row = { name: string; region: string; deals: number }
   const features = tableFeatures({ rowSortingFeature })
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'name', header: 'Rep' },
     { field: 'region', header: 'Region' },
     { field: 'deals', header: 'Deals' },

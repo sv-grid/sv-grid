@@ -1,0 +1,58 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>sv-grid-shadow fixture</title>
+<!-- Drives the BUILT bundles, because the head-CSS injection is a build-only
+     plugin: in dev there is no __SVGRID_WC_CSS__ and adoptGridStyles no-ops.
+     Used by tests/e2e/wc-shadow-dom.spec.ts. -->
+<style>
+  body { margin:0; font:14px system-ui; padding:20px; }
+  /* A hostile page rule: it must NOT reach inside the shadow root. */
+  td, th { background: fuchsia !important; color: lime !important; }
+  sv-grid-shadow, sv-grid { display:block; height:340px; border:1px solid #cbd5e1; margin-bottom:24px; }
+</style></head>
+<body>
+<h3>&lt;sv-grid-shadow&gt; (shadow root)</h3>
+<sv-grid-shadow id="s" sortable filterable selectable editable></sv-grid-shadow>
+<h3>&lt;sv-grid&gt; (light DOM, for comparison)</h3>
+<sv-grid id="l" sortable filterable></sv-grid>
+<h3>&lt;sv-grid&gt; configured entirely by ATTRIBUTES at mount</h3>
+<!-- The CDN story: no script beyond setting data/columns. Every one of these
+     attributes is generated from a primitive prop; page-size is initial-only,
+     so it can only be proven this way. -->
+<sv-grid id="a" sortable filterable pageable page-size="5" show-row-numbers
+         zebra-rows row-height="28" container-height="100%"></sv-grid>
+<script type="module">
+  import '../dist/shadow/sv-grid-shadow-element.js'
+  import '../dist/sv-grid-element.js'
+  const rows = Array.from({ length: 40 }, (_, i) => ({
+    id: i + 1, name: 'Person ' + (i + 1),
+    city: ['Sofia','Berlin','Lisbon','Oslo'][i % 4], amount: (i * 37) % 900,
+  }))
+  const cols = [
+    { id:'id', field:'id', header:'ID', width:70 },
+    { id:'name', field:'name', header:'Name', editable:true },
+    { id:'city', field:'city', header:'City', editable:true, editorType:'list',
+      editorOptions:['Sofia','Berlin','Lisbon','Oslo'] },
+    { id:'amount', field:'amount', header:'Amount', cellDataType:'number' },
+  ]
+  for (const el of [document.getElementById('s'), document.getElementById('l'), document.getElementById('a')]) {
+    el.data = rows; el.columns = cols
+  }
+  // Props that were unreachable before the surface was generated. Objects and
+  // arrays are set as PROPERTIES - an attribute is a string.
+  window.__enableGrouping = () => {
+    const el = document.getElementById('s')
+    el.groupable = true
+    el.groupBy = ['city']
+  }
+  window.__enablePaging = () => {
+    const el = document.getElementById('s')
+    el.pageable = true
+    el.pageSize = 5
+  }
+  window.__events = []
+  document.getElementById('s').addEventListener('rowclick', (e) => window.__events.push(['rowclick', e.detail]))
+  document.getElementById('s').addEventListener('selectionchange', () => window.__events.push(['selectionchange']))
+  for (const name of ['cellvaluechange', 'sortingchange', 'cellclick', 'apiready'])
+    document.getElementById('s').addEventListener(name, (e) => window.__events.push([name, e.detail]))
+</script>
+</body></html>

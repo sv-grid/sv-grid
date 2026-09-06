@@ -14,12 +14,12 @@
     createSortedRowModel,
     tableFeatures,
     rowSortingFeature,
-    type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
 
   type Person = { name: string; team: string; role: string; salary: number }
   const features = tableFeatures({ rowSortingFeature })
-  const columns: ColumnDef<typeof features, Person>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'name', header: 'Name' },
     { field: 'team', header: 'Team' },
     { field: 'role', header: 'Role' },

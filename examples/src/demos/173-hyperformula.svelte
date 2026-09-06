@@ -35,6 +35,7 @@
     spreadsheetLayout,
     rowResize,
     type ColumnDef,
+    type GridColumns,
     type HyperFormulaInstance,
     type HyperFormulaSheet,
     type MergeSpec,
@@ -343,7 +344,7 @@
     return typeof v === 'string' && v.startsWith('=')
   }
 
-  const columns: ColumnDef<typeof features, Row>[] = [
+  const columns: GridColumns<Row> = [
     { field: 'rn', header: '', width: 56, align: 'center', editable: false,
       cellClass: 'sv-row-gutter',
       cell: (ctx) => renderSnippet(RowNumCell, { row: ctx.row.original }) },

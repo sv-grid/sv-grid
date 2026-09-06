@@ -4,8 +4,8 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "2.6.2",
-  "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element). Drop into React, Vue, Angular, or plain HTML - no build step required.",
+  "version": "2.7.0",
+  "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element, plus <sv-grid-shadow> for an open shadow root). Drop into React, Vue, Angular, or plain HTML - no build step required.",
   "type": "module",
   "license": "MIT",
   "author": "jQWidgets Ltd",
@@ -48,9 +48,27 @@
   "module": "./dist/sv-grid-element.js",
   "exports": {
     ".": {
+      "types": "./dist/sv-grid-element.d.ts",
       "import": "./dist/sv-grid-element.js"
     },
-    "./dist/sv-grid-element.js": "./dist/sv-grid-element.js"
+    "./shadow": {
+      "types": "./dist/shadow/sv-grid-shadow-element.d.ts",
+      "import": "./dist/shadow/sv-grid-shadow-element.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./vue": {
+      "types": "./dist/vue/index.d.ts",
+      "import": "./dist/vue/index.js"
+    },
+    "./angular": {
+      "types": "./dist/angular/types/svgrid-grid-wc-angular.d.ts",
+      "import": "./dist/angular/fesm2022/svgrid-grid-wc-angular.mjs"
+    },
+    "./dist/sv-grid-element.js": "./dist/sv-grid-element.js",
+    "./dist/shadow/sv-grid-shadow-element.js": "./dist/shadow/sv-grid-shadow-element.js"
   },
   "unpkg": "./dist/sv-grid-element.js",
   "jsdelivr": "./dist/sv-grid-element.js",
@@ -65,14 +83,61 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "node ./scripts/generate-surface.mjs --check && node ./scripts/generate-wrappers.mjs --check && node ./scripts/build.mjs",
     "test": "vitest run",
-    "prepack": "vite build"
+    "prepack": "node ./scripts/generate-surface.mjs --check && node ./scripts/generate-wrappers.mjs --check && node ./scripts/build.mjs",
+    "preview": "vite preview --outDir . --port 4205 --strictPort",
+    "generate:surface": "node ./scripts/generate-surface.mjs",
+    "size:check": "node ./scripts/check-size.mjs",
+    "generate:wrappers": "node ./scripts/generate-wrappers.mjs",
+    "build:test-apps": "node ./scripts/build-test-apps.mjs",
+    "preview:test-apps": "vite preview --outDir dist-test --port 4206 --strictPort",
+    "check:examples": "node ./scripts/check-examples.mjs",
+    "sync:example-docs": "node ./scripts/sync-example-docs.mjs"
   },
   "devDependencies": {
+    "@angular/common": "^22.1.5",
+    "@angular/compiler": "^22.1.5",
+    "@angular/compiler-cli": "^22.1.5",
+    "@angular/core": "^22.1.5",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@svgrid/enterprise": "workspace:^",
     "@svgrid/grid": "workspace:^",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "ng-packagr": "^22.1.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "svelte": "^5.55.5",
-    "vite": "^8.2.1"
+    "tslib": "^2.8.1",
+    "vite": "^8.2.1",
+    "vue": "^3.5.42",
+    "vue-tsc": "^3.3.11"
+  },
+  "types": "./dist/sv-grid-element.d.ts",
+  "peerDependencies": {
+    "@angular/common": ">=18",
+    "@angular/core": ">=18",
+    "react": ">=17",
+    "react-dom": ">=17",
+    "vue": ">=3.3"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    },
+    "@angular/common": {
+      "optional": true
+    }
   }
 }

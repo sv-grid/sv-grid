@@ -20,6 +20,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
+    type GridColumns,
   } from '@svgrid/grid'
   import { makeWidePeople, metricKind, type WidePerson } from '../shared/seed'
 
@@ -64,15 +65,15 @@
     { name: 'Margin',  format: { type: 'percent', valueIsPercentPoints: true, options: { maximumFractionDigits: 1 } } },
   ] as const
 
-  function buildColumns(metrics: number): ColumnDef<typeof features, WidePerson>[] {
-    const base: ColumnDef<typeof features, WidePerson>[] = [
+  function buildColumns(metrics: number): GridColumns<WidePerson> {
+    const base: GridColumns<WidePerson> = [
       { field: 'firstName',  header: 'First name', editorType: 'text', width: 140 },
       { field: 'lastName',   header: 'Last name',  editorType: 'text', width: 140 },
       { field: 'department', header: 'Team',       editorType: 'text', width: 130 },
       { field: 'country',    header: 'Region',     editorType: 'text', width: 100 },
       { field: 'status',     header: 'Status',     editorType: 'text', width: 110 },
     ]
-    const ledger: ColumnDef<typeof features, WidePerson>[] = []
+    const ledger: GridColumns<WidePerson> = []
     for (let i = 0; i < metrics; i++) {
       const kpi = KPI[metricKind(i)]!
       // Three KPIs share each month, so month N advances every 3 columns.

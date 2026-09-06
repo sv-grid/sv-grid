@@ -217,6 +217,78 @@ export type ContextMenuItem<TData extends RowData = RowData> =
       action: (target: ContextMenuTarget<TData>) => void;
     };
 
+/** What a {@link SelectionBarAction} is handed when it runs. */
+export type SelectionBarTarget<TData extends RowData = RowData> = {
+  /** The selected rows, in the grid's current display order. */
+  rows: TData[];
+  /** Their row ids, same order as `rows`. */
+  ids: string[];
+};
+
+/**
+ * One button on the selection bar. Same shape as {@link ContextMenuItem}'s
+ * object form - key, label, optional hidden/disabled predicates, and an action -
+ * except everything here is handed the whole SELECTION rather than one cell.
+ */
+export type SelectionBarAction<TData extends RowData = RowData> = {
+  key: string;
+  label: string;
+  /**
+   * Inline SVG path data (the `d` of a single 24x24 path) drawn to the left of
+   * the label. A string rather than a component so an action array stays plain
+   * data that can live in a `.ts` module next to the columns.
+   */
+  icon?: string;
+  /** Render in the destructive style (red). Does not add a confirmation. */
+  danger?: boolean;
+  /** Hide the button entirely for this selection. */
+  hidden?: (target: SelectionBarTarget<TData>) => boolean;
+  /** Render greyed-out and non-clickable for this selection. */
+  disabled?: (target: SelectionBarTarget<TData>) => boolean;
+  /** Invoked on click. The bar stays open; clear the selection yourself if the
+   *  action should dismiss it. */
+  action: (target: SelectionBarTarget<TData>) => void;
+};
+
+/**
+ * A built-in bar button, named by key - the same convention
+ * {@link ContextMenuItem} uses for its string form.
+ *
+ * - `'selectAll'` selects every row in the current view.
+ * - `'editFields'` opens the bulk-edit dialog: pick a field, set one value,
+ *   apply it to every selected row in a single undo step.
+ * - `'separator'` draws a divider.
+ */
+export type SelectionBarBuiltin = "selectAll" | "editFields" | "separator";
+
+/**
+ * Full form of the {@link SvGridProps.selectionBar} prop, for when the array
+ * shorthand is not enough.
+ */
+export type SelectionBarConfig<TData extends RowData = RowData> = {
+  /**
+   * The buttons, left to right. Strings are {@link SelectionBarBuiltin} keys,
+   * objects are your own actions - so a Jira-shaped bar is
+   * `['selectAll', 'editFields', 'separator', myAction]`.
+   */
+  actions?: ReadonlyArray<SelectionBarAction<TData> | SelectionBarBuiltin>;
+  /**
+   * Which edge of the grid the bar floats against. Default `'bottom'`, where
+   * the eye is already going after ticking a checkbox and where it covers the
+   * rows a user is least likely to be reading.
+   */
+  position?: "bottom" | "top";
+  /**
+   * How many actions stay on the bar before the rest collapse into an overflow
+   * menu. Default 6, which fits a full issue-tracker set (select all, edit,
+   * status, watch, delete) without collapsing. A bar wide enough to need
+   * horizontal scrolling is a bar whose last button nobody finds.
+   */
+  maxVisible?: number;
+  /** Hide the trailing clear (x) button. Default false. */
+  hideClear?: boolean;
+};
+
 /** A single Kanban lane (board column). {@link BoardConfig}. */
 export type BoardLane = {
   /** Lane id - equals the `groupBy` field value of the cards it holds. */
@@ -1004,6 +1076,29 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   contextMenu?: boolean | ReadonlyArray<ContextMenuItem<TData>>;
   /**
+   * Floating bar that appears over the grid while rows are selected, showing
+   * the count and the actions that apply to the whole selection - the pattern
+   * an issue tracker uses for bulk edit.
+   *
+   * `true` gives the count and a Clear button. An array is the shorthand for
+   * `{ actions }`. Pass {@link SelectionBarConfig} to also set `position`
+   * (`'bottom'` default, or `'top'`), `maxVisible` and `hideClear`. Omitted /
+   * `false` is off.
+   *
+   * Default **off**. This is chrome that floats over your content, not a
+   * gesture: it overlaps a row, and what belongs on it is specific to the app.
+   *
+   * **The prop and its types are free; the bar itself is an Enterprise
+   * feature.** Install `@svgrid/enterprise` and call `enableSelectionBar()`
+   * (or `installEnterprise`, which does it for you) to render it - without
+   * that the grid shows a short upsell note in its place, the same way the
+   * scheduler and board views do.
+   */
+  selectionBar?:
+    | boolean
+    | ReadonlyArray<SelectionBarAction<TData> | SelectionBarBuiltin>
+    | SelectionBarConfig<TData>;
+  /**
    * The feature set built with `tableFeatures({ ... })`. Optional - the
    * `sortable` / `filterable` / `groupable` shortcuts below inject the
    * matching feature for you, so a grid can be configured entirely from
@@ -1455,6 +1550,23 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * is the shortcut alias and wins over it.
    */
   enableCellSelection?: boolean;
+  /**
+   * Excel-style drag-and-drop of a selected cell range: grab the range's
+   * border and drag it somewhere else to MOVE the values there, or hold
+   * Ctrl (Cmd on macOS) to COPY them instead. The modifier is read at drop
+   * time, so it can be pressed or released mid-drag.
+   *
+   * On by default whenever cell selection is on, matching the fill handle.
+   * Set `false` to keep a border pointerdown starting a fresh selection, which
+   * is what it did before this existed.
+   *
+   * The grab strip is the outer 4px of the range border, so a pointerdown
+   * anywhere further inside still starts a new selection. A drop is refused
+   * outright - nothing changes - when the destination would fall outside the
+   * grid, or when any source or destination cell is read-only. It does not
+   * move the part that fits and silently drop the rest.
+   */
+  moveCells?: boolean;
   /**
    * Highlight the row under the pointer. Default **false** - the hover tint can
    * compete with the cell selection / fill marquee. Set `true` to opt in; when

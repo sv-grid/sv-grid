@@ -14,7 +14,7 @@
    *     remove: ['ORD-1001'],                  // by id (or row ref)
    *   })
    */
-  import { SvGrid, tableFeatures, type ColumnDef, type SvGridApi } from '@svgrid/grid'
+  import { SvGrid, tableFeatures, type GridColumns, type SvGridApi } from '@svgrid/grid'
 
   const features = tableFeatures({})
 
@@ -41,7 +41,7 @@
   let applied = $state({ added: 0, updated: 0, removed: 0 })
   let liveRows = $state(seedRows.length)
 
-  const columns: ColumnDef<typeof features, Order>[] = [
+  const columns: GridColumns<Order> = [
     { field: 'id', header: 'Order', width: 120 },
     { field: 'symbol', header: 'Symbol', width: 100 },
     { field: 'side', header: 'Side', width: 90 },

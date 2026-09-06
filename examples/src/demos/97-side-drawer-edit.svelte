@@ -18,7 +18,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -137,7 +137,7 @@
     : n >= 1_000   ? `$${(n / 1_000).toFixed(0)}k`
                    : `$${n.toFixed(0)}`
 
-  const columns: ColumnDef<typeof features, Application>[] = [
+  const columns: GridColumns<Application> = [
     { field: 'id',          header: 'Application', width: 110, editable: false },
     { field: 'company',     header: 'Company',     width: 180, editable: false },
     { field: 'contact',     header: 'Contact',     width: 150, editable: false },

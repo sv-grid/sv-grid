@@ -17,6 +17,7 @@ import {
   toValueArray,
 } from "./SvGrid.helpers";
 import {
+  createDataIndexLookup,
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
@@ -156,6 +157,8 @@ export function createEditing<
       ctx.editingCell.value,
       {
         multiple: column?.columnDef.editorMultiple === true,
+        // A dateString column holds 'YYYY-MM-DD', not a timestamp.
+        dateOnly: column?.columnDef.cellDataType === "dateString",
       },
     );
     let oldValue: unknown = undefined;
@@ -416,18 +419,15 @@ export function createEditing<
       : Math.max(...lines.map((l) => l.split("\t").length));
 
     const next = ctx.internalData.slice() as Array<TData>;
+    const dataIndexOf = createDataIndexLookup(next);
     for (let i = 0; i < rowSpan; i += 1) {
       const targetRowIndex = startRow + i;
       const row = ctx.allRows[targetRowIndex];
       if (!row || isGroupRow(row)) continue;
-      // Map the visible row back to its index in the data array via row.id (default = String(index)).
-      const dataIndex = Number(row.id);
-      if (
-        !Number.isInteger(dataIndex) ||
-        dataIndex < 0 ||
-        dataIndex >= next.length
-      )
-        continue;
+      // Map the visible row back to its slot in the data array by identity -
+      // `row.id` is only the index under the default getRowId.
+      const dataIndex = dataIndexOf(row);
+      if (dataIndex < 0) continue;
       const originalRow = next[dataIndex];
       if (!originalRow) continue;
       const sourceCells = fillRange
@@ -443,7 +443,9 @@ export function createEditing<
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
         const raw = fillRange ? lines[0]! : sourceCells?.[j] ?? "";
-        updated[column.columnDef.field] = parseEditorValue(editorType, raw);
+        updated[column.columnDef.field] = parseEditorValue(editorType, raw, {
+          dateOnly: column.columnDef.cellDataType === "dateString",
+        });
       }
       next[dataIndex] = updated as TData;
     }
@@ -530,6 +532,7 @@ export function createEditing<
       const editorType = (column.columnDef.editorType ?? "text") as CellEditorType;
       const parsed = parseEditorValue(editorType, fr.draft[column.id], {
         multiple: column.columnDef.editorMultiple === true,
+        dateOnly: column.columnDef.cellDataType === "dateString",
       });
       const oldValue = (row.original as Record<string, unknown>)[field];
       const parser = (column.columnDef as { valueParser?: (p: unknown) => unknown }).valueParser;

@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
-    type ColumnDef,
+    type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
 
@@ -41,7 +41,7 @@
 
   // ---- sv-grid (right) -----------------------------------------------
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-  const svColumns: ColumnDef<typeof features, Deal>[] = [
+  const svColumns: GridColumns<Deal> = [
     { field: 'id',      header: 'ID',      width: 60  },
     { field: 'company', header: 'Company', width: 140 },
     { field: 'region',  header: 'Region',  width: 90  },
@@ -140,7 +140,7 @@ grid.setGridOption('quickFilterText', globalFilter)`
   const svSource = `import {
   SvGrid, tableFeatures,
   rowSortingFeature, columnFilteringFeature,
-  type ColumnDef,
+  type GridColumns,
 } from '@svgrid/grid'
 
 const features = tableFeatures({
@@ -148,7 +148,7 @@ const features = tableFeatures({
   columnFilteringFeature,
 })
 
-const columns: ColumnDef<typeof features, Deal>[] = [
+const columns: GridColumns<Deal> = [
   { field: 'id',      header: 'ID',      width: 60  },
   { field: 'company', header: 'Company', width: 140 },
   { field: 'region',  header: 'Region',  width: 90  },
