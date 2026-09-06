@@ -135,6 +135,48 @@ describe('the wrapper import each example uses is a real subpath', () => {
   })
 })
 
+describe('Angular and TypeScript stay a matched pair', () => {
+  /**
+   * Angular pins TypeScript to a single minor. The StackBlitz payload shipped
+   * `@angular/core: ">=18"` (the peer range) beside `typescript: "~5.9.0"`, npm
+   * resolved Angular to 22 - which requires `>=6.0 <6.1` - and the install
+   * became unresolvable. The sandbox then sat on "Running start command"
+   * forever while the AOT worker died inside NgtscProgram, with the real error
+   * scrolled off the top of an xterm.
+   *
+   * So: the TypeScript this repo builds with must satisfy the range the
+   * Angular we depend on declares. When that stops being true, the payload's
+   * pins in `website/src/lib/stackblitz.ts` need moving too.
+   */
+  const range = (spec: string) => {
+    const pkg = JSON.parse(
+      readFileSync(join(pkgRoot, 'node_modules', spec, 'package.json'), 'utf8'),
+    )
+    return pkg
+  }
+
+  it("the repo's TypeScript satisfies @angular/compiler-cli's peer range", () => {
+    const cli = range('@angular/compiler-cli')
+    const want = cli.peerDependencies?.typescript as string | undefined
+    expect(want, 'compiler-cli declares no typescript peer').toBeTruthy()
+
+    const tsVersion = JSON.parse(
+      readFileSync(join(pkgRoot, '..', '..', 'node_modules', 'typescript', 'package.json'), 'utf8'),
+    ).version as string
+
+    // The declared range is of the form ">=6.0 <6.1"; check the major.minor
+    // floor rather than pulling in a semver dependency for one assertion.
+    const floor = /callback|>=\s*(\d+)\.(\d+)/.exec(want!)
+    expect(floor, `unexpected peer range shape: ${want}`).toBeTruthy()
+    const [, major, minor] = floor!
+    expect(
+      tsVersion.startsWith(`${major}.${minor}`),
+      `typescript ${tsVersion} does not satisfy @angular/compiler-cli's "${want}" - ` +
+        `the StackBlitz Angular payload pins TypeScript separately and needs the same bump`,
+    ).toBe(true)
+  })
+})
+
 describe('framework versions come from the manifest, not a literal', () => {
   it('grid-wc declares every framework as an optional peer', () => {
     // The Svelte StackBlitz builder carries a comment about a hand-pinned
