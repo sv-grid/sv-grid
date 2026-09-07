@@ -1,0 +1,51 @@
+{
+  "$comment": "Scored tasks for the SvGrid MCP server. Deterministic and model-free on purpose: every task asserts what the SERVER returns for a given call, so it runs in CI for free and a ranking regression cannot hide. retrieval = did the right thing surface in the top hits. repair = given code a model would plausibly write from memory, does check + auto-fix reach clean. negative = there is no good answer; does the server say so instead of returning plausible noise.",
+  "tasks": [
+    { "id": "pin-column", "band": "retrieval", "query": "how do I pin a column", "expect": { "docs": ["help/columns/column-pinning"], "examples": ["25-column-pinning"] } },
+    { "id": "kanban", "band": "retrieval", "query": "kanban board", "expect": { "docs": ["help/rows/kanban-board"], "examples": ["343-kanban-board"] } },
+    { "id": "inline-editing", "band": "retrieval", "query": "inline editing", "expect": { "docs": ["help/editing/overview"] } },
+    { "id": "pivot", "band": "retrieval", "query": "pivot table", "expect": { "docs": ["help/pivot"] } },
+    { "id": "column-filtering", "band": "retrieval", "query": "column filtering", "expect": { "docs": ["help/filtering/overview"] } },
+    { "id": "export", "band": "retrieval", "query": "data export", "expect": { "docs": ["help/export"] } },
+    { "id": "export-excel", "band": "retrieval", "query": "can I export to excel", "expect": { "docs": ["help/export"] } },
+    { "id": "server-side", "band": "retrieval", "query": "server side pagination", "expect": { "docs": ["help/server-side-data"], "examples": ["09-server-side"] } },
+    { "id": "stock-market", "band": "retrieval", "query": "stock market", "expect": { "examples": ["11-stock-market"] } },
+    { "id": "tree-data", "band": "retrieval", "query": "tree data", "expect": { "examples": ["426-tree-data"] } },
+    { "id": "accessibility", "band": "retrieval", "query": "accessibility keyboard navigation", "expect": { "docs": ["help/accessibility"] } },
+    { "id": "theming", "band": "retrieval", "query": "theme css variables", "expect": { "docs": ["getting-started/5-theme-and-density"] } },
+    { "id": "row-selection-api", "band": "retrieval", "query": "row selection feature", "expect": { "api": ["rowSelectionFeature"] } },
+    { "id": "sorting-api", "band": "retrieval", "query": "how do I sort", "expect": { "api": ["sortable"] } },
+    { "id": "grouping-natural", "band": "retrieval", "query": "how do I group rows by a column", "expect": { "api": ["groupBy"] } },
+    { "id": "two-columns-natural", "band": "retrieval", "query": "how do I sort by two columns", "expect": { "examples": ["02-sort-filter-paginate"] } },
+
+    {
+      "id": "repair-aggrid-props",
+      "band": "repair",
+      "$comment": "The single most common way a model writes SvGrid from memory: with another grid's prop names.",
+      "source": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n  const columns = [{ accessorKey: 'name', headerName: 'Name' }]\n  const rows = [{ name: 'Ada' }]\n</script>\n\n<SvGrid rowData={rows} columnDefs={columns} enableSorting />\n"
+    },
+    {
+      "id": "repair-column-keys",
+      "band": "repair",
+      "source": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n  const columns = [{ dataIndex: 'id', title: 'ID' }, { accessor: 'name', label: 'Name' }]\n</script>\n\n<SvGrid data={[]} columns={columns} />\n"
+    },
+    {
+      "id": "repair-mixed",
+      "band": "repair",
+      "source": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n  const columns = [{ valueGetter: (r) => r.name, cellRenderer: 'x' }]\n</script>\n\n<SvGrid rows={[]} columns={columns} enableFilter />\n"
+    },
+    {
+      "id": "clean-stays-clean",
+      "band": "repair",
+      "$comment": "Correct code must come back untouched - the property that makes auto-fix safe to run at all.",
+      "expectNoChange": true,
+      "source": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n</script>\n\n<SvGrid data={[]} columns={[]} sortable filterable />\n"
+    },
+
+    { "id": "neg-nonsense", "band": "negative", "query": "zzzzqqqq wibble", "expect": { "empty": true } },
+    { "id": "neg-unrelated", "band": "negative", "query": "kubernetes ingress controller", "$comment": "Not empty - a few docs do contain the word controller. The requirement is that the server SAYS these are partial matches instead of presenting them as answers.", "expect": { "partial": true, "hint": "matched some of it" } },
+    { "id": "neg-bad-category", "band": "negative", "category": "NotACategory", "expect": { "hint": "No demo category" } },
+    { "id": "neg-bad-section", "band": "negative", "section": "NotASection", "expect": { "hint": "No doc section" } },
+    { "id": "neg-bad-ref", "band": "negative", "ref": "help/does-not-exist", "expect": { "hint": "No doc, demo or API group" } }
+  ]
+}

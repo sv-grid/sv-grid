@@ -209,6 +209,19 @@ jobs:
       - name: MCP tool guardrails
         run: pnpm vitest run tools/mcp-tools.test.ts
 
+      # The server ships its whole corpus, so it must answer with no network at
+      # all. The competing MCP servers are thin proxies to a vendor backend and
+      # structurally cannot make this promise; it is only worth anything as a
+      # test that fails when someone adds a fetch.
+      - name: MCP works offline
+        run: pnpm vitest run tools/mcp-offline.test.ts
+
+      # Scored retrieval / repair / negative tasks against the built server.
+      # Deterministic and model-free, so it costs nothing and cannot flake.
+      # Fails when the pass rate drops below tools/mcp-eval/baseline.json.
+      - name: MCP eval
+        run: node tools/mcp-eval/run.mjs --check
+
       # The remote server is a Cloudflare Worker in workers/, which is outside
       # the pnpm workspace, so nothing installs or builds it by default. Its
       # corpus is generated from the MCP dist built two steps up.

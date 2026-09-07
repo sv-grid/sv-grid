@@ -1,0 +1,20 @@
+{
+  "passed": 25,
+  "total": 25,
+  "byBand": {
+    "retrieval": {
+      "pass": 16,
+      "total": 16
+    },
+    "repair": {
+      "pass": 4,
+      "total": 4
+    },
+    "negative": {
+      "pass": 5,
+      "total": 5
+    }
+  },
+  "toolCalls": 29,
+  "bytes": 122283
+}

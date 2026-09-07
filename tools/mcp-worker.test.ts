@@ -167,3 +167,151 @@ describe.skipIf(!ready)('remote MCP worker speaks the protocol', () => {
     expect(body.tools).toContain('check_svgrid_code')
   })
 })
+
+/**
+ * The npm package's 3.0 tool names, answered here too.
+ *
+ * `search` and `fetch` keep their names because a one-click connector needs
+ * those two exact ones to index a remote server, so the two servers cannot
+ * advertise an identical surface. They can still ANSWER to the same names.
+ *
+ * This exists because the first attempt did not work at all: the aliases were
+ * resolved inside `callTool`, one line below a dispatcher check that rejects
+ * any name not in `TOOLS`. Every alias was rejected before it could be
+ * resolved. It type-checked, it shipped, and nothing covered it - a model that
+ * learned `svgrid_search` from npm got "Unknown tool" from the hosted server,
+ * which is the exact failure the aliases were added to prevent.
+ */
+describe.skipIf(!ready)('the hosted server answers the npm tool names', () => {
+  it('resolves svgrid_search to the ranked search', async () => {
+    const raw = await callTool('svgrid_search', { query: 'kanban board' })
+    expect(raw, 'svgrid_search was rejected').not.toMatch(/Unknown tool/)
+    expect(raw).toContain('kanban')
+  })
+
+  it('resolves svgrid_get, translating ref -> id', async () => {
+    // The two tools disagree on the argument name; resolving the alias without
+    // translating it would return "id is required" instead of a doc.
+    const raw = await callTool('svgrid_get', { ref: 'help/export' })
+    expect(raw).not.toMatch(/Unknown tool|is required/)
+    expect(raw.length).toBeGreaterThan(200)
+  })
+
+  it('resolves svgrid_check_code', async () => {
+    const raw = await callTool('svgrid_check_code', {
+      source: '<script>\n  import { SvGrid } from "@svgrid/grid"\n</script>\n<SvGrid notARealProp />',
+    })
+    expect(raw).not.toMatch(/Unknown tool/)
+    expect(raw).toContain('notARealProp')
+  })
+
+  it('still rejects a name that is neither a tool nor an alias', async () => {
+    const { body } = (await rpc('tools/call', { name: 'nope_not_real', arguments: {} })) as {
+      body: { error?: { message?: string }; result?: unknown }
+    }
+    expect(body.error?.message).toMatch(/Unknown tool: nope_not_real/)
+  })
+
+  it('does not advertise the aliases, so they cost nothing', async () => {
+    const { body } = (await rpc('tools/list', {})) as {
+      body: { result: { tools: { name: string }[] } }
+    }
+    const names = body.result.tools.map((t) => t.name)
+    for (const alias of ['svgrid_search', 'svgrid_get', 'svgrid_check_code']) {
+      expect(names, `${alias} should not be listed`).not.toContain(alias)
+    }
+  })
+})
+
+/**
+ * Parity: the hosted server offers what the npm one does.
+ *
+ * Hosted is the low-friction path - a URL, no Node, no install - and it was the
+ * path missing the preview, which is the clearest thing this server has that
+ * the competing ones do not. Resources and prompts were missing too: it
+ * advertised `{"tools":{}}` and answered the other four methods with "Method
+ * not found".
+ */
+describe.skipIf(!ready)('the hosted server has resources, prompts and the preview', () => {
+  it('advertises all three capabilities', async () => {
+    const { body } = (await rpc('initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'parity', version: '1.0.0' },
+    })) as { body: { result: { capabilities: Record<string, unknown> } } }
+    const caps = body.result.capabilities
+    expect(caps.tools).toBeTruthy()
+    expect(caps.resources, 'resources not advertised').toBeTruthy()
+    expect(caps.prompts, 'prompts not advertised').toBeTruthy()
+  })
+
+  it('lists resources in pages, with the preview on the first', async () => {
+    const { body } = (await rpc('resources/list', {})) as {
+      body: { result: { resources: { uri: string }[]; nextCursor?: string } }
+    }
+    const uris = body.result.resources.map((r) => r.uri)
+    expect(uris.length).toBeLessThanOrEqual(100)
+    expect(uris, 'the preview UI must be reachable from page one').toContain('ui://svgrid/preview.html')
+    // All 784 in one response is ~37k tokens - worse than any tool listing.
+    expect(body.result.nextCursor, 'resources are not paged').toBeTruthy()
+  })
+
+  it('reads a doc and a demo through resources/read', async () => {
+    const doc = (await rpc('resources/read', { uri: 'svgrid://doc/help/export' })) as {
+      body: { result?: { contents?: { text?: string; mimeType?: string }[] } }
+    }
+    expect(doc.body.result?.contents?.[0]?.mimeType).toBe('text/markdown')
+    expect((doc.body.result?.contents?.[0]?.text ?? '').length).toBeGreaterThan(200)
+
+    const demo = (await rpc('resources/read', { uri: 'svgrid://example/11-stock-market' })) as {
+      body: { result?: { contents?: { text?: string }[] } }
+    }
+    expect(demo.body.result?.contents?.[0]?.text).toContain('<script')
+  })
+
+  it('serves the preview UI with the MCP Apps mime type', async () => {
+    const { body } = (await rpc('resources/read', { uri: 'ui://svgrid/preview.html' })) as {
+      body: { result?: { contents?: { mimeType?: string; text?: string }[] } }
+    }
+    // Without this exact profile a client renders it as plain HTML, not an app.
+    expect(body.result?.contents?.[0]?.mimeType).toBe('text/html;profile=mcp-app')
+    expect(body.result?.contents?.[0]?.text).toContain('sv-grid')
+  })
+
+  it('rejects a resource that does not exist', async () => {
+    const { body } = (await rpc('resources/read', { uri: 'svgrid://doc/nope' })) as {
+      body: { error?: { message?: string } }
+    }
+    expect(body.error?.message).toMatch(/No SvGrid doc/)
+  })
+
+  it('lists prompts and renders one', async () => {
+    const list = (await rpc('prompts/list', {})) as {
+      body: { result: { prompts: { name: string }[] } }
+    }
+    expect(list.body.result.prompts.map((p) => p.name)).toContain('build_grid')
+
+    const got = (await rpc('prompts/get', {
+      name: 'build_grid',
+      arguments: { description: 'a table of orders' },
+    })) as { body: { result?: { messages?: { content?: { text?: string } }[] } } }
+    const text = got.body.result?.messages?.[0]?.content?.text ?? ''
+    expect(text).toContain('svgrid_check_code')
+  })
+
+  it('offers the preview tool and returns a renderable payload', async () => {
+    const list = (await rpc('tools/list', {})) as {
+      body: { result: { tools: { name: string; _meta?: Record<string, unknown> }[] } }
+    }
+    const preview = list.body.result.tools.find((t) => t.name === 'svgrid_preview')
+    expect(preview, 'svgrid_preview is not offered remotely').toBeTruthy()
+    expect(preview?._meta?.['ui/resourceUri']).toBe('ui://svgrid/preview.html')
+
+    const { body } = (await rpc('tools/call', {
+      name: 'svgrid_preview',
+      arguments: { columns: [{ field: 'a', header: 'A' }], data: [{ a: 1 }, { a: 2 }] },
+    })) as { body: { result?: { structuredContent?: { data?: unknown[] }; _meta?: Record<string, unknown> } } }
+    expect(body.result?.structuredContent?.data).toHaveLength(2)
+    expect(body.result?._meta?.['ui/resourceUri']).toBe('ui://svgrid/preview.html')
+  })
+})

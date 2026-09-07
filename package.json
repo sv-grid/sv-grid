@@ -40,6 +40,7 @@
     "bench:compare": "playwright test tests/perf/compare.spec.ts --project=perf",
     "ssr:check": "node packages/grid/scripts/check-ssr.mjs",
     "node:check": "node packages/grid/scripts/check-node-entry.mjs",
+    "mcp:eval": "node tools/mcp-eval/run.mjs",
     "demos:audit": "node tools/audit-demos.mjs"
   },
   "devDependencies": {
