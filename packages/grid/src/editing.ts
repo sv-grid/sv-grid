@@ -291,21 +291,30 @@ export function createEditing<
     }
   }
 
+  /**
+   * Focus the editor synchronously, as soon as the action runs.
+   *
+   * This used to be deferred by a `requestAnimationFrame`, which left a window
+   * where the cell already carried `sv-grid-cell-editing` but nothing inside it
+   * held focus. `onGridKeyDown` returns early while `editingCell` is set, so a
+   * keystroke landing in that window reached neither the grid nor the editor
+   * and was simply dropped: double-click, type immediately, lose the first
+   * characters. The action only runs once the node is in the document, so there
+   * is nothing to wait a frame for.
+   */
   function focusOnMount(node: HTMLInputElement | HTMLTextAreaElement) {
     const selectAll = ctx.editorSelectAll;
-    requestAnimationFrame(() => {
-      node.focus({ preventScroll: true });
-      try {
-        if (selectAll) {
-          node.select();
-        } else {
-          const end = node.value.length;
-          node.setSelectionRange(end, end);
-        }
-      } catch {
-        /* date/number inputs may not support text selection */
+    node.focus({ preventScroll: true });
+    try {
+      if (selectAll) {
+        node.select();
+      } else {
+        const end = node.value.length;
+        node.setSelectionRange(end, end);
       }
-    });
+    } catch {
+      /* date/number inputs may not support text selection */
+    }
   }
 
   function onCellDoubleClick(rowIndex: number, colIndex: number) {
