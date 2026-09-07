@@ -14,7 +14,7 @@
  * Run from this directory: `node scripts/build-data.mjs`
  * (`pnpm build:data`, which the deploy script runs first).
  */
-import { mkdirSync, writeFileSync, rmSync, copyFileSync, existsSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, copyFileSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -86,6 +86,20 @@ mkdirSync(generatedDir, { recursive: true })
 // dragging the worker into the root install.
 for (const file of ['validate.js', 'validate.d.ts', 'search.js', 'search.d.ts']) {
   copyFileSync(join(mcpDist, file), join(generatedDir, file))
+}
+
+/**
+ * The prompts and the preview UI are shared too, for the same reason: they are
+ * the wording and the markup users see, and two copies would drift.
+ *
+ * `preview.js` imports the corpus as `./data.js`, which is the npm server's
+ * layout; here the corpus is `./index.js`. Rewriting that one specifier on copy
+ * is cheaper and less brittle than parameterising the source, and it is the
+ * only difference between the two builds.
+ */
+for (const file of ['prompts.js', 'prompts.d.ts', 'preview.js', 'preview.d.ts']) {
+  const src = readFileSync(join(mcpDist, file), 'utf8')
+  writeFileSync(join(generatedDir, file), src.replace(/(['"])\.\/data\.js\1/g, "'./index.js'"))
 }
 
 // Emitted as .js + .d.ts rather than .ts so every consumer resolves it the

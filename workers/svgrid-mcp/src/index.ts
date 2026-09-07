@@ -21,6 +21,8 @@
 import { checkSvGridCode, type ApiSurface } from './generated/validate.js'
 import { rankDocs, type RankableDoc } from './generated/search.js'
 import { apiReference, apiSurface, docs, examples } from './generated/index.js'
+import { PROMPTS, getPrompt } from './generated/prompts.js'
+import { PREVIEW_TOOL, handlePreview, previewResource, readPreviewResource } from './generated/preview.js'
 
 export type Env = {
   ASSETS: { fetch: (req: Request | string) => Promise<Response> }
@@ -32,7 +34,7 @@ const SERVER_VERSION = apiSurface.gridVersion
 const PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05']
 const DEFAULT_PROTOCOL = PROTOCOL_VERSIONS[0]
 
-const DOCS_FOOTER = '\n\nSvGrid reference: full docs & 370+ live demos at https://svgrid.com/docs'
+const DOCS_FOOTER = `\n\nSvGrid reference: full docs & ${examples.length} live demos at https://svgrid.com/docs`
 
 // ---------------------------------------------------------------------------
 // Corpus loading
@@ -161,6 +163,36 @@ const TOOLS = [
     },
   },
 ] as const
+
+/**
+ * The stdio server's 3.0 names, accepted here too.
+ *
+ * `search` and `fetch` keep their names because a connector needs those two
+ * exact ones to index this server - that constraint is not negotiable, so the
+ * two servers cannot advertise an identical surface. They can still ANSWER to
+ * the same names: aliases are unlisted, so a model that learned `svgrid_search`
+ * from the npm package is not told "unknown tool" here, and the listing costs
+ * nothing extra.
+ */
+const ALIASES: Record<string, string> = {
+  svgrid_search: 'search',
+  svgrid_get: 'fetch',
+  svgrid_check_code: 'check_svgrid_code',
+}
+
+/**
+ * An alias resolved to the tool that answers it, or the name unchanged.
+ *
+ * Exported and applied by the DISPATCHER, not inside `callTool`. The first
+ * version of this lived at the top of `callTool`, one line below a membership
+ * check that rejects anything not in `TOOLS` - so every alias was rejected
+ * before it could be resolved, and the whole thing was dead code. A model that
+ * learned `svgrid_search` from the npm package got "Unknown tool" here, which
+ * is precisely what the aliases exist to prevent.
+ */
+export function resolveToolName(name: string): string {
+  return ALIASES[name] ?? name
+}
 
 async function callTool(name: string, args: Record<string, unknown>, env: Env): Promise<ToolResult> {
   switch (name) {
@@ -301,7 +333,7 @@ async function handleRpc(msg: RpcRequest, env: Env): Promise<object | null> {
       const asked = String(params.protocolVersion ?? '')
       return rpcResult(msg.id, {
         protocolVersion: PROTOCOL_VERSIONS.includes(asked) ? asked : DEFAULT_PROTOCOL,
-        capabilities: { tools: {} },
+        capabilities: { tools: {}, resources: {}, prompts: {} },
         serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
         instructions:
           'SvGrid is a Svelte 5 data grid. Search the docs before writing grid code, and run check_svgrid_code on what you write before showing it to the user.',
@@ -317,13 +349,108 @@ async function handleRpc(msg: RpcRequest, env: Env): Promise<object | null> {
       return rpcResult(msg.id, {})
 
     case 'tools/list':
-      return rpcResult(msg.id, { tools: TOOLS })
+      return rpcResult(msg.id, { tools: [...TOOLS, PREVIEW_TOOL] })
+
+    // ---- resources ---------------------------------------------------------
+    //
+    // Parity with the npm server, which is the point: the hosted path is the
+    // low-friction one - a URL, no Node, no install - and it was the path
+    // missing the preview, our clearest differentiator.
+    //
+    // Listings are built from the bundled metadata, so this costs no asset
+    // fetch. Bodies are pulled lazily, exactly as the tools already do.
+    case 'resources/list': {
+      const all = [
+        previewResource(),
+        ...docs.map((d) => ({
+          uri: `svgrid://doc/${d.slug}`,
+          name: d.slug,
+          title: d.title,
+          description: `${d.section} - SvGrid documentation`,
+          mimeType: 'text/markdown',
+        })),
+        ...examples.map((e) => ({
+          uri: `svgrid://example/${e.id}`,
+          name: e.id,
+          title: e.title,
+          description: `${e.category} - runnable SvGrid demo`,
+          mimeType: 'text/x-svelte',
+        })),
+      ]
+      // Paged for the same reason as the npm server: all 784 in one response is
+      // ~37k tokens, which is worse than any tool listing.
+      const cursorRaw = Number(params.cursor)
+      const start = Number.isSafeInteger(cursorRaw) && cursorRaw > 0 ? cursorRaw : 0
+      const page = all.slice(start, start + 100)
+      const next = start + 100
+      return rpcResult(
+        msg.id,
+        next < all.length ? { resources: page, nextCursor: String(next) } : { resources: page },
+      )
+    }
+
+    case 'resources/read': {
+      const uri = String(params.uri ?? '')
+
+      const ui = readPreviewResource(uri)
+      if (ui) return rpcResult(msg.id, ui)
+
+      const doc = /^svgrid:\/\/doc\/(.+)$/.exec(uri)
+      if (doc) {
+        const body = (await loadDocs(env)).find((d) => d.slug === doc[1])
+        if (!body) return rpcError(msg.id, -32602, `No SvGrid doc at "${uri}".`)
+        return rpcResult(msg.id, {
+          contents: [{ uri, mimeType: 'text/markdown', text: body.markdown }],
+        })
+      }
+
+      const example = /^svgrid:\/\/example\/(.+)$/.exec(uri)
+      if (example) {
+        const found = await loadExample(env, example[1]!)
+        if (!found) return rpcError(msg.id, -32602, `No SvGrid demo at "${uri}".`)
+        return rpcResult(msg.id, {
+          contents: [
+            {
+              uri,
+              mimeType: 'text/x-svelte',
+              text: `// ${found.path}\n// ${found.title} - ${found.blurb}\n\n${found.source}`,
+            },
+          ],
+        })
+      }
+
+      return rpcError(msg.id, -32602, `No SvGrid resource at "${uri}".`)
+    }
+
+    // ---- prompts -----------------------------------------------------------
+
+    case 'prompts/list':
+      return rpcResult(msg.id, { prompts: PROMPTS })
+
+    case 'prompts/get': {
+      const found = getPrompt(
+        String(params.name ?? ''),
+        (params.arguments ?? {}) as Record<string, unknown>,
+      )
+      if (!found) return rpcError(msg.id, -32602, `No SvGrid prompt named "${String(params.name)}".`)
+      return rpcResult(msg.id, found)
+    }
 
     case 'tools/call': {
-      const name = String(params.name ?? '')
-      const args = (params.arguments ?? {}) as Record<string, unknown>
+      const requested = String(params.name ?? '')
+      // Resolve BEFORE the membership check: the aliases are deliberately not
+      // in `TOOLS` (listing is what costs context), so checking first rejected
+      // every one of them.
+      const name = resolveToolName(requested)
+      const raw = (params.arguments ?? {}) as Record<string, unknown>
+      // `svgrid_get` takes `ref`, its target `fetch` takes `id`.
+      const args =
+        requested === 'svgrid_get' && raw.ref !== undefined ? { ...raw, id: raw.ref } : raw
+      if (name === PREVIEW_TOOL.name) {
+        return rpcResult(msg.id, handlePreview(args))
+      }
       if (!TOOLS.some((t) => t.name === name)) {
-        return rpcError(msg.id, -32602, `Unknown tool: ${name}`)
+        return rpcError(msg.id, -32602, `Unknown tool: ${requested}`)
       }
       const started = Date.now()
       try {
