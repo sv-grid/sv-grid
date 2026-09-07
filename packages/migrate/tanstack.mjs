@@ -82,11 +82,113 @@ const isStringLiteral = (raw) => /^(['"]).*\1$/.test(raw.trim())
 const isArrowOrFn = (raw) => /=>|^function\b/.test(raw.trim())
 
 /**
+ * Is `name` actually bound in this script?
+ *
+ * The emitted `<SvGrid {data} {columns} {features} />` used to name all three
+ * unconditionally, so a component with no `tableFeatures(...)` got a reference
+ * to an undefined `features` and would not compile - a codemod handing back
+ * broken code, which is the one thing it must not do.
+ *
+ * Checked against the script AFTER the transform, because that is what the
+ * markup will actually sit next to: `stripFeatures` can empty a features object
+ * out, and `dropTableWiring` deletes whole declarations.
+ */
+function bindsIdentifier(script, name) {
+  const n = name.replace(/[$]/g, '\\$&')
+  return (
+    // const/let/var features = ...
+    new RegExp('\\b(?:const|let|var)\\s+' + n + '\\b').test(script) ||
+    // let { data, columns } = $props()
+    new RegExp('\\b(?:const|let|var)\\s*\\{[^}]*\\b' + n + '\\b[^}]*\\}\\s*=').test(script) ||
+    // import { columns } from './columns'  (the shadcn layout)
+    new RegExp('^[^\\S\\n]*import\\b[^\\n]*\\b' + n + '\\b[^\\n]*$', 'm').test(script) ||
+    // export let data   (Svelte 4 props)
+    new RegExp('\\bexport\\s+let\\s+' + n + '\\b').test(script)
+  )
+}
+
+/** `columnHelper.accessor(...)` / `.display(...)` / `.group(...)`. */
+const HELPER_CALL = /^[A-Za-z_$][\w$]*\s*\.\s*(accessor|display|group)\s*\(/
+
+/**
+ * Flatten a `createColumnHelper()` column into the object literal it stands for.
+ *
+ * The helper exists in TanStack purely to infer the row type; the column it
+ * builds is an ordinary object, and SvGrid's columns are ordinary objects too.
+ * So `helper.accessor('id', { header: 'ID' })` is just
+ * `{ accessorKey: 'id', header: 'ID' }` - which the object path below already
+ * knows how to map.
+ *
+ * Returning that synthetic source rather than mapping the keys here is the
+ * point: every option gets the same treatment, and the same warnings, whichever
+ * style the file was written in.
+ *
+ * Before this existed the helper form was not recognised at all. `rewriteColumn`
+ * took the FIRST `{` in the entry - the options object - and emitted
+ * `{ header: 'ID' }`, silently dropping the accessor. The migrated grid rendered
+ * the right headers over entirely blank columns, with no warning.
+ */
+function helperToObjectSource(text, warnings) {
+  const m = HELPER_CALL.exec(text)
+  if (!m) return null
+  const kind = m[1]
+  const open = text.indexOf('(', m[0].length - 1)
+  const close = matchBracket(text, open)
+  if (close === -1) return null
+
+  const args = splitTopLevel(text.slice(open + 1, close), ',')
+    .map((a) => a.trim())
+    .filter(Boolean)
+
+  // `.display()` and `.group()` take only the options object; `.accessor()`
+  // takes the accessor first.
+  const accessor = kind === 'accessor' ? args.shift() : null
+  const options = args.shift() ?? '{}'
+  if (args.length) {
+    warnings.push(
+      'A `' + kind + '()` column had more arguments than expected; the extra ones were dropped.',
+    )
+  }
+  if (!options.startsWith('{')) {
+    warnings.push(
+      'A `' + kind + '()` column was skipped: its options are not an object literal (`' +
+        options.slice(0, 40) + '`).',
+    )
+    return null
+  }
+
+  const inner = options.slice(1, matchBracket(options, 0)).trim()
+  const parts = []
+  if (accessor) {
+    // A string selects a field; anything else is a function of the row. The
+    // object path maps accessorKey -> field and accessorFn -> fieldFn.
+    parts.push((isStringLiteral(accessor) ? 'accessorKey: ' : 'accessorFn: ') + accessor)
+    if (!isStringLiteral(accessor) && !/\bid\s*:/.test(inner)) {
+      warnings.push(
+        'An `accessor(fn, ...)` column has no `id`. SvGrid needs one to identify a ' +
+          'computed column - add `id` to it.',
+      )
+    }
+  }
+  if (inner) parts.push(inner)
+  return '{ ' + parts.join(', ') + ' }'
+}
+
+/**
  * Rewrite one column-definition object literal. Returns the new source text for
  * the object, or null when it is not an object literal we understand.
  */
 function rewriteColumn(entryText, warnings, depth = 0) {
-  const text = entryText.trim()
+  let text = entryText.trim()
+
+  // A column-helper call is normalised to the object literal it builds, then
+  // falls through to the single mapping path below.
+  if (HELPER_CALL.test(text)) {
+    const flattened = helperToObjectSource(text, warnings)
+    if (!flattened) return null
+    text = flattened
+  }
+
   const open = text.indexOf('{')
   if (open === -1) {
     warnings.push('Skipped a column entry that is not an object literal: `' + text.slice(0, 60) + '`')
@@ -323,7 +425,7 @@ export function migrateTanstack(source, { svelte = true, readImport = null } = {
   if (!svelte || !/<script\b/i.test(source)) {
     const { code, touched } = rewriteColumnArrays(source, warnings)
     const { props, drop } = readFeatures(source, warnings, notes)
-    const next = stripFeatures(rewriteColumnTypes(repointImports(code)), drop)
+    const next = dropColumnHelper(stripFeatures(rewriteColumnTypes(repointImports(code)), drop))
     if (!touched && !props.size && next === source) {
       return { applicable: false, code: source, warnings, notes }
     }
@@ -362,7 +464,7 @@ export function migrateTanstack(source, { svelte = true, readImport = null } = {
   let body = rewriteColumnArrays(script.body, warnings).code
   body = repointImports(body, { wantSvGrid: true })
   body = stripFeatures(rewriteColumnTypes(body), drop)
-  body = dropTableWiring(body, warnings)
+  body = dropColumnHelper(dropTableWiring(body, warnings))
 
   const pageSize = (script.body.match(/pageSize\s*:\s*(\d+)/) || [])[1]
 
@@ -378,7 +480,21 @@ export function migrateTanstack(source, { svelte = true, readImport = null } = {
     'enableColumnReorder',
   ].filter((p) => props.has(p))
 
-  const attrs = ['{data}', '{columns}', '{features}', ...propList]
+  // `features` is optional on <SvGrid>, so it is named only when the component
+  // still has one. `data` and `columns` are required, so they are always named
+  // - but if nothing binds them the reader is told, rather than being handed a
+  // grid that silently renders nothing.
+  const attrs = ['{data}', '{columns}']
+  if (bindsIdentifier(body, 'features')) attrs.push('{features}')
+  for (const required of ['data', 'columns']) {
+    if (!bindsIdentifier(body, required)) {
+      warnings.push(
+        '`' + required + '` is not declared in this component, so `{' + required + '}` on ' +
+          '<SvGrid> will not resolve. Pass it in, or import it, wherever it comes from.',
+      )
+    }
+  }
+  attrs.push(...propList)
   if (pageSize) attrs.push('pageSize={' + pageSize + '}')
 
   let markup = source.slice(script.closeStart + '</script>'.length)
@@ -406,6 +522,11 @@ const DEAD_IMPORTS = new Set([
   'useTable',
   'useReactTable',
   'createTable',
+  // The helper only ever existed to infer the row type for `accessor()`.
+  // Its columns are flattened to plain objects, and `@svgrid/grid` has no
+  // `createColumnHelper` to re-point the import at - left in, the file would
+  // not compile.
+  'createColumnHelper',
   'FlexRender',
   'flexRender',
   'getCoreRowModel',
@@ -474,6 +595,23 @@ function repointImports(src, { wantSvGrid = false } = {}) {
  * `let sorting = $state(...)` and its `onSortingChange`, and the
  * `createSvelteTable(...)` / `useTable(...)` call itself.
  */
+/**
+ * Delete `const columnHelper = createColumnHelper<Row>()`.
+ *
+ * Runs for `.ts` modules as well as components, because the shadcn layout keeps
+ * columns in their own file - which is exactly where the helper is declared.
+ * Its columns have already been flattened by the time this runs, so the
+ * declaration is dead; left behind it would reference an import that is gone.
+ */
+function dropColumnHelper(src) {
+  // Matched with a regex rather than `findCall`, which looks for `name(` and so
+  // never sees the usual `createColumnHelper<Person>()`. `[^()]*` inside the
+  // angle brackets carries nested generics without being able to run past the
+  // call itself.
+  const DECL = /^[^\S\n]*(?:const|let|var)\s+[\w$]+\s*(?::[^=\n]+)?=\s*createColumnHelper\s*(?:<[^()]*>)?\s*\(\s*\)\s*;?[^\S\n]*\r?\n?/gm
+  return src.replace(DECL, '')
+}
+
 function dropTableWiring(src, warnings) {
   let out = src
 

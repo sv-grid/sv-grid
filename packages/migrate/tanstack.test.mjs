@@ -164,3 +164,155 @@ const features = tableFeatures({ rowPinningFeature })
     expect(out.warnings.join(' ')).toMatch(/Unrecognised feature .rowPinningFeature./)
   })
 })
+
+/**
+ * The `createColumnHelper()` style, which the TanStack docs lead with.
+ *
+ * This went unrecognised for two releases. `rewriteColumn` took the first `{`
+ * in the entry - the OPTIONS object - so `helper.accessor('id', { header: 'ID' })`
+ * came out as `{ header: 'ID' }`: the right headers over entirely blank columns,
+ * no warning, and a `createColumnHelper` import re-pointed at `@svgrid/grid`,
+ * which has no such export, so the file did not even compile.
+ */
+const HELPER_TS = `import { createColumnHelper } from '@tanstack/table-core'
+
+export type Person = { id: number; first: string; last: string; team: string }
+
+const columnHelper = createColumnHelper<Person>()
+
+export const columns = [
+  columnHelper.accessor('id', { header: 'ID', size: 70 }),
+  columnHelper.accessor('team', { header: 'Team', enableSorting: false }),
+  columnHelper.accessor((row) => row.first + ' ' + row.last, { id: 'full', header: 'Full name' }),
+  columnHelper.display({ id: 'actions', header: '' }),
+  columnHelper.group({ header: 'Name', columns: [columnHelper.accessor('first', { header: 'First' })] }),
+]
+`
+
+describe('migrateTanstack - createColumnHelper columns', () => {
+  const out = migrateTanstack(HELPER_TS, { svelte: false })
+
+  test('applies', () => {
+    expect(out.applicable).toBe(true)
+  })
+
+  test('accessor(key) keeps the field, not just the header', () => {
+    // The exact regression: the field must survive, or the column renders blank.
+    expect(out.code).toContain("field: 'id'")
+    expect(out.code).toContain("header: 'ID'")
+    expect(out.code).toContain("field: 'team'")
+  })
+
+  test('accessor options are mapped like any other column', () => {
+    expect(out.code).toContain('width: 70')
+    expect(out.code).toContain('sortable: false')
+    expect(out.code).not.toContain('enableSorting')
+    expect(out.code).not.toContain('size: 70')
+  })
+
+  test('accessor(fn) becomes fieldFn and keeps its id', () => {
+    expect(out.code).toContain('fieldFn: (row) => row.first')
+    expect(out.code).toContain("id: 'full'")
+  })
+
+  test('display() carries its options through', () => {
+    expect(out.code).toContain("id: 'actions'")
+  })
+
+  test('group() recurses into its children', () => {
+    expect(out.code).toContain("header: 'Name'")
+    expect(out.code).toContain("field: 'first'")
+  })
+
+  test('no helper call survives in the output', () => {
+    expect(out.code).not.toContain('.accessor(')
+    expect(out.code).not.toContain('.display(')
+    expect(out.code).not.toContain('.group(')
+  })
+
+  test('the helper import and its declaration are removed', () => {
+    // `@svgrid/grid` has no `createColumnHelper`, so leaving either behind
+    // produces a file that cannot resolve its own import.
+    expect(out.code).not.toContain('createColumnHelper')
+    expect(out.code).not.toContain('columnHelper')
+    expect(out.code).not.toContain('@tanstack/')
+  })
+
+  test('warns when a computed accessor has no id to identify it', () => {
+    const src = `import { createColumnHelper } from '@tanstack/table-core'
+const h = createColumnHelper()
+export const columns = [h.accessor((row) => row.last, { header: 'Last' })]
+`
+    const out = migrateTanstack(src, { svelte: false })
+    expect(out.warnings.join(' ')).toMatch(/has no .id./)
+  })
+})
+
+/**
+ * What the emitted `<SvGrid ... />` is allowed to name.
+ *
+ * It used to name `{data} {columns} {features}` unconditionally. A component
+ * with no `tableFeatures(...)` - the plain TanStack setup, as opposed to the
+ * shadcn one - therefore got `{features}` referring to nothing, and the file the
+ * codemod handed back did not compile. A codemod producing broken code is the
+ * one outcome it cannot have.
+ */
+describe('migrateTanstack - the emitted SvGrid tag only names what exists', () => {
+  const tagOf = (src) => (migrateTanstack(src).code.match(/<SvGrid[^>]*\/>/) || [''])[0]
+
+  const NO_FEATURES = `<script lang="ts">
+  import { createTable, getCoreRowModel } from '@tanstack/svelte-table'
+  let { data } = $props()
+  const columns = [{ accessorKey: 'id', header: 'ID' }]
+  const table = createTable({ data, columns, getCoreRowModel: getCoreRowModel() })
+</script>`
+
+  const WITH_FEATURES = `<script lang="ts">
+  import { createSvelteTable } from '@tanstack/svelte-table'
+  import { tableFeatures, rowSortingFeature } from '@tanstack/table-core'
+  const features = tableFeatures({ rowSortingFeature })
+  let { data } = $props()
+  const columns = [{ accessorKey: 'id', header: 'ID' }]
+  const table = createSvelteTable({ data, columns, features })
+</script>`
+
+  const IMPORTED = `<script lang="ts">
+  import { createSvelteTable } from '@tanstack/svelte-table'
+  import { features } from './data-table-features'
+  import { columns } from './columns'
+  let { data } = $props()
+  const table = createSvelteTable({ data, columns, features })
+</script>`
+
+  test('omits {features} when the component has none', () => {
+    const tag = tagOf(NO_FEATURES)
+    expect(tag).toContain('{data}')
+    expect(tag).toContain('{columns}')
+    expect(tag).not.toContain('{features}')
+  })
+
+  test('keeps {features} when it is declared in the body', () => {
+    expect(tagOf(WITH_FEATURES)).toContain('{features}')
+  })
+
+  test('keeps {features} when it is imported, as the shadcn layout does', () => {
+    expect(tagOf(IMPORTED)).toContain('{features}')
+  })
+
+  test('recognises a $props() destructure as a binding', () => {
+    // `let { data } = $props()` is how a Svelte 5 component receives rows, and
+    // reading it as "data is undeclared" would warn on almost every real file.
+    const out = migrateTanstack(NO_FEATURES)
+    expect(out.warnings.join(' ')).not.toMatch(/`data` is not declared/)
+  })
+
+  test('warns when nothing binds a required prop', () => {
+    const orphan = `<script lang="ts">
+  import { createTable, getCoreRowModel } from '@tanstack/svelte-table'
+  const table = createTable({ data: [], columns: [], getCoreRowModel: getCoreRowModel() })
+</script>`
+    const out = migrateTanstack(orphan)
+    expect(out.warnings.join(' ')).toMatch(/`data` is not declared/)
+    expect(out.warnings.join(' ')).toMatch(/`columns` is not declared/)
+  })
+})

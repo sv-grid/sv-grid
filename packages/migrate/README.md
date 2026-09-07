@@ -64,6 +64,10 @@ import is re-pointed and the features SvGrid does not have are removed.
 | --- | --- |
 | `accessorKey: 'x'` | `field: 'x'` |
 | `accessorFn: (row) => ...` | `fieldFn: (row) => ...` |
+| `columnHelper.accessor('x', { ... })` | `{ field: 'x', ... }` |
+| `columnHelper.accessor(fn, { id, ... })` | `{ fieldFn: fn, id, ... }` |
+| `columnHelper.display({ ... })` / `.group({ ... })` | the plain object it built |
+| `createColumnHelper<Row>()` | deleted - SvGrid columns are plain objects |
 | `size: 140` | `width: 140` |
 | `enableSorting: false` | `sortable: false` |
 | `enableColumnFilter: false` | `filterable: false` |
