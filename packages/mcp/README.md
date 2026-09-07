@@ -26,19 +26,29 @@ Point any MCP-capable client - Claude Desktop, Claude Code, Cursor, Zed - at thi
 
 ## Tools exposed
 
+Four. `tools/list` is sent on **every** request, so the tool surface is pure
+overhead on every turn - this server used to spend ~4,710 tokens of it on 36
+tools, 79% of them Studio tools most sessions never call once.
+
 | Tool | Purpose |
 | --- | --- |
-| `check_svgrid_code` | **Verify** a file against the real API surface + the Svelte compiler. |
-| `list_examples` | Every demo: id, title, and one-line blurb. |
-| `get_example_source` | Full `.svelte` source for a demo by id. |
-| `list_docs` | Every documentation page (slug + title). |
-| `get_doc` | Markdown for a single doc by slug. |
-| `search_docs` | Ranked full-text search across the docs. |
-| `get_api_reference` | The curated public-API surface, grouped by category. |
-| `introspect_source` | Studio: infer an `EntitySchema` from a Drizzle file or sample rows. |
-| `scaffold_entity` | Studio: generate SvelteKit files for a single entity. |
+| `svgrid_search` | Search the docs, all 375 demos and the API surface **in one call**. No arguments returns an index. |
+| `svgrid_get` | Read one thing in full: a doc slug, a demo id, or `api`. |
+| `svgrid_check_code` | **Verify** a file against the real API surface + the Svelte compiler. |
+| `svgrid_scaffold` | Studio: turn a Drizzle schema, sample rows or an `EntitySchema` into runnable SvelteKit files. |
 
-### `check_svgrid_code` - the one a retrieval server cannot do
+The docs and demos are also served as **MCP resources**
+(`svgrid://doc/<slug>`, `svgrid://example/<id>`), and three **prompts** ship
+ready to run: `build_grid`, `explain_api`, `review_grid_code`.
+
+Every pre-3.0 tool name still answers - `search_docs`, `get_doc`,
+`list_examples`, `get_example_source`, `list_docs`, `get_api_reference`,
+`check_svgrid_code`, `introspect_source`, `scaffold_entity`, and all 27
+individual `studio_*` tools. They are not **listed**, because listing is what
+costs context and answering an unadvertised name costs nothing. Their response
+shape follows 3.0.
+
+### `svgrid_check_code` - the one a retrieval server cannot do
 
 Reading the docs makes a model *likelier* to be right. This makes it *checkable*.
 Hand it a file and it answers with line-numbered diagnostics and the exact
@@ -87,19 +97,24 @@ wolf is worse than none, because a model will happily "fix" working code.
 
 The `studio_*` tools let an agent build and edit the **same validated project model the visual designer uses** - add entities, screens, blocks, components, wire data sources, theme, RBAC, auth, the typed data layer, and the deploy target - then generate the full runnable app or export the `studio.config.json` the designer can Load. Every edit runs through the model's own functions + `validateProject`, so the agent can't produce an invalid app.
 
+**Opt-in.** Set `SVGRID_MCP_STUDIO=1`, or a valid `SVGRID_LICENSE_KEY`, in the
+server's env. Tools that need a licence to be useful should not cost every
+other user context on every request.
+
 | Tool | Purpose |
 | --- | --- |
-| `studio_new_project` / `studio_load_project` | Start fresh, or load an existing `studio.config.json`. |
-| `studio_describe_project` / `studio_get_config` | Inspect the model / export it as `studio.config.json`. |
-| `studio_capabilities` | List block kinds, component keys, theme presets, data-source kinds, deploy targets. |
-| `studio_add_entity` | Add a table/model (+ default screen), by schema or introspection. |
-| `studio_add_screen` / `studio_add_block` / `studio_add_component` | Compose screens from data blocks + UI components. |
-| `studio_set_entity_source` | Bind an entity to memory / SQL / Supabase / REST / PGlite. |
-| `studio_set_theme` / `studio_set_access` / `studio_set_auth` / `studio_set_data_layer` / `studio_set_deploy_target` | Configure app-wide features. |
-| `studio_validate` | Report errors + warnings. |
-| `studio_generate_app` | Emit every file of the runnable SvelteKit app. |
+| `studio_project` | `new`, `load`, `describe`, `config`, `capabilities`. |
+| `studio_apply` | A **batch** of model changes in order: entities, screens, blocks, components. |
+| `studio_configure` | Theme, auth, RBAC, tenancy, data layer, jobs, deploy target, layouts - in one call. |
+| `studio_build` | `validate`, then `generate` the full runnable SvelteKit app. |
 
-A typical session: `studio_new_project` → `studio_add_entity` (×N) → `studio_set_entity_source` → `studio_set_data_layer` → `studio_set_auth` → `studio_generate_app` → write the files and run `svelte-check`.
+A typical session: `studio_project` (`new`) → one `studio_apply` batch per
+screen → `studio_configure` → `studio_build` (`generate`) → write the files and
+run `svelte-check`.
+
+`studio_apply` batches on purpose. Twenty-seven one-per-mutation tools made a
+five-screen app twenty-odd round trips; a whole screen is now one call, and a
+failure reports which op failed and what already applied.
 
 ## Two ways to run it
 

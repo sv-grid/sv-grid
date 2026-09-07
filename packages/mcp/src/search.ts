@@ -34,8 +34,39 @@ export function occurrences(haystack: string, needle: string): number {
 }
 
 /** Split a query into distinct lowercase terms, dropping one-character noise. */
+/**
+ * Words too common to identify anything, dropped before matching.
+ *
+ * People phrase queries as questions - "how do I sort a column" - and every
+ * one of those filler words matched something. In the API search it was worse
+ * than noise: a single `a` matched 210 of 240 names, so the results came back
+ * led by `SvGridBoard` and `createSvGrid` for a query about pinning.
+ */
+export const STOP_WORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'can', 'do', 'does', 'for', 'from', 'how',
+  'i', 'in', 'is', 'it', 'my', 'of', 'on', 'or', 'the', 'to', 'use', 'want', 'what', 'when',
+  'where', 'which', 'with', 'you',
+])
+
+/** Terms worth matching on: longer than one character, and not filler. */
+export function meaningfulTerms(query: string): string[] {
+  return [
+    ...new Set(
+      query
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((t) => t.length > 2 && !STOP_WORDS.has(t)),
+    ),
+  ]
+}
+
 export function queryTokens(query: string): string[] {
   const tokens = [...new Set(query.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 1))]
+  // Drop filler only when something specific survives - "do" is filler in "how
+  // do I sort", but a query that is ALL filler still has to match on something
+  // rather than silently matching everything.
+  const specific = tokens.filter((t) => !STOP_WORDS.has(t))
+  if (specific.length) return specific
   return tokens.length ? tokens : [query.toLowerCase().trim()]
 }
 

@@ -29,6 +29,17 @@ export type Diagnostic = {
   message: string
   /** The concrete edit that fixes it, when there is one. */
   fix?: string
+  /**
+   * A mechanically applicable identifier rename, when the correction is exact.
+   *
+   * Machine-readable ON PURPOSE. `fix` is prose written for a human or a model
+   * to read; parsing it back out to edit code would make the wording
+   * load-bearing, and someone would eventually reword it and silently break
+   * every rewrite. Set only where the replacement is certain - a known rename
+   * or a close-enough spelling guess - and never where the advice is "this has
+   * no equivalent, remove it".
+   */
+  rename?: { from: string; to: string }
   /** Doc slug or demo id to read for the full story. */
   see?: string
 }
@@ -440,7 +451,10 @@ function checkImports(ctx: Ctx) {
           severity: 'error',
           line,
           message: `${pkgName}@${isGrid ? surface.gridVersion : surface.enterpriseVersion} does not export \`${name}\`.`,
-          fix: guess ? `Did you mean \`${guess}\`?` : 'Call get_api_reference for the exported surface.',
+          fix: guess
+            ? `Did you mean \`${guess}\`?`
+            : 'Call svgrid_get with ref:"api" for the exported surface.',
+          rename: guess ? { from: name, to: guess } : undefined,
         })
       }
     }
@@ -556,7 +570,7 @@ function checkGridProps(ctx: Ctx) {
           message: `\`on:${evt}\` never fires: SvGrid dispatches no component events, it takes callback props.`,
           fix: real
             ? `Use \`${real}={...}\`.`
-            : `Look for the matching \`on...\` prop - call get_api_reference or read reference/SvGrid.`,
+            : `Look for the matching \`on...\` prop - call svgrid_get with ref:"api" or read reference/SvGrid.`,
           see: 'reference/SvGrid',
         })
         continue
@@ -585,6 +599,9 @@ function checkGridProps(ctx: Ctx) {
           line: attr.line,
           message: `\`${name}\` is not a SvGrid prop.`,
           fix: renamed ? `Use \`${renamed}\`.` : PROP_RENAME_NOTES[name],
+          // An empty target means "there is no equivalent, take it out" - a
+          // deletion, not a rename, so it is never applied automatically.
+          rename: renamed ? { from: name, to: renamed } : undefined,
           see: 'reference/SvGrid',
         })
         continue
@@ -608,7 +625,10 @@ function checkGridProps(ctx: Ctx) {
         severity: 'error',
         line: attr.line,
         message: `\`${name}\` is not a prop of <SvGrid> in @svgrid/grid@${surface.gridVersion}.`,
-        fix: guess ? `Did you mean \`${guess}\`?` : 'Call get_api_reference, or read the reference/SvGrid doc for the prop list.',
+        fix: guess
+          ? `Did you mean \`${guess}\`?`
+          : 'Call svgrid_search with the prop name, or read the reference/SvGrid doc for the prop list.',
+        rename: guess ? { from: name, to: guess } : undefined,
         see: 'reference/SvGrid',
       })
     }
@@ -736,6 +756,7 @@ function checkColumns(ctx: Ctx) {
             line,
             message: `\`${key}\` is not a SvGrid column key.`,
             fix: renamed ? `Use \`${renamed}\`.` : COLUMN_RENAME_NOTES[key],
+            rename: renamed ? { from: key, to: renamed } : undefined,
             see: 'help/columns/column-definitions',
           })
           continue
@@ -964,13 +985,18 @@ function checkEnterpriseUsage(ctx: Ctx) {
       }
 
       const hint = API_METHOD_HINTS[method]
-      const guess = hint ?? nearest(method, all)
+      const spelling = nearest(method, all)
+      const guess = hint ?? spelling
       push(ctx, {
         rule: 'svgrid/unknown-api-method',
         severity: 'error',
         line,
         message: `The grid API has no \`${method}()\` in @svgrid/grid@${ctx.surface.gridVersion}.`,
-        fix: guess ? `Use \`${guess}\`.` : 'Call get_api_reference for the api surface.',
+        fix: guess ? `Use \`${guess}\`.` : 'Call svgrid_get with ref:"api" for the api surface.',
+        // Only the spelling guess is a bare identifier. An API_METHOD_HINTS
+        // value is a call expression - `exportData({ format: "xlsx" })` - and
+        // substituting that for an identifier would emit `api.exportData({...})(...)`.
+        rename: !hint && spelling ? { from: method, to: spelling } : undefined,
         see: 'reference/SvGrid',
       })
     }
@@ -1034,6 +1060,61 @@ function checkFeatures(ctx: Ctx) {
 // ---------------------------------------------------------------------------
 
 /** Run every static rule. Exported for tests and for hosts that skip compiling. */
+/**
+ * Apply the mechanically-safe renames to the source, returning the corrected
+ * text and a description of every edit.
+ *
+ * Reporting a mistake and leaving the caller to re-derive the edit from prose
+ * is the loop this tool exists to shorten. But the tool's entire worth is that
+ * it never cries wolf, and rewriting raises those stakes: a false positive no
+ * longer wastes a turn, it corrupts working code. So the rules here are narrow
+ * on purpose.
+ *
+ * - Only diagnostics carrying a `rename`, which is set only where the
+ *   replacement is exact.
+ * - Word-boundary matches only, so `data` never rewrites `rowData`.
+ * - Scoped to the reported LINE. `Diagnostic` has no column, and a whole-file
+ *   replace would hit identifiers the checker never looked at - a local
+ *   variable that happens to share a name with a wrong prop, say.
+ * - Skipped when the line does not contain the identifier, which means the
+ *   source has moved on since the check.
+ *
+ * `applied` is the audit trail; a caller that wants to review before trusting
+ * has everything it needs.
+ */
+export function applyFixes(
+  source: string,
+  diagnostics: readonly Diagnostic[],
+): { fixed: string; applied: string[] } {
+  const lines = source.split('\n')
+  const applied: string[] = []
+
+  for (const d of diagnostics) {
+    if (!d.rename) continue
+    const { from, to } = d.rename
+    if (!from || !to || from === to) continue
+    const i = d.line - 1
+    const line = lines[i]
+    if (line === undefined) continue
+
+    // Word boundaries via an explicit character class rather than \b, which
+    // treats `$` and `-` as boundaries and would match inside `$derived` or a
+    // hyphenated attribute.
+    const pattern = new RegExp(`(^|[^A-Za-z0-9_$])${escapeRegExp(from)}(?![A-Za-z0-9_$])`, 'g')
+    if (!pattern.test(line)) continue
+    pattern.lastIndex = 0
+
+    lines[i] = line.replace(pattern, (_m, before: string) => `${before}${to}`)
+    applied.push(`${from} -> ${to} (line ${d.line})`)
+  }
+
+  return { fixed: lines.join('\n'), applied }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export function checkStatic(source: string, surface: ApiSurface, filename = 'Component.svelte'): Diagnostic[] {
   const ctx: Ctx = {
     raw: source,
