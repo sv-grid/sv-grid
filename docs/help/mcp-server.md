@@ -40,17 +40,20 @@ It carries six tools - `search`, `fetch`, `list_examples`,
 needs no Node, no config file, and no key.
 
 **Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
-the 27 `studio_*` tools, and `check_svgrid_code` additionally *compiles*
-the file with the Svelte compiler rather than checking it statically.
-Use it when you want the compile pass, the Studio tools, or no
-third-party endpoint in the loop.
+the Studio tools, the docs and demos as MCP resources, ready-made
+prompts, and a `svgrid_check_code` that additionally *compiles* the file
+with the Svelte compiler rather than checking it statically. Use it when
+you want the compile pass, the Studio tools, or no third-party endpoint
+in the loop.
 
 |  | Hosted | Local |
 | --- | --- | --- |
 | Setup | a URL | `npx @svgrid/mcp` |
 | Needs Node | no | yes |
-| `check_svgrid_code` compiles | no, static checks only | yes |
-| `studio_*` tools | no | yes (27) |
+| Code check compiles | no, static checks only | yes |
+| Resources and prompts | yes | yes |
+| Visual preview | yes | yes |
+| `studio_*` tools | no | yes, opt-in |
 | Works offline | no | yes |
 
 ## Install
@@ -214,185 +217,232 @@ exactly, which is what a connector needs to index it.
 
 ## Tools exposed
 
-The **local** server registers 36 tools: 9 for verification,
-documentation, examples, and scaffolding, plus 27 `studio_*` tools that
-drive the SvGrid Studio project model. None require an API key.
+Four, by default. `tools/list` is sent on **every** request, so the tool
+surface is pure overhead on every turn - and this server used to spend
+~4,710 tokens of it on 36 tools, 79% of them Studio tools that most
+sessions never call once.
 
-The **hosted** server carries 6 of them: `check_svgrid_code`,
-`list_examples`, `get_example_source`, `get_api_reference`, and the
-retrieval pair `search` / `fetch` (which stand in for `search_docs`,
-`list_docs` and `get_doc`). The Studio tools need a filesystem, so they
-stay local - and a model that just wants a data grid should not spend
-context on an app builder it will never call.
+| Tool | What it does |
+| ---- | ------------ |
+| `svgrid_search` | Search the docs, the 375 demos and the API surface **in one call**. No arguments returns an index. |
+| `svgrid_get` | Read one thing in full: a doc slug, a demo id, or `api`. |
+| `svgrid_check_code` | Verify code against the real exported surface before the user sees it. |
+| `svgrid_preview` | Render a **live, interactive grid** in the conversation from columns + rows. |
+| `svgrid_scaffold` | Turn a Drizzle schema, sample rows or an EntitySchema into runnable SvelteKit files. |
+
+Studio adds four more, and only when you ask for them - set
+`SVGRID_MCP_STUDIO=1` or a licence key in the server's env. They need a
+licence to be useful, so they are not charged to everyone else's context
+window.
+
+The **hosted** server carries `search`, `fetch`, `list_examples`,
+`get_example_source`, `get_api_reference`, `check_svgrid_code` and
+`svgrid_preview`, plus the same resources and prompts. The first two are named
+that way deliberately: those exact names are what a one-click connector needs to
+index a remote server. It also answers to `svgrid_search`, `svgrid_get` and
+`svgrid_check_code`, so a model that learned the npm package's names is never
+told "unknown tool".
+
+What it does **not** have is the compile pass (the Svelte compiler cannot run in
+a Worker), the Studio tools (they need a filesystem), and the offline guarantee
+- it is a remote server, so by definition your query reaches it. Use the local
+one when any of those matter.
 
 ### Verification
 
-#### `check_svgrid_code`
+#### `svgrid_check_code`
 
 Checks a file **against the version you have installed** and returns
-line-numbered diagnostics with the exact replacement for each. Run it
-on SvGrid code before you accept it; fix what it reports and run it
-again.
+line-numbered diagnostics with the exact replacement for each: unknown
+`<SvGrid>` props, wrong `ColumnDef` keys, api methods that do not
+exist, imports that will not resolve, and Svelte 5 runes mistakes. It
+also compiles the component, so a syntax error surfaces here rather
+than in the user's terminal.
 
-```ts
-check_svgrid_code(source: string, filename?: string): string
+This is the tool that makes the rest worth having. Retrieval alone
+still lets a model write a confident, wrong grid; nothing else in the
+server stops it. Run it on every file you write, fix what it reports,
+and run it again.
+
+### Finding and reading
+
+#### `svgrid_search`
+
+One call across all three corpora, because "how do I pin a column" does
+not announce whether it is answered by a doc page, a demo, or an API
+name:
+
+```json
+{ "query": "pin a column" }
 ```
 
-```jsonc
+Returns ranked doc hits with excerpts, matching demos, and matching API
+names - each with the reference you pass to `svgrid_get`. Narrow with
+`kind` (`docs` | `examples` | `api`), trade tokens for completeness
+with `detail` (`concise` | `full`), and cap with `limit` (max 50).
+
+Call it with **no arguments** for an index of doc sections, demo
+categories and API groups - the cheapest way to orient before searching.
+
+#### `svgrid_get`
+
+```json
+{ "ref": "help/columns/column-definitions" }
+{ "ref": "11-stock-market" }
+{ "ref": "api" }
+```
+
+The kind is inferred from the reference; pass `kind` to force it. A
+reference that does not resolve comes back with near matches rather
+than a bare "not found".
+
+### It fixes what it finds
+
+`svgrid_check_code` does not stop at telling you what is wrong. Where the
+correction is exact it returns the corrected file too:
+
+```json
 {
-  "ok": false,
-  "checkedAgainst": "@svgrid/grid@2.6.20",
-  "compiler": "svelte",
-  "counts": { "errors": 2, "warnings": 0, "info": 0 },
-  "diagnostics": [
-    { "rule": "svgrid/renamed-prop", "severity": "error", "line": 24,
-      "message": "`rowData` is not a SvGrid prop.", "fix": "Use `data`." },
-    { "rule": "svgrid/renamed-column-key", "severity": "error", "line": 10,
-      "message": "`accessorKey` is not a SvGrid column key.", "fix": "Use `field`." }
-  ]
+  "diagnostics": [ ... ],
+  "applied": ["rowData -> data (line 7)", "accessorKey -> field (line 3)"],
+  "fixed": "<the corrected source>"
 }
 ```
 
-It checks four things:
+Both fields are omitted when there is nothing mechanically fixable, so a clean
+check stays small.
 
-- **Names, against the installed version.** Importable symbols,
-  `<SvGrid>` props, `ColumnDef` keys, grid API methods, theme
-  stylesheets. The list is generated from the package sources at build
-  time, so it cannot drift from what the package exports; an unknown
-  name comes back with the nearest real one.
-- **Cross-package mistakes.** A symbol that lives in
-  `@svgrid/enterprise`, or an api method that only exists after
-  `installEnterprise(api)`.
-- **Svelte 5 rules.** `export let` and `$:` in a runes file (compiler
-  errors), `on:` / `<slot>` / `createEventDispatcher` (deprecations),
-  and a plain `let` array that is mutated and so never re-renders.
-- **The file, compiled.** When a Svelte compiler is reachable - your
-  project's copy first, then the one bundled here - real parse errors
-  come back too. The `compiler` field says which ran, so `"ok": true`
-  is never mistaken for "this compiles".
+The rules are deliberately narrow, because this tool's whole worth is that it
+never cries wolf - and rewriting raises the stakes from wasting a turn to
+corrupting working code. Only exact renames are applied (a known rename, or a
+close-enough spelling), only on word boundaries, and only on the line the
+diagnostic reported. Advice that is ambiguous - "this has no equivalent, remove
+it" - stays advice. A test asserts that running auto-fix across all 367 demos
+in this repository changes nothing at all.
 
-It is tuned to stay silent on correct code: it reports nothing across
-all 373 demos in the SvGrid repo, which a CI test asserts on every
-commit. A checker that cries wolf is worse than none, because a model
-will rewrite working code to satisfy it.
+### It knows which version you have
 
-### Documentation and examples
+The result carries the version it checked against:
 
-These six are free and need no license key.
-
-#### `list_examples`
-
-List every demo with `id`, `title`, and a one-line blurb. Use it to
-discover what exists before fetching source.
-
-```ts
-list_examples(): Array<{ id, title, blurb, path }>
+```json
+{ "version": { "corpus": "3.0.0", "installed": "2.6.8", "warning": "..." } }
 ```
 
-#### `get_example_source`
+The server reads the `@svgrid/grid` in your project and says plainly when it
+disagrees with the corpus it ships, so a model is told to hedge instead of
+confidently citing an API you do not have. A server that answers from a remote
+backend cannot do this - it has no idea what is in your `node_modules`.
 
-Return the full `.svelte` source of one demo, verbatim, including
-imports - the same file a user would copy into a project.
+### Nothing leaves your machine
 
-```ts
-get_example_source({ id: '11-stock-market' }): string
+This server makes **no network calls**. Not for docs, not for the API surface,
+not for verification - the whole corpus (375 demos, 408 doc pages, the full
+exported API) ships inside the package, which is why it is 8 MB rather than
+90 KB. There is no API key, no licence check on the wire, and no telemetry.
+
+It works on a plane, behind a corporate proxy, and inside an air-gapped
+network. `tools/mcp-offline.test.ts` enforces it: the server is driven through
+a full session with every network primitive booby-trapped, and the test fails if
+anything is even attempted.
+
+The one honest exception: the **preview** loads the grid from a CDN to draw it.
+That happens in your client's sandboxed iframe, never in this server, and only
+when you actually render a preview.
+
+### Seeing the grid, not just reading about it
+
+`svgrid_preview` renders a **real, interactive SvGrid inside the
+conversation** - sortable, filterable, scrollable. Not a screenshot and not a
+mock table: the same `<sv-grid>` custom element a page would use, loaded from
+the CDN, with the columns and rows you passed.
+
+```json
+{
+  "title": "Team roster",
+  "columns": [{ "field": "name", "header": "Name" }, { "field": "amount", "header": "Amount" }],
+  "data": [{ "name": "Ada", "amount": 20000 }],
+  "sortable": true
+}
 ```
 
-#### `list_docs`
+It uses [MCP Apps](https://blog.modelcontextprotocol.io/posts/2026-01-26-mcp-apps/),
+the official UI extension: the tool points at a `ui://` resource through
+`_meta`, the client loads that HTML in a sandboxed iframe, and the tool's
+`structuredContent` arrives over a postMessage bridge. Supported in Claude
+(web and desktop), VS Code and ChatGPT.
 
-List every documentation page with slug and title. Slugs use forward
-slashes, for example `help/columns/column-definitions`.
+Clients without UI support are not left out - they ignore the `_meta` and get
+a text summary of the same grid, so it is always safe to call. That is the
+extension's own rule, and it is why the text half describes the grid rather
+than pointing at a picture the reader cannot see.
 
-```ts
-list_docs(): Array<{ slug, title }>
+Pass `demo` instead of `columns` / `data` and you get the demo's source: a
+demo is a Svelte component, not data, so there is nothing to hand the element
+and rendering an empty grid would just look broken.
+
+### Resources and prompts
+
+The docs and demos are also exposed as **MCP resources**, so a user can
+attach a page or a demo directly instead of hoping the model thinks to
+search for it:
+
+```
+svgrid://doc/help/columns/column-definitions
+svgrid://example/11-stock-market
 ```
 
-#### `get_doc`
-
-Return the markdown of a single page by slug.
-
-```ts
-get_doc({ slug: 'getting-started' }): string
-```
-
-#### `search_docs`
-
-Case-insensitive substring search across all docs. Returns matching
-slugs with a one-line excerpt around the first hit.
-
-`limit` is optional and defaults to 10.
-
-```ts
-search_docs({ query: 'row virtualization', limit: 10 })
-```
-
-#### `get_api_reference`
-
-The curated public-API surface, grouped by category (components,
-headless, scheduler, data ops, export, row models, features,
-virtualization, accessibility, utilities).
-
-```ts
-get_api_reference(): string
-```
+And three **prompts** ship ready to run: `build_grid`, `explain_api`
+and `review_grid_code`. Each is written to make the model use this
+server rather than recall SvGrid from training data, and each ends at
+`svgrid_check_code`.
 
 ### SvGrid Studio (commercial)
 
-These tools generate application code. They still run without a
-license key, but generated files are prefixed with a comment pointing
-at [pricing](https://svgrid.com/pricing/). Set `SVGRID_LICENSE_KEY` in
-the MCP server's environment for licensed use (see
-[Licensing](#licensing) below).
+Off unless enabled. Set `SVGRID_MCP_STUDIO=1`, or a valid
+`SVGRID_LICENSE_KEY`, in the server's env.
 
-#### `introspect_source`
+#### `svgrid_scaffold`
 
-Infer a draft `EntitySchema` from a data source: either a Drizzle
-schema file (`kind: "drizzle"`, `source`: the file text) or sample
-rows (`kind: "json"`, `rows`, `name`). Review and refine the draft
-before scaffolding.
-
-```ts
-introspect_source({ kind: 'drizzle', source: '...' })
-introspect_source({ kind: 'json', rows: [...], name: 'orders' })
-```
-
-#### `scaffold_entity`
-
-Generate runnable SvelteKit files from an `EntitySchema`: the `$lib`
-schema module, a `+server.ts` API route using `createKitHandlers`, and
-a `+page.svelte` with `SvGrid` and `SvGridEditPanel`.
-
-`route` defaults to the schema name and `apiRoute` to `/api/{route}`.
-
-```ts {nocheck}
-scaffold_entity(args: {
-  schema: EntitySchema
-  route?: string
-  apiRoute?: string
-}): Array<{ path: string; contents: string; description: string }>
-```
-
-Generated bodies are wrapped in `svgrid:managed` markers, so
-regeneration preserves your edits outside them. After writing the
-files, run the project's own `svelte-check` or `tsc` to verify they
-compile.
+Point it at a Drizzle schema, sample JSON rows, or an `EntitySchema`
+you already have, and it infers the schema and generates the `$lib`
+schema module, a `+server.ts` API route and a `+page.svelte` with
+`SvGrid` + `SvGridEditPanel` - in one call. Pass `schemaOnly: true` to
+stop after inference. Generated bodies carry `svgrid:managed` markers,
+so regenerating preserves your edits outside them.
 
 #### The `studio_*` tools
 
-27 tools let an agent build and edit the same validated project model
-the visual designer uses, then generate the app:
+Four tools drive the same validated project model the visual designer
+uses:
 
-| Area | Tools |
-| ---- | ----- |
-| Project | `studio_new_project`, `studio_load_project`, `studio_describe_project`, `studio_validate`, `studio_capabilities`, `studio_get_config`, `studio_generate_app` |
-| Entities | `studio_add_entity`, `studio_set_entity_source` |
-| Screens | `studio_add_screen`, `studio_update_screen`, `studio_remove_screen`, `studio_set_screen_layout` |
-| Blocks and components | `studio_add_block`, `studio_update_block`, `studio_move_block`, `studio_remove_block`, `studio_add_component` |
-| Forms | `studio_set_form_layout`, `studio_set_field_conditions` |
-| Platform | `studio_set_auth`, `studio_set_access`, `studio_set_tenancy`, `studio_set_data_layer`, `studio_set_deploy_target`, `studio_set_theme`, `studio_set_job` |
+| Tool | What it does |
+| ---- | ------------ |
+| `studio_project` | `new`, `load`, `describe`, `config`, `capabilities` |
+| `studio_apply` | A **batch** of model changes - entities, screens, blocks, components - applied in order |
+| `studio_configure` | Theme, auth, access, tenancy, data layer, jobs, deploy target, layouts, in one call |
+| `studio_build` | `validate`, then `generate` the full runnable SvelteKit app |
 
-Call `studio_capabilities` first: it reports exactly what the
-installed version supports, so the agent does not have to guess.
+Call `studio_project` with `action: "capabilities"` first: it reports
+exactly what the installed version supports, so the agent does not have
+to guess block kinds or component keys.
+
+`studio_apply` takes a batch on purpose. Building a five-screen app was
+twenty-odd round trips when every block was its own tool; now a whole
+screen is one call, and a failure reports which op failed and what
+already applied.
+
+### The pre-3.0 names
+
+Every tool name from before 3.0 still answers - `search_docs`,
+`get_doc`, `list_examples`, `get_example_source`, `list_docs`,
+`get_api_reference`, `check_svgrid_code`, `introspect_source`,
+`scaffold_entity` and all 27 individual `studio_*` tools. They are not
+**listed**, because listing is what costs context and answering a name
+you did not advertise costs nothing. Saved prompts and scripts keep
+working; nobody pays for the compatibility.
+
+Their JSON response shape follows 3.0, not 2.x. A model reads either
+without trouble; a script that parsed the old shape by hand needs a look.
 
 ## Licensing
 

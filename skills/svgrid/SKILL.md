@@ -116,10 +116,10 @@ detail is uncertain, **fetch, don't hallucinate**:
 
 If the project uses an MCP client (Claude Desktop, Cursor, Zed, Claude
 Code), the **`@svgrid/mcp`** server exposes the same facts as callable
-tools (`list_examples`, `get_example_source`, `list_docs`) - prefer it for
+tools (`svgrid_search`, `svgrid_get`) - prefer it for
 version-pinned answers. It needs no API key and runs locally.
 
-When that server is available, **run `check_svgrid_code` on every file you
+When that server is available, **run `svgrid_check_code` on every file you
 write** before showing it to the user. It validates the file against the
 exported surface of the installed version and compiles it, and returns the
 exact replacement for each problem. It is the difference between code that
@@ -168,7 +168,7 @@ Tailwind). Use the project's package runner (`npm create` / `pnpm create` /
 5. **Review** - confirm every column has an `id`, no CSS targets internal
    nodes, and no enterprise symbol leaks into a grid-only project.
 6. **Verify** - if the `@svgrid/mcp` server is connected, run
-   `check_svgrid_code` on each file and fix everything it reports. Do not
+   `svgrid_check_code` on each file and fix everything it reports. Do not
    hand over code that has not passed it.
 
 ## Detailed references

@@ -189,13 +189,13 @@ an API from its training cutoff. No API key, all local.
 }
 ```
 
-It registers callable tools - `list_examples`, `get_example_source`,
-`list_docs`, `get_doc`, `search_docs`, and `get_api_reference` - so the
+It registers callable tools - `svgrid_search`, `svgrid_get`,
+`svgrid_check_code` and `svgrid_scaffold` - so the
 agent reads real demo source and current docs instead of guessing.
 
 For **Studio** (turning a database or schema into a CRUD data-app), the
 [same server](../enterprise/studio/ai-generation.md) adds
-`introspect_source`, `scaffold_entity`, and 27 `studio_*` project-model
+`svgrid_scaffold` and four `studio_*` project-model
 tools. The generated screen is run
 through the Svelte compiler before it comes back, and each file carries
 `svgrid:managed` markers so a re-generation updates the managed regions and
@@ -263,8 +263,9 @@ data within a boundary before it reaches a provider.
 | `mockAIProvider` | `@svgrid/enterprise` | Deterministic canned provider for demos and tests. |
 | `type AIProvider` | `@svgrid/enterprise` | `(req: AIRequest) => Promise<string>` - the one function you implement. |
 | `api.ai.filter` / `smartFill` / `summarize` / `classify` / `export` / `findAnomalies` | `@svgrid/enterprise` | The in-grid helpers, added by `installEnterprise(api)`. |
-| `search_docs`, `get_doc`, `list_examples`, `get_example_source`, `get_api_reference`, `list_docs` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls. |
-| `introspect_source`, `scaffold_entity`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). |
+| `svgrid_search`, `svgrid_get` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls: find anything across docs, demos and the API, then read it in full. |
+| `svgrid_check_code` | `@svgrid/mcp` | Verifies generated code against the real API surface before you see it. |
+| `svgrid_scaffold`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). Studio tools are opt-in: set `SVGRID_MCP_STUDIO=1` or a licence key. |
 
 Auto-generated per-symbol reference: [`@svgrid/grid` · `ai.ts`](../reference/auto/svgrid-grid-ai.md).
 

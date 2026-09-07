@@ -175,7 +175,7 @@ project so assistants cite real props, methods, and events instead of inventing 
 ```
 
 Claude Code users get both in one plugin - the house-style skill plus the
-server whose `check_svgrid_code` tool verifies each file against the real API
+server whose `svgrid_check_code` tool verifies each file against the real API
 surface before you see it:
 
 ```

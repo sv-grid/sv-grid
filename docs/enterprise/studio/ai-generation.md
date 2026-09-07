@@ -56,46 +56,53 @@ server exposes two generation tools:
 
 | Tool | What it does |
 | --- | --- |
-| `introspect_source` | Infer an `EntitySchema` from a Drizzle schema file (`kind:"drizzle"`) or sample JSON rows (`kind:"json"`). Returns a **draft** to review. |
-| `scaffold_entity` | Generate the SvelteKit files from an `EntitySchema`. The output is **compile-verified** (the generated page is run through the Svelte compiler) before it comes back, and each file carries `svgrid:managed` markers. |
+| `svgrid_scaffold` with `schemaOnly: true` | Infer an `EntitySchema` from a Drizzle schema file (`from:"drizzle"`) or sample JSON rows (`from:"json"`). Returns a **draft** to review. |
+| `svgrid_scaffold` | Generate the SvelteKit files - from a Drizzle schema, sample rows, or an `EntitySchema` you already have, in one call. The output is **compile-verified** (the generated page is run through the Svelte compiler) before it comes back, and each file carries `svgrid:managed` markers. |
 
 ## Drive the whole project model
 
 Beyond single screens, the server exposes the full
 [project model](./concepts.md#the-project-model) - the same
-`studio.config.json` the visual designer edits - as a set of `studio_*` tools.
+`studio.config.json` the visual designer edits - as four `studio_*` tools.
 Your agent can build a complete multi-screen app, or continue editing one the
-designer produced, and hand it back:
+designer produced, and hand it back.
+
+**They are opt-in.** Set `SVGRID_MCP_STUDIO=1`, or a valid
+`SVGRID_LICENSE_KEY`, in the MCP server's env. Tools that need a licence to be
+useful should not cost every other user context on every request.
 
 | Tool | What it does |
 | --- | --- |
-| `studio_new_project` | Start a new, empty project |
-| `studio_load_project` | Load an existing `studio.config.json` to continue editing it |
-| `studio_describe_project` | Summarize the current project: entities, screens + block ids, theme, RBAC, auth, deploy |
-| `studio_get_config` | Return the project as a `studio.config.json` string - write it to disk and the designer opens it (round-trip) |
-| `studio_capabilities` | List what can be added: block kinds, UI component keys, theme presets, source kinds, deploy targets |
-| `studio_add_entity` | Add an entity + its default screen, from an `EntitySchema`, a Drizzle source, or sample JSON rows |
-| `studio_add_screen` | Add an entity-bound screen (default grid) or a freestanding page |
-| `studio_add_block` | Add a data block (grid, chart, kpi, gauge, tree, tabs, accordion, pivot, board, calendar, detail, master-detail, filter, record, lookup, dashboard) to a screen |
-| `studio_add_component` | Add a UI component block (button, badge, alert, card, stat, timeline, sparkline, chip, ...) with prop overrides |
-| `studio_update_block` | **Configure** an existing block - columns, editing mode, export buttons, grouping, chart dimension/measure, row links, format rules - plus its width, height, and class |
-| `studio_remove_block` | Remove a block from a screen |
-| `studio_move_block` | Reorder a block within its screen |
-| `studio_update_screen` | Rename a screen, change its route or nav entry, or set `renderMode` (`ssr` for an idiomatic `+page.server.ts` load + form actions, `spa` for the client page) |
-| `studio_remove_screen` | Remove a screen and its blocks |
-| `studio_set_screen_layout` | Switch a screen between `grid`, `stack`, `split`, `dock`, and `canvas` layouts |
-| `studio_set_form_layout` | Arrange an entity's [create/edit form](./edit-forms.md): column count + titled sections, or `"suggest": true` to have them proposed from the field names |
-| `studio_set_field_conditions` | Make a form field [value-driven](./edit-forms.md#fields-that-react-to-the-answers) - shown, required, or locked depending on the other answers |
-| `studio_set_entity_source` | Bind an entity to a data source: `sql`, `supabase`, `rest`, `pglite`, or `memory` |
-| `studio_set_theme` | Set the theme preset, light/dark mode, and accent color |
-| `studio_set_access` | Configure [RBAC](./access-control.md): roles gating screens and create/update/delete actions |
-| `studio_set_auth` | Configure the [auth starter](./auth.md): protect, register, user admin, 2FA, email, OAuth (`github` / `google` / `oidc`) |
-| `studio_set_data_layer` | Turn the typed Drizzle data layer (schema + repositories + migrations) on or off |
-| `studio_set_tenancy` | Turn [multi-tenancy](./access-control.md#multi-tenancy) on/off - scopes every row to the caller's tenant, enforced server-side; `sharedEntities` stay global |
-| `studio_set_job` | Schedule a background job (`email` digest or `code`) - emits the guarded `/api/cron` route + the platform schedule; omit `cron` to remove one |
-| `studio_set_deploy_target` | Set `auto` / `vercel` / `netlify` / `cloudflare` / `node` - picks the adapter and emits CI/CD config |
-| `studio_validate` | Validate the current project; returns errors + warnings |
-| `studio_generate_app` | Emit the full runnable SvelteKit app - every file, ready to write and `svelte-check` |
+| `studio_project` | `new` an empty project, `load` a `studio.config.json`, `describe` the current one (entities, screens, block ids, theme, RBAC, auth, deploy), `config` to get it back as a string for round-tripping, `capabilities` to list the block kinds, UI component keys, theme presets, source kinds and deploy targets this version supports |
+| `studio_apply` | A **batch** of model changes applied in order: `add_entity`, `add_screen`, `add_block`, `add_component`, `update_block`, `remove_block`, `move_block`, `update_screen`, `remove_screen` |
+| `studio_configure` | Project-wide settings in one call: `theme`, `auth`, `access`, `tenancy`, `data_layer`, `job`, `deploy_target`, `screen_layout`, `form_layout`, `field_conditions`, `entity_source` |
+| `studio_build` | `validate` the project (errors + warnings), then `generate` the full runnable SvelteKit app - every file, ready to write and `svelte-check` |
+
+Call `studio_project` with `action: "capabilities"` before applying anything:
+it reports exactly what the installed version supports, so the agent uses real
+block kinds and component keys rather than plausible-looking ones.
+
+`studio_apply` takes a batch on purpose. This was 27 separate tools, one per
+mutation, which made a five-screen app twenty-odd round trips and cost every
+user of the free grid ~3,741 tokens of tool definitions on every request. A
+whole screen is now one call:
+
+```json
+{
+  "ops": [
+    { "op": "add_entity", "rows": [{ "id": 1, "subject": "Login fails", "status": "open" }], "name": "tickets" },
+    { "op": "add_screen", "title": "Dashboard" },
+    { "op": "add_block", "screen": "dashboard", "kind": "kpi", "entity": "tickets" },
+    { "op": "add_block", "screen": "dashboard", "kind": "chart", "entity": "tickets" }
+  ]
+}
+```
+
+If an op fails, the response says which one and what had already applied, so
+the agent retries the tail rather than the whole batch.
+
+The 27 individual tool names still answer, so an existing prompt keeps working
+- they are simply no longer advertised.
 
 A prompt that exercises the loop end to end:
 
@@ -107,11 +114,11 @@ A prompt that exercises the loop end to end:
 ## Step by step
 
 1. **Point it at a source.** A Drizzle schema file, or a handful of sample rows.
-2. **Introspect.** The agent calls `introspect_source` and shows you the drafted
+2. **Introspect.** The agent calls `svgrid_scaffold` with `schemaOnly: true` and shows you the drafted
    `EntitySchema` - field names, types, primary key, guessed formats.
 3. **Refine (optional).** Correct a type, mark a field hidden or read-only, add
    validation - in chat, or later in the [visual designer](./app-designer.md).
-4. **Scaffold.** The agent calls `scaffold_entity`; the files come back already
+4. **Scaffold.** The agent calls `svgrid_scaffold` again without `schemaOnly`; the files come back already
    run through the Svelte compiler.
 5. **Verify.** The agent runs your project's `svelte-check`; if anything fails it
    iterates. This is the loop that keeps AI output trustworthy.
@@ -139,7 +146,7 @@ Refining before you commit:
 
 ## What comes back
 
-`scaffold_entity` writes three files (the same layout as the CLI and designer):
+`svgrid_scaffold` writes three files (the same layout as the CLI and designer):
 
 ```
 src/lib/customers.schema.ts     # the EntitySchema + row type

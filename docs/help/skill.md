@@ -50,7 +50,7 @@ code it produces:
 
 The plugin wires up the hosted MCP server at `https://mcp.svgrid.com/mcp`,
 so there is nothing to install and no key to configure. The skill supplies
-the house style; the server's `check_svgrid_code` tool verifies each file
+the house style; the server's `svgrid_check_code` tool verifies each file
 against the real API surface before you see it. Prefer this over installing
 the two separately.
 
