@@ -21,7 +21,7 @@
     "vite": "^8.0.16"
   },
   "dependencies": {
-    "@svgrid/grid": "^2.6.8",
-    "@svgrid/enterprise": "^2.6.4"
+    "@svgrid/grid": "^3.0.0",
+    "@svgrid/enterprise": "^3.0.0"
   }
 }

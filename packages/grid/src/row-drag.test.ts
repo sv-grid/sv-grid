@@ -6,7 +6,7 @@
  * Because the bus is shared, we can create TWO fake ctxs (two grids) and drive
  * a genuine grid-to-grid move without mounting anything.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createRowDrag, rowDropZone } from './row-drag'
 
 type AnyCtx = Record<string, any>
@@ -252,6 +252,19 @@ describe('createRowDrag - drop indicator during virtualized scroll (#69)', () =>
 describe('createRowDrag - touch (#66)', () => {
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+  // `row-drag.ts` fetches the touch module with import() on the first touch,
+  // and that fetch is not free: measured at ~190 ms the first time a worker
+  // loads it, against the 400 ms budget the tests below allow for a 350 ms
+  // press. That left 50 ms of headroom and made this the only flaky suite in
+  // the run - green alone, red once the other 200 files were competing for the
+  // same worker. Warming the module here means the waits below measure the
+  // long press, which is what they are for, instead of racing the loader.
+  // The press-clock behaviour that the cold fetch exposed has its own test at
+  // the bottom of this block.
+  beforeAll(async () => {
+    await import('./row-drag-touch')
+  })
+
   // `stubRowAt` replaces a global. Without restoring it, every later test in
   // the worker inherits a fake elementFromPoint - which showed up as an
   // intermittent failure elsewhere in the suite, not here.
@@ -293,10 +306,15 @@ describe('createRowDrag - touch (#66)', () => {
   it('does not start until the long press elapses', async () => {
     const ctx = makeCtx([{ id: 1, title: 'a' }, { id: 2, title: 'b' }], P)
     const d = createRowDrag(ctx)
+    const pressedAt = performance.now()
     d.onRowPointerDown(pointer('touch', 10), 0)
     expect(ctx.rowDragActive).toBe(false)
     await wait(400)
     expect(ctx.rowDragActive).toBe(true)
+    // The name of this test is the assertion: it has to have WAITED. Without
+    // this line the test passes just as happily if the press threshold is
+    // deleted and the drag starts on contact.
+    expect(performance.now() - pressedAt).toBeGreaterThanOrEqual(340)
     d.destroyRowDrag()
   })
 
@@ -349,5 +367,35 @@ describe('createRowDrag - touch (#66)', () => {
     window.dispatchEvent(Object.assign(new Event('pointercancel'), { pointerId: 1 }))
     expect((ctx.internalData as Task[]).map((r) => r.id)).toEqual([1, 2])
     expect(ctx.rowDragActive).toBe(false)
+  })
+
+  // The press threshold is counted from the pointerdown, not from the moment
+  // the lazily-imported touch module finished loading. Driving createTouchDrag
+  // directly is the only way to state that: through createRowDrag the fetch
+  // latency is whatever the machine happens to do that run, which is exactly
+  // the non-determinism this behaviour exists to cancel out.
+  it('counts the long press from the pointerdown, not from when the module loaded', async () => {
+    const { createTouchDrag } = await import('./row-drag-touch')
+    const rows: Task[] = [{ id: 1, title: 'a' }, { id: 2, title: 'b' }]
+    const ctx = makeCtx(rows, P)
+    const handle = createTouchDrag({
+      ctx,
+      managed: () => true,
+      originalAt: (i: number) => (ctx.internalData as Task[])[i],
+      commitDropOnRow: () => {},
+      clearIndicators: () => {},
+      cancelPendingLeave: () => {},
+      openBus: () => {},
+      closeBus: () => {},
+    })
+
+    // 300 ms of the 350 ms press already went on fetching this module, so only
+    // ~50 ms of it is left. Before the fix the clock restarted here and the
+    // user paid 650 ms for their first drag of the session.
+    handle.start(pointer('touch', 10), 0, performance.now() - 300)
+    expect(ctx.rowDragActive).toBe(false)
+    await wait(150)
+    expect(ctx.rowDragActive).toBe(true)
+    handle.destroy()
   })
 })

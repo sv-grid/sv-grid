@@ -8,8 +8,10 @@
 // `onRowDragEnd` payload cannot drift between mouse and touch.
 //
 // Loaded with `import()` on the first touch that lands on a draggable row, so
-// desktop users never download it. The 350 ms long press below more than covers
-// the fetch, and the drag cannot begin before it elapses anyway.
+// desktop users never download it. The 350 ms long press below absorbs the
+// fetch rather than following it: `start` takes the pointerdown timestamp and
+// subtracts the time already spent waiting, so a fetch that finishes inside the
+// press costs the user nothing.
 //
 // A touch that starts on a row must still be able to SCROLL the grid, so the
 // drag only begins after a long press; moving before that threshold hands the
@@ -50,7 +52,11 @@ type TouchState = {
 
 /** What {@link createTouchDrag} returns. */
 export type TouchDragHandle = {
-  start: (e: PointerEvent, rowIndex: number) => void;
+  /**
+   * @param pressStartedAt `performance.now()` at the pointerdown that began
+   *   this press. Defaults to now. See the long-press comment in `start`.
+   */
+  start: (e: PointerEvent, rowIndex: number, pressStartedAt?: number) => void;
   destroy: () => void;
 };
 
@@ -168,7 +174,7 @@ export function createTouchDrag(deps: TouchDragDeps): TouchDragHandle {
 
   return {
     /** Begin a press that may become a drag. Caller has already checked touch. */
-    start(e: PointerEvent, rowIndex: number) {
+    start(e: PointerEvent, rowIndex: number, pressStartedAt?: number) {
       if (!deps.managed() || touch) return;
       const row = deps.originalAt(rowIndex);
       if (row == null) return;
@@ -188,6 +194,15 @@ export function createTouchDrag(deps: TouchDragDeps): TouchDragHandle {
       window.addEventListener("pointerup", onPointerUp);
       window.addEventListener("pointercancel", onPointerCancel);
       window.addEventListener("touchmove", blockTouchScroll, { passive: false });
+      // The long press is measured from when the finger LANDED, not from when
+      // this module finished loading. `row-drag.ts` fetches it with import() on
+      // the first touch, and that fetch is not free - measured at ~190 ms cold.
+      // Starting the clock here would make the real cost `fetch + 350 ms`, so a
+      // user on a slow connection would have to hold noticeably longer for
+      // their first drag than for every one after it. Subtracting the elapsed
+      // time keeps it at 350 ms from the finger's point of view, which is what
+      // the comment at the top of this file has always claimed.
+      const waited = pressStartedAt == null ? 0 : Math.max(0, performance.now() - pressStartedAt);
       touch.timer = setTimeout(() => {
         if (!touch) return;
         touch.started = true;
@@ -202,7 +217,7 @@ export function createTouchDrag(deps: TouchDragDeps): TouchDragHandle {
         ctx.rowDragActive = true;
         ctx.rowDropIndex = rowIndex;
         ctx.rowDropSide = "before";
-      }, LONG_PRESS_MS);
+      }, Math.max(0, LONG_PRESS_MS - waited));
     },
     destroy() {
       end(false);

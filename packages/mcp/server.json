@@ -3,7 +3,7 @@
   "name": "com.svgrid/svgrid",
   "title": "SvGrid",
   "description": "Checks AI-written SvGrid code against the real API, plus version-pinned Svelte 5 grid docs.",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "websiteUrl": "https://svgrid.com/docs/help/mcp-server/",
   "repository": {
     "url": "https://github.com/sv-grid/sv-grid",
@@ -15,7 +15,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@svgrid/mcp",
-      "version": "3.0.0",
+      "version": "3.0.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

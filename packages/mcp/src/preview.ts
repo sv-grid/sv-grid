@@ -29,7 +29,7 @@ const UI_RESOURCE_META_KEY = 'ui/resourceUri'
  * start failing in a way nobody is watching for. `tools/mcp-tools.test.ts` checks these
  * against the workspace so they cannot quietly rot either.
  */
-export const PREVIEW_GRID_WC_VERSION = '2.7.0'
+export const PREVIEW_GRID_WC_VERSION = '3.0.0'
 const EXT_APPS_VERSION = '1.7.5'
 const CDN = 'https://cdn.jsdelivr.net/npm'
 

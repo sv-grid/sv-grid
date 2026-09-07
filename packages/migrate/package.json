@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/migrate",
-  "version": "0.2.3",
+  "version": "3.0.0",
   "description": "Codemod that ports a svelte-headless-table or TanStack Table v9 component (including the shadcn-svelte data table) to SvGrid: translates column definitions and feature config, and removes the scaffolding SvGrid renders for you.",
   "type": "module",
   "license": "MIT",

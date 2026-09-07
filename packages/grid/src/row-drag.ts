@@ -217,8 +217,8 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
 
   // Touch drag (#66) lives in its own module and is fetched on the first touch
   // that lands on a draggable row, so desktop never downloads it. The 350 ms
-  // long press inside it more than covers the fetch - the drag cannot start
-  // before that elapses anyway.
+  // long press inside it absorbs the fetch: the press clock starts at
+  // pointerdown here, so the fetch is free unless it outlasts the press.
   let touchDrag: import("./row-drag-touch").TouchDragHandle | null = null;
   let touchLoading = false;
 
@@ -268,6 +268,10 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     const pid = e.pointerId;
     const startX = e.clientX;
     const startY = e.clientY;
+    // Handed to the touch module so its long press is counted from HERE, not
+    // from whenever the import below resolves. Without it the first touch drag
+    // of a session costs `fetch + 350 ms` while every later one costs 350 ms.
+    const pressStartedAt = performance.now();
     let aborted = false;
     function stopWatching() {
       window.removeEventListener("pointermove", onEarlyMove);
@@ -306,7 +310,7 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
       stopWatching();
       if (aborted || !managed()) return;
       touchDrag = m.createTouchDrag(touchDeps());
-      touchDrag.start(snapshot, rowIndex);
+      touchDrag.start(snapshot, rowIndex, pressStartedAt);
     });
   }
 
