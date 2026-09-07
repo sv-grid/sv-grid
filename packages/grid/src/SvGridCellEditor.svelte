@@ -87,10 +87,14 @@
    *
    * `enabled` lets a group of buttons (the rating stars) pick which one holds
    * focus, since an action cannot be applied conditionally.
+   *
+   * Synchronous, for the same reason as `focusOnMount`: a deferred frame left
+   * the cell marked as editing with nothing inside it focused, and keystrokes
+   * in that window were dropped by both the grid root and the editor.
    */
   function focusControlOnMount(node: HTMLElement, enabled: boolean = true) {
     if (!enabled) return;
-    requestAnimationFrame(() => node.focus({ preventScroll: true }));
+    node.focus({ preventScroll: true });
   }
 
   function fullRowKeydown(e: KeyboardEvent) {

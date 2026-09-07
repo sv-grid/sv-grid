@@ -10,7 +10,7 @@
  *
  * The list now windows its rows and snapshots its values when the menu opens.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -84,31 +84,23 @@ async function openFilterMenu(target: HTMLElement, columnIndex = 0) {
     columnIndex
   ] as HTMLButtonElement
   btn.click()
-  // GridMenus is a lazy chunk, so poll until the popover mounts AND its value
-  // checklist has rendered.
+  // Poll until the popover mounts AND its value checklist has rendered.
   //
   // Waiting only for the popover element returns while the listbox is still
-  // empty: the chunk arrives, the menu element appears, and the values are
-  // snapshotted and windowed in a later flush. Callers then read option counts
-  // from a list that has not populated yet. It survives locally because those
-  // flushes land in the same task, but under parallel load the gap widens - it
-  // failed once that way in a full-suite run. Every caller here opens a menu on
-  // a column that has values, so a populated list is the settled state to wait
-  // for, and each test's own assertions are unchanged.
+  // empty: the menu element appears, and the values are snapshotted and
+  // windowed in a later flush. Callers then read option counts from a list that
+  // has not populated yet. It survives locally because those flushes land in
+  // the same task, but under parallel load the gap widens - it failed once that
+  // way in a full-suite run. Every caller here opens a menu on a column that has
+  // values, so a populated list is the settled state to wait for.
   //
-  // The 1s default is not enough for the lazy chunk when `test:lib` runs the
-  // whole suite with `--coverage`: instrumentation plus parallel load pushes
-  // the import past a second and the menu is still null when the clock runs
-  // out. The assertions are unchanged - this only waits longer for a dynamic
-  // import, so a slow machine reports a real failure rather than a timeout.
-  await vi.waitFor(
-    () => {
-      const menu = target.querySelector('.sv-grid-filter-menu')
-      expect(menu).not.toBeNull()
-      expect(menu!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0)
-    },
-    { timeout: 5000 },
-  )
+  // The default budget is enough because `beforeAll` has already paid for the
+  // overlay chunk; this only waits on flushes.
+  await vi.waitFor(() => {
+    const menu = target.querySelector('.sv-grid-filter-menu')
+    expect(menu).not.toBeNull()
+    expect(menu!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0)
+  })
   return target.querySelector('.sv-grid-filter-menu') as HTMLElement
 }
 
@@ -129,6 +121,19 @@ const findOption = (menu: HTMLElement, label: string) => {
 }
 
 describe('filter menu value checklist', () => {
+  // Load the overlay chunk once, before the clock starts on any test.
+  //
+  // The menus live in a chunk the grid `import()`s the first time one opens,
+  // and vitest transforms + instruments that chunk on demand. Under `test:lib`
+  // (`--coverage`, workers in parallel) that first transform pushed this file's
+  // first test past the 5s per-test budget, while the other eleven - reading
+  // the module from cache - passed in about a second each. Paying for it here
+  // leaves every test measuring the checklist rather than Vite's transform
+  // speed, and the hook reports a slow import as a slow import.
+  beforeAll(async () => {
+    await import('./GridMenus.svelte')
+  }, 60_000)
+
   it('windows a high-cardinality column instead of mounting every value', async () => {
     const rows = makeRows(120)
     const { target, destroy } = await mountGrid(rows)
