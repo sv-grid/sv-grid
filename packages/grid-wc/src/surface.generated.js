@@ -780,6 +780,10 @@ export const ELEMENT_EXCLUDED = [
     "reason": "element-level shorthand for row selection - see GridBody.svelte"
   },
   {
+    "name": "icons",
+    "reason": "Svelte snippets keyed by icon name - cannot cross the custom-element boundary"
+  },
+  {
     "name": "renderDetailRow",
     "reason": "Svelte snippet - cannot cross the custom-element boundary"
   }

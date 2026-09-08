@@ -40,6 +40,16 @@ test.describe('selectionBar', () => {
     const bar = page.locator(BAR)
     await expect(bar).toBeVisible()
 
+    // Scroll the bar into view BEFORE measuring. `document.elementFromPoint`
+    // below only hit-tests inside the viewport and returns null for a point
+    // past the fold - and on the default 1280x720 the bar's centre lands at
+    // y=713, seven pixels clear of it. Any layout difference that costs a few
+    // pixels (a font substitution on the CI runner wrapping one more line of
+    // the demo's blurb) pushes it under, and the z-order assertion then fails
+    // for a reason that has nothing to do with z-order. That is exactly what
+    // it did: green on a dev machine, red on Linux CI on every retry.
+    await bar.scrollIntoViewIfNeeded()
+
     const barBox = (await bar.boundingBox())!
     const rootBox = (await page.locator('.sv-grid-root').first().boundingBox())!
 

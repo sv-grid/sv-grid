@@ -10,6 +10,7 @@
   import "./sv-grid-scrollbar";
   import { onScrollOutside } from "./a11y/dismissable";
   import type { Snippet } from "svelte";
+  import type { GridIconName } from "./grid-icons";
   import SvListBox from "./SvListBox.svelte";
   import type {
     FilterOperator,
@@ -23,7 +24,7 @@
 
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
-  let { ctrl, icon }: { ctrl: SvGridController<TFeatures, TData>; icon: Snippet<[string]> } = $props();
+  let { ctrl, icon }: { ctrl: SvGridController<TFeatures, TData>; icon: Snippet<[GridIconName]> } = $props();
 
   // View facade: re-bind the controller's reactive members so the markup
   // (moved verbatim from SvGrid.svelte) stays identical.
@@ -403,7 +404,7 @@
               onclick={() => patchFilter(colId, { join: "OR" })}>OR</button>
             <button type="button" class="sv-grid-menu-join-x" title="Remove second condition"
               aria-label="Remove second condition"
-              onclick={() => patchFilter(colId, { operator2: undefined, value2: undefined, valueTo2: undefined, join: undefined })}>×</button>
+              onclick={() => patchFilter(colId, { operator2: undefined, value2: undefined, valueTo2: undefined, join: undefined })}>{@render icon("remove")}</button>
           </div>
           <select
             class="sv-grid-menu-operator-select"
@@ -452,11 +453,18 @@
           <span class="sv-grid-menu-head-note">{pickedCount} of {totalCount}</span>
         {/if}
       </div>
-      <input
-        class="sv-grid-menu-search"
-        placeholder="Search values..."
-        bind:value={ctrl.columnMenuSearch}
-      />
+      <!-- The magnifier used to be a background-image data URI in SvGrid.css
+           with a hard-coded stroke colour, so it ignored every theme and could
+           not be overridden. It is markup now, and the input keeps its own
+           class: focusFilterPanel() and a test both resolve `.sv-grid-menu-search`. -->
+      <span class="sv-grid-menu-search-wrap">
+        {@render icon("search")}
+        <input
+          class="sv-grid-menu-search"
+          placeholder="Search values..."
+          bind:value={ctrl.columnMenuSearch}
+        />
+      </span>
       <label class="sv-grid-facet sv-grid-facet-all">
         <input type="checkbox" checked={isAllFacetsChecked(colId)} onchange={() => toggleAllFacets(colId)} />
         <!-- Says what it will actually do: with a query typed it acts on the
@@ -593,7 +601,7 @@
           onclick={() => pinColumnLeft(menuColumnId)}
         >
           <span class="sv-grid-header-icon"
-            >{@render icon("op-startsWith")}</span
+            >{@render icon("pin-left")}</span
           > Pin to left
         </button>
         <button
@@ -604,7 +612,7 @@
           onclick={() => pinColumnRight(menuColumnId)}
         >
           <span class="sv-grid-header-icon"
-            >{@render icon("op-greaterThan")}</span
+            >{@render icon("pin-right")}</span
           > Pin to right
         </button>
         <button
@@ -614,7 +622,7 @@
           disabled={!menuPinSide}
           onclick={() => unpinColumn(menuColumnId)}
         >
-          <span class="sv-grid-header-icon">{@render icon("x")}</span> Unpin column
+          <span class="sv-grid-header-icon">{@render icon("unpin")}</span> Unpin column
         </button>
       {/if}
       <div class="sv-grid-menu-sep"></div>

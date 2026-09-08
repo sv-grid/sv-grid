@@ -107,8 +107,60 @@ function verifyClaims(actual) {
 
 const claimProblems = verifyClaims(total)
 
+/**
+ * The newest demos must carry an `added` date, which is what drives the "new"
+ * dot in the gallery (see isNewDemo in website/src/lib/demos.ts).
+ *
+ * Checked here rather than trusted to memory because the failure is silent: a
+ * demo with no date simply never shows the dot, and nobody notices a badge
+ * that did not appear. The window is the three highest-numbered demos - ids
+ * are assigned incrementally, so those are the recent ones, and dating an
+ * older demo would be pointless anyway since the dot expires on age.
+ *
+ * A date already present is also checked for shape and for being in the past,
+ * since a future date would read as "new" indefinitely.
+ */
+function verifyAddedDates() {
+  const problems = []
+  const today = new Date().toISOString().slice(0, 10)
+
+  // Slice the registry into one span per `demo(` call. Matching id and date
+  // with a single regex does NOT work: a lazy `[\s\S]*?` between them happily
+  // runs past dozens of entries, so an undated demo gets paired with some
+  // later demo's date and the error names the wrong file.
+  const entries = new Map()
+  const calls = [...src.matchAll(/\bdemo\(\s*'([^']+)'/g)]
+  for (const [i, m] of calls.entries()) {
+    const end = i + 1 < calls.length ? calls[i + 1].index : src.length
+    entries.set(m[1], src.slice(m.index, end))
+  }
+
+  for (const [id, entry] of entries) {
+    const m = entry.match(/\badded:\s*'([^']*)'/)
+    if (!m) continue
+    const date = m[1]
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) problems.push(`${id} has added: '${date}', which is not YYYY-MM-DD`)
+    else if (date > today) problems.push(`${id} has added: '${date}', which is in the future`)
+  }
+
+  const newest = live
+    .map((id) => ({ id, n: Number.parseInt(id, 10) }))
+    .filter((d) => Number.isFinite(d.n))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 3)
+
+  for (const { id } of newest) {
+    if (!/\badded:\s*'/.test(entries.get(id) ?? '')) {
+      problems.push(`${id} is one of the newest demos but has no \`added\` date, so it will not show the "new" dot`)
+    }
+  }
+  return problems
+}
+
+const dateProblems = verifyAddedDates()
+
 if (process.argv.includes('--json')) {
-  console.log(JSON.stringify({ firstParty: live.length, community, total, pro, orphanEntries, orphanFiles, claimProblems }, null, 2))
+  console.log(JSON.stringify({ firstParty: live.length, community, total, pro, orphanEntries, orphanFiles, claimProblems, dateProblems }, null, 2))
 } else {
   console.log(`first-party demos : ${live.length}`)
   console.log(`community demos   : ${community}`)
@@ -120,8 +172,12 @@ if (process.argv.includes('--json')) {
     console.log(`\nstale demo-count claims (${claimProblems.length}):`)
     for (const p of claimProblems) console.log(`  ${p}`)
   }
+  if (dateProblems.length) {
+    console.log(`\nmissing / bad \`added\` dates (${dateProblems.length}):`)
+    for (const p of dateProblems) console.log(`  ${p}`)
+  }
 }
 
 // Non-zero exit if the registry and the filesystem disagree, or if a quoted
 // count went stale, so CI can gate on it.
-process.exit(orphanEntries.length || claimProblems.length ? 1 : 0)
+process.exit(orphanEntries.length || claimProblems.length || dateProblems.length ? 1 : 0)

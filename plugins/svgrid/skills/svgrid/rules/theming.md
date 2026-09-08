@@ -55,6 +55,27 @@ introduce a second one.
 The grid reads tokens at paint time, so a mid-session theme toggle repaints
 it with no JS listener and no API call.
 
+## Icons are a prop, not a token
+
+Tokens carry colour and size; they cannot change the shape of a mark.
+The glyphs the grid draws for its own chrome (sort arrows, funnel,
+column menu, expanders, pager) come from the `icons` prop instead - a
+map keyed by icon name.
+
+```svelte
+{#snippet funnel()}<Icon name="filter" />{/snippet}
+
+<!-- Names you leave out keep their built-in glyph. -->
+<SvGrid {data} {columns} icons={{ filter: funnel }} />
+```
+
+It is a MAP, never a single catch-all snippet, so a partial set is a
+complete answer. Use `currentColor` in your markup and do not set a
+width: the grid wraps the override in its own icon box, so it inherits
+the size of the glyph it replaced and rotates with an expander.
+
+Full catalogue: `GridIconName`, or the Icons page in the docs.
+
 ## Design-system presets (fastest path)
 
 `@svgrid/grid` ships ready-made presets as plain stylesheets. Import one and

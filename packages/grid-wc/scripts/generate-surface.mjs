@@ -32,6 +32,12 @@ const EXCLUDED = {
   // options and HTML-string renderers are the documented substitute.
   renderDetailRow: 'Svelte snippet - cannot cross the custom-element boundary',
 
+  // Same reason as renderDetailRow: the values are Svelte snippets. An icon set
+  // is markup, not a serialisable value, so there is nothing an attribute or a
+  // property assignment could carry. `<sv-grid>` restyles its icons through the
+  // --sg-* tokens and CSS instead.
+  icons: 'Svelte snippets keyed by icon name - cannot cross the custom-element boundary',
+
   // A name collision, not an omission. `<sv-grid selectable>` shipped in 2.6.2
   // meaning ROW-selection checkboxes; `<SvGrid selectable>` is an alias of
   // `enableCellSelection`, which is a different feature. Forwarding it would

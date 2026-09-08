@@ -7,16 +7,25 @@
   import {
       fmtStat,
     } from "./SvGrid.helpers";
+  import type { Snippet } from "svelte";
+  import type { GridIconName } from "./grid-icons";
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
   let {
     ctrl,
+    icon,
     pager = true,
     showStatus = true,
     top = false,
     pageSizeOptions,
   }: {
     ctrl: SvGridController<TFeatures, TData>;
+    /**
+     * The grid's icon resolver, so the pager arrows honour the `icons` prop.
+     * Required rather than optional: SvGrid is the only thing that mounts this
+     * component, so a missing icon would be a bug, not a supported call.
+     */
+    icon: Snippet<[GridIconName]>;
     /** Render the pagination controls in this instance. */
     pager?: boolean;
     /** Render the status bar in this instance. */
@@ -132,7 +141,7 @@
                   onclick={openPageSize}
                 >
                   <span class="sv-grid-dropdown-label">{pageSize}</span>
-                  <span class="sv-grid-dropdown-caret" aria-hidden="true">▾</span>
+                  <span class="sv-grid-dropdown-caret" aria-hidden="true">{@render icon("page-size-caret")}</span>
                 </button>
               </div>
             {/if}
@@ -149,14 +158,14 @@
             class="sv-grid-pagination-btn"
             disabled={onFirst}
             onclick={() => goToPage(0)}
-            aria-label={messages.firstPage}>⇤</button
+            aria-label={messages.firstPage}>{@render icon("page-first")}</button
           >
           <button
             type="button"
             class="sv-grid-pagination-btn"
             disabled={onFirst}
             onclick={() => changePage(-1)}
-            aria-label={messages.prevPage}>‹</button
+            aria-label={messages.prevPage}>{@render icon("page-prev")}</button
           >
           <span class="sv-grid-pagination-label">
             {messages.page} <strong>{currentPage.toLocaleString()}</strong> {messages.of}
@@ -167,14 +176,14 @@
             class="sv-grid-pagination-btn"
             disabled={onLast}
             onclick={() => changePage(1)}
-            aria-label={messages.nextPage}>›</button
+            aria-label={messages.nextPage}>{@render icon("page-next")}</button
           >
           <button
             type="button"
             class="sv-grid-pagination-btn"
             disabled={onLast}
             onclick={() => goToPage(pageCount - 1)}
-            aria-label={messages.lastPage}>⇥</button
+            aria-label={messages.lastPage}>{@render icon("page-last")}</button
           >
         </div>
       </div>

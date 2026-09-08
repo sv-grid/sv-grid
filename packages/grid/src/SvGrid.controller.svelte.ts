@@ -2028,6 +2028,18 @@ export function createSvGridController<
     dimensionId: string | null;
     measureId: string | null;
     seriesId: string | null | undefined;
+    /** Scatter only: the Y measure. The X measure reuses `measureId`. */
+    measure2Id: string | null;
+    // These four were config-only until the panel grew controls for them, so
+    // an author could set them and a user could not. Null inherits the config.
+    /** Bar orientation. */
+    orientation: "vertical" | "horizontal" | null;
+    /** Normalise each category to 100 percent. Implies stacked. */
+    stacked100: boolean | null;
+    /** Pie only: draw as a donut. */
+    donut: boolean | null;
+    /** Series colours chosen in the panel. */
+    palette: string[] | null;
     stacked: boolean | null;
     dataLabels: boolean | null;
     logScale: boolean | null;
@@ -2045,6 +2057,11 @@ export function createSvGridController<
     dimensionId: null,
     measureId: null,
     seriesId: undefined,
+    measure2Id: null,
+    orientation: null,
+    stacked100: null,
+    donut: null,
+    palette: null,
     stacked: null,
     dataLabels: null,
     logScale: null,
@@ -2088,14 +2105,22 @@ export function createSvGridController<
   const chartableColumns = $derived.by(function chartableColumns_d() {
     const dims: Array<{ id: string; field: string; label: string }> = [];
     const measures: Array<{ id: string; field: string; label: string }> = [];
+    // Dates are a subset of dims, tracked separately so the panel can tell
+    // whether a calendar chart is possible at all before the user picks
+    // anything. Offering a type that can only render blank is worse than not
+    // offering it.
+    const dates: Array<{ id: string; field: string; label: string }> = [];
     for (const col of allColumns) {
       const field = col.columnDef.field;
       if (!field) continue;
       const entry = { id: col.id, field, label: columnLabel(col) };
       if (isNumericColumn(col)) measures.push(entry);
-      else dims.push(entry);
+      else {
+        dims.push(entry);
+        if (columnIsDate(col)) dates.push(entry);
+      }
     }
-    return { dims, measures };
+    return { dims, measures, dates };
   });
   const chartColumnDefaults = $derived.by(function chartColumnDefaults_d() {
     const { dims, measures } = chartableColumns;
@@ -2139,6 +2164,21 @@ export function createSvGridController<
     if (configured.length) return configured;
     return chartColumnDefaults.measureIds;
   });
+  /** Scatter's Y measure. Defaults to the second numeric column, so picking
+   *  scatter plots something immediately rather than nothing. */
+  const effectiveChartMeasure2Id = $derived(
+    activeChart.measure2Id ??
+      chartableColumns.measures.find((m) => m.id !== effectiveChartMeasureId)?.id ??
+      null,
+  );
+  const effectiveChartOrientation = $derived(
+    activeChart.orientation ?? chartCfg?.orientation ?? "vertical",
+  );
+  const effectiveChartStacked100 = $derived(
+    activeChart.stacked100 ?? chartCfg?.stacked100 === true,
+  );
+  const effectiveChartDonut = $derived(activeChart.donut ?? !!chartCfg?.donut);
+  const effectiveChartPalette = $derived(activeChart.palette ?? chartCfg?.palette ?? null);
   const effectiveChartStacked = $derived(chartStacked ?? chartCfg?.stacked ?? false);
   const effectiveChartDataLabels = $derived(chartDataLabels ?? chartCfg?.dataLabels ?? false);
   const effectiveChartLogScale = $derived(chartLogScale ?? chartCfg?.yScale === "log");
@@ -2162,8 +2202,13 @@ export function createSvGridController<
       ? "Count"
       : `${chartReduce === "avg" ? "Average" : "Sum"} of ${label}`;
   });
-  const chartDimensionIsDate = $derived.by<boolean>(() => {
-    const col = allColumns.find((c) => c.id === effectiveChartDimensionId);
+  /**
+   * Does this column hold dates? Declared type first, then a probe of the
+   * first non-empty value. Lifted out of `chartDimensionIsDate` so the chart
+   * panel can also ask it of columns the user has NOT picked yet, which is
+   * what decides whether a calendar chart is offerable at all.
+   */
+  function columnIsDate(col: Column<TData> | undefined): boolean {
     if (!col) return false;
     if (col.columnDef.cellDataType === "date") return true;
     if (col.columnDef.cellDataType) return false;
@@ -2174,7 +2219,10 @@ export function createSvGridController<
       return typeof v === "string" && /^\d{4}-\d{2}(-\d{2})?/.test(v);
     }
     return false;
-  });
+  }
+  const chartDimensionIsDate = $derived.by<boolean>(() =>
+    columnIsDate(allColumns.find((c) => c.id === effectiveChartDimensionId)),
+  );
   const chartRows = $derived.by<TData[]>(() => {
     const rects = getSelectionRects();
     const pushLeaf = (out: TData[], row: Row<TData> | undefined) => {
@@ -2260,10 +2308,14 @@ export function createSvGridController<
   // null until it resolves, a tick after the panel itself starts loading (which it
   // already does). The `getAggregate` server path uses the local bucketsToSpec and
   // does not need the engine.
-  let chartEngine = $state<typeof import("./chart").rowsToChartSpec | null>(null);
+  // The whole module, not just `rowsToChartSpec`: the panel can now reach
+  // every chart type, and the ones that do not read a categories-by-series
+  // grid (scatter, gauge, treemap, calendar, sankey) need their own builders
+  // from the same lazy chunk. Same `import()`, same boundary.
+  let chartEngine = $state<typeof import("./chart") | null>(null);
   $effect(() => {
     if (chartingEnabled && !chartEngine)
-      import("./chart").then((m) => (chartEngine = m.rowsToChartSpec));
+      import("./chart").then((m) => (chartEngine = m));
   });
 
   const chartSpec = $derived.by<ChartSpec | null>(() => {
@@ -2287,22 +2339,55 @@ export function createSvGridController<
     // Engine not loaded yet (lazy): render nothing until it resolves.
     if (!chartEngine) return null;
     const seriesField = fieldOf(effectiveChartSeriesId);
+    const rowsForChart = chartRows as Array<Record<string, unknown>>;
 
-    const spec = chartEngine<Record<string, unknown>>(chartRows as Array<Record<string, unknown>>, {
+    // Two types read the rows directly rather than a grouped grid: a scatter
+    // point is one row, and a gauge has no category axis at all. Everything
+    // else goes through the aggregation below and is reshaped afterwards, so
+    // reduce / sort / topN / "Other" keep working for all of them.
+    if (chartType === "scatter") {
+      const yField = fieldOf(effectiveChartMeasure2Id);
+      if (!values[0] || !yField) return null;
+      return chartEngine.rowsToScatterSpec(rowsForChart, {
+        x: values[0],
+        y: yField,
+        ...(seriesField ? { series: seriesField } : {}),
+        ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
+      });
+    }
+    if (chartType === "gauge") {
+      return chartEngine.rowsToGaugeSpec(rowsForChart, {
+        value: values[0]!,
+        reduce: chartReduce,
+      });
+    }
+
+    const spec = chartEngine.rowsToChartSpec<Record<string, unknown>>(rowsForChart, {
       type: chartType,
       category: category as string,
       value: values.length === 1 ? values[0]! : values,
       ...(seriesField ? { series: seriesField } : {}),
       reduce: chartReduce,
-      stacked: effectiveChartStacked || chartCfg.stacked100 === true,
-      stacked100: chartCfg.stacked100 === true,
-      ...(chartCfg.palette ? { palette: chartCfg.palette } : {}),
+      stacked: effectiveChartStacked || effectiveChartStacked100,
+      stacked100: effectiveChartStacked100,
+      ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
       ...(chartCfg.topN ? { topN: chartCfg.topN } : {}),
       ...(chartCfg.otherLabel ? { otherLabel: chartCfg.otherLabel } : {}),
       ...(chartCfg.sort ? { sort: chartCfg.sort } : {}),
     });
 
-    if (chartCfg.orientation) spec.orientation = chartCfg.orientation;
+    // Reshape the aggregated grid into whatever this type actually reads.
+    // These run AFTER the aggregation so grouping, reduce, sort, topN and the
+    // "Other" bucket apply to them exactly as they do to a bar chart.
+    if (chartType === "treemap") spec.treemap = chartEngine.specToTreemap(spec);
+    else if (chartType === "calendar") spec.calendarValues = chartEngine.specToCalendar(spec);
+    else if (chartType === "sankey") {
+      const flow = chartEngine.specToSankey(spec);
+      spec.sankeyNodes = flow.nodes;
+      spec.sankeyLinks = flow.links;
+    }
+
+    if (effectiveChartOrientation === "horizontal") spec.orientation = "horizontal";
     if (effectiveChartTimeAxis) spec.xType = "time";
     if (effectiveChartLogScale) spec.yScale = "log";
     if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
@@ -2311,7 +2396,7 @@ export function createSvGridController<
     }
     if (effectiveChartValueFormat && activeChart.valueFormat === null) { /* inherited default */ }
     if (chartType === "pie") {
-      if (chartCfg.donut) spec.innerRadius = typeof chartCfg.donut === "number" ? chartCfg.donut : 0.6;
+      if (effectiveChartDonut) spec.innerRadius = typeof chartCfg.donut === "number" ? chartCfg.donut : 0.6;
     }
     if (chartCfg.annotations) spec.annotations = chartCfg.annotations;
     if (chartCfg.patternFallback) spec.patternFallback = true;
@@ -2331,7 +2416,20 @@ export function createSvGridController<
     return spec;
   });
 
+  /**
+   * Can a click on this chart be turned back into a grid filter?
+   *
+   * Only where a clicked mark maps to exactly one value of the charted
+   * dimension. It does not for a sankey (clicking a TARGET would filter the
+   * SOURCE column by a target value and empty the grid), a gauge (no category
+   * at all), or a scatter (the mark carries a point label, not a group).
+   */
+  const chartCrossFilterable = $derived(
+    chartType !== "sankey" && chartType !== "gauge" && chartType !== "scatter",
+  );
+
   function applyChartCrossFilter(category: string) {
+    if (!chartCrossFilterable) return;
     const dimId = effectiveChartDimensionId;
     if (!dimId) return;
     const existing = valueFilters[dimId];
@@ -3937,6 +4035,11 @@ export function createSvGridController<
         dimension: c.dimensionId,
         series: c.seriesId ?? null,
         measure: c.measureId,
+        measure2: c.measure2Id,
+        orientation: c.orientation,
+        stacked100: c.stacked100,
+        donut: c.donut,
+        palette: c.palette,
         reduce: c.reduce,
         stacked: c.stacked,
         dataLabels: c.dataLabels,
@@ -3954,6 +4057,11 @@ export function createSvGridController<
         dimensionId: (c.dimension as string | null) ?? null,
         measureId: (c.measure as string | null) ?? null,
         seriesId: c.series as string | null | undefined,
+        measure2Id: (c.measure2 as string | null) ?? null,
+        orientation: (c.orientation as "vertical" | "horizontal" | null) ?? null,
+        stacked100: (c.stacked100 as boolean | null) ?? null,
+        donut: (c.donut as boolean | null) ?? null,
+        palette: (c.palette as string[] | null) ?? null,
         stacked: (c.stacked as boolean | null) ?? null,
         dataLabels: (c.dataLabels as boolean | null) ?? null,
         logScale: (c.logScale as boolean | null) ?? null,
@@ -3963,6 +4071,18 @@ export function createSvGridController<
       charts = restored.length ? restored : [makeChart("Chart 1")];
       activeChartIndex = Math.max(0, Math.min(charts.length - 1, active ?? 0));
     },
+    get chartCrossFilterable() { return chartCrossFilterable; },
+    get chartOrientation() { return effectiveChartOrientation; },
+    set chartOrientation(v) { activeChart.orientation = v as never; },
+    get chartStacked100() { return effectiveChartStacked100; },
+    set chartStacked100(v) { activeChart.stacked100 = v as never; },
+    get chartDonut() { return effectiveChartDonut; },
+    set chartDonut(v) { activeChart.donut = v as never; },
+    get chartPalette() { return effectiveChartPalette; },
+    set chartPalette(v) { activeChart.palette = v as never; },
+    get chartMeasure2Id() { return activeChart.measure2Id; },
+    set chartMeasure2Id(v) { activeChart.measure2Id = v as never; },
+    get effectiveChartMeasure2Id() { return effectiveChartMeasure2Id; },
     get chartAiHandler() { return chartAiHandler; },
     set chartAiHandler(v) { chartAiHandler = v as never; },
     applyChartConfig(config: {

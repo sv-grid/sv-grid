@@ -4,8 +4,8 @@ Auto-generated. Source: `packages\grid\src\builtin-editors.ts`.
 
 ### `function registerBuiltinEditors`
 
-Register the config-free UI-kit editors (`otp`, `duration`) as grid cell
-editors. Idempotent. Returns the list of type names it registered.
+Register the config-free UI-kit editors (`otp`, `duration`, `richtext`) as
+grid cell editors. Idempotent. Returns the list of type names it registered.
 
 ```ts
 export function registerBuiltinEditors(): string[] {
@@ -30,6 +30,20 @@ export function registerBuiltinEditors(): string[] {
       onCancel: () => ctx.onCancel(),
     }),
   })
-  return ['otp', 'duration']
+  // Rich text carries a toolbar, so give the column a taller row (or edit it
+  // from a detail panel) - it does not fit a default single-line row.
+  //
+  // Both the value handed to the editor and the value coming back are
+  // sanitized. The stored string is the one SvRichCell later paints, so
+  // cleaning it on the way in means a pasted payload never reaches row data.
+  registerCellEditor('richtext', {
+    component: SvRichText,
+    props: (ctx) => ({
+      value: sanitizeHtml((ctx.value ?? '') as string),
+      autofocus: true,
+      onChange: (html: string) => ctx.onChange(sanitizeHtml(html)),
+    }),
+  })
+  return ['otp', 'duration', 'richtext']
 }
 ```

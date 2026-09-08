@@ -33,6 +33,38 @@ ship in a corporate design system.
 | `--sg-accent`          | `#6366f1`              | `#818cf8`              | Active-cell ring, primary buttons, sort indicator                    |
 | `--sg-focus-ring`      | `0 0 0 2px rgba(99,102,241,.40)` | same | Box-shadow used for the focus outline                                |
 
+## Chart series tokens
+
+| Token                    | Default   | What it controls                          |
+| ------------------------ | --------- | ----------------------------------------- |
+| `--sg-chart-1`           | `#2563eb` | First series colour                       |
+| `--sg-chart-2`           | `#16a34a` | Second series                             |
+| `--sg-chart-3`           | `#f59e0b` | Third series                              |
+| `--sg-chart-4`           | `#ef4444` | Fourth series                             |
+| `--sg-chart-5`           | `#8b5cf6` | Fifth series                              |
+| `--sg-chart-6`           | `#0ea5e9` | Sixth series                              |
+| `--sg-chart-7`           | `#ec4899` | Seventh series                            |
+| `--sg-chart-8`           | `#14b8a6` | Eighth series                             |
+
+The chart cycles through these in order, so a ninth series reuses the first.
+They also colour the marks that have no series of their own, such as pie
+slices and tree-map cells.
+
+Set as few as you like; the rest keep their defaults, so a brand primary and
+secondary is often the whole change:
+
+```css
+:root {
+  --sg-chart-1: #7c3aed;
+  --sg-chart-2: #db2777;
+}
+```
+
+Precedence runs explicit-to-general: a `color` on the series wins, then
+`spec.palette` (or `charting.palette`), then these tokens, then the built-in
+colours. The first two are the author speaking about one chart; the tokens are
+the theme speaking about all of them.
+
 ## Layout tokens
 
 | Token                  | Default     | What it controls                                                       |

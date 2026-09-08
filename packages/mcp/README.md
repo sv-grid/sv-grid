@@ -32,7 +32,7 @@ tools, 79% of them Studio tools most sessions never call once.
 
 | Tool | Purpose |
 | --- | --- |
-| `svgrid_search` | Search the docs, all 375 demos and the API surface **in one call**. No arguments returns an index. |
+| `svgrid_search` | Search the docs, all 377 demos and the API surface **in one call**. No arguments returns an index. |
 | `svgrid_get` | Read one thing in full: a doc slug, a demo id, or `api`. |
 | `svgrid_check_code` | **Verify** a file against the real API surface + the Svelte compiler. |
 | `svgrid_scaffold` | Studio: turn a Drizzle schema, sample rows or an `EntitySchema` into runnable SvelteKit files. |
@@ -90,7 +90,7 @@ What it checks:
   "no errors" is never mistaken for "this compiles".
 
 It is tuned to shut up when the code is right: it reports **nothing** across all
-375 demos in this repo, which is what a CI test asserts. A verifier that cries
+377 demos in this repo, which is what a CI test asserts. A verifier that cries
 wolf is worse than none, because a model will happily "fix" working code.
 
 ### Studio: drive the app model (agent co-designer)

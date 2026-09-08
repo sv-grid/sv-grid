@@ -26,7 +26,7 @@ usable in SvelteKit with SSR.
 
 </p>
 
-**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [375 Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
+**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [377 Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
 
 Writing SvGrid with an AI assistant? It ships an MCP server that carries the real API surface and
 **checks your agent's code against it** before you see it. [Details below](#ai-native).
@@ -95,7 +95,7 @@ it into a live, editable Vite + Svelte 5 project. Nothing to install to try any 
 | [<img src="https://svgrid.com/thumbs/343-kanban-board.webp" width="260" alt="Kanban board demo" />](https://svgrid.com/demos/343-kanban-board/) | [<img src="https://svgrid.com/thumbs/363-scheduler-intro.webp" width="260" alt="Scheduler demo" />](https://svgrid.com/demos/363-scheduler-intro/) | [<img src="https://svgrid.com/thumbs/80-cell-types-showcase.webp" width="260" alt="Cell types showcase demo" />](https://svgrid.com/demos/80-cell-types-showcase/) |
 | **[Kanban board](https://svgrid.com/demos/343-kanban-board/)**<br>the same grid, board mode | **[Scheduler](https://svgrid.com/demos/363-scheduler-intro/)**<br>calendar views off the same data | **[Cell types](https://svgrid.com/demos/80-cell-types-showcase/)**<br>every editor in one grid |
 
-All [375 demos](https://svgrid.com/demos/) are browsable by category.
+All [377 demos](https://svgrid.com/demos/) are browsable by category.
 
 ## Shipped with it
 
@@ -290,7 +290,7 @@ Honest list:
 
 - Custom filter / floating-filter component slot. Filters are configurable but not yet pluggable as your own component. Medium effort.
 - Custom tool panels. The tool panel is a fixed Columns + Filters pair. Medium effort.
-- Integrated-chart depth. 13 chart types, the wizard, "chart selected range", click-to-cross-filter, the PNG / SVG export toolbar, zoom + brush, combo / dual-axis, and server-side aggregation all ship. What is still missing is breadth in the panel itself: the in-panel type picker offers bar / line / area / pie only, so the other nine types are config-only via `defaultType`. Small effort.
+- Integrated-chart depth is **done**. 15 chart types including candlestick / OHLC, the in-panel picker reaching every one of them that the current columns can feed, "chart selected range", click-to-cross-filter, the PNG / SVG export toolbar, zoom + brush, combo / dual-axis, `--sg-chart-*` palette tokens, and server-side aggregation all ship. What is left is a chart BUILDER: the type gallery with live previews still lives in demo 152 rather than in the panel. Small effort.
 - Server-side pivot and a viewport row model. The server-side row model does sort / filter / group / infinite today. Large effort.
 - A formula language of our own. `createHyperFormulaSheet` ships in the package so you can bring HyperFormula, and there are in-grid formula demos, but the engine itself is not ours and there is no formula bar.
 - Custom calendar systems (Hijri, Buddhist, fiscal year) for the date editor. Gregorian dates / times / datetimes are built in.
@@ -315,7 +315,7 @@ packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
 packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
 packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
-examples/                                       - 375 live demos
+examples/                                       - 377 live demos
 website/                                        - svgrid.com source
 docs/                                           - markdown docs
 ```

@@ -156,6 +156,186 @@ rowsToChartSpec(rows, { type: 'line', category: 'date', value: 'sessions', serie
 // then: spec.xType = 'time'
 ```
 
+### Ordinal dates, for data with gaps
+
+`xType: 'ordinal-time'` also reads `categories` as dates, but spaces them
+**evenly** and uses the dates only for the tick labels.
+
+Use it whenever the gaps in your data are not meaningful. On a true time axis a
+series of trading sessions or business days opens a hole over every weekend
+three times as wide as a working day, which tells the reader nothing except
+that Saturday exists.
+
+```ts
+spec.xType = 'ordinal-time'
+```
+
+## Candlestick and OHLC
+
+Set `ohlc` on the series alongside `values`:
+
+```ts
+const spec: ChartSpec = {
+  type: 'candlestick',            // or 'ohlc' for tick bars
+  xType: 'ordinal-time',          // skip the days the market was shut
+  categories: rows.map((r) => r.date),
+  series: [{
+    label: 'ACME',
+    values: rows.map((r) => r.c), // the CLOSES - see below
+    ohlc: rows.map((r) => ({ o: r.o, h: r.h, l: r.l, c: r.c })),
+    overlay: 'sma:10',            // a moving average, for free
+  }],
+}
+```
+
+A rising bar draws hollow and a falling one filled, so direction reads from the
+shape as well as the colour. `candleColors` overrides the pair. A `null` entry
+in `ohlc` is a day with no session and draws nothing.
+
+**Put the closing prices in `values` too.** Everything that reads a series
+generically reads `values`: the tooltip, the CSV export, the screen-reader
+table, and `overlay`. Filling it in is what lets a price series carry a moving
+average or export to CSV without a line of candle-specific code.
+
+Give volume its own pane rather than the price chart's right axis. Both axes
+share the full plot height, so a right-axis volume series climbs up through the
+candles: technically correct, and unreadable. A second short chart over the
+same `categories` and the same `xType` is what a trading screen actually does,
+and the two stay in register because they share the axis mode.
+
+Candlesticks are cartesian, so zoom, the brush mini-map, the crosshair tooltip
+and keyboard navigation all work. The price axis is **not** pinned to zero the
+way a bar chart's is, so a series trading between 180 and 195 uses the whole
+plot instead of a fifth of it.
+
+<div data-docs-demo="432-chart-candlestick" data-height="620"></div>
+
+## The other chart types
+
+Everything below reads the same `categories` + `series` shape as a bar chart,
+so you can switch `type` and keep the rest of the spec. They are all reachable
+from the built-in panel too, where the picker offers whichever ones your
+current columns can actually feed.
+
+### Waterfall
+
+Running total, with bars that step up and down from where the last one left
+off. `waterfallTotals` marks the bars that are subtotals: those reset the
+running sum and span from zero.
+
+```ts
+{ type: 'waterfall', categories, series: [{ label: 'P&L', values }],
+  waterfallTotals: [false, false, false, true] }
+```
+
+Only the first series is drawn: a waterfall is one running sequence, so a
+split-by has nothing to add.
+
+<div data-docs-demo="158-chart-waterfall" data-height="520"></div>
+
+### Funnel
+
+Stages narrowing to a conclusion. Each segment carries its own conversion and
+drop-off, so the chart answers "where did they go" rather than just "how many".
+Sort descending unless the data is already in stage order.
+
+<div data-docs-demo="160-chart-funnel" data-height="520"></div>
+
+### Radar
+
+One spoke per category, one polygon per series. Good for comparing a handful
+of things across the same handful of measures; poor above about eight spokes,
+where the shape stops being readable.
+
+<div data-docs-demo="161-chart-radar" data-height="520"></div>
+
+### Heat map
+
+Series become rows, categories become columns, and each cell is coloured by
+value. `colorScale` picks the ramp: `'sequential'` runs one hue from min to
+max, `'diverging'` runs cold to warm around zero, or pass your own array of
+two or more hex colours.
+
+A heat map needs a split-by: without one it has a single row.
+
+<div data-docs-demo="154-chart-heatmap" data-height="520"></div>
+
+### Tree map
+
+Nested rectangles sized by value, laid out squarified so the shapes stay close
+to square and remain comparable. Pass `treemap` as a hierarchy, or let the
+panel build one from a group-by plus an optional split-by.
+
+Only positive values have an area, so zero and negative leaves are dropped.
+
+<div data-docs-demo="164-chart-treemap" data-height="520"></div>
+
+### Sankey
+
+Flows between nodes. `sankeyNodes` names them and `sankeyLinks` carries
+`{ source, target, value }`. From the panel, group-by is the source and
+split-by is the target.
+
+<div data-docs-demo="165-chart-sankey" data-height="520"></div>
+
+### Calendar
+
+A year of days, GitHub-style: one cell per day, coloured by value.
+`calendarValues` takes `{ date: 'YYYY-MM-DD', value }` samples and missing
+days render blank. `calendarStart` / `calendarEnd` set the window; by default
+it spans the data.
+
+<div data-docs-demo="162-chart-calendar" data-height="520"></div>
+
+### Gauge
+
+A single number on a semicircle dial.
+
+```ts
+{ type: 'gauge', categories: [], series: [],
+  gaugeValue: 99.82, gaugeMin: 0, gaugeMax: 100, gaugeUnit: '%',
+  gaugeTarget: 99.9,
+  gaugeRanges: [
+    { from: 0,  to: 70, color: '#ef4444' },
+    { from: 70, to: 99.9, color: '#f59e0b' },
+    { from: 99.9, to: 100, color: '#16a34a' },
+  ] }
+```
+
+Bands are **half-open** `[from, to)`, so a value sitting exactly on a boundary
+belongs to the band that boundary opens. They are drawn as a thin reference
+ring inside the dial rather than on the value arc: the arc is the reading, the
+bands only say what the scale means, and a band covering most of the scale
+should not look like a full dial.
+
+<div data-docs-demo="163-chart-gauge" data-height="520"></div>
+
+## Charting from the grid, without a spec
+
+`charting` puts the whole thing behind one prop: the grid grows a Chart button
+and a panel that derives its spec from the displayed rows.
+
+```svelte
+<SvGrid {data} {columns} charting />
+<SvGrid {data} {columns} charting={{ position: 'right', crossFilter: true }} />
+```
+
+The panel lets a reader pick the chart type, the group-by, an optional
+split-by, the measure, the aggregate and the number format, plus stacking,
+100%, horizontal bars, donut, data labels, a log axis, a date axis and the
+series palette. Everything it offers is a `ChartingConfig` field, so anything
+a reader can reach you can also preset.
+
+### Cross-filtering
+
+`crossFilter: true` turns a click on a chart category into a grid filter, and
+the panel grows a Clear filter button. It applies to the types where a clicked
+mark maps back to exactly one value of the charted dimension, so it is off for
+gauge, scatter and sankey - on a sankey a clicked target would otherwise
+filter the source column and empty the grid.
+
+<div data-docs-demo="353-built-in-charting" data-height="560"></div>
+
 ## Interactivity
 
 `SvGridChart` is interactive by default:
@@ -212,10 +392,11 @@ screen.
 - **Accessible** - every chart renders a visually-hidden `<table>` of the same
   data, wired to the SVG via `aria-describedby`, so screen readers get the
   numbers, not just "chart".
-- For a richer charting stack (zoom, tooltips, dozens of types) you can still
-  pipe `getDisplayedRows()` into Chart.js or a web component - see demos
-  `73-chartjs-sync` and `77-smart-chart`. `SvGridChart` is the
-  batteries-included option.
+- Zoom, a brush mini-map, crosshair tooltips, drag-to-select drill-through and
+  fifteen chart types all ship here, so reaching for a separate charting
+  library is rarely the shortcut it looks like. If you already have one, demos
+  `73-chartjs-sync` and `77-smart-chart` show how to pipe
+  `getDisplayedRows()` into it.
 
 See the live [Integrated charts](https://svgrid.com/demos/147-integrated-charts/)
 demo, or the [Chart wizard panel](https://svgrid.com/demos/152-chart-wizard/) -

@@ -37,11 +37,20 @@
     { id: 4, metric: 'Trial -> paid conversion',value:   8.4, target:  12.0, max: 25,   unit: '%'  },
   ]
 
+  /**
+   * Every row is a different KPI, so the numbers are in different units: a
+   * percentage, milliseconds, an unitless NPS score. A bare "180" next to a
+   * bare "99.82" tells the reader nothing, so each cell carries its own unit
+   * the same way the dial's readout does.
+   */
+  const withUnit = (v: unknown, row: Row) =>
+    v == null || v === '' ? '' : row.unit ? `${v} ${row.unit}` : String(v)
+
   const columns: GridColumns<Row> = [
-    { field: 'metric', header: 'Metric', width: 200 },
-    { field: 'value',  header: 'Value',  width: 100, align: 'right' },
-    { field: 'target', header: 'Target', width: 100, align: 'right' },
-    { field: 'max',    header: 'Scale',  width: 90,  align: 'right' },
+    { field: 'metric', header: 'Metric', width: 190 },
+    { field: 'value',  header: 'Value',  width: 104, align: 'right', cell: (ctx) => withUnit(ctx.getValue(), ctx.row.original) },
+    { field: 'target', header: 'Target', width: 104, align: 'right', cell: (ctx) => withUnit(ctx.getValue(), ctx.row.original) },
+    { field: 'max',    header: 'Scale',  width: 96,  align: 'right', cell: (ctx) => withUnit(ctx.getValue(), ctx.row.original) },
   ]
 
   let api = $state<SvGridApi<typeof features, Row> | null>(null)

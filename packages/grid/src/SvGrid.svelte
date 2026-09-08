@@ -23,6 +23,7 @@
   } from "./render-component";
   import { buildSparkline, toSparklineValues } from "./sparkline";
   import { localizeOperatorLabel } from "./filter-operators";
+  import { GRID_ICON_GLYPHS, type GridIconName } from "./grid-icons";
   // The whole editor UI - including the lazy SvGridDropdown / SvDateTimePicker
   // and the custom-editor registry - now lives in SvGridCellEditor.svelte, which
   // this component loads with import() once editing is enabled.
@@ -671,9 +672,19 @@
       for (const chip of chips.slice(fit)) chip.style.display = "none";
       const hidden = chips.length - fit;
       more.textContent = `+${hidden}`;
+      // Read the label element rather than stripping the remove button's glyph
+      // off the end of the chip's text. That regex assumed the button always
+      // renders one specific character, which stopped being true once `icons`
+      // let a consumer replace it - any other glyph, or an SVG, leaked into
+      // this tooltip.
       more.title = chips
         .slice(fit)
-        .map((c) => c.textContent?.replace(/×$/, "").trim() ?? "")
+        .map(
+          (c) =>
+            (
+              c.querySelector(".sv-grid-filter-chip-label") ?? c
+            ).textContent?.trim() ?? "",
+        )
         .join(", ");
     };
     // Measure after layout settles.
@@ -734,6 +745,158 @@
   </p>
 {/snippet}
 
+<!-- Every icon the grid draws for its own chrome comes through here, so the
+     `icons` prop has exactly one place to intercept. Three branches, in
+     order: a consumer override, a glyph icon whose default is a character,
+     and the built-in path set.
+
+     The override is wrapped in `.sv-grid-icon` rather than the consumer
+     being asked to add that class themselves. Sizing and the expander's
+     rotate-on-open both hang off it (SvGrid.css), and an override that
+     dropped the class would lose both silently - which is the kind of bug
+     that only shows up in someone else's app. -->
+{#snippet icon(name: GridIconName)}
+  {@const override = opt.icons?.[name]}
+  {#if override}
+    <span class="sv-grid-icon sv-grid-icon-custom" aria-hidden="true"
+      >{@render override()}</span
+    >
+  {:else if GRID_ICON_GLYPHS[name]}
+    {GRID_ICON_GLYPHS[name]}
+  {:else}
+  <svg
+    class="sv-grid-icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    {#if name === "sort"}
+      <path d="M8 10l4-4 4 4" />
+      <path d="M8 14l4 4 4-4" />
+    {:else if name === "sort-asc"}
+      <path d="M6 14l6-6 6 6" />
+    {:else if name === "sort-desc"}
+      <path d="M6 10l6 6 6-6" />
+    {:else if name === "filter"}
+      <path d="M3 5h18l-7 8v6l-4 2v-8z" />
+    {:else if name === "menu"}
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    {:else if name === "group"}
+      <path d="M12 3l8 4.5-8 4.5-8-4.5z" />
+      <path d="M4 12l8 4.5 8-4.5" />
+      <path d="M4 16.5l8 4.5 8-4.5" />
+    {:else if name === "x" || name === "unpin"}
+      <path d="M18 6L6 18" />
+      <path d="M6 6l12 12" />
+    {:else if name === "chevron-down" || name === "column-group-caret"}
+      <path d="M6 9l6 6 6-6" />
+    {:else if name === "chevron-right"}
+      <!-- Same path SvTree's twisty uses, so every expander in the library
+           draws the same chevron. Rotated 90deg by CSS when expanded rather
+           than swapped for a second glyph. -->
+      <path d="m9 18 6-6-6-6" />
+    {:else if name === "op-contains" || name === "search"}
+      <!-- The magnifier the operator menu draws is also the one every search
+           box in the grid draws. Four hand-inlined copies used to diverge
+           here (different viewBox, different stroke width); they share this
+           arm now, so re-skinning `search` catches all of them. -->
+      <circle cx="11" cy="11" r="6" />
+      <path d="M20 20l-4.5-4.5" />
+    {:else if name === "op-equals"}
+      <path d="M5 9.5h14" />
+      <path d="M5 14.5h14" />
+    {:else if name === "op-startsWith" || name === "pin-left"}
+      <!-- `pin-left` / `pin-right` / `unpin` share the operator glyphs rather
+           than borrowing the operator NAMES, which is what the menu used to
+           do. Same default, but overriding a filter operator no longer
+           silently repaints the pin menu. -->
+      <path d="M5 5v14" />
+      <path d="M9 9h10" />
+      <path d="M9 15h7" />
+    {:else if name === "op-greaterThan" || name === "pin-right"}
+      <path d="M8 5l9 7-9 7" />
+    {:else if name === "op-lessThan"}
+      <path d="M16 5l-9 7 9 7" />
+    {:else if name === "op-between"}
+      <!-- Two bounds with the span between them. The catalogue has always
+           named this icon; the snippet had no case for it, so the Between
+           row in the operator menu drew an empty <svg>. -->
+      <path d="M5 5v14" />
+      <path d="M19 5v14" />
+      <path d="M9 12h6" />
+    {:else if name === "op-isBlank"}
+      <circle cx="12" cy="12" r="8" />
+      <path d="M6.5 6.5l11 11" />
+    {:else if name === "op-isNotBlank"}
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
+    {:else if name === "op-notContains"}
+      <circle cx="11" cy="11" r="6" />
+      <path d="M20 20l-4.5-4.5" />
+      <path d="M7 11h8" />
+    {:else if name === "op-notEquals"}
+      <path d="M5 9.5h14" />
+      <path d="M5 14.5h14" />
+      <path d="M16 5l-8 14" />
+    {:else if name === "op-endsWith"}
+      <path d="M19 5v14" />
+      <path d="M15 9H5" />
+      <path d="M15 15H8" />
+    {:else if name === "op-regex"}
+      <path d="M12 5v9" />
+      <path d="M8.1 7.4l7.8 4.5" />
+      <path d="M15.9 7.4l-7.8 4.5" />
+      <circle cx="6" cy="18" r="1.4" fill="currentColor" stroke="none" />
+    {:else if name === "op-in"}
+      <path d="M14 5a7 7 0 1 0 0 14" />
+      <path d="M6 12h9" />
+      <path d="M12 9l3 3-3 3" />
+    {:else if name === "op-notIn"}
+      <path d="M14 5a7 7 0 1 0 0 14" />
+      <path d="M15 12H6" />
+      <path d="M9 9l-3 3 3 3" />
+    {:else if name === "autosize"}
+      <path d="M3 12h18" />
+      <path d="M3 12l4-4" />
+      <path d="M3 12l4 4" />
+      <path d="M21 12l-4-4" />
+      <path d="M21 12l-4 4" />
+    {:else if name === "columns"}
+      <rect x="3" y="4" width="5" height="16" rx="1" />
+      <rect x="10" y="4" width="5" height="16" rx="1" />
+      <rect x="17" y="4" width="4" height="16" rx="1" />
+    {:else if name === "reset"}
+      <path d="M3 4v6h6" />
+      <path d="M3.5 10A9 9 0 1 0 6 5.3" />
+    {:else if name === "tool-panel"}
+      <!-- Deliberately NOT the same rects as `columns`: this one is 6/4/4 and
+           `columns` is 5/5/4. Two different marks for two different things,
+           and merging them would visibly change the toolbar button. -->
+      <rect x="3" y="4" width="6" height="16" rx="1" />
+      <rect x="11" y="4" width="4" height="16" rx="1" />
+      <rect x="17" y="4" width="4" height="16" rx="1" />
+    {:else if name === "chart"}
+      <line x1="12" y1="20" x2="12" y2="10" />
+      <line x1="18" y1="20" x2="18" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="16" />
+    {:else if name === "advanced-filter"}
+      <!-- A filled-corner funnel, distinct from `filter`'s outline path. It
+           marks an ACTIVE advanced filter, so it has to read differently
+           from the plain funnel sitting in the header next to it. -->
+      <polygon
+        points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"
+      />
+    {/if}
+  </svg>
+  {/if}
+{/snippet}
+
 {#if opt.loading && !opt.loadingOverlay && !hasMeasured}
   <!-- Full-screen loading state only on the *initial* load, before the grid
        has ever rendered. Once measured, a `loading` flip (from a server-mode
@@ -759,10 +922,7 @@
   >
     {#if boardConfig.searchable !== false}
       <label class="sv-grid-board-search">
-        <svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14">
-          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" />
-          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-        </svg>
+        {@render icon("search")}
         <input
           type="search"
           placeholder={boardConfig.searchPlaceholder ?? "Search cards..."}
@@ -807,10 +967,7 @@
   >
     {#if schedulerConfig.searchable !== false}
       <label class="sv-grid-board-search">
-        <svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14">
-          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" />
-          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-        </svg>
+        {@render icon("search")}
         <input
           type="search"
           placeholder={schedulerConfig.searchPlaceholder ?? "Search events..."}
@@ -855,10 +1012,7 @@
   >
     {#if chartViewConfig.searchable !== false}
       <label class="sv-grid-board-search">
-        <svg viewBox="0 0 16 16" aria-hidden="true" width="14" height="14">
-          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5" />
-          <line x1="10.2" y1="10.2" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-        </svg>
+        {@render icon("search")}
         <input
           type="search"
           placeholder={chartViewConfig.searchPlaceholder ?? "Search data..."}
@@ -927,112 +1081,6 @@
     </div>
   </div>
 {:else}
-  {#snippet icon(name: string)}
-    <svg
-      class="sv-grid-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-    >
-      {#if name === "sort"}
-        <path d="M8 10l4-4 4 4" />
-        <path d="M8 14l4 4 4-4" />
-      {:else if name === "sort-asc"}
-        <path d="M6 14l6-6 6 6" />
-      {:else if name === "sort-desc"}
-        <path d="M6 10l6 6 6-6" />
-      {:else if name === "filter"}
-        <path d="M3 5h18l-7 8v6l-4 2v-8z" />
-      {:else if name === "menu"}
-        <path d="M4 7h16" />
-        <path d="M4 12h16" />
-        <path d="M4 17h16" />
-      {:else if name === "group"}
-        <path d="M12 3l8 4.5-8 4.5-8-4.5z" />
-        <path d="M4 12l8 4.5 8-4.5" />
-        <path d="M4 16.5l8 4.5 8-4.5" />
-      {:else if name === "x"}
-        <path d="M18 6L6 18" />
-        <path d="M6 6l12 12" />
-      {:else if name === "chevron-down"}
-        <path d="M6 9l6 6 6-6" />
-      {:else if name === "chevron-right"}
-        <!-- Same path SvTree's twisty uses, so every expander in the library
-             draws the same chevron. Rotated 90deg by CSS when expanded rather
-             than swapped for a second glyph. -->
-        <path d="m9 18 6-6-6-6" />
-      {:else if name === "op-contains"}
-        <circle cx="11" cy="11" r="6" />
-        <path d="M20 20l-4.5-4.5" />
-      {:else if name === "op-equals"}
-        <path d="M5 9.5h14" />
-        <path d="M5 14.5h14" />
-      {:else if name === "op-startsWith"}
-        <path d="M5 5v14" />
-        <path d="M9 9h10" />
-        <path d="M9 15h7" />
-      {:else if name === "op-greaterThan"}
-        <path d="M8 5l9 7-9 7" />
-      {:else if name === "op-lessThan"}
-        <path d="M16 5l-9 7 9 7" />
-      {:else if name === "op-between"}
-        <!-- Two bounds with the span between them. The catalogue has always
-             named this icon; the snippet had no case for it, so the Between
-             row in the operator menu drew an empty <svg>. -->
-        <path d="M5 5v14" />
-        <path d="M19 5v14" />
-        <path d="M9 12h6" />
-      {:else if name === "op-isBlank"}
-        <circle cx="12" cy="12" r="8" />
-        <path d="M6.5 6.5l11 11" />
-      {:else if name === "op-isNotBlank"}
-        <circle cx="12" cy="12" r="8" />
-        <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
-      {:else if name === "op-notContains"}
-        <circle cx="11" cy="11" r="6" />
-        <path d="M20 20l-4.5-4.5" />
-        <path d="M7 11h8" />
-      {:else if name === "op-notEquals"}
-        <path d="M5 9.5h14" />
-        <path d="M5 14.5h14" />
-        <path d="M16 5l-8 14" />
-      {:else if name === "op-endsWith"}
-        <path d="M19 5v14" />
-        <path d="M15 9H5" />
-        <path d="M15 15H8" />
-      {:else if name === "op-regex"}
-        <path d="M12 5v9" />
-        <path d="M8.1 7.4l7.8 4.5" />
-        <path d="M15.9 7.4l-7.8 4.5" />
-        <circle cx="6" cy="18" r="1.4" fill="currentColor" stroke="none" />
-      {:else if name === "op-in"}
-        <path d="M14 5a7 7 0 1 0 0 14" />
-        <path d="M6 12h9" />
-        <path d="M12 9l3 3-3 3" />
-      {:else if name === "op-notIn"}
-        <path d="M14 5a7 7 0 1 0 0 14" />
-        <path d="M15 12H6" />
-        <path d="M9 9l-3 3 3 3" />
-      {:else if name === "autosize"}
-        <path d="M3 12h18" />
-        <path d="M3 12l4-4" />
-        <path d="M3 12l4 4" />
-        <path d="M21 12l-4-4" />
-        <path d="M21 12l-4 4" />
-      {:else if name === "columns"}
-        <rect x="3" y="4" width="5" height="16" rx="1" />
-        <rect x="10" y="4" width="5" height="16" rx="1" />
-        <rect x="17" y="4" width="4" height="16" rx="1" />
-      {:else if name === "reset"}
-        <path d="M3 4v6h6" />
-        <path d="M3.5 10A9 9 0 1 0 6 5.3" />
-      {/if}
-    </svg>
-  {/snippet}
 
   {#snippet cellBody(
     row: Row<TData>,
@@ -1370,7 +1418,7 @@
         <td
           class="sv-grid-cell sv-grid-row-number-cell"
           style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-          >{where === "top" ? "↑" : "↓"}</td
+          >{#if where === "top"}{@render icon("pinned-row-top")}{:else}{@render icon("pinned-row-bottom")}{/if}</td
         >
       {/if}
       {#if showRowSelectionEffective}
@@ -1458,9 +1506,7 @@
             to undo it. This is that something: state plus a way out.
           -->
           <span class="sv-grid-advf-chip">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
+            {@render icon("advanced-filter")}
             {messages.advancedFilterActive}
             <button
               type="button"
@@ -1468,7 +1514,7 @@
               aria-label={messages.advancedFilterClear}
               title={messages.advancedFilterClear}
               onclick={() => (ctrl.advancedFilter = null)}
-            >✕</button>
+            >{@render icon("clear")}</button>
           </span>
         {/if}
         {#if toolPanelEnabled}
@@ -1482,21 +1528,7 @@
             aria-expanded={ctrl.toolPanelOpen}
             onclick={() => (ctrl.toolPanelOpen = !ctrl.toolPanelOpen)}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="15"
-              height="15"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="3" y="4" width="6" height="16" rx="1" />
-              <rect x="11" y="4" width="4" height="16" rx="1" />
-              <rect x="17" y="4" width="4" height="16" rx="1" />
-            </svg>
+            {@render icon("tool-panel")}
             Columns &amp; Filters
           </button>
         {/if}
@@ -1509,9 +1541,7 @@
             aria-expanded={ctrl.chartPanelOpen}
             onclick={() => (ctrl.chartPanelOpen = !ctrl.chartPanelOpen)}
           >
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" />
-            </svg>
+            {@render icon("chart")}
             Chart
           </button>
         {/if}
@@ -1519,7 +1549,7 @@
     {/if}
 
     {#if hasMeasured && (opt.paginationPosition === "top" || opt.paginationPosition === "both")}
-      <GridFooter {ctrl} showStatus={false} top pager pageSizeOptions={opt.pageSizeOptions} />
+      <GridFooter {ctrl} {icon} showStatus={false} top pager pageSizeOptions={opt.pageSizeOptions} />
     {/if}
 
     <div
@@ -1613,20 +1643,9 @@
                           <span class="sv-grid-group-header-label"
                             >{cell.label}</span
                           >
-                          <svg
-                            class="sv-grid-group-caret"
-                            viewBox="0 0 16 16"
-                            width="10"
-                            height="10"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            aria-hidden="true"
+                          <span class="sv-grid-group-caret" aria-hidden="true"
+                            >{@render icon("column-group-caret")}</span
                           >
-                            <polyline points="4 6 8 10 12 6"></polyline>
-                          </svg>
                         </button>
                       {:else}
                         <span class="sv-grid-group-header-label"
@@ -1659,7 +1678,9 @@
                     style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
                     aria-label="Row number"
                   >
-                    <span class="sv-grid-row-number-head">#</span>
+                    <span class="sv-grid-row-number-head"
+                      >{@render icon("row-number")}</span
+                    >
                   </th>
                 {/if}
                 {#if showRowSelectionEffective}
@@ -1980,7 +2001,7 @@
                                   onmousedown={(event) => {
                                     event.preventDefault();
                                     removeFilterChip(rendered.column.id, token);
-                                  }}>×</button
+                                  }}>{@render icon("remove")}</button
                                 >
                               </span>
                             {/each}
@@ -2819,32 +2840,14 @@
       {/if}
     </div>
 
-    <GridFooter {ctrl} pager={(opt.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={opt.pageSizeOptions} />
+    <GridFooter {ctrl} {icon} pager={(opt.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={opt.pageSizeOptions} />
 
     {#if ctrl.findOpen}
       <!-- Find-in-grid overlay. Anchored to the TOP of the grid root so
            it tracks the grid even when the page scrolls. Ctrl+F opens;
            Enter cycles to the next hit; Esc closes. -->
       <div class="sv-grid-find" role="search" aria-label="Find in grid">
-        <svg class="sv-grid-find-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <circle
-            cx="7"
-            cy="7"
-            r="4.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          />
-          <line
-            x1="10.2"
-            y1="10.2"
-            x2="14"
-            y2="14"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-        </svg>
+        {@render icon("search")}
         <input
           class="sv-grid-find-input"
           type="search"
@@ -2897,7 +2900,7 @@
               setActiveCell(hit.rowIndex, hit.colIndex);
               scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
             }
-          }}>↑</button
+          }}>{@render icon("find-prev")}</button
         >
         <button
           type="button"
@@ -2911,7 +2914,7 @@
               setActiveCell(hit.rowIndex, hit.colIndex);
               scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
             }
-          }}>↓</button
+          }}>{@render icon("find-next")}</button
         >
         <button
           type="button"
@@ -2922,7 +2925,7 @@
             ctrl.findQuery = "";
             // Return focus to the grid instead of letting it fall to <body> (#80).
             ctrl.gridRootEl?.focus({ preventScroll: true });
-          }}>✕</button
+          }}>{@render icon("close")}</button
         >
       </div>
     {/if}
@@ -2960,7 +2963,7 @@
               type="button"
               class="sv-grid-tool-panel-close"
               aria-label="Close"
-              onclick={() => (ctrl.toolPanelOpen = false)}>✕</button
+              onclick={() => (ctrl.toolPanelOpen = false)}>{@render icon("close")}</button
             >
           </div>
           <div class="sv-grid-tool-panel-tabs" role="tablist">
@@ -3004,21 +3007,21 @@
                       class:is-active={grouped}
                       aria-label={grouped ? "Ungroup" : "Group by"}
                       title={grouped ? "Ungroup" : "Group by this column"}
-                      onclick={() => toggleGroupInPanel(column.id)}>⊞</button
+                      onclick={() => toggleGroupInPanel(column.id)}>{@render icon("group-add")}</button
                     >
                     <button
                       type="button"
                       class="sv-grid-tool-panel-btn"
                       aria-label="Move up"
                       disabled={i === 0}
-                      onclick={() => moveColumnInPanel(column.id, -1)}>↑</button
+                      onclick={() => moveColumnInPanel(column.id, -1)}>{@render icon("move-up")}</button
                     >
                     <button
                       type="button"
                       class="sv-grid-tool-panel-btn"
                       aria-label="Move down"
                       disabled={i === toolPanelColumns.length - 1}
-                      onclick={() => moveColumnInPanel(column.id, 1)}>↓</button
+                      onclick={() => moveColumnInPanel(column.id, 1)}>{@render icon("move-down")}</button
                     >
                   </span>
                 </li>
@@ -3050,7 +3053,7 @@
                           class="sv-grid-tp-filter-clear"
                           aria-label={`Clear ${toolPanelHeaderLabel(column)} filter`}
                           title={messages.clearFilter}
-                          onclick={() => clearColumnFilter(column.id)}>✕</button
+                          onclick={() => clearColumnFilter(column.id)}>{@render icon("clear")}</button
                         >
                       {/if}
                     </div>

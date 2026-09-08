@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-07T11:17:07.811Z",
+  "generatedAt": "2026-09-08T22:32:58.984Z",
   "counts": {
-    "pages": 360,
+    "pages": 361,
     "enterprise": 55,
-    "withDemo": 240
+    "withDemo": 241
   },
   "pillars": [
     {
@@ -109,6 +109,7 @@
         "help/glossary.md",
         "help/grouping-aggregation.md",
         "help/i18n-rtl.md",
+        "help/icons.md",
         "help/import.md",
         "help/llm-grounding.md",
         "help/mcp-server.md",
@@ -1849,23 +1850,26 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2033,
-      "lastUpdated": "2026-09-03",
+      "words": 3099,
+      "lastUpdated": "2026-09-08",
       "demoIds": [
+        "432-chart-candlestick",
+        "158-chart-waterfall",
+        "160-chart-funnel",
+        "161-chart-radar",
+        "154-chart-heatmap",
+        "164-chart-treemap",
+        "165-chart-sankey",
+        "162-chart-calendar",
+        "163-chart-gauge",
+        "353-built-in-charting",
         "150-scatter-bubble",
         "151-time-series-chart",
         "153-chart-zoom-brush",
-        "154-chart-heatmap",
         "155-chart-analytics",
         "156-chart-patterns",
         "157-chart-forecast-band",
-        "158-chart-waterfall",
-        "159-chart-streaming",
-        "160-chart-funnel",
-        "161-chart-radar",
-        "162-chart-calendar",
-        "164-chart-treemap",
-        "165-chart-sankey"
+        "159-chart-streaming"
       ]
     },
     {
@@ -2611,6 +2615,22 @@
       ]
     },
     {
+      "path": "help/icons.md",
+      "url": "/docs/help/icons/",
+      "title": "Icons",
+      "summary": "The grid draws about fifty small marks for its own chrome - sort arrows, the filter funnel, the column menu, expanders, pager arrows, the tool panel's buttons. Every one of them has a name, and the icons prop replaces any of them with a snippet of your markup.",
+      "seoTitle": "Custom icons in a Svelte data grid",
+      "seoDescription": "Replace the sort, filter, menu, expander and pager icons of a Svelte data grid with your own icon set using the icons snippet map. Names you leave out keep their built-in glyph.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1219,
+      "lastUpdated": "2026-09-08",
+      "demoIds": [
+        "431-custom-icons"
+      ]
+    },
+    {
       "path": "help/import.md",
       "url": "/docs/help/import/",
       "title": "Data import - Enterprise",
@@ -2889,8 +2909,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1683,
-      "lastUpdated": "2026-09-05",
+      "words": 1712,
+      "lastUpdated": "2026-09-08",
       "demoIds": []
     },
     {
@@ -3585,8 +3605,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1209,
-      "lastUpdated": "2026-08-24",
+      "words": 1398,
+      "lastUpdated": "2026-09-08",
       "demoIds": [
         "74-theme-integrations"
       ]
@@ -5160,8 +5180,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1344,
-      "lastUpdated": "2026-09-06",
+      "words": 1360,
+      "lastUpdated": "2026-09-08",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"

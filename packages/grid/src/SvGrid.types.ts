@@ -11,6 +11,7 @@ import type {
 import type { ConditionalFormat } from "./conditional-formatting";
 import type { GroupDisplayType } from "./group-display";
 import type { GridMessages } from "./grid-messages";
+import type { GridIconName, GridIcons } from "./grid-icons";
 import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { GridPredicateExpr } from "./filtering/predicate-expr";
 import type { MenuItem } from "./SvMenuList.svelte";
@@ -1331,6 +1332,25 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   localization?: GridLocalization;
   /**
+   * Replace any of the grid's own icons with your own markup. One snippet per
+   * icon name; names you leave out keep their built-in glyph, so a partial map
+   * is all you ever need. `localization.text` for strings, this for glyphs.
+   *
+   * ```svelte
+   * {#snippet funnel()}<MyFilterIcon />{/snippet}
+   * <SvGrid icons={{ filter: funnel }} {data} {columns} />
+   * ```
+   *
+   * Your markup is wrapped in the grid's own icon box, so it inherits the size
+   * of the glyph it replaced and the rotation an expander applies when it
+   * opens. Colour follows `currentColor`, as the built-ins do.
+   *
+   * See {@link GridIconName} for the catalogue, and the Icons guide for the
+   * handful of marks this does not cover (the scrollbar arrows and the
+   * checkbox tick, both for reasons documented in `grid-icons.ts`).
+   */
+  icons?: GridIcons;
+  /**
    * Show the single search box that filters across every column. Explicitly
    * setting this wins over `filterMode`; leaving it unset means it appears only
    * when `filterMode` is `'global'`.
@@ -2087,6 +2107,13 @@ export type FilterOperator =
 export type FilterOption = {
   value: FilterOperator;
   label: string;
-  iconName: string;
+  /**
+   * Which glyph the operator draws. A `GridIconName` rather than a bare string
+   * so an operator cannot name an icon the grid has no case for: that is
+   * exactly how `op-between` once rendered an empty `<svg>` in the operator
+   * menu. `FilterOperator` is a closed union, so nothing user-supplied is
+   * being narrowed here.
+   */
+  iconName: GridIconName;
 };
 export type MenuPosition = { x: number; y: number };

@@ -153,6 +153,10 @@
 /* Advanced-filter indicator. Reads as state rather than as another action, so
    it uses the accent fill the toolbar buttons reserve for `is-active` instead
    of the neutral button shell. */
+.sv-grid-advf-chip > .sv-grid-icon {
+  width: 13px;
+  height: 13px;
+}
 .sv-grid-advf-chip {
   display: inline-flex;
   align-items: center;
@@ -261,6 +265,12 @@
   flex-shrink: 0;
 }
 .sv-grid-tool-panel-btn {
+  /* Centred as flex because these draw an icon now, not a bare character: a
+     glyph default still centres, and an SVG override no longer sits on the
+     text baseline. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 22px;
   height: 22px;
   border: 0;
@@ -807,8 +817,17 @@
   color: var(--sg-accent, #2563eb);
 }
 .sv-grid-group-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
   transition: transform 140ms ease;
+}
+.sv-grid-group-caret > .sv-grid-icon {
+  width: 100%;
+  height: 100%;
 }
 /* Collapsed: point the caret right (like a closed disclosure). */
 .sv-grid-group-toggle.is-collapsed .sv-grid-group-caret {
@@ -1855,6 +1874,23 @@ select.sv-grid-fr-editor {
   display: block;
   flex: none;
 }
+/* A consumer icon from the `icons` prop. SvGrid wraps the override in this box
+   rather than asking the consumer to add `.sv-grid-icon` themselves, so it
+   inherits every per-site size rule below and the expander's rotate-on-open
+   without needing to know those rules exist. Must stay AFTER .sv-grid-icon:
+   equal specificity, and this display has to win. */
+.sv-grid-icon-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.sv-grid-icon-custom > svg,
+.sv-grid-icon-custom > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .sv-grid-header-cell {
   display: flex;
@@ -2453,14 +2489,19 @@ select.sv-grid-fr-editor {
    group banners and auto-group columns, SvGroupCell and SvTree all draw the
    same `chevron-right` and rotate it open, rather than swapping between two
    different glyphs. */
-.sv-grid-tree-toggle .sv-grid-icon,
-.sv-grid-group-toggle .sv-grid-icon {
+/* Direct child, not descendant. The column-group header button also carries
+   `sv-grid-group-toggle` + `aria-expanded`, and its caret is wrapped one level
+   deeper - a descendant selector would rotate that caret 90deg too, so an
+   expanded down-caret would point left. The three row/tree expanders render
+   their icon as an immediate child, so `>` changes nothing for them. */
+.sv-grid-tree-toggle > .sv-grid-icon,
+.sv-grid-group-toggle > .sv-grid-icon {
   width: 12px;
   height: 12px;
   transition: transform 0.15s ease;
 }
-.sv-grid-tree-toggle[aria-expanded="true"] .sv-grid-icon,
-.sv-grid-group-toggle[aria-expanded="true"] .sv-grid-icon {
+.sv-grid-tree-toggle[aria-expanded="true"] > .sv-grid-icon,
+.sv-grid-group-toggle[aria-expanded="true"] > .sv-grid-icon {
   transform: rotate(90deg);
 }
 .sv-grid-tree-toggle:focus-visible {
@@ -2624,7 +2665,7 @@ select.sv-grid-fr-editor {
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
   min-width: 280px;
 }
-.sv-grid-find-icon {
+.sv-grid-find > .sv-grid-icon {
   width: 14px; height: 14px;
   color: var(--sg-muted, #94a3b8);
   flex: none;
@@ -2868,13 +2909,26 @@ select.sv-grid-fr-editor {
   opacity: 1;
 }
 
-/* Magnifier prefix on the menu's search input. */
+/* Magnifier prefix on the menu's search input. Real markup rather than a
+   background-image, so it follows the theme and the `icons` prop can replace
+   it; the input keeps its own class because focusFilterPanel() and a test both
+   resolve `.sv-grid-menu-search`. */
 .sv-grid-menu-search {
   padding-left: 28px;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='M20 20l-4.5-4.5'/%3E%3C/svg%3E");
-  background-position: 8px center;
-  background-repeat: no-repeat;
-  background-size: 14px 14px;
+}
+.sv-grid-menu-search-wrap {
+  position: relative;
+  display: block;
+}
+.sv-grid-menu-search-wrap > .sv-grid-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--sg-muted, #94a3b8);
+  pointer-events: none;
 }
 
 /* Filter menu vertical rhythm. */
@@ -2908,6 +2962,11 @@ select.sv-grid-fr-editor {
 }
 .sv-grid-filter-operator-btn.is-open {
   opacity: 1;
+}
+
+.sv-grid-board-search > .sv-grid-icon {
+  width: 14px;
+  height: 14px;
 }
 
 /* Kanban board mode search box (board.searchable) */
@@ -3048,6 +3107,16 @@ select.sv-grid-fr-editor {
 .sv-grid-chart-actions { display: inline-flex; align-items: center; gap: 6px; }
 .sv-grid-chart-controls { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
 .sv-grid-chart-controls:empty { display: none; }
+/* Says why the chosen chart type cannot draw yet - a missing Split by, too few
+   groups. The picker deliberately does NOT hide such a type: options that come
+   and go as the user filters are worse than one sentence of explanation. */
+.sv-grid-chart-hint {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--sg-muted, #64748b);
+}
 .sv-grid-chart-ctl { display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: var(--sg-muted, #64748b); }
 .sv-grid-chart-ctl select {
   font: inherit; font-size: 12.5px; font-weight: 400; color: var(--sg-fg, #0f172a);

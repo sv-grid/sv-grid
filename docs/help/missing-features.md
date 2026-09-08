@@ -114,7 +114,7 @@ sparklines, collaboration). The genuine remaining gaps:
 | ~~**UI-string localisation**~~ | **shipped** - the `localization` prop takes `{ locale, text }`, where `text` is a partial `GridMessages`; every menu/panel/chrome string is overridable. Note there is no `localeText` prop, and no translation catalogues ship in the box - you supply the strings. See [i18n and RTL](./i18n-rtl.md) | ✓ |
 | ~~**Row-grouping display modes** + group-level footers~~ | **shipped** - `groupDisplayMode: 'groupRows' \| 'singleColumn' \| 'multipleColumns'` plus `groupFooters` and `grandTotalRow`; demo `427-group-footers` | ✓ |
 | ~~**In-grid pivot mode** (toggle on the main grid)~~ | **shipped** - `enablePivot()` registers the engine and the main grid pivots in place | ✓ |
-| ~~**Integrated-chart depth** (chart toolbar, cross-filtering)~~ | **shipped** - `crossFilter` config plus `applyChartCrossFilter` / `clearChartCrossFilter`, wired from chart selection in `SvGridChartPanel`, with a Clear filter button; the panel toolbar has chart-type switching, export, AI, add-chart, tabs, maximize, dock and pop out | ✓ |
+| ~~**Integrated-chart depth** (chart toolbar, cross-filtering)~~ | **shipped** - `crossFilter` config plus `applyChartCrossFilter` / `clearChartCrossFilter`, wired from chart selection in `SvGridChartPanel`, with a Clear filter button; the panel toolbar has chart-type switching, export, AI, add-chart, tabs, maximize, dock and pop out. The picker now reaches all 15 types (it offered 4), gated on whether the current columns can feed each one, and `--sg-chart-*` tokens let a theme recolour the series | ✓ |
 | **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |
 
 ## What's already there

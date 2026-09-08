@@ -260,6 +260,8 @@ import ConditionalFormatting     from '../demos/94-conditional-formatting.svelte
 import FillHandle                from '../demos/95-fill-handle.svelte'
 import MoveCells429              from '../demos/429-move-cells.svelte'
 import SelectionBar430          from '../demos/430-selection-bar.svelte'
+import CustomIcons431           from '../demos/431-custom-icons.svelte'
+import Candlestick432           from '../demos/432-chart-candlestick.svelte'
 import SideDrawerEdit            from '../demos/97-side-drawer-edit.svelte'
 import AdvancedFilterBuilder     from '../demos/98-advanced-filter-builder.svelte'
 import TopNFilter                from '../demos/99-top-n-filter.svelte'
@@ -437,11 +439,12 @@ export type DemoCategory =
  * Categories that belong to the paid @svgrid/enterprise product. The sidebar
  * badges these group headers as "Enterprise".
  */
+// NOT in here: 'AI'. The AI helpers are free and MIT (packages/grid/src/ai.ts).
+// Enterprise carries AI-planned EXPORT - the paid xlsx/pdf writer - not the AI.
 export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
   'Data Export & Import',
   'Pivot Grid',
   'Studio',
-  'AI',
   'Alerts',
 ])
 
@@ -482,6 +485,8 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Server-Side Data',
   'Real-time & Streaming',
   'Spreadsheet',
+  // AI helpers and the chart engine are both free @svgrid/grid features.
+  'AI',
   'Charts',
   'Kanban',
   'Scheduler',
@@ -494,7 +499,6 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Data Export & Import',
   'Pivot Grid',
   'Studio',
-  'AI',
   'Alerts',
   // SvGrid Editors product
   'Date & Time',
@@ -828,6 +832,7 @@ export const demos: Demo[] = [
   demo('356-spreadsheet-chart','Spreadsheet chart (Excel-style)','An editable sales sheet with the chart drawer open beside it - type a new number into any Units / Revenue cell and the chart redraws, just like an Excel chart bound to a table. Switch Type, swap Group by / Split by / Value, aggregate, stack, format, or add labels - all live.', 'Charts', SpreadsheetChart),
   demo('358-charting-by-date','Charting by date (time axis)','A daily signups sheet charted by a real date column. Because the group-by is a date, the chart panel adds a Date-axis toggle (proportional time gaps + real date ticks) alongside a Log-scale toggle - both live. Export the chart as PNG / SVG / CSV from the panel.', 'Charts', ChartingByDate),
   demo('357-ai-chart-this','AI chart builder','With `installEnterprise(api)`, the chart panel gains an AI button: describe a chart in plain English ("total price by country stacked by product") and the model returns a chart config - type, group-by, split-by, measure, aggregate - applied live. Enterprise-gated AI over the free MIT chart panel; runs on the bundled mock provider.', 'AI', AiChartThis, { pro: true }),
+  demo('432-chart-candlestick',     'Candlestick / OHLC',          'Candlestick and OHLC price marks with an ordinal date axis. ChartSeries.ohlc carries the four prices while values keeps the closes, so the CSV export, the screen-reader table and a 10-day moving average all work with no candle-specific code. Toggle the axis: a real time axis opens a gap over every weekend, an ordinal one spaces sessions evenly and still labels them by date. The strip under the plot is the chart brush: drag its window to pan, drag an edge to resize.', 'Charts', Candlestick432),
   demo('147-integrated-charts',     'Integrated charts (no dependencies)', 'Chart the grid data with no external charting library. SvGridChart renders a ChartSpec; rowsToChartSpec aggregates the grid current (filtered/sorted) rows into one. Bar, line, area, pie - plus 100% stacked, top-N + Other, an average reference line, and double-click-to-isolate a series. Filter the grid and the chart re-aggregates live.', 'Charts', IntegratedCharts),
   demo('150-scatter-bubble',        'Scatter / bubble chart',      'A scatter plot maps two numeric measures (x vs y); a bubble chart adds a third via dot radius. type: scatter with series points [{ x, y, r }]. Spend vs revenue, sized by deals, coloured by region, with an average-revenue reference line. Filter the grid and the cloud re-plots.', 'Charts', ScatterBubble),
   demo('151-time-series-chart',     'Time-series chart (date axis)','xType: time spaces points by ACTUAL time - irregular date gaps render proportionally - and shows real date ticks. A referenceLines target/SLA line spans the plot; toggle 100% stacked to read each day as a share of its total. Line, stacked area, or stacked bar.', 'Charts', TimeSeriesChart),
@@ -861,6 +866,7 @@ export const demos: Demo[] = [
 
   // ----- Themes & Styling
   demo('37-theming-studio',         'Theming studio',              'Live token playground: brand color, density, radius, font, dark/light, zebra. Copy-ready CSS snippet, persists across reloads.', 'Themes & Styling', ThemingStudio),
+  demo('431-custom-icons',          'Custom icon set',             'Replace the built-in glyphs with your own icon set. `icons` is a map keyed by icon name, so names you leave out keep their built-in glyph - a partial set is a complete answer. Toggle Ours / Mixed / Yours: Mixed overrides four icons and the rest of the chrome carries on unchanged.', 'Themes & Styling', CustomIcons431),
   demo('74-theme-integrations',     'Theme integrations',          'Five design-system presets (Ant, MUI, Fluent, Base Web, shadcn) toggled by mapping --sg-* tokens. Side panel shows the exact CSS to paste into your app.', 'Themes & Styling', ThemeIntegrations),
 
   // ----- Keyboard & Accessibility
@@ -908,9 +914,9 @@ export const demos: Demo[] = [
   demo('200-studio-dashboard',        'SvGrid Studio · dashboard',    'A schema-driven dashboard above the grid. SvSchemaDashboard renders a declarative spec of KPI tiles (count / sum / avg) + charts (SvSchemaChart) over the same EntitySchema - a data view, not a page builder. Click a chart category to drill the grid; create / edit / delete and the KPIs and charts update.', 'Studio', StudioDashboard,        { pro: true }),
   demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.',     'Data Export & Import', ExcelImport,            { pro: true }),
   demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Editing', StagedEditing,          { pro: true }),
-  demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'AI', AiAssistant,            { pro: true }),
+  demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'AI', AiAssistant),
   demo('75-ai-smart-paste',           'AI Smart Paste',                 'Paste CSV / TSV / free-form text - the assistant parses it into typed rows with a preview panel. Swap mockAssistant for your LLM endpoint and ship.', 'AI', AiSmartPaste,           { pro: true }),
-  demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; production wiring needs an AI Platform key.', 'AI', NlFilterBar,            { pro: true }),
+  demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; wire your own model with setAIProvider.', 'AI', NlFilterBar),
 
   // ----- New enterprise features
   demo('96-high-contrast-theme',      'High-contrast theme',            'WCAG 2.2 AAA-grade preset for accessibility procurement. Token block opts a subtree into the high-contrast skin while the rest of the page stays standard. Light + dark.', 'Themes & Styling', HighContrastTheme),

@@ -10,6 +10,7 @@
 -->
 <script lang="ts" generics="TData">
   import type { ServerDisplayRow } from './server-data-source'
+  import type { GridIcons } from './grid-icons'
 
   type GroupGridRow = { __group?: ServerDisplayRow<TData> } & Record<string, unknown>
   type Props = {
@@ -24,9 +25,17 @@
     leafField?: string
     /** Pixels of indentation per level. Default 18. */
     indent?: number
+    /**
+     * Icon overrides, the same map `<SvGrid icons>` takes. Only
+     * `chevron-right` is drawn here. You mount this component yourself, so it
+     * cannot inherit the grid's icons - pass the same object to both to keep
+     * the expander consistent with the rest of the chrome.
+     */
+    icons?: GridIcons
   }
 
-  let { row, onToggle, leafField, indent = 18 }: Props = $props()
+  let { row, onToggle, leafField, indent = 18, icons }: Props = $props()
+  const chevron = $derived(icons?.['chevron-right'])
   const meta = $derived(row.__group)
 </script>
 
@@ -42,8 +51,12 @@
     <!-- Same chevron the grid's own expanders and SvTree draw, so every
          expander in the library looks identical. -->
     <span class="sv-group-chev" class:open={meta.expanded} aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
-        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+      {#if chevron}
+        {@render chevron()}
+      {:else}
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+      {/if}
     </span>
     <span class="sv-group-key">{meta.key}</span>
     {#if meta.loading}<span class="sv-group-load" aria-hidden="true">…</span>{/if}
@@ -84,8 +97,20 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 12px;
+    height: 12px;
     transition: transform 0.15s;
     color: var(--sg-muted, #64748b);
+  }
+  /* An `icons` override renders inside this wrapper, and this style block is
+     scoped, so its markup needs :global() to be reached. Sizing it here means
+     a custom chevron lands in the same box as the built-in and rotates with
+     the wrapper rather than needing to know the rule exists. */
+  .sv-group-chev :global(svg),
+  .sv-group-chev :global(img) {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
   .sv-group-chev.open { transform: rotate(90deg); }
   .sv-group-key { font-weight: 600; }

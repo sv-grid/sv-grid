@@ -126,14 +126,93 @@
   const chartW = $derived(bodyW > 24 ? bodyW - 8 : undefined);
   const chartH = $derived(bodyH > 24 ? Math.max(120, bodyH - 8 - reserve) : undefined);
 
-  // Aggregation-friendly types offered in the picker; exotic types come via
-  // `buildSpec`, where the picker is hidden.
-  const TYPES: Array<{ value: ChartType; label: string }> = [
-    { value: "bar", label: "Bar" },
-    { value: "line", label: "Line" },
-    { value: "area", label: "Area" },
-    { value: "pie", label: "Pie" },
+  /**
+   * The chart types the picker offers, grouped by what they are FOR.
+   *
+   * This used to be four entries while the engine drew fifteen, so nine types
+   * were reachable only by hand-writing a spec - and `charting.defaultType`
+   * accepted them all, which meant setting one left the picker showing
+   * something else entirely.
+   *
+   * `needs` gates on COLUMN SHAPE only, never on the data. Column shape is
+   * stable while the user filters; row counts are not, and a picker whose
+   * options vanish mid-session because a filter emptied a group is worse than
+   * one that explains itself. Data-level problems get a sentence instead, see
+   * `typeIssue` below.
+   */
+  type TypeDef = {
+    value: ChartType;
+    label: string;
+    group: string;
+    needs?: (c: { dims: unknown[]; measures: unknown[]; dates: unknown[] }) => boolean;
+  };
+  const TYPES: TypeDef[] = [
+    { value: "bar", label: "Bar", group: "Compare" },
+    { value: "line", label: "Line", group: "Compare" },
+    { value: "area", label: "Area", group: "Compare" },
+    { value: "pie", label: "Pie", group: "Part of a whole" },
+    { value: "treemap", label: "Tree map", group: "Part of a whole" },
+    { value: "funnel", label: "Funnel", group: "Flow" },
+    { value: "waterfall", label: "Waterfall", group: "Flow" },
+    { value: "sankey", label: "Sankey", group: "Flow", needs: (c) => c.dims.length >= 2 },
+    { value: "radar", label: "Radar", group: "Distribution" },
+    { value: "heatmap", label: "Heat map", group: "Distribution", needs: (c) => c.dims.length >= 2 },
+    { value: "scatter", label: "Scatter", group: "Distribution", needs: (c) => c.measures.length >= 2 },
+    { value: "gauge", label: "Gauge", group: "Single value" },
+    { value: "calendar", label: "Calendar", group: "Over time", needs: (c) => c.dates.length >= 1 },
   ];
+  const availableTypes = $derived(TYPES.filter((t) => !t.needs || t.needs(columns)));
+
+  // Which controls this type can actually use. Allow-lists rather than the old
+  // "not pie" guards: with thirteen types, "everything except pie" hands a
+  // gauge a Stacked checkbox.
+  const CARTESIAN: ChartType[] = ["bar", "line", "area"];
+
+  /** Named series palettes. "Theme" defers to --sg-chart-1..8 and the defaults. */
+  const PALETTES: Array<{ key: string; label: string; colors: string[] | null }> = [
+    { key: "theme", label: "Theme", colors: null },
+    { key: "ocean", label: "Ocean", colors: ["#0ea5e9", "#14b8a6", "#6366f1", "#8b5cf6", "#06b6d4"] },
+    { key: "sunset", label: "Sunset", colors: ["#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#f97316"] },
+    { key: "forest", label: "Forest", colors: ["#16a34a", "#65a30d", "#0d9488", "#4d7c0f", "#0891b2"] },
+    { key: "slate", label: "Slate", colors: ["#475569", "#0ea5e9", "#64748b", "#38bdf8", "#94a3b8"] },
+  ];
+  const activePalette = $derived(
+    PALETTES.find((x) => x.colors && ctrl.chartPalette && x.colors.join() === ctrl.chartPalette.join())?.key ??
+      "theme",
+  );
+  const wantsHorizontal = $derived(ctrl.chartType === "bar");
+  const wantsDonut = $derived(ctrl.chartType === "pie");
+  const wantsGroupBy = $derived(ctrl.chartType !== "gauge");
+  const wantsSplitBy = $derived(
+    columns.dims.length > 1 &&
+      !["pie", "gauge", "waterfall", "funnel", "calendar"].includes(ctrl.chartType),
+  );
+  const wantsStacked = $derived(CARTESIAN.includes(ctrl.chartType));
+  const wantsLogScale = $derived(CARTESIAN.includes(ctrl.chartType) || ctrl.chartType === "scatter");
+  const wantsDataLabels = $derived(
+    !["gauge", "sankey", "calendar", "treemap", "scatter"].includes(ctrl.chartType),
+  );
+  const wantsSecondMeasure = $derived(ctrl.chartType === "scatter");
+  const typeGroups = $derived([...new Set(availableTypes.map((t) => t.group))]);
+
+  /**
+   * Why the current type cannot draw anything useful yet, as a sentence.
+   *
+   * The alternative - removing the option - means a chart can disappear from
+   * under the user when they filter. Saying what is missing keeps the picker
+   * honest without making it unstable.
+   */
+  const typeIssue = $derived.by<string | null>(() => {
+    const t = ctrl.chartType;
+    const cats = ctrl.chartSpec?.categories.length ?? 0;
+    if (t === "heatmap" && !ctrl.chartSeriesId && columns.dims.length > 1)
+      return "Heat map needs a Split by column for its rows.";
+    if (t === "sankey" && !ctrl.chartSeriesId)
+      return "Sankey needs a Split by column: Group by is the source, Split by the target.";
+    if (t === "radar" && cats > 0 && cats < 3) return "Radar needs at least 3 groups.";
+    if (t === "funnel" && cats === 1) return "Funnel needs at least 2 stages.";
+    return null;
+  });
   const REDUCERS = [
     { value: "sum", label: "Sum" },
     { value: "avg", label: "Average" },
@@ -386,18 +465,28 @@
         <label class="sv-grid-chart-ctl">
           <span class="sv-grid-chart-ctl-lbl">Type</span>
           <select value={ctrl.chartType} onchange={(e) => (ctrl.chartType = e.currentTarget.value as ChartType)}>
-            {#each TYPES as t (t.value)}<option value={t.value}>{t.label}</option>{/each}
+            <!-- Grouped: a flat thirteen-item list is a wall. optgroup is
+                 native, so this costs no new component. -->
+            {#each typeGroups as g (g)}
+              <optgroup label={g}>
+                {#each availableTypes.filter((t) => t.group === g) as t (t.value)}
+                  <option value={t.value}>{t.label}</option>
+                {/each}
+              </optgroup>
+            {/each}
           </select>
         </label>
+        {#if wantsGroupBy}
         <label class="sv-grid-chart-ctl">
-          <span class="sv-grid-chart-ctl-lbl">Group by</span>
+          <span class="sv-grid-chart-ctl-lbl">{ctrl.chartType === "sankey" ? "From" : ctrl.chartType === "heatmap" ? "Columns" : "Group by"}</span>
           <select value={ctrl.chartDimensionId ?? ""} onchange={(e) => (ctrl.chartDimensionId = e.currentTarget.value || null)}>
             {#each columns.dims as d (d.id)}<option value={d.id}>{d.label}</option>{/each}
           </select>
         </label>
-        {#if columns.dims.length > 1}
+        {/if}
+        {#if wantsSplitBy}
           <label class="sv-grid-chart-ctl">
-            <span class="sv-grid-chart-ctl-lbl">Split by</span>
+            <span class="sv-grid-chart-ctl-lbl">{ctrl.chartType === "sankey" ? "To" : ctrl.chartType === "heatmap" ? "Rows" : "Split by"}</span>
             <select value={ctrl.chartSeriesId ?? ""} onchange={(e) => (ctrl.chartSeriesId = e.currentTarget.value || null)}>
               <option value="">(none)</option>
               {#each columns.dims as d (d.id)}<option value={d.id}>{d.label}</option>{/each}
@@ -405,51 +494,98 @@
           </label>
         {/if}
         <label class="sv-grid-chart-ctl">
-          <span class="sv-grid-chart-ctl-lbl">Value</span>
+          <span class="sv-grid-chart-ctl-lbl">{wantsSecondMeasure ? "X" : ctrl.chartType === "gauge" ? "Metric" : "Value"}</span>
           <select value={ctrl.chartMeasureId ?? ""} onchange={(e) => (ctrl.chartMeasureId = e.currentTarget.value || null)}>
             {#each columns.measures as m (m.id)}<option value={m.id}>{m.label}</option>{/each}
           </select>
         </label>
+        {#if wantsSecondMeasure}
+          <label class="sv-grid-chart-ctl">
+            <span class="sv-grid-chart-ctl-lbl">Y</span>
+            <select value={ctrl.effectiveChartMeasure2Id ?? ""} onchange={(e) => (ctrl.chartMeasure2Id = e.currentTarget.value || null)}>
+              {#each columns.measures as m (m.id)}<option value={m.id}>{m.label}</option>{/each}
+            </select>
+          </label>
+        {/if}
+        {#if !wantsSecondMeasure}
         <label class="sv-grid-chart-ctl">
           <span class="sv-grid-chart-ctl-lbl">Aggregate</span>
           <select value={ctrl.chartReduce} onchange={(e) => (ctrl.chartReduce = e.currentTarget.value as "sum" | "avg" | "count")}>
             {#each REDUCERS as r (r.value)}<option value={r.value}>{r.label}</option>{/each}
           </select>
         </label>
+        {/if}
         <label class="sv-grid-chart-ctl">
           <span class="sv-grid-chart-ctl-lbl">Format</span>
           <select value={ctrl.chartValueFormat} onchange={(e) => (ctrl.chartValueFormat = e.currentTarget.value as "number" | "currency" | "percent")}>
             {#each FORMATS as f (f.value)}<option value={f.value}>{f.label}</option>{/each}
           </select>
         </label>
-        {#if ctrl.chartType !== "pie"}
+        {#if wantsStacked}
           <label class="sv-grid-chart-toggle">
             <input type="checkbox" checked={ctrl.chartStacked} onchange={(e) => (ctrl.chartStacked = e.currentTarget.checked)} />
             Stacked
           </label>
+          <label class="sv-grid-chart-toggle" title="Normalise each category to 100 percent">
+            <input type="checkbox" checked={ctrl.chartStacked100} onchange={(e) => (ctrl.chartStacked100 = e.currentTarget.checked)} />
+            100%
+          </label>
         {/if}
-        <label class="sv-grid-chart-toggle">
-          <input type="checkbox" checked={ctrl.chartDataLabels} onchange={(e) => (ctrl.chartDataLabels = e.currentTarget.checked)} />
-          Labels
+        {#if wantsHorizontal}
+          <label class="sv-grid-chart-toggle" title="Bars grow rightwards - suits long category labels">
+            <input
+              type="checkbox"
+              checked={ctrl.chartOrientation === "horizontal"}
+              onchange={(e) => (ctrl.chartOrientation = e.currentTarget.checked ? "horizontal" : "vertical")}
+            />
+            Horizontal
+          </label>
+        {/if}
+        {#if wantsDonut}
+          <label class="sv-grid-chart-toggle">
+            <input type="checkbox" checked={ctrl.chartDonut} onchange={(e) => (ctrl.chartDonut = e.currentTarget.checked)} />
+            Donut
+          </label>
+        {/if}
+        <label class="sv-grid-chart-ctl">
+          <span class="sv-grid-chart-ctl-lbl">Colours</span>
+          <select
+            value={activePalette}
+            onchange={(e) => (ctrl.chartPalette = PALETTES.find((x) => x.key === e.currentTarget.value)?.colors ?? null)}
+          >
+            {#each PALETTES as pal (pal.key)}<option value={pal.key}>{pal.label}</option>{/each}
+          </select>
         </label>
-        {#if ctrl.chartType !== "pie"}
+        {#if wantsDataLabels}
+          <label class="sv-grid-chart-toggle">
+            <input type="checkbox" checked={ctrl.chartDataLabels} onchange={(e) => (ctrl.chartDataLabels = e.currentTarget.checked)} />
+            Labels
+          </label>
+        {/if}
+        {#if wantsLogScale}
           <label class="sv-grid-chart-toggle" title="Logarithmic value axis - flattens wide-range data">
             <input type="checkbox" checked={ctrl.chartLogScale} onchange={(e) => (ctrl.chartLogScale = e.currentTarget.checked)} />
             Log scale
           </label>
         {/if}
-        {#if ctrl.chartDimensionIsDate && ctrl.chartType !== "pie"}
+        {#if ctrl.chartDimensionIsDate && CARTESIAN.includes(ctrl.chartType)}
           <label class="sv-grid-chart-toggle" title="Space points by actual date - real time ticks and proportional gaps">
             <input type="checkbox" checked={ctrl.chartTimeAxis} onchange={(e) => (ctrl.chartTimeAxis = e.currentTarget.checked)} />
             Date axis
           </label>
         {/if}
       {/if}
+      {#if typeIssue}
+        <p class="sv-grid-chart-hint" role="note">{typeIssue}</p>
+      {/if}
     </div>
   </header>
 
   <div class="sv-grid-chart-panel-body" bind:this={bodyEl} bind:clientWidth={bodyW} bind:clientHeight={bodyH}>
-    {#if spec && (spec.series.length || isCustom)}
+    <!-- A gauge is one number, so it legitimately carries no series and no
+         categories. Gating purely on `series.length` sent it to the "No data"
+         message even with a perfectly good spec. -->
+    {#if spec && (spec.series.length || spec.gaugeValue != null || isCustom)}
       <SvGridChart
         {spec}
         width={chartW}

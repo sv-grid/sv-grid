@@ -67,6 +67,8 @@
   "docs/help/accessibility.md": ["65-keyboard-shortcuts", "96-high-contrast-theme"],
   "docs/help/ai.md": ["92-nl-filter-bar", "357-ai-chart-this", "203-ai-export-and-anomalies"],
   "docs/help/i18n-rtl.md": ["15-localization"],
+  "docs/help/icons.md": ["431-custom-icons"],
+  "docs/help/charts.md": ["432-chart-candlestick"],
   "docs/help/migrating-from-ag-grid.md": ["139-migration-from-ag-grid"],
 
   "docs/recipes/index.md": ["12-hr-team", "32-manufacturing-ops", "205-project-management", "120-test-systems-monitor", "167-project-tracker", "343-invoice-builder", "14-industrial", "20-industrial-dashboard"]

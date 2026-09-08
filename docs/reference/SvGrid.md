@@ -44,6 +44,12 @@ The render component. One `<SvGrid>` element per grid instance.
 | `rowNumberWidth`     | `number`             | `56`        | Width (px) of the row-number column. Default fits up to "99,999"; bump it for six-figure row counts so the largest number stays fully visible at the bottom of a long scroll. |
 | `initialColumnPinning` | `{ left?, right? }`| -           | Seed left/right pinning at mount.                                      |
 
+## Icons
+
+| Prop    | Type                                    | Notes |
+| ------- | --------------------------------------- | ----- |
+| `icons` | `Partial<Record<GridIconName, Snippet>>` | Replace any of the glyphs the grid draws for its own chrome, keyed by name. Names you leave out keep their built-in glyph, so a partial map is all you ever need. Your markup is wrapped in the grid icon box, so it inherits the size of the glyph it replaced and the rotation an expander applies when it opens; use `currentColor` so it picks up hover / muted / accent states. See [Icons](../help/icons.md) for the full catalogue. |
+
 ## Virtualization
 
 | Prop                   | Type      | Default | Notes                                              |

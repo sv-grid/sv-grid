@@ -138,7 +138,11 @@
       />
     </div>
     <div class="shrink-0 rounded-lg border p-3" style="width: 760px; border-color: var(--sg-border); background: var(--sg-bg);">
-      <SvGridChart {spec} formatValue={compact} />
+      <!-- zoomable because a forecast is the chart people most want to zoom
+           into, and because the band has to survive the zoom window: the
+           envelopes are category-parallel arrays, so a window that sliced the
+           values but not them used to drop the shading without a word. -->
+      <SvGridChart {spec} formatValue={compact} zoomable />
     </div>
   </div>
 </section>

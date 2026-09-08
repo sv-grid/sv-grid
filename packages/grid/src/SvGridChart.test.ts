@@ -67,3 +67,40 @@ describe('SvGridChart horizontal bars', () => {
     expect(axisText).toContain('Grace')
   })
 })
+
+describe('SvGridChart candlesticks', () => {
+  const bars = [
+    { o: 100, h: 110, l: 95, c: 105 },
+    { o: 105, h: 108, l: 99, c: 101 },
+  ]
+  const priced = (type: 'candlestick' | 'ohlc'): ChartSpec => ({
+    type,
+    categories: ['2026-03-02', '2026-03-03'],
+    series: [{ label: 'ACME', values: bars.map((b) => b.c), ohlc: bars }],
+  })
+
+  it('draws a body and a wick per bar', () => {
+    const el = render(priced('candlestick'))
+    expect(el.querySelectorAll('rect.sv-grid-chart-candle')).toHaveLength(2)
+    expect(el.querySelectorAll('line.sv-grid-chart-wick')).toHaveLength(2)
+  })
+
+  it('a rising candle is hollow, a falling one filled', () => {
+    const el = render(priced('candlestick'))
+    const [up, down] = [...el.querySelectorAll('rect.sv-grid-chart-candle')]
+    expect(up!.getAttribute('fill')).toBe('none')
+    expect(down!.getAttribute('fill')).not.toBe('none')
+  })
+
+  it('ohlc draws three ticks per bar and no body', () => {
+    const el = render(priced('ohlc'))
+    expect(el.querySelectorAll('line.sv-grid-chart-ohlc')).toHaveLength(6)
+    expect(el.querySelectorAll('rect.sv-grid-chart-candle')).toHaveLength(0)
+  })
+
+  it('gives a screen reader the four real prices, not just the closes', () => {
+    const el = render(priced('candlestick'))
+    const head = [...el.querySelectorAll('th')].map((t) => t.textContent)
+    expect(head).toEqual(['Date', 'Series', 'Open', 'High', 'Low', 'Close'])
+  })
+})

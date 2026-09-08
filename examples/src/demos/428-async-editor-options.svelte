@@ -6,8 +6,13 @@
    * `editorOptions` accepts an array, a `(row) => array` for cascades, and
    * either of those returning a Promise:
    *
-   *   editorOptions: fetch('/api/users').then(r => r.json())          // per column
+   *   editorOptions: () => fetchUsers()                              // per column
    *   editorOptions: (row) => fetchCities(row.country)                // per row
+   *
+   * A bare Promise (`editorOptions: fetch(...).then(...)`) is accepted too,
+   * but it starts the moment the component initialises rather than when the
+   * column is first edited - so its loading state is usually over before
+   * anyone clicks, and it cannot be re-fetched. Prefer the thunk.
    *
    * While a request is in flight the dropdown shows "Loading…" rather than
    * "No options", which would read as "nothing to pick". Results are cached:
@@ -69,10 +74,23 @@
     })
   }
 
-  // STATIC async source: one request for the whole column, cached after that.
-  const assignees = fakeFetch('assignees (column)', [
-    'Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Margaret Hamilton', 'Linus Torvalds', 'Barbara Liskov',
-  ])
+  // COLUMN-WIDE async source, fetched on first use.
+  //
+  // The obvious spelling is `editorOptions: fetch(...).then(...)` - a bare
+  // Promise. It works, but a Promise is a value, not a request you can start
+  // later: it fires the moment the component initialises, whether or not
+  // anyone ever edits the column, and by the time a person double-clicks a
+  // cell it has long since resolved, so the loading state is never seen. It
+  // also cannot be re-fetched, because "Invalidate cache" hands the editor the
+  // same already-settled Promise back.
+  //
+  // Wrapping it in a thunk and memoising the result keeps the one-request
+  // guarantee while making the request start when the column is first opened.
+  let assigneesReq: Promise<string[]> | null = null
+  const loadAssignees = () =>
+    (assigneesReq ??= fakeFetch('assignees (column)', [
+      'Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Margaret Hamilton', 'Linus Torvalds', 'Barbara Liskov',
+    ]))
 
   const columns: GridColumns<Ticket> = [
     { field: 'title', header: 'Ticket', width: 300 },
@@ -93,7 +111,9 @@
     },
     {
       field: 'assignee', header: 'Assignee', width: 200,
-      editorType: 'rich-select', editorOptions: assignees,
+      // Takes no row: the list is the same for every row, and the memo above
+      // means the fetch happens once no matter which cell opens first.
+      editorType: 'rich-select', editorOptions: () => loadAssignees(),
     },
   ]
 
@@ -127,7 +147,14 @@
       <button
         type="button" class="rounded-md border px-3 py-1 text-xs"
         style="border-color: var(--sg-border); color: var(--sg-fg);"
-        onclick={() => api?.refreshEditorOptions()}
+        onclick={() => {
+          // Drop OUR memo as well as the grid's cache. refreshEditorOptions()
+          // clears what the grid resolved, but the app still owns the request:
+          // without this the thunk would hand back the same settled promise
+          // and nothing would refetch.
+          assigneesReq = null
+          api?.refreshEditorOptions()
+        }}
       >Invalidate cache</button>
       <button
         type="button" class="rounded-md border px-3 py-1 text-xs"

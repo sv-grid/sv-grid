@@ -327,20 +327,18 @@
 </script>
 
 <section class="nlf-shell flex flex-col flex-1 min-h-0 gap-3">
-  <!-- AI Platform key notice. This demo runs against a rule-based
-       fallback so evaluators don't need a key to click around, but
-       the production wiring routes queries through your AI Platform
-       API key (set as VITE_AI_PLATFORM_KEY or POST'd via your backend).
-       Pro feature - in `@svgrid/enterprise`. -->
+  <!-- Model-provider notice. The AI helpers themselves are free and MIT
+       (@svgrid/grid); what you supply is the model. This demo runs against a
+       rule-based fallback so evaluators need no key at all. -->
   <aside class="nlf-aikey shrink-0" role="note">
-    <span class="nlf-aikey-badge">PRO · AI</span>
+    <span class="nlf-aikey-badge">AI</span>
     <div class="nlf-aikey-body">
-      <strong>Requires an AI Platform key.</strong>
-      The natural-language parser routes through your provider (OpenAI / Anthropic / Azure / your own endpoint).
-      This demo runs against a built-in <em>rule-based fallback</em> so you can evaluate the UX without a key -
-      production deployments wire <code>VITE_AI_PLATFORM_KEY</code> into the Pro <code>aiAssistant</code> adapter.
+      <strong>Bring your own model.</strong>
+      <code>aiFilter</code> is free and ships in <code>@svgrid/grid</code>; it calls whatever provider you
+      register with <code>setAIProvider</code> (OpenAI / Anthropic / Azure / your own endpoint).
+      This demo runs against a built-in <em>rule-based fallback</em> so you can evaluate the UX without a key.
     </div>
-    <a class="nlf-aikey-docs" href="#/docs/pro/ai-platform">Get a key →</a>
+    <a class="nlf-aikey-docs" href="#/docs/help/ai">Read the AI docs →</a>
   </aside>
 
   <header class="nlf-bar shrink-0">

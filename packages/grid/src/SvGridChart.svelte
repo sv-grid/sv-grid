@@ -7,7 +7,7 @@
    * focus tooltips, a clickable legend that toggles series, optional data
    * labels, and an `onSelect` drill hook. No external charting dependency.
    */
-  import { buildChart, DEFAULT_PALETTE, formatChartValue, type ChartSpec, type ChartSelection } from './chart'
+  import { buildChart, DEFAULT_PALETTE, formatChartValue, sliceChartWindow, type ChartSpec, type ChartSelection } from './chart'
 
   type Props = {
     spec: ChartSpec
@@ -72,9 +72,16 @@
   let hidden = $state(new Set<string>())
   // Isolate: double-clicking a legend chip shows ONLY that series/slice.
   let isolated = $state<string | null>(null)
+  // Series colours read from --sg-chart-1..8. Declared here because the
+  // palette derivation below reads it, and a rune used above its declaration
+  // is an error rather than a hoist. Filled by the theme effect further down.
+  let tokenPalette = $state<string[] | null>(null)
+
   // Hover-dim: hovering a legend chip dims the other series (visual only).
   let dimmed = $state<string | null>(null)
-  const palette = $derived(spec.palette ?? DEFAULT_PALETTE)
+  // An explicit `spec.palette` is the author speaking about THIS chart, so it
+  // outranks the theme's tokens, which in turn outrank the built-in colours.
+  const palette = $derived(spec.palette ?? tokenPalette ?? DEFAULT_PALETTE)
   const uid = `svgc-${Math.random().toString(36).slice(2, 8)}`
 
   const coloredSeries = $derived(
@@ -188,6 +195,15 @@
     if (zoomable && isZoomed) resetZoom()
   }
 
+  // Candles are cartesian, and the `isCartesian` negative list below already
+  // covers them, so they inherit gridlines, the crosshair, category hit bands,
+  // keyboard nav, drag-zoom and double-click reset with no new wiring.
+  // Declared up here because the brush spec reads it, and a `$derived` used
+  // above its declaration is an error rather than a hoist.
+  const isCandle = $derived(spec.type === 'candlestick' || spec.type === 'ohlc')
+  /** OHLC draws ticks off a vertical; candlestick draws a body and a wick. */
+  const isOhlcBars = $derived(spec.type === 'ohlc')
+
   // ---- Brush state -----------------------------------------------------
   // The brush is a compact second chart showing the FULL data range with
   // a translucent window over the visible slice. Dragging the body pans
@@ -202,7 +218,13 @@
     yAxisTitle: undefined, y2AxisTitle: undefined, xAxisTitle: undefined,
     referenceLines: undefined,
     annotations: undefined,
-    series: coloredSeries.filter((s) => !effectiveHidden.has(s.label)),
+    // The mini-map draws candles as a close-price line: at brush scale a
+    // candle is a couple of pixels wide and reads as noise, while a close line
+    // is the shape a reader actually navigates by.
+    type: isCandle ? 'line' : spec.type,
+    series: coloredSeries
+      .filter((s) => !effectiveHidden.has(s.label))
+      .map((s) => (s.ohlc ? { ...s, ohlc: undefined, type: 'line' as const } : s)),
   })
   const brushGeo = $derived(brushEligible ? buildChart(brushSpec) : null)
   /** The brush window in fractional [0..1] of the visible data range,
@@ -269,20 +291,12 @@
     }
     const visibleSeries = coloredSeries.filter((s) => !effectiveHidden.has(s.label))
     if (!zoom) return { ...spec, series: visibleSeries }
-    // Slice categories + each series' values to the zoom window so
-    // buildChart re-spreads the visible slice across the full plot.
-    const lo = Math.max(0, zoom.i0)
-    const hi = Math.min(spec.categories.length - 1, zoom.i1)
-    const slice = <T,>(arr: T[]) => arr.slice(lo, hi + 1)
-    return {
-      ...spec,
-      categories: slice(spec.categories),
-      series: visibleSeries.map((s) => ({
-        ...s,
-        values: slice(s.values),
-        rowIds: s.rowIds ? slice(s.rowIds) : undefined,
-      })),
-    }
+    // Narrow to the zoom window so buildChart re-spreads the visible slice
+    // across the full plot. The slicing itself lives in chart.ts: this used to
+    // be done by hand here and only covered categories / values / rowIds, so
+    // the confidence-band envelopes kept their full length and the band
+    // silently vanished as soon as anyone zoomed.
+    return sliceChartWindow({ ...spec, series: visibleSeries }, zoom.i0, zoom.i1)
   })
 
   // Heatmap / calendar cell fills are computed colors (not CSS), so they can't
@@ -290,8 +304,15 @@
   // chartEl) and hand buildChart a light/dark hint so low-value cells render as
   // "cold" rather than glaring white rectangles on a dark grid.
   let isDark = $state(false)
+  // Hand the RESOLVED palette down here rather than relying on per-series
+  // colours alone: buildChart also picks from `spec.palette` for the marks
+  // that have no series of their own (pie slices, treemap cells), and those
+  // should follow the theme tokens too.
   const geo = $derived(
-    buildChart(width || height ? { ...visibleSpec, width, height } : visibleSpec, isDark ? 'dark' : 'light'),
+    buildChart(
+      { ...visibleSpec, palette, ...(width || height ? { width, height } : {}) },
+      isDark ? 'dark' : 'light',
+    ),
   )
   const isCartesian = $derived(
     spec.type !== 'pie' && spec.type !== 'heatmap' &&
@@ -341,6 +362,7 @@
     if (spec.type === 'gauge') return !geo.gauge
     if (spec.type === 'treemap') return geo.treemapCells.length === 0
     if (spec.type === 'sankey') return geo.sankeyNodes.length === 0
+    if (isCandle) return geo.candles.length === 0
     return geo.bars.length === 0 && geo.lines.every((l) => l.points.every((p) => !p.defined))
   })
 
@@ -374,6 +396,18 @@
       for (const s of coloredSeries) for (const p of s.points ?? []) rows.push([s.label, fmt(p.x), fmt(p.y), p.r != null ? fmt(p.r) : ''])
       return { cols: ['Series', 'X', 'Y', 'Size'], rows }
     }
+    if (isCandle) {
+      // This IS the accessible version of the chart, so it carries the four
+      // real numbers rather than the closes `values` happens to hold.
+      const rows: string[][] = []
+      for (const s of coloredSeries) {
+        ;(s.ohlc ?? []).forEach((k, i) => {
+          if (!k) return
+          rows.push([spec.categories[i] ?? String(i), s.label, fmt(k.o), fmt(k.h), fmt(k.l), fmt(k.c)])
+        })
+      }
+      return { cols: ['Date', 'Series', 'Open', 'High', 'Low', 'Close'], rows }
+    }
     return {
       cols: ['Category', ...coloredSeries.map((s) => s.label)],
       rows: spec.categories.map((c, i) => [c, ...coloredSeries.map((s) => fmt(s.values[i] ?? 0))]),
@@ -405,10 +439,32 @@
     // Perceived luminance (0..255); below the midpoint reads as a dark surface.
     return 0.299 * r + 0.587 * g + 0.114 * b < 128
   }
+  /**
+   * Series colours declared as `--sg-chart-1` .. `--sg-chart-8`.
+   *
+   * The palette used to be a hard-coded array in `chart.ts`, which meant a
+   * theme could restyle every part of a chart except the data - the one part
+   * a brand actually cares about. It stays out of `chart.ts` because that
+   * module is deliberately DOM-free and SSR-safe, so the tokens are read here
+   * and handed down as an ordinary `palette`.
+   *
+   * Partial sets are honoured: declare two tokens and the rest fall back, so a
+   * theme can set a brand primary and secondary without inventing six more.
+   */
   $effect(() => {
     if (!chartEl || typeof window === 'undefined') return
     const el = chartEl
-    const check = () => { isDark = surfaceIsDark(getComputedStyle(el).getPropertyValue('--sg-bg')) }
+    const check = () => {
+      const cs = getComputedStyle(el)
+      isDark = surfaceIsDark(cs.getPropertyValue('--sg-bg'))
+      const next: string[] = []
+      for (let i = 1; i <= 8; i += 1) {
+        const v = cs.getPropertyValue(`--sg-chart-${i}`).trim()
+        next.push(v || DEFAULT_PALETTE[i - 1]!)
+      }
+      const changed = !tokenPalette || next.some((c, i) => c !== tokenPalette![i])
+      if (changed) tokenPalette = next.some((c, i) => c !== DEFAULT_PALETTE[i]) ? next : null
+    }
     check()
     const obs = new MutationObserver(check)
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] })
@@ -428,10 +484,25 @@
 
   // Unified tooltip: every visible series' value at one category.
   function catRows(i: number): TipRow[] {
-    return visibleSpec.series
-      .map((s) => ({ label: s.label, color: (s as { color?: string }).color, value: s.values[i] }))
-      .filter((r) => Number.isFinite(r.value))
-      .map((r) => ({ label: r.label, color: r.color, value: fmt(r.value as number) }))
+    const rows: TipRow[] = []
+    for (const s of visibleSpec.series) {
+      const color = (s as { color?: string }).color
+      // A candle carries four numbers, so it gets four rows. Doing it here
+      // rather than in a parallel tooltip path means the crosshair, the
+      // keyboard focus tooltip and the hit rect's aria-label all follow, and a
+      // volume series on the right axis still lists itself underneath.
+      const k = s.ohlc?.[i]
+      if (k) {
+        rows.push({ label: `${s.label} O`, color, value: fmt(k.o) })
+        rows.push({ label: `${s.label} H`, value: fmt(k.h) })
+        rows.push({ label: `${s.label} L`, value: fmt(k.l) })
+        rows.push({ label: `${s.label} C`, value: fmt(k.c) })
+        continue
+      }
+      const v = s.values[i]
+      if (Number.isFinite(v)) rows.push({ label: s.label, color, value: fmt(v as number) })
+    }
+    return rows
   }
   function hoverCat(clientX: number, clientY: number, i: number) {
     activeCat = i
@@ -779,6 +850,21 @@
       {/if}
     {/each}
 
+    <!-- Candles paint above gridlines and any volume bars, below the reference
+         lines, annotations, crosshair and hit layer. Hollow-up / filled-down
+         rather than two fills: direction then reads from the shape as well as
+         the hue, which is the same reason this chart ships pattern fills. -->
+    {#each geo.candles as k, ki (ki)}
+      {#if isOhlcBars}
+        <line class="sv-grid-chart-ohlc" x1={k.xCenter} y1={k.yHigh} x2={k.xCenter} y2={k.yLow} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
+        <line class="sv-grid-chart-ohlc" x1={k.x} y1={k.yOpen} x2={k.xCenter} y2={k.yOpen} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
+        <line class="sv-grid-chart-ohlc" x1={k.xCenter} y1={k.yClose} x2={k.x + k.w} y2={k.yClose} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
+      {:else}
+        <line class="sv-grid-chart-wick" x1={k.xCenter} y1={k.yHigh} x2={k.xCenter} y2={k.yLow} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
+        <rect class="sv-grid-chart-candle" x={k.x} y={k.bodyY} width={k.w} height={k.bodyH} fill={k.up ? 'none' : k.color} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
+      {/if}
+    {/each}
+
     {#each geo.scatterPoints as dot, di (di)}
       <!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events -->
       <circle
@@ -987,9 +1073,12 @@
       {/each}
       <!-- Track (grey full arc) -->
       <path d={g.trackPath} fill="none" stroke="var(--sg-border, #e2e8f0)" stroke-width="16" stroke-linecap="round" />
-      <!-- Optional colored range bands (a thinner inner arc). -->
+      <!-- Range bands: a thin inner reference ring. Deliberately quieter than
+           the value arc - they say what the scale MEANS, while the value arc
+           is what the dial is actually reading. Butt caps so adjacent bands
+           meet cleanly instead of overlapping into each other's colour. -->
       {#each g.rangePaths as band, bi (bi)}
-        <path d={band.path} fill="none" stroke={band.color} stroke-width="6" stroke-linecap="round" opacity="0.85" />
+        <path d={band.path} fill="none" stroke={band.color} stroke-width="4" stroke-linecap="butt" opacity="0.7" />
       {/each}
       <!-- Value arc, colored by the band the value sits in. -->
       <path d={g.valuePath} fill="none" stroke={g.valueColor ?? 'var(--sg-accent, #2563eb)'} stroke-width="16" stroke-linecap="round" />
@@ -1549,6 +1638,15 @@
   }
   .sv-grid-chart-dot {
     transition: cx 0.3s ease, cy 0.3s ease;
+  }
+  .sv-grid-chart-candle {
+    stroke-width: 1;
+    transition: x 0.3s ease, y 0.3s ease, width 0.3s ease, height 0.3s ease;
+  }
+  .sv-grid-chart-wick,
+  .sv-grid-chart-ohlc {
+    stroke-width: 1;
+    shape-rendering: crispEdges;
   }
   .is-clickable .sv-grid-chart-cat-hit,
   .is-clickable .sv-grid-chart-slice {

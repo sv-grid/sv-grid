@@ -74,10 +74,27 @@ export type GridMessages = {
   menuRemoveRow: string
   menuRemoveColumn: string
   menuEditComment: string
+  // Selection bar
+  selectionBarLabel: string
+  selectionBarCount: string
+  selectionBarClear: string
+  selectionBarMore: string
+  selectionBarSelectAll: string
+  selectionBarEditFields: string
+  // Bulk edit dialog
+  bulkEditTitle: string
+  bulkEditLead: string
+  bulkEditMixed: string
+  bulkEditApply: string
+  bulkEditCancel: string
+  bulkEditNoFields: string
   chartRange: string
   // Upsell notes (enterprise views not installed)
   pivotUpsellTitle: string
   pivotUpsellBody: string
+  /** Shared licensing line under every Enterprise upsell note. */
+  upsellLicense: string
+  upsellLicenseLink: string
 }
 ```
 
@@ -125,6 +142,20 @@ export const defaultGridMessages: GridMessages = {
   menuRemoveRow: 'Remove row',
   menuRemoveColumn: 'Remove column',
   menuEditComment: 'Edit comment',
+  selectionBarLabel: 'Selection actions',
+  /** Label beside the count CHIP, which carries the number itself. */
+  selectionBarCount: 'selected',
+  selectionBarClear: 'Clear selection',
+  selectionBarMore: 'More actions',
+  selectionBarSelectAll: 'Select all',
+  selectionBarEditFields: 'Edit fields',
+  bulkEditTitle: 'Edit fields',
+  bulkEditLead:
+    'Changes apply to all {count} selected items. Fields you leave alone keep their existing values.',
+  bulkEditMixed: 'Multiple values',
+  bulkEditApply: 'Apply to {count} items',
+  bulkEditCancel: 'Cancel',
+  bulkEditNoFields: 'No editable fields on this grid.',
   opContains: 'Contains',
   opNotContains: 'Not contains',
   opEquals: 'Equals',
@@ -144,6 +175,9 @@ export const defaultGridMessages: GridMessages = {
   chartRange: 'Chart selected range',
   pivotUpsellTitle: 'Pivot mode',
   pivotUpsellBody: 'Pivot mode is an Enterprise feature. Install @svgrid/enterprise and call enablePivot() to use it.',
+  upsellLicense:
+    'A license key is required for production use. Without one the feature still works, but the grid renders an unlicensed watermark.',
+  upsellLicenseLink: 'View licensing',
 }
 ```
 

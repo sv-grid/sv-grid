@@ -536,6 +536,8 @@ export {
   buildChart,
   formatChartValue,
   rowsToChartSpec,
+  sliceChartWindow,
+  ordinalDateTicks,
   niceScale,
   niceLogScale,
   linearTrend,
@@ -551,6 +553,8 @@ export {
   type ChartSeries,
   type ChartGeometry,
   type ChartBar,
+  type ChartCandle,
+  type OhlcBar,
   type ChartLine,
   type ChartLinePoint,
   type ChartPieSlice,
@@ -693,6 +697,12 @@ export {
   resolveGridMessages,
   type GridMessages,
 } from './grid-messages'
+export {
+  GRID_ICON_GLYPHS,
+  GRID_ICON_NAMES,
+  type GridIconName,
+  type GridIcons,
+} from './grid-icons'
 export {
   insertGroupFooters,
   buildAutoGroupColumns,

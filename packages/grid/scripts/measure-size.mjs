@@ -22,6 +22,18 @@ const ENTRIES = {
   // The whole published '@svgrid/grid/core' subpath, not just createGrid - this
   // is the number a consumer actually pays for `import ... from '@svgrid/grid/core'`.
   "headless subpath (@svgrid/grid/core)": `export * from ${JSON.stringify(pkgSrc + 'headless.ts')}`,
+  // Charting, measured on its own.
+  //
+  // The chart chunks are the largest deferred feature in the package and they
+  // had no ceiling at all: the budgets below only ever applied to an entry's
+  // BASE bundle, and charts are lazy from SvGrid's point of view, so they were
+  // invisible to `--check`. Giving the renderer its own entry makes
+  // "renderer + engine" the base number of its own isolated build, which the
+  // existing check then guards with no new machinery.
+  //
+  // Deliberately not budgeted: SvGrid's lazy total. It aggregates eleven
+  // unrelated chunks, so a ceiling there would fire on a date-picker change.
+  'chart surface (SvChart)': `export { default } from ${JSON.stringify(pkgSrc + 'SvGridChart.svelte')}`,
 }
 
 /**
@@ -192,7 +204,40 @@ const BUDGET_KB = {
   // further `import()` inside it, gated on the open column being a date. The
   // measurement confirms it - SvDateTimePicker, SvDateRangeInput and
   // date-format all still report as lazy.
-  'full render component (SvGrid)': 83.6,
+  // 83.6 -> 84.2 for the `icons` prop: every glyph the grid draws for its own
+  // chrome now resolves through one snippet, so a consumer can replace any of
+  // them by name.
+  //
+  // Measured 83.4 before and 83.9 after, so 0.5 KB. I expected this to come out
+  // flat, on the theory that folding nine inline SVGs into the shared root would
+  // pay for the lookup - it did not. What actually lands in base is the override
+  // branch and the glyph-table branch (two per icon call, and `icon` is rendered
+  // 40-odd times), the GRID_ICON_GLYPHS table itself, and the five new path arms.
+  // The savings were smaller than that because Svelte was already hoisting the
+  // repeated inline SVGs into shared template fragments, so the duplication I
+  // was counting on removing had largely been compiled away already.
+  //
+  // GridMenus is a lazy chunk, so its 15 icon call sites cost base nothing, and
+  // SvGroupCell / SvRowGroupPanel are not imported by SvGrid at all. CSS went
+  // the other way, 9.5 -> 9.4 KB, because the menu-search magnifier stopped
+  // being a base64 data URI.
+  //
+  // Not deferrable: this is the branch that decides what to draw, so it has to
+  // be present before anything can be drawn. Budget set 0.3 KB above the
+  // measurement, the usual headroom.
+  //
+  // 84.2 -> 84.5 for opening the chart panel's type picker from four types to
+  // thirteen. Measured 83.9 before and 84.2 after, so 0.3 KB.
+  //
+  // The picker itself is in SvGridChartPanel, which is lazy and costs base
+  // nothing. What lands here is the controller half: a `dates` bucket on
+  // `chartableColumns`, `columnIsDate` lifted out so the panel can ask it of
+  // columns nobody has picked yet, the scatter Y field on the tab state, the
+  // cross-filter gate, and the dispatch that routes scatter / gauge / treemap
+  // / calendar / sankey to their builders. The controller already derives the
+  // chart spec in base, so this follows the shape that was already there
+  // rather than adding a new one.
+  'full render component (SvGrid)': 84.5,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
@@ -201,6 +246,23 @@ const BUDGET_KB = {
   // went 32 ms -> 27 ms and a text sort 62 ms -> 59 ms. The budget keeps the
   // usual ~0.3 KB of headroom above the measurement.
   'headless subpath (@svgrid/grid/core)': 5.3,
+  // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
+  // imports. Nobody pays this unless they chart - SvGrid reaches both through
+  // `import()` - but it is the biggest deferred thing in the package and until
+  // now nothing stopped it growing, because `--check` only ever saw base
+  // bundles and charts are never in one. Budget set 0.3 KB above the
+  // measurement, the same headroom the entries above keep.
+  //
+  // 26.6 -> 27.8 for candlesticks / OHLC and the ordinal-time axis. Measured
+  // 26.3 before and 27.5 after, so 1.2 KB: the candle layout block, the
+  // `ordinalDateTicks` unit search, the two markup branches, and OHLC rows in
+  // the tooltip and the screen-reader table. The axis half is most of it and
+  // is not candle-specific - any daily series of business days now gets an
+  // x axis whose marks and labels agree.
+  //
+  // SvGrid's own base is untouched at 83.9 KB, which is the point: none of
+  // this reaches a grid that never charts.
+  'chart surface (SvChart)': 27.8,
 }
 
 const CHECK = process.argv.includes('--check')

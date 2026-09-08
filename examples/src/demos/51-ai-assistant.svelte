@@ -1,8 +1,10 @@
 <script lang="ts">
   /**
-   * 51. AI assistant (Pro)
-   * ----------------------
-   * Demonstrates the @svgrid/enterprise AI feature pack. The grid stays
+   * 51. AI assistant
+   * ----------------
+   * The AI helpers are FREE and ship in @svgrid/grid (MIT) - setAIProvider,
+   * aiFilter, aiSmartFill, aiSummarize, aiClassify, aiFindAnomalies and
+   * mockAIProvider. This demo imports nothing else. The grid stays
    * model-agnostic; the demo wires the bundled `mockAIProvider` so
    * everything works end-to-end without any keys. In production you
    * register your own adapter that calls OpenAI / Anthropic / a proxy:

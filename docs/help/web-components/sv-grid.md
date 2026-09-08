@@ -181,11 +181,12 @@ Plus one alias kept from before the surface was generated:
 | --- | --- | --- |
 | `selectionchange` | `onRowSelectionChange` | `rows` - published alias of rowselectionchange, detail is the selected rows |
 
-### Not exposed (2)
+### Not exposed (3)
 
 | Prop | Why |
 | --- | --- |
 | `selectable` | element-level shorthand for row selection - see GridBody.svelte |
+| `icons` | Svelte snippets keyed by icon name - cannot cross the custom-element boundary |
 | `renderDetailRow` | Svelte snippet - cannot cross the custom-element boundary |
 
 <!-- END generated reference -->

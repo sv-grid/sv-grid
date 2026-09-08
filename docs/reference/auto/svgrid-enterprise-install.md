@@ -124,6 +124,7 @@ export function installEnterprise<
   enableSchedulerView()
   // Register the Kanban board view (no-op without the `board` prop).
   enableBoardView()
+  enableSelectionBar()
   // Register the export engine so built-in AI exports (aiExport) can write the
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
   registerExportProvider(exportGrid as never)

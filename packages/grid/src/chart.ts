@@ -12,6 +12,10 @@ export type ChartType =
   | 'bar' | 'line' | 'area' | 'pie' | 'scatter'
   | 'heatmap' | 'waterfall' | 'funnel' | 'radar'
   | 'calendar' | 'gauge' | 'treemap' | 'sankey'
+  | 'candlestick' | 'ohlc'
+
+/** One open / high / low / close bar. */
+export type OhlcBar = { o: number; h: number; l: number; c: number }
 
 /** A clicked bar / point / slice - the payload of `SvGridChart`'s `onSelect`.
  *  `rowIds` is populated when the spec was built from grid rows (via
@@ -43,7 +47,18 @@ export type ChartSeries = {
   values: number[]
   color?: string
   /** Per-series chart type, for combo charts. Defaults to the spec `type`. */
-  type?: 'bar' | 'line' | 'area'
+  type?: 'bar' | 'line' | 'area' | 'candlestick' | 'ohlc'
+  /**
+   * Open / high / low / close per category, parallel to `categories`. `null`
+   * is a gap (a day with no session) and draws nothing.
+   *
+   * Set `values` to the CLOSING prices alongside this. Everything that reads a
+   * series generically reads `values` - the tooltip rows, the CSV export, the
+   * screen-reader table, and `overlay` - so filling it in is what lets a
+   * candlestick series carry a moving average (`overlay: 'sma:20'`) or export
+   * to CSV without a single line of candle-specific code.
+   */
+  ohlc?: Array<OhlcBar | null>
   /** Plot against the left (default) or right Y axis. */
   axis?: 'left' | 'right'
   /** Scatter / bubble points (used when `type === 'scatter'`). */
@@ -134,8 +149,18 @@ export type ChartSpec = {
   innerRadius?: number
   /** Horizontal target / goal / average lines. */
   referenceLines?: ChartReferenceLine[]
-  /** Treat `categories` as dates -> time-scaled x positions + date ticks. */
-  xType?: 'category' | 'time'
+  /**
+   * How to read `categories` along the x axis.
+   *
+   * - `'category'` (default): evenly spaced labels, taken literally.
+   * - `'time'`: parsed as dates and positioned by ACTUAL elapsed time, so an
+   *   irregular gap renders as a proportional gap.
+   * - `'ordinal-time'`: parsed as dates but spaced EVENLY, with date-derived
+   *   ticks. This is what a series of trading sessions or business days needs:
+   *   on a true time axis every weekend opens a hole a third as wide as the
+   *   working week, which is noise rather than information.
+   */
+  xType?: 'category' | 'time' | 'ordinal-time'
   /** Axis titles (reserve gutter space + render). */
   yAxisTitle?: string
   y2AxisTitle?: string
@@ -186,6 +211,10 @@ export type ChartSpec = {
   /** Waterfall: explicit colors for positive/negative/total bars. The
    *  series color is ignored when this is set. */
   waterfallColors?: { positive?: string; negative?: string; total?: string }
+  /** Candlestick / OHLC colors. Direction beats series identity here, the same
+   *  way `waterfallColors` overrides the series color. Defaults to the green /
+   *  red pair from the palette's own vocabulary. */
+  candleColors?: { up?: string; down?: string }
   /** Heatmap color scale. `'sequential'` maps min->max through one hue,
    *  `'diverging'` runs cold->neutral->warm around 0. A custom array
    *  (>=2 hex colors) defines an arbitrary gradient. Default `'sequential'`. */
@@ -331,6 +360,38 @@ export type ChartHeatmapCell = {
   colLabel: string
 }
 
+/**
+ * One candlestick / OHLC bar in SVG coordinates.
+ *
+ * Kept apart from {@link ChartBar} rather than folded into it: bars pick up
+ * series pattern fills, data labels and the brush mini-map, and all three are
+ * wrong for a candle. A separate array means every existing loop over `bars`
+ * keeps working untouched, which is the point of this flat geometry.
+ */
+export type ChartCandle = {
+  /** Body rect left edge and width. In OHLC mode, the span of the two ticks. */
+  x: number
+  w: number
+  /** Wick line, and the OHLC bar's vertical. */
+  xCenter: number
+  yOpen: number
+  yClose: number
+  yHigh: number
+  yLow: number
+  /** Body rect, pre-ordered so the renderer does no min/max of its own. */
+  bodyY: number
+  bodyH: number
+  /** Close at or above open. Drives colour and hollow-vs-filled. */
+  up: boolean
+  color: string
+  label: string
+  series: string
+  o: number
+  h: number
+  l: number
+  c: number
+}
+
 /** A computed bar rectangle in SVG coordinates. Output of {@link buildChart}, not an input. */
 export type ChartBar = {
   x: number
@@ -408,6 +469,8 @@ export type ChartGeometry = {
   height: number
   plot: { x: number; y: number; w: number; h: number }
   bars: ChartBar[]
+  /** Candlestick / OHLC bars. Empty for every other chart type. */
+  candles: ChartCandle[]
   lines: ChartLine[]
   slices: ChartPieSlice[]
   yTicks: ChartAxisTick[]
@@ -793,6 +856,53 @@ function dateTicks(tMin: number, tMax: number): number[] {
   if (!ticks.length) ticks.push(tMin, tMax)
   return ticks
 }
+/**
+ * Tick positions for an ordinal (evenly spaced) date axis, as INDICES into
+ * `times`.
+ *
+ * A time axis can put a tick anywhere, because x is a function of the
+ * timestamp. An ordinal axis cannot: x is a function of the index, so a tick
+ * has to land on a point that exists. This picks the first point of each
+ * calendar unit - day, week, month, year, whichever gets closest to `target`
+ * ticks without going over - so labels sit on real sessions and a weekend or a
+ * holiday never stretches the spacing.
+ */
+export function ordinalDateTicks(times: number[], target = 6): number[] {
+  if (times.length <= 1) return times.length ? [0] : []
+  const keyOf: Record<string, (d: Date) => number | string> = {
+    day: (d) => `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`,
+    week: (d) => Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / DAY + 4) / 7),
+    month: (d) => `${d.getUTCFullYear()}-${d.getUTCMonth()}`,
+    year: (d) => d.getUTCFullYear(),
+  }
+  let chosen: number[] | null = null
+  for (const unit of ['day', 'week', 'month', 'year'] as const) {
+    const at: number[] = []
+    let prev: number | string | null = null
+    for (let i = 0; i < times.length; i += 1) {
+      const t = times[i]!
+      if (!Number.isFinite(t)) continue
+      const k = keyOf[unit]!(new Date(t))
+      if (k !== prev) at.push(i)
+      prev = k
+    }
+    chosen = at
+    if (at.length <= target * 2) break
+  }
+  let out = chosen ?? []
+  // Even the coarsest unit can be too dense (a decade of yearly points), and a
+  // single trading day yields one boundary. Thin, or fall back to plain strides.
+  if (out.length > target) {
+    const stride = Math.ceil(out.length / target)
+    out = out.filter((_, i) => i % stride === 0)
+  }
+  if (out.length < 2) {
+    const stride = Math.max(1, Math.ceil(times.length / target))
+    out = times.map((_, i) => i).filter((i) => i % stride === 0)
+  }
+  return out
+}
+
 function fmtDate(t: number, span: number): string {
   const d = new Date(t)
   if (span <= 70 * DAY) return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -802,8 +912,23 @@ function fmtDate(t: number, span: number): string {
 
 type ResolvedSeries = ChartSeries & {
   color: string
-  kind: 'bar' | 'line' | 'area'
+  kind: 'bar' | 'line' | 'area' | 'candle'
   axis: 'left' | 'right'
+}
+
+/**
+ * Which mark a series draws.
+ *
+ * A series counts as a candle when it says so OR when it carries `ohlc` data,
+ * so a spec typed `'candlestick'` can still hold a plain volume bar series
+ * beside the prices. Anything unrecognised falls back to `'bar'`, which is
+ * what pie and scatter have always relied on.
+ */
+function kindOf(s: ChartSeries, specType: ChartType): ResolvedSeries['kind'] {
+  const t = s.type ?? specType
+  if (t === 'candlestick' || t === 'ohlc' || s.ohlc) return 'candle'
+  if (t === 'line' || t === 'area') return t
+  return 'bar'
 }
 
 /** Data domain for one axis, honoring stacking of its bar/area series.
@@ -843,6 +968,19 @@ function axisDomain(
     for (const s of stackable) for (const v of s.values) note(v)
   }
   for (const s of lines) for (const v of s.values) note(v)
+  // Candles: note the HIGH and the LOW, not `values` (the closes), or every
+  // wick clips at the body. Note also that candles are deliberately absent
+  // from `stackable`, so the zero-baseline rule below does not fire for them:
+  // a price series running 180 to 195 keeps a readable domain instead of being
+  // flattened against zero.
+  for (const s of list) {
+    if (s.kind !== 'candle') continue
+    for (const k of s.ohlc ?? []) {
+      if (!k) continue
+      note(k.h)
+      note(k.l)
+    }
+  }
   if (dMin === Infinity) {
     dMin = isLog ? 1 : 0
     dMax = isLog ? 10 : 1
@@ -870,10 +1008,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
   const series: ResolvedSeries[] = spec.series.map((s, i) => ({
     ...s,
     color: s.color ?? palette[i % palette.length]!,
-    kind: (s.type ?? (spec.type === 'pie' || spec.type === 'scatter' ? 'bar' : spec.type)) as
-      | 'bar'
-      | 'line'
-      | 'area',
+    kind: kindOf(s, spec.type),
     axis: s.axis ?? 'left',
   }))
   const legend: ChartLegendItem[] = series.map((s) => ({ label: s.label, color: s.color }))
@@ -884,6 +1019,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     height,
     plot: { x: 0, y: 0, w: width, h: height },
     bars: [],
+    candles: [],
     lines: [],
     slices: [],
     yTicks: [],
@@ -1226,8 +1362,13 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
     const trackPath = arc(A0, A1, r)
     const valuePath = arc(A0, angleAt(value), r)
+    // Bands sit on their own inner ring, well clear of the value arc's 16px
+    // stroke at `r`. They are context, not the reading: a band covering most
+    // of the scale (an error-rate dial where anything above 0.45 is red) used
+    // to out-shout the value arc completely, so the dial looked pegged at
+    // maximum when the actual value was 9 percent.
     const rangePaths = (spec.gaugeRanges ?? []).map((band) => ({
-      path: arc(angleAt(band.from), angleAt(band.to), r - 9),
+      path: arc(angleAt(band.from), angleAt(band.to), r - 16),
       color: band.color, from: band.from, to: band.to,
     }))
     let targetPx: ChartGaugeLayout['target'] = null
@@ -1264,9 +1405,20 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const needlePath =
       `M${pt(baseR, aPerp)} L${pt(tipR, aV)} L${pt(baseR, aPerp + Math.PI)} L${pt(tailR, aV + Math.PI)} Z`
     // Color the value arc by the band the value currently sits in.
+    // First match wins, and bands are half-open [from, to). Bands normally
+    // share endpoints - green 0..0.3, amber 0.3..0.45, red 0.45..5 - and with
+    // an inclusive `to` plus last-match-wins, a value sitting exactly ON a
+    // boundary took the colour of the band ABOVE it. An error rate of 0.45
+    // against a 0.45 amber ceiling read as red.
     let valueColor: string | null = null
-    for (const band of spec.gaugeRanges ?? []) {
-      if (value >= band.from && value <= band.to) valueColor = band.color
+    const bands = spec.gaugeRanges ?? []
+    for (const band of bands) {
+      if (value >= band.from && value < band.to) { valueColor = band.color; break }
+    }
+    // The very top of the scale belongs to the last band that reaches it,
+    // which the half-open test above would otherwise exclude.
+    if (valueColor == null) {
+      for (const band of bands) if (value >= band.from && value <= band.to) valueColor = band.color
     }
     return {
       ...empty,
@@ -1843,21 +1995,31 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
 
   // X positions. A time axis spaces points by actual time (irregular gaps);
   // a category axis is uniform. (Bars stay uniform either way.)
-  const timeVals =
-    spec.xType === 'time' ? spec.categories.map((c) => Date.parse(c)) : null
+  // Two date modes, and the difference is only where the marks go: `'time'`
+  // positions by the timestamp, `'ordinal-time'` positions by the index and
+  // uses the dates for labels alone. Both parse; only one scales.
+  const isDateAxis = spec.xType === 'time' || spec.xType === 'ordinal-time'
+  const timeVals = isDateAxis ? spec.categories.map((c) => Date.parse(c)) : null
   const timeOk = !!timeVals && timeVals.some((t) => Number.isFinite(t))
+  const timeScaled = timeOk && spec.xType === 'time'
   const tMin = timeOk ? Math.min(...timeVals!.filter(Number.isFinite)) : 0
   const tSpan = timeOk ? Math.max(...timeVals!.filter(Number.isFinite)) - tMin || 1 : 1
   const xCenter = (i: number) =>
-    timeOk && Number.isFinite(timeVals![i])
+    timeScaled && Number.isFinite(timeVals![i])
       ? round(padL + ((timeVals![i]! - tMin) / tSpan) * plotW)
       : round(padL + slot * i + slot / 2)
-  const xTicks: ChartCategoryTick[] = timeOk
+  const xTicks: ChartCategoryTick[] = timeScaled
     ? dateTicks(tMin, tMin + tSpan).map((t) => ({
         label: fmtDate(t, tSpan),
         x: round(padL + ((t - tMin) / tSpan) * plotW),
       }))
-    : spec.categories.map((label, i) => ({ label, x: xCenter(i) }))
+    : timeOk
+      ? // Ordinal: ticks land on points that exist, labelled from their dates.
+        ordinalDateTicks(timeVals!).map((i) => ({
+          label: fmtDate(timeVals![i]!, tSpan),
+          x: xCenter(i),
+        }))
+      : spec.categories.map((label, i) => ({ label, x: xCenter(i) }))
 
   // Parent-tier ticks for a grouped category axis: each spans its leaves.
   const categoryGroupTicks: ChartGeometry['categoryGroupTicks'] = []
@@ -1952,6 +2114,55 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
   }
 
+  // Candlesticks / OHLC bars. Laid out once; the two marks differ only in how
+  // the renderer paints them, so there is no second geometry pass.
+  const candleSeries = series.filter((s) => s.kind === 'candle')
+  const candles: ChartCandle[] = []
+  if (candleSeries.length) {
+    const upColor = spec.candleColors?.up ?? '#16a34a'
+    const downColor = spec.candleColors?.down ?? '#ef4444'
+    // Share the slot when two instruments are charted together, the same way
+    // grouped bars do.
+    const bodyW = Math.max(1, (slot * 0.7) / candleSeries.length)
+    candleSeries.forEach((s, si) => {
+      const dom = domOf(s)
+      const log = isLogOf(s)
+      ;(s.ohlc ?? []).forEach((k, i) => {
+        if (!k) return
+        if (![k.o, k.h, k.l, k.c].every(Number.isFinite)) return
+        // A log price axis is genuinely used for long histories, and a
+        // non-positive price has no place on one.
+        if (log && (k.o <= 0 || k.h <= 0 || k.l <= 0 || k.c <= 0)) return
+        const centre = padL + slot * i + slot / 2
+        const x = centre - (bodyW * candleSeries.length) / 2 + bodyW * si
+        const yOpen = yOf(dom, k.o, log)
+        const yClose = yOf(dom, k.c, log)
+        const up = k.c >= k.o
+        candles.push({
+          x: round(x),
+          w: round(bodyW),
+          xCenter: round(x + bodyW / 2),
+          yOpen,
+          yClose,
+          yHigh: yOf(dom, k.h, log),
+          yLow: yOf(dom, k.l, log),
+          bodyY: Math.min(yOpen, yClose),
+          // A doji closes where it opened; keep it visible as a 1px line
+          // rather than a zero-height rect that paints nothing.
+          bodyH: Math.max(1, Math.abs(yClose - yOpen)),
+          up,
+          color: up ? upColor : downColor,
+          label: spec.categories[i] ?? String(i),
+          series: s.label,
+          o: k.o,
+          h: k.h,
+          l: k.l,
+          c: k.c,
+        })
+      })
+    })
+  }
+
   // Lines / areas. Stacked areas accumulate per axis; others fill to baseline.
   const lines: ChartLine[] = []
   const areaCum: Record<'left' | 'right', number[]> = {
@@ -1975,7 +2186,11 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
   }
   for (const s of series) {
-    if (s.kind === 'bar') continue
+    // Bars and candles draw their own marks. Candles especially: `values`
+    // holds their closing prices so that tooltips, CSV and overlays work, and
+    // without this guard that same array was ALSO drawn as a line, laying a
+    // dotted close-line straight over every candle.
+    if (s.kind === 'bar' || s.kind === 'candle') continue
     const dom = domOf(s)
     const log = isLogOf(s)
     const yA = (v: number) => yOf(dom, v, log)
@@ -2072,8 +2287,17 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     lines.push({ path, areaPath, color: s.color, label: s.label, points: pts, bandPath })
   }
 
+  // Under `stacked100` the axis is a share of the total, not the measure, so
+  // it is labelled as a percentage whatever `valueFormat` says. Formatting it
+  // as currency gives an axis reading "$0 .. $100" for what are percentages -
+  // which is what it did, unnoticed, while `stacked100` was reachable only
+  // from config.
   const tickFor = (dom: NiceScale, log: boolean): ChartAxisTick[] =>
-    dom.ticks.map((value) => ({ value, y: yOf(dom, value, log), label: formatChartValue(value, spec.valueFormat) }))
+    dom.ticks.map((value) => ({
+      value,
+      y: yOf(dom, value, log),
+      label: spec.stacked100 ? `${round(value)}%` : formatChartValue(value, spec.valueFormat),
+    }))
 
   const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => {
     const onRight = ref.axis === 'right'
@@ -2157,6 +2381,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     ...empty,
     plot,
     bars,
+    candles,
     lines,
     yTicks: tickFor(leftDom, leftLog),
     y2Ticks: rightDom ? tickFor(rightDom, rightLog) : [],
@@ -2167,6 +2392,43 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     referenceLines,
     overlays,
     annotations,
+  }
+}
+
+/**
+ * Narrow a spec to the category window `[lo, hi]`, keeping every
+ * category-parallel array in step.
+ *
+ * This is the zoom / brush slice. It lives here rather than in the renderer
+ * because getting it wrong is a MODEL bug, not a paint bug, and it was wrong:
+ * the component used to slice `categories`, `values` and `rowIds` by hand and
+ * spread the rest of the series through untouched. `upperValues` and
+ * `lowerValues` therefore kept their full length, the equality guard on the
+ * confidence band (see `buildChart`) stopped matching, and the band silently
+ * disappeared the moment anyone zoomed.
+ *
+ * The lesson generalises: every array here is indexed by category, so each one
+ * added in future has to be sliced too. Keeping them in one function is what
+ * makes that a single place to remember rather than a scattered convention.
+ */
+export function sliceChartWindow(spec: ChartSpec, lo: number, hi: number): ChartSpec {
+  const from = Math.max(0, lo)
+  const to = Math.min(spec.categories.length - 1, hi)
+  const cut = <T,>(arr: T[] | undefined): T[] | undefined =>
+    arr ? arr.slice(from, to + 1) : undefined
+  return {
+    ...spec,
+    categories: spec.categories.slice(from, to + 1),
+    series: spec.series.map((s) => ({
+      ...s,
+      values: s.values.slice(from, to + 1),
+      rowIds: cut(s.rowIds),
+      upperValues: cut(s.upperValues),
+      lowerValues: cut(s.lowerValues),
+    })),
+    // Per-category, so it has to travel with the window or the waterfall's
+    // running total resets on the wrong bars.
+    waterfallTotals: cut(spec.waterfallTotals),
   }
 }
 
@@ -2317,5 +2579,198 @@ export function rowsToChartSpec<T extends Record<string, unknown>>(
     stacked: opts.stacked,
     stacked100: opts.stacked100,
     palette: opts.palette,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shape adapters.
+//
+// Nine of the thirteen chart types were unreachable from the chart panel
+// because they do not read a `categories x series` grid: a treemap wants a
+// hierarchy, a sankey wants an edge list, a gauge wants one number. Rather
+// than give each its own aggregation path, these take the spec
+// `rowsToChartSpec` already produced and reshape it, so grouping, `reduce`,
+// `sort`, `topN` and the "Other" bucket keep working for all of them.
+// ---------------------------------------------------------------------------
+
+/**
+ * Reshape an aggregated spec into a tree-map hierarchy.
+ *
+ * One series gives a flat set of leaves. Several (a split-by) give two levels,
+ * category above series, which is the shape people expect from "sales by
+ * region, split by channel".
+ */
+export function specToTreemap(spec: ChartSpec, rootName = 'Total'): TreeNode {
+  const positive = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0)
+  if (spec.series.length <= 1) {
+    const s = spec.series[0]
+    return {
+      name: rootName,
+      children: spec.categories
+        .map((name, i) => ({ name, value: positive(s?.values[i]) }))
+        .filter((n) => n.value > 0),
+    }
+  }
+  return {
+    name: rootName,
+    children: spec.categories
+      .map((name, i) => ({
+        name,
+        children: spec.series
+          .map((s) => ({ name: s.label, value: positive(s.values[i]) }))
+          .filter((n) => n.value > 0),
+      }))
+      .filter((n) => n.children.length > 0),
+  }
+}
+
+/**
+ * Reshape an aggregated spec into calendar samples.
+ *
+ * Categories that do not parse as a date are dropped rather than rendered at
+ * epoch zero, which would put a stray cell in 1970 and rescale the whole year.
+ */
+export function specToCalendar(spec: ChartSpec): Array<{ date: string; value: number }> {
+  const s = spec.series[0]
+  const out: Array<{ date: string; value: number }> = []
+  spec.categories.forEach((c, i) => {
+    const t = Date.parse(c)
+    if (!Number.isFinite(t)) return
+    const v = s?.values[i]
+    if (typeof v !== 'number' || !Number.isFinite(v)) return
+    out.push({ date: new Date(t).toISOString().slice(0, 10), value: v })
+  })
+  return out
+}
+
+/**
+ * Reshape a pivoted spec into sankey nodes and links.
+ *
+ * The pivot `rowsToChartSpec` already performs is exactly an edge list read
+ * sideways: categories are sources, series are targets, and each cell is the
+ * flow between them. Zero cells and self-edges are dropped, the first because
+ * a zero-width ribbon is not a flow and the second because the layout has no
+ * meaningful place to put one.
+ */
+export function specToSankey(spec: ChartSpec): {
+  nodes: Array<{ id: string; label?: string }>
+  links: Array<{ source: string; target: string; value: number }>
+} {
+  const links: Array<{ source: string; target: string; value: number }> = []
+  const ids = new Set<string>()
+  spec.categories.forEach((from, i) => {
+    for (const s of spec.series) {
+      const v = s.values[i]
+      if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) continue
+      // Sources and targets share a namespace, so a value appearing on both
+      // sides would otherwise become one node with a cycle through it.
+      const source = `from:${from}`
+      const target = `to:${s.label}`
+      if (source === target) continue
+      ids.add(source)
+      ids.add(target)
+      links.push({ source, target, value: v })
+    }
+  })
+  return {
+    nodes: [...ids].map((id) => ({ id, label: id.slice(id.indexOf(':') + 1) })),
+    links,
+  }
+}
+
+/**
+ * Build a scatter / bubble spec straight from rows.
+ *
+ * Unlike the adapters above this cannot reuse `rowsToChartSpec`: a scatter
+ * point is one row, not one group, so there is nothing to reduce. `series`
+ * colours the points by a categorical field.
+ */
+export function rowsToScatterSpec<T extends Record<string, unknown>>(
+  rows: ReadonlyArray<T>,
+  opts: {
+    x: keyof T & string
+    y: keyof T & string
+    /** Bubble radius field. Omit for a plain scatter. */
+    r?: keyof T & string
+    /** Group points into one series per distinct value. */
+    series?: keyof T & string
+    /** Per-point label, shown in the tooltip. */
+    label?: keyof T & string
+    palette?: string[]
+    width?: number
+    height?: number
+  },
+): ChartSpec {
+  const bySeries = new Map<string, ScatterPoint[]>()
+  for (const row of rows) {
+    const x = Number(row[opts.x])
+    const y = Number(row[opts.y])
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+    const key = opts.series ? String(row[opts.series] ?? '') : (opts.y as string)
+    const pt: ScatterPoint = { x, y }
+    if (opts.r) {
+      const r = Number(row[opts.r])
+      if (Number.isFinite(r)) pt.r = r
+    }
+    if (opts.label) pt.label = String(row[opts.label] ?? '')
+    const list = bySeries.get(key)
+    if (list) list.push(pt)
+    else bySeries.set(key, [pt])
+  }
+  return {
+    type: 'scatter',
+    categories: [],
+    series: [...bySeries].map(([label, points]) => ({ label, values: [], points })),
+    palette: opts.palette,
+    width: opts.width,
+    height: opts.height,
+    xAxisTitle: opts.x,
+    yAxisTitle: opts.y,
+  }
+}
+
+/**
+ * Reduce rows to the single number a gauge shows.
+ *
+ * There is no category axis here, which is why this cannot go through
+ * `rowsToChartSpec`. The dial ends on a nice round number rather than exactly
+ * the value, so the needle never sits pinned at the far end of the arc.
+ */
+export function rowsToGaugeSpec<T extends Record<string, unknown>>(
+  rows: ReadonlyArray<T>,
+  opts: {
+    value: keyof T & string
+    reduce?: 'sum' | 'avg' | 'count'
+    min?: number
+    max?: number
+    unit?: string
+    target?: number
+    width?: number
+    height?: number
+  },
+): ChartSpec {
+  const reduce = opts.reduce ?? 'sum'
+  let sum = 0
+  let count = 0
+  for (const row of rows) {
+    const v = Number(row[opts.value])
+    if (!Number.isFinite(v)) continue
+    sum += v
+    count += 1
+  }
+  const value = reduce === 'count' ? count : reduce === 'avg' ? (count ? sum / count : 0) : sum
+  const min = opts.min ?? Math.min(0, value)
+  const max = opts.max ?? (value > min ? niceScale(min, value).max : min + 1)
+  return {
+    type: 'gauge',
+    categories: [],
+    series: [],
+    gaugeValue: value,
+    gaugeMin: min,
+    gaugeMax: max,
+    gaugeTarget: opts.target,
+    gaugeUnit: opts.unit,
+    width: opts.width,
+    height: opts.height,
   }
 }

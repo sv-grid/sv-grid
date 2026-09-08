@@ -12,6 +12,8 @@
       />
 -->
 <script lang="ts">
+  import { GRID_ICON_GLYPHS, type GridIconName, type GridIcons } from './grid-icons'
+
   type Col = { id: string; label: string }
   type Props = {
     /** Columns that can be grouped on. */
@@ -22,8 +24,15 @@
     onChange: (groupBy: string[]) => void
     /** Text shown when nothing is grouped. */
     placeholder?: string
+    /**
+     * Icon overrides, the same map `<SvGrid icons>` takes. This panel draws
+     * `drag-handle`, `remove` and `breadcrumb-separator`. You mount it
+     * yourself, so pass the same object you gave the grid to keep them
+     * consistent.
+     */
+    icons?: GridIcons
   }
-  let { columns, groupBy, onChange, placeholder = 'Drag a column here to group by it' }: Props = $props()
+  let { columns, groupBy, onChange, placeholder = 'Drag a column here to group by it', icons }: Props = $props()
 
   const labelOf = (id: string) => columns.find((c) => c.id === id)?.label ?? id
   const available = $derived(columns.filter((c) => !groupBy.includes(c.id)))
@@ -68,6 +77,13 @@
   }
 </script>
 
+<!-- Same override-or-default resolution SvGrid uses, kept local because this
+     component is mounted by the consumer and never sees the grid's snippet. -->
+{#snippet ic(name: GridIconName)}
+  {@const override = icons?.[name]}
+  {#if override}{@render override()}{:else}{GRID_ICON_GLYPHS[name]}{/if}
+{/snippet}
+
 <div
   class="sv-rowgroup-panel"
   role="group"
@@ -80,7 +96,7 @@
     <span class="sv-rgp-empty">{placeholder}</span>
   {:else}
     {#each groupBy as id, i (id)}
-      {#if i > 0}<span class="sv-rgp-sep" aria-hidden="true">›</span>{/if}
+      {#if i > 0}<span class="sv-rgp-sep" aria-hidden="true">{@render ic('breadcrumb-separator')}</span>{/if}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <span
         class="sv-rgp-chip"
@@ -95,9 +111,9 @@
         ondrop={() => reorder(i)}
         onkeydown={(e) => onChipKeydown(e, i)}
       >
-        <span class="sv-rgp-grip" aria-hidden="true">⠿</span>
+        <span class="sv-rgp-grip" aria-hidden="true">{@render ic('drag-handle')}</span>
         {labelOf(id)}
-        <button type="button" class="sv-rgp-x" onclick={() => remove(id)} aria-label={`Stop grouping by ${labelOf(id)}`}>×</button>
+        <button type="button" class="sv-rgp-x" onclick={() => remove(id)} aria-label={`Stop grouping by ${labelOf(id)}`}>{@render ic('remove')}</button>
       </span>
     {/each}
   {/if}

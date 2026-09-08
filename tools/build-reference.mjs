@@ -43,8 +43,9 @@ const SOURCES = [
       'builtin-editors.ts', 'advanced-filter.svelte.ts',
       // Filtering vocabulary - the operators a consumer builds filters from.
       'filtering/filter-operator-catalogue.ts', 'filtering/row-predicate.ts',
-      // Localization and cell display.
-      'grid-messages.ts', 'cell-formatting.ts',
+      // Localization, icons and cell display - the three ways a consumer
+      // changes what the grid's own chrome shows.
+      'grid-messages.ts', 'grid-icons.ts', 'cell-formatting.ts',
       // Utilities consumers call directly.
       'positioning.ts', 'toast-store.svelte.ts', 'spreadsheet.ts',
       'chart-export.ts', 'scheduler-ical.ts', 'duration.ts',

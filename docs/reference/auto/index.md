@@ -13,7 +13,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/scheduler-model.ts`](./svgrid-grid-scheduler-model.md) - 30 exports
 - [`@svgrid/grid/dock-model.ts`](./svgrid-grid-dock-model.md) - 25 exports
 - [`@svgrid/grid/dock-manager-model.ts`](./svgrid-grid-dock-manager-model.md) - 32 exports
-- [`@svgrid/grid/chart.ts`](./svgrid-grid-chart.md) - 45 exports
+- [`@svgrid/grid/chart.ts`](./svgrid-grid-chart.md) - 54 exports
 - [`@svgrid/grid/createTree.svelte.ts`](./svgrid-grid-createTree.svelte.md) - 12 exports
 - [`@svgrid/grid/editor-contract.ts`](./svgrid-grid-editor-contract.md) - 11 exports
 - [`@svgrid/grid/editor-registry.ts`](./svgrid-grid-editor-registry.md) - 9 exports
@@ -23,6 +23,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/filtering/filter-operator-catalogue.ts`](./svgrid-grid-filter-operator-catalogue.md) - 8 exports
 - [`@svgrid/grid/filtering/row-predicate.ts`](./svgrid-grid-row-predicate.md) - 1 exports
 - [`@svgrid/grid/grid-messages.ts`](./svgrid-grid-grid-messages.md) - 3 exports
+- [`@svgrid/grid/grid-icons.ts`](./svgrid-grid-grid-icons.md) - 4 exports
 - [`@svgrid/grid/cell-formatting.ts`](./svgrid-grid-cell-formatting.md) - 3 exports
 - [`@svgrid/grid/positioning.ts`](./svgrid-grid-positioning.md) - 10 exports
 - [`@svgrid/grid/toast-store.svelte.ts`](./svgrid-grid-toast-store.svelte.md) - 14 exports
