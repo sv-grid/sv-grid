@@ -58,21 +58,24 @@ npx sv add @svgrid
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
-  const rows = [
+  type Row = { firstName: string; age: number; status: string }
+
+  const data = $state<Row[]>([
     { firstName: 'Ada',   age: 36, status: 'active' },
     { firstName: 'Linus', age: 54, status: 'active' },
     { firstName: 'Grace', age: 85, status: 'inactive' },
-  ]
-  const columns: ColumnDef<{}, (typeof rows)[number]>[] = [
+  ])
+
+  const columns: GridColumns<Row> = [
     { field: 'firstName', header: 'First name' },
     { field: 'age',       header: 'Age' },
     { field: 'status',    header: 'Status' },
   ]
 </script>
 
-<SvGrid data={rows} columns={columns} sortable filterable editable />
+<SvGrid {data} {columns} sortable filterable editable />
 ```
 
 That is a real, working, accessible table. Sorting, filtering, virtualization, cell selection, and
