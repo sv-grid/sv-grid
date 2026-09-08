@@ -4,6 +4,34 @@ Releases above 1.2.3 are generated from the commit subjects in each release tag 
 (`node tools/build-changelog.mjs`), so they describe what changed rather than
 reading as polished release notes. Entries from 1.2.3 down are hand-written.
 
+## 3.0.0
+
+_2026-09-07_
+
+- Release 3.0.0 across the suite
+- Record the versions published from this tree
+- Docs: teach the 3.0 tool names and what the server now does
+- migrate: handle createColumnHelper columns
+- Measure the MCP server instead of asserting it is good
+- Hosted MCP server reaches parity, and answers its own aliases
+- MCP 3.0: a small, verified, offline surface
+
+## 2.6.23
+
+_2026-09-07_
+
+- Framework docs use the wrapper, not the raw element
+- Guard the Angular / TypeScript pairing the sandbox depends on
+- Framework wrappers for grid-wc, runnable examples, and a web-components docs category
+
+## 2.6.22
+
+_2026-09-04_
+
+- docs updates
+- row and column resizing props and updated docs
+- MCP Server Updates
+
 ## 2.6.21
 
 _2026-08-31_

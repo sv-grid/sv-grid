@@ -26,20 +26,10 @@ usable in SvelteKit with SSR.
 
 </p>
 
-**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [370+ Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [npm](https://www.npmjs.com/package/@svgrid/grid)
+**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [375 Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
 
-### Your coding agent can use it too
-
-SvGrid ships an [MCP server](https://svgrid.com/docs/help/mcp-server/) that carries the real API
-surface, every demo's source, and the full docs - and then **checks the code your agent writes**
-against that surface before you see it. Wrong prop, wrong column key, Svelte 4 syntax: it comes
-back with the exact replacement, not a guess. Nothing to install:
-
-```bash
-claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
-```
-
-Or run it locally with `npx -y @svgrid/mcp`, which adds the Svelte compiler pass.
+Writing SvGrid with an AI assistant? It ships an MCP server that carries the real API surface and
+**checks your agent's code against it** before you see it. [Details below](#ai-native).
 
 ---
 
@@ -90,6 +80,30 @@ inline editing all wire up the moment you turn on the matching prop.
 
 <img width="100%" alt="03-inline-edit" src="https://github.com/user-attachments/assets/cebfb8ed-e54e-4409-aa82-e77df73fb584" />
 
+## See it running
+
+Every demo below opens in the browser, and each one has an **Edit in StackBlitz** button that turns
+it into a live, editable Vite + Svelte 5 project. Nothing to install to try any of this.
+
+| | | |
+|:--:|:--:|:--:|
+| [<img src="https://svgrid.com/thumbs/00-trading-desk.webp" width="260" alt="Trading desk demo" />](https://svgrid.com/demos/00-trading-desk/) | [<img src="https://svgrid.com/thumbs/78-million-rows.webp" width="260" alt="1 million rows demo" />](https://svgrid.com/demos/78-million-rows/) | [<img src="https://svgrid.com/thumbs/83-spreadsheet-formulas.webp" width="260" alt="Spreadsheet with formulas demo" />](https://svgrid.com/demos/83-spreadsheet-formulas/) |
+| **[Trading desk](https://svgrid.com/demos/00-trading-desk/)**<br>10,000 securities on a 500 ms feed | **[1 million rows](https://svgrid.com/demos/78-million-rows/)**<br>sort, filter, group and edit, all on | **[Spreadsheet + formulas](https://svgrid.com/demos/83-spreadsheet-formulas/)**<br>formula cells in a real grid |
+| [<img src="https://svgrid.com/thumbs/343-kanban-board.webp" width="260" alt="Kanban board demo" />](https://svgrid.com/demos/343-kanban-board/) | [<img src="https://svgrid.com/thumbs/363-scheduler-intro.webp" width="260" alt="Scheduler demo" />](https://svgrid.com/demos/363-scheduler-intro/) | [<img src="https://svgrid.com/thumbs/80-cell-types-showcase.webp" width="260" alt="Cell types showcase demo" />](https://svgrid.com/demos/80-cell-types-showcase/) |
+| **[Kanban board](https://svgrid.com/demos/343-kanban-board/)**<br>the same grid, board mode | **[Scheduler](https://svgrid.com/demos/363-scheduler-intro/)**<br>calendar views off the same data | **[Cell types](https://svgrid.com/demos/80-cell-types-showcase/)**<br>every editor in one grid |
+
+All [375 demos](https://svgrid.com/demos/) are browsable by category.
+
+## Shipped with it
+
+> "We were looking for an Excel-like library using SvelteKit. Then I explored your library a lot,
+> mostly everything about SvGrid: cell selection, grabbing cells, updating values in cells. So we
+> used it for an accounting application. It was so easy to integrate. We even built our custom
+> theme, by updating the svgrid.css file which includes all the classes. **We found no issues yet,
+> everything just worked for us.**"
+>
+> <a href="https://github.com/SikandarJODD"><img src="https://github.com/SikandarJODD.png?size=64" width="32" height="32" align="left" alt="" /></a> **[Sikandar Bhide](https://github.com/SikandarJODD)** - built an accounting app on SvelteKit
+
 ## Quick facts
 
 | | |
@@ -97,10 +111,10 @@ inline editing all wire up the moment you turn on the matching prop.
 | **Package** | `@svgrid/grid` |
 | **License** | MIT, free for commercial use |
 | **Requires** | `svelte@^5` (peer dependency), Node 16+ |
-| **Bundle (gzip)** | ~2 KB headless core, ~77 KB full `<SvGrid>` + ~9 KB CSS |
+| **Bundle (gzip)** | ~2.5 KB headless core, ~83 KB full `<SvGrid>` + ~9.5 KB CSS |
 | **Types** | Bundled, no `@types/` package needed |
 | **SSR** | Server-renders header + a viewport window of rows; verified in CI by `pnpm ssr:check` |
-| **Demos** | 370+ at [svgrid.com/demos](https://svgrid.com/demos/) |
+| **Demos** | 375 at [svgrid.com/demos](https://svgrid.com/demos/) |
 | **AI grounding** | [MCP server](https://www.npmjs.com/package/@svgrid/mcp), [llms.txt](https://svgrid.com/llms.txt), [Agent Skill](https://svgrid.com/docs/help/skill/) |
 
 Re-derive the numbers yourself: `pnpm size` and `pnpm demos:count`.
@@ -109,14 +123,14 @@ Re-derive the numbers yourself: `pnpm size` and `pnpm demos:count`.
 
 - **Virtual scrolling.** Row + column windowing; 100k x 100 stays smooth, and there's a 1M-row demo.
 - **Filtering.** Excel-style filter menu, inline filter row, locale-aware text matching, set / value-list filter, between operator on numbers and dates.
-- **Editing.** 15 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, autocomplete, textarea, color, checkbox, list, chips, rating, password), plus `date-native` / `datetime-native` / `time-native` to opt out of the rich pickers, and a `cellEditor` snippet slot for anything else.
-- **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
+- **Editing.** 15 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, autocomplete, textarea, color, checkbox, list, chips, rating, password), plus `date-native` / `datetime-native` / `time-native` to opt out of the rich pickers. `registerBuiltinEditors()` adds `otp`, `duration` and `richtext`; `<SvRichCell>` paints sanitized HTML / Markdown in a cell; and a `cellEditor` snippet slot takes anything else.
+- **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, drag a selected range by its border to move it (`moveCells`), edge auto-scroll while dragging, row selection.
 - **Views.** Row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas, plus Kanban board and scheduler/calendar views.
-- **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, keyboard-accessible column sizing, responsive mode for mobile.
+- **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, opt-in drag handles for row and column sizing (`rowResize` / `columnResize`, each loaded only when enabled), keyboard-accessible column sizing, responsive mode for mobile.
 - **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
 - **AI helpers, free.** Natural-language filter, smart fill, summarize, classify, anomaly detection, and "chart this". Model-agnostic: you register one provider, nothing is bundled.
 - **UI components.** A Svelte 5 component suite ships in the same package (inputs, selection, date/time, overlays, layout, feedback), usable standalone or as grid cell editors.
-- **Accessibility.** WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
+- **Accessibility and i18n.** WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme, and every string in the grid chrome overridable through `localeText`.
 - **Production concerns.** TypeScript types, CSP / Trusted-Types safe rendering, SSR-friendly, themeable via `--sg-*` CSS custom properties.
 
 The MIT community core has zero feature gating: no license key, no watermark, no row-count cap.
@@ -126,9 +140,9 @@ The MIT community core has zero feature gating: no license key, no watermark, no
 | You want to | Install | License |
 |---|---|---|
 | A data grid in a Svelte 5 / SvelteKit app | `@svgrid/grid` | MIT |
-| Excel / PDF export, import, pivot tables, print, Kanban + scheduler renderers | `+ @svgrid/enterprise` | Commercial |
+| Excel / PDF export, import, pivot tables, print, advanced filter builder, no-code alert rules, selection action bar, record detail + bulk edit, Kanban + scheduler renderers | `+ @svgrid/enterprise` | Commercial |
 | The grid in React, Vue, Angular, or plain HTML | `@svgrid/grid-wc` | MIT |
-| Standalone Svelte 5 UI components (no grid) | `@svgrid/ui` | MIT |
+| To copy one UI component into your app, shadcn-style | `npx @svgrid/ui add <name>` | MIT |
 | Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | MIT |
 | A generated CRUD app from your database schema | `@svgrid/studio` | Commercial |
 | To port an existing `svelte-headless-table` app | `npx @svgrid/migrate` | MIT |
@@ -143,7 +157,7 @@ free. See [Pricing](https://svgrid.com/pricing/).
 |---|---|---|---|
 | **Svelte 5 runes native** | Yes | No, JS core + wrapper | Adapter only |
 | **Ships a renderer** | Yes, plus headless | Yes | No, headless only |
-| **Bundle (gzip)** | ~2 KB headless / ~77 KB full | ~340 KB | ~12-14 KB |
+| **Bundle (gzip)** | ~2.5 KB headless / ~83 KB full | ~340 KB | ~12-14 KB |
 | **Virtualization built in** | Yes | Yes | Bring your own |
 | **Master/detail, tree, range selection** | Free | Enterprise only | Build it yourself |
 | **License** | MIT core, commercial pack | MIT core, commercial pack | MIT |
@@ -222,9 +236,11 @@ filtering, and grouping to your backend.
 
 ### How big is the bundle?
 
-About 2 KB gzipped for the headless core and about 78 KB for the full `<SvGrid>` render component, plus
-9 KB of CSS, with Svelte excluded as a peer dependency. Charts, date/time editors, menus, and export add
-another ~64 KB that loads on demand rather than up front. Run `pnpm size` to re-measure.
+About 2.5 KB gzipped for the headless core and about 83 KB for the full `<SvGrid>` render component, plus
+9.5 KB of CSS, with Svelte excluded as a peer dependency. Charts, date/time editors, menus, and export add
+another ~94 KB, and each of those chunks is fetched only once the feature that needs it is actually
+used - `rowResize` and `columnResize` default to off and never request their module, and a grid that
+never opens a menu never loads one. Run `pnpm size` to re-measure.
 
 ### Do I need Tailwind?
 
@@ -271,7 +287,7 @@ Honest list:
 
 - Custom filter / floating-filter component slot. Filters are configurable but not yet pluggable as your own component. Medium effort.
 - Custom tool panels. The tool panel is a fixed Columns + Filters pair. Medium effort.
-- Integrated-chart depth. 17 chart types, the wizard, and "chart selected range" ship; the chart toolbar and the click-to-cross-filter loop do not. Large effort.
+- Integrated-chart depth. 13 chart types, the wizard, "chart selected range", click-to-cross-filter, the PNG / SVG export toolbar, zoom + brush, combo / dual-axis, and server-side aggregation all ship. What is still missing is breadth in the panel itself: the in-panel type picker offers bar / line / area / pie only, so the other nine types are config-only via `defaultType`. Small effort.
 - Server-side pivot and a viewport row model. The server-side row model does sort / filter / group / infinite today. Large effort.
 - A formula language of our own. `createHyperFormulaSheet` ships in the package so you can bring HyperFormula, and there are in-grid formula demos, but the engine itself is not ours and there is no formula bar.
 - Custom calendar systems (Hijri, Buddhist, fiscal year) for the date editor. Gregorian dates / times / datetimes are built in.
@@ -296,7 +312,7 @@ packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
 packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
 packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
-examples/                                       - 370+ live demos
+examples/                                       - 375 live demos
 website/                                        - svgrid.com source
 docs/                                           - markdown docs
 ```
@@ -313,12 +329,14 @@ pnpm install            # install workspace deps
 pnpm dev                # run the demo gallery at http://localhost:5174
 pnpm build              # build packages/grid/dist
 pnpm build:example      # build the demo gallery
-pnpm dev:site           # run the website at http://localhost:5180
-pnpm build:site         # build the website (writes website/dist)
+pnpm --filter svgrid-website dev    # run the website at http://localhost:5180 (private submodule)
+pnpm --filter svgrid-website build  # build the website (writes website/dist)
 pnpm test               # run the grid test suite
 pnpm test:types         # type-check every package
+pnpm lint               # encoding + mobile-CSS + API-example checks, then eslint
 pnpm size               # re-measure the gzipped bundle
 pnpm demos:count        # re-count the live demos
+pnpm ssr:check          # verify the SSR output against a real server build
 ```
 
 `pnpm dev` proxies to `pnpm --filter @svgrid/grid-example-gallery dev`. Inside the example, the library
