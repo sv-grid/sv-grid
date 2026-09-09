@@ -18599,6 +18599,26 @@ wrapper element (or its `<svg>`):
 instead. The export inlines the live theme colors, so it matches what's on
 screen.
 
+### CSV
+
+`chartSpecToCsv(spec)` writes the data behind the picture: one row per category,
+one column per series. A series carrying more than one number per category
+widens rather than losing them:
+
+| Series shape | Columns |
+| --- | --- |
+| plain `values` | `<label>` |
+| `ohlc` | `<label> Open`, `High`, `Low`, `Close` |
+| `boxes` | `<label> Min`, `Q1`, `Median`, `Q3`, `Max`, `Outliers` |
+| `errors` | `<label>`, `<label> Low`, `<label> High` |
+
+Scatter has no categories, so it exports one row per point instead
+(`Series, X, Y, Size, Label`).
+
+`chartCsvExportable(spec)` answers whether there is anything to write, without
+building it - which is what the panel's CSV menu item is disabled on. Sankey,
+treemap, gauge and calendar have no rectangular data and still export nothing.
+
 ## Notes
 
 - Pure SVG - no canvas, no dependency, SSR-safe, and it inherits the grid's

@@ -28,7 +28,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/positioning.ts`](./svgrid-grid-positioning.md) - 10 exports
 - [`@svgrid/grid/toast-store.svelte.ts`](./svgrid-grid-toast-store.svelte.md) - 14 exports
 - [`@svgrid/grid/spreadsheet.ts`](./svgrid-grid-spreadsheet.md) - 7 exports
-- [`@svgrid/grid/chart-export.ts`](./svgrid-grid-chart-export.md) - 6 exports
+- [`@svgrid/grid/chart-export.ts`](./svgrid-grid-chart-export.md) - 7 exports
 - [`@svgrid/grid/scheduler-ical.ts`](./svgrid-grid-scheduler-ical.md) - 5 exports
 - [`@svgrid/grid/duration.ts`](./svgrid-grid-duration.md) - 2 exports
 - [`@svgrid/grid/datetime/date-core.ts`](./svgrid-grid-date-core.md) - 22 exports

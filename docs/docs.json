@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-09T10:58:48.148Z",
+  "generatedAt": "2026-09-09T12:22:29.324Z",
   "counts": {
     "pages": 361,
     "enterprise": 55,
@@ -1850,7 +1850,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 4526,
+      "words": 4656,
       "lastUpdated": "2026-09-09",
       "demoIds": [
         "432-chart-candlestick",

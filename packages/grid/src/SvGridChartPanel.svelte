@@ -15,7 +15,7 @@
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import SvGridChart from "./SvGridChart.svelte";
-  import { downloadChartPng, downloadChartSvg, downloadChartCsv, chartToPngBlob } from "./chart-export";
+  import { downloadChartPng, downloadChartSvg, downloadChartCsv, chartCsvExportable, chartToPngBlob } from "./chart-export";
   import type { ChartType, ChartSelection, RowData, TableFeatures } from "./index";
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
@@ -243,7 +243,9 @@
   let exportOpen = $state(false);
   let copied = $state(false);
   const svgEl = () => bodyEl?.querySelector("svg") ?? null;
-  const csvExportable = $derived(!!(spec && spec.categories?.length && spec.series?.length));
+  // One source of truth with the serializer: a scatter chart has no categories
+  // but does have points, so the old shape test greyed out an export that works.
+  const csvExportable = $derived(!!spec && chartCsvExportable(spec));
   function exportPng() {
     const el = svgEl();
     if (el) void downloadChartPng(el, "chart.png");

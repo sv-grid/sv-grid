@@ -4,7 +4,10 @@ import {
   chartToPngBlob,
   downloadChartSvg,
   downloadChartPng,
+  chartSpecToCsv,
+  chartCsvExportable,
 } from './chart-export'
+import type { ChartSpec } from './chart'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -366,5 +369,114 @@ describe('downloadChartPng', () => {
     expect(filename).toBe('pic.png')
     vi.advanceTimersByTime(1000)
     expect(revoke).toHaveBeenCalledWith('blob:png-url')
+  })
+})
+
+describe('chartSpecToCsv: series that carry more than one number', () => {
+  it('keeps a plain series byte-identical', () => {
+    const csv = chartSpecToCsv({
+      type: 'bar',
+      categories: ['a', 'b'],
+      series: [{ label: 'rev', values: [1, 2] }, { label: 'cost', values: [3, 4] }],
+    })
+    expect(csv).toBe('Category,rev,cost\na,1,3\nb,2,4')
+  })
+
+  it('writes all four prices for a candlestick, not just the closes', () => {
+    // The screen-reader table was given the four real numbers on purpose. The
+    // export is what people actually take away, and it wrote `values` - the
+    // closes - and silently dropped the rest.
+    const csv = chartSpecToCsv({
+      type: 'candlestick',
+      categories: ['2026-03-02', '2026-03-03'],
+      series: [{
+        label: 'ACME',
+        values: [105, 101],
+        ohlc: [{ o: 100, h: 110, l: 95, c: 105 }, { o: 105, h: 108, l: 99, c: 101 }],
+      }],
+    })
+    const [header, ...rows] = csv.split('\n')
+    expect(header).toBe('Category,ACME Open,ACME High,ACME Low,ACME Close')
+    expect(rows[0]).toBe('2026-03-02,100,110,95,105')
+    expect(rows[1]).toBe('2026-03-03,105,108,99,101')
+  })
+
+  it('writes the whole five-number summary for a box plot', () => {
+    const csv = chartSpecToCsv({
+      type: 'boxplot',
+      categories: ['eu', 'ap'],
+      series: [{
+        label: 'ms',
+        values: [20, 30],
+        boxes: [
+          { min: 10, q1: 15, median: 20, q3: 25, max: 30, outliers: [90, 120] },
+          { min: 20, q1: 25, median: 30, q3: 35, max: 40 },
+        ],
+      }],
+    })
+    const [header, ...rows] = csv.split('\n')
+    expect(header).toBe('Category,ms Min,ms Q1,ms Median,ms Q3,ms Max,ms Outliers')
+    expect(rows[0]).toBe('eu,10,15,20,25,30,90 120')
+    // A box with no outliers leaves the cell empty rather than writing "0".
+    expect(rows[1]).toBe('ap,20,25,30,35,40,')
+  })
+
+  it('resolves error bars to absolute low / high', () => {
+    const csv = chartSpecToCsv({
+      type: 'bar',
+      categories: ['a', 'b', 'c'],
+      series: [{ label: 'mean', values: [10, 20, 30], errors: [2, { lo: 25, hi: 18 }, null] }],
+    })
+    const [header, ...rows] = csv.split('\n')
+    expect(header).toBe('Category,mean,mean Low,mean High')
+    expect(rows[0]).toBe('a,10,8,12')       // symmetric margin
+    expect(rows[1]).toBe('b,20,18,25')      // explicit pair, order normalised
+    expect(rows[2]).toBe('c,30,,')          // null: value only
+  })
+
+  it('exports scatter points instead of nothing', () => {
+    // Scatter has no categories, so this used to return '' and the export
+    // button did nothing at all.
+    const csv = chartSpecToCsv({
+      type: 'scatter',
+      categories: [],
+      series: [
+        { label: 'EMEA', values: [], points: [{ x: 1, y: 2, r: 3, label: 'Ada' }] },
+        { label: 'APAC', values: [], points: [{ x: 4, y: 5 }] },
+      ],
+    })
+    expect(csv.split('\n')).toEqual([
+      'Series,X,Y,Size,Label',
+      'EMEA,1,2,3,Ada',
+      'APAC,4,5,,',
+    ])
+  })
+
+  it('still writes nothing for the specs with no rectangular data', () => {
+    expect(chartSpecToCsv({ type: 'gauge', categories: [], series: [], gaugeValue: 5 })).toBe('')
+    expect(chartSpecToCsv({ type: 'bar', categories: [], series: [] })).toBe('')
+  })
+})
+
+describe('chartCsvExportable', () => {
+  it('agrees with the serializer on every shape', () => {
+    // The panel greys out its CSV item on this predicate rather than on
+    // `chartSpecToCsv(spec) !== ''`, because that would serialise a 100k-point
+    // series on every render just to decide whether a button is enabled. The
+    // cost of a mirror is drift, so assert the two agree.
+    const specs: ChartSpec[] = [
+      { type: 'bar', categories: ['a'], series: [{ label: 's', values: [1] }] },
+      { type: 'bar', categories: [], series: [] },
+      { type: 'bar', categories: ['a'], series: [] },
+      { type: 'bar', categories: [], series: [{ label: 's', values: [] }] },
+      { type: 'gauge', categories: [], series: [], gaugeValue: 5 },
+      { type: 'scatter', categories: [], series: [{ label: 's', values: [], points: [{ x: 1, y: 2 }] }] },
+      { type: 'scatter', categories: [], series: [{ label: 's', values: [], points: [] }] },
+    ]
+    for (const spec of specs) {
+      expect(chartCsvExportable(spec), JSON.stringify(spec.type + ':' + spec.categories.length)).toBe(
+        chartSpecToCsv(spec) !== '',
+      )
+    }
   })
 })

@@ -593,6 +593,7 @@ export {
   downloadChartSvg,
   chartToPngBlob,
   downloadChartPng,
+  chartCsvExportable,
   chartSpecToCsv,
   downloadChartCsv,
   type ChartExportOptions,

@@ -152,19 +152,90 @@ export function chartToPngBlob(
 ### `function chartSpecToCsv`
 
 Serialize a chart's data to CSV: one row per category, one column per series
-(`Category, <series 1>, ...`). Empty for exotic specs (sankey/treemap/gauge/
-calendar) that don't carry a rectangular categories x series grid.
+(`Category, <series 1>, ...`).
+
+A series that carries more than one number per category widens instead of
+losing them. `ohlc` becomes four columns, `boxes` five plus its outliers,
+`errors` two. This used to write `values` and nothing else, which quietly
+made "Export CSV" on a candlestick chart hand back the closing prices only -
+the screen-reader table was given the four real numbers on purpose and the
+export, which is what people actually take away, was not.
+
+Scatter has no categories, so it gets its own long-format table of points
+rather than exporting nothing at all.
+
+Still empty for the specs with no rectangular data to write: sankey, treemap,
+gauge and calendar.
 
 ```ts
 export function chartSpecToCsv(spec: ChartSpec): string {
-  const cats = spec.categories ?? []
   const series = spec.series ?? []
+  // Scatter: one row per point. `categories` is empty for these, so the
+  // category path below would return '' and the export button would do nothing.
+  if (series.some((s) => s.points?.length)) {
+    const header = ['Series', 'X', 'Y', 'Size', 'Label'].map(csvCell).join(',')
+    const rows: string[] = []
+    for (const s of series) {
+      for (const p of s.points ?? []) {
+        rows.push([s.label, p.x, p.y, p.r ?? '', p.label ?? ''].map(csvCell).join(','))
+      }
+    }
+    return rows.length ? [header, ...rows].join('\n') : ''
+  }
+
+  const cats = spec.categories ?? []
   if (!cats.length || !series.length) return ''
-  const header = ['Category', ...series.map((s) => s.label)].map(csvCell).join(',')
-  const rows = cats.map((cat, i) =>
-    [cat, ...series.map((s) => s.values[i] ?? '')].map(csvCell).join(','),
-  )
-  return [header, ...rows].join('\n')
+
+  // One header cell per column a series contributes. A plain series keeps its
+  // bare label, so an existing export is byte-identical.
+  const header: string[] = ['Category']
+  for (const s of series) {
+    if (s.ohlc) header.push(`${s.label} Open`, `${s.label} High`, `${s.label} Low`, `${s.label} Close`)
+    else if (s.boxes) header.push(`${s.label} Min`, `${s.label} Q1`, `${s.label} Median`, `${s.label} Q3`, `${s.label} Max`, `${s.label} Outliers`)
+    else if (s.errors) header.push(s.label, `${s.label} Low`, `${s.label} High`)
+    else header.push(s.label)
+  }
+
+  const rows = cats.map((cat, i) => {
+    const cells: unknown[] = [cat]
+    for (const s of series) {
+      if (s.ohlc) {
+        const k = s.ohlc[i]
+        cells.push(k?.o ?? '', k?.h ?? '', k?.l ?? '', k?.c ?? '')
+      } else if (s.boxes) {
+        const b = s.boxes[i]
+        // Outliers are a list inside one cell; csvCell quotes it.
+        cells.push(b?.min ?? '', b?.q1 ?? '', b?.median ?? '', b?.q3 ?? '', b?.max ?? '', b?.outliers?.join(' ') ?? '')
+      } else if (s.errors) {
+        const v = s.values[i]
+        const e = s.errors[i]
+        const lo = e == null ? '' : typeof e === 'number' ? (v ?? 0) - Math.abs(e) : Math.min(e.lo, e.hi)
+        const hi = e == null ? '' : typeof e === 'number' ? (v ?? 0) + Math.abs(e) : Math.max(e.lo, e.hi)
+        cells.push(v ?? '', lo, hi)
+      } else {
+        cells.push(s.values[i] ?? '')
+      }
+    }
+    return cells.map(csvCell).join(',')
+  })
+  return [header.map(csvCell).join(','), ...rows].join('\n')
+}
+```
+
+### `function chartCsvExportable`
+
+Whether {@link chartSpecToCsv} would produce anything, without building it.
+
+The chart panel disables its CSV menu item on this. It has to be a predicate
+rather than `chartSpecToCsv(spec) !== ''` because that runs on every render,
+and serialising a 100,000-point series to decide whether to grey out a button
+is not a thing to do sixty times a second.
+
+```ts
+export function chartCsvExportable(spec: ChartSpec): boolean {
+  const series = spec.series ?? []
+  if (series.some((s) => s.points?.length)) return true
+  return !!(spec.categories?.length && series.length)
 }
 ```
 
