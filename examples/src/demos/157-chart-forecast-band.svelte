@@ -102,6 +102,10 @@
   })
 
   const compact = (v: number) => (Math.abs(v) >= 1e3 ? (v / 1e3).toFixed(v % 1e3 ? 1 : 0) + 'k' : String(Math.round(v)))
+
+  /** Pane size, so the chart fills its card rather than a fixed viewBox. */
+  let paneW = $state(0)
+  let paneH = $state(0)
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
@@ -120,7 +124,7 @@
   </div>
 
   <div class="flex flex-1 min-h-0 gap-3">
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-w-0 min-h-0">
       <SvGrid responsive={true}
       columnResize
         data={rows}
@@ -137,12 +141,18 @@
         onSortingChange={sync}
       />
     </div>
-    <div class="shrink-0 rounded-lg border p-3" style="width: 760px; border-color: var(--sg-border); background: var(--sg-bg);">
-      <!-- zoomable because a forecast is the chart people most want to zoom
-           into, and because the band has to survive the zoom window: the
-           envelopes are category-parallel arrays, so a window that sliced the
-           values but not them used to drop the shading without a word. -->
-      <SvGridChart {spec} formatValue={compact} zoomable />
+    <div class="rounded-lg border p-3" style="flex: 0 1 760px; min-width: 0; min-height: 0; border-color: var(--sg-border); background: var(--sg-bg);">
+      <!-- Measured box, not the card: its height comes from the parent, so the
+           chart cannot push the thing it is sized against. -->
+      <div style="width: 100%; height: 100%; min-height: 0;" bind:clientWidth={paneW} bind:clientHeight={paneH}>
+        {#if paneW > 40 && paneH > 40}
+          <!-- zoomable because a forecast is the chart people most want to zoom
+               into, and because the band has to survive the zoom window: the
+               envelopes are category-parallel arrays, so a window that sliced the
+               values but not them used to drop the shading without a word. -->
+          <SvGridChart {spec} formatValue={compact} zoomable width={paneW} height={paneH} />
+        {/if}
+      </div>
     </div>
   </div>
 </section>

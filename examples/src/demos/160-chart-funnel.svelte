@@ -63,6 +63,9 @@
   function onSelect(sel: ChartSelection) {
     highlighted = sel.category
   }
+  /** Pane size, so the chart fills its card rather than a fixed viewBox. */
+  let paneW = $state(0)
+  let paneH = $state(0)
 </script>
 
 <section class="flex flex-col flex-1 min-h-0 gap-3">
@@ -78,7 +81,7 @@
   </div>
 
   <div class="flex flex-1 min-h-0 gap-3">
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-w-0 min-h-0">
       <SvGrid responsive={true}
       columnResize
         data={rows}
@@ -95,8 +98,14 @@
         onSortingChange={sync}
       />
     </div>
-    <div class="shrink-0 rounded-lg border p-3" style="width: 580px; border-color: var(--sg-border); background: var(--sg-bg);">
-      <SvGridChart {spec} formatValue={compact} {onSelect} />
+    <div class="rounded-lg border p-3" style="flex: 0 1 580px; min-width: 0; min-height: 0; border-color: var(--sg-border); background: var(--sg-bg);">
+      <!-- Measured box, not the card: its height comes from the parent, so the
+           chart cannot push the thing it is sized against. -->
+      <div style="width: 100%; height: 100%; min-height: 0;" bind:clientWidth={paneW} bind:clientHeight={paneH}>
+        {#if paneW > 40 && paneH > 40}
+          <SvGridChart {spec} formatValue={compact} {onSelect} width={paneW} height={paneH} />
+        {/if}
+      </div>
     </div>
   </div>
 </section>
