@@ -64,7 +64,7 @@
     formatValue
       ? formatValue(v)
       : spec.valueFormat
-        ? formatChartValue(v, spec.valueFormat)
+        ? formatChartValue(v, spec.valueFormat, spec)
         : Number.isFinite(v)
           ? v.toLocaleString(undefined, { maximumFractionDigits: 2 })
           : String(v)

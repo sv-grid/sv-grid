@@ -262,7 +262,23 @@ const BUDGET_KB = {
   //
   // SvGrid's own base is untouched at 83.9 KB, which is the point: none of
   // this reaches a grid that never charts.
-  'chart surface (SvChart)': 27.8,
+  //
+  // 27.8 -> 28.2 for locale-aware value formatting. Measured 27.6 before and
+  // 28.0 after, so 0.4 KB, and it buys a chart that can say what currency it is
+  // drawing. `formatChartValue` hard-coded a `$`, so every axis, data label and
+  // tooltip on every chart outside the dollar zone was labelled in the wrong
+  // currency, with no prop to fix it.
+  //
+  // The 0.4 is the Intl branch plus `getNumberFormatter`, which chart.ts now
+  // imports from cell-formatting instead of caching its own. The cache is not
+  // optional at any price: `Intl.NumberFormat` is expensive enough to construct
+  // that a chart with 200 data labels would build 200 of them a frame. Writing
+  // a second, leaner cache here would shave maybe 0.2 KB and leave two of them
+  // to keep in step, which is a bad trade.
+  //
+  // SvGrid's base is again untouched (84.4 KB): cell-formatting was already
+  // there for column formats, so this only shows up for a standalone SvChart.
+  'chart surface (SvChart)': 28.2,
 }
 
 const CHECK = process.argv.includes('--check')

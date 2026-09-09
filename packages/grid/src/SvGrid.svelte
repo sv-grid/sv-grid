@@ -1028,6 +1028,7 @@
           data={boardData}
           columns={opt.columns}
           chart={chartViewConfig}
+          localization={opt.localization}
           getRowId={opt.getRowId}
         />
       {:else if ChartView}
@@ -1035,6 +1036,7 @@
           data={boardData}
           columns={opt.columns}
           chart={chartViewConfig}
+          localization={opt.localization}
           getRowId={opt.getRowId}
         />
       {:else}

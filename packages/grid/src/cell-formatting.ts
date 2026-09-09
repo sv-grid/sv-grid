@@ -74,7 +74,13 @@ type NumericFormatInput = {
  * + currency + options).
  */
 const numberFormatterCache = new Map<string, Intl.NumberFormat>()
-function getNumberFormatter(
+/**
+ * A cached `Intl.NumberFormat` for the locale and options given. Cached because
+ * constructing one is among the most expensive calls in the platform, and both
+ * callers do it per rendered value: once per cell while scrolling a number
+ * column, and once per axis tick, data label and tooltip while drawing a chart.
+ */
+export function getNumberFormatter(
   locales: string | readonly string[] | undefined,
   options: Intl.NumberFormatOptions,
 ): Intl.NumberFormat {

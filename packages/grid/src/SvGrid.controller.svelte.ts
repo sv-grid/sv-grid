@@ -2318,6 +2318,17 @@ export function createSvGridController<
       import("./chart").then((m) => (chartEngine = m));
   });
 
+  /** Put the chart's numbers in the same locale as the grid's. A grid that set
+   *  `localization.locale` has already said which locale its data is in, and a
+   *  chart of that data reading in a different one is a bug nobody would think
+   *  to look for; `charting.locale` overrides when they really should differ.
+   *  Currency has no such default - only the app knows what the numbers are. */
+  const applyChartLocale = (spec: ChartSpec) => {
+    const locale = chartCfg?.locale ?? props.localization?.locale;
+    if (locale) spec.locale = locale;
+    if (chartCfg?.currency) spec.currency = chartCfg.currency;
+  };
+
   const chartSpec = $derived.by<ChartSpec | null>(() => {
     if (!chartingEnabled || !chartCfg) return null;
     if (chartCfg.getAggregate) {
@@ -2329,6 +2340,7 @@ export function createSvGridController<
       if (effectiveChartTimeAxis) spec.xType = "time";
       if (effectiveChartLogScale) spec.yScale = "log";
       if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+      applyChartLocale(spec);
       return spec;
     }
     if (chartCfg.buildSpec) return chartCfg.buildSpec(chartRows) ?? null;
@@ -2391,6 +2403,7 @@ export function createSvGridController<
     if (effectiveChartTimeAxis) spec.xType = "time";
     if (effectiveChartLogScale) spec.yScale = "log";
     if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+    applyChartLocale(spec);
     if (chartType !== "pie" && spec.orientation !== "horizontal" && !spec.yAxisTitle && chartAutoYAxisTitle) {
       spec.yAxisTitle = chartAutoYAxisTitle;
     }

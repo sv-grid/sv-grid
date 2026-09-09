@@ -5985,7 +5985,7 @@ export const apiReference = {
 } as const
 
 export const apiSurface: ApiSurface = {
-  "gridVersion": "3.0.0",
+  "gridVersion": "3.0.1",
   "enterpriseVersion": "3.0.0",
   "grid": {
     "values": [

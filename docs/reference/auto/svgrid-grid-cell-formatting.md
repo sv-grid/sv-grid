@@ -63,6 +63,45 @@ export function resolveDatePattern(
 }
 ```
 
+### `function getNumberFormatter`
+
+A cached `Intl.NumberFormat` for the locale and options given. Cached because
+constructing one is among the most expensive calls in the platform, and both
+callers do it per rendered value: once per cell while scrolling a number
+column, and once per axis tick, data label and tooltip while drawing a chart.
+
+```ts
+export function getNumberFormatter(
+  locales: string | readonly string[] | undefined,
+  options: Intl.NumberFormatOptions,
+): Intl.NumberFormat {
+  // Stable key - for normal column configs the options object is reused
+  // (declared in module scope), so this stringifies a small static shape.
+  const key =
+    (Array.isArray(locales) ? locales.join(',') : locales ?? '') +
+    '|' +
+    (options.style ?? '') +
+    '|' +
+    (options.currency ?? '') +
+    '|' +
+    (options.minimumFractionDigits ?? '') +
+    '|' +
+    (options.maximumFractionDigits ?? '') +
+    '|' +
+    (options.useGrouping ?? '') +
+    '|' +
+    (options.currencyDisplay ?? '') +
+    '|' +
+    (options.notation ?? '')
+  let fmt = numberFormatterCache.get(key)
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locales as string | string[] | undefined, options)
+    numberFormatterCache.set(key, fmt)
+  }
+  return fmt
+}
+```
+
 ### `function getDateFormatter`
 
 A cached `Intl.DateTimeFormat` for the locale and options given. Cached because

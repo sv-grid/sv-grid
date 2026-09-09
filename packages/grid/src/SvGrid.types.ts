@@ -121,6 +121,13 @@ export type ChartingConfig<TData extends RowData = RowData> = {
   yScale?: "linear" | "log";
   timeAxis?: boolean;
   valueFormat?: "number" | "currency" | "percent" | "compact";
+  /** ISO 4217 code for `valueFormat: 'currency'` (`'EUR'`, `'JPY'`, ...).
+   *  Without it the axis reads `$`, whatever the data is actually in. */
+  currency?: string;
+  /** BCP-47 locale for the chart's numbers. Defaults to `localization.locale`,
+   *  so a grid that is already localized gets a localized chart without setting
+   *  anything here; set it to format the chart differently from the grid. */
+  locale?: string | ReadonlyArray<string>;
   smooth?: boolean;
   orientation?: "vertical" | "horizontal";
   donut?: number | boolean;
@@ -422,6 +429,13 @@ export type ChartViewConfig<
   palette?: string[];
   /** Number format for the value axis, tooltips and data labels. */
   valueFormat?: ChartValueFormat;
+  /** ISO 4217 code for `valueFormat: 'currency'` (`'EUR'`, `'JPY'`, ...).
+   *  Without it the axis reads `$`, whatever the data is actually in. */
+  currency?: string;
+  /** BCP-47 locale for the chart's numbers. Defaults to `localization.locale`,
+   *  so a grid that is already localized gets a localized chart without setting
+   *  anything here; set it to format the chart differently from the grid. */
+  locale?: string | ReadonlyArray<string>;
   /** Show the clickable legend. Default `true`. */
   legend?: boolean;
   /** Draw the value on each bar / point / slice. Default `false`. */

@@ -8,6 +8,15 @@
  * (per-series type), a secondary (right) Y axis, signed Y domains (negative
  * values drop below a zero baseline), and nice auto-scaled ticks.
  */
+// The one import this module has. `Intl.NumberFormat` is expensive enough to
+// construct that a chart with 8 axis ticks and 200 data labels would rebuild it
+// 200 times a frame, and the grid already solved that for cells - so reuse that
+// cache rather than starting a second one. Still DOM-free: it is plain TS.
+import { getNumberFormatter } from './cell-formatting'
+
+/** Every mark this engine can draw. `bar`, `line` and `area` compose (a series
+ *  can override the spec's type for a combo chart); the rest are whole-chart
+ *  types that ignore per-series overrides. */
 export type ChartType =
   | 'bar' | 'line' | 'area' | 'pie' | 'scatter'
   | 'heatmap' | 'waterfall' | 'funnel' | 'radar'
@@ -131,6 +140,16 @@ export type ChartSpec = {
   /** Number format for the value axis, tooltips, data labels and reference
    *  lines. Unset = the default compact `1.2k` / `1.2M` style. */
   valueFormat?: ChartValueFormat
+  /** BCP-47 locale for value formatting. Setting this (or `currency`) switches
+   *  formatting to `Intl.NumberFormat`, so thousands separators, the decimal
+   *  mark and the compact suffixes follow the locale rather than the built-in
+   *  English `1.2k` / `1.2M`. Unset = the locale-free default, which is why the
+   *  default output has never changed under anyone's feet. */
+  locale?: string | ReadonlyArray<string>;
+  /** ISO 4217 code for `valueFormat: 'currency'` (`'EUR'`, `'JPY'`, ...). Unset
+   *  means the axis reads `$`, which is wrong everywhere outside the dollar
+   *  zone and was the only currency this chart could draw for a long time. */
+  currency?: string
   /** Grouped (nested) category axis: a parent tier spanning consecutive leaf
    *  categories (spans must sum to `categories.length`). Vertical category
    *  charts only (ignored for time / horizontal / pie). */
@@ -829,14 +848,46 @@ function fmtTick(n: number): string {
 /** Value-axis / tooltip / label number format. */
 export type ChartValueFormat = 'number' | 'currency' | 'percent' | 'compact'
 
+/** Locale-aware formatting options, a structural subset of `ChartSpec` so a
+ *  caller inside the engine can pass the spec straight through. */
+export type ChartFormatLocale = { locale?: string | ReadonlyArray<string>; currency?: string }
+
 /**
  * Format a numeric value for display, honouring an optional `valueFormat`.
- * Builds on the compact `1.2k` / `1.2M` base: currency prefixes `$` (sign
- * outside), percent multiplies by 100 and suffixes `%`. Unset / `'number'` /
- * `'compact'` = the plain compact form.
+ *
+ * Two modes, on purpose. With no `locale` and no `currency` this is the original
+ * locale-free output: the compact `1.2k` / `1.2M` base, currency prefixed with
+ * `$` (sign outside), percent multiplied by 100 and suffixed `%`. Set either one
+ * and it switches to `Intl.NumberFormat`, so separators, the decimal mark and the
+ * compact suffixes all follow the locale.
+ *
+ * Keeping the old path as the default is deliberate rather than lazy. `Intl`'s
+ * compact notation is not the same string even for `en-US` (`1.2K`, capital),
+ * so formatting everything through it would silently restyle every axis in every
+ * existing chart. Opting in is the only version of this that is not a surprise.
  */
-export function formatChartValue(n: number, format?: ChartValueFormat): string {
+export function formatChartValue(
+  n: number,
+  format?: ChartValueFormat,
+  opts?: ChartFormatLocale,
+): string {
   if (!Number.isFinite(n)) return ''
+  const localized = opts && (opts.locale || opts.currency)
+  if (localized) {
+    // Compact notation because these are axis ticks and data labels, where a
+    // full-precision number is what makes an axis unreadable.
+    const style = format === 'currency' ? 'currency' : format === 'percent' ? 'percent' : 'decimal'
+    const o: Intl.NumberFormatOptions = { notation: 'compact', maximumFractionDigits: 1 }
+    if (style === 'currency') {
+      o.style = 'currency'
+      // `style: 'currency'` throws without a code, so fall back to the symbol
+      // this used to hard-code rather than refusing to draw the chart.
+      o.currency = opts!.currency || 'USD'
+    } else if (style === 'percent') {
+      o.style = 'percent'
+    }
+    return getNumberFormatter(opts!.locale, o).format(n)
+  }
   if (format === 'currency') return `${n < 0 ? '-' : ''}$${fmtTick(Math.abs(n))}`
   if (format === 'percent') {
     const p = n * 100
@@ -1139,7 +1190,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
       x: round(padL + slotW * i + slotW / 2),
     }))
     const yTicks: ChartAxisTick[] = dom.ticks.map((value) => ({
-      value, y: yOfW(value), label: formatChartValue(value, spec.valueFormat),
+      value, y: yOfW(value), label: formatChartValue(value, spec.valueFormat, spec),
     }))
     return {
       ...empty,
@@ -1326,7 +1377,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const legend = Array.from({ length: 5 }, (_, i) => {
       const t = i / 4
       const value = vMin + (vMax - vMin) * t
-      return { value, color: colorAt(value), label: formatChartValue(value, spec.valueFormat) }
+      return { value, color: colorAt(value), label: formatChartValue(value, spec.valueFormat, spec) }
     })
     return {
       ...empty,
@@ -1696,7 +1747,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const heatmapLegend = Array.from({ length: 5 }, (_, i) => {
       const t = i / 4
       const value = vMin + (vMax - vMin) * t
-      return { value, color: colorAt(value), label: formatChartValue(value, spec.valueFormat) }
+      return { value, color: colorAt(value), label: formatChartValue(value, spec.valueFormat, spec) }
     })
     return {
       ...empty,
@@ -1817,7 +1868,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
     const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => ({
       y: yOf(ref.value),
-      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat),
+      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat, spec),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }))
@@ -1826,7 +1877,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
       plot,
       scatterPoints,
       referenceLines,
-      yTicks: yDom.ticks.map((value) => ({ value, y: yOf(value), label: formatChartValue(value, spec.valueFormat) })),
+      yTicks: yDom.ticks.map((value) => ({ value, y: yOf(value), label: formatChartValue(value, spec.valueFormat, spec) })),
       xTicks: xDom.ticks.map((value) => ({ label: fmtTick(value), x: xOf(value) })),
     }
   }
@@ -1913,7 +1964,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
 
     const valueTicks: ChartCategoryTick[] = dom.ticks.map((value) => ({
-      label: spec.stacked100 ? `${fmtTick(value)}%` : formatChartValue(value, spec.valueFormat),
+      label: spec.stacked100 ? `${fmtTick(value)}%` : formatChartValue(value, spec.valueFormat, spec),
       x: xOf(value),
     }))
     const catTicks: ChartAxisTick[] = spec.categories.map((label, i) => ({
@@ -1923,7 +1974,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }))
     const referenceLinesV: ChartRefLineGeoV[] = (spec.referenceLines ?? []).map((ref) => ({
       x: xOf(ref.value),
-      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat),
+      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat, spec),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }))
@@ -2296,7 +2347,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     dom.ticks.map((value) => ({
       value,
       y: yOf(dom, value, log),
-      label: spec.stacked100 ? `${round(value)}%` : formatChartValue(value, spec.valueFormat),
+      label: spec.stacked100 ? `${round(value)}%` : formatChartValue(value, spec.valueFormat, spec),
     }))
 
   const referenceLines: ChartRefLineGeo[] = (spec.referenceLines ?? []).map((ref) => {
@@ -2305,7 +2356,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     const log = onRight ? rightLog : leftLog
     return {
       y: yOf(dom, ref.value, log),
-      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat),
+      label: ref.label ?? formatChartValue(ref.value, spec.valueFormat, spec),
       color: ref.color ?? '#ef4444',
       dashed: ref.dashed !== false,
     }

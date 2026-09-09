@@ -17,12 +17,18 @@
   let {
     data,
     chart,
+    localization,
   }: {
     data: ReadonlyArray<Record<string, unknown>>;
     /** Present for parity with board/scheduler renderers; unused here. */
     columns?: unknown;
     getRowId?: unknown;
     chart: ChartViewConfig;
+    /** The grid's localization, so a localized grid gets a localized chart
+     *  without saying so twice. Resolved here rather than in SvGrid because
+     *  this renderer is lazy: a grid that never charts should not carry the
+     *  fallback in its base bundle. */
+    localization?: { locale?: string | ReadonlyArray<string> };
   } = $props();
 
   // Container size -> chart viewBox, so the chart fills the grid area and
@@ -44,6 +50,9 @@
       palette: chart.palette,
     });
     if (chart.valueFormat) s.valueFormat = chart.valueFormat;
+    const locale = chart.locale ?? localization?.locale;
+    if (locale) s.locale = locale;
+    if (chart.currency) s.currency = chart.currency;
     return s;
   });
 </script>

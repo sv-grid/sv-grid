@@ -104,6 +104,45 @@ const spec: ChartSpec = {
 }
 ```
 
+## Number format, currency and locale
+
+`valueFormat` picks the shape of every number the chart draws - the value axis,
+tooltips, data labels and reference lines:
+
+```ts
+{ valueFormat: 'currency' }   // 'number' | 'currency' | 'percent' | 'compact'
+```
+
+By itself that formats in the chart's own compact style, and currency means a
+`$`. Add `currency` (an ISO 4217 code) and `locale` (BCP-47) to format through
+`Intl.NumberFormat` instead:
+
+```ts
+{ valueFormat: 'currency', currency: 'EUR', locale: 'de-DE' }
+```
+
+Setting either one switches the whole chart over, so separators, the decimal
+mark and the compact suffixes follow the locale rather than English. Leaving
+both unset keeps the original output exactly, which is deliberate: `Intl`'s
+compact form is not the same string even for `en-US` (`1.2K`, capitalised), so
+formatting everything through it would restyle every axis already drawn.
+
+A grid inherits this. `localization.locale` is the chart's default locale, so a
+grid that is already localized gets a localized chart without repeating itself,
+and `charting.locale` overrides it when the two really should differ:
+
+```svelte
+<SvGrid
+  {data} {columns}
+  localization={{ locale: 'de-DE' }}
+  charting={{ valueFormat: 'currency', currency: 'EUR' }}
+/>
+```
+
+Currency has no such default, because only the application knows what the
+numbers are denominated in. Ask for `valueFormat: 'currency'` without one and
+the chart falls back to USD rather than refusing to draw.
+
 ## 100% stacked
 
 `stacked100: true` (implies `stacked`) normalizes each category to its own

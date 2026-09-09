@@ -370,6 +370,86 @@ describe('SvGrid built-in charting', () => {
     expect(formatChartValue(1500, 'number')).toBe('1.5k')
   })
 
+  it('formats through Intl once a locale or currency is set, and not before', () => {
+    // The whole point of the opt-in: an existing chart keeps byte-identical
+    // labels. Intl's own compact form for en-US is '1.5K', capitalised, so
+    // routing everything through it would restyle every axis already shipped.
+    expect(formatChartValue(1500, 'currency', {})).toBe('$1.5k')
+    expect(formatChartValue(1500, 'currency', { locale: undefined, currency: undefined })).toBe('$1.5k')
+
+    // A currency alone is enough - the symbol is the thing that was wrong.
+    const eur = formatChartValue(1500, 'currency', { currency: 'EUR', locale: 'en-US' })
+    expect(eur).toContain('€')
+    expect(eur).not.toContain('$')
+    // A currency with no minor unit still renders (JPY has 0 decimals).
+    expect(formatChartValue(2500, 'currency', { currency: 'JPY', locale: 'en-US' })).toContain('¥')
+
+    // A locale alone localizes the separators and the compact suffix.
+    const de = formatChartValue(1500, 'number', { locale: 'de-DE' })
+    expect(de).not.toBe('1.5k')
+    expect(formatChartValue(1234, 'number', { locale: 'en-US' })).toBe('1.2K')
+
+    // `style: 'currency'` throws with no code, so a locale-only currency chart
+    // must still draw rather than take the whole grid down.
+    expect(() => formatChartValue(1500, 'currency', { locale: 'de-DE' })).not.toThrow()
+
+    expect(formatChartValue(0.25, 'percent', { locale: 'en-US' })).toBe('25%')
+    expect(formatChartValue(Number.NaN, 'currency', { currency: 'EUR' })).toBe('')
+  })
+
+  it("inherits the grid's localization.locale, and charting.locale overrides it", async () => {
+    // A chart of localized data reading in a different locale is the kind of bug
+    // nobody thinks to check, so the grid's own locale is the default.
+    {
+      const { api, destroy } = await mountGrid({ charting: true, localization: { locale: 'de-DE' } })
+      try {
+        api.configureChart({ dimension: 'team', measure: 'salary', reduce: 'sum' })
+        await tick()
+        expect(api.getChartSpec()!.locale).toBe('de-DE')
+      } finally { destroy() }
+    }
+    {
+      const { api, destroy } = await mountGrid({
+        charting: { locale: 'ja-JP', currency: 'JPY' },
+        localization: { locale: 'de-DE' },
+      })
+      try {
+        api.configureChart({ dimension: 'team', measure: 'salary', reduce: 'sum' })
+        await tick()
+        const spec = api.getChartSpec()!
+        expect(spec.locale).toBe('ja-JP')
+        expect(spec.currency).toBe('JPY')
+      } finally { destroy() }
+    }
+    {
+      // No localization anywhere: the spec stays locale-free, which is what
+      // keeps every existing chart rendering exactly as it did.
+      const { api, destroy } = await mountGrid({ charting: true })
+      try {
+        api.configureChart({ dimension: 'team', measure: 'salary', reduce: 'sum' })
+        await tick()
+        expect(api.getChartSpec()!.locale).toBeUndefined()
+        expect(api.getChartSpec()!.currency).toBeUndefined()
+      } finally { destroy() }
+    }
+  })
+
+  it('the localized format reaches the axis ticks, not just the helper', () => {
+    const geo = buildChart({
+      type: 'bar',
+      categories: ['a', 'b'],
+      series: [{ label: 'Revenue', values: [1500, 3000] }],
+      valueFormat: 'currency',
+      currency: 'EUR',
+      locale: 'en-US',
+      width: 400,
+      height: 300,
+    })
+    expect(geo.yTicks.length).toBeGreaterThan(0)
+    expect(geo.yTicks.some((t) => t.label.includes('€'))).toBe(true)
+    expect(geo.yTicks.every((t) => !t.label.includes('$'))).toBe(true)
+  })
+
   it('applies a value format and an auto y-axis title to the spec', async () => {
     const { api, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {
