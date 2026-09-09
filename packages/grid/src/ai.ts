@@ -835,8 +835,20 @@ export async function aiFindAnomalies<
 // 7. Natural-language chart ("chart this")
 // ---------------------------------------------------------------------------
 
-/** Chart shapes the model may choose from when planning a visualisation. */
-export type AIChartType = 'bar' | 'line' | 'area' | 'pie'
+/**
+ * Chart shapes the model may choose from when planning a visualisation.
+ *
+ * These are exactly the types the built-in panel can build from a dimension, a
+ * measure and an optional split - which is all a chart plan carries. Two
+ * families are deliberately absent, because a plan cannot express them:
+ * scatter needs a SECOND measure for its y axis, and candlestick / OHLC need
+ * four under first/max/min/last. Asking for either would produce a plan the
+ * panel renders as an empty frame, which is worse than not offering it.
+ */
+export type AIChartType =
+  | 'bar' | 'line' | 'area' | 'pie'
+  | 'treemap' | 'funnel' | 'waterfall' | 'radar'
+  | 'heatmap' | 'boxplot' | 'gauge' | 'calendar' | 'sankey'
 
 /** A chart the model proposed: its type, and the fields to plot. */
 export type AIChartPlan = {
@@ -881,7 +893,7 @@ export async function aiChart<
     `into a strict-JSON chart plan the grid can render.\n\n` +
     `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
     `Output JSON schema:\n` +
-    `{ "type": "bar"|"line"|"area"|"pie", ` +
+    `{ "type": "bar"|"line"|"area"|"pie"|"treemap"|"funnel"|"waterfall"|"radar"|"heatmap"|"boxplot"|"gauge"|"calendar"|"sankey", ` +
     `"dimension": "<a categorical column to group by>", ` +
     `"series": "<a second categorical column to split into series, or null>", ` +
     `"measure": "<a numeric column to aggregate>", ` +
@@ -893,6 +905,16 @@ export async function aiChart<
     `"rationale": "<one-sentence explanation>" }\n\n` +
     `Rules: pick "dimension" and "series" from text/date columns and "measure" ` +
     `from a numeric column; use only column names from the list above; ` +
+    `default to "bar" unless the request clearly wants another type. ` +
+    `Type hints: share/proportion/breakdown -> pie; nested/hierarchy/"what makes ` +
+    `up" -> treemap; drop-off/conversion/stages/pipeline -> funnel; ` +
+    `running total/contribution/bridge -> waterfall; comparing several measures ` +
+    `per item -> radar; a grid of two dimensions -> heatmap (needs "series"); ` +
+    `spread/distribution/variance/outliers/percentiles -> boxplot; a single ` +
+    `number vs a target -> gauge (leave "dimension" null); a year of daily ` +
+    `activity -> calendar (dimension must be a date column); flow between two ` +
+    `things -> sankey (needs "series": dimension is the source, series the ` +
+    `target). ` +
     `"stacked"/"stack" -> stacked:true; "log"/"logarithmic" -> logScale:true; ` +
     `"over time"/"by date"/a date dimension -> timeAxis:true; ` +
     `money/revenue/price/$ -> valueFormat:"currency"; rate/%/share -> valueFormat:"percent"; ` +
@@ -909,7 +931,11 @@ export async function aiChart<
 
   const valid = new Set(schema.map((c) => c.field))
   const numericFields = new Set(schema.filter((c) => c.type === 'number').map((c) => c.field))
-  const CHART_TYPES: AIChartType[] = ['bar', 'line', 'area', 'pie']
+  const CHART_TYPES: AIChartType[] = [
+    'bar', 'line', 'area', 'pie',
+    'treemap', 'funnel', 'waterfall', 'radar',
+    'heatmap', 'boxplot', 'gauge', 'calendar', 'sankey',
+  ]
   plan.type = CHART_TYPES.includes(plan.type) ? plan.type : 'bar'
   plan.dimension = plan.dimension && valid.has(plan.dimension) ? plan.dimension : null
   plan.series = plan.series && valid.has(plan.series) && plan.series !== plan.dimension ? plan.series : null
@@ -917,6 +943,18 @@ export async function aiChart<
     plan.measure && numericFields.has(plan.measure)
       ? plan.measure
       : (schema.find((c) => c.type === 'number')?.field ?? null)
+  // Shape check. Some types need more than a dimension and a measure, and a
+  // plan that does not satisfy one renders an empty frame - the model asked for
+  // a chart the data cannot make. Fall back to a bar, which any dimension and
+  // measure can draw, rather than showing nothing and blaming the request.
+  const dateFields = new Set(schema.filter((c) => c.type === 'date').map((c) => c.field))
+  const needsSplit = plan.type === 'heatmap' || plan.type === 'sankey'
+  if (needsSplit && !plan.series) plan.type = 'bar'
+  if (plan.type === 'calendar' && !(plan.dimension && dateFields.has(plan.dimension))) plan.type = 'bar'
+  // A gauge is one number: it has no category axis, so a dimension is noise.
+  if (plan.type === 'gauge') plan.dimension = null
+  if (plan.type !== 'gauge' && !plan.dimension) plan.type = 'bar'
+
   plan.reduce = ['sum', 'avg', 'count'].includes(plan.reduce) ? plan.reduce : 'sum'
   plan.stacked = plan.stacked === true
   plan.logScale = plan.logScale === true
@@ -1031,8 +1069,20 @@ function buildMockChart(prompt: string): AIChartPlan {
   const textFields = typed.filter((f) => f.type === 'string' || f.type === 'date').map((f) => f.name)
   const numberFields = typed.filter((f) => f.type === 'number').map((f) => f.name)
 
+  // Mirrors the type hints in the real prompt, so the bundled offline provider
+  // can reach the same charts a model can. Ordered most-specific first: "share
+  // of the pipeline" is a funnel request, not a pie one.
   const type: AIChartType =
-    /\bline\b|\btrend\b|over time/.test(q) ? 'line'
+    /\bfunnel\b|drop.?off|conversion|\bstages?\b|pipeline/.test(q) ? 'funnel'
+    : /\bwaterfall\b|running total|contribution|\bbridge\b/.test(q) ? 'waterfall'
+    : /\btree ?map\b|nested|hierarch/.test(q) ? 'treemap'
+    : /\bradar\b|spider|multi.?measure/.test(q) ? 'radar'
+    : /\bheat ?map\b/.test(q) ? 'heatmap'
+    : /\bbox ?plot\b|spread|distribution|variance|outlier|percentile|quartile/.test(q) ? 'boxplot'
+    : /\bgauge\b|\bdial\b|vs target|against target/.test(q) ? 'gauge'
+    : /\bcalendar\b|daily activity|year of/.test(q) ? 'calendar'
+    : /\bsankey\b|\bflow\b/.test(q) ? 'sankey'
+    : /\bline\b|\btrend\b|over time/.test(q) ? 'line'
     : /\barea\b/.test(q) ? 'area'
     : /\bpie\b|share|proportion|breakdown/.test(q) ? 'pie'
     : 'bar'
@@ -1046,8 +1096,11 @@ function buildMockChart(prompt: string): AIChartPlan {
     return null
   }
   const dimension = pickText(byMatch?.[1]) ?? textFields[0] ?? null
+  // Heatmap and sankey are two-dimension charts: without a split the shape
+  // check downgrades them to a bar, so the mock would answer "heatmap" with a
+  // bar chart and look broken rather than offline.
   const series =
-    /\b(split|stack(?:ed)?|by product|by category|per)\b/.test(q)
+    /\b(split|stack(?:ed)?|by product|by category|per)\b/.test(q) || type === 'heatmap' || type === 'sankey'
       ? (textFields.find((t) => t !== dimension) ?? null)
       : null
   const measure = numberFields.find((n) => q.includes(n.toLowerCase())) ?? numberFields[0] ?? null

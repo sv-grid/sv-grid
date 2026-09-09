@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   setAIProvider, getAIProvider, hasAIProvider,
   mockAIProvider,
-  aiFilter, aiSmartFill, aiSummarize, aiClassify,
+  aiFilter, aiSmartFill, aiSummarize, aiClassify, aiChart,
   type AIProvider, type AIRequest,
 } from './ai'
 
@@ -498,5 +498,64 @@ describe('cancellation', () => {
     const { api } = fakeApi([{ id: 1 }])
     await aiSummarize(api, { target: { kind: 'all' }, signal: controller.signal })
     expect(receivedSignal).toBe(controller.signal)
+  })
+})
+
+describe('aiChart type vocabulary', () => {
+  beforeEach(() => setAIProvider(mockAIProvider))
+  afterEach(() => setAIProvider(null))
+
+  const rows = [
+    { region: 'EMEA', product: 'A', day: '2026-01-01', revenue: 10 },
+    { region: 'APAC', product: 'B', day: '2026-01-02', revenue: 20 },
+  ]
+  const plan = (q: string) => aiChart(fakeApi(rows).api as never, q)
+
+  it('reaches the types the panel can build, not just the original four', async () => {
+    // The prompt offered bar|line|area|pie while the picker had grown to
+    // thirteen, and anything else was coerced to 'bar' - so "chart this" could
+    // never produce nine of the types sitting right next to it.
+    expect((await plan('show the drop-off by stage')).type).toBe('funnel')
+    expect((await plan('treemap of revenue by region')).type).toBe('treemap')
+    expect((await plan('running total contribution by region')).type).toBe('waterfall')
+    expect((await plan('the spread of revenue by region, with outliers')).type).toBe('boxplot')
+    expect((await plan('a heatmap of revenue')).type).toBe('heatmap')
+    expect((await plan('flow from region to product')).type).toBe('sankey')
+  })
+
+  it('still defaults to a bar chart for a plain request', async () => {
+    expect((await plan('revenue by region')).type).toBe('bar')
+    expect((await plan('revenue over time')).type).toBe('line')
+    expect((await plan('share of revenue by region')).type).toBe('pie')
+  })
+
+  it('never returns a plan the panel would draw as an empty frame', async () => {
+    // Two-dimension types need a split; a calendar needs a real date column.
+    // Rather than render nothing and blame the request, they fall back to a
+    // bar, which any dimension and measure can draw.
+    // Asserted unconditionally. An `if (p.type === 'heatmap')` here would pass
+    // by doing nothing the day the mock stops producing one.
+    const heat = await plan('heatmap of revenue')
+    expect(heat.type).toBe('heatmap')
+    expect(heat.series).toBeTruthy()
+    const flow = await plan('flow from region to product')
+    expect(flow.type).toBe('sankey')
+    expect(flow.series).toBeTruthy()
+    const noDates = [{ region: 'EMEA', revenue: 1 }]
+    const cal = await aiChart(fakeApi(noDates).api as never, 'a calendar of revenue')
+    expect(cal.type).toBe('bar')
+  })
+
+  it('drops the dimension for a gauge, which has no category axis', async () => {
+    const g = await plan('revenue on a gauge against target')
+    expect(g.type).toBe('gauge')
+    expect(g.dimension).toBeNull()
+  })
+
+  it('coerces an unknown type rather than passing it through', async () => {
+    const bogus: AIProvider = async () =>
+      JSON.stringify({ type: 'sunburst', dimension: 'region', measure: 'revenue', reduce: 'sum' })
+    setAIProvider(bogus)
+    expect((await plan('anything')).type).toBe('bar')
   })
 })

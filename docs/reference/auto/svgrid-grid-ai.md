@@ -320,10 +320,20 @@ export type AIAnomalyOptions = {
 
 ### `type AIChartType`
 
-Chart shapes the model may choose from when planning a visualisation. */
+Chart shapes the model may choose from when planning a visualisation.
+
+These are exactly the types the built-in panel can build from a dimension, a
+measure and an optional split - which is all a chart plan carries. Two
+families are deliberately absent, because a plan cannot express them:
+scatter needs a SECOND measure for its y axis, and candlestick / OHLC need
+four under first/max/min/last. Asking for either would produce a plan the
+panel renders as an empty frame, which is worse than not offering it.
 
 ```ts
-export type AIChartType = 'bar' | 'line' | 'area' | 'pie'
+export type AIChartType =
+  | 'bar' | 'line' | 'area' | 'pie'
+  | 'treemap' | 'funnel' | 'waterfall' | 'radar'
+  | 'heatmap' | 'boxplot' | 'gauge' | 'calendar' | 'sankey'
 ```
 
 ### `type AIChartPlan`

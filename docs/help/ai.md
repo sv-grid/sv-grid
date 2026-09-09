@@ -309,6 +309,17 @@ Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFil
 
 Open the Chart panel, press the AI button, and describe the chart in words - the model reads the grid\'s column schema and returns a ChartSpec the built-in panel renders. Ships with a deterministic mock provider; swap in your own via setAIProvider.
 
+It can ask for any type the panel builds from a dimension, a measure and an
+optional split: bar, line, area, pie, treemap, funnel, waterfall, radar,
+heatmap, box plot, gauge, calendar and sankey. Scatter, candlestick and OHLC are
+deliberately out - they need a second (or a fourth) measure that a chart plan
+cannot express, so asking for one would return a plan the panel draws as an
+empty frame.
+
+Every plan is validated against the real schema before it is applied, including
+its shape: a heatmap or sankey without a split, or a calendar whose dimension is
+not a date column, falls back to a bar rather than rendering nothing.
+
 <div data-docs-demo="357-ai-chart-this" data-height="560"></div>
 
 ### AI export + anomaly scan
