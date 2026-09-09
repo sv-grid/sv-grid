@@ -21,10 +21,24 @@ export type ChartType =
   | 'bar' | 'line' | 'area' | 'pie' | 'scatter'
   | 'heatmap' | 'waterfall' | 'funnel' | 'radar'
   | 'calendar' | 'gauge' | 'treemap' | 'sankey'
-  | 'candlestick' | 'ohlc'
+  | 'candlestick' | 'ohlc' | 'boxplot'
 
 /** One open / high / low / close bar. */
 export type OhlcBar = { o: number; h: number; l: number; c: number }
+
+/** A five-number summary: one box, its whiskers, and anything past them.
+ *  `min` / `max` are the WHISKER ENDS, not the extremes of the sample - with
+ *  the usual 1.5 IQR rule those differ, and the points beyond go in
+ *  `outliers` so they can be drawn individually. */
+export type BoxStats = {
+  min: number
+  q1: number
+  median: number
+  q3: number
+  max: number
+  /** Values outside the whiskers, drawn as individual points. */
+  outliers?: number[]
+}
 
 /** A clicked bar / point / slice - the payload of `SvGridChart`'s `onSelect`.
  *  `rowIds` is populated when the spec was built from grid rows (via
@@ -56,7 +70,7 @@ export type ChartSeries = {
   values: number[]
   color?: string
   /** Per-series chart type, for combo charts. Defaults to the spec `type`. */
-  type?: 'bar' | 'line' | 'area' | 'candlestick' | 'ohlc'
+  type?: 'bar' | 'line' | 'area' | 'candlestick' | 'ohlc' | 'boxplot'
   /**
    * Open / high / low / close per category, parallel to `categories`. `null`
    * is a gap (a day with no session) and draws nothing.
@@ -68,6 +82,28 @@ export type ChartSeries = {
    * to CSV without a single line of candle-specific code.
    */
   ohlc?: Array<OhlcBar | null>
+  /**
+   * Five-number summaries per category, parallel to `categories`. `null` is a
+   * gap and draws nothing.
+   *
+   * Set `values` to the MEDIANS alongside this, for exactly the reason `ohlc`
+   * sets them to the closes: everything that reads a series generically reads
+   * `values`, so the tooltip rows, the CSV export, the screen-reader table and
+   * `overlay` all keep working with no box-specific code.
+   *
+   * `boxStats()` turns a raw sample into one of these.
+   */
+  boxes?: Array<BoxStats | null>
+  /**
+   * Symmetric or asymmetric error bars, parallel to `values`. A number is a
+   * symmetric +/- margin; a pair is an explicit low/high; `null` draws nothing.
+   *
+   * These are an ANNOTATION on an existing mark rather than a mark of their
+   * own, so they compose: a bar, line, area or scatter series can carry them
+   * without changing its type. That is the whole reason they are not a
+   * `ChartType` - "bar chart with error bars" should not be a different chart.
+   */
+  errors?: Array<number | { lo: number; hi: number } | null>
   /** Plot against the left (default) or right Y axis. */
   axis?: 'left' | 'right'
   /** Scatter / bubble points (used when `type === 'scatter'`). */
@@ -411,6 +447,106 @@ export type ChartCandle = {
   c: number
 }
 
+/**
+ * A laid-out box plot, in SVG coordinates. Its own array for the same reason
+ * candles have one: `bars` carries pattern fills, data labels and the brush
+ * mini-map, none of which mean anything for a box.
+ */
+export type ChartBox = {
+  /** Box rect left edge and width. */
+  x: number
+  w: number
+  /** Whisker line and the caps, centred on the slot. */
+  xCenter: number
+  yMin: number
+  yQ1: number
+  yMedian: number
+  yQ3: number
+  yMax: number
+  /** Box rect, pre-ordered so the renderer does no min/max of its own. */
+  boxY: number
+  boxH: number
+  /** Points beyond the whiskers, already positioned. */
+  outliers: Array<{ y: number; value: number }>
+  color: string
+  label: string
+  series: string
+  min: number
+  q1: number
+  median: number
+  q3: number
+  max: number
+}
+
+/** One positioned error bar: a vertical span with caps, centred on its mark. */
+export type ChartErrorBar = {
+  xCenter: number
+  yLo: number
+  yHi: number
+  /** Cap half-width, so the renderer draws the same T at both ends. */
+  cap: number
+  color: string
+  label: string
+  series: string
+  lo: number
+  hi: number
+}
+
+/**
+ * Five-number summary of a raw sample, with the 1.5 IQR whisker rule.
+ *
+ * Whiskers stop at the last observation INSIDE the fence rather than at the
+ * fence itself, which is what makes them read as real data; anything past them
+ * comes back in `outliers`. Quartiles use linear interpolation between the two
+ * neighbouring order statistics.
+ *
+ * Returns `null` for an empty sample, so a category with no observations is a
+ * gap rather than a box drawn at zero.
+ */
+export function boxStats(sample: ReadonlyArray<number>, whisker = 1.5): BoxStats | null {
+  const v = sample.filter((n) => Number.isFinite(n)).slice().sort((a, b) => a - b)
+  if (!v.length) return null
+  const q = (p: number) => {
+    const pos = (v.length - 1) * p
+    const lo = Math.floor(pos)
+    const hi = Math.ceil(pos)
+    return lo === hi ? v[lo]! : v[lo]! + (v[hi]! - v[lo]!) * (pos - lo)
+  }
+  const q1 = q(0.25)
+  const median = q(0.5)
+  const q3 = q(0.75)
+  const fenceLo = q1 - whisker * (q3 - q1)
+  const fenceHi = q3 + whisker * (q3 - q1)
+  const inside = v.filter((n) => n >= fenceLo && n <= fenceHi)
+  const outliers = v.filter((n) => n < fenceLo || n > fenceHi)
+  return {
+    // `inside` can only be empty if every point is an outlier, which the fence
+    // rule makes impossible (q1 and q3 are always within it) - but a degenerate
+    // sample should still produce a box rather than `undefined` coordinates.
+    min: inside.length ? inside[0]! : v[0]!,
+    q1,
+    median,
+    q3,
+    max: inside.length ? inside[inside.length - 1]! : v[v.length - 1]!,
+    ...(outliers.length ? { outliers } : {}),
+  }
+}
+
+/** Normalize one `errors` entry to an absolute low/high pair around `value`. */
+function errorSpan(
+  e: number | { lo: number; hi: number } | null | undefined,
+  value: number,
+): { lo: number; hi: number } | null {
+  if (e == null) return null
+  if (typeof e === 'number') {
+    if (!Number.isFinite(e)) return null
+    const m = Math.abs(e)
+    return { lo: value - m, hi: value + m }
+  }
+  if (!Number.isFinite(e.lo) || !Number.isFinite(e.hi)) return null
+  return { lo: Math.min(e.lo, e.hi), hi: Math.max(e.lo, e.hi) }
+}
+
 /** A computed bar rectangle in SVG coordinates. Output of {@link buildChart}, not an input. */
 export type ChartBar = {
   x: number
@@ -490,6 +626,11 @@ export type ChartGeometry = {
   bars: ChartBar[]
   /** Candlestick / OHLC bars. Empty for every other chart type. */
   candles: ChartCandle[]
+  /** Box plots. Empty for every other chart type. */
+  boxes: ChartBox[]
+  /** Error bars, from any series carrying `errors`. Empty when none do - they
+   *  annotate whatever mark the series already draws. */
+  errorBars: ChartErrorBar[]
   lines: ChartLine[]
   slices: ChartPieSlice[]
   yTicks: ChartAxisTick[]
@@ -963,7 +1104,7 @@ function fmtDate(t: number, span: number): string {
 
 type ResolvedSeries = ChartSeries & {
   color: string
-  kind: 'bar' | 'line' | 'area' | 'candle'
+  kind: 'bar' | 'line' | 'area' | 'candle' | 'box'
   axis: 'left' | 'right'
 }
 
@@ -972,12 +1113,13 @@ type ResolvedSeries = ChartSeries & {
  *
  * A series counts as a candle when it says so OR when it carries `ohlc` data,
  * so a spec typed `'candlestick'` can still hold a plain volume bar series
- * beside the prices. Anything unrecognised falls back to `'bar'`, which is
- * what pie and scatter have always relied on.
+ * beside the prices. Boxes work the same way. Anything unrecognised falls back
+ * to `'bar'`, which is what pie and scatter have always relied on.
  */
 function kindOf(s: ChartSeries, specType: ChartType): ResolvedSeries['kind'] {
   const t = s.type ?? specType
   if (t === 'candlestick' || t === 'ohlc' || s.ohlc) return 'candle'
+  if (t === 'boxplot' || s.boxes) return 'box'
   if (t === 'line' || t === 'area') return t
   return 'bar'
 }
@@ -1031,6 +1173,30 @@ function axisDomain(
       note(k.h)
       note(k.l)
     }
+  }
+  // Boxes: the whisker ends and any outlier, for the same reason - `values`
+  // holds the medians, so a domain built from those alone would clip half of
+  // every box. Boxes are also absent from `stackable`, so a sample that never
+  // goes near zero keeps a readable domain.
+  for (const s of list) {
+    if (s.kind !== 'box') continue
+    for (const b of s.boxes ?? []) {
+      if (!b) continue
+      note(b.min)
+      note(b.max)
+      for (const o of b.outliers ?? []) note(o)
+    }
+  }
+  // Error bars extend past their own mark, so a whisker that leaves the plot is
+  // the same defect as a clipped candle wick.
+  for (const s of list) {
+    if (!s.errors) continue
+    s.errors.forEach((e, i) => {
+      const span = errorSpan(e, s.values[i] ?? 0)
+      if (!span) return
+      note(span.lo)
+      note(span.hi)
+    })
   }
   if (dMin === Infinity) {
     dMin = isLog ? 1 : 0
