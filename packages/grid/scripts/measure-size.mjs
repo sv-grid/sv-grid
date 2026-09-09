@@ -237,7 +237,17 @@ const BUDGET_KB = {
   // / calendar / sankey to their builders. The controller already derives the
   // chart spec in base, so this follows the shape that was already there
   // rather than adding a new one.
-  'full render component (SvGrid)': 84.5,
+  // 84.5 -> 84.8, and this one buys NOTHING - it restores headroom that should
+  // never have been given up. The last two bumps set the budget flush against
+  // the measurement, so base sat at exactly 84.5 with nothing to spare, and a
+  // round of work that touched only LAZY files (the chart renderer and engine)
+  // came out at 84.502 and failed the check. Two bytes.
+  //
+  // This file has already learned that lesson once, a few entries up: "it had
+  // been ratcheted flush against the measurement, so a one-byte feature failed
+  // CI". Same mistake, same fix - 0.3 KB of headroom, which is the margin every
+  // other entry here keeps and roughly one small feature's worth of room.
+  'full render component (SvGrid)': 84.8,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
@@ -290,7 +300,21 @@ const BUDGET_KB = {
   // bundle of grids that never chart. That dispatch moved into the engine
   // (`rowsToDirectSpec`), which paid for box plots and leaves the next direct
   // type free.
-  'chart surface (SvChart)': 29.6,
+  //
+  // 29.6 -> 30.6 for large-series rendering. Measured 29.3 before and 30.3
+  // after, so 1.0 KB, and it is the best-paying kilobyte in this file: a
+  // 20,000-point line chart went from 63,024 DOM nodes and 4,711 ms to 3,072
+  // nodes and 617 ms, measured in Chromium on the same build with the new paths
+  // toggled off and on.
+  //
+  // The engine was never the problem - `buildChart` does 100k points in about
+  // 140 ms. Four separate things emitted one node PER CATEGORY: a `<circle>`
+  // per point, a hit `<rect>` per category whose `aria-label` called
+  // `catRows()` at render time, a `<text>` per axis label, and a screen-reader
+  // table row. Under ~4px a category none of them could be read or aimed at
+  // anyway, so they collapse to one hovered dot, one hit surface, ~40 thinned
+  // labels and a capped table.
+  'chart surface (SvChart)': 30.6,
 }
 
 const CHECK = process.argv.includes('--check')

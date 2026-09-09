@@ -104,3 +104,68 @@ describe('SvGridChart candlesticks', () => {
     expect(head).toEqual(['Date', 'Series', 'Open', 'High', 'Low', 'Close'])
   })
 })
+
+describe('dense charts (more categories than pixels)', () => {
+  const line = (n: number): ChartSpec => ({
+    type: 'line',
+    categories: Array.from({ length: n }, (_, i) => `c${i}`),
+    series: [{ label: 's', values: Array.from({ length: n }, (_, i) => Math.sin(i / 7) * 50 + 60) }],
+    width: 800,
+    height: 400,
+  })
+
+  it('draws a dot and a hit rect per point while there is room', () => {
+    const el = render(line(40)) // 800px / 40 = 20px a category
+    expect(el.querySelectorAll('.sv-grid-chart-dot').length).toBe(40)
+    expect(el.querySelectorAll('.sv-grid-chart-cat-hit').length).toBe(40)
+  })
+
+  it('collapses the dots and the hit layer once categories go sub-pixel', () => {
+    // 800px / 5000 = 0.16px a category. Per-category machinery here is not just
+    // slow, it is useless: the dots overlap into a smear and a hit rect is
+    // narrower than the pointer.
+    const el = render(line(5000))
+    expect(el.querySelectorAll('.sv-grid-chart-dot').length).toBe(0)
+    const hits = el.querySelectorAll('.sv-grid-chart-cat-hit')
+    expect(hits.length).toBe(1)
+    expect(hits[0]!.getAttribute('data-dense')).toBe('true')
+    // The line itself is still drawn in full - this is about the marks on it,
+    // not about dropping data.
+    expect(el.querySelector('.sv-grid-chart-linepath')).toBeTruthy()
+  })
+
+  it('keeps the aria-label off the render path when dense', () => {
+    // Each per-category rect labels itself by calling catRows(), so 5000 rects
+    // meant 5000 tooltip-row computations before anything was hovered.
+    const el = render(line(5000))
+    const label = el.querySelector('.sv-grid-chart-cat-hit')!.getAttribute('aria-label')!
+    expect(label).toContain('5000 points')
+    expect(label).toContain('Arrow keys')
+  })
+
+  it('caps the screen-reader table and says so in the caption', () => {
+    const el = render(line(5000))
+    const rows = el.querySelectorAll('.sv-grid-chart-sr-only tbody tr')
+    expect(rows.length).toBe(1000)
+    expect(el.querySelector('.sv-grid-chart-sr-only caption')!.textContent).toContain('first 1000 of 5000')
+  })
+
+  it('leaves a small chart entirely alone', () => {
+    const el = render(line(40))
+    expect(el.querySelector('.sv-grid-chart-sr-only tbody')!.children.length).toBe(40)
+    expect(el.querySelector('.sv-grid-chart-sr-only caption')!.textContent).not.toContain('first')
+    expect(el.querySelector('[data-dense]')).toBeNull()
+  })
+
+  it('does not collapse a bar chart, whose marks ARE the data', () => {
+    // Dropping dots loses nothing because the line still shows the shape.
+    // Dropping bars would draw an empty chart, so density only governs the
+    // dot / hit / label / table layers, never the marks themselves.
+    //
+    // 1200 rather than 5000 only because jsdom takes seconds to build that many
+    // <rect> nodes; 1200 at 800px is already 0.67px a bar, well inside dense.
+    const el = render({ ...line(1200), type: 'bar' })
+    expect(el.querySelectorAll('.sv-grid-chart-bar').length).toBe(1200)
+    expect(el.querySelector('[data-dense]')).toBeTruthy()
+  })
+})

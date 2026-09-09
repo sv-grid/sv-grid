@@ -532,6 +532,36 @@ export function boxStats(sample: ReadonlyArray<number>, whisker = 1.5): BoxStats
   }
 }
 
+/**
+ * Category-axis labels, thinned so they do not overlap.
+ *
+ * A category axis used to emit one tick per category however many there were.
+ * At 5000 categories that is 5000 `<text>` nodes stacked into an unreadable
+ * grey band - the labels were the single biggest thing the renderer had to put
+ * in the DOM, and none of them could be read. The time and ordinal-time axes
+ * already thinned themselves (`dateTicks` / `ordinalDateTicks`); this brings
+ * the plain category axis in line.
+ *
+ * The first category always gets a label, so a thinned axis still starts where
+ * the data does.
+ */
+function thinCategoryTicks(
+  categories: string[],
+  xCenter: (i: number) => number,
+  slot: number,
+  rotated: boolean,
+): ChartCategoryTick[] {
+  // Rotated labels run diagonally and pack far tighter than upright ones. 18px
+  // is deliberately just under the spacing a 40-category chart at 800px already
+  // had, so charts that read fine before are untouched and only genuinely
+  // overlapping axes get thinned.
+  const minPx = rotated ? 18 : 60
+  const step = Math.max(1, Math.ceil(minPx / Math.max(slot, 0.001)))
+  const out: ChartCategoryTick[] = []
+  for (let i = 0; i < categories.length; i += step) out.push({ label: categories[i]!, x: xCenter(i) })
+  return out
+}
+
 /** Normalize one `errors` entry to an absolute low/high pair around `value`. */
 function errorSpan(
   e: number | { lo: number; hi: number } | null | undefined,
@@ -2238,7 +2268,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
           label: fmtDate(timeVals![i]!, tSpan),
           x: xCenter(i),
         }))
-      : spec.categories.map((label, i) => ({ label, x: xCenter(i) }))
+      : thinCategoryTicks(spec.categories, xCenter, slot, xLabelRotated)
 
   // Parent-tier ticks for a grouped category axis: each spans its leaves.
   const categoryGroupTicks: ChartGeometry['categoryGroupTicks'] = []

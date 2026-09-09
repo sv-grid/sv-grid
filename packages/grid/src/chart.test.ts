@@ -953,3 +953,45 @@ describe('rowsToBoxSpec (the panel path)', () => {
     expect(buildChart({ ...spec, width: 400, height: 300 }).boxes).toHaveLength(1)
   })
 })
+
+describe('category axis label thinning', () => {
+  const line = (n: number, width = 800): ChartSpec => ({
+    type: 'line',
+    categories: Array.from({ length: n }, (_, i) => `c${i}`),
+    series: [{ label: 's', values: Array.from({ length: n }, (_, i) => i % 50) }],
+    width,
+    height: 400,
+  })
+
+  it('labels every category while they fit', () => {
+    // The threshold is set just under the spacing a 40-category chart at 800px
+    // already had, so charts that read fine before are untouched.
+    expect(buildChart(line(2)).xTicks).toHaveLength(2)
+    expect(buildChart(line(12)).xTicks).toHaveLength(12)
+    expect(buildChart(line(40)).xTicks).toHaveLength(40)
+  })
+
+  it('thins once labels would overlap, and never grows without bound', () => {
+    const many = buildChart(line(5000)).xTicks
+    expect(many.length).toBeLessThan(60)
+    expect(many.length).toBeGreaterThan(10)
+    // 5000 labels were 5000 <text> nodes stacked into an unreadable band, and
+    // the single biggest thing the renderer had to put in the DOM.
+    expect(buildChart(line(500)).xTicks.length).toBeLessThan(60)
+  })
+
+  it('keeps the first category labelled, so the axis starts where the data does', () => {
+    expect(buildChart(line(5000)).xTicks[0]!.label).toBe('c0')
+  })
+
+  it('thins by available width, not by count alone', () => {
+    const narrow = buildChart(line(200, 400)).xTicks.length
+    const wide = buildChart(line(200, 1600)).xTicks.length
+    expect(wide).toBeGreaterThan(narrow)
+  })
+
+  it('leaves ticks in ascending x order after thinning', () => {
+    const ticks = buildChart(line(1000)).xTicks
+    for (let i = 1; i < ticks.length; i += 1) expect(ticks[i]!.x).toBeGreaterThan(ticks[i - 1]!.x)
+  })
+})

@@ -18385,6 +18385,32 @@ changing its type:
 cover the whiskers, so a bar with a wide interval cannot clip at the top of the
 plot.
 
+## Large series
+
+A chart with more categories than the plot has pixels adapts on its own, with
+nothing to configure. Below about 4px per category:
+
+- **Dots** collapse to the hovered one. The line path still draws every point -
+  no data is dropped - but at that spacing the dots overlap into a band that
+  hides the line they are meant to mark.
+- **Hit zones** collapse from one rect per category to a single surface that
+  works out the index from the cursor. Arrow keys still step point by point.
+- **Axis labels** thin to whatever fits, first category always labelled. This
+  applies at any density, not only past the threshold.
+- **The screen-reader table** is capped, and its caption says so ("first 1000 of
+  100000 rows"). A table with a row per point is not an accessible version of a
+  chart; nobody traverses that.
+
+Measured on a 20,000-point line chart in Chromium: 63,024 DOM nodes and 4,711 ms
+before, 3,072 nodes and 617 ms after. The engine was never the bottleneck -
+`buildChart` handles 100,000 points in about 140 ms - it was four separate
+things that emitted one node per category.
+
+Bar charts are not thinned: a line still shows its shape without dots, but bars
+**are** the data, so dropping them would draw an empty chart. Several thousand
+sub-pixel bars still render correctly and still merge into a solid block, which
+is a good sign you want `topN`, a coarser group-by, or `zoomable`.
+
 ## Charting from the grid, without a spec
 
 `charting` puts the whole thing behind one prop: the grid grows a Chart button

@@ -2218,7 +2218,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
           label: fmtDate(timeVals![i]!, tSpan),
           x: xCenter(i),
         }))
-      : spec.categories.map((label, i) => ({ label, x: xCenter(i) }))
+      : thinCategoryTicks(spec.categories, xCenter, slot, xLabelRotated)
 
   // Parent-tier ticks for a grouped category axis: each spans its leaves.
   const categoryGroupTicks: ChartGeometry['categoryGroupTicks'] = []

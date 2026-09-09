@@ -343,6 +343,85 @@
     (isHorizontal ? geo.plot.h : geo.plot.w) / Math.max(1, visibleSpec.categories.length),
   )
 
+  /**
+   * A chart with more categories than the plot has room for.
+   *
+   * `buildChart` itself scales fine - 100k line points is about 140ms of pure
+   * maths. What does not scale is what the DOM is asked to hold: one `<circle>`
+   * per point, one hit `<rect>` per category whose `aria-label` costs a
+   * `catRows()` call AT RENDER TIME, and one screen-reader table row per
+   * category. That is roughly 300k nodes for a 100k-point series, and the chart
+   * stops responding long before the engine breaks a sweat.
+   *
+   * Below ~4px per category none of that machinery is buying anything anyway:
+   * the dots overlap into a smear that hides the line they are meant to mark,
+   * and a hit rect thinner than the pointer cannot be aimed at. So under the
+   * threshold the marks collapse to the line path, the hit rects collapse to one
+   * surface that computes the index from the cursor, and the table is capped.
+   */
+  const DENSE_SLOT_PX = 4
+  const dense = $derived(
+    isCartesian && !isScatter && !isHorizontal && slot < DENSE_SLOT_PX && visibleSpec.categories.length > 1,
+  )
+
+  /** Rows the screen-reader table will actually render before it is capped. */
+  const SR_ROW_CAP = 1000
+
+  /** Which category the cursor is over, in dense mode. Binary search over the
+   *  first series' point x's, so a non-uniform (time) axis is handled too;
+   *  uniform slot maths when there are no line points to search. */
+  function catAtClientX(clientX: number, target: Element): number | null {
+    const svg = (target as SVGGraphicsElement).ownerSVGElement
+    if (!svg) return null
+    const box = svg.getBoundingClientRect()
+    if (!box.width) return null
+    // Client px -> viewBox px. The svg scales to its container, so the two
+    // differ whenever the chart is not rendered at its natural size.
+    const vb = svg.viewBox.baseVal
+    const scale = vb && vb.width ? vb.width / box.width : 1
+    const x = (clientX - box.left) * scale + (vb ? vb.x : 0)
+    const pts = geo.lines[0]?.points
+    const n = visibleSpec.categories.length
+    if (!pts || pts.length !== n) {
+      const i = Math.floor((x - geo.plot.x) / slot)
+      return i >= 0 && i < n ? i : null
+    }
+    let lo = 0
+    let hi = pts.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (pts[mid]!.x < x) lo = mid + 1
+      else hi = mid
+    }
+    // Land on the nearer of the two neighbours rather than always rounding up.
+    if (lo > 0 && Math.abs(pts[lo - 1]!.x - x) <= Math.abs(pts[lo]!.x - x)) lo -= 1
+    return lo
+  }
+
+  /** Focused category in dense mode, where there is one rect rather than n. */
+  let denseIndex = $state(0)
+  function onDenseKey(e: KeyboardEvent) {
+    const max = visibleSpec.categories.length - 1
+    const step = Math.max(1, Math.floor(max / 10))
+    let next = denseIndex
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': next = Math.min(max, denseIndex + 1); break
+      case 'ArrowLeft': case 'ArrowUp': next = Math.max(0, denseIndex - 1); break
+      case 'Home': next = 0; break
+      case 'End': next = max; break
+      case 'PageDown': next = Math.min(max, denseIndex + step); break
+      case 'PageUp': next = Math.max(0, denseIndex - step); break
+      case 'Enter': case ' ':
+        e.preventDefault()
+        select(visibleSpec.categories[denseIndex] ?? '', '', 0, denseIndex)
+        return
+      default: return
+    }
+    e.preventDefault()
+    denseIndex = next
+    focusCat(e.currentTarget as Element, next)
+  }
+
   // Opacity for a series when another legend chip is being hovered.
   const dimOf = (seriesLabel: string) => (dimmed && dimmed !== seriesLabel ? 0.18 : 1)
 
@@ -422,6 +501,13 @@
       rows: spec.categories.map((c, i) => [c, ...coloredSeries.map((s) => fmt(s.values[i] ?? 0))]),
     }
   })
+  /** Declared here rather than in the markup: `{@const}` is only legal as the
+   *  immediate child of a block, and the table sits at the template top level.
+   *  Below `srTable` because a `$derived` used above its declaration is an
+   *  error, not a hoist. */
+  const srCapped = $derived(srTable.rows.length > SR_ROW_CAP)
+  const srRows = $derived(srCapped ? srTable.rows.slice(0, SR_ROW_CAP) : srTable.rows)
+
   function truncate(s: string, n = 12): string {
     return s.length > n ? s.slice(0, n - 1) + '…' : s
   }
@@ -865,14 +951,24 @@
           <path class="sv-grid-chart-area" d={line.areaPath} fill={seriesFill[line.label] ?? line.color} fill-opacity="0.15" stroke="none" />
         {/if}
         <path class="sv-grid-chart-linepath" d={line.path} fill="none" stroke={line.color} stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-        {#each line.points as pt, pi (pi)}
-          {#if pt.defined}
-            <circle class="sv-grid-chart-dot" class:is-active={activeCat === pi} cx={pt.x} cy={pt.y} r={activeCat === pi ? 4 : 3} fill={line.color} />
-            {#if dataLabels}
-              <text class="sv-grid-chart-datalabel" x={pt.x} y={pt.y - 7} text-anchor="middle">{fmt(pt.value)}</text>
-            {/if}
+        {#if dense}
+          <!-- Below ~4px a category the dots touch, so they stop marking the
+               points and start hiding the line. Only the hovered one is drawn,
+               which is the one a reader is actually asking about. -->
+          {@const pt = line.points[activeCat ?? -1]}
+          {#if pt?.defined}
+            <circle class="sv-grid-chart-dot is-active" cx={pt.x} cy={pt.y} r="4" fill={line.color} />
           {/if}
-        {/each}
+        {:else}
+          {#each line.points as pt, pi (pi)}
+            {#if pt.defined}
+              <circle class="sv-grid-chart-dot" class:is-active={activeCat === pi} cx={pt.x} cy={pt.y} r={activeCat === pi ? 4 : 3} fill={line.color} />
+              {#if dataLabels}
+                <text class="sv-grid-chart-datalabel" x={pt.x} y={pt.y - 7} text-anchor="middle">{fmt(pt.value)}</text>
+              {/if}
+            {/if}
+          {/each}
+        {/if}
       </g>
     {/each}
 
@@ -1256,6 +1352,34 @@
            Vertical bands centre on the ACTUAL point x (which differs from
            slot math when xType is 'time'); their widths bisect the gap to
            neighbouring points so a mouse over a dot always selects it. -->
+      {#if dense}
+        <!-- One surface instead of n rects. At this density a per-category
+             rect is thinner than the pointer, and each one costs a catRows()
+             call for its aria-label at render time - so 100k categories meant
+             100k tooltip-row computations before anything was even hovered. -->
+        <!-- svelte-ignore a11y_no_static_element_interactions a11y_mouse_events_have_key_events a11y_no_noninteractive_tabindex -->
+        <rect
+          class="sv-grid-chart-cat-hit"
+          x={geo.plot.x}
+          y={geo.plot.y}
+          width={geo.plot.w}
+          height={geo.plot.h}
+          role={onSelect ? 'button' : 'img'}
+          tabindex={interactive ? 0 : undefined}
+          data-cat-index={denseIndex}
+          data-dense="true"
+          aria-label={`${visibleSpec.categories.length} points, ${visibleSpec.categories[0] ?? ''} to ${visibleSpec.categories[visibleSpec.categories.length - 1] ?? ''}. Arrow keys step through values.`}
+          onmousemove={(e) => {
+            const i = catAtClientX(e.clientX, e.currentTarget)
+            if (i != null) { denseIndex = i; hoverCat(e.clientX, e.clientY, i) }
+          }}
+          onmouseleave={clearActive}
+          onfocus={(e) => focusCat(e.currentTarget, denseIndex)}
+          onblur={clearActive}
+          onclick={() => select(visibleSpec.categories[denseIndex] ?? '', '', 0, denseIndex)}
+          onkeydown={onDenseKey}
+        />
+      {:else}
       {#each visibleSpec.categories as cat, i (cat + i)}
         {@const pts = geo.lines[0]?.points}
         {@const px = pts?.[i]?.x}
@@ -1285,6 +1409,7 @@
           onkeydown={(e) => onCatKey(e, i)}
         />
       {/each}
+      {/if}
     {/if}
 
     {#if dragRect}
@@ -1390,14 +1515,21 @@
     </div>
   {/if}
 
-  <!-- Visually-hidden data table: the same data for assistive technology. -->
+  <!-- Visually-hidden data table: the same data for assistive technology.
+       Capped, and the caption says so. A table with 100k rows is not an
+       accessible version of anything - nobody traverses that with a screen
+       reader, and rendering it was a third of the DOM cost of a large chart.
+       Saying "first 1000 of 100000" is more use than silently truncating, and
+       more honest than pretending the whole set is readable here. -->
   <table id={`${uid}-table`} class="sv-grid-chart-sr-only">
-    <caption>{spec.type} chart data</caption>
+    <caption>
+      {spec.type} chart data{#if srCapped}, first {SR_ROW_CAP} of {srTable.rows.length} rows{/if}
+    </caption>
     <thead>
       <tr>{#each srTable.cols as c (c)}<th>{c}</th>{/each}</tr>
     </thead>
     <tbody>
-      {#each srTable.rows as row, ri (ri)}
+      {#each srRows as row, ri (ri)}
         <tr>{#each row as cell, ci (ci)}<td>{cell}</td>{/each}</tr>
       {/each}
     </tbody>
@@ -1884,5 +2016,19 @@
     border: 1.5px solid transparent;
     display: inline-block;
     box-sizing: border-box;
+  }
+
+  /* Reduced motion. Every other animated component in the kit honours this
+     (SvCard, SvCircularProgress, SvCollapsible); the chart never did, so a
+     reader who has asked the OS for less movement still got every bar, dot,
+     candle and box sliding on each re-aggregation - and a chart re-aggregates
+     on every filter keystroke, which is the worst case for it. */
+  @media (prefers-reduced-motion: reduce) {
+    .sv-grid-chart-bar,
+    .sv-grid-chart-dot,
+    .sv-grid-chart-candle,
+    .sv-grid-chart-box {
+      transition: none;
+    }
   }
 </style>
