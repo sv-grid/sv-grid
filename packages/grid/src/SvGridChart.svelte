@@ -66,6 +66,35 @@
      */
     underlay?: Snippet<[ChartRenderContext]>
     overlay?: Snippet<[ChartRenderContext]>
+    /**
+     * Let a reader pin annotations on the plot. Adds an "Annotate" toggle to
+     * the toolbar; while it is on, clicking the plot fires `onAnnotate` with
+     * the point that was clicked, and clicking an existing marker fires
+     * `onAnnotationRemove` with its index.
+     *
+     * The chart does NOT store them. It owns the gesture - which you cannot
+     * build from outside, because drag is already zoom and click is already
+     * drill - and hands back the data point; where the annotations live, and
+     * whether they survive a reload, is the host's business. Put what comes
+     * back into `spec.annotations` and they render like any other.
+     */
+    annotatable?: boolean
+    /**
+     * A point the reader picked while annotating. It is a DATA point, not a
+     * pixel: annotate mode takes over the category gesture, so a note anchors
+     * to the category it was pinned on and stays there when the chart is
+     * re-laid-out, re-sorted or zoomed. That also means it works from the
+     * keyboard, since the category hit zones already navigate with arrows.
+     */
+    onAnnotate?: (at: {
+      /** The category picked, and its index. */
+      category: string
+      index: number
+      /** The value at that category on the first series. */
+      value: number
+    }) => void
+    /** An existing `spec.annotations` entry was clicked, by index. */
+    onAnnotationRemove?: (index: number) => void
   }
   /** What a custom mark is handed. `scales` is null on non-cartesian types. */
   type ChartRenderContext = {
@@ -92,8 +121,14 @@
     height,
     underlay,
     overlay,
+    annotatable = false,
+    onAnnotate,
+    onAnnotationRemove,
   }: Props = $props()
-  const showToolbar = $derived(toolbar ?? (zoomable || !!onDrill))
+  const showToolbar = $derived(toolbar ?? (zoomable || !!onDrill || annotatable))
+  /** Annotate mode is off until the reader asks for it: it takes over the plot
+   *  click, which is the drill gesture the rest of the time. */
+  let annotating = $state(false)
 
   const fmt = (v: number) =>
     formatValue
@@ -195,6 +230,9 @@
     return Math.max(0, Math.min(visibleSpec.categories.length - 1, idx))
   }
   function onZoomDown(e: PointerEvent) {
+    // Annotate mode takes the plot pointer over. Without this a click to pin an
+    // annotation also starts a zoom drag, and the reader gets both.
+    if (annotating) return
     if (!zoomable || !isCartesian) return
     const p = svgPoint(e)
     if (!p) return
@@ -415,16 +453,26 @@
   /** Which category the cursor is over, in dense mode. Binary search over the
    *  first series' point x's, so a non-uniform (time) axis is handled too;
    *  uniform slot maths when there are no line points to search. */
-  function catAtClientX(clientX: number, target: Element): number | null {
-    const svg = (target as SVGGraphicsElement).ownerSVGElement
-    if (!svg) return null
+  /** Client px -> viewBox px. The svg scales to its container, so the two
+   *  differ whenever the chart is not rendered at its natural size. */
+  function toViewBox(clientX: number, clientY: number, target: Element): { x: number; y: number } | null {
+    const svg = (target as SVGGraphicsElement).ownerSVGElement ?? (target as SVGSVGElement)
+    if (!svg || typeof svg.getBoundingClientRect !== 'function') return null
     const box = svg.getBoundingClientRect()
-    if (!box.width) return null
-    // Client px -> viewBox px. The svg scales to its container, so the two
-    // differ whenever the chart is not rendered at its natural size.
-    const vb = svg.viewBox.baseVal
-    const scale = vb && vb.width ? vb.width / box.width : 1
-    const x = (clientX - box.left) * scale + (vb ? vb.x : 0)
+    if (!box.width || !box.height) return null
+    const vb = (svg as SVGSVGElement).viewBox?.baseVal
+    const sx = vb && vb.width ? vb.width / box.width : 1
+    const sy = vb && vb.height ? vb.height / box.height : 1
+    return {
+      x: (clientX - box.left) * sx + (vb ? vb.x : 0),
+      y: (clientY - box.top) * sy + (vb ? vb.y : 0),
+    }
+  }
+
+  function catAtClientX(clientX: number, target: Element): number | null {
+    const vp = toViewBox(clientX, 0, target)
+    if (!vp) return null
+    const x = vp.x
     const pts = geo.lines[0]?.points
     const n = visibleSpec.categories.length
     if (!pts || pts.length !== n) {
@@ -710,6 +758,18 @@
   }
 
   function select(category: string, series: string, value: number, catIndex?: number) {
+    // Annotate mode takes over the category gesture rather than adding one of
+    // its own. That is what makes it work from the keyboard: the hit rects
+    // already have a roving tabindex and fire this on Enter, so pinning a note
+    // is Tab, arrow, Enter - with no extra handler and no click-only feature.
+    if (annotating && onAnnotate && catIndex !== undefined) {
+      // A CATEGORY click carries no value - `select(cat, '', 0, i)` passes zero
+      // because a drill only needs the category - so read the real one off the
+      // first series. A click on a specific bar or slice already has one.
+      const picked = series ? value : visibleSpec.series[0]?.values[catIndex]
+      onAnnotate({ category, index: catIndex, value: Number.isFinite(picked) ? (picked as number) : 0 })
+      return
+    }
     // Collect contributing row ids when the spec carries them. For a
     // category click (series === ''), flatten across every series; for a
     // single-series click, return just that series' bucket.
@@ -878,6 +938,19 @@
           Reset zoom
         </button>
       {/if}
+      {#if annotatable}
+        <button
+          type="button"
+          class="sv-grid-chart-tool"
+          class:is-on={annotating}
+          aria-pressed={annotating}
+          onclick={() => (annotating = !annotating)}
+          title={annotating ? 'Click the plot to pin a note, or a marker to remove it' : 'Pin notes on the chart'}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><circle cx="12" cy="11" r="3"/><path d="M12 14v8"/></svg>
+          Annotate
+        </button>
+      {/if}
       <button type="button" class="sv-grid-chart-tool" onclick={() => downloadImage('png')} title="Download PNG">PNG</button>
       <button type="button" class="sv-grid-chart-tool" onclick={() => downloadImage('svg')} title="Download SVG">SVG</button>
       <button type="button" class="sv-grid-chart-tool" onclick={copyAsImage} title="Copy chart as image">
@@ -890,7 +963,8 @@
     class="sv-grid-chart-svg"
     class:is-interactive={interactive}
     class:is-clickable={!!onSelect || !!onDrill}
-    class:is-zoomable={zoomable && isCartesian}
+    class:is-zoomable={zoomable && isCartesian && !annotating}
+    class:is-annotating={annotating}
     class:is-dragging={!!dragStart}
     viewBox={`0 0 ${geo.width} ${geo.height}`}
     width="100%"
@@ -1109,7 +1183,33 @@
       {@const dx = ann.placement === 'left' ? -8 : ann.placement === 'right' ? 8 : 0}
       {@const dy = ann.placement === 'bottom' ? 14 : ann.placement === 'top' ? -8 : 0}
       {@const anchor = ann.placement === 'left' ? 'end' : ann.placement === 'right' ? 'start' : 'middle'}
-      <circle class="sv-grid-chart-annotation-marker" cx={ann.x} cy={ann.y} r="4" fill={ann.color} stroke="var(--sg-bg, #fff)" stroke-width="1.5" />
+      <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+      <circle
+        class="sv-grid-chart-annotation-marker"
+        class:is-removable={annotating && !!onAnnotationRemove}
+        cx={ann.x}
+        cy={ann.y}
+        r={annotating && onAnnotationRemove ? 6 : 4}
+        fill={ann.color}
+        stroke="var(--sg-bg, #fff)"
+        stroke-width="1.5"
+        role={annotating && onAnnotationRemove ? 'button' : undefined}
+        tabindex={annotating && onAnnotationRemove ? 0 : undefined}
+        aria-label={annotating && onAnnotationRemove ? `Remove note: ${ann.label}` : undefined}
+        onclick={(e) => {
+          if (!annotating || !onAnnotationRemove) return
+          // Or the same click also pins a NEW note where this one is.
+          e.stopPropagation()
+          onAnnotationRemove(ai)
+        }}
+        onkeydown={(e) => {
+          if (!annotating || !onAnnotationRemove) return
+          if (e.key !== 'Enter' && e.key !== ' ') return
+          e.preventDefault()
+          e.stopPropagation()
+          onAnnotationRemove(ai)
+        }}
+      />
       <text class="sv-grid-chart-annotation-label" x={ann.x + dx} y={ann.y + dy} text-anchor={anchor} fill={ann.color}>{ann.label}</text>
     {/each}
 
@@ -1949,6 +2049,16 @@
     background: var(--sg-row-hover-bg, #f1f5f9);
     border-color: var(--sg-accent, #2563eb);
   }
+
+  /* Annotate mode: the toggle reads as pressed, the plot as a target, and a
+     marker as something you can click to take away. */
+  .sv-grid-chart-tool.is-on {
+    background: var(--sg-accent, #2563eb);
+    border-color: var(--sg-accent, #2563eb);
+    color: var(--sg-on-accent, #fff);
+  }
+  .sv-grid-chart-svg.is-annotating { cursor: copy; }
+  .sv-grid-chart-annotation-marker.is-removable { cursor: pointer; }
 
   /* Drag-to-zoom: translucent accent rectangle over the plot. */
   .sv-grid-chart-svg.is-zoomable { cursor: crosshair; }

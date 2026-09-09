@@ -18541,6 +18541,48 @@ filter the source column and empty the grid.
 `formatValue` is applied to tooltips, data labels, **and the Y-axis ticks**, so
 they stay consistent - keep it compact (e.g. `$2M`, not `$2,000,000`).
 
+### Letting readers pin their own notes
+
+`annotations` in the spec are yours. `annotatable` hands the same thing to the
+reader: it adds an **Annotate** toggle to the toolbar, and while that is on,
+picking a category fires `onAnnotate` and clicking an existing marker fires
+`onAnnotationRemove`.
+
+The chart does not store them. It owns the gesture - which you cannot build from
+outside, because drag is already zoom and click is already drill - and hands you
+back the data point. Where the notes live and whether they outlive a reload is
+yours to decide:
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvChart, type ChartAnnotation, type ChartSpec } from '@svgrid/grid'
+
+  let notes = $state<ChartAnnotation[]>([])
+  const base: ChartSpec = {
+    type: 'line',
+    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    series: [{ label: 'Errors', values: [4, 6, 31, 8, 5] }],
+  }
+  const spec = $derived({ ...base, annotations: notes })
+</script>
+
+<SvChart
+  {spec}
+  annotatable
+  onAnnotate={(at) => (notes = [...notes, { at: { category: at.category }, label: `${at.value}` }])}
+  onAnnotationRemove={(i) => (notes = notes.filter((_, n) => n !== i))}
+/>
+```
+
+What comes back is a **data point**, not a pixel: `{ category, index, value }`.
+A note anchored to a category stays on its data when the chart is re-sorted,
+re-filtered or zoomed, which is the whole reason not to hand back coordinates.
+
+It works from the keyboard for the same reason. Annotate mode takes over the
+category gesture rather than adding one of its own, and the category hit zones
+already navigate with arrow keys - so pinning a note is Tab, arrow, Enter. A
+marker is focusable while the mode is on, and Enter removes it.
+
 ## Export
 
 Download the rendered chart as a standalone SVG or a PNG. Pass the chart's

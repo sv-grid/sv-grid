@@ -324,7 +324,17 @@ const BUDGET_KB = {
   // markup, not a component: handing over the geometry and the scales lets a
   // caller draw with ordinary SVG in a snippet, and costs a fraction of what a
   // registry plus its resolution would.
-  'chart surface (SvChart)': 31.0,
+  //
+  // 31.0 -> 31.6 for interactive annotations. Measured 30.7 before and 31.3
+  // after, so 0.6 KB: the toolbar toggle, the removable markers and their
+  // keyboard handling.
+  //
+  // Cheap because annotate mode does not add a gesture - it takes over the
+  // category one. Drag was already zoom and double-click already reset, so a
+  // new gesture would have needed its own hit testing and its own pointer
+  // bookkeeping. Reusing `select()` also means it works from the keyboard for
+  // nothing, since the category hit zones already navigate with arrows.
+  'chart surface (SvChart)': 31.6,
 }
 
 const CHECK = process.argv.includes('--check')

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mount, unmount, createRawSnippet } from 'svelte'
+import { mount, unmount, createRawSnippet, flushSync } from 'svelte'
 import SvGridChart from './SvGridChart.svelte'
 import type { ChartSpec } from './chart'
 
@@ -219,5 +219,93 @@ describe('custom-series seam (underlay / overlay snippets)', () => {
     const el = render(spec)
     expect(el.querySelector('.my-over')).toBeNull()
     expect(el.querySelector('.sv-grid-chart-bar')).toBeTruthy()
+  })
+})
+
+describe('interactive annotations', () => {
+  const spec: ChartSpec = {
+    type: 'bar',
+    categories: ['a', 'b', 'c'],
+    series: [{ label: 's', values: [10, 20, 30] }],
+    width: 500,
+    height: 300,
+  }
+  const noted: ChartSpec = { ...spec, annotations: [{ at: { category: 'b' }, label: 'deploy' }] }
+
+  it('shows no toggle unless asked for', () => {
+    const el = render(spec, { toolbar: true })
+    expect([...el.querySelectorAll('.sv-grid-chart-tool')].some((b) => b.textContent?.includes('Annotate'))).toBe(false)
+  })
+
+  it('adds an Annotate toggle, off to begin with', () => {
+    const el = render(spec, { annotatable: true })
+    const btn = [...el.querySelectorAll('.sv-grid-chart-tool')].find((b) => b.textContent?.includes('Annotate'))!
+    expect(btn).toBeTruthy()
+    expect(btn.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('reports the data point picked, not a pixel', () => {
+    const seen: unknown[] = []
+    const el = render(spec, { annotatable: true, onAnnotate: (a: unknown) => seen.push(a) })
+    const btn = [...el.querySelectorAll('.sv-grid-chart-tool')].find((b) => b.textContent?.includes('Annotate'))! as HTMLButtonElement
+    btn.click()
+    flushSync()
+    ;(el.querySelectorAll('.sv-grid-chart-cat-hit')[1] as SVGElement).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    // Anchored to a category, so the note survives a re-layout, a re-sort or a
+    // zoom - which a pixel would not.
+    expect(seen).toEqual([{ category: 'b', index: 1, value: 20 }])
+  })
+
+  it('takes over the drill gesture rather than firing both', () => {
+    const drills: unknown[] = []
+    const notes: unknown[] = []
+    const el = render(spec, {
+      annotatable: true,
+      onSelect: (s: unknown) => drills.push(s),
+      onAnnotate: (a: unknown) => notes.push(a),
+    })
+    const hit = () => (el.querySelectorAll('.sv-grid-chart-cat-hit')[0] as SVGElement).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    hit()
+    flushSync()
+    expect(drills).toHaveLength(1)
+    expect(notes).toHaveLength(0)
+
+    const btn = [...el.querySelectorAll('.sv-grid-chart-tool')].find((b) => b.textContent?.includes('Annotate'))! as HTMLButtonElement
+    btn.click()
+    flushSync()
+    hit()
+    flushSync()
+    expect(notes).toHaveLength(1)
+    expect(drills).toHaveLength(1) // not both
+  })
+
+  it('makes existing markers removable, by mouse and by keyboard', () => {
+    const removed: number[] = []
+    const el = render(noted, { annotatable: true, onAnnotationRemove: (i: number) => removed.push(i) })
+    const marker = () => el.querySelector('.sv-grid-chart-annotation-marker') as SVGElement
+    // Inert until the mode is on.
+    expect(marker().getAttribute('role')).toBeNull()
+    marker().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(removed).toEqual([])
+
+    const btn = [...el.querySelectorAll('.sv-grid-chart-tool')].find((b) => b.textContent?.includes('Annotate'))! as HTMLButtonElement
+    btn.click()
+    flushSync()
+    expect(marker().getAttribute('role')).toBe('button')
+    expect(marker().getAttribute('tabindex')).toBe('0')
+    marker().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    expect(removed).toEqual([0])
+
+    marker().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    flushSync()
+    expect(removed).toEqual([0, 0])
+  })
+
+  it('renders annotations normally when the mode is off', () => {
+    const el = render(noted)
+    expect(el.querySelectorAll('.sv-grid-chart-annotation-marker')).toHaveLength(1)
+    expect(el.querySelector('.sv-grid-chart-annotation-label')!.textContent).toBe('deploy')
   })
 })
