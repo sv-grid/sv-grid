@@ -334,7 +334,11 @@ const BUDGET_KB = {
   // new gesture would have needed its own hit testing and its own pointer
   // bookkeeping. Reusing `select()` also means it works from the keyboard for
   // nothing, since the category hit zones already navigate with arrows.
-  'chart surface (SvChart)': 31.6,
+  //
+  // 31.6 -> 32.1 for the enter animation and the reduced-motion guard.
+  // Measured 31.3 before and 31.8 after, so 0.5 KB - all of it the CSS, which
+  // Svelte inlines into the component's JS.
+  'chart surface (SvChart)': 32.1,
 }
 
 const CHECK = process.argv.includes('--check')

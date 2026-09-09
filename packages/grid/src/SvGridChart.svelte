@@ -2182,6 +2182,36 @@
     box-sizing: border-box;
   }
 
+  /* Enter animation. Marks fade in when they are first created; the position
+     transitions above then handle everything after that, so a chart appears
+     smoothly and moves smoothly rather than popping into place and then
+     animating.
+
+     A fade rather than the wipe you would normally reach for. A wipe needs a
+     clip-path over all the marks, and the marks here are direct children of the
+     <svg> - grouping them is a large edit across every chart type, for a nicer
+     version of something already pleasant. Noted rather than done.
+
+     `both` matters: it holds the from-state before the animation starts, so a
+     mark cannot flash at full opacity for a frame first. It also means that
+     when `animation: none` applies below, the rule stops applying entirely and
+     the mark is simply painted - not stuck invisible. */
+  @keyframes sv-grid-chart-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .sv-grid-chart-bar,
+  .sv-grid-chart-linepath,
+  .sv-grid-chart-area,
+  .sv-grid-chart-slice,
+  .sv-grid-chart-candle,
+  .sv-grid-chart-box,
+  .sv-grid-chart-funnel-seg,
+  .sv-grid-chart-heatcell,
+  .sv-grid-chart-treemap-cell {
+    animation: sv-grid-chart-in 0.3s ease-out both;
+  }
+
   /* Reduced motion. Every other animated component in the kit honours this
      (SvCard, SvCircularProgress, SvCollapsible); the chart never did, so a
      reader who has asked the OS for less movement still got every bar, dot,
@@ -2193,6 +2223,17 @@
     .sv-grid-chart-candle,
     .sv-grid-chart-box {
       transition: none;
+    }
+    .sv-grid-chart-bar,
+    .sv-grid-chart-linepath,
+    .sv-grid-chart-area,
+    .sv-grid-chart-slice,
+    .sv-grid-chart-candle,
+    .sv-grid-chart-box,
+    .sv-grid-chart-funnel-seg,
+    .sv-grid-chart-heatcell,
+    .sv-grid-chart-treemap-cell {
+      animation: none;
     }
   }
 </style>
