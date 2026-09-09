@@ -2353,26 +2353,26 @@ export function createSvGridController<
     const seriesField = fieldOf(effectiveChartSeriesId);
     const rowsForChart = chartRows as Array<Record<string, unknown>>;
 
-    // Two types read the rows directly rather than a grouped grid: a scatter
-    // point is one row, and a gauge has no category axis at all. Everything
-    // else goes through the aggregation below and is reshaped afterwards, so
-    // reduce / sort / topN / "Other" keep working for all of them.
-    if (chartType === "scatter") {
-      const yField = fieldOf(effectiveChartMeasure2Id);
-      if (!values[0] || !yField) return null;
-      return chartEngine.rowsToScatterSpec(rowsForChart, {
-        x: values[0],
-        y: yField,
-        ...(seriesField ? { series: seriesField } : {}),
-        ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
-      });
-    }
-    if (chartType === "gauge") {
-      return chartEngine.rowsToGaugeSpec(rowsForChart, {
-        value: values[0]!,
-        reduce: chartReduce,
-      });
-    }
+    // Some types read the rows directly rather than a grouped grid: a scatter
+    // point is one row, a gauge has no category axis at all, and a box plot
+    // needs the whole sample per group rather than one reduced number. The
+    // engine owns that dispatch - naming each type here would put them in the
+    // base bundle, which every grid pays for whether or not it ever charts.
+    // Everything else falls through to the aggregation below and is reshaped
+    // afterwards, so reduce / sort / topN / "Other" keep working for all of it.
+    const direct = chartEngine.rowsToDirectSpec(chartType, rowsForChart, {
+      category: category as string,
+      ...(values[0] ? { value: values[0] } : {}),
+      ...(fieldOf(effectiveChartMeasure2Id) ? { value2: fieldOf(effectiveChartMeasure2Id)! } : {}),
+      ...(seriesField ? { series: seriesField } : {}),
+      reduce: chartReduce,
+      ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
+    });
+    if (direct) return direct;
+    // A direct type that could not build (scatter with no Y picked yet, for
+    // instance) must not fall through to the bar-chart path and draw the wrong
+    // chart - it renders the panel's empty state instead.
+    if (chartType === "scatter" || chartType === "gauge" || chartType === "boxplot") return null;
 
     const spec = chartEngine.rowsToChartSpec<Record<string, unknown>>(rowsForChart, {
       type: chartType,

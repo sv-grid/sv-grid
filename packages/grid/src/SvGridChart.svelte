@@ -221,10 +221,18 @@
     // The mini-map draws candles as a close-price line: at brush scale a
     // candle is a couple of pixels wide and reads as noise, while a close line
     // is the shape a reader actually navigates by.
-    type: isCandle ? 'line' : spec.type,
+    // A box gets the same treatment for the same reason: at brush scale it is
+    // a smear, while the median line is a shape you can navigate by.
+    type: isCandle ? 'line' : spec.type === 'boxplot' ? 'line' : spec.type,
     series: coloredSeries
       .filter((s) => !effectiveHidden.has(s.label))
-      .map((s) => (s.ohlc ? { ...s, ohlc: undefined, type: 'line' as const } : s)),
+      .map((s) =>
+        s.ohlc || s.boxes
+          ? { ...s, ohlc: undefined, boxes: undefined, errors: undefined, type: 'line' as const }
+          : s.errors
+            ? { ...s, errors: undefined }
+            : s,
+      ),
   })
   const brushGeo = $derived(brushEligible ? buildChart(brushSpec) : null)
   /** The brush window in fractional [0..1] of the visible data range,
@@ -363,6 +371,7 @@
     if (spec.type === 'treemap') return geo.treemapCells.length === 0
     if (spec.type === 'sankey') return geo.sankeyNodes.length === 0
     if (isCandle) return geo.candles.length === 0
+    if (spec.type === 'boxplot') return geo.boxes.length === 0
     return geo.bars.length === 0 && geo.lines.every((l) => l.points.every((p) => !p.defined))
   })
 
@@ -499,8 +508,34 @@
         rows.push({ label: `${s.label} C`, value: fmt(k.c) })
         continue
       }
+      // A box is a five-number summary, and reading it off the picture is
+      // exactly what a tooltip is for. Same reasoning as the candle above:
+      // one place, so crosshair / keyboard / aria-label all agree.
+      const b = s.boxes?.[i]
+      if (b) {
+        rows.push({ label: `${s.label} max`, color, value: fmt(b.max) })
+        rows.push({ label: `${s.label} Q3`, value: fmt(b.q3) })
+        rows.push({ label: `${s.label} median`, value: fmt(b.median) })
+        rows.push({ label: `${s.label} Q1`, value: fmt(b.q1) })
+        rows.push({ label: `${s.label} min`, value: fmt(b.min) })
+        if (b.outliers?.length) {
+          rows.push({ label: `${s.label} outliers`, value: String(b.outliers.length) })
+        }
+        continue
+      }
       const v = s.values[i]
-      if (Number.isFinite(v)) rows.push({ label: s.label, color, value: fmt(v as number) })
+      if (Number.isFinite(v)) {
+        rows.push({ label: s.label, color, value: fmt(v as number) })
+        // An error bar is only worth drawing if you can read what it means.
+        const e = s.errors?.[i]
+        if (e != null) {
+          const lo = typeof e === 'number' ? (v as number) - Math.abs(e) : Math.min(e.lo, e.hi)
+          const hi = typeof e === 'number' ? (v as number) + Math.abs(e) : Math.max(e.lo, e.hi)
+          if (Number.isFinite(lo) && Number.isFinite(hi)) {
+            rows.push({ label: `${s.label} range`, value: `${fmt(lo)} - ${fmt(hi)}` })
+          }
+        }
+      }
     }
     return rows
   }
@@ -863,6 +898,27 @@
         <line class="sv-grid-chart-wick" x1={k.xCenter} y1={k.yHigh} x2={k.xCenter} y2={k.yLow} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
         <rect class="sv-grid-chart-candle" x={k.x} y={k.bodyY} width={k.w} height={k.bodyH} fill={k.up ? 'none' : k.color} stroke={k.color} style={`opacity:${dimOf(k.series)}`} />
       {/if}
+    {/each}
+
+    <!-- Box plots. The median is a heavier rule than the box outline because it
+         is the number people actually read; the whisker caps are drawn at the
+         box width so the shape stays legible when the slot is narrow. -->
+    {#each geo.boxes as b, bi (bi)}
+      <line class="sv-grid-chart-whisker" x1={b.xCenter} y1={b.yMax} x2={b.xCenter} y2={b.yMin} stroke={b.color} style={`opacity:${dimOf(b.series)}`} />
+      <line class="sv-grid-chart-whisker" x1={b.x + b.w * 0.25} y1={b.yMax} x2={b.x + b.w * 0.75} y2={b.yMax} stroke={b.color} style={`opacity:${dimOf(b.series)}`} />
+      <line class="sv-grid-chart-whisker" x1={b.x + b.w * 0.25} y1={b.yMin} x2={b.x + b.w * 0.75} y2={b.yMin} stroke={b.color} style={`opacity:${dimOf(b.series)}`} />
+      <rect class="sv-grid-chart-box" x={b.x} y={b.boxY} width={b.w} height={b.boxH} fill={b.color} fill-opacity="0.25" stroke={b.color} style={`opacity:${dimOf(b.series)}`} />
+      <line class="sv-grid-chart-median" x1={b.x} y1={b.yMedian} x2={b.x + b.w} y2={b.yMedian} stroke={b.color} style={`opacity:${dimOf(b.series)}`} />
+      {#each b.outliers as o, oi (oi)}
+        <circle class="sv-grid-chart-outlier" cx={b.xCenter} cy={o.y} r="2" fill="none" stroke={b.color} style={`opacity:${dimOf(b.series)}`} />
+      {/each}
+    {/each}
+
+    <!-- Error bars, on top of the mark they annotate. -->
+    {#each geo.errorBars as eb, ei (ei)}
+      <line class="sv-grid-chart-errorbar" x1={eb.xCenter} y1={eb.yHi} x2={eb.xCenter} y2={eb.yLo} stroke={eb.color} style={`opacity:${dimOf(eb.series)}`} />
+      <line class="sv-grid-chart-errorbar" x1={eb.xCenter - eb.cap} y1={eb.yHi} x2={eb.xCenter + eb.cap} y2={eb.yHi} stroke={eb.color} style={`opacity:${dimOf(eb.series)}`} />
+      <line class="sv-grid-chart-errorbar" x1={eb.xCenter - eb.cap} y1={eb.yLo} x2={eb.xCenter + eb.cap} y2={eb.yLo} stroke={eb.color} style={`opacity:${dimOf(eb.series)}`} />
     {/each}
 
     {#each geo.scatterPoints as dot, di (di)}
@@ -1647,6 +1703,24 @@
   .sv-grid-chart-ohlc {
     stroke-width: 1;
     shape-rendering: crispEdges;
+  }
+  .sv-grid-chart-box {
+    stroke-width: 1;
+    transition: x 0.3s ease, y 0.3s ease, width 0.3s ease, height 0.3s ease;
+  }
+  .sv-grid-chart-whisker,
+  .sv-grid-chart-errorbar {
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  /* The median is the number people read off a box plot, so it gets the
+     weight. Everything else on the mark is 1px. */
+  .sv-grid-chart-median {
+    stroke-width: 2;
+    shape-rendering: crispEdges;
+  }
+  .sv-grid-chart-outlier {
+    stroke-width: 1;
   }
   .is-clickable .sv-grid-chart-cat-hit,
   .is-clickable .sv-grid-chart-slice {

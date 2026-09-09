@@ -26,7 +26,7 @@ usable in SvelteKit with SSR.
 
 </p>
 
-**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [377 Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
+**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [378 Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
 
 Writing SvGrid with an AI assistant? It ships an MCP server that carries the real API surface and
 **checks your agent's code against it** before you see it. [Details below](#ai-native).
@@ -95,7 +95,7 @@ it into a live, editable Vite + Svelte 5 project. Nothing to install to try any 
 | [<img src="https://svgrid.com/thumbs/343-kanban-board.webp" width="260" alt="Kanban board demo" />](https://svgrid.com/demos/343-kanban-board/) | [<img src="https://svgrid.com/thumbs/363-scheduler-intro.webp" width="260" alt="Scheduler demo" />](https://svgrid.com/demos/363-scheduler-intro/) | [<img src="https://svgrid.com/thumbs/80-cell-types-showcase.webp" width="260" alt="Cell types showcase demo" />](https://svgrid.com/demos/80-cell-types-showcase/) |
 | **[Kanban board](https://svgrid.com/demos/343-kanban-board/)**<br>the same grid, board mode | **[Scheduler](https://svgrid.com/demos/363-scheduler-intro/)**<br>calendar views off the same data | **[Cell types](https://svgrid.com/demos/80-cell-types-showcase/)**<br>every editor in one grid |
 
-All [377 demos](https://svgrid.com/demos/) are browsable by category.
+All [378 demos](https://svgrid.com/demos/) are browsable by category.
 
 ## Shipped with it
 
@@ -315,7 +315,7 @@ packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
 packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
 packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
-examples/                                       - 377 live demos
+examples/                                       - 378 live demos
 website/                                        - svgrid.com source
 docs/                                           - markdown docs
 ```

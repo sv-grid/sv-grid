@@ -3,7 +3,7 @@
  * SvGrid MCP server (stdio).
  *
  * Gives an MCP-capable client accurate, version-pinned answers about SvGrid -
- * the real exported API, the shipped docs, 377 runnable demos - and, uniquely,
+ * the real exported API, the shipped docs, 378 runnable demos - and, uniquely,
  * a way to CHECK generated code against that surface before a user ever sees
  * it.
  *

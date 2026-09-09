@@ -158,6 +158,7 @@
     { value: "radar", label: "Radar", group: "Distribution" },
     { value: "heatmap", label: "Heat map", group: "Distribution", needs: (c) => c.dims.length >= 2 },
     { value: "scatter", label: "Scatter", group: "Distribution", needs: (c) => c.measures.length >= 2 },
+    { value: "boxplot", label: "Box plot", group: "Distribution" },
     { value: "gauge", label: "Gauge", group: "Single value" },
     { value: "calendar", label: "Calendar", group: "Over time", needs: (c) => c.dates.length >= 1 },
   ];
@@ -188,11 +189,20 @@
       !["pie", "gauge", "waterfall", "funnel", "calendar"].includes(ctrl.chartType),
   );
   const wantsStacked = $derived(CARTESIAN.includes(ctrl.chartType));
-  const wantsLogScale = $derived(CARTESIAN.includes(ctrl.chartType) || ctrl.chartType === "scatter");
+  const wantsLogScale = $derived(
+    CARTESIAN.includes(ctrl.chartType) || ctrl.chartType === "scatter" || ctrl.chartType === "boxplot",
+  );
   const wantsDataLabels = $derived(
-    !["gauge", "sankey", "calendar", "treemap", "scatter"].includes(ctrl.chartType),
+    !["gauge", "sankey", "calendar", "treemap", "scatter", "boxplot"].includes(ctrl.chartType),
   );
   const wantsSecondMeasure = $derived(ctrl.chartType === "scatter");
+  /**
+   * A box plot is the one type that reduces its groups itself: the whole point
+   * is the spread of the sample, so `sum | avg | count` has nothing to say
+   * about it. Showing an Aggregate select that changes nothing is worse than
+   * not showing one.
+   */
+  const wantsReduce = $derived(!wantsSecondMeasure && ctrl.chartType !== "boxplot");
   const typeGroups = $derived([...new Set(availableTypes.map((t) => t.group))]);
 
   /**
@@ -507,7 +517,7 @@
             </select>
           </label>
         {/if}
-        {#if !wantsSecondMeasure}
+        {#if wantsReduce}
         <label class="sv-grid-chart-ctl">
           <span class="sv-grid-chart-ctl-lbl">Aggregate</span>
           <select value={ctrl.chartReduce} onchange={(e) => (ctrl.chartReduce = e.currentTarget.value as "sum" | "avg" | "count")}>

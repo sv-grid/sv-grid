@@ -434,6 +434,46 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
+  it('builds the row-reading types through the panel: scatter, gauge, box plot', async () => {
+    // These three do not go through `rowsToChartSpec`, so their dispatch is the
+    // one bit of chart wiring a bar-chart test never touches. It lives in the
+    // lazy engine to keep the controller out of the base bundle, which is
+    // exactly the kind of move that can silently stop building a spec.
+    const { api, destroy } = await mountGrid({ charting: true })
+    try {
+      api.configureChart({ type: 'boxplot', dimension: 'team', measure: 'salary' })
+      await tick()
+      const box = api.getChartSpec()!
+      expect(box.type).toBe('boxplot')
+      expect(box.series[0]!.boxes!.length).toBe(box.categories.length)
+      expect(box.series[0]!.boxes!.some((b) => b && Number.isFinite(b.median))).toBe(true)
+
+      api.configureChart({ type: 'gauge', measure: 'salary', reduce: 'avg' })
+      await tick()
+      expect(api.getChartSpec()!.type).toBe('gauge')
+      expect(api.getChartSpec()!.gaugeValue).toBeGreaterThan(0)
+
+      api.configureChart({ type: 'scatter', dimension: 'team', measure: 'age' })
+      await tick()
+      const scatter = api.getChartSpec()
+      // Whatever the Y measure resolves to, the one thing that must never
+      // happen is falling through and drawing a BAR chart under a "Scatter"
+      // label. Asserted unconditionally: a `if (scatter)` here would pass by
+      // doing nothing the day the dispatch stops building a spec.
+      expect(scatter === null || scatter.type === 'scatter').toBe(true)
+      expect(scatter?.type).not.toBe('bar')
+
+      // Back to a bar chart: the fall-through still works after the early
+      // returns above.
+      api.configureChart({ type: 'bar', dimension: 'team', measure: 'salary', reduce: 'sum' })
+      await tick()
+      expect(api.getChartSpec()!.type).toBe('bar')
+      expect(api.getChartSpec()!.series[0]!.values.length).toBeGreaterThan(0)
+    } finally {
+      destroy()
+    }
+  })
+
   it('the localized format reaches the axis ticks, not just the helper', () => {
     const geo = buildChart({
       type: 'bar',

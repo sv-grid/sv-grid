@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildChart, rowsToChartSpec, niceScale, sliceChartWindow, specToTreemap, specToCalendar, specToSankey, rowsToScatterSpec, rowsToGaugeSpec } from './chart'
+import { buildChart, rowsToChartSpec, niceScale, sliceChartWindow, specToTreemap, specToCalendar, specToSankey, rowsToScatterSpec, rowsToGaugeSpec, boxStats, rowsToBoxSpec } from './chart'
 import type { ChartSpec } from './chart'
 
 describe('niceScale', () => {
@@ -359,6 +359,73 @@ describe('sliceChartWindow (the zoom / brush window)', () => {
     expect(zoomed.lines[0]!.bandPath, 'band vanished inside the zoom window').not.toBe('')
   })
 
+  it('slices ohlc, boxes and errors with the window', () => {
+    // Same defect class as the band above, and the reason to assert every
+    // per-category array rather than the one that broke last time: a missed
+    // array does not throw, it silently draws against the wrong categories.
+    const spec: ChartSpec = {
+      type: 'candlestick',
+      categories: ['a', 'b', 'c', 'd'],
+      series: [
+        {
+          label: 'px',
+          values: [1, 2, 3, 4],
+          ohlc: [
+            { o: 1, h: 2, l: 0, c: 1 },
+            { o: 2, h: 3, l: 1, c: 2 },
+            { o: 3, h: 4, l: 2, c: 3 },
+            { o: 4, h: 5, l: 3, c: 4 },
+          ],
+          boxes: [
+            { min: 0, q1: 1, median: 2, q3: 3, max: 4 },
+            { min: 1, q1: 2, median: 3, q3: 4, max: 5 },
+            { min: 2, q1: 3, median: 4, q3: 5, max: 6 },
+            { min: 3, q1: 4, median: 5, q3: 6, max: 7 },
+          ],
+          errors: [0.1, 0.2, 0.3, 0.4],
+        },
+      ],
+    }
+    const s = sliceChartWindow(spec, 1, 2).series[0]!
+    expect(s.values).toEqual([2, 3])
+    expect(s.ohlc).toHaveLength(2)
+    expect(s.ohlc![0]!.c).toBe(2)
+    expect(s.boxes).toHaveLength(2)
+    expect(s.boxes![0]!.median).toBe(3)
+    expect(s.errors).toEqual([0.2, 0.3])
+  })
+
+  it('draws a zoomed candlestick against the right categories', () => {
+    // Before the slice covered `ohlc`, the geometry walked the full-length
+    // array against three categories, so candles landed off the plot.
+    const spec: ChartSpec = {
+      type: 'candlestick',
+      categories: ['a', 'b', 'c', 'd', 'e'],
+      series: [
+        {
+          label: 'px',
+          values: [1, 2, 3, 4, 5],
+          ohlc: [
+            { o: 1, h: 2, l: 0, c: 1 },
+            { o: 2, h: 3, l: 1, c: 2 },
+            { o: 3, h: 4, l: 2, c: 3 },
+            { o: 4, h: 5, l: 3, c: 4 },
+            { o: 5, h: 6, l: 4, c: 5 },
+          ],
+        },
+      ],
+      width: 400,
+      height: 300,
+    }
+    const zoomed = buildChart(sliceChartWindow(spec, 1, 3))
+    expect(zoomed.candles).toHaveLength(3)
+    expect(zoomed.candles.map((c) => c.label)).toEqual(['b', 'c', 'd'])
+    for (const c of zoomed.candles) {
+      expect(c.xCenter).toBeGreaterThanOrEqual(zoomed.plot.x)
+      expect(c.xCenter).toBeLessThanOrEqual(zoomed.plot.x + zoomed.plot.w)
+    }
+  })
+
   it('carries waterfall totals with the window', () => {
     const w = sliceChartWindow(
       { type: 'waterfall', categories: ['a', 'b', 'c'], series: [{ label: 's', values: [1, 2, 3] }], waterfallTotals: [false, false, true] },
@@ -664,5 +731,225 @@ describe('gauge bands', () => {
     const g = buildChart(dial(0.45)).gauge!
     const bandR = Number(/A([\d.]+),/.exec(g.rangePaths[0]!.path)![1])
     expect(bandR).toBeLessThan(g.r - 8)
+  })
+})
+
+describe('boxStats (the five-number summary)', () => {
+  it('computes quartiles and stops the whiskers at real observations', () => {
+    // Whiskers land on the last point INSIDE the 1.5 IQR fence, not on the
+    // fence itself, which is what makes them read as data rather than as a
+    // calculated boundary.
+    const b = boxStats([1, 2, 3, 4, 5, 6, 7, 8, 9])!
+    expect(b.median).toBe(5)
+    expect(b.q1).toBe(3)
+    expect(b.q3).toBe(7)
+    expect(b.min).toBe(1)
+    expect(b.max).toBe(9)
+    expect(b.outliers).toBeUndefined()
+  })
+
+  it('splits points beyond the fence into outliers', () => {
+    const b = boxStats([10, 11, 12, 13, 14, 15, 90])!
+    expect(b.outliers).toEqual([90])
+    // The whisker stops at the largest value still inside the fence.
+    expect(b.max).toBe(15)
+  })
+
+  it('interpolates quartiles between order statistics', () => {
+    // 4 points: q1 sits between the 1st and 2nd.
+    const b = boxStats([1, 2, 3, 4])!
+    expect(b.q1).toBeCloseTo(1.75, 5)
+    expect(b.median).toBeCloseTo(2.5, 5)
+    expect(b.q3).toBeCloseTo(3.25, 5)
+  })
+
+  it('returns null for an empty sample, so the category is a gap', () => {
+    expect(boxStats([])).toBeNull()
+    expect(boxStats([Number.NaN, Number.POSITIVE_INFINITY])).toBeNull()
+  })
+
+  it('handles a single observation and a zero-spread sample', () => {
+    const one = boxStats([7])!
+    expect(one).toMatchObject({ min: 7, q1: 7, median: 7, q3: 7, max: 7 })
+    const flat = boxStats([3, 3, 3, 3])!
+    expect(flat.q1).toBe(3)
+    expect(flat.outliers).toBeUndefined()
+  })
+})
+
+describe('buildChart: box plots', () => {
+  const spec = (): ChartSpec => ({
+    type: 'boxplot',
+    categories: ['a', 'b'],
+    series: [
+      {
+        label: 'latency',
+        // `values` holds the medians, the way `ohlc` sets closes.
+        values: [20, 30],
+        boxes: [
+          { min: 10, q1: 15, median: 20, q3: 25, max: 30, outliers: [45] },
+          { min: 20, q1: 25, median: 30, q3: 35, max: 40 },
+        ],
+      },
+    ],
+    width: 400,
+    height: 300,
+  })
+
+  it('lays out a box per category, ordered and inside the plot', () => {
+    const geo = buildChart(spec())
+    expect(geo.boxes).toHaveLength(2)
+    const b = geo.boxes[0]!
+    // SVG y grows downward, so the max whisker is the SMALLEST y.
+    expect(b.yMax).toBeLessThan(b.yQ3)
+    expect(b.yQ3).toBeLessThan(b.yMedian)
+    expect(b.yMedian).toBeLessThan(b.yQ1)
+    expect(b.yQ1).toBeLessThan(b.yMin)
+    expect(b.boxY).toBe(Math.min(b.yQ1, b.yQ3))
+    expect(b.boxH).toBeGreaterThan(0)
+    expect(b.label).toBe('a')
+  })
+
+  it('positions outliers and carries the raw numbers for the tooltip', () => {
+    const geo = buildChart(spec())
+    const b = geo.boxes[0]!
+    expect(b.outliers).toHaveLength(1)
+    expect(b.outliers[0]!.value).toBe(45)
+    // The outlier is above the upper whisker, so a smaller y.
+    expect(b.outliers[0]!.y).toBeLessThan(b.yMax)
+    expect(b).toMatchObject({ min: 10, q1: 15, median: 20, q3: 25, max: 30 })
+  })
+
+  it('scales the axis to the whiskers and outliers, not the medians', () => {
+    // `values` are 20 and 30; a domain built from those would clip every box.
+    const geo = buildChart(spec())
+    const top = geo.yTicks[geo.yTicks.length - 1]!.value
+    expect(top).toBeGreaterThanOrEqual(45)
+    expect(geo.yTicks[0]!.value).toBeLessThanOrEqual(10)
+  })
+
+  it('never also draws the medians as a line', () => {
+    // The candlestick bug: `values` exists for tooltips / CSV / overlays, and
+    // was drawn a second time as a dotted line straight over the marks.
+    const geo = buildChart(spec())
+    expect(geo.lines).toHaveLength(0)
+    expect(geo.bars).toHaveLength(0)
+  })
+
+  it('treats a null box as a gap and returns empty geometry for no data', () => {
+    const withGap = spec()
+    withGap.series[0]!.boxes = [null, { min: 1, q1: 2, median: 3, q3: 4, max: 5 }]
+    expect(buildChart(withGap).boxes).toHaveLength(1)
+    expect(buildChart({ type: 'boxplot', categories: [], series: [] }).boxes).toEqual([])
+  })
+
+  it('shares the slot between two box series, like grouped bars', () => {
+    const two = spec()
+    two.series.push({
+      label: 'p99',
+      values: [40, 50],
+      boxes: [
+        { min: 30, q1: 35, median: 40, q3: 45, max: 50 },
+        { min: 40, q1: 45, median: 50, q3: 55, max: 60 },
+      ],
+    })
+    const geo = buildChart(two)
+    expect(geo.boxes).toHaveLength(4)
+    const first = geo.boxes.filter((b) => b.label === 'a')
+    expect(first).toHaveLength(2)
+    expect(first[0]!.x).not.toBe(first[1]!.x)
+  })
+})
+
+describe('buildChart: error bars', () => {
+  const spec = (errors: ChartSpec['series'][number]['errors']): ChartSpec => ({
+    type: 'bar',
+    categories: ['a', 'b'],
+    series: [{ label: 'mean', values: [10, 20], errors }],
+    width: 400,
+    height: 300,
+  })
+
+  it('draws a symmetric margin around the value', () => {
+    const geo = buildChart(spec([2, 3]))
+    expect(geo.errorBars).toHaveLength(2)
+    expect(geo.errorBars[0]).toMatchObject({ lo: 8, hi: 12 })
+    expect(geo.errorBars[1]).toMatchObject({ lo: 17, hi: 23 })
+    // Higher value, smaller y.
+    expect(geo.errorBars[0]!.yHi).toBeLessThan(geo.errorBars[0]!.yLo)
+  })
+
+  it('accepts an explicit asymmetric pair and normalizes the order', () => {
+    const geo = buildChart(spec([{ lo: 9, hi: 14 }, { hi: 18, lo: 25 }]))
+    expect(geo.errorBars[0]).toMatchObject({ lo: 9, hi: 14 })
+    expect(geo.errorBars[1]).toMatchObject({ lo: 18, hi: 25 })
+  })
+
+  it('extends the axis domain past the mark, so a whisker cannot clip', () => {
+    const withBars = buildChart(spec([0, 40]))
+    const top = withBars.yTicks[withBars.yTicks.length - 1]!.value
+    expect(top).toBeGreaterThanOrEqual(60)
+  })
+
+  it('skips a null entry and still draws the bar it annotates', () => {
+    const geo = buildChart(spec([null, 3]))
+    expect(geo.errorBars).toHaveLength(1)
+    expect(geo.errorBars[0]!.label).toBe('b')
+    expect(geo.bars).toHaveLength(2)
+  })
+
+  it('annotates a line series too, without changing its type', () => {
+    const geo = buildChart({
+      type: 'line',
+      categories: ['a', 'b'],
+      series: [{ label: 'm', values: [10, 20], errors: [1, 1] }],
+      width: 400,
+      height: 300,
+    })
+    expect(geo.lines).toHaveLength(1)
+    expect(geo.errorBars).toHaveLength(2)
+  })
+})
+
+describe('rowsToBoxSpec (the panel path)', () => {
+  const rows = [
+    { team: 'A', ms: 10 }, { team: 'A', ms: 12 }, { team: 'A', ms: 14 }, { team: 'A', ms: 90 },
+    { team: 'B', ms: 20 }, { team: 'B', ms: 22 }, { team: 'B', ms: 24 },
+  ]
+
+  it('groups rows into one box per category', () => {
+    const spec = rowsToBoxSpec(rows, { category: 'team', value: 'ms' })
+    expect(spec.type).toBe('boxplot')
+    expect(spec.categories).toEqual(['A', 'B'])
+    const boxes = spec.series[0]!.boxes!
+    expect(boxes).toHaveLength(2)
+    expect(boxes[0]!.outliers).toEqual([90])
+    expect(boxes[1]!.median).toBe(22)
+  })
+
+  it('sets values to the medians so tooltips and CSV keep working', () => {
+    const spec = rowsToBoxSpec(rows, { category: 'team', value: 'ms' })
+    expect(spec.series[0]!.values).toEqual([13, 22])
+  })
+
+  it('splits into side-by-side series on a second field', () => {
+    const split = [
+      { team: 'A', env: 'prod', ms: 10 }, { team: 'A', env: 'prod', ms: 12 },
+      { team: 'A', env: 'dev', ms: 30 }, { team: 'A', env: 'dev', ms: 32 },
+    ]
+    const spec = rowsToBoxSpec(split, { category: 'team', value: 'ms', series: 'env' })
+    expect(spec.series.map((s) => s.label)).toEqual(['prod', 'dev'])
+    expect(spec.series[1]!.boxes![0]!.median).toBe(31)
+    expect(buildChart({ ...spec, width: 400, height: 300 }).boxes).toHaveLength(2)
+  })
+
+  it('leaves a category with no numeric sample as a gap, not a zero', () => {
+    const spec = rowsToBoxSpec(
+      [{ team: 'A', ms: 5 }, { team: 'B', ms: null as unknown as number }],
+      { category: 'team', value: 'ms' },
+    )
+    expect(spec.series[0]!.boxes![1]).toBeNull()
+    expect(Number.isNaN(spec.series[0]!.values[1]!)).toBe(true)
+    expect(buildChart({ ...spec, width: 400, height: 300 }).boxes).toHaveLength(1)
   })
 })

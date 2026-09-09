@@ -13,7 +13,7 @@ export type ChartType =
   | 'bar' | 'line' | 'area' | 'pie' | 'scatter'
   | 'heatmap' | 'waterfall' | 'funnel' | 'radar'
   | 'calendar' | 'gauge' | 'treemap' | 'sankey'
-  | 'candlestick' | 'ohlc'
+  | 'candlestick' | 'ohlc' | 'boxplot'
 ```
 
 ### `type OhlcBar`
@@ -22,6 +22,25 @@ One open / high / low / close bar. */
 
 ```ts
 export type OhlcBar = { o: number; h: number; l: number; c: number }
+```
+
+### `type BoxStats`
+
+A five-number summary: one box, its whiskers, and anything past them.
+ `min` / `max` are the WHISKER ENDS, not the extremes of the sample - with
+ the usual 1.5 IQR rule those differ, and the points beyond go in
+ `outliers` so they can be drawn individually. */
+
+```ts
+export type BoxStats = {
+  min: number
+  q1: number
+  median: number
+  q3: number
+  max: number
+  /** Values outside the whiskers, drawn as individual points. */
+  outliers?: number[]
+}
 ```
 
 ### `type ChartSelection`
@@ -78,7 +97,7 @@ export type ChartSeries = {
   values: number[]
   color?: string
   /** Per-series chart type, for combo charts. Defaults to the spec `type`. */
-  type?: 'bar' | 'line' | 'area' | 'candlestick' | 'ohlc'
+  type?: 'bar' | 'line' | 'area' | 'candlestick' | 'ohlc' | 'boxplot'
   /**
    * Open / high / low / close per category, parallel to `categories`. `null`
    * is a gap (a day with no session) and draws nothing.
@@ -90,6 +109,28 @@ export type ChartSeries = {
    * to CSV without a single line of candle-specific code.
    */
   ohlc?: Array<OhlcBar | null>
+  /**
+   * Five-number summaries per category, parallel to `categories`. `null` is a
+   * gap and draws nothing.
+   *
+   * Set `values` to the MEDIANS alongside this, for exactly the reason `ohlc`
+   * sets them to the closes: everything that reads a series generically reads
+   * `values`, so the tooltip rows, the CSV export, the screen-reader table and
+   * `overlay` all keep working with no box-specific code.
+   *
+   * `boxStats()` turns a raw sample into one of these.
+   */
+  boxes?: Array<BoxStats | null>
+  /**
+   * Symmetric or asymmetric error bars, parallel to `values`. A number is a
+   * symmetric +/- margin; a pair is an explicit low/high; `null` draws nothing.
+   *
+   * These are an ANNOTATION on an existing mark rather than a mark of their
+   * own, so they compose: a bar, line, area or scatter series can carry them
+   * without changing its type. That is the whole reason they are not a
+   * `ChartType` - "bar chart with error bars" should not be a different chart.
+   */
+  errors?: Array<number | { lo: number; hi: number } | null>
   /** Plot against the left (default) or right Y axis. */
   axis?: 'left' | 'right'
   /** Scatter / bubble points (used when `type === 'scatter'`). */
@@ -500,6 +541,102 @@ export type ChartCandle = {
 }
 ```
 
+### `type ChartBox`
+
+A laid-out box plot, in SVG coordinates. Its own array for the same reason
+candles have one: `bars` carries pattern fills, data labels and the brush
+mini-map, none of which mean anything for a box.
+
+```ts
+export type ChartBox = {
+  /** Box rect left edge and width. */
+  x: number
+  w: number
+  /** Whisker line and the caps, centred on the slot. */
+  xCenter: number
+  yMin: number
+  yQ1: number
+  yMedian: number
+  yQ3: number
+  yMax: number
+  /** Box rect, pre-ordered so the renderer does no min/max of its own. */
+  boxY: number
+  boxH: number
+  /** Points beyond the whiskers, already positioned. */
+  outliers: Array<{ y: number; value: number }>
+  color: string
+  label: string
+  series: string
+  min: number
+  q1: number
+  median: number
+  q3: number
+  max: number
+}
+```
+
+### `type ChartErrorBar`
+
+One positioned error bar: a vertical span with caps, centred on its mark. */
+
+```ts
+export type ChartErrorBar = {
+  xCenter: number
+  yLo: number
+  yHi: number
+  /** Cap half-width, so the renderer draws the same T at both ends. */
+  cap: number
+  color: string
+  label: string
+  series: string
+  lo: number
+  hi: number
+}
+```
+
+### `function boxStats`
+
+Five-number summary of a raw sample, with the 1.5 IQR whisker rule.
+
+Whiskers stop at the last observation INSIDE the fence rather than at the
+fence itself, which is what makes them read as real data; anything past them
+comes back in `outliers`. Quartiles use linear interpolation between the two
+neighbouring order statistics.
+
+Returns `null` for an empty sample, so a category with no observations is a
+gap rather than a box drawn at zero.
+
+```ts
+export function boxStats(sample: ReadonlyArray<number>, whisker = 1.5): BoxStats | null {
+  const v = sample.filter((n) => Number.isFinite(n)).slice().sort((a, b) => a - b)
+  if (!v.length) return null
+  const q = (p: number) => {
+    const pos = (v.length - 1) * p
+    const lo = Math.floor(pos)
+    const hi = Math.ceil(pos)
+    return lo === hi ? v[lo]! : v[lo]! + (v[hi]! - v[lo]!) * (pos - lo)
+  }
+  const q1 = q(0.25)
+  const median = q(0.5)
+  const q3 = q(0.75)
+  const fenceLo = q1 - whisker * (q3 - q1)
+  const fenceHi = q3 + whisker * (q3 - q1)
+  const inside = v.filter((n) => n >= fenceLo && n <= fenceHi)
+  const outliers = v.filter((n) => n < fenceLo || n > fenceHi)
+  return {
+    // `inside` can only be empty if every point is an outlier, which the fence
+    // rule makes impossible (q1 and q3 are always within it) - but a degenerate
+    // sample should still produce a box rather than `undefined` coordinates.
+    min: inside.length ? inside[0]! : v[0]!,
+    q1,
+    median,
+    q3,
+    max: inside.length ? inside[inside.length - 1]! : v[v.length - 1]!,
+    ...(outliers.length ? { outliers } : {}),
+  }
+}
+```
+
 ### `type ChartBar`
 
 A computed bar rectangle in SVG coordinates. Output of {@link buildChart}, not an input. */
@@ -640,6 +777,11 @@ export type ChartGeometry = {
   bars: ChartBar[]
   /** Candlestick / OHLC bars. Empty for every other chart type. */
   candles: ChartCandle[]
+  /** Box plots. Empty for every other chart type. */
+  boxes: ChartBox[]
+  /** Error bars, from any series carrying `errors`. Empty when none do - they
+   *  annotate whatever mark the series already draws. */
+  errorBars: ChartErrorBar[]
   lines: ChartLine[]
   slices: ChartPieSlice[]
   yTicks: ChartAxisTick[]
@@ -1075,6 +1217,8 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     plot: { x: 0, y: 0, w: width, h: height },
     bars: [],
     candles: [],
+    boxes: [],
+    errorBars: [],
     lines: [],
     slices: [],
     yTicks: [],
@@ -2218,6 +2362,79 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     })
   }
 
+  // Box plots. Same slot-sharing as grouped bars and candles, so several
+  // samples can sit side by side under one category.
+  const boxSeries = series.filter((s) => s.kind === 'box')
+  const boxes: ChartBox[] = []
+  if (boxSeries.length) {
+    const boxW = Math.max(1, (slot * 0.6) / boxSeries.length)
+    boxSeries.forEach((s, si) => {
+      const dom = domOf(s)
+      const log = isLogOf(s)
+      ;(s.boxes ?? []).forEach((b, i) => {
+        if (!b) return
+        if (![b.min, b.q1, b.median, b.q3, b.max].every(Number.isFinite)) return
+        if (log && b.min <= 0) return
+        const centre = padL + slot * i + slot / 2
+        const x = centre - (boxW * boxSeries.length) / 2 + boxW * si
+        const yQ1 = yOf(dom, b.q1, log)
+        const yQ3 = yOf(dom, b.q3, log)
+        boxes.push({
+          x: round(x),
+          w: round(boxW),
+          xCenter: round(x + boxW / 2),
+          yMin: yOf(dom, b.min, log),
+          yQ1,
+          yMedian: yOf(dom, b.median, log),
+          yQ3,
+          yMax: yOf(dom, b.max, log),
+          boxY: Math.min(yQ1, yQ3),
+          // A sample with no spread would otherwise paint nothing at all.
+          boxH: Math.max(1, Math.abs(yQ1 - yQ3)),
+          outliers: (b.outliers ?? [])
+            .filter((o) => Number.isFinite(o) && (!log || o > 0))
+            .map((o) => ({ y: yOf(dom, o, log), value: o })),
+          color: s.color,
+          label: spec.categories[i] ?? String(i),
+          series: s.label,
+          min: b.min,
+          q1: b.q1,
+          median: b.median,
+          q3: b.q3,
+          max: b.max,
+        })
+      })
+    })
+  }
+
+  // Error bars. Not a mark of their own: they annotate whatever the series
+  // already draws, so this runs over every series carrying `errors` regardless
+  // of kind, and the geometry sits in its own array so no existing loop changes.
+  const errorBars: ChartErrorBar[] = []
+  for (const s of series) {
+    if (!s.errors) continue
+    const dom = domOf(s)
+    const log = isLogOf(s)
+    s.errors.forEach((e, i) => {
+      const v = s.values[i]
+      if (!Number.isFinite(v)) return
+      const span = errorSpan(e, v!)
+      if (!span) return
+      if (log && span.lo <= 0) return
+      errorBars.push({
+        xCenter: round(padL + slot * i + slot / 2),
+        yLo: yOf(dom, span.lo, log),
+        yHi: yOf(dom, span.hi, log),
+        cap: round(Math.min(6, slot * 0.15)),
+        color: s.color,
+        label: spec.categories[i] ?? String(i),
+        series: s.label,
+        lo: span.lo,
+        hi: span.hi,
+      })
+    })
+  }
+
   // Lines / areas. Stacked areas accumulate per axis; others fill to baseline.
   const lines: ChartLine[] = []
   const areaCum: Record<'left' | 'right', number[]> = {
@@ -2241,11 +2458,12 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
   }
   for (const s of series) {
-    // Bars and candles draw their own marks. Candles especially: `values`
-    // holds their closing prices so that tooltips, CSV and overlays work, and
-    // without this guard that same array was ALSO drawn as a line, laying a
-    // dotted close-line straight over every candle.
-    if (s.kind === 'bar' || s.kind === 'candle') continue
+    // Bars, candles and boxes draw their own marks. Candles and boxes
+    // especially: `values` holds their closes / medians so that tooltips, CSV
+    // and overlays work, and without this guard that same array was ALSO drawn
+    // as a line, laying a dotted close-line straight over every candle. Boxes
+    // would do exactly the same thing through the median.
+    if (s.kind === 'bar' || s.kind === 'candle' || s.kind === 'box') continue
     const dom = domOf(s)
     const log = isLogOf(s)
     const yA = (v: number) => yOf(dom, v, log)
@@ -2437,6 +2655,8 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     plot,
     bars,
     candles,
+    boxes,
+    errorBars,
     lines,
     yTicks: tickFor(leftDom, leftLog),
     y2Ticks: rightDom ? tickFor(rightDom, rightLog) : [],
@@ -2477,12 +2697,22 @@ export function sliceChartWindow(spec: ChartSpec, lo: number, hi: number): Chart
   return {
     ...spec,
     categories: spec.categories.slice(from, to + 1),
+    // EVERY per-category array on a series has to be cut here, not just the
+    // ones that existed when this function was written. A missed one does not
+    // throw: the geometry keeps indexing the full-length array against the
+    // sliced categories, so marks land at the wrong x or off the plot entirely.
+    // `upperValues` / `lowerValues` were missed once and silently dropped the
+    // confidence band on zoom; `ohlc` was missed the same way and drew a
+    // zoomed candlestick chart against the wrong categories.
     series: spec.series.map((s) => ({
       ...s,
       values: s.values.slice(from, to + 1),
       rowIds: cut(s.rowIds),
       upperValues: cut(s.upperValues),
       lowerValues: cut(s.lowerValues),
+      ohlc: cut(s.ohlc),
+      boxes: cut(s.boxes),
+      errors: cut(s.errors),
     })),
     // Per-category, so it has to travel with the window or the waterfall's
     // running total resets on the wrong bars.
@@ -2734,6 +2964,149 @@ export function specToSankey(spec: ChartSpec): {
   return {
     nodes: [...ids].map((id) => ({ id, label: id.slice(id.indexOf(':') + 1) })),
     links,
+  }
+}
+```
+
+### `function rowsToDirectSpec`
+
+The chart types that read ROWS directly instead of a grouped grid, behind one
+call. Returns `null` for every other type, which then goes through
+`rowsToChartSpec` and its reduce / sort / topN / "Other" pipeline.
+
+One entry point rather than a branch per type in the caller, because the
+caller is the grid controller and the controller is in the BASE bundle: every
+type named there is bytes paid by grids that never chart. Here it is in the
+lazy chart chunk, next to the builders it dispatches to, and adding a fourth
+direct type costs a grid nothing.
+
+```ts
+export function rowsToDirectSpec<T extends Record<string, unknown>>(
+  type: ChartType,
+  rows: ReadonlyArray<T>,
+  opts: {
+    category?: string
+    /** The measure. For scatter this is X. */
+    value?: string
+    /** Scatter's Y measure. */
+    value2?: string
+    series?: string
+    reduce?: 'sum' | 'avg' | 'count'
+    palette?: string[]
+  },
+): ChartSpec | null {
+  const cat = opts.category as (keyof T & string) | undefined
+  const val = opts.value as (keyof T & string) | undefined
+  const ser = opts.series as (keyof T & string) | undefined
+  if (type === 'scatter') {
+    const y = opts.value2 as (keyof T & string) | undefined
+    if (!val || !y) return null
+    return rowsToScatterSpec(rows, {
+      x: val,
+      y,
+      ...(ser ? { series: ser } : {}),
+      ...(opts.palette ? { palette: opts.palette } : {}),
+    })
+  }
+  if (type === 'gauge') {
+    if (!val) return null
+    return rowsToGaugeSpec(rows, { value: val, ...(opts.reduce ? { reduce: opts.reduce } : {}) })
+  }
+  if (type === 'boxplot') {
+    if (!cat || !val) return null
+    const spec = rowsToBoxSpec(rows, {
+      category: cat,
+      value: val,
+      ...(ser ? { series: ser } : {}),
+    })
+    if (opts.palette) spec.palette = opts.palette
+    return spec
+  }
+  return null
+}
+```
+
+### `function rowsToBoxSpec`
+
+Build a box plot spec straight from rows: group by a category, then reduce
+each group to a five-number summary.
+
+This is the one aggregate the panel's `sum | avg | count` cannot express, and
+that is the point of it. Every other chart answers "how much"; a box plot
+answers "how spread out", which needs the whole sample per group rather than
+one number, so it cannot go through `rowsToChartSpec`.
+
+`values` comes out as the medians, so tooltips, CSV and overlays work with no
+box-specific code - the same contract `ohlc` follows.
+
+```ts
+export function rowsToBoxSpec<T extends Record<string, unknown>>(
+  rows: ReadonlyArray<T>,
+  opts: {
+    category: keyof T & string
+    value: keyof T & string
+    /** One box series per distinct value of this field, side by side. */
+    series?: keyof T & string
+    seriesLabel?: string
+    /** Whisker length in IQRs. Default 1.5. */
+    whisker?: number
+    width?: number
+    height?: number
+  },
+): ChartSpec {
+  const cats: string[] = []
+  const seen = new Set<string>()
+  for (const r of rows) {
+    const c = String(r[opts.category] ?? '')
+    if (!seen.has(c)) {
+      seen.add(c)
+      cats.push(c)
+    }
+  }
+  const groupNames: string[] = []
+  const groupSeen = new Set<string>()
+  if (opts.series) {
+    for (const r of rows) {
+      const g = String(r[opts.series] ?? '')
+      if (!groupSeen.has(g)) {
+        groupSeen.add(g)
+        groupNames.push(g)
+      }
+    }
+  } else {
+    groupNames.push(opts.seriesLabel ?? String(opts.value))
+  }
+
+  const series: ChartSeries[] = groupNames.map((g) => {
+    const boxes: Array<BoxStats | null> = cats.map((c) => {
+      const sample: number[] = []
+      for (const r of rows) {
+        if (String(r[opts.category] ?? '') !== c) continue
+        if (opts.series && String(r[opts.series] ?? '') !== g) continue
+        // `Number(null)` and `Number('')` are both 0, so coercing first would
+        // fold every empty cell into the sample as a zero and drag the whole
+        // box down. An absent observation is absent, not zero.
+        const raw = r[opts.value]
+        if (raw == null || raw === '') continue
+        const n = Number(raw)
+        if (Number.isFinite(n)) sample.push(n)
+      }
+      return boxStats(sample, opts.whisker)
+    })
+    return {
+      label: g,
+      // Medians, so a gap stays a gap rather than plotting as zero.
+      values: boxes.map((b) => (b ? b.median : Number.NaN)),
+      boxes,
+    }
+  })
+
+  return {
+    type: 'boxplot',
+    categories: cats,
+    series,
+    ...(opts.width ? { width: opts.width } : {}),
+    ...(opts.height ? { height: opts.height } : {}),
   }
 }
 ```

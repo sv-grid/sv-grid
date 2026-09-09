@@ -278,7 +278,19 @@ const BUDGET_KB = {
   //
   // SvGrid's base is again untouched (84.4 KB): cell-formatting was already
   // there for column formats, so this only shows up for a standalone SvChart.
-  'chart surface (SvChart)': 28.2,
+  //
+  // 28.2 -> 29.6 for box plots and error bars. Measured 28.0 before and 29.3
+  // after, so 1.3 KB for the two marks that answer "how spread out" rather than
+  // "how much" - the box geometry and its renderer, `boxStats` with the 1.5 IQR
+  // whisker rule, `rowsToBoxSpec`, the error-bar geometry, and five tooltip rows
+  // per box.
+  //
+  // Base did NOT move for this, and that took work: the controller used to name
+  // scatter and gauge itself, so every direct chart type was bytes in the base
+  // bundle of grids that never chart. That dispatch moved into the engine
+  // (`rowsToDirectSpec`), which paid for box plots and leaves the next direct
+  // type free.
+  'chart surface (SvChart)': 29.6,
 }
 
 const CHECK = process.argv.includes('--check')

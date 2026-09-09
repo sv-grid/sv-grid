@@ -349,6 +349,59 @@ should not look like a full dial.
 
 <div data-docs-demo="163-chart-gauge" data-height="520"></div>
 
+### Box plot
+
+The one chart here that answers "how spread out" rather than "how much", which
+is the question an average hides. `ChartSeries.boxes` carries a five-number
+summary per category, and `values` holds the medians alongside it, so tooltips,
+CSV export and overlays keep working with no box-specific code.
+
+```ts
+import { boxStats, rowsToBoxSpec } from '@svgrid/grid'
+
+// One sample -> one summary, with the usual 1.5 IQR whisker rule.
+boxStats([120, 130, 140, 150, 900])
+// { min: 120, q1: 130, median: 140, q3: 150, max: 150, outliers: [900] }
+
+// Per group, straight from rows. This is what the chart panel calls.
+const spec = rowsToBoxSpec(rows, { category: 'region', value: 'ms' })
+```
+
+`min` and `max` are the **whisker ends**, not the extremes of the sample:
+whiskers stop at the last observation inside the fence, and anything past it
+comes back in `outliers` to be drawn as individual points. A category with no
+observations returns `null` and is left as a gap rather than a box at zero.
+
+Pass `series` for side-by-side boxes per group. In the grid's own panel, Box
+plot is the one type that ignores the Aggregate control, because it does its own
+reduction - `sum | avg | count` has nothing to say about a distribution.
+
+<div data-docs-demo="433-chart-boxplot" data-height="560"></div>
+
+### Error bars
+
+Not a chart type. `ChartSeries.errors` annotates whatever mark the series
+already draws, so a bar, line, area or scatter series grows whiskers without
+changing its type:
+
+```ts
+{
+  type: 'bar',
+  categories: ['eu-west', 'us-east'],
+  series: [{
+    label: 'Mean',
+    values: [120, 140],
+    // A number is a symmetric +/- margin.
+    errors: [12, 34],
+    // Or set both ends explicitly: errors: [{ lo: 108, hi: 132 }, ...]
+  }],
+}
+```
+
+`null` skips one entry and still draws its mark. The value axis stretches to
+cover the whiskers, so a bar with a wide interval cannot clip at the top of the
+plot.
+
 ## Charting from the grid, without a spec
 
 `charting` puts the whole thing behind one prop: the grid grows a Chart button

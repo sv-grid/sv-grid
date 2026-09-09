@@ -1237,6 +1237,8 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     plot: { x: 0, y: 0, w: width, h: height },
     bars: [],
     candles: [],
+    boxes: [],
+    errorBars: [],
     lines: [],
     slices: [],
     yTicks: [],
@@ -2380,6 +2382,79 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     })
   }
 
+  // Box plots. Same slot-sharing as grouped bars and candles, so several
+  // samples can sit side by side under one category.
+  const boxSeries = series.filter((s) => s.kind === 'box')
+  const boxes: ChartBox[] = []
+  if (boxSeries.length) {
+    const boxW = Math.max(1, (slot * 0.6) / boxSeries.length)
+    boxSeries.forEach((s, si) => {
+      const dom = domOf(s)
+      const log = isLogOf(s)
+      ;(s.boxes ?? []).forEach((b, i) => {
+        if (!b) return
+        if (![b.min, b.q1, b.median, b.q3, b.max].every(Number.isFinite)) return
+        if (log && b.min <= 0) return
+        const centre = padL + slot * i + slot / 2
+        const x = centre - (boxW * boxSeries.length) / 2 + boxW * si
+        const yQ1 = yOf(dom, b.q1, log)
+        const yQ3 = yOf(dom, b.q3, log)
+        boxes.push({
+          x: round(x),
+          w: round(boxW),
+          xCenter: round(x + boxW / 2),
+          yMin: yOf(dom, b.min, log),
+          yQ1,
+          yMedian: yOf(dom, b.median, log),
+          yQ3,
+          yMax: yOf(dom, b.max, log),
+          boxY: Math.min(yQ1, yQ3),
+          // A sample with no spread would otherwise paint nothing at all.
+          boxH: Math.max(1, Math.abs(yQ1 - yQ3)),
+          outliers: (b.outliers ?? [])
+            .filter((o) => Number.isFinite(o) && (!log || o > 0))
+            .map((o) => ({ y: yOf(dom, o, log), value: o })),
+          color: s.color,
+          label: spec.categories[i] ?? String(i),
+          series: s.label,
+          min: b.min,
+          q1: b.q1,
+          median: b.median,
+          q3: b.q3,
+          max: b.max,
+        })
+      })
+    })
+  }
+
+  // Error bars. Not a mark of their own: they annotate whatever the series
+  // already draws, so this runs over every series carrying `errors` regardless
+  // of kind, and the geometry sits in its own array so no existing loop changes.
+  const errorBars: ChartErrorBar[] = []
+  for (const s of series) {
+    if (!s.errors) continue
+    const dom = domOf(s)
+    const log = isLogOf(s)
+    s.errors.forEach((e, i) => {
+      const v = s.values[i]
+      if (!Number.isFinite(v)) return
+      const span = errorSpan(e, v!)
+      if (!span) return
+      if (log && span.lo <= 0) return
+      errorBars.push({
+        xCenter: round(padL + slot * i + slot / 2),
+        yLo: yOf(dom, span.lo, log),
+        yHi: yOf(dom, span.hi, log),
+        cap: round(Math.min(6, slot * 0.15)),
+        color: s.color,
+        label: spec.categories[i] ?? String(i),
+        series: s.label,
+        lo: span.lo,
+        hi: span.hi,
+      })
+    })
+  }
+
   // Lines / areas. Stacked areas accumulate per axis; others fill to baseline.
   const lines: ChartLine[] = []
   const areaCum: Record<'left' | 'right', number[]> = {
@@ -2403,11 +2478,12 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
   }
   for (const s of series) {
-    // Bars and candles draw their own marks. Candles especially: `values`
-    // holds their closing prices so that tooltips, CSV and overlays work, and
-    // without this guard that same array was ALSO drawn as a line, laying a
-    // dotted close-line straight over every candle.
-    if (s.kind === 'bar' || s.kind === 'candle') continue
+    // Bars, candles and boxes draw their own marks. Candles and boxes
+    // especially: `values` holds their closes / medians so that tooltips, CSV
+    // and overlays work, and without this guard that same array was ALSO drawn
+    // as a line, laying a dotted close-line straight over every candle. Boxes
+    // would do exactly the same thing through the median.
+    if (s.kind === 'bar' || s.kind === 'candle' || s.kind === 'box') continue
     const dom = domOf(s)
     const log = isLogOf(s)
     const yA = (v: number) => yOf(dom, v, log)
@@ -2599,6 +2675,8 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     plot,
     bars,
     candles,
+    boxes,
+    errorBars,
     lines,
     yTicks: tickFor(leftDom, leftLog),
     y2Ticks: rightDom ? tickFor(rightDom, rightLog) : [],
@@ -2636,12 +2714,22 @@ export function sliceChartWindow(spec: ChartSpec, lo: number, hi: number): Chart
   return {
     ...spec,
     categories: spec.categories.slice(from, to + 1),
+    // EVERY per-category array on a series has to be cut here, not just the
+    // ones that existed when this function was written. A missed one does not
+    // throw: the geometry keeps indexing the full-length array against the
+    // sliced categories, so marks land at the wrong x or off the plot entirely.
+    // `upperValues` / `lowerValues` were missed once and silently dropped the
+    // confidence band on zoom; `ohlc` was missed the same way and drew a
+    // zoomed candlestick chart against the wrong categories.
     series: spec.series.map((s) => ({
       ...s,
       values: s.values.slice(from, to + 1),
       rowIds: cut(s.rowIds),
       upperValues: cut(s.upperValues),
       lowerValues: cut(s.lowerValues),
+      ohlc: cut(s.ohlc),
+      boxes: cut(s.boxes),
+      errors: cut(s.errors),
     })),
     // Per-category, so it has to travel with the window or the waterfall's
     // running total resets on the wrong bars.
@@ -2892,6 +2980,143 @@ export function specToSankey(spec: ChartSpec): {
   return {
     nodes: [...ids].map((id) => ({ id, label: id.slice(id.indexOf(':') + 1) })),
     links,
+  }
+}
+
+/**
+ * The chart types that read ROWS directly instead of a grouped grid, behind one
+ * call. Returns `null` for every other type, which then goes through
+ * `rowsToChartSpec` and its reduce / sort / topN / "Other" pipeline.
+ *
+ * One entry point rather than a branch per type in the caller, because the
+ * caller is the grid controller and the controller is in the BASE bundle: every
+ * type named there is bytes paid by grids that never chart. Here it is in the
+ * lazy chart chunk, next to the builders it dispatches to, and adding a fourth
+ * direct type costs a grid nothing.
+ */
+export function rowsToDirectSpec<T extends Record<string, unknown>>(
+  type: ChartType,
+  rows: ReadonlyArray<T>,
+  opts: {
+    category?: string
+    /** The measure. For scatter this is X. */
+    value?: string
+    /** Scatter's Y measure. */
+    value2?: string
+    series?: string
+    reduce?: 'sum' | 'avg' | 'count'
+    palette?: string[]
+  },
+): ChartSpec | null {
+  const cat = opts.category as (keyof T & string) | undefined
+  const val = opts.value as (keyof T & string) | undefined
+  const ser = opts.series as (keyof T & string) | undefined
+  if (type === 'scatter') {
+    const y = opts.value2 as (keyof T & string) | undefined
+    if (!val || !y) return null
+    return rowsToScatterSpec(rows, {
+      x: val,
+      y,
+      ...(ser ? { series: ser } : {}),
+      ...(opts.palette ? { palette: opts.palette } : {}),
+    })
+  }
+  if (type === 'gauge') {
+    if (!val) return null
+    return rowsToGaugeSpec(rows, { value: val, ...(opts.reduce ? { reduce: opts.reduce } : {}) })
+  }
+  if (type === 'boxplot') {
+    if (!cat || !val) return null
+    const spec = rowsToBoxSpec(rows, {
+      category: cat,
+      value: val,
+      ...(ser ? { series: ser } : {}),
+    })
+    if (opts.palette) spec.palette = opts.palette
+    return spec
+  }
+  return null
+}
+
+/**
+ * Build a box plot spec straight from rows: group by a category, then reduce
+ * each group to a five-number summary.
+ *
+ * This is the one aggregate the panel's `sum | avg | count` cannot express, and
+ * that is the point of it. Every other chart answers "how much"; a box plot
+ * answers "how spread out", which needs the whole sample per group rather than
+ * one number, so it cannot go through `rowsToChartSpec`.
+ *
+ * `values` comes out as the medians, so tooltips, CSV and overlays work with no
+ * box-specific code - the same contract `ohlc` follows.
+ */
+export function rowsToBoxSpec<T extends Record<string, unknown>>(
+  rows: ReadonlyArray<T>,
+  opts: {
+    category: keyof T & string
+    value: keyof T & string
+    /** One box series per distinct value of this field, side by side. */
+    series?: keyof T & string
+    seriesLabel?: string
+    /** Whisker length in IQRs. Default 1.5. */
+    whisker?: number
+    width?: number
+    height?: number
+  },
+): ChartSpec {
+  const cats: string[] = []
+  const seen = new Set<string>()
+  for (const r of rows) {
+    const c = String(r[opts.category] ?? '')
+    if (!seen.has(c)) {
+      seen.add(c)
+      cats.push(c)
+    }
+  }
+  const groupNames: string[] = []
+  const groupSeen = new Set<string>()
+  if (opts.series) {
+    for (const r of rows) {
+      const g = String(r[opts.series] ?? '')
+      if (!groupSeen.has(g)) {
+        groupSeen.add(g)
+        groupNames.push(g)
+      }
+    }
+  } else {
+    groupNames.push(opts.seriesLabel ?? String(opts.value))
+  }
+
+  const series: ChartSeries[] = groupNames.map((g) => {
+    const boxes: Array<BoxStats | null> = cats.map((c) => {
+      const sample: number[] = []
+      for (const r of rows) {
+        if (String(r[opts.category] ?? '') !== c) continue
+        if (opts.series && String(r[opts.series] ?? '') !== g) continue
+        // `Number(null)` and `Number('')` are both 0, so coercing first would
+        // fold every empty cell into the sample as a zero and drag the whole
+        // box down. An absent observation is absent, not zero.
+        const raw = r[opts.value]
+        if (raw == null || raw === '') continue
+        const n = Number(raw)
+        if (Number.isFinite(n)) sample.push(n)
+      }
+      return boxStats(sample, opts.whisker)
+    })
+    return {
+      label: g,
+      // Medians, so a gap stays a gap rather than plotting as zero.
+      values: boxes.map((b) => (b ? b.median : Number.NaN)),
+      boxes,
+    }
+  })
+
+  return {
+    type: 'boxplot',
+    categories: cats,
+    series,
+    ...(opts.width ? { width: opts.width } : {}),
+    ...(opts.height ? { height: opts.height } : {}),
   }
 }
 
