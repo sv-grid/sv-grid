@@ -7,7 +7,8 @@
    * focus tooltips, a clickable legend that toggles series, optional data
    * labels, and an `onSelect` drill hook. No external charting dependency.
    */
-  import { buildChart, DEFAULT_PALETTE, formatChartValue, sliceChartWindow, type ChartSpec, type ChartSelection } from './chart'
+  import type { Snippet } from 'svelte'
+  import { buildChart, chartScales, DEFAULT_PALETTE, formatChartValue, sliceChartWindow, type ChartSpec, type ChartSelection, type ChartGeometry, type ChartScales } from './chart'
 
   type Props = {
     spec: ChartSpec
@@ -42,6 +43,38 @@
      *  fit exactly - used by the docked panel to size the chart to its body. */
     width?: number
     height?: number
+    /**
+     * Draw your own marks in the chart's own coordinates - the custom-series
+     * seam. `underlay` paints beneath the built-in marks (bands, shaded
+     * regions, a background you want the bars to sit on); `overlay` paints
+     * above them but below the crosshair and the hit layer, so tooltips and
+     * clicks keep working over whatever you draw.
+     *
+     * Both receive the laid-out geometry and its scales, so a custom mark lands
+     * on exactly the axis the built-in ones did:
+     *
+     * ```svelte
+     * <SvChart {spec}>
+     *   {#snippet overlay({ geo, xOf, yOf })}
+     *     <circle cx={xOf(3)} cy={yOf(120)} r="5" fill="tomato" />
+     *   {/snippet}
+     * </SvChart>
+     * ```
+     *
+     * `xOf` / `yOf` are null for the types with no cartesian axes (pie, gauge,
+     * treemap, sankey, calendar, radar, funnel); `geo` is always there.
+     */
+    underlay?: Snippet<[ChartRenderContext]>
+    overlay?: Snippet<[ChartRenderContext]>
+  }
+  /** What a custom mark is handed. `scales` is null on non-cartesian types. */
+  type ChartRenderContext = {
+    geo: ChartGeometry
+    /** Pixel x at the centre of category `i`. Null when there is no x axis. */
+    xOf: ChartScales['xOf'] | null
+    /** Pixel y for a value. Null when there is no value axis. */
+    yOf: ChartScales['yOf'] | null
+    scales: ChartScales | null
   }
   let {
     spec,
@@ -57,6 +90,8 @@
     toolbar,
     width,
     height,
+    underlay,
+    overlay,
   }: Props = $props()
   const showToolbar = $derived(toolbar ?? (zoomable || !!onDrill))
 
@@ -322,6 +357,16 @@
       isDark ? 'dark' : 'light',
     ),
   )
+  /** What the `underlay` / `overlay` snippets are handed. Built from the
+   *  laid-out geometry, so a custom mark shares the built-in scale exactly. */
+  const renderScales = $derived(chartScales(geo))
+  const renderCtx = $derived<ChartRenderContext>({
+    geo,
+    scales: renderScales,
+    xOf: renderScales?.xOf ?? null,
+    yOf: renderScales?.yOf ?? null,
+  })
+
   const isCartesian = $derived(
     spec.type !== 'pie' && spec.type !== 'heatmap' &&
     spec.type !== 'funnel' && spec.type !== 'radar' &&
@@ -972,6 +1017,10 @@
       </g>
     {/each}
 
+    <!-- Custom-series seam, beneath the built-in marks: shaded regions, bands,
+         anything the bars should sit on top of. -->
+    {#if underlay}{@render underlay(renderCtx)}{/if}
+
     {#each geo.bars as bar, bi (bi)}
       <rect class="sv-grid-chart-bar" x={bar.x} y={bar.y} width={bar.w} height={bar.h} rx="1" fill={seriesFill[bar.series] ?? bar.color} style={`opacity:${dimOf(bar.series)}`} />
       {#if dataLabels && isHorizontal && bar.w > 18}
@@ -1048,6 +1097,11 @@
     {#each geo.overlays as ovl, oi (ovl.label + oi)}
       <path class="sv-grid-chart-overlay" d={ovl.path} fill="none" stroke={ovl.color} stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round" stroke-linecap="round" />
     {/each}
+
+    <!-- Custom-series seam, above the built-in marks. Deliberately BEFORE the
+         crosshair and the hit layer below, so a custom mark cannot swallow the
+         tooltips, the keyboard navigation or the drill clicks. -->
+    {#if overlay}{@render overlay(renderCtx)}{/if}
 
     <!-- Pinned annotations: small marker + label. Placement nudges the
          label position so it sits clear of the data point. -->

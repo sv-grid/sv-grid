@@ -653,6 +653,25 @@ export type ChartGeometry = {
   width: number
   height: number
   plot: { x: number; y: number; w: number; h: number }
+  /**
+   * The value domain each axis was actually drawn against, and the slot width
+   * of the category axis. Plain data, deliberately: the geometry stays a
+   * serialisable value object, and `chartScales(geo)` turns this into the
+   * `xOf` / `yOf` functions a custom mark needs.
+   *
+   * Null on the types with no cartesian axes (pie, gauge, treemap, sankey,
+   * calendar, radar, funnel), which is also how a caller can tell whether
+   * drawing into plot coordinates means anything.
+   */
+  axes: {
+    y: { min: number; max: number; log: boolean }
+    /** The right axis, when a series is plotted against one. */
+    y2: { min: number; max: number; log: boolean } | null
+    /** Horizontal room per category, in px. */
+    slot: number
+    /** Number of categories the axis was laid out for. */
+    count: number
+  } | null
   bars: ChartBar[]
   /** Candlestick / OHLC bars. Empty for every other chart type. */
   candles: ChartCandle[]
@@ -844,6 +863,62 @@ function project(value: number, min: number, max: number, isLog: boolean): numbe
     return (Math.log10(value) - Math.log10(min)) / (Math.log10(max) - Math.log10(min))
   }
   return (value - min) / (max - min)
+}
+
+/** The scale functions for a laid-out cartesian chart. See {@link chartScales}. */
+export type ChartScales = {
+  /** Pixel x at the centre of category `i`. Fractional indices interpolate,
+   *  so `xOf(2.5)` is the midpoint between the third and fourth categories. */
+  xOf: (index: number) => number
+  /** Pixel y for a value on the left axis (or the right, when asked). Returns
+   *  NaN for a value the axis cannot express, e.g. zero on a log scale. */
+  yOf: (value: number, axis?: 'left' | 'right') => number
+  /** The inverse of `xOf`: which category a pixel x falls on. Clamped. */
+  xInvert: (px: number) => number
+  /** The inverse of `yOf`. */
+  yInvert: (px: number, axis?: 'left' | 'right') => number
+}
+
+/**
+ * Turn a laid-out chart's axes into functions, so a caller can draw its own
+ * marks in the same coordinates the built-in ones use.
+ *
+ * This is the custom-series seam. Rather than a registry of mark types, the
+ * chart hands over its geometry and its scales and lets the caller render
+ * whatever SVG it likes into the plot - which is the Svelte-shaped answer, and
+ * means a custom mark is ordinary markup rather than a plugin.
+ *
+ * Deriving the scale from `geo.axes` matters: the domain a chart drew against
+ * is the NICE-ROUNDED one, stretched to include zero for bar charts and any
+ * reference lines. Recomputing it from the data outside would land custom marks
+ * a few pixels off the built-in ones, in a way that looks like a rendering bug.
+ *
+ * Returns `null` for a chart with no cartesian axes (pie, gauge, treemap,
+ * sankey, calendar, radar, funnel), where plot coordinates mean nothing.
+ */
+export function chartScales(geo: ChartGeometry): ChartScales | null {
+  const a = geo.axes
+  if (!a) return null
+  const { x: px, y: py, w: pw, h: ph } = geo.plot
+  const yFor = (dom: { min: number; max: number; log: boolean }) => (value: number) => {
+    const t = project(value, dom.min, dom.max, dom.log)
+    return t === null ? Number.NaN : py + ph - t * ph
+  }
+  const left = yFor(a.y)
+  const right = a.y2 ? yFor(a.y2) : left
+  const invFor = (dom: { min: number; max: number; log: boolean }) => (y: number) => {
+    const t = ph === 0 ? 0 : (py + ph - y) / ph
+    if (!dom.log) return dom.min + t * (dom.max - dom.min)
+    const lo = Math.log10(dom.min)
+    return 10 ** (lo + t * (Math.log10(dom.max) - lo))
+  }
+  return {
+    xOf: (i) => px + a.slot * i + a.slot / 2,
+    yOf: (value, axis) => (axis === 'right' ? right(value) : left(value)),
+    xInvert: (x) =>
+      Math.max(0, Math.min(a.count - 1, Math.floor((x - px) / (a.slot || 1)))),
+    yInvert: (y, axis) => (axis === 'right' && a.y2 ? invFor(a.y2)(y) : invFor(a.y)(y)),
+  }
 }
 
 // ---- Overlay math: trendline + moving averages -----------------------
@@ -1265,6 +1340,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     width,
     height,
     plot: { x: 0, y: 0, w: width, h: height },
+    axes: null,
     bars: [],
     candles: [],
     boxes: [],
@@ -2703,6 +2779,16 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
   return {
     ...empty,
     plot,
+    // What a caller needs to put its own marks in this chart's coordinates.
+    // Reported rather than recomputed, so a custom mark lands on exactly the
+    // scale the built-in ones did - including the nice-scale rounding and the
+    // "always include zero" rule, which are impossible to guess from outside.
+    axes: {
+      y: { min: leftDom.min, max: leftDom.max, log: leftLog },
+      y2: rightDom ? { min: rightDom.min, max: rightDom.max, log: rightLog } : null,
+      slot,
+      count: spec.categories.length,
+    },
     bars,
     candles,
     boxes,

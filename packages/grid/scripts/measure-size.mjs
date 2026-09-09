@@ -314,7 +314,17 @@ const BUDGET_KB = {
   // table row. Under ~4px a category none of them could be read or aimed at
   // anyway, so they collapse to one hovered dot, one hit surface, ~40 thinned
   // labels and a capped table.
-  'chart surface (SvChart)': 30.6,
+  //
+  // 30.6 -> 31.0 for the custom-series seam. Measured 30.3 before and 30.7
+  // after, so 0.4 KB: `chartScales`, the axis domains reported on the geometry,
+  // and the two snippet call sites.
+  //
+  // The alternative design was a registry of custom mark types, like the
+  // chart-view / board-view seams. It was rejected because a chart mark is
+  // markup, not a component: handing over the geometry and the scales lets a
+  // caller draw with ordinary SVG in a snippet, and costs a fraction of what a
+  // registry plus its resolution would.
+  'chart surface (SvChart)': 31.0,
 }
 
 const CHECK = process.argv.includes('--check')

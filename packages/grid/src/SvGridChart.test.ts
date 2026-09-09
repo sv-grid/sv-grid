@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mount, unmount } from 'svelte'
+import { mount, unmount, createRawSnippet } from 'svelte'
 import SvGridChart from './SvGridChart.svelte'
 import type { ChartSpec } from './chart'
 
@@ -167,5 +167,57 @@ describe('dense charts (more categories than pixels)', () => {
     const el = render({ ...line(1200), type: 'bar' })
     expect(el.querySelectorAll('.sv-grid-chart-bar').length).toBe(1200)
     expect(el.querySelector('[data-dense]')).toBeTruthy()
+  })
+})
+
+describe('custom-series seam (underlay / overlay snippets)', () => {
+  const spec: ChartSpec = {
+    type: 'bar',
+    categories: ['a', 'b', 'c'],
+    series: [{ label: 's', values: [10, 20, 30] }],
+    width: 500,
+    height: 300,
+  }
+
+  it('renders both snippets inside the chart svg', () => {
+    const el = render(spec, {
+      underlay: createRawSnippet(() => ({ render: () => `<rect class="my-under" />` })),
+      overlay: createRawSnippet(() => ({ render: () => `<rect class="my-over" />` })),
+    })
+    expect(el.querySelector('.sv-grid-chart-svg .my-under')).toBeTruthy()
+    expect(el.querySelector('.sv-grid-chart-svg .my-over')).toBeTruthy()
+  })
+
+  it('puts the underlay beneath the bars and the overlay above them', () => {
+    const el = render(spec, {
+      underlay: createRawSnippet(() => ({ render: () => `<rect class="my-under" />` })),
+      overlay: createRawSnippet(() => ({ render: () => `<rect class="my-over" />` })),
+    })
+    // SVG paints in document order, so position IS z-order.
+    const nodes = [...el.querySelectorAll('.sv-grid-chart-svg *')]
+    const under = nodes.findIndex((n) => n.classList.contains('my-under'))
+    const bar = nodes.findIndex((n) => n.classList.contains('sv-grid-chart-bar'))
+    const over = nodes.findIndex((n) => n.classList.contains('my-over'))
+    expect(under).toBeGreaterThanOrEqual(0)
+    expect(under).toBeLessThan(bar)
+    expect(bar).toBeLessThan(over)
+  })
+
+  it('keeps the hit layer above the overlay, so tooltips still work', () => {
+    // A custom mark must not be able to swallow the tooltips, the keyboard
+    // navigation or the drill clicks.
+    const el = render(spec, {
+      overlay: createRawSnippet(() => ({ render: () => `<rect class="my-over" />` })),
+    })
+    const nodes = [...el.querySelectorAll('.sv-grid-chart-svg *')]
+    const over = nodes.findIndex((n) => n.classList.contains('my-over'))
+    const hit = nodes.findIndex((n) => n.classList.contains('sv-grid-chart-cat-hit'))
+    expect(hit).toBeGreaterThan(over)
+  })
+
+  it('draws nothing extra when no snippet is passed', () => {
+    const el = render(spec)
+    expect(el.querySelector('.my-over')).toBeNull()
+    expect(el.querySelector('.sv-grid-chart-bar')).toBeTruthy()
   })
 })

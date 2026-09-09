@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildChart, rowsToChartSpec, niceScale, sliceChartWindow, specToTreemap, specToCalendar, specToSankey, rowsToScatterSpec, rowsToGaugeSpec, boxStats, rowsToBoxSpec } from './chart'
+import { buildChart, rowsToChartSpec, niceScale, sliceChartWindow, specToTreemap, specToCalendar, specToSankey, rowsToScatterSpec, rowsToGaugeSpec, boxStats, rowsToBoxSpec, chartScales } from './chart'
 import type { ChartSpec } from './chart'
 
 describe('niceScale', () => {
@@ -993,5 +993,94 @@ describe('category axis label thinning', () => {
   it('leaves ticks in ascending x order after thinning', () => {
     const ticks = buildChart(line(1000)).xTicks
     for (let i = 1; i < ticks.length; i += 1) expect(ticks[i]!.x).toBeGreaterThan(ticks[i - 1]!.x)
+  })
+})
+
+describe('chartScales (the custom-series seam)', () => {
+  const spec = (over: Partial<ChartSpec> = {}): ChartSpec => ({
+    type: 'bar',
+    categories: ['a', 'b', 'c', 'd'],
+    series: [{ label: 's', values: [10, 20, 30, 40] }],
+    width: 500,
+    height: 300,
+    ...over,
+  })
+
+  it('lands a custom mark exactly where the built-in one is', () => {
+    // The whole point. A caller recomputing the scale from the raw data would
+    // miss the nice-scale rounding and the "always include zero" rule, and its
+    // marks would sit a few pixels off in a way that reads as a rendering bug.
+    const geo = buildChart(spec())
+    const sc = chartScales(geo)!
+    // The category tick is the authoritative x - that is where the axis label
+    // sits - and `xOf` matches it exactly.
+    geo.xTicks.forEach((t, i) => expect(sc.xOf(i)).toBeCloseTo(t.x, 6))
+    geo.bars.forEach((bar, i) => {
+      // A bar's own centre can be a half pixel off its slot: the bar width is
+      // rounded before it is centred. Within a pixel of the tick, which is what
+      // the eye compares it against.
+      expect(Math.abs(sc.xOf(i) - (bar.x + bar.w / 2))).toBeLessThanOrEqual(1)
+      expect(sc.yOf(bar.value)).toBeCloseTo(bar.y, 0)
+    })
+  })
+
+  it('agrees with the axis ticks it was drawn from', () => {
+    const geo = buildChart(spec({ type: 'line' }))
+    const sc = chartScales(geo)!
+    for (const t of geo.yTicks) expect(sc.yOf(t.value)).toBeCloseTo(t.y, 0)
+  })
+
+  it('maps the right axis separately when there is one', () => {
+    const geo = buildChart(spec({
+      series: [
+        { label: 'left', values: [10, 20, 30, 40], axis: 'left' },
+        { label: 'right', values: [0.1, 0.2, 0.3, 0.9], type: 'line', axis: 'right' },
+      ],
+    }))
+    const sc = chartScales(geo)!
+    expect(geo.axes!.y2).not.toBeNull()
+    // Same number, different axis, different pixel - or the second axis is a lie.
+    expect(sc.yOf(0.5, 'right')).not.toBeCloseTo(sc.yOf(0.5, 'left'), 0)
+    for (const t of geo.y2Ticks) expect(sc.yOf(t.value, 'right')).toBeCloseTo(t.y, 0)
+  })
+
+  it('inverts back to the value and the category it came from', () => {
+    const geo = buildChart(spec())
+    const sc = chartScales(geo)!
+    expect(sc.yInvert(sc.yOf(25))).toBeCloseTo(25, 4)
+    for (let i = 0; i < 4; i += 1) expect(sc.xInvert(sc.xOf(i))).toBe(i)
+    // Clamped rather than off the end.
+    expect(sc.xInvert(-500)).toBe(0)
+    expect(sc.xInvert(99_999)).toBe(3)
+  })
+
+  it('round-trips on a log axis too', () => {
+    const geo = buildChart(spec({ yScale: 'log', series: [{ label: 's', values: [1, 10, 100, 1000] }] }))
+    const sc = chartScales(geo)!
+    expect(sc.yInvert(sc.yOf(50))).toBeCloseTo(50, 3)
+    // A value the axis cannot express is NaN, not a silently wrong pixel.
+    expect(Number.isNaN(sc.yOf(0))).toBe(true)
+  })
+
+  it('is null for the types where plot coordinates mean nothing', () => {
+    for (const type of ['pie', 'gauge', 'treemap', 'sankey', 'radar', 'funnel', 'calendar'] as const) {
+      const geo = buildChart({ ...spec(), type })
+      expect(chartScales(geo), `${type} should have no cartesian scale`).toBeNull()
+      expect(geo.axes).toBeNull()
+    }
+  })
+
+  it('reports the axes a candlestick and a box plot were drawn against', () => {
+    // Both keep out of the zero-baseline rule, so their domain is not something
+    // a caller could guess from the data.
+    const px = buildChart({
+      type: 'candlestick',
+      categories: ['a', 'b'],
+      series: [{ label: 'p', values: [190, 192], ohlc: [{ o: 189, h: 195, l: 188, c: 190 }, { o: 190, h: 196, l: 189, c: 192 }] }],
+      width: 400, height: 300,
+    })
+    expect(px.axes!.y.min).toBeGreaterThan(0)
+    const sc = chartScales(px)!
+    expect(sc.yOf(195)).toBeLessThan(sc.yOf(188)) // higher price, smaller y
   })
 })

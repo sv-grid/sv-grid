@@ -402,6 +402,77 @@ changing its type:
 cover the whiskers, so a bar with a wide interval cannot clip at the top of the
 plot.
 
+## Drawing your own marks
+
+Two snippets let you draw into the chart's own coordinate space. `underlay`
+paints beneath the built-in marks, `overlay` above them:
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvChart, type ChartSpec } from '@svgrid/grid'
+
+  const spec: ChartSpec = {
+    type: 'line',
+    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    series: [{ label: 'Latency', values: [120, 180, 140, 260, 150] }],
+  }
+  const budget = 200
+</script>
+
+<SvChart {spec}>
+  {#snippet underlay({ geo, yOf })}
+    <!-- Everything over budget, shaded. -->
+    {#if yOf}
+      <rect
+        x={geo.plot.x}
+        y={geo.plot.y}
+        width={geo.plot.w}
+        height={Math.max(0, yOf(budget) - geo.plot.y)}
+        fill="tomato"
+        fill-opacity="0.08"
+      />
+    {/if}
+  {/snippet}
+
+  {#snippet overlay({ xOf, yOf })}
+    <!-- A ring around the worst day. -->
+    {#if xOf && yOf}
+      <circle cx={xOf(3)} cy={yOf(260)} r="7" fill="none" stroke="tomato" stroke-width="2" />
+    {/if}
+  {/snippet}
+</SvChart>
+```
+
+This is the extension point instead of a registry of custom series types: a
+chart mark is markup, so drawing one should be markup too.
+
+Both snippets receive `{ geo, xOf, yOf, scales }`. `geo` is the full
+[`ChartGeometry`](../reference/auto/svgrid-grid-chart.md) - every laid-out bar,
+line point, tick and plot rectangle. `xOf(i)` is the pixel x at the centre of
+category `i` (fractional indices interpolate), and `yOf(value, axis?)` is the
+pixel y for a value on the left or right axis.
+
+Take the scales from here rather than recomputing them. The domain a chart was
+drawn against is nice-rounded, stretched to include zero for bar charts and to
+cover any reference lines - reproducing that from the raw data is guesswork, and
+being a few pixels out reads as a rendering bug. `chartScales(geo)` is exported
+if you need the same functions outside a snippet:
+
+```ts
+import { buildChart, chartScales } from '@svgrid/grid'
+
+const geo = buildChart(spec)
+const sc = chartScales(geo) // null for pie / gauge / treemap / sankey / radar / funnel / calendar
+sc?.xInvert(240) // which category is at x=240
+sc?.yInvert(80)  // what value is at y=80
+```
+
+`xOf` and `yOf` are `null` on the types with no cartesian axes, which is also
+how you can tell whether plot coordinates mean anything for the current type.
+
+The overlay is drawn **below** the crosshair and the hit layer on purpose, so
+whatever you add cannot swallow tooltips, keyboard navigation or drill clicks.
+
 ## Large series
 
 A chart with more categories than the plot has pixels adapts on its own, with

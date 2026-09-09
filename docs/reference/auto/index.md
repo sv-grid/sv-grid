@@ -13,7 +13,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/scheduler-model.ts`](./svgrid-grid-scheduler-model.md) - 30 exports
 - [`@svgrid/grid/dock-model.ts`](./svgrid-grid-dock-model.md) - 25 exports
 - [`@svgrid/grid/dock-manager-model.ts`](./svgrid-grid-dock-manager-model.md) - 32 exports
-- [`@svgrid/grid/chart.ts`](./svgrid-grid-chart.md) - 61 exports
+- [`@svgrid/grid/chart.ts`](./svgrid-grid-chart.md) - 63 exports
 - [`@svgrid/grid/createTree.svelte.ts`](./svgrid-grid-createTree.svelte.md) - 12 exports
 - [`@svgrid/grid/editor-contract.ts`](./svgrid-grid-editor-contract.md) - 11 exports
 - [`@svgrid/grid/editor-registry.ts`](./svgrid-grid-editor-registry.md) - 9 exports
