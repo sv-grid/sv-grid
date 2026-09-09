@@ -1,50 +1,79 @@
-name: Publish npm package
+name: Publish npm packages
 
-# Daily auto-publish of @svgrid/grid, but ONLY when its source changed since the
-# last release (tools/release-grid.mjs decides). Days with no changes are no-ops,
-# so the registry never sees an empty version bump - important for the enterprise
-# consumers that depend on the grid.
+# Auto-publish the public @svgrid packages, but ONLY the ones whose shipped files
+# changed since their last release (tools/release-packages.mjs decides). Runs after
+# the Test workflow goes green on main, so every published version is a version that
+# passed lint, types, unit tests and e2e. Commits that change nothing shippable are
+# no-ops, so the registry never sees an empty version bump.
 #
-# Scope: @svgrid/grid only. @svgrid/enterprise is the paid SKU and is deliberately
-# NOT auto-published here. To add another public package later, give it the same
-# detect/bump/tag treatment (a per-package `<name>-v*` tag marks its last release).
+# Scope: every public package, in dependency order - grid, enterprise, grid-wc, mcp,
+# studio, ui, create, create-studio, migrate, sv. Each one carries its own
+# `<dir>-v*` tag marking the commit it was last released at. A package with no tag
+# yet is baselined on the first run (tagged at its current version, not published),
+# so its first auto-release is its next real change.
 #
-# Required repo secret:
-#   NPM_TOKEN - an npm automation token with publish rights to the @svgrid scope.
+# Publishing itself is tools/publish.mjs - the same ordered, idempotent script used
+# for manual releases. It publishes with pnpm, NOT npm: every package except grid,
+# migrate and sv carries `@svgrid/...: workspace:^` in its dependencies or peers, and
+# npm ships that protocol string verbatim, which fails every consumer's install with
+# EUNSUPPORTEDPROTOCOL. pnpm rewrites it to the concrete version being published.
 #
-# 06:37 UTC: off-peak and a non-round minute (GitHub delays jobs scheduled on the
-# hour). Runs after the daily blog job (05:23) and before the website rebuild (07:12).
+# Required repo secrets:
+#   NPM_TOKEN     - an npm automation token with publish rights to the @svgrid scope.
+#   WEBSITE_TOKEN - read access to the private website submodule (a workspace member).
+#
+# The 06:37 UTC schedule is a safety net, not the main path: Test uses
+# cancel-in-progress, so a commit superseded within minutes never emits a
+# `workflow_run: success` of its own. The cron sweeps up whatever that dropped.
 
 on:
+  workflow_run:
+    workflows: ['Test']
+    types: [completed]
   workflow_dispatch:
     inputs:
       force:
         description: 'Publish even if no changes were detected'
         type: boolean
         default: false
+      only:
+        description: 'Restrict to these package directories (comma separated, e.g. grid,mcp)'
+        type: string
+        default: ''
   schedule:
     - cron: '37 6 * * *'
 
-# Push the version-bump commit + release tag back to main.
+# Push the version-bump commit + release tags back to main.
 permissions:
   contents: write
   id-token: write # npm provenance
 
 concurrency:
-  group: publish-grid
+  group: publish-npm
   cancel-in-progress: false
 
 jobs:
   publish:
+    # A workflow_run fires for every Test completion, including PRs and failures.
+    # Only a green push to main is allowed to publish.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
-    # Cap the run so a stuck step (classically `npm publish` blocking on a 2FA
-    # OTP prompt when NPM_TOKEN is not an *automation* token) can't hold the
-    # `publish-grid` concurrency lock for the default 6h and leave the next
-    # scheduled run sitting in "Waiting".
-    timeout-minutes: 15
+    # Cap the run so a stuck step (classically a publish blocking on a 2FA OTP
+    # prompt when NPM_TOKEN is not an *automation* token) can't hold the
+    # `publish-npm` concurrency lock for the default 6h and leave the next run
+    # sitting in "Waiting". Enterprise's prepublishOnly rebuilds the designer SPA,
+    # so a full-suite release is a good deal slower than the old grid-only job.
+    timeout-minutes: 45
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: main
           fetch-depth: 0 # need full history + tags for change detection
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -67,55 +96,92 @@ jobs:
           cache: pnpm
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Detect changes and bump version
+      - name: Detect changes and bump versions
         id: release
-        # Only the manual `force` input publishes without changes. A scheduled run
-        # on an unchanged tree is a no-op: forcing it here is what took the package
-        # to 125 published versions and drowned the download stats in mirror
-        # traffic that refetches every version.
-        run: node tools/release-grid.mjs ${{ inputs.force == true && '--force' || '' }}
-
-      # First run lays down the baseline tag at the current version without
-      # publishing (the package is already on npm at this version).
-      - name: Establish baseline tag (first run)
-        if: steps.release.outputs.changed == 'false' && inputs.force != true
+        # Only the manual `force` input publishes without changes. A run on an
+        # unchanged tree is a no-op: forcing it is what took @svgrid/grid to 125
+        # published versions and drowned the download stats in mirror traffic that
+        # refetches every version.
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          FORCE: ${{ inputs.force == true && '--force' || '' }}
+          ONLY: ${{ inputs.only }}
         run: |
-          tag="grid-v${{ steps.release.outputs.version }}"
-          if git rev-parse "$tag" >/dev/null 2>&1; then
-            echo "Tag $tag already exists - nothing to do."
+          # workflow_run reports the commit that was tested. If main has moved on,
+          # publishing here would ship untested commits; the newer commit's own
+          # green run publishes them instead.
+          if [ -n "$TESTED_SHA" ] && [ "$(git rev-parse HEAD)" != "$TESTED_SHA" ]; then
+            echo "main has moved past the tested commit $TESTED_SHA - leaving it to that commit's run."
+            printf 'any=false\npackages=\npackages_json=[]\ntags=\nbaseline=\nsummary=\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "$ONLY" ]; then
+            node tools/release-packages.mjs $FORCE --only "$ONLY"
           else
-            echo "Creating baseline tag $tag."
-            git tag "$tag"
-            git push origin "$tag"
+            node tools/release-packages.mjs $FORCE
           fi
 
       - name: Install dependencies
-        if: steps.release.outputs.changed == 'true' || inputs.force == true
+        if: steps.release.outputs.any == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Build library
-        if: steps.release.outputs.changed == 'true' || inputs.force == true
-        run: pnpm --filter @svgrid/grid build
+      # grid and grid-wc have no prepublishOnly hook, so their dist/ has to exist
+      # before the publish step. Enterprise is built even when it is not being
+      # published because @svgrid/mcp and @svgrid/studio compile against its dist/.
+      - name: Build the workspace libraries
+        if: steps.release.outputs.any == 'true'
+        run: |
+          pnpm --filter @svgrid/grid build
+          pnpm --filter @svgrid/enterprise build:lib
+          pnpm --filter @svgrid/enterprise build:node
 
-      - name: Verify package is publishable
-        if: steps.release.outputs.changed == 'true' || inputs.force == true
+      - name: Build the web component
+        if: contains(fromJSON(steps.release.outputs.packages_json), 'grid-wc')
+        run: pnpm --filter @svgrid/grid-wc build
+
+      - name: Verify the grid package is publishable
+        if: contains(fromJSON(steps.release.outputs.packages_json), 'grid')
         run: pnpm --filter @svgrid/grid test:build
 
       - name: Publish to npm
-        if: steps.release.outputs.changed == 'true' || inputs.force == true
-        run: npm publish --provenance --access public
-        working-directory: packages/grid
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        if: steps.release.outputs.any == 'true'
+        # --no-git-checks because the tree is intentionally dirty here: the bumped
+        # package.json files are committed after a successful publish, not before,
+        # so a failed publish leaves main untouched. The script skips anything whose
+        # exact version is already on the registry, so a re-run is safe.
+        run: node tools/publish.mjs --no-git-checks
 
-      - name: Commit version bump and tag the release
-        if: steps.release.outputs.changed == 'true' || inputs.force == true
+      - name: Commit the version bumps and tag the releases
+        if: steps.release.outputs.any == 'true'
         run: |
-          version="${{ steps.release.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/grid/package.json
-          git commit -m "release: @svgrid/grid v${version} [skip ci]" || echo "nothing to commit"
-          git tag "grid-v${version}"
-          git push origin HEAD:main
-          git push origin "grid-v${version}"
+          git add packages/*/package.json
+          git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
+          # main can gain commits while a release builds; rebase the bump on top
+          # rather than failing the run after the packages are already on npm.
+          git push origin HEAD:main || {
+            git pull --rebase origin main
+            git push origin HEAD:main
+          }
+          # Tag only once the bump commit is safely on main. Tagging before the
+          # push would leave every tag on the pre-rebase commit, off the branch.
+          for tag in ${{ steps.release.outputs.tags }}; do
+            git tag "$tag"
+            git push origin "$tag"
+          done
+
+      # Packages with no release tag yet are already on npm at their current
+      # version, so the first run starts their history instead of republishing.
+      - name: Establish baseline tags
+        if: steps.release.outputs.baseline != ''
+        run: |
+          for tag in ${{ steps.release.outputs.baseline }}; do
+            if git rev-parse "$tag" >/dev/null 2>&1; then
+              echo "Tag $tag already exists - nothing to do."
+            else
+              echo "Creating baseline tag $tag."
+              git tag "$tag"
+              git push origin "$tag"
+            fi
+          done

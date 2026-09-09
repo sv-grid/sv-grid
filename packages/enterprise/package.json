@@ -74,7 +74,7 @@
     "build:cdn": "node ./scripts/build-cdn.mjs",
     "build:node": "node ./scripts/build-node.mjs",
     "build:designer": "node ./scripts/build-designer.mjs",
-    "prepublishOnly": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "prepublishOnly": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
     "extract:ui-props": "node scripts/extract-ui-props.mjs",
     "lint": "eslint ./src"
   },

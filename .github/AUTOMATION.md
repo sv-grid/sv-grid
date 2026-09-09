@@ -1,11 +1,11 @@
-# Daily automation
+# Repo automation
 
-Three scheduled GitHub Actions keep the package and the blog moving without manual work.
+Three GitHub Actions keep the packages and the blog moving without manual work.
 
 | Workflow | File | Schedule (UTC) | What it does |
 | --- | --- | --- | --- |
 | Blog post (twice weekly) | [daily-blog.yml](workflows/daily-blog.yml) | Tue + Fri 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
-| Publish npm package | [publish-npm.yml](workflows/publish-npm.yml) | 06:37 | Publishes `@svgrid/grid` to npm, but only when its source changed. |
+| Publish npm packages | [publish-npm.yml](workflows/publish-npm.yml) | after every green Test run on `main`, plus 06:37 | Publishes each public `@svgrid/*` package whose shipped files changed. |
 | Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Regenerates the blog's SEO structure (tips pages, pillar hubs, "Related reading" blocks), then rebuilds the site so posts whose date has arrived go live. |
 
 ## Required secrets and variables
@@ -13,19 +13,32 @@ Three scheduled GitHub Actions keep the package and the blog moving without manu
 Add these under **Settings -> Secrets and variables -> Actions**:
 
 - `NPM_TOKEN` (secret) - an npm **automation** token with publish rights to the `@svgrid` scope.
+- `WEBSITE_TOKEN` (secret) - read access to the private `website` submodule, which is a pnpm workspace member.
 - `ANTHROPIC_API_KEY` (secret) - Anthropic API key used to write each post.
 - `BLOG_MODEL` (variable, optional) - model id for generation. Defaults to `claude-sonnet-4-6`. Use `claude-opus-4-8` for higher quality at higher cost.
 
 ## How the npm publish stays clean
 
-`@svgrid/grid` is consumed by enterprise customers, so we never push an empty version.
-[tools/release-grid.mjs](../tools/release-grid.mjs) marks each release with a `grid-v<version>`
-git tag and, on the next run, only bumps the patch (build) number and republishes if
-`packages/grid/src` or its `package.json` changed since that tag. Days with no changes are no-ops.
+The packages are consumed by paying customers, so we never push an empty version and
+never publish a commit that has not gone green. The publish workflow is triggered by
+the **Test** workflow completing successfully on `main` (`workflow_run`), so lint,
+type-check, unit tests and the Playwright suite all pass before anything reaches npm.
+The 06:37 schedule stays on as a safety net: Test runs with `cancel-in-progress`, so a
+commit that is superseded within minutes never emits a success event of its own.
 
-- First scheduled run finds no `grid-v*` tag, so it lays down the baseline tag `grid-v1.0.2` (the version already on npm) and publishes nothing.
-- `@svgrid/enterprise` is the paid SKU and is deliberately **not** auto-published. To add another public package later, give it the same detect/bump/tag treatment in `publish-npm.yml`.
-- Run manually any time from the Actions tab; `force: true` publishes even with no detected change.
+[tools/release-packages.mjs](../tools/release-packages.mjs) decides what ships. Each
+release is marked with a `<dir>-v<version>` git tag, and on the next run a package
+only gets its patch (build) number bumped and republished if its **shipped** files
+changed since that tag - its `files` entries plus the scripts that generate `dist/`.
+Tests, docs and demos do not trigger a release. Commits with nothing shippable are no-ops.
+
+- Every public package is covered, in dependency order: `grid`, `enterprise`, `grid-wc`, `mcp`, `studio`, `ui`, `create`, `create-studio`, `migrate`, `sv`.
+- A package with no `<dir>-v*` tag yet is **baselined** on the first run: tagged at the version already on npm, published nothing. Its first auto-release is its next real change.
+- One cascade rule: `@svgrid/grid-wc` compiles grid and enterprise *into* its bundle, so a grid change republishes it even though its own files did not move. Everything else depends through `^x.y.z` ranges that a patch already satisfies.
+- Publishing runs through [tools/publish.mjs](../tools/publish.mjs), the same ordered, idempotent script used for manual releases. It uses **pnpm, never npm**: every package except grid, migrate and sv carries `@svgrid/...: workspace:^` in its dependencies or peers, and npm ships that string verbatim, so every consumer's install dies with `EUNSUPPORTEDPROTOCOL`. pnpm rewrites it to the concrete version.
+- The bumped `package.json` files are committed and tagged **after** a successful publish, so a failed run leaves `main` untouched and is safe to re-run.
+- Run manually any time from the Actions tab: `force: true` publishes even with no detected change, and `only: grid,mcp` restricts the run to named package directories.
+- Adding a package: give it an entry in `PACKAGES` in `tools/release-packages.mjs` and in `ORDER` in `tools/publish.mjs`. One without the other is detected but never shipped, or shipped without a tag.
 
 ## How the blog drip works
 

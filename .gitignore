@@ -78,7 +78,7 @@ docs/legal/SvGrid-EULA.pdf
 
 # Maintainer-only tooling under tools/ - kept locally, never in the public repo.
 # tools/ CANNOT be ignored wholesale: 5 workflows and both package.json script
-# sets invoke ~25 scripts there (build-docs-index, prerender-site, release-grid,
+# sets invoke ~25 scripts there (build-docs-index, prerender-site, release-packages,
 # post-tweet + twitter/*, the *.test.ts files, ...). Ignoring the folder would
 # break CI. Only the scripts with no build/CI dependency are listed here, by
 # name - never by extension (see the blanket `*.mjs` note above).
