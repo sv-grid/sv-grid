@@ -61,10 +61,11 @@ test.describe('chart', () => {
   })
 
   test('the legend toggles a series off and back on', async ({ page }) => {
-    await open(page, '147-integrated-charts')
+    // A demo that always has more than one series: demo 147 defaults to a
+    // single measure, so this used to skip every run and prove nothing.
+    await open(page, '354-charting-multi-series')
     const items = page.locator('.sv-grid-chart-legend-item')
-    await expect(items.first()).toBeVisible()
-    if ((await items.count()) < 2) test.skip()
+    await expect(items.nth(1)).toBeVisible()
 
     const first = items.first()
     await first.click()

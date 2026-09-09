@@ -47,7 +47,7 @@ const COMPONENTS = [
 
 /** Shared prop-type sources resolved for `Props = X & {...}` intersections and
  *  named union aliases (EditorSize etc.). Parsed once, merged by name. */
-const SHARED_TYPE_FILES = ['editor-contract.ts', 'editors/cell-editors.ts']
+const SHARED_TYPE_FILES = ['editor-contract.ts', 'editors/cell-editors.ts', 'grid-icons.ts']
 
 // --- tiny helpers -----------------------------------------------------------
 
@@ -112,6 +112,25 @@ function literalMembers(node, aliases) {
   return out
 }
 
+/** True when a type is a snippet, or a keyed bundle of them (`icons`, typed
+ *  `Partial<Record<GridIconName, Snippet>>`). Both are content, not properties:
+ *  the panel would offer a JSON box that cannot hold a snippet, and the value it
+ *  produced would be emitted as a plain object and throw at `{@render}`. */
+function snippetValued(node, aliases, seen = new Set()) {
+  if (!node) return false
+  if (ts.isParenthesizedTypeNode(node)) return snippetValued(node.type, aliases, seen)
+  if (!ts.isTypeReferenceNode(node)) return false
+  const ref = node.typeName.getText()
+  if (ref === 'Snippet') return true
+  const args = node.typeArguments ?? []
+  // Wrappers pass their payload through; keyed containers are their value type.
+  if (/^(Partial|Required|Readonly|NonNullable)$/.test(ref)) return snippetValued(args[0], aliases, seen)
+  if (/^(Record|Map|Array|ReadonlyArray|Set)$/.test(ref)) return snippetValued(args[args.length - 1], aliases, seen)
+  if (seen.has(ref)) return false // a self-referential alias must not loop
+  seen.add(ref)
+  return snippetValued(aliases.get(ref), aliases, seen)
+}
+
 /** Classify a prop's type node -> { kind: UiPropType | 'event' | 'code', options? }.
  *  A real prop is NEVER dropped: unclassifiable types fall back to 'json', and a
  *  non-`on*` function prop (e.g. loadChildren) is listed read-only as 'code'. Only
@@ -144,7 +163,8 @@ function classify(name, node, aliases) {
   if (ts.isArrayTypeNode(node) || ts.isTypeLiteralNode(node) || ts.isTupleTypeNode(node)) return { kind: 'json' }
   if (ts.isTypeReferenceNode(node)) {
     const ref = node.typeName.getText()
-    if (ref === 'Snippet') return { kind: 'skip' } // a content slot, not a property
+    // A content slot, not a property - whether it is one snippet or a map of them.
+    if (snippetValued(node, aliases)) return { kind: 'skip' }
     if (ref === 'Date') return { kind: 'date' }
     if (/^(Partial|Record|Array|ReadonlyArray|Map|Set)$/.test(ref)) return { kind: 'json' }
     const target = aliases.get(ref)

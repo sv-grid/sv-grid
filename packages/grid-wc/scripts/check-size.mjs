@@ -29,12 +29,26 @@ const dist = join(here, '..', 'dist')
  * props and 2 events to 98 and 19, so grouping, pagination, pinning, tree data,
  * master/detail, board, scheduler and the enterprise features became reachable
  * from a non-Svelte host at all. Measured 102.5 -> 104.1 KiB, so 1.6 KiB for
- * roughly fourteen times the API. The budget keeps ~2 KiB of headroom, which is
+ * roughly fourteen times the API. The budget kept ~2 KiB of headroom, which was
  * about one more feature's worth of props.
+ *
+ * 106.0 -> 107.1 and 106.5 -> 107.3, and the headroom is now 0.3 KiB rather
+ * than 2. None of the growth is in the element layer: it is the grid's own base
+ * bundle, +0.8 KiB for the `icons` prop and the chart panel's type picker
+ * (measured 84.4 KB against 83.6 before, see the note in
+ * packages/grid/scripts/measure-size.mjs). An element inlines the grid, so any
+ * grid base change lands here at roughly 1:1.
+ *
+ * The cushion is gone on purpose. It was sized for a layer that only moved when
+ * someone touched the element surface, and it silently absorbed grid-side growth
+ * instead. Tracking the measurement closely means a grid base increase now has to
+ * be acknowledged in both budgets, which is two edits and the intended cost: this
+ * file is the only thing that measures what a non-Svelte consumer actually
+ * downloads, and 2 KiB is a lot of room to grow into unnoticed.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 106.0 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 106.5 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.1 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 107.3 },
 }
 
 const failures = []
