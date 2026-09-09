@@ -75,6 +75,10 @@
     }
   }
 
+  /** Pane size, so the dial fills its card rather than a fixed viewBox. */
+  let paneW = $state(0)
+  let paneH = $state(0)
+
   const spec = $derived.by<ChartSpec>(() => ({
     type: 'gauge',
     categories: [],
@@ -103,7 +107,7 @@
   </div>
 
   <div class="flex flex-1 min-h-0 gap-3">
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-w-0 min-h-0">
       <SvGrid responsive={true}
       columnResize
         data={rows}
@@ -119,9 +123,21 @@
         onRowClick={(e: { row: Row }) => { if (e.row) selected = e.row }}
       />
     </div>
-    <div class="shrink-0 rounded-lg border p-3" style="width: 380px; border-color: var(--sg-border); background: var(--sg-bg);">
-      <div class="mb-2 text-xs font-semibold" style="color: var(--sg-muted);">{selected.metric}</div>
-      <SvGridChart {spec} />
+    <div class="rounded-lg border p-3 flex flex-col" style="flex: 0 1 380px; min-width: 0; min-height: 0; border-color: var(--sg-border); background: var(--sg-bg);">
+      <div class="mb-2 shrink-0 text-xs font-semibold" style="color: var(--sg-muted);">{selected.metric}</div>
+      <!-- A dial is a semicircle, so unlike the other charts it should NOT be
+           stretched to fill: given a tall card it just sits at the bottom with
+           dead space above the arc. Keep its own ~0.68 aspect and centre it. -->
+      <div
+        class="flex-1 min-h-0 flex items-center justify-center"
+        style="width: 100%;"
+        bind:clientWidth={paneW}
+        bind:clientHeight={paneH}
+      >
+        {#if paneW > 40 && paneH > 40}
+          <SvGridChart {spec} width={paneW} height={Math.min(paneH, Math.round(paneW * 0.68))} />
+        {/if}
+      </div>
     </div>
   </div>
 </section>

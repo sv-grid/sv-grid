@@ -94,6 +94,11 @@
     ],
   })
 
+
+  /** Brush strip height, and the pane box the chart is sized to fill. */
+  const BRUSH = 74
+  let paneW = $state(0)
+  let paneH = $state(0)
 </script>
 
 <section class="wrap">
@@ -128,12 +133,30 @@
     </div>
 
     <div class="pane">
-      <!-- The strip underneath is the chart's own brush: drag its window to
-           pan, drag an edge to resize, and the plot above follows. An earlier
-           draft put a separate volume chart there, which read as a range
-           selector, did not act like one, and fell out of register with the
-           plot the moment you zoomed. Volume lives in the grid instead. -->
-      <SvChart spec={price} legend={false} zoomable brush brushHeight={74} />
+      <!-- Measured box, not the card: its height comes from the parent, so the
+           chart cannot push the thing it is sized against. -->
+      <div class="pane-fill" bind:clientWidth={paneW} bind:clientHeight={paneH}>
+        {#if paneW > 40 && paneH > 140}
+          <!-- The strip underneath is the chart's own brush: drag its window to
+               pan, drag an edge to resize, and the plot above follows. An earlier
+               draft put a separate volume chart there, which read as a range
+               selector, did not act like one, and fell out of register with the
+               plot the moment you zoomed. Volume lives in the grid instead.
+
+               The brush sits BELOW the plot and is not part of `height`, so its
+               strip has to come out of the budget or the pair overflows the
+               card. Measured at 83px for a 74px brush, so 9px of chrome. -->
+          <SvChart
+            spec={price}
+            legend={false}
+            zoomable
+            brush
+            brushHeight={BRUSH}
+            width={paneW}
+            height={paneH - BRUSH - 9}
+          />
+        {/if}
+      </div>
     </div>
   </div>
 </section>
@@ -198,9 +221,18 @@
     min-width: 0;
     min-height: 0;
   }
+  .pane-fill {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
   .pane {
-    flex: none;
-    width: 600px;
+    /* 600px is a preference, not a floor: `flex: none` pushed the card off the
+       right of the window on a laptop, and the page does not scroll sideways,
+       so the part that fell outside was unreachable. */
+    flex: 0 1 600px;
+    min-width: 0;
+    min-height: 0;
     border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 10px;
     background: var(--sg-bg, #fff);
