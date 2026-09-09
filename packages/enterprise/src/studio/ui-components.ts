@@ -705,6 +705,11 @@ export const GRID_CURATED_PROPS: ReadonlySet<string> = new Set<string>([
   'pageSize', 'pageSizeOptions', 'paginationPosition', 'rowHeight', 'containerHeight',
   'columnVirtualization', 'initialColumnPinning', 'conditionalFormats', 'features', 'editable',
   'enableInlineEditing',
+  // The icon picker owns this. The extractor already skips it (a map of snippets is
+  // content, not a property), so this is belt and braces - but if snippet handling
+  // there ever changes, `icons` must not reappear as a JSON box: the value it would
+  // produce is emitted with JSON.stringify and would throw at `{@render}`.
+  'icons',
 ])
 
 /** The Grid's raw prop surface for the "All properties" panel: every extracted SvGrid
@@ -717,6 +722,38 @@ export function gridPropSurface(): UiComponentProp[] {
     .filter((p) => !GRID_CURATED_PROPS.has(p.key))
     .map((p) => ({ ...p }) as UiComponentProp)
     .sort((a, b) => (order[a.group ?? 'common']! - order[b.group ?? 'common']!) || a.label.localeCompare(b.label))
+}
+
+// --- Grid icons: how the picker groups the catalogue ------------------------
+// SvGrid names ~50 chrome glyphs and `icons` replaces any subset, which is far too
+// long a list to show flat. Array order is BOTH the matching order (each name takes
+// the first rule that accepts it) and the order the picker shows the groups in, so
+// the header icons people actually reach for - sort, filter, the column menu - come
+// first rather than falling out of a catch-all at the bottom.
+//
+// 'Other' is the catch-all and is expected to stay empty: a glyph added to the
+// catalogue still shows up there rather than vanishing from the picker, but the
+// guardrail test fails so someone gives it a real home.
+const GRID_ICON_GROUP_RULES: ReadonlyArray<{ label: string; match: (n: string) => boolean }> = [
+  { label: 'Header + column menu', match: (n) => ['sort', 'sort-asc', 'sort-desc', 'filter', 'menu', 'chevron-down', 'chevron-right', 'autosize', 'columns', 'reset'].includes(n) },
+  { label: 'Filter operators', match: (n) => n.startsWith('op-') },
+  { label: 'Pinning', match: (n) => n === 'pin-left' || n === 'pin-right' || n === 'unpin' },
+  { label: 'Rows + grouping', match: (n) => ['group', 'group-add', 'row-number', 'pinned-row-top', 'pinned-row-bottom', 'drag-handle', 'breadcrumb-separator'].includes(n) },
+  { label: 'Toolbar + overlays', match: (n) => ['search', 'tool-panel', 'chart', 'advanced-filter', 'column-group-caret'].includes(n) },
+  { label: 'Pager', match: (n) => n.startsWith('page-') },
+  { label: 'Find + move', match: (n) => n.startsWith('find-') || n.startsWith('move-') },
+  { label: 'Close + clear', match: (n) => ['x', 'close', 'clear', 'remove'].includes(n) },
+  { label: 'Other', match: () => true },
+]
+
+/** Split the grid's icon catalogue into the picker's display groups, in order,
+ *  dropping any that came out empty. Takes the names rather than importing them so
+ *  the studio metadata module stays free of a runtime dependency on the grid. */
+export function gridIconGroups<T extends string>(names: readonly T[]): Array<{ label: string; names: T[] }> {
+  return GRID_ICON_GROUP_RULES.map((rule, i) => ({
+    label: rule.label,
+    names: names.filter((n) => GRID_ICON_GROUP_RULES.findIndex((c) => c.match(n)) === i),
+  })).filter((g) => g.names.length)
 }
 
 // Props NOT offered on `ctx.grid` as runtime-settable options: structural data,

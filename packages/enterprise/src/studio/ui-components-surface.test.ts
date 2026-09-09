@@ -1,13 +1,32 @@
 import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import { GENERATED_UI_SURFACE } from './ui-components.generated'
-import { UI_COMPONENT_REGISTRY, uiComponentSpec, gridPropSurface } from './ui-components'
+import { UI_COMPONENT_REGISTRY, uiComponentSpec, gridPropSurface, gridIconGroups } from './ui-components'
 import { addComponentBlock, addFreestandingScreen, createProject, eventSlot, setHandlerBody, setHandlerSteps, updateBlock, type GridConfig } from './project'
 import { emitStudioProject } from './emit-project'
 import type { EntitySchema } from '../schema'
+
+/** The grid's icon catalogue, READ from its source rather than imported.
+ *
+ *  Neither import works here. `import { GRID_ICON_NAMES } from '@svgrid/grid'` is a
+ *  value import, so it pulls SvGrid.svelte into a unit environment that has no
+ *  Svelte transform (every other grid import in this package is `import type`,
+ *  which erases). And a relative import into ../../../grid/src makes
+ *  svelte-package follow the path during `build:lib` and write a stray
+ *  grid-icons.d.ts into packages/grid/src on every build.
+ *
+ *  So: parse the array. The length assertion in the test is what stops a parse that
+ *  silently returns nothing from passing vacuously. */
+function readIconCatalogue(): string[] {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../../grid/src/grid-icons.ts'), 'utf8')
+  const block = /export const GRID_ICON_NAMES[^=]*=\s*\[([\s\S]*?)\]/.exec(src)
+  if (!block) throw new Error('GRID_ICON_NAMES not found in grid-icons.ts - the guardrail below is not running')
+  return [...block[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!)
+}
 
 const customers: EntitySchema = {
   name: 'customers',
@@ -163,6 +182,61 @@ describe('full component surface (extractor-driven)', () => {
     // `sortable` is curated (emitted once) - the raw override must NOT duplicate it.
     expect((page.match(/\bsortable\b/g) ?? []).length).toBe(1)
     expect(() => compile(page, { filename: 'g2.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('icons are never offered as a raw property, and compile to snippets when set', () => {
+    // A map of snippets is content, not a property. Offering it in "All properties"
+    // would emit `icons={{"sort-asc":"..."}}` (JSON.stringify) and throw at
+    // `{@render override()}`, so the extractor skips it and the picker owns it.
+    expect(gridPropSurface().some((p) => p.key === 'icons')).toBe(false)
+    expect(GENERATED_UI_SURFACE['SvGrid']!.props.some((p) => p.key === 'icons')).toBe(false)
+
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    const blk = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'grid')!
+    p = updateBlock(p, sid, blk.id, {
+      config: {
+        icons: {
+          // A character glyph, an inline SVG, and the two that prove the value is
+          // not sniffed on a leading bracket: '<' is a legitimate pager arrow.
+          'sort-asc': '▲',
+          filter: '<svg viewBox="0 0 16 16"><path d="M2 3h12l-5 6v4l-2 1V9z" /></svg>',
+          'page-prev': '<',
+          'page-next': '>',
+        },
+      } as Partial<GridConfig>,
+    })
+    const page = emitStudioProject(p).find((f) => f.path.endsWith('+page.svelte'))!.contents
+
+    // Each override is a real snippet, and the prop references them by name.
+    expect(page).toMatch(/\{#snippet icon_[A-Za-z0-9_]+_sort_asc\(\)\}\{'▲'\}\{\/snippet\}/)
+    expect(page).toContain('<svg viewBox="0 0 16 16">')
+    expect(page).toMatch(/icons=\{\{ 'sort-asc': icon_/)
+    // A bare angle bracket is text, not markup - so it goes through an expression.
+    expect(page).toMatch(/\{#snippet icon_[A-Za-z0-9_]+_page_prev\(\)\}\{'<'\}\{\/snippet\}/)
+    // The value never reaches the page as a JSON blob.
+    expect(page).not.toContain('"sort-asc"')
+    expect(() => compile(page, { filename: 'icons.svelte', generate: 'client' })).not.toThrow()
+  })
+
+  it('every icon in the grid catalogue lands in exactly one picker group', () => {
+    // The picker's groups are predicates over the NAME, so a glyph added to the
+    // catalogue is grouped without anyone editing a list. What that trades away is
+    // a name matching nothing (invisible in the picker) or landing twice, so assert
+    // the partition rather than the rules.
+    const names = readIconCatalogue()
+    expect(names.length).toBeGreaterThan(40) // the parse actually found the catalogue
+    const groups = gridIconGroups(names)
+    const placed = groups.flatMap((g) => g.names)
+    expect(placed.slice().sort()).toEqual([...names].sort())
+    expect(new Set(placed).size).toBe(names.length)
+    expect(groups.every((g) => g.names.length > 0)).toBe(true)
+    // Everything has a real home: a name landing in 'Other' still shows up in the
+    // picker, but it means a glyph was added to the catalogue and never grouped.
+    expect(groups.map((g) => g.label)).not.toContain('Other')
+    // The icons people actually change lead the list, not a leftover bucket.
+    expect(groups[0]!.label).toBe('Header + column menu')
+    expect(groups[0]!.names).toContain('sort-asc')
   })
 
   it('declared events wire through the component callback prop + a method slot each', () => {

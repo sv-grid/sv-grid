@@ -172,6 +172,16 @@ export type GridConfig = {
    *  prop the curated controls don't manage. Passed straight through to `<SvGrid>`
    *  (deduped against the curated props at codegen time). */
   props?: Record<string, unknown>
+  /** No-code icon overrides: a `GridIconName` from the grid's catalogue -> the glyph
+   *  that replaces the built-in one. Names left out keep their default, so a partial
+   *  map is all this ever needs to hold.
+   *
+   *  Deliberately NOT part of `props` above. SvGrid's `icons` prop takes a map of
+   *  SNIPPETS, and `props` is emitted with `JSON.stringify`, so an entry there would
+   *  generate `icons={{"sort-asc":"..."}}` and throw the moment the grid tried to
+   *  render it. This compiles to one real snippet per entry instead - which is also
+   *  why the extractor keeps `icons` out of the "All properties" panel. */
+  icons?: Record<string, string>
 }
 /** Which calendar view the scheduler opens on / offers. */
 export type SchedulerViewMode = 'month' | 'week' | 'day' | 'agenda' | 'timelineDay' | 'timelineWeek' | 'timelineMonth' | 'timelineYear'

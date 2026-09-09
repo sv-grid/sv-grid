@@ -170,17 +170,18 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       const emptyMsg = `No ${(entity.label ?? entity.name).toLowerCase()} yet.`
       // Scheduler view: render the grid's rows as a calendar (a view of the grid, like the
       // board). Full-client over `allRows`; the enterprise renderer is enabled app-wide.
+      const gridIcons = gridIconParts(cfg, idSafe)
       if (cfg.scheduler) {
         const schDisp = relationDisplayFields(ctx.rawEntity ?? entity, resolve)
         const schAsText = (f: string) => schDisp.get(f) ?? f
         return `    <div ${span}${cls}>
-      <SvGrid
+${gridIcons.decls}      <SvGrid
         data={allRows}
         columns={${colVar}}
         getRowId={(r) => String((r as Record<string, unknown>)[idField])}
         loading={!allRowsReady}
         scheduler={${schedulerConfigExpr(cfg.scheduler, typeName, schAsText)}}
-        containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 640}}`}
+${gridIcons.attr ? `        ${gridIcons.attr}\n` : ''}        containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 640}}`}
       />
     </div>`
       }
@@ -294,6 +295,8 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       if (apiBody.length === 1 && ctx.captureApi && !grouped) lines.push(`onApiReady={(a) => (${ctx.captureApi} = a)}`)
       else if (apiBody.length) lines.push(`onApiReady={(a) => { ${apiBody.join('; ')} }}`)
       lines.push(`containerHeight=${ctx.pane ? '"100%"' : `{${block.height ?? 360}}`}`)
+      // No-code icon overrides -> one snippet each, declared just below.
+      if (gridIcons.attr) lines.push(gridIcons.attr)
       // Raw "All properties" overrides: pass through every grid prop the curated
       // controls didn't already emit (deduped by prop name), so nothing is set twice.
       if (cfg.props && Object.keys(cfg.props).length) {
@@ -306,7 +309,7 @@ function blockMarkup(entity: EntitySchema, schemaVar: string, typeName: string, 
       // No-code export toolbar - buttons wired to the grid's own export API.
       const exportBar = gridHasExport(cfg) && ctx.captureApi ? exportToolbarMarkup(cfg.export!, ctx.captureApi, entity.name) : ''
       return `    <div ${span}${cls}>
-${exportBar}      <SvGrid
+${gridIcons.decls}${exportBar}      <SvGrid
         ${lines.join('\n        ')}
       />
     </div>`
@@ -705,6 +708,38 @@ function conditionalFormatsExpr(cfg: GridConfig): string | null {
     entries.push(`{ type: 'rule' as const, columns: [${jsStr(r.field)}], when: ({ value }: { value: unknown }) => ${pred}, ${style.join(', ')} }`)
   }
   return entries.length ? `[${entries.join(', ')}]` : null
+}
+
+/** Snippet declarations + the `icons={...}` attribute for a grid's no-code icon
+ *  overrides. SvGrid's `icons` prop takes a map of SNIPPETS, so each override has to
+ *  become a real snippet declared next to the grid; it cannot be a value the way
+ *  every other prop in the panel is. That is the whole reason icons get their own
+ *  config field instead of riding along in `props`, which is JSON.stringify'd.
+ *
+ *  A value that reads as a tag is emitted as markup, so a user can paste an inline
+ *  `<svg>` or reference a component they imported in code-behind. Anything else goes
+ *  through an expression rather than as bare template text, so a glyph containing a
+ *  brace, a quote or an angle bracket cannot break the page it lands in. That last
+ *  case is not hypothetical: `<` and `>` are perfectly good pager arrows, which is
+ *  why this looks for a whole tag rather than just a leading bracket.
+ *
+ *  Snippets are declared inside the block's own wrapper and prefixed with the block
+ *  id, so two grids on one screen can override the same icon differently. */
+function gridIconParts(cfg: GridConfig, idSafe: string): { decls: string; attr: string } {
+  const entries = Object.entries(cfg.icons ?? {}).filter(
+    ([name, v]) => name && typeof v === 'string' && v.trim() !== '',
+  )
+  if (!entries.length) return { decls: '', attr: '' }
+  const decls: string[] = []
+  const pairs: string[] = []
+  for (const [name, glyph] of entries) {
+    const snip = `icon_${idSafe}_${name.replace(/[^A-Za-z0-9]/g, '_')}`
+    const g = glyph.trim()
+    const body = /^<[a-zA-Z][\s\S]*>$/.test(g) ? g : `{${jsStr(glyph)}}`
+    decls.push(`      {#snippet ${snip}()}${body}{/snippet}`)
+    pairs.push(`${jsStr(name)}: ${snip}`)
+  }
+  return { decls: decls.join('\n') + '\n', attr: `icons={{ ${pairs.join(', ')} }}` }
 }
 const fieldLabel = (f: EntityField) => f.label ?? f.field
 /** Stable per-block identifiers for a filter panel's state + apply function. */

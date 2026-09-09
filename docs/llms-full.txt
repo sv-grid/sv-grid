@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-08 from 361 pages, plus 40 API reference pages.
+Generated 2026-09-09 from 361 pages, plus 40 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -9600,9 +9600,48 @@ automatically. There is nothing extra to theme - the same tokens drive the
 inputs, the primary Save button (`--sg-accent`), and the header / footer bars
 (`--sg-header-bg`).
 
+## Icons
+
+Tokens change the grid's colours; the icon picker changes its glyphs. Select a
+grid, open **Icons** in the inspector, and click **Customize icons** for the full
+catalogue: sort arrows, the filter funnel, expanders, pager arrows, tool-panel
+buttons, and one name per filter operator.
+
+Each row takes either a character or markup:
+
+- A character or emoji, typed straight in: `▲`, `→`, `⌄`.
+- An inline `<svg>`, pasted. Use `currentColor` for the stroke or fill and it
+  picks up hover, muted and accent states the way the built-in does.
+
+Leave a row empty and that icon keeps its default, so you only fill in the ones
+you actually want to change. **Reset all** puts every glyph back.
+
+Each override is generated as its own snippet next to the grid:
+
+```svelte
+{#snippet icon_grid_1_sort_asc()}{'▲'}{/snippet}
+
+<SvGrid
+  ...
+  icons={{ 'sort-asc': icon_grid_1_sort_asc }}
+/>
+```
+
+That is the same `icons` prop the grid takes by hand, so anything you set here
+you can also edit afterwards in the generated code, and two grids on one screen
+can override the same icon differently.
+
+Two marks are not in the picker, for reasons that are not going to change: the
+scrollbar's stepper arrows are built inside a shadow root to stay usable under a
+strict CSP, and the checkbox tick is drawn from borders rather than a glyph.
+Both are themeable with the `--sg-scrollbar-*` and checkbox tokens. See the
+grid's [Icons guide](../../help/icons.md) for the full catalogue and the
+hand-written API.
+
 ## See also
 
 - [Layout & styling / tokens](../../help/tokens.md) - the complete token list
+- [Icons](../../help/icons.md) - the icon catalogue and the `icons` prop
 - [Edit forms & validation](./edit-forms.md) · [Deploying a Studio app](./deployment.md)
 
 <!-- =================================================================

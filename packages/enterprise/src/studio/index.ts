@@ -353,6 +353,7 @@ export {
   uiComponentSpec,
   gridPropSurface,
   gridApiSettableProps,
+  gridIconGroups,
   GRID_CURATED_PROPS,
   STANDARD_UI_EVENTS,
   type UiPropType,
