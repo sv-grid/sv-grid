@@ -74,6 +74,34 @@ async function main() {
         .catch(() => {})
       await page.waitForTimeout(1400)
 
+      // Did a demo actually mount? The wait above swallows its own timeout, so
+      // without this the screenshot is of whatever happened to be on screen -
+      // and the run reports "ok" for every one of them.
+      //
+      // This is not hypothetical: pointed at the website (:5181) instead of the
+      // gallery, every id resolves to the site's not-found route, and a batch of
+      // eighteen "Page not found" images was written and committed, each one
+      // announced as ok.
+      const state = await page.evaluate(() => {
+        const main = document.querySelector('main')
+        return {
+          text: (main?.textContent ?? '').replace(/\s+/g, ' ').slice(0, 200),
+          painted: !!main?.querySelector('.sv-grid-container, .sv-grid, svg, canvas, table'),
+        }
+      })
+      if (/page not found|match any route/i.test(state.text)) {
+        throw new Error(
+          `route not found at ${BASE}/#/${id} - this tool wants the EXAMPLES GALLERY ` +
+            `(cd examples && npm run dev, :5174), not the website`,
+        )
+      }
+      if (!state.painted) {
+        // Not fatal: a few demos are prose or bare inputs with nothing in that
+        // selector list. Worth saying out loud, because it is also what a demo
+        // that failed to mount looks like.
+        process.stdout.write(`  ??  ${id}  nothing drawn - check the thumbnail\n`)
+      }
+
       const box = await page.evaluate(() => {
         const main = document.querySelector('main')
         const header = main?.querySelector('header')
