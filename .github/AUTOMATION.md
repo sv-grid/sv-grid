@@ -35,10 +35,10 @@ Tests, docs and demos do not trigger a release. Commits with nothing shippable a
 - Every public package is covered, in dependency order: `grid`, `enterprise`, `grid-wc`, `mcp`, `studio`, `ui`, `create`, `create-studio`, `migrate`, `sv`.
 - A package with no `<dir>-v*` tag yet is **baselined** on the first run: tagged at the version already on npm, published nothing. Its first auto-release is its next real change.
 - One cascade rule: `@svgrid/grid-wc` compiles grid and enterprise *into* its bundle, so a grid change republishes it even though its own files did not move. Everything else depends through `^x.y.z` ranges that a patch already satisfies.
-- Publishing runs through [tools/publish.mjs](../tools/publish.mjs), the same ordered, idempotent script used for manual releases. It uses **pnpm, never npm**: every package except grid, migrate and sv carries `@svgrid/...: workspace:^` in its dependencies or peers, and npm ships that string verbatim, so every consumer's install dies with `EUNSUPPORTEDPROTOCOL`. pnpm rewrites it to the concrete version.
+- Publishing runs through the same script's `--publish` mode. It deliberately does **not** call `tools/publish.mjs`, the local release script: it is gitignored as maintainer-only, so in CI it does not exist and the first real run died on `MODULE_NOT_FOUND`. Both use **pnpm, never npm**: every package except grid, migrate and sv carries `@svgrid/...: workspace:^` in its dependencies or peers, and npm ships that string verbatim, so every consumer's install dies with `EUNSUPPORTEDPROTOCOL`. pnpm rewrites it to the concrete version.
 - The bumped `package.json` files are committed and tagged **after** a successful publish, so a failed run leaves `main` untouched and is safe to re-run.
 - Run manually any time from the Actions tab: `force: true` publishes even with no detected change, and `only: grid,mcp` restricts the run to named package directories.
-- Adding a package: give it an entry in `PACKAGES` in `tools/release-packages.mjs` and in `ORDER` in `tools/publish.mjs`. One without the other is detected but never shipped, or shipped without a tag.
+- Adding a package: give it an entry in `PACKAGES` in `tools/release-packages.mjs` - that one list drives detection, ordering and publishing. Add it to `ORDER` in your local `tools/publish.mjs` too if you also release by hand.
 
 ## How the blog drip works
 

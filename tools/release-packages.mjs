@@ -35,26 +35,41 @@
  *   tags=a-v1.2.3 b-v...  - the tags to create after a successful publish
  *   baseline=c-v1.0.0     - baseline tags to lay down (never-released packages)
  *
+ * The second mode, --publish, does the actual npm publish for a list of package
+ * directories, in dependency order. CI cannot call tools/publish.mjs (the manual
+ * release script) because that one is maintainer-only and gitignored under
+ * "Commercial / credential-adjacent" - the workflow tried, and every run died on
+ * MODULE_NOT_FOUND. Keep the publishing here, in a tracked file.
+ *
+ * Like publish.mjs, it publishes with **pnpm, never npm**: most packages carry
+ * `@svgrid/...: workspace:^` on a sibling, and npm ships that string verbatim, so
+ * consumers' installs fail with EUNSUPPORTEDPROTOCOL. pnpm rewrites it to the
+ * concrete version. It also skips any version already on the registry, so a run
+ * that failed halfway can simply be re-run.
+ *
  * Flags:
  *   --check          report only; do NOT write bumped versions into package.json
  *   --force          bump + publish every package regardless of changes
  *   --only a,b       restrict to these package directories
+ *   --publish a,b    publish these already-built package directories, then stop
  *
  * Usage:
- *   node tools/release-packages.mjs            # CI: detect + bump
- *   node tools/release-packages.mjs --check    # local: detect only, no writes
+ *   node tools/release-packages.mjs                    # CI: detect + bump
+ *   node tools/release-packages.mjs --check            # local: detect only, no writes
+ *   node tools/release-packages.mjs --publish grid,mcp # CI: publish what was bumped
  */
 import { readFileSync, writeFileSync, appendFileSync } from 'node:fs'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 
-// Dependency-first, and deliberately the same order as ORDER in tools/publish.mjs
-// (which does the actual publishing). Keep the two lists in sync when a package
-// is added: a package listed here but missing there is detected and never shipped.
+// Dependency-first: detection, publish order and the CI publish itself all walk
+// this list, so a consumer never publishes before the sibling it was built against.
+// The local tools/publish.mjs keeps its own ORDER for manual releases; adding a
+// package here is what CI needs, adding it there is what a hand release needs.
 const PACKAGES = [
   {
     dir: 'grid',
@@ -108,15 +123,21 @@ const PACKAGES = [
 const argv = process.argv.slice(2)
 const CHECK_ONLY = argv.includes('--check')
 const FORCE = argv.includes('--force')
-const onlyArg = argv.find((a) => a.startsWith('--only'))
-const ONLY = onlyArg
-  ? new Set(
-      (onlyArg.includes('=') ? onlyArg.split('=')[1] : argv[argv.indexOf(onlyArg) + 1] || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
-    )
-  : null
+
+// `--flag a,b` and `--flag=a,b` both work; returns null when the flag is absent.
+function listFlag(name) {
+  const arg = argv.find((a) => a === `--${name}` || a.startsWith(`--${name}=`))
+  if (!arg) return null
+  const raw = arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : argv[argv.indexOf(arg) + 1] || ''
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+const onlyList = listFlag('only')
+const ONLY = onlyList ? new Set(onlyList) : null
+const PUBLISH = listFlag('publish')
 
 function git(args) {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf-8' }).trim()
@@ -169,7 +190,66 @@ function emit(lines) {
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, out)
 }
 
+// True only when this exact name@version is already on the registry. `npm view`
+// exits non-zero on a 404, which is the normal "not published yet" case.
+function isPublished(name, version) {
+  const r = spawnSync('npm', ['view', `${name}@${version}`, 'version'], {
+    encoding: 'utf-8',
+    shell: process.platform === 'win32',
+  })
+  return r.status === 0 && r.stdout.trim() === version
+}
+
+// pnpm and npm are .cmd shims on Windows, which Node can only launch through a
+// shell. CI is Linux, where the plain binary runs directly and no shell is used.
+function publishMode(dirs) {
+  const unknown = dirs.filter((d) => !PACKAGES.some((p) => p.dir === d))
+  if (unknown.length) {
+    console.error(`Unknown package directory: ${unknown.join(', ')}`)
+    process.exit(1)
+  }
+  // Walk PACKAGES rather than the caller's list, so dependency order holds no
+  // matter what order the directories were passed in.
+  const queue = PACKAGES.filter((p) => dirs.includes(p.dir))
+
+  for (const pkg of queue) {
+    const manifest = JSON.parse(readFileSync(manifestPath(pkg.dir), 'utf-8'))
+    const { name, version } = manifest
+    if (manifest.private) {
+      console.log(`- skip ${name} (private)`)
+      continue
+    }
+    if (isPublished(name, version)) {
+      console.log(`- skip ${name}@${version} (already on the registry)`)
+      continue
+    }
+
+    console.log(`\n>>> publishing ${name}@${version}`)
+    // --no-git-checks: the tree is intentionally dirty here, holding the version
+    // bumps that get committed only after every publish succeeds.
+    // --provenance needs an OIDC token, which exists only inside a CI runner with
+    // `id-token: write`; passing it from a laptop makes npm error out.
+    const args = ['publish', '--access', 'public', '--no-git-checks']
+    if (process.env.GITHUB_ACTIONS === 'true') args.push('--provenance')
+    const r = spawnSync('pnpm', args, {
+      cwd: join(ROOT, 'packages', pkg.dir),
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    })
+    if (r.status !== 0) {
+      console.error(`\nPublish failed for ${name}@${version}. Fix it and re-run - anything already published is skipped.`)
+      process.exit(r.status || 1)
+    }
+  }
+  console.log('\nPublished everything in the queue.')
+}
+
 function main() {
+  if (PUBLISH) {
+    publishMode(PUBLISH)
+    return
+  }
+
   const selected = PACKAGES.filter((p) => !ONLY || ONLY.has(p.dir))
   if (ONLY) {
     const unknown = [...ONLY].filter((d) => !PACKAGES.some((p) => p.dir === d))

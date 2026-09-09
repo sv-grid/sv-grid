@@ -145,11 +145,12 @@ jobs:
 
       - name: Publish to npm
         if: steps.release.outputs.any == 'true'
-        # --no-git-checks because the tree is intentionally dirty here: the bumped
-        # package.json files are committed after a successful publish, not before,
-        # so a failed publish leaves main untouched. The script skips anything whose
-        # exact version is already on the registry, so a re-run is safe.
-        run: node tools/publish.mjs --no-git-checks
+        # NOT tools/publish.mjs: that is the manual release script and it is
+        # gitignored as maintainer-only, so in CI it is simply not there. The
+        # publish mode here is the tracked equivalent - same pnpm invocation, same
+        # dependency order, same skip of versions already on the registry, so a
+        # half-failed run can be re-run safely.
+        run: node tools/release-packages.mjs --publish "${{ steps.release.outputs.packages }}"
 
       - name: Commit the version bumps and tag the releases
         if: steps.release.outputs.any == 'true'
