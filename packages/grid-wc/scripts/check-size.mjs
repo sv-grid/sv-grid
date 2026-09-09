@@ -45,10 +45,23 @@ const dist = join(here, '..', 'dist')
  * be acknowledged in both budgets, which is two edits and the intended cost: this
  * file is the only thing that measures what a non-Svelte consumer actually
  * downloads, and 2 KiB is a lot of room to grow into unnoticed.
+ *
+ * 107.1 -> 107.5 and 107.3 -> 107.8. Measured 107.2 / 107.5, so +0.4 for a wave
+ * of charting work, and this is the two-edit cost that note above predicted -
+ * the growth is the grid's base, reaching the element at 1:1.
+ *
+ * What landed in base: locale-aware value formatting wired through the
+ * controller and the chart-view config (a chart of localized data now reads in
+ * that locale without being told twice), and the base half of box plots and
+ * error bars. What did NOT land here is the interesting part - the chart engine
+ * is a separate chunk (`SvGridChart-*.js`), so box plots, candlesticks, the
+ * custom-series seam, interactive annotations and the large-series work cost a
+ * `<sv-grid>` consumer nothing unless they chart. That chunk grew 27.6 -> 31.9
+ * KB over the same period, all of it deferred.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.1 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 107.3 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.5 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 107.8 },
 }
 
 const failures = []
