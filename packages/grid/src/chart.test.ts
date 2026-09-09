@@ -1084,3 +1084,57 @@ describe('chartScales (the custom-series seam)', () => {
     expect(sc.yOf(195)).toBeLessThan(sc.yOf(188)) // higher price, smaller y
   })
 })
+
+describe('gauge needle', () => {
+  const dial = (value: number, max = 100) =>
+    buildChart({ type: 'gauge', categories: [], series: [], gaugeValue: value, gaugeMin: 0, gaugeMax: max, width: 360, height: 240 })
+
+  /** The needle's four vertices, as distances from the hub. */
+  const spokes = (g: ReturnType<typeof dial>) => {
+    const { cx, cy } = g.gauge!
+    return g.gauge!.needle.path
+      .match(/-?[\d.]+,-?[\d.]+/g)!
+      .map((p) => p.split(',').map(Number) as [number, number])
+      .map(([x, y]) => Math.hypot(x - cx, y - cy))
+  }
+
+  it('keeps the counterweight inside the hub, so it cannot read as an arrowhead', () => {
+    // The tail used to stick out past the hub. At a horizontal angle that
+    // little solid triangle is visually denser than the 130px taper opposite
+    // it, so a near-full dial read as an arrow pointing at the MINIMUM.
+    const g = dial(99.82)
+    const hubR = g.gauge!.needle.hubR
+    const dists = spokes(g).sort((a, b) => a - b)
+    const [tail, s1, s2, tip] = [dists[0]!, dists[1]!, dists[2]!, dists[3]!]
+    expect(tail).toBeLessThanOrEqual(hubR)
+    // ...and the shoulders OUTSIDE it, or the hub hides the needle's base and
+    // all that is left is a hairline.
+    expect(s1).toBeGreaterThan(hubR)
+    expect(s2).toBeGreaterThan(hubR)
+    // The tip is the far end, by a wide margin.
+    expect(tip).toBeGreaterThan(s2 * 5)
+  })
+
+  it('points at the value: the tip is the vertex nearest the value angle', () => {
+    const { cx, cy, r } = dial(25).gauge!
+    const g = dial(25)
+    const pts = g.gauge!.needle.path
+      .match(/-?[\d.]+,-?[\d.]+/g)!
+      .map((p) => p.split(',').map(Number) as [number, number])
+    const far = pts.reduce((a, b) => (Math.hypot(b[0] - cx, b[1] - cy) > Math.hypot(a[0] - cx, a[1] - cy) ? b : a))
+    // 25 of 100 on a semicircle sweeping left -> right is up and to the left.
+    expect(far[0]).toBeLessThan(cx)
+    expect(far[1]).toBeLessThan(cy)
+    // And it stops inside the track rather than poking through it.
+    expect(Math.hypot(far[0] - cx, far[1] - cy)).toBeLessThan(r)
+  })
+
+  it('swings to the other side for a high value', () => {
+    const { cx } = dial(75).gauge!
+    const pts = dial(75).gauge!.needle.path
+      .match(/-?[\d.]+,-?[\d.]+/g)!
+      .map((p) => p.split(',').map(Number) as [number, number])
+    const far = pts.reduce((a, b) => (Math.abs(b[0] - cx) > Math.abs(a[0] - cx) ? b : a))
+    expect(far[0]).toBeGreaterThan(cx)
+  })
+})

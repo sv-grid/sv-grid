@@ -1393,8 +1393,11 @@
         <line x1={g.target.x1} y1={g.target.y1} x2={g.target.x2} y2={g.target.y2}
           stroke="var(--sg-fg, #0f172a)" stroke-width="2.5" stroke-linecap="round" />
       {/if}
-      <!-- Pointer needle + center hub. -->
-      <path class="sv-grid-chart-gauge-needle" d={g.needle.path} fill={g.valueColor ?? 'var(--sg-accent, #2563eb)'} />
+      <!-- Pointer needle + center hub. Deliberately NOT the value colour: the
+           needle used to be filled with the same colour as the arc it sits on
+           top of, so on a nearly-full dial it disappeared into it. An
+           instrument pointer reads against the face, whatever the face is. -->
+      <path class="sv-grid-chart-gauge-needle" d={g.needle.path} />
       <circle class="sv-grid-chart-gauge-hub" cx={g.cx} cy={g.cy} r={g.needle.hubR} />
       <circle class="sv-grid-chart-gauge-hub-dot" cx={g.cx} cy={g.cy} r="2.5" />
       <!-- Scale end labels + center readout. -->
@@ -1858,6 +1861,10 @@
   }
   /* Pointer needle + hub. */
   .sv-grid-chart-gauge-needle {
+    fill: var(--sg-fg, #0f172a);
+    /* A hairline of the background colour around the needle keeps it legible
+       where it crosses the value arc, which is the same weight and often a
+       similar tone. */
     stroke: var(--sg-bg, #ffffff);
     stroke-width: 0.75;
     stroke-linejoin: round;

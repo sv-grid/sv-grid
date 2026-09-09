@@ -1723,8 +1723,16 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
     }
     // Pointer needle: a kite (long tip toward the value, short counterweight
     // tail) pivoting on a center hub.
+    //
+    // The proportions matter more than they look, and the counterweight was the
+    // whole problem. A tail sticking out past the hub is a short, solid triangle;
+    // the pointer is a 130px taper that thins to nothing. The compact shape wins
+    // the eye, so on a near-full dial the needle read as an arrow pointing at the
+    // MINIMUM. Keeping the tail inside the hub radius removes the competing
+    // point without giving up the pivot, and the shoulders sit outside the hub so
+    // the needle actually has a visible base to taper from.
     const aV = angleAt(value)
-    const tipR = r - 16, tailR = 18, baseR = 6
+    const tipR = r - 14, tailR = 5, baseR = 9
     const aPerp = aV + Math.PI / 2
     const pt = (rad: number, ang: number) => `${round(cx + rad * Math.cos(ang))},${round(cy + rad * Math.sin(ang))}`
     const needlePath =
@@ -1750,7 +1758,7 @@ export function buildChart(spec: ChartSpec, theme: 'light' | 'dark' = 'light'): 
       plot: { x: 0, y: 0, w: width, h: height },
       gauge: {
         cx, cy, r, trackPath, valuePath, rangePaths, target: targetPx,
-        ticks, needle: { path: needlePath, hubR: 7 }, valueColor,
+        ticks, needle: { path: needlePath, hubR: 6 }, valueColor,
         minLabel: { x: cx - r, y: cy + 20 },
         maxLabel: { x: cx + r, y: cy + 20 },
         value, min, max, unit: spec.gaugeUnit ?? '',
