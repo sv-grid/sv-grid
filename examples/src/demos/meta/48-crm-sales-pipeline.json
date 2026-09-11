@@ -1,0 +1,24 @@
+{
+  "description": "A CRM deal board in the Svelte 5 data grid. A KPI strip shows pipeline value, weighted value, win rate, average deal size and cycle time, recomputed from the visible rows; stage funnel chips scope the grid to one stage with live counts; owner, stage, probability and next step are editable inline; clicking a row opens a detail aside with contact, activity feed, health signals and Advance, Mark won and Mark lost actions; and a forecast bar rolls per-stage weighted contribution against the quarter's quota.",
+  "keywords": [
+    "svelte crm grid",
+    "svelte 5 sales pipeline table",
+    "svelte deal board",
+    "svelte grid weighted forecast",
+    "svelte grid detail aside"
+  ],
+  "faq": [
+    {
+      "question": "How do the KPIs follow the filters?",
+      "answer": "They are $derived over the filtered deals array that the grid renders, so a stage chip or a column filter changes the totals in the same pass."
+    },
+    {
+      "question": "What happens when the stage is edited inline?",
+      "answer": "onCellValueChange bumps the probability to the stage's default when the stage changes, and the KPIs, chips and forecast bar update from the row."
+    },
+    {
+      "question": "How is the row detail opened?",
+      "answer": "onActiveCellChange resolves the row and sets it as the selected deal; the aside renders from that object, and its buttons mutate the same row."
+    }
+  ]
+}

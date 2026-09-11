@@ -1,0 +1,24 @@
+{
+  "description": "Three set-list filter patterns for the Svelte 5 data grid, all driven through api.setFacetFilter(columnId, values). The built-in column-menu facet covers static distinct values with typeahead, select all and clear; an async side panel fetches the value list from a mock endpoint with loading and retry, for columns whose distinct values are too many to load up front; and a tree picker for Region, Country and City cascades parent checkboxes to their descendants with a partial state.",
+  "keywords": [
+    "svelte grid set filter",
+    "svelte table checkbox value filter",
+    "svelte 5 data grid facet filter",
+    "svelte grid tree filter",
+    "svelte grid async filter values"
+  ],
+  "faq": [
+    {
+      "question": "How do I apply a set of values as a filter from code?",
+      "answer": "Call api.setFacetFilter(columnId, ['EMEA', 'APAC']). Pass null to clear it. The built-in column menu facet uses the same call, so a custom panel and the menu stay consistent."
+    },
+    {
+      "question": "What if a column has too many distinct values to list?",
+      "answer": "Load them on demand. The async panel here fetches the list from a mock server when it opens, shows a loading state and a retry on failure, and applies the checked values with setFacetFilter."
+    },
+    {
+      "question": "How does the tree picker filter three columns at once?",
+      "answer": "Checking a region checks its countries and cities; the panel then derives the selected values per level and calls setFacetFilter for region, country and city."
+    }
+  ]
+}

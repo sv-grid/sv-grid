@@ -1,0 +1,24 @@
+{
+  "description": "A gauge dial for a KPI dashboard in Svelte 5. type gauge renders a semicircle with a grey track arc and a coloured fill arc for gaugeValue, optional red, amber and green range bands through gaugeRanges and a target tick through gaugeTarget. The grid holds the KPIs and the dial reads one row at a time: click any row to display it, and the bands flip direction depending on whether higher or lower is better for that metric.",
+  "keywords": [
+    "svelte gauge chart",
+    "svelte 5 kpi dial",
+    "svelte chart gauge ranges target",
+    "svelte semicircle gauge",
+    "svelte dashboard gauge from grid row"
+  ],
+  "faq": [
+    {
+      "question": "How do I set the ranges?",
+      "answer": "gaugeRanges is an array of { from, to, color } within the gauge's max; the demo generates green, amber and red bands from the row's target and flips their order for metrics where lower is better."
+    },
+    {
+      "question": "What does the target tick show?",
+      "answer": "gaugeTarget draws a small marker on the arc at that value, so the needle's distance from the target is readable without numbers."
+    },
+    {
+      "question": "How does the dial follow the grid?",
+      "answer": "onRowClick sets the selected row, and the spec is a $derived over it, so the dial redraws for whichever KPI is clicked."
+    }
+  ]
+}

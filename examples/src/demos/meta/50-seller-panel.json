@@ -1,0 +1,24 @@
+{
+  "description": "A marketplace seller dashboard in the Svelte 5 data grid with four tabs over one product list. Catalog shows an SVG thumbnail, ASIN, title, category, price, sale price, stock and status with inline editing; Inventory visualises stock against the reorder threshold as a bar, highlights low and out-of-stock rows and offers a one-click reorder; Orders lists a pipeline with status pills, customer, line value and ship-by date; Pricing rules toggle active per rule; and a KPI strip stays live across tabs.",
+  "keywords": [
+    "svelte ecommerce admin grid",
+    "svelte 5 seller dashboard",
+    "svelte inventory table reorder",
+    "svelte product catalog grid",
+    "svelte orders pipeline table"
+  ],
+  "faq": [
+    {
+      "question": "How do four tabs share one product list?",
+      "answer": "Each tab is a column set over the same products array, or a related array for orders and rules; switching tabs swaps the columns and data props while the KPI strip derives from the products regardless."
+    },
+    {
+      "question": "How are low-stock rows highlighted?",
+      "answer": "The stock and inventory cell snippets compare stock with the reorder threshold and pick an ok, low or out class, painting the number and the bar, and the KPI strip counts low and out-of-stock products from the same rule."
+    },
+    {
+      "question": "How are thumbnails generated?",
+      "answer": "A cell snippet draws a small SVG icon from the product's category and a colour derived from its id, so the catalog has images without any image assets."
+    }
+  ]
+}

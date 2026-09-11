@@ -1,0 +1,24 @@
+{
+  "description": "The headless number input core of the SvGrid UI kit in Svelte 5. SvNumberInput is a styled renderer over createNumberInput, which owns parsing, formatting with grouping and precision, clamping to min and max, the step spinner and the keyboard, exposed as inputProps, incrementProps and decrementProps. The same core drives the styled component and a custom stepper render, both bound to one number.",
+  "keywords": [
+    "svelte headless number input",
+    "svelte 5 custom stepper component",
+    "svelte createNumberInput",
+    "svelte number parsing core",
+    "svelte headless spinner buttons"
+  ],
+  "faq": [
+    {
+      "question": "What does the core do with typed text?",
+      "answer": "It parses the text according to grouping and precision, clamps to min and max on commit and formats the display; your render only spreads inputProps() and shows the formatted string."
+    },
+    {
+      "question": "How do the spinner buttons work?",
+      "answer": "incrementProps() and decrementProps() wire click and hold-to-repeat with the step, and disable themselves at the bounds."
+    },
+    {
+      "question": "Which keys are handled?",
+      "answer": "Up and Down step by step, Enter commits the parsed value, and the spinner buttons repeat while held; the core clamps every result to min and max."
+    }
+  ]
+}

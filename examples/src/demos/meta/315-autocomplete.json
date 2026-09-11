@@ -1,0 +1,24 @@
+{
+  "description": "SvAutoComplete in Svelte 5 as a search field: free text with a live-filtered suggestion list where any value is accepted and suggestions are shortcuts, shown as a city search with a label and a hint and as a filter-syntax helper. Controlled through value and onChange on the shared editor contract.",
+  "keywords": [
+    "svelte autocomplete",
+    "svelte 5 search input suggestions",
+    "svelte typeahead free text",
+    "svelte autocomplete component",
+    "svelte suggestion list input"
+  ],
+  "faq": [
+    {
+      "question": "Does the value have to match a suggestion?",
+      "answer": "No. Whatever the user types is the value; picking a suggestion just fills it in. Use SvComboBox when the value must come from a list."
+    },
+    {
+      "question": "How are suggestions filtered?",
+      "answer": "By substring match on the suggestions array as you type; pass a new array to control them yourself, for example from a server."
+    },
+    {
+      "question": "Which keys work?",
+      "answer": "Down opens and moves through suggestions, Enter accepts the highlighted one, Escape closes the list and keeps the typed text."
+    }
+  ]
+}

@@ -25,7 +25,7 @@ import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
 import { blogCardSvg, rasterizePng } from './blog-card.mjs'
 import { clampDescription, firstSentence } from './lib/seo-text.mjs'
-import { demoFacts } from './lib/demo-facts.mjs'
+import { demoAboutModel, renderDemoAboutHtml } from './lib/demo-page.mjs'
 import { parseDemoRegistry, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
 import { compareTitle, compareKeywords, compareFaq, shortCompetitor } from './lib/compare-meta.mjs'
@@ -1386,7 +1386,6 @@ async function main() {
     html = injectJsonLd(html, demoGraph)
     const tier = d.pro ? ' (requires @svgrid/enterprise)' : ''
     const ghUrl = `https://github.com/sv-grid/sv-grid/blob/main/examples/src/demos/${d.id}.svelte`
-    const facts = source ? demoFacts(source) : { imports: [], features: [], columns: [], api: [] }
     const relatedPosts = relatedPostsFor(d)
     demoRelated[d.id] = {
       docs: (docsByDemo.get(d.id) ?? []).map((doc) => ({ slug: doc.slug, title: doc.title })),
@@ -1396,7 +1395,10 @@ async function main() {
     let body = `<main class="prerender-demo" data-prerender="1">`
     body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}demos/">Demos</a> / ${escapeAttr(d.category)}</nav>`
     body += `<h1>${escapeAttr(d.title)}</h1>`
-    body += `<p>${escapeAttr(meta.description || d.blurb)}${tier}</p>`
+    // The lead is always the registry blurb. The meta description used to
+    // replace it here, which threw the blurb away on exactly the pages that
+    // had the most copy; it now opens the "About this example" section below.
+    body += `<p>${escapeAttr(d.blurb)}${tier}</p>`
     // No link back to this same URL: every demo page used to carry one, which
     // is a wasted crawl edge and reads as a broken "open" button.
     const docsLink = uiKit
@@ -1404,54 +1406,16 @@ async function main() {
       : `See the <a href="${BASE}docs/">SvGrid documentation</a> for the full API.`
     body += `<p>A live, editable Svelte 5 ${uiKit ? 'component' : 'data grid'} example from the <a href="${BASE}demos/">SvGrid gallery</a> (${escapeAttr(d.category)}). ${docsLink}</p>`
 
-    if (pitch) {
-      body += `<section><h2>What this example shows</h2>`
-      body += pitch.split(/\n{2,}/).map((p) => `<p>${escapeAttr(p.replace(/\n/g, ' ')).trim()}</p>`).join('')
-      body += `</section>`
-    }
-
-    // The identifiers a developer searches by (feature names, api.* methods,
-    // column fields) as plain text, so the page answers those queries.
-    if (facts.imports.length || facts.features.length || facts.columns.length || facts.api.length) {
-      const codes = (list) => list.map((x) => `<code>${escapeAttr(x)}</code>`).join(', ')
-      body += `<section><h2>Imports, features and API used</h2>`
-      if (facts.imports.length) body += `<p>Imports: ${codes(facts.imports)}</p>`
-      if (facts.features.length) body += `<p>Table features registered: ${codes(facts.features)}</p>`
-      if (facts.columns.length) {
-        body += `<p>Columns: ${facts.columns.map((c) => `<code>${escapeAttr(c.field)}</code>${c.header ? ` (${escapeAttr(c.header)})` : ''}`).join(', ')}</p>`
-      }
-      if (facts.api.length) body += `<p>SvGridApi methods called: ${facts.api.map((a) => `<code>api.${escapeAttr(a)}()</code>`).join(', ')}</p>`
-      body += `</section>`
-    }
-
-    if (source) {
-      body += `<section><h2>Source code (${escapeAttr(d.id)}.svelte)</h2>`
-      body += `<pre><code class="language-svelte">${escapeAttr(source)}</code></pre>`
-      body += `<p><a href="${ghUrl}">View this example on GitHub</a></p></section>`
-    }
-
-    const relatedDocs = docsByDemo.get(d.id) ?? []
-    if (relatedDocs.length) {
-      body += `<section><h2>Related documentation</h2><ul>`
-      for (const doc of relatedDocs) {
-        body += `<li><a href="${BASE}docs/${doc.slug}/">${escapeAttr(doc.title)}</a></li>`
-      }
-      body += `</ul></section>`
-    }
-
-    if (relatedPosts.length) {
-      body += `<section><h2>Related articles</h2><ul>`
-      for (const p of relatedPosts) {
-        body += `<li><a href="${BASE}blog/${p.slug}/">${escapeAttr(p.title)}</a> - ${escapeAttr(p.description)}</li>`
-      }
-      body += `</ul></section>`
-    }
-
-    if (meta.faq.length) {
-      body += `<section><h2>Frequently asked questions</h2>`
-      for (const f of meta.faq) body += `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`
-      body += `</section>`
-    }
+    // The description, pitch, identifiers a developer searches by, FAQ,
+    // related links and source: one model shared with the hydrated
+    // DemoAboutBody.svelte, rendered here for crawlers that do not run JS.
+    // website/src/demo-page-parity.dom.test.ts holds the two in step.
+    const model = demoAboutModel({ id: d.id, source, meta, related: demoRelated[d.id] })
+    body += renderDemoAboutHtml(model, {
+      href: (kind, slug) => `${BASE}${kind}/${slug}/`,
+      escape: escapeAttr,
+      sourceLink: ghUrl,
+    })
 
     const siblings = demos.filter((s) => s.category === d.category && s.id !== d.id).slice(0, 5)
     if (siblings.length) {

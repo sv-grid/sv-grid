@@ -1,0 +1,24 @@
+{
+  "description": "Declarative per-column rollups for group rows in the Svelte 5 data grid. Set aggregate on a column and its group header shows the value formatted with the column's own format: sum for revenue with a currency format, avg for win rate as a percent, count, min, max, countDistinct, extent, first, or a custom (values, rows) reducer such as a median. The groupable shortcut switches grouping on.",
+  "keywords": [
+    "svelte grid group totals",
+    "svelte table aggregate column",
+    "svelte 5 grid custom aggregator",
+    "svelte grid median per group",
+    "svelte data grid subtotals"
+  ],
+  "faq": [
+    {
+      "question": "Which aggregators are built in?",
+      "answer": "sum, avg, min, max, count, countDistinct, extent and first. Set one as the column's aggregate and the group row displays it through the column's format, so a currency column shows a currency total."
+    },
+    {
+      "question": "How do I write a custom aggregator?",
+      "answer": "Pass a function: aggregate: (values, rows) => median(values). It receives the leaf values of the group and the row objects, and its return value is rendered like a built-in."
+    },
+    {
+      "question": "Do aggregates nest for multi-level groups?",
+      "answer": "Yes. Each group level is rolled up from its own leaf rows, so a region total and a rep subtotal both show correctly when grouped by region then rep."
+    }
+  ]
+}

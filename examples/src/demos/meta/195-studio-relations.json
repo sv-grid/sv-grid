@@ -1,0 +1,24 @@
+{
+  "description": "Foreign-key lookup fields end to end in the SvGrid Studio stack. Contacts belong to a Company: the contact's companyId is a relation field, so the edit form renders a searchable picker built from SvLookupInput and createRelationLookup that queries the Companies source and stores the id, while the grid shows the resolved company name. The lookup runs over the same ServerDataSource contract as everything else, so related options can come from Supabase, REST, SQL or, as here, memory.",
+  "keywords": [
+    "svelte foreign key lookup field",
+    "svelte 5 crud form relation picker",
+    "svelte grid resolve related name",
+    "svelte searchable select from data source",
+    "svelte SvLookupInput"
+  ],
+  "faq": [
+    {
+      "question": "How does the form know to render a picker?",
+      "answer": "The schema marks companyId as a relation field; SvGridEditPanel receives a lookups map with createRelationLookup for that field and renders SvLookupInput, which searches the Companies source as the user types."
+    },
+    {
+      "question": "How does the grid show the name instead of the id?",
+      "answer": "The column for companyId resolves the id through the same lookup, so the cell displays the company name while the stored value stays the id."
+    },
+    {
+      "question": "Can the related options come from a server?",
+      "answer": "Yes. createRelationLookup takes any ServerDataSource, so the Companies list can be a Supabase table, a REST endpoint or SQL; the picker sends its search text as a filter."
+    }
+  ]
+}

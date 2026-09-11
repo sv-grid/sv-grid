@@ -115,7 +115,7 @@
 
 <section class="sheet-demo">
   <header class="bs-head">
-    <h1 class="bs-title">Freeze panes</h1>
+    <h2 class="bs-title">Freeze panes</h2>
     <p class="bs-sub">
       Scroll <strong>right</strong> across the twelve months - <em>Account</em> and
       <em>Owner</em> stay frozen (pinned columns) next to the sticky row-number gutter.

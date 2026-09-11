@@ -1,0 +1,24 @@
+{
+  "description": "Every booking policy the Svelte 5 scheduler can enforce, on one board: business hours with a hard-blocked lunch band through restrictedHours, a closed date through restrictedDates, a highlighted holiday through specialDates, minDate and maxDate for navigation, room capacity through maxEventsPerSlot and a per-doctor day off through a resource's dateOverrides. Free, busy, tentative and out-of-office statuses render distinctly, per-event reminders fire a toast as their lead time is crossed, dragging an event onto the Unscheduled panel calls onUnschedule, and a recurring event's drag, delete or drawer edit asks This, This and following or All through onOccurrenceChange.",
+  "keywords": [
+    "svelte scheduler business hours",
+    "svelte 5 calendar booking rules",
+    "svelte scheduler restricted dates",
+    "svelte event reminders toast",
+    "svelte recurring event edit scope"
+  ],
+  "faq": [
+    {
+      "question": "How do I block a lunch break?",
+      "answer": "Add the band to restrictedHours; the scheduler shades it and refuses drops and resizes into it, on top of the businessHours window."
+    },
+    {
+      "question": "How does room capacity work?",
+      "answer": "maxEventsPerSlot caps how many events may overlap in one slot per resource; a drop that would exceed it snaps back with a message."
+    },
+    {
+      "question": "What does onOccurrenceChange receive?",
+      "answer": "The event, the change and a scope of this, following or all chosen in the prompt; you apply it to the one occurrence as an exception, split the series or update the rule."
+    }
+  ]
+}

@@ -200,7 +200,7 @@
 
 <section class="sheet-demo">
   <header class="bs-head">
-    <h1 class="bs-title">Financial model</h1>
+    <h2 class="bs-title">Financial model</h2>
     <p class="bs-sub">
       A 30-year loan amortization built from formulas on a plain <code>&lt;SvGrid&gt;</code>.
       The three <span class="bs-blue">blue</span> cells are inputs - change Principal, APR or

@@ -1,0 +1,24 @@
+{
+  "description": "SvTabs in Svelte 5 as a settings screen: line tabs with real panels and a disabled tab, plus a pill-style view switcher. Focus roves between tabs with the arrow keys and activation is automatic, following the WAI-ARIA tabs pattern, with the active tab bound through bind:value.",
+  "keywords": [
+    "svelte tabs component",
+    "svelte 5 tabs with panels",
+    "svelte pill tabs",
+    "svelte accessible tabs",
+    "svelte tabs bind value"
+  ],
+  "faq": [
+    {
+      "question": "How do I disable a tab?",
+      "answer": "Set disabled on its entry in tabs. It stays visible, is skipped by arrow-key navigation and cannot be activated."
+    },
+    {
+      "question": "What is automatic activation?",
+      "answer": "Moving focus with the arrow keys also selects the tab, so keyboard users do not need a second key press; the panel changes as focus moves."
+    },
+    {
+      "question": "How do I switch to the pill look?",
+      "answer": "Set variant='pill'. The tabs render as a segmented pill group instead of an underlined row, with the same behaviour."
+    }
+  ]
+}

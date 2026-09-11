@@ -62,7 +62,7 @@
   <div class="flex flex-col gap-3 flex-1 min-h-0">
     <div class="ag-block">
       <div class="ag-title">Budget</div>
-      <div class="ag-grid">
+      <div class="aligned-pane">
         <SvGrid responsive={true}
       columnResize
           data={budget}
@@ -78,7 +78,7 @@
 
     <div class="ag-block">
       <div class="ag-title">Actuals</div>
-      <div class="ag-grid">
+      <div class="aligned-pane">
         <SvGrid responsive={true}
       columnResize
           data={actuals}
@@ -101,5 +101,5 @@
     letter-spacing: 0.05em; color: var(--sg-muted, #64748b);
     padding: 2px 2px 6px;
   }
-  .ag-grid { flex: 1; min-height: 0; }
+  .aligned-pane { flex: 1; min-height: 0; }
 </style>

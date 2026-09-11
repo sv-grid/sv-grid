@@ -1,0 +1,24 @@
+{
+  "description": "A schema-driven dashboard above the grid in the SvGrid Studio stack. SvSchemaDashboard renders a declarative DashboardSpec of KPI tiles with count, sum and avg and charts through SvSchemaChart, all over the same EntitySchema and data source as the grid. It is a data view rather than a page builder: click a chart category to drill the grid, and creating, editing or deleting a row updates the KPIs and charts.",
+  "keywords": [
+    "svelte dashboard above grid",
+    "svelte 5 kpi tiles schema",
+    "svelte data app dashboard spec",
+    "svelte grid drill from chart",
+    "svelte SvSchemaDashboard"
+  ],
+  "faq": [
+    {
+      "question": "What goes in a DashboardSpec?",
+      "answer": "An array of tiles, each a KPI with a measure and a reducer or a chart with a group field and a measure. The dashboard lays them out and asks the data source's getAggregate for the numbers."
+    },
+    {
+      "question": "Does the dashboard need its own data?",
+      "answer": "No. It receives the same schema and getAggregate as the grid, so KPIs and charts describe the same source; refreshKey re-runs the aggregates after a write."
+    },
+    {
+      "question": "Can users edit the dashboard?",
+      "answer": "Not in this component; the spec is authored in code. It is meant as a data view over an entity, and the Studio designer is where layouts are edited visually."
+    }
+  ]
+}

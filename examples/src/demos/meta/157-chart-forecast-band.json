@@ -1,0 +1,24 @@
+{
+  "description": "A forecast chart in Svelte 5 with a smooth curve and a confidence band. smooth true swaps the polyline for a monotone cubic curve that still passes through every point without overshoot, and upperValues plus lowerValues give the series a translucent envelope that curves with it, over twelve weeks of actuals and eight of forecast. Flip actuals only to clip the chart to the historical part of the same series, with zoom available.",
+  "keywords": [
+    "svelte forecast chart",
+    "svelte 5 confidence band chart",
+    "svelte smooth line chart",
+    "svelte chart upper lower values",
+    "svelte prediction interval chart"
+  ],
+  "faq": [
+    {
+      "question": "How is the band defined?",
+      "answer": "Give the series upperValues and lowerValues arrays parallel to values; the chart fills between them with a translucent version of the series colour."
+    },
+    {
+      "question": "Why monotone cubic smoothing?",
+      "answer": "It keeps the curve through every point and never overshoots between them, so a smoothed forecast never shows a peak the data does not contain."
+    },
+    {
+      "question": "Can the band apply only to the forecast part?",
+      "answer": "Yes. Leave the upper and lower entries empty for historical points and the band starts where the forecast begins."
+    }
+  ]
+}

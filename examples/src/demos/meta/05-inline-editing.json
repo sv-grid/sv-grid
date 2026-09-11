@@ -1,0 +1,24 @@
+{
+  "description": "Inline editing in the Svelte 5 data grid with a typed editor per column: text, number, date, checkbox and list dropdowns for department, country and status, each set with editorType. Edits are tracked locally, so a KPI strip shows dirty cell and dirty row counts, and Save and Reset stay disabled until something changes. Save writes the edits into a local server snapshot and clears the markers; Reset returns to the last save point.",
+  "keywords": [
+    "svelte inline editing grid",
+    "svelte 5 editable data grid",
+    "svelte table cell editors",
+    "svelte grid dirty tracking",
+    "svelte grid save changes"
+  ],
+  "faq": [
+    {
+      "question": "How do I give each column a different editor?",
+      "answer": "Set editorType on the column definition. This demo uses text, number, date and checkbox editors, and list for the department, country and status columns with the choices in editorOptions. Formatted display values come from the column's format setting."
+    },
+    {
+      "question": "How do I know which cells changed?",
+      "answer": "Compare the grid's rows against a saved snapshot. The demo reads the current rows with api.getData(), derives dirty cells and dirty rows from the diff, and shows the counts in a KPI strip."
+    },
+    {
+      "question": "How do Save and Reset work?",
+      "answer": "Save copies the current rows into the snapshot so the dirty markers clear; Reset restores the snapshot into the grid. Both buttons are disabled until the diff is non-empty."
+    }
+  ]
+}

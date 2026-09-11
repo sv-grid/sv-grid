@@ -1,0 +1,24 @@
+{
+  "description": "Real rows over the network in the Svelte 5 data grid, with no mock and no seeded array. The grid talks to the public dummyjson.com products API through the enterprise createRestDataSource, and a shape adapter, dummyJsonAdapter, teaches it that API's dialect: skip and limit paging, sortBy and order sorting, rows under products with the count in total. Sorting a header sends the request straight to the API and only the current page reaches the grid; swap the URL and the adapter for jsonServerAdapter or offsetLimitAdapter to point at another API.",
+  "keywords": [
+    "svelte grid rest api",
+    "svelte 5 table fetch from api",
+    "svelte grid rest datasource",
+    "svelte public api data grid",
+    "svelte grid dummyjson"
+  ],
+  "faq": [
+    {
+      "question": "What is a shape adapter?",
+      "answer": "A small object that maps the data source's generic request (page, sort) to the API's query parameters and its response to { rows, total }. dummyJsonAdapter, jsonServerAdapter and offsetLimitAdapter ship with @svgrid/enterprise; writing one for your own API is a few lines."
+    },
+    {
+      "question": "How are errors handled?",
+      "answer": "The data source exposes an error state that the demo renders as a message with a retry button; the loadingOverlay covers the grid while a request is in flight and emptyMessage shows when nothing loaded."
+    },
+    {
+      "question": "Is the REST data source in the free package?",
+      "answer": "createRestDataSource and the adapters are in @svgrid/enterprise; the grid itself and the externalSort wiring are in the MIT @svgrid/grid. The enterprise package runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

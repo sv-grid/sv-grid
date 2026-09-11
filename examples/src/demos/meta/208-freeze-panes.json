@@ -1,0 +1,24 @@
+{
+  "description": "Excel freeze panes on a plain Svelte 5 SvGrid. The Account and Owner columns stay pinned with initialColumnPinning while you scroll across a full year of month columns, the row-number gutter is sticky by construction, and the sticky header keeps the column letters in view while you scroll down. HyperFormula keeps each row's total column and the bottom Total row live as you edit any month.",
+  "keywords": [
+    "svelte freeze panes",
+    "svelte 5 spreadsheet frozen columns",
+    "svelte grid sticky header and columns",
+    "svelte sheet pinned columns",
+    "svelte grid frozen row totals"
+  ],
+  "faq": [
+    {
+      "question": "How do I freeze the first columns?",
+      "answer": "Pass initialColumnPinning={{ left: ['A', 'B'] }} with the ids of the columns to keep in view. The pinned cells are sticky, so they stay while the rest scrolls."
+    },
+    {
+      "question": "Is the header frozen automatically?",
+      "answer": "Yes. The header row is sticky in every SvGrid, and the row-number gutter is too, so the freeze-panes corner needs no extra work."
+    },
+    {
+      "question": "How do the totals stay live?",
+      "answer": "Every row's total cell holds a =SUM formula over its months and the Total row sums each column; HyperFormula recomputes them on every commit."
+    }
+  ]
+}

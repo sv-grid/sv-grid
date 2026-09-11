@@ -1,0 +1,24 @@
+{
+  "description": "An editorial content calendar on the Svelte 5 data grid: stage lanes crossed with a swimlane per channel, and rich cards with a cover glyph, the author's avatar and a target date. Drag a piece down the pipeline or across a band to move it to another channel, and double-click to edit it in place.",
+  "keywords": [
+    "svelte content calendar board",
+    "svelte 5 editorial pipeline kanban",
+    "svelte kanban channels swimlanes",
+    "svelte publishing workflow board",
+    "svelte kanban rich cards"
+  ],
+  "faq": [
+    {
+      "question": "How is the card content customised?",
+      "answer": "The board's card option takes a snippet that receives the row; the demo renders the cover glyph, title, an SvAvatar for the author and the target date, and the board keeps drag, selection and keyboard around it."
+    },
+    {
+      "question": "Can a piece move to another channel?",
+      "answer": "Yes. Channel is the swimlane field, so dragging a card into another band changes its channel while staying in the same stage."
+    },
+    {
+      "question": "How do I sort cards within a lane?",
+      "answer": "Card order within a lane follows the row order and drag position; sort the rows by target date before passing them to seed the order."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Grouped resources in the Svelte 5 scheduler: providers organised into a collapsible tree in the timeline gutter, buildings to departments to providers and rooms, through resourceGroups and resourceGroupOf. collapsibleGroups lets a click fold a group and groupPersistKey remembers it; appointments schedule onto the leaf providers with drag, resize and double-click to add, and the Table reads the same rows.",
+  "keywords": [
+    "svelte scheduler resource groups",
+    "svelte 5 timeline grouped rows",
+    "svelte scheduler collapsible departments",
+    "svelte clinic providers tree",
+    "svelte resource hierarchy scheduler"
+  ],
+  "faq": [
+    {
+      "question": "How are groups defined?",
+      "answer": "resourceGroups lists the groups with ids, titles and parents, and resourceGroupOf maps each resource to its group, so the gutter renders the tree and the rows nest under it."
+    },
+    {
+      "question": "Can events be scheduled on a group?",
+      "answer": "No. Groups are headings; events belong to leaf resources, and collapsing a group hides its providers' rows without changing the data."
+    },
+    {
+      "question": "Is the collapsed state remembered?",
+      "answer": "Yes. groupPersistKey stores which groups are collapsed in localStorage and restores it on load."
+    }
+  ]
+}

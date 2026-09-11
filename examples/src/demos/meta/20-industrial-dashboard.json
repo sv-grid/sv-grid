@@ -1,0 +1,24 @@
+{
+  "description": "A plant-floor operations view in Svelte 5: KPI cards for OEE and throughput on top, a live line-status grid below and an active-alarms grid alongside, all driven by a single 2-second tick. The KPIs are $derived from the grid data, cells and cards colour by threshold, and an Acknowledge button lives inside an alarm cell through renderSnippet and a closure, showing two SvGrid instances working next to other UI in one screen.",
+  "keywords": [
+    "svelte plant dashboard",
+    "svelte 5 two grids one page",
+    "svelte grid kpi cards",
+    "svelte alarm list table",
+    "svelte grid button in cell"
+  ],
+  "faq": [
+    {
+      "question": "How do the KPI cards stay in sync with the grid?",
+      "answer": "They are $derived values over the same lines array the grid renders, so the tick that updates the rows updates the cards in the same pass."
+    },
+    {
+      "question": "How is the Acknowledge button wired?",
+      "answer": "The alarm column's cell returns renderSnippet with a closure over the alarm id; clicking it marks the alarm acknowledged in state and the row re-renders."
+    },
+    {
+      "question": "Do both grids need separate tick loops?",
+      "answer": "No. One interval mutates the lines, recomputes the KPIs and spawns alarms; each grid just reflects its own array."
+    }
+  ]
+}

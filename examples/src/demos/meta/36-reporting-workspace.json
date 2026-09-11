@@ -1,0 +1,24 @@
+{
+  "description": "A reporting workspace over a sales pipeline in the Svelte 5 data grid: group rows by one or two dimensions with chips, see live aggregates per numeric column and switch each column's aggregator between sum, avg, min, max and count, save the whole view under a name and restore it from a sidebar. Three starter views ship, saved views persist in localStorage through a shared createSavedViews helper, and a KPI strip recomputes whenever grouping or filters change.",
+  "keywords": [
+    "svelte reporting grid",
+    "svelte 5 pivot lite table",
+    "svelte grid saved views",
+    "svelte grid aggregator picker",
+    "svelte sales pipeline report"
+  ],
+  "faq": [
+    {
+      "question": "How is the grouping applied?",
+      "answer": "The chips write an array of column ids that is passed to api.setGroupBy. Grouping is a built-in row model, so the same grid used for day-to-day editing becomes the report view without a separate component."
+    },
+    {
+      "question": "How can a user change the aggregator for a column?",
+      "answer": "The side panel lists every numeric column with a select; the choice is stored in state and the column's aggregate is derived from it, so the group rows update immediately."
+    },
+    {
+      "question": "What is stored in a saved view?",
+      "answer": "The grouping array, the aggregator choices, filters and sort clauses, with a name and a timestamp, in localStorage. Restoring applies each piece back through the API and the column definitions."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Application-level shortcuts layered on the Svelte 5 data grid's built-in WAI-ARIA keyboard model: Ctrl or Cmd+K opens a command palette, Ctrl+/ toggles a cheat sheet, the vim chord g g jumps to the first row and G to the last, and Escape closes any overlay. Overlays use position fixed with no portals, and the document keydown listener bails when the target is a text input so typing g in the palette does not trigger the chord.",
+  "keywords": [
+    "svelte grid command palette",
+    "svelte 5 keyboard shortcuts table",
+    "svelte grid vim keys",
+    "svelte ctrl k palette",
+    "svelte data grid cheat sheet"
+  ],
+  "faq": [
+    {
+      "question": "How does the chord detection work?",
+      "answer": "A document keydown listener records the last key and its time; a second g within the chord window jumps to the first row through the API, and any other key resets it. Inputs are excluded by checking the event target."
+    },
+    {
+      "question": "What can the command palette do?",
+      "answer": "Its commands call the grid API: clear filters with api.clearAllFilters, sort by a column, jump to a row, toggle the cheat sheet. Adding a command is one entry in the list."
+    },
+    {
+      "question": "Why no portals for the overlays?",
+      "answer": "position: fixed with a high z-index renders above the page even when an ancestor creates a stacking context, so the palette shows inside any layout without moving DOM nodes."
+    }
+  ]
+}

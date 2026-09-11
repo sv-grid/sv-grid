@@ -1,0 +1,24 @@
+{
+  "description": "The tier-one input editors of the SvGrid UI kit in Svelte 5 on the shared editor contract: SvTextInput with a clear button, SvTextArea with auto-grow and a character counter against maxlength, SvOtpInput as a segmented code field that distributes a pasted code and fires onComplete, SvDurationInput converting text such as 1h 30m to minutes, and SvMultiSelect as a portalled checkbox dropdown with search and chips capped by maxTagCount. Each is standalone and a grid cell editor.",
+  "keywords": [
+    "svelte text area auto grow",
+    "svelte 5 otp input",
+    "svelte duration input",
+    "svelte multi select dropdown chips",
+    "svelte form editors"
+  ],
+  "faq": [
+    {
+      "question": "How does the OTP input handle paste?",
+      "answer": "Pasting a full code into any box distributes the characters across the segments and fires onComplete with the value; typing moves focus forward and Backspace moves it back."
+    },
+    {
+      "question": "What does SvDurationInput store?",
+      "answer": "A number of minutes. The units style accepts and displays text such as 1h 30m, so users type naturally while your state holds an integer."
+    },
+    {
+      "question": "How does the multi-select show many values?",
+      "answer": "Selected options render as chips; maxTagCount limits how many are shown before a +N summary, and the dropdown keeps checkboxes with a search box."
+    }
+  ]
+}

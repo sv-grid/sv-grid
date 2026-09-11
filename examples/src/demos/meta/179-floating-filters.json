@@ -1,0 +1,24 @@
+{
+  "description": "The inline filter row of the Svelte 5 data grid with every operator per column. Click the funnel in a filter cell to pick the operator, the value input switches to the column's type for number, date or text, and Between shows a second To input right in the row, so common filters never need the full column menu. It takes filterMode='row' and about fifty lines.",
+  "keywords": [
+    "svelte grid floating filters",
+    "svelte table filter row",
+    "svelte 5 inline column filters",
+    "svelte grid filter under header",
+    "svelte data grid quick filter"
+  ],
+  "faq": [
+    {
+      "question": "How do I show a filter row under the headers?",
+      "answer": "Set filterMode='row' with columnFilteringFeature registered. Each column gets an input typed by its editorType; number and date columns get the matching input types."
+    },
+    {
+      "question": "Can I change the operator without opening the menu?",
+      "answer": "Yes. The funnel icon in each filter cell opens a small operator list; Between adds a To input inline."
+    },
+    {
+      "question": "Does the row support dates?",
+      "answer": "Yes. A column with editorType 'date' renders a date input in the row, and Between takes two dates."
+    }
+  ]
+}

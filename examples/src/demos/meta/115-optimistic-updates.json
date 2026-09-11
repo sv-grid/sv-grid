@@ -1,0 +1,24 @@
+{
+  "description": "Optimistic updates with rollback in the Svelte 5 data grid. An edited cell updates immediately, the change is sent to a mock server, and on success the row settles while on failure the value rolls back through api.setCellValue and a toast shows the error. A per-cell status badge cycles through pending, saved and failed; the mock rejects negative stock, price changes over 50 percent and a random 8 percent of requests to simulate network blips.",
+  "keywords": [
+    "svelte optimistic update grid",
+    "svelte 5 table rollback on error",
+    "svelte grid pending saved failed",
+    "svelte data grid save to server",
+    "svelte editable grid toast error"
+  ],
+  "faq": [
+    {
+      "question": "How is the pending state shown?",
+      "answer": "onCellValueChange records the edit in a status map keyed by row and column and starts the request; the cell snippet reads the map and renders a pending badge until the promise settles."
+    },
+    {
+      "question": "How does rollback work?",
+      "answer": "The handler keeps the old value from the event. If the server rejects, it calls api.setCellValue(rowIndex, columnId, oldValue) to restore it, marks the cell failed and shows a toast with the reason."
+    },
+    {
+      "question": "How does the cell show its status?",
+      "answer": "The column's cell renders a StatusCell snippet that reads both the row value and a writes map keyed by row id and field inside its body, so the badge and the value stay reactive to every change instead of freezing at the time the cell function was called."
+    }
+  ]
+}

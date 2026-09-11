@@ -1,0 +1,24 @@
+{
+  "description": "A project work-breakdown tree in the Svelte 5 data grid: phase, task and subtask rows with owner, due date, status and percent complete. Leaf tasks carry a user-entered percent and every ancestor's percent is derived as the effort-weighted average of its descendants, so editing a subtask's percent recomputes the task and phase above it on commit. Editing is enabled for leaf rows only.",
+  "keywords": [
+    "svelte project tree grid",
+    "svelte 5 wbs table",
+    "svelte grid weighted rollup",
+    "svelte editable tree grid",
+    "svelte gantt alternative table"
+  ],
+  "faq": [
+    {
+      "question": "How does the parent percent recompute?",
+      "answer": "onCellValueChange writes the leaf's new percent, then a $derived computes each ancestor's value as the sum of child percent times effort divided by the summed effort. The grid re-renders from the derived rows."
+    },
+    {
+      "question": "How are parent rows kept read-only?",
+      "answer": "The percent column's editable function returns true only for leaf rows, so double-clicking a phase or task does nothing while a subtask opens the editor."
+    },
+    {
+      "question": "Can I use this with the built-in treeData prop?",
+      "answer": "Yes. treeData handles the expander and indent; keep the roll-up logic in your own derived state exactly as here and pass the computed rows as data."
+    }
+  ]
+}

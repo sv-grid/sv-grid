@@ -1,0 +1,24 @@
+{
+  "description": "SvRichText, a lightweight WYSIWYG editor for Svelte 5 over a contentEditable region: bold, italic, underline and strikethrough, headings, lists, quotes, code blocks, alignment, links and undo and redo, emitting HTML through bind:value with a configurable toolbar, placeholder and minimum height.",
+  "keywords": [
+    "svelte rich text editor",
+    "svelte 5 wysiwyg component",
+    "svelte contenteditable editor",
+    "svelte html editor bind value",
+    "svelte lightweight text editor"
+  ],
+  "faq": [
+    {
+      "question": "What does bind:value contain?",
+      "answer": "The editor's HTML as a string, updated on every change. Set it to load existing content and read it to save."
+    },
+    {
+      "question": "Can I limit the toolbar?",
+      "answer": "Yes. The tools prop takes the list of commands to show, so a comment box can offer only bold, italic and link while a CMS field shows everything."
+    },
+    {
+      "question": "Is the HTML sanitized?",
+      "answer": "The editor only emits markup produced by its own commands, but content pasted in or loaded from a server should still be sanitized on the server before it is stored or rendered elsewhere."
+    }
+  ]
+}

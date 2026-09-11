@@ -1,0 +1,24 @@
+{
+  "description": "An appointment booking form composed from the SvGrid UI kit in Svelte 5: SvComboBox picks the service, SvCalendar the date in single-selection mode, SvTimePicker the slot at fifteen-minute intervals, SvButtonGroup the duration and SvNumberInput the guest count between one and twelve, with a live summary and a Book button that enables once every field is set. The same components SvGrid mounts to edit cells, arranged into a real page.",
+  "keywords": [
+    "svelte booking form",
+    "svelte 5 appointment scheduling form",
+    "svelte calendar and time picker form",
+    "svelte combobox form",
+    "svelte reservation ui"
+  ],
+  "faq": [
+    {
+      "question": "How are the date and time combined?",
+      "answer": "SvCalendar reports an array of dates and the form keeps the first; SvTimePicker reports a Date holding the time. A $derived merges the two into the appointment start shown in the summary."
+    },
+    {
+      "question": "How do I limit the time slots?",
+      "answer": "minuteInterval on SvTimePicker snaps the minutes, fifteen here. For business hours, pass min and max or filter the chosen time in the summary derivation."
+    },
+    {
+      "question": "How is the Book button gated?",
+      "answer": "canBook is a $derived that requires a service, a date and a time; the button's disabled prop reads it, so validation is declarative."
+    }
+  ]
+}

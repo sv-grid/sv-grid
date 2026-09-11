@@ -1,0 +1,24 @@
+{
+  "description": "SvColorInput on its own in Svelte 5: a swatch that opens an animated, portalled popover with a hex field, the native color picker and a preset palette, emitting a hex string through onChange. It is the SvGrid color cell editor, standalone.",
+  "keywords": [
+    "svelte color picker",
+    "svelte 5 color input component",
+    "svelte hex color field",
+    "svelte color palette popover",
+    "svelte swatch picker"
+  ],
+  "faq": [
+    {
+      "question": "What value does it emit?",
+      "answer": "A hex string such as #ff6600. Typing in the hex field, choosing a palette swatch or using the native picker all report through the same onChange."
+    },
+    {
+      "question": "Can I supply my own palette?",
+      "answer": "Yes. Pass a palette array of hex values and the popover shows those swatches instead of the default set."
+    },
+    {
+      "question": "Why does the popover portal?",
+      "answer": "So it can open from inside a scrolling panel or a grid cell without being clipped, positioned next to the swatch and closed on outside click or Escape."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "SvCalendar, the themeable Svelte 5 calendar and date picker that is also the SvGrid date cell editor. It offers month, year and decade views, single, range, week and multi selection, min and max bounds, restricted and important dates, week numbers, a footer, animated navigation, mouse-wheel month scrolling and date tooltips, all styled by the --sg-* theme tokens and usable standalone in any app that has @svgrid/grid installed.",
+  "keywords": [
+    "svelte calendar component",
+    "svelte 5 date picker",
+    "svelte calendar range selection",
+    "svelte calendar week numbers",
+    "svelte calendar restricted dates"
+  ],
+  "faq": [
+    {
+      "question": "How do I switch between single, range and multi selection?",
+      "answer": "Set selectionMode to one, zeroOrOne, range, week, many or one of the other modes such as oneExtended for Shift-extend. onChange always delivers an array of dates, one entry for single selection and two for a range."
+    },
+    {
+      "question": "How do I block certain dates?",
+      "answer": "Pass restrictedDates as an array of dates or a predicate such as one that rejects weekends; those days render disabled and cannot be picked. importantDates marks days with a dot instead."
+    },
+    {
+      "question": "Does the calendar follow the grid theme?",
+      "answer": "Yes. It reads the same --sg-* tokens as the grid, so a theme preset or dark mode applied to the page styles the calendar identically whether it is standalone or inside a cell editor."
+    }
+  ]
+}

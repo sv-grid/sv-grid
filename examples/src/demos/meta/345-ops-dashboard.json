@@ -1,0 +1,24 @@
+{
+  "description": "An operations KPI console composed from the SvGrid UI kit in Svelte 5 with no grid dependency: SvStat tiles paired with SvSparkline area charts, an SvGauge SLA dial from 95 to 100 percent with warning bands, SvHoverCard drill-down previews on each service row with status badges, an SvMenubar toolbar for View, Range and Actions, and a promise toast on Refresh.",
+  "keywords": [
+    "svelte kpi dashboard",
+    "svelte 5 ops console ui",
+    "svelte stat tiles sparklines",
+    "svelte sla gauge",
+    "svelte menubar toolbar"
+  ],
+  "faq": [
+    {
+      "question": "How are the tiles built?",
+      "answer": "Each tile is an SvCard holding an SvStat with label, value, delta and trend, and an SvSparkline fed the last points as data with a colour per metric."
+    },
+    {
+      "question": "How does the SLA gauge focus on the top of the range?",
+      "answer": "min={95} and max={100} narrow the arc to the interesting band, and bands colours 95 to 99 amber and 99 to 100 green so small changes are visible."
+    },
+    {
+      "question": "What does a promise toast do?",
+      "answer": "toast.promise takes the refresh promise and shows loading, success or error messages as it settles, so the user sees the outcome without extra state."
+    }
+  ]
+}

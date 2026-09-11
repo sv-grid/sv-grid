@@ -1,0 +1,24 @@
+{
+  "description": "A payment form built entirely from the SvGrid UI kit in Svelte 5, the same components the grid mounts to edit cells composed into a page. SvMaskedInput takes the card number, expiry and CVC with masks, SvCountryInput picks the billing country, SvNumberInput shows the amount with a currency prefix and grouping, SvSwitchButton saves the card and SvButton submits, with live card-brand detection from the number and validation gating the pay button. Copy the file and wire pay() to your provider.",
+  "keywords": [
+    "svelte checkout form",
+    "svelte 5 payment form components",
+    "svelte credit card input mask",
+    "svelte country select input",
+    "svelte form ui kit"
+  ],
+  "faq": [
+    {
+      "question": "How is the card number masked?",
+      "answer": "SvMaskedInput with mask '#### #### #### ####' formats as you type and reports both the masked and the raw digits through onChange; expiry and CVC use shorter masks the same way."
+    },
+    {
+      "question": "How is the card brand detected?",
+      "answer": "A $derived tests the raw digits against the leading-digit patterns for the major brands and shows the matching logo, so it updates on every keystroke without a library."
+    },
+    {
+      "question": "Are these components part of the grid package?",
+      "answer": "Yes. Every control here is exported from the MIT @svgrid/grid package and doubles as a grid cell editor, so a form and a grid in the same app share one component set and theme."
+    }
+  ]
+}

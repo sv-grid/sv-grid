@@ -1,0 +1,24 @@
+{
+  "description": "Hierarchical cards on the Svelte 5 data grid board: point board.childrenField at the property holding a row's child rows and each card gains a children count that expands to show its sub-cards inline, the epic to stories shape. Each child shows its own title and status, the parent still moves as one card, and a Board and Table switcher shows the same grid.",
+  "keywords": [
+    "svelte kanban nested cards",
+    "svelte 5 epic stories board",
+    "svelte board childrenField",
+    "svelte hierarchical kanban",
+    "svelte kanban expand subcards"
+  ],
+  "faq": [
+    {
+      "question": "What shape do the rows need?",
+      "answer": "Each parent row holds an array of child rows under the field named by childrenField; children use the same title and status fields, and the board reads them for the inline list."
+    },
+    {
+      "question": "Do children move with the parent?",
+      "answer": "Yes. Children are part of the parent row, so dragging the epic carries its stories; a story's own status is shown on the sub-card but does not place it in a lane."
+    },
+    {
+      "question": "Can I show a progress across children?",
+      "answer": "The card snippet can count children by status and draw a bar, the way the sub-task checklist does, using the same childrenField data."
+    }
+  ]
+}

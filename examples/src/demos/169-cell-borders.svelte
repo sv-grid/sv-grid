@@ -7,7 +7,7 @@
    * encode performance bands - everything below is empty, like a
    * fresh sheet.
    *
-   * `spreadsheetLayout` paints HOT-style per-edge borders via an
+   * `spreadsheetLayout` paints spreadsheet-style per-edge borders via an
    * absolute-positioned overlay div inside each cell (no border-
    * collapse fights). Edit any Plan or Actual cell - subtotals and
    * borders recompute live.

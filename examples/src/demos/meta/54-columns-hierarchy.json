@@ -1,0 +1,24 @@
+{
+  "description": "A column hierarchy manager for wide Svelte 5 grids. A side panel exposes the column tree: every group has a chevron and a checkbox, every leaf a checkbox. Collapsing a group replaces its children with one synthetic summary column, checkboxes hide or show a leaf or a whole subtree, and leaf chips can be dragged between siblings to reorder. The columns prop is a $derived of a small tree state, and the grid renders real nested group headers with one row per depth and proper colSpan.",
+  "keywords": [
+    "svelte grid column groups",
+    "svelte table nested headers",
+    "svelte 5 column chooser tree",
+    "svelte grid collapse column group",
+    "svelte data grid column manager"
+  ],
+  "faq": [
+    {
+      "question": "How do I define nested column headers?",
+      "answer": "Give a column definition a columns array of child definitions. The grid renders one header row per depth with the group header spanning its children, and groups can nest as deep as you need."
+    },
+    {
+      "question": "How does collapsing a group into a summary column work?",
+      "answer": "The derived columns array swaps the group's children for one synthetic column with a cell snippet that shows the group's most important value. Expanding restores the children."
+    },
+    {
+      "question": "Does changing the columns array reset the grid?",
+      "answer": "No. The grid swaps its column tree in place, so scroll position, sorting and selection survive each toggle in the panel."
+    }
+  ]
+}

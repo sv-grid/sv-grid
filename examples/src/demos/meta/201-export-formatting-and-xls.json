@@ -1,0 +1,24 @@
+{
+  "description": "Faithful export from the Svelte 5 data grid. Currency, date and percent values export exactly as shown on screen, with a rawValues toggle for the underlying numbers; a row scope picks the current view, only selected rows or all rows; legacy .xls in Excel 2003 XML format needs no zip library and keeps numbers numeric; an exportValue hook handles a custom-rendered column; and the drop-in SvExportMenu component supplies the format picker, scope and progress.",
+  "keywords": [
+    "svelte grid export formatted values",
+    "svelte 5 export selected rows",
+    "svelte legacy xls export",
+    "svelte grid export menu component",
+    "svelte grid exportValue hook"
+  ],
+  "faq": [
+    {
+      "question": "How do I export only the selected rows?",
+      "answer": "Pass rows: 'selected' to exportData, or pick it in SvExportMenu's scope control. rows: 'all' ignores the current filter, the default 'displayed' exports the view, and an explicit array overrides all three."
+    },
+    {
+      "question": "When would I use .xls instead of .xlsx?",
+      "answer": "For consumers on old Excel versions or tools that only read the 2003 XML format. It is written as plain XML, so it needs no zip library, and numeric cells stay numeric."
+    },
+    {
+      "question": "How do I control a custom column's exported value?",
+      "answer": "Set exportValue on the column definition. It receives the row and returns the text or number to write, which is how a snippet-rendered column exports something meaningful."
+    }
+  ]
+}

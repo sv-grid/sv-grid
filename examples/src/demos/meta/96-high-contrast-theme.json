@@ -1,0 +1,24 @@
+{
+  "description": "A WCAG 2.2 AAA-grade high-contrast preset for the Svelte 5 data grid, for accessibility procurement. Every chrome surface uses one of two ink colours on one background, borders are one pixel solid, the accent is pure red on light and pure yellow on dark for unmistakable focus rings, and selection, hover and zebra tones keep at least a 7:1 contrast ratio against text. The token block opts a wrapper's subtree into the skin while the rest of the page stays standard.",
+  "keywords": [
+    "svelte grid high contrast",
+    "svelte 5 accessible data grid theme",
+    "svelte grid wcag aaa",
+    "svelte table focus ring contrast",
+    "svelte grid accessibility procurement"
+  ],
+  "faq": [
+    {
+      "question": "How do I apply the high-contrast theme to one section?",
+      "answer": "Wrap that section in an element carrying the token block. Only grids inside it change; the rest of the page keeps its normal theme, so users can switch per section."
+    },
+    {
+      "question": "Which contrast ratios does it target?",
+      "answer": "Text against every background at 7:1 or better, the AAA level, including selected and hovered rows and zebra stripes. Focus rings use a pure accent colour so they read at any size."
+    },
+    {
+      "question": "Does it change behaviour?",
+      "answer": "No. It is CSS custom properties only; keyboard navigation, ARIA roles and editing are unchanged."
+    }
+  ]
+}

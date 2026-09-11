@@ -1,0 +1,24 @@
+{
+  "description": "The same Svelte 5 SvGrid, same data and columns, rendered as a full calendar by setting one scheduler prop. Rows become events bucketed by time; the toolbar switches Month, Week, Day and Agenda views; drag an event to reschedule, drag its edge to resize and click to edit in a drawer, with onEventMove and onEventResize writing the new times back onto your row so the Table view agrees. The calendar renderer ships in @svgrid/enterprise.",
+  "keywords": [
+    "svelte scheduler component",
+    "svelte 5 calendar view",
+    "svelte event calendar drag and drop",
+    "svelte month week day agenda views",
+    "svelte grid to calendar"
+  ],
+  "faq": [
+    {
+      "question": "What does the scheduler prop need at minimum?",
+      "answer": "startField and endField naming the columns that hold the times, plus titleField for the label. Everything else, views, colours, resources and editing callbacks, is optional."
+    },
+    {
+      "question": "How do drags reach my data?",
+      "answer": "onEventMove and onEventResize receive the row and the new start and end; you assign them to the row and the calendar and the table both re-render from the same array."
+    },
+    {
+      "question": "Is the scheduler free?",
+      "answer": "The scheduler prop and the data model are in @svgrid/grid; the calendar renderer is part of @svgrid/enterprise, which runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

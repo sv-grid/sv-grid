@@ -403,8 +403,8 @@ ${coverHtml}
   {#if coverPage}
     <div class="pb-cover">
       <div class="pb-cover-logo">⬢</div>
-      <h1 class="pb-cover-title">{companyName}</h1>
-      <h2 class="pb-cover-sub">{periodLabel}</h2>
+      <h2 class="pb-cover-title">{companyName}</h2>
+      <p class="pb-cover-sub">{periodLabel}</p>
       <div class="pb-cover-meta">
         <div><strong>Prepared by</strong> {preparedBy}</div>
         <div><strong>Date</strong> {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>

@@ -1,0 +1,24 @@
+{
+  "description": "A Sankey diagram of a user flow in Svelte 5. type sankey takes nodes and links, lays the nodes out in columns by longest-path depth, sizes each node by the larger of its total in and out and draws each link as a bezier ribbon whose width is the link value in pixels. Hover a ribbon for the source to target value; the demo traces traffic from acquisition channels through onboarding steps to purchased, churned or pending outcomes, built from the grid's displayed rows.",
+  "keywords": [
+    "svelte sankey diagram",
+    "svelte 5 flow chart ribbons",
+    "svelte user journey chart",
+    "svelte sankey from grid rows",
+    "svelte nodes links chart"
+  ],
+  "faq": [
+    {
+      "question": "What shape do the rows need?",
+      "answer": "One row per link with source, target and value; the demo collects the distinct names as nodes and passes the rows as links."
+    },
+    {
+      "question": "How are node columns decided?",
+      "answer": "By longest path from any source: a node placed after the longest chain leading to it, so channels land on the left and outcomes on the right without manual positions."
+    },
+    {
+      "question": "Can links be filtered?",
+      "answer": "Yes. Filtering the grid removes links, and the diagram re-lays out from the remaining rows, dropping nodes with no flow."
+    }
+  ]
+}

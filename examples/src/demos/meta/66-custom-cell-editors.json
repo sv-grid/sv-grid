@@ -1,0 +1,24 @@
+{
+  "description": "Three hand-rolled editors inside Svelte 5 grid cells: a native colour picker bound to a tag swatch, a 5-star rating and an emoji mood control, set in a quarterly feature-health review. Each lives in a cell snippet that handles its own interaction and writes the new value with api.setCellValue, and inner click handlers stop propagation so the grid's cell click does not fight the control.",
+  "keywords": [
+    "svelte grid star rating cell",
+    "svelte table color picker cell",
+    "svelte 5 custom cell control",
+    "svelte grid setCellValue",
+    "svelte data grid emoji cell"
+  ],
+  "faq": [
+    {
+      "question": "How does a control inside a cell write back to the row?",
+      "answer": "Call api.setCellValue with the row index, the column id and the new value from the control's event handler. The grid updates the row and fires onCellValueChange the same way a built-in editor would."
+    },
+    {
+      "question": "Why stop propagation inside the snippet?",
+      "answer": "A click on the star or the colour input is also a click on the cell. Stopping propagation keeps the grid from treating it as a cell click, so the control gets the interaction and the selection does not jump."
+    },
+    {
+      "question": "Can these controls coexist with built-in editors?",
+      "answer": "Yes. The other columns in this grid use editorType editors that open on double-click or F2, while the snippet columns handle their own input inline."
+    }
+  ]
+}

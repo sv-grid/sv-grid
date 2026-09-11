@@ -1,0 +1,24 @@
+{
+  "description": "A map-first field-service operations console in Svelte 5. A left rail lists technicians grouped by region with a live status dot, region and today's job count and toggles to filter; the centre splits into a live ops map with a pin per technician by status and job markers, and a scheduler timeline grouped by technician with an Unassigned backlog you drag onto the timeline to dispatch, no double booking, a drawer, tooltips and an SLA countdown on every open job card; a KPI strip tracks SLA at risk, in progress, unassigned and average response.",
+  "keywords": [
+    "svelte dispatch console",
+    "svelte 5 field service scheduling",
+    "svelte technician timeline map",
+    "svelte unassigned jobs backlog",
+    "svelte sla countdown cards"
+  ],
+  "faq": [
+    {
+      "question": "How does the backlog dispatch a job?",
+      "answer": "The unscheduled option shows jobs without a technician in a side panel; dragging one onto a technician's row calls onSchedule with the resource and time, and the row gets its tech, start and end."
+    },
+    {
+      "question": "How is the map drawn?",
+      "answer": "As a canvas with a street grid and positioned markers derived from each technician's status and each job's coordinates; it is demo code, not a scheduler feature, and shares the same rows."
+    },
+    {
+      "question": "How does the SLA countdown update?",
+      "answer": "Each job carries an SLA in minutes; the card snippet computes the remaining time from now and shows it, switching to OVERDUE in red when it passes."
+    }
+  ]
+}

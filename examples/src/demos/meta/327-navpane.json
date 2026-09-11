@@ -1,0 +1,24 @@
+{
+  "description": "SvNavPane in Svelte 5, an application sidebar with collapsible sections, items with icons and unread badges, nested folders, a single-select highlight and arrow-key navigation. A collapsed mode reduces it to an icon-only rail, and a bottom module strip with a drag splitter switches between modules such as Mail and Calendar; drag it up to collapse the modules into icons.",
+  "keywords": [
+    "svelte navigation pane",
+    "svelte 5 sidebar component",
+    "svelte collapsible sidebar rail",
+    "svelte nav sections badges",
+    "svelte app shell sidebar"
+  ],
+  "faq": [
+    {
+      "question": "How are sections and items defined?",
+      "answer": "sections is an array of { id, label, items } and each item has an id, label, optional icon, badge and children. value marks the selected item and onSelect reports clicks."
+    },
+    {
+      "question": "What does collapsed do?",
+      "answer": "It narrows the pane to an icon rail with tooltips for the labels, keeping selection and keyboard navigation; the switch in the demo toggles it."
+    },
+    {
+      "question": "How does the module strip work?",
+      "answer": "modules lists the bottom entries, moduleValue is the active one and bind:moduleRows tracks how many are shown as rows versus icons as the user drags the splitter."
+    }
+  ]
+}

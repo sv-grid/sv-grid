@@ -1,0 +1,24 @@
+{
+  "description": "The imperative API and event stream of SvDockManager in Svelte 5. onReady hands back a DockManagerApi with float, popout, autoHide, maximize, close, focus and getState and setState, which a toolbar drives from code, and onEvent reports every lifecycle event, active pane, close, float, pop-out, auto-hide, pin, maximize, window and focus, which the demo logs live.",
+  "keywords": [
+    "svelte dock manager api",
+    "svelte 5 docking events",
+    "svelte float panel from code",
+    "svelte dock onReady handle",
+    "svelte workspace event log"
+  ],
+  "faq": [
+    {
+      "question": "How do I get the API handle?",
+      "answer": "Pass onReady; it is called once with the handle, which the demo stores and calls from buttons, for example api.float('log') or api.autoHide('metrics')."
+    },
+    {
+      "question": "What does onEvent receive?",
+      "answer": "A DockEvent with a type such as activePane, close, float, popout, autoHide, pin, maximize, window or focus, plus the pane or tabs id, so you can persist changes or react to a user's arrangement."
+    },
+    {
+      "question": "Can I focus a panel programmatically?",
+      "answer": "Yes. api.focus(id) activates the panel's tab, flies it out if it is auto-hidden and brings its window forward if it is floating."
+    }
+  ]
+}

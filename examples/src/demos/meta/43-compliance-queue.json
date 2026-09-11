@@ -1,0 +1,24 @@
+{
+  "description": "A regulatory review queue in the Svelte 5 data grid, sorted by SLA age. The SLA badge turns yellow at 50 percent of remaining time, orange at 80 and red at breach on a 30-second tick; the workflow column is editable only by the role whose approver level matches the case's current step; an approver chain shows L1, L2 and L3 with a stamp once each level signs off; clicking a case id opens an immutable history with actor and timestamp; and a Submit, Reject and Return toolbar is gated so only the current level can advance a case.",
+  "keywords": [
+    "svelte approval workflow grid",
+    "svelte 5 compliance queue table",
+    "svelte grid sla timer",
+    "svelte multi level approval",
+    "svelte case history audit"
+  ],
+  "faq": [
+    {
+      "question": "How is the workflow column gated by role?",
+      "answer": "Its editable function compares the active role's approver level with the case's current step and returns true only when they match, so lower levels see it locked and upper levels see it open."
+    },
+    {
+      "question": "How does the SLA badge update?",
+      "answer": "A 30-second tick updates now in state; the badge's class is a $derived of remaining time against the case's deadline, so colours change without re-fetching."
+    },
+    {
+      "question": "What makes the history immutable?",
+      "answer": "Status changes append to a per-case array that nothing else writes to; the popover renders it oldest first with actor and timestamp for an audit response."
+    }
+  ]
+}

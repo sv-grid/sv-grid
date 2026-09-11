@@ -1,0 +1,24 @@
+{
+  "description": "SvButtonGroup, a segmented button bar for Svelte 5. mode='single' gives radio semantics for a view switcher, mode='multiple' a toggle set for a formatting toolbar, and no mode gives plain actions; a roving tabindex with arrow keys handles focus, and the shared editor contract adds a label, validation and dir for RTL. Items come from an items array and the selection is reported through onChange.",
+  "keywords": [
+    "svelte button group",
+    "svelte 5 segmented buttons",
+    "svelte toggle group toolbar",
+    "svelte view switcher buttons",
+    "svelte button bar rtl"
+  ],
+  "faq": [
+    {
+      "question": "What is the difference between single and multiple mode?",
+      "answer": "single keeps exactly one item pressed and reports its value, like radios; multiple lets any set of items be pressed and reports an array, like bold, italic and underline in a toolbar."
+    },
+    {
+      "question": "How does keyboard navigation work?",
+      "answer": "Tab enters the group on the pressed or first item, arrow keys move between items and Space or Enter presses one, following the WAI-ARIA toolbar and radiogroup patterns."
+    },
+    {
+      "question": "Can I mix icons and text?",
+      "answer": "Yes. Each item can carry a label, an icon or both, and the group sizes the buttons consistently."
+    }
+  ]
+}

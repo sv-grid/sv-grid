@@ -1,0 +1,24 @@
+{
+  "description": "A theme-matched Excel export from the Svelte 5 data grid. Click export and the xlsx header row, body rows and zebra stripes match whichever theme the grid is showing, light or dark, because the styles are read from the live --sg-* CSS tokens the grid renders with. Re-theme the page and the next export follows without any export configuration.",
+  "keywords": [
+    "svelte grid styled excel export",
+    "svelte 5 xlsx export theme colors",
+    "svelte grid dark mode export",
+    "svelte export matching table style",
+    "svelte grid export zebra rows"
+  ],
+  "faq": [
+    {
+      "question": "Where do the export colours come from?",
+      "answer": "From the computed --sg-* custom properties on the grid element at export time: header background, row background, alternate row background, border and text colours. They become cell fills and fonts in the workbook."
+    },
+    {
+      "question": "Can I override the export styling?",
+      "answer": "Yes. exportData accepts a styles object with header, rows and per-cell styles that take precedence over the theme tokens when you want the file to look different from the screen."
+    },
+    {
+      "question": "Does this apply to PDF too?",
+      "answer": "Yes. The same token snapshot styles the PDF header and rows, so the two formats look alike."
+    }
+  ]
+}

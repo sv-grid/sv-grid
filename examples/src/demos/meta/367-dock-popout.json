@@ -1,0 +1,24 @@
+{
+  "description": "SvDockManager pop-out to a native window in Svelte 5. allowPopout, off by default, adds a pop-out button to each tab that opens the panel in a separate browser window for a second monitor: a monitoring console keeps its Live log and Metrics panels streaming in the popped-out window while the main console stays in place, styles and theme carry across, closing the window docks the panel back, and a blocked pop-up falls back to an in-app floating window.",
+  "keywords": [
+    "svelte popout panel new window",
+    "svelte 5 multi window dashboard",
+    "svelte dock second monitor",
+    "svelte open panel in browser window",
+    "svelte monitoring console"
+  ],
+  "faq": [
+    {
+      "question": "How does the panel render in another window?",
+      "answer": "The manager opens a window, copies the stylesheets and theme attributes into it and mounts the panel's content there; Svelte state stays in the main page, so live data keeps flowing."
+    },
+    {
+      "question": "What if pop-ups are blocked?",
+      "answer": "The manager detects the blocked window and floats the panel inside the app instead, so the action never fails silently."
+    },
+    {
+      "question": "How does the panel come back?",
+      "answer": "Closing the popped-out window docks the panel to its previous position, and the dock API's popout call can reverse it from code."
+    }
+  ]
+}

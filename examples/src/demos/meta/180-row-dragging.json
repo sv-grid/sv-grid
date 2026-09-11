@@ -1,0 +1,24 @@
+{
+  "description": "Managed row dragging in the Svelte 5 data grid, within one grid and between two. rowDragManaged turns every row into a drag source with a grip, rows reorder inside a grid, and because a Backlog and a Sprint grid share the same rowDragGroup a row can be dragged out of one and dropped into the other. The grid splices its own data on drop and onRowDragEnd fires on the receiving grid so you can mirror the move into your own state.",
+  "keywords": [
+    "svelte grid drag rows between grids",
+    "svelte table row reorder drag",
+    "svelte 5 rowDragManaged",
+    "svelte grid to grid drag and drop",
+    "svelte sprint backlog board"
+  ],
+  "faq": [
+    {
+      "question": "How do I let users reorder rows by dragging?",
+      "answer": "Set rowDragManaged on <SvGrid>. Each row gets a drag grip, dropping a row splices the grid's data into the new order, and onRowDragEnd tells you what moved so your own state can follow."
+    },
+    {
+      "question": "How do I drag a row from one grid into another?",
+      "answer": "Give both grids the same rowDragGroup string. A row dragged from one and dropped on the other leaves the source data and lands in the target at the drop position; onRowDragEnd fires on the receiver."
+    },
+    {
+      "question": "Does the grid mutate my array?",
+      "answer": "Yes, in managed mode the grid owns the splice so the drop is instant. If you need to control the move yourself, keep the data in your state and apply it from onRowDragEnd instead."
+    }
+  ]
+}

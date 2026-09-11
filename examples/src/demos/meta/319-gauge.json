@@ -1,0 +1,24 @@
+{
+  "description": "SvGauge in Svelte 5 as a KPI dashboard: radial gauges with coloured threshold bands, a needle that follows a live-updating value with a unit label, a size prop, and a needle-less variant used as a storage tile. Copy-paste ready and themed from the tokens.",
+  "keywords": [
+    "svelte gauge",
+    "svelte 5 kpi gauge dashboard",
+    "svelte radial gauge bands",
+    "svelte speedometer component",
+    "svelte live gauge needle"
+  ],
+  "faq": [
+    {
+      "question": "How are the bands defined?",
+      "answer": "As an array of { from, to, color } objects in the gauge's value range; the demo paints green, amber and red bands for CPU load and the needle animates between values."
+    },
+    {
+      "question": "How do I change the sweep?",
+      "answer": "sweep sets the arc angle in degrees, a half circle by default and up to a full ring; size sets the pixel diameter and thickness the arc width."
+    },
+    {
+      "question": "Can the gauge have no needle?",
+      "answer": "Yes. Set needle={false} and the arc fills to the value like a ring, which the storage tile in the demo uses; formatValue controls the readout text."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A real formula engine inside the Svelte 5 data grid. Cells hold a literal or a formula starting with =, with A1 and $C$3 references, A1:A10 ranges, arithmetic, comparison and string concatenation, and SUM, AVG, MIN, MAX, COUNT, COUNTA, COUNTIF, IF, AND, OR, NOT, ROUND, ABS, LEN, LEFT, RIGHT, UPPER, LOWER, CONCAT and TODAY. The sheet recomputes on every change, reports #CYCLE!, #REF! and #VALUE!, and rows resize from the gutter with rowResize, all without bundling a spreadsheet library.",
+  "keywords": [
+    "svelte spreadsheet formulas",
+    "svelte 5 grid formula engine",
+    "svelte table sum if countif",
+    "svelte excel formulas component",
+    "svelte grid cell references"
+  ],
+  "faq": [
+    {
+      "question": "How does the grid know a cell is a formula?",
+      "answer": "The raw text starts with =. The engine parses it, resolves references against the other cells, evaluates and returns the display value; cells without = are literals. A cell snippet shows the computed value while the raw text stays editable."
+    },
+    {
+      "question": "How are circular references handled?",
+      "answer": "The evaluator tracks the cells on the current evaluation path; a reference back into that path stops evaluation and the cell shows #CYCLE! instead of hanging."
+    },
+    {
+      "question": "When would I use a full spreadsheet engine instead?",
+      "answer": "When you need hundreds of functions, named ranges or array formulas. The HyperFormula demos show that path; this engine covers budgets, scorecards and lightweight planning with no extra dependency."
+    }
+  ]
+}

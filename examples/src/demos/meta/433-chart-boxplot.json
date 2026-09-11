@@ -1,0 +1,24 @@
+{
+  "description": "Box plots and error bars in Svelte 5, answering how spread out rather than how much. The grid holds one row per request; two regions with nearly identical mean response times sit side by side in a bar chart of means with error bars and look nothing alike in the boxes, where one runs three times as wide with outlier dots. boxStats summarises a raw sample with the 1.5 IQR whisker rule, rowsToBoxSpec does it per group, ChartSeries.boxes carries the summaries with values keeping the medians, and ChartSeries.errors annotates any existing mark without changing its type. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte box plot",
+    "svelte 5 error bars chart",
+    "svelte distribution chart",
+    "svelte boxStats iqr",
+    "svelte chart outliers"
+  ],
+  "faq": [
+    {
+      "question": "How is a box plot built from grid rows?",
+      "answer": "rowsToBoxSpec(rows, groupField, valueField) groups the rows and runs boxStats on each group's values, returning a spec whose series carry boxes and medians; the grid's own chart panel calls the same function."
+    },
+    {
+      "question": "What does the whisker rule mean?",
+      "answer": "Whiskers extend to the furthest values within 1.5 times the interquartile range of the box; anything beyond is drawn as an individual outlier point."
+    },
+    {
+      "question": "Can I add error bars to a line chart?",
+      "answer": "Yes. ChartSeries.errors takes a per-point spread and draws whiskers on whatever mark the series already uses, bar, line or scatter, without changing the series type."
+    }
+  ]
+}

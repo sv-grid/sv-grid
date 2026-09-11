@@ -1,0 +1,24 @@
+{
+  "description": "Outlier detection painted into the Svelte 5 data grid. A background pass computes per-column anomalies, IQR distance for numeric columns with warning, outlier and extreme thresholds at 1.5, 3 and 6 times the interquartile range, and rare-value detection for low-cardinality categoricals seen in under 2 percent of rows. The cell snippet paints a coloured halo by severity and a tooltip explaining which rule fired; the whole map is one $derived, so cells read it in constant time and sorting or filtering never triggers a rescan.",
+  "keywords": [
+    "svelte grid outlier detection",
+    "svelte table anomaly highlight",
+    "svelte 5 data grid iqr outliers",
+    "svelte grid data quality",
+    "svelte highlight unusual values"
+  ],
+  "faq": [
+    {
+      "question": "How are outliers detected?",
+      "answer": "For each numeric column the quartiles are computed once and every value is scored by its distance from the interquartile range. Categorical columns flag values that appear in fewer than 2 percent of rows."
+    },
+    {
+      "question": "How is the severity shown?",
+      "answer": "The cell snippet reads the score from the anomaly map and adds a warning, outlier or extreme class that draws a halo; the tooltip names the detector and the threshold that tripped."
+    },
+    {
+      "question": "Does the scan run on every render?",
+      "answer": "No. The map is a $derived of the data, so it recomputes only when rows change; sorting and filtering just re-read it."
+    }
+  ]
+}

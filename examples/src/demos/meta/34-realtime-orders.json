@@ -1,0 +1,24 @@
+{
+  "description": "A live order-operations view in the Svelte 5 data grid fed by a WebSocket-style event stream: order.created adds a row at the top, order.updated merges in place with a field-level flash and order.cancelled marks the row for two seconds before dropping it. Rows are keyed by id so virtualization keeps scroll steady, every event carries seq and rowVersion so late events for a newer row are ignored, Pause buffers a backlog that Resume drains in order, a simulated disconnect shows reconnecting state, and a slider runs the stream from 1 to 50 events per second. Priority and Notes stay editable client-side.",
+  "keywords": [
+    "svelte realtime order grid",
+    "svelte 5 streaming table",
+    "svelte grid out of order events",
+    "svelte grid reconnect backlog",
+    "svelte event stream merge"
+  ],
+  "faq": [
+    {
+      "question": "How are out-of-order events handled?",
+      "answer": "Each event carries a rowVersion; the merge compares it with the version on the existing row and ignores anything older, which is the standard guarantee for a streaming merge."
+    },
+    {
+      "question": "What happens during Pause?",
+      "answer": "Events keep arriving into a buffer and the KPI strip shows the backlog count. Resume applies them in sequence order, so the grid ends in the same state as if it had never paused."
+    },
+    {
+      "question": "Can the stream overwrite a user's edits?",
+      "answer": "No. Priority and Notes are edited locally and never included in the stream's patches, so there is no merge conflict at the cell level; sending them to the server would be a call from onCellValueChange."
+    }
+  ]
+}

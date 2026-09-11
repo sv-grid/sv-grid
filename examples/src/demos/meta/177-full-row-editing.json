@@ -1,0 +1,24 @@
+{
+  "description": "Full-row editing in the Svelte 5 data grid: the fullRowEditing prop puts every editable cell of a row into edit at once, with a text, select, number, date or checkbox editor per column. Enter or clicking away commits all cells in one update and Escape cancels the whole row, giving a form-style entry experience at grid density in under a hundred lines.",
+  "keywords": [
+    "svelte grid full row editing",
+    "svelte table edit whole row",
+    "svelte 5 data grid row editor",
+    "svelte grid row form",
+    "svelte editable row mode"
+  ],
+  "faq": [
+    {
+      "question": "How do I switch from cell editing to row editing?",
+      "answer": "Keep enableInlineEditing on and add fullRowEditing. Double-click or F2 then opens editors in every editable cell of that row instead of one cell."
+    },
+    {
+      "question": "When are the values written?",
+      "answer": "All at once when the row commits, on Enter or when focus leaves the row. Escape discards every change in the row. The full-row editor covers the text, number, date, datetime, checkbox and list editor types."
+    },
+    {
+      "question": "Can some columns stay read-only in row mode?",
+      "answer": "Yes. Columns with editable: false or no editorType show their value as text while the rest of the row is in edit."
+    }
+  ]
+}

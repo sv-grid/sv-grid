@@ -1,0 +1,24 @@
+{
+  "description": "Several calendars overlaid on one week in the Svelte 5 scheduler: Work, Personal, Family and Holidays, each colour-coded from a legend you can toggle, through calendars and calendarField. Turning a calendar off hides its events across every view, and an event takes its calendar's colour unless it sets its own; the same rows power the Table.",
+  "keywords": [
+    "svelte multiple calendars overlay",
+    "svelte 5 calendar toggle legend",
+    "svelte work personal calendar view",
+    "svelte scheduler calendarField",
+    "svelte color coded calendars"
+  ],
+  "faq": [
+    {
+      "question": "How is an event assigned to a calendar?",
+      "answer": "calendarField names the row field holding the calendar id, and calendars lists each id with a title and colour; the legend renders from that list."
+    },
+    {
+      "question": "How does the toggle hide events?",
+      "answer": "Each calendar has a visible flag the legend flips; the scheduler filters events whose calendar is hidden in every view without touching the rows."
+    },
+    {
+      "question": "Can an event override its colour?",
+      "answer": "Yes. An event with its own colour keeps it; otherwise the calendar's colour from the calendars list applies through calendarField."
+    }
+  ]
+}

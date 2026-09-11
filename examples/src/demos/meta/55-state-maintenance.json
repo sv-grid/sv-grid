@@ -1,0 +1,24 @@
+{
+  "description": "Capturing and restoring every dimension of Svelte 5 data grid state: sort, filters, group-by, column visibility and widths, page, expansion, selection and active cell go into one JSON-serialisable snapshot. On top of it sit undo and redo through a bounded history, auto-save to localStorage debounced at 250 ms, named bookmarks such as a weekly forecast view, JSON export and import for sharing a view, and a reset that forgets everything.",
+  "keywords": [
+    "svelte grid save state",
+    "svelte table restore layout",
+    "svelte 5 grid state localStorage",
+    "svelte grid undo redo state",
+    "svelte data grid bookmarks"
+  ],
+  "faq": [
+    {
+      "question": "Which events do I listen to for state changes?",
+      "answer": "onSortingChange, onFiltersChange, onActiveCellChange, onRowSelectionChange and onCellValueChange, plus your own column visibility and width state. Each one writes into the snapshot and pushes onto the history."
+    },
+    {
+      "question": "How is the state restored?",
+      "answer": "The snapshot is applied back through the API and props: api.setSort for sorting, the filter setters for filters, and the column array for visibility and widths. The demo's restore function does this in one place."
+    },
+    {
+      "question": "Can users share a view?",
+      "answer": "Yes. The JSON export copies the snapshot as text that can be pasted into a ticket or chat, and import parses it back and restores it."
+    }
+  ]
+}

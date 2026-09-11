@@ -1,0 +1,24 @@
+{
+  "description": "The headless toggle button core of the SvGrid UI kit in Svelte 5. createToggle is the state machine behind SvToggleButton, pressed on and off with aria-pressed, exposed as buttonProps to spread onto any element. The same core drives the styled component and a custom on and off pill, both bound to one pressed value with a readout.",
+  "keywords": [
+    "svelte headless toggle button",
+    "svelte 5 custom toggle markup",
+    "svelte createToggle",
+    "svelte aria pressed core",
+    "svelte headless toggle state"
+  ],
+  "faq": [
+    {
+      "question": "What does buttonProps include?",
+      "answer": "type button, aria-pressed reflecting the state, a click handler that flips it and keyboard handling for Space and Enter, so any element becomes an accessible toggle."
+    },
+    {
+      "question": "Can the change be vetoed?",
+      "answer": "Yes. The core calls onChange with the requested state and the bound value is yours to update or not, which is how a controlled toggle stays controlled."
+    },
+    {
+      "question": "Why a core for something this small?",
+      "answer": "So the toggle in a grid cell, a toolbar and a custom pill share one ARIA and keyboard implementation rather than three."
+    }
+  ]
+}

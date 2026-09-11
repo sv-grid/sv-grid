@@ -1,0 +1,24 @@
+{
+  "description": "The navigation set of SvGrid UI in Svelte 5: SvBreadcrumb with a trail that collapses in the middle when long, SvPagination with a page range that shows ellipses, first and last and previous and next buttons, and SvStepper for a linear wizard with completed, active and upcoming states. All are keyboard accessible and theme-token driven, and the pagination range math lives in the framework-free paginationRange helper.",
+  "keywords": [
+    "svelte breadcrumb component",
+    "svelte 5 pagination component",
+    "svelte stepper component",
+    "svelte pagination ellipsis",
+    "svelte wizard steps"
+  ],
+  "faq": [
+    {
+      "question": "How does the pagination decide which pages to show?",
+      "answer": "paginationRange({ page, pageCount, siblings }) returns the page numbers and ellipsis markers around the current page; SvPagination renders it, and you can use the helper for your own pager."
+    },
+    {
+      "question": "How does the breadcrumb collapse?",
+      "answer": "With maxItems set and more items than that, the middle ones fold into an expandable ellipsis so the root and the current page stay visible."
+    },
+    {
+      "question": "Can a stepper step be clicked?",
+      "answer": "Yes when onChange is provided. In linear mode only completed steps and the active one are clickable; otherwise any step is."
+    }
+  ]
+}

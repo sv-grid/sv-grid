@@ -1,0 +1,24 @@
+{
+  "description": "SvSlider in Svelte 5 as a filter block: a dual-thumb price range with range, min, max and step, ticks and labels on every mark, a formatValue function that prints dollar amounts, plus single sliders for rating and distance with live formatted readouts. Keyboard accessible and themed from the tokens.",
+  "keywords": [
+    "svelte range slider",
+    "svelte 5 dual thumb slider",
+    "svelte price range filter",
+    "svelte slider format value",
+    "svelte slider ticks labels"
+  ],
+  "faq": [
+    {
+      "question": "How do I get two thumbs?",
+      "answer": "Add range. The value becomes a [min, max] tuple, both thumbs respect step, and they cannot cross."
+    },
+    {
+      "question": "How do I format the readout?",
+      "answer": "Pass formatValue, a function from number to string, which the slider uses for the value bubble and, with labels='all', for the tick labels too."
+    },
+    {
+      "question": "Can the slider be vertical?",
+      "answer": "Yes. orientation='vertical' turns the track vertical with the same keyboard model, which suits volume and level controls."
+    }
+  ]
+}

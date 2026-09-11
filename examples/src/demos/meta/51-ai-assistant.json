@@ -1,0 +1,24 @@
+{
+  "description": "The free AI helpers of the Svelte 5 data grid, all in @svgrid/grid under MIT: setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify, aiFindAnomalies and mockAIProvider. Four panels drive them: Ask turns a sentence into a filter and sort plan you preview and apply through api.setFilter and api.setSort, Smart fill completes a column from one or two worked examples, Summarize writes a paragraph about the view, a selection or a row, and Classify buckets free-text rows into labels with confidence. The mock provider runs everything without a key; a real adapter is a fetch to your endpoint.",
+  "keywords": [
+    "svelte ai data grid",
+    "svelte 5 natural language filter",
+    "svelte grid smart fill ai",
+    "svelte table summarize rows llm",
+    "svelte grid classify rows"
+  ],
+  "faq": [
+    {
+      "question": "How do I plug in my own model?",
+      "answer": "Call setAIProvider(async ({ prompt, responseFormat, signal }) => ...) with a function that posts the prompt to your API or proxy and returns the text. The helpers build the prompts and parse the responses; the grid stays model-agnostic."
+    },
+    {
+      "question": "Does the AI change the grid directly?",
+      "answer": "No. aiFilter returns a plan of filters and a sort; the demo shows it for review and applies it with api.setFilter and api.setSort on click. Smart fill proposes values you accept before they are written."
+    },
+    {
+      "question": "Is any of this behind the enterprise license?",
+      "answer": "No. The helpers and the mock provider ship in the MIT package; this demo imports nothing from @svgrid/enterprise."
+    }
+  ]
+}

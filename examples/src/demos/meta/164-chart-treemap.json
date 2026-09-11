@@ -1,0 +1,24 @@
+{
+  "description": "A treemap of sales by region, category and product in Svelte 5. type treemap breaks revenue down into nested rectangles where a bigger value is a bigger box, running a squarified layout so every rectangle stays close to a square and labels remain readable even for skewed data. Three nested levels show drill-down structure with a palette colour per level, and switching the drill order between Region then Category and Category then Region compares the same data two ways.",
+  "keywords": [
+    "svelte treemap chart",
+    "svelte 5 hierarchical revenue chart",
+    "svelte squarified treemap",
+    "svelte nested rectangles chart",
+    "svelte treemap drill order"
+  ],
+  "faq": [
+    {
+      "question": "How is the hierarchy passed?",
+      "answer": "As nested tree nodes with a name, a value and children; the demo builds them from the grid rows by grouping on the chosen fields in order."
+    },
+    {
+      "question": "Why squarified?",
+      "answer": "A naive slice-and-dice layout produces long thin slivers for small values. The squarified algorithm keeps aspect ratios near one so text fits and areas are easier to compare."
+    },
+    {
+      "question": "How are colours assigned?",
+      "answer": "Each depth cycles the palette, so regions, categories and products are distinguishable without a legend; a colour per node can override it."
+    }
+  ]
+}

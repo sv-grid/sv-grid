@@ -1,0 +1,24 @@
+{
+  "description": "Cursor, or keyset, pagination for the Svelte 5 data grid as the alternative to offset paging. The server returns a nextCursor token derived from the last row's sort key, here createdAt and id, and the next request asks for 25 items after that cursor, which is stable under concurrent writes and an indexed range read regardless of depth. Only previous and next are meaningful, so the pager has no page numbers.",
+  "keywords": [
+    "svelte cursor pagination grid",
+    "svelte 5 keyset pagination table",
+    "svelte grid next cursor",
+    "svelte infinite api paging",
+    "svelte audit log pagination"
+  ],
+  "faq": [
+    {
+      "question": "Why not offset pagination?",
+      "answer": "Offset paging makes the server scan and skip for every deep page and shifts rows across page boundaries when writes happen. A cursor names a position in the sort order, so pages are consistent and the query is a single indexed range read."
+    },
+    {
+      "question": "What is in the cursor?",
+      "answer": "An encoding of the sort key of the last row on the page, createdAt and id in this demo. Real servers use whatever indexed columns make the query plan cheap; the client treats it as an opaque token."
+    },
+    {
+      "question": "How do I go back a page?",
+      "answer": "Keep a stack of the cursors you came from and request the page before the top one, which is what the Prev button does. Jumping to page seven of two hundred is not possible with cursors by design."
+    }
+  ]
+}

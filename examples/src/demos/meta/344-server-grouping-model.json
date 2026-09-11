@@ -1,0 +1,24 @@
+{
+  "description": "First-class server-side grouping in the Svelte 5 data grid through the same getRows contract. The request carries groupBy and groupKeys, createServerGroupModel owns the group tree with lazy expand per level, aggregation, per-node caching and race safety, and hands back a flat displayRows list; the serverGroup prop wires it in and SvRowGroupPanel lets users pick the grouping. The server here holds 63,000 rows behind 200 ms latency and the grid only ever holds the groups you expand.",
+  "keywords": [
+    "svelte server side grouping",
+    "svelte grid group by on server",
+    "svelte 5 createServerGroupModel",
+    "svelte grid lazy group expand",
+    "svelte row group panel"
+  ],
+  "faq": [
+    {
+      "question": "How does the server know which group to return?",
+      "answer": "Each getRows request carries groupBy, the ordered list of group columns, and groupKeys, the path of expanded keys. An empty path asks for the top-level groups with their aggregates; a path of one key asks for that group's children."
+    },
+    {
+      "question": "Is a group refetched every time it is expanded?",
+      "answer": "No. createServerGroupModel caches each node's children, so collapsing and re-expanding renders from memory. Changing groupBy clears the tree."
+    },
+    {
+      "question": "How do users change the grouping?",
+      "answer": "SvRowGroupPanel shows the groupable columns as chips; its onChange calls the controller's setGroupBy and the model requests the new top level."
+    }
+  ]
+}

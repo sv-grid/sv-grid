@@ -1,0 +1,24 @@
+{
+  "description": "A ticking stock market feed in the Svelte 5 data grid. Every 500 ms a random walk moves each symbol's last price, bid, ask and volume; cells flash green on an up-tick and red on a down-tick through a data-pulse attribute and a 320 ms CSS animation, Symbol is pinned left, and a Pause control stops the interval while sorting and selection keep working. Rows live in $state.raw so each tick hands the grid one new array reference.",
+  "keywords": [
+    "svelte stock ticker grid",
+    "svelte 5 live prices table",
+    "svelte grid cell flash on change",
+    "svelte realtime market data grid",
+    "svelte grid pause updates"
+  ],
+  "faq": [
+    {
+      "question": "How are the flashes cleared?",
+      "answer": "The pulses map is rebuilt on every tick with only the cells that changed, so entries disappear on the next tick rather than through timers. The CSS animation runs once per attribute change."
+    },
+    {
+      "question": "Why $state.raw for the rows?",
+      "answer": "Deep reactivity on thousands of cells would make every tick a thousand fine-grained updates. Replacing the array once per tick gives the grid a single change to diff."
+    },
+    {
+      "question": "How do I plug in a real feed?",
+      "answer": "Replace the tick function's random walk with your WebSocket onmessage handler that produces the next array; the pinning, flashing and pause logic stay as they are."
+    }
+  ]
+}

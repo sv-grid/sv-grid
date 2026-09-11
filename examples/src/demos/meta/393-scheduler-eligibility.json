@@ -1,0 +1,24 @@
+{
+  "description": "Skill-based eligibility in the Svelte 5 scheduler: each job needs a skill in its requiresField and each technician resource carries a skills array, so a job may only be scheduled onto a qualified technician. Drag one onto someone who lacks the skill and it snaps back with a Not eligible flash, ineligible rows are hatched while you drag, and the same rule gates creating and resizing through the booking-rule pipeline.",
+  "keywords": [
+    "svelte scheduler skill matching",
+    "svelte 5 dispatch eligibility",
+    "svelte drag only to qualified resource",
+    "svelte scheduler requiresField",
+    "svelte technician skills scheduling"
+  ],
+  "faq": [
+    {
+      "question": "How is eligibility declared?",
+      "answer": "requiresField names the event field holding the needed skill, and each resource's skills array lists what it can do; a resource is eligible when its array includes the event's skill."
+    },
+    {
+      "question": "What happens on an ineligible drop?",
+      "answer": "The event animates back to its origin and a Not eligible message flashes; nothing is written to the row."
+    },
+    {
+      "question": "Does it apply to new events?",
+      "answer": "Yes. Double-clicking a technician's row to add a job pre-fills a skill they have, and the drawer refuses a skill they lack."
+    }
+  ]
+}

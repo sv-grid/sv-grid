@@ -1,0 +1,24 @@
+{
+  "description": "The everyday fetch-JSON-and-render pattern for the Svelte 5 data grid with the four states a line-of-business app needs: a skeleton grid while loading so the layout does not jump, a typed error surface with a retry button, an empty state when the API returns nothing, and the ready state with sort, filter and inline editing wired. The endpoint is the public jsonplaceholder users API, an in-flight request is aborted on unmount, and swapping in your own URL and auth headers is one change.",
+  "keywords": [
+    "svelte fetch data into table",
+    "svelte 5 grid loading state",
+    "svelte grid error retry",
+    "svelte table skeleton loading",
+    "svelte data grid from rest api"
+  ],
+  "faq": [
+    {
+      "question": "How is the loading skeleton done?",
+      "answer": "While the request is pending the component renders placeholder rows with the same rowHeight and columns, so the grid's footprint is stable and the real rows slide in without a layout shift."
+    },
+    {
+      "question": "Why abort on unmount?",
+      "answer": "A user who navigates away mid-request would otherwise get a state update on a destroyed component. The AbortController stored in inflight is aborted in the cleanup, and a Reload click aborts the previous fetch before starting a new one."
+    },
+    {
+      "question": "How do I add authentication?",
+      "answer": "Pass headers to the single fetch call, for example an Authorization bearer token; the loading, error and empty handling around it stay the same."
+    }
+  ]
+}

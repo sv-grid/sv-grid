@@ -1,0 +1,24 @@
+{
+  "description": "Headless virtualization in Svelte 5: createSvelteVirtualizer from @svgrid/grid reports which of 50,000 rows are in view and where to place them, and this component renders those rows into its own scroll container with hand-written markup. Only about twenty rows hold DOM nodes at any time, so scrolling stays smooth without the SvGrid render component.",
+  "keywords": [
+    "svelte virtualizer",
+    "svelte 5 virtual list",
+    "headless virtual scroll svelte",
+    "svelte virtualize 50000 rows",
+    "svelte virtual table custom markup"
+  ],
+  "faq": [
+    {
+      "question": "How do I virtualize my own list or table in Svelte 5?",
+      "answer": "Call createSvelteVirtualizer with count, estimateSize (the row height), overscan and viewportHeight, then render virtualizer.getVirtualItems() at the offsets each item reports inside a scroll container. Reading virtualizer.version in a $derived makes the visible slice recompute on scroll."
+    },
+    {
+      "question": "Does the virtualizer require the SvGrid component?",
+      "answer": "No. It is the same engine the grid uses internally, exported on its own, so it works with any markup: a table, a list of cards or a custom layout."
+    },
+    {
+      "question": "How many rows are in the DOM at once?",
+      "answer": "Roughly the visible count plus overscan, about twenty here. The other 49,980 rows exist only as data until they scroll into view."
+    }
+  ]
+}

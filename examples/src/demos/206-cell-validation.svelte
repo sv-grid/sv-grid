@@ -2,7 +2,7 @@
   /**
    * 206. Cell validation (declarative `validate` hook)
    * --------------------------------------------------
-   * Handsontable-style per-cell validation, built in. Each column gets a
+   * Spreadsheet-style per-cell validation, built in. Each column gets a
    * `validate(params) => message | true` function. The grid runs it for
    * EVERY rendered cell - including values that are already in the data on
    * load - and paints invalid cells red with the message as a tooltip.
@@ -94,7 +94,7 @@
 
 <section class="cv-shell">
   <header class="cv-head">
-    <h1 class="cv-title">Cell validation</h1>
+    <h2 class="cv-title">Cell validation</h2>
     <p class="cv-sub">
       Each column declares a <code>validate()</code> hook. Invalid cells are
       highlighted <span class="cv-red">red</span> on load - not just after an

@@ -1,0 +1,24 @@
+{
+  "description": "SvRadioGroup in Svelte 5 as a plan picker and a shipping-method selector with a disabled option. The group follows the WAI-ARIA radiogroup pattern with roving arrow-key focus, takes its choices from an options array, reports the value through onChange and supports a label and validation.",
+  "keywords": [
+    "svelte radio group",
+    "svelte 5 radio buttons component",
+    "svelte plan picker radios",
+    "svelte radio group keyboard navigation",
+    "svelte radio validation"
+  ],
+  "faq": [
+    {
+      "question": "How do options get their labels and values?",
+      "answer": "options is an array of { value, label } objects, optionally with disabled or a description. The group renders one radio per entry and reports the chosen value."
+    },
+    {
+      "question": "How does keyboard focus move?",
+      "answer": "One radio is in the tab order at a time; arrow keys move selection and focus together, matching native radio behaviour."
+    },
+    {
+      "question": "Can the radios be laid out horizontally?",
+      "answer": "Yes. orientation='horizontal' places them in a row; the default is a vertical list."
+    }
+  ]
+}

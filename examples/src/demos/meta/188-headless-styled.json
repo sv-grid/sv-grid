@@ -1,0 +1,24 @@
+{
+  "description": "Styling a headless Svelte 5 table: the same createSvGrid engine and rows rendered three ways. Flip between minimal, bordered and card presets, change density and toggle zebra striping, all with CSS that lives in this one file. The table reads the --sg-* theme tokens so it follows the site's light and dark themes without the grid having any opinion about its look.",
+  "keywords": [
+    "svelte headless table styling",
+    "svelte table css themes",
+    "svelte 5 custom table design",
+    "headless table zebra stripes",
+    "svelte table density"
+  ],
+  "faq": [
+    {
+      "question": "Where does the styling live in a headless SvGrid table?",
+      "answer": "Entirely in your component. The engine emits no classes and no CSS; this demo's presets, density and striping are plain class toggles on the <table> it renders."
+    },
+    {
+      "question": "How does the table follow the site theme?",
+      "answer": "Its colors are var(--sg-*) tokens, the same custom properties the SvGrid themes define. Switching the site theme changes the tokens and the hand-styled table follows."
+    },
+    {
+      "question": "Can I keep sorting while restyling?",
+      "answer": "Yes. rowSortingFeature is registered on the engine, and the header click handlers are untouched by the preset switch. Look and behaviour are independent."
+    }
+  ]
+}

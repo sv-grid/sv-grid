@@ -1,0 +1,24 @@
+{
+  "description": "Three overlays built on the shared positioning engine in Svelte 5: SvHoverCard for a rich preview on hover such as a teammate card with an avatar, SvPopconfirm for a quick confirm in a popover before a low-stakes destructive action with a danger confirm button, and SvMenubar, an app-style row of dropdown menus with roving focus, ArrowLeft and ArrowRight to switch menus and ArrowDown to open. All portal to the body and flip and shift to stay in view.",
+  "keywords": [
+    "svelte hover card",
+    "svelte 5 popconfirm",
+    "svelte menubar component",
+    "svelte app menu bar keyboard",
+    "svelte confirm popover"
+  ],
+  "faq": [
+    {
+      "question": "How does SvPopconfirm differ from a dialog?",
+      "answer": "It anchors to the button, asks one question with confirm and cancel and never blocks the page. onConfirm runs the action; confirmVariant='danger' colours the button for deletes."
+    },
+    {
+      "question": "How does the menubar keyboard work?",
+      "answer": "One menu title is in the tab order; ArrowLeft and ArrowRight move between titles and open the neighbouring menu if one is open, ArrowDown opens the current one, and Escape closes."
+    },
+    {
+      "question": "What is the positioning engine?",
+      "answer": "A shared floating-element helper that computes placement, flips to the opposite side when there is no room, shifts to stay inside the viewport, draws the arrow and updates on scroll and resize."
+    }
+  ]
+}

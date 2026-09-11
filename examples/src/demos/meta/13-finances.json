@@ -1,0 +1,24 @@
+{
+  "description": "An account ledger in the Svelte 5 data grid with about 600 transactions across three accounts, a running balance, currency and date formatting, category chips and a status column. The running balance is computed once in chronological order when the account is chosen, so it stays correct however the visible rows are later sorted or filtered; pagination at fifty rows and the funnel menu filters complete the ledger, with signed amounts rendered by custom cells.",
+  "keywords": [
+    "svelte ledger table",
+    "svelte 5 finance grid",
+    "svelte grid running balance",
+    "svelte transactions table",
+    "svelte data grid currency formatting"
+  ],
+  "faq": [
+    {
+      "question": "Why compute the running balance up front?",
+      "answer": "A balance depends on chronological order, and the user may sort by amount or filter by category. Computing it once at load and storing it on each row keeps every displayed balance correct regardless of the view."
+    },
+    {
+      "question": "How are signed amounts shown?",
+      "answer": "A cell snippet renders money in and money out with different colours and signs from the same numeric field, and the currency format handles the number itself."
+    },
+    {
+      "question": "How do I switch accounts?",
+      "answer": "The dropdown sets the active account; a $derived filters the transactions to it and recomputes balances, and the grid receives the new rows array."
+    }
+  ]
+}

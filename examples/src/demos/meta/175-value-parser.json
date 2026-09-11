@@ -1,0 +1,24 @@
+{
+  "description": "Per-column valueParser in the Svelte 5 data grid refines a committed value after the built-in editorType coercion and before it is written to the row. The demo uppercases a SKU, parses a currency string such as $1,299.90 into a number, clamps a discount to 0-100 and rounds a weight, and a log shows raw input against the stored value.",
+  "keywords": [
+    "svelte grid valueParser",
+    "svelte table transform input on commit",
+    "svelte 5 grid parse currency input",
+    "svelte data grid normalize value",
+    "svelte grid clamp number"
+  ],
+  "faq": [
+    {
+      "question": "What does valueParser receive?",
+      "answer": "An object with newValue, oldValue, rawInput, the row data and columnId. Return the value to store; the grid writes your result instead of the raw keystrokes."
+    },
+    {
+      "question": "When does it run relative to editorType?",
+      "answer": "After. A number editor has already turned the input into a number when valueParser sees it; the parser then refines that value, for example by clamping or rounding."
+    },
+    {
+      "question": "Can it reject a value?",
+      "answer": "It normalizes rather than rejects. Return oldValue to keep the previous value, or combine it with a validate hook or onCellValueChange for explicit rejection."
+    }
+  ]
+}

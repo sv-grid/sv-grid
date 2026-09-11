@@ -1,0 +1,24 @@
+{
+  "description": "A large Kanban board on the Svelte 5 data grid with thousands of cards per lane kept smooth by board.virtualized, which keeps only the cards in view in the DOM with a fixed cardHeight. A slider scales the board from 1,000 to 50,000 cards, and drag-and-drop and keyboard moves keep working across the whole window.",
+  "keywords": [
+    "svelte virtualized kanban",
+    "svelte 5 kanban 50000 cards",
+    "svelte board performance",
+    "svelte large kanban board",
+    "svelte kanban virtualization"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn on virtualization?",
+      "answer": "Set virtualized: true in the board config and give cardHeight a fixed pixel height so the lane can compute positions without measuring every card."
+    },
+    {
+      "question": "Does drag-and-drop work with cards that are not rendered?",
+      "answer": "Yes. Dropping between two visible cards computes the index in the full lane, and a keyboard move scrolls the moving card into view as it travels."
+    },
+    {
+      "question": "Why must cards be a fixed height?",
+      "answer": "The virtualizer sizes the lane's scroll area from the count times cardHeight; variable heights would require measuring, which is what virtualization avoids."
+    }
+  ]
+}

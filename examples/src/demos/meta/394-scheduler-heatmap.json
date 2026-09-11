@@ -1,0 +1,24 @@
+{
+  "description": "A utilization heatmap in the Svelte 5 scheduler: a support centre where each queue has a capacity from its team size and calls overlap through the day. utilizationHeatmap tints the whole row background by how loaded the queue is each hour, light when quiet, hot near capacity and red when over, with collisionMode stack laying overlapping calls out, so a glance shows where the pressure is; the Table shows the same rows.",
+  "keywords": [
+    "svelte scheduler heatmap",
+    "svelte 5 timeline load by hour",
+    "svelte queue capacity visualization",
+    "svelte support center schedule",
+    "svelte utilization lane tint"
+  ],
+  "faq": [
+    {
+      "question": "How is load computed per hour?",
+      "answer": "The scheduler counts overlapping events per resource per hour and divides by the resource's capacity from capacityField, mapping the ratio to the tint."
+    },
+    {
+      "question": "How is this different from the histogram?",
+      "answer": "The histogram is a bar chart under each row; the heatmap colours the row itself, so the whole timeline reads as a pressure map without extra height."
+    },
+    {
+      "question": "Can I change the colours?",
+      "answer": "Yes. utilizationHeatmap takes the colour stops for quiet, near capacity and over, and the tint is applied through the theme so it works in dark mode."
+    }
+  ]
+}

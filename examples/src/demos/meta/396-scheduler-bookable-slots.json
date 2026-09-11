@@ -1,0 +1,24 @@
+{
+  "description": "A booking page in the Svelte 5 scheduler: pick a service, which sets the duration, and the scheduler lights up every open slot on each provider through bookable with durationMin and stepMin, the free time left after existing appointments, each provider's own hours and a 10-minute cleanup buffer from bufferAfterMin. Click a slot to book it, and the same rows power the Table.",
+  "keywords": [
+    "svelte booking page",
+    "svelte 5 available time slots",
+    "svelte scheduler bookable slots",
+    "svelte appointment booking widget",
+    "svelte find open slot"
+  ],
+  "faq": [
+    {
+      "question": "How are the open slots computed?",
+      "answer": "For each provider the scheduler subtracts existing appointments plus buffers from the working hours and cuts the remainder into slots of durationMin every stepMin; those are drawn as clickable slots."
+    },
+    {
+      "question": "What happens on click?",
+      "answer": "The slot's start and end and the provider are passed to onSlotPick, and the demo adds a booking row with the chosen service and client."
+    },
+    {
+      "question": "Can the duration change per service?",
+      "answer": "Yes. Changing the service updates durationMin in the config and the slots recompute, so a longer service shows fewer, longer openings."
+    }
+  ]
+}

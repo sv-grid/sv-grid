@@ -1,0 +1,24 @@
+{
+  "description": "Built-in column reordering in the Svelte 5 data grid. Set enableColumnReorder and every header becomes draggable, with a vertical drop indicator between neighbouring headers. onColumnOrderChange fires on every change and api.setColumnOrder() and api.getColumnOrder() drive the order from code, which is what saved views, URL persistence and command palettes need.",
+  "keywords": [
+    "svelte grid reorder columns",
+    "svelte table drag column headers",
+    "svelte 5 enableColumnReorder",
+    "svelte grid column order api",
+    "svelte data grid persist column order"
+  ],
+  "faq": [
+    {
+      "question": "How do I let users drag columns?",
+      "answer": "Set enableColumnReorder on <SvGrid>. Headers become draggable and the grid shows a drop indicator while dragging; nothing else is required."
+    },
+    {
+      "question": "How do I persist the order?",
+      "answer": "Save the array from onColumnOrderChange or api.getColumnOrder() and call api.setColumnOrder(ids) on load. The array is column ids in display order, so it serializes cleanly."
+    },
+    {
+      "question": "Can I restrict which columns move?",
+      "answer": "Set the order from code after a change: onColumnOrderChange gives you the proposed array, and api.setColumnOrder can put a column back if your app needs, for example, the symbol column to stay first."
+    }
+  ]
+}

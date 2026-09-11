@@ -37,7 +37,7 @@
     <!-- Benefits rail -->
     <aside class="rail">
       <SvBadge variant="accent" pill>14-day free trial</SvBadge>
-      <h1>Start building today.</h1>
+      <h2>Start building today.</h2>
       <p class="muted">No credit card required. Cancel anytime.</p>
       <SvDivider />
       <SvList type="none" spacing="md">
@@ -98,7 +98,7 @@
      nothing shrinks the card and no percentage max-width can clamp it. */
   .su-grid { display: grid; grid-template-columns: 300px 420px; justify-content: center; gap: 28px; align-items: start; width: 100%; box-sizing: border-box; }
   .rail { padding: 8px 4px; display: flex; flex-direction: column; gap: 12px; }
-  .rail h1 { font-size: 26px; margin: 8px 0 0; letter-spacing: -.02em; line-height: 1.15; }
+  .rail h2 { font-size: 26px; margin: 8px 0 0; letter-spacing: -.02em; line-height: 1.15; }
   .muted { color: var(--sg-muted, #64748b); font-size: 13.5px; margin: 0; }
   .fields { display: flex; flex-direction: column; gap: 15px; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

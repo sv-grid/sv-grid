@@ -1,0 +1,24 @@
+{
+  "description": "Two headless Svelte 5 grids driven by one reactive store. createGridState returns a [get, set] tuple you own; feeding the same store to two independent createSvGrid engines keeps them in lockstep, so sorting a column in the first table re-sorts the second. Each engine renders its own markup, which makes this the pattern for linked views, split panes and synced summaries.",
+  "keywords": [
+    "svelte shared grid state",
+    "svelte 5 linked tables",
+    "svelte synced grids",
+    "createGridState svelte",
+    "headless grid state store"
+  ],
+  "faq": [
+    {
+      "question": "How do I keep two grids in sync?",
+      "answer": "Create one store with createGridState, read it into state.sorting in each createSvGrid call and pass its setter as onSortingChange. Both engines then derive their rows from the same sorting, and the setter already applies updater functions for you."
+    },
+    {
+      "question": "Can I persist the state or drive it from a URL?",
+      "answer": "Yes. The store is a plain [get, set] tuple, so you can serialize get() to localStorage or search params and call set() with the parsed value on load."
+    },
+    {
+      "question": "Do the two grids have to render the same columns?",
+      "answer": "No. They share state, not markup. This demo renders different column sets from the same rows and sort order."
+    }
+  ]
+}

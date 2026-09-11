@@ -1,0 +1,24 @@
+{
+  "description": "Excel-style cell visualisations in the Svelte 5 data grid written as user-land cell snippets: a red to yellow to green colour scale, in-cell data bars proportional to the value, a traffic-light icon set by threshold and a heat-map tint across a row. Each renderer reads its column's min and max from the displayed rows and paints accordingly, and a side panel toggles every formatter on and off to compare.",
+  "keywords": [
+    "svelte grid color scale cells",
+    "svelte table data bars",
+    "svelte 5 grid heatmap",
+    "svelte grid traffic light icons",
+    "svelte custom cell formatting"
+  ],
+  "faq": [
+    {
+      "question": "How does a cell know the column's range?",
+      "answer": "A $derived computes min and max per column from the current rows once; each cell snippet reads them and maps its value to a colour or a bar width."
+    },
+    {
+      "question": "Is there a built-in way to do this?",
+      "answer": "Yes. The conditionalFormats prop does colour scales, data bars, icon sets and predicate rules declaratively; this demo shows the same effects hand-built so you can see what the engine saves you."
+    },
+    {
+      "question": "Can I mix formatters on one column?",
+      "answer": "Yes. A snippet can paint a background tint and an icon at once; the toggles in the side panel show each layer independently."
+    }
+  ]
+}

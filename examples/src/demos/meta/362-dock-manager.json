@@ -1,0 +1,24 @@
+{
+  "description": "SvDockManager in Svelte 5, a full docking workspace on top of SvDockLayout. Beyond tiling and drag-to-dock it adds floating windows through a tab button or by dragging a tab into open space, tab reordering along the strip, and pinning and auto-hide where the triangle button collapses a panel to an edge, hovering the edge tab flies it out and Pin re-docks it. The whole workspace binds through bind:workspace; popping a panel out to a native window is opt-in.",
+  "keywords": [
+    "svelte dock manager",
+    "svelte 5 floating panels",
+    "svelte auto hide panel",
+    "svelte docking workspace",
+    "svelte visual studio like layout"
+  ],
+  "faq": [
+    {
+      "question": "How do I float a panel?",
+      "answer": "Click the float button on its tab or drag the tab into empty space; the panel becomes a movable, resizable window over the workspace and can be docked again by dragging it onto a pane."
+    },
+    {
+      "question": "What is auto-hide?",
+      "answer": "The panel collapses to a tab on the nearest edge; hovering or clicking that tab slides it out temporarily, and Pin returns it to the tiled layout."
+    },
+    {
+      "question": "Is the workspace serializable?",
+      "answer": "Yes. bind:workspace holds the tiled tree, the floating windows and the auto-hidden panels in one object, which the analytics workspace demo saves to localStorage."
+    }
+  ]
+}

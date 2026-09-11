@@ -1,0 +1,24 @@
+{
+  "description": "An operations console for a fleet of connected test and measurement systems in the Svelte 5 data grid: live status, a utilization sparkline, temperature, throughput, active alarms, firmware and calibration due date per system, with getRowId keeping identity stable under streaming updates. Select systems for bulk acknowledge-alarms or schedule-calibration actions, group by site with api.setGroupBy and expandAllGroups, read a KPI strip derived from the live data, use search and quick filters, and click a system for a master-detail view of its instruments and tags. Row and column virtualization keep it flat at fleet scale.",
+  "keywords": [
+    "svelte fleet monitoring grid",
+    "svelte 5 test systems console",
+    "svelte grid live status alarms",
+    "svelte instrument management table",
+    "svelte grid stable row identity"
+  ],
+  "faq": [
+    {
+      "question": "Why does getRowId matter for live data?",
+      "answer": "With a stable id per row the grid can update a system in place when a new reading arrives, keeping selection, expansion and scroll position; without it a new array would look like new rows."
+    },
+    {
+      "question": "How do bulk actions work?",
+      "answer": "onRowSelectionChange stores the selected rows; the toolbar buttons map over them to clear alarms or set a calibration date, then api.clearRowSelection() resets the checkboxes."
+    },
+    {
+      "question": "How is the detail panel opened?",
+      "answer": "onRowClick sets the clicked system as selected when it has instruments, and a side panel renders its instruments and tags from that object."
+    }
+  ]
+}

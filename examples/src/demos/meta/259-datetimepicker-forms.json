@@ -1,0 +1,24 @@
+{
+  "description": "SvDateTimePicker in the five shapes a Svelte 5 form ships: a date-only field, a time-only field, a full date and time field, a 12-hour field with spin buttons and a min and max constrained field, all on one form. Each is a masked text input that can be typed or picked, with a portalled dropdown and an animated calendar, the same component the grid mounts to edit a datetime cell.",
+  "keywords": [
+    "svelte form date fields",
+    "svelte 5 date only time only picker",
+    "svelte datetime min max",
+    "svelte 12 hour picker spin buttons",
+    "svelte form with date pickers"
+  ],
+  "faq": [
+    {
+      "question": "How do I make a date-only field?",
+      "answer": "Set dropDownDisplayMode='calendar' and a date formatString such as yyyy-MM-dd. The clock tab disappears and the value's time part stays at midnight; 'time' gives the opposite, a clock-only field."
+    },
+    {
+      "question": "How do I constrain the range?",
+      "answer": "Pass min and max as Dates. Typing a value outside them reverts, and the calendar disables days outside the bounds."
+    },
+    {
+      "question": "What do the spin buttons do?",
+      "answer": "spinButtons adds up and down arrows to the input that step the focused segment, hour, minute or day, without opening the dropdown."
+    }
+  ]
+}

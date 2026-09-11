@@ -1,0 +1,24 @@
+{
+  "description": "A live trading desk built on the Svelte 5 data grid: 10,000 securities tick on a 500 ms feed while the grid stays at 60 fps. Symbol is pinned left and P&L pinned right, cells pulse green or red on each price move, every row carries a 30-point sparkline, and a KPI strip recomputes across all rows on every tick with $derived. It uses the same SvGrid primitives as every other example, with rows held in $state.raw so each tick hands the grid one new array reference instead of 10,000 cell mutations.",
+  "keywords": [
+    "svelte real-time data grid",
+    "svelte trading grid",
+    "svelte 5 live updating table",
+    "svelte sparkline column",
+    "svelte grid 10000 rows"
+  ],
+  "faq": [
+    {
+      "question": "How does the grid stay smooth with 10,000 rows updating every 500 ms?",
+      "answer": "Row virtualization only renders the rows in view, and the demo keeps its rows in $state.raw so a tick replaces the array once instead of mutating 10,000 reactive objects. Only about 5 percent of rows change per tick, and the sparkline path is recomputed only for rows whose reference changed."
+    },
+    {
+      "question": "How are the cell flashes done?",
+      "answer": "A pulses map is rebuilt on every tick with the ids and directions of the rows that moved. Cell snippets read it to add a green or red class, and because the map is replaced rather than appended to, stale pulses disappear on the next tick without any cleanup timer."
+    },
+    {
+      "question": "Do I need special APIs to pin columns and add sparklines?",
+      "answer": "No. Symbol and P&L are pinned with the grid prop initialColumnPinning={{ left: [\"symbol\"], right: [\"pnl\"] }}, and the sparkline is a plain Svelte snippet rendering an SVG path from the row's rolling buffer. Everything in this demo is available in @svgrid/grid."
+    }
+  ]
+}

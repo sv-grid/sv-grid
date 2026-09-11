@@ -1,0 +1,24 @@
+{
+  "description": "SvMaskedInput on its own in Svelte 5: a fixed-pattern mask where # is a digit, A a letter and * alphanumeric and every other character is a literal, emitting the masked display value, the raw value and a complete flag through onChange. Shown with a card-number mask, a placeholder and a clear button; it is the SvGrid masked cell editor, standalone.",
+  "keywords": [
+    "svelte masked input",
+    "svelte 5 input mask pattern",
+    "svelte credit card mask",
+    "svelte formatted input raw value",
+    "svelte input complete flag"
+  ],
+  "faq": [
+    {
+      "question": "How do I write a mask?",
+      "answer": "Use # for a digit, A for a letter and * for either; any other character, such as a space, dash or parenthesis, is inserted automatically. '#### #### #### ####' is a card number, '(###) ###-####' a phone."
+    },
+    {
+      "question": "What does onChange receive?",
+      "answer": "Three arguments: the masked text as displayed, the raw characters the user typed and a boolean that is true once every mask slot is filled."
+    },
+    {
+      "question": "What happens to invalid keystrokes?",
+      "answer": "A character that does not fit the next slot is ignored, so the field can never hold a value that breaks the pattern."
+    }
+  ]
+}

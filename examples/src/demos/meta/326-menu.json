@@ -1,0 +1,24 @@
+{
+  "description": "SvMenu in Svelte 5, a dropdown and actions menu with submenus, separators, icons and keyboard shortcut hints, driven by an items array. The panel portals to the body and animates in, and the keyboard covers arrows, Enter, Escape and ArrowRight and ArrowLeft to open and close submenus.",
+  "keywords": [
+    "svelte dropdown menu",
+    "svelte 5 menu component submenus",
+    "svelte actions menu keyboard",
+    "svelte menu with icons shortcuts",
+    "svelte portalled menu"
+  ],
+  "faq": [
+    {
+      "question": "How do I define a submenu?",
+      "answer": "Give an item a children array. It shows a chevron, opens on hover or ArrowRight and closes on ArrowLeft, nesting as deep as the items go."
+    },
+    {
+      "question": "How are separators and shortcuts shown?",
+      "answer": "An item with separator: true draws a divider, and an item's shortcut string renders right-aligned as a hint; the shortcut itself is bound by your app."
+    },
+    {
+      "question": "How is the menu opened?",
+      "answer": "Any trigger element passed as the menu's child toggles it on click; the panel positions next to the trigger and flips when there is no room."
+    }
+  ]
+}

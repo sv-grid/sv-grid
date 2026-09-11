@@ -1,0 +1,24 @@
+{
+  "description": "A clinic day roster on the Svelte 5 data grid's Scheduler view. Setting the scheduler prop renders the same rows as a calendar: providers become resource columns on an hour axis and appointments become events. Drag to reschedule, drag an edge to resize, drag across providers to reassign, click to edit in the built-in drawer, and a now-line ticks live. The calendar renderer ships in @svgrid/enterprise.",
+  "keywords": [
+    "svelte scheduler component",
+    "svelte 5 appointment calendar",
+    "svelte resource scheduler",
+    "svelte clinic scheduling grid",
+    "svelte drag and drop calendar"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn the grid into a scheduler?",
+      "answer": "Pass the scheduler prop with startField, endField, titleField and resourceField plus the resources list, and optionally views, dayStartHour and dayEndHour. The rows stay your appointment data; the enterprise renderer lays them out on the time axis with a column per provider."
+    },
+    {
+      "question": "What happens when an appointment is dragged?",
+      "answer": "onEventMove and onEventResize report the new start, end or provider; onEventCommit, onEventAdd and onEventDelete cover the drawer, so your data stays the source of truth while the calendar reflects the change."
+    },
+    {
+      "question": "Is the scheduler free?",
+      "answer": "The data model and the scheduler prop are in @svgrid/grid; the calendar renderer is part of @svgrid/enterprise, which runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

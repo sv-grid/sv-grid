@@ -1,0 +1,24 @@
+{
+  "description": "SvTreeSelect in Svelte 5, a single-select dropdown that shows a collapsible tree in its portalled panel, the tree-select or cascader pattern. Arrow keys navigate, Right and Left expand and collapse, Enter selects, expandedIds sets the initial open branches and showPath prints the full path in the trigger. Standalone or a grid cell editor.",
+  "keywords": [
+    "svelte tree select",
+    "svelte 5 cascader dropdown",
+    "svelte hierarchical select",
+    "svelte tree dropdown component",
+    "svelte select with nested options"
+  ],
+  "faq": [
+    {
+      "question": "How are the nodes defined?",
+      "answer": "As a nodes array of { id, label, children } objects nested as deep as needed. A node with disabled set is shown but cannot be picked."
+    },
+    {
+      "question": "What is shown after a pick?",
+      "answer": "The node's label, or with showPath the whole path such as Asia, Japan, Tokyo, which helps when leaf names repeat across branches."
+    },
+    {
+      "question": "How do I open branches by default?",
+      "answer": "Pass expandedIds with the ids to start open; the panel also remembers what the user expanded while it stays mounted."
+    }
+  ]
+}

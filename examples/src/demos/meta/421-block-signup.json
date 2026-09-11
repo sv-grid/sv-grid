@@ -1,0 +1,24 @@
+{
+  "description": "A copy-paste sign-up page built from the SvGrid UI kit in Svelte 5: a centred SvCard with two-up name fields, a work email, a password with the live strength meter, a plan SvSegmented switch and a terms SvCheckBox, a submit SvButton that shows loading and stays disabled until the form is valid, and a benefits rail beside the card. Submit fires a promise toast.",
+  "keywords": [
+    "svelte signup page",
+    "svelte 5 registration form template",
+    "svelte account creation block",
+    "svelte password strength signup",
+    "svelte plan picker signup"
+  ],
+  "faq": [
+    {
+      "question": "How is the submit button gated?",
+      "answer": "canSubmit is a $derived requiring a name, an email, a password of at least eight characters and the terms box; the button reads it as disabled and shows loading while the promise runs."
+    },
+    {
+      "question": "How is the plan chosen?",
+      "answer": "SvSegmented with block width lists the plans as mutually exclusive segments bound to plan, which goes into the submitted payload."
+    },
+    {
+      "question": "Can I reuse the benefits rail?",
+      "answer": "Yes. It is an SvList with type none and check icons inside a stack; edit the items or drop the rail for a single-column page."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A copy-paste application shell built from the SvGrid UI kit in Svelte 5: an SvNavPane sidebar with sections and badges that collapses to an icon rail, a top bar with SvBreadcrumb, a search SvTextInput, a notifications button and an account SvMenu with an avatar, and a routed content area where selecting a nav item swaps the page, shown with SvStat tiles and an SvEmptyState placeholder.",
+  "keywords": [
+    "svelte app shell",
+    "svelte 5 admin layout sidebar",
+    "svelte dashboard shell template",
+    "svelte sidebar breadcrumb layout",
+    "svelte collapsible nav rail"
+  ],
+  "faq": [
+    {
+      "question": "How does navigation swap the content?",
+      "answer": "active is bound to the nav pane's value; the content area renders the page for that id. In a SvelteKit app, replace the switch with routes and keep the shell in the layout."
+    },
+    {
+      "question": "How is the sidebar collapsed?",
+      "answer": "collapsed on SvNavPane narrows it to icons with tooltips; the toggle in the top bar flips it, and the content area takes the freed width."
+    },
+    {
+      "question": "Where does the account menu come from?",
+      "answer": "SvMenu with an items array wrapped around the avatar button, giving profile, settings and sign-out entries with keyboard support."
+    }
+  ]
+}

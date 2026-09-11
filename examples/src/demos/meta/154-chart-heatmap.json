@@ -1,0 +1,24 @@
+{
+  "description": "A heatmap chart in Svelte 5. type heatmap renders a coloured grid with one cell per row and column from the same categories and series shape as other charts, where each series is a row and its values are the cells. colorScale picks a sequential ramp by default, a diverging red to blue ramp for data that straddles zero or a custom hex array, and cell text auto-contrasts black or white. The demo builds an hour by weekday traffic heatmap from the grid's displayed rows; filter the Channel column and it re-renders.",
+  "keywords": [
+    "svelte heatmap chart",
+    "svelte 5 hour by weekday heatmap",
+    "svelte chart color scale diverging",
+    "svelte heatmap from grid rows",
+    "svelte heatmap auto contrast labels"
+  ],
+  "faq": [
+    {
+      "question": "How is the heatmap data shaped?",
+      "answer": "categories are the column headers, hours here, and each series is one row, a weekday, with values holding the cell numbers; the same shape as a stacked bar spec, so rowsToChartSpec can produce it."
+    },
+    {
+      "question": "When should I use the diverging ramp?",
+      "answer": "When values run from negative to positive around a meaningful zero, such as change versus last week. The ramp centres on zero so the sign is readable at a glance."
+    },
+    {
+      "question": "Are the cell labels always readable?",
+      "answer": "Yes. dataLabels prints each value and the chart picks black or white text per cell for WCAG contrast against the cell colour."
+    }
+  ]
+}

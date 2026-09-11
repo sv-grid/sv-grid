@@ -1,0 +1,24 @@
+{
+  "description": "Named views for the Svelte 5 data grid: save the current sort, filters and column layout under a name and restore it in one click. createNamedViews(api, { storage }) wraps the grid's getState() and setState() with a save, load, list and delete manager; localStorageViews(key) persists views across reloads, and a custom storage adapter syncs per-user views to a server.",
+  "keywords": [
+    "svelte grid named views",
+    "svelte table saved layouts",
+    "svelte 5 grid getState setState",
+    "svelte grid views localStorage",
+    "svelte data grid user presets"
+  ],
+  "faq": [
+    {
+      "question": "How do I save the current grid layout?",
+      "answer": "Create the manager once the API is ready with createNamedViews(api, { storage: localStorageViews('my-grid') }), then call its save method with a name. It reads api.getState() and stores it under that key."
+    },
+    {
+      "question": "How do I sync views to a server?",
+      "answer": "Pass your own storage adapter with the same load, save and delete shape as localStorageViews, backed by fetch calls to your API, and views become per user."
+    },
+    {
+      "question": "What is captured in a view?",
+      "answer": "Whatever api.getState() returns: sorting, filters, column order, visibility and widths. Restoring calls api.setState with the stored object."
+    }
+  ]
+}

@@ -153,7 +153,7 @@
   // The snippet reads `rows[i][field]` INSIDE its body so the cell
   // tracks both `rows` (the data) and `writes` (the badge state)
   // reactively. Passing `value` as a static prop would freeze it at
-  // cell-function-call time - TanStack's row-model cache means the
+  // cell-function-call time - the engine's row-model cache means the
   // function isn't always re-called on edit, and the displayed value
   // would stay stale.
   const moneyFmt = (v: unknown) => `$${Number(v).toFixed(2)}`

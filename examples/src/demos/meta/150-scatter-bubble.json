@@ -1,0 +1,24 @@
+{
+  "description": "Scatter and bubble charts in Svelte 5. SvGridChart renders a type scatter spec whose series carry points of x, y and r, so each sales rep is one bubble with marketing spend on x, revenue on y, the radius from deals closed and the colour from region, with a reference line at the average revenue. Filter the grid and the cloud re-plots from the displayed rows.",
+  "keywords": [
+    "svelte scatter chart",
+    "svelte 5 bubble chart",
+    "svelte xy plot from grid",
+    "svelte chart reference line",
+    "svelte scatter points x y r"
+  ],
+  "faq": [
+    {
+      "question": "How are bubbles sized?",
+      "answer": "Each point's r is scaled to a radius range by the chart, so deals closed maps to area rather than raw pixels and small values stay visible."
+    },
+    {
+      "question": "How is colour assigned?",
+      "answer": "One series per region, so the legend lists regions and clicking one hides or isolates its bubbles."
+    },
+    {
+      "question": "Can axes use different scales?",
+      "answer": "Yes. Spend and revenue are independent numeric axes with their own ticks and formatValue, and yScale log is available for wide ranges."
+    }
+  ]
+}

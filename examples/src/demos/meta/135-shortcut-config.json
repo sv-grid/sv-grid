@@ -1,0 +1,24 @@
+{
+  "description": "Every SvGrid capability is off by default, so a bare <SvGrid> is a plain read-only table. This Svelte 5 example switches sorting, filtering, editing, selection, grouping, paging, column resize and row resize on one boolean prop at a time, with no features array and no fine-grained props, and shows the resulting config live. Capabilities that stay off are never downloaded, because their code loads on demand.",
+  "keywords": [
+    "svelte grid configuration",
+    "svelte data grid props",
+    "svelte 5 table sortable filterable",
+    "svelte grid lazy features",
+    "svgrid shortcut props"
+  ],
+  "faq": [
+    {
+      "question": "Do I have to import tableFeatures to enable sorting or filtering?",
+      "answer": "No. The boolean shortcut props sortable, filterable, editable, selectable, groupable and pageable each inject the feature they need. tableFeatures is the fine-grained route for when you want to configure a feature beyond its defaults."
+    },
+    {
+      "question": "What does a grid with no capabilities enabled cost?",
+      "answer": "Only the core renderer. Column resize and row resize, for example, are loaded on demand the first time a grid turns them on, so a grid that never enables them never fetches that code."
+    },
+    {
+      "question": "How do I autosize a column?",
+      "answer": "With columnResize on, drag a header edge to set a width or double-click the edge to fit the column to its content."
+    }
+  ]
+}

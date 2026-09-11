@@ -1,0 +1,24 @@
+{
+  "description": "Dropping a Svelte 5 data grid row onto any element outside the grid. The rowDropZone action marks an Archive and a Delete bucket as targets for managed row drags: the dragged task leaves the grid and the zone's onDrop handles it. The grid keeps rowDragManaged so in-grid reorder still works, and a rowDragGroup that the zones match on.",
+  "keywords": [
+    "svelte grid drop zone",
+    "svelte table drag row to delete",
+    "svelte 5 rowDropZone action",
+    "svelte drag row out of grid",
+    "svelte archive bucket drag and drop"
+  ],
+  "faq": [
+    {
+      "question": "How do I make an element accept rows from the grid?",
+      "answer": "Apply use:rowDropZone={{ group, onDrop }} to it with the same group string as the grid's rowDragGroup. When a row is released over the element, the grid removes it and onDrop receives an event with the row."
+    },
+    {
+      "question": "Can the same grid still reorder its own rows?",
+      "answer": "Yes. rowDragManaged stays on, so dropping inside the grid reorders and dropping on a zone removes; the target decides which happens."
+    },
+    {
+      "question": "How do I show the zone as active during a drag?",
+      "answer": "The action adds sv-grid-row-dropzone-over to the element while a matching drag hovers it, or a class of your own through overClass, which the demo styles as a highlighted bucket."
+    }
+  ]
+}

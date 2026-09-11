@@ -1,0 +1,24 @@
+{
+  "description": "The headless time picker core of the SvGrid UI kit in Svelte 5. createTimePicker is the state machine behind SvTimePicker: hour and minute value math, 12 and 24-hour display, minute snapping, the pure dial geometry and the full keyboard, exposed as dialProps, segProps, ampmProps and nowProps. The same core drives the styled analog picker and a custom digital readout, both bound to one value.",
+  "keywords": [
+    "svelte headless time picker",
+    "svelte 5 custom time readout",
+    "svelte createTimePicker",
+    "svelte clock dial geometry",
+    "svelte time state machine"
+  ],
+  "faq": [
+    {
+      "question": "What is the dial geometry?",
+      "answer": "The core computes the angle and position of every number and of the hand for the current selection, so a render can draw the dial in SVG or CSS without trigonometry of its own."
+    },
+    {
+      "question": "How does a digital render use the core?",
+      "answer": "It ignores the dial and uses segProps for hour and minute segments, which wire arrow keys and typing, plus ampmProps for the period toggle; the value stays shared with the analog picker."
+    },
+    {
+      "question": "What does nowProps do?",
+      "answer": "It wires a button that sets the value to the current time, respecting minuteInterval snapping."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "The list and overlay pickers of the SvGrid UI kit in Svelte 5: SvListBox as an inline multi-select, SvDropDownList, SvComboBox that filters as you type, SvAutoComplete for free text with suggestions, SvTagsInput for chips and SvCountryInput with flags and dial codes. Every popover portals out of the scroll container so it never clips, all theme from the --sg-* tokens, and each is also a grid cell editor.",
+  "keywords": [
+    "svelte select components",
+    "svelte 5 dropdown combobox autocomplete",
+    "svelte listbox multi select",
+    "svelte tags input country picker",
+    "svelte ui kit pickers"
+  ],
+  "faq": [
+    {
+      "question": "When do I use a combo box versus an autocomplete?",
+      "answer": "SvComboBox requires a value from its options and reverts unmatched text; SvAutoComplete accepts any text and treats suggestions as shortcuts. Pick by whether free text is valid input."
+    },
+    {
+      "question": "Why do the popovers portal?",
+      "answer": "A list that opens inside a scrolling or overflow-hidden container would be clipped. Portalling to the body and positioning next to the trigger avoids that, and the shared dismiss layer closes it on outside click or Escape."
+    },
+    {
+      "question": "Do they share option shapes?",
+      "answer": "Yes. options is an array of strings or { value, label } objects, optionally grouped, across the list box, dropdown and combo box."
+    }
+  ]
+}

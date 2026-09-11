@@ -1,0 +1,24 @@
+{
+  "description": "A floating bulk-action bar for the Svelte 5 data grid. Tick rows and selectionBar shows the count, your actions, an overflow menu and Clear, pinned to the bottom or top edge; the grid shrinks by the bar height so it never covers the rows being acted on. Built-in keys need no wiring: selectAll selects the view and editFields opens a bulk-edit drawer that writes only the fields you change across every selected row. Your own actions get the selected rows in display order, and hidden and disabled are re-checked against the live selection.",
+  "keywords": [
+    "svelte grid bulk actions",
+    "svelte table selection toolbar",
+    "svelte 5 bulk edit rows",
+    "svelte data grid floating action bar",
+    "svelte grid select all edit fields"
+  ],
+  "faq": [
+    {
+      "question": "How do I add my own actions to the bar?",
+      "answer": "Pass selectionBar an array or an object with actions. Each action gets { rows, ids } for the current selection in display order, and can define hidden and disabled functions that the bar re-evaluates on every render, which is how Merge appears only at two or more rows here."
+    },
+    {
+      "question": "What does the editFields action do?",
+      "answer": "It opens the same drawer and form used for single-row editing, across the whole selection. A field the rows agree on opens with that value, one they disagree on opens blank and marked Multiple values, and only fields you actually change are written."
+    },
+    {
+      "question": "Is the selection bar free?",
+      "answer": "The selectionBar prop is in @svgrid/grid, the bar itself renders from @svgrid/enterprise. Without the enterprise package the grid shows a note in its place; with it, the bar runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "The headless color input core of the SvGrid UI kit in Svelte 5. SvColorInput is a styled renderer over createColorInput, which owns hex normalization, the palette, the draft text field and open and close state, exposed as swatchProps and chipProps. The styled version adds a portalled popover; the demo's custom render draws an inline swatch plus palette panel from the same core, both bound to one value.",
+  "keywords": [
+    "svelte headless color picker",
+    "svelte 5 custom color palette",
+    "svelte createColorInput",
+    "svelte hex normalization",
+    "svelte inline color panel"
+  ],
+  "faq": [
+    {
+      "question": "What does hex normalization do?",
+      "answer": "normalizeHex accepts 3 or 6 digit values with or without the hash, expands short form and stores a canonical six-digit lower-case hex, or null for invalid text, so both renders agree on the value."
+    },
+    {
+      "question": "How is the palette exposed?",
+      "answer": "As an array the core filters and marks with the selected entry; chipProps(i) gives each swatch its button role, aria-pressed and click handler."
+    },
+    {
+      "question": "Do I need the portal?",
+      "answer": "No. The core has no notion of a popover. The styled component portals for use inside grid cells; an inline panel is just another render."
+    }
+  ]
+}

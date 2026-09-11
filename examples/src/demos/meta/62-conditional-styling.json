@@ -1,0 +1,24 @@
+{
+  "description": "A support-ticket triage board built on the Svelte 5 data grid with two styling hooks. rowClass adds row-level state classes for SLA breach, at-risk and done, rendered as a thin accent strip on the leftmost cell; cellClass paints priority pills, status badges, plan badges, an agent-load bar and CSAT highlights per column. The look stays tonal with low-saturation backgrounds and tabular numerals, and pagination keeps the queue at twenty rows.",
+  "keywords": [
+    "svelte grid row class",
+    "svelte table conditional styling",
+    "svelte 5 data grid cellClass",
+    "svelte ticket queue table",
+    "svelte grid status badges"
+  ],
+  "faq": [
+    {
+      "question": "How do I style a whole row based on its data?",
+      "answer": "Pass rowClass={({ row }) => ...} on <SvGrid>. Return one or more class names computed from the row, here breach, risk or done from the SLA due date, and style them in your CSS."
+    },
+    {
+      "question": "How do I style a single column's cells?",
+      "answer": "Set cellClass on the column definition; it receives the cell context and returns a class. The priority, status and plan columns use it for pills and badges without any snippet."
+    },
+    {
+      "question": "When should I use a cell snippet instead?",
+      "answer": "When the cell needs markup beyond a class, such as the agent-load progress bar here. Classes cover colours and typography; snippets cover structure."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "SvCalendar extended into an event calendar in Svelte 5. The day snippet fills each cell with event chips, and recurrence rules such as weekly standups, an every-other-week sprint and monthly invoices mark repeating days and generate their events through matchesRecurrence, with the component still owning navigation, keyboard, selection and theming across a six-week grid. Pick a day to see its agenda beside the calendar.",
+  "keywords": [
+    "svelte event calendar",
+    "svelte 5 calendar with events",
+    "svelte recurring events calendar",
+    "svelte calendar day snippet",
+    "svelte scheduler calendar component"
+  ],
+  "faq": [
+    {
+      "question": "How do I render content inside a day cell?",
+      "answer": "Provide the day snippet. It receives the date and the calendar's state for that cell and renders whatever you return, event chips here, while the component keeps the cell's selection and focus behaviour."
+    },
+    {
+      "question": "How are recurring events defined?",
+      "answer": "As recurrence rules with a frequency, an interval and an anchor date. The calendar marks days that match, and the demo calls matchesRecurrence to expand the rules into the agenda for the selected day."
+    },
+    {
+      "question": "Is this the full scheduler view?",
+      "answer": "No. This is the calendar component with rich cells, suited to month views and agendas. The grid's scheduler prop renders resources on a time axis with drag-and-drop."
+    }
+  ]
+}

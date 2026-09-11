@@ -1,0 +1,24 @@
+{
+  "description": "SvListBox and SvDropDownList scaling to 50,000 options in Svelte 5 with the virtual prop: only the visible rows exist in the DOM, rows are recycled on scroll with no mount and unmount churn, grouped lists window too with their headings, and rowHeight can be a function for variable heights. Scrolling and type-ahead stay instant, and a custom itemTemplate renders an avatar and role per row.",
+  "keywords": [
+    "svelte virtualized list",
+    "svelte 5 dropdown 50000 options",
+    "svelte listbox virtual scroll",
+    "svelte select large option list",
+    "svelte list item template"
+  ],
+  "faq": [
+    {
+      "question": "What changes when I add virtual?",
+      "answer": "Nothing in the API. The list renders only the rows in view plus a small buffer and recycles them as you scroll, so a list of fifty thousand options costs the same as one of fifty."
+    },
+    {
+      "question": "Do grouped lists virtualize?",
+      "answer": "Yes. Group headings are part of the windowed rows, so they scroll into view like options and type-ahead still jumps across groups."
+    },
+    {
+      "question": "Can rows have different heights?",
+      "answer": "Yes. Pass rowHeight as a function of the option and the virtualizer uses the per-row size."
+    }
+  ]
+}

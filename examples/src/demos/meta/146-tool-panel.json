@@ -1,0 +1,24 @@
+{
+  "description": "The docked tool panel of the Svelte 5 data grid, enabled with the toolPanel prop. A button appears at the grid's top right and the panel docks on the right edge with two tabs: Columns toggles visibility, reorders columns up and down and groups by a column; Filters offers an operator and value control per column, with numeric operators picked from cellDataType, kept in sync with the column menu and filter row. The panel ships in @svgrid/enterprise.",
+  "keywords": [
+    "svelte grid tool panel",
+    "svelte table columns sidebar",
+    "svelte 5 data grid filters panel",
+    "svelte grid column chooser",
+    "svelte grid toolPanel"
+  ],
+  "faq": [
+    {
+      "question": "How do I enable the tool panel?",
+      "answer": "Add toolPanel to <SvGrid>. With columnGroupingFeature and columnFilteringFeature registered, the Columns tab can group and the Filters tab can filter; no other configuration is needed."
+    },
+    {
+      "question": "Do the panel filters and the column menu stay consistent?",
+      "answer": "Yes. Both write the same column filter state, so a filter set in the panel appears in the header menu and vice versa."
+    },
+    {
+      "question": "Where do the numeric operators come from?",
+      "answer": "From cellDataType on the column. A column marked number gets equals, greater than, less than and between in the panel, text columns get the text operators."
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   /**
    * 89. Group Panel - drag & drop grouping
    * --------------------------------------
-   * A DevExpress / Kendo / AG Grid-style "drag a column here to group"
+   * A "drag a column here to group"
    * panel. Drag chips from the palette into the panel to group by that
    * column; drag chips inside the panel to reorder grouping levels;
    * click a chip's × to ungroup. Everything is driven by the grid's
@@ -94,7 +94,7 @@
   let api = $state<SvGridApi<typeof features, Deal> | null>(null)
   let grouping = $state<string[]>(['region', 'stage'])
   // Push current grouping into the grid whenever it changes. We dedupe
-  // on a serialised key because setGroupBy mutates the grid's TanStack
+  // on a serialised key because setGroupBy mutates the grid's
   // state, which surfaces back through the wrapper's reactive plumbing
   // and would otherwise re-trigger this effect → infinite loop.
   let lastGroupingKey = ''

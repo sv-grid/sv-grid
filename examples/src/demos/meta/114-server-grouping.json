@@ -1,0 +1,24 @@
+{
+  "description": "Server-side grouping and aggregates for the Svelte 5 data grid. Instead of fetching 100k raw rows and grouping in the browser, the client asks the server for the grouped result: pre-aggregated SUM, AVG and COUNT per dimension come back as one row per group, and an expandable drill-in lazily fetches the raw rows for a single group. A timing panel compares grouping 100k rows on the client with receiving a dozen pre-grouped rows.",
+  "keywords": [
+    "svelte grid server side aggregation",
+    "svelte 5 group by sql table",
+    "svelte grid drill down rows",
+    "svelte olap style grid",
+    "svelte pre aggregated data grid"
+  ],
+  "faq": [
+    {
+      "question": "What does the server return?",
+      "answer": "One row per group with the dimension value and its measures, sum, average and count. The grid renders those as normal rows through groupColumns, so no client grouping feature is involved."
+    },
+    {
+      "question": "How does drill-in work?",
+      "answer": "Expanding a group fetches only that group's raw rows from the server and renders them under it; the full table never crosses the network."
+    },
+    {
+      "question": "When should I group on the server?",
+      "answer": "When the raw data is too large to ship or when the aggregate lives naturally in SQL or an OLAP engine. For a few thousand rows the client grouping feature is simpler."
+    }
+  ]
+}

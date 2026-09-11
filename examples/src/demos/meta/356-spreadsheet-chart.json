@@ -1,0 +1,24 @@
+{
+  "description": "A live formula sheet wired to the built-in chart panel of the Svelte 5 data grid. Type a new number into any Units or Revenue cell and the chart redraws on the spot, like a spreadsheet chart bound to a table, and the panel is the chart-design surface: switch the type between column, bar, line, area and pie, change Group by, Split by and Value, choose the aggregate, stack the series or turn on data labels, all live with no code. A clipboard context menu covers copy, cut, paste and clear.",
+  "keywords": [
+    "svelte editable sheet with chart",
+    "svelte 5 chart updates on cell edit",
+    "svelte spreadsheet chart design",
+    "svelte grid chart data labels",
+    "svelte live chart from editable table"
+  ],
+  "faq": [
+    {
+      "question": "How does an edit reach the chart?",
+      "answer": "onCellValueChange writes the row, the grid's displayed rows change and the panel re-aggregates; nothing chart-specific is called."
+    },
+    {
+      "question": "Can users change the chart type themselves?",
+      "answer": "Yes. The panel's Type control is live, along with the axis pickers, aggregate, Stacked and Data labels, so end users design the chart without code."
+    },
+    {
+      "question": "Is the context menu related to charting?",
+      "answer": "No. contextMenu lists the clipboard commands for the editable cells; the chart panel is opened from the toolbar or the Chart selected range item."
+    }
+  ]
+}

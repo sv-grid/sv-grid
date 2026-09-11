@@ -1,0 +1,24 @@
+{
+  "description": "Exporting a grouped Svelte 5 data grid to Excel with native outline groups. A flat sales grid grouped by Region and optionally Country and Rep is exported with api.exportData({ format: 'xlsx', groupBy: ['region', 'country'] }); the exporter wraps every cluster of rows in an Excel outline row, so the file opens with the plus and minus buttons in the row gutter and Data, Outline behaviour, with no extra rows materialised by hand. A toolbar picks the grouping levels and a preview panel mirrors the workbook.",
+  "keywords": [
+    "svelte export grouped rows excel",
+    "svelte 5 xlsx outline groups",
+    "svelte grid export groupBy",
+    "svelte excel collapsible groups export",
+    "svelte grid grouped export preview"
+  ],
+  "faq": [
+    {
+      "question": "How do I export the grouping?",
+      "answer": "Pass groupBy with the ordered column ids to exportData. The exporter sorts the rows into clusters and writes an outline level per grouping depth, which Excel shows as collapsible groups."
+    },
+    {
+      "question": "Does the export follow the grid's current grouping?",
+      "answer": "The demo reads the grouping the user chose in the toolbar and passes it explicitly, which keeps the export predictable; you can also mirror api.setGroupBy so the two always match."
+    },
+    {
+      "question": "Are subtotals included?",
+      "answer": "Outline groups carry the rows; enableRowSummaries on the grid provides totals on screen, and the grouped PDF and print demo shows subtotal rows carried into the file."
+    }
+  ]
+}

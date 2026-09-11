@@ -1,0 +1,24 @@
+{
+  "description": "SvTimePicker, the Svelte 5 analog clock-dial time picker that is also the SvGrid time cell editor. Drag the hand or click a number, choose 12 or 24-hour format, snap minutes to an interval, and let the hour dial switch to minutes automatically after a pick, with an optional footer. It is standalone here and themed by the --sg-* tokens.",
+  "keywords": [
+    "svelte time picker",
+    "svelte 5 clock dial component",
+    "svelte analog time input",
+    "svelte 24 hour time picker",
+    "svelte minute interval picker"
+  ],
+  "faq": [
+    {
+      "question": "How do I get 24-hour time?",
+      "answer": "Set format to '24-hour'. The dial shows 0 to 23 and the value reported through onChange reflects the choice; '12-hour' adds the AM and PM toggle."
+    },
+    {
+      "question": "How do I snap to fifteen-minute slots?",
+      "answer": "Pass minuteInterval={15}. The minute dial only offers those positions and dragging snaps between them."
+    },
+    {
+      "question": "What does autoSwitchToMinutes do?",
+      "answer": "After an hour is picked the dial flips to minutes on its own, so a time takes two clicks. Turn it off to let users confirm the hour first."
+    }
+  ]
+}

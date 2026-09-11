@@ -1,0 +1,24 @@
+{
+  "description": "The Svelte 5 data grid under a strict Content Security Policy. SvGrid uses no eval, no new Function, no inline scripts and no injected inline event handlers, so it runs cleanly with a strict CSP. The demo documents the recommended header, runs a self-check at mount that tries new Function to report whether the current policy allows it, logs securitypolicyviolation events for the lifetime of the section, and renders a fully featured grid with editing, selection, filters and paging to prove every feature works.",
+  "keywords": [
+    "svelte grid content security policy",
+    "svelte 5 csp compliant table",
+    "svelte grid no eval",
+    "svelte data grid strict csp header",
+    "svelte securitypolicyviolation"
+  ],
+  "faq": [
+    {
+      "question": "Which CSP directives does the grid need?",
+      "answer": "The demo recommends default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'. No unsafe-eval and no inline script allowance is needed; the style allowance covers inline style attributes such as column widths."
+    },
+    {
+      "question": "How does the self-check work?",
+      "answer": "At mount it calls new Function in a try block. Under a strict policy that throws, and the panel reports that eval is blocked, which confirms the policy is active while the grid keeps working."
+    },
+    {
+      "question": "What if something in my page violates the policy?",
+      "answer": "The section listens for securitypolicyviolation events and logs the blocked URI and directive, so a violation from any component shows up immediately."
+    }
+  ]
+}

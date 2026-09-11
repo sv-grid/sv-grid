@@ -1,0 +1,24 @@
+{
+  "description": "Six locales stress-testing the Svelte 5 data grid: en, de, fr-CA, ja, ar and he. Switching a chip translates headers, buttons and status pills, flips document direction for Arabic and Hebrew, and drives number, currency and date formatting through Intl with Arabic-Indic digits, narrow non-breaking spaces in fr-CA, era in ja-JP and CLDR currency placement. It checks the procurement list: headers right-align with the sort indicator on the left in RTL, pinned columns pin to the correct edge, filter menus anchor correctly, numbers stay tabular and mixed-direction text is isolated with bdi.",
+  "keywords": [
+    "svelte grid rtl support",
+    "svelte 5 table arabic hebrew",
+    "svelte grid intl formatting locales",
+    "svelte data grid bidi text",
+    "svelte grid japanese date format"
+  ],
+  "faq": [
+    {
+      "question": "How does the grid handle RTL?",
+      "answer": "It reads the direction of its container. With dir='rtl' the header alignment, sort indicator position, pinned edges and menu anchors mirror, without any RTL-specific props."
+    },
+    {
+      "question": "How is mixed-direction text kept readable?",
+      "answer": "Cells that combine a Latin brand name with Arabic text wrap the embedded run in bidi isolation, so the digits and brand stay in reading order inside the RTL sentence."
+    },
+    {
+      "question": "Where do the formats come from?",
+      "answer": "From Intl.NumberFormat and Intl.DateTimeFormat with the active locale, which is why fr-CA gets narrow non-breaking spaces and ar-SA gets the full Arabic month name with no custom code."
+    }
+  ]
+}

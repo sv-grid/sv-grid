@@ -1,0 +1,24 @@
+{
+  "description": "The composite controls of SvGrid UI in Svelte 5: SvTabs in line and pill styles with a roving keyboard, SvTree with expand and collapse, single selection and cascading tri-state checkboxes, and a schema-driven SvForm that wires the rest of the kit, inputs, select, switch, date and textarea, with required and custom validation in a two-column layout.",
+  "keywords": [
+    "svelte tabs tree form",
+    "svelte 5 composite ui components",
+    "svelte schema form validation",
+    "svelte tree checkboxes",
+    "svelte tabs keyboard"
+  ],
+  "faq": [
+    {
+      "question": "How does the form know which component to render?",
+      "answer": "From each field's type in the schema: text, select, switch, date and textarea map to the kit components, and initial seeds the values."
+    },
+    {
+      "question": "How do cascading checkboxes work in the tree?",
+      "answer": "Checking a folder checks its children and partially checked folders show the indeterminate state; onCheck reports the full set of checked ids."
+    },
+    {
+      "question": "How are the tabs and panels linked?",
+      "answer": "tabs is an array of { id, label } and value is the active id; the panel for that id renders below, and arrow keys move focus between tabs with automatic activation."
+    }
+  ]
+}

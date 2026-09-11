@@ -1,0 +1,24 @@
+{
+  "description": "A small spreadsheet workbook in the browser built on the Svelte 5 data grid: five tabs, a formula engine that resolves references across sheets with live recalculation, cell and conditional formatting, validation dropdowns, an inline chart and a calendar planner sheet backed by a data sheet. Budget holds line items with =B*C subtotals and IF status, Price list is the lookup table, Orders uses =VLOOKUP('Price list'!...) with nested IF tiers, Summary sums across sheets with COUNTIF; open an xlsx or csv into the active sheet and export every sheet to one multi-tab xlsx.",
+  "keywords": [
+    "svelte spreadsheet workbook",
+    "svelte 5 multi sheet spreadsheet",
+    "svelte cross sheet formulas vlookup",
+    "svelte workbook export xlsx",
+    "svelte open excel file in browser"
+  ],
+  "faq": [
+    {
+      "question": "How do cross-sheet references work?",
+      "answer": "The engine parses 'Sheet name'!A1 and 'Sheet name'!A1:B9 and resolves them against the named sheet's cells; a change on Price list recalculates the VLOOKUPs on Orders and the sums on Summary in the same pass."
+    },
+    {
+      "question": "Which functions and references are supported?",
+      "answer": "A1 and $A$1 refs, ranges, whole columns A:C, cross-sheet refs, arithmetic, comparisons and & concat, plus SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, COUNTIF, IF, AND, OR, NOT, ROUND, ABS, LEN, LEFT, RIGHT, UPPER, LOWER, CONCAT, TODAY and VLOOKUP, with #REF!, #CYCLE!, #DIV/0!, #VALUE! and #NAME? errors."
+    },
+    {
+      "question": "How is the workbook exported?",
+      "answer": "Export all writes every sheet to one xlsx through the enterprise exportData sheets option; the active sheet can also go to csv. Opening a file loads its cells into the active sheet."
+    }
+  ]
+}

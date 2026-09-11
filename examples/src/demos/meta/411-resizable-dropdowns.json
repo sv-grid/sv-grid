@@ -1,0 +1,24 @@
+{
+  "description": "Resizable dropdown panels in Svelte 5. SvDropDownList, SvComboBox and SvAutoComplete detect the browser bounds, opening downward when there is room and flipping upward near the window edge, and a resizable prop adds a bottom drag grip to the open panel: drag to grow or shrink the list, the height sticks for the session and the grip hides on an upward flip. A switch compares fixed-height and resizable panels in light and dark themes.",
+  "keywords": [
+    "svelte resizable dropdown",
+    "svelte 5 dropdown flip up near edge",
+    "svelte dropdown panel height",
+    "svelte select bounds detection",
+    "svelte drag resize list"
+  ],
+  "faq": [
+    {
+      "question": "How does the panel decide to open upward?",
+      "answer": "On open it measures the space below the trigger in the viewport; if the panel would not fit it opens above, and it re-checks on scroll and resize."
+    },
+    {
+      "question": "How do I enable resizing?",
+      "answer": "Add resizable to the picker. A grip appears at the bottom of the open panel; the chosen height is remembered for that picker until the page is reloaded."
+    },
+    {
+      "question": "Why does the grip disappear when flipped?",
+      "answer": "A panel that opened upward has no room to grow downward, so the grip is hidden to avoid a drag that could not do anything."
+    }
+  ]
+}

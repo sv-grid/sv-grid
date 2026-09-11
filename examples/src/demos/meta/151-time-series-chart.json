@@ -1,0 +1,24 @@
+{
+  "description": "A time-series chart in Svelte 5 with a real date axis. xType time makes SvGridChart treat categories as dates: x positions are spaced by actual elapsed time so irregular gaps render proportionally and the axis shows real date ticks. A referenceLines entry draws a target or SLA line across the plot, and a toggle switches 100 percent stacked to read each day's traffic as a share of its total, as line, stacked area or stacked bar.",
+  "keywords": [
+    "svelte time series chart",
+    "svelte 5 date axis chart",
+    "svelte chart proportional time gaps",
+    "svelte chart reference line target",
+    "svelte stacked area chart"
+  ],
+  "faq": [
+    {
+      "question": "What happens without xType time?",
+      "answer": "Categories are placed at equal steps regardless of their dates, so a gap of a week looks the same as a gap of a day. time fixes the spacing and labels the axis with dates."
+    },
+    {
+      "question": "How do I add a target line?",
+      "answer": "Add { value, label } to referenceLines in the spec; the chart draws a dashed horizontal line at that value with the label at the edge."
+    },
+    {
+      "question": "What does 100 percent stacked change?",
+      "answer": "Each category's series are normalised to sum to 100, so the chart shows the share of each channel per day rather than absolute sessions."
+    }
+  ]
+}

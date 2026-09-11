@@ -1,0 +1,24 @@
+{
+  "description": "SvTree at scale in Svelte 5: a virtualized tree of 10,100 nodes where only about fifteen rows exist in the DOM through fixed-row windowing with virtual, height and rowHeight, and a lazy-loading tree that fetches each folder's children on first expand with a spinner. Keyboard navigation, selection and cascading checkboxes keep working in both.",
+  "keywords": [
+    "svelte virtual tree",
+    "svelte 5 tree 10000 nodes",
+    "svelte lazy loading tree",
+    "svelte tree fetch children on expand",
+    "svelte large tree view performance"
+  ],
+  "faq": [
+    {
+      "question": "How do I virtualize the tree?",
+      "answer": "Set virtual with a height for the scroll container and a rowHeight. The tree windows its flattened visible rows, so expanding a folder with thousands of children costs the same as a small one."
+    },
+    {
+      "question": "How does lazy loading work?",
+      "answer": "Nodes are marked as having children not yet loaded; onToggle fetches them, shows a spinner row in the meantime and appends the result to the node, after which it behaves like a normal branch."
+    },
+    {
+      "question": "Do checkboxes cascade across lazy nodes?",
+      "answer": "For loaded nodes, yes. A folder whose children are not loaded yet is checked as a unit and its children inherit the state when they arrive."
+    }
+  ]
+}

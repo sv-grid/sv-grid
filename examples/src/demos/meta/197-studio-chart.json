@@ -1,0 +1,24 @@
+{
+  "description": "A live chart panel beside the grid in the SvGrid Studio stack, driven by the same entity schema and data source. SvSchemaChart picks chartable fields from the schema, renders its own group-by and measure controls, and aggregates through the source's getAggregate so the GROUP BY runs server-side and scales past a page. Click a bar or slice to filter the grid to that category; create, edit or delete a row, bump refreshKey and the chart re-aggregates. No external chart library.",
+  "keywords": [
+    "svelte grid with chart panel",
+    "svelte 5 schema driven chart",
+    "svelte chart click to filter grid",
+    "svelte server side aggregate chart",
+    "svelte SvSchemaChart"
+  ],
+  "faq": [
+    {
+      "question": "Where does the aggregation happen?",
+      "answer": "In the data source. SvSchemaChart calls getAggregate with the group field, the measure and the reducer, and the source answers from SQL, Supabase or memory, so the chart is right even when the grid shows one page."
+    },
+    {
+      "question": "How does clicking the chart filter the grid?",
+      "answer": "onDrill receives the clicked category; the demo sets a filter on the controller for that field and value, and the grid re-queries."
+    },
+    {
+      "question": "How does the chart know a row changed?",
+      "answer": "The page increments refreshKey after every save or delete; the chart re-runs getAggregate when the key changes."
+    }
+  ]
+}

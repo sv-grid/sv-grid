@@ -1,0 +1,24 @@
+{
+  "description": "SvSegmented, a segmented control for Svelte 5: mutually exclusive options in a shared track, used as a view switcher and a range picker. It is single-select and keyboard accessible with arrow keys and Space or Enter through the radio-group core, supports icons per option, disabled options and a full-width block layout, binds its value and is themed from the --sg-* tokens as the modern alternative to a small radio group.",
+  "keywords": [
+    "svelte segmented control",
+    "svelte 5 segmented buttons",
+    "svelte view switcher control",
+    "svelte tabs like toggle",
+    "svelte segmented picker"
+  ],
+  "faq": [
+    {
+      "question": "How do I bind the selection?",
+      "answer": "Use bind:value with the options array of { value, label }. The selected segment slides into place and the bound value updates."
+    },
+    {
+      "question": "When should I use a segmented control over tabs?",
+      "answer": "For a small set of mutually exclusive choices that change a view or a parameter, such as Board and Table or Day and Week. Tabs suit larger content panels."
+    },
+    {
+      "question": "Can segments show icons?",
+      "answer": "Yes. Each option can carry an icon snippet with or without a label, and block mode stretches the segments across the container."
+    }
+  ]
+}

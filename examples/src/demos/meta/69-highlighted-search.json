@@ -1,0 +1,24 @@
+{
+  "description": "A search box above the Svelte 5 data grid that filters the rows and wraps the matching substring in every cell with <mark>. The filtered row set is a $derived of the query, and text columns render through a cell snippet that splits the value around the match, so users see exactly why a row matched, with pagination still on.",
+  "keywords": [
+    "svelte grid highlight search matches",
+    "svelte table search highlight",
+    "svelte 5 data grid mark matches",
+    "svelte grid external search input",
+    "svelte table filter and highlight"
+  ],
+  "faq": [
+    {
+      "question": "How do I highlight the matching text in a cell?",
+      "answer": "Render the column through a cell snippet that finds the query in the value, splits it into before, match and after, and wraps the match in <mark>. The snippet re-runs whenever the query changes."
+    },
+    {
+      "question": "Where does the filtering happen?",
+      "answer": "Outside the grid, in a $derived that keeps the rows whose searchable fields contain the query, and that array is passed as data. filterMode is 'none' so the built-in filters do not compete with it."
+    },
+    {
+      "question": "Is the match case-sensitive?",
+      "answer": "No. The demo lowercases both sides for the test and uses the original value for display, so the highlight keeps the cell's casing."
+    }
+  ]
+}

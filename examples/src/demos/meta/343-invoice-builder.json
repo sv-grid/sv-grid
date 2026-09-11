@@ -1,0 +1,24 @@
+{
+  "description": "An invoice builder composed from the SvGrid UI kit in Svelte 5: a money form with currency prefixes, percent suffixes and a masked tax ID through frame adornments, line items with SvNumberInput quantities, SvPopconfirm on delete with an Undo action toast, live SvStat totals, an SvHoverCard hint on the tax rate and a promise toast when the invoice is sent.",
+  "keywords": [
+    "svelte invoice form",
+    "svelte 5 line items form",
+    "svelte currency input prefix",
+    "svelte form live totals",
+    "svelte masked tax id input"
+  ],
+  "faq": [
+    {
+      "question": "How are the totals kept live?",
+      "answer": "Subtotal, tax and total are $derived over the lines array, so editing a quantity or rate in an SvNumberInput updates the SvStat tiles on every keystroke."
+    },
+    {
+      "question": "How does delete with Undo work?",
+      "answer": "SvPopconfirm confirms the removal, the line is removed from the array and a toast offers Undo, which reinserts the line at its old index."
+    },
+    {
+      "question": "Why a masked input for the tax ID?",
+      "answer": "The mask '##-#######' enforces the format as the user types and reports the raw digits, so validation is a length check."
+    }
+  ]
+}

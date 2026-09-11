@@ -1,0 +1,24 @@
+{
+  "description": "SvTabs with closable tabs and tab positions in Svelte 5. Tabs close browser-style from an x button or the Delete key on the focused tab, an add button opens a new one and onClose lets the parent update the tabs array; tabPosition places the strip at top, bottom, left or right, with left and right rendering vertical tabs.",
+  "keywords": [
+    "svelte closable tabs",
+    "svelte 5 browser style tabs",
+    "svelte vertical tabs",
+    "svelte tabs position left right",
+    "svelte tabs add close"
+  ],
+  "faq": [
+    {
+      "question": "How do I make a tab closable?",
+      "answer": "Set closable on its entry and handle onClose, which receives the id; remove it from the array and, if it was active, move value to a neighbour as the demo does."
+    },
+    {
+      "question": "What happens when the strip overflows?",
+      "answer": "The strip scrolls horizontally with scroll buttons at the ends, so many open tabs stay reachable without wrapping."
+    },
+    {
+      "question": "Which keys work?",
+      "answer": "Arrow keys move between tabs, Home and End jump to the ends, and Delete closes the focused tab when it is closable."
+    }
+  ]
+}

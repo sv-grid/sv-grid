@@ -105,7 +105,7 @@
 
 <section class="sheet-demo">
   <header class="bs-head">
-    <h1 class="bs-title">Data validation</h1>
+    <h2 class="bs-title">Data validation</h2>
     <p class="bs-sub">
       <strong>Status</strong>, <strong>Priority</strong>, <strong>Owner</strong> and
       <strong>Sprint</strong> are list-constrained - double-click for a dropdown.

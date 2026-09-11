@@ -1,0 +1,24 @@
+{
+  "description": "A secured SvGrid Studio screen. SvAuthGate requires a signed-in user before it shows the grid, presenting a login and sign-up form and a signed-in bar with sign out. The demo uses a mock auth client so any email and password works with no backend; in a real app you pass your supabase-js client through createSupabaseAuth, and Row-Level Security scopes each user to their own rows: auth establishes who, RLS enforces what.",
+  "keywords": [
+    "svelte auth gate component",
+    "svelte 5 login protected grid",
+    "svelte supabase auth crud",
+    "svelte data app sign in",
+    "svelte grid row level security"
+  ],
+  "faq": [
+    {
+      "question": "What does SvAuthGate render?",
+      "answer": "A login form with a sign-up switch while there is no session, and its children plus a signed-in bar once there is one. Sign out clears the session and returns to the form."
+    },
+    {
+      "question": "How do I connect Supabase Auth?",
+      "answer": "Create your client with createClient(url, anonKey) and pass it through createSupabaseAuth as the gate's client. Sessions persist in the browser, so a reload keeps the user signed in."
+    },
+    {
+      "question": "Does signing in restrict the data?",
+      "answer": "Not by itself. Authentication identifies the user; Row-Level Security policies on the table use that identity to decide which rows the data source can read and write."
+    }
+  ]
+}

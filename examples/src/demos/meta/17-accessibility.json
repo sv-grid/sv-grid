@@ -1,0 +1,24 @@
+{
+  "description": "The WAI-ARIA grid pattern built into the Svelte 5 data grid: role grid, row, columnheader and gridcell, aria-rowcount and aria-colcount reflecting the visible model, aria-rowindex and aria-colindex on every row and cell, aria-sort on headers and a focused active cell. Arrow keys move between cells, Home and End jump to row edges, Page Up and Down move a page, F2 or Enter starts editing and Ctrl+Home and Ctrl+End reach the grid edges. The demo adds an aria-live status region for sort, filter and selection changes, a panel showing the active cell's ARIA state, a toggleable high-contrast focus outline and a shortcut cheat sheet.",
+  "keywords": [
+    "svelte accessible data grid",
+    "svelte 5 wai-aria grid",
+    "svelte table keyboard navigation",
+    "svelte grid screen reader",
+    "svelte grid aria live announcements"
+  ],
+  "faq": [
+    {
+      "question": "Do I need to add ARIA attributes myself?",
+      "answer": "No. The grid applies the roles, indexes, counts and aria-sort itself and manages focus on the active cell. What the demo adds is an app-level live region announcing state changes."
+    },
+    {
+      "question": "How do I announce changes to screen readers?",
+      "answer": "Keep a role='status' element and write a short message into it from onSortingChange, onFiltersChange and onRowSelectionChange, as the demo does. Screen readers read the new text without moving focus."
+    },
+    {
+      "question": "Which keys does the grid handle?",
+      "answer": "Arrows, Home, End, Page Up, Page Down, Ctrl+Home, Ctrl+End, Enter and F2 for editing, Escape to cancel and Space to toggle selection when checkboxes are on. Cells use a roving tabindex, so a single Tab moves focus out of the grid."
+    }
+  ]
+}

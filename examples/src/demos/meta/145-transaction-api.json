@@ -1,0 +1,24 @@
+{
+  "description": "Batched row mutations in the Svelte 5 data grid with api.applyTransaction({ add, update, remove }), the high-frequency streaming path. One call applies inserts, updates and removals in a single data update, far cheaper than addRow or setCellValue per row; update and remove match rows by getRowId and remove also accepts row references. The demo ticks a live order book through batched transactions.",
+  "keywords": [
+    "svelte grid applyTransaction",
+    "svelte 5 batch row updates",
+    "svelte grid add update remove rows",
+    "svelte order book grid",
+    "svelte high frequency table updates"
+  ],
+  "faq": [
+    {
+      "question": "When should I use applyTransaction instead of setting data?",
+      "answer": "When you have a stream of small changes. Replacing the whole array makes the grid diff every row; a transaction tells it exactly which rows were added, changed or removed, so a tick with fifty updates costs fifty row renders."
+    },
+    {
+      "question": "How are updated rows matched?",
+      "answer": "By the id from getRowId. Pass the updated row object in update and the grid replaces the row with that id; remove takes ids or row references."
+    },
+    {
+      "question": "What does the call return?",
+      "answer": "Counts of the rows actually added, updated and removed, which the demo accumulates into a running total; api.getData() reflects the new state immediately."
+    }
+  ]
+}

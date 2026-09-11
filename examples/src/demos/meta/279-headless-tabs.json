@@ -1,0 +1,24 @@
+{
+  "description": "The headless tabs core of the SvGrid UI kit in Svelte 5. createTabs is the runes state machine behind SvTabs: roving arrow-key focus, automatic or manual activation and full WAI-ARIA, exposed as tablistProps, tabProps and panelProps. One core drives the styled SvTabs and a custom segmented control, both bound to a single active id with a readout.",
+  "keywords": [
+    "svelte headless tabs",
+    "svelte 5 custom tabs markup",
+    "svelte createTabs",
+    "svelte tabs state machine",
+    "svelte accessible tabs core"
+  ],
+  "faq": [
+    {
+      "question": "What links a tab to its panel?",
+      "answer": "tabProps(id) and panelProps(id) generate matching ids for aria-controls and aria-labelledby, so any pair of elements becomes an accessible tab and panel."
+    },
+    {
+      "question": "What is manual activation?",
+      "answer": "Arrow keys move focus without selecting; Enter or Space selects. Automatic activation selects as focus moves. The core supports both and the styled component defaults to automatic."
+    },
+    {
+      "question": "Can two renders show the same active tab?",
+      "answer": "Yes. The demo's segmented control and SvTabs share one core, so clicking either updates both and the bound id."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "SvComboBox with a remote data source in Svelte 5: options are fetched from a server as you type through loadOptions, debounced, with a loading state, a type-to-search hint until minLength characters are entered, and latest-response-wins race handling so a slow older query never overwrites newer results. Local filtering is off and the server's results are shown as they arrive.",
+  "keywords": [
+    "svelte combobox remote search",
+    "svelte 5 async select options",
+    "svelte debounced search dropdown",
+    "svelte combobox loadOptions",
+    "svelte server side autocomplete"
+  ],
+  "faq": [
+    {
+      "question": "What does loadOptions receive and return?",
+      "answer": "It receives the typed query and returns a promise of options. The combo box debounces calls, shows a spinner while pending and tags each request with a sequence number so only the latest response is applied."
+    },
+    {
+      "question": "Why is local filtering off?",
+      "answer": "The server already filtered; filtering again on the client could hide results whose label does not contain the query, for example matches on a description."
+    },
+    {
+      "question": "How do I avoid searching on one character?",
+      "answer": "Set minLength. Below it the panel shows the type-to-search hint and no request is sent."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A hand-built bulk-actions toolbar for the Svelte 5 data grid. When rows are checked, a sticky bar slides in above the grid with Mark, Delete and Copy as TSV; Clear or unchecking the rows dismisses it. The wiring is onRowSelectionChange to learn which rows are selected, a toolbar that reads that array, and mutations written back to the rows state, with api.clearRowSelection to reset. It is the do-it-yourself version of the built-in selectionBar.",
+  "keywords": [
+    "svelte grid bulk actions toolbar",
+    "svelte table selected rows actions",
+    "svelte 5 grid delete selected rows",
+    "svelte grid row selection change",
+    "svelte data grid sticky toolbar"
+  ],
+  "faq": [
+    {
+      "question": "How do I know which rows are checked?",
+      "answer": "Pass onRowSelectionChange. It is called with the selection state and the selected row objects; the demo keeps those rows in $state and shows the toolbar whenever the array is non-empty."
+    },
+    {
+      "question": "How do I delete or update the selected rows?",
+      "answer": "Mutate your own rows array: filter out the selected ids for Delete, or map over it for Mark. The grid re-renders from the new array, then api.clearRowSelection() empties the checkboxes."
+    },
+    {
+      "question": "When should I use the built-in selectionBar instead?",
+      "answer": "When you want the bar working out of the box with a count chip, Select all, a bulk-edit drawer and an overflow menu. Stay with this pattern when the toolbar must be your own markup in your own layout."
+    }
+  ]
+}

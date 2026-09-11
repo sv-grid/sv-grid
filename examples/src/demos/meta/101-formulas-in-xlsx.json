@@ -1,0 +1,24 @@
+{
+  "description": "Excel formulas preserved in an xlsx export from the Svelte 5 data grid. A Q3 budget has three computed columns, Subtotal, Tax and Total, plus a SUM footer; the export builds a real OOXML workbook in the browser with JSZip and writes those cells as formula elements such as B2*$D$1, not cached numbers, so Excel recomputes when a quantity is edited. Numbers and inline strings share the sheet without a shared-strings part; @svgrid/enterprise offers the same through the formulas option of exportData.",
+  "keywords": [
+    "svelte export excel formulas",
+    "svelte 5 xlsx with formulas",
+    "svelte grid ooxml export",
+    "svelte jszip excel",
+    "svelte computed columns excel"
+  ],
+  "faq": [
+    {
+      "question": "How is a formula written into the xlsx?",
+      "answer": "As a cell element with an f child holding the formula text, for example B2*$D$1, and no cached value. Excel evaluates it on open, so the sheet is live rather than a snapshot."
+    },
+    {
+      "question": "Why build the workbook by hand?",
+      "answer": "To show that an xlsx is a zip of XML parts and that formulas, numbers and inline strings can be emitted directly. The enterprise exporter does the same with formulas: true so every grid in the app shares one code path."
+    },
+    {
+      "question": "Do relative and absolute references both work?",
+      "answer": "Yes. Row-relative references such as B2 are generated per row and absolute references such as $D$1 point at the tax rate cell, exactly as typed in Excel."
+    }
+  ]
+}

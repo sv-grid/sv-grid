@@ -1,0 +1,24 @@
+{
+  "description": "A CRUD-heavy users board in the Svelte 5 data grid. Role and status are list editors and MFA a checkbox, every edit lands in a live audit log in the side panel, ticking rows reveals a toolbar for Activate, Deactivate, Delete and Export, an Invite user dialog validates name, email and role and inserts a new user with a pending status, and clicking a row shows a permissions matrix per resource plus the user's activity feed.",
+  "keywords": [
+    "svelte admin users table",
+    "svelte 5 crud dashboard",
+    "svelte grid bulk activate deactivate",
+    "svelte user management grid",
+    "svelte invite user dialog"
+  ],
+  "faq": [
+    {
+      "question": "How are inline edits captured for the audit log?",
+      "answer": "onCellValueChange receives the row, column, old and new value and appends an entry with the acting admin, a severity and a timestamp. The side panel lists the newest entries from that array."
+    },
+    {
+      "question": "How do bulk actions know the selection?",
+      "answer": "The checkbox column keeps a selected set in state; the toolbar enables when it is non-empty and maps over the selected ids to update or remove users."
+    },
+    {
+      "question": "How is a new user added?",
+      "answer": "The invite dialog validates its fields and prepends a user object with a pending status to the array; the status cell renders it as a pending pill until an admin activates it."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "The headless radio group core of the SvGrid UI kit in Svelte 5. createRadioGroup is the state machine behind SvRadioGroup: single selection, a roving tabindex, arrow-key navigation and the ARIA radiogroup, exposed as groupProps and radioProps. The same core drives the styled component and a custom segmented control with a disabled option, both bound to one value.",
+  "keywords": [
+    "svelte headless radio group",
+    "svelte 5 custom segmented control",
+    "svelte createRadioGroup",
+    "svelte roving tabindex core",
+    "svelte accessible radios headless"
+  ],
+  "faq": [
+    {
+      "question": "How does the roving tabindex work?",
+      "answer": "radioProps(i) gives tabindex 0 to the selected radio and -1 to the rest, so Tab enters the group once and arrow keys move selection and focus together."
+    },
+    {
+      "question": "How are disabled options skipped?",
+      "answer": "The core excludes them from arrow navigation and radioProps marks them aria-disabled; the custom segmented control greys the segment."
+    },
+    {
+      "question": "Does selection wrap?",
+      "answer": "Yes. Pressing Down or Right on the last option moves to the first and Up or Left on the first moves to the last, as native radios do."
+    }
+  ]
+}

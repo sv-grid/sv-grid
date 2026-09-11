@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-09T12:41:38.048Z",
+  "generatedAt": "2026-09-11T11:26:15.314Z",
   "counts": {
-    "pages": 361,
+    "pages": 362,
     "enterprise": 55,
-    "withDemo": 241
+    "withDemo": 242
   },
   "pillars": [
     {
@@ -152,6 +152,7 @@
         "help/testing-and-quality.md",
         "help/testing.md",
         "help/tokens.md",
+        "help/troubleshooting.md",
         "help/versioning.md"
       ]
     },
@@ -1656,8 +1657,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 839,
-      "lastUpdated": "2026-08-15",
+      "words": 859,
+      "lastUpdated": "2026-09-11",
       "demoIds": []
     },
     {
@@ -3610,6 +3611,20 @@
       "lastUpdated": "2026-09-08",
       "demoIds": [
         "74-theme-integrations"
+      ]
+    },
+    {
+      "path": "help/troubleshooting.md",
+      "url": "/docs/help/troubleshooting/",
+      "title": "Troubleshooting",
+      "summary": "Symptom first. The error reference covers the messages the library throws; this page covers the quiet failures - the grid mounts but shows nothing, a feature you switched on does nothing, the page scrolls instead of the grid. Each entry names the cause the way you would see it and the smallest change that fixes it.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1503,
+      "lastUpdated": "2026-09-11",
+      "demoIds": [
+        "79-loading-from-rest"
       ]
     },
     {

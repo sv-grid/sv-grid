@@ -1,0 +1,24 @@
+{
+  "description": "Smart paste for the Svelte 5 data grid: drop any shape of contact data into the zone, CSV with a header, tab-separated cells from a spreadsheet, a JSON array or free-form lines, and the assistant works out which column is which by inspecting the cells. It detects the separator, decides whether the first line is a header, detects email, phone, name, company and role per column with content patterns, falls back to a prose parser that anchors on the email, scores each row's confidence, and previews before api.addRows commits.",
+  "keywords": [
+    "svelte smart paste grid",
+    "svelte 5 paste any format into table",
+    "svelte grid parse pasted contacts",
+    "svelte ai import assistant",
+    "svelte column type detection"
+  ],
+  "faq": [
+    {
+      "question": "How is the header line detected?",
+      "answer": "By matching the first line's tokens against known field names, or by contrasting its column types with the second line: a line of words above a line with an email and a phone is a header."
+    },
+    {
+      "question": "How are columns mapped without a fixed format?",
+      "answer": "Each column's content is tested against patterns for email, phone, name, company and role, and the detected type is mapped to the matching target field; leftover columns are offered for manual mapping."
+    },
+    {
+      "question": "How would I use a real language model?",
+      "answer": "Replace the assistant function with a call to your model that returns typed rows; the preview panel, confidence display and api.addRows commit stay the same."
+    }
+  ]
+}

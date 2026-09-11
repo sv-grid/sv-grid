@@ -1,0 +1,24 @@
+{
+  "description": "The headless calendar core of the SvGrid UI kit in Svelte 5. createCalendar is the state machine behind SvCalendar: the view page and drill level, roving focus, every selection mode, range preview and the full keyboard, all built on the shared datetime engine and exposed as navProps, titleProps, gridProps, dayProps, monthCellProps, yearCellProps and presetProps. The same core drives the styled SvCalendar and a compact custom day grid, both bound to one value, with no forked date math.",
+  "keywords": [
+    "svelte headless calendar",
+    "svelte 5 custom date grid",
+    "svelte createCalendar",
+    "svelte calendar state machine",
+    "svelte headless date picker core"
+  ],
+  "faq": [
+    {
+      "question": "How do I render a day?",
+      "answer": "The core exposes panels of weeks and days with a CalendarDayState for each: disabled, selected, important, today, outside, focused, preview and recurring. Spread dayProps(day) on your cell and read the state for styling."
+    },
+    {
+      "question": "Which selection modes does the core support?",
+      "answer": "All of SvCalendar's: one, zeroOrOne, oneExtended, many, zeroOrMany, oneOrMany, week and range, including the hover preview of a pending range."
+    },
+    {
+      "question": "Does the custom render get keyboard navigation?",
+      "answer": "Yes. gridProps wires arrow keys, Page Up and Down for months, Home and End for the week and Enter to select; focus roves over the days the core marks focusable."
+    }
+  ]
+}

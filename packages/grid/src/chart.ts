@@ -899,7 +899,7 @@ export type ChartScales = {
 export function chartScales(geo: ChartGeometry): ChartScales | null {
   const a = geo.axes
   if (!a) return null
-  const { x: px, y: py, w: pw, h: ph } = geo.plot
+  const { x: px, y: py, h: ph } = geo.plot
   const yFor = (dom: { min: number; max: number; log: boolean }) => (value: number) => {
     const t = project(value, dom.min, dom.max, dom.log)
     return t === null ? Number.NaN : py + ph - t * ph

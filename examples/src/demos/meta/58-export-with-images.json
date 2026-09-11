@@ -1,0 +1,24 @@
+{
+  "description": "Cell images in an Excel export from the Svelte 5 data grid. A products grid has a thumbnail column holding a data URL or http URL, rendered in the grid by a cell snippet; exportData({ imageFields: ['thumbnail'] }) tells the xlsx writer to treat that field as an embedded picture rather than text, so the exporter pulls each image into the workbook's media directory and anchors it in the cell.",
+  "keywords": [
+    "svelte export images to excel",
+    "svelte 5 xlsx embedded pictures",
+    "svelte grid thumbnail export",
+    "svelte product grid excel images",
+    "svelte grid imageFields"
+  ],
+  "faq": [
+    {
+      "question": "What can the image field contain?",
+      "answer": "A data URL or an http or https URL to a PNG or JPEG. Remote images are fetched at export time, so they must be reachable from the browser with CORS allowed."
+    },
+    {
+      "question": "How are the images placed in Excel?",
+      "answer": "Each picture is embedded in the workbook media and anchored to its cell, so the column reads as a thumbnail strip in the sheet rather than a list of URLs."
+    },
+    {
+      "question": "What happens in CSV export?",
+      "answer": "CSV has no images, so the field exports as its URL text. Only the xlsx writer honours imageFields."
+    }
+  ]
+}

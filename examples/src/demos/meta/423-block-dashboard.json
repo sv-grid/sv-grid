@@ -1,0 +1,24 @@
+{
+  "description": "A copy-paste analytics dashboard page built from the SvGrid UI kit in Svelte 5 with no grid dependency: a header row with a range SvSegmented and actions, a KPI grid of SvStat tiles with SvSparkline area charts and invertible deltas, a revenue bar panel drawn by SvChart from a spec, a recent-activity SvTimeline, and a top-products list with SvProgress bars, avatars and badges.",
+  "keywords": [
+    "svelte dashboard template",
+    "svelte 5 admin analytics page",
+    "svelte kpi grid sparklines",
+    "svelte dashboard block",
+    "svelte revenue chart panel"
+  ],
+  "faq": [
+    {
+      "question": "How does the range control affect the tiles?",
+      "answer": "range is bound to the SvSegmented; the KPI values and sparkline series are derived from it, so 7d, 30d and 90d swap the numbers without re-mounting the tiles."
+    },
+    {
+      "question": "What draws the revenue panel?",
+      "answer": "SvChart with a bar spec of categories and values, a fixed height and the legend off; it is the same free chart component the grid's chart panel uses."
+    },
+    {
+      "question": "Can I add a grid to the page?",
+      "answer": "Yes. The layout is SvCard tiles in a responsive grid, so an SvGrid inside a card slots in where the top-products list is."
+    }
+  ]
+}

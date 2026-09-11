@@ -1,0 +1,24 @@
+{
+  "description": "Bulk server operations from the Svelte 5 data grid: pick rows with checkboxes, choose approve, archive, re-assign or delete, and submit. A mock server processes the batch with a configurable concurrency of 1, 4 or 10, a live progress bar and a per-row outcome chip track queued, running, succeeded, failed and cancelled, and a Cancel button aborts in-flight requests and stops the queue without rolling back the rows that already succeeded.",
+  "keywords": [
+    "svelte grid bulk update rows",
+    "svelte 5 batch operations table",
+    "svelte grid progress per row",
+    "svelte concurrent requests queue",
+    "svelte data grid cancel batch"
+  ],
+  "faq": [
+    {
+      "question": "How is concurrency limited?",
+      "answer": "A small queue starts up to N requests at once and starts the next one as each settles, so a batch of 200 rows never opens 200 connections. The picker sets N."
+    },
+    {
+      "question": "What does Cancel do to rows already done?",
+      "answer": "Nothing. Rows that succeeded keep their new status, in-flight requests are aborted and marked cancelled, and queued rows are never sent."
+    },
+    {
+      "question": "How is the per-row outcome rendered?",
+      "answer": "A status column with a cell snippet reads an outcome map keyed by row id, so each row shows its own chip while the batch runs and after it finishes."
+    }
+  ]
+}

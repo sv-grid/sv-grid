@@ -1,0 +1,24 @@
+{
+  "description": "The Svelte 5 data grid driven by an Excel-style shell: a four-tab ribbon with Clipboard, Home, Insert and Data tabs, a right-click context menu, a cut, copy and paste buffer, and an embedded formula engine. Cells hold a literal or a formula starting with =, recomputed on every change with #REF!, #CYCLE!, #DIV/0!, #VALUE!, #NAME? and #PARSE! error codes; the ribbon applies bold, italic, colours, number formats, inserts and deletes rows through api.addRow and api.removeRow, sorts through api.setSort and shows live SUM, AVG and COUNT. rowResize lets rows be dragged to a new height.",
+  "keywords": [
+    "svelte spreadsheet ribbon",
+    "svelte 5 excel like grid",
+    "svelte grid formula bar",
+    "svelte spreadsheet toolbar",
+    "svelte grid cell formatting bold color"
+  ],
+  "faq": [
+    {
+      "question": "How does the ribbon talk to the grid?",
+      "answer": "Through SvGridApi. Formatting buttons write a per-cell style map that cellClass and the cell snippet read; Insert calls api.addRow and api.removeRow; Data calls api.setSort, api.clearSort and api.clearAllFilters; and formulas commit through api.setCellValue."
+    },
+    {
+      "question": "How are cell addresses mapped?",
+      "answer": "Column A is Category and B to M are the months; row 1 is the first data row, so =SUM(B2:B5) sums January for the second to fifth rows in the array. onActiveCellChange keeps the address and formula bar current."
+    },
+    {
+      "question": "How do rows get resized?",
+      "answer": "rowResize adds a grip under each row number in the gutter; drag it, or focus it and use Up and Down with Shift for one-pixel steps. The grid stores the heights, so no rowHeight function is needed."
+    }
+  ]
+}

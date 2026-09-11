@@ -1,0 +1,24 @@
+{
+  "description": "Two Svelte 5 data grids kept in lockstep with alignedGridGroup. Scroll one horizontally and the other follows, resize a column in either and the matching column resizes in both, which is what a budget versus actuals comparison or a totals grid under a body grid needs. Enough month columns force a horizontal scrollbar so the sync is visible.",
+  "keywords": [
+    "svelte aligned grids",
+    "svelte 5 synced horizontal scroll tables",
+    "svelte grid alignedGridGroup",
+    "svelte budget vs actuals grid",
+    "svelte linked column widths"
+  ],
+  "faq": [
+    {
+      "question": "How do I link two grids?",
+      "answer": "Give both the same alignedGridGroup string. Horizontal scroll and column widths are then synchronised between every grid in the group; sorting and filtering stay independent."
+    },
+    {
+      "question": "Do the grids need identical columns?",
+      "answer": "They need matching column ids for the columns that should stay aligned. A width change on a column id is applied to the same id in the other grid."
+    },
+    {
+      "question": "Can I align more than two grids?",
+      "answer": "Yes. Any number of grids can share a group; a body grid, a totals grid and a comparison grid can all move together."
+    }
+  ]
+}

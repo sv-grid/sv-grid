@@ -82,7 +82,7 @@
 
     <main class="content">
       <div class="page-head">
-        <h1>{labelOf[active]}</h1>
+        <h2>{labelOf[active]}</h2>
         <SvBadge variant="accent" pill>Live</SvBadge>
       </div>
 
@@ -132,7 +132,7 @@
 
   .content { padding: 22px; overflow: auto; display: flex; flex-direction: column; gap: 16px; background: var(--sg-header-bg, #f8fafc); }
   .page-head { display: flex; align-items: center; gap: 10px; }
-  .page-head h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .page-head h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
   .muted { color: var(--sg-muted, #64748b); font-size: 14px; line-height: 1.55; margin: 0; }
   .ic { display: inline-flex; font-size: 13px; }

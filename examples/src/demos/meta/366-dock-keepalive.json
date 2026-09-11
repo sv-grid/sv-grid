@@ -1,0 +1,24 @@
+{
+  "description": "SvDockManager keepAlive in Svelte 5. By default only the active tab renders, so switching unmounts the previous panel and loses its DOM state; with keepAlive inactive tabs stay mounted but hidden, so scroll position and unsaved form input survive a tab switch. Type in one tab, switch away and back, and toggle the prop to compare.",
+  "keywords": [
+    "svelte keep alive tabs",
+    "svelte 5 preserve tab state",
+    "svelte dock tabs keep mounted",
+    "svelte tab switch form state",
+    "svelte hidden tabs mounted"
+  ],
+  "faq": [
+    {
+      "question": "What is the cost of keepAlive?",
+      "answer": "Inactive panels stay in the DOM, so memory and any live subscriptions persist for every open tab. Leave it off for panels that are cheap to recreate."
+    },
+    {
+      "question": "Does keepAlive apply to floating windows?",
+      "answer": "Floating windows are always visible, so the setting only affects tabs stacked in a pane."
+    },
+    {
+      "question": "Can I keep only some panels alive?",
+      "answer": "The prop is workspace-wide in this demo; for a mix, hold the state of cheap-to-lose panels in a store and let them remount."
+    }
+  ]
+}

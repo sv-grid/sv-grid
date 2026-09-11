@@ -1,0 +1,24 @@
+{
+  "description": "Function-valued cell and header templates on top of createPivotModel in Svelte 5. Value cells render traffic-light pills for revenue against target, data bars for units and signed arrows for variance, chosen by reading the measure id off the column id; header cells add a measure icon, a units label and a target-line annotation under each quarter; and the row-header cell shows a coloured region chip, depth-based indent and an expand chevron. The pivot engine is unchanged.",
+  "keywords": [
+    "svelte pivot custom cell renderer",
+    "svelte 5 pivot conditional formatting",
+    "svelte pivot header template",
+    "svelte pivot traffic light cells",
+    "svelte pivot data bars"
+  ],
+  "faq": [
+    {
+      "question": "How does a value cell know which measure it shows?",
+      "answer": "The pivot engine encodes the column axis path and the measure id in each leaf column id; the cell function decodes it and picks the pill, bar or arrow renderer accordingly."
+    },
+    {
+      "question": "Can header cells be customised too?",
+      "answer": "Yes. The header option accepts a function receiving the column, so the demo adds an icon and a units label to measure headers and an annotation to the quarter group headers."
+    },
+    {
+      "question": "Does styling affect the totals?",
+      "answer": "No. Subtotal and grand-total rows come from the engine as before; the renderers only change how the emitted values are drawn."
+    }
+  ]
+}

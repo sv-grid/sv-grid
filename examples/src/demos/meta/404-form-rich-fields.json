@@ -1,0 +1,24 @@
+{
+  "description": "SvForm reaching the whole input suite from one schema in Svelte 5: phone, country, mask, combobox, radio, slider, tags, datetime and file fields, plus per-field help text, a readonly field, a column span across the two-column layout, an error summary and a promise toast on submit. The fields array is the whole form.",
+  "keywords": [
+    "svelte schema driven form",
+    "svelte 5 form builder fields",
+    "svelte form phone country file fields",
+    "svelte form column span",
+    "svelte form error summary"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a field?",
+      "answer": "Push an object to fields with a name, a type such as phone or tags, a label and any validation. SvForm renders the matching kit component and includes the value in onSubmit."
+    },
+    {
+      "question": "How do I make a field span both columns?",
+      "answer": "Set span: 2 on the field. With columns={2} it takes the full row, which the demo uses for the file field."
+    },
+    {
+      "question": "What does errorSummary do?",
+      "answer": "On a failed submit it lists every error above the form with links that focus the field, in addition to the inline messages."
+    }
+  ]
+}

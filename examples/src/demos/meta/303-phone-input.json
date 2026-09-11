@@ -1,0 +1,24 @@
+{
+  "description": "SvPhoneInput on its own in Svelte 5: a country dial-code selector with flags plus a national number field, emitting an E.164-style string such as +14155551234, with the shared field contract for label, validation and dir for RTL. It is the SvGrid phone cell editor, standalone.",
+  "keywords": [
+    "svelte phone input",
+    "svelte 5 international phone number input",
+    "svelte country dial code picker",
+    "svelte e164 phone field",
+    "svelte phone validation"
+  ],
+  "faq": [
+    {
+      "question": "What format is the value?",
+      "answer": "A single string with the plus sign, the dial code and the national digits, ready to store or send to an SMS provider. onChange also receives a parts object with country, dial, national, valid and complete, and the national part is masked per country for display."
+    },
+    {
+      "question": "How is the country chosen?",
+      "answer": "From a dropdown listing flag, name and dial code; the national field then applies that country's mask, and the parts object tells you whether the number is complete and valid."
+    },
+    {
+      "question": "Does it work right-to-left?",
+      "answer": "Yes. dir='rtl' mirrors the layout while the number itself stays left-to-right, as phone numbers should."
+    }
+  ]
+}

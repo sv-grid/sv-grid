@@ -1,0 +1,24 @@
+{
+  "description": "A calendar heatmap of a year of days in Svelte 5. type calendar renders a contribution-style grid of seven rows for the days of the week by about 53 columns for the weeks, each cell shaded by its value in calendarValues through the sequential colour scale; days with no value render as outlined blanks so missing data reads as missing, and hovering shows the date and value. Filter the grid's Type column and the year re-aggregates.",
+  "keywords": [
+    "svelte calendar heatmap",
+    "svelte 5 contribution graph",
+    "svelte year of days chart",
+    "svelte activity heatmap",
+    "svelte chart calendarValues"
+  ],
+  "faq": [
+    {
+      "question": "What data does the calendar need?",
+      "answer": "calendarValues, an array of { date, value } entries; the chart lays the year out from the earliest to the latest date and shades each cell."
+    },
+    {
+      "question": "How are empty days shown?",
+      "answer": "As outlined cells with no fill, distinct from a zero value, so a gap in the data is visible rather than hidden as light colour."
+    },
+    {
+      "question": "Can I show more than one year?",
+      "answer": "The layout is one year of weeks; for several years render one chart per year, which keeps the week columns aligned and readable."
+    }
+  ]
+}

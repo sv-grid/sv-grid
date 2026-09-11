@@ -1,0 +1,24 @@
+{
+  "description": "Column autosize in the Svelte 5 data grid. Every header menu has an Autosize item, and api.autosizeColumn(id) and api.autosizeAllColumns() do the same from code: both walk the rendered cells of the column, measure the widest text on a canvas and snap the width to fit. Manual drag-resize with columnResize keeps working alongside it.",
+  "keywords": [
+    "svelte grid autosize columns",
+    "svelte table fit column to content",
+    "svelte 5 auto width columns",
+    "svelte grid autosizeAllColumns",
+    "svelte data grid column sizing"
+  ],
+  "faq": [
+    {
+      "question": "How do I size all columns to their content?",
+      "answer": "Call api.autosizeAllColumns() once the API is ready, or per column with api.autosizeColumn('product'). Users get the same action from the Autosize item in each header menu."
+    },
+    {
+      "question": "How is the width measured?",
+      "answer": "The text of each rendered cell in the column is measured with canvas text measurement in the grid's font, and the column takes the widest value plus padding, so the result reflects the visible content."
+    },
+    {
+      "question": "Can I still resize by hand afterwards?",
+      "answer": "Yes. columnResize stays on; dragging a header edge overrides the autosized width, and double-clicking the edge autosizes again."
+    }
+  ]
+}

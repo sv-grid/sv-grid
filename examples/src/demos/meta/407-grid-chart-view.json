@@ -1,0 +1,24 @@
+{
+  "description": "The chart view of the Svelte 5 data grid: the chart prop turns the same SvGrid into a chart driven by its filtered and sorted rows, so search and sort flow straight through. It is a view like board and scheduler, but the renderer is free: the grid lazy-loads a built-in view that wraps the standalone SvChart through rowsToChartSpec, and an SvSegmented flips Table and Chart with bar, line and area types over one source of truth.",
+  "keywords": [
+    "svelte grid as chart",
+    "svelte 5 chart view prop",
+    "svelte table chart toggle",
+    "svelte rowsToChartSpec",
+    "svelte data grid free charts"
+  ],
+  "faq": [
+    {
+      "question": "What does the chart prop take?",
+      "answer": "The chart type plus the group-by, series and value fields and an aggregate, the same options rowsToChartSpec accepts; the view builds the spec from the grid's displayed rows on every change."
+    },
+    {
+      "question": "Does filtering the grid filter the chart?",
+      "answer": "Yes. The view reads the rows after the grid's filter and sort pipeline, so a column filter or a global search narrows the chart and sorting reorders the categories."
+    },
+    {
+      "question": "Is the chart renderer part of the free package?",
+      "answer": "Yes. SvChart, rowsToChartSpec and the chart view are in the MIT @svgrid/grid and load on demand the first time a grid switches to the chart view."
+    }
+  ]
+}

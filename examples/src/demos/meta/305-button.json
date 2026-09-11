@@ -1,0 +1,24 @@
+{
+  "description": "SvButton in production shapes for Svelte 5: a toolbar with primary, secondary, outline, ghost and danger variants, sm, md and lg sizes, a leading icon snippet, a loading state that shows a spinner and disables the button, and a full-width call to action through block. Variant, loading, icon, block and href are props, so a link that looks like a button needs no extra markup.",
+  "keywords": [
+    "svelte button component",
+    "svelte 5 button variants",
+    "svelte button loading state",
+    "svelte icon button",
+    "svelte link styled as button"
+  ],
+  "faq": [
+    {
+      "question": "How do I show a loading state?",
+      "answer": "Set loading while the async work runs. The button shows a spinner, keeps its width so the layout does not shift and ignores clicks until loading is false."
+    },
+    {
+      "question": "How do I add an icon?",
+      "answer": "Pass an icon snippet with an SVG or an icon component; it renders before the label and the button spaces and sizes it for the chosen size."
+    },
+    {
+      "question": "Can a button be a link?",
+      "answer": "Yes. Pass href and it renders an anchor with the same styling and variants, so navigation buttons stay accessible as links."
+    }
+  ]
+}

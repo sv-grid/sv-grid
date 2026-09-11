@@ -1,0 +1,24 @@
+{
+  "description": "SvDateTimePicker, the Svelte 5 date-time picker that is also the SvGrid datetime cell editor: a masked text input plus a dropdown that composes the calendar and the clock behind Date and Time tabs. Type a value in the formatString pattern or pick it, invalid input reverts, and the dropdown portals to the body so it is never clipped; min and max, nullable, 12 or 24-hour and spin buttons are props.",
+  "keywords": [
+    "svelte datetime picker",
+    "svelte 5 date and time input",
+    "svelte masked date input",
+    "svelte picker portalled dropdown",
+    "svelte datetime spin buttons"
+  ],
+  "faq": [
+    {
+      "question": "How do I control the text format?",
+      "answer": "Pass formatString, for example yyyy-MM-dd HH:mm. The input masks typing to that pattern and parses it back; a value that does not parse reverts to the last valid one."
+    },
+    {
+      "question": "Can I show only the calendar or only the clock?",
+      "answer": "Yes. dropDownDisplayMode accepts both, calendar or time; the Date and Time tabs appear only in the combined mode, and hourFormat picks 12-hour or 24-hour time."
+    },
+    {
+      "question": "Why does the dropdown portal to the body?",
+      "answer": "So a picker inside a scrolling panel, a table cell or a dialog is never clipped by overflow rules. Focus and keyboard handling stay attached to the input."
+    }
+  ]
+}

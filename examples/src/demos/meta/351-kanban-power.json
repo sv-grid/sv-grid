@@ -1,0 +1,24 @@
+{
+  "description": "Board power tools on the Svelte 5 data grid, all from board config on the built-in card: a facet filter bar by tag and assignee through facets, card multi-select with bulk move through selectable, click or Ctrl-click and drag the group, a blocked flag from flagField that locks the card from moving, a card-age badge from ageField, and right-click menus on cards and lanes through cardMenu and laneMenu. Board and Table switcher included.",
+  "keywords": [
+    "svelte kanban filters",
+    "svelte 5 board multi select cards",
+    "svelte kanban context menu",
+    "svelte board blocked card",
+    "svelte kanban card age badge"
+  ],
+  "faq": [
+    {
+      "question": "How does bulk move work?",
+      "answer": "With selectable on, click or Ctrl-click marks several cards; dragging any selected card moves the whole set to the drop lane, and onCardMove is called for each so your data updates per card."
+    },
+    {
+      "question": "What does the blocked flag do?",
+      "answer": "flagField names a truthy field; a blocked card shows a red badge with the field's value as the reason and is locked from drag and keyboard moves while flagBlocksMoves stays true."
+    },
+    {
+      "question": "How are the menus defined?",
+      "answer": "cardMenu and laneMenu take item arrays or functions of the card or lane returning items, each with a label and an action; right-click opens them portalled next to the pointer."
+    }
+  ]
+}

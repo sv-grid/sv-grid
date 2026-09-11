@@ -1,0 +1,24 @@
+{
+  "description": "Custom cell content and theming in the Svelte 5 data grid: avatars, sparklines and progress bars rendered with renderSnippet, a density toggle driven purely by CSS custom properties and the rowHeight prop, and a forced light, dark or high-contrast theme switch. ARIA roles and focus styles come from the grid's built-in accessibility helpers and need no re-declaration.",
+  "keywords": [
+    "svelte grid custom cell snippet",
+    "svelte table avatars in cells",
+    "svelte 5 data grid dark mode",
+    "svelte grid density toggle",
+    "svelte grid high contrast theme"
+  ],
+  "faq": [
+    {
+      "question": "How do I render a Svelte snippet in a cell?",
+      "answer": "Define a snippet in the component and return renderSnippet(MySnippet, props) from the column's cell function. The snippet receives the row and renders any markup, here an avatar, a sparkline or a progress bar."
+    },
+    {
+      "question": "How is the density toggle implemented?",
+      "answer": "The toggle changes rowHeight and a few --sg-* custom properties such as cell padding. Nothing in the grid is re-created; the CSS variables do the work."
+    },
+    {
+      "question": "Do I need to add ARIA roles to custom cells?",
+      "answer": "No. The grid's cells already carry the grid roles and focus handling; the snippet renders inside that cell, so keyboard navigation and screen reader announcements keep working."
+    }
+  ]
+}

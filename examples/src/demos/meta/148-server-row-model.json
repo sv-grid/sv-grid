@@ -1,0 +1,24 @@
+{
+  "description": "The server-side row model of the Svelte 5 data grid: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort, filter and page lifecycle, races stale responses away and pushes { rows, total, loading } back. The demo's server is a 100,000-row in-memory table behind 250 ms latency; the grid holds only the current 50-row page, shows loadingOverlay while a request is in flight and takes its filter value lists from serverFilterValues.",
+  "keywords": [
+    "svelte server side row model",
+    "svelte grid datasource getRows",
+    "svelte 5 createServerDataSource",
+    "svelte grid remote data contract",
+    "svelte data grid loading overlay"
+  ],
+  "faq": [
+    {
+      "question": "What does my getRows have to return?",
+      "answer": "A promise of { rows, total } for the requested range, after applying the sortModel and filterModel it receives. The data source calls it whenever sort, filter or page changes and ignores any response that arrives after a newer request."
+    },
+    {
+      "question": "How does the grid connect to the data source?",
+      "answer": "Pass s.rows as data and s.loading to loading, set externalSort and externalFilter, and forward onSortingChange and onFiltersChange to the controller's setSort and setFilter. The controller re-queries and updates the reactive state."
+    },
+    {
+      "question": "Where do the filter checklists get their values?",
+      "answer": "From serverFilterValues, a map of column id to distinct values you fetch once from the server, since the grid never sees the full dataset."
+    }
+  ]
+}

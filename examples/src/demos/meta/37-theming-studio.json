@@ -1,0 +1,24 @@
+{
+  "description": "A live token playground for the Svelte 5 data grid. Sliders and colour pickers write --sg-accent, --sg-bg, --sg-header-bg, --sg-border and --sg-radius, choose the font family, switch dark and light through the data-theme attribute and set density through rowHeight, and the grid restyles in real time. A Copy CSS pane emits the full :root snippet to paste into a stylesheet, and the settings persist in localStorage across reloads.",
+  "keywords": [
+    "svelte grid theming",
+    "svelte 5 data grid css variables",
+    "svelte grid brand colors",
+    "svelte table design tokens",
+    "svelte grid theme builder"
+  ],
+  "faq": [
+    {
+      "question": "How is the grid styled?",
+      "answer": "Entirely through --sg-* custom properties. Set them on any wrapper element and every grid inside picks them up; the studio writes them on its wrapper as you move the controls."
+    },
+    {
+      "question": "How do I switch to dark mode?",
+      "answer": "Set data-theme='dark' on a wrapper or on <html>. The theme stylesheets define a dark token set under that attribute, so the switch is one attribute change."
+    },
+    {
+      "question": "Is there a shortcut for density?",
+      "answer": "rowHeight is a grid prop, so pass 28 for compact or 44 for comfortable; padding tokens follow the row height in the built-in themes."
+    }
+  ]
+}

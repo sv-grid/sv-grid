@@ -1,0 +1,24 @@
+{
+  "description": "SvCountryInput in Svelte 5 as a checkout field: a searchable country picker showing flag, name and, with showDial, the dial code, emitting the ISO country code through onChange, with a label and required validation on the shared editor contract.",
+  "keywords": [
+    "svelte country picker",
+    "svelte 5 country select with flags",
+    "svelte iso country code input",
+    "svelte country dial code select",
+    "svelte checkout country field"
+  ],
+  "faq": [
+    {
+      "question": "What value is stored?",
+      "answer": "The two-letter ISO code, for example DE, which is what payment and shipping APIs expect. The display shows the flag and localized name."
+    },
+    {
+      "question": "How is the list searched?",
+      "answer": "Typing filters by country name, dial code and ISO code, so +49, DE and Germany all find the same entry."
+    },
+    {
+      "question": "Can I translate the strings?",
+      "answer": "Yes. The messages prop overrides the placeholder, the search label and the empty-result text, and the country names come from the built-in reference list."
+    }
+  ]
+}

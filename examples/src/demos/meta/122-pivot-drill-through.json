@@ -1,0 +1,24 @@
+{
+  "description": "Drill-through from any pivot value cell in Svelte 5. Click a leaf, a subtotal or the grand total and a right rail opens with the exact source facts behind that aggregate, computed by walking the clicked row's ancestor labels along the row dimensions and decoding the column id into the column-axis dimensions and measure. Total, count and average in the rail always agree with the cell because both summarise the same filtered slice; SvPivotDesigner handles the wells and presets, and onCellClick opens the rail.",
+  "keywords": [
+    "svelte pivot drill through",
+    "svelte 5 pivot show source rows",
+    "svelte pivot cell click details",
+    "svelte pivot subtotal drill",
+    "svelte pivot designer onCellClick"
+  ],
+  "faq": [
+    {
+      "question": "How are the source rows found?",
+      "answer": "The row's ancestor labels give the values of each row dimension, the column id gives the column dimensions and the measure, and the facts are filtered by all of those; a subtotal simply has fewer constraints."
+    },
+    {
+      "question": "Why do the numbers always match?",
+      "answer": "The rail recomputes the aggregate from the same filtered facts the engine used for the cell, so sum, count and average are derived from identical inputs."
+    },
+    {
+      "question": "What happens on the grand total?",
+      "answer": "No constraints apply, so the rail lists the entire fact table and its totals equal the grand-total cell."
+    }
+  ]
+}

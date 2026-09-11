@@ -1,0 +1,24 @@
+{
+  "description": "A literal 1,000,000-row dataset in the Svelte 5 data grid with sorting, filtering, grouping, cell selection and inline editing all enabled. Rows are generated in requestAnimationFrame chunks so the page keeps painting while the heap fills, and the row shape is kept to nine fields so a million rows fit in memory. Row and column virtualization keep scrolling smooth once the data is in.",
+  "keywords": [
+    "svelte grid 1 million rows",
+    "svelte 5 million row table",
+    "svelte virtualized grid performance",
+    "svelte grid group by large data",
+    "svelte data grid memory"
+  ],
+  "faq": [
+    {
+      "question": "Can SvGrid really sort and group a million rows on the client?",
+      "answer": "Yes. Sorting and grouping run over the full array in the row-model pipeline; only rendering is virtualized. Grouping is switched on through api.setGroupBy, and rowExpandingFeature lets you expand and collapse the groups."
+    },
+    {
+      "question": "Why does the row shape matter at this size?",
+      "answer": "Every field on every row costs memory. Nine fields per row keeps a million rows around 250 MB; a wide row shape at the same count would make the tab unresponsive. Keep rows lean and derive display values in column formatters or snippets."
+    },
+    {
+      "question": "How is the load kept from freezing the UI?",
+      "answer": "The generator fills the array in chunks scheduled with requestAnimationFrame and reports progress, so the browser paints between chunks. The same approach works for large fetches: append pages as they arrive instead of waiting for the whole set."
+    }
+  ]
+}

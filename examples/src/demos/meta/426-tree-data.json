@@ -1,0 +1,24 @@
+{
+  "description": "Client-side tree data in the Svelte 5 data grid. treeData={{ parentField: 'managerId', column: 'name' }} nests rows into an expandable hierarchy by parent id; tree rows stay real data rows with their own cells, formatting, editing and selection, and only gain an expander plus indent in the tree column. Flat parent-id data is used directly and nested children arrays go through flattenTreeData, with full treegrid accessibility and arrow-key expand.",
+  "keywords": [
+    "svelte tree grid",
+    "svelte 5 hierarchical table",
+    "svelte treegrid parent id",
+    "svelte grid nested rows expand",
+    "svelte org chart grid"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn flat rows with a parent id into a tree?",
+      "answer": "Pass treeData with parentField naming the id column of the parent and column naming the column that shows the expander and indent. Rows whose parent is missing are roots."
+    },
+    {
+      "question": "My data has nested children arrays. Do I have to flatten it?",
+      "answer": "Call flattenTreeData(rows) from @svgrid/grid. It stamps __parentId on each child and returns one flat list, which is then the same shape as the parent-id case."
+    },
+    {
+      "question": "How is this different from row grouping?",
+      "answer": "In grouping the parent is a synthetic banner created by the grid. In tree data the parent is a real row from your data with its own values, and children can be edited and selected like any other row."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Per-edge custom cell borders on an editable KPI scorecard in the Svelte 5 data grid. It opens like a sheet with a 1 to 1000 row gutter and A to Z column letters, and spreadsheetLayout paints each border through an absolutely positioned overlay inside the cell so there are no border-collapse conflicts. Edit any plan or actual cell and the subtotals and borders re-derive: green double for beating target, blue solid for hitting it, amber dotted for a near miss, red dashed for a bad miss, and a coloured full frame for the row champion.",
+  "keywords": [
+    "svelte grid custom cell borders",
+    "svelte spreadsheet borders",
+    "svelte 5 kpi scorecard grid",
+    "svelte grid spreadsheetLayout",
+    "svelte conditional borders"
+  ],
+  "faq": [
+    {
+      "question": "How are per-edge borders specified?",
+      "answer": "As CellBorderSpec entries in the spreadsheetLayout prop, each naming a cell and the top, right, bottom or left style. The layout is a $derived of the data, so editing a value changes the specs and the overlay repaints."
+    },
+    {
+      "question": "Why an overlay instead of CSS borders on the cell?",
+      "answer": "Adjacent cells share edges, so a double border on one and a dashed one on its neighbour fight under border-collapse. An overlay div per cell draws exactly what the spec says without affecting layout."
+    },
+    {
+      "question": "Does this work with virtualization?",
+      "answer": "Yes. Row and column virtualization are both on in this demo; the overlay is part of the cell, so it is created and recycled with it."
+    }
+  ]
+}

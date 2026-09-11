@@ -1,0 +1,24 @@
+{
+  "description": "A lazy-loading tree in the Svelte 5 data grid: Region, Country, State and City, with only the root regions seeded up front. Expanding a node fires an async fetch, simulated at 400 to 800 ms, and shows a Loading row in place of the children until it resolves; loaded subtrees are cached so the second expand is instant. Right Arrow expands, Left Arrow collapses, Enter and Space toggle.",
+  "keywords": [
+    "svelte lazy tree grid",
+    "svelte 5 load children on expand",
+    "svelte grid async tree nodes",
+    "svelte tree table loading placeholder",
+    "svelte hierarchical data on demand"
+  ],
+  "faq": [
+    {
+      "question": "How is the loading row shown?",
+      "answer": "When a node expands without cached children, a placeholder row with a loading flag is inserted under it in the visible list; when the fetch resolves the placeholder is replaced by the real children."
+    },
+    {
+      "question": "How are loaded subtrees cached?",
+      "answer": "Children are stored on the node once fetched. Collapsing keeps them, so the next expand renders from memory without a request."
+    },
+    {
+      "question": "Which keys work on the tree?",
+      "answer": "Right Arrow expands the focused node and triggers the load if needed, Left Arrow collapses it, and Enter or Space toggle. Up and Down move between visible rows as in any grid."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A front-desk appointment console in Svelte 5 on the Scheduler. A left rail holds the provider roster you toggle to filter the board, a utilization SvGauge and a status legend; the centre has a KPI strip, a slim toolbar and the day scheduler grouped by provider with each doctor's own hours, no double booking and no booking out of hours, a drag-in patient waitlist, a drawer and status-coded cards; and a right panel shows a live patient-flow pipeline of Waiting, Checked in, In room and Completed derived from each appointment's status.",
+  "keywords": [
+    "svelte appointment scheduling app",
+    "svelte 5 clinic front desk",
+    "svelte scheduler provider hours",
+    "svelte patient waitlist drag",
+    "svelte medical scheduling console"
+  ],
+  "faq": [
+    {
+      "question": "How does each provider get their own hours?",
+      "answer": "Each provider resource carries its business hours and restrictToBusinessHours is on, so the scheduler shades time outside them and rejects drops there; a doctor who starts at ten cannot be booked at nine."
+    },
+    {
+      "question": "How is double booking prevented?",
+      "answer": "disableConflicts is set, so a drop that would overlap an existing appointment on the same provider snaps back with a message."
+    },
+    {
+      "question": "How is the patient-flow pipeline built?",
+      "answer": "It is a $derived that buckets the appointment rows by status; changing a status in the drawer or by drag moves the card between stages immediately."
+    }
+  ]
+}

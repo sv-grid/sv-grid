@@ -1,0 +1,24 @@
+{
+  "description": "Row and cell-range selection in the Svelte 5 data grid with a built-in TSV clipboard. selectionMode='both' gives row checkboxes and rectangular cell selection at once; Ctrl or Cmd+C copies the active rectangle as tab-separated text and Ctrl+V pastes TSV back into the same range, so data moves straight into and out of a spreadsheet. A hand-rolled footer summarises the current selection from onRowSelectionChange.",
+  "keywords": [
+    "svelte grid copy paste",
+    "svelte table clipboard tsv",
+    "svelte 5 cell range selection",
+    "svelte grid select rows and cells",
+    "svelte data grid paste from excel"
+  ],
+  "faq": [
+    {
+      "question": "How do I copy cells out of the grid?",
+      "answer": "Select a rectangle with click and drag or Shift and the arrow keys, then press Ctrl or Cmd+C. The grid writes the range to the clipboard as TSV, which spreadsheets paste as cells. With contextMenu on, the right-click menu offers copy, cut, paste and clear as well."
+    },
+    {
+      "question": "Does paste work from a spreadsheet?",
+      "answer": "Yes. Copy cells in a spreadsheet, select the target cell in the grid and press Ctrl or Cmd+V. The TSV is split into cells starting at the active cell; inline editing is off here so the demo is read-only, turn it on to write."
+    },
+    {
+      "question": "How do I get the selected rows?",
+      "answer": "onRowSelectionChange is called with the selection state and the selected row objects; the demo stores the rows and renders the footer from them."
+    }
+  ]
+}

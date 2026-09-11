@@ -1,0 +1,24 @@
+{
+  "description": "A full monitoring app in Svelte 5 in three panes: an SvNavPane with a module rail for Monitor, Rules and Reports plus badged folders for Critical, Warnings, Healthy and each region, a live fleet grid filtered by the selected folder, and a reading pane with the selected host's detail, a CPU sparkline, its recent alerts and quick actions. Alert rules watch every host regardless of the folder in view, paint the rows through bound formats and feed the bell and the fired-alert panel, and the module buttons open the rule manager and the report panel.",
+  "keywords": [
+    "svelte monitoring console",
+    "svelte 5 fleet alerts app",
+    "svelte navpane folders badges",
+    "svelte alerts rule manager",
+    "svelte ops dashboard three panes"
+  ],
+  "faq": [
+    {
+      "question": "Do rules only watch the visible folder?",
+      "answer": "No. SvGridAlerts receives the full rows array while the grid receives the filtered one, so a critical host in another region still fires and its folder badge counts it."
+    },
+    {
+      "question": "How are the folder badges computed?",
+      "answer": "They are $derived counts over the rows by status and region, so a status change from a rule updates the sidebar numbers."
+    },
+    {
+      "question": "How are the manager and panel opened from the rail?",
+      "answer": "bind:managerOpen and bind:panelOpen on SvGridAlerts are flipped by the module buttons, so Rules opens the rule manager and Reports the fired-alert panel."
+    }
+  ]
+}

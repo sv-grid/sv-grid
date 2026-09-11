@@ -1,0 +1,24 @@
+{
+  "description": "The HyperFormula engine wired into the Svelte 5 data grid as an optional peer dependency. The grid holds raw values such as =SUM(B2:B10) so the inline editor edits the formula itself, while a cell renderer shows the computed value from a parallel HyperFormula snapshot. A syntax-highlighted formula bar, marching-ants outline on copied cells, per-row heights with rowResize and coloured merged section headers through spreadsheetLayout complete it, with formula families for math, lookup, text, date, logical, financial and statistical functions.",
+  "keywords": [
+    "svelte hyperformula",
+    "svelte 5 spreadsheet engine integration",
+    "svelte grid vlookup formulas",
+    "svelte excel formulas pmt npv",
+    "svelte formula bar highlighting"
+  ],
+  "faq": [
+    {
+      "question": "How are raw and computed values kept apart?",
+      "answer": "The grid's data holds the raw text. A HyperFormula instance mirrors it; on every commit the demo updates the engine and refreshes a computed snapshot, and each cell's snippet displays the snapshot value while editing shows the raw formula."
+    },
+    {
+      "question": "Is HyperFormula bundled with SvGrid?",
+      "answer": "No. It is an optional peer dependency the demo imports directly; the grid itself has no formula engine dependency. Add it to your project when you need its function library."
+    },
+    {
+      "question": "How is the copy outline drawn?",
+      "answer": "Ctrl+C stores the copied range from api.getSelected(); cellClass adds a marching-ants class to cells in that range, and Escape or another copy clears it."
+    }
+  ]
+}

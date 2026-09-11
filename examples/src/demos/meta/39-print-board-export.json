@@ -1,0 +1,24 @@
+{
+  "description": "A quarterly P&L by department in the Svelte 5 data grid with a boardroom print pack. Print opens a fresh window containing only the printable HTML, a styled cover sheet with company, period, owner and signature line plus a plain table with inlined styles, and calls print() there so no site chrome bleeds onto the paper; a switcher writes Letter, A4 or Legal in portrait or landscape into the popup's @page rule; CSV and HTML downloads reuse the same builder so the file matches the printed sheet; and PDF comes from the browser's native print-to-PDF with no library.",
+  "keywords": [
+    "svelte grid print",
+    "svelte 5 table print to pdf",
+    "svelte report print page size",
+    "svelte grid export html csv",
+    "svelte boardroom report"
+  ],
+  "faq": [
+    {
+      "question": "Why print from a popup window?",
+      "answer": "window.print() on the app page prints the sidebar, header and everything else around the grid. A new window with only the printable HTML gives a clean dialog and a document that reads as one report."
+    },
+    {
+      "question": "How are page size and orientation set?",
+      "answer": "The chosen values are written into an @page rule inside the popup's stylesheet, which the browser's print pipeline honours; the cover sheet ends with a page break so the table starts on page two."
+    },
+    {
+      "question": "Do I need a PDF library?",
+      "answer": "No. The browser's Save as PDF in the print dialog produces the deliverable. For programmatic PDF export with column formatting see the export demos in @svgrid/enterprise."
+    }
+  ]
+}

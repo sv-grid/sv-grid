@@ -1,0 +1,24 @@
+{
+  "description": "Submit-time validation for a bulk leads import in the Svelte 5 data grid. Users edit freely, then click Submit and a row-level validator runs over the in-memory rows; invalid cells are highlighted through cellClass, every error is listed in an aria-live panel, and the payload only goes to the server when the error list is empty.",
+  "keywords": [
+    "svelte grid submit validation",
+    "svelte bulk import table",
+    "svelte 5 grid form validation",
+    "svelte table validate before save",
+    "svelte editable grid errors panel"
+  ],
+  "faq": [
+    {
+      "question": "How is this different from validating on each edit?",
+      "answer": "Nothing runs while the user types. Validation happens once on Submit against all rows, which suits imports where a row may be temporarily incomplete while it is being filled in."
+    },
+    {
+      "question": "How are invalid cells highlighted?",
+      "answer": "The column's cellClass function reads the derived errors map and returns an error class for cells that failed, so the styling is data-driven and clears when the row passes."
+    },
+    {
+      "question": "Why an aria-live panel for the errors?",
+      "answer": "So screen readers announce the error list when it changes. The panel lists each row and field with its message, and submission stays blocked until the list is empty."
+    }
+  ]
+}

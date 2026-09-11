@@ -1,0 +1,24 @@
+{
+  "description": "A plant-floor Today's runs screen in the Svelte 5 data grid, the view a manufacturing execution system shows: KPI cards for throughput, average OEE, defect rate and on-time completion ticking every five seconds, and a wide grid of active production runs with line, product, batch size, status pills, a colour-coded OEE bar, yield, defect heat colouring, ETA and operator. The synthetic data is reassigned on each tick, where a WebSocket or SSE source would go.",
+  "keywords": [
+    "svelte manufacturing dashboard",
+    "svelte 5 mes grid",
+    "svelte production runs table",
+    "svelte grid oee bar",
+    "svelte plant floor kpi"
+  ],
+  "faq": [
+    {
+      "question": "How is the OEE bar drawn?",
+      "answer": "The OEE column's cell snippet renders a bar whose width is the percentage and whose colour comes from thresholds, so a run below target reads red without a separate status field."
+    },
+    {
+      "question": "How are the KPI cards kept live?",
+      "answer": "They are $derived over the runs array. The five-second tick assigns a new array, and the cards and the grid update from the same change."
+    },
+    {
+      "question": "How would I connect real data?",
+      "answer": "Replace the tick with your feed's message handler and assign runs from it; the columns, formats and KPIs need no change."
+    }
+  ]
+}

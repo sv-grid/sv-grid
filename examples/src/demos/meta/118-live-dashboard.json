@@ -1,0 +1,24 @@
+{
+  "description": "A live dashboard over a 10,000,000-row transaction stream behind a mock API in the Svelte 5 data grid. Paging is server-side and pages are generated on demand from a deterministic generator so any page is instant; sorting and filtering round-trip in externalSort and externalFilter mode over an indexed 50,000-row shard; a burst of fresh transactions arrives every second to feed KPI counters, a 60-second throughput chart and the live tail on page one, with charts drawn as inline SVG.",
+  "keywords": [
+    "svelte live dashboard grid",
+    "svelte 5 transaction stream table",
+    "svelte grid 10 million rows server",
+    "svelte inline svg charts dashboard",
+    "svelte realtime kpi grid"
+  ],
+  "faq": [
+    {
+      "question": "Why is virtualization off here?",
+      "answer": "The grid only holds one server page at a time, so there is nothing to virtualize; turning it off lets the live tail rows animate in without the virtualizer recycling them."
+    },
+    {
+      "question": "How is the ten-million-row total real if pages are generated?",
+      "answer": "Rows are derived from a deterministic generator seeded by index, so page 400,000 is computed the same way every time without materialising the set. Sorting and filtering run over an indexed shard so the UI stays responsive."
+    },
+    {
+      "question": "How do the charts update?",
+      "answer": "A $derived over the last sixty seconds of tick counts produces the SVG path for the throughput chart, and status and region bars are derived from the current page; no chart library is loaded."
+    }
+  ]
+}

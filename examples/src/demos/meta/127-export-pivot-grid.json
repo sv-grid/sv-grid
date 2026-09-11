@@ -1,0 +1,24 @@
+{
+  "description": "Exporting a pivot grid from Svelte 5 to Excel. createPivotModel produces flat PivotRow objects with one numeric value per leaf column id; each row is projected into a record whose keys are the final readable headers such as Q1 Revenue instead of the engine's internal ids, and passed to api.exportData({ format: 'xlsx', columns, rows }) with groupBy on the region so each region becomes an outline group. A toolbar toggles subtotal rows, the grand total row and column, one sheet or one sheet per top-level group, and a filename strategy, with a live workbook preview.",
+  "keywords": [
+    "svelte pivot table export excel",
+    "svelte 5 pivot grid xlsx",
+    "svelte createPivotModel export",
+    "svelte pivot subtotals excel",
+    "svelte grid pivot to workbook"
+  ],
+  "faq": [
+    {
+      "question": "Why project the pivot rows before export?",
+      "answer": "The pivot engine names leaf columns with internal ids. Mapping each id to its readable header gives the workbook meaningful column titles and lets you drop or reorder columns before writing."
+    },
+    {
+      "question": "How do I get one sheet per region?",
+      "answer": "Switch the toolbar to per-group sheets; the demo splits the projected rows by the top-level row group and passes them as the sheets array of exportData."
+    },
+    {
+      "question": "Can I exclude totals?",
+      "answer": "Yes. The subtotal rows, grand total row and grand total column are each toggled independently before export, and the preview shows the resulting table."
+    }
+  ]
+}

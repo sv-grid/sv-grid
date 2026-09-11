@@ -1,0 +1,24 @@
+{
+  "description": "A research and earnings desk in Svelte 5 with one dataset and four synced views inside an SvDockManager: the same research events render as a Scheduler, a Grid, a Kanban pipeline by workflow stage and a stacked exposure SvGridChart by asset class. Drag an event, move a card or edit a cell in any pane and it writes back to the one rows array, so every surface stays in sync; panes can be dragged, resized and floated.",
+  "keywords": [
+    "svelte financial research calendar",
+    "svelte 5 synced views one dataset",
+    "svelte scheduler grid kanban chart",
+    "svelte earnings calendar app",
+    "svelte dockable analyst workspace"
+  ],
+  "faq": [
+    {
+      "question": "How do four views stay in sync?",
+      "answer": "They are four SvGrid instances and one chart over the same $state array. Each edit mutates a row object, and Svelte's reactivity re-renders every view that reads it."
+    },
+    {
+      "question": "How is the exposure chart built?",
+      "answer": "A $derived groups the rows by asset class and stage into a stacked bar spec for SvGridChart, so moving a card between stages changes the stack."
+    },
+    {
+      "question": "Which view is primary?",
+      "answer": "The grid. The calendar, board and chart are views of its rows, and the table is where bulk edits and sorting happen."
+    }
+  ]
+}

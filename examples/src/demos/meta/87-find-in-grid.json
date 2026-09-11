@@ -1,0 +1,24 @@
+{
+  "description": "A built-in find overlay for the Svelte 5 data grid: press Ctrl or Cmd+F on the grid, type, and every visible cell value is scanned. Enter moves to the next match, Shift+Enter to the previous, Escape closes; each match activates the cell and scrolls it into view. The same surface is on the API for command palettes: api.openFind(), api.setFindQuery(), api.getFindHits() and api.closeFind().",
+  "keywords": [
+    "svelte grid find ctrl f",
+    "svelte table search all cells",
+    "svelte 5 data grid find next",
+    "svelte grid openFind api",
+    "svelte log viewer grid search"
+  ],
+  "faq": [
+    {
+      "question": "Do I need to configure anything for Ctrl+F?",
+      "answer": "No. The overlay is part of the grid; focus the grid and press Ctrl or Cmd+F. The shortcut is handled while the grid has focus, so the browser's own find still works elsewhere on the page."
+    },
+    {
+      "question": "How do I drive find from my own UI?",
+      "answer": "api.openFind() shows the overlay, api.setFindQuery('error') runs a search, api.getFindHits() returns the matching cells and api.closeFind() dismisses it, which is enough to wire a command palette."
+    },
+    {
+      "question": "How does it scale?",
+      "answer": "Matching is a linear scan over the rendered values, fine for a working set around 10,000 rows by 30 columns. Beyond that, debounce setFindQuery or search on the server and select the hits through the selection API."
+    }
+  ]
+}

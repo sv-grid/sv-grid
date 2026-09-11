@@ -1,0 +1,24 @@
+{
+  "description": "Threaded comments on cells of the Svelte 5 data grid with @-mentions. Right-click a cell and choose Add comment to open an editor below the grid; a corner triangle marks cells with active threads, typing @ opens a fuzzy picker over the team list and inserts a chip, threads can be resolved, and mentioned users get a badge. Storage goes through a commentsAdapter, wired here to an in-memory map with the same contract a REST or WebSocket adapter would use.",
+  "keywords": [
+    "svelte grid cell comments",
+    "svelte table comment threads",
+    "svelte 5 mentions picker",
+    "svelte data grid collaboration",
+    "svelte grid comment indicator"
+  ],
+  "faq": [
+    {
+      "question": "How is the comment indicator drawn?",
+      "answer": "The cell snippet adds a class when the cell has a thread, and CSS paints a corner triangle with a pseudo-element. There is no overlay layer to keep in sync with scrolling."
+    },
+    {
+      "question": "How does the @-mention picker place the chip?",
+      "answer": "The editor watches the textarea's selectionStart; when @ is typed it opens a fuzzy search over the team and inserts the chosen name at that position."
+    },
+    {
+      "question": "How would I persist comments?",
+      "answer": "Keep the same shape as the demo's local adapter, functions that add a comment and resolve a thread against a map keyed by cell, and back them with your API. A remote adapter would call fetch or push over a socket; the grid only ever sees the class the snippet adds."
+    }
+  ]
+}

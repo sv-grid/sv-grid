@@ -1,0 +1,24 @@
+{
+  "description": "Every cell editor SvGrid ships, in one Svelte 5 grid modelled on an annual vendor review. Each column sets an editorType: text, number with currency formatting, date, checkbox, list, chips with editorMultiple, color and rating. Columns whose raw value would look bland add a cell snippet for the read-only display (tier chip, category tags, brand swatch, 5-star rating, mood, delivery progress bar, status badge, owner avatar), so every column stays editable while looking finished.",
+  "keywords": [
+    "svelte grid cell editors",
+    "svelte table custom cell renderer",
+    "svelte 5 grid star rating column",
+    "svelte data grid date picker cell",
+    "svelte grid color picker cell"
+  ],
+  "faq": [
+    {
+      "question": "How do I pick the editor for a column?",
+      "answer": "Set editorType on the column definition: text, number, date, checkbox, list, chips, color or rating. list and chips take their choices from editorOptions, and chips sets editorMultiple so a cell can hold several values."
+    },
+    {
+      "question": "How do I render a custom display without losing the editor?",
+      "answer": "Keep the editorType and add a cell function that returns a snippet, as the tier, status and rating columns do here with renderSnippet. The snippet draws the read-only view; double-click or F2 still opens the built-in editor for that type."
+    },
+    {
+      "question": "How is the currency column formatted?",
+      "answer": "Through the column format setting: { type: \"currency\", currency: \"USD\" } with Intl options such as maximumFractionDigits. The date column uses format { type: \"date\", pattern: \"y-m-d\" } the same way."
+    }
+  ]
+}

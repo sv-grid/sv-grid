@@ -1,0 +1,24 @@
+{
+  "description": "A whole clinic app in Svelte 5 on the Scheduler. A NavPane rail switches modules; Schedule is a dockable SvDockManager workspace with the day scheduler as the hero over a live load-by-hour SvGridChart and an Upcoming grid, providers grouped by department through a resource tree, every open slot bookable and appointments keeping a cleanup buffer; Insights is a charting dashboard and Patients a records grid, with live KPIs, and every surface reads the one rows array.",
+  "keywords": [
+    "svelte clinic management app",
+    "svelte 5 scheduler workspace",
+    "svelte appointments dashboard",
+    "svelte load by hour chart",
+    "svelte patient records and calendar"
+  ],
+  "faq": [
+    {
+      "question": "How does the load chart follow the schedule?",
+      "answer": "A $derived counts appointments per hour from the rows and builds an SvGridChart spec; booking a slot adds to the hour's bar immediately."
+    },
+    {
+      "question": "Do the modules share data?",
+      "answer": "Yes. Schedule, Insights and Patients read the same rows array; the Patients grid is the record view and the scheduler is the time view of the same appointments."
+    },
+    {
+      "question": "How are the panes arranged?",
+      "answer": "SvDockManager holds the scheduler, chart and Upcoming grid as panes with minSize so none can be crushed; drag, resize and float them, and the arrangement persists."
+    }
+  ]
+}

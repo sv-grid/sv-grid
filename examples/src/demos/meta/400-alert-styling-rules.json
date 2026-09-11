@@ -1,0 +1,24 @@
+{
+  "description": "Alert rules as live conditional styling in Svelte 5. A rule with a highlight or badge action becomes conditional formatting painted through the grid's own format pipeline: a server fleet lights up by rule, hot CPU turns amber and near-full disks turn red through a cross-column rule of used divided by total over 0.9, alongside in-cell data bars, CPU sparklines and status pills. Randomise the load and the colours follow, and the visual builder adds your own styling rule.",
+  "keywords": [
+    "svelte conditional formatting rules",
+    "svelte 5 grid styling by rule",
+    "svelte server fleet dashboard",
+    "svelte cross column rule",
+    "svelte runtime highlight rules"
+  ],
+  "faq": [
+    {
+      "question": "How do highlight rules combine with other formats?",
+      "answer": "SvGridAlerts binds a formats array that the demo merges with its own data-bar formats before passing to conditionalFormats, so rules and static formats coexist."
+    },
+    {
+      "question": "Can a rule compare two columns?",
+      "answer": "Yes. The expression language reads any column, so diskUsed / diskTotal > 0.9 is a valid condition and it re-evaluates whenever either value changes."
+    },
+    {
+      "question": "Does styling need the alerts panel?",
+      "answer": "No. Rules with only a highlight or badge action paint the grid silently; add a toast or log action when you also want a notification."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A five-level employee hierarchy in the Svelte 5 data grid, from CEO to VPs, directors, managers and individual contributors. The first column is a cell snippet that indents by depth, draws connector lines between parents and children and rotates a chevron on expand; the other columns are regular grid columns with a role pill, department, a headcount roll-up summed from descendants and tenure. The pattern is a flat array plus an expanded map, with the visible rows derived.",
+  "keywords": [
+    "svelte org chart table",
+    "svelte 5 tree grid employees",
+    "svelte grid expand collapse hierarchy",
+    "svelte hierarchical data grid",
+    "svelte grid indent by depth"
+  ],
+  "faq": [
+    {
+      "question": "How is the tree rendered?",
+      "answer": "The rows stay a flat array with a depth and a parent id. A $derived filters it to the rows whose ancestors are all expanded, and that list is passed as data; the name column's snippet draws the indent and the chevron from the depth."
+    },
+    {
+      "question": "How is headcount rolled up?",
+      "answer": "A pass over the flat array counts descendants per node once, and the headcount column reads the result. Expand all and collapse all just replace the expanded map."
+    },
+    {
+      "question": "Is there a built-in tree mode?",
+      "answer": "Yes. The treeData prop nests rows by parent id with an expander, indent and treegrid accessibility. This hand-built version is the option when you need custom connector lines and a rendering of your own."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "The status and display kit of SvGrid UI in Svelte 5: SvAlert for inline info, success, warning and danger messages with actions, SvStat for KPI cards with a delta coloured up or down and invertible for metrics where down is good, SvTimeline for an activity feed, SvChip for removable or clickable pills with avatars, SvDivider with a label and vertical mode, and SvEmptyState with a title and description. All theme-driven.",
+  "keywords": [
+    "svelte alert component",
+    "svelte 5 stat card delta",
+    "svelte timeline component",
+    "svelte chip component",
+    "svelte empty state"
+  ],
+  "faq": [
+    {
+      "question": "How does SvStat colour the delta?",
+      "answer": "A positive delta reads green with an up arrow and a negative one red with a down arrow. invert swaps the colours for metrics such as churn where a decrease is good."
+    },
+    {
+      "question": "Can an alert carry actions?",
+      "answer": "Yes. Buttons placed in the alert's action slot render inline with the message, and the danger variant is what the demo uses for a destructive confirmation."
+    },
+    {
+      "question": "How is a chip removed?",
+      "answer": "Set removable and handle onRemove; the chip shows an x button and your handler drops it from the list."
+    }
+  ]
+}

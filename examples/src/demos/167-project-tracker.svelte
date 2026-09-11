@@ -499,7 +499,7 @@
   <header class="pt-page-head">
     <div>
       <div class="pt-eyebrow">PM workspace</div>
-      <h1 class="pt-title">Active projects</h1>
+      <h2 class="pt-title">Active projects</h2>
       <p class="pt-lede">
         {kpi.total} projects across {phaseStats.length} phases · {kpi.avgProg}% avg complete
         {#if kpi.blocked > 0} · <span class="pt-warn">{kpi.blocked} blocked</span>{/if}

@@ -1,0 +1,24 @@
+{
+  "description": "A drag-and-drop group panel for the Svelte 5 data grid. Drag column chips from a palette into the panel to group by that column, drag chips inside the panel to reorder the grouping levels, and click a chip's x to ungroup; the whole thing drives api.setGroupBy(columnIds), with expandAllGroups and collapseAllGroups on the toolbar. The dataset is a multi-region SaaS pipeline, so Region then Stage then Owner is a meaningful three-level grouping.",
+  "keywords": [
+    "svelte grid group panel",
+    "svelte table drag column to group",
+    "svelte 5 multi level grouping",
+    "svelte grid group by drag and drop",
+    "svelte data grid grouping chips"
+  ],
+  "faq": [
+    {
+      "question": "How does the panel talk to the grid?",
+      "answer": "Only through api.setGroupBy with the ordered array of column ids. The chips are plain Svelte state; whenever the array changes the grid regroups, so the panel works for any data shape."
+    },
+    {
+      "question": "How do I reorder grouping levels?",
+      "answer": "Drag a chip to a new position inside the panel. The order of the ids in the array is the nesting order, so Region before Stage groups stages inside regions."
+    },
+    {
+      "question": "Can I expand every group at once?",
+      "answer": "Yes. api.expandAllGroups() and api.collapseAllGroups() open and close all levels from the toolbar, and enableRowSummaries adds a sticky footer with totals across the filtered rows."
+    }
+  ]
+}

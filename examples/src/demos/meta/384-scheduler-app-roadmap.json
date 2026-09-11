@@ -1,0 +1,24 @@
+{
+  "description": "A dashboard-forward portfolio planner in Svelte 5 on the Scheduler. A portfolio-health band derived from the data sits over a timeline of squads by initiatives: a status-mix stacked bar, capacity-by-squad bars, a delivered-effort burn-up SvSparkline and an on-track SvGauge, plus a KPI strip. Initiatives are multi-week bars carrying an SvProgress meter and milestones are amber flags; zoom Month or Year, drag a bar to reschedule or hand it to another squad, drop an idea from the backlog, and every chart recomputes as the roadmap changes.",
+  "keywords": [
+    "svelte roadmap timeline",
+    "svelte 5 portfolio planner",
+    "svelte initiatives by squad timeline",
+    "svelte roadmap health dashboard",
+    "svelte milestone flags timeline"
+  ],
+  "faq": [
+    {
+      "question": "How do the health charts stay current?",
+      "answer": "Every chart is a $derived over the same rows the timeline renders, so a drag that reschedules an initiative or hands it to another squad recomputes the status mix, capacity and burn-up in the same pass."
+    },
+    {
+      "question": "How is progress shown on a bar?",
+      "answer": "The event snippet renders an SvProgress inside the bar from the row's progress field, and milestones are zero-length events drawn as flags."
+    },
+    {
+      "question": "Can I hide a squad?",
+      "answer": "Yes. The roster checkboxes filter the rows passed to the grid, so the timeline, the table and the charts all drop that squad together."
+    }
+  ]
+}

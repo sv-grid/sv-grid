@@ -1,0 +1,24 @@
+{
+  "description": "A Gantt-style project plan in the Svelte 5 data grid without a Gantt plug-in. The left columns hold the task name, owner, dates and progress, and one wide Schedule cell per row renders an absolutely positioned bar with left and width in percentages of the project window, phase colouring, an interior progress fill, a dashed today line refreshed every minute and an overdue glow. Sorting and filtering still work because the timeline cells are ordinary grid cells, and onApiReady sets the left column widths through api.setColumnWidth so fitColumns stretches the timeline.",
+  "keywords": [
+    "svelte gantt chart",
+    "svelte 5 project timeline grid",
+    "svelte gantt component",
+    "svelte grid timeline cell",
+    "svelte project plan bars"
+  ],
+  "faq": [
+    {
+      "question": "How is the bar positioned?",
+      "answer": "The snippet computes left and width as percentages of the project window from the task's start and end dates and applies them as inline styles inside the cell; the cell itself is a normal column with a large width."
+    },
+    {
+      "question": "How is the today line drawn across every row?",
+      "answer": "Each Schedule cell draws its own vertical dashed line at today's percentage; because every row uses the same window the lines align into one, and a 60-second tick moves them."
+    },
+    {
+      "question": "Can I sort and filter the plan?",
+      "answer": "Yes. Sort by start date or filter by owner from the column menus; the timeline column reflows because it is derived per row."
+    }
+  ]
+}

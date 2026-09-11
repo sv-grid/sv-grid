@@ -1,0 +1,24 @@
+{
+  "description": "SvAccordion in Svelte 5: collapsible sections with single or multiple expand through expandMode, roving header focus with Up, Down, Home and End, and full WAI-ARIA with region roles and aria-controls. The panel body is a snippet that receives the item, expanded ids are controlled through expanded and onChange, and dir='rtl' mirrors the chevron and layout.",
+  "keywords": [
+    "svelte accordion",
+    "svelte 5 collapsible sections",
+    "svelte accordion single multiple expand",
+    "svelte accessible accordion",
+    "svelte faq accordion"
+  ],
+  "faq": [
+    {
+      "question": "How do I allow only one open section?",
+      "answer": "Set expandMode='single'. Opening a section closes the others; 'multiple' lets any number stay open, and expanded holds the open ids either way."
+    },
+    {
+      "question": "How do I render custom content in a panel?",
+      "answer": "Pass a snippet as the accordion's body; it receives the item so one template renders every section, or the items can carry their own content."
+    },
+    {
+      "question": "Which keys move between headers?",
+      "answer": "Up and Down move to the previous and next header, Home and End jump to the first and last, and Enter or Space toggles the focused section."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A signup conversion funnel in Svelte 5. type funnel renders strictly decreasing values as a stack of trapezoids where each level is narrower than the one above in proportion to its value; every segment shows its count and the cumulative conversion against the top of the funnel, hovering shows the step drop-off, and clicking a segment records a drill selection through onSelect that filters the grid to that stage.",
+  "keywords": [
+    "svelte funnel chart",
+    "svelte 5 conversion funnel",
+    "svelte signup funnel visualization",
+    "svelte chart trapezoid segments",
+    "svelte funnel click drill"
+  ],
+  "faq": [
+    {
+      "question": "What if the values are not decreasing?",
+      "answer": "A funnel assumes each stage is a subset of the previous one. Sort or aggregate the rows so the stages descend before building the spec; the chart draws each segment in proportion to its value either way."
+    },
+    {
+      "question": "What does hover show?",
+      "answer": "The tooltip lists the stage count, the conversion from the top of the funnel and the drop-off from the previous step."
+    },
+    {
+      "question": "How does drill work here?",
+      "answer": "onSelect receives the clicked stage; the demo filters the grid's stage column to it so the rows behind the segment are listed."
+    }
+  ]
+}

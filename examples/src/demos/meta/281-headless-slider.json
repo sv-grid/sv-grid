@@ -1,0 +1,24 @@
+{
+  "description": "The headless slider core of the SvGrid UI kit in Svelte 5. createSlider is the runes state machine behind SvSlider: it owns the value to position math, stepping, keyboard and drag state, and exposes trackProps and thumbProps. The core never touches the DOM; the renderer measures the track and passes the rect in. One core drives the styled SvSlider and a custom draggable bar, both bound to a single number.",
+  "keywords": [
+    "svelte headless slider",
+    "svelte 5 custom slider bar",
+    "svelte createSlider",
+    "svelte slider math core",
+    "svelte drag state machine"
+  ],
+  "faq": [
+    {
+      "question": "Why does the renderer pass the rect in?",
+      "answer": "Converting a pointer position to a value needs the track's size and offset, and measuring is a DOM concern. The renderer measures with getBoundingClientRect and hands the rect to the core, which stays pure and testable."
+    },
+    {
+      "question": "How is dragging handled?",
+      "answer": "thumbProps wires pointer down and the core tracks the drag through pointer move and up, converting positions to stepped values; the render just reads the value."
+    },
+    {
+      "question": "Does the custom bar get the keyboard?",
+      "answer": "Yes. thumbProps includes the slider role, aria-valuenow and the arrow, Home, End and Page key handling."
+    }
+  ]
+}

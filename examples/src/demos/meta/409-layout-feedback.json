@@ -1,0 +1,24 @@
+{
+  "description": "The structural and status primitives of SvGrid UI in Svelte 5: SvStack, SvGroup and SvSimpleGrid for layout with gap, alignment and a minChildWidth responsive grid, SvCollapsible for show and hide sections, SvSpinner and SvLoadingOverlay for async states, and SvResult for a full outcome page such as a completed payment. All themed from the --sg-* tokens.",
+  "keywords": [
+    "svelte layout primitives",
+    "svelte 5 stack group grid components",
+    "svelte collapsible section",
+    "svelte loading overlay spinner",
+    "svelte result page component"
+  ],
+  "faq": [
+    {
+      "question": "How does SvSimpleGrid decide the column count?",
+      "answer": "From minChildWidth: it fits as many columns of at least that width as the container allows and wraps the rest, so the KPI cards go from four across to one on a phone without media queries."
+    },
+    {
+      "question": "How do I overlay a loading state on a section?",
+      "answer": "Wrap the section and render SvLoadingOverlay with visible bound to your loading flag and a label; it dims the content, blocks interaction and announces the label."
+    },
+    {
+      "question": "What is SvResult for?",
+      "answer": "Whole-page outcomes: success, error, warning, info or notfound, with a status icon, title, description and action buttons, where an inline alert would be too small."
+    }
+  ]
+}

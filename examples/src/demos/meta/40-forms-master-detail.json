@@ -1,0 +1,24 @@
+{
+  "description": "A master grid with a full record-detail form beside it in Svelte 5. Clicking an account row loads it into a tabbed form with Profile, Billing, Contacts and Notes sections; edits live in a draft record with dirty tracking, Save applies them atomically and Discard rolls back to what the grid holds. Inline validation of email format, phone length and required fields blocks Save with messages, and a contacts subgrid lives inside the form.",
+  "keywords": [
+    "svelte master detail form",
+    "svelte 5 crud grid with form",
+    "svelte grid record editor",
+    "svelte tabbed detail form",
+    "svelte data grid dirty tracking"
+  ],
+  "faq": [
+    {
+      "question": "How does the form know which row is selected?",
+      "answer": "onActiveCellChange reports the row index; the demo looks up the account and copies it into a draft object that the form binds to. selectionMode='row' with showRowSelection highlights the master row."
+    },
+    {
+      "question": "How are Save and Discard implemented?",
+      "answer": "Save validates the draft and, if it passes, replaces the account in the accounts array so the grid updates; Discard resets the draft from the current account. A dirty flag is a $derived comparison of the two."
+    },
+    {
+      "question": "Can the form write through to the grid live instead?",
+      "answer": "Yes. Bind the form fields to the account object itself and the grid cell updates as you type, which suits a real-time backend where other operators see the same record."
+    }
+  ]
+}

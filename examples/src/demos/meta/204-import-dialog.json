@@ -1,0 +1,24 @@
+{
+  "description": "A drop-in import dialog for the Svelte 5 data grid, the round-trip partner of export. SvImportDialog takes the grid api, accepts a dropped file or rows pasted from a spreadsheet, auto-maps the headers that line up with your columns and leaves the rest for a one-click retarget, coerces each column with its own format so price becomes a number and sell date an ISO date, flags cells that will not convert, previews the typed rows and appends the clean ones through onImported. It reads xlsx, CSV, TSV and JSON, and a Copy sample CSV button lets you try the Paste tab.",
+  "keywords": [
+    "svelte import dialog",
+    "svelte 5 grid import csv xlsx",
+    "svelte paste from excel into table",
+    "svelte grid column auto mapping",
+    "svelte SvImportDialog"
+  ],
+  "faq": [
+    {
+      "question": "How does the dialog know which column a header belongs to?",
+      "answer": "It matches header text against the grid's column headers and fields, case-insensitively. Unmatched headers appear with a select so the user picks the target column or skips it."
+    },
+    {
+      "question": "How are values converted?",
+      "answer": "Each target column's format setting drives the coercion: currency and number formats parse to numbers, date formats parse to ISO dates. A value that fails is flagged in the preview and its row is held back."
+    },
+    {
+      "question": "What does onImported receive?",
+      "answer": "An ImportResult with the typed rows that passed, which the demo appends to its rows array so the grid shows them and inline editing works on them immediately."
+    }
+  ]
+}

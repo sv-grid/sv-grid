@@ -1,0 +1,24 @@
+{
+  "description": "A BI-style OLAP cube browser in Svelte 5 with the pivot rendered in tabular form: each row dimension, Region, Country and Product family, gets its own column, expand chevrons sit in the dimension cell that owns the children and subtotals appear as Total rows within the dimension column. Around the cube sit a page header, five KPI tiles with quarter-over-quarter sparklines, a left slicer rail with region multi-select, year picker, country search, density, heat-map and view-mode toggles, and a right insights rail with top movers and top contributors driven by the same fact slice.",
+  "keywords": [
+    "svelte olap cube grid",
+    "svelte 5 bi dashboard pivot",
+    "svelte pivot tabular form",
+    "svelte slicer rail filters",
+    "svelte pivot insights panel"
+  ],
+  "faq": [
+    {
+      "question": "What is tabular form?",
+      "answer": "Instead of one compact row-header column, every row dimension has its own column, the layout classic cube browsers use. The demo remaps the engine's row-header output to N dimension columns; the engine itself is unchanged."
+    },
+    {
+      "question": "How do the slicers apply?",
+      "answer": "They filter the fact table before it is pivoted, so the cube, the KPI tiles and the insights rail all reflect the same slice."
+    },
+    {
+      "question": "How are the insights computed?",
+      "answer": "From the filtered facts: quarter-over-quarter deltas ranked for top movers, contribution shares for top contributors and a z-score check for outlier callouts."
+    }
+  ]
+}

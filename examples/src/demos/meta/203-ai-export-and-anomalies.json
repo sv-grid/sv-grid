@@ -1,0 +1,24 @@
+{
+  "description": "Natural-language export from the Svelte 5 data grid: type export orders over $300 as a grouped PDF by country and the AI provider turns it into a { format, filters, groupBy } plan that is applied to the grid and downloaded, using aiExport from @svgrid/grid. A second button runs aiFindAnomalies over the current view. Both run on the bundled mockAIProvider with no API key, and setAIProvider(yourAdapter) connects a real model.",
+  "keywords": [
+    "svelte ai export",
+    "svelte 5 natural language grid export",
+    "svelte grid anomaly detection ai",
+    "svelte grid llm adapter",
+    "svelte export by describing it"
+  ],
+  "faq": [
+    {
+      "question": "What does the AI return for an export request?",
+      "answer": "An AIExportPlan with format, filters and groupBy. The demo shows the plan, applies the filters and grouping to the grid and calls exportData with the format, so the model never touches the data directly."
+    },
+    {
+      "question": "How do I connect a real model?",
+      "answer": "Call setAIProvider with a function that takes the prompt and response format, calls your endpoint and returns the text. The mock provider has the same shape, so nothing else changes."
+    },
+    {
+      "question": "What does the anomaly scan flag?",
+      "answer": "aiFindAnomalies returns rows and columns with a reason and a severity, which the demo lists and highlights; on the mock provider it uses statistical outliers, and a real model can reason over the values."
+    }
+  ]
+}

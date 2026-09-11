@@ -1,0 +1,24 @@
+{
+  "description": "The typed text controls of the SvGrid UI kit in Svelte 5: SvNumberInput with min, max, step, thousands grouping, precision, a prefix and spinner buttons, SvPasswordInput with a reveal toggle and a strength meter, SvMaskedInput with a pattern mask that reports the masked and raw value, SvPhoneInput with a country dial code and national mask, and SvColorInput with a swatch that opens a palette popover. Each emits a clean value, themes from the --sg-* tokens and doubles as a grid cell editor.",
+  "keywords": [
+    "svelte input components",
+    "svelte 5 number input password input",
+    "svelte masked input phone input",
+    "svelte color input swatch",
+    "svelte typed form controls"
+  ],
+  "faq": [
+    {
+      "question": "What value does each control emit?",
+      "answer": "SvNumberInput a number, SvPasswordInput and SvPhoneInput a string, SvColorInput a hex string, and SvMaskedInput both the masked display text and the raw characters, so your state never holds formatting."
+    },
+    {
+      "question": "How do the inputs become grid cell editors?",
+      "answer": "Through editorType on a column: number, password, masked, phone and color mount the same components inside the cell with the column's options."
+    },
+    {
+      "question": "Do they share a look?",
+      "answer": "Yes. They are built on the same field frame, so size, focus ring, invalid state and the clear button behave identically across the family and follow the active theme."
+    }
+  ]
+}

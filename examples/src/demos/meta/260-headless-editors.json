@@ -1,0 +1,24 @@
+{
+  "description": "The headless side of the SvGrid UI kit in Svelte 5. createListbox is the state machine behind SvListBox: roving focus, single and multi selection, the full keyboard model and ARIA, exposed as rootProps and optionProps prop-getters you spread onto your own markup. One core instance drives both the styled SvListBox and a custom chip-cloud render, bound to one value, so there is no forked logic and no re-implemented keyboard handling.",
+  "keywords": [
+    "svelte headless listbox",
+    "svelte 5 headless ui components",
+    "svelte prop getters pattern",
+    "svelte custom listbox markup",
+    "svelte headless first ui kit"
+  ],
+  "faq": [
+    {
+      "question": "What is a prop-getter?",
+      "answer": "A function such as optionProps(index) that returns the attributes and event handlers an element needs, role, aria-selected, tabindex, onclick and onkeydown. Spread it onto any element and that element becomes an option the core controls."
+    },
+    {
+      "question": "Can the styled component and my render share state?",
+      "answer": "Yes. Both read and write the same core, so selecting a chip in the custom render selects the row in SvListBox and the bound value updates once."
+    },
+    {
+      "question": "Which cores are available?",
+      "answer": "One per interactive component: listbox, combobox, dropdown list, autocomplete, tags, country, number, masked, phone, color and password inputs, toggle, switch, checkbox, radio group, rating, calendar, time and date-time pickers, tabs, tree, slider and gauge, each with its own demo."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "The list and chips editors of the Svelte 5 data grid, in single and multi-select forms. editorType: 'list' is a native select that becomes a multi-select with editorMultiple and stores an array; editorType: 'chips' edits removable tokens, with a picker when editorOptions are given and free-form typing when they are not. editorSeparator controls how array values are joined for display, and onCellValueChange reports each commit.",
+  "keywords": [
+    "svelte grid multi select cell",
+    "svelte table tags editor",
+    "svelte chips editor",
+    "svelte 5 dropdown cell editor",
+    "svelte grid array column"
+  ],
+  "faq": [
+    {
+      "question": "How do I store several values in one cell?",
+      "answer": "Set editorMultiple on a list or chips column. The cell value becomes an array of option values; a chips column renders them as tokens when not editing, and editorSeparator sets the join string for a list column's display."
+    },
+    {
+      "question": "Can users type their own tags?",
+      "answer": "Yes. A chips column without editorOptions is free-form: type a value and press Enter to add a token, click the x on a token to remove it."
+    },
+    {
+      "question": "What shapes can editorOptions take?",
+      "answer": "An array of strings, of numbers, or of { value, label } objects. The label is what the dropdown and the chips show; the value is what lands in the row."
+    }
+  ]
+}

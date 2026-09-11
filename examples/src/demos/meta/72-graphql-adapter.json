@@ -1,0 +1,24 @@
+{
+  "description": "The Svelte 5 data grid wired to a GraphQL endpoint. Sorting, filtering and paging run in externalSort and externalFilter mode, so each change hands the grid state to the component, which builds a typed GraphQL query from it, sends it and resets data from the response. A side panel shows the live query document so you can compare it with the network tab; the resolver is an in-process mock that swaps for fetch('/graphql') unchanged.",
+  "keywords": [
+    "svelte grid graphql",
+    "svelte 5 table graphql pagination",
+    "svelte data grid graphql client",
+    "svelte grid build graphql query",
+    "svelte graphql sorting filtering"
+  ],
+  "faq": [
+    {
+      "question": "How is the query built from grid state?",
+      "answer": "onSortingChange and onFiltersChange store the sort clause and column filters; a function maps them to the orders field's page, pageSize, sort { field, dir } and filters [{ field, op, value }] arguments and serializes the document that the side panel displays."
+    },
+    {
+      "question": "Does this work with a GraphQL client library?",
+      "answer": "Yes. runQuery is the only place the document is sent; replace its body with your client's query call and pass the variables it produces."
+    },
+    {
+      "question": "How is the response mapped to rows?",
+      "answer": "The resolver returns total and items; the items array becomes the grid's data and total drives the pager."
+    }
+  ]
+}

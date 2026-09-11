@@ -1,0 +1,24 @@
+{
+  "description": "The headless combobox core of the SvGrid UI kit in Svelte 5. SvComboBox is one styled renderer over createCombobox, which owns type-to-filter, the roving active index, the keyboard model, reverting unmatched text and ARIA, exposed as inputProps, triggerProps, listboxProps and optionProps. The same core drives the styled component and a custom filter-input render, both bound to one value with a readout.",
+  "keywords": [
+    "svelte headless combobox",
+    "svelte 5 custom combobox markup",
+    "svelte createCombobox",
+    "svelte combobox state machine",
+    "svelte accessible combobox headless"
+  ],
+  "faq": [
+    {
+      "question": "What do I have to render myself?",
+      "answer": "An input with inputProps(), an optional trigger with triggerProps(), a list with listboxProps() and one element per filtered option with optionProps(i). The core supplies the filtered options and the active index."
+    },
+    {
+      "question": "How does unmatched text revert?",
+      "answer": "On blur the core compares the input text with the options and, if nothing matches, restores the last valid value, so your render does not need its own blur logic."
+    },
+    {
+      "question": "Does the core know about the DOM?",
+      "answer": "No. It holds state and returns attributes; positioning and portalling are the styled component's concern, which is why an inline custom render works without a portal."
+    }
+  ]
+}

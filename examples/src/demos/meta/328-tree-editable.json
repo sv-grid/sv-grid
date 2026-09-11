@@ -1,0 +1,24 @@
+{
+  "description": "SvTree editing in Svelte 5: drag-and-drop reordering that drops before, after or inside a node, inline rename on double-click or F2, and sortable siblings. onMove receives the dragged id, the target id and the drop position, and the exported moveTreeNode helper applies the move to the nodes array; onRename delivers the new label.",
+  "keywords": [
+    "svelte editable tree",
+    "svelte 5 tree drag and drop reorder",
+    "svelte tree inline rename",
+    "svelte moveTreeNode",
+    "svelte sortable tree"
+  ],
+  "faq": [
+    {
+      "question": "How do I apply a drop?",
+      "answer": "In onMove call moveTreeNode(nodes, dragId, targetId, position) and assign the result. It removes the node from its old parent and inserts it before, after or inside the target."
+    },
+    {
+      "question": "How does inline rename work?",
+      "answer": "With editable on, double-click or F2 turns the label into an input; Enter commits through onRename and Escape cancels."
+    },
+    {
+      "question": "Why is reorder disabled while sorting?",
+      "answer": "A sorted tree orders siblings by label, so a manual position would be overridden immediately; the demo enables reorderable only when sort is off."
+    }
+  ]
+}

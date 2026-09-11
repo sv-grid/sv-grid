@@ -1,0 +1,24 @@
+{
+  "description": "Rich edit-form fields in the SvGrid Studio stack, both schema-driven on SvGridEditPanel. An upload field renders SvFileInput with a preview and file picker and stores an inline data URL with no backend, or pushes to storage when an uploads handler is given, and the grid shows the result as an avatar. A dependent dropdown computes its City options from the chosen Country through dependentOptions and clears when the country changes.",
+  "keywords": [
+    "svelte form image upload field",
+    "svelte 5 cascading dropdown form",
+    "svelte crud form file input",
+    "svelte schema driven form fields",
+    "svelte dependent select options"
+  ],
+  "faq": [
+    {
+      "question": "How is the uploaded image stored?",
+      "answer": "Without an uploads handler the field reads the file as a data URL and stores it in the row, which works offline. Pass uploads with a function that sends the file to storage and returns a URL to store that instead."
+    },
+    {
+      "question": "How do I make one field's options depend on another?",
+      "answer": "Give SvGridEditPanel dependentOptions with a function per field: city: (row) => citiesFor(row.country). The panel re-evaluates it when the country changes and clears the city if it is no longer valid."
+    },
+    {
+      "question": "How does the grid render the avatar?",
+      "answer": "The avatar column is mapped to a cell that renders an img from the stored URL, so the grid and the form show the same image."
+    }
+  ]
+}

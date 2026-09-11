@@ -36,7 +36,7 @@
     </div>
     <div class="brand-mid">
       <SvBadge variant="accent" pill>Analytics Cloud</SvBadge>
-      <h1>Sign in to your workspace.</h1>
+      <h2>Sign in to your workspace.</h2>
       <p>Dashboards, pipelines and reports for the whole team - in one place.</p>
     </div>
     <blockquote class="quote">
@@ -113,7 +113,7 @@
   }
   .brand-top { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; }
   .logo { font-size: 22px; }
-  .brand-mid h1 { font-size: 30px; line-height: 1.15; margin: 14px 0 10px; letter-spacing: -.02em; }
+  .brand-mid h2 { font-size: 30px; line-height: 1.15; margin: 14px 0 10px; letter-spacing: -.02em; }
   .brand-mid p { margin: 0; opacity: .82; max-width: 34ch; line-height: 1.5; }
   /* currentColor so the rule tracks whatever sits legibly on the accent. */
   .quote { margin: 0; font-size: 14px; line-height: 1.55; opacity: .9; border-left: 3px solid color-mix(in srgb, currentColor 40%, transparent); padding-left: 14px; }

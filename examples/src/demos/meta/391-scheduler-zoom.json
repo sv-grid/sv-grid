@@ -1,0 +1,24 @@
+{
+  "description": "A shop-floor timeline in the Svelte 5 scheduler that collapses non-working time: collapseNonWorking folds nights into a thin gap and collapseWeekends folds weekends into a marker, with collapsedGapPx setting the gap, so working hours fill the width. A zoom stepper scales the axis from hourly detail out to a whole week, and bars, drag and the now-line all map through the compressed axis; the Table shows the same rows.",
+  "keywords": [
+    "svelte timeline zoom",
+    "svelte 5 scheduler collapse non working hours",
+    "svelte machine shop timeline",
+    "svelte timeline hide weekends",
+    "svelte operations schedule"
+  ],
+  "faq": [
+    {
+      "question": "How does the axis skip nights?",
+      "answer": "With collapseNonWorking the hours outside businessHours are drawn as a narrow gap of collapsedGapPx pixels instead of at full width, and positions are computed through the compressed scale."
+    },
+    {
+      "question": "How is zoom controlled?",
+      "answer": "zoom is a level index the stepper changes; each level sets the tick unit and pixel width, from hourly to weekly."
+    },
+    {
+      "question": "Do drags respect the compressed axis?",
+      "answer": "Yes. Pointer positions are mapped back through the same scale, so a bar dropped after a folded night lands at the next working hour."
+    }
+  ]
+}

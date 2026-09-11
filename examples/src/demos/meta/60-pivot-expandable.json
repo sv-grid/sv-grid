@@ -1,0 +1,24 @@
+{
+  "description": "A production-style pivot view of a sales pipeline in Svelte 5: a page header with title, breadcrumbs, last-refresh time and refresh and export actions, four KPI tiles with sparkline trends per region, a filter rail with region chips, measure toggles and a density toggle, and the pivot grid in a card with heat-map tinting, a pinned row-header column and distinct subtotal and grand-total styling. The toolbar expands and collapses all groups and exports to xlsx through the enterprise exportData.",
+  "keywords": [
+    "svelte pivot report",
+    "svelte 5 sales pipeline pivot",
+    "svelte pivot expand collapse all",
+    "svelte pivot heatmap",
+    "svelte pivot export xlsx"
+  ],
+  "faq": [
+    {
+      "question": "How is the row-header column pinned?",
+      "answer": "onApiReady calls api.setColumnPinning({ left: [rowHeaderId] }) so the region and sales-person labels stay in view while the quarter columns scroll."
+    },
+    {
+      "question": "How do the KPI tiles relate to the pivot?",
+      "answer": "They are derived from the same fact slice the pivot reads, filtered by the region chips, so changing a chip updates the tiles and the grid together."
+    },
+    {
+      "question": "What does the density toggle change?",
+      "answer": "The rowHeight prop switches between 28 and 36 pixels; the grid re-lays out without rebuilding the pivot."
+    }
+  ]
+}

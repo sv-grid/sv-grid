@@ -1,0 +1,24 @@
+{
+  "description": "SvForm as a multi-step wizard in Svelte 5: group fields into titled FormSection entries and set stepper, and each section becomes a validated step with Back and Next, where Next is gated on that step's validation, and a Submit on the final step with an async finish. Drop the stepper prop and the same schema renders as stacked fieldsets.",
+  "keywords": [
+    "svelte wizard form",
+    "svelte 5 multi step form",
+    "svelte form stepper validation",
+    "svelte form sections",
+    "svelte step by step signup"
+  ],
+  "faq": [
+    {
+      "question": "How are steps defined?",
+      "answer": "Each FormSection has a title and its own fields; with stepper on, sections become steps in order and the stepper header shows progress."
+    },
+    {
+      "question": "Can the user skip ahead?",
+      "answer": "No. Next runs the current step's validation and only advances when it passes; Back always works and keeps the entered values."
+    },
+    {
+      "question": "Does the payload change between wizard and fieldset modes?",
+      "answer": "No. onSubmit receives the same flat object of all fields either way; stepper only changes presentation and when validation runs."
+    }
+  ]
+}

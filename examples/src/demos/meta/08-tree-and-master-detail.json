@@ -1,0 +1,24 @@
+{
+  "description": "Two hierarchical views in one Svelte 5 data grid example. The upper grid flattens a synthetic file tree and indents the name column by depth, with expand and collapse through rowExpandingFeature; the lower grid shows master and detail by mounting a second SvGrid keyed to the selected order row and listing its line items. Both use the MIT @svgrid/grid package.",
+  "keywords": [
+    "svelte tree table",
+    "svelte 5 master detail grid",
+    "svelte file tree grid",
+    "svelte grid nested data",
+    "svelte order line items table"
+  ],
+  "faq": [
+    {
+      "question": "How is the file tree flattened?",
+      "answer": "A recursive walk turns the nested folders into a flat array with a depth per row; the name column's snippet indents by that depth and the rowExpandingFeature toggles which subtrees are visible. The treeData prop now does this automatically for parent-id data."
+    },
+    {
+      "question": "How does the detail grid follow the selection?",
+      "answer": "The master grid reports the active row; a $derived filters the line items for that order and a second SvGrid renders them. Selecting another order swaps the detail data in place."
+    },
+    {
+      "question": "Can the detail be inside the master row instead?",
+      "answer": "Yes. The isDetailRow and renderDetailRow props render a full-width detail row under a master row, which the master/detail nested-grid demo shows."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A schema-free Excel and CSV importer for the Svelte 5 data grid. Pick a file or paste text and the importer detects xlsx, csv, tsv or json, reads the source headers, and lets you rename each column, choose its type or drop it; the parser then previews the rows with per-cell typed coercion and per-row validation errors, and Commit appends the clean rows into a grid whose columns were derived from the parsed shape. It works for orders, bank statements, lookup tables or JSON arrays because there is no hard-coded target schema.",
+  "keywords": [
+    "svelte excel import",
+    "svelte 5 csv upload to table",
+    "svelte grid import mapping preview",
+    "svelte xlsx parser grid",
+    "svelte import validation preview"
+  ],
+  "faq": [
+    {
+      "question": "Which file formats are detected?",
+      "answer": "xlsx, csv, tsv and json, from the file extension or the pasted text's shape. The parser reads the headers from the first row or the object keys and lists them in the mapping panel."
+    },
+    {
+      "question": "What happens to rows that fail validation?",
+      "answer": "They stay in the preview with their errors highlighted and are excluded from the commit, so the user can fix the source or the mapping and re-parse before appending."
+    },
+    {
+      "question": "Is the importer in the free package?",
+      "answer": "The file parsing for xlsx ships in @svgrid/enterprise; the grid that receives the rows is the MIT @svgrid/grid. The enterprise package runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

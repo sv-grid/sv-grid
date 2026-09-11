@@ -1,0 +1,24 @@
+{
+  "description": "Locale-aware text filtering in the Svelte 5 data grid. Set filterLocale to a BCP-47 tag and the grid normalises text with NFD decomposition, diacritic stripping and locale-aware lowercasing, so cafe matches Café, munch matches München and, in tr-TR, istanbul matches İstanbul. The same pipeline drives global search and every column's contains, equals and starts-with operator.",
+  "keywords": [
+    "svelte grid diacritic insensitive filter",
+    "svelte table accent insensitive search",
+    "svelte 5 locale aware filtering",
+    "svelte grid filterLocale",
+    "svelte data grid unicode search"
+  ],
+  "faq": [
+    {
+      "question": "How do I make the filter ignore accents?",
+      "answer": "Set filterLocale on <SvGrid>, for example filterLocale='en'. Values and queries are decomposed with NFD and stripped of combining marks before comparison, so cafe and Café match."
+    },
+    {
+      "question": "Why does the locale matter for lowercasing?",
+      "answer": "Some languages have casing rules that plain toLowerCase gets wrong. Turkish has the dotted and dotless I, so under tr-TR the grid lowercases with that locale and istanbul matches İstanbul."
+    },
+    {
+      "question": "Does this apply to the column menu filters too?",
+      "answer": "Yes. Global search and the contains, equals and starts-with operators of every text column share the same normalisation."
+    }
+  ]
+}

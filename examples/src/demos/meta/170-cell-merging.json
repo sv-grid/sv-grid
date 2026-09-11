@@ -1,0 +1,24 @@
+{
+  "description": "Merged cells on an Excel-style shell in the Svelte 5 data grid. Column letters run across the top and row numbers down the left, and the first rows hold a complete invoice assembled from MergeSpec and CellBorderSpec entries: a brand band, bill-from and bill-to address blocks, a meta block, line items, totals, a notes box and signature lines. Quantity, rate, addresses and notes are editable and the amount, subtotal, tax and total recompute on every commit; below the invoice the sheet is empty for free typing.",
+  "keywords": [
+    "svelte grid merge cells",
+    "svelte spreadsheet merged cells",
+    "svelte 5 invoice template grid",
+    "svelte grid MergeSpec",
+    "svelte table colspan rowspan"
+  ],
+  "faq": [
+    {
+      "question": "How do I merge cells?",
+      "answer": "Add a MergeSpec to spreadsheetLayout with the top-left cell and the number of rows and columns to span. The grid renders the anchor cell across the area and hides the covered cells."
+    },
+    {
+      "question": "Can merged cells be edited?",
+      "answer": "Yes. The anchor cell is a normal editable cell; the address blocks and notes here are merged ranges with a text editor, and typing writes to the anchor's field."
+    },
+    {
+      "question": "How do the totals update?",
+      "answer": "onCellValueChange recomputes amount per line, then subtotal, tax and total, and writes them back into the rows the merged total cells read from."
+    }
+  ]
+}

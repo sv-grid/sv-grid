@@ -1,0 +1,24 @@
+{
+  "description": "SvDockManager header positions in Svelte 5: the tab strip can sit on any side of a panel through headerPosition, top, bottom, left or right, with left and right rendering vertical tabs, and tab reordering can be turned off with reorderEnabled. Dock, float, auto-hide and pop-out keep working in every position.",
+  "keywords": [
+    "svelte dock tabs position",
+    "svelte 5 vertical tab strip",
+    "svelte dock manager header",
+    "svelte disable tab reorder",
+    "svelte panel tabs bottom"
+  ],
+  "faq": [
+    {
+      "question": "How do vertical tabs read?",
+      "answer": "With headerPosition left or right the tab labels rotate along the strip and the active tab connects to the panel, the way IDE side bars do."
+    },
+    {
+      "question": "Can different panels use different positions?",
+      "answer": "The prop applies to the manager as a whole so the workspace stays consistent; a per-panel override is not part of this demo."
+    },
+    {
+      "question": "Why turn reordering off?",
+      "answer": "For fixed workspaces where tab order carries meaning, or where a drag should always mean dock rather than reorder."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A weekly staffing timeline in the Svelte 5 scheduler where one shift can cover several people and appears under each through assignmentField. A per-person utilization histogram from resourceHistogram sits under each row and turns red where someone is over-booked, a sticky summary strip from columnSummary totals the shifts per day, and dragging a shift onto another person reassigns it; the Table shows the same rows.",
+  "keywords": [
+    "svelte staffing timeline",
+    "svelte 5 shift scheduling",
+    "svelte scheduler utilization histogram",
+    "svelte multi resource event",
+    "svelte roster planning grid"
+  ],
+  "faq": [
+    {
+      "question": "How does one shift appear under several people?",
+      "answer": "assignmentField names an array field of resource ids; the scheduler renders the event in every listed row and a drag between rows updates that array."
+    },
+    {
+      "question": "What does the histogram measure?",
+      "answer": "Booked hours per slot for each person against their capacity; resourceHistogram sets its height and bars over capacity turn red."
+    },
+    {
+      "question": "How is the daily total computed?",
+      "answer": "columnSummary with reducer count and position bottom counts the events in each day column and pins the strip to the bottom of the timeline."
+    }
+  ]
+}

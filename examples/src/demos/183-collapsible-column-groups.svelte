@@ -6,7 +6,7 @@
    * Each quarter is a column GROUP with a collapse toggle in its header. The
    * quarter Total is always visible; the month columns are tagged
    * `columnGroupShow: 'open'`, so they appear only when the group is expanded.
-   * Groups start collapsed (AG-Grid default) - click a quarter header caret to
+   * Groups start collapsed by default - click a quarter header caret to
    * reveal its months. Q1 starts open via `openByDefault`.
    */
   import { SvGrid, tableFeatures, rowSortingFeature, type ColumnDef,

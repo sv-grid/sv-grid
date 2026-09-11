@@ -1,0 +1,24 @@
+{
+  "description": "SvSplitter in Svelte 5: two resizable panes with a draggable WAI-ARIA separator. Drag the gutter or focus it and use the arrow keys, with Home and End jumping to the min and max bounds set as fractions; splitters nest, so a horizontal split holding a vertical one gives an IDE layout, and dir='rtl' flips the horizontal drag direction.",
+  "keywords": [
+    "svelte splitter",
+    "svelte 5 resizable panes",
+    "svelte split pane component",
+    "svelte nested split layout",
+    "svelte accessible separator"
+  ],
+  "faq": [
+    {
+      "question": "How is the split size expressed?",
+      "answer": "As a fraction of the container from 0 to 1 through fraction and onChange, with min and max as fractions too, so the layout is independent of pixel size."
+    },
+    {
+      "question": "How do I build a three-pane layout?",
+      "answer": "Nest a vertical SvSplitter inside one pane of a horizontal one; each keeps its own fraction, which is how the demo gets a sidebar plus an editor over a console."
+    },
+    {
+      "question": "Is the separator keyboard accessible?",
+      "answer": "Yes. It is a separator role with aria-valuenow, focusable by Tab, and arrow keys resize in small steps while Home and End go to the bounds."
+    }
+  ]
+}

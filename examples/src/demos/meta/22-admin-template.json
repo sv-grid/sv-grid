@@ -1,0 +1,24 @@
+{
+  "description": "A complete admin dashboard in one Svelte 5 file: a sidebar with seven pages built on the data grid, including a KPI dashboard, an Orders page with 5,000 rows and the enterprise export bar, Customers with inline editing on every column, a Products inventory with stock badges, a Users roster, region Reports with sparklines and a tabbed Settings form. Styles are scoped to the shell so the template drops into any SvelteKit app.",
+  "keywords": [
+    "svelte admin template",
+    "sveltekit admin dashboard",
+    "svelte 5 admin panel",
+    "svelte dashboard with data grid",
+    "svelte crud admin"
+  ],
+  "faq": [
+    {
+      "question": "Can I use this admin template in a SvelteKit project?",
+      "answer": "Yes. The whole template is one component with scoped styles, so you can copy it into a SvelteKit route, split the pages into their own routes and swap the seed data for a load function or a fetch. The grid pages use @svgrid/grid; the export bar on the Orders page uses @svgrid/enterprise."
+    },
+    {
+      "question": "How is pagination done on the Orders page?",
+      "answer": "rowPaginationFeature is registered alongside sorting, filtering and row selection, and the grid renders its own pager. Page size and the current page are grid state you can read or set through the API."
+    },
+    {
+      "question": "Why are the styles scoped to .sg-admin-shell?",
+      "answer": "So the template's layout tokens do not leak into the host page. Every rule in the file is nested under that class, which is the pattern to keep when you embed the template in a larger app."
+    }
+  ]
+}

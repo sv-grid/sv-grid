@@ -1,0 +1,24 @@
+{
+  "description": "A custom chart inside the built-in panel of the Svelte 5 data grid. When group-by and split-by cannot express the chart, charting.buildSpec hands you the current rows and you return any ChartSpec; here a sankey flow diagram renders in the docked panel, the panel scopes it to the selection and re-runs it on every grid change, so filtering the flow table redraws the ribbons.",
+  "keywords": [
+    "svelte custom chart in grid panel",
+    "svelte 5 charting buildSpec",
+    "svelte sankey in chart panel",
+    "svelte grid chart custom spec",
+    "svelte chart panel live rows"
+  ],
+  "faq": [
+    {
+      "question": "What does buildSpec receive?",
+      "answer": "The rows currently in scope, the displayed rows or the selected ones, plus the column definitions, and it returns a ChartSpec of any type the chart engine supports."
+    },
+    {
+      "question": "Do the panel's pickers still show?",
+      "answer": "The Group by and Value pickers are hidden when buildSpec is set, since the spec is yours; the type selector and export remain."
+    },
+    {
+      "question": "When is buildSpec re-run?",
+      "answer": "On every change to the displayed rows or the selection, so a filter, sort or edit rebuilds the chart without manual wiring."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "The headless Svelte 5 table: no <SvGrid> component at all. createSvGrid from @svgrid/grid computes the sorted and filtered rows with rowSortingFeature and columnFilteringFeature, and this component renders a plain hand-styled <table> from them. Click a header to sort, type to filter; the engine owns the logic and you own every element of markup.",
+  "keywords": [
+    "svelte headless table",
+    "svelte 5 headless data grid",
+    "headless table svelte runes",
+    "svelte table engine",
+    "svelte custom table markup"
+  ],
+  "faq": [
+    {
+      "question": "What does headless mean in SvGrid?",
+      "answer": "createSvGrid gives you the state and the derived rows (sorted, filtered, grouped, paged) as reactive values, and nothing else. You write the <table>, the headers and the cells yourself and call the engine's setters from your own event handlers."
+    },
+    {
+      "question": "Is the headless engine a separate package?",
+      "answer": "No. createSvGrid and the feature functions are exported from @svgrid/grid alongside the SvGrid component, so you can start headless and adopt the render component later, or use both in one app."
+    },
+    {
+      "question": "How do I make a header sortable in my own markup?",
+      "answer": "Give createSvGrid an onSortingChange callback that writes your own sorting state, pass that state back in, and call a small toggle from the header's onclick. The demo does the same for filters with onColumnFiltersChange and an input per column."
+    }
+  ]
+}

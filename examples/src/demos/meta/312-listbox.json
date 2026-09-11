@@ -1,0 +1,24 @@
+{
+  "description": "SvListBox in Svelte 5 as an assignee picker: an inline multi-select list with options grouped by department, a roving keyboard with type-ahead, a fixed number of visible rows and a live summary of the selection. Controlled through value and onChange with multiple on.",
+  "keywords": [
+    "svelte listbox component",
+    "svelte 5 multi select list",
+    "svelte grouped options list",
+    "svelte listbox keyboard type ahead",
+    "svelte assignee picker"
+  ],
+  "faq": [
+    {
+      "question": "How are groups defined?",
+      "answer": "Options carry a group name; the list renders a heading per group and keeps keyboard navigation flowing across groups as one list."
+    },
+    {
+      "question": "How does type-ahead work?",
+      "answer": "Typing letters while the list has focus jumps to the next option starting with them, following the WAI-ARIA listbox pattern; arrow keys move and Space toggles in multiple mode."
+    },
+    {
+      "question": "How many rows are shown?",
+      "answer": "rows sets the visible height in options and the rest scroll; add virtual for very long lists."
+    }
+  ]
+}

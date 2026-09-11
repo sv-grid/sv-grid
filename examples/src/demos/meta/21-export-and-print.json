@@ -1,0 +1,24 @@
+{
+  "description": "The export feature pack of the Svelte 5 data grid: download the visible grid to Excel, PDF, CSV, TSV or HTML, or open a printable view in a new window. The grid is plain @svgrid/grid; installEnterprise(api) adds api.exportData(...) and api.print(...) onto the same SvGridApi you already hold, so the export buttons are a few lines each and respect the current sort, filters and row selection.",
+  "keywords": [
+    "svelte grid export excel",
+    "svelte 5 table export pdf",
+    "svelte grid print view",
+    "svelte data grid export csv",
+    "svelte grid exportData"
+  ],
+  "faq": [
+    {
+      "question": "How do I add export to a grid?",
+      "answer": "In onApiReady call installEnterprise(api) from @svgrid/enterprise and keep the returned api. Then api.exportData({ format: 'xlsx' }) downloads the file; 'pdf', 'csv', 'tsv' and 'html' are the other formats."
+    },
+    {
+      "question": "Is CSV export free?",
+      "answer": "Yes. api.exportCsv and exportTsv are in the MIT @svgrid/grid package and export values as shown on screen. Excel, PDF and the styled formats are the enterprise part."
+    },
+    {
+      "question": "What does print do?",
+      "answer": "api.print() opens a new window with the grid rendered as a plain table with a title and formatted values and calls the browser's print dialog, which is also the route to Save as PDF without a library."
+    }
+  ]
+}

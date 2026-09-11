@@ -1,0 +1,24 @@
+{
+  "description": "An empty Excel-style sheet on a plain Svelte 5 SvGrid: column-letter headers, the grid's built-in row-number gutter, a name box and formula bar with a browsable function picker, gridlines, range selection and a fill handle. HyperFormula computes the display values, so typing a literal or a formula such as =SUM(B2:D2) or =IF(...) recalculates every dependent cell live; drag a row or column border to resize and right-click for Cut, Copy, Paste and Clear.",
+  "keywords": [
+    "svelte spreadsheet component",
+    "svelte 5 blank sheet grid",
+    "svelte excel like table",
+    "svelte grid formula autocomplete",
+    "svelte spreadsheet fill handle"
+  ],
+  "faq": [
+    {
+      "question": "What does the grid provide and what does the demo add?",
+      "answer": "The grid supplies the row-number gutter with showRowNumbers, inline editing, cell-range selection with the fill handle, rowResize and header resize. The demo adds the letter columns, the name box, the formula bar with autocomplete and the HyperFormula engine."
+    },
+    {
+      "question": "How does the function picker work?",
+      "answer": "Typing = in the formula bar opens a list of functions filtered by prefix with their signature; choosing one inserts it, so a signature never has to be remembered."
+    },
+    {
+      "question": "Where does the value live?",
+      "answer": "The grid stores the raw text you typed. HyperFormula evaluates it and the cell shows the result, so editing a cell always shows the formula, not the number."
+    }
+  ]
+}

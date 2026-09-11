@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 pivot cube linked to two inline SVG charts that always reflect the slice the grid renders. A horizontal bar chart plots each row dimension value's total ARR and drills one level deeper on each row click, from regions to countries to product families, while a line chart plots the quarterly trend across every year for the active scope; clicking a value cell highlights the bar or line point and a scope KPI strip tracks the selection. Everything is driven by the same createPivotModel output, with onCellClick wiring the selection to the charts.",
+  "keywords": [
+    "svelte pivot linked charts",
+    "svelte 5 pivot bar line chart",
+    "svelte pivot drill down chart",
+    "svelte grid click to update chart",
+    "svelte inline svg chart pivot"
+  ],
+  "faq": [
+    {
+      "question": "How does a row click change the chart?",
+      "answer": "onCellClick records the clicked row's dimension path as the scope; the bar chart data is a $derived of the pivot rows whose parent is that path, so it shows the children of the selected node."
+    },
+    {
+      "question": "Why inline SVG charts?",
+      "answer": "They keep the demo dependency-free and render from the same reactive values as the grid; any chart library or the enterprise chart components can be fed the same arrays."
+    },
+    {
+      "question": "What does the scope KPI strip show?",
+      "answer": "Totals for the current selection, the whole slice, a region, a country or a family, computed from the same pivot rows the charts read."
+    }
+  ]
+}

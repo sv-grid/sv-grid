@@ -1,0 +1,24 @@
+{
+  "description": "A content command centre in Svelte 5: one grid, two views. A Calendar and Board toggle renders the same posts as an editorial month where you drag a draft idea from the backlog onto a date, or as an approval pipeline of Idea, Draft, In review, Scheduled and Published where dragging a card between lanes changes its status. A left rail filters channels and lists campaigns and owners, a KPI strip counts scheduled, published and in review plus total reach, and every board card carries a seven-point engagement SvSparkline.",
+  "keywords": [
+    "svelte content calendar app",
+    "svelte 5 editorial calendar and kanban",
+    "svelte marketing calendar board",
+    "svelte post scheduling pipeline",
+    "svelte calendar board toggle"
+  ],
+  "faq": [
+    {
+      "question": "How can the same grid be a calendar and a board?",
+      "answer": "The toggle switches between passing the scheduler prop and the board prop to one SvGrid over the same rows; a status change on the board or a date change on the calendar writes to the same row."
+    },
+    {
+      "question": "Where does the engagement sparkline come from?",
+      "answer": "Each post carries a reach number and a trend array; the board card snippet renders an SvSparkline from the array in the channel's colour."
+    },
+    {
+      "question": "How do channel filters apply to both views?",
+      "answer": "They filter the rows array before it reaches the grid, so hiding a channel removes its posts from the calendar and the pipeline at once."
+    }
+  ]
+}

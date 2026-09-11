@@ -1,0 +1,24 @@
+{
+  "description": "Three kinds of selection on the Svelte 5 scheduler. rangeSelectable lets you drag across empty slots to mark a continuous date and time range, or across days for a multi-day span, and press Enter or choose Add Event to create one event from it, with onRangeSelect delivering the start and end. eventSelectable lets you Ctrl or Cmd-click events to multi-select, Shift-click for a range, drag one to move the set together and press Delete to remove them.",
+  "keywords": [
+    "svelte calendar drag to create event",
+    "svelte 5 scheduler multi select",
+    "svelte calendar select range",
+    "svelte scheduler delete selected events",
+    "svelte calendar shift click select"
+  ],
+  "faq": [
+    {
+      "question": "Does selecting a range create an event?",
+      "answer": "No. Selecting only marks the range; creation happens when you press Enter or pick Add Event, which calls onRangeSelect with the start and end so your code adds the row."
+    },
+    {
+      "question": "How do multi-selected events move?",
+      "answer": "Dragging any selected event moves all of them by the same offset; onEventMove is called per event, so each row gets its own new times."
+    },
+    {
+      "question": "What does onEventSelectionChange report?",
+      "answer": "The ids of the currently selected events after every click, so a toolbar can enable bulk actions for the set."
+    }
+  ]
+}

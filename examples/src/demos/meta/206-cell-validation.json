@@ -1,0 +1,24 @@
+{
+  "description": "Declarative per-column validation in the Svelte 5 data grid. Each column gets a validate function returning true or a message; the grid runs it for every rendered cell, including values already in the data on load, and paints invalid cells red with the message as a tooltip. The check re-runs live as you edit, so fixing a value clears the red and breaking a good one lights it up, and the value is never rolled back.",
+  "keywords": [
+    "svelte grid validate hook",
+    "svelte table cell validation",
+    "svelte 5 data grid invalid cell highlight",
+    "svelte grid validation tooltip",
+    "svelte spreadsheet validation"
+  ],
+  "faq": [
+    {
+      "question": "How do I add validation to a column?",
+      "answer": "Add validate: (params) => message | true to the column definition. Return true when the value is fine and a string explaining the problem otherwise; the grid uses the string as the tooltip on the red cell."
+    },
+    {
+      "question": "Does it catch bad data that was already there?",
+      "answer": "Yes. The hook runs for every rendered cell, so rows that arrive invalid are flagged the moment the grid mounts, which a commit-time validator cannot do."
+    },
+    {
+      "question": "Does validation block the edit?",
+      "answer": "No. What you type is what is stored; the cell just stays red until the value passes. For a hard reject, roll the value back in onCellValueChange instead."
+    }
+  ]
+}

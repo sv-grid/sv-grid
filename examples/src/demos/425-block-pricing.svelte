@@ -44,7 +44,7 @@
 <div class="pricing">
   <header class="head">
     <SvBadge variant="accent" pill>Pricing</SvBadge>
-    <h1>Plans that scale with you.</h1>
+    <h2>Plans that scale with you.</h2>
     <p class="muted">Start free, upgrade when you grow. No hidden fees.</p>
     <div class="toggle">
       <SvSegmented
@@ -92,7 +92,7 @@
 <style>
   .pricing { padding: 28px 20px; display: flex; flex-direction: column; gap: 26px; background: var(--sg-header-bg, #f8fafc); color: var(--sg-fg, #0f172a); }
   .head { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .head h1 { margin: 6px 0 0; font-size: 30px; letter-spacing: -.02em; }
+  .head h2 { margin: 6px 0 0; font-size: 30px; letter-spacing: -.02em; }
   .muted { color: var(--sg-muted, #64748b); font-size: 14px; margin: 0; }
   .toggle { margin-top: 10px; }
 

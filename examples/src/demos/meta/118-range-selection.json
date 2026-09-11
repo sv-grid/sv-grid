@@ -1,0 +1,24 @@
+{
+  "description": "Rectangular range selection in the Svelte 5 data grid, in depth. Click and drag to select, Shift+click to extend from the anchor, Ctrl or Cmd+drag to add more rectangles that stay highlighted and copy together, and Shift with Arrow, Home, End, PgUp or PgDn to grow the range from the keyboard. api.selectCells drives one or many ranges from outside, onCellSelectionChange reports every change, and a stats panel computes sum, average, min, max and counts over the selection.",
+  "keywords": [
+    "svelte grid range selection",
+    "svelte table multi range select",
+    "svelte 5 excel style selection",
+    "svelte grid shift click select",
+    "svelte data grid keyboard range"
+  ],
+  "faq": [
+    {
+      "question": "How do I select several separate ranges?",
+      "answer": "Hold Ctrl or Cmd while dragging a second rectangle. Every range stays highlighted, api.getSelected() returns all of them and a copy spans them all."
+    },
+    {
+      "question": "Which keys grow the selection?",
+      "answer": "Shift+Arrow extends one cell at a time, Shift+Home and Shift+End reach the row edges and Shift+PgUp or Shift+PgDn move a page. All of them grow from the anchor cell the selection started at."
+    },
+    {
+      "question": "Can I issue common ranges from a toolbar?",
+      "answer": "Yes. The quick-select buttons call api.selectCells with a whole column, a whole row, a block of quarters or several blocks at once, and the stats panel updates from the same onCellSelectionChange event the mouse uses."
+    }
+  ]
+}

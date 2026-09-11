@@ -1,0 +1,24 @@
+{
+  "description": "The built-in chart panel of the Svelte 5 data grid from a single charting prop, no external library. The Chart toolbar button opens a docked panel, open by default here, where you pick Group by and Value and a chart type; filter or sort the grid and the chart re-draws live, select a cell range and it scopes to those rows, and click a bar or slice to filter the grid to that category. Everything the hand-wired integrated-charts demo does, with no glue code; the engine is in the MIT core.",
+  "keywords": [
+    "svelte grid built in charts",
+    "svelte 5 charting prop",
+    "svelte data grid chart panel",
+    "svelte chart cross filter grid",
+    "svelte grid chart no library"
+  ],
+  "faq": [
+    {
+      "question": "What does the charting prop accept?",
+      "answer": "true for defaults, or an object with defaultOpen, position and width for the docked panel plus dimension for the group-by column, series for a split-by column, measures, reduce, defaultType and crossFilter; the panel's pickers change them live."
+    },
+    {
+      "question": "How does cross-filtering work?",
+      "answer": "With crossFilter on, clicking a category in the chart filters the grid on the charted dimension, so only that category's rows show; clicking again clears it."
+    },
+    {
+      "question": "Which columns can be charted?",
+      "answer": "Numeric columns are offered as measures and text columns as group-by fields, read from the column definitions and their cellDataType; the panel needs at least one of each."
+    }
+  ]
+}

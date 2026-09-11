@@ -1,0 +1,24 @@
+{
+  "description": "A waterfall chart of a quarterly P&L in Svelte 5. type waterfall renders each bar starting where the previous one ended, waterfallTotals marks subtotal and total bars that span from zero, bars colour by sign with green for positive and red for negative and total bars a neutral slate overridable through waterfallColors, and thin connectors link bar tops so the cumulative trend reads at a glance. The grid drives it: tick a row's isTotal checkbox and the chart re-renders with the new running calculation.",
+  "keywords": [
+    "svelte waterfall chart",
+    "svelte 5 p&l bridge chart",
+    "svelte running total chart",
+    "svelte chart subtotal bars",
+    "svelte signed bar chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I mark a subtotal?",
+      "answer": "waterfallTotals is a boolean array parallel to categories; a true entry makes that bar span from zero to the running total instead of stacking on the previous bar."
+    },
+    {
+      "question": "How are negatives drawn?",
+      "answer": "A negative value draws downward from the previous top in the negative colour, and the running total continues from its bottom."
+    },
+    {
+      "question": "Can I change the colours?",
+      "answer": "Yes. waterfallColors takes positive, negative and total colours; by default they are green, red and slate."
+    }
+  ]
+}

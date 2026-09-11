@@ -1,0 +1,24 @@
+{
+  "description": "A faceted product filter bar composed from the SvGrid UI kit in Svelte 5: SvAutoComplete searches product names, SvButtonGroup picks the category, SvTagsInput adds tags, SvSlider sets a price range, SvSwitchButton limits to in-stock items and SvDropDownList chooses the sort, filtering a live product list as each control changes. Every control is also a SvGrid cell editor.",
+  "keywords": [
+    "svelte filter bar",
+    "svelte 5 faceted search ui",
+    "svelte price range slider filter",
+    "svelte tags input filter",
+    "svelte product list filters"
+  ],
+  "faq": [
+    {
+      "question": "How does the list react to the controls?",
+      "answer": "Each control writes to its own $state, and the visible products are one $derived that applies the search, category, tags, price range and stock flag in sequence, then sorts."
+    },
+    {
+      "question": "How is the price range bound?",
+      "answer": "SvSlider with the range prop reports a [min, max] tuple through onChange; min, max and step set the track, and the derived filter keeps products inside the tuple."
+    },
+    {
+      "question": "Can the tags be restricted to known values?",
+      "answer": "Yes. The demo filters the SvTagsInput value against the known tag list in onChange, so an unknown tag is dropped as it is typed."
+    }
+  ]
+}

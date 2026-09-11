@@ -1,0 +1,24 @@
+{
+  "description": "Row and column virtualization in the Svelte 5 data grid: 100,000 rows by 100 columns of sales-rep ledgers with monthly revenue, units and margin. Data is generated in chunks with a progress indicator and a cancel button, then the grid renders only the rows and columns in view, so both axes scroll smoothly. Sorting, filtering, cell selection and inline editing stay on at that size.",
+  "keywords": [
+    "svelte virtual table",
+    "svelte grid 100k rows",
+    "svelte column virtualization",
+    "svelte 5 large dataset table",
+    "svelte virtual scroll grid"
+  ],
+  "faq": [
+    {
+      "question": "How do I enable column virtualization in SvGrid?",
+      "answer": "Set virtualization for rows and columnVirtualization for columns. overscan and columnOverscan control how many extra rows and columns render outside the viewport; columnWidth gives wide grids a default width so the virtualizer can lay columns out without measuring each one."
+    },
+    {
+      "question": "How big can the dataset go?",
+      "answer": "The demo defaults to 10,000 rows by 55 columns and lets you scale to 100,000 rows at runtime. The 100k option pauses briefly while the data is generated, then scrolls smoothly because the DOM only ever holds the visible slice."
+    },
+    {
+      "question": "Why is the data loaded in chunks?",
+      "answer": "Generating 100,000 rows in one synchronous pass would freeze the tab. The demo builds the array in chunks with a progress bar and a cancel button, which is the same pattern to use when streaming rows from a server."
+    }
+  ]
+}

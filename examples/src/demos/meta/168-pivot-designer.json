@@ -1,0 +1,24 @@
+{
+  "description": "SvPivotDesigner, the self-contained pivot authoring component for Svelte 5. You provide flat rows and a field list; it renders a left-rail field picker with search and dimension and measure grouping, the Filters, Columns, Rows and Values wells with HTML5 drag and drop, per-chip menus to pick an aggregator or the allowed filter values, a toolbar with Reset, presets, subtotal and grand-total toggles and an optional export hook, and an inline pivot grid driven by createPivotModel. One bindable layout prop lets the page persist it, restore it from a URL or sync it with other components.",
+  "keywords": [
+    "svelte pivot designer component",
+    "svelte 5 pivot field wells",
+    "svelte pivot layout bindable",
+    "svelte drag and drop pivot builder",
+    "svelte SvPivotDesigner"
+  ],
+  "faq": [
+    {
+      "question": "How do I persist the pivot layout?",
+      "answer": "Bind the layout prop. It is a plain object of the fields in each well with their aggregators and filters, so you can serialize it to localStorage or a URL and bind it back on load."
+    },
+    {
+      "question": "Can I add an export button?",
+      "answer": "Yes. Pass an onExport hook and the toolbar shows Export; the hook receives the layout and the pivot rows, which you can hand to the enterprise exportData."
+    },
+    {
+      "question": "How do presets work?",
+      "answer": "Give the designer an array of named layouts; the preset menu applies one by replacing the bound layout, and Reset returns to the initial one."
+    }
+  ]
+}

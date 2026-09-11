@@ -3,7 +3,7 @@
   /**
    * 185. Tabbed column menu (columnMenuTabs)
    * ----------------------------------------
-   * Opt into the AG-Grid-style tabbed header menu with `columnMenuTabs`. The
+   * Opt into the tabbed header menu with `columnMenuTabs`. The
    * column menu (the ⋮ button on any header) then has three tabs:
    *   General - sort / pin / autosize / group / reset
    *   Filter  - the column's filter UI (operator + value + value checklist)

@@ -1,0 +1,24 @@
+{
+  "description": "A multi-sheet Excel export from the Svelte 5 data grid: one xlsx with an All orders tab and one tab per region, written independently of the current grid filter. The user can filter the grid to a single region while exportData({ format: 'xlsx', sheets: [{ label, rows }, ...] }) writes every region on its own sheet, because the export is a snapshot of the data you hand it.",
+  "keywords": [
+    "svelte excel export multiple sheets",
+    "svelte 5 xlsx multi tab export",
+    "svelte grid export per region sheets",
+    "svelte export workbook tabs",
+    "svelte grid sheets option"
+  ],
+  "faq": [
+    {
+      "question": "How do I write several sheets?",
+      "answer": "Pass a sheets array to exportData, each entry with a label and its rows, and optionally its own columns. The workbook gets one tab per entry in that order."
+    },
+    {
+      "question": "Does the export follow the grid's filter?",
+      "answer": "Not when you pass rows explicitly. The sheets here are built from the full orders array, so the file is complete even while the grid shows one region; omit rows to export the current view instead."
+    },
+    {
+      "question": "Can each sheet have different columns?",
+      "answer": "Yes. A sheet entry may carry its own columns array, which is how a summary tab and a detail tab can differ in the same file."
+    }
+  ]
+}

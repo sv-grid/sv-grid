@@ -1,0 +1,24 @@
+{
+  "description": "Totals and subtotals in the Svelte 5 pivot engine. createPivotModel emits subtotal rows per row-axis group, a grand-total row at the bottom and a grand-total column at the right, each switched by the rowSubtotals, grandTotalRow and grandTotalCol config flags; the chevron in the row header expands and collapses each group. The demo flips each toggle independently, marks subtotals with a badge, tints the grand-total row with the accent and the grand-total column amber, with a legend that stays in sync.",
+  "keywords": [
+    "svelte pivot grand total",
+    "svelte 5 pivot subtotal rows",
+    "svelte pivot totals toggle",
+    "svelte createPivotModel config",
+    "svelte pivot rollup rows"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn subtotals off?",
+      "answer": "Set rowSubtotals: false in the createPivotModel config. The engine then emits only leaf rows and the grand total, and the row headers lose their subtotal entries."
+    },
+    {
+      "question": "How do I style total rows differently?",
+      "answer": "Each emitted row carries __pivotKind, one of group, leaf, subtotal or grandTotal; rowClass reads it and returns a class, which is how the demo tints the grand-total row and badges the subtotals."
+    },
+    {
+      "question": "Is the grand-total column computed per row?",
+      "answer": "Yes. For every row it aggregates the row's values across all column-axis members with the measure's aggregator, so it is a sum for sums and an average for averages."
+    }
+  ]
+}

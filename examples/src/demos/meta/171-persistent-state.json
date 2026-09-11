@@ -1,0 +1,24 @@
+{
+  "description": "Automatic view persistence for a CRM contacts grid in Svelte 5. attachAutoSavedView reserves one slot inside createNamedViews with localStorageViews and mirrors the grid view to it: sort, filter, hide, reorder or resize a column, reload the tab, and the layout is exactly where you left it. The grid has twelve editable columns with pipeline stages, deal values, owners and last-contact dates so the persistence has something worth keeping, and the same store can hold extra named layouts.",
+  "keywords": [
+    "svelte grid remember layout",
+    "svelte table persist column state",
+    "svelte 5 grid auto save view",
+    "svelte grid attachAutoSavedView",
+    "svelte crm contacts grid"
+  ],
+  "faq": [
+    {
+      "question": "How do I make the grid remember its layout across reloads?",
+      "answer": "In onApiReady create a named-views manager with localStorageViews and call attachAutoSavedView on it. From then on every change to the view is written to the reserved slot and restored on the next load."
+    },
+    {
+      "question": "What is included in the saved view?",
+      "answer": "Sorting, column filters, column visibility, order and widths, everything api.getState() reports. Row data is not stored; it comes from your source as usual."
+    },
+    {
+      "question": "Can users still save additional named views?",
+      "answer": "Yes. The auto-saved slot is reserved, and the same manager keeps saving, loading and deleting named views next to it."
+    }
+  ]
+}

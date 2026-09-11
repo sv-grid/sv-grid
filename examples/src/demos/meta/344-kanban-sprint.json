@@ -1,0 +1,24 @@
+{
+  "description": "An agile sprint board on the Svelte 5 data grid: status lanes from board.groupBy crossed with a swimlane per assignee through board.swimlaneBy, an enforced WIP limit on In progress with enforceWip, and a story-point roll-up in every lane header from board.laneSummary. Drag a card across a swimlane band to reassign its owner as well as its status, double-click to edit, and collapse lanes you are not working in. The board renderer ships in @svgrid/enterprise.",
+  "keywords": [
+    "svelte sprint board",
+    "svelte 5 kanban swimlanes",
+    "svelte kanban wip limit",
+    "svelte agile board component",
+    "svelte board story points per lane"
+  ],
+  "faq": [
+    {
+      "question": "How do swimlanes work?",
+      "answer": "swimlaneBy names a second field, assignee here, and the board draws a horizontal band per value across every lane. Dropping a card in another band writes that field too, so one drag can change status and owner."
+    },
+    {
+      "question": "How is the WIP limit enforced?",
+      "answer": "The lane definition carries wipLimit and enforceWip rejects a drop or keyboard move that would exceed it; the lane header shows the count against the limit and turns red when full."
+    },
+    {
+      "question": "How are story points summed per lane?",
+      "answer": "laneSummary receives the lane's rows and returns a string; the demo sums points and the board prints it in the header, recomputed after every move."
+    }
+  ]
+}

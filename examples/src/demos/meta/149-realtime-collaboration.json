@@ -1,0 +1,24 @@
+{
+  "description": "Real-time collaboration on the Svelte 5 data grid: presence showing who is here and where their cursor is, and live edits where a change in one client lands in every other, over a pluggable transport. createCollaboration takes a user, a transport and onPeersChange and onRemoteEdit callbacks; broadcastChannelTransport syncs cursors and edits across browser tabs with no backend, and a WebSocket transport takes it across machines. Open the demo in two tabs to see it.",
+  "keywords": [
+    "svelte collaborative grid",
+    "svelte 5 multiplayer table",
+    "svelte grid presence cursors",
+    "svelte broadcastchannel sync",
+    "svelte realtime editing grid"
+  ],
+  "faq": [
+    {
+      "question": "How do cursors get shared?",
+      "answer": "onActiveCellChange sends the row id and column id through the transport; onPeersChange delivers every peer's position, and an effect locates the matching cell by its data-svgrid-row and data-col-id attributes to draw a coloured box with the peer's name over it."
+    },
+    {
+      "question": "How are remote edits applied?",
+      "answer": "onCellValueChange broadcasts { rowId, columnId, value }; the receiving client's onRemoteEdit writes the value into its own data by row id and the cell flashes green through a shared cellClass callback."
+    },
+    {
+      "question": "What does a WebSocket transport need to implement?",
+      "answer": "The same send and subscribe shape as broadcastChannelTransport, relaying messages to every other client through your server. The collaboration object does not care which transport carries them."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Cell editor dropdowns in the Svelte 5 data grid that load their options from a server. editorOptions can be a function returning a Promise for the whole column, or a per-row function for a cascade such as cities filtered by the row's country. The dropdown shows Loading while the request is in flight, results are cached per column or per column and row so reopening never refetches, and api.refreshEditorOptions() drops the cache when the server list changes.",
+  "keywords": [
+    "svelte grid async dropdown options",
+    "svelte table editor options from api",
+    "svelte cascading dropdown grid",
+    "svelte 5 lazy select options",
+    "svelte grid fetch editor options"
+  ],
+  "faq": [
+    {
+      "question": "How do I load dropdown options from an API?",
+      "answer": "Give the column editorOptions: () => fetchUsers(). The grid calls it the first time the column is edited, shows Loading until the promise settles, and caches the result for the column. Prefer a function over a bare Promise, which would start at mount and could never be refetched."
+    },
+    {
+      "question": "How do I make one dropdown depend on another?",
+      "answer": "Use the row form: editorOptions: (row) => fetchCities(row.country). Results are cached per row and per row data, so editing the country invalidates that row's city list on its own."
+    },
+    {
+      "question": "What if the server list changes?",
+      "answer": "Call api.refreshEditorOptions() to clear the cache; the next edit refetches. The option source runs during render, so it must not write $state; count requests inside the promise instead."
+    }
+  ]
+}

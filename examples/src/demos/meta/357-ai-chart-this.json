@@ -1,0 +1,24 @@
+{
+  "description": "Describing a chart in words to the Svelte 5 data grid. After enableAiCharting(api) the built-in chart panel gains an AI button: type revenue by country, stacked by product, and the model reads the grid's column schema and returns a chart config with type, group-by, split-by, measure and aggregate that the panel applies live. It ships with the deterministic mockAIProvider so no key is needed, setAIProvider plugs in a real model, and the AI helpers are free in @svgrid/grid.",
+  "keywords": [
+    "svelte ai chart generation",
+    "svelte 5 natural language chart",
+    "svelte chart from text prompt",
+    "svelte grid enableAiCharting",
+    "svelte llm chart config"
+  ],
+  "faq": [
+    {
+      "question": "What does the model see?",
+      "answer": "The column schema, names and data types, plus the request text. It returns a chart config, not data, so nothing in the grid leaves the browser beyond the schema you already have."
+    },
+    {
+      "question": "How do I connect a real model?",
+      "answer": "Call setAIProvider with a function that posts the prompt to your endpoint and returns the response text; the mock provider has the same shape and is what the demo uses."
+    },
+    {
+      "question": "Can I edit the result?",
+      "answer": "Yes. The returned config lands in the panel's pickers, so any part of it can be adjusted by hand afterwards."
+    }
+  ]
+}

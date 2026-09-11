@@ -1,0 +1,24 @@
+{
+  "description": "SvGridSelect in Svelte 5, a grid-in-a-dropdown single-select: the panel shows options as a compact multi-column table with a header row and a search box, so a user picks an assignee by name, email and team rather than by one label. It is built on its own panel with no embedded SvGrid, takes columns and options with a labelField for the trigger, and works standalone or as a grid cell editor.",
+  "keywords": [
+    "svelte grid select",
+    "svelte 5 multi column dropdown",
+    "svelte table in dropdown",
+    "svelte select with columns",
+    "svelte lookup dropdown"
+  ],
+  "faq": [
+    {
+      "question": "How do I define the columns?",
+      "answer": "With a columns array of { field, header, width }, the same shape the grid uses. Each option row shows those fields; labelField names the one printed in the trigger after a pick."
+    },
+    {
+      "question": "What does search match?",
+      "answer": "Every visible column, so typing part of an email or a team name narrows the rows even though the trigger shows only the name."
+    },
+    {
+      "question": "Is a full SvGrid inside the panel?",
+      "answer": "No. The panel is a light table renderer sized for a dropdown, which keeps it fast and free of the grid's features it does not need."
+    }
+  ]
+}

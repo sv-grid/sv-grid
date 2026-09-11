@@ -1,0 +1,24 @@
+{
+  "description": "An ICU inpatient census in the Svelte 5 data grid as a clinician sees it: a vitals sparkline, a colour-graded risk score, an allergy chip cluster, a code-status pill and a primary-nurse avatar, all stock cell snippets. A role switcher drives the cell-level editable predicate: nurses edit notes, physicians move code status and orders, admins also see discharge planning, and Viewer locks everything. Every name, MRN, allergy and diagnosis is synthetic.",
+  "keywords": [
+    "svelte healthcare grid",
+    "svelte 5 emr table",
+    "svelte patient list grid",
+    "svelte grid role based cells",
+    "svelte clinical dashboard"
+  ],
+  "faq": [
+    {
+      "question": "How does the role change what is editable?",
+      "answer": "enableInlineEditing is false for Viewer, and each clinical column's editable function calls canEditColumn with the column id, which checks the active role, so Notes opens for nurses while code status opens only for physicians; onCellValueChange rejects anything the role may not edit."
+    },
+    {
+      "question": "How is the vitals sparkline drawn?",
+      "answer": "A cell snippet renders an SVG polyline from the patient's recent readings, the same in-cell technique used by the other sparkline demos, with no chart library."
+    },
+    {
+      "question": "Is any real patient data used?",
+      "answer": "No. Every value is generated deterministically from a seed; the structure of the columns is the point."
+    }
+  ]
+}

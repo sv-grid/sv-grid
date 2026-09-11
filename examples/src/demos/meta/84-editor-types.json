@@ -1,0 +1,24 @@
+{
+  "description": "The select, rich-select and textarea editors of the Svelte 5 data grid, plus a custom cellEditor snippet for the cases no built-in fits. editorType: 'select' is a native dropdown, 'rich-select' a combobox with typeahead search and 'textarea' a multi-line editor where Enter inserts a newline. The Severity column supplies its own range slider as a cellEditor snippet that receives the value plus commit and cancel callbacks.",
+  "keywords": [
+    "svelte grid custom cell editor",
+    "svelte table textarea editor",
+    "svelte grid combobox editor",
+    "svelte 5 rich select cell",
+    "svelte data grid editor snippet"
+  ],
+  "faq": [
+    {
+      "question": "How do I write my own cell editor?",
+      "answer": "Pass a snippet as the column's cellEditor. It receives the current value and commit and cancel functions; render any control you like and call commit with the new value. The Severity column here uses a range slider."
+    },
+    {
+      "question": "What is the difference between select and rich-select?",
+      "answer": "select renders a native <select> with the editorOptions; rich-select renders a combobox with typeahead, which is the better choice when the option list is long."
+    },
+    {
+      "question": "How does the textarea editor commit?",
+      "answer": "Enter inserts a newline; Tab, Escape and blur end the edit, so a long description gets a proper multi-line editor without leaving the grid."
+    }
+  ]
+}

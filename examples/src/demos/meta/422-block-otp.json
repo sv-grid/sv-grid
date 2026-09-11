@@ -1,0 +1,24 @@
+{
+  "description": "A copy-paste two-factor verification block built from the SvGrid UI kit in Svelte 5: a centred card with SvOtpInput for six digits that auto-advances and fires onComplete, a resend cooldown timer, verify and back actions, and the waiting, verifying and verified states with a loading button. Enter 000000 to see the error path.",
+  "keywords": [
+    "svelte otp verification page",
+    "svelte 5 two factor code input",
+    "svelte 2fa screen template",
+    "svelte resend code timer",
+    "svelte one time password form"
+  ],
+  "faq": [
+    {
+      "question": "How does verification start?",
+      "answer": "onComplete fires when the sixth digit is entered and calls verify with the code, so most users never press the button; the button remains for a partial code."
+    },
+    {
+      "question": "How does the resend timer work?",
+      "answer": "A countdown in state decrements every second after a resend; the link is disabled and shows the remaining seconds until it reaches zero."
+    },
+    {
+      "question": "How is an error shown?",
+      "answer": "A rejected code sets the status to error, marks the input invalid with a message and clears it for another attempt; the demo rejects 000000."
+    }
+  ]
+}

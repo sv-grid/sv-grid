@@ -1,0 +1,24 @@
+{
+  "description": "Localization of the Svelte 5 data grid: the same data re-rendered as the locale and currency change. Each column's format setting for date, number and currency takes the live locale, header text comes from a small messages dictionary, and dir='rtl' on the wrapper flips the column order for Arabic. The grid's default sort already uses localeCompare, so locale-aware ordering comes for free.",
+  "keywords": [
+    "svelte grid localization",
+    "svelte 5 table i18n",
+    "svelte grid currency locale format",
+    "svelte data grid rtl",
+    "svelte table translated headers"
+  ],
+  "faq": [
+    {
+      "question": "How do I format numbers and dates for a locale?",
+      "answer": "Set format: { type: 'currency', currency: 'EUR' } or { type: 'date' } on the column and pass the locale; the grid formats through Intl. Switching the locale re-renders every formatted cell."
+    },
+    {
+      "question": "How are headers translated?",
+      "answer": "The columns array is a $derived that reads header text from a dictionary keyed by locale, so changing the locale rebuilds the headers."
+    },
+    {
+      "question": "How do I enable right-to-left?",
+      "answer": "Set dir='rtl' on the wrapper element. The grid mirrors column order, header alignment and pinned edges."
+    }
+  ]
+}

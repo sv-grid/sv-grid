@@ -1,0 +1,24 @@
+{
+  "description": "The headless country input core of the SvGrid UI kit in Svelte 5. SvCountryInput is one styled renderer over createCountryInput, which owns the searchable picker matching by name, dial code or ISO code, the roving active index, keyboard and ARIA, exposed as triggerProps, searchProps, listboxProps and optionProps. The same core drives the styled component and a custom searchable picker, both bound to one ISO alpha-2 code.",
+  "keywords": [
+    "svelte headless country picker",
+    "svelte 5 custom country select",
+    "svelte createCountryInput",
+    "svelte country search core",
+    "svelte iso code picker headless"
+  ],
+  "faq": [
+    {
+      "question": "Where does the country list come from?",
+      "answer": "From the built-in reference in @svgrid/grid with name, ISO code, dial code and flag; the core filters it and exposes the filtered array for your render."
+    },
+    {
+      "question": "How does search match?",
+      "answer": "Case-insensitively against the name, the dial code and the ISO code, so +49, de and Germany all find the same entry."
+    },
+    {
+      "question": "What is the bound value?",
+      "answer": "The two-letter ISO code. Both renders read and write it, and the styled component shows the flag and name for it."
+    }
+  ]
+}

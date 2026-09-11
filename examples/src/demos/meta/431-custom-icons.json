@@ -1,0 +1,24 @@
+{
+  "description": "Replacing the built-in glyphs of the Svelte 5 data grid with your own icon set. Every icon the grid draws for its chrome has a name, and the icons prop is a map from name to snippet, so names you leave out keep their built-in glyph; a partial set is a complete answer. Toggle Ours, Mixed and Yours to see Mixed override four icons while the rest of the chrome carries on. Overrides can be SVG, a design-system icon component, an image or a character, sized by the grid and coloured through currentColor.",
+  "keywords": [
+    "svelte grid custom icons",
+    "svelte 5 data grid icon set",
+    "svelte table replace sort filter icons",
+    "svelte grid icons prop",
+    "svelte grid design system icons"
+  ],
+  "faq": [
+    {
+      "question": "How do I replace one icon?",
+      "answer": "Pass icons={{ filter: myFunnel }} where myFunnel is a snippet. Only the filter glyph changes; sort, menu, pager and expander keep their defaults."
+    },
+    {
+      "question": "Do I have to size or colour the override?",
+      "answer": "No. The grid sizes the icon box so an override lands at the same size as the glyph it replaces, and the colour follows currentColor. The expander override also rotates when a group opens."
+    },
+    {
+      "question": "Which package is this in?",
+      "answer": "The icons prop is part of the MIT @svgrid/grid package, and the same map applies to the tool panel and pager icons when those are shown."
+    }
+  ]
+}

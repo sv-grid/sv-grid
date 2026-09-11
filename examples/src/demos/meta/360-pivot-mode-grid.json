@@ -1,0 +1,24 @@
+{
+  "description": "A pivot mode toggle for the Svelte 5 data grid built on SvPivotDesigner with panelPosition='right', which docks the field checklist and the Columns, Rows and Values wells as a tool panel beside the grid. With pivot mode off, flatColumns renders the flat participant grid with column groups, flags, ratings and an inline filter row; on, the grid pivots Language and Country against Game with averaged measures, and decorateColumns heat-tints the values from low to high. The layout is pre-seeded so the switch yields a real cross-tab immediately.",
+  "keywords": [
+    "svelte pivot mode grid",
+    "svelte 5 toggle table to pivot",
+    "svelte pivot tool panel",
+    "svelte grid pivot designer docked",
+    "svelte cross tab from flat grid"
+  ],
+  "faq": [
+    {
+      "question": "How do I show the normal grid when pivot mode is off?",
+      "answer": "Pass flatColumns to SvPivotDesigner with the columns for the flat view and bind pivotMode. Off renders those columns over the raw rows; on renders the pivot from the wells."
+    },
+    {
+      "question": "How is the heat tint applied?",
+      "answer": "decorateColumns receives the generated value columns and returns them with a cellClass or style computed from the column's value range, so the tint follows the data."
+    },
+    {
+      "question": "Can the panel sit above the grid instead?",
+      "answer": "Yes. panelPosition accepts top, the default where the field rail and wells sit above the pivot, or right for the docked tool-panel look used here."
+    }
+  ]
+}

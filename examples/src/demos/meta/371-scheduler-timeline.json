@@ -1,0 +1,24 @@
+{
+  "description": "A horizontal resource timeline on the Svelte 5 data grid: teams are rows, time runs left to right on a scrollable axis and work items are bars sized to their real durations, from half-day blocks to multi-day tasks. Switch timelineDay with hour ticks or timelineWeek with day ticks, drag a bar to re-time it, drop it on another team's row to reassign or drag an edge to resize. rangeSelectable lets you click or drag empty space to mark a range and press Enter to create, and eventSelectable lets you Ctrl-click bars to multi-select and Delete to remove; bar fill is the team and the left strip is the status.",
+  "keywords": [
+    "svelte resource timeline",
+    "svelte 5 timeline scheduler",
+    "svelte gantt like resource view",
+    "svelte timeline drag to reassign",
+    "svelte timelineWeek view"
+  ],
+  "faq": [
+    {
+      "question": "How do I get a timeline instead of a calendar?",
+      "answer": "Include timelineDay or timelineWeek in views with resourceField and resources set. Each resource becomes a row and events lay out as horizontal bars."
+    },
+    {
+      "question": "How is a bar reassigned to another team?",
+      "answer": "Drop it on the other row. onEventMove receives the new resource id along with the times, and the demo writes it to the row's team field."
+    },
+    {
+      "question": "How does keyboard range selection work?",
+      "answer": "With rangeSelectable, click an empty slot to mark it, arrow keys move the range, Shift with arrows extends it and Enter opens the add flow through onRangeSelect."
+    }
+  ]
+}

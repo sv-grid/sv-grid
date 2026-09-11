@@ -1,0 +1,24 @@
+{
+  "description": "SvFileUpload in Svelte 5: a drag-and-drop file field with click to browse, accept, maxSize and maxFiles validation whose rejections fire onReject, and a selected-files list. It carries the shared editor contract with a label, a hint and required or error validation, so it drops into a form like any other input; the demo uses it for a required avatar limited to images.",
+  "keywords": [
+    "svelte file upload component",
+    "svelte 5 drag and drop file input",
+    "svelte file input validation",
+    "svelte upload accept max size",
+    "svelte avatar upload field"
+  ],
+  "faq": [
+    {
+      "question": "How are rejected files reported?",
+      "answer": "Files that fail accept, maxSize or maxFiles are not added to the value; onReject receives them with a reason so you can show a message, as the demo does under the field."
+    },
+    {
+      "question": "Does it upload the files?",
+      "answer": "No. It collects File objects through onChange; you send them with fetch or FormData when the form submits, which keeps the component free of network assumptions."
+    },
+    {
+      "question": "Can users remove a selected file?",
+      "answer": "Yes. Each entry in the list has a remove button, and the value updates through onChange."
+    }
+  ]
+}

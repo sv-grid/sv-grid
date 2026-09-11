@@ -1,0 +1,24 @@
+{
+  "description": "The headless tree core of the SvGrid UI kit in Svelte 5. createTree is the runes state machine behind SvTree: flattening the node tree into visible rows, expand and collapse, single selection, cascading tri-state checkboxes and the full keyboard, exposed as treeProps and itemProps. One core drives the styled SvTree and a custom compact file explorer, both bound to a single selected id.",
+  "keywords": [
+    "svelte headless tree",
+    "svelte 5 custom tree view markup",
+    "svelte createTree",
+    "svelte tree state machine",
+    "svelte tree flattening core"
+  ],
+  "faq": [
+    {
+      "question": "What does flattening give my render?",
+      "answer": "An array of visible rows with depth, expanded state, selection and check state per node, so a render is a simple each block over rows rather than a recursive component."
+    },
+    {
+      "question": "What does itemProps wire?",
+      "answer": "role treeitem, aria-level, aria-expanded and aria-selected, the click and double-click handlers and the keyboard: Up and Down move, Right expands, Left collapses, Enter selects."
+    },
+    {
+      "question": "Do cascading checkboxes come from the core?",
+      "answer": "Yes. Checking a node updates its descendants and recomputes ancestors to checked, unchecked or partial, and both renders read the result."
+    }
+  ]
+}

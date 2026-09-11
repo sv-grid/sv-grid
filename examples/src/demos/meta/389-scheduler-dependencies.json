@@ -1,0 +1,24 @@
+{
+  "description": "Sequenced bookings in the Svelte 5 scheduler: a service centre where a job flows through stations in order, so a booking can only start once the one it depends on finishes. A dependencies array links the bookings, autoReschedule slides the following steps forward when you drag or resize one, and dependencyRespectWorkingTime keeps them inside opening hours. Dependencies are an optional convenience for ordered bookings on a resource scheduler, not a project planner; the Table shows the same rows.",
+  "keywords": [
+    "svelte scheduler dependencies",
+    "svelte 5 sequenced bookings",
+    "svelte auto reschedule linked events",
+    "svelte service center scheduling",
+    "svelte scheduler working hours dependencies"
+  ],
+  "faq": [
+    {
+      "question": "How are dependencies declared?",
+      "answer": "As an array of { from, to } event ids passed as dependencies in the scheduler config; the target may not start before the source ends."
+    },
+    {
+      "question": "What does autoReschedule do?",
+      "answer": "When a booking moves or grows, dependent bookings that would now start too early are pushed forward in order, and with dependencyRespectWorkingTime they skip closed hours."
+    },
+    {
+      "question": "Is this a Gantt chart?",
+      "answer": "No. The scheduler books resources over time; dependencies only order bookings. Critical paths, baselines and effort planning are project-planner features it does not attempt."
+    }
+  ]
+}

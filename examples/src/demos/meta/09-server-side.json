@@ -1,0 +1,24 @@
+{
+  "description": "Server-side sorting, filtering and paging for the Svelte 5 data grid, the pattern a SvelteKit app uses against an API. The grid runs with externalSort and externalFilter, so its built-in sort and filter UI only updates query state in the component; an effect debounces changes by 250 ms, turns the state into a request and an AbortController cancels stale ones. Only the current page is held in memory; the mock endpoint sees the full 100k-row dataset and is a drop-in for fetch('/api/people?...').",
+  "keywords": [
+    "sveltekit server side table",
+    "svelte grid external sort filter",
+    "svelte 5 server side pagination grid",
+    "svelte grid debounce fetch",
+    "svelte data grid abort controller"
+  ],
+  "faq": [
+    {
+      "question": "What do externalSort and externalFilter do?",
+      "answer": "They tell the grid not to sort or filter the rows it holds. The header clicks and filter menus still work, but they only fire onSortingChange and onFiltersChange; your code sends that state to the server and passes the returned page as data."
+    },
+    {
+      "question": "How are stale responses avoided?",
+      "answer": "Each request gets an AbortController stored in the component; the next request aborts the previous one before starting, so a slow older response can never overwrite a newer page. The 250 ms debounce keeps typing in a filter from firing a request per keystroke."
+    },
+    {
+      "question": "How do I swap the mock for my API?",
+      "answer": "Replace the mockEndpoint function with fetch against your route, passing the sort clauses, column filters, page and page size as query params. The effect, the debounce and the abort logic stay as they are."
+    }
+  ]
+}

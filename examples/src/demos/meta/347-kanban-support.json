@@ -1,0 +1,24 @@
+{
+  "description": "A helpdesk triage board on the Svelte 5 data grid: status lanes crossed with a swimlane per priority, a search box front and centre through board.searchable, and an SLA colour bar on each card driven by ticket age. Drag a ticket to a new status, or across a band to re-triage its priority, and double-click to edit.",
+  "keywords": [
+    "svelte support ticket board",
+    "svelte 5 helpdesk kanban",
+    "svelte kanban priority swimlanes",
+    "svelte board search cards",
+    "svelte sla board"
+  ],
+  "faq": [
+    {
+      "question": "How does the search box filter the board?",
+      "answer": "searchable adds a search input above the lanes with searchPlaceholder as its hint; typing filters the cards across every lane and band by their fields while the lane structure stays in place."
+    },
+    {
+      "question": "How is the SLA bar coloured?",
+      "answer": "The card snippet reads the ticket's age in hours and paints the bar red past 24 hours, amber past 8 and green below, and the header counts the tickets breaching the SLA."
+    },
+    {
+      "question": "How is priority changed by drag?",
+      "answer": "Priority is the swimlaneBy field, so dropping a card in another horizontal band writes the new priority through onCardMove alongside any status change."
+    }
+  ]
+}

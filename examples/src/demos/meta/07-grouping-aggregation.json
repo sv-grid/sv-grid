@@ -1,0 +1,24 @@
+{
+  "description": "Row grouping in the Svelte 5 data grid over 500 people. columnGroupingFeature buckets rows by department, country or both and renders a group row in their place, rowExpandingFeature expands and collapses each group, and showGroupingControls exposes Group by this column in the header menu; buttons above the grid switch the grouping through api.setGroupBy. enableRowSummaries adds a sticky footer that sums the salary column and counts the others across every filtered row.",
+  "keywords": [
+    "svelte table row grouping",
+    "svelte 5 grid group by column",
+    "svelte grid aggregation sum average",
+    "svelte data grid expand collapse groups",
+    "svelte grid setGroupBy"
+  ],
+  "faq": [
+    {
+      "question": "How do I group rows by a column?",
+      "answer": "Register columnGroupingFeature and rowExpandingFeature, then call api.setGroupBy(['department']) or let users pick Group by this column from the header menu with showGroupingControls on. Pass several ids for multi-level groups."
+    },
+    {
+      "question": "How do I show totals?",
+      "answer": "enableRowSummaries appends a sticky footer row that sums numeric columns and shows a count for the rest across every filtered row. For a rolled-up value inside each group header, set aggregate on the column, as the group aggregators demo shows."
+    },
+    {
+      "question": "How do I expand or collapse every group?",
+      "answer": "Click a group row to toggle it, or call api.expandAllGroups() and api.collapseAllGroups() from a toolbar. Passing an empty array to api.setGroupBy removes the grouping altogether."
+    }
+  ]
+}

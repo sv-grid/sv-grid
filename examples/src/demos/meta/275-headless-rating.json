@@ -1,0 +1,24 @@
+{
+  "description": "The headless rating core of the SvGrid UI kit in Svelte 5. createRating is the state machine behind SvRating: hover preview, half steps, the keyboard with arrows, Home and End and the ARIA slider model, exposed as rootProps and starProps. The same core drives the styled half-star SvRating and a custom segmented meter, both bound to one numeric value with a live preview.",
+  "keywords": [
+    "svelte headless rating",
+    "svelte 5 custom rating meter",
+    "svelte createRating",
+    "svelte rating hover preview",
+    "svelte rating half steps core"
+  ],
+  "faq": [
+    {
+      "question": "How does hover preview work?",
+      "answer": "The core tracks a preview value from pointer moves that starProps reports and exposes it separately from the committed value, so both renders can show the hovered rating without changing the bound value until click."
+    },
+    {
+      "question": "How are half steps produced?",
+      "answer": "With allowHalf the core resolves the pointer position within a star to a half or full value; starProps(i) tells the render whether star i is empty, half or full."
+    },
+    {
+      "question": "What does the segmented meter show?",
+      "answer": "The same value as bars instead of stars, proving the core carries no star-specific assumptions."
+    }
+  ]
+}

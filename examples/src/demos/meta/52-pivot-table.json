@@ -1,0 +1,24 @@
+{
+  "description": "A sales pivot table in Svelte 5 built on the shipped SvPivotDesigner: a field rail, Filters, Rows, Columns and Values wells with drag and drop, chip menus for aggregators and filters, presets, totals toggles and the inline pivot grid with multi-level column headers, subtotal and grand-total rows. The demo adds a grand-total KPI strip recomputed from the designer's onPivot callback and currency and number formatting on value cells through decorateColumns, over about 2,400 synthetic sales facts.",
+  "keywords": [
+    "svelte pivot table",
+    "svelte 5 pivot designer drag and drop",
+    "svelte pivot grid subtotals",
+    "svelte multi level column headers pivot",
+    "svelte pivot kpi strip"
+  ],
+  "faq": [
+    {
+      "question": "What do I have to provide to SvPivotDesigner?",
+      "answer": "Flat rows and a field list marking dimensions and measures. The designer renders the wells, handles drag and drop, builds the pivot with createPivotModel and shows it in a grid."
+    },
+    {
+      "question": "How do I format the value cells?",
+      "answer": "decorateColumns receives the generated columns and returns them with a format, so revenue and cost get a currency format and units a plain number format."
+    },
+    {
+      "question": "How do I react to layout changes?",
+      "answer": "onPivot fires with the pivot result whenever the layout changes; the demo reads the grand totals from it for the KPI strip."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Sorting, filtering and pagination wired together in the Svelte 5 data grid over 5,000 rows. Shift+click headers for multi-column sort, a per-column filter row for text and numbers, and a pagination footer with a page-size selector, from rowSortingFeature, columnFilteringFeature and rowPaginationFeature. The component owns the state so it can be persisted, here in the URL.",
+  "keywords": [
+    "svelte table sort filter paginate",
+    "svelte 5 data grid pagination",
+    "svelte grid multi column sort",
+    "svelte table filter row",
+    "svelte grid persist state url"
+  ],
+  "faq": [
+    {
+      "question": "How do I enable pagination?",
+      "answer": "Register rowPaginationFeature in features and set showPagination with a pageSize. The footer renders page controls and a page-size selector; the current page is grid state."
+    },
+    {
+      "question": "How do I sort by more than one column?",
+      "answer": "Click a header to sort by it and Shift+click another to add it as a secondary key. The sort indicators show the order; clicking again cycles direction and off."
+    },
+    {
+      "question": "How is the state kept in the URL?",
+      "answer": "The component holds sorting, filters and page in its own state, serializes them into the query string when they change and reads them back on load, so a link reproduces the same view."
+    }
+  ]
+}

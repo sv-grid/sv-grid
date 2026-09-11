@@ -1,0 +1,24 @@
+{
+  "description": "Server-side infinite scroll in the Svelte 5 data grid over a 100,000-row transaction log behind a mock API. The grid mounts with no data; rows is a sparse fixed-length array whose null slots render skeleton cells, a scroll listener converts scrollTop into a chunk range and fetches the chunks not yet loaded with two chunks of look-ahead, and sort, filter and search round-trip to the server so nothing is sorted in the browser. A floating network panel shows the last ten requests with latency.",
+  "keywords": [
+    "svelte infinite scroll grid",
+    "svelte 5 table lazy load on scroll",
+    "svelte grid chunked loading",
+    "svelte virtual scroll server data",
+    "svelte audit log table"
+  ],
+  "faq": [
+    {
+      "question": "How does the grid know the total length before the rows load?",
+      "answer": "The first response carries the match count, and rows is created as an array of that length filled with null. The virtualizer sizes the scrollbar from the length, and cell snippets draw skeleton bars for null rows."
+    },
+    {
+      "question": "What happens when the user sorts or filters?",
+      "answer": "The cache is wiped, the loaded and pending chunk sets are cleared and chunk 0 is fetched with the new query. The debounced mock API cancels any in-flight chunk so old results cannot paint over fresh ones."
+    },
+    {
+      "question": "How is the chunk range computed?",
+      "answer": "From the scroll container's scrollTop divided by rowHeight, extended by the viewport height and two chunks of look-ahead. Chunks already loaded or pending are skipped."
+    }
+  ]
+}

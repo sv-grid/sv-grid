@@ -1,0 +1,24 @@
+{
+  "description": "A radar chart comparing products in Svelte 5. type radar plots each category, speed, quality, price, durability, ergonomics and warranty, as a spoke, and every series draws a polygon connecting its values across the spokes on a shared scale, so two products read against each other directly. Click the legend to isolate one, and filter the grid to change which products are plotted.",
+  "keywords": [
+    "svelte radar chart",
+    "svelte 5 spider chart",
+    "svelte product comparison chart",
+    "svelte multi axis polygon chart",
+    "svelte chart legend isolate series"
+  ],
+  "faq": [
+    {
+      "question": "How is the scale chosen?",
+      "answer": "All spokes share one scale from zero to the maximum value across every series, so the polygons are comparable; normalise your columns to the same range first if their units differ."
+    },
+    {
+      "question": "How are categories ordered?",
+      "answer": "In the order of the categories array, clockwise from the top; reorder the array to put related attributes next to each other."
+    },
+    {
+      "question": "How many series are practical?",
+      "answer": "Three or four polygons stay readable; beyond that use the legend to isolate one at a time, which a click does."
+    }
+  ]
+}

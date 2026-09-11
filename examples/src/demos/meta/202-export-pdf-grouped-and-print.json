@@ -1,0 +1,24 @@
+{
+  "description": "Grouped PDF and Excel export from the Svelte 5 data grid. Group the grid by country or company through the header menu and export: the PDF and xlsx carry the grouping as bold group headers and per-cluster subtotal rows, taken from the grid's grouping state with no groupBy option needed. Print opens the zero-dependency Save as PDF view with a repeated header, a title and formatted values.",
+  "keywords": [
+    "svelte export grouped pdf",
+    "svelte 5 grid pdf subtotals",
+    "svelte grid print grouped table",
+    "svelte data grid pdf export",
+    "svelte grid export grouping state"
+  ],
+  "faq": [
+    {
+      "question": "Do I have to pass the grouping to the export?",
+      "answer": "No. exportData reads the grid's grouping state and writes group headers and subtotal rows for it; groupBy is only needed to export a grouping the grid is not showing."
+    },
+    {
+      "question": "How are subtotals computed?",
+      "answer": "From the columns' aggregate settings, so the same sum or average the group row shows on screen appears in the subtotal row of the PDF and workbook."
+    },
+    {
+      "question": "What is the difference between PDF export and Print?",
+      "answer": "PDF export writes the file directly with the grouping and formatting. Print renders a printable page and uses the browser's dialog, which needs no library and is what Save as PDF uses."
+    }
+  ]
+}

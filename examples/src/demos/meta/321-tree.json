@@ -1,0 +1,24 @@
+{
+  "description": "SvTree in Svelte 5 as a file explorer with cascading tri-state checkboxes, a single-select highlight and a search box that filters the tree. Up and Down move between visible nodes, Left and Right collapse and expand, and onSelect, onCheck and onToggle report selection, the checked id set and expansion changes.",
+  "keywords": [
+    "svelte tree view",
+    "svelte 5 file explorer tree",
+    "svelte tree checkboxes",
+    "svelte tree keyboard navigation",
+    "svelte searchable tree"
+  ],
+  "faq": [
+    {
+      "question": "How do I enable checkboxes?",
+      "answer": "Set checkable and pass the checked ids; checking a folder cascades to its descendants and partial folders show the indeterminate state. onCheck receives the updated id array."
+    },
+    {
+      "question": "How does search work?",
+      "answer": "searchable adds an input above the tree; typing filters to nodes whose label matches and keeps their ancestors visible and expanded so the path stays readable."
+    },
+    {
+      "question": "How is the expanded state controlled?",
+      "answer": "expandedIds holds the open node ids and onToggle reports each change, so the parent can persist or preset which folders are open."
+    }
+  ]
+}

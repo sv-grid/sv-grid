@@ -1,0 +1,24 @@
+{
+  "description": "Zoom and a brush mini-map on a Svelte 5 chart. zoomable lets the user drag a rectangle over a 180-day series to zoom in with double-click to reset, and brush adds a compact overview below the plot with a draggable window: drag the body to pan and an edge to resize, with brushHeight setting its size. The two stay in sync through the chart's zoom state, and a crosshair tooltip and PNG or SVG export complete the surface.",
+  "keywords": [
+    "svelte chart zoom",
+    "svelte 5 chart brush minimap",
+    "svelte drag to zoom chart",
+    "svelte chart pan window",
+    "svelte chart export png svg"
+  ],
+  "faq": [
+    {
+      "question": "How do I zoom?",
+      "answer": "With zoomable on, drag a rectangle over the plot area; the axes rescale to that range. Double-click anywhere in the plot to reset."
+    },
+    {
+      "question": "How does the brush relate to zoom?",
+      "answer": "The brush shows the full series with a window that mirrors the zoomed range; moving or resizing the window zooms the main plot, and zooming the plot moves the window."
+    },
+    {
+      "question": "Does the brush work with the grid filter?",
+      "answer": "Yes. The series comes from the displayed rows, so filtering the grid shortens the series in both the plot and the brush."
+    }
+  ]
+}

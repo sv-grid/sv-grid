@@ -1,0 +1,24 @@
+{
+  "description": "Five design-system presets for the Svelte 5 data grid, each a mapping of the system's tokens onto --sg-* custom properties with a light and a dark set. Drop a preset onto any wrapper and every grid inside picks it up; the active mode follows the page's data-theme attribute so flipping dark mode swaps every preset's tokens together, and a side panel shows the exact CSS to paste into your app.",
+  "keywords": [
+    "svelte grid design system theme",
+    "svelte 5 data grid shadcn theme",
+    "svelte grid material fluent look",
+    "svelte grid token mapping",
+    "svelte grid match design system"
+  ],
+  "faq": [
+    {
+      "question": "How do I make the grid match my design system?",
+      "answer": "Map your tokens onto the --sg-* properties on a wrapper: background, foreground, border, accent, header background, radius and font. The side panel shows the full list for each preset as a starting point."
+    },
+    {
+      "question": "How does dark mode work per preset?",
+      "answer": "Each preset defines its tokens twice, once for light and once under [data-theme='dark']. The page attribute selects the set, so the grid follows the app's theme switch."
+    },
+    {
+      "question": "Do I need the preset stylesheets from the package?",
+      "answer": "Not necessarily. The built-in presets in @svgrid/grid/themes are convenient, but any CSS that sets the --sg-* properties on an ancestor works the same way."
+    }
+  ]
+}

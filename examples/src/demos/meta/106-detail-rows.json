@@ -1,0 +1,24 @@
+{
+  "description": "Expandable detail rows in the Svelte 5 data grid. Click the chevron on an order and a full-width detail opens beneath it with four panels: line items, shipping events, a payment timeline and a support thread, staying in the row stream instead of a separate pane. The demo uses the grid's isDetailRow and renderDetailRow props with a DetailPanel snippet and virtualization off so each detail can take its natural height.",
+  "keywords": [
+    "svelte grid expandable rows",
+    "svelte table row detail panel",
+    "svelte 5 renderDetailRow",
+    "svelte grid inline expansion",
+    "svelte order details table"
+  ],
+  "faq": [
+    {
+      "question": "How do I render a full-width row under a data row?",
+      "answer": "Insert a detail row into the data after the expanded row, tell the grid which rows are details with isDetailRow={(row) => row.kind === 'detail'}, and pass the component to render as renderDetailRow. The detail spans every column."
+    },
+    {
+      "question": "Why is virtualization off here?",
+      "answer": "Row virtualization assumes a fixed rowHeight, and a detail panel with four sections is much taller. For long lists keep virtualization on and give detail rows a fixed height instead."
+    },
+    {
+      "question": "How is the chevron column built?",
+      "answer": "A column whose cell snippet renders a button that toggles the order id in an open set; a $derived rebuilds the data array with detail rows spliced after every open order."
+    }
+  ]
+}

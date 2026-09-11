@@ -1,0 +1,24 @@
+{
+  "description": "SvDockManager as an analytics workspace in Svelte 5. Panels carry a per-pane minSize so a splitter cannot crush them below a usable width, and the whole layout, tiled, floating and auto-hidden, serializes to JSON: Save and Load persist it to localStorage so a user's arrangement survives a reload.",
+  "keywords": [
+    "svelte dashboard docking layout",
+    "svelte 5 save layout localStorage",
+    "svelte dock minSize panels",
+    "svelte bi workspace layout",
+    "svelte persist panel arrangement"
+  ],
+  "faq": [
+    {
+      "question": "How is the layout saved?",
+      "answer": "JSON.stringify(workspace) is written to localStorage on Save and parsed back into bind:workspace on Load; the manager rebuilds every pane, window and hidden panel from it."
+    },
+    {
+      "question": "What does minSize enforce?",
+      "answer": "A minimum width or height in pixels for each pane; splitters stop at it, and a window resize that would violate it re-balances the neighbouring panes instead."
+    },
+    {
+      "question": "Can panels hold live components?",
+      "answer": "Yes. Each panel renders a snippet or component, here charts and grids, and stays mounted while tiled; keepAlive keeps inactive tabs mounted too."
+    }
+  ]
+}

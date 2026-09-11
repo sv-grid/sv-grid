@@ -1,0 +1,24 @@
+{
+  "description": "SvDropDownList in Svelte 5 as a status and priority toolbar: compact single-select dropdowns with grouped options, type-ahead and animated portalled panels driving a live issue list. Controlled through value and onChange, themed from the --sg-* tokens.",
+  "keywords": [
+    "svelte dropdown list",
+    "svelte 5 select component",
+    "svelte custom select grouped",
+    "svelte dropdown type ahead",
+    "svelte toolbar select"
+  ],
+  "faq": [
+    {
+      "question": "How is this different from a native select?",
+      "answer": "It renders a styled trigger and a portalled panel that supports groups, icons and theming, while keeping the select keyboard model: type-ahead, arrow keys, Enter and Escape."
+    },
+    {
+      "question": "How do I animate the panel?",
+      "answer": "The open and close transitions are built in and respect reduced-motion settings; no extra configuration is needed."
+    },
+    {
+      "question": "Can it be used as a grid cell editor?",
+      "answer": "Yes. A column with editorType 'list' mounts the same dropdown inside the cell with the column's editorOptions."
+    }
+  ]
+}

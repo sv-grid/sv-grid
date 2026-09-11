@@ -1,0 +1,24 @@
+{
+  "description": "The Excel Format Cells experience on a plain Svelte 5 SvGrid. Select a range and apply Currency, Percent, Thousands, Number, Date or General; only the rendering changes while the stored value and every formula stay untouched. HyperFormula keeps Gross profit, Margin and the Total column live, so a computed percentage formats exactly like a typed number.",
+  "keywords": [
+    "svelte spreadsheet number format",
+    "svelte 5 grid format cells currency percent",
+    "svelte sheet display format",
+    "svelte grid format selection",
+    "svelte excel format cells"
+  ],
+  "faq": [
+    {
+      "question": "How is the format applied to a selection?",
+      "answer": "The toolbar reads api.getSelected() for the rectangles and writes a format name into a per-cell map. The cell snippet looks up the map and runs the value through toLocaleString with the matching currency, percent or number options for display."
+    },
+    {
+      "question": "Does formatting change the value?",
+      "answer": "No. The raw value and any formula stay as typed; only the rendered text changes, which is why a formula result and a literal can share one format."
+    },
+    {
+      "question": "Can I add my own format?",
+      "answer": "Yes. Add a name and a formatter function to the map the snippet consults; the toolbar button is one more entry."
+    }
+  ]
+}

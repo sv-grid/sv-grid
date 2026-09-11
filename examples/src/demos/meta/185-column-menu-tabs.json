@@ -1,0 +1,24 @@
+{
+  "description": "A tabbed column header menu for the Svelte 5 data grid, opt-in with columnMenuTabs. The menu on any header then has three tabs: General with sort, pin, autosize, group and reset; Filter with the column's operator, value and value checklist; and Columns with a visibility checklist. It is off by default, where the flat menu has a Choose columns submenu, and a switch in the demo compares both.",
+  "keywords": [
+    "svelte grid column menu tabs",
+    "svelte table header menu",
+    "svelte 5 grid columnMenuTabs",
+    "svelte grid filter tab",
+    "svelte data grid header dropdown"
+  ],
+  "faq": [
+    {
+      "question": "How do I enable the tabbed menu?",
+      "answer": "Set columnMenuTabs on <SvGrid>. The header menu switches from the flat action list to General, Filter and Columns tabs."
+    },
+    {
+      "question": "What is in the Filter tab?",
+      "answer": "The column's operator and value editor plus a checklist of distinct values with search, the same filter surface the flat menu opens, kept in sync with the filter row when showColumnFilters is on."
+    },
+    {
+      "question": "Which is the default?",
+      "answer": "The flat menu. It keeps the actions one click away and puts column visibility in a Choose columns submenu; the tabbed layout suits grids with heavy filtering."
+    }
+  ]
+}

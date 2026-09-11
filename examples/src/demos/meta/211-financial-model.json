@@ -1,0 +1,24 @@
+{
+  "description": "A loan amortization model on a plain Svelte 5 SvGrid. Three blue input cells for principal, APR and term drive a full 360-month schedule built entirely from formulas: PMT for the fixed payment, then per-period interest, principal and running balance that each reference the row above. Change an input and all 360 rows plus the summary recompute through HyperFormula; a name box and formula bar with autocomplete let you inspect or edit any cell's formula.",
+  "keywords": [
+    "svelte amortization schedule",
+    "svelte 5 financial model spreadsheet",
+    "svelte grid pmt formula",
+    "svelte loan calculator table",
+    "svelte analyst model sheet"
+  ],
+  "faq": [
+    {
+      "question": "How is the schedule generated?",
+      "answer": "The demo seeds row formulas once: each period's interest references the previous balance and the rate cell, the principal is the payment minus interest, and the balance is the previous balance minus principal. HyperFormula chains the 360 rows."
+    },
+    {
+      "question": "Why blue for inputs?",
+      "answer": "It is the analyst convention: blue cells are typed, black cells are computed. cellClass applies the colour from a set of input addresses."
+    },
+    {
+      "question": "How fast is a recompute?",
+      "answer": "Changing an input re-evaluates the dependent chain in HyperFormula and the grid re-renders only the visible rows, so the update is immediate even though every row changes."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A copy-paste pricing section built from the SvGrid UI kit in Svelte 5: a three-tier plan grid with a monthly and annual SvSegmented toggle that applies the annual discount live, a highlighted most-popular SvCard, per-plan feature SvLists with check marks, an SvDivider and a call-to-action SvButton on each plan.",
+  "keywords": [
+    "svelte pricing page",
+    "svelte 5 pricing table template",
+    "svelte monthly annual toggle",
+    "svelte plan cards",
+    "svelte pricing block"
+  ],
+  "faq": [
+    {
+      "question": "How is the annual price computed?",
+      "answer": "cycle is bound to the SvSegmented; each plan's displayed price is a $derived that applies the discount when cycle is annual, so the cards update instantly."
+    },
+    {
+      "question": "How is the popular plan highlighted?",
+      "answer": "The plan carries a popular flag that adds an accent border and badge to its SvCard and switches its button to the primary variant."
+    },
+    {
+      "question": "How do I wire the buttons?",
+      "answer": "Each SvButton's onclick receives the plan; replace the demo toast with your checkout or sign-up navigation."
+    }
+  ]
+}

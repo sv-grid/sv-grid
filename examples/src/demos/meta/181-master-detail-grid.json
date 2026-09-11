@@ -1,0 +1,24 @@
+{
+  "description": "Master and detail with a nested grid in Svelte 5. Expand any account row and a full-width detail row hosts another SvGrid listing that account's call records with their own sortable and filterable columns. It is built on the grid's isDetailRow and renderDetailRow props: the detail is a real colspan row, and its content happens to be a second grid.",
+  "keywords": [
+    "svelte master detail nested grid",
+    "svelte 5 grid inside grid row",
+    "svelte table expand to child table",
+    "svelte grid isDetailRow",
+    "svelte call records grid"
+  ],
+  "faq": [
+    {
+      "question": "How do I put a grid inside a detail row?",
+      "answer": "Render <SvGrid> in the component passed as renderDetailRow, with data filtered to the master row's id. Each expanded account gets its own instance with independent sorting and filtering."
+    },
+    {
+      "question": "How is the expand state tracked?",
+      "answer": "An open set of account ids in $state. A $derived inserts a detail marker row after each open account, and isDetailRow tells the grid which rows to render through renderDetailRow."
+    },
+    {
+      "question": "Does the nested grid virtualize?",
+      "answer": "Yes, each nested grid is a normal grid with its own scroll container and containerHeight, so an account with thousands of calls stays smooth."
+    }
+  ]
+}

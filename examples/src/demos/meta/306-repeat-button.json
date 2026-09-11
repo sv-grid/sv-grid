@@ -1,0 +1,24 @@
+{
+  "description": "SvRepeatButton, a hold-to-repeat button for Svelte 5, shown as a quantity stepper and a volume control. Press and hold and onclick fires repeatedly with acceleration, so long holds move quickly while a tap changes the value by one; the stepper clamps between 0 and 99 and uses the outline variant with an accessible label.",
+  "keywords": [
+    "svelte repeat button",
+    "svelte 5 hold to increment",
+    "svelte quantity stepper",
+    "svelte press and hold button",
+    "svelte volume control buttons"
+  ],
+  "faq": [
+    {
+      "question": "How fast does it repeat?",
+      "answer": "It starts after a short delay and speeds up the longer the button is held, so users can move a value a long way without many taps while single taps stay precise."
+    },
+    {
+      "question": "Does it work with touch and keyboard?",
+      "answer": "Yes. Holding a finger repeats like a mouse press, and holding Space or Enter on the focused button repeats as well."
+    },
+    {
+      "question": "How is the value clamped?",
+      "answer": "In the onclick handler: the stepper computes the next value and clamps it with min and max before writing it, so the button itself stays simple."
+    }
+  ]
+}

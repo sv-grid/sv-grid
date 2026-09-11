@@ -208,7 +208,7 @@
 
 <section class="sheet-demo">
   <header class="bs-head">
-    <h1 class="bs-title">Blank sheet</h1>
+    <h2 class="bs-title">Blank sheet</h2>
     <p class="bs-sub">
       A real spreadsheet on a plain <code>&lt;SvGrid&gt;</code>. Click any cell and type a value
       or a formula (<code>=SUM(B2:B5)</code>, <code>=IF(B8&gt;30000,"over","ok")</code>) - start with

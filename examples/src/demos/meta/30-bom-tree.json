@@ -1,0 +1,24 @@
+{
+  "description": "A bicycle bill of materials four levels deep in the Svelte 5 data grid. The finished product breaks into assemblies, sub-assemblies and parts; every non-leaf row's quantity is one per parent and its unit cost and subtotal are roll-ups summed from its children, while leaf parts carry an explicit quantity and unit cost. Double-click a leaf's quantity or cost and the whole ancestor chain up to the grand total recomputes.",
+  "keywords": [
+    "svelte bill of materials grid",
+    "svelte 5 bom tree table",
+    "svelte grid subtotal rollup",
+    "svelte manufacturing data grid",
+    "svelte editable hierarchy costs"
+  ],
+  "faq": [
+    {
+      "question": "How are the subtotals computed?",
+      "answer": "Bottom-up. A leaf's subtotal is quantity times unit cost; each assembly's subtotal is the sum of its children's subtotals, computed in a $derived over the flat part list whenever a leaf is edited."
+    },
+    {
+      "question": "Which rows are editable?",
+      "answer": "Only leaf parts. The editable function on the quantity and unit cost columns checks whether the row has children, so assemblies show computed values that cannot be typed over."
+    },
+    {
+      "question": "How is the tree drawn?",
+      "answer": "The first column uses a cell snippet with indent and a chevron based on the row's depth, and a visible-rows $derived hides collapsed subtrees, the same pattern as the org chart demo."
+    }
+  ]
+}

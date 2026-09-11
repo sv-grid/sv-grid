@@ -1,0 +1,24 @@
+{
+  "description": "Sparklines as a first-class column type of the Svelte 5 data grid. Set sparkline on a column whose value is an array of numbers, or a comma or space separated string, and the grid paints an inline SVG with no chart library and no custom snippet. Four types are available, line, area, bar with positive and negative colouring, and win/loss, each with color, negativeColor, width, height and an optional fixed min and max scale.",
+  "keywords": [
+    "svelte grid sparkline column",
+    "svelte table inline chart",
+    "svelte 5 data grid mini charts",
+    "svelte sparkline svg",
+    "svelte grid win loss column"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a sparkline column?",
+      "answer": "Give the column definition sparkline: { type: 'line' } and point its field at an array of numbers. bar, area and winloss are the other types; { type: 'bar', color: '#16a34a', negativeColor: '#dc2626' } colours positive and negative bars."
+    },
+    {
+      "question": "Does the value have to be an array?",
+      "answer": "No. A string of numbers separated by commas or spaces is parsed too, which suits data that comes from a CSV or a server that flattens series."
+    },
+    {
+      "question": "Can I fix the scale across rows?",
+      "answer": "Yes. Set min and max on the sparkline config so every row shares the same axis; without them each cell scales to its own values."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Two conditions on one column in the Svelte 5 data grid, joined by AND or OR: a salary band of more than 80k and less than 150k, or age outliers under 25 or over 60. Open a column's funnel menu and click Add condition, or set it from code with api.setFilter(col, { operator, value, operator2, value2, join }); preset buttons apply each example and api.clearAllFilters resets.",
+  "keywords": [
+    "svelte grid and or filter",
+    "svelte table two conditions one column",
+    "svelte 5 data grid compound filter",
+    "svelte grid filter between values",
+    "svelte grid setFilter join"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a second condition to a column filter?",
+      "answer": "In the column menu click Add condition, choose the join (AND or OR) and fill the second operator and value. Both conditions show in the menu and the funnel icon marks the column as filtered."
+    },
+    {
+      "question": "What does the API call look like?",
+      "answer": "api.setFilter('salary', { operator: 'greaterThan', value: '80000', operator2: 'lessThan', value2: '150000', join: 'AND' }). Omit operator2 for a single condition; join is AND or OR."
+    },
+    {
+      "question": "Can I combine this with the inline filter row?",
+      "answer": "Yes. showColumnFilters keeps the filter row visible under the headers while the menu holds the compound editor; both write the same column filter state."
+    }
+  ]
+}

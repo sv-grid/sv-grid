@@ -1,0 +1,24 @@
+{
+  "description": "Frozen rows at the top and bottom of the Svelte 5 data grid, built from three stacked grids. A top grid holds an Account totals row with sum, average and count over the whole dataset, the middle grid scrolls the data, and a bottom grid shows Page totals recomputed from api.getDisplayedRows() as filters change. All three share the column schema and widths, and a right-click pins any data row with a badge.",
+  "keywords": [
+    "svelte grid frozen rows",
+    "svelte table totals row",
+    "svelte 5 pinned totals",
+    "svelte grid sticky footer row",
+    "svelte grid filtered totals"
+  ],
+  "faq": [
+    {
+      "question": "How do the three grids stay aligned?",
+      "answer": "They receive the same columns array, so widths, alignment and formats match; the top and bottom grids have one row each and no scrollbar, the middle one scrolls."
+    },
+    {
+      "question": "How do the page totals react to filters?",
+      "answer": "onFiltersChange reads api.getDisplayedRows() from the main grid and recomputes the bottom row from those rows, so totals always describe what is visible."
+    },
+    {
+      "question": "Is there a built-in way?",
+      "answer": "Yes. The pinnedTopRows and pinnedBottomRows props render pinned rows inside one grid with sticky cells; this stacked version is the option when you need fully independent grids."
+    }
+  ]
+}

@@ -16,7 +16,7 @@
 <div class="page">
 <SvStack gap={24}>
   <section>
-    <SvTitle order={1}>Typography</SvTitle>
+    <SvTitle order={2} size={1}>Typography</SvTitle>
     <SvText tone="muted">A consistent type scale and text tones built on the shared tokens.</SvText>
   </section>
 

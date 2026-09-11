@@ -1,0 +1,24 @@
+{
+  "description": "SvForm in Svelte 5 as a schema-driven sign-up form: text, email, password, select, date, switch and rating fields declared in one fields array, required and cross-field custom validation, initial values and a responsive two-column layout, with the submitted values shown as JSON. It is the fastest way to a validated form from the SvGrid UI kit.",
+  "keywords": [
+    "svelte form component",
+    "svelte 5 schema based form",
+    "svelte form validation cross field",
+    "svelte signup form",
+    "svelte two column form"
+  ],
+  "faq": [
+    {
+      "question": "How do I add validation?",
+      "answer": "Set required on a field or give it a validate function that receives the value and all values and returns a message; cross-field rules such as confirm password read the other value there."
+    },
+    {
+      "question": "What does onSubmit receive?",
+      "answer": "An object of field name to value after every rule passes; the demo prints it as JSON. Nothing is called while errors remain."
+    },
+    {
+      "question": "How do I pre-fill the form?",
+      "answer": "Pass initial with the values to start from; fields not listed start empty or at the type's default."
+    }
+  ]
+}

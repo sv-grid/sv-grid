@@ -1,0 +1,24 @@
+{
+  "description": "Schema-driven visibility and editability inside the Svelte 5 data grid. Each column carries declarative when rules evaluated against the row's current values: an EIN cell only appears on nonprofits, an SSN only on individuals, and a rejection reason only when the status is rejected. Cells that fail a visible rule are hidden, cells that fail an editable rule are locked with a contextual reason, all built on SvGrid's per-cell editable function.",
+  "keywords": [
+    "svelte conditional fields grid",
+    "svelte 5 dynamic form schema",
+    "svelte grid conditional editable",
+    "svelte table hide cell by rule",
+    "svelte data grid business rules"
+  ],
+  "faq": [
+    {
+      "question": "How do I make a cell editable only under some condition?",
+      "answer": "SvGrid accepts editable as a function of the cell context, so you can return false when the row's status is not pending. This demo wraps that in a declarative when rule so the condition lives in the schema rather than in code."
+    },
+    {
+      "question": "How is a cell hidden for some rows?",
+      "answer": "The column's cell snippet checks the visible rule against the row and renders nothing when it fails, while the same column shows its value on rows where the rule passes."
+    },
+    {
+      "question": "Why a declarative schema instead of inline checks?",
+      "answer": "Rules in data can be edited by people who do not touch the rendering code, combined in arrays, and reused for the reason text the locked cell shows."
+    }
+  ]
+}

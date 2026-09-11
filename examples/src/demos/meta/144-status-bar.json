@@ -1,0 +1,24 @@
+{
+  "description": "An Excel-style status bar under the Svelte 5 data grid with live aggregates of the selected cell range: count, sum, average, min and max. Turn it on with statusBar alongside enableCellSelection and drag a rectangle across numeric cells; statusBar={{ aggregates: ['sum', 'avg'] }} picks the aggregate set.",
+  "keywords": [
+    "svelte grid status bar",
+    "svelte table selection sum average",
+    "svelte 5 spreadsheet status bar",
+    "svelte grid range aggregates",
+    "svelte data grid selected cells sum"
+  ],
+  "faq": [
+    {
+      "question": "How do I enable the status bar?",
+      "answer": "Add statusBar and enableCellSelection to <SvGrid>. The bar appears under the grid and updates as the selection changes, with no other wiring."
+    },
+    {
+      "question": "Can I choose which aggregates show?",
+      "answer": "Yes. Pass an object: statusBar={{ aggregates: ['sum', 'avg'] }} shows only those two. The available names are count, numericCount, sum, avg, min and max."
+    },
+    {
+      "question": "What happens with non-numeric cells in the range?",
+      "answer": "count includes every selected cell, numericCount only the numbers, and sum, avg, min and max consider only numeric cells, so a rectangle that spans the product name column still gives correct totals."
+    }
+  ]
+}

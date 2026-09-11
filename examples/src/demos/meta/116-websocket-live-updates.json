@@ -1,0 +1,24 @@
+{
+  "description": "Server-push updates merged into the Svelte 5 data grid by id. A long-lived connection streams row-level change events, insert with a row, update with an id and a patch, and delete with an id, and the client merges them into the local dataset so only affected rows re-render. getRowId keeps identity stable, updated cells flash yellow and fade, and controls pause and resume the stream and set throughput from 1 to 30 events per second; replace mockSocket with a WebSocket or EventSource and the merge stays the same.",
+  "keywords": [
+    "svelte websocket grid",
+    "svelte 5 live updating table",
+    "svelte grid merge deltas",
+    "svelte data grid server push",
+    "svelte realtime rows flash"
+  ],
+  "faq": [
+    {
+      "question": "How are events merged without reloading the list?",
+      "answer": "Rows are kept in a map by id. insert adds a row, update applies the patch to the existing object and delete removes it; the grid receives the new array and, thanks to getRowId, only re-renders rows whose object changed."
+    },
+    {
+      "question": "How is the cell flash done?",
+      "answer": "The merge records a timestamp per updated cell keyed by row id and field; cellClass adds a flash class while the entry is younger than 1100 ms, and a polling tick re-evaluates so the class drops off when the time is up."
+    },
+    {
+      "question": "What changes for a real WebSocket?",
+      "answer": "Only the source. Wire socket.onmessage to parse the event and call the same merge function; the pause buffer, throughput and log work unchanged."
+    }
+  ]
+}

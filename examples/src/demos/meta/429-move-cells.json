@@ -1,0 +1,24 @@
+{
+  "description": "Drag a selected block of cells by its border to move it in the Svelte 5 data grid, the way a spreadsheet does. The values land at the drop point and the source goes blank, or the block is copied when Ctrl or Cmd is held at drop time. The rectangle moves whole or not at all: a drop that would run off the grid or onto a read-only column is refused, and Ctrl+Z walks the whole move back. It rides on enableCellSelection and can be switched off with moveCells={false}.",
+  "keywords": [
+    "svelte grid drag cells",
+    "svelte table move cell range",
+    "svelte 5 spreadsheet drag and drop cells",
+    "svelte grid copy range drag",
+    "svelte data grid moveCells"
+  ],
+  "faq": [
+    {
+      "question": "How do I move a range of cells?",
+      "answer": "Select the cells, put the pointer on the selection border until it becomes a move cursor, then drag and release. Hold Ctrl or Cmd when you release to copy instead of move."
+    },
+    {
+      "question": "What happens if the drop target is invalid?",
+      "answer": "Nothing. A drop that would place part of the block outside the grid or on a read-only column is refused entirely, which avoids landing half a block with no way to tell which half."
+    },
+    {
+      "question": "Can it be undone?",
+      "answer": "Yes. Each moved cell is on the history stack, so Ctrl+Z or api.undo() reverses the whole move cell by cell."
+    }
+  ]
+}

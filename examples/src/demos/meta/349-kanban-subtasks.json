@@ -1,0 +1,24 @@
+{
+  "description": "The default board card of the Svelte 5 data grid made rich by configuration alone: labelsField, dueField and assigneesField badges, a sub-task checklist with a progress bar through subtasks that expands to tick items or add more, and a quick-add composer at the bottom of each lane. Double-click opens the built-in detail drawer from board.drawer, an SvDrawer with an SvForm rendered from the columns using the UI-kit editors, with a toggle between all fields and a customised subset, and a Board and Table switcher.",
+  "keywords": [
+    "svelte kanban subtasks",
+    "svelte 5 board card badges",
+    "svelte kanban edit drawer",
+    "svelte board quick add composer",
+    "svelte kanban checklist progress"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a checklist to cards?",
+      "answer": "Point subtasks at the field holding the items and wire onSubtaskToggle and onSubtaskAdd; the card shows a progress bar and expands to the list, and ticking an item calls your handler with the card and the item."
+    },
+    {
+      "question": "What does board.drawer render?",
+      "answer": "An SvDrawer containing an SvForm built from the grid's columns, with each column's editorType mapped to the kit editor. Pass fields to limit or reorder the form, and onCardCommit receives the saved values."
+    },
+    {
+      "question": "How does the composer add a card?",
+      "answer": "composer shows an input at the bottom of each lane; Enter calls onCardAdd with the lane id and the title, and your handler appends the row."
+    }
+  ]
+}

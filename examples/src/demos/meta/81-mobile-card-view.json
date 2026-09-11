@@ -1,0 +1,24 @@
+{
+  "description": "A responsive Svelte 5 data grid that becomes touch-friendly cards on small screens. Above 720 px it is a normal SvGrid; below, the grid hides and the same $state array renders as cards, tap a card to expand it into an edit panel, and writes go through api.setCellValue so dirty tracking, filtering and observers see the same edits from either view. Filter and sort state live on the API, so resizing between the views preserves the working set.",
+  "keywords": [
+    "svelte responsive data grid",
+    "svelte 5 mobile table cards",
+    "svelte grid card view",
+    "svelte table touch friendly",
+    "svelte grid breakpoint layout"
+  ],
+  "faq": [
+    {
+      "question": "How is the breakpoint handled?",
+      "answer": "A resize listener compares window.innerWidth with 720 and sets an isMobile $state flag. The template shows the grid or the card list from that flag; both read the same rows array."
+    },
+    {
+      "question": "Why write through the API from the cards?",
+      "answer": "So the edit is a grid edit: onCellValueChange fires, dirty tracking updates and any external observer sees it, exactly as if the cell had been edited in the desktop view."
+    },
+    {
+      "question": "Does the grid's responsive prop do this?",
+      "answer": "No. responsive unpins columns and relaxes fitting on narrow viewports so the grid stays usable; the card layout here is an app-level view built beside it."
+    }
+  ]
+}

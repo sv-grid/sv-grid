@@ -1,0 +1,24 @@
+{
+  "description": "Buffers and lead time in the Svelte 5 scheduler: a salon day where every appointment needs a 15-minute cleanup buffer on both sides through bufferBeforeMin and bufferAfterMin, must be booked at least an hour ahead through minLeadMin and runs 30 to 90 minutes through minDurationMin and maxDurationMin. Drag two appointments back to back and the drop snaps back with the reason, and the same rules gate creating and resizing.",
+  "keywords": [
+    "svelte scheduler buffer time",
+    "svelte 5 booking lead time rule",
+    "svelte appointment min max duration",
+    "svelte salon booking calendar",
+    "svelte scheduler booking constraints"
+  ],
+  "faq": [
+    {
+      "question": "How do buffers affect conflicts?",
+      "answer": "An appointment's blocked span is its duration plus the buffers, so two appointments must leave the cleanup gap between them or the drop is refused."
+    },
+    {
+      "question": "What does lead time prevent?",
+      "answer": "Booking closer to now than minLeadMin minutes; a drag into that window snaps back with a message explaining the lead time."
+    },
+    {
+      "question": "Are resizes limited too?",
+      "answer": "Yes. An edge drag cannot make the appointment shorter than minDurationMin or longer than maxDurationMin."
+    }
+  ]
+}

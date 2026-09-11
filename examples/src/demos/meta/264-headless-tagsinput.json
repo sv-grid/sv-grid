@@ -1,0 +1,24 @@
+{
+  "description": "The headless tags input core of the SvGrid UI kit in Svelte 5. SvTagsInput is one styled renderer over createTagsInput, which owns the draft text, adding on Enter or comma, removing the last tag on Backspace, per-chip removal and the unique and max rules, exposed as rootProps, inputProps, tagProps and removeProps. The same core drives the styled component and a custom chip-cloud render, both editing one string array.",
+  "keywords": [
+    "svelte headless tags input",
+    "svelte 5 custom chips render",
+    "svelte createTagsInput",
+    "svelte token input core",
+    "svelte headless chip editor"
+  ],
+  "faq": [
+    {
+      "question": "What does each prop-getter cover?",
+      "answer": "rootProps() makes the container focus the input on click, inputProps() wires typing, Enter, comma and Backspace, tagProps(i) labels a chip and removeProps(i) wires its remove button."
+    },
+    {
+      "question": "Where do unique and max live?",
+      "answer": "In the core. An add that would duplicate a tag or exceed max is refused before your render sees it, so both renders enforce the same rules."
+    },
+    {
+      "question": "Can the custom render lay chips out differently?",
+      "answer": "Yes. The chip cloud in the demo wraps chips in a grid rather than a row; the core does not care about layout."
+    }
+  ]
+}

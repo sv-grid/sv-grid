@@ -1,0 +1,24 @@
+{
+  "description": "A live shipment dispatch board in the Svelte 5 data grid with about 80 in-flight loads. A route lane column shows origin, destination and carrier, a progress bar is colour-graded by lateness against the committed ETA, status pills cover in transit, loading, delivered, delayed and exception, ETA cells overlay a red delta when the stream pushes a promise later, and an alerts column clusters chips for temperature, route deviation and dwell time. The stream sim emits position, ETA shift, status change and alert events through the same delta-merge pipeline as the order stream demo, with pause, reconnect and a throughput slider.",
+  "keywords": [
+    "svelte logistics dashboard",
+    "svelte 5 shipment tracking grid",
+    "svelte fleet operations table",
+    "svelte grid live eta updates",
+    "svelte dispatch board"
+  ],
+  "faq": [
+    {
+      "question": "How are stream events merged?",
+      "answer": "Each event names a shipment id and a patch; the merge finds the row by id and applies it, and the grid re-renders that row. It is the same helper the real-time orders demo uses."
+    },
+    {
+      "question": "How is lateness visualised?",
+      "answer": "The progress cell compares the current ETA with the committed one and picks a colour band; the ETA cell adds a plus-hours overlay when the promise has slipped."
+    },
+    {
+      "question": "Can the board be paused?",
+      "answer": "Yes. The stream sim buffers events while paused and drains them on resume, and it can simulate a disconnect to show the reconnecting state."
+    }
+  ]
+}

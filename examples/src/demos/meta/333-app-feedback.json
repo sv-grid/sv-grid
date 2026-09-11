@@ -1,0 +1,24 @@
+{
+  "description": "The display layer of the SvGrid UI kit in Svelte 5: SvBadge status pills, SvAvatar with an image, an initials fallback coloured by a hash of the name and a presence dot, SvSkeleton shimmer loaders in text, circle and block variants, and SvCard as a surface with a hoverable state. All are token-driven for light, dark and presets and reduced-motion aware; a Loading toggle swaps the real content for skeletons.",
+  "keywords": [
+    "svelte badge component",
+    "svelte 5 avatar with initials",
+    "svelte skeleton loader",
+    "svelte card component",
+    "svelte dashboard display components"
+  ],
+  "faq": [
+    {
+      "question": "What does the avatar show without an image?",
+      "answer": "The initials of name on a background colour derived from a hash of the name, so the same person always gets the same colour; status adds an online, away or offline dot."
+    },
+    {
+      "question": "How do I use skeletons while loading?",
+      "answer": "Render SvSkeleton with the width, height and variant of the content it stands in for, circle for an avatar and lines for text, and swap in the real content when the data arrives, as the toggle does."
+    },
+    {
+      "question": "What variants does SvBadge have?",
+      "answer": "neutral, accent, success, warning, danger and info, with a pill option and an optional dot for a status list."
+    }
+  ]
+}

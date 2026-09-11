@@ -1,0 +1,24 @@
+{
+  "description": "SvNumberInput on its own in Svelte 5: min, max and step bounds, thousands grouping, precision, prefix and suffix, spinner buttons and the shared field contract with a label, a hint and required or error validation. It is the SvGrid number cell editor, standalone.",
+  "keywords": [
+    "svelte number input",
+    "svelte 5 numeric input min max step",
+    "svelte number field thousands separator",
+    "svelte input spinner buttons",
+    "svelte currency input"
+  ],
+  "faq": [
+    {
+      "question": "How is the value kept within bounds?",
+      "answer": "min and max clamp typed and stepped values, and step sets the spinner and arrow-key increment. onChange receives a number, or null when the field is cleared."
+    },
+    {
+      "question": "How do I show a currency?",
+      "answer": "Set prefix='$' or a suffix such as 'kg', grouping for thousands separators and precision={2} for cents. The formatting is display only; the value stays a plain number."
+    },
+    {
+      "question": "How does validation surface?",
+      "answer": "required marks the field, and passing invalid with an error message shows the message under the input in the same way every field in the kit does."
+    }
+  ]
+}

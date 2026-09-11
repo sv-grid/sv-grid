@@ -1,0 +1,24 @@
+{
+  "description": "A SaaS account and security settings console composed entirely from the SvGrid UI kit in Svelte 5. An SvMenubar app bar sits on top, Profile, Team and Security tabs render over SvCard and SvStat, saving fires a promise toast with an Undo action, destructive team rows ask through SvPopconfirm, teammates get SvHoverCard previews, and inputs use frame adornments: leading icons, prefix affixes and a masked API key.",
+  "keywords": [
+    "svelte settings page",
+    "svelte 5 account settings ui",
+    "svelte team management screen",
+    "svelte toast undo action",
+    "svelte popconfirm delete"
+  ],
+  "faq": [
+    {
+      "question": "How does the Undo toast work?",
+      "answer": "The save handler shows a toast with an action button; clicking it within the toast's lifetime restores the previous values, which the demo keeps in a snapshot until the toast closes."
+    },
+    {
+      "question": "When should I use SvPopconfirm instead of a modal?",
+      "answer": "For low-stakes destructive actions where a full dialog would be heavy. It anchors to the button, asks one question and confirms or cancels in place."
+    },
+    {
+      "question": "How is the API key masked?",
+      "answer": "It is a text input with a leading icon and a masked value; a reveal action swaps the mask for the real key, the same pattern as the password input."
+    }
+  ]
+}

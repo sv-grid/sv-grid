@@ -1,0 +1,24 @@
+{
+  "description": "A field-service dispatcher board in the Svelte 5 data grid with every active job sorted by SLA. The Tech and Priority cells are list editors gated by the editable predicate so a finished job cannot be reassigned or bumped, a Today cell renders an inline striped timeline of received, en route, on site and resolved with segment lengths proportional to time spent, an SLA tone gauge flags urgency, and a right-hand panel shows each technician as a load gauge. A live stream emits status transitions and ETA shifts.",
+  "keywords": [
+    "svelte dispatch board",
+    "svelte 5 field service grid",
+    "svelte grid inline timeline cell",
+    "svelte technician capacity panel",
+    "svelte work order table"
+  ],
+  "faq": [
+    {
+      "question": "How is a job reassigned?",
+      "answer": "Double-click the Tech cell and pick from the editorType list dropdown. The editable function returns false for jobs marked done, so those cells stay locked."
+    },
+    {
+      "question": "How is the timeline cell built?",
+      "answer": "A cell snippet lays out one segment per state with a width proportional to the time in that state, using the job's timestamps; the current state's segment grows on each tick."
+    },
+    {
+      "question": "How does the capacity panel stay accurate?",
+      "answer": "It is a $derived count of open jobs per technician over the same jobs array the grid renders, so a reassignment moves load between gauges immediately."
+    }
+  ]
+}

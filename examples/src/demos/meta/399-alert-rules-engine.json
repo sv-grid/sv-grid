@@ -1,0 +1,24 @@
+{
+  "description": "Runtime alert rules on a live trading desk in Svelte 5, no code required. Prices walk every second and end users define rules that watch the data and react: raise a toast, tint the row, flash the cell or log it. SvGridAlerts provides a visual condition builder reusing the grid's own filter operators or a free-text expression, persists rules to localStorage under storageKey, exports them as shareable JSON and feeds conditional formats back to the grid; the bell opens the fired-alert log and onJump scrolls to the row. Engine and overlay ship in @svgrid/enterprise.",
+  "keywords": [
+    "svelte alert rules engine",
+    "svelte 5 no code data alerts",
+    "svelte grid condition builder",
+    "svelte live data notifications",
+    "svelte trading desk alerts"
+  ],
+  "faq": [
+    {
+      "question": "How does a rule reach the grid?",
+      "answer": "SvGridAlerts evaluates the rules against data as it changes and binds a formats array; passing it to the grid's conditionalFormats prop paints tints and flashes through the grid's own format pipeline."
+    },
+    {
+      "question": "What can a condition contain?",
+      "answer": "Field comparisons with the same operators as the column filters, combined with AND and OR, or a free-text expression over the columns with arithmetic and functions; the builder and the expression compile to the same rule."
+    },
+    {
+      "question": "How are rules shared?",
+      "answer": "The rule manager's Export button downloads the rules as alert-rules.json and Import loads a file back, and storageKey keeps each user's rules across reloads in localStorage."
+    }
+  ]
+}

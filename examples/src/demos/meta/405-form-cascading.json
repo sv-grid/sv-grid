@@ -1,0 +1,24 @@
+{
+  "description": "Dependent selects in SvForm for Svelte 5: a child field's options is a function of the current values, so State lists only the states of the chosen Country and City only the cities of the chosen State, and dependsOn clears the child when its parent changes so a stale selection never lingers.",
+  "keywords": [
+    "svelte form cascading selects",
+    "svelte 5 dependent dropdowns form",
+    "svelte country state city form",
+    "svelte form dependsOn",
+    "svelte dynamic select options"
+  ],
+  "faq": [
+    {
+      "question": "How do I derive a field's options from another field?",
+      "answer": "Give the field options: (values) => list. SvForm calls it whenever values change, so the State select always reflects the current Country."
+    },
+    {
+      "question": "Why is dependsOn needed as well?",
+      "answer": "Without it a chosen state would stay selected after the country changed even though it is no longer in the list. dependsOn: ['country'] resets the child when the parent changes."
+    },
+    {
+      "question": "Does this work for more than two levels?",
+      "answer": "Yes. City depends on State which depends on Country here; each level declares its own dependsOn."
+    }
+  ]
+}

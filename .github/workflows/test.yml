@@ -106,7 +106,18 @@ jobs:
         # config includes them, so nothing ran them and all three drifted red.
         # studio-docs + ui-docs read website/src/lib/docs.ts, which needs the
         # private submodule checked out above.
-        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts
+        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/docs-corpus.test.ts
+
+      - name: Demo page parity + meta coverage + search quality
+        # A demo page's crawlable half is rendered twice, by the prerenderer
+        # (static HTML for crawlers that do not run JS) and by DemoAboutBody
+        # (the hydrated DOM Google indexes). This mounts the component in jsdom
+        # for every demo and diffs it against the static render, and checks
+        # every demo still ships a meta json with a description and FAQ.
+        # The same run covers the site search (website/src/lib/search): a
+        # set of questions typed in plain words must surface the right docs
+        # page and demo in the top three, over the committed llms-full.txt.
+        run: pnpm --filter svgrid-website test
 
       - name: Docs structure + reference guards
         # Same story as the step above: these live in tools/, no package's

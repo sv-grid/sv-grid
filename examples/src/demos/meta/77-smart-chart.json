@@ -1,0 +1,24 @@
+{
+  "description": "A working integration of the Svelte 5 data grid with the smart-chart web component from htmlelements.com. The chart is created with createElement and its dataSource is kept in sync with the rows the grid currently displays through api.getDisplayedRows(), so filtering or sorting the grid re-aggregates the chart, and pills switch column, stacked column, line and pie without remounting. The chart module is loaded lazily on first paint.",
+  "keywords": [
+    "svelte grid chart integration",
+    "svelte 5 web component chart",
+    "svelte grid filtered data to chart",
+    "svelte smart chart",
+    "svelte grid getDisplayedRows chart"
+  ],
+  "faq": [
+    {
+      "question": "How does the chart follow the grid?",
+      "answer": "onFiltersChange and onSortingChange call a rebuild that reads api.getDisplayedRows(), aggregates by region and quarter, and assigns the result to the chart element's dataSource property."
+    },
+    {
+      "question": "Why set properties instead of attributes?",
+      "answer": "The web component takes rich objects for dataSource and series. Creating it with createElement and assigning properties keeps the objects intact, where attributes would stringify them."
+    },
+    {
+      "question": "Can I use another chart library?",
+      "answer": "Yes. The grid only exposes the displayed rows; the Chart.js sync demo and the charts in @svgrid/enterprise use the same hook."
+    }
+  ]
+}

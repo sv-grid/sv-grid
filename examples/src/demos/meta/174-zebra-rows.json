@@ -1,0 +1,24 @@
+{
+  "description": "Striped rows in the Svelte 5 data grid with the zebraRows prop. Every other data row gets the theme's --sg-row-alt-bg background, while pinned, group, detail and summary rows keep their single background so a pinned totals row still reads as one solid band. The stripe colour is a theme token, so it follows whichever preset or dark mode the page uses.",
+  "keywords": [
+    "svelte grid zebra rows",
+    "svelte table striped rows",
+    "svelte 5 alternating row color",
+    "svelte grid row alt background",
+    "svelte data grid striping"
+  ],
+  "faq": [
+    {
+      "question": "How do I stripe the rows?",
+      "answer": "Add zebraRows to <SvGrid>. No CSS is needed; the alternate rows use the --sg-row-alt-bg token of the active theme."
+    },
+    {
+      "question": "How do I change the stripe colour?",
+      "answer": "Override --sg-row-alt-bg on the grid or its container. A subtle tint of the row background is what the built-in presets use."
+    },
+    {
+      "question": "Why are group and summary rows not striped?",
+      "answer": "Striping only applies to data rows. Group headers, detail panels, pinned rows and summary rows keep their own background so they stay visually distinct."
+    }
+  ]
+}

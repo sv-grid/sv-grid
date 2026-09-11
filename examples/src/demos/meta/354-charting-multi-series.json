@@ -1,0 +1,24 @@
+{
+  "description": "Multi-series charts from the Svelte 5 data grid's charting prop. Point the panel at a Split by column and it draws one series per distinct value, grouped or stacked with a Stacked toggle, over the Group by and Value pickers, so Region by Product revenue becomes grouped or stacked bars. Change the pickers or filter a column and every series re-aggregates from the live grid rows.",
+  "keywords": [
+    "svelte grid stacked chart",
+    "svelte 5 chart split by column",
+    "svelte grouped bar chart from grid",
+    "svelte chart panel series",
+    "svelte multi series aggregation"
+  ],
+  "faq": [
+    {
+      "question": "How do I get one series per product?",
+      "answer": "Choose Product in Split by. The panel groups the rows by Region, then by Product within each region, and aggregates Value per pair into a series."
+    },
+    {
+      "question": "What does Stacked do?",
+      "answer": "It stacks the series within each category instead of placing them side by side, and 100 percent mode normalises each stack to its total."
+    },
+    {
+      "question": "Can the split be set in code?",
+      "answer": "Yes. charting accepts series for the split-by column along with dimension and measures so the panel opens with the split already applied, and stacked sets the initial stacking."
+    }
+  ]
+}

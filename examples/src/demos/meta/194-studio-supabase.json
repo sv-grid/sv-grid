@@ -1,0 +1,24 @@
+{
+  "description": "The SvGrid Studio stack over hosted Postgres on Supabase, straight from the browser through supabase-js and the project's public anon key, the way a production SvelteKit screen would. createSupabaseDataSource maps the grid's sort, filter, page and CRUD onto the query builder, introspectSupabaseTable reads any table's columns from PostgREST and builds the entity schema, foreign keys become searchable lookups in the form, and createSupabaseRealtime flashes rows changed in the Supabase dashboard. Paste your URL and anon key, run the one-time setup SQL, and Row-Level Security keeps the key safe.",
+  "keywords": [
+    "svelte supabase grid",
+    "svelte 5 supabase crud table",
+    "svelte supabase realtime grid",
+    "svelte grid postgrest data source",
+    "sveltekit supabase admin screen"
+  ],
+  "faq": [
+    {
+      "question": "Is it safe to use the anon key in the browser?",
+      "answer": "Yes when Row-Level Security is enabled on the table, which is what the setup SQL does. The anon key only grants what the policies allow, the same model every Supabase client app uses."
+    },
+    {
+      "question": "How does the grid adapt to my table?",
+      "answer": "introspectSupabaseTable reads the column list and types from the PostgREST OpenAPI document, a sample row or a CSV header, and returns an EntitySchema. Foreign keys it detects become relation fields with a lookup in the edit form."
+    },
+    {
+      "question": "How do live updates reach the grid?",
+      "answer": "createSupabaseRealtime subscribes to the table's changes over Supabase Realtime; an insert, update or delete refreshes the affected row and flashes it, and the Live pill toggles the subscription."
+    }
+  ]
+}

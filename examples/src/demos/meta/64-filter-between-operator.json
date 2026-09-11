@@ -1,0 +1,24 @@
+{
+  "description": "The between operator of the Svelte 5 data grid's column filters. Number and date columns render From and To inputs in the column menu and keep rows whose value falls in the inclusive range; the same filter is set from code with api.setFilter('price', { operator: 'between', value: '100', valueTo: '500' }). api.getFilters() returns the same shape, so filter sets can be saved to localStorage or the URL, and onFiltersChange keeps a visible summary current.",
+  "keywords": [
+    "svelte grid between filter",
+    "svelte table date range filter",
+    "svelte 5 number range filter",
+    "svelte grid getFilters",
+    "svelte data grid filter operators"
+  ],
+  "faq": [
+    {
+      "question": "How do I filter a column to a range?",
+      "answer": "Open the column menu, pick Between and fill From and To. From code: api.setFilter(columnId, { operator: 'between', value, valueTo }). Both ends are inclusive."
+    },
+    {
+      "question": "Can I persist the filters?",
+      "answer": "Yes. api.getFilters() returns every active filter as { operator, value, valueTo } keyed by column, which serializes cleanly; feed it back through api.setFilter on load."
+    },
+    {
+      "question": "Why is there no Between for text columns?",
+      "answer": "A lexical range is rarely what users mean for strings, so text columns offer contains, equals, starts with, ends with, regex and the set operators instead."
+    }
+  ]
+}

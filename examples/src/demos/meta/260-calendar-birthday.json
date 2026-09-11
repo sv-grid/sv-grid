@@ -1,0 +1,24 @@
+{
+  "description": "SvCalendar as a Svelte 5 date-of-birth picker: single selection with max clamped to today so future dates are blocked, and displayMode='decade' so it opens on the year grid for fewer clicks to a birth year, with a footer and a live age readout beside it. It is the same component SvGrid mounts to edit a date cell, in under fifty lines.",
+  "keywords": [
+    "svelte date of birth picker",
+    "svelte 5 birthday calendar",
+    "svelte calendar decade view",
+    "svelte calendar max date today",
+    "svelte age from date"
+  ],
+  "faq": [
+    {
+      "question": "How do I start on the year grid?",
+      "answer": "Set displayMode='decade'. The calendar opens on a grid of years; picking one goes to the months of that year, then to the days."
+    },
+    {
+      "question": "How are future dates blocked?",
+      "answer": "Pass max={today}. Days after it render disabled and the year and month grids stop at the current one."
+    },
+    {
+      "question": "How is the age computed?",
+      "answer": "A $derived subtracts the picked date from today, adjusting for whether the birthday has passed this year, and prints the result next to the calendar."
+    }
+  ]
+}

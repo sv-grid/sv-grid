@@ -1,0 +1,24 @@
+{
+  "description": "Alerts that watch a whole-table total in Svelte 5, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target, and a row rule flags any region trailing its own target. Close a few deals and the aggregate alert fires the moment the total clears the line; aggregate rules use the expression language's SUM, AVG and COUNT reducers, with onJump scrolling to a flagged row. Engine and overlay ship in @svgrid/enterprise.",
+  "keywords": [
+    "svelte aggregate alert",
+    "svelte 5 kpi threshold notification",
+    "svelte grid sum crosses target",
+    "svelte table total alert rule",
+    "svelte expression sum avg count"
+  ],
+  "faq": [
+    {
+      "question": "How does an aggregate rule differ from a row rule?",
+      "answer": "Its scope is the table: the condition uses SUM, AVG or COUNT over a column and fires once per crossing instead of once per row, with the total in the message."
+    },
+    {
+      "question": "Why does it fire only once?",
+      "answer": "The engine de-duplicates on the true edge: a rule fires when its predicate turns true and stays quiet while it remains true, re-arming once the total drops back below the target."
+    },
+    {
+      "question": "How is a rule scoped?",
+      "answer": "A rule has a scope of row or aggregate and a trigger; aggregate rules evaluate their predicate over the whole table with SUM, AVG and COUNT, while row rules evaluate per row and can name the row in onJump."
+    }
+  ]
+}

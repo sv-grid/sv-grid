@@ -153,7 +153,7 @@
 
 <section class="sheet-demo">
   <header class="bs-head">
-    <h1 class="bs-title">Dashboard sheet</h1>
+    <h2 class="bs-title">Dashboard sheet</h2>
     <p class="bs-sub">
       Weekly signups by channel as an Excel-style dashboard on a plain
       <code>&lt;SvGrid&gt;</code>: an inline <strong>sparkline</strong> per row and an eight-week

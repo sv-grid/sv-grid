@@ -1,0 +1,24 @@
+{
+  "description": "Driving cell selection in the Svelte 5 data grid from code. api.selectCells([[r1, c1, r2, c2]]) selects a rectangle, api.getSelected() reads the current rectangles, and onCellSelectionChange fires for both programmatic and mouse-driven changes. A live panel computes sum, average, min and max over the selected cells with api.getCellValue, alongside an event log and a copy-as-TSV button.",
+  "keywords": [
+    "svelte grid selection api",
+    "svelte table select cells programmatically",
+    "svelte 5 onCellSelectionChange",
+    "svelte grid getSelected",
+    "svelte data grid selection events"
+  ],
+  "faq": [
+    {
+      "question": "How do I select a range from a button?",
+      "answer": "Call api.selectCells with one or more [startRow, startCol, endRow, endCol] arrays. The selection renders exactly as if the user had dragged it, and onCellSelectionChange fires with the new ranges."
+    },
+    {
+      "question": "How do I compute totals over the selection?",
+      "answer": "Read api.getSelected() for the rectangles, loop over the rows and columns in each and read values with api.getCellValue. The demo does this in a $derived that re-runs on every selection event."
+    },
+    {
+      "question": "Are indexes based on the displayed order?",
+      "answer": "Yes. Row and column indexes refer to what is displayed after sorting, filtering and column reordering, so the same coordinates the user sees are the ones the API uses."
+    }
+  ]
+}

@@ -54,9 +54,11 @@ on the security page.
 
 ## Node / SSR
 
-SvGrid is SSR-compatible. The render component does nothing on the
-server beyond emitting the wrapper markup with an `aria-busy` shell -
-the data + interactions hydrate on the client. Demo
+SvGrid is SSR-compatible. Since `@svgrid/grid@2.6.8` the render
+component emits the header and a viewport-sized window of rows with their
+real cell values on the server (virtualization survives SSR, so a 5,000-row
+grid does not serialise 5,000 rows); the rest of the rows and every
+interaction hydrate on the client. Demo
 [19. Server-side rendering](https://svgrid.com/demos/19-ssr/)
 shows a sandboxed pre-hydration snapshot.
 

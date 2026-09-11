@@ -1,0 +1,24 @@
+{
+  "description": "A recruiting pipeline in Svelte 5 with one dataset and four synced views inside an SvDockManager: the same candidate interviews render as an interview Scheduler, a Grid, a Kanban hiring pipeline from Applied to Hired and a stacked hiring-funnel SvGridChart by department. Drag an interview, move a card or edit a cell in any pane and it writes back to the one rows array; panes drag, resize and float.",
+  "keywords": [
+    "svelte recruiting pipeline app",
+    "svelte 5 interview scheduler",
+    "svelte hiring kanban and calendar",
+    "svelte hiring funnel chart",
+    "svelte candidate tracking workspace"
+  ],
+  "faq": [
+    {
+      "question": "How does moving a card change the calendar?",
+      "answer": "The card's stage is a field on the same row the scheduler renders; the interview keeps its time and the calendar shows the new stage colour, while the funnel chart recounts."
+    },
+    {
+      "question": "How is the funnel chart derived?",
+      "answer": "A $derived counts candidates per stage and department into a stacked bar spec; it recomputes on any row change."
+    },
+    {
+      "question": "Can the workspace layout be saved?",
+      "answer": "Yes. bind:workspace on SvDockManager holds the arrangement, which can be serialized to localStorage as the docking demos show."
+    }
+  ]
+}

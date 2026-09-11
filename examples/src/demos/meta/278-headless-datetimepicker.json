@@ -1,0 +1,24 @@
+{
+  "description": "The headless date-time picker core of the SvGrid UI kit in Svelte 5. createDateTimePicker is the state machine behind SvDateTimePicker: the masked field parse and format through the datetime token engine, min and max clamping, nullable clear, spin stepping and dropdown open and tab state, exposed as inputProps, toggleProps, tabProps, spinProps and clearProps. The same core drives the styled picker with its portalled calendar and clock dropdown and a custom masked field, both bound to one value.",
+  "keywords": [
+    "svelte headless datetime picker",
+    "svelte 5 custom masked date field",
+    "svelte createDateTimePicker",
+    "svelte date format tokens",
+    "svelte datetime state machine"
+  ],
+  "faq": [
+    {
+      "question": "How does the masked field parse?",
+      "answer": "The core turns a formatString such as the default yyyy-MM-dd HH:mm into a mask and parses the typed text back into a Date, rejecting values outside min and max and committing through onCommit."
+    },
+    {
+      "question": "Can I build a field without the dropdown?",
+      "answer": "Yes. The custom render in the demo uses inputProps, spinProps and clearProps only; the dropdown state exists in the core but nothing forces you to render it."
+    },
+    {
+      "question": "What does spinProps do?",
+      "answer": "It wires up and down buttons that step the segment under the caret, day, month, year, hour or minute, without opening the dropdown."
+    }
+  ]
+}

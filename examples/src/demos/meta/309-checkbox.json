@@ -1,0 +1,24 @@
+{
+  "description": "SvCheckBox in a Svelte 5 role-permissions block: a tri-state select-all parent that shows indeterminate when only some children are checked, child checkboxes per permission, and a required terms checkbox with validation that blocks submit until it is ticked. Controlled through checked, indeterminate and onChange.",
+  "keywords": [
+    "svelte checkbox component",
+    "svelte 5 indeterminate checkbox",
+    "svelte select all checkbox",
+    "svelte required checkbox validation",
+    "svelte permissions checkboxes"
+  ],
+  "faq": [
+    {
+      "question": "How does the select-all parent work?",
+      "answer": "Its checked is true when every child is on and its indeterminate is true when some are; onChange toggles every child at once. Both flags are $derived from the children's state."
+    },
+    {
+      "question": "How is the terms checkbox validated?",
+      "answer": "It carries required and an error message; the form's submit checks the value and the checkbox shows the message until it is ticked."
+    },
+    {
+      "question": "Does it work as a grid cell editor?",
+      "answer": "Yes. A column with editorType 'checkbox' mounts the same component in the cell."
+    }
+  ]
+}

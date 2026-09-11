@@ -1,0 +1,24 @@
+{
+  "description": "The Svelte 5 data grid as the source of truth for three Chart.js charts. A mock socket pushes price ticks every 350 ms; a bar chart of price per symbol, a line chart of the last 30 ticks for the top four symbols and a doughnut of market cap by sector all read the grid's displayed rows through api.getDisplayedRows() and re-render on every tick and every filter or sort change with chart.update('none') so nothing animates on the fast cadence. Filter the Symbol column and the charts trim to match.",
+  "keywords": [
+    "svelte grid chart.js",
+    "svelte 5 table and chart sync",
+    "svelte grid filtered rows to chart",
+    "svelte realtime chart from grid",
+    "svelte getDisplayedRows"
+  ],
+  "faq": [
+    {
+      "question": "How do the charts follow the grid filters?",
+      "answer": "onFiltersChange and onSortingChange call a rebuild that reads api.getDisplayedRows(), and the charts are fed from that array, so a column filter narrows the chart to the same rows."
+    },
+    {
+      "question": "Why chart.update('none')?",
+      "answer": "It refreshes the chart without its transition animation. On a 350 ms tick an animated update would never finish and would look jittery."
+    },
+    {
+      "question": "Is Chart.js part of SvGrid?",
+      "answer": "No. It is imported by the demo as a normal dependency; the grid only exposes the rows. The same pattern works with any chart library, or with the charts in @svgrid/enterprise."
+    }
+  ]
+}

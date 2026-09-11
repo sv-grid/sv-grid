@@ -133,7 +133,7 @@
 
 <section class="sheet-demo">
   <header class="bs-head">
-    <h1 class="bs-title">Format Cells</h1>
+    <h2 class="bs-title">Format Cells</h2>
     <p class="bs-sub">
       Drag a rectangle across cells, then click a format - <strong>$</strong>, <strong>%</strong>,
       <strong>1,234</strong> - and only the display changes; the value and every formula are

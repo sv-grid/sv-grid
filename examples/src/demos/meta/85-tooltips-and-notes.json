@@ -1,0 +1,24 @@
+{
+  "description": "Two annotation layers for the Svelte 5 data grid. A column-level tooltip, static or computed from the cell context, renders as a native title so hovering any cell in that column explains it; and per-cell notes passed as a { [rowId]: { [columnId]: string } } map through the notes prop paint a corner indicator and use the note text as the hover tooltip. You own the storage, the grid renders the indicator; a button adds, edits or deletes the note on the selected cell.",
+  "keywords": [
+    "svelte grid cell tooltip",
+    "svelte table cell notes",
+    "svelte 5 data grid comments indicator",
+    "svelte grid column tooltip",
+    "svelte grid annotations"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a tooltip to a column?",
+      "answer": "Set tooltip on the column definition, either a string or a function of the cell context that returns one. The grid writes it as the cell's title attribute."
+    },
+    {
+      "question": "How are notes stored?",
+      "answer": "In your own state as an object keyed by row id and then column id. Pass it as the notes prop; when the user saves a note you update the object and the indicator appears on that cell."
+    },
+    {
+      "question": "Do notes survive sorting and filtering?",
+      "answer": "Yes. They are keyed by row id rather than row index, so a note stays on its record wherever the row moves."
+    }
+  ]
+}

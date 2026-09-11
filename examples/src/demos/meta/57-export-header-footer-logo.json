@@ -1,0 +1,24 @@
+{
+  "description": "A branded Excel export from the Svelte 5 data grid: a single-sheet xlsx that opens with a page header holding a PNG logo, the company name and a report subtitle, and a three-segment footer with the generated date on the left, the brand URL in the centre and Excel page-number fields on the right. The lines are passed as ExportHeaderFooterLine entries, and image lines are embedded as real pictures in the workbook.",
+  "keywords": [
+    "svelte excel export with logo",
+    "svelte 5 xlsx header footer",
+    "svelte grid branded export",
+    "svelte export page numbers excel",
+    "svelte grid report header"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a logo to the export?",
+      "answer": "Pass an image line in the header array of exportData with the PNG as a data URL or fetched bytes. The exporter embeds it in the workbook's media and anchors it in the header area."
+    },
+    {
+      "question": "How do page numbers work?",
+      "answer": "The footer's right segment carries Excel's page-number and page-count fields, which Excel resolves when printing, so a long sheet numbers itself."
+    },
+    {
+      "question": "Can the header be text only?",
+      "answer": "Yes. Any mix of text and image lines is accepted; omit the image line for a plain title and subtitle."
+    }
+  ]
+}

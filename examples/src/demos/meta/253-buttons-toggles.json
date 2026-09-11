@@ -1,0 +1,24 @@
+{
+  "description": "The press and toggle primitives of the SvGrid UI kit in Svelte 5: SvButton with variants, sizes and a loading state, SvRepeatButton that fires while held, SvToggleButton with a pressed state, SvSwitchButton, SvCheckBox with an indeterminate state, SvRadioGroup with arrow-key navigation and SvRating with half stars. Every one is themed from the --sg-* tokens and works standalone or as a grid cell control.",
+  "keywords": [
+    "svelte button components",
+    "svelte 5 toggle switch checkbox",
+    "svelte ui kit buttons",
+    "svelte radio group arrow keys",
+    "svelte rating component"
+  ],
+  "faq": [
+    {
+      "question": "Do these controls share a theme with the grid?",
+      "answer": "Yes. They read the same --sg-* custom properties, so a theme preset applied to the page styles buttons, switches and the grid together."
+    },
+    {
+      "question": "How does SvRepeatButton differ from SvButton?",
+      "answer": "It fires onclick repeatedly while the pointer is held down, with acceleration, which suits steppers and scroll controls; SvButton fires once per click."
+    },
+    {
+      "question": "How do I set an indeterminate checkbox?",
+      "answer": "Pass indeterminate along with checked. The box shows the dash state and reports the next click as checked, which is the select-all parent pattern."
+    }
+  ]
+}

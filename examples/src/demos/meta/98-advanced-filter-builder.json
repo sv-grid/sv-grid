@@ -1,0 +1,24 @@
+{
+  "description": "A visual AND/OR query builder for the Svelte 5 data grid built on its own advanced filter. SvAdvancedFilter writes a predicate expression through api.setAdvancedFilter(), and the grid applies it after its global, column and facet filters while keeping the full dataset, so the row count, facet value lists, exports and saved views stay correct. Typed rules, per-field operators and presets such as at-risk EMEA accounts are each a single expression; it requires enableAdvancedFilter() from @svgrid/enterprise.",
+  "keywords": [
+    "svelte advanced filter builder",
+    "svelte grid query builder",
+    "svelte 5 and or filter panel",
+    "svelte data grid saved views",
+    "svelte grid predicate filter"
+  ],
+  "faq": [
+    {
+      "question": "Why filter through the grid instead of passing a filtered array?",
+      "answer": "Passing a pre-filtered array hides rows from the grid entirely, so the row count, the facet value lists, exports and saved views no longer know what was filtered out. setAdvancedFilter keeps data complete and the grid does the filtering."
+    },
+    {
+      "question": "How do I save a view?",
+      "answer": "A view is the expression. Store what onAdvancedFilterChange gives you and call api.setAdvancedFilter with it later; the presets in the demo are exactly that."
+    },
+    {
+      "question": "Can a rule compare a row against an aggregate?",
+      "answer": "Yes. The last preset compares each row to an aggregate over the rows that survived the other filters, which only works because the expression runs inside the grid's engine."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A field array in SvForm for Svelte 5: type 'array' with itemFields renders a repeatable group with add and remove rows, each row validating against its own values so within-row rules work, required and minItems gating the count, and an array of item objects in the submitted payload. The demo is an invoice line-items form.",
+  "keywords": [
+    "svelte form field array",
+    "svelte 5 repeatable form rows",
+    "svelte invoice line items form",
+    "svelte form add remove rows",
+    "svelte form minItems"
+  ],
+  "faq": [
+    {
+      "question": "How do I declare a repeatable group?",
+      "answer": "Add a field with type: 'array' and itemFields listing the fields of one row. The form renders the rows from the initial array with add and remove buttons."
+    },
+    {
+      "question": "How does per-row validation work?",
+      "answer": "Each row's validate functions receive that row's values, so a rule such as quantity greater than zero applies within the row, and errors show on the row's field."
+    },
+    {
+      "question": "How do I require at least one row?",
+      "answer": "Set minItems on the array field, or required for at least one; the form blocks submit and shows a message until the count is met."
+    }
+  ]
+}

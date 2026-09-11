@@ -1,0 +1,24 @@
+{
+  "description": "SvComboBox in Svelte 5 as a form field: type to filter a grouped, portalled list where the value must come from the list, so unmatched text reverts on blur. Shown as a currency picker with a label, a clear button and required validation, on the shared editor contract.",
+  "keywords": [
+    "svelte combobox",
+    "svelte 5 filterable select",
+    "svelte searchable dropdown form field",
+    "svelte combobox required validation",
+    "svelte grouped combobox"
+  ],
+  "faq": [
+    {
+      "question": "What happens if the user types something not in the list?",
+      "answer": "On blur the text reverts to the current value, or clears if there is none, so the field never reports a value outside its options."
+    },
+    {
+      "question": "How is the list filtered?",
+      "answer": "Case-insensitively on the label as you type, keeping group headings for groups that still have matches; arrow keys move through the matches and Enter picks."
+    },
+    {
+      "question": "Can options load from a server?",
+      "answer": "Yes. Pass loadOptions instead of options for a debounced remote search, which the remote combo box demo shows."
+    }
+  ]
+}

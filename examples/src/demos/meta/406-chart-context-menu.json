@@ -1,0 +1,24 @@
+{
+  "description": "Charting a selection from the right-click menu of the Svelte 5 data grid. With the charting prop enabled the context menu gains a Chart selected range item: select a block of cells, right-click, and the docked chart panel opens scoped to that range, the spreadsheet chart-this gesture built in. The panel reserves its own gutter so the grid shrinks rather than being covered, and the grid keeps its custom cell renderers, in-cell sparklines and declarative conditional formatting, all still chartable, with no external charting library.",
+  "keywords": [
+    "svelte grid chart selected cells",
+    "svelte 5 right click chart range",
+    "svelte data grid integrated charting",
+    "svelte chart panel from selection",
+    "svelte excel chart this"
+  ],
+  "faq": [
+    {
+      "question": "How does the menu item appear?",
+      "answer": "Set charting on the grid together with contextMenu. The Chart selected range item is appended to the default menu automatically and only while charting is on."
+    },
+    {
+      "question": "What does the chart scope to?",
+      "answer": "The selected rectangle: its rows become the data and its numeric columns the measures, so a selection of three products by four quarters charts exactly those cells."
+    },
+    {
+      "question": "Why does the grid shrink when the panel opens?",
+      "answer": "The panel is docked with position right and a width, taking its own space beside the grid rather than overlaying rows, so the selection stays visible while you chart it."
+    }
+  ]
+}

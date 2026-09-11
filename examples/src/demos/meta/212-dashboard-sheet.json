@@ -1,0 +1,24 @@
+{
+  "description": "A spreadsheet that reads like a dashboard on a plain Svelte 5 SvGrid. Each channel row carries an inline SVG trend sparkline rendered by a per-column custom cell and an eight-week heatmap shaded by volume through value-driven cellClass, while Total and Avg are live =SUM and =AVERAGE formulas in HyperFormula. Edit any weekly cell and the sparkline reshapes, the heatmap re-shades and the totals update at once.",
+  "keywords": [
+    "svelte dashboard spreadsheet",
+    "svelte 5 sheet sparkline heatmap",
+    "svelte grid formulas and charts",
+    "svelte marketing channel dashboard",
+    "svelte heatmap cells"
+  ],
+  "faq": [
+    {
+      "question": "How does the sparkline react to edits?",
+      "answer": "The sparkline column's cell snippet reads the row's eight weekly values; a commit changes the row, the snippet re-renders and the SVG path is rebuilt."
+    },
+    {
+      "question": "How is the heatmap shaded?",
+      "answer": "cellClass maps each weekly value to one of several intensity classes based on the column's range, so the shading updates as values change."
+    },
+    {
+      "question": "Are the totals formulas or code?",
+      "answer": "Formulas. Total and Avg cells hold =SUM and =AVERAGE over the week cells and HyperFormula recalculates them, the same as any other sheet cell."
+    }
+  ]
+}

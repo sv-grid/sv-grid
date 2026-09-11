@@ -1,0 +1,24 @@
+{
+  "description": "The headless switch core of the SvGrid UI kit in Svelte 5. createSwitch is the state machine behind SvSwitchButton, on and off with the full keyboard and the ARIA switch role, exposed as switchProps. The same core drives the styled component and a custom sliding-knob render, both bound to one checked value with a readout.",
+  "keywords": [
+    "svelte headless switch",
+    "svelte 5 custom switch knob",
+    "svelte createSwitch",
+    "svelte aria switch role",
+    "svelte headless toggle switch"
+  ],
+  "faq": [
+    {
+      "question": "How does a switch differ from a toggle button in ARIA?",
+      "answer": "A switch uses role switch with aria-checked and represents a setting; a toggle button uses aria-pressed and represents an action state. The two cores emit the right one so screen readers announce them correctly."
+    },
+    {
+      "question": "Which keys flip it?",
+      "answer": "Space and Enter, and the core also handles a click anywhere on the element that carries switchProps, including a custom knob and track."
+    },
+    {
+      "question": "How do I animate my own knob?",
+      "answer": "Read the core's checked flag in your markup and transition the knob with CSS; the demo slides it with a transform."
+    }
+  ]
+}

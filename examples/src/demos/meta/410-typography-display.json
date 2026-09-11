@@ -1,0 +1,24 @@
+{
+  "description": "The prose and display primitives of SvGrid UI in Svelte 5: SvTitle with size decoupled from heading level, SvText with tones and line clamping, SvAnchor with an external marker, SvBlockquote with a citation, SvMark and SvList in ordered, unordered and none types, plus SvKbd for key combinations, SvCode, SvAspectRatio and SvVisuallyHidden for the small display bits. All themed from the tokens.",
+  "keywords": [
+    "svelte typography components",
+    "svelte 5 title text components",
+    "svelte kbd component",
+    "svelte aspect ratio component",
+    "svelte visually hidden"
+  ],
+  "faq": [
+    {
+      "question": "How is the heading level separated from its size?",
+      "answer": "order sets the semantic h1 to h6 element and size sets the visual scale independently, so a page can keep a correct outline while a card title looks small."
+    },
+    {
+      "question": "How do I clamp long text?",
+      "answer": "SvText takes clamp with a line count; the text is cut after that many lines with an ellipsis and the full content stays available to assistive technology."
+    },
+    {
+      "question": "What does SvVisuallyHidden do?",
+      "answer": "It renders content that screen readers announce but sighted users do not see, for labels and instructions that would clutter the layout."
+    }
+  ]
+}

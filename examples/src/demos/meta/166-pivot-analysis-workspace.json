@@ -1,0 +1,24 @@
+{
+  "description": "An Excel-style pivot analysis workspace for loyalty and membership data built on SvPivotDesigner in about 80 lines of glue. The component supplies the left-rail field picker with search and checkboxes, the Rows, Columns, Data and Filters wells, drag and drop, a per-chip aggregator menu, presets and totals toggles, and re-pivots live on every layout change; the seed is six cities by three tiers by eight hourly buckets with spend and rating measures plus extra dimensions to pull in, and value cells get data bars for spend and amber strips for average rating.",
+  "keywords": [
+    "svelte pivot analysis",
+    "svelte 5 pivot workspace",
+    "svelte pivot field picker search",
+    "svelte loyalty analytics grid",
+    "svelte pivot aggregator chips"
+  ],
+  "faq": [
+    {
+      "question": "How do I change the aggregator for a measure?",
+      "answer": "Click the measure chip in the Data well to open its menu and pick sum, average, count, min or max; the same field can sit in the well twice with different aggregators, and the pivot recomputes on each change."
+    },
+    {
+      "question": "Does the pivot virtualize?",
+      "answer": "About 1,800 facts pivot into a few hundred rows here, which renders without virtualization; for much larger results the inline grid's row virtualization is available through the designer's grid props."
+    },
+    {
+      "question": "Can I add my own dimensions?",
+      "answer": "Yes. Any field in the rows can be listed as a dimension or a measure; gender, age band and discount are included here so they can be dragged into the layout."
+    }
+  ]
+}

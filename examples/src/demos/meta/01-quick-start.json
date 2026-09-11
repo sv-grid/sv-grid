@@ -1,0 +1,24 @@
+{
+  "description": "The Svelte 5 data grid quick start: a 25-row by 9-column table with sortable headers, a filter with an operator picker in every column menu, checkbox row selection, click-and-drag cell range selection, inline editing on double-click or F2, a row-number column and column resize. It is the shape of grid you would put in an admin tool, wired in about a hundred lines with tableFeatures for sorting, filtering and row selection.",
+  "keywords": [
+    "svelte data grid quick start",
+    "svelte 5 table example",
+    "svelte editable table",
+    "svelte grid sort filter select",
+    "sveltekit data grid"
+  ],
+  "faq": [
+    {
+      "question": "What is the minimum code for a sortable, filterable Svelte grid?",
+      "answer": "Import SvGrid and tableFeatures from @svgrid/grid, pass data and columns, and register rowSortingFeature and columnFilteringFeature in the features prop. filterMode=\"menu\" puts the filter and its operator picker in each column's header menu (filterMode=\"row\" would add a filter row instead); selectionMode=\"both\" with showRowSelection adds the checkboxes and cell ranges."
+    },
+    {
+      "question": "How do I turn on inline editing?",
+      "answer": "Set enableInlineEditing on the grid. Double-click a cell or press F2 to edit it; Enter commits and Escape cancels. Columns can opt out individually with editable: false."
+    },
+    {
+      "question": "How do I get a reference to the grid API?",
+      "answer": "Pass an onApiReady callback. It receives the SvGridApi instance once the grid has mounted, which is what the demo uses for programmatic selection, filtering and editing."
+    }
+  ]
+}

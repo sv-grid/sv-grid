@@ -1,0 +1,24 @@
+{
+  "description": "Row reordering for a priority queue in the Svelte 5 data grid with a drag-handle column. Check several rows and drag the handle of any of them to move the whole selection as a block, and the grid auto-scrolls when the pointer comes within 60 px of the top or bottom edge. It is plain user-land code: dragstart on the handle cell, dragover on rows to compute the insertion index, and drop to mutate the data array.",
+  "keywords": [
+    "svelte grid drag handle column",
+    "svelte table reorder rows",
+    "svelte 5 priority queue grid",
+    "svelte drag multiple rows",
+    "svelte grid autoscroll drag"
+  ],
+  "faq": [
+    {
+      "question": "How is the drag handle added?",
+      "answer": "As a column with a cell snippet rendering the grip; the snippet sets draggable and starts the drag with the row's id. The grid renders the column like any other."
+    },
+    {
+      "question": "How does the block move work?",
+      "answer": "On drop the handler collects the checked row ids, removes them from the array in order and reinserts them at the computed index, so the selected rows keep their relative order."
+    },
+    {
+      "question": "Is there a managed alternative?",
+      "answer": "Yes. rowDragManaged gives every row a built-in grip and the grid splices its own data; use this hand-built version when the drag needs to carry a multi-row selection or custom drop rules."
+    }
+  ]
+}

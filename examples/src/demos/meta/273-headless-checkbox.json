@@ -1,0 +1,24 @@
+{
+  "description": "The headless checkbox core of the SvGrid UI kit in Svelte 5. createCheckbox is the state machine behind SvCheckBox: checked, unchecked and indeterminate with aria-checked set to mixed, exposed as boxProps to spread onto any element. The same core drives the styled component and a custom card-style checkbox, both bound to one checked value.",
+  "keywords": [
+    "svelte headless checkbox",
+    "svelte 5 custom checkbox card",
+    "svelte createCheckbox",
+    "svelte indeterminate aria mixed",
+    "svelte headless checkbox state"
+  ],
+  "faq": [
+    {
+      "question": "How is indeterminate represented?",
+      "answer": "As a separate flag the core exposes; boxProps sets aria-checked to mixed while it is on and the next click resolves to checked, matching native behaviour."
+    },
+    {
+      "question": "Can the whole card be the click target?",
+      "answer": "Yes. Spread boxProps on the card element and the entire surface toggles the value with the right role and keyboard handling."
+    },
+    {
+      "question": "Does it work inside a label?",
+      "answer": "Yes. The element with boxProps carries an id you can point a label at, or wrap it in a label as the styled component does."
+    }
+  ]
+}

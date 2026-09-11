@@ -3,7 +3,7 @@
   /**
    * 181. Master / Detail - nested grids
    * -----------------------------------
-   * The classic AG-Grid-style master/detail: each master row expands to reveal
+   * The classic master/detail: each master row expands to reveal
    * a full nested <SvGrid responsive={true}> of its child records. Built on the grid's own
    * `isDetailRow` + `renderDetailRow` props - the detail row is a real
    * full-width colspan row, and its content is just another grid.

@@ -1,0 +1,24 @@
+{
+  "description": "Four story-telling chart features on one Svelte 5 line chart. overlay adds a smoothing or trend line, sma:7, ema:14 or linear regression, dashed and tinted over the source series; annotations pin text and markers at named events such as releases and incidents; yScale log plots base-10 for signups that run from dozens to thousands; and onDrill fires with the rowIds behind a clicked category so the demo filters the grid to that day's rows.",
+  "keywords": [
+    "svelte chart moving average overlay",
+    "svelte 5 chart annotations",
+    "svelte log scale chart",
+    "svelte chart drill to grid rows",
+    "svelte analytics line chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a moving average?",
+      "answer": "Set overlay on the series to sma:7 for a seven-point simple moving average, ema:14 for an exponential one or linear for a regression line; the chart computes and draws it from the series values."
+    },
+    {
+      "question": "What does onDrill receive?",
+      "answer": "The clicked category and the ids of the rows that were aggregated into it, so the grid can be filtered to exactly those rows without recomputing the grouping."
+    },
+    {
+      "question": "How are annotations placed?",
+      "answer": "Each annotation names a category and carries text and an optional marker; the chart positions it at that x with a callout so the event is explained on the plot."
+    }
+  ]
+}

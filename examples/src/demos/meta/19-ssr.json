@@ -1,0 +1,24 @@
+{
+  "description": "Server-side rendering of the Svelte 5 data grid. In SvelteKit, render(SvGrid, { props }) from svelte/server returns table markup with the data baked in, so the first paint carries real rows before hydration. The gallery has no server runtime, so this demo snapshots the client-rendered grid into a script-blocked iframe to show the shape of the markup without JavaScript; the real check is the pnpm ssr:check script against a server build.",
+  "keywords": [
+    "svelte grid ssr",
+    "sveltekit data grid server side rendering",
+    "svelte 5 table seo markup",
+    "svelte grid hydration",
+    "svelte grid render on server"
+  ],
+  "faq": [
+    {
+      "question": "Does SvGrid render rows on the server?",
+      "answer": "Yes. Rendering the component on the server produces the table with header and data rows for the initial state, and the client hydrates it for interactivity."
+    },
+    {
+      "question": "Why is this demo a snapshot instead of real SSR?",
+      "answer": "The demo gallery is a static site with no server. Capturing the client DOM and showing it in an iframe that blocks scripts demonstrates that the markup carries the data, but only a real server build can catch an SSR regression."
+    },
+    {
+      "question": "What about virtualization on the server?",
+      "answer": "The server has no viewport, so the initial render emits the first window of rows; hydration takes over scrolling and renders the rest on demand."
+    }
+  ]
+}

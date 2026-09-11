@@ -1,0 +1,24 @@
+{
+  "description": "A full calendar client in Svelte 5 built on the Scheduler and SvDockManager. A NavPane module rail switches between Calendar, Mail, People and Tasks; the Calendar module is a dockable workspace with the scheduler in Month, Week, Day or Agenda driven by a mini date picker, an Upcoming grid and an Inbox auto-hidden to the bottom edge, and the arrangement persists across reloads. Meeting cards show attendee avatars, recurring events take per-occurrence edits through recurrenceField and recurrenceExceptionsField, a second time-zone ruler runs beside the day, and .ics import and export plus undo complete it.",
+  "keywords": [
+    "svelte calendar app",
+    "svelte 5 recurring events per occurrence",
+    "svelte ical import export",
+    "svelte dockable calendar workspace",
+    "svelte second time zone calendar"
+  ],
+  "faq": [
+    {
+      "question": "How are recurring events edited per occurrence?",
+      "answer": "The row holds a rule in recurrenceField and a list of exceptions in recurrenceExceptionsField; editing one occurrence writes an exception for that date while the series stays intact."
+    },
+    {
+      "question": "How does iCal import work?",
+      "answer": "The demo parses an .ics file into rows with start, end, title and recurrence and appends them; export walks the rows back into VEVENT entries and downloads the file."
+    },
+    {
+      "question": "How is the workspace persisted?",
+      "answer": "The SvDockManager state, tiled panes, the auto-hidden Upcoming and Inbox and any floated window, is serialized to localStorage and restored on load."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "SvDockLayout in Svelte 5, an IDE-style docking workspace. Drag a tab onto another pane and drop it on an edge to split or on the centre to stack it as a tab, drag the splitters to resize and close panes with the x. The whole layout is a serializable DockNode tree bound through bind:layout, so a workspace can be saved and restored.",
+  "keywords": [
+    "svelte dock layout",
+    "svelte 5 docking panels",
+    "svelte ide style layout",
+    "svelte drag tab to split",
+    "svelte serializable layout tree"
+  ],
+  "faq": [
+    {
+      "question": "What does the layout tree look like?",
+      "answer": "A DockNode is either a split with a direction, sizes and children, or a pane with tabs and an active id. Every drag rewrites the tree and bind:layout reflects it, so JSON.stringify gives a saveable workspace."
+    },
+    {
+      "question": "How do I decide between split and stack?",
+      "answer": "By where you drop. The edges of a pane show a highlight for a split on that side; the centre highlights for adding the tab to that pane."
+    },
+    {
+      "question": "What happens when the last tab of a pane closes?",
+      "answer": "The pane is removed and its sibling takes the space, so the tree never keeps empty panes."
+    }
+  ]
+}

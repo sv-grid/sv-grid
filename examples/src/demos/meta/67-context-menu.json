@@ -1,0 +1,24 @@
+{
+  "description": "A right-click context menu on rows of the Svelte 5 data grid with Edit, Duplicate, Move up, Move down and Delete. A single contextmenu listener on the wrapper reads the data-svgrid-row attribute to find the row, a floating menu opens at the pointer, and the actions call api.addRow, api.removeRow or rebuild the data array. The grid does not impose its own row menu, so you can stack whatever menu your app already has.",
+  "keywords": [
+    "svelte grid context menu",
+    "svelte table right click menu",
+    "svelte 5 data grid row actions",
+    "svelte grid duplicate row",
+    "svelte grid addRow removeRow"
+  ],
+  "faq": [
+    {
+      "question": "How do I find which row was right-clicked?",
+      "answer": "Listen for contextmenu on the grid wrapper and walk up from event.target to the element carrying data-svgrid-row. Its value is the row id, which the menu keeps as its anchor."
+    },
+    {
+      "question": "How are rows added and removed?",
+      "answer": "Duplicate calls api.addRow with a copy of the row, Delete calls api.removeRow with its id. Move up and down rebuild the data array in the new order, since order lives in your data."
+    },
+    {
+      "question": "Does the grid ship a context menu of its own?",
+      "answer": "There is a contextMenu prop for the built-in clipboard commands, but the grid deliberately does not own row-level actions, so your app can supply a menu that matches the rest of its UI."
+    }
+  ]
+}

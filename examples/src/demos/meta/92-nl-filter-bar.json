@@ -1,0 +1,24 @@
+{
+  "description": "A natural-language filter bar for the Svelte 5 data grid. Type EMEA active over 50k or sales rep starting with A younger than 35 and a rule-based parser maps the phrase to a chain of api.setFilter calls plus an optional api.setSort and a top-N slice, so it is fast, predictable and works offline. It understands over, less than, between, before, after, this month, quarter names, set-filter values, starting with, containing, sort by, highest, lowest and top N; unresolved tokens fall into a search filter, and the same token-to-intent shape is what you would hand to a model through setAIProvider.",
+  "keywords": [
+    "svelte natural language filter",
+    "svelte 5 grid search bar phrases",
+    "svelte grid text to filter",
+    "svelte data grid nl query",
+    "svelte grid rule based parser"
+  ],
+  "faq": [
+    {
+      "question": "How does the parser pick a column?",
+      "answer": "Number and date phrases look for the nearest column of that type by name, set values such as EMEA or active are matched against the distinct values of the set-filter columns, and the rest becomes a search filter on the name-like columns."
+    },
+    {
+      "question": "Can I see what it decided?",
+      "answer": "Yes. The bar shows the parsed filters, the sort and the top N as chips with a plain-English explanation before Apply is clicked, and Clear resets the grid and the phrase."
+    },
+    {
+      "question": "Why rule-based rather than a model?",
+      "answer": "It answers instantly, needs no key and behaves the same every time, which matters for a filter bar. The parsed shape is identical to what the AI helpers return, so swapping in a model is a matter of replacing the parser body."
+    }
+  ]
+}

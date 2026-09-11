@@ -1,0 +1,24 @@
+{
+  "description": "Candlestick and OHLC price charts in Svelte 5 with an ordinal date axis. ChartSeries.ohlc carries open, high, low and close while values keeps the closes, so the tooltip, the CSV export, the screen-reader table and an overlay of sma:10 all work with no candle-specific code. Toggle the axis: xType time opens a gap over every weekend while ordinal-time spaces sessions evenly and still labels them by date, and the strip under the plot is the chart's brush, drag its window to pan or an edge to resize. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte candlestick chart",
+    "svelte 5 ohlc chart",
+    "svelte stock chart ordinal axis",
+    "svelte price chart moving average",
+    "svelte chart brush pan zoom"
+  ],
+  "faq": [
+    {
+      "question": "Why keep the closes in values?",
+      "answer": "Everything generic in the chart reads values: the tooltip, the CSV export, the accessible data table and overlays such as the moving average. ohlc adds the four prices for drawing candles without changing any of that."
+    },
+    {
+      "question": "What is the difference between time and ordinal-time?",
+      "answer": "time places points by elapsed time, so a weekend is a visible gap three sessions wide; ordinal-time places sessions at equal steps and labels them with their dates, which is how trading charts are usually read."
+    },
+    {
+      "question": "Where is the volume?",
+      "answer": "In the grid next to the chart. A short strip under a plot reads as a range selector whatever it draws, and two charts cannot share one zoom, so volume lives in the table where it stays in register."
+    }
+  ]
+}

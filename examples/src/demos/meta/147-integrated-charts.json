@@ -1,0 +1,24 @@
+{
+  "description": "Charting the Svelte 5 data grid with no external charting library. SvGridChart renders a ChartSpec and rowsToChartSpec aggregates the grid's current filtered and sorted rows into one: bar, line, area, pie and donut, grouped or stacked, 100 percent stacked, top-N plus Other, a combo of bar and line on a second axis, a signed Y axis for negatives, an average reference line, tooltips, a clickable legend with double-click to isolate a series, data labels, click-to-drill through onSelect and SVG or PNG export. Filter the grid and the chart re-aggregates live.",
+  "keywords": [
+    "svelte grid charts no dependencies",
+    "svelte 5 chart from table rows",
+    "svelte SvGridChart",
+    "svelte chart re aggregate on filter",
+    "svelte bar line pie chart component"
+  ],
+  "faq": [
+    {
+      "question": "How does the chart follow the grid?",
+      "answer": "onFiltersChange and onSortingChange call a sync that reads api.getDisplayedRows() and rebuilds the spec with rowsToChartSpec; the chart re-renders from the new spec."
+    },
+    {
+      "question": "How does click-to-drill work?",
+      "answer": "onSelect receives the clicked category and series; the demo applies api.setFacetFilter for that value so the grid narrows to the rows behind the bar, and api.clearAllFilters resets."
+    },
+    {
+      "question": "Which chart types are available?",
+      "answer": "bar, line, area, pie and donut here, plus scatter, heatmap, waterfall, funnel, radar, calendar, gauge, treemap, sankey, candlestick and box plot in the other chart demos, all from the same SvGridChart."
+    }
+  ]
+}

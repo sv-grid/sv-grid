@@ -1,0 +1,24 @@
+{
+  "description": "Excel-style conditional formatting as a declarative engine prop of the Svelte 5 data grid. Pass every rule in one conditionalFormats array, later entries win, and no per-cell snippet is needed: dataBar draws a gradient-filled in-cell bar, colorScale paints heat maps as an alpha ramp, zero-centred, banded or compared against another column, iconSet adds arrows, traffic lights or triangles by threshold, and rule applies a style when a predicate matches. conditionalStatScope rescales the ramp to the visible rows.",
+  "keywords": [
+    "svelte grid conditional formatting",
+    "svelte table heat map cells",
+    "svelte 5 data bars in grid",
+    "svelte grid icon set column",
+    "svelte grid color scale"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a heat map to a column?",
+      "answer": "Add { type: 'colorScale', columns: ['revenue'] } with min, mid and max colours to the conditionalFormats array. mode: 'alpha' with a base colour tints the cell with a translucent ramp that composites over zebra stripes and selection, and compareColumn scales one column against another."
+    },
+    {
+      "question": "What does conditionalStatScope do?",
+      "answer": "It chooses whether min and max for a scale come from all rows or only the rows currently displayed. With 'visible', filtering the grid rescales the ramp to what is on screen; the demo toggles it live."
+    },
+    {
+      "question": "How do rules combine?",
+      "answer": "Entries are applied in array order and later ones win for the same cell, so { type: 'rule' } with a predicate can sit on top of a colour scale for the same column, and { type: 'iconSet', columns: ['growth'], set: 'arrows', thresholds: [0, 10] } adds the icon without touching the fill."
+    }
+  ]
+}

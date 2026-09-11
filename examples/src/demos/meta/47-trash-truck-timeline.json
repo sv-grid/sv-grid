@@ -1,0 +1,24 @@
+{
+  "description": "A public-works dispatcher view in the Svelte 5 data grid where every truck row has a wide Route cell laying out the day's stops on a time axis. An SVG truck with spinning wheels glides between stops through a CSS transition on its left percentage, the cell paints a completed zone behind it, each stop shows its scheduled time, and now advances every two seconds so positions reflow as pure derived state. Status pills, fill level and completion KPIs round out the board.",
+  "keywords": [
+    "svelte animated timeline grid",
+    "svelte 5 route timeline cell",
+    "svelte fleet route board",
+    "svelte grid svg animation",
+    "svelte public works dispatch"
+  ],
+  "faq": [
+    {
+      "question": "How does the truck animate?",
+      "answer": "Its position is a percentage derived from now against the stop times, applied as an inline left style with a CSS transition, so each two-second update glides rather than jumps; a keyframe spins the wheels."
+    },
+    {
+      "question": "Why derived state instead of an animation loop?",
+      "answer": "One now value in state drives every truck's position, the completed zone and the KPIs; the browser's transitions smooth the movement without per-frame JavaScript."
+    },
+    {
+      "question": "How are the fixed columns sized?",
+      "answer": "onApiReady sets the identity and actions column widths once through api.setColumnWidth so fitColumns gives the remaining width to the Route cell, which keeps the timeline as wide as the viewport allows."
+    }
+  ]
+}

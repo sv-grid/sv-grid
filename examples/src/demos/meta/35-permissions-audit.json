@@ -1,0 +1,24 @@
+{
+  "description": "Role-based editing, PII masking and a full audit trail in the Svelte 5 data grid, on a B2B sales pipeline. The column's editable function receives the cell context, so a rep can edit only their own deals and a manager only their region; email and phone are locked to admins and masked for everyone else; every onCellValueChange lands in a ring-buffer audit log filterable by user, row or column; clicking a cell opens its history, each entry has a one-click revert that is itself audited, and a compliance toggle freezes the grid while keeping the log visible.",
+  "keywords": [
+    "svelte grid role based editing",
+    "svelte 5 audit log table",
+    "svelte grid cell history",
+    "svelte data grid pii masking",
+    "svelte grid revert change"
+  ],
+  "faq": [
+    {
+      "question": "How do I make a cell editable for some rows only?",
+      "answer": "Give the column editable: (ctx) => boolean. The function sees the row and the current user, so it can return true for the rep's own deals and false for the rest without any per-row props."
+    },
+    {
+      "question": "How is the audit log built?",
+      "answer": "onCellValueChange pushes who, when, row, column, old and new value into a bounded array. The side panel filters that array; the per-cell popover selects the entries for the clicked cell."
+    },
+    {
+      "question": "How does revert stay auditable?",
+      "answer": "Revert writes the previous value with api.setCellValue, which fires onCellValueChange again, so the revert appears in the log as its own entry."
+    }
+  ]
+}

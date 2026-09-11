@@ -1,0 +1,24 @@
+{
+  "description": "A production-grade Country to State to City cascade in the Svelte 5 data grid. Each level is a combobox with typeahead rendered as a cell snippet, so editor and display are the same element and there is no edit-mode flicker. Its options come from the row's upstream value; changing Country resets State and City to the first valid option through api.setCellValue, and a row whose values no longer belong together turns amber with a one-click Fix button.",
+  "keywords": [
+    "svelte dependent dropdowns",
+    "svelte cascading select grid",
+    "svelte 5 country state city dropdown",
+    "svelte grid combobox cell",
+    "svelte table linked dropdowns"
+  ],
+  "faq": [
+    {
+      "question": "How does the City dropdown know which options to show?",
+      "answer": "The cell snippet computes its option list from the row's current State, which in turn depends on the row's Country. Because the snippet re-renders when the row changes, the options narrow automatically."
+    },
+    {
+      "question": "What happens when the user changes Country?",
+      "answer": "The handler writes the new country and then resets State and City to the first valid option for it with api.setCellValue, so the row never shows a city that belongs to another country."
+    },
+    {
+      "question": "How are inconsistent rows handled?",
+      "answer": "If seed data arrives with a city outside its country, the cell turns amber and offers a Fix button that writes a valid value. Validation and repair happen in the same snippet."
+    }
+  ]
+}

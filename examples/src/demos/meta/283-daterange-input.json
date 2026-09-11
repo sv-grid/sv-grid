@@ -1,0 +1,24 @@
+{
+  "description": "SvDateRangeInput, a compact start and end field for Svelte 5 that opens a portalled two-month range calendar with one-click presets such as Today, Last 7 days and This month. It composes the same headless range engine as SvCalendar and carries the shared editor contract: label, hint, error validation, dir for RTL and localizable messages, with firstDayOfWeek and presets as props.",
+  "keywords": [
+    "svelte date range input",
+    "svelte 5 date range picker field",
+    "svelte two month calendar",
+    "svelte date range presets",
+    "svelte rtl date picker"
+  ],
+  "faq": [
+    {
+      "question": "How is this different from SvCalendar in range mode?",
+      "answer": "SvCalendar renders inline; SvDateRangeInput is a text field that opens the calendar on demand, which suits forms and filter bars where space is tight."
+    },
+    {
+      "question": "How do I add presets?",
+      "answer": "Pass presets as an array of { label, range } entries or use the built-in set; each one fills the start and end in one click and resolves relative to today."
+    },
+    {
+      "question": "Does it support right-to-left?",
+      "answer": "Yes. Set dir='rtl' and the field, the dropdown and the month order mirror, and the messages prop lets you localize the preset labels and validation text."
+    }
+  ]
+}

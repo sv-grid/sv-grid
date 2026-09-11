@@ -1,0 +1,24 @@
+{
+  "description": "Staged, batch editing for a compensation review in the Svelte 5 data grid. Edits go into a draft buffer from createStagedEditing() in @svgrid/enterprise instead of writing through: a side rail shows the pending diff per employee with totals and cost impact, and the user commits the whole batch in one server round trip or reverts to the original snapshot. The grid surface is plain SvGrid; the staging engine sits next to it.",
+  "keywords": [
+    "svelte grid batch editing",
+    "svelte table staged changes",
+    "svelte 5 grid review before save",
+    "svelte data grid draft buffer",
+    "svelte grid commit batch"
+  ],
+  "faq": [
+    {
+      "question": "How are edits captured into the draft?",
+      "answer": "onCellValueChange calls stage.record(e) on the staged-editing instance. The row shows the new value, but the original stays in the snapshot until commit."
+    },
+    {
+      "question": "How does revert work?",
+      "answer": "The staging engine keeps each cell's original value. stage.revert() replays them through a callback that calls api.setCellValue, then empties the diff, so the grid returns to the snapshot it was opened with."
+    },
+    {
+      "question": "Which package is staged editing in?",
+      "answer": "createStagedEditing ships in @svgrid/enterprise. The grid itself is the MIT @svgrid/grid component; the enterprise package runs without a key while you evaluate, with a small watermark."
+    }
+  ]
+}

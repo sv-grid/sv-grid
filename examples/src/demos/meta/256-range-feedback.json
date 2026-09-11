@@ -1,0 +1,24 @@
+{
+  "description": "The range and feedback controls of the SvGrid UI kit in Svelte 5: SvSlider as a single or dual-thumb range with ticks, keyboard control and a vertical option, and SvGauge as a radial arc with threshold bands, a needle and a half sweep. Both are theme-driven value controls that work standalone or inside grid cells; the demo shows a volume slider with a value readout and five ticks beside a temperature gauge.",
+  "keywords": [
+    "svelte slider component",
+    "svelte 5 gauge component",
+    "svelte range slider ticks",
+    "svelte radial gauge",
+    "svelte value controls ui kit"
+  ],
+  "faq": [
+    {
+      "question": "How do I show the current slider value?",
+      "answer": "Set showValue and the slider prints the value next to the thumb; ticks={5} draws five evenly spaced marks along the track."
+    },
+    {
+      "question": "How does the gauge colour its arc?",
+      "answer": "Through bands, an array of { from, to, color } ranges painted along the arc; the needle points at value and unit is appended to the readout."
+    },
+    {
+      "question": "Are the controls keyboard accessible?",
+      "answer": "Yes. The slider thumb is a slider role with arrow, Home, End, Page Up and Page Down keys, and the gauge is a read-only meter announced with its value."
+    }
+  ]
+}

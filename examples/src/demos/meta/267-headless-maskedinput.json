@@ -1,0 +1,24 @@
+{
+  "description": "The headless masked input core of the SvGrid UI kit in Svelte 5. SvMaskedInput is a styled renderer over createMaskedInput, the pattern-mask engine where # is a digit, A a letter and * alphanumeric, exposed as inputProps. One core drives the styled field and a custom boxed field with a complete or partial badge, both bound to one value.",
+  "keywords": [
+    "svelte headless masked input",
+    "svelte 5 custom mask field",
+    "svelte createMaskedInput",
+    "svelte input mask engine",
+    "svelte mask complete flag"
+  ],
+  "faq": [
+    {
+      "question": "What does the core expose besides inputProps?",
+      "answer": "The masked text, the raw characters and a complete flag, which the custom render uses for its badge; the styled field uses the same values for its clear button and validation."
+    },
+    {
+      "question": "What happens to characters that do not fit?",
+      "answer": "The engine ignores any character that does not match the next slot and skips over literal characters automatically, so typing digits into a card mask lands them in the right places in any render."
+    },
+    {
+      "question": "Can the same engine be used outside an input?",
+      "answer": "Yes. The mask engine is a pure function used by the phone and date-time pickers as well, so formatting a value for display needs no input element."
+    }
+  ]
+}

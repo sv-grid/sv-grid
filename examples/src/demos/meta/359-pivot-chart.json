@@ -1,0 +1,24 @@
+{
+  "description": "One drag-and-drop pivot layout rendered two ways in Svelte 5. SvPivotDesigner with the chartable prop renders the same Rows, Columns and Values as either an expandable pivot grid or a live chart, switched with a Table and Chart toggle in the toolbar: rows become chart categories with their full path so nested rows read Americas, Canada, columns become series and the values the measure. The enterprise pivot engine feeds pivotToChartSpec into the MIT SvGridChart.",
+  "keywords": [
+    "svelte pivot chart",
+    "svelte 5 pivot table to chart toggle",
+    "svelte pivot series from columns",
+    "svelte pivot designer chartable",
+    "svelte pivotToChartSpec"
+  ],
+  "faq": [
+    {
+      "question": "How do the wells map to the chart?",
+      "answer": "Each row path becomes a category on the axis, each column-axis member becomes a series and the first value well entry is the measure, so a Region by Quarter revenue pivot becomes grouped bars per region with one bar per quarter."
+    },
+    {
+      "question": "Is the chart component enterprise?",
+      "answer": "No. SvGridChart is in the MIT @svgrid/grid package; the pivot engine and pivotToChartSpec that feed it are in @svgrid/enterprise."
+    },
+    {
+      "question": "Does switching views lose the layout?",
+      "answer": "No. Both views read the same bound layout, so a change in the wells updates the table and the chart alike."
+    }
+  ]
+}

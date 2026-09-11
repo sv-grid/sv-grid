@@ -1,0 +1,24 @@
+{
+  "description": "Live board structure on the Svelte 5 data grid: switch the lane axis at runtime between Status, Assignee and Priority by changing board.groupBy and the board re-buckets, and drag a lane header to reorder the columns with reorderableLanes. Both are built in: the group-by switch resets card positions to the new field, lane order is reported through onLaneReorder and persists with persistKey, and a Board and Table switcher shows it is one grid.",
+  "keywords": [
+    "svelte kanban group by switch",
+    "svelte 5 reorderable lanes",
+    "svelte board lane order persist",
+    "svelte kanban change lane field",
+    "svelte board persistKey"
+  ],
+  "faq": [
+    {
+      "question": "What happens when groupBy changes?",
+      "answer": "The board rebuilds its lanes from the distinct values of the new field, or the lanes array if given, and places each card by its value of that field; nothing in the data changes."
+    },
+    {
+      "question": "How is lane order saved?",
+      "answer": "board.persistKey names a localStorage key the board writes its layout to, including lane order and collapsed lanes, and restores on load; onLaneReorder also reports the new order so you can store it elsewhere."
+    },
+    {
+      "question": "Can lanes be renamed?",
+      "answer": "Yes. With onLaneRename provided, a lane header becomes editable and the new label is reported to your handler."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "SvCarousel and SvTour in Svelte 5. The carousel is a sliding track with arrows, dot indicators, autoplay that pauses on hover and swipe support, sized by a slide count; the tour spotlights each target element in turn and steps through Back, Next and Done, with arrow keys to navigate and Escape to skip. Both portal and follow the theme.",
+  "keywords": [
+    "svelte carousel component",
+    "svelte 5 product tour",
+    "svelte guided onboarding tour",
+    "svelte spotlight walkthrough",
+    "svelte carousel autoplay swipe"
+  ],
+  "faq": [
+    {
+      "question": "How is autoplay controlled?",
+      "answer": "autoplay takes the interval in milliseconds and 0 turns it off; the carousel pauses while hovered or focused and resumes after."
+    },
+    {
+      "question": "How do I define tour steps?",
+      "answer": "Each step names a target element selector plus a title and text; the tour scrolls the target into view, dims the page around it and positions the card next to it."
+    },
+    {
+      "question": "Can the tour be resumed later?",
+      "answer": "Yes. Bind the open flag and the current step; storing the step lets you reopen the tour where the user left off."
+    }
+  ]
+}

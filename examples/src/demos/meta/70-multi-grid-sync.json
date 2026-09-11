@@ -1,0 +1,24 @@
+{
+  "description": "Two Svelte 5 data grids over a single $state array. Edit a cell in either grid and the other re-renders immediately because both read the same reactive reference, with no grid-to-grid wiring. Filter and sort state stay per grid, so each keeps its own view of the shared inventory rows.",
+  "keywords": [
+    "svelte two grids same data",
+    "svelte 5 reactive grid sync",
+    "svelte grid shared state array",
+    "svelte linked tables editing",
+    "svelte data grid runes"
+  ],
+  "faq": [
+    {
+      "question": "How do the grids stay in sync?",
+      "answer": "They are given the same $state array as data. An inline edit in one grid mutates the row object, and Svelte's reactivity re-renders the other grid's cell; nothing else is needed."
+    },
+    {
+      "question": "Why do the filters not affect both grids?",
+      "answer": "Sorting and filtering are internal grid state, held per instance. Each grid projects the shared rows through its own pipeline, so one can show a filtered subset while the other shows everything."
+    },
+    {
+      "question": "Does this work with the headless engine too?",
+      "answer": "Yes. Two createSvGrid engines given the same array behave the same way; the shared-state headless demo goes further and shares the sort state as well."
+    }
+  ]
+}

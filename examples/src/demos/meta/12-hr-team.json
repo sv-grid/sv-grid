@@ -1,0 +1,24 @@
+{
+  "description": "An HR employee directory in the Svelte 5 data grid: about 80 people with avatar and name, title, level, team, manager, location, start date, a derived tenure column, status and compensation. It groups by team, location or status through columnGroupingFeature with a default group-by, renders the avatar cell and status badge with renderSnippet, computes tenure with fieldFn rather than a stored field, and folds group rows to a summary line.",
+  "keywords": [
+    "svelte employee directory grid",
+    "svelte 5 hr table",
+    "svelte grid avatar column",
+    "svelte grid group by team",
+    "svelte data grid derived column"
+  ],
+  "faq": [
+    {
+      "question": "How is the tenure column computed without a field?",
+      "answer": "The column has an id and a fieldFn that returns the tenure from the start date, so it sorts and filters like any other column while nothing is stored on the row."
+    },
+    {
+      "question": "How do I set a default grouping?",
+      "answer": "Call api.setGroupBy(['team']) in onApiReady. The demo does this after the API arrives, and the toolbar buttons switch to location or status the same way."
+    },
+    {
+      "question": "How are the avatar and badge rendered?",
+      "answer": "Each is a snippet returned from the column's cell function with renderSnippet. The person column combines the avatar and the name; the status column maps the value to a coloured badge."
+    }
+  ]
+}

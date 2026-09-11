@@ -56,7 +56,7 @@
 <div class="dash">
   <header class="top">
     <div>
-      <h1>Overview</h1>
+      <h2>Overview</h2>
       <p class="muted">Welcome back, Ada. Here's how things are trending.</p>
     </div>
     <div class="top-actions">
@@ -138,7 +138,7 @@
 <style>
   .dash { padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--sg-bg-subtle, var(--sg-header-bg, #f8fafc)); color: var(--sg-fg, #0f172a); }
   .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .top h1 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
+  .top h2 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
   .muted { color: var(--sg-muted, #64748b); font-size: 13px; margin: 2px 0 0; }
   .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 

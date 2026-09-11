@@ -1,0 +1,24 @@
+{
+  "description": "A product inventory grid in Svelte 5 where every row renders a real, scannable EAN-13 barcode as SVG, with no canvas, no eval and no dependency. The barcode is drawn by a cell snippet from the row's 12-digit code plus a computed check digit, so it stays sharp at any zoom, follows the theme and prints cleanly; row virtualization keeps only the visible barcodes in the DOM, and clicking a row opens a shelf-label preview.",
+  "keywords": [
+    "svelte barcode component",
+    "svelte grid ean-13 barcode",
+    "svelte 5 inventory table barcodes",
+    "svelte svg barcode generator",
+    "svelte warehouse grid"
+  ],
+  "faq": [
+    {
+      "question": "How is the barcode generated?",
+      "answer": "A small encoder maps the 12 digits plus the EAN-13 check digit to the left and right guard and digit patterns, and the snippet renders the bars as SVG rects. The code is in the demo, and it has no external dependency."
+    },
+    {
+      "question": "Does rendering thousands of barcodes slow the grid?",
+      "answer": "No. Rows are virtualized, so only the barcodes in the viewport exist in the DOM at any time; scrolling through the catalogue keeps the cost flat."
+    },
+    {
+      "question": "Can I print the labels?",
+      "answer": "Yes. SVG prints at full resolution, and the shelf-label preview that opens from onRowClick is the same SVG scaled up."
+    }
+  ]
+}

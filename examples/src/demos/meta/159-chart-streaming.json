@@ -1,0 +1,24 @@
+{
+  "description": "A streaming chart with a rolling window in Svelte 5. Live data needs no special chart API: the spec is a $derived, so appending a tick to the rows re-runs rowsToChartSpec and re-renders the chart, and capping the array at 60 ticks keeps the last window on screen with older points dropping off the left. Press Start and prices stream at 4 Hz while smoothing, brush and zoom stay available.",
+  "keywords": [
+    "svelte streaming chart",
+    "svelte 5 live updating line chart",
+    "svelte rolling window chart",
+    "svelte real time chart svelte runes",
+    "svelte chart 4hz updates"
+  ],
+  "faq": [
+    {
+      "question": "How is the window kept fixed?",
+      "answer": "After each tick the rows array is sliced to its last 60 entries before being assigned, so the derived spec always covers the same number of points."
+    },
+    {
+      "question": "Does re-aggregating every tick cost much?",
+      "answer": "Not at this size. rowsToChartSpec over 60 rows is a few microseconds, and the chart re-renders only the paths that changed."
+    },
+    {
+      "question": "Can I keep the grid and chart in sync?",
+      "answer": "Yes. Both read the same rows array, so the table scrolls the same window the chart draws."
+    }
+  ]
+}

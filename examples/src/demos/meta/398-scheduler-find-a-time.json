@@ -1,0 +1,24 @@
+{
+  "description": "Free and busy scheduling across attendees in the Svelte 5 scheduler. Each person's busy time, their events plus an external free-busy feed drawn as a hatch through freeBusyOf, is combined, and Find a time calls commonFree with the busy intervals, the day window and the meeting length to surface the windows when everyone is free. Click a suggestion to book it for all; the pure commonFree and availableSlots helpers ship in @svgrid/enterprise.",
+  "keywords": [
+    "svelte find a meeting time",
+    "svelte 5 free busy scheduling",
+    "svelte common free time across attendees",
+    "svelte scheduler external busy feed",
+    "svelte meeting booking helper"
+  ],
+  "faq": [
+    {
+      "question": "How is external busy time shown?",
+      "answer": "freeBusyOf returns busy intervals per resource from another source; the scheduler hatches them so they read as unavailable without being editable events."
+    },
+    {
+      "question": "What does commonFree return?",
+      "answer": "An array of intervals within the day window where no attendee is busy and that are at least the requested duration long, which the demo lists as suggestions."
+    },
+    {
+      "question": "How does booking for all work?",
+      "answer": "Clicking a suggestion adds one event per attendee at that time, so each person's row shows the meeting."
+    }
+  ]
+}

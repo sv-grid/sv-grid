@@ -1,0 +1,24 @@
+{
+  "description": "Server-side paging, sorting and filtering with the headless Svelte 5 grid engine. The server owns the data and returns one page plus a total count; sort, filter and page are query params sent with each request, and the engine wraps only the page it gets back, so it never sees the other rows. A request counter shows one round trip per state change, and the markup is a hand-styled <table>.",
+  "keywords": [
+    "svelte server side pagination",
+    "svelte 5 server side table",
+    "headless grid remote data svelte",
+    "svelte table load on demand",
+    "svelte sort filter query params"
+  ],
+  "faq": [
+    {
+      "question": "How does the headless engine work with server-side data?",
+      "answer": "Keep pageIndex, pageSize, sort and the search text as your own state, watch them in an effect, and fetch a page from your API whenever they change. Hand the returned rows to createSvGrid as its data with only the core row model; it renders those rows as-is instead of sorting or paging them locally."
+    },
+    {
+      "question": "How many requests does a state change cause?",
+      "answer": "One. The demo counts them on screen: changing the sort, typing a filter or moving to the next page each fires a single fetch with the new params."
+    },
+    {
+      "question": "Where does the total row count come from?",
+      "answer": "From the server's response alongside the page. The demo uses it to compute the page count for the pager; the engine itself never holds more than the current page."
+    }
+  ]
+}

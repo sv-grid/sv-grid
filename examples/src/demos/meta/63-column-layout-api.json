@@ -1,0 +1,24 @@
+{
+  "description": "The column layout API of the Svelte 5 data grid. api.getColumnWidths() and api.getColumnPinning() snapshot the current widths and pins into a plain JSON object, api.setColumnWidth(id, width) and api.setColumnPinning({ left, right }) restore it, and named layouts are saved to localStorage so an analyst's setup survives a reload. Buttons drive widths and pins directly to show the calls.",
+  "keywords": [
+    "svelte grid setColumnWidth",
+    "svelte table save column layout",
+    "svelte 5 grid column widths api",
+    "svelte grid pinning api",
+    "svelte data grid named layouts"
+  ],
+  "faq": [
+    {
+      "question": "How do I read the current column widths?",
+      "answer": "api.getColumnWidths() returns an object of column id to pixel width, including widths set by drag-resize. Store it with api.getColumnPinning() to capture the whole layout."
+    },
+    {
+      "question": "How do I restore a layout?",
+      "answer": "Loop over the saved widths and call api.setColumnWidth(id, width) for each, then api.setColumnPinning with the saved { left, right } arrays. The demo does this when a named layout is selected."
+    },
+    {
+      "question": "Is there a higher-level helper?",
+      "answer": "Yes. createNamedViews wraps api.getState() and api.setState() and includes widths and pins along with sort and filters; use it when you want views rather than layout alone."
+    }
+  ]
+}

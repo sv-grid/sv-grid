@@ -1,0 +1,24 @@
+{
+  "description": "Adornments on SvTextInput in Svelte 5: leading and trailing icon snippets, prefix and suffix text affixes, the shared clear button, sizes and the invalid, readonly and disabled states. All of it is owned by the SvField frame, so the entire text-input family behaves identically; the demo shows a search field with type='search', a label, clearable and block layout among other shapes.",
+  "keywords": [
+    "svelte text input with icon",
+    "svelte 5 input prefix suffix",
+    "svelte input clear button",
+    "svelte input adornments",
+    "svelte search input component"
+  ],
+  "faq": [
+    {
+      "question": "How do I add an icon inside the input?",
+      "answer": "Pass a leading or trailing snippet to SvTextInput. The frame reserves the space, keeps the icon aligned with the text and adjusts padding for the size."
+    },
+    {
+      "question": "What is the difference between an icon and an affix?",
+      "answer": "An affix is text such as a currency symbol or a unit rendered inside the frame; an icon is any snippet. Both sit in the same slots and can be combined with the clear button."
+    },
+    {
+      "question": "Why is the frame shared?",
+      "answer": "So every text-like input, number, password, masked, phone and search, gets the same sizes, focus ring, invalid styling and adornment behaviour from one implementation."
+    }
+  ]
+}

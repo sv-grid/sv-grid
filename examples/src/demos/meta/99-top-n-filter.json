@@ -1,0 +1,24 @@
+{
+  "description": "A BI-style top N and bottom N toolbar for the Svelte 5 data grid: pick a metric such as revenue, pick N, pick top or bottom, and the grid shows those rows while a KPI strip reports how much of the total the slice covers. It composes with the column-menu filters, so top 5 in EMEA works, and it is plain user-land code: sort a copy of the visible data and slice.",
+  "keywords": [
+    "svelte grid top n filter",
+    "svelte table show top 10",
+    "svelte 5 data grid bottom n",
+    "svelte grid ranking filter",
+    "svelte bi table toolbar"
+  ],
+  "faq": [
+    {
+      "question": "How is top N implemented?",
+      "answer": "A $derived sorts a copy of the rows by the chosen metric, takes the first or last N and passes that array as data. No grid feature is involved beyond rendering."
+    },
+    {
+      "question": "Does it work together with column filters?",
+      "answer": "Yes. The column-menu filters apply on top of the sliced rows, so you can rank first and narrow by region after, or the other way round by filtering before choosing N."
+    },
+    {
+      "question": "What does the KPI strip show?",
+      "answer": "The slice's share of the metric's total across all rows, so top 10 by revenue is reported as the percentage of revenue those ten rows account for."
+    }
+  ]
+}

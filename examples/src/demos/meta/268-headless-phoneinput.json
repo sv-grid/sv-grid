@@ -1,0 +1,24 @@
+{
+  "description": "The headless phone input core of the SvGrid UI kit in Svelte 5. SvPhoneInput is a styled renderer over createPhoneInput, which owns the country dial-code and national-number state and the E.164 parsing, exposed as selectProps for the country picker and inputProps for the national field. The same core drives the styled component and a custom country picker plus national field, both bound to one value.",
+  "keywords": [
+    "svelte headless phone input",
+    "svelte 5 custom phone field",
+    "svelte createPhoneInput",
+    "svelte e164 parsing core",
+    "svelte dial code state machine"
+  ],
+  "faq": [
+    {
+      "question": "What state does the core keep?",
+      "answer": "The selected country, its dial code and the national digits, plus derived valid and complete flags and the assembled E.164 string that is the bound value."
+    },
+    {
+      "question": "How is the national number masked?",
+      "answer": "The core applies the country's mask through the shared mask engine, so the custom render shows the same grouping as the styled field."
+    },
+    {
+      "question": "Can I use my own country selector?",
+      "answer": "Yes. selectProps() works on a native select as in the demo, and it exposes the value and change handler you need to drive any picker that reports an ISO code."
+    }
+  ]
+}

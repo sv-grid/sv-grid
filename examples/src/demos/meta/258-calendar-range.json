@@ -1,0 +1,24 @@
+{
+  "description": "SvCalendar as a Svelte 5 date-range picker with a presets rail. selectionMode='range' plus a presets array gives one-click Today, Last 7 days, This month and Year to date ranges resolved relative to the current date, with animated month navigation, mouse-wheel scrolling, two months side by side and Monday as the first day of the week. The rail and the range band are built into the component, so there is no extra dependency and every --sg-* theme styles it.",
+  "keywords": [
+    "svelte date range picker",
+    "svelte 5 calendar presets",
+    "svelte range calendar two months",
+    "svelte calendar last 7 days preset",
+    "svelte animated calendar"
+  ],
+  "faq": [
+    {
+      "question": "How do I define a preset?",
+      "answer": "Each preset is { label, value } where value is a date, a [start, end] tuple or a function returning one, so a preset such as Last 7 days computes its dates when clicked and is always relative to today."
+    },
+    {
+      "question": "How do I show two months at once?",
+      "answer": "Set months={2}. The calendar lays the months side by side and the range band spans across them; wheelNavigation scrolls both together."
+    },
+    {
+      "question": "What does onChange deliver for a range?",
+      "answer": "An array with the start and end dates once both are picked, and a single-entry array while the user is choosing the end."
+    }
+  ]
+}

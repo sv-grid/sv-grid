@@ -1,0 +1,24 @@
+{
+  "description": "The app-chrome overlays of SvGrid UI in Svelte 5: SvDrawer, an edge side-sheet with a configurable side and title, SvContextMenu for a right-click menu from an items array, and the toast() API with SvToaster for notifications. All are built on the shared focus-trap, scroll-lock and dismissable-layer primitives, so nested overlays close top-first and every toast is announced to screen readers.",
+  "keywords": [
+    "svelte drawer component",
+    "svelte 5 context menu",
+    "svelte toast notifications",
+    "svelte side sheet",
+    "svelte dismissable overlays"
+  ],
+  "faq": [
+    {
+      "question": "How do I show a toast?",
+      "answer": "Render SvToaster once, then call toast('Saved') from anywhere, or toast.success, toast.error, toast.warning and toast.info with an optional duration where 0 keeps it sticky; toast.promise wraps an async call with loading, success and error messages."
+    },
+    {
+      "question": "What does the dismissable layer stack do?",
+      "answer": "It tracks open overlays in order so Escape or an outside click closes only the topmost one, which keeps a context menu inside a drawer behaving correctly."
+    },
+    {
+      "question": "How is the drawer opened?",
+      "answer": "Bind open and set it true; side chooses the edge, the drawer traps focus, locks scroll and closes on Escape or the backdrop."
+    }
+  ]
+}

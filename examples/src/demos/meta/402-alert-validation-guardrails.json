@@ -1,0 +1,24 @@
+{
+  "description": "Validation-trigger alerts in Svelte 5 that are evaluated on edit and can veto the change. A budget sheet is editable and two guardrail rules block bad edits, a negative amount or an amount over the line's budget, with the pure engine wired into the grid's per-column validate hook, the supported integration point for preventing an edit. Switches toggle each guardrail so the edit passes when a rule is off.",
+  "keywords": [
+    "svelte prevent edit rule",
+    "svelte 5 grid edit validation guardrails",
+    "svelte alert engine validate hook",
+    "svelte budget sheet validation",
+    "svelte veto cell edit"
+  ],
+  "faq": [
+    {
+      "question": "How does a rule veto an edit?",
+      "answer": "The column's validate function calls the alerts engine with the proposed row; if a validation-trigger rule matches, validate returns its message and the grid keeps the cell red until a valid value is entered."
+    },
+    {
+      "question": "Why route through validate rather than onCellValueChange?",
+      "answer": "validate runs before the value is accepted and is the grid's supported way to reject input; onCellValueChange fires after the fact and would need a rollback."
+    },
+    {
+      "question": "Can guardrails be toggled at runtime?",
+      "answer": "Yes. Each rule has an enabled flag; the switches flip it and the engine skips disabled rules on the next edit."
+    }
+  ]
+}

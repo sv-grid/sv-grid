@@ -1,0 +1,24 @@
+{
+  "description": "SvRating in Svelte 5 as a review widget: an interactive star input with a live text label, plus a read-only aggregate that shows half stars and a distribution breakdown per star count. The value and onChange keep it controlled, size sets the star scale, allowHalf enables half-star steps and readOnly turns it into a display.",
+  "keywords": [
+    "svelte star rating",
+    "svelte 5 rating component",
+    "svelte half star rating",
+    "svelte review widget",
+    "svelte read only rating"
+  ],
+  "faq": [
+    {
+      "question": "How do I show an average with half stars?",
+      "answer": "Pass a fractional value such as 4.3 with allowHalf and readOnly; the stars render partial fills at half-star precision without accepting input."
+    },
+    {
+      "question": "How is the live label produced?",
+      "answer": "A small array maps each star count to a word; a $derived picks the entry for the current value and prints it next to the stars."
+    },
+    {
+      "question": "Is the rating keyboard accessible?",
+      "answer": "Yes. Each star is a button with its own aria-label, the group carries a label, arrow keys and Tab move between stars and hover previews the value before a click commits it."
+    }
+  ]
+}

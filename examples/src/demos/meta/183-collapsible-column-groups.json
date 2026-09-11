@@ -1,0 +1,24 @@
+{
+  "description": "Collapsible column groups in the Svelte 5 data grid. Each quarter is a column group with a caret in its header: the quarter Total is always visible and the month columns are tagged columnGroupShow: 'open' so they appear only when the group is expanded. Groups start collapsed, and openByDefault on the first quarter opens it initially.",
+  "keywords": [
+    "svelte grid collapsible column groups",
+    "svelte table expand column group",
+    "svelte 5 columnGroupShow",
+    "svelte grid quarter month columns",
+    "svelte data grid header groups"
+  ],
+  "faq": [
+    {
+      "question": "How do I make a column group collapsible?",
+      "answer": "Define the group with an id and a columns array, and tag the child columns that should hide when collapsed with columnGroupShow: 'open'. The header shows a caret automatically."
+    },
+    {
+      "question": "How do I keep one column visible in both states?",
+      "answer": "Leave columnGroupShow off that column. The quarter Total here has no tag, so it shows whether the group is open or closed."
+    },
+    {
+      "question": "How do I choose the initial state?",
+      "answer": "Set openByDefault: true on the group. Groups without it start collapsed."
+    }
+  ]
+}

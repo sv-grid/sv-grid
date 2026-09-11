@@ -1,0 +1,24 @@
+{
+  "description": "The headless gauge core of the SvGrid UI kit in Svelte 5. A gauge is a display control, so createGauge is a light core: value, range and bands in, computed arc and needle geometry out, plus rootProps with role meter and aria-valuenow. One core drives the styled radial SvGauge and a custom linear meter drawn in SVG from the same geometry, both bound to a single value.",
+  "keywords": [
+    "svelte headless gauge",
+    "svelte 5 custom meter svg",
+    "svelte createGauge",
+    "svelte gauge geometry",
+    "svelte role meter accessibility"
+  ],
+  "faq": [
+    {
+      "question": "What geometry does the core compute?",
+      "answer": "The normalized fraction of the value within min and max, the arc angles for the sweep, the angle of the needle and the start and end of each band, so a render draws paths without redoing the math."
+    },
+    {
+      "question": "How can a linear meter use radial geometry?",
+      "answer": "It uses the fraction and the band boundaries and ignores the angles, mapping them to x positions on a bar."
+    },
+    {
+      "question": "What does rootProps add?",
+      "answer": "role meter with aria-valuemin, aria-valuemax and aria-valuenow, plus an accessible label, so the value is announced regardless of how it is drawn."
+    }
+  ]
+}

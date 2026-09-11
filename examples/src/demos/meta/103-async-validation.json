@@ -1,0 +1,24 @@
+{
+  "description": "Debounced server-side validation per column in the Svelte 5 data grid: SKU uniqueness, a GTIN-13 checksum and price against the category median, checked by a mock server with latency. Each cell shows one of three states, validating with a spinner, valid with a green tick, or invalid with the reason, rendered by a cell snippet. The edit is stored immediately and the check runs in the background; a rejection marks the cell without rolling the value back.",
+  "keywords": [
+    "svelte grid async validation",
+    "svelte table server side validation",
+    "svelte 5 debounced validation",
+    "svelte grid unique check",
+    "svelte editable grid validation state"
+  ],
+  "faq": [
+    {
+      "question": "How is the async check triggered?",
+      "answer": "onCellValueChange records the edit, debounces per cell and then calls the validator for that column. The cell snippet reads the pending, valid or invalid state from a map keyed by row and column."
+    },
+    {
+      "question": "Why not block the edit until the server answers?",
+      "answer": "Latency would make typing feel broken. Storing the value first keeps the grid responsive; the cell just shows a spinner and then a tick or the rejection reason."
+    },
+    {
+      "question": "Can I validate against other rows?",
+      "answer": "Yes. The mock server validators receive the current row id and scan the other rows, so a duplicate SKU or barcode is rejected with the id of the row that already uses it. A real backend would run the same query against its table."
+    }
+  ]
+}

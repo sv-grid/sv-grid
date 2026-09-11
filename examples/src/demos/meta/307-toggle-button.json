@@ -1,0 +1,24 @@
+{
+  "description": "SvToggleButton, a pressed on and off button for Svelte 5 with aria-pressed semantics, shown as a text-formatting toolbar with bold, italic and underline and as pin and live-state toggles. The pressed prop and onChange keep it controlled, and the pressed look comes from the theme tokens.",
+  "keywords": [
+    "svelte toggle button",
+    "svelte 5 aria pressed button",
+    "svelte formatting toolbar toggles",
+    "svelte pin toggle button",
+    "svelte on off button"
+  ],
+  "faq": [
+    {
+      "question": "How is a toggle button different from a switch?",
+      "answer": "A toggle button is an action that stays pressed, such as Bold, and uses aria-pressed; a switch represents a setting being on or off and uses the switch role. Screen readers announce them differently."
+    },
+    {
+      "question": "How do I group several toggles?",
+      "answer": "Place them in a toolbar or use SvButtonGroup in multiple mode, which adds arrow-key navigation between the toggles."
+    },
+    {
+      "question": "Is the state controlled?",
+      "answer": "Yes. pressed is the source of truth and onChange reports the requested state, so your code can veto or transform a toggle."
+    }
+  ]
+}

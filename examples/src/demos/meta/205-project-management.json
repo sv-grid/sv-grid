@@ -1,0 +1,24 @@
+{
+  "description": "A project tracker built entirely from stock Svelte 5 data grid props. Nested collapsible column groups for Task, Details, Timeline and Progress keep a primary column visible and tag the rest with columnGroupShow 'open'; showRowNumbers with rowDragManaged turns the number column into a drag grip for reordering; Status, Priority and Assignee are editorType list dropdowns and the dates editorType date; a cell snippet renders the progress bar from the editable Progress number; and showPagination pages ten rows at a time with pageSizeOptions.",
+  "keywords": [
+    "svelte project management grid",
+    "svelte 5 task tracker table",
+    "svelte grid collapsible column groups",
+    "svelte grid drag reorder tasks",
+    "svelte grid progress bar cell"
+  ],
+  "faq": [
+    {
+      "question": "How do I get row drag without writing drag code?",
+      "answer": "Set rowDragManaged together with showRowNumbers. The number column becomes the grip, and the grid splices its own data on drop."
+    },
+    {
+      "question": "How are the column groups collapsed?",
+      "answer": "Each group definition lists its child columns; the ones tagged columnGroupShow: 'open' hide when the group's header caret is closed, and openByDefault sets the initial state."
+    },
+    {
+      "question": "Does editing Progress update the bar?",
+      "answer": "Yes. The bar is a cell snippet reading the row's progress value; committing a new number re-renders it at the new width."
+    }
+  ]
+}

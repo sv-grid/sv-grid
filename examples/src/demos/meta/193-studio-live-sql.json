@@ -1,0 +1,24 @@
+{
+  "description": "The SvGrid Studio data-app stack backed by a real Postgres running in the browser through PGlite, with no server. createSqlDataSource turns the grid's sort, filter and page requests into parameterized SQL executed through PGlite's query(text, params), and the statement is shown live under the toolbar as you interact. Full CRUD with optimistic updates runs against the actual database, with SvGridEditPanel rendering the edit form from the entity schema.",
+  "keywords": [
+    "svelte pglite grid",
+    "svelte 5 postgres in browser crud",
+    "svelte sql data source grid",
+    "svelte data app studio",
+    "svelte grid parameterized sql"
+  ],
+  "faq": [
+    {
+      "question": "How does the grid talk to Postgres?",
+      "answer": "createSqlDataSource implements the server data source contract over a query function. Sorting, filtering and paging become ORDER BY, WHERE and LIMIT OFFSET with bound parameters, and inserts, updates and deletes run as SQL too; PGlite executes them in WebAssembly."
+    },
+    {
+      "question": "Is PGlite required to use the SQL data source?",
+      "answer": "No. It only needs a function that runs SQL with parameters and returns rows, so a fetch to a server endpoint that proxies your database works the same way. PGlite makes the demo self-contained."
+    },
+    {
+      "question": "How are edits shown before the SQL completes?",
+      "answer": "The controller applies the change to the view immediately and reconciles with the query result, so a save feels instant and a failure rolls the row back with a message."
+    }
+  ]
+}

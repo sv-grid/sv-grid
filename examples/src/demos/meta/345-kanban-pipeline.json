@@ -1,0 +1,24 @@
+{
+  "description": "A CRM deal board on the Svelte 5 data grid: pipeline stages as lanes with a live total-value roll-up per stage from board.laneSummary, rich deal cards with the owner's avatar, amount and close date, drag to advance a deal and double-click to edit. The rows are saved to localStorage from onCardMove and onCardCommit and the board layout, card positions, edits and collapsed lanes, persists through board.persistKey, so a reload restores the board; Reset reseeds it.",
+  "keywords": [
+    "svelte sales pipeline board",
+    "svelte 5 crm kanban",
+    "svelte deal stages drag and drop",
+    "svelte board persist localStorage",
+    "svelte pipeline value per stage"
+  ],
+  "faq": [
+    {
+      "question": "How is the board persisted?",
+      "answer": "Two layers. onCardMove and onCardCommit update the rows array and write it to localStorage so the data survives, and board.persistKey stores the layout, card positions, edits and collapsed lanes, under its own key; getRowId gives the cards stable identity across reloads."
+    },
+    {
+      "question": "How is the value per stage computed?",
+      "answer": "laneSummary sums the amount of the rows in the lane and formats it as currency; the board recalculates it whenever a card enters or leaves the stage."
+    },
+    {
+      "question": "What does double-click open?",
+      "answer": "The built-in card editor for the columns, so amount, owner, close date and stage can be changed inline and the change is reported through onCardCommit."
+    }
+  ]
+}

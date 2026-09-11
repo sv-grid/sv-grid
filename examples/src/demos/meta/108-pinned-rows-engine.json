@@ -1,0 +1,24 @@
+{
+  "description": "Pinned rows as an engine feature of the Svelte 5 data grid. Pass arrays of rows to pinnedTopRows and pinnedBottomRows and they render inside the same table with position: sticky cells, sharing the column schema, widths, pinning, cellClass and format with the regular rows. No second grid, no stacking; the demo pins account totals at the top and a filtered summary at the bottom.",
+  "keywords": [
+    "svelte grid pinnedTopRows",
+    "svelte table sticky rows",
+    "svelte 5 data grid pinned bottom row",
+    "svelte grid summary rows",
+    "svelte grid frozen header rows"
+  ],
+  "faq": [
+    {
+      "question": "How do I pin a row to the top?",
+      "answer": "Put the row object in the pinnedTopRows array; pinnedBottomRows works the same for the bottom. The rows use the same TData shape as data, so a totals row is just an object whose fields hold the totals."
+    },
+    {
+      "question": "Do pinned rows scroll with the data?",
+      "answer": "No. Their cells are sticky, so they stay in view while the data rows scroll, and they stay aligned with the columns because they live in the same table."
+    },
+    {
+      "question": "Can pinned rows react to filters?",
+      "answer": "Yes. Recompute the array from api.getDisplayedRows() in onFiltersChange and the bottom summary follows the visible rows."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A side-drawer edit form for the Svelte 5 data grid. Click a row and a drawer slides in from the right with every field of the record, a dirty-state badge, live validation with a summary, Save and Cancel, and Escape and Ctrl+Enter shortcuts. The grid is the list view, the drawer the detail view; the editor mutates a draft copy and Save replaces the corresponding grid row.",
+  "keywords": [
+    "svelte grid side drawer edit",
+    "svelte 5 slide over form",
+    "svelte table row detail panel",
+    "svelte grid edit record drawer",
+    "svelte data grid keyboard shortcuts form"
+  ],
+  "faq": [
+    {
+      "question": "When is a drawer better than inline editing?",
+      "answer": "For records with more than four or five fields, or fields that need explanation and validation. Inline editing suits quick numeric tweaks; the drawer suits reviewing a whole application."
+    },
+    {
+      "question": "How does Save update the grid?",
+      "answer": "The drawer edits a draft copy. On Save the draft replaces the row in the rows array by id, and the grid re-renders that row; Cancel drops the draft."
+    },
+    {
+      "question": "Which shortcuts are wired?",
+      "answer": "Escape closes the drawer and Ctrl or Cmd+Enter saves, handled by a keydown listener on the drawer element so the shortcuts only apply while it is open."
+    }
+  ]
+}

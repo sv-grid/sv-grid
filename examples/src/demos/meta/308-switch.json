@@ -1,0 +1,24 @@
+{
+  "description": "SvSwitchButton in a Svelte 5 settings panel: a list of labelled rows with descriptions, on and off labels on the track and a disabled row. Each switch is controlled through checked and onChange and writes into a settings object, and the panel is styled from the theme tokens.",
+  "keywords": [
+    "svelte switch component",
+    "svelte 5 toggle switch settings",
+    "svelte switch with labels",
+    "svelte settings panel ui",
+    "svelte accessible switch"
+  ],
+  "faq": [
+    {
+      "question": "How do I label a switch?",
+      "answer": "Wrap it in a labelled row as the demo does, or pass ariaLabel when the visual label is elsewhere. The switch exposes the switch role with aria-checked."
+    },
+    {
+      "question": "Can the track show on and off text?",
+      "answer": "Yes. The track labels are a prop, so a switch can read Yes and No or On and Off inside the control."
+    },
+    {
+      "question": "How is a disabled switch handled?",
+      "answer": "disabled greys the control, removes it from the tab order and ignores clicks, while still showing its current state."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A chart wizard beside the Svelte 5 data grid. The wizard builds a chart from the grid's current filtered and sorted rows through rowsToChartSpec: pick the type from a gallery whose thumbnails are live mini SvGridChart instances, choose group-by, measure and aggregation in Customize, and a palette, across column, horizontal bar, line, area and pie with stacked and 100 percent variants. Drag a cell range or tick row checkboxes to chart just the selection; otherwise the whole set re-aggregates live.",
+  "keywords": [
+    "svelte chart wizard",
+    "svelte 5 chart builder from grid",
+    "svelte chart type gallery",
+    "svelte chart selected rows",
+    "svelte chart customize group by measure"
+  ],
+  "faq": [
+    {
+      "question": "How are the gallery thumbnails drawn?",
+      "answer": "Each is a small SvGridChart rendering the current spec in that type, so the previews reflect your data rather than a static picture."
+    },
+    {
+      "question": "How does selection scope the chart?",
+      "answer": "onCellSelectionChange and onRowSelectionChange report the selected rows; when either is non-empty the wizard aggregates only those rows, and a filter or sort change clears the selection back to the full set."
+    },
+    {
+      "question": "What does Customize control?",
+      "answer": "The group-by column, the measure column, the aggregate such as sum or average, stacking, the legend and the palette; the spec is rebuilt on every change."
+    }
+  ]
+}

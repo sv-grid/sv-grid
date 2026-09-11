@@ -1,0 +1,24 @@
+{
+  "description": "Business logic on the entity schema in the SvGrid Studio stack. total is a computed field defined as qty times price: read-only in the grid and the form, recomputed live as you type and never stored or submitted. withEntityRules materializes it onto every row and runs the schema's hooks, beforeCreate stamps createdAt and a cross-field validate rejects a non-positive quantity before the save reaches the data source.",
+  "keywords": [
+    "svelte computed field schema",
+    "svelte 5 crud validation hooks",
+    "svelte form derived field live",
+    "svelte entity rules beforeCreate",
+    "svelte grid read only computed column"
+  ],
+  "faq": [
+    {
+      "question": "How is a computed field declared?",
+      "answer": "As a schema field with a compute function of the row. The form shows it read-only and re-runs the function on every keystroke; withEntityRules adds the value to rows read from the source so the grid column has it too."
+    },
+    {
+      "question": "Where do hooks run?",
+      "answer": "In withEntityRules, which wraps the data source. beforeCreate mutates the row before insert, validate runs before create and update and returns messages that the form displays."
+    },
+    {
+      "question": "Is the computed value sent to the server?",
+      "answer": "No. It is stripped from the payload on save, so the database never stores a value that could drift from its inputs."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "How the Svelte 5 grid engine turns raw data into rendered rows: a pipeline of row models. This headless example lets you flip the group-by control and watch the pipeline change shape from core to grouped to expanded. Group rows carry an aggregate sum roll-up while leaf rows are the original objects, and the whole thing renders as a plain hand-styled <table>.",
+  "keywords": [
+    "svelte grid row models",
+    "svelte 5 group by table",
+    "headless grouping svelte",
+    "svelte table aggregate sum",
+    "svgrid row pipeline"
+  ],
+  "faq": [
+    {
+      "question": "What is a row model in SvGrid?",
+      "answer": "A stage in the pipeline that transforms rows: the core model wraps your data, the grouped model buckets rows by a column and inserts group rows, and the expanded model flattens the groups that are open. Features register the models they need."
+    },
+    {
+      "question": "How do I compute a sum per group?",
+      "answer": "Set aggregate: 'sum' on the column definition. The grouped model computes the roll-up and puts it on the group row, where your markup can read and print it."
+    },
+    {
+      "question": "Which features does grouping need?",
+      "answer": "columnGroupingFeature to build the groups and rowExpandingFeature to open and close them; the demo registers both plus rowSortingFeature and passes grouping, expanded and sorting in state. table.getRowModel().rows is the final output of the pipeline that the markup iterates."
+    }
+  ]
+}

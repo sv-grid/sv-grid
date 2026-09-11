@@ -199,7 +199,7 @@
 
 <section class="pm-shell">
   <header class="pm-head">
-    <h1 class="pm-title">Project Management</h1>
+    <h2 class="pm-title">Project Management</h2>
     <p class="pm-sub">
       Project tracker with date cells, status/priority dropdowns, custom progress bar renderer, nested headers, and drag-to-reorder rows.
     </p>

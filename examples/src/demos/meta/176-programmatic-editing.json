@@ -1,0 +1,24 @@
+{
+  "description": "Driving the Svelte 5 data grid editor from outside: api.startEditing(row, columnId) opens an editor, api.stopEditing(cancel) commits or cancels it. A toolbar edits the active cell, and a guided-entry flow uses api.getDisplayedRows() and api.selectCells() to jump to the next blank required field and open it, so a form-style entry experience is built entirely on the imperative API.",
+  "keywords": [
+    "svelte grid startEditing api",
+    "svelte table programmatic edit",
+    "svelte 5 grid guided data entry",
+    "svelte data grid imperative api",
+    "svelte grid stopEditing"
+  ],
+  "faq": [
+    {
+      "question": "How do I open an editor from a button?",
+      "answer": "Track the active cell with onActiveCellChange, then call api.startEditing(rowIndex, columnId) from the button's handler. api.stopEditing() commits and api.stopEditing(true) cancels."
+    },
+    {
+      "question": "How does the guided-entry flow find the next blank field?",
+      "answer": "It scans api.getDisplayedRows() for the first required column that is empty, selects that cell with api.selectCells() and calls startEditing on it, so the user just types and presses Enter to move on."
+    },
+    {
+      "question": "How are cells addressed?",
+      "answer": "By row index and column id in the grid's displayed order, which is why the flow reads api.getDisplayedRows() rather than the source array: sorting or filtering changes the indexes, and the displayed rows are what startEditing and selectCells expect."
+    }
+  ]
+}

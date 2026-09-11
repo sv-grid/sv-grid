@@ -1,0 +1,24 @@
+{
+  "description": "Excel-style column filters in the Svelte 5 data grid. Every header's filter icon opens the built-in column menu with an operator dropdown and a value input, and this example adds an active-filter chip strip above the grid, built with api.setFilter and api.clearFilter, so a filter can be removed with one click without opening the menu.",
+  "keywords": [
+    "svelte excel style filters",
+    "svelte grid column filter operators",
+    "svelte 5 table filter chips",
+    "svelte grid setFilter api",
+    "svelte data grid filter menu"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn on the column filter menu?",
+      "answer": "Register columnFilteringFeature and set filterMode='menu'. Each header gets a filter icon that opens the operator and value editor for that column's type."
+    },
+    {
+      "question": "How do I show active filters as chips?",
+      "answer": "Keep the filters in your own state through the API: api.setFilter(columnId, filter) applies one and api.clearFilter(columnId) removes it, and the chip strip renders from that state."
+    },
+    {
+      "question": "Which operators are available?",
+      "answer": "Text columns get contains, not contains, equals, not equals, starts with, ends with, regex, in, not in, blank and not blank. Number columns get equals, not equals, greater than, less than, between, in, not in, blank and not blank; date columns use the same before-and-after set with between. The menu shows the set that fits the column's editorType."
+    }
+  ]
+}

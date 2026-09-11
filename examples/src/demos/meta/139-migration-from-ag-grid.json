@@ -1,0 +1,24 @@
+{
+  "description": "Two real grids over the same dataset side by side: AG Grid Community on the left and the Svelte 5 SvGrid on the right, with the same column definitions and rows, both mounted live. Click headers to sort in either, type in the shared global filter to narrow both, and read the actual code that mounted each grid beneath it, so the recipe for moving a column definition across can be lifted straight into your app.",
+  "keywords": [
+    "migrate ag grid to svelte",
+    "ag grid svelte alternative",
+    "svelte 5 grid comparison",
+    "svelte data grid migration",
+    "ag grid column defs to svgrid"
+  ],
+  "faq": [
+    {
+      "question": "How different are the column definitions?",
+      "answer": "Close. field and header map directly, width and align carry over, and formatting moves from a valueFormatter callback to the column's format setting; the code panels show the two definitions for the same six columns."
+    },
+    {
+      "question": "How is the shared filter applied to both grids?",
+      "answer": "A $derived filters the rows array by the query, and both grids receive that array as data, so they stay in step without either grid's own filter state."
+    },
+    {
+      "question": "Is the migration guide longer than this demo?",
+      "answer": "Yes. The documentation has a migration page covering features, events and the API surface; this demo is the visual proof that the same definitions render the same table."
+    }
+  ]
+}

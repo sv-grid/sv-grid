@@ -1,0 +1,24 @@
+{
+  "description": "The classic Northwind sample database seeded into a real in-browser Postgres through PGlite, with the SvGrid Studio stack over it. Switch between Order lines, a five-table JOIN exposed as a read-only VIEW, and the editable Products and Customers base tables, each through createSqlDataSource over the same database. Sort, filter, page and edit all run as parameterized SQL shown under the toolbar, and new rows get an id from a Postgres IDENTITY sequence.",
+  "keywords": [
+    "svelte northwind demo",
+    "svelte 5 sql view grid",
+    "svelte pglite crud sample",
+    "svelte grid join view read only",
+    "svelte postgres identity insert"
+  ],
+  "faq": [
+    {
+      "question": "Why is the Order lines entity read-only?",
+      "answer": "It is a VIEW joining orders, order details, products, customers and categories. A view has no single row to update, so its data source is created without write operations and the grid hides row selection and the edit form."
+    },
+    {
+      "question": "Where does a new product's id come from?",
+      "answer": "The products table's id column is GENERATED AS IDENTITY, so the insert omits it and Postgres assigns the next value, which the data source reads back into the grid."
+    },
+    {
+      "question": "Can I point this at my own Postgres?",
+      "answer": "Yes. Replace the PGlite query function with one that sends SQL and parameters to your backend; the entities, schemas and grid wiring are unchanged."
+    }
+  ]
+}

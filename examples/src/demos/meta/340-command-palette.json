@@ -1,0 +1,24 @@
+{
+  "description": "SvCommand, a Cmd+K fuzzy command palette for Svelte 5 built on the shared focus-trap, scroll-lock and dismissable primitives, with arrow-key navigation, grouped commands, shortcut hints, a global hotkey and onRun. The demo pairs it with SvSparkline inline line, area, bar and win-loss charts, SvAvatarGroup with stacked members and an overflow count, and SvScrollArea with themed scrollbars.",
+  "keywords": [
+    "svelte command palette",
+    "svelte 5 cmd k component",
+    "svelte fuzzy command search",
+    "svelte avatar group",
+    "svelte scroll area themed"
+  ],
+  "faq": [
+    {
+      "question": "How do commands get defined?",
+      "answer": "commands is an array of CommandItem objects with id, label and optional hint, group, icon, shortcut, keywords and disabled; the palette fuzzy-matches the typed text against label and keywords, groups the results and calls onRun with the chosen command."
+    },
+    {
+      "question": "How is the hotkey wired?",
+      "answer": "hotkey defaults to mod+k, so Cmd or Ctrl+K toggles the palette while it is mounted; mod+p is the alternative and false disables it, and bind:open lets a button open it too."
+    },
+    {
+      "question": "What does SvAvatarGroup do with many members?",
+      "answer": "It stacks the first max avatars with overlap and shows a +N badge for the rest, sized with the same size prop as SvAvatar."
+    }
+  ]
+}

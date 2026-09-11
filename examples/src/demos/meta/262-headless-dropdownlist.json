@@ -1,0 +1,24 @@
+{
+  "description": "The headless dropdown list core of the SvGrid UI kit in Svelte 5. SvDropDownList is one styled renderer over createDropdownList, which owns open and close state, a roving active index over the enabled options, the select keyboard model and ARIA, exposed as triggerProps, listboxProps and optionProps. The same core drives the styled component and a custom trigger-plus-menu render sharing one value.",
+  "keywords": [
+    "svelte headless select",
+    "svelte 5 custom dropdown markup",
+    "svelte createDropdownList",
+    "svelte headless dropdown core",
+    "svelte select state machine"
+  ],
+  "faq": [
+    {
+      "question": "How are disabled options handled?",
+      "answer": "The active index only moves over enabled options, so arrow keys skip a disabled entry and optionProps marks it with aria-disabled; your render can style it however it likes."
+    },
+    {
+      "question": "How do I open the list from my own trigger?",
+      "answer": "Spread triggerProps() on any button. It wires click, ArrowDown to open, aria-haspopup and aria-expanded, and the core's open flag tells your render when to show the list."
+    },
+    {
+      "question": "Is type-ahead part of the core?",
+      "answer": "Yes. Typing letters while the trigger or list has focus moves the active option to the next label starting with them, as a native select does."
+    }
+  ]
+}

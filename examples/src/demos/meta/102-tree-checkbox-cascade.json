@@ -1,0 +1,24 @@
+{
+  "description": "A permissions matrix as a tree in the Svelte 5 data grid: workspaces, resources and actions. Checking a parent checks every descendant, unchecking a descendant flips its ancestors to the indeterminate state, and when every child is checked the parent becomes fully checked again, with a live monthly cost roll-up of what is selected. It is plain user-land: a Set of checked ids and a partial-state map recomputed per render.",
+  "keywords": [
+    "svelte tree checkbox cascade",
+    "svelte 5 permissions matrix grid",
+    "svelte indeterminate checkbox tree",
+    "svelte grid select descendants",
+    "svelte role editor table"
+  ],
+  "faq": [
+    {
+      "question": "How is the indeterminate state computed?",
+      "answer": "For each parent the demo counts checked descendants: none gives unchecked, all gives checked, anything between gives partial, which the cell snippet renders by setting indeterminate on the checkbox."
+    },
+    {
+      "question": "What happens when a parent is toggled?",
+      "answer": "Its whole subtree is added to or removed from the checked Set, then the partial map is recomputed for every ancestor, so the tree stays consistent in one pass."
+    },
+    {
+      "question": "How is the cost total derived?",
+      "answer": "A $derived sums monthlyCost over the checked leaf actions, so the total updates as boxes are ticked without any extra event wiring."
+    }
+  ]
+}

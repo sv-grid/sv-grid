@@ -5,7 +5,7 @@
    * ---------------------------------------------------------------------------
    * The classic "enterprise data grid" experience, built entirely on the
    * shipped `<SvPivotDesigner>` component - no bespoke panel. Three designer
-   * features drive the AG-Grid-style look:
+   * features drive the docked tool-panel look:
    *
    *   - `panelPosition="right"` docks the field picker + Column/Row/Values
    *     wells as a vertical tool panel on the right of the grid.

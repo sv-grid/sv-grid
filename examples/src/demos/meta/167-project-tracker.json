@@ -1,0 +1,24 @@
+{
+  "description": "A project workspace in the Svelte 5 data grid with a restrained visual language. A KPI strip counts projects, in progress, ready, blocked and budget; a bulk-action toolbar for Mark ready, Block, Move to launch and Delete enables on selection; rows group by phase with per-phase aggregate cards; the name column carries a NEW pill and an SVG progress ring; owner shows an avatar; Status, Priority and Risk are colour-block cells; Department and skills render as chips; and an inline filter row can be toggled with showFilterRow. Everything drives off one data array, so edits flow to the KPIs, cards and group aggregates.",
+  "keywords": [
+    "svelte project tracker",
+    "svelte 5 pm workspace grid",
+    "svelte grid phase grouping",
+    "svelte grid bulk toolbar",
+    "svelte kanban alternative table"
+  ],
+  "faq": [
+    {
+      "question": "How are the phase cards computed?",
+      "answer": "A $derived groups the data array by phase and totals count, budget and progress per phase; the grid groups by the same field through api.setGroupBy so the cards and the group rows agree."
+    },
+    {
+      "question": "How is the filter row toggled?",
+      "answer": "filterMode is 'row' and showFilterRow is bound to a toolbar switch, so the inline filter inputs appear and disappear without touching the column definitions."
+    },
+    {
+      "question": "How do bulk actions update the rows?",
+      "answer": "The toolbar reads the rows from onRowSelectionChange and mutates their status in the data array; the grid, the KPI strip and the phase cards update from the same change, and api.clearRowSelection() clears the checkboxes."
+    }
+  ]
+}

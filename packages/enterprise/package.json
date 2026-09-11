@@ -10,6 +10,9 @@
   "author": "jQWidgets <sales@jqwidgets.com>",
   "homepage": "https://svgrid.com/pricing",
   "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
   "svelte": "./dist/index.js",

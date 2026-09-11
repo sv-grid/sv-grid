@@ -1,0 +1,24 @@
+{
+  "description": "Commit-time validation in the Svelte 5 data grid: a validator per column runs inside onCellValueChange, an invalid edit is rolled back with api.setCellValue to the previous value, the cell flashes red and the rejection is logged in a Recent rejections panel. This is the pattern for rules that must never let a bad value land in the row; for highlighting bad values without rolling them back, see the column validate hook.",
+  "keywords": [
+    "svelte grid validation",
+    "svelte table validate on edit",
+    "svelte 5 data grid rollback edit",
+    "svelte grid onCellValueChange",
+    "svelte editable table rules"
+  ],
+  "faq": [
+    {
+      "question": "How do I reject an invalid edit?",
+      "answer": "Check the new value in onCellValueChange and, if it fails, call api.setCellValue(rowIndex, columnId, oldValue) to restore the previous value. The demo also flashes the cell and appends the reason to a rejections list."
+    },
+    {
+      "question": "Is there a declarative alternative?",
+      "answer": "Yes. A column can carry a validate function that the grid runs for every rendered cell and paints failures red with the message as a tooltip. That flags bad data already in the source without rolling anything back; the cell validation demo shows it."
+    },
+    {
+      "question": "Can the rules differ per column?",
+      "answer": "Yes. The demo keeps a map of column id to validator (email format, age range, salary bounds, a required name) and looks up the right one from the event's columnId."
+    }
+  ]
+}

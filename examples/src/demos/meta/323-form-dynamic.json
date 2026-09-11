@@ -1,0 +1,24 @@
+{
+  "description": "SvForm with conditional fields in Svelte 5: visible and disabled are functions of the other values, hidden fields skip validation and drop out of the payload, a field can validate asynchronously, an async onSubmit shows a loading button, and showReset adds a Reset that restores the initial values.",
+  "keywords": [
+    "svelte dynamic form",
+    "svelte 5 conditional form fields",
+    "svelte form async validation",
+    "svelte form reset button",
+    "svelte form loading submit"
+  ],
+  "faq": [
+    {
+      "question": "How do I show a field only when another has a value?",
+      "answer": "Give the field visible: (values) => values.contact === 'phone'. When it is hidden it is not validated and is left out of the submitted object."
+    },
+    {
+      "question": "How does async validation work?",
+      "answer": "Give the field asyncValidate, a function returning a promise of a message or null, debounced by asyncDebounce; the field shows a pending state until it resolves and submit is blocked while any check is outstanding."
+    },
+    {
+      "question": "What happens during an async submit?",
+      "answer": "The submit button shows its loading state and the form is disabled until the promise from onSubmit settles; a rejection surfaces as an error."
+    }
+  ]
+}

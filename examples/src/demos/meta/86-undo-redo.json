@@ -1,0 +1,24 @@
+{
+  "description": "Undo and redo for inline edits in the Svelte 5 data grid. Every cell edit goes onto a history stack; Ctrl or Cmd plus Z undoes, Ctrl+Y or Ctrl+Shift+Z redoes, and the same surface is exposed as api.undo(), api.redo(), api.canUndo() and api.canRedo() for toolbar buttons. The history is bounded at 200 steps, and api.clearHistory() resets the baseline after a successful save.",
+  "keywords": [
+    "svelte grid undo redo",
+    "svelte table ctrl z",
+    "svelte 5 data grid history",
+    "svelte editable grid undo",
+    "svelte grid clearHistory"
+  ],
+  "faq": [
+    {
+      "question": "Do I need to wire the keyboard shortcuts myself?",
+      "answer": "No. Ctrl/Cmd+Z, Ctrl/Cmd+Y and Ctrl/Cmd+Shift+Z work as soon as inline editing is on. The API methods exist so you can add buttons with the same behaviour."
+    },
+    {
+      "question": "How do I enable and disable the toolbar buttons?",
+      "answer": "Read api.canUndo() and api.canRedo() after each change. The demo bumps a counter in onCellValueChange so its $derived button states re-evaluate."
+    },
+    {
+      "question": "When should I call clearHistory?",
+      "answer": "After the edits have been saved to the server. Clearing makes the saved state the new baseline, so an undo cannot walk back past what is already persisted."
+    }
+  ]
+}

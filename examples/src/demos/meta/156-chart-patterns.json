@@ -1,0 +1,24 @@
+{
+  "description": "Colour-blind-safe pattern fills on Svelte 5 charts. Colour alone is a fragile encoding for readers with red-green or blue-yellow colour vision deficiency, so SvGrid layers SVG pattern fills, stripe, crosshatch, dots and diagonal, over the series colour. Opt in per series with pattern or set patternFallback true on the spec to cycle four patterns across every unflagged series, on bars and area stacks alike, so similar hues still read as distinct in grayscale.",
+  "keywords": [
+    "svelte accessible chart patterns",
+    "svelte 5 color blind safe chart",
+    "svelte chart texture fills",
+    "svelte chart patternFallback",
+    "svelte grayscale readable chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn patterns on for a whole chart?",
+      "answer": "Set patternFallback: true on the spec. Every series without its own pattern gets one of the four textures in rotation, layered over its colour."
+    },
+    {
+      "question": "Can I pick a pattern per series?",
+      "answer": "Yes. series[i].pattern accepts stripe, crosshatch, dots or diagonal and wins over the fallback cycle."
+    },
+    {
+      "question": "Do patterns print?",
+      "answer": "Yes. They are SVG pattern fills, so they survive grayscale printing and the SVG export, which is the point."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Cascading edits in a Svelte 5 invoice grid. Region narrows the Country dropdown, Country narrows City and fills in the currency, because editorOptions accepts a (row) => options function the grid evaluates when the editor opens. onCellValueChange pushes each change forward with api.setCellValue so downstream cells never keep a stale value, and a summary row totals quantity and unit price with currency formatting.",
+  "keywords": [
+    "svelte grid cascading edits",
+    "svelte table dependent options",
+    "svelte 5 invoice grid",
+    "svelte grid summary row totals",
+    "svelte editable table formulas"
+  ],
+  "faq": [
+    {
+      "question": "How do I narrow a dropdown based on another cell?",
+      "answer": "Give the column editorOptions as a function of the row. The grid calls it when the editor opens, so the Country column reads the row's Region and returns only the countries in it."
+    },
+    {
+      "question": "How are downstream cells reset?",
+      "answer": "In onCellValueChange: when Region changes, the handler writes a valid default Country and City for that region with api.setCellValue, and when Country changes it also fills the currency."
+    },
+    {
+      "question": "How is the totals row produced?",
+      "answer": "summary is switched on, and the quantity and unit price columns carry format settings so the totals read as currency rather than raw numbers."
+    }
+  ]
+}

@@ -24,6 +24,11 @@ import { emitUnlicensedNudge } from './watermark'
 import { showUpgradePrompt, type EnterpriseFeatureLabel } from './upgrade-prompt'
 
 export { checkLicenseKey, type LicenseInfo, type LicenseStatus } from './license-core'
+// The nudge the key silences, on the same subpath as the key: an app that only
+// wants to set its licence imports `@svgrid/enterprise/license` and never
+// pulls the component barrel (the package has no `sideEffects` flag, so a
+// barrel import carries every module it reaches into the importer's chunk).
+export { dismissUnlicensedNudge } from './watermark'
 
 let currentKey: string | null = null
 let noticedDev = false

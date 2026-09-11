@@ -1,0 +1,24 @@
+{
+  "description": "SvTagsInput in Svelte 5 as a token editor: type and press Enter or comma to add a chip, Backspace or the chip's x to remove one, with unique values and a max count enforced, shown as a skills field and an email recipients field with validation.",
+  "keywords": [
+    "svelte tags input",
+    "svelte 5 token input chips",
+    "svelte email recipients input",
+    "svelte chips editor max tags",
+    "svelte skills input"
+  ],
+  "faq": [
+    {
+      "question": "How do I limit the number of tags?",
+      "answer": "Set max. Once it is reached the input stops accepting new tokens until one is removed, and the count can be shown in the hint."
+    },
+    {
+      "question": "Can I validate each tag?",
+      "answer": "Yes. Check the array in onChange and reject entries that fail, for example invalid email addresses, and pass invalid with an error message to show it."
+    },
+    {
+      "question": "Are duplicates allowed?",
+      "answer": "No. Adding a value that already exists is ignored, so the array is always unique."
+    }
+  ]
+}

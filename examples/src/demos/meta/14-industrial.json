@@ -1,0 +1,24 @@
+{
+  "description": "A factory-floor sensor dashboard in the Svelte 5 data grid: about 120 readings across four production lines tick every 700 ms. Each row carries threshold bands, the status column is computed live against them, the Trend column is an inline SVG sparkline of the last 24 readings, and the grid groups by line, sensor type or status with row summaries showing sensor counts per group. Updates use the $state.raw swap-the-array pattern.",
+  "keywords": [
+    "svelte iot dashboard grid",
+    "svelte 5 sensor readings table",
+    "svelte grid threshold status",
+    "svelte industrial monitoring grid",
+    "svelte grid sparkline trend"
+  ],
+  "faq": [
+    {
+      "question": "How is the status computed?",
+      "answer": "Each sensor row holds critical-low, warn-low, warn-high and critical-high bands; a function compares the live reading with them and the status cell renders the resulting badge. Grouping by status reflects the live values."
+    },
+    {
+      "question": "How is the trend drawn?",
+      "answer": "Each row keeps its last 24 readings in an array, and the Trend column's cell snippet renders an SVG polyline from them; only rows whose reading changed get a new path."
+    },
+    {
+      "question": "Does grouping survive the ticks?",
+      "answer": "Yes. Grouping is grid state set through api.setGroupBy, and each new data array is regrouped, so a sensor whose status changes moves to the right group."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Three ways to draw grouped rows in the Svelte 5 data grid plus a subtotal footer per group. groupDisplayMode='groupRows' draws a full-width banner per group, 'singleColumn' one combined Group column, and 'multipleColumns' one column per grouped field, with groupFooters closing each group with a subtotal row under the real columns. Paging counts data rows, so a page holds pageSize real rows and reprints the banners they sit under, and footers never eat the budget.",
+  "keywords": [
+    "svelte grid group footers",
+    "svelte table subtotal rows",
+    "svelte 5 grid group display mode",
+    "svelte grid group column",
+    "svelte grouped table pagination"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a subtotal row under each group?",
+      "answer": "Set groupFooters on <SvGrid> and give the numeric columns an aggregate. The footer renders under the group's rows using the real columns, so the subtotal lines up with the values."
+    },
+    {
+      "question": "What is the difference between the display modes?",
+      "answer": "groupRows puts a banner row above each group. singleColumn keeps the rows flat and adds one Group column showing the nested keys with indentation. multipleColumns adds a column per grouped field, which only differs from singleColumn when grouping by two or more fields."
+    },
+    {
+      "question": "How does paging count grouped rows?",
+      "answer": "By data rows only. pageSize=20 means twenty real rows per page; the banners those rows belong to are reprinted at the top of the page and footers are inserted after paging."
+    }
+  ]
+}

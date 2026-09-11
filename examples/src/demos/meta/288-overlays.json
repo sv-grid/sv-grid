@@ -1,0 +1,24 @@
+{
+  "description": "The overlay trio of SvGrid UI in Svelte 5: SvPopover, an anchored floating panel opened by click, hover or manually with a minimum width, SvTooltip, a delayed hover and focus tip wired through aria-describedby, and SvModal, a focus-trapped dialog closed by Escape or the backdrop that can be draggable by its header and resizable from the corner. All portal to the body, animate in, share one positioning engine and respect reduced motion.",
+  "keywords": [
+    "svelte popover tooltip modal",
+    "svelte 5 modal dialog focus trap",
+    "svelte draggable resizable modal",
+    "svelte accessible tooltip",
+    "svelte overlay components"
+  ],
+  "faq": [
+    {
+      "question": "How is the tooltip announced?",
+      "answer": "The trigger gets aria-describedby pointing at the tip, so screen readers read the text on focus, and the tip shows after a short delay on hover or focus and hides on blur."
+    },
+    {
+      "question": "How does the modal manage focus?",
+      "answer": "Focus moves into the dialog on open, Tab cycles inside it, Escape or a backdrop click closes it and focus returns to the trigger, with page scroll locked while it is open."
+    },
+    {
+      "question": "When do I use a popover instead of a modal?",
+      "answer": "For contextual content anchored to a control, such as a filter panel or a quick form, where the page should stay usable; a modal is for tasks that must be completed or dismissed."
+    }
+  ]
+}

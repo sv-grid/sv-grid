@@ -1,0 +1,24 @@
+{
+  "description": "A copy-paste login page built from the SvGrid UI kit in Svelte 5: a two-column split with a branded gradient panel beside a sign-in SvCard holding social SvButton providers, SvTextInput for email and SvPasswordInput with reveal, a remember-me SvCheckBox, an or SvDivider and a forgot-password link, with a toast on submit. Themed from the --sg-* tokens and ready to drop into any route.",
+  "keywords": [
+    "svelte login page",
+    "svelte 5 sign in form template",
+    "svelte auth page block",
+    "svelte login with social buttons",
+    "svelte password reveal login"
+  ],
+  "faq": [
+    {
+      "question": "How do I connect it to my auth?",
+      "answer": "Replace the submit handler with your sign-in call; the email and password are bound state, and the social buttons are plain SvButtons with onclick for each provider."
+    },
+    {
+      "question": "How does the layout behave on a phone?",
+      "answer": "The two columns stack, the brand panel becomes a short header and the card takes the full width, using the kit's block inputs and no custom media queries in the form itself."
+    },
+    {
+      "question": "Is anything here from the grid?",
+      "answer": "No. The block is pure UI-kit composition from @svgrid/grid's components; the grid itself is not imported."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Excel-style data validation on a plain Svelte 5 SvGrid. Status, Priority, Owner and Sprint are list-constrained with editorType 'list' and editorOptions, so a double-click opens a dropdown, and Estimate must be a whole number from 0 to 40. Four cells arrive invalid and light up red with the reason as a tooltip through the declarative validate hook, and fixing a value clears the flag live.",
+  "keywords": [
+    "svelte spreadsheet data validation",
+    "svelte 5 grid dropdown validation",
+    "svelte sheet list constrained cells",
+    "svelte grid validate hook",
+    "svelte invalid cell tooltip"
+  ],
+  "faq": [
+    {
+      "question": "How do I restrict a column to a list?",
+      "answer": "Set editorType: 'list' and editorOptions on the column. The editor is a dropdown of those values, and a validate function can flag any existing value that is not in the list."
+    },
+    {
+      "question": "How is the numeric rule enforced?",
+      "answer": "The Estimate column's validate returns a message unless the value is an integer between 0 and 40; the cell turns red and the message becomes the tooltip until the value passes."
+    },
+    {
+      "question": "Does validation run on load?",
+      "answer": "Yes. The hook runs for every rendered cell, which is why the four seeded bad values are flagged before anyone edits."
+    }
+  ]
+}

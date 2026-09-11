@@ -1,0 +1,24 @@
+{
+  "description": "A date axis in the built-in chart panel of the Svelte 5 data grid. Group a daily signups sheet by its date column and the panel adds a Date axis toggle that spaces points by actual time with real date ticks, alongside a Log scale toggle for the wide-range value axis; both are one click, live, and persist in saved views. Retype a value, re-pick a column or filter the grid and the line re-plots.",
+  "keywords": [
+    "svelte chart panel date axis",
+    "svelte 5 grid chart by date",
+    "svelte chart log scale toggle",
+    "svelte daily signups chart",
+    "svelte chart saved view options"
+  ],
+  "faq": [
+    {
+      "question": "When does the Date axis toggle appear?",
+      "answer": "When the Group by column has cellDataType date. The panel then offers proportional time spacing instead of equal steps."
+    },
+    {
+      "question": "What does Log scale help with?",
+      "answer": "Values that span orders of magnitude, such as signups from a few dozen to thousands; a base-10 axis keeps the small days visible next to the large ones."
+    },
+    {
+      "question": "Are the toggles saved?",
+      "answer": "Yes. They are part of the chart state that saved views capture, so a view restores the same axis settings."
+    }
+  ]
+}
