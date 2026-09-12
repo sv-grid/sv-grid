@@ -28,9 +28,13 @@ import { clampDescription, firstSentence } from './lib/seo-text.mjs'
 import { demoAboutModel, renderDemoAboutHtml } from './lib/demo-page.mjs'
 import { parseDemoRegistry, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
-import { compareTitle, compareKeywords, compareFaq, shortCompetitor } from './lib/compare-meta.mjs'
+import { compareSeo, compareKeywords, compareJsonLd, COMPARE_HUB } from './lib/compare-meta.mjs'
+import { comparePageModel, renderCompareHtml, compareHubModel, renderCompareHubHtml } from './lib/compare-page.mjs'
+import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
 import { prerenderedRoutes } from './lib/route-seo.mjs'
+import { tutorialIdsIn, videoObjectLd } from './lib/tutorial-media.mjs'
+import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
@@ -357,106 +361,15 @@ function faqFromMarkdown(md) {
 // through tools/lib/demo-registry.mjs (shared with tools/seo-audit.mjs).
 
 /**
- * Slice a bracketed literal starting at `open` (the index of its `[`),
- * honouring quoted strings so a `[` inside a string does not skew the depth.
- */
-function sliceArrayLiteral(src, open) {
-  let depth = 0
-  let quote = null
-  for (let i = open; i < src.length; i += 1) {
-    const ch = src[i]
-    if (quote) {
-      if (ch === '\\') i += 1
-      else if (ch === quote) quote = null
-      continue
-    }
-    if (ch === "'" || ch === '"' || ch === '`') { quote = ch; continue }
-    if (ch === '[') depth += 1
-    else if (ch === ']') {
-      depth -= 1
-      if (depth === 0) return src.slice(open, i + 1)
-    }
-  }
-  return ''
-}
-
-/** Pull `key: [ 'a', 'b' ]` out of a comparison chunk as a string array. */
-function parseStringArray(chunk, key) {
-  const at = chunk.search(new RegExp('\\b' + key + ':\\s*\\['))
-  if (at === -1) return []
-  const block = sliceArrayLiteral(chunk, chunk.indexOf('[', at))
-  const out = []
-  const re = /'((?:\\.|[^'\\])*)'/g
-  let m
-  while ((m = re.exec(block))) out.push(unesc(m[1]))
-  return out
-}
-
-/** Pull the `features: [{ feature, svgrid, competitor }]` matrix. */
-function parseFeatureRows(chunk) {
-  const at = chunk.search(/\bfeatures:\s*\[/)
-  if (at === -1) return []
-  const block = sliceArrayLiteral(chunk, chunk.indexOf('[', at))
-  const out = []
-  const re = /feature:\s*'((?:\\.|[^'\\])*)'\s*,\s*svgrid:\s*'((?:\\.|[^'\\])*)'\s*,\s*competitor:\s*'((?:\\.|[^'\\])*)'/g
-  let m
-  while ((m = re.exec(block))) {
-    out.push({ feature: unesc(m[1]), svgrid: unesc(m[2]), competitor: unesc(m[3]) })
-  }
-  return out
-}
-
-/** Parse the comparison entries (slug + competitor + tagline + verdict). */
-async function parseComparisons() {
-  const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'comparisons.ts'), 'utf-8')
-  const marks = []
-  const slugRe = /\bslug:\s*'([^']+)'/g
-  let m
-  while ((m = slugRe.exec(src))) marks.push({ slug: m[1], at: m.index })
-  const out = []
-  for (let i = 0; i < marks.length; i += 1) {
-    const chunk = src.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : undefined)
-    const comp = chunk.match(/competitor:\s*'((?:\\.|[^'\\])*)'/)
-    const tag = chunk.match(/tagline:\s*'((?:\\.|[^'\\])*)'/)
-    const verdict = chunk.match(/oneLineVerdict:\s*'((?:\\.|[^'\\])*)'/)
-    const alt = chunk.match(/alternativeIntro:\s*'((?:\\.|[^'\\])*)'/)
-    const bottom = chunk.match(/bottomLine:\s*'((?:\\.|[^'\\])*)'/)
-    const mig = chunk.match(/migrationSlug:\s*'([^']+)'/)
-    const faq = []
-    const faqRe = /question:\s*'((?:\\.|[^'\\])*)'\s*,\s*answer:\s*'((?:\\.|[^'\\])*)'/g
-    let fm
-    while ((fm = faqRe.exec(chunk))) faq.push({ question: unesc(fm[1]), answer: unesc(fm[2]) })
-    out.push({
-      slug: marks[i].slug,
-      competitor: comp ? unesc(comp[1]) : marks[i].slug,
-      tagline: tag ? unesc(tag[1]) : '',
-      oneLineVerdict: verdict ? unesc(verdict[1]) : '',
-      alternativeIntro: alt ? unesc(alt[1]) : '',
-      bottomLine: bottom ? unesc(bottom[1]) : '',
-      migrationSlug: mig ? mig[1] : '',
-      intro: parseStringArray(chunk, 'intro'),
-      similarities: parseStringArray(chunk, 'similarities'),
-      svgridAdvantages: parseStringArray(chunk, 'svgridAdvantages'),
-      competitorAdvantages: parseStringArray(chunk, 'competitorAdvantages'),
-      whenToChooseSvGrid: parseStringArray(chunk, 'whenToChooseSvGrid'),
-      whenToChooseCompetitor: parseStringArray(chunk, 'whenToChooseCompetitor'),
-      features: parseFeatureRows(chunk),
-      faq,
-    })
-  }
-  return out
-}
-
-/**
  * Solution pages (/svelte/<slug>): one page per thing people search for by
  * name - "svelte kanban board", "svelte pivot table", "svelte date picker".
  * The gallery answers those queries with a demo shell and the docs answer them
  * with reference prose; neither reads like a landing page, so each solution
  * gets one that states what it is, what it costs, and where to go next.
  *
- * Plain JSON (not a scraped .ts module like comparisons.ts) so the file has one
- * parser, the website imports it directly, and a typo is a parse error rather
- * than a silently empty section.
+ * Plain JSON so the file has one parser, the website imports it directly, and
+ * a typo is a parse error rather than a silently empty section. The
+ * comparisons under docs/_data/comparisons/ follow the same rule.
  */
 async function parseSolutions() {
   try {
@@ -846,12 +759,13 @@ function solutionsIndexBody(solutions) {
   return html + `</ul></main>`
 }
 
-function compareIndexBody(comparisons) {
-  let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid vs Other Svelte Data Grids</h1><p>Honest, feature-by-feature comparisons.</p><ul>`
-  for (const c of comparisons) {
-    html += `<li><a href="${BASE}compare/${c.slug}/">SvGrid vs ${escapeAttr(c.competitor)}</a> - ${escapeAttr(c.oneLineVerdict || c.tagline)}</li>`
-  }
-  return html + `</ul></main>`
+function compareIndexBody(comparisons, ledger) {
+  // Same groups, cards and facts lines as CompareHub.svelte, from one model.
+  const hub = compareHubModel(comparisons, { ledger })
+  let html = `<main class="prerender-index" data-prerender="1"><h1>${escapeAttr(COMPARE_HUB.h1)}</h1><p>${escapeAttr(COMPARE_HUB.intro)}</p>`
+  html += renderCompareHubHtml(hub, { href: (kind, slug) => `${BASE}${kind}/${slug}/`, escape: escapeAttr })
+  html += `<h2>${escapeAttr(COMPARE_HUB.why.heading)}</h2><p>${escapeAttr(COMPARE_HUB.why.body)}</p>`
+  return html + `</main>`
 }
 
 function blogIndexBody(posts) {
@@ -1034,7 +948,14 @@ async function main() {
 
   const demos = await parseDemoRegistry(ROOT)
   const demoById = new Map(demos.map((d) => [d.id, d]))
-  const comparisons = await parseComparisons()
+  // 30-second tutorials (tools/tutorials/manifest.json): a VideoObject per
+  // embed on a doc page, built by the helper website/src/lib/seo.ts also uses.
+  const tutorialById = new Map(readTutorialManifest().tutorials.map((t) => [t.id, t]))
+  // Comparison pages: the JSON the SPA imports, joined with the measured
+  // facts ledger the same way website/src/routes/Compare.svelte joins them.
+  const comparisons = await loadComparisons()
+  const ledger = await loadLedger()
+  const svgridSize = await loadSvgridSize()
   const faqItems = await parseFaqRoute()
   const aiPrompts = await parseAiPrompts()
   const solutions = await parseSolutions()
@@ -1271,6 +1192,10 @@ async function main() {
         })),
       })
     }
+    for (const id of tutorialIdsIn(doc.markdown)) {
+      const t = tutorialById.get(id)
+      if (t) docGraph.push(videoObjectLd(t, { origin: CANON, pageUrl: url }))
+    }
     html = injectJsonLd(html, docGraph)
     const article = `<main class="prerender-doc" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}docs/">Docs</a></nav>${renderDoc(doc)}${docExtras(doc)}</main>`
     html = injectBody(html, article)
@@ -1301,7 +1226,7 @@ async function main() {
       body = docsIndexBody(docs, solutions)
       html = injectJsonLd(html, collectionLd('SvGrid Documentation', url, docs.map((d) => ({ name: d.title, url: `${CANON}/docs/${d.slug}/` }))))
     } else if (route === 'compare') {
-      body = compareIndexBody(comparisons)
+      body = compareIndexBody(comparisons, ledger)
       html = injectJsonLd(html, collectionLd('SvGrid Comparisons', url, comparisons.map((c) => ({ name: `SvGrid vs ${c.competitor}`, url: `${CANON}/compare/${c.slug}/` }))))
     } else if (route === 'svelte') {
       body = solutionsIndexBody(solutions)
@@ -1520,71 +1445,29 @@ async function main() {
   }
 
   // 4c. Prerender each comparison page (SvGrid vs X - high commercial intent).
+  // The body is the same model CompareBody.svelte draws after hydration
+  // (website/src/compare-page-parity.dom.test.ts diffs the two), and the head
+  // graph is the one applyCompareSeo rebuilds, so a crawler with or without
+  // JavaScript reads one page.
+  const compareHref = (kind, slug) => `${BASE}${kind}/${slug}/`
+  const demoTitle = (id) => demoById.get(id)?.title ?? null
+  const docTitle = (slug) => docs.find((d) => d.slug === slug)?.title ?? null
+  const postTitle = (slug) => blogPosts.find((p) => p.slug === slug)?.title ?? null
   for (const c of comparisons) {
     const url = `${CANON}/compare/${c.slug}/`
-    const title = compareTitle(c.competitor)
-    const description = clampDescription(c.oneLineVerdict || c.tagline)
-    const keywords = compareKeywords(c.competitor).join(', ')
+    const { title, description } = compareSeo(c, clampDescription)
+    const keywords = compareKeywords(c.competitor, c.aliases ?? []).join(', ')
     let html = applyHead(template, { title, description, canonical: url, ogType: 'article', keywords, image: `${CANON}/og/compare.svg`, imageAlt: `SvGrid vs ${c.competitor}` })
-    const cmpGraph = [
-      {
-        '@context': 'https://schema.org', '@type': 'TechArticle',
-        headline: `SvGrid vs ${c.competitor}`, description, url, inLanguage: 'en',
-        isPartOf: { '@type': 'WebSite', name: 'SvGrid', url: CANON + '/' },
-        publisher: { '@type': 'Organization', name: 'jQWidgets', url: 'https://www.jqwidgets.com' },
-      },
-      {
-        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'SvGrid', item: CANON + '/' },
-          { '@type': 'ListItem', position: 2, name: 'Comparisons', item: `${CANON}/compare/` },
-          { '@type': 'ListItem', position: 3, name: `SvGrid vs ${c.competitor}`, item: url },
-        ],
-      },
-    ]
-    const cmpFaq = compareFaq(c)
-    if (cmpFaq.length) cmpGraph.push(faqLd(cmpFaq))
-    html = injectJsonLd(html, cmpGraph)
-    const migLink = c.migrationSlug
-      ? `<p><a href="${BASE}docs/help/${c.migrationSlug}/">Migration guide: moving from ${escapeAttr(c.competitor)} to SvGrid</a></p>`
-      : ''
-    // "X alternative for Svelte" is the other half of the comparison intent,
-    // and it was covered on one page out of 18 before this block existed.
-    const altHtml = c.alternativeIntro
-      ? `<h2>Looking for a ${escapeAttr(shortCompetitor(c.competitor))} alternative for Svelte?</h2><p>${escapeAttr(c.alternativeIntro)}</p>`
-      : ''
-    const bottom = c.bottomLine ? `<h2>The bottom line</h2><p>${escapeAttr(c.bottomLine)}</p>` : ''
-    const faqHtml = cmpFaq.length
-      ? `<h2>Frequently asked questions</h2>${cmpFaq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
-      : ''
-    // The comparison body used to stop at the verdict and link to itself for
-    // "the full feature-by-feature comparison", leaving the matrix and every
-    // pro/con list JS-only. These are the site's highest-intent pages, so the
-    // whole argument now ships as raw HTML for crawlers that do not render.
-    const list = (heading, items) =>
-      items && items.length
-        ? `<h2>${escapeAttr(heading)}</h2><ul>${items.map((i) => `<li>${escapeAttr(i)}</li>`).join('')}</ul>`
-        : ''
-    const introHtml = (c.intro ?? []).map((para) => `<p>${escapeAttr(para)}</p>`).join('')
-    const featureTable = c.features && c.features.length
-      ? `<h2>SvGrid vs ${escapeAttr(c.competitor)}: feature by feature</h2>` +
-        `<table><thead><tr><th scope="col">Feature</th><th scope="col">SvGrid</th>` +
-        `<th scope="col">${escapeAttr(c.competitor)}</th></tr></thead><tbody>` +
-        c.features.map((r) => `<tr><th scope="row">${escapeAttr(r.feature)}</th>` +
-          `<td>${escapeAttr(r.svgrid)}</td><td>${escapeAttr(r.competitor)}</td></tr>`).join('') +
-        `</tbody></table>`
-      : ''
+    html = injectJsonLd(html, compareJsonLd(c, { canon: CANON, description }))
+    const model = comparePageModel(c, { ledger, size: svgridSize, demoTitle, docTitle, postTitle, comparisons })
+    const links = [c.url ? `<a href="${escapeAttr(c.url)}" rel="noopener">Project site</a>` : '', c.npm ? `<code>${escapeAttr(c.npm)}</code>` : ''].filter(Boolean)
     const body = `<main class="prerender-compare" data-prerender="1">` +
       `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}compare/">Comparisons</a></nav>` +
       `<h1>SvGrid vs ${escapeAttr(c.competitor)}</h1>` +
-      `<p>${escapeAttr(c.oneLineVerdict || c.tagline)}</p>` +
-      introHtml + altHtml + migLink + featureTable +
-      list('What they have in common', c.similarities) +
-      list('Where SvGrid is stronger', c.svgridAdvantages) +
-      list(`Where ${c.competitor} is stronger`, c.competitorAdvantages) +
-      list('Choose SvGrid when', c.whenToChooseSvGrid) +
-      list(`Choose ${c.competitor} when`, c.whenToChooseCompetitor) +
-      bottom + faqHtml + `</main>`
+      (c.tagline ? `<p>${escapeAttr(c.tagline)}</p>` : '') +
+      (links.length ? `<p>${links.join(' &middot; ')}</p>` : '') +
+      renderCompareHtml(model, { href: compareHref, escape: escapeAttr }) +
+      `</main>`
     html = injectBody(html, body)
     await writePage(join(DIST, 'compare', c.slug), html, url, body)
     written += 1

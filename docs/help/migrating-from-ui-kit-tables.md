@@ -13,6 +13,10 @@ letting you match the design system.
 > [Migrating from the shadcn-svelte data table](./migrating-from-shadcn-data-table.md)
 > instead - the port is different, and smaller.
 
+<!-- facts:start svelte-ui-kit-tables -->
+> **Facts, checked 12 Sep 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
+<!-- facts:end -->
+
 > Estimated effort: **30 min - 1 hour** per table. You are mostly
 > deleting `{#each}` markup and the sort / filter state you wrote
 > yourself.

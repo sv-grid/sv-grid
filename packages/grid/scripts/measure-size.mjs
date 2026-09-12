@@ -10,9 +10,10 @@
 import { build } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { gzipSync } from 'node:zlib'
-import { writeFileSync, mkdtempSync } from 'node:fs'
+import { writeFileSync, mkdtempSync, readFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const pkgSrc = new URL('../src/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 
@@ -247,7 +248,30 @@ const BUDGET_KB = {
   // been ratcheted flush against the measurement, so a one-byte feature failed
   // CI". Same mistake, same fix - 0.3 KB of headroom, which is the margin every
   // other entry here keeps and roughly one small feature's worth of room.
-  'full render component (SvGrid)': 84.8,
+  //
+  // 84.8 -> 85.4 for the chart depth program's second wave. Measured 84.7
+  // before and 85.1 after, so 0.4 KB, all of it in the controller: three more
+  // fields on the per-chart tab state (histogram bins, funnel shape, candle
+  // style) with their getters, setters, state round-trip and configureChart
+  // keys; the direct-dispatch guard naming the five types that must not fall
+  // through to the bar path; and the cross-filter rule excluding the three
+  // new families a click cannot map back to one value. The thirteen new chart
+  // types themselves are in the lazy engine chunk (see the chart surface
+  // entry); this is the same two-edit cost the type picker paid before.
+  //
+  // 85.4 -> 86.4 for the program's last two waves. Measured 85.1 before and
+  // 86.1 after, so 1.0 KB, again all controller: the ChartingConfig
+  // pass-through (zoom / presets / sync / menu / animate / lifecycle events)
+  // and the per-tab state that the builder, the price chart and the link
+  // toggle need (zoom window, OHLC column picks, indicator list, format
+  // state, frozen snapshot) with their getters, round-trip and configureChart
+  // keys, plus the freeze / unfreeze methods and the debounced onChartChanged
+  // effect. The OHLC column guessing, the indicator split and the format
+  // applier were moved INTO the lazy engine (guessOhlcColumns,
+  // splitPanelIndicators, ohlcDirectOptions, applyChartFormat) so the base
+  // pays for the wiring and not the logic; a grid that never charts still
+  // loads none of the engine.
+  'full render component (SvGrid)': 86.4,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
@@ -338,11 +362,98 @@ const BUDGET_KB = {
   // 31.6 -> 32.1 for the enter animation and the reduced-motion guard.
   // Measured 31.3 before and 31.8 after, so 0.5 KB - all of it the CSS, which
   // Svelte inlines into the component's JS.
-  'chart surface (SvChart)': 32.1,
+  //
+  // 32.1 -> 32.4 for splitting the 3,300-line engine into modules. Measured
+  // 31.8 before and 32.1 after, so 0.3 KB: one exported function per chart
+  // family instead of one branch, each taking a shared ctx, plus the facade's
+  // re-exports. Nothing moved between chunks - chart.ts is still the single
+  // lazy engine chunk - so a grid that never charts pays nothing. This is the
+  // foundation the chart depth program builds on (axis config, new families,
+  // decimation), and it was not going to be done inside one function.
+  //
+  // 32.4 -> 40.4 for the chart depth program's foundation wave. Measured 32.1
+  // before and 40.1 after, so 8.0 KB, split 5.8 engine / 2.2 renderer:
+  //   - per-axis config (min / max / tick count and interval / formatter /
+  //     grid lines / label rotation / reversed / labels off / fixed width),
+  //     a numeric x axis, reference bands, x reference lines, title /
+  //     subtitle / caption framing on every family;
+  //   - null policy, step lines, marker shapes, per-point colours and
+  //     markers, stroke width / dash / opacity / gradient fills;
+  //   - data labels placed and thinned by the engine (placement, formatter,
+  //     overlap hiding) instead of inline heuristics in the markup;
+  //   - seven more reducers (min / max / median / percentile / first / last /
+  //     distinct count) and calendar bucketing in rowsToChartSpec;
+  //   - LTTB and min / max decimation, with the zoom slice routed through the
+  //     same category picker so the per-category arrays stay in step;
+  //   - a tooltip snippet + format hook + single-series mode, legend
+  //     placement + item snippet, and autosize.
+  // Still nothing in base: SvGrid measures 84.7 KB before and after. This is
+  // the wave that lifts the chart from 'a chart in a grid' to something with
+  // an axis model, which every later wave builds on.
+  //
+  // 40.4 -> 46.7 for the chart depth program's series-type wave. Measured 40.1
+  // before and 46.4 after, so 6.3 KB, split 5.5 engine / 0.8 renderer:
+  // histogram (with binValues and Sturges / FD / sqrt rules), range bar, range
+  // area, lollipop, dumbbell, pareto, stream (wiggle and silhouette
+  // baselines), sunburst, radial bar, radial column, nightingale, chord and
+  // bullet, plus the hollow / Heikin-Ashi candle styles and the pyramid / cone
+  // funnel shapes. Thirteen families for the price of one and a half of the
+  // old ones; the polar five share one arc-path builder, which is most of
+  // why. Still nothing a grid that never charts pays for.
+  //
+  // 46.7 -> 53.8 for the chart depth program's interaction wave. Measured 46.4
+  // before and 53.5 after, so 7.1 KB, split 3.5 engine / 3.6 renderer:
+  //   - chart-zoom (wheel / pan / pinch windows, range presets, nearest-by-
+  //     time matching, 0.9), chart-motion (the geometry interpolator, 2.0),
+  //     chart-sync (0.3), drillTree / pathTo (0.3);
+  //   - in the renderer: the bindable zoom window with zoomTo / resetZoom,
+  //     wheel + pinch + pan gestures and the y-axis window, preset buttons,
+  //     sync-group publish / mirror effects, the data-update tween and the
+  //     grow / wipe enter effects, sunburst and tree map drilldown with a
+  //     breadcrumb, point selection with dimming, series stepping with the
+  //     live region, and the keyboard opener for the context menu.
+  // The menu itself is the lazy `SvChartMenu` chunk (6.3 KB with the shared
+  // menu list, popover and dismissable layer), fetched on the first
+  // right-click. The interpolator was tried as a lazy chunk too and rejected:
+  // it shares the arc and line path builders with the engine, so Rollup hoisted
+  // those into a third chunk and base grew by 0.8 KB to move 1.2 KB out. SvGrid
+  // base 85.1 -> 85.2 for the ChartingConfig pass-through (zoom / presets /
+  // sync / menu / animate) and the per-tab zoom window in the controller.
+  //
+  // 53.8 -> 59.6 for the chart depth program's financial wave. Measured 53.5
+  // before and 59.3 after, so 5.8 KB:
+  //   - the overlays a price series can carry (Bollinger with its band path,
+  //     VWAP, WMA) pull the indicator module's overlay half into the engine;
+  //     the pane indicators (RSI, MACD, stochastic, ATR, OBV) are only reached
+  //     through indicatorPane / SvChartPanes and tree-shake out of this entry;
+  //   - the last-price pill, annotation shapes (flag / pin / square) with a
+  //     tooltip, reader drawings resolved to pixels (trend, ray, fib levels,
+  //     rect, arrow, text) and the drawing tools: tool state, data-space
+  //     conversion, handles, keyboard removal, the toolbar buttons;
+  //   - PDF and print are a lazy chunk (chart-export-pdf, 2.4 KB) loaded on
+  //     the first click; the shared chart-export module became its own base
+  //     chunk because the renderer and that lazy chunk both import it, which
+  //     moves bytes between chunks and adds none.
+  // The builder (SvGridChartBuilder + chart-samples, 12.6 KB) and SvChartPanes
+  // are lazy from the grid panel and never load for a chart outside it.
+  'chart surface (SvChart)': 59.6,
 }
 
 const CHECK = process.argv.includes('--check')
+// `--json` also writes docs/_data/svgrid-size.json, the one place the site
+// reads SvGrid's own size from: the comparison pages, the comparison guides
+// and the README quote it from there instead of typing a number that was true
+// the day someone last ran this script.
+const JSON_OUT = process.argv.includes('--json')
+const SIZE_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'docs', '_data', 'svgrid-size.json')
+const JSON_KEYS = {
+  'full render component (SvGrid)': 'full',
+  'headless core (createGrid)': 'headless',
+  'headless subpath (@svgrid/grid/core)': 'core',
+  'chart surface (SvChart)': 'chart',
+}
 const failures = []
+const measured = {}
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB'
 
@@ -391,6 +502,11 @@ for (const [label, code] of Object.entries(ENTRIES)) {
     }
   }
   const entryJs = baseJs
+  measured[JSON_KEYS[label] ?? label] = {
+    baseGzipKb: Number((baseJs / 1024).toFixed(1)),
+    cssGzipKb: Number((css / 1024).toFixed(1)),
+    lazyGzipKb: Number((lazyJs / 1024).toFixed(1)),
+  }
   const budget = BUDGET_KB[label]
   const overBudget = budget != null && entryJs / 1024 > budget
   if (overBudget) {
@@ -403,6 +519,19 @@ for (const [label, code] of Object.entries(ENTRIES)) {
       (lazyJs ? `   |  lazy chunks (loaded on demand) ${kb(lazyJs)}` : '') +
       '\n',
   )
+}
+
+if (JSON_OUT) {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const out = {
+    readme: 'Written by packages/grid/scripts/measure-size.mjs --json (pnpm size --json). Gzip level 9 of the minified Vite library build with Svelte external. Read by tools/lib/competitor-facts.mjs; never edit by hand.',
+    measuredAt: new Date().toISOString().slice(0, 10),
+    version: pkg.version,
+    entries: measured,
+  }
+  mkdirSync(dirname(SIZE_FILE), { recursive: true })
+  writeFileSync(SIZE_FILE, JSON.stringify(out, null, 2) + '\n')
+  console.log(`wrote ${SIZE_FILE}`)
 }
 
 if (CHECK) {

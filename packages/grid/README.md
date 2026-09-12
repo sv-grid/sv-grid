@@ -193,10 +193,11 @@ inside `@svgrid/grid`; the tools after it install separately and are entirely op
 |---|---|---|---|
 | **Svelte 5 runes native** | Yes | No, JS core + wrapper | Adapter only |
 | **Ships a renderer** | Yes, plus headless | Yes | No, headless only |
-| **Bundle (gzip)** | ~2 KB headless / ~80 KB full | ~340 KB | ~12-14 KB |
+| **Bundle (gzip)** | measured on [the comparison page](https://svgrid.com/compare/ag-grid/) | measured, same page | measured, [same method](https://svgrid.com/compare/tanstack-table/) |
 | **Master/detail, tree, range selection** | Free | Enterprise only | Build it yourself |
 
 Full detail: [SvGrid vs AG Grid vs TanStack Table](https://svgrid.com/docs/help/comparison/) ·
+[All comparisons, with dated sources](https://svgrid.com/compare/) ·
 [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-grid/)
 
 ## Documentation

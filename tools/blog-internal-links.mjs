@@ -19,6 +19,11 @@
  * live. The website deploy re-runs it before every build (deploy-website.yml),
  * so the blocks track the queue without anyone re-running it by hand.
  *
+ * A post that names a rival grid (by the aliases in docs/_data/comparisons)
+ * also gets up to two links to the matching /compare/ pages at the end of
+ * the same block, so the comparison pages collect the blog's authority on
+ * their topic instead of the other way round.
+ *
  * Idempotent: the block lives between HTML comment markers and is fully
  * replaced on each run, so hand-written body text is never touched.
  */
@@ -32,6 +37,9 @@ const BLOG_DIR = join(HERE, '..', 'website', 'src', 'content', 'blog')
 const DRY_RUN = process.argv.includes('--dry-run')
 const limitArg = process.argv.indexOf('--limit')
 const LIMIT = limitArg !== -1 ? Number(process.argv[limitArg + 1]) : Infinity
+
+const COMPARISONS_DIR = join(HERE, '..', 'docs', '_data', 'comparisons')
+const COMPARE_LINKS = 2
 
 const START = '<!-- related:start -->'
 const END = '<!-- related:end -->'
@@ -90,6 +98,28 @@ const posts = readdirSync(BLOG_DIR)
 
 const targets = posts.filter((p) => p.published && !p.canonical)
 
+// The comparison pages, with the names people use for each competitor. Plain
+// fs reads, no loader import: this script runs in the deploy workflow with
+// only the website checked out beside it.
+const comparisons = existsSync(COMPARISONS_DIR)
+  ? readdirSync(COMPARISONS_DIR)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => JSON.parse(readFileSync(join(COMPARISONS_DIR, f), 'utf-8')))
+      .map((c) => ({
+        slug: c.slug,
+        title: `SvGrid vs ${c.competitor}`,
+        aliases: [...(c.aliases ?? []), c.competitor].map((a) => String(a).toLowerCase()),
+      }))
+  : []
+
+/** Comparisons whose competitor a post names in its title, slug or tags. */
+function compareLinks(post) {
+  const hay = `${post.title} ${post.slug.replace(/-/g, ' ')} ${post.tags.join(' ')}`.toLowerCase()
+  return comparisons
+    .filter((c) => c.aliases.some((a) => a.length >= 3 && hay.includes(a)))
+    .slice(0, COMPARE_LINKS)
+}
+
 function related(post) {
   return targets
     .filter((c) => c.slug !== post.slug)
@@ -104,8 +134,11 @@ function related(post) {
     .map((x) => x.c)
 }
 
-function buildBlock(list) {
-  const items = list.map((p) => `- [${p.title}](/blog/${p.slug})`).join('\n')
+function buildBlock(list, compares = []) {
+  const items = [
+    ...list.map((p) => `- [${p.title}](/blog/${p.slug})`),
+    ...compares.map((c) => `- [${c.title}](/compare/${c.slug}/) - the comparison page, with a source and date for every claim`),
+  ].join('\n')
   return `${START}\n\n## Related reading\n\n${items}\n\n${END}`
 }
 
@@ -126,11 +159,12 @@ for (const post of posts) {
   processed++
 
   const list = related(post)
-  if (list.length === 0) {
+  const compares = compareLinks(post)
+  if (list.length === 0 && compares.length === 0) {
     skippedNoRelated++
     continue
   }
-  const block = buildBlock(list)
+  const block = buildBlock(list, compares)
   const next = applyBlock(post.raw, block)
   if (next === post.raw) continue
   changed++

@@ -14,12 +14,20 @@
  *        /docs/<slug>/  (<tier>)
  *        ================================================================== -->
  *
- * Blocks whose header is not a /docs/ URL (the unrouted API reference tail)
- * are ignored. tools/docs-corpus.test.ts checks the generated file against
- * docs-index.json so a change to the writer cannot silently empty the search.
+ * The comparison pages ride along under the same shape with a /compare/ URL
+ * and come back keyed `compare/<slug>`, which is the slug website/src/lib/docs.ts
+ * gives them. Blocks whose header is neither (the unrouted API reference
+ * tail) are ignored. tools/docs-corpus.test.ts checks the generated file
+ * against docs-index.json and the comparison data so a change to the writer
+ * cannot silently empty the search.
  */
 
 const SEPARATOR = /<!-- =+\r?\n\s*(\S+)\s+\([^)]*\)\r?\n\s*=+ -->\r?\n/g
+
+/** The slug a corpus block is keyed by, or null for a block the search ignores. */
+export function corpusSlug(url) {
+  return /^\/docs\/(.+)\/$/.exec(url)?.[1] ?? (/^\/compare\/([^/]+)\/$/.exec(url) ? `compare/${/^\/compare\/([^/]+)\/$/.exec(url)[1]}` : null)
+}
 
 /**
  * @param {string} text  The contents of llms-full.txt.
@@ -31,9 +39,7 @@ export function parseDocsCorpus(text) {
   /** @type {Array<{ slug: string | null, start: number }>} */
   const marks = []
   for (const m of text.matchAll(SEPARATOR)) {
-    const url = m[1]
-    const slug = /^\/docs\/(.+)\/$/.exec(url)?.[1] ?? null
-    marks.push({ slug, start: m.index + m[0].length })
+    marks.push({ slug: corpusSlug(m[1]), start: m.index + m[0].length })
   }
   // A body runs to the next separator of any shape: the next page's, or the
   // API reference tail's, whose header has no tier and so is not a mark.

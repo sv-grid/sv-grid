@@ -89,8 +89,23 @@ pnpm demos:count        # re-count live demos (fails if registry and files disag
   `examples/src/demos/`, and a matching registration in
   `website/src/lib/demos.ts`. `pnpm demos:count` fails if they disagree.
 - **Competitor names** stay out of docs and shipped code, except in
-  `docs/help/comparison.md`, `docs/help/migrating-from-*.md`, and the
-  comparison blocks in the root and grid READMEs.
+  `docs/help/comparison.md`, `docs/help/migrating-from-*.md`, the
+  comparison blocks in the root and grid READMEs, the comparison data and
+  its renderers (`docs/_data/comparisons/*.json`, `docs/_data/competitors.json`,
+  `tools/lib/compare-*.mjs`, `tools/lib/competitor-facts.mjs`,
+  `tools/lib/guide-facts.mjs`, `tools/verify-competitors.mjs`,
+  `packages/grid/scripts/measure-competitor-bundles.mjs`, `website/src/routes/Compare.svelte`,
+  `website/src/components/Compare*.svelte`), the blog under
+  `website/src/content/blog/`, and the benchmark adapters in
+  `examples/src/bench/adapters.ts`.
+- **Competitor numbers are never typed.** Versions, licences, download
+  counts and bundle sizes on the comparison pages and in the comparison
+  guides come from `docs/_data/competitors.json` (`pnpm competitors:verify`,
+  `pnpm competitors:measure`) and `docs/_data/svgrid-size.json`
+  (`pnpm size:json`), rendered with the date they were read. The guides
+  carry them in a generated block (`node tools/sync-guide-facts.mjs`);
+  `tools/competitor-facts.test.ts` fails on a typed one. A competitor's
+  price is quoted only as its own site states it, with the URL and the date.
 - **New grid capability registers through the existing feature and
   row-model seams** so it tree-shakes out when unused.
 

@@ -1,0 +1,202 @@
+{
+  "slug": "smart-grid",
+  "competitor": "Smart.Grid (Smart Web Components)",
+  "npm": "smart-webcomponents",
+  "url": "https://www.htmlelements.com/",
+  "aliases": [
+    "smart.grid",
+    "smart grid",
+    "smart web components",
+    "htmlelements",
+    "smart-webcomponents"
+  ],
+  "framework": [
+    "web components"
+  ],
+  "group": "commercial",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "Smart.Grid is the htmlelements.com web-component grid - framework-agnostic custom elements from the team that builds SvGrid.",
+  "oneLineVerdict": "Same team again. Smart.Grid is a great framework-agnostic web component that even works inside Svelte; SvGrid is the runes-native option, with Svelte snippets for cells and an MIT community core.",
+  "alternativeIntro": "Smart.Grid and SvGrid come from the same team, so this is a question about how you want to ship rather than who to trust. Smart.Grid is web components, which work anywhere including Svelte; SvGrid is a native Svelte 5 component with runes, snippets and SSR. If you need one grid across several frameworks, the web-component route is the deliberate choice, and @svgrid/grid-wc offers the same for SvGrid.",
+  "intro": [
+    "Smart.Grid (part of Smart Web Components / htmlelements.com) is a high-performance grid built as a standard custom element, so it drops into any framework - Angular, React, Vue, Svelte, or vanilla. It comes from the same team behind jQWidgets and SvGrid, with the same enterprise pedigree.",
+    "SvGrid covers the same job for Svelte 5 specifically: where Smart.Grid is a custom element you bind to through attributes and events, SvGrid is reactive Svelte - `$state` data, snippet cells, and an MIT community core."
+  ],
+  "similarities": [
+    "Same engineering team and enterprise pedigree.",
+    "High-performance grid with virtualization.",
+    "Sorting, filtering, grouping, editing.",
+    "Works inside a Svelte app."
+  ],
+  "svgridAdvantages": [
+    "Reactive Svelte 5 - runes + snippets, not a custom element bound via attributes.",
+    "MIT-licensed community core.",
+    "Svelte component / snippet cells instead of element templates.",
+    "A headless engine in addition to the render component."
+  ],
+  "competitorAdvantages": [
+    "Truly framework-agnostic - one component across Angular, React, Vue, Svelte, vanilla.",
+    "Part of a large Smart Web Components library beyond the grid.",
+    "Mature, with the team's long enterprise track record.",
+    "Reuse the same grid if your shop spans several frameworks.",
+    "Ships its own MCP server for AI assistants, like SvGrid."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 reactive-native",
+      "svgrid": {
+        "status": "yes",
+        "note": "Runes + snippets"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Custom element in Svelte"
+      }
+    },
+    {
+      "feature": "License",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "perpetual per-developer licence; the free Community License excludes the Grid",
+        "source": "smart-license"
+      }
+    },
+    {
+      "feature": "Custom cells",
+      "svgrid": {
+        "status": "yes",
+        "note": "Snippets / components"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Element templates"
+      }
+    },
+    {
+      "feature": "Sort / filter / group",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Framework-agnostic",
+      "svgrid": {
+        "status": "no",
+        "note": "Svelte only"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Web component everywhere"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "AI / MCP server",
+      "svgrid": {
+        "status": "yes",
+        "note": "@svgrid/mcp"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Smart MCP"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "Your stack is Svelte 5 and you want reactive runes, not attribute binding.",
+    "You want Svelte snippets / components for custom cells.",
+    "You want an MIT community core and an MCP server."
+  ],
+  "whenToChooseCompetitor": [
+    "You need one grid across Angular, React, Vue, Svelte, and vanilla.",
+    "You already use the Smart Web Components library.",
+    "A standard custom element fits your architecture better than a Svelte component."
+  ],
+  "migration": {
+    "slug": "migrating-from-smart-grid",
+    "effort": "2-4 hours per grid",
+    "youLose": [
+      "One custom element that runs in every framework.",
+      "A perpetual licence model and the wider Smart UI suite."
+    ]
+  },
+  "pricing": {
+    "summary": "htmlelements.com lists the Developer License at $499 (on sale at $399) per developer, perpetual, or $39 per month, and the Team License at $1,499 per five developers; the free Community License covers the core components but not the Grid",
+    "amount": 499,
+    "unit": "USD per developer, perpetual",
+    "url": "https://www.htmlelements.com/license/",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "08-tree-and-master-detail"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/mcp-server",
+    "help/web-components"
+  ],
+  "related": [
+    "jqxgrid",
+    "ag-grid",
+    "tabulator"
+  ],
+  "bottomLine": "Smart.Grid is a strong framework-agnostic web component from the same team, and it works in Svelte today. Choose SvGrid when you want idiomatic Svelte - runes and snippets - and an MIT core; choose Smart.Grid when you need one grid across every framework.",
+  "faq": [
+    {
+      "question": "Is Smart.Grid from the SvGrid team?",
+      "answer": "Yes - Smart Web Components (htmlelements.com) and SvGrid are built by the same team. SvGrid is the Svelte-native option with an MIT core."
+    },
+    {
+      "question": "Can I use Smart.Grid in Svelte instead of SvGrid?",
+      "answer": "Yes - Smart.Grid is a web component and runs in Svelte. Pick SvGrid for an idiomatic Svelte component (runes plus snippets) rather than a custom element."
+    },
+    {
+      "question": "Do both Smart.Grid and SvGrid have an MCP server?",
+      "answer": "Yes - both ship MCP servers for AI assistants."
+    }
+  ],
+  "sources": [
+    {
+      "id": "smart-license",
+      "url": "https://www.htmlelements.com/license/",
+      "evidences": "Developer License $499 (sale $399) per developer, perpetual, or $39 per month; Team License $1,499 per 5 developers; Unlimited $2,999; Community License covers 40+ core components, advanced components such as Grid, Scheduler and Charts need a Commercial License",
+      "verified": "2026-09-12"
+    }
+  ]
+}

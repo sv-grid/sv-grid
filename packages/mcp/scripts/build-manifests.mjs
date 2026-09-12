@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { parseDocFrontmatter, sectionOf, SECTION_TITLES } from '../../../tools/lib/doc-meta.mjs'
 import { parseDemoRegistry } from '../../../tools/lib/demo-registry.mjs'
 import { buildApiSurface } from './api-surface.mjs'
+import { loadComparisons, loadLedger, loadSvgridSize } from '../../../tools/lib/compare-data.mjs'
+import { comparePageModel, renderCompareMarkdown } from '../../../tools/lib/compare-page.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkgRoot = join(__dirname, '..')
@@ -70,7 +72,7 @@ const examples = readAll(demosDir, '.svelte').map((path) => {
   }
 })
 
-const docs = readAll(docsDir, '.md')
+const routedDocs = readAll(docsDir, '.md')
   .filter((p) => !p.includes('examples-plan'))
   .map((path) => {
     // Search-facing frontmatter (seoTitle etc.) is for the website; the model
@@ -89,6 +91,27 @@ const docs = readAll(docsDir, '.md')
       markdown,
     }
   })
+
+// The comparison pages (/compare/<slug>/), rendered from docs/_data through
+// the same model the website and the prerenderer use, so `svgrid_get
+// compare/ag-grid` returns what the page says, verified numbers and all.
+// They have no .md file, which is why the docs walk above never saw them.
+const comparisonDocs = await (async () => {
+  const comparisons = await loadComparisons()
+  const ledger = await loadLedger()
+  const size = await loadSvgridSize()
+  const demoTitle = (id) => examples.find((e) => e.id === id)?.title ?? null
+  const docTitle = (slug) => routedDocs.find((d) => d.slug === slug)?.title ?? null
+  return comparisons.map((c) => ({
+    slug: `compare/${c.slug}`,
+    path: `docs/_data/comparisons/${c.slug}.json`,
+    title: `SvGrid vs ${c.competitor}`,
+    section: 'Comparisons',
+    markdown: renderCompareMarkdown(comparePageModel(c, { ledger, size, demoTitle, docTitle, comparisons }), { site: 'https://svgrid.com' }),
+  }))
+})()
+
+const docs = [...routedDocs, ...comparisonDocs]
 
 const apiReference = {
   components: ['SvGrid', 'SvGridBoard', 'FlexRender', 'renderComponent', 'renderSnippet'],

@@ -1,0 +1,191 @@
+{
+  "slug": "tabulator",
+  "competitor": "Tabulator",
+  "npm": "tabulator-tables",
+  "url": "https://tabulator.info/",
+  "aliases": [
+    "tabulator",
+    "tabulator-tables"
+  ],
+  "framework": [
+    "javascript"
+  ],
+  "group": "oss",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "Tabulator is a feature-rich, framework-agnostic vanilla-JS interactive table library, MIT-licensed.",
+  "oneLineVerdict": "Tabulator is enormously capable and free, but it is vanilla JS you wire into Svelte imperatively. SvGrid delivers a similar feature surface as a Svelte-5-native component with reactive data binding.",
+  "alternativeIntro": "Tabulator is mature, MIT and framework-agnostic, and the reason people move is usually reactivity: it owns its own DOM, so Svelte state and table state have to be kept in sync by hand. SvGrid is driven by your runes directly. Tabulator still wins on breadth of built-in features and on being usable from plain HTML with no build step.",
+  "intro": [
+    "Tabulator packs a huge feature set - sorting, filtering, grouping, editing, tree data, formatters, and more - into a framework-agnostic vanilla-JS library. You instantiate it against a DOM element and drive it through its imperative API.",
+    "SvGrid covers the same ground but as a Svelte 5 component: data is a reactive `$state` array, cells are snippets, and the imperative API is there when you want it - no manual mount/teardown or DOM bridging."
+  ],
+  "similarities": [
+    "Broad feature set: sort, filter, group, edit, tree, format.",
+    "MIT-licensed / free for commercial use.",
+    "Virtualized rendering for large datasets.",
+    "Rich, mature documentation."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native - reactive data binding, no imperative mount/teardown.",
+    "Custom cells are Svelte snippets, not HTML-string formatters.",
+    "Headless engine available in addition to the component.",
+    "@svgrid/mcp MCP server for AI assistants."
+  ],
+  "competitorAdvantages": [
+    "Framework-agnostic - the same library across vanilla, React, Vue, Angular.",
+    "Very large built-in formatter / editor catalogue.",
+    "Long track record and a big community.",
+    "No build step required to drop into a plain HTML page."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "vanilla JavaScript",
+        "source": "tabulator-readme"
+      }
+    },
+    {
+      "feature": "Reactive data binding",
+      "svgrid": {
+        "status": "yes",
+        "note": "$state"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Imperative setData()"
+      }
+    },
+    {
+      "feature": "Custom cells",
+      "svgrid": {
+        "status": "yes",
+        "note": "Snippets / components"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "HTML-string formatters"
+      }
+    },
+    {
+      "feature": "Sort / filter / group",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Tree data",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want reactive data, not imperative setData calls.",
+    "You want Svelte snippets for custom cells instead of HTML strings.",
+    "You want a headless engine option and an MCP server."
+  ],
+  "whenToChooseCompetitor": [
+    "You need one table library across vanilla JS, React, Vue, and Angular.",
+    "You want a no-build-step drop-in for a plain HTML page.",
+    "You rely on a specific Tabulator formatter / module."
+  ],
+  "migration": {
+    "slug": "migrating-from-tabulator",
+    "effort": "2-4 hours per grid",
+    "youLose": [
+      "One library for plain JavaScript pages as well as React, Angular and Vue.",
+      "Built-in download to CSV, XLSX and PDF without a paid pack; SvGrid has CSV free and Excel and PDF in @svgrid/enterprise."
+    ]
+  },
+  "pricing": {
+    "summary": "Tabulator is MIT and free; no licence or support plan is sold",
+    "url": "https://github.com/olifolkerd/tabulator",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "08-tree-and-master-detail"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/cells/cell-components"
+  ],
+  "related": [
+    "gridjs",
+    "smart-grid",
+    "ag-grid"
+  ],
+  "bottomLine": "Tabulator is a free, feature-packed table that runs anywhere. If your app is Svelte 5, SvGrid gives you a comparable feature set with reactive data binding and snippet cells instead of imperative setData and HTML-string formatters.",
+  "faq": [
+    {
+      "question": "SvGrid vs Tabulator for Svelte - which is better?",
+      "answer": "For Svelte 5, SvGrid: reactive $state data and Svelte snippet cells, with no imperative mount or teardown. Tabulator wins if you need one library across vanilla JS, React, Vue, and Angular."
+    },
+    {
+      "question": "Is SvGrid free like Tabulator?",
+      "answer": "Yes - the core is MIT, like Tabulator. Only the optional @svgrid/enterprise pack is paid."
+    },
+    {
+      "question": "Can I reuse Tabulator formatters in SvGrid?",
+      "answer": "You re-create them as Svelte snippets via renderSnippet, which is more flexible than HTML-string formatters."
+    }
+  ],
+  "sources": [
+    {
+      "id": "tabulator-readme",
+      "url": "https://github.com/olifolkerd/tabulator",
+      "evidences": "MIT; a vanilla JavaScript library that builds interactive tables from HTML tables, arrays or JSON, with support for React, Angular and Vue; installed as tabulator-tables",
+      "verified": "2026-09-12"
+    }
+  ],
+  "publishBundle": true
+}

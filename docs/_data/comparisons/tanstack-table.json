@@ -1,0 +1,336 @@
+{
+  "slug": "tanstack-table",
+  "competitor": "TanStack Table (Svelte)",
+  "npm": "@tanstack/svelte-table",
+  "url": "https://tanstack.com/table/latest",
+  "aliases": [
+    "tanstack table",
+    "react table",
+    "@tanstack/svelte-table",
+    "@tanstack/table-core",
+    "tanstack table alternative"
+  ],
+  "framework": [
+    "svelte",
+    "react",
+    "vue",
+    "solid",
+    "qwik",
+    "lit"
+  ],
+  "group": "headless",
+  "tier": "priority",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs TanStack Table - Headless and Rendered for Svelte 5",
+  "seoDescription": "TanStack Table's Svelte adapter is headless by design; SvGrid keeps a headless core and adds a rendered grid with filters, editing and virtualization.",
+  "tagline": "TanStack Table is the headless table engine with adapters for React, Vue, Svelte, Solid, Qwik and Lit; you bring the markup.",
+  "oneLineVerdict": "The closest peer to SvGrid's headless core. SvGrid ships a rendered component on top of the same kind of engine, in Svelte 5 runes; TanStack stays framework-agnostic and asks you to build and maintain the DOM, the virtualizer, the filter menus and the editors yourself.",
+  "alternativeIntro": "People arrive here wanting less glue code, and that is the trade: you keep a headless engine with row models and composable features, and you stop hand-building the DOM, the virtualizer, the filter menus and the editors. If you need one table engine across React and Svelte, stay where you are; that portability is exactly what SvGrid gives up.",
+  "intro": [
+    "TanStack Table is the canonical headless table library: it provides the data pipeline (filter, sort, group, expand, paginate, select) and leaves the markup to you. The v9 line ships a Svelte adapter, @tanstack/svelte-table, whose peer dependency range is Svelte 5, with createTable and getters for reactive data instead of the stores the v8 adapter used.",
+    "SvGrid covers the same headless surface (createSvGrid, row models, a features object) and adds a full render component with virtualization, Excel-style filters, inline editing, cell-range selection with a fill handle, grouping with aggregation, master/detail, a server-side row model and integrated charts, all in the MIT package."
+  ],
+  "similarities": [
+    "Headless-first architecture with row-model factories and a features object.",
+    "Composable features: sorting, filtering, grouping, pagination, expansion, selection.",
+    "TypeScript-first, MIT-licensed, with paid support available from the maintainers.",
+    "A createTable / createSvGrid entry point that takes columns, data and features.",
+    "Svelte 5 in both: runes in SvGrid, a Svelte 5 peer range in the TanStack adapter."
+  ],
+  "svgridAdvantages": [
+    "Ships <SvGrid />: a production render component with virtualization, Excel-style filters, cell-range selection, inline editing, grouping, master/detail and pagination. With TanStack Table you build all of this.",
+    "The headless core is written in Svelte 5 runes; the TanStack adapter wraps a framework-agnostic core.",
+    "An imperative API (SvGridApi) for adding rows, setting filters and mutating columns from outside the component.",
+    "A gallery of runnable examples that covers every feature, and per-feature docs pages with embedded demos.",
+    "In-grid AI helpers free in @svgrid/grid, and @svgrid/mcp so assistants fetch real example sources and can check the code they write.",
+    "A paid pack with Excel, PDF and print output, import, pivot tables and support."
+  ],
+  "competitorAdvantages": [
+    "A far larger community; the At a glance table has the download counts side by side.",
+    "Multi-framework parity: if your shop has React, Vue and Svelte apps, the API stays consistent.",
+    "A smaller bundle when all you want is the engine; the At a glance table has both measured sizes.",
+    "Framework-specific documentation for each adapter and years of production use in large companies.",
+    "Enterprise Support as private consulting, and sponsor perks such as priority issue requests."
+  ],
+  "features": [
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes",
+        "note": "createSvGrid"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "createTable",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Render component (drop-in)",
+      "svgrid": {
+        "status": "yes",
+        "note": "<SvGrid />"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "bring your own markup",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Svelte 5",
+      "svgrid": {
+        "status": "yes",
+        "note": "runes throughout"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "the adapter's peer range is Svelte 5",
+        "source": "tanstack-npm"
+      }
+    },
+    {
+      "feature": "Row virtualization",
+      "svgrid": {
+        "status": "yes",
+        "note": "built in"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "pair with @tanstack/svelte-virtual",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Column virtualization",
+      "svgrid": {
+        "status": "yes",
+        "note": "built in"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "pair with @tanstack/svelte-virtual",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Excel-style filter menu",
+      "svgrid": {
+        "status": "yes",
+        "note": "built in"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "filtering logic only; the UI is yours",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes",
+        "note": "enableInlineEditing"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "bring your own",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Cell-range selection and clipboard",
+      "svgrid": {
+        "status": "yes",
+        "note": "enableCellSelection, fill handle"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "bring your own",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Server-side data",
+      "svgrid": {
+        "status": "yes",
+        "note": "server-side row model"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "manual sorting, filtering and pagination flags",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Master/detail and tree",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "expansion and subRows",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Grouping with aggregation",
+      "svgrid": {
+        "status": "yes",
+        "note": "engine and rendered group rows"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "engine only",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Integrated charts",
+      "svgrid": {
+        "status": "yes",
+        "note": "SvGridChart"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not part of a headless engine",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "WAI-ARIA helpers",
+      "svgrid": {
+        "status": "yes",
+        "note": "exported, and applied by <SvGrid />"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "your markup, your ARIA",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "In-grid AI helpers and MCP server",
+      "svgrid": {
+        "status": "yes",
+        "note": "helpers free in @svgrid/grid; @svgrid/mcp, MIT"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the docs",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Multi-framework support",
+      "svgrid": {
+        "status": "no",
+        "note": "Svelte only"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "React, Vue, Svelte, Solid, Qwik, Lit",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Paid support tier",
+      "svgrid": {
+        "status": "yes",
+        "note": "with @svgrid/enterprise, per developer per year"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Enterprise Support (private consulting) and sponsor perks such as priority issues",
+        "source": "tanstack-home"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want a grid that uses runes idiomatically, headless or rendered.",
+    "You want a drop-in <SvGrid /> with virtualization, filters, editing and selection working in one prop pass.",
+    "You want AI tools to give accurate answers about your grid through MCP, and to have their code checked.",
+    "You want paid support available without switching libraries later."
+  ],
+  "whenToChooseCompetitor": [
+    "You ship to multiple frameworks (React, Vue, Svelte) and want one API across them.",
+    "You explicitly want a headless library and intend to build your own render layer.",
+    "You want the smallest possible engine and the largest possible community.",
+    "A shadcn-svelte data table built on TanStack already does what you need."
+  ],
+  "migration": {
+    "slug": "migrating-from-tanstack-table",
+    "effort": "About 30 minutes per read-only grid, 2-4 hours for editing-heavy grids",
+    "youLose": [
+      "One table engine across React, Vue, Svelte, Solid, Qwik and Lit.",
+      "The smallest engine-only bundle; the At a glance table has both measured sizes.",
+      "The TanStack ecosystem around the table: Virtual, Query and the shadcn-svelte data table recipe."
+    ]
+  },
+  "pricing": {
+    "summary": "TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table",
+    "url": "https://tanstack.com/table/latest",
+    "verified": "2026-09-12"
+  },
+  "publishBundle": true,
+  "demos": [
+    "186-headless-table",
+    "187-headless-virtual",
+    "03-excel-filters",
+    "118-range-selection"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/headless/build-a-table",
+    "help/headless/server-side",
+    "help/headless/virtualization"
+  ],
+  "related": [
+    "svelte-headless-table",
+    "svar-svelte-datagrid",
+    "svelte-ui-kit-tables"
+  ],
+  "bottomLine": "If you build across React, Vue and Svelte and want one headless API, TanStack Table is the safer bet. If you are committed to Svelte 5 and want virtualization, Excel-style filters, editing and selection out of the box, SvGrid gets you there with far less code, and you keep a headless core when you need it.",
+  "faq": [
+    {
+      "question": "Is SvGrid better than TanStack Table for Svelte?",
+      "answer": "For a Svelte 5 app, SvGrid is usually the faster path: it ships a virtualized render component with built-in filters, editing and accessibility, so there is no DOM layer to write. The TanStack Svelte adapter is Svelte 5 in its v9 line, but it is headless by design; you still build and maintain the table, virtualization and editing UI. TanStack wins if you need one API across several frameworks, or if owning that markup is the point."
+    },
+    {
+      "question": "Can I keep a headless setup like TanStack Table?",
+      "answer": "Yes. createSvGrid plus the row-model factories is a headless engine; you can drive your own markup exactly as with TanStack and adopt the SvGrid component only where you want it. The headless docs and the headless demos on this page show both."
+    },
+    {
+      "question": "Does the TanStack Svelte adapter support Svelte 5?",
+      "answer": "Yes. The @tanstack/svelte-table package on npm declares a Svelte 5 peer range in its v9 line and its examples pass data through getters rather than stores. The At a glance table shows the version and the peer range as read from the registry."
+    },
+    {
+      "question": "How long is a TanStack Table to SvGrid migration?",
+      "answer": "About thirty minutes for a read-only grid and two to four hours for editing-heavy ones. The row-model concepts map almost one to one; the migration guide walks through createTable to createSvGrid, the features object and the rendering options."
+    },
+    {
+      "question": "Which is smaller, TanStack Table or SvGrid?",
+      "answer": "The TanStack adapter, as an engine with no rendering. The At a glance table has both packages measured the same way on the same date. Add what you would write on top of TanStack (a virtualizer, filter UI, editors) before comparing, since that is what the extra size in SvGrid is."
+    }
+  ],
+  "sources": [
+    {
+      "id": "tanstack-svelte",
+      "url": "https://tanstack.com/table/latest/docs/framework/svelte/overview",
+      "evidences": "The Svelte adapter is headless: build your own markup from the table instance's state and APIs; createTable takes features, columns and data through a getter; adapters exist for React, Vue, Solid, Qwik, Lit and Svelte",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "tanstack-npm",
+      "url": "https://www.npmjs.com/package/@tanstack/svelte-table",
+      "evidences": "The latest version's peerDependencies declare svelte ^5.0.0; licence MIT",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "tanstack-home",
+      "url": "https://tanstack.com/table/latest",
+      "evidences": "Sponsor-supported with gold, silver and bronze sponsors; sponsors get private discord channels, priority issue requests and direct support; an Enterprise Support tier offers private consulting and expert support; no licence for the table is sold",
+      "verified": "2026-09-12"
+    }
+  ]
+}

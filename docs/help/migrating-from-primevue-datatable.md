@@ -4,9 +4,16 @@ The Prime DataTable is the grid in the Prime UI suites for Vue, Angular,
 and React. Its columns are declared as `<Column>` children with `field`
 / `header` props - a shape that maps cleanly onto SvGrid's `ColumnDef`
 array. The port is mostly translating columns and events into a Svelte 5
-component.
+component. Since PrimeVue 5 the package ships under the PrimeUI licence
+rather than MIT: free for individuals and small organisations under the
+limits in its licence file, per developer with a licence key otherwise.
+The facts box below quotes the terms as read on the date shown.
 
 > Estimated effort: **2-4 hours** per grid.
+
+<!-- facts:start primevue-datatable -->
+> **Facts, checked 12 Sep 2026.** `primevue` 5.0.1, Commercial (see licence file), last published 13 Aug 2026, 3,010,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026). PrimeVue / PrimeNG / PrimeReact DataTable pricing, as its site states it: primeui.dev lists the Commercial Suite at a launch price of $599 per developer (standard $799) as a perpetual licence with one year of updates, renewable at $399 per developer per year; the Community License is free for individuals, non-profits and organisations under $1M revenue, fewer than five developers, fewer than ten employees and under $3M in venture funding (https://primeui.dev/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/).
+<!-- facts:end -->
 
 ## Vocabulary cheat sheet
 
@@ -101,8 +108,12 @@ filtering move from per-column props to the `rowSortingFeature` /
 
 ### Is SvGrid open-source like the Prime grid core?
 
-Yes. `@svgrid/grid` is MIT, like the Prime component cores. The difference
-is framework: SvGrid is Svelte 5, not Vue / Angular / React.
+`@svgrid/grid` is MIT with no licence key or eligibility conditions. The
+Prime cores were MIT through PrimeVue 4; from PrimeVue 5 the npm package
+carries the PrimeUI licence, whose free Community License depends on your
+revenue, developer count, headcount and funding, and whose Commercial
+License is per developer with a key. The other difference is framework:
+SvGrid is Svelte 5, not Vue / Angular / React.
 
 ### Do I lose Prime theming?
 

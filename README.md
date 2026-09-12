@@ -160,7 +160,7 @@ free. See [Pricing](https://svgrid.com/pricing/).
 |---|---|---|---|
 | **Svelte 5 runes native** | Yes | No, JS core + wrapper | Adapter only |
 | **Ships a renderer** | Yes, plus headless | Yes | No, headless only |
-| **Bundle (gzip)** | ~2.5 KB headless / ~83 KB full | ~340 KB | ~12-14 KB |
+| **Bundle (gzip)** | measured on [the comparison page](https://svgrid.com/compare/ag-grid/) | measured, same page | measured, [same method](https://svgrid.com/compare/tanstack-table/) |
 | **Virtualization built in** | Yes | Yes | Bring your own |
 | **Master/detail, tree, range selection** | Free | Enterprise only | Build it yourself |
 | **License** | MIT core, commercial pack | MIT core, commercial pack | MIT |
@@ -168,6 +168,7 @@ free. See [Pricing](https://svgrid.com/pricing/).
 Multi-framework teams are better served by AG Grid or TanStack Table; SvGrid is deliberately
 Svelte-first. Full detail and migration guides:
 [SvGrid vs AG Grid vs TanStack Table](https://svgrid.com/docs/help/comparison/) ·
+[All comparisons, with dated sources](https://svgrid.com/compare/) ·
 [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-grid/) ·
 [Migrating from Handsontable](https://svgrid.com/docs/help/migrating-from-handsontable/)
 
@@ -290,7 +291,7 @@ Honest list:
 
 - Custom filter / floating-filter component slot. Filters are configurable but not yet pluggable as your own component. Medium effort.
 - Custom tool panels. The tool panel is a fixed Columns + Filters pair. Medium effort.
-- Integrated-chart depth is **done**. 15 chart types including candlestick / OHLC, the in-panel picker reaching every one of them that the current columns can feed, "chart selected range", click-to-cross-filter, the PNG / SVG export toolbar, zoom + brush, combo / dual-axis, `--sg-chart-*` palette tokens, and server-side aggregation all ship. What is left is a chart BUILDER: the type gallery with live previews still lives in demo 152 rather than in the panel. Small effort.
+- Integrated-chart depth is **done**, builder included. 29 chart types, a configurable axis model (numeric x, min / max / ticks / formatters / grid lines, reference bands), wheel / pinch / pan zoom with range presets, synchronized charts, a context menu, animation, drilldown, point selection, decimation for 50,000-point series, eight technical indicators with stacked panes, drawing tools, a last-price line and event flags, PNG / SVG / PDF / CSV export and print, and an in-panel builder (type gallery with live thumbnails, data pickers, a Format tab, link / unlink) all ship free, plus a standalone `<sv-chart>` element with React / Vue / Angular wrappers. Not built: maps, network graphs, 3D, a canvas renderer.
 - Server-side pivot and a viewport row model. The server-side row model does sort / filter / group / infinite today. Large effort.
 - A formula language of our own. `createHyperFormulaSheet` ships in the package so you can bring HyperFormula, and there are in-grid formula demos, but the engine itself is not ours and there is no formula bar.
 - Custom calendar systems (Hijri, Buddhist, fiscal year) for the date editor. Gregorian dates / times / datetimes are built in.

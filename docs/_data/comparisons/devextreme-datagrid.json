@@ -1,0 +1,188 @@
+{
+  "slug": "devextreme-datagrid",
+  "competitor": "DevExtreme DataGrid (DevExpress)",
+  "npm": "devextreme",
+  "url": "https://js.devexpress.com/Documentation/Guide/UI_Components/DataGrid/",
+  "aliases": [
+    "devextreme",
+    "devexpress",
+    "devextreme datagrid"
+  ],
+  "framework": [
+    "javascript",
+    "react",
+    "angular",
+    "vue"
+  ],
+  "group": "commercial",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "DevExtreme DataGrid is the commercial enterprise grid from DevExpress, for jQuery, React, Vue, and Angular.",
+  "oneLineVerdict": "DevExtreme is a deep, commercial multi-framework grid with strong vendor support. SvGrid is Svelte-5-native with an MIT core and a far lower-cost paid tier.",
+  "alternativeIntro": "DevExtreme is a broad commercial suite with no Svelte target, so this is a framework decision first. SvGrid covers the grid with a free MIT core and a paid pack for export, pivot and the board and scheduler views. If you use the DevExtreme charts, schedulers and form widgets together, replacing the grid alone leaves the rest of that suite behind.",
+  "intro": [
+    "DevExtreme DataGrid is a heavyweight commercial grid from DevExpress, available across jQuery, React, Vue, and Angular, with a very deep feature set (master/detail, grouping, summaries, export, state persistence) and professional support.",
+    "SvGrid covers the common ground - sorting, Excel-style filters, grouping, virtualization, editing, master/detail, tree - as a Svelte-5-native grid with an MIT core, and adds a Enterprise pack for export / import / pivot / AI."
+  ],
+  "similarities": [
+    "Deep feature set with master/detail, grouping, and summaries.",
+    "Inline and batch editing.",
+    "Export (in SvGrid via the Enterprise pack).",
+    "Paid support available."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native rather than a multi-framework commercial library.",
+    "MIT-licensed community core.",
+    "Headless engine + imperative API + @svgrid/mcp.",
+    "Much lower-cost paid tier."
+  ],
+  "competitorAdvantages": [
+    "Larger feature surface and a full component suite.",
+    "Multi-framework parity (jQuery / React / Vue / Angular).",
+    "Enterprise vendor support and long track record.",
+    "Built-in state persistence and a wide export feature set."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "JavaScript core with React, Angular and Vue packages",
+        "source": "dx-pricing"
+      }
+    },
+    {
+      "feature": "License",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "per developer, 12-month subscription",
+        "source": "dx-pricing"
+      }
+    },
+    {
+      "feature": "Grouping + summaries",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Master/detail",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline / batch editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Export",
+      "svgrid": {
+        "status": "yes",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Built in"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want a native grid.",
+    "You want an MIT core and a lower-cost paid tier.",
+    "You want a headless engine and an MCP server."
+  ],
+  "whenToChooseCompetitor": [
+    "You need the full DevExpress suite across several frameworks.",
+    "You depend on its built-in state persistence and export breadth.",
+    "Enterprise procurement requires the DevExpress vendor relationship."
+  ],
+  "migration": {
+    "slug": "migrating-from-devextreme",
+    "effort": "3-6 hours per grid",
+    "youLose": [
+      "The rest of the DevExtreme suite and the DevExpress .NET server-side pieces under one subscription.",
+      "Vendor support with a 12-month term priced into the licence."
+    ]
+  },
+  "pricing": {
+    "summary": "js.devexpress.com lists DevExtreme Complete at $899.99 per developer for a 12-month subscription with updates and support, renewing at $449.99; no free or non-commercial tier is shown",
+    "amount": 899.99,
+    "unit": "USD per developer, 12-month subscription",
+    "url": "https://js.devexpress.com/Buy/",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "148-server-row-model"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/server-side-data"
+  ],
+  "related": [
+    "kendo-ui-grid",
+    "syncfusion-grid",
+    "ag-grid"
+  ],
+  "bottomLine": "DevExtreme is a deep, commercial multi-framework grid with built-ins like state storing and broad export. SvGrid trades that breadth for a Svelte-native grid with an MIT core and a far lower-cost paid tier.",
+  "faq": [
+    {
+      "question": "SvGrid vs DevExtreme DataGrid - which for Svelte?",
+      "answer": "SvGrid is the native fit for Svelte and far cheaper; DevExtreme is a commercial multi-framework suite with a larger built-in feature set."
+    },
+    {
+      "question": "Is SvGrid cheaper than DevExtreme?",
+      "answer": "Yes - MIT core and a lower-cost Enterprise tier. You give up the multi-framework reach of DevExtreme and some built-ins like stateStoring, which becomes a saved-views pattern."
+    },
+    {
+      "question": "Does SvGrid export like DevExtreme?",
+      "answer": "Yes, via @svgrid/enterprise: Excel, PDF, CSV, TSV, and HTML plus a printable view."
+    }
+  ],
+  "sources": [
+    {
+      "id": "dx-pricing",
+      "url": "https://js.devexpress.com/Buy/",
+      "evidences": "DevExtreme Complete $899.99 per developer, 12 months of updates and support, renewal $449.99; all pricing in US dollars; no free tier shown",
+      "verified": "2026-09-12"
+    }
+  ]
+}

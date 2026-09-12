@@ -1,0 +1,433 @@
+{
+  "slug": "svar-svelte-datagrid",
+  "competitor": "SVAR Svelte DataGrid",
+  "npm": "wx-svelte-grid",
+  "url": "https://svar.dev/svelte/datagrid/",
+  "aliases": [
+    "svar",
+    "svar datagrid",
+    "svar data grid",
+    "svar grid",
+    "svar svelte datagrid",
+    "svar svelte grid",
+    "wx-svelte-grid",
+    "svar alternative"
+  ],
+  "framework": [
+    "svelte",
+    "react",
+    "vue"
+  ],
+  "group": "svelte-native",
+  "tier": "priority",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs SVAR Svelte DataGrid - Two MIT Svelte 5 Grids",
+  "seoDescription": "SVAR Svelte DataGrid and SvGrid are both MIT and Svelte-5-native. Where they differ: grouping, master/detail, range editing, charts, a headless core.",
+  "tagline": "SVAR Svelte DataGrid (wx-svelte-grid) is a Svelte-native, MIT-licensed data grid from XB Software, the team behind Webix, with React and Vue versions of the same grid.",
+  "oneLineVerdict": "SVAR is the closest genuinely Svelte-native rival: both grids are MIT and both target Svelte 5. SvGrid has the wider capability surface (grouping with aggregation, master/detail, Excel-style range editing with a fill handle, integrated charts, a headless core, in-grid AI helpers and an MCP server); SVAR is the smaller grid with print in the free package, React and Vue versions, and the Webix team behind it.",
+  "alternativeIntro": "The closest comparison on this list, since both are Svelte-native and both are MIT, so licensing does not decide it. The differences are depth and direction: SvGrid ships a larger feature surface, a UI component suite, in-grid AI helpers and an MCP server, while SVAR spans Svelte, React and Vue and keeps a smaller core. The At a glance table above has both measured bundle sizes; if a compact MIT grid with sorting, filtering, editing, tree data and CSV export is all you need, SVAR is a perfectly good answer.",
+  "intro": [
+    "SVAR DataGrid (npm: wx-svelte-grid) is part of the SVAR suite from XB Software, the makers of Webix, and is one of the few grids built for Svelte rather than wrapped from another framework. Its docs list in-cell editing, header and advanced filtering, single and multi-column sorting, tree data, virtual scrolling for rows and columns, columns pinned to the left, column and row spans in the header and footer, auto-sized rows, undo and redo, a context menu, row reordering, CSV export, a print API and a REST data provider, all under MIT.",
+    "SvGrid overlaps on the Svelte-native angle and reaches further: row grouping with aggregation, master/detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left and right column pinning, integrated charts, a server-side row model, a headless engine, in-grid AI helpers and the @svgrid/mcp server, all in the MIT package. Excel, PDF and print output, import and pivot tables live in the paid @svgrid/enterprise pack, whereas SVAR keeps its grid entirely free and sells PRO editions of its Gantt, Calendar and Kanban instead."
+  ],
+  "similarities": [
+    "Purpose-built for Svelte 5, not a cross-framework wrapper.",
+    "MIT-licensed and free for commercial use.",
+    "Sorting, filtering, in-cell editing, virtualization on rows and columns, tree data.",
+    "Auto-sized row heights, undo and redo, a context menu and drag-and-drop row reordering.",
+    "Themeable through CSS variables with light and dark themes, localization, WAI-ARIA markup and keyboard navigation."
+  ],
+  "svgridAdvantages": [
+    "Row grouping with aggregation and a drag-and-drop group panel; SVAR's docs list neither.",
+    "Master/detail and expandable detail rows; SVAR offers tree data only.",
+    "Excel-style cell-range selection with clipboard copy and paste and a fill handle; SVAR selects rows.",
+    "Pinned top and bottom rows, and columns pinned left and right; SVAR pins columns to the left only.",
+    "Integrated charts with no dependency, plus a chart wizard.",
+    "A server-side row model with cursor pagination, GraphQL, websocket and optimistic updates, beyond a REST data provider.",
+    "A headless engine (createSvGrid) you can compose, in addition to the render component.",
+    "In-grid AI helpers free in @svgrid/grid, and @svgrid/mcp with llms.txt so assistants answer and write code accurately.",
+    "A paid pack with Excel, PDF and styled-HTML export, print, pivot tables, Excel and CSV import and support. CSV, TSV and JSON export are free in the grid."
+  ],
+  "competitorAdvantages": [
+    "The whole grid is free, print API included; SvGrid puts print and Excel and PDF export in the paid pack. Both export CSV for free.",
+    "The same grid for React and Vue as well as Svelte; SvGrid is Svelte-only by design.",
+    "A smaller bundle: the At a glance table has both measured numbers.",
+    "XB Software and Webix behind it, a team that has built data grids for a long time.",
+    "Part of the wider SVAR suite, with paid consulting and custom development on offer."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Svelte 5 compatible",
+        "source": "svar-datagrid"
+      }
+    },
+    {
+      "feature": "Licence",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core, paid enterprise pack"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "MIT, the grid is entirely free",
+        "source": "svar-datagrid"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes",
+        "note": "createSvGrid"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "component only",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Excel-style filter menu",
+      "svgrid": {
+        "status": "yes",
+        "note": "built in"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "header filters plus the SVAR Filter component",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Cell-range selection and clipboard",
+      "svgrid": {
+        "status": "yes",
+        "note": "built in"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "single and multiple row selection",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Fill handle",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Row grouping with aggregation",
+      "svgrid": {
+        "status": "yes",
+        "note": "with a group panel"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Master/detail rows",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "tree data only",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Tree data",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Pinned columns",
+      "svgrid": {
+        "status": "yes",
+        "note": "left and right"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "to the left",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Pinned rows (top and bottom)",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Header and footer column spans",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Auto-sized row height",
+      "svgrid": {
+        "status": "yes",
+        "note": "autoRowHeight"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Virtualization (rows and columns)",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Undo and redo, context menu, row drag",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Integrated charts",
+      "svgrid": {
+        "status": "yes",
+        "note": "no dependency, plus a chart wizard"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Server-side data",
+      "svgrid": {
+        "status": "yes",
+        "note": "server-side row model, cursor, GraphQL, websocket"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "RestDataProvider and dynamic loading while scrolling",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "CSV export",
+      "svgrid": {
+        "status": "yes",
+        "note": "free, with TSV and JSON"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "free",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Excel and PDF export",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "CSV only in the feature list",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Print",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "print API, free",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Pivot tables",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the SVAR Svelte product list",
+        "source": "svar-svelte"
+      }
+    },
+    {
+      "feature": "React and Vue versions",
+      "svgrid": {
+        "status": "no",
+        "note": "Svelte only"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "svar-datagrid"
+      }
+    },
+    {
+      "feature": "In-grid AI helpers and MCP server",
+      "svgrid": {
+        "status": "yes",
+        "note": "helpers free in @svgrid/grid; @svgrid/mcp, MIT"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not mentioned in the docs",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Paid support",
+      "svgrid": {
+        "status": "yes",
+        "note": "with @svgrid/enterprise, per developer per year"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "paid consulting and custom development; no support plan for the grid listed",
+        "source": "svar-gantt"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You need grouping with aggregation, master/detail, Excel-style range editing or pivot tables, which SVAR's docs do not list.",
+    "You want a headless engine plus a render component, not a component-only API.",
+    "You want integrated charts and a full server-side row model in one library.",
+    "You want in-grid AI helpers, an MCP server that checks generated code, and a paid support tier."
+  ],
+  "whenToChooseCompetitor": [
+    "You want a fully free grid with print included and no paid tier at all.",
+    "You ship to React and Vue as well as Svelte and want one grid across them.",
+    "A smaller bundle matters more than the features above.",
+    "You are already adopting the wider SVAR suite: Gantt, Calendar, Kanban, File Manager."
+  ],
+  "migration": {
+    "slug": "migrating-from-svar-svelte-datagrid",
+    "effort": "2-4 hours per grid",
+    "youLose": [
+      "Free printing: SVAR's print API is in the MIT grid, SvGrid's print view is in @svgrid/enterprise.",
+      "The React and Vue versions of the same grid.",
+      "A smaller bundle, by the measurements in the At a glance table.",
+      "The SVAR suite around the grid: Gantt, Calendar, Kanban and File Manager share its core."
+    ]
+  },
+  "pricing": {
+    "summary": "The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid",
+    "url": "https://svar.dev/svelte/",
+    "verified": "2026-09-12"
+  },
+  "publishBundle": true,
+  "demos": [
+    "07-grouping-aggregation",
+    "08-tree-and-master-detail",
+    "118-range-selection",
+    "147-integrated-charts"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/grouping-aggregation",
+    "help/rows/master-detail",
+    "help/headless/build-a-table"
+  ],
+  "related": [
+    "svelte-headless-table",
+    "tanstack-table",
+    "vincjo-datatables"
+  ],
+  "bottomLine": "Both grids are Svelte-5-native and MIT, so this is not a licensing call. On capability SvGrid is the more complete grid: grouping, master/detail, range editing with a fill handle, charts, a server-side row model, a headless core, AI helpers and an MCP server. SVAR is the smaller, fully free, multi-framework option from the Webix team, and it prints for free where SvGrid charges for print and Excel and PDF export. Choose SvGrid when you need the deeper feature set or support; choose SVAR when a compact free grid covers your needs or you also ship React and Vue.",
+  "faq": [
+    {
+      "question": "SvGrid vs SVAR Svelte DataGrid: what is the difference?",
+      "answer": "Both are MIT-licensed, Svelte-5-native grids. SvGrid is the broader product: row grouping with aggregation, master/detail, Excel-style range selection with a fill handle, integrated charts, a server-side row model, a headless core, in-grid AI helpers and an MCP server. SVAR is a smaller, fully free grid with React and Vue versions from XB Software, with CSV export and a print API included."
+    },
+    {
+      "question": "Are SvGrid and SVAR both free?",
+      "answer": "Both are free under MIT, including commercial use. SVAR keeps the whole grid free, CSV export and print included, and sells PRO editions of its Gantt, Calendar and Kanban. SvGrid's grid is free too, including CSV, TSV and JSON export, charts and the AI helpers; Excel, PDF and print output, import, pivot tables and support are in @svgrid/enterprise at $599 per developer per year."
+    },
+    {
+      "question": "Are both built for Svelte 5?",
+      "answer": "Yes. SvGrid is written in Svelte 5 runes, and svar.dev states the DataGrid is Svelte 5 compatible. Neither is a cross-framework wrapper, although SVAR also ships React and Vue versions of its grid."
+    },
+    {
+      "question": "Which grid is smaller?",
+      "answer": "SVAR, by the measurements in the At a glance table: both packages were built alone with Vite, minified and gzipped with Svelte external, on the dates shown. SvGrid's extra size buys grouping, master/detail, range editing, charts and the server-side row model; features you never import, such as the date editors, menus and charts, load as separate chunks."
+    },
+    {
+      "question": "Does SVAR have row grouping, master/detail or cell-range selection?",
+      "answer": "Not according to its docs overview on the date we read it, which lists tree data, single and multiple row selection, header and advanced filters, sorting, in-cell editing, columns pinned to the left, CSV export and a print API. SvGrid has all three in the MIT core, and the demos on this page show them."
+    },
+    {
+      "question": "How long does a SVAR to SvGrid migration take?",
+      "answer": "The migration guide budgets two to four hours per grid: a prop and event rename pass, since both use array-of-object column definitions, plus re-theming through --sg-* tokens."
+    }
+  ],
+  "sources": [
+    {
+      "id": "svar-datagrid",
+      "url": "https://svar.dev/svelte/datagrid/",
+      "evidences": "Licensed under MIT; Svelte 5 compatible; React and Vue versions available; lists multi-column sorting, header filters, in-cell editing, tree data, virtual scrolling, columns pinned to the left, context menu, row drag-and-drop, checkbox selection, pagination, hotkeys, WAI-ARIA, print, undo/redo",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "svar-overview",
+      "url": "https://docs.svar.dev/svelte/grid/overview/",
+      "evidences": "Feature list: in-cell editing, header and advanced filtering, sorting, single and multiple row selection, row reordering, context menu, undo/redo, tree data, pagination, colspans and rowspans in header and footer, collapsible column groups, pinned columns to the left, auto-sizing of rows and columns, localization, themes, export to CSV, print API, RestDataProvider, virtual scrolling for rows and columns, WAI-ARIA, keyboard navigation; no Excel export, row grouping, aggregation, master/detail, charts, AI or MCP",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "svar-svelte",
+      "url": "https://svar.dev/svelte/",
+      "evidences": "DataGrid, Filter, Editor, File Manager and Core are MIT; Gantt, Calendar and Kanban have MIT cores with paid PRO editions; no pivot component in the list; no price list on the page",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "svar-gantt",
+      "url": "https://svar.dev/svelte/gantt/",
+      "evidences": "Offers paid consulting and custom development services; PRO edition pricing is on a separate page",
+      "verified": "2026-09-12"
+    }
+  ]
+}

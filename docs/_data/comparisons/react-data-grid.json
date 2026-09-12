@@ -1,0 +1,200 @@
+{
+  "slug": "react-data-grid",
+  "competitor": "React Data Grid (adazzle)",
+  "npm": "react-data-grid",
+  "url": "https://github.com/adazzle/react-data-grid",
+  "aliases": [
+    "react-data-grid",
+    "react data grid",
+    "adazzle"
+  ],
+  "framework": [
+    "react"
+  ],
+  "group": "oss",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "react-data-grid is a fast, Excel-like data grid for React, MIT-licensed.",
+  "oneLineVerdict": "react-data-grid is a strong, lightweight React grid with great editing. SvGrid is the Svelte-5-native equivalent, with a similar feature set and no React dependency.",
+  "alternativeIntro": "react-data-grid is React-only, so this is a port rather than a swap, and the shapes line up well: both are Excel-like, both MIT, both driven by column definitions. Cell renderers become Svelte snippets and hooks become runes. If you are staying on React, there is no reason to move.",
+  "intro": [
+    "react-data-grid (the adazzle project) is a focused, performant React grid known for spreadsheet-style editing, virtualization, and a clean column API. It is MIT-licensed and React-only.",
+    "SvGrid offers the same shape - virtualized DOM, typed columns, inline editing, custom cells - built on Svelte 5 runes and snippets rather than React components."
+  ],
+  "similarities": [
+    "MIT-licensed.",
+    "Virtualized rows and columns.",
+    "Spreadsheet-style inline editing.",
+    "Typed column definitions."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native - runes and snippets, not React.",
+    "Built-in Excel-style filter menu and the imperative API.",
+    "Grouping, tree data, and master/detail in the core.",
+    "@svgrid/mcp MCP server + optional Enterprise pack."
+  ],
+  "competitorAdvantages": [
+    "First-class fit for a React codebase.",
+    "Mature, focused, and battle-tested in React apps.",
+    "Large React community."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "React only",
+        "source": "rdg-readme"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Excel-style filter menu",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "BYO filter UI"
+      }
+    },
+    {
+      "feature": "Grouping / tree",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "row grouping and a TreeDataGrid",
+        "source": "rdg-readme"
+      }
+    },
+    {
+      "feature": "Master/detail",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "bring your own detail row",
+        "source": "rdg-readme"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Fill handle and copy/paste",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "cell copy, paste and value dragging",
+        "source": "rdg-readme"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 rather than React.",
+    "You want filters, grouping, and master/detail without building them.",
+    "You want a headless engine option and an MCP server."
+  ],
+  "whenToChooseCompetitor": [
+    "Your app is React and you want a focused, proven grid.",
+    "You want the React community and ecosystem around it.",
+    "You only need the feature set react-data-grid already covers."
+  ],
+  "migration": {
+    "slug": "migrating-from-react-data-grid",
+    "effort": "2-4 hours per grid",
+    "youLose": [
+      "A very small React grid with the spreadsheet basics built in.",
+      "React 19 features such as the use hook in cell renderers."
+    ]
+  },
+  "pricing": {
+    "summary": "react-data-grid is MIT on npm and free; no licence is sold",
+    "url": "https://github.com/adazzle/react-data-grid",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "95-fill-handle",
+    "118-range-selection"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/cells/cell-text-selection"
+  ],
+  "related": [
+    "glide-data-grid",
+    "mui-x-datagrid",
+    "ag-grid"
+  ],
+  "bottomLine": "react-data-grid is a strong, focused choice in React. On Svelte 5, SvGrid is the equivalent - similar editing and virtualization - plus a built-in filter menu, grouping, and a headless core, with no React dependency.",
+  "faq": [
+    {
+      "question": "SvGrid vs react-data-grid - which for Svelte?",
+      "answer": "SvGrid - it is Svelte-5-native, while react-data-grid is React-only. They share a similar editing and virtualization model."
+    },
+    {
+      "question": "Does SvGrid have built-in filtering unlike react-data-grid?",
+      "answer": "Yes - SvGrid ships an Excel-style filter menu and a global filter; react-data-grid leaves the filter UI to you."
+    },
+    {
+      "question": "Is SvGrid free like react-data-grid?",
+      "answer": "Yes, the core is MIT. SvGrid adds an optional Enterprise pack for export, import, pivot, and AI."
+    }
+  ],
+  "sources": [
+    {
+      "id": "rdg-readme",
+      "url": "https://github.com/adazzle/react-data-grid",
+      "evidences": "React 19.2+; virtualization of rows and columns, multi-column sorting, cell editing, row grouping and a TreeDataGrid, frozen columns, cell copy and paste, cell value dragging; light and dark mode through color-scheme",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "rdg-npm",
+      "url": "https://www.npmjs.com/package/react-data-grid",
+      "evidences": "The latest tag is a 7.0 beta line; licence MIT",
+      "verified": "2026-09-12"
+    }
+  ],
+  "publishBundle": true
+}

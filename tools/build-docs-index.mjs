@@ -7,6 +7,11 @@
  *                          unrouted API reference (see isLlmOnlyDoc)
  *   docs/docs.json       — machine-readable route manifest with metadata
  *
+ * The comparison pages (/compare/<slug>/, from docs/_data/comparisons) ride
+ * along in all three: a `### Comparisons` list in llms.txt, a block per page
+ * in llms-full.txt and a top-level `comparisons` array in docs.json. They are
+ * not docs routes and never join `pages`, `sections` or the sidebar.
+ *
  * Routed pages and LLM-only pages are collected separately on purpose:
  * docs.json, llms.txt and the sitemap are all built from the routed list, so
  * the reference cannot leak into them and advertise URLs that 404.
@@ -20,6 +25,12 @@ import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
 import { join, relative, sep, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
+import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
+import { comparePageModel, renderCompareMarkdown } from './lib/compare-page.mjs'
+import { compareSeo, compareKeywords } from './lib/compare-meta.mjs'
+import { clampDescription } from './lib/seo-text.mjs'
+import { parseDemoRegistry } from './lib/demo-registry.mjs'
+import { tutorialIdsIn } from './lib/tutorial-media.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
@@ -114,7 +125,7 @@ const PAGE_GROUPS = {
   // `limitations` reads as a conclusion rather than an opening.
   'help/web-components': [
     { label: '', pages: ['help/web-components.md'] },
-    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'shadow-dom'] },
+    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'sv-chart', 'shadow-dom'] },
     { label: 'Frameworks', pages: ['react', 'vue', 'angular'] },
     { label: 'Reference', pages: ['typescript', 'enterprise', 'limitations'] },
   ],
@@ -260,9 +271,50 @@ async function main() {
         ...[...body.matchAll(/data-docs-demo="([^"]+)"/g)].map((m) => m[1]),
         ...[...body.matchAll(/#\/demos\/(\d+-[a-z0-9-]+)/g)].map((m) => m[1]),
       ])],
+      // 30-second tutorial embeds (tools/tutorials/embed.mjs), by id.
+      ...(tutorialIdsIn(body).length ? { tutorialIds: tutorialIdsIn(body) } : {}),
     })
   }
   docs.sort((a, b) => a.path.localeCompare(b.path))
+
+  // ---- comparisons --------------------------------------------------------
+  // Same model the prerenderer and the SPA render, so the markdown a model
+  // reads says what the page says. Demo titles come from the gallery registry
+  // in the private website submodule; without it the live-example line is
+  // simply absent.
+  const comparisons = await loadComparisons()
+  const ledger = await loadLedger()
+  const svgridSize = await loadSvgridSize()
+  const demoTitles = await parseDemoRegistry(ROOT).then((list) => new Map(list.map((d) => [d.id, d.title]))).catch(() => new Map())
+  let postTitles = new Map()
+  try {
+    const posts = JSON.parse(await readFile(join(ROOT, 'website', 'src', 'lib', 'blog-index.json'), 'utf-8'))
+    postTitles = new Map(posts.map((p) => [p.slug, p.title]))
+  } catch { /* no submodule: no post links */ }
+  const comparePages = comparisons.map((c) => {
+    const model = comparePageModel(c, {
+      ledger,
+      size: svgridSize,
+      demoTitle: (id) => demoTitles.get(id) ?? null,
+      docTitle: (slug) => docs.find((d) => d.path === slug + '.md')?.title ?? null,
+      postTitle: (slug) => postTitles.get(slug) ?? null,
+      comparisons,
+    })
+    const { title, description } = compareSeo(c, clampDescription)
+    return {
+      slug: `compare/${c.slug}`,
+      url: `/compare/${c.slug}/`,
+      title: `SvGrid vs ${c.competitor}`,
+      competitor: c.competitor,
+      seoTitle: title,
+      summary: description,
+      keywords: compareKeywords(c.competitor, c.aliases ?? []),
+      verified: c.verified,
+      published: c.published,
+      tier: c.tier,
+      markdown: renderCompareMarkdown(model, { site: SITE }),
+    }
+  })
 
   // ---- docs.json --------------------------------------------------------
   const orderOf = (id) => {
@@ -313,6 +365,9 @@ async function main() {
     })),
     sections,
     pages: docs,
+    // Not routed docs: listed for models and the MCP server, keyed by the
+    // /compare/ URL. `markdown` is the same text llms-full.txt carries.
+    comparisons: comparePages.map(({ markdown, ...rest }) => rest),
   }
   await writeFile(join(DOCS_DIR, 'docs.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8')
 
@@ -347,6 +402,16 @@ async function main() {
       llmsLines.push('')
     }
   }
+  if (comparePages.length) {
+    llmsLines.push('## Comparisons')
+    llmsLines.push('')
+    llmsLines.push('### SvGrid vs other data grids')
+    llmsLines.push('')
+    for (const c of comparePages) {
+      llmsLines.push(`- [${c.title}](${SITE}${c.url}): ${c.summary}`)
+    }
+    llmsLines.push('')
+  }
   await writeFile(join(DOCS_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
 
   // ---- llms-full.txt ---------------------------------------------------
@@ -355,6 +420,7 @@ async function main() {
   llmsFullLines.push('')
   llmsFullLines.push(
     `Generated ${new Date().toISOString().slice(0, 10)} from ${docs.length} pages` +
+      (comparePages.length ? `, ${comparePages.length} comparison pages` : '') +
       (llmOnly.length ? `, plus ${llmOnly.length} API reference pages.` : '.'),
   )
   llmsFullLines.push('')
@@ -365,6 +431,17 @@ async function main() {
     llmsFullLines.push(`     ================================================================== -->`)
     llmsFullLines.push('')
     llmsFullLines.push(body.trim())
+    llmsFullLines.push('')
+  }
+  // The comparison pages, under the same separator shape as a docs page so
+  // tools/lib/docs-corpus.mjs splits them back out for the site search. Every
+  // number in them is a ledger value with its date; see the Sources section.
+  for (const c of comparePages) {
+    llmsFullLines.push(`<!-- =================================================================`)
+    llmsFullLines.push(`     ${c.url}  (community)`)
+    llmsFullLines.push(`     ================================================================== -->`)
+    llmsFullLines.push('')
+    llmsFullLines.push(c.markdown.trim())
     llmsFullLines.push('')
   }
   // The full typed API surface. It has no route - the /api page is the
@@ -396,7 +473,7 @@ async function main() {
 
   // ---- Console summary --------------------------------------------------
   process.stdout.write(`build-docs-index: ${docs.length} pages → docs.json, llms.txt, llms-full.txt (docs/ + website/public/)\n`)
-  process.stdout.write(`  enterprise: ${manifest.counts.enterprise} · with demo: ${manifest.counts.withDemo}\n`)
+  process.stdout.write(`  enterprise: ${manifest.counts.enterprise} · with demo: ${manifest.counts.withDemo} · comparisons: ${comparePages.length}\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

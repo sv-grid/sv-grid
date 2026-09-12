@@ -10,6 +10,10 @@ port is mostly about deciding how much markup you want to keep.
 > Estimated effort: **30 min - 2 hours** per table. A simple list is a
 > 30-minute swap; a feature-heavy one trends toward two hours.
 
+<!-- facts:start vincjo-datatables -->
+> **Facts, checked 12 Sep 2026.** `@vincjo/datatables` 2.8.1, MIT, last published 4 Jun 2026, 72,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@vincjo/datatables` 2.8.1 10.2 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). @vincjo/datatables pricing, as its site states it: @vincjo/datatables is MIT on npm and free; no licence is sold (https://github.com/vincjo/datatables, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/).
+<!-- facts:end -->
+
 ## Vocabulary cheat sheet
 
 | @vincjo/datatables                         | sv-grid                                   |
