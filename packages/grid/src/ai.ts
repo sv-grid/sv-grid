@@ -334,7 +334,14 @@ export async function aiSmartFill<
   api: SvGridApi<TFeatures, TData>,
   opts: AISmartFillOptions,
 ): Promise<AISmartFillResult<TValue>> {
-  if (opts.examples.length === 0) {
+  // Named errors for the required options, rather than the `Cannot read
+  // properties of undefined` a missing one used to throw from inside the
+  // prompt builder. A caller reaching these has a wiring bug, and the message
+  // should say which one.
+  if (!opts?.field) {
+    throw new Error('@svgrid/grid ai: aiSmartFill requires `field` - the column to fill.')
+  }
+  if (!opts.examples?.length) {
     throw new Error('@svgrid/grid ai: aiSmartFill requires at least one example.')
   }
   const data = api.getData()
@@ -427,6 +434,12 @@ export async function aiSummarize<
   api: SvGridApi<TFeatures, TData>,
   opts: AISummarizeOptions,
 ): Promise<AISummary> {
+  if (!opts?.target?.kind) {
+    throw new Error(
+      "@svgrid/grid ai: aiSummarize requires `target`, e.g. { kind: 'all' } or " +
+        "{ kind: 'row', rowIndex }.",
+    )
+  }
   const all = api.getData()
   const rows: TData[] = (() => {
     const t = opts.target
@@ -517,6 +530,15 @@ export async function aiClassify<
   api: SvGridApi<TFeatures, TData>,
   opts: AIClassifyOptions,
 ): Promise<AIClassifyResult> {
+  if (!opts?.inputField || !opts.outputField) {
+    throw new Error(
+      '@svgrid/grid ai: aiClassify requires `inputField` (the text to read) and ' +
+        '`outputField` (the column to write).',
+    )
+  }
+  if (!opts.classes?.length) {
+    throw new Error('@svgrid/grid ai: aiClassify requires `classes` - the labels to choose from.')
+  }
   const data = api.getData()
   const targets = opts.targetRowIndices ?? data.map((_, i) => i)
   const rubric = opts.classDescriptions

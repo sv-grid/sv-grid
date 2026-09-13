@@ -1463,6 +1463,12 @@ export async function copyExportToClipboard<
   const projectOpts =
     format === 'json' ? { ...opts, rawValues: opts.rawValues ?? true } : opts
   const projected = await projectRows(sourceRows, cols, projectOpts)
-  const { text } = await serializeNative(format, projected, cols, opts)
+  // No BOM on the clipboard. A file wants one (Excel needs it to read UTF-8),
+  // but a pasted payload carries it into the first header cell as a stray
+  // U+FEFF - which is what `\ufeffRegion` in a spreadsheet comes from. The free
+  // `api.copyToClipboard` already forces it off; this is the same rule, and an
+  // explicit `csv: { bom: true }` still wins.
+  const clipboardOpts = { ...opts, csv: { bom: false, ...opts.csv } }
+  const { text } = await serializeNative(format, projected, cols, clipboardOpts)
   await writeClipboard(text, format)
 }

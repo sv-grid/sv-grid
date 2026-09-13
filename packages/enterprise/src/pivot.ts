@@ -122,14 +122,43 @@ const numeric = (vs: ReadonlyArray<unknown>): number[] =>
     .map((v) => (typeof v === 'number' ? v : Number(v)))
     .filter((n): n is number => !Number.isNaN(n))
 
+/**
+ * One accumulation pass for the min / max extremes.
+ *
+ * `Math.min(...values)` spreads the whole bucket onto the argument stack, which
+ * throws `RangeError: Maximum call stack size exceeded` once a pivot cell holds
+ * enough rows (~100k) - so a min or max measure over a large dataset crashed
+ * rather than aggregating. The grid's own group aggregator fixed exactly this;
+ * this is the same accumulator, and it also stops walking the values twice.
+ */
+function extent(vs: ReadonlyArray<unknown>): { min: number; max: number; count: number } {
+  let min = Infinity
+  let max = -Infinity
+  let count = 0
+  for (const v of vs) {
+    const n = typeof v === 'number' ? v : Number(v)
+    if (!Number.isFinite(n)) continue
+    count += 1
+    min = Math.min(min, n)
+    max = Math.max(max, n)
+  }
+  return { min, max, count }
+}
+
 const BUILT_IN_AGGS: Record<PivotAggregatorId, PivotAggregator> = {
   sum:           (vs) => numeric(vs).reduce((a, b) => a + b, 0),
   avg:           (vs) => {
     const ns = numeric(vs)
     return ns.length === 0 ? null : ns.reduce((a, b) => a + b, 0) / ns.length
   },
-  min:           (vs) => (numeric(vs).length === 0 ? null : Math.min(...numeric(vs))),
-  max:           (vs) => (numeric(vs).length === 0 ? null : Math.max(...numeric(vs))),
+  min:           (vs) => {
+    const { min, count } = extent(vs)
+    return count === 0 ? null : min
+  },
+  max:           (vs) => {
+    const { max, count } = extent(vs)
+    return count === 0 ? null : max
+  },
   count:         (vs) => vs.length,
   countDistinct: (vs) => new Set(vs).size,
   first:         (vs) => vs[0] ?? null,

@@ -7,7 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { emitUnlicensedNudge, dismissUnlicensedNudge } from './watermark'
+import { emitUnlicensedNudge, dismissUnlicensedNudge, resetUnlicensedNudge } from './watermark'
 
 const WATERMARK_ATTR = 'data-svgrid-enterprise-watermark'
 
@@ -28,7 +28,11 @@ describe('unlicensed watermark', () => {
   })
 
   afterEach(() => {
+    // `dismissUnlicensedNudge()` suppresses the console notice for the rest of
+    // the session, which is its job - so resetting between cases is the other
+    // call, not this one.
     dismissUnlicensedNudge()
+    resetUnlicensedNudge()
     vi.useRealTimers()
     document.body.innerHTML = ''
   })

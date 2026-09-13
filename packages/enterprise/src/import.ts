@@ -35,7 +35,13 @@ import { assertEnterpriseLicensed } from './license'
 export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
 
 /** Maps a source header to the row field it populates, for files whose columns do not match your data. */
-export type ImportColumnMap = Record<string, string>
+/**
+ * Source header -> target field. `null` drops that source column, which the
+ * parser has always honoured and `ImportOptions.columnMap` has always
+ * documented - the type just said `string`, so the documented call did not
+ * type-check.
+ */
+export type ImportColumnMap = Record<string, string | null>
 
 /**
  * Declared data type per target field. When `columnTypes` is set on

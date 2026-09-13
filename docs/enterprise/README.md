@@ -1,9 +1,19 @@
 # Enterprise feature pack
 
 `@svgrid/enterprise` is a paid add-on for `@svgrid/grid`. It bolts onto
-the same `<SvGrid>` you already have and adds three feature areas: data
-export, data import, and pivot tables. (The AI helpers are built in and
-**free** in `@svgrid/grid` - see [AI assistant](../help/ai.md).)
+the same `<SvGrid>` you already have and adds two kinds of thing:
+
+- **Capabilities on the api** - Excel / PDF export, import, print, pivot
+  tables, the advanced filter builder, no-code alert rules, the selection
+  action bar, record detail and bulk edit.
+- **Whole alternate renderers for the same grid and the same data** - the
+  **Kanban board** (`board`) and the **scheduler / calendar** (`scheduler`).
+  Their props live in the free package, but the renderers ship here: without
+  the pack a grid with `board` or `scheduler` set renders an upgrade
+  placeholder instead of the view.
+
+(The AI helpers are built in and **free** in `@svgrid/grid` - see
+[AI assistant](../help/ai.md).)
 
 ![The @svgrid/enterprise pack bolts data export, data import, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
 
@@ -81,6 +91,87 @@ aggregators (sum/avg/min/max/count/countDistinct/first/last) or
 custom, grand-total row + column, subtotals, custom axis sort.
 
 Demo: [52 pivot table + designer](../../examples/src/demos/52-pivot-table.svelte).
+
+### [Kanban board](../help/rows/kanban-board.md)
+
+The same grid, rendered as columns of cards. `installEnterprise(api)`
+registers the renderer, and the community `board` prop does the rest -
+one data source, one column set, two views.
+
+```svelte
+<script lang="ts">
+  import { SvGrid } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
+
+  setLicenseKey('SVENTERPRISE-...')
+  let api = $state<ReturnType<typeof installEnterprise> | null>(null)
+</script>
+
+<!-- 1. Bucket cards by a column. -->
+<SvGrid
+  {data}
+  {columns}
+  board={{ groupBy: 'status' }}
+  onApiReady={(next) => (api = installEnterprise(next))}
+/>
+```
+
+```ts
+// 2. Name the lanes and what a card shows.
+board = {
+  groupBy: 'status',
+  lanes: ['todo', 'doing', 'done'],
+  title: 'summary',
+  subtitle: 'assignee',
+}
+
+// 3. Move a card, and persist the change yourself.
+board = {
+  groupBy: 'status',
+  onCardMove: ({ row, toLane }) => save({ ...row, status: toLane }),
+}
+```
+
+Without the pack the same markup renders the upgrade placeholder, so a
+board-shaped page degrades rather than breaking.
+
+### [Scheduler / calendar](../help/rows/scheduler.md)
+
+The same rows on a Month / Week / Day / Agenda calendar, with resources,
+recurrence and drag / resize. Registered by the same install.
+
+```ts
+// 1. The minimum: where the event starts, and what it is called.
+scheduler = { startField: 'start', endField: 'end', titleField: 'subject' }
+
+// 2. Open on a specific view, with resource lanes.
+scheduler = {
+  startField: 'start',
+  endField: 'end',
+  titleField: 'subject',
+  view: 'week',
+  resourceField: 'room',
+}
+
+// 3. Let the user drag events, and write the change back.
+scheduler = {
+  startField: 'start',
+  endField: 'end',
+  titleField: 'subject',
+  onEventChange: ({ row, start, end }) => save({ ...row, start, end }),
+}
+```
+
+### The rest of the pack
+
+| Area | What it adds | Page |
+| ---- | ------------ | ---- |
+| Print | `pro.print(opts)` - a printable window with repeating headers, cover page, page size + orientation | [Export and printing](../help/export.md) |
+| Advanced filter | A visual builder over the grid's predicate expressions, plus the engine that evaluates them (`setAdvancedFilter` is inert without it) | [Advanced filter](../help/filtering/advanced-filter.md) |
+| Alert rules | No-code, value-driven alerts with a rule editor and a panel | [Alerts](../help/alerts.md) |
+| Selection action bar | A floating bar over the grid while rows are selected, with your actions on it | [Selection bar](../help/rows/selection-bar.md) |
+| Record detail + bulk edit | `SvRecordDetail` / `SvGridEditPanel` for one row, `SvGridBulkEditDrawer` for many (no dedicated help page yet - see the package README) | [Package README](../../packages/enterprise/README.md) |
+| Clipboard export | `pro.copyExport(opts)` - the view, the selection or everything, as tsv / csv / markdown / html | [Export and printing](../help/export.md) |
 
 ## Licensing
 

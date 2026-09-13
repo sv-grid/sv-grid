@@ -20,7 +20,7 @@
 //   any other "SVENTERPRISE-..."             -> works silently (paid production)
 
 import { checkLicenseKey, VALID_PREFIX, type LicenseInfo } from './license-core'
-import { emitUnlicensedNudge } from './watermark'
+import { emitUnlicensedNudge, resetUnlicensedNudge } from './watermark'
 import { showUpgradePrompt, type EnterpriseFeatureLabel } from './upgrade-prompt'
 
 export { checkLicenseKey, type LicenseInfo, type LicenseStatus } from './license-core'
@@ -56,12 +56,18 @@ export function setLicenseKey(key: string): void {
   currentKey = key
   noticedDev = false
   noticedExpired = false
+  // A license transition re-arms every one-time notice, the unlicensed nudge
+  // included: an app that sets a key and later clears it is unlicensed again
+  // and should hear about it once more. A user-driven
+  // `dismissUnlicensedNudge()` is the one thing that stays sticky.
+  resetUnlicensedNudge()
 }
 
 export function clearLicenseKey(): void {
   currentKey = null
   noticedDev = false
   noticedExpired = false
+  resetUnlicensedNudge()
 }
 
 export function getLicenseKey(): string | null {

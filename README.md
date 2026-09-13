@@ -93,7 +93,7 @@ it into a live, editable Vite + Svelte 5 project. Nothing to install to try any 
 | [<img src="https://svgrid.com/thumbs/00-trading-desk.webp" width="260" alt="Trading desk demo" />](https://svgrid.com/demos/00-trading-desk/) | [<img src="https://svgrid.com/thumbs/78-million-rows.webp" width="260" alt="1 million rows demo" />](https://svgrid.com/demos/78-million-rows/) | [<img src="https://svgrid.com/thumbs/83-spreadsheet-formulas.webp" width="260" alt="Spreadsheet with formulas demo" />](https://svgrid.com/demos/83-spreadsheet-formulas/) |
 | **[Trading desk](https://svgrid.com/demos/00-trading-desk/)**<br>10,000 securities on a 500 ms feed | **[1 million rows](https://svgrid.com/demos/78-million-rows/)**<br>sort, filter, group and edit, all on | **[Spreadsheet + formulas](https://svgrid.com/demos/83-spreadsheet-formulas/)**<br>formula cells in a real grid |
 | [<img src="https://svgrid.com/thumbs/343-kanban-board.webp" width="260" alt="Kanban board demo" />](https://svgrid.com/demos/343-kanban-board/) | [<img src="https://svgrid.com/thumbs/363-scheduler-intro.webp" width="260" alt="Scheduler demo" />](https://svgrid.com/demos/363-scheduler-intro/) | [<img src="https://svgrid.com/thumbs/80-cell-types-showcase.webp" width="260" alt="Cell types showcase demo" />](https://svgrid.com/demos/80-cell-types-showcase/) |
-| **[Kanban board](https://svgrid.com/demos/343-kanban-board/)**<br>the same grid, board mode | **[Scheduler](https://svgrid.com/demos/363-scheduler-intro/)**<br>calendar views off the same data | **[Cell types](https://svgrid.com/demos/80-cell-types-showcase/)**<br>every editor in one grid |
+| **[Kanban board](https://svgrid.com/demos/343-kanban-board/)**<br>the same grid, board mode - *Enterprise renderer* | **[Scheduler](https://svgrid.com/demos/363-scheduler-intro/)**<br>calendar views off the same data - *Enterprise renderer* | **[Cell types](https://svgrid.com/demos/80-cell-types-showcase/)**<br>every editor in one grid |
 
 All [378 demos](https://svgrid.com/demos/) are browsable by category.
 
@@ -128,7 +128,7 @@ Re-derive the numbers yourself: `pnpm size` and `pnpm demos:count`.
 - **Filtering.** Excel-style filter menu, inline filter row, locale-aware text matching, set / value-list filter, between operator on numbers and dates.
 - **Editing.** 15 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, autocomplete, textarea, color, checkbox, list, chips, rating, password), plus `date-native` / `datetime-native` / `time-native` to opt out of the rich pickers. `registerBuiltinEditors()` adds `otp`, `duration` and `richtext`; `<SvRichCell>` paints sanitized HTML / Markdown in a cell; and a `cellEditor` snippet slot takes anything else.
 - **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, drag a selected range by its border to move it (`moveCells`), edge auto-scroll while dragging, row selection.
-- **Views.** Row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas, plus Kanban board and scheduler/calendar views.
+- **Views.** Row grouping with aggregation, tree data, master/detail, full-width detail rows, and spreadsheet mode with formulas - all MIT. The same grid also renders as a **Kanban board** (`board`) or a **scheduler / calendar** (`scheduler`), and those two renderers ship in `@svgrid/enterprise`: the props live in the free package, and without the pack the grid shows an upgrade placeholder in their place.
 - **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, opt-in drag handles for row and column sizing (`rowResize` / `columnResize`, each loaded only when enabled), keyboard-accessible column sizing, responsive mode for mobile.
 - **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
 - **AI helpers, free.** Natural-language filter, smart fill, summarize, classify, anomaly detection, and "chart this". Model-agnostic: you register one provider, nothing is bundled.
@@ -163,6 +163,7 @@ free. See [Pricing](https://svgrid.com/pricing/).
 | **Bundle (gzip)** | ~2.5 KB headless / ~83 KB full | ~340 KB | ~12-14 KB |
 | **Virtualization built in** | Yes | Yes | Bring your own |
 | **Master/detail, tree, range selection** | Free | Enterprise only | Build it yourself |
+| **Kanban board + scheduler views** | Enterprise renderer, same grid + data | Separate products | Not offered |
 | **License** | MIT core, commercial pack | MIT core, commercial pack | MIT |
 
 Multi-framework teams are better served by AG Grid or TanStack Table; SvGrid is deliberately
@@ -224,7 +225,9 @@ static builds. See [going to production](https://svgrid.com/docs/getting-started
 ### Is SvGrid free for commercial use?
 
 Yes. `@svgrid/grid` is MIT, with no license key, no watermark, and no row-count cap. Only the optional
-`@svgrid/enterprise` pack (export, import, pivot, print) is paid.
+`@svgrid/enterprise` pack is paid: Excel / PDF export, import, pivot tables, print, the advanced filter
+builder, no-code alert rules, the selection action bar, record detail + bulk edit, and the **Kanban board
+and scheduler / calendar renderers**.
 
 ### Does it support Svelte 4?
 

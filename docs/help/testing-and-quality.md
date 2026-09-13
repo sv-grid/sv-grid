@@ -72,11 +72,13 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
 ## The API QA phase
 
 `packages/grid/src/qa/` is a sweep over the **public surface** rather than a
-feature: 327 cases checked against the contract each member's reference page or
-doc comment states - 120 props, 84 api members, 35 column options, 19 callbacks
-and the whole headless engine. The component cases mount the real `<SvGrid>`;
-the engine cases run `createSvGrid` / `createSvGridCore` with no component at
-all.
+feature: 327 cases in `@svgrid/grid` plus 85 in `@svgrid/enterprise`, each checked
+against the contract that member's reference page or doc comment states - 120
+props, 84 api members, 35 column options, 19 callbacks, the whole headless
+engine, and everything `installEnterprise` adds. The component cases mount the
+real `<SvGrid>`; the engine cases run `createSvGrid` / `createSvGridCore` with no
+component at all; the enterprise cases mount the real grid and install onto the
+api the component hands back, rather than onto a stub.
 
 | Suite | Surface |
 | ----- | ------- |
@@ -90,6 +92,19 @@ all.
 | `qa.events.test.ts` | The DOM-driven callbacks (clicks, double clicks, scroll-bottom) plus `icons` and the seed props |
 | `qa.columndef.test.ts` | Every `ColumnDef` option: value source, rendering slots, layout, column groups, editing, per-column opt-outs, aggregation |
 | `qa.headless.test.ts` | The engine: `createSvGrid` options, the instance members, state slices, the row-model pipeline, `Row` / `Column` / `Header` shapes, features, `sortFns` / `filterFns`, the no-runes `createSvGridCore` entry |
+
+And in `packages/enterprise/src/qa/`:
+
+| Suite | Surface |
+| ----- | ------- |
+| `qa.install.dom.test.ts` | What `installEnterprise` adds, that it returns the same object, idempotence, and the view renderers it registers |
+| `qa.export.dom.test.ts` | Every `exportData` format, the row / column scopes, csv tuning, progress, abort, `copyExport`, `print`, and the static `exportGrid` / `printGrid` |
+| `qa.import.dom.test.ts` | `importData` parsing, sniffing, coercion, `columnMap` / `autoMap` / `columnTypes`, validation, preview vs commit |
+| `qa.pivot.dom.test.ts` | `pivot.build` / `buildFrom`, `createPivotModel`, the config switches and all eight `pivotAggregators` |
+| `qa.ai.dom.test.ts` | The seven `pro.ai.*` helpers against `mockAIProvider`, including the required-option errors |
+| `qa.advanced-filter.dom.test.ts` | The seam the install closes: a stored expression that the community grid cannot evaluate starts dropping rows |
+| `qa.license.dom.test.ts` | `setLicenseKey` / `clearLicenseKey` / `isLicenseKeySet` / `checkLicenseKey`, the soft gate, and the nudge |
+| `qa.surface.dom.test.ts` | The enterprise gate: every `EnterpriseGridApi`, `ai.*` and `pivot.*` member exercised, plus every registration the install performs |
 | `qa.surface.test.ts` | The gate: parses the `SvGridApi` and `Props` types and fails when a member has no QA case, and checks the runtime api object matches the type exactly |
 
 The gate is the point. A new prop, column option, engine member or api member
@@ -117,9 +132,29 @@ here even when no feature suite covers it. The phase found eight defects:
     commit carries `[skip ci]`, so the guard test never ran. Synced, and the
     release script now rewrites the constant when it bumps the package.
 
+11. `pro.copyExport()` wrote a BOM into the clipboard, so a paste into Excel or
+    Sheets carried a stray U+FEFF in the first header cell. The free
+    `copyToClipboard` already forced it off.
+12. `pivotAggregators.min` / `.max` spread the whole bucket into `Math.min(...)`,
+    throwing `RangeError: Maximum call stack size exceeded` past roughly 100k
+    values - so a min or max measure over a large pivot cell crashed. One
+    accumulation pass now, the same fix the grid's own aggregators got.
+13. `dismissUnlicensedNudge()` - documented as "hide the console nudge for the
+    rest of the session" - reset the shown flag instead, so it re-armed the
+    nudge. A test calling it to quieten its output got more output.
+14. `ImportColumnMap` was typed `Record<string, string>` while `columnMap`'s own
+    doc comment (and the parser) support `null` to drop a source column, so the
+    documented call did not type-check.
+15. `aiSummarize` / `aiClassify` / `aiSmartFill` threw `Cannot read properties of
+    undefined` when a required option was missing. They now name the option.
+
 Plus the docs: two editing pages promising that editing never touches the
-caller's rows, and stale operator / option / registry lists on three reference
-pages.
+caller's rows, stale operator / option / registry lists on three reference
+pages, an enterprise reference whose `importData` types and AI option shapes did
+not match the code, and an Enterprise landing page that described the pack as
+"export, import and pivot tables" while leaving out the Kanban board and
+scheduler renderers, print, the advanced filter, alerts, the selection bar and
+bulk edit.
 
 Run it alone with:
 
@@ -165,7 +200,7 @@ and is documented inline with the reasoning for each entry.
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
 | `qa/*.test.ts` | The API QA phase: every prop, every `SvGridApi` member, every callback | Mounted |
 
-Total: **3,214 tests** across **214 test files** in `@svgrid/grid`, plus **1,658** across **103** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
+Total: **3,214 tests** across **214 test files** in `@svgrid/grid`, plus **1,743** across **111** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 

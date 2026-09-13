@@ -34,17 +34,32 @@ export function emitUnlicensedNudge(): void {
   }
 }
 
+/**
+ * Re-arm the console notice. Internal: a license transition is a state change,
+ * so `setLicenseKey` / `clearLicenseKey` call this, and tests that exercise the
+ * nudge itself use it to reset between cases. `dismissUnlicensedNudge` is the
+ * user-facing call and deliberately does the opposite.
+ */
+export function resetUnlicensedNudge(): void {
+  consoleNudgeShown = false
+}
+
 export function dismissUnlicensedNudge(): void {
   if (observer) {
     observer.disconnect()
     observer = null
   }
+  // Mark the console notice as already shown, so it stays quiet for the rest of
+  // the session. This used to RESET the flag, which meant the documented
+  // "hide the console nudge" call actually re-armed it: the next unlicensed
+  // export logged the nudge again, and a test suite calling dismiss to quieten
+  // its output got more output, not less.
+  consoleNudgeShown = true
   if (typeof document === 'undefined') return
   document.querySelectorAll(`[${WATERMARK_ATTR}]`).forEach((el) => el.remove())
   document
     .querySelectorAll(`[${NUDGED_ATTR}]`)
     .forEach((el) => el.removeAttribute(NUDGED_ATTR))
-  consoleNudgeShown = false
 }
 
 function showConsoleOnce(): void {
