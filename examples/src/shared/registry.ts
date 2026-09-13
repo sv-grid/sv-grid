@@ -259,6 +259,7 @@ import FormulasInXlsx            from '../demos/101-formulas-in-xlsx.svelte'
 import ConditionalFormatting     from '../demos/94-conditional-formatting.svelte'
 import FillHandle                from '../demos/95-fill-handle.svelte'
 import MoveCells429              from '../demos/429-move-cells.svelte'
+import ExcelShortcuts434        from '../demos/434-excel-shortcuts.svelte'
 import SelectionBar430          from '../demos/430-selection-bar.svelte'
 import CustomIcons431           from '../demos/431-custom-icons.svelte'
 import Candlestick432           from '../demos/432-chart-candlestick.svelte'
@@ -865,6 +866,7 @@ export const demos: Demo[] = [
   demo('210-format-cells',          'Format Cells',                'The Excel Home -> Number experience: select a range and apply a display format - Currency, Percent, Thousands, Number, Date, or General - and only the rendering changes; the stored value and every formula are untouched. HyperFormula keeps Gross profit, Margin and the Total column live, so a computed % formats exactly like a typed number.', 'Spreadsheet', FormatCells),
   demo('211-financial-model',       'Financial model (amortization)','A real analyst model on the sheet: three blue INPUT cells (Principal, APR, Term) drive a full 360-month amortization schedule built entirely from formulas - PMT for the fixed payment, then per-period interest / principal / running balance that each reference the row above. Change an input and all 360 rows plus the summary recompute instantly. Blue = you type, black = computed.', 'Spreadsheet', FinancialModel),
   demo('212-dashboard-sheet',       'Dashboard sheet',             'A spreadsheet that reads like an Excel dashboard: each channel row carries an inline SVG trend sparkline and an eight-week heatmap shaded by volume. Total and Avg are live =SUM / =AVERAGE formulas - edit any weekly cell and the sparkline reshapes, the heatmap re-shades, and the totals update at once. Sparklines are a per-column custom cell; the heatmap is value-driven cellClass.', 'Spreadsheet', DashboardSheet),
+  demo('434-excel-shortcuts',       'Excel keyboard shortcuts',    'The muscle memory a spreadsheet user arrives with: Ctrl+Arrow jumps to the edge of the data region (a run-boundary search, so it hops gaps rather than running to the end), Ctrl+Shift+Arrow extends there, Ctrl+A takes the current region then the sheet, Ctrl+Space / Shift+Space take the column or row, Ctrl+D / Ctrl+R fill, Ctrl+; stamps the date. One enableSheet() call. Ctrl+Z undoes a whole fill in one press, not one per cell.', 'Spreadsheet', ExcelShortcuts434),
 
   // ----- Themes & Styling
   demo('37-theming-studio',         'Theming studio',              'Live token playground: brand color, density, radius, font, dark/light, zebra. Copy-ready CSS snippet, persists across reloads.', 'Themes & Styling', ThemingStudio),

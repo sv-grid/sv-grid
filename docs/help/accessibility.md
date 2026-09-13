@@ -57,7 +57,7 @@ shortcuts:
 | End                 | Active cell → last column in the row.                                 |
 | Ctrl/Cmd + Home     | Active cell → top-left of the grid.                                   |
 | Ctrl/Cmd + End      | Active cell → bottom-right.                                           |
-| Ctrl/Cmd + Arrow    | Reserved. The grid does not move the active cell; `@svgrid/enterprise` binds it to Excel's jump-to-edge-of-data-region. |
+| Ctrl/Cmd + Arrow    | Reserved. The grid does not move the active cell; `enableSheet()` in `@svgrid/enterprise` binds it to Excel's jump-to-edge-of-data-region. See [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md). |
 | Page Up / Page Down | Scroll a viewport's worth of rows.                                    |
 
 ### Selection (when `rowSelectionFeature` is on)

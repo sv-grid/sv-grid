@@ -39,6 +39,9 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
 | Formula language / formula editor | **demo-level only.** The engine is copy-paste code inside demos `83`, `27` and `119`, not an importable module, and the three copies have diverged (only `119` has cross-sheet refs, whole-column refs and VLOOKUP). `$` is parsed and then discarded, so absolute refs evaluate as relative. The `hyperformula` adapter (demo `173`) is real and shipped. Being promoted into `@svgrid/enterprise` | L |
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
+| ~~Excel keyboard shortcuts~~ | **shipped** - `enableSheet()` binds Ctrl+Arrow (a run-boundary search, so it hops gaps), Ctrl+Shift+Arrow, Ctrl+A region-then-sheet, Ctrl+Space / Shift+Space, Ctrl+D / Ctrl+R, Ctrl+; and Ctrl+'; demo `434-excel-shortcuts`. Bind your own through the free `registerGridShortcuts` seam | ✓ |
+| Reference-aware fill | Ctrl+D / Ctrl+R fill VALUES. Excel also shifts relative references as it fills, which needs the formula engine's AST - `setFillTranslator` is the hook it plugs into | M |
+| `Alt+Enter`, `F4`, `Alt+=`, `Ctrl+1`, `Ctrl+Shift+V` | the command seam runs in the editor as well as on the grid root, so these are wiring rather than plumbing | M |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
 | ~~Drag a selected range to move / copy it~~ | **shipped** - `moveCells`, on by default with cell selection; demo `429-move-cells` | ✓ |
