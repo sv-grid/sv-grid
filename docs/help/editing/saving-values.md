@@ -1,9 +1,17 @@
 # Saving values
 
 When the user commits an edit, the new value is written into the grid's
-**internal data copy**. The grid does **not** mutate the array you passed
-in via the `data` prop - it keeps its own working copy so an undo / cancel
-is possible without touching your state.
+working copy of the rows, and the grid keeps an edit overlay so cancel /
+undo work without a round trip through your state.
+
+One thing to know about that working copy: the grid never replaces or
+reorders the **array** you passed to `data` (adding, removing and
+`api.setCellValue` all copy), but an editor commit - and an `undo` / `redo`
+of one - writes the value straight into the **row object** it came from. If
+those row objects are the same ones your app holds, they will show the new
+value. Hand the grid copies (`data={rows.map((r) => ({ ...r }))}`) when you
+need the source rows left exactly as they were, and use
+`onCellValueChange` as the authoritative signal for what changed.
 
 To round-trip edits back to your source there are two patterns.
 

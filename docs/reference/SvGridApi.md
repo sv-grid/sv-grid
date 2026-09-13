@@ -112,7 +112,8 @@ setSort(columnId: string, direction: 'asc' | 'desc' | null): void
 Replaces any existing sort. Pass `null` to clear sort on that column.
 Multi-sort through the API is on the
 [Missing features](../help/missing-features.md) list - the user can
-build it themselves with Shift-click on headers.
+build it themselves with Shift-click on headers, and a saved multi-sort
+restores through `setState({ sorting })`.
 
 ### `clearSort()`
 
@@ -139,28 +140,59 @@ Group by zero or more columns. Replaces any existing group config.
 ```ts
 setFilter(
   columnId: string,
-  filter: { operator: SvGridFilterOperator; value?: string } | null,
+  filter:
+    | {
+        operator: SvGridFilterOperator
+        value?: string
+        /** Upper bound, required when `operator` is `'between'`. */
+        valueTo?: string
+        /** Optional second condition on the same column. */
+        operator2?: SvGridFilterOperator
+        value2?: string
+        valueTo2?: string
+        /** How the two conditions combine. Defaults to `'AND'`. */
+        join?: 'AND' | 'OR'
+      }
+    | null,
 ): void
 ```
 
-Where `SvGridFilterOperator` is:
+Where `SvGridFilterOperator` is the same union the filter menu offers:
 
 ```ts
 type SvGridFilterOperator =
-  | 'contains' | 'equals' | 'startsWith'
-  | 'greaterThan' | 'lessThan' | 'isBlank'
+  | 'contains' | 'notContains'
+  | 'equals' | 'notEquals'
+  | 'startsWith' | 'endsWith'
+  | 'regex'
+  | 'in' | 'notIn'
+  | 'greaterThan' | 'lessThan' | 'between'
+  | 'isBlank' | 'isNotBlank'
 ```
 
 Pass `null` to clear.
 
-### `clearFilter(columnId)`
+### `setFacetFilter(columnId, values)`
+
+```ts
+setFacetFilter(columnId: string, values: ReadonlyArray<string> | null): void
+```
+
+Set the column-menu value checklist (the Excel-style set filter). An empty
+array or `null` clears it.
+
+### `clearFilter(columnId)` / `clearAllFilters()` / `getFilters()`
 
 ```ts
 clearFilter(columnId: string): void
+clearAllFilters(): void
+getFilters(): Record<string, { operator: SvGridFilterOperator; value: string; valueTo?: string }>
 ```
 
-Clear a single column's filter. (A `clearAllFilters()` helper is on
-the [Missing features](../help/missing-features.md) list.)
+`clearFilter` clears one column. `clearAllFilters` clears every filter
+surface in one call - column, filter row, set list, global search and the
+advanced filter. `getFilters` reads the active column filters back as a
+snapshot.
 
 ## Data snapshot
 
@@ -183,6 +215,34 @@ getDisplayedRows(): ReadonlyArray<TData>
 Returns the rows that are currently **visible** in the grid - after
 filter, sort, and pagination. Use for `pro.exportData(...)` when you
 want to export the current view.
+
+## The rest of the surface
+
+This page is the curated tour. The api also carries editing
+(`startEditing` / `stopEditing`), undo / redo (`undo`, `redo`, `canUndo`,
+`canRedo`, `clearHistory`), cell-range selection (`selectCells`,
+`getSelected`), row selection (`getSelectedRows`, `getSelectedRowIds`,
+`selectRows`, `selectAllRows`, `toggleRowSelected`, `clearRowSelection`),
+column layout (`setColumnWidth`, `getColumnWidths`, `autosizeColumn`,
+`autosizeAllColumns`, `setColumnPinning`, `getColumnPinning`,
+`setColumnOrder`, `getColumnOrder`, `getColumns`), expansion
+(`setRowExpanded`, `expandAllGroups`, `collapseAllGroups`), pagination
+(`getPageInfo`, `setPage`, `nextPage`, `prevPage`, `firstPage`, `lastPage`,
+`setPageSize`), navigation (`scrollToRow`, `getActiveCell`,
+`setActiveCell`), find (`openFind`, `closeFind`, `setFindQuery`,
+`getFindHits`), the free exporters (`exportCsv`, `exportTsv`, `exportJson`,
+`copyToClipboard`), batched row mutation (`applyTransaction`), runtime prop
+overrides (`setOption`, `getOption`, `resetOptions`), the advanced filter
+(`setAdvancedFilter`, `getAdvancedFilter`, `clearAdvancedFilter`,
+`isAdvancedFilterActive`), integrated charting (`openChart`, `closeChart`,
+`configureChart`, `chartRange`, `getChartSpec`, `setChartAiHandler`), view
+state (`getState`, `setState`, `refresh`) and `refreshEditorOptions`.
+
+Every member, with its full signature and doc comment, is generated from the
+source in
+[`reference/auto/svgrid-grid-svgrid-wrapper.types`](./auto/svgrid-grid-svgrid-wrapper.types.md).
+Behaviour for all of them is covered by the API QA suite in
+`packages/grid/src/qa/`.
 
 ## Enterprise extensions
 

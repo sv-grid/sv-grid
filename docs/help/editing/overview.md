@@ -76,9 +76,12 @@ editor through the `cellEditor` slot.
 
 ### Does SvGrid mutate my data array when editing?
 
-No. Commits are written to the grid's internal working copy, not the array you
-passed in, so cancel/undo is possible. Subscribe to `onCellValueChange` to
-persist edits to your own state or backend.
+The array itself, no: the grid works on its own copy, so rows are never added,
+removed or reordered underneath you, and cancel / undo stay local to the grid.
+A committed edit does write the new value into that row's object, though, so
+if you handed the grid the same objects your app holds, you will see the value
+there too - pass copies if the source rows must stay untouched. Subscribe to
+`onCellValueChange` to persist edits to your own state or backend.
 
 ## More examples
 

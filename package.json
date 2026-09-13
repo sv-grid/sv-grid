@@ -14,6 +14,7 @@
     "build": "pnpm --filter @svgrid/grid build",
     "build:example": "pnpm --filter @svgrid/grid-example-gallery build",
     "test": "pnpm --filter @svgrid/grid test:lib",
+    "test:qa": "pnpm --filter @svgrid/grid exec vitest run src/qa",
     "test:types": "pnpm -r test:types",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

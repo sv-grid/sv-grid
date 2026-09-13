@@ -90,21 +90,25 @@ export default defineConfig({
         // Test scaffolding
         'src/test-fixtures/**',
         'src/test-setup.ts',
+        // Mount harness for the API QA suite (src/qa) - scaffolding, not product
+        // code, and exercised only by the QA tests that import it.
+        'src/qa/harness.svelte.ts',
         'src/**/*.test.ts',
         'src/**/*.d.ts',
       ],
       // A ratchet, not a target: each number sits just under the measured
-      // value (lines 79.58, statements 73.67, functions 74.02, branches
-      // 64.18), so a drop fails the build while normal churn does not. The
-      // previous 90/90/80/75 were aspirational and never met, which kept CI
-      // red. Raise these as coverage climbs; never lower them to make a build
-      // pass. The render component is covered separately by behavioral mount
-      // tests - see the Testing & Quality docs page for the split.
+      // value (lines 81.24, statements 75.04, functions 74.84, branches 66.39
+      // once the API QA suite in src/qa landed), so a drop fails the build
+      // while normal churn does not. The original 90/90/80/75 were aspirational
+      // and never met, which kept CI red. Raise these as coverage climbs; never
+      // lower them to make a build pass. The render component is covered
+      // separately by behavioral mount tests - see the Testing & Quality docs
+      // page for the split.
       thresholds: {
-        lines: 79,
-        statements: 73,
-        functions: 73,
-        branches: 63,
+        lines: 81,
+        statements: 74,
+        functions: 74,
+        branches: 65,
       },
     },
   },

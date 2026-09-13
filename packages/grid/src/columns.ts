@@ -6,6 +6,10 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
+// `cssEscape` rather than `CSS.escape`: the latter is undefined in jsdom and in
+// any non-browser DOM shim, so an autosize call from a consumer's test suite
+// threw instead of measuring. Same helper the filter menus already use.
+import { cssEscape } from "./SvGrid.helpers";
 
 export function createColumns<
   TFeatures extends TableFeatures = TableFeatures,
@@ -181,14 +185,14 @@ export function createColumns<
   function autosizeColumn(columnId: string) {
     if (!ctx.gridRootEl) return;
     const sampleCell = (ctx.gridRootEl as HTMLElement).querySelector<HTMLElement>(
-      `[data-col-id="${CSS.escape(columnId)}"]`,
+      `[data-col-id="${cssEscape(columnId)}"]`,
     );
     if (!sampleCell) return;
     const cellFont = getComputedStyle(sampleCell).font;
 
     let max = ctx.MIN_COLUMN_WIDTH;
     const header = (ctx.gridRootEl as HTMLElement).querySelector<HTMLElement>(
-      `[data-svgrid-header-col="${CSS.escape(columnId)}"]`,
+      `[data-svgrid-header-col="${cssEscape(columnId)}"]`,
     );
     if (header) {
       const labelEl = header.querySelector<HTMLElement>(
@@ -204,7 +208,7 @@ export function createColumns<
     }
 
     const cells = (ctx.gridRootEl as HTMLElement).querySelectorAll<HTMLElement>(
-      `[data-col-id="${CSS.escape(columnId)}"]`,
+      `[data-col-id="${cssEscape(columnId)}"]`,
     );
     cells.forEach((cell: any) => {
       const text = cell.textContent ?? "";

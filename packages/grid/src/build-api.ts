@@ -709,6 +709,11 @@ export function createGridApi<
       },
       getActiveCell() {
         const a = ctx.activeCell;
+        // The grid seeds its internal active cell to (0,0) at mount so keyboard
+        // navigation has a starting point. That seed is not a focus, and this
+        // method documents "null when nothing is focused" - so gate on the same
+        // flag the fill handle uses to tell a seeded (0,0) from a real one.
+        if (!ctx.userHasActivatedCell) return null;
         if (!a || a.rowIndex < 0 || a.colIndex < 0) return null;
         const col = ctx.allColumns[a.colIndex];
         return {

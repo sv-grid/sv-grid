@@ -20,6 +20,10 @@
  *     virtualisation on grids that need a continuous merge.
  */
 
+// `cssEscape` rather than `CSS.escape`, which is undefined outside a real
+// browser (jsdom and other DOM shims ship no `CSS` global).
+import { cssEscape } from './SvGrid.helpers'
+
 /** A single edge of a cell border. */
 export type BorderSpec = {
   /** Thickness in pixels. Default 2. */
@@ -146,7 +150,7 @@ function findCell(
   columnId: string,
 ): HTMLTableCellElement | null {
   return root.querySelector<HTMLTableCellElement>(
-    `td[data-svgrid-row="${rowIndex}"][data-col-id="${CSS.escape(columnId)}"]`,
+    `td[data-svgrid-row="${rowIndex}"][data-col-id="${cssEscape(columnId)}"]`,
   )
 }
 

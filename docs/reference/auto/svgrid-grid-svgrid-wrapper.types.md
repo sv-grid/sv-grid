@@ -127,12 +127,14 @@ export type SvGridApi<
   /**
    * Programmatically select one or more rectangular cell ranges. Each
    * range is `[rowStart, colStart, rowEnd, colEnd]` in 0-indexed grid
-   * coordinates. Pass an empty array to clear the selection.
+   * coordinates. Coordinates are normalised and clamped, so a reversed
+   * or open-ended range (`[0, 0, Infinity, Infinity]` for "select all")
+   * is fine. Pass an empty array to clear the selection.
    *
-   * The grid currently honours the FIRST range only (single-range
-   * engine); subsequent ranges are accepted for API forward compat
-   * but ignored. The grid's active cell jumps to the range's start
-   * corner.
+   * Every range is kept: the LAST one becomes the active range that
+   * keyboard extension works from, and the earlier ones stay selected
+   * alongside it. `getSelected()` reads them all back. The active cell
+   * moves to the active range's start corner.
    */
   selectCells(ranges: ReadonlyArray<readonly [number, number, number, number]>): void
   /**
@@ -415,7 +417,8 @@ export type SvGridApi<
   /**
    * Set whether a row (group node or expandable leaf) is expanded.
    * The `id` is the engine's row id - for grouped rows that's the
-   * synthetic group key (e.g. `"department:Engineering"`).
+   * synthetic group key, `group_<columnId>_<value>` (e.g.
+   * `"group_department_Engineering"`); tree rows use their own row id.
    */
   setRowExpanded(id: string, expanded: boolean): void
   /** Expand every group node in the current grouped row model. */
@@ -494,7 +497,12 @@ export type SvGridApi<
    * Works with virtualization on. Index is clamped to the row count.
    */
   scrollToRow(rowIndex: number): void
-  /** The active (focused) cell, or null when nothing is focused. */
+  /**
+   * The active (focused) cell, or null when nothing is focused. The grid
+   * seeds an internal (0,0) at mount so keyboard navigation has a starting
+   * point; that seed reads as null here until a click, a key, or
+   * `setActiveCell` actually focuses a cell.
+   */
   getActiveCell(): { rowIndex: number; colIndex: number; columnId: string } | null
   /** Move the active cell. Both coordinates are clamped to the grid bounds. */
   setActiveCell(rowIndex: number, colIndex: number): void

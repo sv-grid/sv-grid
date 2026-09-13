@@ -220,6 +220,10 @@
   const hasVerticalOverflow = $derived(ctrl.hasVerticalOverflow);
   const showGlobalFilterEffective = $derived(ctrl.showGlobalFilterEffective);
   const showFilterRowEffective = $derived(ctrl.showFilterRowEffective);
+  // Gates the header funnel. The filter PANEL behind it is already gated on
+  // this (GridMenus), so without the same gate here `filterMode: 'row'` /
+  // `'global'` / `'none'` rendered a funnel button whose menu never opened.
+  const showColumnFiltersEffective = $derived(ctrl.showColumnFiltersEffective);
   const showInlineColumnFilterEffective = $derived(
     ctrl.showInlineColumnFilterEffective,
   );
@@ -897,7 +901,14 @@
   {/if}
 {/snippet}
 
-{#if opt.loading && !opt.loadingOverlay && !hasMeasured}
+{#if opt.error}
+  <!-- `error` is documented as taking precedence over `loading` and over the
+       empty state: a fetch that failed is terminal, so the banner must win even
+       when the consumer left `loading` on while unwinding the request. -->
+  <div class="sv-grid-state sv-grid-state-error" role="alert">
+    {opt.error}
+  </div>
+{:else if opt.loading && !opt.loadingOverlay && !hasMeasured}
   <!-- Full-screen loading state only on the *initial* load, before the grid
        has ever rendered. Once measured, a `loading` flip (from a server-mode
        sort / filter / page refetch) keeps the table mounted so header inputs
@@ -905,10 +916,6 @@
        cover the in-place refresh. -->
   <div class="sv-grid-state sv-grid-state-loading" role="status">
     {messages.loading}
-  </div>
-{:else if opt.error}
-  <div class="sv-grid-state sv-grid-state-error" role="alert">
-    {opt.error}
   </div>
 {:else if boardConfig}
   <div
@@ -1863,7 +1870,7 @@
                               title="Grouped">{@render icon("group")}</span
                             >
                           {/if}
-                          {#if header.column.getCanFilter()}
+                          {#if header.column.getCanFilter() && showColumnFiltersEffective}
                             <button
                               type="button"
                               class="sv-grid-col-menu-btn sv-grid-col-filter-btn"

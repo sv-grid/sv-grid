@@ -67,7 +67,7 @@ The render component. One `<SvGrid>` element per grid instance.
 | `showGlobalFilter`  | `boolean`                                  | derived   | Show the global search input.                                          |
 | `showColumnFilters` | `boolean`                                  | derived   | Show the column-menu filter funnel.                                    |
 | `showFilterRow`     | `boolean`                                  | derived   | Show the per-column filter row under the header.                       |
-| `showFilterMenu`    | `boolean`                                  | derived   | (Legacy alias for `showColumnFilters`.)                                |
+| `showFilterMenu`    | `boolean`                                  | -         | **Deprecated and inert.** Nothing reads it; kept so older code compiles. Use `showColumnFilters`. |
 | `externalFilter`    | `boolean`                                  | `false`   | Grid records filter UI state but does NOT filter rows. Pair with `onFiltersChange`. |
 
 ## Selection

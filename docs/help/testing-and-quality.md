@@ -6,15 +6,15 @@ stands today.
 
 ## Headline numbers
 
-> **79.6% line coverage** on the measurable surface
+> **81.2% line coverage** on the measurable surface
 > (`pnpm --filter @svgrid/grid test:lib`)
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
-| Lines | 79.65% | >= 79% |
-| Statements | 73.74% | >= 73% |
-| Branches | 64.37% | >= 63% |
-| Functions | 74.18% | >= 73% |
+| Lines | 81.24% | >= 81% |
+| Statements | 75.04% | >= 74% |
+| Branches | 66.39% | >= 65% |
+| Functions | 74.84% | >= 74% |
 
 The thresholds are a **ratchet, not a target**: each sits just under the measured
 value so a drop fails the build while ordinary churn does not. They were once set
@@ -69,6 +69,37 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
   glyphs from layout measurements. Its paint loop runs in a real browser;
   jsdom can't exercise it.
 
+## The API QA phase
+
+`packages/grid/src/qa/` is a sweep over the **public surface** rather than a
+feature: 245 cases that mount the real `<SvGrid>` and check each member against
+the contract its reference page or doc comment states.
+
+| Suite | Surface |
+| ----- | ------- |
+| `qa.api-cells-rows.test.ts` | `getCellValue` / `setCellValue`, row add + remove, `applyTransaction`, editing, undo / redo |
+| `qa.api-columns.test.ts` | Column add / remove, visibility, width, autosize, pinning, order |
+| `qa.api-filter-sort-group.test.ts` | Sort, every filter operator + surface, facets, grouping, expansion, the advanced filter |
+| `qa.api-selection-nav.test.ts` | Row + cell-range selection, active cell, scrolling, pagination, find |
+| `qa.api-state-export-chart.test.ts` | `getState` / `setState`, `setOption` overrides, CSV / TSV / JSON / clipboard, the chart panel |
+| `qa.props-core.test.ts` | Data state, layout, virtualization, filter / selection / editing surfaces, sort, pagination, grouping, the shortcuts |
+| `qa.props-extras.test.ts` | Row chrome, notes, conditional formatting, clipboard hooks, status bar, tool panel, tree data, localization, server hooks, board / scheduler / chart / pivot modes |
+| `qa.events.test.ts` | The DOM-driven callbacks (clicks, double clicks, scroll-bottom) plus `icons` and the seed props |
+| `qa.surface.test.ts` | The gate: parses the `SvGridApi` and `Props` types and fails when a member has no QA case, and checks the runtime api object matches the type exactly |
+
+The gate is the point. A new prop or api member cannot ship without a QA case,
+and a member that quietly stops working fails here even when no feature suite
+covers it. The first run of the phase found five defects (a dead filter funnel,
+`CSS.escape` crashing autosize outside a browser, `error` losing to `loading`,
+`getActiveCell` reporting the mount seed as a focus, and two doc pages promising
+that editing never touches the caller's rows).
+
+Run it alone with:
+
+```bash
+pnpm --filter @svgrid/grid exec vitest run src/qa
+```
+
 ## What's excluded
 
 The coverage report excludes:
@@ -78,7 +109,8 @@ The coverage report excludes:
 - `sv-grid-scrollbar.ts` (custom element)
 - `static-functions.ts` (pure re-exports)
 - `createGridState.svelte.ts` (downstream-adapter thin layer)
-- `test-fixtures/**`, `test-setup.ts`, `**/*.test.ts`, `**/*.d.ts`
+- `test-fixtures/**`, `test-setup.ts`, `qa/harness.svelte.ts`, `**/*.test.ts`,
+  `**/*.d.ts`
 
 The exclusion list is part of `packages/grid/vite.config.ts`
 and is documented inline with the reasoning for each entry.
@@ -104,8 +136,9 @@ and is documented inline with the reasoning for each entry.
 | `keyboard.test.ts` | `getKeyboardIntent` / `getNextActiveCell` | Pure unit |
 | `a11y.test.ts`, `a11y.contract.test.ts` | ARIA prop builders + contract | Pure unit |
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
+| `qa/*.test.ts` | The API QA phase: every prop, every `SvGridApi` member, every callback | Mounted |
 
-Total: **2,308 tests** across **179 test files** in `@svgrid/grid`, plus **1,607** across **101** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
+Total: **3,132 tests** across **212 test files** in `@svgrid/grid`, plus **1,607** across **101** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 
