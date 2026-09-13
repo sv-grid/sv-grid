@@ -54,6 +54,17 @@ export {
   type Column,
   type ColumnDef,
   type ColumnDefTemplate,
+  // The state slices. `SortingState` and `ActiveCellState` were here from the
+  // start and the rest were subpath-only, which left a consumer unable to type
+  // the `onColumnFiltersChange` / `onPaginationChange` handlers that
+  // `SvGridOptions` - exported right below - asks for. They are types, so this
+  // costs nothing at runtime.
+  type ColumnFilter,
+  type ColumnFiltersState,
+  type ExpandedState,
+  type GroupingState,
+  type PaginationState,
+  type RowSelectionState,
   type GridColumnDef,
   type GridColumns,
   type GroupAggregator,
@@ -62,6 +73,7 @@ export {
   type HeaderGroup,
   type Row,
   type RowData,
+  type RowModel,
   type SortingState,
   type SvGrid as SvGridInstance,
   type SvGridOptions,

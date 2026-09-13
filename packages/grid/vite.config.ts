@@ -97,7 +97,7 @@ export default defineConfig({
         'src/**/*.d.ts',
       ],
       // A ratchet, not a target: each number sits just under the measured
-      // value (lines 81.35, statements 75.14, functions 75.08, branches 66.53
+      // value (lines 81.36, statements 75.15, functions 75.08, branches 66.54
       // once the API QA suite in src/qa landed), so a drop fails the build
       // while normal churn does not. The original 90/90/80/75 were aspirational
       // and never met, which kept CI red. Raise these as coverage climbs; never

@@ -83,6 +83,13 @@ pnpm demos:count        # re-count live demos (fails if registry and files disag
 - **Do not quote numbers you have not derived.** Bundle sizes come from
   `pnpm size`; demo counts come from `pnpm demos:count`. Both were wrong in
   the docs for months because someone typed a number instead of measuring.
+- **At least three examples per docs topic.** Every section of a reference or
+  help page carries three or more code examples, not one: the common case, a
+  variation, and the case people get wrong. One example reads as the only way to
+  do it, and a table of types with no code is not documentation. Verify them -
+  `node tools/build-doc-snippets.mjs --candidates && node tools/check-doc-snippets.mjs`
+  compiles every extracted snippet (needs `pnpm --filter @svgrid/grid build`
+  first, so the package types resolve).
 - **`as` casts in Svelte template expressions** pass `svelte-check` but break
   vitest and the build. Keep casts in `<script>`; re-export types from `.ts`.
 - **Adding a demo means two edits**: the `.svelte` file in

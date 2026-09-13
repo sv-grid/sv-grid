@@ -751,6 +751,9 @@ export const filterFns = {
   equals: (value: unknown, query: unknown) => value === query,
 }
 
+/** Filter-fn names already reported as unknown, so the warning fires once each. */
+const warnedUnknownFilterFns = new Set<string>()
+
 /**
  * Everything a base row needs that is the same for every row in the table.
  *
@@ -915,11 +918,27 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
     if (!filters.length) return rows
 
     // Resolve each filter's match function once, outside the row loop.
-    const compiled = filters.map((filter) => ({
-      id: filter.id,
-      value: filter.value,
-      fn: filter.fn ? filterFns[filter.fn] : filterFns.includesString,
-    }))
+    //
+    // An unknown `fn` name resolves to `undefined`, and calling that inside the
+    // row loop took the whole pipeline down with `filter.fn is not a function` -
+    // one typo in a clause, and the grid renders nothing. Fall back to the
+    // documented default instead, and say so once: a warning names the bad clause
+    // while the rows keep rendering.
+    const compiled = filters.map((filter) => {
+      const named = filter.fn ? filterFns[filter.fn] : undefined
+      if (filter.fn && !named && !warnedUnknownFilterFns.has(filter.fn)) {
+        warnedUnknownFilterFns.add(filter.fn)
+        console.warn(
+          `[svgrid] unknown filter fn "${String(filter.fn)}" on column "${filter.id}" - ` +
+            `falling back to includesString. Known: ${Object.keys(filterFns).join(', ')}.`,
+        )
+      }
+      return {
+        id: filter.id,
+        value: filter.value,
+        fn: named ?? filterFns.includesString,
+      }
+    })
 
     return rows.filter((row) => {
       for (let i = 0; i < compiled.length; i++) {

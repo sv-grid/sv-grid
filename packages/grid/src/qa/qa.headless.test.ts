@@ -29,7 +29,26 @@ import {
 } from '../index'
 import { createGridState, subscribeGrid } from '../index'
 import { createSvGridCore } from '../core'
-import type { ColumnDef } from '../index'
+/**
+ * Imported from the BARREL on purpose. A controlled consumer has to type the
+ * `on*Change` handlers `SvGridOptions` asks for, and half these slices used to be
+ * reachable only from `@svgrid/grid/core` - so this import is the regression
+ * test, and `pnpm test:types` is what enforces it.
+ */
+import type {
+  ActiveCellState,
+  ColumnDef,
+  ColumnFilter,
+  ColumnFiltersState,
+  ExpandedState,
+  GroupingState,
+  PaginationState,
+  RowModel,
+  RowSelectionState,
+  SortingState,
+  SvGridOptions,
+  Updater,
+} from '../index'
 
 type Repo = { id: number; name: string; lang: string; stars: number }
 
@@ -544,6 +563,29 @@ describe('QA headless: features and the function registries', () => {
     expect(names(exact)).toEqual(['ripgrep', 'fd'])
   })
 
+  it('an unknown filter fn falls back to the default and warns once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      // A typo in a clause used to throw `filter.fn is not a function` from
+      // inside the row model, which rendered the whole grid empty.
+      const grid = makeGrid({
+        state: { columnFilters: [{ id: 'lang', value: 'rust', fn: 'between' }] },
+      })
+      expect(names(grid)).toEqual(['ripgrep', 'fd'])
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0]![0]).toContain('unknown filter fn "between"')
+
+      // Same name again: still filters, no second warning.
+      const again = makeGrid({
+        state: { columnFilters: [{ id: 'lang', value: 'rust', fn: 'between' }] },
+      })
+      expect(names(again)).toEqual(['ripgrep', 'fd'])
+      expect(warn).toHaveBeenCalledTimes(1)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
   it('a filter fn added to the registry at runtime is usable by name', () => {
     const registry = filterFns as Record<string, (value: unknown, query: unknown) => boolean>
     registry.startsWithQa = (value, query) =>
@@ -614,5 +656,44 @@ describe('QA headless: the no-runes entry and the reactivity helpers', () => {
 
     setSorting((prev) => [...prev, { id: 'name', desc: false }])
     expect(sorting()).toHaveLength(2)
+  })
+})
+
+describe('QA headless: the state types are usable from the main barrel', () => {
+  it('types every controlled handler without reaching for the /core subpath', () => {
+    const sorting: SortingState = [{ id: 'stars', desc: true }]
+    const clause: ColumnFilter = { id: 'lang', value: 'Rust', fn: 'equals' }
+    const columnFilters: ColumnFiltersState = [clause]
+    const pagination: PaginationState = { pageIndex: 0, pageSize: 10 }
+    const grouping: GroupingState = ['lang']
+    const expanded: ExpandedState = { group_lang_Rust: true }
+    const rowSelection: RowSelectionState = { '0': true }
+    const activeCell: ActiveCellState = { rowIndex: 0, colIndex: 0, cellId: null }
+
+    /** The exact shape a controlled consumer writes. */
+    const apply = <T,>(updater: Updater<T>, prev: T): T =>
+      typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater
+
+    const options: SvGridOptions<typeof features, Repo> = {
+      _features: features,
+      _rowModels: allRowModels(),
+      columns,
+      data: repos,
+      state: { sorting, columnFilters, pagination, grouping, expanded, rowSelection, activeCell },
+      onSortingChange: (updater) => void apply(updater, sorting),
+      onColumnFiltersChange: (updater) => void apply(updater, columnFilters),
+      onPaginationChange: (updater) => void apply(updater, pagination),
+      onGroupingChange: (updater) => void apply(updater, grouping),
+      onExpandedChange: (updater) => void apply(updater, expanded),
+      onRowSelectionChange: (updater) => void apply(updater, rowSelection),
+      onActiveCellChange: (updater) => void apply(updater, activeCell),
+    }
+
+    const grid = createSvGridCore(options)
+    const model: RowModel<Repo> = grid.getRowModel()
+    // The Rust banner plus its two expanded children: the seeded filter,
+    // grouping and expansion all applied.
+    expect(model.rows.map((row) => row.id)).toEqual(['group_lang_Rust', '2', '3'])
+    expect(grid.getState().grouping).toEqual(['lang'])
   })
 })

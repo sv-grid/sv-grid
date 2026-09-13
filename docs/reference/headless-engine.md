@@ -25,6 +25,66 @@ This page is the API reference. For the guided introduction start with
 - [Performance notes](#performance-notes)
 - [Limits worth knowing](#limits-worth-knowing)
 
+## What the examples assume
+
+Every example on this page is written against this setup, so the snippets stay
+about the API rather than about scaffolding:
+
+```svelte {preamble}
+<script lang="ts">
+  import {
+    columnFilteringFeature,
+    createCoreRowModel,
+    createExpandedRowModel,
+    createFilteredRowModel,
+    createGroupedRowModel,
+    createPaginatedRowModel,
+    createSortedRowModel,
+    createSvGrid,
+    createTreeRowModel,
+    filterFns,
+    rowExpandingFeature,
+    rowPaginationFeature,
+    rowSelectionFeature,
+    rowSortingFeature,
+    sortFns,
+    tableFeatures,
+    type ColumnDef,
+    type ColumnFiltersState,
+    type PaginationState,
+    type SortingState,
+  } from '@svgrid/grid'
+
+  type Repo = { slug: string; name: string; lang: string; stars: number }
+
+  const features = tableFeatures({
+    rowSortingFeature,
+    columnFilteringFeature,
+    rowSelectionFeature,
+  })
+
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name', header: 'Repository' },
+    { field: 'lang', header: 'Language' },
+    { field: 'stars', header: 'Stars', editorType: 'number' },
+  ]
+
+  const data: Repo[] = [
+    { slug: 'sveltejs/svelte', name: 'svelte', lang: 'TypeScript', stars: 79_000 },
+    { slug: 'vitejs/vite', name: 'vite', lang: 'TypeScript', stars: 68_000 },
+    { slug: 'BurntSushi/ripgrep', name: 'ripgrep', lang: 'Rust', stars: 47_000 },
+  ]
+
+  const models = {
+    coreRowModel: createCoreRowModel<Repo>(),
+    filteredRowModel: createFilteredRowModel<Repo>(),
+    sortedRowModel: createSortedRowModel<Repo>(sortFns),
+  }
+
+  const grid = createSvGrid({ _features: features, _rowModels: models, columns, data })
+</script>
+```
+
 ## Entry points
 
 | Import | Runs where | Use for |
@@ -40,12 +100,44 @@ subpath exists so the headless bundle is measurable and so it can also export
 the low-level types (`RowModelFactory`, `Store`, the individual state types)
 that the barrel leaves out.
 
+**1. In a Svelte component** - runes back `grid.state`, so the markup re-renders:
+
 ```ts
-// Svelte app
 import { createSvGrid } from '@svgrid/grid'
 
-// Node / worker / test
+const grid = createSvGrid({ _features, _rowModels, columns, data })
+```
+
+**2. In Node** - a request handler, a CLI, a cron job. No compiler needed:
+
+```ts
 import { createSvGridCore } from '@svgrid/grid/core'
+
+const grid = createSvGridCore({ _features, _rowModels, columns, data })
+const page = grid.getRowModel().rows.map((row) => row.original)
+```
+
+**3. In a worker** - same core, plus the low-level types only the subpath
+exports:
+
+```ts
+// sort.worker.ts
+import { createSvGridCore, createCoreRowModel, createSortedRowModel } from '@svgrid/grid/core'
+import type { RowModelFactory, SortingState, Store } from '@svgrid/grid/core'
+
+self.onmessage = (event: MessageEvent<{ rows: Repo[]; sorting: SortingState }>) => {
+  const grid = createSvGridCore({
+    _features: features,
+    _rowModels: {
+      coreRowModel: createCoreRowModel<Repo>(),
+      sortedRowModel: createSortedRowModel<Repo>(),
+    },
+    columns,
+    data: event.data.rows,
+    state: { sorting: event.data.sorting },
+  })
+  self.postMessage(grid.getRowModel().rows.map((row) => row.original))
+}
 ```
 
 ## `createSvGrid(options, selector?)`
@@ -59,6 +151,51 @@ function createSvGrid<TFeatures extends TableFeatures, TData extends RowData, TS
 
 The optional `selector` decides what `grid.state` exposes reactively. Without
 it, `grid.state` is an empty object and you read state through `getState()`.
+
+**1. No selector** - read state on demand. Fine when the markup derives
+everything from the row model anyway:
+
+```svelte
+<script lang="ts">
+  const grid = createSvGrid({ _features: features, _rowModels: models, columns, data })
+  const rows = $derived(grid.getRowModel().rows)
+
+  function isSorted(id: string) {
+    return grid.getState().sorting.some((clause) => clause.id === id)
+  }
+</script>
+```
+
+**2. One slice** - the narrowest subscription, so unrelated state changes do not
+re-run the component:
+
+```svelte
+<script lang="ts">
+  const grid = createSvGrid(
+    { _features: features, _rowModels: models, columns, data },
+    (state) => ({ sorting: state.sorting }),
+  )
+</script>
+
+<p>{grid.state.sorting.length} sort clauses</p>
+```
+
+**3. Several slices** - one projection for a toolbar that shows counts:
+
+```svelte
+<script lang="ts">
+  const grid = createSvGrid(
+    { _features: features, _rowModels: models, columns, data },
+    (state) => ({
+      sorting: state.sorting as Array<{ id: string; desc: boolean }>,
+      filters: state.columnFilters as Array<{ id: string; value: unknown }>,
+      selected: Object.keys(state.rowSelection ?? {}).length as number,
+    }),
+  )
+</script>
+
+<span>{grid.state.filters.length} filters, {grid.state.selected} selected</span>
+```
 
 ```svelte
 <script lang="ts">
@@ -116,6 +253,57 @@ it, `grid.state` is an empty object and you read state through `getState()`.
 Options are read live through the options store, so `setOptions` swaps any of
 them - `data` and `columns` included - and the next `getRowModel()` reflects it.
 
+**1. The minimum** - features, one stage, columns, data:
+
+```ts
+const grid = createSvGridCore({
+  _features: tableFeatures({}),
+  _rowModels: { coreRowModel: createCoreRowModel<Repo>() },
+  columns: [{ field: 'name', header: 'Repository' }],
+  data: repos,
+})
+```
+
+**2. Seeded state plus stable ids** - the grid starts sorted, and selection
+follows rows rather than positions:
+
+```ts
+const grid = createSvGridCore({
+  _features: tableFeatures({ rowSortingFeature, rowSelectionFeature }),
+  _rowModels: {
+    coreRowModel: createCoreRowModel<Repo>(),
+    sortedRowModel: createSortedRowModel<Repo>(),
+  },
+  columns,
+  data: repos,
+  getRowId: (row) => row.slug,
+  state: {
+    sorting: [{ id: 'stars', desc: true }],
+    rowSelection: { 'sveltejs/svelte': true },
+  },
+})
+```
+
+**3. Fully controlled** - you own every slice the UI can change:
+
+```ts
+const grid = createSvGridCore({
+  _features: features,
+  _rowModels: models,
+  columns,
+  data,
+  state: { sorting, columnFilters, pagination },
+  onSortingChange: (updater) => (sorting = apply(updater, sorting)),
+  onColumnFiltersChange: (updater) => (columnFilters = apply(updater, columnFilters)),
+  onPaginationChange: (updater) => (pagination = apply(updater, pagination)),
+})
+
+/** Every callback hands you a value OR a function, so unwrap once and reuse. */
+function apply<T>(updater: T | ((prev: T) => T), prev: T): T {
+  return typeof updater === 'function' ? (updater as (p: T) => T)(prev) : updater
+}
+```
+
 ## The instance
 
 `SvGrid<TData>`:
@@ -132,6 +320,33 @@ them - `data` and `columns` included - and the next `getRowModel()` reflects it.
 | `state` | `Record<string, any>` | On `createSvGrid`, the reactive projection through your `selector`. On `createSvGridCore`, the raw state object. |
 | `store` | `Store<Record<string, any>>` | The state store: `state`, `setState(updater)`, `subscribe(listener)`. Subscribing is how a non-Svelte renderer re-renders. |
 | `optionsStore` | `Store<Record<string, any>>` | The options store, written by `setOptions`. |
+
+**1. Read the rows** - the one call a renderer cannot skip:
+
+```ts
+for (const row of grid.getRowModel().rows) {
+  console.log(row.id, row.getCellValueByColumnId('name'))
+}
+```
+
+**2. Read the columns** - for a column picker, an exporter, or a header row:
+
+```ts
+const exportable = grid
+  .getAllColumns()
+  .filter((column) => column.columnDef.field)
+  .map((column) => ({ field: column.columnDef.field!, header: column.columnDef.header }))
+```
+
+**3. Read the state** - two ways, and they are not interchangeable:
+
+```ts
+// Any time: the current value, no subscription.
+const { sorting, rowSelection } = grid.getState()
+
+// In a component, through the selector: re-runs the markup when it changes.
+const sortCount = $derived(grid.state.sorting.length)
+```
 
 ### Writing
 
@@ -150,16 +365,57 @@ Every setter takes a value **or** an updater function, and calls the matching
 | `moveActiveCell` | `(next: { rowDelta?: number; colDelta?: number }) => void` |
 | `setOptions` | `(updater: Updater<Record<string, any>>) => void` |
 
-`moveActiveCell` clamps to the displayed bounds, so `{ rowDelta: -1 }` on the
-first row is a no-op rather than a negative index. It is the whole keyboard
-navigation primitive: the renderer maps arrow keys onto deltas.
+**1. Replace, or amend** - a value replaces the slice, an updater edits it:
 
 ```ts
-grid.setSorting([{ id: 'stars', desc: true }])
-grid.setSorting((prev) => [...prev, { id: 'name', desc: false }])  // multi-sort
-grid.setColumnFilters([{ id: 'lang', value: 'Rust', fn: 'equals' }])
-grid.setExpanded((prev) => ({ ...prev, group_lang_Rust: true }))
+grid.setSorting([{ id: 'stars', desc: true }])                      // primary sort
+grid.setSorting((prev) => [...prev, { id: 'name', desc: false }])   // tie-breaker
+grid.setSorting([])                                                 // clear
+```
+
+**2. Toggle by key** - selection and expansion are id-keyed maps, so an updater
+is the natural shape:
+
+```ts
+function toggleRow(id: string) {
+  grid.setRowSelection((prev) => {
+    const next = { ...prev }
+    if (next[id]) delete next[id]
+    else next[id] = true
+    return next
+  })
+}
+
+grid.setExpanded((prev) => ({ ...prev, group_lang_Rust: !prev.group_lang_Rust }))
+```
+
+**3. Swap options** - the server handed you a new page, or the user picked a
+different column set:
+
+```ts
 grid.setOptions((prev) => ({ ...prev, data: nextPage }))
+grid.setOptions((prev) => ({ ...prev, columns: compactColumns }))
+```
+
+**4. Walk the active cell** - `moveActiveCell` clamps to the displayed bounds,
+so `{ rowDelta: -1 }` on the first row is a no-op rather than a negative index.
+It is the whole keyboard-navigation primitive:
+
+```svelte
+<tbody
+  onkeydown={(event) => {
+    const deltas: Record<string, { rowDelta?: number; colDelta?: number }> = {
+      ArrowDown: { rowDelta: 1 },
+      ArrowUp: { rowDelta: -1 },
+      ArrowRight: { colDelta: 1 },
+      ArrowLeft: { colDelta: -1 },
+    }
+    const delta = deltas[event.key]
+    if (!delta) return
+    event.preventDefault()
+    grid.moveActiveCell(delta)
+  }}
+></tbody>
 ```
 
 ## State
@@ -183,6 +439,38 @@ state shows everything rather than the first 10 rows.
 
 `sorting` is ordered: the first clause is the primary sort, the rest break ties.
 `grouping` is ordered the same way, outermost group first.
+
+**1. Seed a view** - open on page 2 of a grouped, sorted grid:
+
+```ts
+state: {
+  sorting: [{ id: 'lang', desc: false }, { id: 'stars', desc: true }],
+  grouping: ['lang'],
+  expanded: { group_lang_Rust: true },
+  pagination: { pageIndex: 1, pageSize: 25 },
+}
+```
+
+**2. Persist and restore one** - the slices are plain JSON:
+
+```ts
+localStorage.setItem('repos.view', JSON.stringify(grid.getState().sorting))
+
+const saved = localStorage.getItem('repos.view')
+if (saved) grid.setSorting(JSON.parse(saved) as SortingState)
+```
+
+**3. Reset to empty** - each slice has an empty value, and `pagination` is the
+one that is not `[]` or `{}`:
+
+```ts
+grid.setSorting([])
+grid.setColumnFilters([])
+grid.setGrouping([])
+grid.setExpanded({})
+grid.setRowSelection({})
+grid.setPagination({ pageIndex: 0, pageSize: 25 })
+```
 
 ## The controlled state channel
 
@@ -216,13 +504,46 @@ the next render. That is what makes it compose with Svelte 5 runes:
 </script>
 ```
 
-Uncontrolled works too: leave the callbacks off and the engine keeps the state
-in its own store, which is what the `<SvGrid>` renderer does for most slices.
+That was the controlled shape. Two more:
 
-`Updater<T>` is `T | ((prev: T) => T)`, which is why every handler needs the
-`typeof updater === 'function'` branch. [Controlled
-state](../help/headless/controlled-state.md) has the longer treatment, including
-`createGridState` and sharing one state object across two grids.
+**Uncontrolled** - leave the callbacks off and the engine keeps state in its own
+store. Simplest, and what `<SvGrid>` does for most slices:
+
+```ts
+const grid = createSvGridCore({ _features: features, _rowModels: models, columns, data })
+grid.setSorting([{ id: 'stars', desc: true }])
+// The engine holds it; read it back with getState().
+```
+
+**Hoisted with `createGridState`** - when something outside the grid (a URL, a
+toolbar, a sibling component) has to own the slice:
+
+```svelte
+<script lang="ts">
+  import { createGridState, createSvGrid } from '@svgrid/grid'
+  import type { SortingState } from '@svgrid/grid'
+
+  const [sorting, setSorting] = createGridState<SortingState>([])
+
+  const grid = $derived.by(() =>
+    createSvGrid({
+      _features: features,
+      _rowModels: models,
+      columns,
+      data,
+      state: { sorting: sorting() },
+      onSortingChange: setSorting,   // takes a value or an updater already
+    }),
+  )
+</script>
+
+<button onclick={() => setSorting([])}>Clear sort</button>
+```
+
+`Updater<T>` is `T | ((prev: T) => T)`, which is why a hand-written handler needs
+the `typeof updater === 'function'` branch while `createGridState`'s setter takes
+either directly. [Controlled state](../help/headless/controlled-state.md) has the
+longer treatment, including sharing one state object across two grids.
 
 ## Row-model pipeline
 
@@ -252,6 +573,49 @@ headers report `getCanSort() === false`.
 `<SvGrid>` deliberately leaves `paginatedRowModel` out of its pipeline: it
 applies its own filter overlays first and paginates after, so the filter UI sees
 the whole dataset rather than the visible page.
+
+### Three pipelines
+
+**1. Sort only** - a leaderboard that never filters or pages:
+
+```ts
+_rowModels: {
+  coreRowModel: createCoreRowModel<Repo>(),
+  sortedRowModel: createSortedRowModel<Repo>(),
+}
+```
+
+**2. The full local pipeline** - everything client-side, pagination last:
+
+```ts
+_rowModels: {
+  coreRowModel: createCoreRowModel<Repo>(),
+  filteredRowModel: createFilteredRowModel<Repo>(),
+  sortedRowModel: createSortedRowModel<Repo>(),
+  groupedRowModel: createGroupedRowModel<Repo>(),
+  expandedRowModel: createExpandedRowModel<Repo>(),
+  paginatedRowModel: createPaginatedRowModel<Repo>(),
+}
+```
+
+**3. Server-side** - the server already sorted, filtered and paged, so the
+engine must not do it again:
+
+```ts
+_rowModels: { coreRowModel: createCoreRowModel<Repo>() }
+// `data` is the current page. Keep sorting / filters / pagination controlled and
+// refetch in the callbacks.
+```
+
+**4. Tree instead of grouping** - `createTreeRowModel` takes the grouping slot:
+
+```ts
+_rowModels: {
+  coreRowModel: createCoreRowModel<Task>(),
+  groupedRowModel: createTreeRowModel<Task>({ parentField: 'parentId', idField: 'id' }),
+  expandedRowModel: createExpandedRowModel<Task>(),
+}
+```
 
 ### Writing your own stage
 
@@ -304,6 +668,62 @@ is wrong. Use `getCanExpand()`, `subRows`, or `leafCount`:
 
 ```ts
 const dataRows = grid.getRowModel().rows.filter((row) => !row.getCanExpand())
+```
+
+**1. Render banners and data rows differently** - the branch every custom
+renderer needs:
+
+```svelte
+{#each grid.getRowModel().rows as row (row.id)}
+  {#if row.getCanExpand()}
+    <tr class="banner" style={`--depth:${row.depth}`}>
+      <td colspan={columns.length}>
+        <button onclick={() => row.toggleExpanded()}>
+          {row.getIsExpanded() ? '-' : '+'}
+        </button>
+        {row.getCellValueByColumnId('lang')} ({row.leafCount})
+      </td>
+    </tr>
+  {:else}
+    <tr>
+      {#each columns as column (column.field)}
+        <td>{row.getCellValueByColumnId(column.field!) ?? ''}</td>
+      {/each}
+    </tr>
+  {/if}
+{/each}
+```
+
+**2. Read values two ways** - the cheap read, and the full cell object when you
+need its context:
+
+```ts
+const row = grid.getRowModel().rows[0]!
+
+row.getCellValueByColumnId('stars')   // 79000 - no allocation
+row.original.stars                    // 79000 - your own object, data rows only
+
+for (const cell of row.getAllCells()) {
+  // `cell.getContext()` is what a `cell` renderer receives.
+  console.log(cell.column.id, cell.getValue())
+}
+```
+
+**3. Selection, from the row** - `toggleSelected` goes through the setter, so
+`onRowSelectionChange` fires and a controlled parent stays in sync:
+
+```svelte
+{#each grid.getRowModel().rows as row (row.id)}
+  <tr class:selected={row.getIsSelected()}>
+    <td>
+      <input
+        type="checkbox"
+        checked={row.getIsSelected()}
+        onchange={() => row.toggleSelected()}
+      />
+    </td>
+  </tr>
+{/each}
 ```
 
 ## Column, Header, HeaderGroup, Cell
@@ -360,7 +780,60 @@ column, always `colSpan: 1` and `isPlaceholder: false`. It does not build a
 multi-level header tree from nested `columns: [...]` definitions - `<SvGrid>`
 renders the group-header row itself, on top of this flat list. If your own
 renderer needs spanning group headers, walk your `columns` definitions for the
-upper levels and use `getHeaderGroups()` for the leaf row.
+upper levels and use `getHeaderGroups()` for the leaf row:
+
+```svelte
+<script lang="ts">
+  // One extra row, computed from the defs rather than from the engine.
+  const groups = $derived(
+    columns.map((def) => ({
+      header: def.header as string,
+      span: def.columns?.length ?? 1,
+    })),
+  )
+  const leaves = $derived(grid.getHeaderGroups()[0]?.headers ?? [])
+</script>
+
+<thead>
+  <tr>
+    {#each groups as group (group.header)}
+      <th colspan={group.span}>{group.header}</th>
+    {/each}
+  </tr>
+  <tr>
+    {#each leaves as header (header.id)}
+      <th>{header.column.columnDef.header}</th>
+    {/each}
+  </tr>
+</thead>
+```
+
+And the capability flags decide what a header may offer at all - the feature
+registry and the column's own `sortable` / `filterable` both fold into them:
+
+```svelte
+{#each leaves as header (header.id)}
+  <th>
+    {#if header.column.getCanSort()}
+      <button onclick={header.column.getToggleSortingHandler()}>
+        {header.column.columnDef.header}
+      </button>
+    {:else}
+      {header.column.columnDef.header}
+    {/if}
+    {#if header.column.getCanFilter()}
+      <input
+        placeholder="Filter"
+        oninput={(event) =>
+          grid.setColumnFilters((prev) => [
+            ...prev.filter((clause) => clause.id !== header.column.id),
+            { id: header.column.id, value: event.currentTarget.value },
+          ])}
+      />
+    {/if}
+  </th>
+{/each}
+```
 
 ## Features
 
@@ -376,6 +849,52 @@ give TypeScript a precise type.
 | `rowExpandingFeature` | Expand / collapse on group and tree rows |
 | `rowPaginationFeature` | The pager and page slicing |
 | `rowSelectionFeature` | Row selection state and the checkbox column |
+
+**1. Sorting only** - the smallest useful set:
+
+```ts
+const features = tableFeatures({ rowSortingFeature })
+// columns report getCanSort() === true, getCanFilter() === false
+```
+
+**2. Sorting plus filtering** - add the feature AND the stage, always in pairs:
+
+```ts
+const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+const models = {
+  coreRowModel: createCoreRowModel<Repo>(),
+  filteredRowModel: createFilteredRowModel<Repo>(),
+  sortedRowModel: createSortedRowModel<Repo>(),
+}
+```
+
+**3. Everything** - what `<SvGrid>` registers when every capability is on:
+
+```ts
+const features = tableFeatures({
+  rowSortingFeature,
+  columnFilteringFeature,
+  columnGroupingFeature,
+  rowExpandingFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+})
+```
+
+Mismatches are quiet, so they are worth naming. A stage without its feature
+sorts rows whose headers say they cannot be sorted; a feature without its stage
+offers a control that reorders nothing:
+
+```ts
+// Wrong: rows sort, but column.getCanSort() is false, so no header affordance.
+createSvGridCore({
+  _features: tableFeatures({}),
+  _rowModels: { coreRowModel: createCoreRowModel<Repo>(), sortedRowModel: createSortedRowModel<Repo>() },
+  columns,
+  data,
+  state: { sorting: [{ id: 'stars', desc: true }] },
+})
+```
 
 See the [features reference](./features.md) for what each one costs and which
 help page covers it.
@@ -420,9 +939,12 @@ import { filterFns } from '@svgrid/grid'
 grid.setColumnFilters([{ id: 'name', value: 'sv', fn: 'startsWith' as never }])
 ```
 
-TypeScript does not know about the new key, hence the cast on `fn`. The richer
-operator set the `<SvGrid>` filter UI uses (`between`, `regex`, `notContains`,
-`in`, the blank checks) lives in
+TypeScript does not know about the new key, hence the cast on `fn`. A name that
+resolves to nothing is not fatal: the clause falls back to `includesString` and
+the engine warns once, naming the column and listing the names it does know.
+
+The richer operator set the `<SvGrid>` filter UI uses (`between`, `regex`,
+`notContains`, `in`, the blank checks) lives in
 [`@svgrid/grid/filtering`](../help/filtering/overview.md) and is applied by the
 renderer, not by `filteredRowModel`.
 
@@ -436,8 +958,36 @@ server refetch moves them. Pass a stable id and they follow rows instead:
 createSvGridCore({ /* ... */, getRowId: (row) => row.uuid })
 ```
 
-Group row ids are always `group_<columnId>_<value>` (e.g.
-`group_lang_TypeScript`), which is also the key `expanded` uses for them.
+**1. Index ids (the default)** - fine for a static list, wrong the moment rows
+move:
+
+```ts
+const grid = createSvGridCore({ _features, _rowModels, columns, data })
+grid.getRowModel().rows.map((row) => row.id)   // ['0', '1', '2', ...]
+```
+
+**2. A stable id** - selection and expansion survive re-sorts and refetches:
+
+```ts
+createSvGridCore({ /* ... */, getRowId: (row) => row.uuid })
+```
+
+**3. A composite id** - when no single field is unique:
+
+```ts
+createSvGridCore({
+  /* ... */,
+  getRowId: (row, index) => (row.sku ? `${row.warehouse}:${row.sku}` : `row-${index}`),
+})
+```
+
+Group row ids are always `group_<columnId>_<value>`, which is also the key
+`expanded` uses for them:
+
+```ts
+grid.setGrouping(['lang'])
+grid.setExpanded({ group_lang_TypeScript: true })
+```
 
 ## Reactivity helpers
 
@@ -447,11 +997,36 @@ Group row ids are always `group_<columnId>_<value>` (e.g.
 | `subscribeGrid(grid, selector)` | `{ current: TSelected }` | Watch one slice from outside a component, with a shallow-compare guard. |
 | `grid.store.subscribe(fn)` | `() => void` (unsubscribe) | The raw channel a non-Svelte renderer uses to re-render. |
 
+**1. Watch a slice from outside a component:**
+
 ```ts
 import { subscribeGrid } from '@svgrid/grid'
 
 const selection = subscribeGrid(grid, (state) => state.rowSelection)
-// later: selection.current
+// later, e.g. in an action handler:
+const ids = Object.keys(selection.current)
+```
+
+**2. Hoist a slice out of the component that renders the grid:**
+
+```ts
+import { createGridState } from '@svgrid/grid'
+import type { ColumnFiltersState } from '@svgrid/grid'
+
+const [filters, setFilters] = createGridState<ColumnFiltersState>([])
+// pass `state: { columnFilters: filters() }` and `onColumnFiltersChange: setFilters`
+```
+
+**3. Re-render a non-Svelte renderer** - the raw store subscription, and the
+unsubscribe you must keep:
+
+```ts
+const stop = grid.store.subscribe(() => {
+  render(grid.getRowModel().rows)
+})
+
+// on teardown
+stop()
 ```
 
 ## Recipes
@@ -542,15 +1117,71 @@ grid's own is exported for reuse - see
   dragging the whole dataset in.
 - **Registering fewer stages is cheaper**, both in bundle bytes and per update.
 
+**1. Read values the cheap way** in anything that touches every row:
+
+```ts
+// Allocates one Cell per column, per row.
+const slow = rows.map((row) => row.getAllCells().find((c) => c.column.id === 'stars')?.getValue())
+
+// Reads the same cached value, allocates nothing.
+const fast = rows.map((row) => row.getCellValueByColumnId('stars'))
+```
+
+**2. Invalidate deliberately** - a new array recomputes, an in-place edit does
+not:
+
+```ts
+// Recomputes the pipeline: new identity.
+grid.setOptions((prev) => ({ ...prev, data: [...data, newRepo] }))
+
+// Does NOT recompute: same array identity, the cache still matches.
+data.push(newRepo)
+```
+
+**3. Keep rows serializable** - a row's table pointer is behind a symbol, so
+sending rows across a worker or into a snapshot stays cheap:
+
+```ts
+const row = grid.getRowModel().rows[0]!
+JSON.stringify(row).length        // a small constant, whatever the row count
+JSON.stringify(row.original)      // your data object, nothing else attached
+```
+
 ## Limits worth knowing
 
 - `getHeaderGroups()` is one flat level of leaf headers - no spanning group
   headers, no placeholders. See [Header levels](#column-header-headergroup-cell).
+
+  ```ts
+  grid.getHeaderGroups().length            // always 1
+  grid.getHeaderGroups()[0]!.headers[0]!.colSpan   // always 1
+  ```
+
 - A group row's `original` is synthesized, not one of your rows.
+
+  ```ts
+  const banner = grid.getRowModel().rows[0]!
+  banner.getCanExpand()      // true - this is the test to use
+  banner.original            // { lang: 'Rust', stars: 80000 } - built, not yours
+  ```
+
 - `filteredRowModel` understands `includesString` and `equals` only; the
   Excel-style operator set belongs to the renderer.
+
+  ```ts
+  grid.setColumnFilters([{ id: 'stars', value: '100', fn: 'between' as never }])
+  // `between` is not in filterFns: the clause falls back to includesString and
+  // the engine warns once, naming the column and the known names.
+  ```
+
 - `createSvGrid` needs the Svelte compiler. In plain Node use
   `createSvGridCore`.
+
+  ```ts
+  // node script.mjs
+  import { createSvGridCore } from '@svgrid/grid/core'   // works
+  // import { createSvGrid } from '@svgrid/grid'         // throws: runes need the compiler
+  ```
 
 ## See also
 

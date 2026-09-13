@@ -202,6 +202,35 @@ function isPublished(name, version) {
 
 // pnpm and npm are .cmd shims on Windows, which Node can only launch through a
 // shell. CI is Linux, where the plain binary runs directly and no shell is used.
+/**
+ * Source files that hard-code this package's own version, and have to move with
+ * the manifest. `@svgrid/enterprise` carries one: the Studio generator writes
+ * `^<version>` into the apps it scaffolds and cannot read package.json at
+ * runtime, so the number lives in a module constant.
+ *
+ * Without this, a release bumps package.json alone and the constant drifts -
+ * which is exactly what happened at 3.0.1, unnoticed because the release commit
+ * carries `[skip ci]` and the guard test (`enterprise/src/version.test.ts`) only
+ * runs on a normal push.
+ */
+const VERSION_CONSTANTS = {
+  enterprise: [{ file: 'src/version.ts', re: /(SVGRID_VERSION = ')([^']+)(')/ }],
+}
+
+function syncVersionConstants(dir, version) {
+  for (const entry of VERSION_CONSTANTS[dir] ?? []) {
+    const path = join(ROOT, 'packages', dir, entry.file)
+    const before = readFileSync(path, 'utf-8')
+    const after = before.replace(entry.re, `$1${version}$3`)
+    if (after === before) {
+      console.error(`- WARNING: ${dir}/${entry.file} has no version literal to sync.`)
+      continue
+    }
+    writeFileSync(path, after)
+    console.error(`- synced ${dir}/${entry.file} to ${version}.`)
+  }
+}
+
 function publishMode(dirs) {
   const unknown = dirs.filter((d) => !PACKAGES.some((p) => p.dir === d))
   if (unknown.length) {
@@ -305,6 +334,7 @@ function main() {
     if (!CHECK_ONLY) {
       manifest.version = nextStr
       writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n')
+      syncVersionConstants(pkg.dir, nextStr)
     }
     console.error(
       `- ${manifest.name}: ${reason}: ${fmtVer(current)} -> ${nextStr}${CHECK_ONLY ? ' (check only, not written)' : ''}.`,

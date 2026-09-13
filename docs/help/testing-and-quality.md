@@ -11,9 +11,9 @@ stands today.
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
-| Lines | 81.35% | >= 81% |
-| Statements | 75.14% | >= 74% |
-| Branches | 66.53% | >= 65% |
+| Lines | 81.36% | >= 81% |
+| Statements | 75.15% | >= 74% |
+| Branches | 66.54% | >= 65% |
 | Functions | 75.08% | >= 74% |
 
 The thresholds are a **ratchet, not a target**: each sits just under the measured
@@ -72,7 +72,7 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
 ## The API QA phase
 
 `packages/grid/src/qa/` is a sweep over the **public surface** rather than a
-feature: 323 cases checked against the contract each member's reference page or
+feature: 327 cases checked against the contract each member's reference page or
 doc comment states - 120 props, 84 api members, 35 column options, 19 callbacks
 and the whole headless engine. The component cases mount the real `<SvGrid>`;
 the engine cases run `createSvGrid` / `createSvGridCore` with no component at
@@ -105,8 +105,21 @@ here even when no feature suite covers it. The phase found eight defects:
    `Updater` example both used it and every sibling slice had a setter.
 7. `grid.setOptions()` writing to a store nothing read, so swapping `data` or
    `columns` through it did nothing.
-8. Two editing doc pages promising that editing never touches the caller's rows,
-   plus stale operator / option lists on three reference pages.
+8. An unknown filter-fn name crashing the row model with `filter.fn is not a
+   function` - one typo in a clause rendered the whole grid empty. It now falls
+   back to the documented default and warns once.
+9. Half the state slice types (`ColumnFiltersState`, `PaginationState`,
+   `GroupingState`, `ExpandedState`, `RowSelectionState`, `ColumnFilter`)
+   missing from the main barrel, so a controlled consumer could not type the
+   handlers `SvGridOptions` asks for without the `/core` subpath.
+10. `SVGRID_VERSION` in `@svgrid/enterprise` drifted from its `package.json` at
+    the 3.0.1 release, because the release bumps the manifest alone and its
+    commit carries `[skip ci]`, so the guard test never ran. Synced, and the
+    release script now rewrites the constant when it bumps the package.
+
+Plus the docs: two editing pages promising that editing never touches the
+caller's rows, and stale operator / option / registry lists on three reference
+pages.
 
 Run it alone with:
 
@@ -152,7 +165,7 @@ and is documented inline with the reasoning for each entry.
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
 | `qa/*.test.ts` | The API QA phase: every prop, every `SvGridApi` member, every callback | Mounted |
 
-Total: **3,212 tests** across **214 test files** in `@svgrid/grid`, plus **1,607** across **101** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
+Total: **3,214 tests** across **214 test files** in `@svgrid/grid`, plus **1,658** across **103** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 

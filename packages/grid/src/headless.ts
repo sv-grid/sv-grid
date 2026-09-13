@@ -17,9 +17,11 @@
  * Every runtime symbol here is also reachable from the main `@svgrid/grid`
  * barrel, so the two paths never disagree. This entry additionally exposes the
  * low-level types a custom renderer needs and the barrel does not re-export
- * (`RowModelFactory`, `Store`, `createSvGridCore`, and the individual state
- * types), and it makes the headless bundle cost measurable instead of leaving
- * it to tree-shaking a 200+ export barrel.
+ * (`RowModelFactory`, `Store` and `createSvGridCore`), and it makes the headless
+ * bundle cost measurable instead of leaving it to tree-shaking a 200+ export
+ * barrel. The state slice types are on both paths: a controlled consumer needs
+ * them to type the `on*Change` handlers `SvGridOptions` asks for, whichever
+ * entry they import from.
  *
  * See docs/why-headless.md.
  */

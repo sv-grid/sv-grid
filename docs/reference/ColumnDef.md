@@ -64,6 +64,17 @@ column id in that order:
 | `field`       | `keyof TData & string`            | Reads `row[field]`. The clean default.                                 |
 | `fieldFn`  | `(row: TData) => unknown`         | Computed value. Pair with `id`.                                        |
 
+```ts
+// 1. `field` alone: the value source, and the column id.
+{ field: 'name', header: 'Name' }
+
+// 2. An explicit `id` when two columns read the same field, or none does.
+{ id: 'nameUpper', field: 'name', header: 'NAME', formatter: ({ value }) => String(value).toUpperCase() }
+
+// 3. `fieldFn` for a computed value - no field on the row has it.
+{ id: 'full', header: 'Name', fieldFn: (row) => `${row.firstName} ${row.lastName}` }
+```
+
 ## Rendering
 
 | Field       | Type                                            | Notes                                                       |
@@ -118,6 +129,21 @@ Example: `{ type: 'date', pattern: 'y-m-d' }` ⇒ `2026-06-05`.
 | `visible` | `boolean`                            | Initial visibility. Set `false` to start the column hidden while still listing it in the Choose Columns / tool panel for the user to re-enable. Applied once at mount; after that `api.setColumnVisible` and user toggles win. On a group column, `false` hides the whole group's leaf columns. |
 | `align`   | `'left' \| 'right' \| 'center'`      | Header + cell alignment. Inferred from `editorType` when omitted: number/date → right, checkbox → center, else left. |
 
+```ts
+// 1. A fixed width, and one that falls back to the grid's `columnWidth`.
+{ field: 'name', header: 'Name', width: 240 }
+{ field: 'team', header: 'Team' }
+
+// 2. Start hidden but listed in the column picker, and pin the layout columns
+//    so the user cannot resize them.
+{ field: 'notes', header: 'Notes', visible: false }
+{ id: 'actions', header: '', width: 48, resizable: false }
+
+// 3. Alignment: inferred from `editorType`, overridden when you say so.
+{ field: 'total', header: 'Total', editorType: 'number' }               // right
+{ field: 'total', header: 'Total', editorType: 'number', align: 'left' } // left
+```
+
 ## Editing
 
 | Field        | Type                                                              | Notes                                                       |
@@ -128,6 +154,39 @@ The grid uses `editorType` for two things: which inline editor to
 mount when the user presses F2, AND which sort comparator to pick when
 sorting. Set it even when you don't need editing if your column is
 numeric or date-typed.
+
+```ts
+// 1. A typed editor. The column needs `editorType` to be editable at all.
+{ field: 'qty', header: 'Qty', editorType: 'number' }
+
+// 2. A list editor with options, and a cascading per-row source.
+{ field: 'status', header: 'Status', editorType: 'select', editorOptions: ['open', 'done'] }
+{ field: 'city', header: 'City', editorType: 'select', editorOptions: (row) => citiesFor(row.country) }
+
+// 3. Lock the column, or just some of its cells.
+{ field: 'id', header: 'Id', editorType: 'text', editable: false }
+{ field: 'fee', header: 'Fee', editorType: 'number', editable: (ctx) => ctx.row.original.status === 'open' }
+```
+
+Two hooks run around a commit, and they are easy to mix up: `valueParser`
+transforms the value on its way into the row, `validate` only flags it.
+
+```ts
+// 1. Round on commit.
+{ field: 'fee', header: 'Fee', editorType: 'number', valueParser: ({ newValue }) => Math.round(Number(newValue)) }
+
+// 2. Flag out-of-band values - including ones already in `data` on load.
+{ field: 'fee', header: 'Fee', validate: ({ value }) => (Number(value) > 1000 ? 'Above cap' : null) }
+
+// 3. Both, plus a custom editor when no built-in fits.
+{
+  field: 'colour',
+  header: 'Colour',
+  editorType: 'color',
+  valueParser: ({ newValue }) => String(newValue).toLowerCase(),
+  validate: ({ value }) => /^#[0-9a-f]{6}$/.test(String(value)) || 'Use #rrggbb',
+}
+```
 
 ## Column groups
 
@@ -149,6 +208,26 @@ const columns: GridColumns<Row> = [
   },
   { field: 'salary', header: 'Salary' },
 ]
+```
+
+Two more shapes:
+
+```ts
+// 2. A collapsible group: `columnGroupShow` on a child gives the parent a
+//    toggle, and `openByDefault` decides which state it starts in.
+{
+  header: 'Compensation',
+  openByDefault: true,
+  columns: [
+    { field: 'salary', header: 'Salary' },                              // always shown
+    { field: 'bonus', header: 'Bonus', columnGroupShow: 'open' },       // expanded only
+    { field: 'total', header: 'Total', columnGroupShow: 'closed' },     // collapsed only
+  ],
+}
+
+// 3. Hide a whole group at mount - `visible: false` on the group column takes
+//    its leaves with it.
+{ header: 'Internal', visible: false, columns: [{ field: 'costCentre', header: 'CC' }] }
 ```
 
 ## Custom-cell context
@@ -206,6 +285,30 @@ This page covers the options you reach for first. A column also accepts:
 | `colSpan` / `rowSpan` | Value-driven cell spanning. Feed `spansToMerges(rows, columns)` into `spreadsheetLayout` to apply them. |
 | `columnGroupShow` | On a child of a collapsible group: `'open'` shows it only while the group is expanded, `'closed'` only while collapsed. |
 | `openByDefault` | On a group column: start expanded instead of collapsed. |
+
+```ts
+// 1. Aggregate into group banners and the footer summary, formatted once.
+{
+  field: 'amount',
+  header: 'Amount',
+  format: { type: 'currency', currency: 'USD' },
+  aggregate: 'sum',
+  summary: 'avg',
+}
+
+// 2. Value-driven chrome: a class per cell, a flash on change, a tooltip.
+{
+  field: 'delta',
+  header: 'Delta',
+  cellClass: (ctx) => (Number(ctx.getValue()) < 0 ? 'is-down' : 'is-up'),
+  cellFlash: true,
+  tooltip: (ctx) => `Previous close: ${ctx.row.original.prevClose}`,
+}
+
+// 3. One declaration instead of four: `cellDataType` fills in `editorType`,
+//    `align` and a date format, and anything you set explicitly still wins.
+{ field: 'due', header: 'Due', cellDataType: 'dateString' }
+```
 
 Every option, with its full type and doc comment, is generated from the source
 in [`reference/auto/svgrid-grid-core`](./auto/svgrid-grid-core.md), and the

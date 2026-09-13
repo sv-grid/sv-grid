@@ -25,8 +25,36 @@ const features = tableFeatures({
 
 The `features` object is the contract the headless core checks for
 optional capabilities. The wrapper reads it once at mount and wires
-the matching row-model pipeline (core → filtered → sorted → grouped →
+the matching row-model pipeline (core -> filtered -> sorted -> grouped ->
 expanded). Features you don't register are tree-shaken out.
+
+Three ways the same registry gets built:
+
+**1. A read-only table** - no features at all. Every capability is off, which is
+the cheapest grid there is:
+
+```svelte
+<SvGrid {data} {columns} features={tableFeatures({})} />
+```
+
+**2. The shortcuts** - `sortable` / `filterable` inject their feature for you, so
+most apps never build the object by hand:
+
+```svelte
+<SvGrid {data} {columns} sortable filterable pageable />
+```
+
+**3. Explicit, for a headless pipeline** - when you wire the row models yourself
+the features have to match them:
+
+```ts
+const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+const models = {
+  coreRowModel: createCoreRowModel<Row>(),
+  filteredRowModel: createFilteredRowModel<Row>(),
+  sortedRowModel: createSortedRowModel<Row>(),
+}
+```
 
 ## The feature catalogue
 
@@ -51,6 +79,21 @@ Identity at runtime - just a typed pass-through. Its job is to give
 TypeScript a precise type for the `features` object that
 `<SvGrid features={...}>` and `ColumnDef<TFeatures, TData>` both
 consume.
+
+```ts
+// 1. Name the type once, reuse it on every column list.
+const features = tableFeatures({ rowSortingFeature, rowSelectionFeature })
+const columns: ColumnDef<typeof features, Person>[] = [{ field: 'name', header: 'Name' }]
+
+// 2. Share one registry across grids that must stay consistent.
+export const reportFeatures = tableFeatures({ rowSortingFeature, columnGroupingFeature })
+
+// 3. Compose conditionally - it is a plain object, so spreading works.
+const features = tableFeatures({
+  rowSortingFeature,
+  ...(canFilter ? { columnFilteringFeature } : {}),
+})
+```
 
 ## Row-model factories (headless)
 
@@ -123,6 +166,25 @@ Pick a comparator yourself by setting the column's `editorType` -
 `'number'`, `'date'`, `'datetime'` map to `sortFns.number` /
 `sortFns.date` automatically.
 
+```ts
+// 1. Numeric column: editorType picks sortFns.number, so 9 sorts before 10.
+{ field: 'stars', header: 'Stars', editorType: 'number' }
+
+// 2. Date column: sortFns.date parses the value before comparing.
+{ field: 'released', header: 'Released', editorType: 'date' }
+
+// 3. Your own comparator set, handed to the stage instead of the default:
+const naturalSort = {
+  ...sortFns,
+  auto: (a: unknown, b: unknown) =>
+    String(a).localeCompare(String(b), undefined, { numeric: true }),
+}
+const models = {
+  coreRowModel: createCoreRowModel<Row>(),
+  sortedRowModel: createSortedRowModel<Row>(naturalSort),
+}
+```
+
 ### `filterFns`
 
 ```ts
@@ -171,9 +233,23 @@ They are separate switches, and mixing them up is the usual headless snag:
   `getCanFilter()` - and therefore what affordance the UI offers.
 - A **stage** in `_rowModels` decides what actually happens to the rows.
 
-Register `createSortedRowModel` without `rowSortingFeature` and the rows sort
-while the headers insist they cannot be sorted. Register the feature without the
-stage and the headers offer sorting that never reorders anything. Register both.
+```ts
+// 1. Both: what you want. Headers offer sorting, and sorting reorders rows.
+tableFeatures({ rowSortingFeature })
+// + sortedRowModel: createSortedRowModel<Row>()
+
+// 2. Stage only: rows sort, but column.getCanSort() is false, so no header UI.
+tableFeatures({})
+// + sortedRowModel: createSortedRowModel<Row>()
+
+// 3. Feature only: headers offer sorting that changes nothing, because no stage
+//    reads the `sorting` state.
+tableFeatures({ rowSortingFeature })
+// + no sortedRowModel
+```
+
+The same pairing holds for filtering (`columnFilteringFeature` +
+`filteredRowModel`), grouping, expansion and pagination.
 
 ## See also
 
