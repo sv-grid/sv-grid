@@ -4,16 +4,19 @@
  * 1. Every `SvGridApi` member in the type must be exercised by a QA case.
  * 2. Every `<SvGrid>` prop must be exercised by a QA case.
  * 3. Every `ColumnDef` option must be exercised by a QA case.
- * 4. The object handed to `onApiReady` must expose exactly the members the type
+ * 4. Every headless `SvGrid` instance member and `SvGridOptions` option must be
+ *    exercised by a QA case, and the instance must match its type at runtime.
+ * 5. The object handed to `onApiReady` must expose exactly the members the type
  *    promises - no missing methods, no undocumented extras.
  *
- * A new prop, column option or api member therefore cannot ship without a QA
- * case (or an explicit, reasoned exemption).
+ * A new prop, column option, engine member or api member therefore cannot ship
+ * without a QA case (or an explicit, reasoned exemption).
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { createCoreRowModel, createSvGrid, tableFeatures } from '../index'
 import { mountQaGrid } from './harness.svelte'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -59,6 +62,8 @@ const apiMembers = topLevelMembers(
 )
 const propNames = topLevelMembers(typeBody('SvGrid.types.ts', 'export type Props<'))
 const columnOptions = topLevelMembers(typeBody('core.ts', 'export type ColumnDef<'))
+const engineMembers = topLevelMembers(typeBody('core.ts', 'export type SvGrid<'))
+const engineOptions = topLevelMembers(typeBody('core.ts', 'export type SvGridOptions<'))
 
 /** Every QA test source, concatenated. */
 const qaSources = readdirSync(here)
@@ -128,6 +133,50 @@ describe('QA gate: the column surface is fully exercised', () => {
   it('exercises every ColumnDef option in a QA case', () => {
     const missing = columnOptions.filter((o) => !(o in EXEMPT) && !isExercised(o))
     expect(missing, `ColumnDef options with no QA case: ${missing.join(', ')}`).toEqual([])
+  })
+})
+
+describe('QA gate: the headless surface is fully exercised', () => {
+  it('finds the engine members and options in the types', () => {
+    expect(engineMembers).toContain('getRowModel')
+    expect(engineMembers).toContain('setSorting')
+    expect(engineOptions).toContain('_rowModels')
+    expect(engineMembers.length).toBeGreaterThan(12)
+    expect(engineOptions.length).toBeGreaterThan(10)
+  })
+
+  it('exercises every engine member and option in a QA case', () => {
+    const missingMembers = engineMembers.filter((m) => !new RegExp(`\\.${m}\\b`).test(qaSources))
+    expect(
+      missingMembers,
+      `engine members with no QA case: ${missingMembers.join(', ')}`,
+    ).toEqual([])
+
+    const missingOptions = engineOptions.filter((o) => !(o in EXEMPT) && !isExercised(o))
+    expect(
+      missingOptions,
+      `engine options with no QA case: ${missingOptions.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('the engine instance matches its type at runtime', () => {
+    const grid = createSvGrid({
+      _features: tableFeatures({}),
+      _rowModels: { coreRowModel: createCoreRowModel() },
+      columns: [{ field: 'a', header: 'A' }],
+      data: [{ a: 1 }],
+    } as never)
+    const runtime = grid as unknown as Record<string, unknown>
+
+    const missing = engineMembers.filter((m) => !(m in runtime))
+    expect(missing, `typed but absent on the engine: ${missing.join(', ')}`).toEqual([])
+
+    for (const member of engineMembers) {
+      const expected = member === 'store' || member === 'optionsStore' || member === 'state'
+        ? 'object'
+        : 'function'
+      expect(typeof runtime[member], member).toBe(expected)
+    }
   })
 })
 

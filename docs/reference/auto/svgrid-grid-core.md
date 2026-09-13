@@ -1,6 +1,6 @@
 # `@svgrid/grid` · `core.ts`
 
-Auto-generated. Source: `packages\grid\src\core.ts`.
+Auto-generated. Source: `packages/grid/src/core.ts`.
 
 ### `type RowData`
 
@@ -703,9 +703,11 @@ export type Column<TData extends RowData> = {
 
 ### `type Header`
 
-One header cell. `colSpan` is how many leaf columns it covers, and
-`isPlaceholder` marks the empty cells that pad a group-header row so the
-levels line up.
+One header cell, always for a LEAF column: the engine emits a single header
+level, so `colSpan` is 1 and `isPlaceholder` is false on everything it builds.
+Both fields exist for a renderer that computes its own multi-level header rows
+from the nested `columns: [...]` definitions - `<SvGrid>` does exactly that -
+and for a future engine-level header tree.
 
 ```ts
 export type Header<TData extends RowData> = {
@@ -744,8 +746,11 @@ export type Cell<TData extends RowData> = {
 
 ### `type Row`
 
-A row in the display model. `original` is your untouched data object;
-everything else is grid-computed. `index` is the position in the displayed
+A row in the display model. On a data row `original` is your untouched data
+object; on a GROUP row it is synthesized per column (that column's `aggregate`
+result, or the value every child shares), so `getCanExpand()` / `subRows` /
+`leafCount` are what tell a banner from a data row - not the presence of
+`original`. Everything else is grid-computed. `index` is the position in the displayed
 set, so it shifts as sorting and filtering change - key on `id`, not index.
 
 Group rows and tree parents carry `subRows`; a plain data row does not.
@@ -1525,6 +1530,7 @@ export type SvGrid<TData extends RowData> = {
   state: Record<string, any>
   getState: () => Record<string, any>
   setOptions: (updater: Updater<Record<string, any>>) => void
+  setSorting: (updater: Updater<SortingState>) => void
   setColumnFilters: (updater: Updater<ColumnFiltersState>) => void
   setPagination: (updater: Updater<PaginationState>) => void
   setGrouping: (updater: Updater<GroupingState>) => void
@@ -1564,6 +1570,18 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
   }
   const store = createStore(internalState)
   const optionsStore = createStore(options as Record<string, any>)
+  /**
+   * The CURRENT options, read through the store rather than through the object
+   * handed to this call. `setOptions` is part of the documented instance
+   * surface, so the pipeline has to read what it wrote - reading the captured
+   * `options` made every `setOptions` call a no-op for data, columns and the
+   * change callbacks.
+   *
+   * `optionsStore` is seeded with the very object passed in, getters included,
+   * so a renderer that exposes `get data()` / `get columns()` behaves exactly
+   * as before: this decides WHICH object is read, never how.
+   */
+  const opts = () => optionsStore.state as SvGridOptions<TFeatures, TData>
   let cachedColumnsInput: Array<ColumnDef<TFeatures, TData>> | null = null
   let cachedColumns: Array<Column<TData>> = []
   let cachedHeaderGroups: Array<HeaderGroup<TData>> = []
@@ -1595,13 +1613,20 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         typeof updater === 'function' ? (updater as any)(prev) : updater,
       )
     },
+    setSorting(updater: Updater<SortingState>) {
+      store.setState((prev) => ({
+        ...prev,
+        sorting: typeof updater === 'function' ? (updater as any)(prev.sorting ?? []) : updater,
+      }))
+      opts().onSortingChange?.(updater)
+    },
     setColumnFilters(updater: Updater<ColumnFiltersState>) {
       store.setState((prev) => ({
         ...prev,
         columnFilters:
           typeof updater === 'function' ? (updater as any)(prev.columnFilters ?? []) : updater,
       }))
-      options.onColumnFiltersChange?.(updater)
+      opts().onColumnFiltersChange?.(updater)
     },
     setPagination(updater: Updater<PaginationState>) {
       store.setState((prev) => ({
@@ -1611,21 +1636,21 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             ? (updater as any)(prev.pagination ?? { pageIndex: 0, pageSize: 10 })
             : updater,
       }))
-      options.onPaginationChange?.(updater)
+      opts().onPaginationChange?.(updater)
     },
     setGrouping(updater: Updater<GroupingState>) {
       store.setState((prev) => ({
         ...prev,
         grouping: typeof updater === 'function' ? (updater as any)(prev.grouping ?? []) : updater,
       }))
-      options.onGroupingChange?.(updater)
+      opts().onGroupingChange?.(updater)
     },
     setExpanded(updater: Updater<ExpandedState>) {
       store.setState((prev) => ({
         ...prev,
         expanded: typeof updater === 'function' ? (updater as any)(prev.expanded ?? {}) : updater,
       }))
-      options.onExpandedChange?.(updater)
+      opts().onExpandedChange?.(updater)
     },
     setRowSelection(updater: Updater<RowSelectionState>) {
       store.setState((prev) => ({
@@ -1633,7 +1658,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         rowSelection:
           typeof updater === 'function' ? (updater as any)(prev.rowSelection ?? {}) : updater,
       }))
-      options.onRowSelectionChange?.(updater)
+      opts().onRowSelectionChange?.(updater)
     },
     setActiveCell(updater: Updater<ActiveCellState>) {
       store.setState((prev) => {
@@ -1649,7 +1674,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           activeCell: nextActive,
         }
       })
-      options.onActiveCellChange?.(updater)
+      opts().onActiveCellChange?.(updater)
     },
     moveActiveCell(next: { rowDelta?: number; colDelta?: number }) {
       const rows = grid.getRowModel().rows
@@ -1679,7 +1704,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
     },
     getAllColumns() {
       // Cache hit: referentially identical columns array.
-      if (cachedColumnsInput === options.columns && cachedColumns.length) {
+      if (cachedColumnsInput === opts().columns && cachedColumns.length) {
         return cachedColumns
       }
       // Soft cache hit: consumers commonly recreate the columns array
@@ -1692,9 +1717,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // render time, not at this top-level cache.
       if (
         cachedColumnsInput &&
-        options.columns.length === cachedColumnsInput.length &&
-        cachedColumns.length === options.columns.length &&
-        options.columns.every((c, i) => {
+        opts().columns.length === cachedColumnsInput.length &&
+        cachedColumns.length === opts().columns.length &&
+        opts().columns.every((c, i) => {
           const prev = cachedColumnsInput![i]!
           return (
             c.field === prev.field &&
@@ -1706,11 +1731,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       ) {
         // Update the stored input reference so the strict check hits
         // next time, but reuse the built column model.
-        cachedColumnsInput = options.columns
+        cachedColumnsInput = opts().columns
         return cachedColumns
       }
 
-      cachedColumnsInput = options.columns
+      cachedColumnsInput = opts().columns
       cachedHeaderGroups = []
       const build = (
         defs: Array<ColumnDef<TFeatures, TData>>,
@@ -1730,10 +1755,10 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             parentId,
             columnDef,
             getCanSort: () =>
-              Boolean((options._features as any).rowSortingFeature) &&
+              Boolean((opts()._features as any).rowSortingFeature) &&
               columnDef.sortable !== false,
             getCanFilter: () =>
-              Boolean((options._features as any).columnFilteringFeature) &&
+              Boolean((opts()._features as any).columnFilteringFeature) &&
               columnDef.filterable !== false,
             getIsSorted: () => {
               const entry = store.state.sorting?.find((s: any) => s.id === id)
@@ -1749,16 +1774,20 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
                   ? clauses.filter((s) => s.id !== id)
                   : clauses.map((s) => (s.id === id ? { ...s, desc: true } : s))
               store.setState((prev) => ({ ...prev, sorting: nextClause }))
-              options.onSortingChange?.(nextClause)
+              opts().onSortingChange?.(nextClause)
             },
           })
         })
         return leaves
       }
-      cachedColumns = build(options.columns, 0)
+      cachedColumns = build(opts().columns, 0)
       return cachedColumns
     },
     getHeaderGroups() {
+      // One level, one header per leaf column. Nested `columns: [...]` defs
+      // contribute their children (see `getAllColumns`); a renderer that wants
+      // spanning group headers builds those rows from the column defs itself,
+      // as `<SvGrid>` does. Documented in docs/reference/headless-engine.md.
       if (cachedHeaderGroups.length) return cachedHeaderGroups
       const headers = grid.getAllColumns().map((column) => {
         const header: Header<TData> = {
@@ -1778,8 +1807,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
     },
     getRowModel() {
       const columns = grid.getAllColumns()
-      if (cachedBaseRowsInput !== options.data || cachedBaseRowsColumns !== columns) {
-        cachedBaseRowsInput = options.data
+      if (cachedBaseRowsInput !== opts().data || cachedBaseRowsColumns !== columns) {
+        cachedBaseRowsInput = opts().data
         cachedBaseRowsColumns = columns
         // O(1) column-id → index lookup so getCellValueByColumnId doesn't do
         // a linear `findIndex` on every cell read (was O(rows × cells × cols)).
@@ -1797,8 +1826,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           columnIndexById,
         }
 
-        cachedBaseRows = new Array(options.data.length)
-        const getRowId = options.getRowId
+        cachedBaseRows = new Array(opts().data.length)
+        const getRowId = opts().getRowId
         const m = BASE_ROW_METHODS as unknown as {
           getCanExpand: Row<TData>['getCanExpand']
           getIsExpanded: Row<TData>['getIsExpanded']
@@ -1808,8 +1837,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           getAllCells: Row<TData>['getAllCells']
           getCellValueByColumnId: Row<TData>['getCellValueByColumnId']
         }
-        for (let index = 0; index < options.data.length; index++) {
-          const original = options.data[index]!
+        for (let index = 0; index < opts().data.length; index++) {
+          const original = opts().data[index]!
           // `_values` and `_cells` stay null until something reads them - a
           // 100k-row grid showing twenty rows must not materialise every row's
           // values or cell objects to paint.
@@ -1856,7 +1885,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       if (
         cachedRowModel &&
         cachedRowModelBaseRows === cachedBaseRows &&
-        cachedPipeline === options._rowModels &&
+        cachedPipeline === opts()._rowModels &&
         cachedSlices?.sorting === currentSlices.sorting &&
         cachedSlices?.columnFilters === currentSlices.columnFilters &&
         cachedSlices?.pagination === currentSlices.pagination &&
@@ -1868,7 +1897,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
 
       let rows: Array<Row<TData>> = cachedBaseRows
 
-      const pipeline = options._rowModels ?? {}
+      const pipeline = opts()._rowModels ?? {}
       const ordered: Array<RowModelFactory<TData> | undefined> = [
         pipeline.coreRowModel,
         pipeline.filteredRowModel,
@@ -1880,7 +1909,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       ordered.forEach((fn) => {
         if (fn) rows = fn({ table: grid, rows })
       })
-      cachedPipeline = options._rowModels
+      cachedPipeline = opts()._rowModels
       cachedSlices = currentSlices
       cachedRowModelBaseRows = cachedBaseRows
       cachedRowModel = { rows }

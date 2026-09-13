@@ -114,9 +114,9 @@ const grid = createSvGrid({
 ```ts
 import { sortFns } from '@svgrid/grid'
 
-// sortFns.auto   - lexical (default for unknown / mixed types)
-// sortFns.number - numeric, NaN-safe
-// sortFns.date   - parsed via new Date(...)
+// sortFns.auto   - lexical, via String(a).localeCompare(String(b))
+// sortFns.number - numeric; null / undefined count as 0
+// sortFns.date   - new Date(value).getTime() difference
 ```
 
 Pick a comparator yourself by setting the column's `editorType` -
@@ -128,35 +128,56 @@ Pick a comparator yourself by setting the column's `editorType` -
 ```ts
 import { filterFns } from '@svgrid/grid'
 
-// includesString, equalsString, arrIncludes,
-// inNumberRange, isAfter, isBefore, isEmpty, isNotEmpty
+// includesString - case-insensitive substring. The DEFAULT.
+// equals         - strict identity (===), so '30' does not match 30.
 ```
 
-Reference a filter function by name on a column-filter clause:
+Two functions, because this registry backs the headless
+`filteredRowModel` only. The richer operator set the `<SvGrid>` filter UI offers
+(`between`, `regex`, `notContains`, `in`, the blank checks) is applied by the
+renderer - see [Filter overview](../help/filtering/overview.md).
+
+Reference one by name on a column-filter clause. Omit `fn` and you get
+`includesString`:
 
 ```ts
-const columnFilters = [{ id: 'age', value: 30, fn: 'equals' }]
+const columnFilters = [
+  { id: 'lang', value: 'rust' },                  // substring, case-insensitive
+  { id: 'age', value: 30, fn: 'equals' as const }, // strict
+]
 ```
 
-Extend the registry yourself - it's a plain mutable object:
+Extend the registry yourself - it is a plain mutable object, so add a key and
+name it from a clause:
 
 ```ts
 import { filterFns } from '@svgrid/grid'
 
-declare module '@svgrid/grid' {
-  interface FilterFnsRegistry {
-    inListCSV: (value: unknown, query: string) => boolean
+;(filterFns as Record<string, (value: unknown, query: unknown) => boolean>).inListCSV =
+  (value, query) => {
+    const items = String(query).split(',').map((s) => s.trim().toLowerCase())
+    return items.includes(String(value ?? '').toLowerCase())
   }
-}
 
-;(filterFns as any).inListCSV = (value, query) => {
-  const items = String(query).split(',').map((s) => s.trim().toLowerCase())
-  return items.includes(String(value ?? '').toLowerCase())
-}
+// TypeScript does not know the new key, so the clause needs a cast.
+const columnFilters = [{ id: 'lang', value: 'rust,go', fn: 'inListCSV' as never }]
 ```
+
+## Features vs pipeline stages
+
+They are separate switches, and mixing them up is the usual headless snag:
+
+- A **feature** decides what a column reports - `getCanSort()`,
+  `getCanFilter()` - and therefore what affordance the UI offers.
+- A **stage** in `_rowModels` decides what actually happens to the rows.
+
+Register `createSortedRowModel` without `rowSortingFeature` and the rows sort
+while the headers insist they cannot be sorted. Register the feature without the
+stage and the headers offer sorting that never reorders anything. Register both.
 
 ## See also
 
 - [`<SvGrid>`](./SvGrid.md) - where features get passed in
+- [Headless engine reference](./headless-engine.md) - the engine these wire into
 - [`SvGridApi`](./SvGridApi.md) - imperative sort/filter/group setters
 - [Why headless?](../why-headless.md) - when to use the row-model factories directly
