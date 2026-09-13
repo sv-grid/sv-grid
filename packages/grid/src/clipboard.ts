@@ -18,6 +18,7 @@ import {
   isGroupRow,
   toolPanelHeaderLabel,
 } from "./cell-values";
+import { pushHistory, nextGroupId } from "./history";
 
 export function createClipboard<
   TFeatures extends TableFeatures = TableFeatures,
@@ -618,17 +619,10 @@ export function createClipboard<
       }
     }
 
-    // One undo entry per changed cell, appended together so a single Ctrl+Z
-    // sequence walks the whole move back. Same shape and truncation rule as
-    // a whole-row commit.
-    if (steps.length) {
-      let hist = ctx.history.slice(0, ctx.historyPtr + 1);
-      for (const step of steps) hist.push(step);
-      if (hist.length > ctx.UNDO_LIMIT) hist = hist.slice(hist.length - ctx.UNDO_LIMIT);
-      ctx.history = hist;
-      ctx.historyPtr = ctx.history.length - 1;
-      ctx.historyVersion += 1;
-    }
+    // The whole move is ONE undo entry. It used to be one step per changed
+    // cell, so walking a 15x20 move back took 300 presses of Ctrl+Z and blew
+    // past UNDO_LIMIT, evicting every step behind it.
+    pushHistory(ctx, steps, nextGroupId());
 
     // Follow the values: the range stays selected where it landed, so a
     // second drag can chain off the first the way it does in a spreadsheet.

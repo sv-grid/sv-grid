@@ -37,7 +37,7 @@ can see both the trajectory and the (short) list of real gaps.
 | Gap | Status | Effort |
 | --- | ------ | ------ |
 | ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
-| ~~Formula language / formula editor~~ | **shipped** - in-grid engine (demo `83-spreadsheet-formulas`), HyperFormula adapter (demo `173-hyperformula`), xlsx formulas (`101`, `119`) | ✓ |
+| Formula language / formula editor | **demo-level only.** The engine is copy-paste code inside demos `83`, `27` and `119`, not an importable module, and the three copies have diverged (only `119` has cross-sheet refs, whole-column refs and VLOOKUP). `$` is parsed and then discarded, so absolute refs evaluate as relative. The `hyperformula` adapter (demo `173`) is real and shipped. Being promoted into `@svgrid/enterprise` | L |
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |

@@ -247,7 +247,41 @@ const BUDGET_KB = {
   // been ratcheted flush against the measurement, so a one-byte feature failed
   // CI". Same mistake, same fix - 0.3 KB of headroom, which is the margin every
   // other entry here keeps and roughly one small feature's worth of room.
-  'full render component (SvGrid)': 84.8,
+  //
+  // 84.8 -> 85.3 for the keyboard command seam. Measured 84.5 without it and
+  // 85.0 with, so 0.5 KB, against the 0.4 KB this file records for the free
+  // half of `selectionBar` - the closest comparable seam. Three things are in
+  // that number and all of them are base by necessity, because they answer
+  // synchronously inside a keydown handler:
+  //
+  //   - `shortcut-registry.ts`, a prioritised handler chain. It exists because
+  //     `GridKeyboardIntent` is a closed public union with no member that could
+  //     mean "jump to the edge of the data region", and widening it would break
+  //     any consumer switching on it exhaustively. Running registered handlers
+  //     BEFORE the intent is computed sidesteps that.
+  //   - `command-context.ts`, the handle those handlers read the grid through.
+  //     All getters, and built only when `hasGridShortcuts()` is true, so a
+  //     grid with nothing registered pays one array-length read per keystroke.
+  //   - `history.ts`, group-aware undo.
+  //
+  // A shrink pass ran first, as the header above asks. Dropping `refresh()`
+  // from the context (the one member `api.refresh()` already covers with no
+  // index translation in it) took 85.1 -> 85.0. Folding the context into the
+  // registry to save a module boundary was tried and REJECTED on measurement:
+  // it went the wrong way, 85.0 -> 85.1, because two modules tree-shake better
+  // than one. Re-measure before trying that again rather than assuming.
+  //
+  // The COMMANDS are not in this number. Ctrl+Arrow, Ctrl+D, paste special and
+  // the rest are enterprise code arriving through `registerGridShortcuts` the
+  // same way the scheduler, board and selection bar views do, so a free grid
+  // pays for the dispatcher and nothing else.
+  //
+  // The history rewrite is in it too, and was close to free: it replaced three
+  // open-coded slice/push/cap blocks in editing.ts and clipboard.ts and two
+  // open-coded undo/redo blocks in build-api.ts and keyboard-handlers.ts with
+  // one shared module, which is why 0.5 KB buys a registry AND a context AND
+  // grouped undo.
+  'full render component (SvGrid)': 85.3,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
