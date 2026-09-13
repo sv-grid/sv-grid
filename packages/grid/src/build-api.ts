@@ -26,6 +26,7 @@ import {
   columnDefMatchesId,
 } from "./cell-values";
 import { hasAdvancedFilterEngine } from "./advanced-filter.svelte";
+import { undoHistory, redoHistory } from "./history";
 
 export function createGridApi<
   TFeatures extends TableFeatures = TableFeatures,
@@ -598,24 +599,8 @@ export function createGridApi<
         ctx.grid.setExpanded(() => ({}));
       },
       // ---- Undo / redo (history + pointer)
-      undo() {
-        if (ctx.historyPtr < 0) return false
-        const step = ctx.history[ctx.historyPtr]
-        if (!step) return false
-        ctx.applyHistoryStep(step, 'undo')
-        ctx.historyPtr -= 1
-        ctx.historyVersion += 1
-        return true
-      },
-      redo() {
-        if (ctx.historyPtr >= ctx.history.length - 1) return false
-        const step = ctx.history[ctx.historyPtr + 1]
-        if (!step) return false
-        ctx.applyHistoryStep(step, 'redo')
-        ctx.historyPtr += 1
-        ctx.historyVersion += 1
-        return true
-      },
+      undo() { return undoHistory(ctx) },
+      redo() { return redoHistory(ctx) },
       canUndo() { void ctx.historyVersion; return ctx.historyPtr >= 0 },
       canRedo() { void ctx.historyVersion; return ctx.historyPtr < ctx.history.length - 1 },
       clearHistory() { ctx.history = []; ctx.historyPtr = -1; ctx.historyVersion += 1 },

@@ -57,6 +57,7 @@ shortcuts:
 | End                 | Active cell → last column in the row.                                 |
 | Ctrl/Cmd + Home     | Active cell → top-left of the grid.                                   |
 | Ctrl/Cmd + End      | Active cell → bottom-right.                                           |
+| Ctrl/Cmd + Arrow    | Reserved. The grid does not move the active cell; `@svgrid/enterprise` binds it to Excel's jump-to-edge-of-data-region. |
 | Page Up / Page Down | Scroll a viewport's worth of rows.                                    |
 
 ### Selection (when `rowSelectionFeature` is on)
@@ -64,7 +65,7 @@ shortcuts:
 | Key                       | Action                                                          |
 | ------------------------- | --------------------------------------------------------------- |
 | Space                     | Toggle the active row's selection.                              |
-| Ctrl/Cmd + A              | Select all rows on the current page.                            |
+| Ctrl/Cmd + A              | Not bound by the grid; the browser's select-all applies. The header checkbox selects every row, and `api.selectCells` selects ranges. |
 | Shift + Arrow Up/Down     | Extend the row selection.                                       |
 | Ctrl/Cmd + Click on a row | Toggle that row's selection without affecting others.           |
 

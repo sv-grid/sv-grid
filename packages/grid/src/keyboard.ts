@@ -22,6 +22,20 @@ export function getKeyboardIntent(event: KeyboardEvent): GridKeyboardIntent {
   if (event.ctrlKey && event.key === 'Home') return 'gridStart'
   if (event.ctrlKey && event.key === 'End') return 'gridEnd'
 
+  // Ctrl/Cmd + arrow is Excel's "jump to the edge of the data region". The
+  // grid does not implement that itself - it is a paid command registered
+  // through `registerGridShortcuts`, which runs before this function is ever
+  // called. If we get here the key was NOT claimed, and the right answer is to
+  // do nothing: moving one cell is a silently wrong response to a shortcut
+  // every spreadsheet user presses. Alt is excluded so a browser or OS
+  // combination still falls through untouched.
+  if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+    if (
+      event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
+      event.key === 'ArrowUp' || event.key === 'ArrowDown'
+    ) return 'noop'
+  }
+
   if (event.key === 'ArrowLeft') return 'moveLeft'
   if (event.key === 'ArrowRight') return 'moveRight'
   if (event.key === 'ArrowUp') return 'moveUp'

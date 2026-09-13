@@ -724,6 +724,14 @@ export {
   type GroupPaginationResult,
 } from './group-display'
 export { getKeyboardIntent, getNextActiveCell, type GridKeyboardIntent } from './keyboard'
+export {
+  registerGridShortcuts,
+  hasGridShortcuts,
+  clearGridShortcuts,
+  type GridShortcutHandler,
+  type GridCommandContext,
+} from './shortcut-registry'
+export type { HistoryStep } from './history'
 export { createVirtualizer } from './virtualization/virtualizer'
 export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
 export { createColumnVirtualizer } from './virtualization/column-virtualizer'
