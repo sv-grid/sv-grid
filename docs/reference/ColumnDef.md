@@ -122,7 +122,7 @@ Example: `{ type: 'date', pattern: 'y-m-d' }` ⇒ `2026-06-05`.
 
 | Field        | Type                                                              | Notes                                                       |
 | ------------ | ----------------------------------------------------------------- | ----------------------------------------------------------- |
-| `editorType` | `'text' \| 'number' \| 'date' \| 'datetime' \| 'checkbox'`        | Required for the column to be inline-editable.              |
+| `editorType` | `'text' \| 'number' \| 'date' \| 'datetime' \| 'time' \| 'date-native' \| 'datetime-native' \| 'time-native' \| 'password' \| 'checkbox' \| 'list' \| 'chips' \| 'select' \| 'rich-select' \| 'autocomplete' \| 'textarea' \| 'color' \| 'rating'` (or any name registered with `registerCellEditor`) | Required for the column to be inline-editable. |
 
 The grid uses `editorType` for two things: which inline editor to
 mount when the user presses F2, AND which sort comparator to pick when
@@ -178,6 +178,38 @@ import { renderSnippet } from '@svgrid/grid'
   cell: (ctx) => renderSnippet(PersonCell, { row: ctx.row.original }),
 }
 ```
+
+## The rest of the options
+
+This page covers the options you reach for first. A column also accepts:
+
+| Field | What it does |
+| ----- | ------------ |
+| `cellDataType` | `'text' \| 'number' \| 'boolean' \| 'date' \| 'dateString'` - fills in `editorType`, `align` and a date `format` in one go. Anything you set explicitly still wins. |
+| `cellClass` | Class name(s) for this column's cells: a string, an array, or a per-cell function returning either, or a `{ class: boolean }` map. |
+| `cellFlash` | Flash the cell when its value changes. `true` for the built-in animation, `{ className }` for your own. |
+| `cellEditor` | A snippet that replaces the built-in editor, with `commit(value)` / `cancel()` helpers. Wins over `editorType`. |
+| `editable` | `false` locks the column; `(ctx) => boolean` locks individual cells. The grid's `enableInlineEditing` still wins when off. |
+| `editorOptions` | Options for the list-style editors. Bare values or `{ value, label }`, a `(row) => options` function for cascades, and either may return a Promise. |
+| `editorMultiple` | The list / chips editors allow several values; the cell value becomes an array. |
+| `editorSeparator` | How an array value is joined for the read-only display. Defaults to `', '`. |
+| `validate` | Per-cell validation, run on every rendered cell (not just on edit). Return a string for the message, `false` for a bare invalid, `null` / `true` for valid. |
+| `valueParser` | Transform a committed edit before it is written to the row. |
+| `tooltip` | A string, or `(ctx) => string`, shown when the pointer rests on the cell. |
+| `sortable` | `false` opts the column out of sorting, header clicks and `api.setSort` included. |
+| `filterable` | `false` opts the column out of filtering, funnel and `api.setFilter` included. |
+| `aggregate` | How the column rolls up into a group banner: `'sum' \| 'avg' \| 'min' \| 'max' \| 'count' \| 'countDistinct' \| 'extent' \| 'first'`, or a custom reducer. |
+| `summary` | What the footer summary row shows for this column. Same aggregators; `false` leaves the cell blank. |
+| `sparkline` | Render the cell as an in-cell sparkline. A `cell` renderer wins over it. |
+| `formatter` | A display function for anything `format` cannot express. Returns a string. |
+| `hideBelow` | In `responsive` mode, drop this column when the grid is narrower than this many pixels. |
+| `colSpan` / `rowSpan` | Value-driven cell spanning. Feed `spansToMerges(rows, columns)` into `spreadsheetLayout` to apply them. |
+| `columnGroupShow` | On a child of a collapsible group: `'open'` shows it only while the group is expanded, `'closed'` only while collapsed. |
+| `openByDefault` | On a group column: start expanded instead of collapsed. |
+
+Every option, with its full type and doc comment, is generated from the source
+in [`reference/auto/svgrid-grid-core`](./auto/svgrid-grid-core.md), and the
+behaviour of all of them is covered by `packages/grid/src/qa/qa.columndef.test.ts`.
 
 ## See also
 

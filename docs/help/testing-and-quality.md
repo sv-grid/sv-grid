@@ -6,15 +6,15 @@ stands today.
 
 ## Headline numbers
 
-> **81.2% line coverage** on the measurable surface
+> **81.3% line coverage** on the measurable surface
 > (`pnpm --filter @svgrid/grid test:lib`)
 
 | Metric | Coverage | Threshold |
 | ------ | -------- | --------- |
-| Lines | 81.24% | >= 81% |
-| Statements | 75.04% | >= 74% |
-| Branches | 66.39% | >= 65% |
-| Functions | 74.84% | >= 74% |
+| Lines | 81.26% | >= 81% |
+| Statements | 75.06% | >= 74% |
+| Branches | 66.43% | >= 65% |
+| Functions | 74.86% | >= 74% |
 
 The thresholds are a **ratchet, not a target**: each sits just under the measured
 value so a drop fails the build while ordinary churn does not. They were once set
@@ -72,8 +72,9 @@ dimensions, ResizeObserver fires) that jsdom returns as zero:
 ## The API QA phase
 
 `packages/grid/src/qa/` is a sweep over the **public surface** rather than a
-feature: 245 cases that mount the real `<SvGrid>` and check each member against
-the contract its reference page or doc comment states.
+feature: 284 cases that mount the real `<SvGrid>` and check each member against
+the contract its reference page or doc comment states - 120 props, 84 api
+members, 35 column options and 19 callbacks.
 
 | Suite | Surface |
 | ----- | ------- |
@@ -85,14 +86,16 @@ the contract its reference page or doc comment states.
 | `qa.props-core.test.ts` | Data state, layout, virtualization, filter / selection / editing surfaces, sort, pagination, grouping, the shortcuts |
 | `qa.props-extras.test.ts` | Row chrome, notes, conditional formatting, clipboard hooks, status bar, tool panel, tree data, localization, server hooks, board / scheduler / chart / pivot modes |
 | `qa.events.test.ts` | The DOM-driven callbacks (clicks, double clicks, scroll-bottom) plus `icons` and the seed props |
+| `qa.columndef.test.ts` | Every `ColumnDef` option: value source, rendering slots, layout, column groups, editing, per-column opt-outs, aggregation |
 | `qa.surface.test.ts` | The gate: parses the `SvGridApi` and `Props` types and fails when a member has no QA case, and checks the runtime api object matches the type exactly |
 
-The gate is the point. A new prop or api member cannot ship without a QA case,
-and a member that quietly stops working fails here even when no feature suite
-covers it. The first run of the phase found five defects (a dead filter funnel,
+The gate is the point. A new prop, column option or api member cannot ship
+without a QA case, and a member that quietly stops working fails here even when
+no feature suite covers it. The phase found six defects: a dead filter funnel,
 `CSS.escape` crashing autosize outside a browser, `error` losing to `loading`,
-`getActiveCell` reporting the mount seed as a focus, and two doc pages promising
-that editing never touches the caller's rows).
+`getActiveCell` reporting the mount seed as a focus, the per-column `tooltip`
+never firing while virtualization was on (its default), and two doc pages
+promising that editing never touches the caller's rows.
 
 Run it alone with:
 
@@ -138,7 +141,7 @@ and is documented inline with the reasoning for each entry.
 | `core.performance.test.ts` | Engine performance under large row counts | Benchmark |
 | `qa/*.test.ts` | The API QA phase: every prop, every `SvGridApi` member, every callback | Mounted |
 
-Total: **3,132 tests** across **212 test files** in `@svgrid/grid`, plus **1,607** across **101** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
+Total: **3,173 tests** across **213 test files** in `@svgrid/grid`, plus **1,607** across **101** in `@svgrid/enterprise` (the table above lists the core suites; the full set also covers clipboard, selection, menus, editing, columns, charts, spreadsheet, server-side data, collaboration, and more).
 
 ## Quality controls beyond unit tests
 

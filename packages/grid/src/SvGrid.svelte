@@ -2320,6 +2320,10 @@
                           row,
                           rendered.column,
                         )}
+                        {@const cellTooltip = computeCellTooltip(
+                          row,
+                          rendered.column,
+                        )}
                         <td
                           class={`sv-grid-cell ${userCellClass}`}
                           class:sv-grid-cell-editing={isEditing || inRowEdit}
@@ -2330,7 +2334,6 @@
                           class:sv-grid-cell-invalid={cellValidity.invalid}
                           class:sv-grid-cell-has-note={cellNote != null}
                           aria-invalid={cellValidity.invalid ? "true" : undefined}
-                          title={cellValidity.message ?? undefined}
                           data-svgrid-row={rowIndex}
                           data-svgrid-col={colIndex}
                           data-col-id={rendered.column.id}
@@ -2358,8 +2361,26 @@
                           style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
                           onpointerdown={(event) =>
                             onCellPointerDown(rowIndex, colIndex, event)}
-                          onpointerenter={() =>
-                            onCellPointerEnter(rowIndex, colIndex)}
+                          onpointerenter={(event) => {
+                            onCellPointerEnter(rowIndex, colIndex);
+                            // Same tooltip contract as the unvirtualized path
+                            // below: the column tooltip shows on whole-cell
+                            // hover, a validation message wins over it, and
+                            // per-cell notes stay on their corner hot-zone.
+                            // Without this the `tooltip` column option was
+                            // dead whenever virtualization was on - which is
+                            // the default.
+                            const tip =
+                              cellValidity.invalid && cellValidity.message
+                                ? cellValidity.message
+                                : cellTooltip;
+                            if (tip)
+                              showTooltipFor(
+                                event.currentTarget as HTMLElement,
+                                tip,
+                              );
+                          }}
+                          onpointerleave={hideTooltip}
                           ondblclick={() =>
                             emitCellDoubleClick(rowIndex, colIndex)}
                           onclick={() => onCellClick(rowIndex, colIndex)}
@@ -2403,6 +2424,15 @@
                                 cellValue,
                               )}
                             {/if}
+                          {/if}
+                          {#if cellValidity.invalid && cellValidity.message}
+                            <!-- The validation message for assistive tech, as
+                                 on the unvirtualized path: the visual copy is
+                                 the pointer tooltip above, which a keyboard or
+                                 screen-reader user never sees. -->
+                            <span class="sv-grid-sr-only"
+                              >{cellValidity.message}</span
+                            >
                           {/if}
                           {#if !isEditing && fillHandleCell && fillHandleCell.rowIndex === rowIndex && fillHandleCell.colIndex === colIndex}
                             <!-- Excel-style fill handle: drag down/right to

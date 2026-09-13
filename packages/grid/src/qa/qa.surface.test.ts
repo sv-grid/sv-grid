@@ -2,13 +2,13 @@
  * The QA gate: ties the public surface to this directory.
  *
  * 1. Every `SvGridApi` member in the type must be exercised by a QA case.
- * 2. Every `<SvGrid>` prop must be exercised by a QA case, unless it is listed
- *    in `UNREACHABLE_IN_JSDOM` with the reason it cannot be.
- * 3. The object handed to `onApiReady` must expose exactly the members the type
+ * 2. Every `<SvGrid>` prop must be exercised by a QA case.
+ * 3. Every `ColumnDef` option must be exercised by a QA case.
+ * 4. The object handed to `onApiReady` must expose exactly the members the type
  *    promises - no missing methods, no undocumented extras.
  *
- * A new prop or api member therefore cannot ship without a QA case (or an
- * explicit, reasoned exemption).
+ * A new prop, column option or api member therefore cannot ship without a QA
+ * case (or an explicit, reasoned exemption).
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -58,6 +58,7 @@ const apiMembers = topLevelMembers(
   typeBody('svgrid-wrapper.types.ts', 'export type SvGridApi<'),
 )
 const propNames = topLevelMembers(typeBody('SvGrid.types.ts', 'export type Props<'))
+const columnOptions = topLevelMembers(typeBody('core.ts', 'export type ColumnDef<'))
 
 /** Every QA test source, concatenated. */
 const qaSources = readdirSync(here)
@@ -114,6 +115,19 @@ describe('QA gate: the api surface is fully exercised', () => {
     for (const member of apiMembers) {
       expect(typeof (api as unknown as Record<string, unknown>)[member]).toBe('function')
     }
+  })
+})
+
+describe('QA gate: the column surface is fully exercised', () => {
+  it('finds the column options in the type', () => {
+    expect(columnOptions.length).toBeGreaterThan(30)
+    expect(columnOptions).toContain('field')
+    expect(columnOptions).toContain('cellClass')
+  })
+
+  it('exercises every ColumnDef option in a QA case', () => {
+    const missing = columnOptions.filter((o) => !(o in EXEMPT) && !isExercised(o))
+    expect(missing, `ColumnDef options with no QA case: ${missing.join(', ')}`).toEqual([])
   })
 })
 
