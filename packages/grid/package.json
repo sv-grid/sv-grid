@@ -94,6 +94,11 @@
       "svelte": "./dist/filtering/excel-filters.js",
       "import": "./dist/filtering/excel-filters.js"
     },
+    "./shortcuts": {
+      "types": "./dist/shortcut-registry.d.ts",
+      "svelte": "./dist/shortcut-registry.js",
+      "import": "./dist/shortcut-registry.js"
+    },
     "./flex-render": {
       "types": "./dist/flex-render.d.ts",
       "svelte": "./dist/flex-render.js",

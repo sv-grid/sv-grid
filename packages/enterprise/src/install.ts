@@ -33,6 +33,7 @@ import { enableBoardView } from './board'
 import { enableSelectionBar } from './selection-bar'
 import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
+import { enableSheet } from './sheet-enable'
 
 /** The `api.ai.*` namespace added by the enterprise install. */
 export type EnterpriseAIApi<TData extends RowData> = {
@@ -145,6 +146,10 @@ export function installEnterprise<
   registerExportProvider(exportGrid as never)
   enablePivot()
   enableAdvancedFilter()
+  // Register the Excel keymap (Ctrl+Arrow, Ctrl+D, Ctrl+A and the rest). The
+  // grid interprets a key itself only when nothing claims it, so a free grid
+  // is unaffected.
+  enableSheet()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

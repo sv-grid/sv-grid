@@ -74,6 +74,31 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // In-grid pivot mode (Pro). `enablePivot()` registers the pivot engine so
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
+export { enableSheet } from './sheet-enable'
+export {
+  SHEET_BINDINGS,
+  handleSheetKey,
+  type SheetBinding,
+  type SheetCommand,
+} from './sheet/shortcuts'
+export {
+  edgeOfRegion,
+  currentRegion,
+  isBlankValue,
+  type Direction as SheetDirection,
+} from './sheet/navigate'
+export {
+  fillDown,
+  fillRight,
+  fillSelection,
+  stampDate,
+  stampNow,
+  copyFromAbove,
+  guessSumRange,
+  looksNumeric,
+  setFillTranslator,
+  type FillTranslator,
+} from './sheet/commands'
 export { enableAdvancedFilter } from './advanced-filter-enable'
 export { default as SvAdvancedFilter } from './SvAdvancedFilter.svelte'
 export {
