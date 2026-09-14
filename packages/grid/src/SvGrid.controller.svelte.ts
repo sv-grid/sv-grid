@@ -2355,6 +2355,19 @@ export function createSvGridController<
     const seriesField = fieldOf(effectiveChartSeriesId);
     const rowsForChart = chartRows as Array<Record<string, unknown>>;
 
+    // Shared by the direct and aggregated paths so the two cannot drift apart
+    // again - which is how these came to be skipped for scatter, gauge and
+    // boxplot in the first place.
+    function applyChartValueSettings<T extends {
+      xType?: string; yScale?: string; valueFormat?: unknown;
+    }>(spec: T): T {
+      if (effectiveChartTimeAxis) spec.xType = "time";
+      if (effectiveChartLogScale) spec.yScale = "log";
+      if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+      applyChartLocale(spec as never);
+      return spec;
+    }
+
     // Some types read the rows directly rather than a grouped grid: a scatter
     // point is one row, a gauge has no category axis at all, and a box plot
     // needs the whole sample per group rather than one reduced number. The
@@ -2370,7 +2383,14 @@ export function createSvGridController<
       reduce: chartReduce,
       ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
     });
-    if (direct) return direct;
+    // Number formatting and the scale/axis-type settings are about how values
+    // READ, so they apply to a scatter or a gauge exactly as they do to a bar
+    // chart. They used to live only on the aggregated path below, so setting
+    // `valueFormat` or `logScale` on a direct type silently did nothing.
+    //
+    // The series-shaped settings (trend, averageLine, seriesTypes) stay on the
+    // aggregated path: a direct spec does not have the series shape they read.
+    if (direct) return applyChartValueSettings(direct);
     // A direct type that could not build (scatter with no Y picked yet, for
     // instance) must not fall through to the bar-chart path and draw the wrong
     // chart - it renders the panel's empty state instead.
@@ -2402,10 +2422,7 @@ export function createSvGridController<
     }
 
     if (effectiveChartOrientation === "horizontal") spec.orientation = "horizontal";
-    if (effectiveChartTimeAxis) spec.xType = "time";
-    if (effectiveChartLogScale) spec.yScale = "log";
-    if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
-    applyChartLocale(spec);
+    applyChartValueSettings(spec);
     if (chartType !== "pie" && spec.orientation !== "horizontal" && !spec.yAxisTitle && chartAutoYAxisTitle) {
       spec.yAxisTitle = chartAutoYAxisTitle;
     }
