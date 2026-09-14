@@ -23,6 +23,7 @@ import {
   axisForSelection, getStructureTarget,
 } from './structure'
 import { getFindTarget } from './find-replace'
+import type { Workbook } from './workbook'
 
 export type SheetCommand = (cmd: GridCommandContext, event: KeyboardEvent) => boolean
 
@@ -50,6 +51,41 @@ export function setFormatTarget(target: SheetFormatTarget | null): void {
 
 export function getFormatTarget(): SheetFormatTarget | null {
   return formatTarget
+}
+
+/**
+ * The workbook the sheet-switching keys act on.
+ *
+ * Optional, like everything else here: a single-sheet grid never sets one and
+ * Ctrl+PageDown falls through to the browser's own tab switching, which is
+ * what someone with one sheet expects it to do.
+ */
+let workbook: Workbook | null = null
+let onWorkbookChange: (() => void) | null = null
+
+export function setWorkbook(next: Workbook | null, onChange?: () => void): void {
+  workbook = next
+  onWorkbookChange = onChange ?? null
+}
+
+export function getWorkbook(): Workbook | null {
+  return workbook
+}
+
+/** Move `delta` sheets from the active one. Excel does NOT wrap at the ends,
+ *  so neither does this: hitting the last sheet and pressing again should
+ *  leave you there rather than teleport you to the first. */
+function switchSheet(delta: number): boolean {
+  const wb = workbook
+  if (!wb) return false
+  const sheets = wb.sheets
+  const at = sheets.indexOf(wb.active)
+  if (at < 0) return false
+  const next = at + delta
+  if (next < 0 || next >= sheets.length) return false
+  wb.setActive(sheets[next]!)
+  onWorkbookChange?.()
+  return true
 }
 
 /** Called when Ctrl+Shift+V fires, so a consumer can open its own Paste
@@ -263,6 +299,18 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
     onPasteSpecial(cmd)
     return true
   }, label: 'Paste Special' },
+
+  // Workbook. These decline without a workbook attached, so a single-sheet
+  // grid leaves Ctrl+PageDown to the browser.
+  { key: 'PageDown', mod: true, run: () => switchSheet(1), label: 'Next sheet' },
+  { key: 'PageUp', mod: true, run: () => switchSheet(-1), label: 'Previous sheet' },
+  { key: 'F11', shift: true, run: () => {
+    const wb = workbook
+    if (!wb) return false
+    wb.addSheet()
+    onWorkbookChange?.()
+    return true
+  }, label: 'New sheet' },
 ]
 
 function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean {
