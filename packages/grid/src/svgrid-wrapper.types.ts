@@ -5,6 +5,7 @@ import type { FilterOperator, Props } from './SvGrid.types'
 import type { GridExportOptions, GridClipboardOptions } from './export-format'
 import type { ChartFormatState, ChartReducer, ChartSpec, ChartTimeBucket, ChartType, ChartZoomWindow } from './chart'
 import type { GridPredicateExpr } from './filtering/predicate-expr'
+import type { GridCommandContext } from './shortcut-registry'
 
 // Aliased to the core union rather than restated: the API surfaces below hand
 // back whatever the grid actually filtered with, so a hand-maintained subset
@@ -497,6 +498,20 @@ export type SvGridApi<
   canRedo(): boolean
   /** Wipe both stacks (e.g. after a server save commits the buffer). */
   clearHistory(): void
+
+  // ----- Keyboard commands -----
+  /**
+   * The same `GridCommandContext` a registered shortcut handler receives.
+   *
+   * Keyboard commands are handed one on every keystroke, but a button in a
+   * ribbon or a toolbar has no keystroke to ride in on, and re-implementing
+   * "bold the selection" against the api would give the button and the key
+   * two code paths that drift. Both go through this instead.
+   *
+   * Live, not a snapshot: the object reads through to the grid, so one built
+   * once at mount still reports the current selection.
+   */
+  getCommandContext(): GridCommandContext
 
   // ----- Find in grid -----
   /** Open the built-in find overlay (Ctrl+F also opens it). */

@@ -1670,6 +1670,27 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     columnId: string;
   }) => unknown;
   /**
+   * Transform each cell on its way IN from the clipboard, before the grid
+   * coerces it for the column's editor. Symmetric with
+   * `processCellForClipboard`: the pair is what lets a round trip survive.
+   *
+   * Receives the raw clipboard text for the cell plus where it is landing.
+   * Return the value to write, or `undefined` to leave the cell untouched.
+   *
+   * This is also the seam a feature pack uses to take over a paste entirely:
+   * `@svgrid/enterprise`'s paste-special reads the clipboard's `text/html`
+   * for formats and formulas and writes through here.
+   */
+  processCellFromClipboard?: (params: {
+    /** The raw text from the clipboard for this cell. */
+    text: string;
+    /** What the grid would have written after its own coercion. */
+    parsedValue: unknown;
+    row: TData;
+    rowIndex: number;
+    columnId: string;
+  }) => unknown;
+  /**
    * Inline cell editing: F2 or double-click opens an editor in the active cell,
    * Enter commits, Esc cancels. Off by default.
    *

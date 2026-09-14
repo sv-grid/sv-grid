@@ -7045,6 +7045,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "advanced"
       },
       {
+        "key": "processCellFromClipboard",
+        "label": "Process Cell From Clipboard",
+        "type": "json",
+        "description": "Transform each cell on its way IN from the clipboard, before the grid coerces it for the column's editor. Symmetric with `processCellForClipboard`: the pair is what lets a round trip survive. Receives the raw clipboard text for the cell plus where it is landing. Return the value to write, or `undefined` to leave the cell untouched. This is also the seam a feature pack uses to take over a paste entirely: `@svgrid/enterprise`'s paste-special reads the clipboard's `text/html` for formats and formulas and writes through here.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "enableInlineEditing",
         "label": "Enable Inline Editing",
         "type": "boolean",

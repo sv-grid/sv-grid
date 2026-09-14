@@ -42,6 +42,11 @@
       "svelte": "./dist/pivot.js",
       "import": "./dist/pivot.js"
     },
+    "./sheet": {
+      "types": "./dist/sheet/index.d.ts",
+      "svelte": "./dist/sheet/index.js",
+      "import": "./dist/sheet/index.js"
+    },
     "./license": {
       "types": "./dist/license.d.ts",
       "svelte": "./dist/license.js",

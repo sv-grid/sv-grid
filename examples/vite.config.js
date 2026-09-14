@@ -28,10 +28,19 @@ export default defineConfig({
       // code). Must precede the bare alias below so it wins for this specifier.
       '@svgrid/grid/format': path.resolve(repoRoot, 'packages/grid/src/export-format.ts'),
       '@svgrid/grid/filtering': path.resolve(repoRoot, 'packages/grid/src/filtering/excel-filters.ts'),
+      // The Svelte-free `/shortcuts` subpath (the keyboard command registry
+      // that @svgrid/enterprise's sheet code imports). EVERY subpath the
+      // packages use of each other needs a line here: the bare alias below
+      // does not cover them, and without one the dev server 500s while
+      // test:types and vitest both pass, because those resolve through
+      // package.json exports to dist.
+      '@svgrid/grid/shortcuts': path.resolve(repoRoot, 'packages/grid/src/shortcut-registry.ts'),
       '@svgrid/grid/themes': path.resolve(repoRoot, 'packages/grid/src/themes/index.ts'),
       '@svgrid/grid': path.resolve(repoRoot, 'packages/grid/src/index.ts'),
       // Studio subpath (Svelte-free core) - must precede the bare alias below.
       '@svgrid/enterprise/studio': path.resolve(repoRoot, 'packages/enterprise/src/studio/index.ts'),
+      // Spreadsheet subpath (engine + keyboard layer, without export or pivot).
+      '@svgrid/enterprise/sheet': path.resolve(repoRoot, 'packages/enterprise/src/sheet/index.ts'),
       // Private: visual designer components (only used by git-ignored demos).
       '@svgrid/enterprise': path.resolve(repoRoot, 'packages/enterprise/src/index.ts'),
     },
