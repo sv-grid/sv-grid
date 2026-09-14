@@ -1,25 +1,25 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/interaction.md -->
 <script lang="ts">
   /**
    * 159. Streaming chart with a rolling window
    * -------------------------------------------
-   * Live data doesn't need any special chart API - because `spec` is a
-   * Svelte derived, anything that mutates the underlying rows re-runs
-   * the spec and re-renders the chart. The trick is to:
+   * A feed hands the chart one tick every 250 ms. The spec is state, and
+   * `appendPoints(spec, point, { window })` returns the next one: the new
+   * category and value appended, the oldest dropped past the window, and
+   * every per-category array (row ids, bands, candles if there were any) kept
+   * in step. `live` on the chart skips the data-update tween and the enter
+   * effect, which would otherwise restart on every tick and never settle.
    *
-   *  1. Append the new tick to the dataset.
-   *  2. Cap the array at a fixed window size so the chart shows the most
-   *     recent N points instead of growing forever.
-   *  3. Re-aggregate via `rowsToChartSpec` so the chart inherits zoom /
-   *     drill / brush / format helpers for free.
-   *
-   * Hit Start - prices stream in at 4 Hz. The window holds the last 60
-   * ticks; older points drop off the left as new ones appear on the right.
+   * The grid keeps its own rows array for the table; the chart no longer
+   * rebuilds from it. Hit Start - prices stream in at 4 Hz. The window holds
+   * the last 60 ticks; older points drop off the left as new ones appear on
+   * the right.
    */
   import { onDestroy } from 'svelte'
   import {
     SvGrid,
     SvGridChart,
+    appendPoints,
     rowsToChartSpec,
     tableFeatures,
     rowSortingFeature,
@@ -38,12 +38,15 @@
   const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 0xffffffff)
   let nextId = 0
   let price = 100
-  function tick(): Row {
+  function tick(at = Date.now()): Row {
     price = Math.max(50, price + (rnd() - 0.5) * 1.8)
-    const t = new Date().toISOString().slice(11, 19)   // HH:MM:SS
+    const t = new Date(at).toISOString().slice(11, 21)   // HH:MM:SS.ms, unique per tick
     return { id: nextId++, t, price: Math.round(price * 100) / 100 }
   }
-  let rows = $state<Row[]>(Array.from({ length: 20 }, () => tick()))
+  // Twenty seed ticks, spaced like the feed will be, so the chart starts with
+  // twenty categories rather than twenty rows in one instant.
+  const seedAt = Date.now()
+  let rows = $state<Row[]>(Array.from({ length: 20 }, (_, i) => tick(seedAt - (20 - i) * 250)))
 
   const columns: GridColumns<Row> = [
     { field: 't',     header: 'Tick',  width: 110 },
@@ -58,9 +61,12 @@
     if (intervalId) return
     running = true
     intervalId = setInterval(() => {
-      const next = [...rows, tick()]
-      // Roll: drop the oldest when above WINDOW so the chart slides.
+      const row = tick()
+      const next = [...rows, row]
+      // Roll: drop the oldest when above WINDOW so the table slides too.
       rows = next.length > WINDOW ? next.slice(next.length - WINDOW) : next
+      // The chart takes the one point; appendPoints keeps the window.
+      spec = appendPoints(spec, { category: row.t, values: [row.price], rowIds: [[row.id]] }, { window: WINDOW })
     }, 250)
   }
   function stop() {
@@ -69,20 +75,14 @@
   }
   onDestroy(stop)
 
-  const spec = $derived.by<ChartSpec>(() => {
-    const s = rowsToChartSpec(rows, {
-      type: 'line',
-      category: 't',
-      value: 'price',
-      reduce: 'sum',
-      width: 720,
-      height: 320,
-    })
+  // Seeded once from the starting rows; every tick appends to it.
+  let spec = $state<ChartSpec>((() => {
+    const s = rowsToChartSpec(rows, { type: 'line', category: 't', value: 'price', reduce: 'sum', width: 720, height: 320 })
     s.xAxisTitle = 'Tick'
     s.yAxisTitle = 'Price'
     s.series[0]!.smooth = true
     return s
-  })
+  })())
   /** Pane size, so the chart fills its card rather than a fixed viewBox. */
   let paneW = $state(0)
   let paneH = $state(0)
@@ -128,7 +128,7 @@
            chart cannot push the thing it is sized against. -->
       <div style="width: 100%; height: 100%; min-height: 0;" bind:clientWidth={paneW} bind:clientHeight={paneH}>
         {#if paneW > 40 && paneH > 40}
-          <SvGridChart {spec} width={paneW} height={paneH} />
+          <SvGridChart {spec} width={paneW} height={paneH} live />
         {/if}
       </div>
     </div>

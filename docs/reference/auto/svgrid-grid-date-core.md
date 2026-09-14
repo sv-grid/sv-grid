@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\datetime\date-core.ts`.
 
 ### `type DateLike`
 
-Anything the date helpers accept: a `Date`, epoch milliseconds, or a parseable string. */
+Anything the date helpers accept: a `Date`, epoch milliseconds, or a parseable string.
 
 ```ts
 export type DateLike = Date | number | string
@@ -12,7 +12,7 @@ export type DateLike = Date | number | string
 
 ### `function toDate`
 
-Coerce a Date | epoch-ms | parseable string to a Date, or null if invalid. */
+Coerce a Date | epoch-ms | parseable string to a Date, or null if invalid.
 
 ```ts
 export function toDate(value: DateLike | null | undefined): Date | null {
@@ -24,7 +24,7 @@ export function toDate(value: DateLike | null | undefined): Date | null {
 
 ### `function startOfDay`
 
-A new Date at local midnight of the same calendar day (time stripped). */
+A new Date at local midnight of the same calendar day (time stripped).
 
 ```ts
 export function startOfDay(d: Date): Date {
@@ -34,7 +34,7 @@ export function startOfDay(d: Date): Date {
 
 ### `function startOfMonth`
 
-First day (midnight) of the month `d` falls in. */
+First day (midnight) of the month `d` falls in.
 
 ```ts
 export function startOfMonth(d: Date): Date {
@@ -44,7 +44,7 @@ export function startOfMonth(d: Date): Date {
 
 ### `function endOfMonth`
 
-Last day (midnight) of the month `d` falls in. */
+Last day (midnight) of the month `d` falls in.
 
 ```ts
 export function endOfMonth(d: Date): Date {
@@ -54,7 +54,7 @@ export function endOfMonth(d: Date): Date {
 
 ### `function daysInMonth`
 
-Number of days in the month `d` falls in. */
+Number of days in the month `d` falls in.
 
 ```ts
 export function daysInMonth(d: Date): number {
@@ -78,7 +78,7 @@ export function startOfWeek(d: Date, firstDayOfWeek = 0): Date {
 
 ### `function isSameDay`
 
-True when both dates are the same local calendar day. */
+True when both dates are the same local calendar day.
 
 ```ts
 export function isSameDay(a: Date | null, b: Date | null): boolean {
@@ -93,7 +93,7 @@ export function isSameDay(a: Date | null, b: Date | null): boolean {
 
 ### `function isSameMonth`
 
-True when both dates are in the same year+month. */
+True when both dates are in the same year+month.
 
 ```ts
 export function isSameMonth(a: Date | null, b: Date | null): boolean {
@@ -104,7 +104,7 @@ export function isSameMonth(a: Date | null, b: Date | null): boolean {
 
 ### `function compareDay`
 
--1 / 0 / 1 comparison by calendar day (time-of-day ignored). */
+-1 / 0 / 1 comparison by calendar day (time-of-day ignored).
 
 ```ts
 export function compareDay(a: Date, b: Date): number {
@@ -116,7 +116,7 @@ export function compareDay(a: Date, b: Date): number {
 
 ### `function addDays`
 
-Add `n` days (can be negative), returning a new Date. */
+Add `n` days (can be negative), returning a new Date.
 
 ```ts
 export function addDays(d: Date, n: number): Date {
@@ -142,7 +142,7 @@ export function addMonths(d: Date, n: number): Date {
 
 ### `function addYears`
 
-Add `n` years, clamping Feb-29 to Feb-28 on non-leap targets. */
+Add `n` years, clamping Feb-29 to Feb-28 on non-leap targets.
 
 ```ts
 export function addYears(d: Date, n: number): Date {
@@ -152,7 +152,7 @@ export function addYears(d: Date, n: number): Date {
 
 ### `function clampDate`
 
-Clamp `d` to the inclusive [min, max] range (either bound may be null). */
+Clamp `d` to the inclusive [min, max] range (either bound may be null).
 
 ```ts
 export function clampDate(d: Date, min: Date | null, max: Date | null): Date {
@@ -198,7 +198,7 @@ export function decadeRange(year: number): { start: number; end: number } {
 
 ### `function centuryRange`
 
-The [start, end] years of the century block (100-year) `year` belongs to. */
+The [start, end] years of the century block (100-year) `year` belongs to.
 
 ```ts
 export function centuryRange(year: number): { start: number; end: number } {
@@ -209,7 +209,7 @@ export function centuryRange(year: number): { start: number; end: number } {
 
 ### `type MonthMatrixCell`
 
-One cell of a month grid, including the leading and trailing days from adjacent months. */
+One cell of a month grid, including the leading and trailing days from adjacent months.
 
 ```ts
 export type MonthMatrixCell = {
@@ -268,7 +268,7 @@ export function weekdayOrder(firstDayOfWeek = 0): number[] {
 
 ### `function withTime`
 
-Merge a calendar day with a time-of-day taken from `time`, returning a new Date. */
+Merge a calendar day with a time-of-day taken from `time`, returning a new Date.
 
 ```ts
 export function withTime(day: Date, time: Date): Date {
@@ -286,7 +286,7 @@ export function withTime(day: Date, time: Date): Date {
 
 ### `function snapMinute`
 
-Snap a minute value to the nearest lower multiple of `interval` (>=1). */
+Snap a minute value to the nearest lower multiple of `interval` (>=1).
 
 ```ts
 export function snapMinute(minute: number, interval: number): number {

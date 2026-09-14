@@ -1,4 +1,4 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/interaction.md -->
 <script lang="ts">
   /**
    * 153. Chart zoom + brush (mini-map)

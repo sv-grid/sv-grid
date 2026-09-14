@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\cell-formatting.ts`.
 
 ### `function resolveDatePattern`
 
-Map shortcut date patterns to Intl options (merged with caller `options`). */
+Map shortcut date patterns to Intl options (merged with caller `options`).
 
 ```ts
 export function resolveDatePattern(
@@ -105,7 +105,7 @@ export function getNumberFormatter(
 ### `function getDateFormatter`
 
 A cached `Intl.DateTimeFormat` for the locale and options given. Cached because
- constructing one per cell is the dominant cost when formatting a date column. */
+ constructing one per cell is the dominant cost when formatting a date column.
 
 ```ts
 export function getDateFormatter(
@@ -145,7 +145,7 @@ export function getDateFormatter(
 
 ### `function formatNumericWithConfig`
 
-Format a numeric value for number / currency / percent column formats. */
+Format a numeric value for number / currency / percent column formats.
 
 ```ts
 export function formatNumericWithConfig(value: unknown, config: NumericFormatInput): string {

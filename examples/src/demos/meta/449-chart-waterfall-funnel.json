@@ -1,0 +1,24 @@
+{
+  "description": "Waterfall, funnel and pareto: waterfallTotals marks the bars that are subtotals and restart from zero, waterfallColors names the colours for up, down and total, and connectors join the steps; a funnel carries each step's count with the conversion from the top and the drop-off from the step before in the tooltip, drawn as a trapezoid, pyramid or cone through funnelShape; paretoSpec sorts the causes by value and runs a cumulative percentage line with the 80% mark. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte waterfall chart",
+    "svelte funnel chart",
+    "svelte pareto chart",
+    "svelte bridge chart",
+    "svelte conversion funnel"
+  ],
+  "faq": [
+    {
+      "question": "How do I mark subtotals in a waterfall?",
+      "answer": "waterfallTotals is a boolean per category. A true entry draws that bar from zero to the running total instead of as a step: give it a value of 0 to show the sum reached so far, or a value of its own to set the sum, which is how the bridge opens on the revenue figure."
+    },
+    {
+      "question": "What does the funnel tooltip show?",
+      "answer": "The step's value, its conversion as a share of the first step, and its drop-off from the step before."
+    },
+    {
+      "question": "How do I make a pareto chart?",
+      "answer": "Pass a bar spec to paretoSpec. It sorts the categories by value, adds the cumulative percentage as a line on a right axis and marks the threshold, 80% by default."
+    }
+  ]
+}

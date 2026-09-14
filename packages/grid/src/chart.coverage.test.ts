@@ -399,6 +399,29 @@ describe("buildChart: waterfall", () => {
     // a connector line exists between bar tops
     expect(g.lines[0]!.path).toContain("M");
   });
+  it("tilts its labels when the widest does not fit its slot, with the angle the renderer needs", () => {
+    const cats = ["Revenue", "Cost of sales", "Gross profit", "R&D", "Sales & marketing", "G&A", "Operating income", "Tax", "Net income"];
+    const wide = buildChart({ type: "waterfall", categories: cats, series: [{ label: "s", values: cats.map(() => 1) }], width: 1400, height: 300 });
+    expect(wide.xLabelRotated).toBe(false);
+    const narrow = buildChart({ type: "waterfall", categories: cats, series: [{ label: "s", values: cats.map(() => 1) }], width: 700, height: 300 });
+    expect(narrow.xLabelRotated).toBe(true);
+    expect(narrow.xLabelAngle).toBe(-40);
+    const pinned = buildChart({ type: "waterfall", categories: cats, series: [{ label: "s", values: cats.map(() => 1) }], width: 700, height: 300, xAxis: { labelRotation: 0 } });
+    expect(pinned.xLabelRotated).toBe(false);
+  });
+  it("a total with a value opens the bridge at that level; a total with 0 reads the running sum", () => {
+    const g = buildChart({
+      type: "waterfall",
+      categories: ["Revenue", "Cost", "Gross", "Tax", "Net"],
+      series: [{ label: "s", values: [4300, -1840, 0, -180, 0] }],
+      waterfallTotals: [true, false, true, false, true],
+    });
+    expect(g.bars.map((b) => b.value)).toEqual([4300, -1840, 2460, -180, 2280]);
+    // The opening bar rises from zero; the cost hangs from its top.
+    const [revenue, cost] = g.bars;
+    expect(revenue!.y).toBeLessThan(cost!.y + cost!.h);
+    expect(cost!.y).toBeCloseTo(revenue!.y, 0);
+  });
   it("colors positive/negative/total via waterfallColors overrides", () => {
     const g = buildChart({
       type: "waterfall",
@@ -437,6 +460,21 @@ describe("buildChart: funnel", () => {
   });
 });
 
+describe("buildChart: colour legends", () => {
+  it("round their steps to the precision the range earns", () => {
+    const counts = buildChart({
+      type: "calendar", categories: [], series: [],
+      calendarValues: [{ date: "2026-01-05", value: 20 }, { date: "2026-01-06", value: 314 }, { date: "2026-01-07", value: 150 }],
+    });
+    expect(counts.calendarLegend.map((l) => l.label)).toEqual(["20", "94", "167", "241", "314"]);
+    const ratios = buildChart({
+      type: "heatmap", categories: ["a", "b"],
+      series: [{ label: "r1", values: [0.1, 0.5] }, { label: "r2", values: [0.3, 0.9] }],
+    });
+    expect(ratios.heatmapLegend.map((l) => l.value)).toEqual([0.1, 0.3, 0.5, 0.7, 0.9]);
+  });
+});
+
 describe("buildChart: radar", () => {
   it("one polygon per series + axis spokes + rings", () => {
     const g = buildChart({
@@ -458,6 +496,27 @@ describe("buildChart: radar", () => {
     expect(
       buildChart({ type: "radar", categories: ["A"], series: [] }).radarAxes,
     ).toHaveLength(0);
+  });
+  it("yAxis.min / max pin the rim, and a value past it sits on the rim", () => {
+    const spec = {
+      type: "radar" as const,
+      categories: ["A", "B", "C", "D"],
+      series: [{ label: "s", values: [50, 50, 50, 50] }],
+    };
+    const free = buildChart(spec);
+    const pinned = buildChart({ ...spec, yAxis: { min: 0, max: 100 } });
+    const c = pinned.radarCenter!;
+    // Unpinned, 50 is the data maximum and sits on the rim; pinned to 100 it sits halfway.
+    expect(free.radarSeries[0]!.points[0]!.y).toBeCloseTo(c.cy - c.r, 0);
+    expect(pinned.radarSeries[0]!.points[0]!.y).toBeCloseTo(c.cy - c.r / 2, 0);
+    expect(pinned.radarRings.at(-1)).toBe(100);
+    // Past the rim clamps to it rather than leaving the dial.
+    const over = buildChart({ ...spec, yAxis: { min: 0, max: 40 } });
+    expect(over.radarSeries[0]!.points[0]!.y).toBeCloseTo(c.cy - c.r, 0);
+    // A pinned minimum lifts the floor: the value at the minimum is the centre.
+    const floor = buildChart({ ...spec, series: [{ label: "s", values: [20, 60, 20, 60] }], yAxis: { min: 20, max: 60 } });
+    expect(floor.radarSeries[0]!.points[0]!.x).toBeCloseTo(c.cx, 0);
+    expect(floor.radarSeries[0]!.points[0]!.y).toBeCloseTo(c.cy, 0);
   });
   it("guards against an all-zero max (vMax defaults to 1)", () => {
     const g = buildChart({
@@ -492,6 +551,19 @@ describe("buildChart: calendar heatmap", () => {
     const blank = g.calendarCells.find((c) => !c.defined);
     expect(blank!.color).toBe("transparent");
     expect(g.calendarMonthTicks.length).toBeGreaterThanOrEqual(1);
+  });
+  it("labels only the months inside the range: the padding days of the next year get no tick", () => {
+    // 2026 ends on a Thursday; the grid pads to Saturday 2 Jan 2027.
+    const g = buildChart({
+      type: "calendar", categories: [], series: [],
+      calendarValues: [{ date: "2026-12-30", value: 1 }],
+      calendarStart: "2026-01-01", calendarEnd: "2026-12-31",
+    });
+    expect(g.calendarMonthTicks).toHaveLength(12);
+    expect(g.calendarMonthTicks[0]!.label).toBe(new Date("2026-01-01T00:00:00Z").toLocaleDateString(undefined, { month: "short" }));
+    expect(g.calendarMonthTicks[11]!.label).toBe(new Date("2026-12-01T00:00:00Z").toLocaleDateString(undefined, { month: "short" }));
+    // The padding cells exist but are blank.
+    expect(g.calendarCells.filter((c) => c.date > "2026-12-31").every((c) => !c.defined)).toBe(true);
   });
   it("honours explicit calendarStart even with no values", () => {
     const g = buildChart({
@@ -628,6 +700,15 @@ describe("buildChart: heatmap", () => {
     expect(g.heatmapRowTicks.map((t) => t.label)).toEqual(["North", "South"]);
     expect(g.heatmapColTicks.map((t) => t.label)).toEqual(["Q1", "Q2", "Q3"]);
     expect(g.heatmapLegend).toHaveLength(5);
+    // Column labels thin out when the cells get narrower than a label: 24
+    // hours in 520px is about 15px a cell, so every fourth one is written.
+    const hours = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:00`);
+    const dense = buildChart({ type: "heatmap", categories: hours, series: [{ label: "Mon", values: hours.map((_, i) => i) }] });
+    expect(dense.heatmapCells).toHaveLength(24);
+    expect(dense.heatmapColTicks.length).toBeLessThan(24);
+    expect(dense.heatmapColTicks[0]!.label).toBe("00:00");
+    const gap = dense.heatmapColTicks[1]!.x - dense.heatmapColTicks[0]!.x;
+    expect(gap).toBeGreaterThanOrEqual(60);
     for (const c of g.heatmapCells) {
       expect(["#0f172a", "#ffffff"]).toContain(c.textColor);
     }

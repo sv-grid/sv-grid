@@ -28,9 +28,11 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
-    "ag-grid-community": "^35.3.1",
+    "@tanstack/svelte-table": "^9.2.4",
+    "ag-grid-community": "^36.1.0",
     "chart.js": "^4.5.1",
     "hyperformula": "^3.3.0",
-    "smart-webcomponents": "^26.0.0"
+    "smart-webcomponents": "^26.0.0",
+    "wx-svelte-grid": "^2.7.0"
   }
 }

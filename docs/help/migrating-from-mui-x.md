@@ -1,11 +1,17 @@
 # Migrating from MUI X DataGrid
 
 MUI X DataGrid is the most common starting point for teams already
-on Material UI. It's a closed-source-Pro / open-source-Community
-split very similar to sv-grid's. The port is mostly mechanical.
+on Material UI. Its MIT Community edition plus paid Pro and Premium
+tiers is a split similar to sv-grid's, except that column pinning,
+master/detail, tree data, row grouping, aggregation and cell selection
+are paid in MUI X and free here. The port is mostly mechanical.
 
 > Estimated effort: **1-3 hours** per grid, depending on how heavily
 > you've leant on `apiRef.current.*` calls.
+
+<!-- facts:start mui-x-datagrid -->
+> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
+<!-- facts:end -->
 
 ## Package map
 
@@ -162,7 +168,11 @@ For full-row editing (one Save button per row), see
 ## Server-side data
 
 MUI X's `pagination + serverSideMode + filterMode='server'` maps to
-sv-grid's `externalSort + externalFilter`:
+sv-grid's `externalSort + externalFilter`, or to the server-side row
+model when the server also groups and pages; the demo below runs that
+model against a fake API with sort, filter and infinite scroll:
+
+<div data-docs-demo="148-server-row-model" data-height="520"></div>
 
 ```svelte
 <SvGrid
@@ -192,9 +202,18 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
 
 ## What you get for free vs MUI X
 
-- **No Emotion / no Material theme dependency.** ~50 kB gzip total
-  vs MUI X DataGrid Community's ~270 kB.
-- **All Enterprise features in one tier.** No DataGrid Pro vs Premium split.
+- **No Emotion / no Material theme dependency.** The facts box at the
+  top of the page has both packages measured the same way; the MUI X
+  figure excludes React, Material UI, Emotion and the MUI system, which
+  it needs and sv-grid does not.
+- **Pro and Premium features in the MIT core.** Column pinning, master/detail,
+  tree data, row grouping, aggregation and cell selection carry Pro or
+  Premium badges on mui.com; they are free here. Excel export and pivot
+  are paid on both sides.
+- **In-grid AI helpers against your own model.** MUI X's AI assistant is a
+  Premium feature that routes prompts through MUI's hosted service unless
+  you build your own; sv-grid's natural-language filter, smart fill and
+  summarise helpers are free and run against a provider you register.
 - **CSP-clean.** No `eval`.
 
 ## What you give up
@@ -204,6 +223,12 @@ For full theme presets (Ant, MUI, Fluent, Base Web, shadcn) see
   is one drop-in.
 - **MUI form-field integration.** Bind directly to your own MUI
   inputs in custom cell components if you want them.
+- **The rest of MUI X in one design system.** Date pickers, charts and
+  the tree view share MUI X's theme; sv-grid ships its own date and time
+  editors and charts, themed through the same `--sg-*` tokens.
+- **A hosted AI assistant with starter credits.** Premium licence holders
+  get MUI's service; sv-grid's helpers need a model provider you host or
+  pay for yourself.
 
 ## Frequently asked questions
 
@@ -222,9 +247,12 @@ bind your own MUI inputs inside custom cell components.
 ### Is SvGrid cheaper than MUI X Pro/Premium?
 
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
-is priced per developer ($599 single-app / $999 multi-app) rather than
-per seat with Premium add-ons. Compare your team size and feature needs against
-the [pricing page](https://svgrid.com/pricing/).
+is priced per developer ($599 single-app / $999 multi-app). MUI X Pro and
+Premium are also per developer per year; the prices mui.com listed on the
+date we read it are in the facts box at the top of this page. The difference
+is what the free tier holds: most of what MUI X sells in Pro and Premium is
+in SvGrid's MIT core, so compare feature needs before prices on the
+[pricing page](https://svgrid.com/pricing/).
 
 ## What you end up with
 
@@ -236,7 +264,9 @@ Sorting, filtering, pagination and inline editing - the MUI X DataGrid feature s
 
 ## See also
 
-- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/) - the side-by-side comparison
+- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/) - the side-by-side comparison, with a source and date for every claim
+- [Server-side data](./server-side-data.md) - the row model the demo above uses
+- [AI assistant](./ai.md) - the free in-grid helpers
 - [Migrating from AG Grid](./migrating-from-ag-grid.md)
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md)
 - [Design tokens](./tokens.md)

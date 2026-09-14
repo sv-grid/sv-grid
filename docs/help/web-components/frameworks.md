@@ -47,6 +47,18 @@ configuration. Every one is compiled in CI, so what you open is what works.
 | Excel export (Enterprise) | The paid pack from a non-Svelte host | [→](./react.md#excel-export-enterprise) | [→](./vue.md#excel-export-enterprise) | [→](./angular.md#excel-export-enterprise) |
 
 <!-- END generated recipe table -->
+## The chart element
+
+The standalone chart ships as its own element, `<sv-chart>`, in the same
+package: `import '@svgrid/grid-wc/chart'` registers it, and
+`@svgrid/grid-wc/react/chart`, `@svgrid/grid-wc/vue/chart` and the
+`SvChartComponent` export of the Angular package wrap it the same way the
+grid is wrapped. Set `spec` as a property; the primitives (`zoomable`,
+`range-presets`, `legend="right"`, `animate`, `drawable`) are attributes.
+The [`<sv-chart>` reference](sv-chart.md) lists all of it, and the
+[charts guide](../charts.md) says what goes in a spec. It carries none of the
+grid, so a page that only charts loads the chart.
+
 ## What each wrapper is actually for
 
 The grid is a custom element underneath, and a custom element is awkward in each

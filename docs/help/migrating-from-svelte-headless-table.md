@@ -10,17 +10,23 @@ Svelte 5 runes and ships a render component, so the port mostly
 > Estimated effort: **1-3 hours** per grid. Most of the time is deleting
 > the `<table>` markup and `Subscribe` blocks you no longer need.
 
+<!-- facts:start svelte-headless-table pkg:@humanspeak/svelte-headless-table -->
+> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
+<!-- facts:end -->
+
 ## Know your options first
 
-The last svelte-headless-table release was 0.18.3 in October 2024 and it
-declares `svelte@^4`, so a Svelte 5 upgrade forces a decision. There are three
+The original package's last release and its Svelte 4 peer range are in the
+facts box above, and its README states there are no current plans for a
+Svelte 5 port, so a Svelte 5 upgrade forces a decision. There are three
 honest answers and you should know all of them:
 
 1. **`@humanspeak/svelte-headless-table`** - a maintained fork on Svelte 5 with
-   the same API. Changing one package name is the cheapest path by a wide
-   margin. If your table works and you only need Svelte 5, do that.
-2. **TanStack Table v9** - shipped a Svelte 5 adapter in August 2026. Still
-   headless-only, so you keep writing and maintaining the markup.
+   the same API; its version, publish date and downloads are in the facts box
+   too. Changing one package name is the cheapest path by a wide margin. If
+   your table works and you only need Svelte 5, do that.
+2. **TanStack Table v9** - its Svelte adapter declares a Svelte 5 peer range.
+   Still headless-only, so you keep writing and maintaining the markup.
 3. **SvGrid** - this page. A different trade: you delete the markup and take a
    renderer instead.
 
@@ -175,7 +181,15 @@ is the shortest form; a bare `GridColumns` widens the row to
 - **Excel-style filter menu** and **cell-range selection + TSV copy**,
   which are BYO in svelte-headless-table.
 - **Inline editing** with typed editors and validation hooks.
-- **Enterprise features** - export, import, pivot, AI - in one paid add-on.
+- **In-grid AI helpers** - natural-language filter, smart fill, summarise -
+  free in `@svgrid/grid` against a model you register.
+- **Enterprise features** - Excel and PDF export, print, import and pivot -
+  in one paid add-on; CSV, TSV and JSON export are free.
+
+If you would rather keep driving your own `<table>`, the headless demo
+below does exactly that on `createSvGrid`, plugins replaced by features:
+
+<div data-docs-demo="186-headless-table" data-height="520"></div>
 
 ## What changes
 
@@ -227,10 +241,12 @@ so you usually do not have to.
 
 ### Is svelte-headless-table still maintained?
 
-The original has not published since 0.18.3 in October 2024 and targets Svelte
-4. A community fork, `@humanspeak/svelte-headless-table`, is maintained and runs
-on Svelte 5 with the same API, which is the lowest-effort option if you are
-happy with the library and only need Svelte 5.
+The original's last publish date and Svelte 4 peer range are in the facts box
+at the top of the page, read from npm on the date shown, and its README says
+there are no current plans for a Svelte 5 port. A community fork,
+`@humanspeak/svelte-headless-table`, is maintained and runs on Svelte 5 with
+the same API; the facts box has its release line too. The fork is the
+lowest-effort option if you are happy with the library and only need Svelte 5.
 
 ## What you end up with
 
@@ -242,7 +258,8 @@ Sorting, filtering and selection, on a library that still ships for Svelte 5.
 
 ## See also
 
-- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison
+- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison, with a source and date for every claim
+- [Headless: build a table](./headless/build-a-table.md) - the demo above, step by step
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide
 - [Why headless?](../why-headless.md) - the design rationale
 - [Architecture](./architecture.md) - the engine + render-component split

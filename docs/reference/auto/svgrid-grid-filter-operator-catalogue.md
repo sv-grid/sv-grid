@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\filtering\filter-operator-catalogue.t
 
 ### `type FilterValueType`
 
-Coarse value type used to decide which operators a column offers. */
+Coarse value type used to decide which operators a column offers.
 
 ```ts
 export type FilterValueType = 'text' | 'number' | 'date' | 'datetime' | 'boolean'
@@ -37,7 +37,7 @@ export const ALL_FILTER_OPERATORS: ReadonlyArray<ExcelFilterOperator> = [
 ### `const SET_OPERATOR_IDS`
 
 Operators whose predicate is a set-membership test over a token list.
- A filter UI renders a multi-value chip input for these. */
+ A filter UI renders a multi-value chip input for these.
 
 ```ts
 export const SET_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = ['in', 'notIn']
@@ -45,7 +45,7 @@ export const SET_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = ['in', 'notI
 
 ### `const VALUELESS_OPERATOR_IDS`
 
-Operators that need no value input - they act on emptiness alone. */
+Operators that need no value input - they act on emptiness alone.
 
 ```ts
 export const VALUELESS_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = [
@@ -56,7 +56,7 @@ export const VALUELESS_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = [
 
 ### `const RANGE_OPERATOR_IDS`
 
-Operators that need a second value (`valueTo`). */
+Operators that need a second value (`valueTo`).
 
 ```ts
 export const RANGE_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = ['between']
@@ -64,7 +64,7 @@ export const RANGE_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = ['between'
 
 ### `function isSetOperator`
 
-Whether an operator takes a multi-value token list. */
+Whether an operator takes a multi-value token list.
 
 ```ts
 export function isSetOperator(op: ExcelFilterOperator): boolean {
@@ -74,7 +74,7 @@ export function isSetOperator(op: ExcelFilterOperator): boolean {
 
 ### `function isValuelessOperator`
 
-Whether an operator needs no value input. */
+Whether an operator needs no value input.
 
 ```ts
 export function isValuelessOperator(op: ExcelFilterOperator): boolean {
@@ -84,7 +84,7 @@ export function isValuelessOperator(op: ExcelFilterOperator): boolean {
 
 ### `function isRangeOperator`
 
-Whether an operator needs a second (`valueTo`) value. */
+Whether an operator needs a second (`valueTo`) value.
 
 ```ts
 export function isRangeOperator(op: ExcelFilterOperator): boolean {

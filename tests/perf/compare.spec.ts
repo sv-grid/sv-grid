@@ -13,6 +13,8 @@
  *   pnpm bench:compare
  */
 import { test, expect } from '@playwright/test'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 type GridResult = {
   grid: string
@@ -133,6 +135,14 @@ test('grid comparison', async ({ page }) => {
   console.log('    Filter is indicative only - see the note in examples/src/bench/run.ts.\n')
 
   if (errors.length) console.log(`    Page errors: ${errors.slice(0, 5).join(' | ')}\n`)
+
+  // The same numbers as a file, for tools/record-benchmarks.mjs to move into
+  // docs/_data/competitors.json with the rig and the date. Gitignored: a run
+  // is a measurement, the ledger is the publication.
+  writeFileSync(
+    join(process.cwd(), 'tests', 'perf', '.last-compare.json'),
+    JSON.stringify({ measuredAt: new Date().toISOString(), rows: ROWS, repeats: REPEATS, grids: GRIDS.split(','), results }, null, 2) + '\n',
+  )
 
   // Assertions are about the harness working, not about who won. A grid that
   // failed to load, or that rendered every row into the DOM, means the run is

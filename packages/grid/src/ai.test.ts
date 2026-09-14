@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   setAIProvider, getAIProvider, hasAIProvider,
   mockAIProvider,
-  aiFilter, aiSmartFill, aiSummarize, aiClassify, aiChart,
+  aiFilter, aiSmartFill, aiSummarize, aiClassify, aiChart, aiExplainChart, enableAiCharting, disableAiCharting,
   type AIProvider, type AIRequest,
 } from './ai'
 
@@ -552,10 +552,65 @@ describe('aiChart type vocabulary', () => {
     expect(g.dimension).toBeNull()
   })
 
+  it('plans a candlestick with indicators when the data has a date and four prices', async () => {
+    const prices = [
+      { day: '2026-01-05', open: 10, high: 12, low: 9, close: 11, volume: 100 },
+      { day: '2026-01-06', open: 11, high: 13, low: 10, close: 12, volume: 120 },
+    ]
+    const p = await aiChart(fakeApi(prices).api as never, 'candlestick price chart with volume and RSI')
+    expect(p.type).toBe('candlestick')
+    expect(p.dimension).toBe('day')
+    expect(p.indicators).toEqual(['volume', 'rsi'])
+    // Without four numeric columns there is nothing to draw candles from.
+    expect((await plan('candlestick of revenue')).type).toBe('bar')
+    // Indicators only mean something on a candlestick, and unknown ones are dropped.
+    const loose: AIProvider = async () =>
+      JSON.stringify({ type: 'candlestick', dimension: 'day', measure: 'close', reduce: 'sum', indicators: ['rsi', 'bogus'] })
+    setAIProvider(loose)
+    const q = await aiChart(fakeApi(prices).api as never, 'anything')
+    expect(q.indicators).toEqual(['rsi'])
+  })
+
   it('coerces an unknown type rather than passing it through', async () => {
     const bogus: AIProvider = async () =>
-      JSON.stringify({ type: 'sunburst', dimension: 'region', measure: 'revenue', reduce: 'sum' })
+      JSON.stringify({ type: 'hexbin', dimension: 'region', measure: 'revenue', reduce: 'sum' })
     setAIProvider(bogus)
     expect((await plan('anything')).type).toBe('bar')
+  })
+})
+
+describe('aiExplainChart', () => {
+  it('grounds the prompt on chartSummary and returns the summary with the insights', async () => {
+    const prompts: string[] = []
+    setAIProvider(async (req) => {
+      prompts.push(req.prompt)
+      expect(req.task).toBe('explain-chart')
+      return JSON.stringify({ insights: ['one', 'two', 'three', 'four'] })
+    })
+    const spec = { type: 'bar' as const, categories: ['Q1', 'Q2'], series: [{ label: 'Sales', values: [10, 15] }] }
+    const out = await aiExplainChart({ getChartSpec: () => spec } as never)
+    expect(out.summary).toBe('Sales rises 50% from 10 at Q1 to 15 at Q2.')
+    expect(out.insights).toEqual(['one', 'two', 'three'])
+    expect(prompts[0]).toContain('Reading of the chart: Sales rises 50%')
+    expect(prompts[0]).toContain('category\tSales\nQ1\t10\nQ2\t15')
+    // No chart: no call.
+    expect(await aiExplainChart({ getChartSpec: () => null } as never)).toEqual({ summary: 'No chart to explain.', insights: [] })
+    expect(prompts).toHaveLength(1)
+  })
+
+  it('the mock provider answers with two insights, and enableAiCharting registers the explain handler', async () => {
+    setAIProvider(mockAIProvider)
+    const spec = { type: 'line' as const, categories: ['a', 'b'], series: [{ label: 'v', values: [1, 3] }] }
+    const out = await aiExplainChart({ getChartSpec: () => spec } as never)
+    expect(out.insights).toHaveLength(2)
+    expect(out.insights[0]).toContain('front-loaded')
+    const handlers: Record<string, unknown> = {}
+    const api = { getChartSpec: () => spec, setChartAiHandler: (fn: unknown) => { handlers.chart = fn }, setChartExplainHandler: (fn: unknown) => { handlers.explain = fn } }
+    enableAiCharting(api as never)
+    expect(typeof handlers.explain).toBe('function')
+    const res = await (handlers.explain as () => Promise<{ summary: string }>)()
+    expect(res.summary).toBe('v rises 200% from 1 at a to 3 at b.')
+    disableAiCharting(api as never)
+    expect(handlers.explain).toBeNull()
   })
 })

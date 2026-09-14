@@ -33,15 +33,16 @@
   const NAMES = ['Ada', 'Grace', 'Linus', 'Donald', 'Margaret', 'Brian', 'Barbara', 'Ken']
   let seed = 0xc0ffee
   const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 0xffffffff)
+  const pick = <T,>(list: readonly T[]): T => list[Math.floor(rnd() * list.length)]!
   const rows: Row[] = Array.from({ length: 900 }, (_, id) => {
     const region = REGIONS[id % 3]!
-    const country = COUNTRIES[region][id % COUNTRIES[region].length]!
-    const category = CATEGORIES[id % 4]!
+    const country = pick(COUNTRIES[region])
+    const category = pick(CATEGORIES)
     const price = category === 'Electronics' ? 280 : category === 'Apparel' ? 65 : category === 'Home' ? 120 : 45
     const units = Math.round(2 + rnd() * 38)
     const revenue = Math.round(units * price * (0.8 + rnd() * 0.5))
     return {
-      id, region, country, category, quarter: QUARTERS[id % 4]!,
+      id, region, country, category, quarter: pick(QUARTERS),
       salesperson: NAMES[id % NAMES.length]!,
       units, revenue,
       profit: Math.round(revenue * (0.15 + rnd() * 0.25)),

@@ -75,6 +75,8 @@ function makeCtx(overrides: any = {}) {
     // for plain drag-select. Its own behaviour is covered in move-cells.test.ts.
     trackEdgeScroll: vi.fn(),
     stopEdgeScroll: vi.fn(),
+    // Inline virtualizer sync after a programmatic scroll (scroll-sync.ts).
+    syncScrollNow: vi.fn(),
     grid: {
       setRowSelection,
       setActiveCell,

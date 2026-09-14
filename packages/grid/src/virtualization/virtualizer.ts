@@ -33,29 +33,46 @@ function sameState(a: VirtualizerState, b: VirtualizerState) {
   for (let i = 0; i < a.items.length; i += 1) {
     const ai = a.items[i]!
     const bi = b.items[i]!
-    if (ai.index !== bi.index || ai.start !== bi.start || ai.size !== bi.size) return false
+    if (ai.index !== bi.index || ai.start !== bi.start || ai.size !== bi.size || ai.key !== bi.key) return false
   }
   return true
 }
 
-// Slot-based keying: the key is the POSITION of the item inside the
-// visible window (slot 0 = topmost rendered row, slot 1 = next, etc.)
-// - NOT the data index. As the user scrolls, the window's startIndex
-// changes but the slot keys stay the same (0..N-1), so Svelte recycles
-// the existing <tr> DOM nodes and only updates their data + position.
+// Slot-based keying: the key is a SLOT number, not the data index, so the
+// same N <tr> nodes stay alive for the lifetime of the grid and scrolling
+// never mounts or unmounts a row. With data-index keys, scrolling down one
+// row meant the old topmost key disappeared and a new bottommost key
+// appeared, so Svelte unmounted the top <tr> and mounted a fresh one at the
+// bottom on every scroll tick.
 //
-// This avoids the mount/unmount churn that previously fired on every
-// scroll tick: with data-index keys, scrolling down 1 row meant the old
-// topmost key disappeared and a new bottommost key appeared, forcing
-// Svelte to unmount the top <tr> and mount a fresh one at the bottom.
-// Slot-based keys keep the same N <tr> nodes alive for the lifetime of
-// the grid; scroll just translates them via the top spacer.
+// The slot for data index i is `i mod N`, N being the window length. That
+// matters for what a one-row scroll costs: while N holds, a row that stays
+// inside the window keeps its slot, so Svelte keeps its <tr> and touches
+// nothing in it, and only the row that entered gets new content - the keyed
+// each moves that one <tr> to the other end with a single `insertBefore`.
+// The earlier `i - startIndex` slot scheme handed EVERY rendered row a new
+// index on every one-row scroll, so an arrow key re-rendered all ~30 rows x
+// every rendered column to shift the data up by one.
+//
+// The modulus has to be EXACTLY N, not merely >= N: under a larger modulus
+// the window's residues are a proper subset, so each one-row scroll drops
+// one residue and picks up another, and Svelte unmounts a <tr> and mounts a
+// fresh one instead of moving it (measured: mount + unmount per arrow key,
+// zero moves). When N changes - the top and bottom overscan clamping on the
+// first and last rows, a resize, variable row heights - every slot remaps
+// and the whole window re-renders once, which is what the old scheme did on
+// every tick.
+function slotKey(index: number, windowLength: number): string {
+  return `virtual_slot_${index % windowLength}`
+}
+
 function buildUniformItems(
   startIndex: number,
   endIndex: number,
   estimateSize: number,
 ): Array<VirtualItem> {
   const items: Array<VirtualItem> = []
+  const windowLength = endIndex - startIndex + 1
   for (let index = startIndex; index <= endIndex; index += 1) {
     const start = index * estimateSize
     items.push({
@@ -63,7 +80,7 @@ function buildUniformItems(
       start,
       size: estimateSize,
       end: start + estimateSize,
-      key: `virtual_slot_${index - startIndex}`,
+      key: slotKey(index, windowLength),
     })
   }
   return items
@@ -91,8 +108,8 @@ export function buildPreMeasureItems(
   if (count <= 0) return []
   const size = Math.max(estimateSize, 1)
   const visible = Math.ceil(Math.max(viewportHeight, 0) / size)
-  const endIndex = Math.min(visible + Math.max(overscan, 0), count - 1)
-  return buildUniformItems(0, Math.max(endIndex, 0), size)
+  const endIndex = Math.max(Math.min(visible + Math.max(overscan, 0), count - 1), 0)
+  return buildUniformItems(0, endIndex, size)
 }
 
 function buildVariableItems(
@@ -101,6 +118,7 @@ function buildVariableItems(
   offsets: Array<number>,
 ): Array<VirtualItem> {
   const items: Array<VirtualItem> = []
+  const windowLength = endIndex - startIndex + 1
   for (let index = startIndex; index <= endIndex; index += 1) {
     const start = offsets[index] ?? 0
     const end = offsets[index + 1] ?? start
@@ -109,7 +127,7 @@ function buildVariableItems(
       start,
       size: end - start,
       end,
-      key: `virtual_slot_${index - startIndex}`,
+      key: slotKey(index, windowLength),
     })
   }
   return items

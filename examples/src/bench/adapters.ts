@@ -219,7 +219,12 @@ export async function agGridAdapter(): Promise<GridAdapter> {
   let api: { setGridOption: (k: string, v: unknown) => void; destroy: () => void } | null = null
   let host: HTMLElement | null = null
 
-  const rowNodes = () => host?.querySelectorAll('.ag-center-cols-container .ag-row') ?? []
+  // v36 restructured the body DOM: rows sit in `.ag-grid-scrolling-container`
+  // and the vertical scroller is `.ag-grid-viewport`; v35 and earlier used
+  // `.ag-center-cols-container` and `.ag-body-viewport`. Both are tried so the
+  // adapter measures whichever version is installed.
+  const rowNodes = () =>
+    host?.querySelectorAll('.ag-grid-scrolling-container .ag-row, .ag-center-cols-container .ag-row') ?? []
 
   return {
     name: 'AG Grid Community',
@@ -268,7 +273,7 @@ export async function agGridAdapter(): Promise<GridAdapter> {
       await domSettled(host!)
     },
     async scrollBy(dy) {
-      const el = host?.querySelector<HTMLElement>('.ag-body-viewport')
+      const el = host?.querySelector<HTMLElement>('.ag-grid-viewport, .ag-body-viewport')
       if (el) el.scrollTop += dy
       await painted()
     },
@@ -283,9 +288,103 @@ export async function agGridAdapter(): Promise<GridAdapter> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Svelte component adapters: SVAR Svelte DataGrid and TanStack Table
+// ---------------------------------------------------------------------------
+
+/**
+ * A Svelte component driven through the same `handle` object BenchSvGrid uses,
+ * so the two Svelte-native grids and the TanStack renderer share one adapter
+ * shape. `rowSelector` proves virtualization; `name`, `version` and
+ * `license` come from the package the component wraps.
+ */
+async function svelteComponentAdapter(opts: {
+  name: string
+  license: string
+  pkg: Promise<unknown>
+  component: Promise<{ default: unknown }>
+  rowSelector: string
+}): Promise<GridAdapter> {
+  const [{ mount, unmount }, pkg, mod] = await Promise.all([import('svelte'), opts.pkg, opts.component])
+  const Component = mod.default as never
+
+  let app: Record<string, unknown> | null = null
+  let host: HTMLElement | null = null
+  const handle: {
+    setSort?: (field: string | null, desc: boolean) => void
+    setFilter?: (field: string | null, value: string) => void
+    scroller?: () => HTMLElement | null
+  } = {}
+
+  return {
+    name: opts.name,
+    version: (pkg as { default?: { version?: string }; version?: string }).default?.version
+      ?? (pkg as { version?: string }).version
+      ?? 'unknown',
+    license: opts.license,
+    async mount(el, rows) {
+      host = el
+      app = mount(Component, {
+        target: el,
+        props: { rows, columns: COLUMNS, rowHeight: ROW_HEIGHT, handle },
+      }) as Record<string, unknown>
+      await settle(() => el.querySelectorAll(opts.rowSelector).length > 0, `${opts.name} mount`)
+    },
+    async sort(field, desc) {
+      handle.setSort?.(field as string, desc)
+      await domSettled(host!)
+    },
+    async filter(field, value) {
+      handle.setFilter?.(field as string, value)
+      await domSettled(host!)
+    },
+    async scrollBy(dy) {
+      const el = handle.scroller?.()
+      if (el) el.scrollTop += dy
+      await painted()
+    },
+    domRowCount() {
+      return host?.querySelectorAll(opts.rowSelector).length ?? 0
+    },
+    destroy() {
+      if (app) unmount(app as never)
+      app = null
+      host = null
+    },
+  }
+}
+
+/** SVAR Svelte DataGrid (wx-svelte-grid), MIT. See BenchSvar.svelte. */
+export function svarAdapter(): Promise<GridAdapter> {
+  return svelteComponentAdapter({
+    name: 'SVAR Svelte DataGrid',
+    license: 'MIT',
+    pkg: import('../../node_modules/wx-svelte-grid/package.json'),
+    component: import('./BenchSvar.svelte'),
+    rowSelector: '.wx-row',
+  })
+}
+
+/**
+ * TanStack Table (@tanstack/svelte-table), MIT, rendered through the minimal
+ * windowed table in BenchTanStack.svelte. It is an engine, not a grid: the
+ * numbers are the engine plus the least DOM an app could draw on top of it.
+ */
+export function tanstackAdapter(): Promise<GridAdapter> {
+  return svelteComponentAdapter({
+    name: 'TanStack Table (minimal DOM)',
+    license: 'MIT',
+    pkg: import('../../node_modules/@tanstack/svelte-table/package.json'),
+    component: import('./BenchTanStack.svelte'),
+    rowSelector: 'tr.tt-row',
+  })
+}
+
 export const ADAPTERS: Record<string, () => Promise<GridAdapter>> = {
   svgrid: svgridAdapter,
   aggrid: agGridAdapter,
+  svar: svarAdapter,
+  tanstack: tanstackAdapter,
 }
 
 /**

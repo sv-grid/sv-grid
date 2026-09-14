@@ -1,4 +1,4 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/start.md -->
 <script lang="ts">
   /**
    * 151. Time-series chart (date axis + target line)

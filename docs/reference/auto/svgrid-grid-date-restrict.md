@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\datetime\date-restrict.ts`.
 
 ### `type RestrictOptions`
 
-Which dates a picker allows: bounds, an explicit disabled set, and disabled weekdays. */
+Which dates a picker allows: bounds, an explicit disabled set, and disabled weekdays.
 
 ```ts
 export type RestrictOptions = {
@@ -17,7 +17,7 @@ export type RestrictOptions = {
 
 ### `function isOutOfRange`
 
-True when `d` is outside the inclusive [min, max] day range. */
+True when `d` is outside the inclusive [min, max] day range.
 
 ```ts
 export function isOutOfRange(d: Date, min?: DateLike | null, max?: DateLike | null): boolean {
@@ -31,7 +31,7 @@ export function isOutOfRange(d: Date, min?: DateLike | null, max?: DateLike | nu
 
 ### `function isRestricted`
 
-True when `d` is explicitly restricted (by list membership or predicate). */
+True when `d` is explicitly restricted (by list membership or predicate).
 
 ```ts
 export function isRestricted(
@@ -57,7 +57,7 @@ export function isDisabledDay(d: Date, opts: RestrictOptions): boolean {
 
 ### `function isImportant`
 
-True when `d` is flagged important (highlighted). Never affects selectability. */
+True when `d` is flagged important (highlighted). Never affects selectability.
 
 ```ts
 export function isImportant(

@@ -1,0 +1,374 @@
+{
+  "slug": "handsontable",
+  "competitor": "Handsontable",
+  "npm": "handsontable",
+  "url": "https://handsontable.com/",
+  "aliases": [
+    "handsontable",
+    "handsontable svelte",
+    "spreadsheet grid",
+    "hyperformula",
+    "handsontable alternative"
+  ],
+  "framework": [
+    "javascript",
+    "react",
+    "angular",
+    "vue"
+  ],
+  "group": "commercial",
+  "tier": "priority",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs Handsontable - Spreadsheet Grid for Svelte 5",
+  "seoDescription": "A spreadsheet-style grid for Svelte 5 under MIT: cell ranges, fill handle, clipboard, formulas and freeze panes in SvGrid, compared with Handsontable.",
+  "tagline": "Handsontable is a spreadsheet-style JavaScript data grid with the HyperFormula engine, sold under a commercial licence with React, Angular and Vue wrappers.",
+  "oneLineVerdict": "Handsontable is the spreadsheet-in-a-page with the deepest formula engine, licensed commercially and without a Svelte build. SvGrid is MIT, Svelte-5-native, and covers the spreadsheet surface most teams need: cell ranges, a fill handle, clipboard, frozen panes, cell spans and formulas, with HyperFormula as an option when you need its function library.",
+  "alternativeIntro": "If you came for the spreadsheet behaviour, the part that matters is that cell ranges, the fill handle, clipboard round-trips, freeze panes and a formula engine are all in the free MIT package here, and the gallery has a run of spreadsheet demos built on the plain grid. Handsontable is still the deeper spreadsheet, with HyperFormula's function library and years of edge cases handled. The licence is the other half of the decision: handsontable.com's free Hobby licence excludes commercial use.",
+  "intro": [
+    "Handsontable models a grid as a live spreadsheet: every cell editable, copy and paste with the OS clipboard, frozen rows and columns, merged cells, nested rows, and the HyperFormula engine with roughly four hundred functions. It ships a JavaScript core with official React, Angular and Vue wrappers; handsontable.com names no Svelte package.",
+    "SvGrid is Svelte-5-native and MIT. Its spreadsheet surface is built on the ordinary grid: cell-range selection, a fill handle, clipboard, freeze panes through column pinning and pinned rows, colSpan and rowSpan callbacks for merged cells, and a dependency-free formula engine for the common functions. When you need HyperFormula's library, the spreadsheet demos show it wired underneath SvGrid, so the choice of engine stays yours."
+  ],
+  "similarities": [
+    "Editing on every cell, range selection, a fill handle and OS clipboard round-trips.",
+    "Formulas with cell references, ranges and functions.",
+    "Frozen rows and columns, merged cells and nested (tree) rows.",
+    "Excel-style filters, sorting, undo and redo, a context menu.",
+    "Virtualization on both axes, keyboard navigation and WAI-ARIA markup."
+  ],
+  "svgridAdvantages": [
+    "MIT core: no commercial licence, no licence key and no watermark in production.",
+    "Svelte 5 native, with snippets for cells and runes for state, rather than a JavaScript core behind a framework wrapper.",
+    "A headless engine under the component, so the same row models drive a plain table or a custom layout.",
+    "Row grouping with aggregation, master/detail, a server-side row model and integrated charts in the same MIT package.",
+    "In-grid AI helpers (natural-language filter, smart fill, summarise) free in @svgrid/grid, and @svgrid/mcp for assistants that write code against it."
+  ],
+  "competitorAdvantages": [
+    "HyperFormula: the most complete formula surface in the category, with cross-sheet references and named expressions.",
+    "Years of spreadsheet edge cases handled: merged-cell editing, nested headers, cell comments, autofill rules.",
+    "Official React, Angular and Vue wrappers for a multi-framework shop.",
+    "Paid support with code review and a dedicated success manager on the higher plans."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes",
+        "note": "runes and snippets"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "JavaScript core; wrappers for React, Angular and Vue only",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Licence for commercial use",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "the free Hobby licence excludes commercial use",
+        "source": "hot-pricing"
+      }
+    },
+    {
+      "feature": "Inline editing on every cell",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Cell-range selection, fill handle, clipboard",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Formulas",
+      "svgrid": {
+        "status": "partial",
+        "note": "built-in engine for the common functions; HyperFormula optional"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "HyperFormula, about four hundred functions",
+        "source": "hot-formulas"
+      }
+    },
+    {
+      "feature": "Virtualization on both axes",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Excel-style filters and sorting",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Merged cells",
+      "svgrid": {
+        "status": "yes",
+        "note": "colSpan and rowSpan callbacks per column"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Frozen rows and columns",
+      "svgrid": {
+        "status": "yes",
+        "note": "column pinning left and right, pinned top and bottom rows"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Nested (tree) rows",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Row grouping with aggregation",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "nested rows only; no group rows with aggregates in the feature list",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Master/detail",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Server-side row model",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list; data is loaded by the app",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "CSV export",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-export"
+      }
+    },
+    {
+      "feature": "Excel export",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "through the asynchronous export method",
+        "source": "hot-export"
+      }
+    },
+    {
+      "feature": "Integrated charts",
+      "svgrid": {
+        "status": "yes",
+        "note": "SvGridChart in the MIT core"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Undo and redo",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Right-to-left layout",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "WAI-ARIA and keyboard navigation",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "WCAG 2.1 AA stated",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "In-grid AI helpers and MCP server",
+      "svgrid": {
+        "status": "yes",
+        "note": "helpers free in @svgrid/grid; @svgrid/mcp, MIT"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not mentioned on the site",
+        "source": "hot-home"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You want a spreadsheet-like grid under MIT, with no licence key.",
+    "You are on Svelte 5 and want a native component, not a wrapped JavaScript core.",
+    "The built-in formula functions cover your sheet, or you are happy to add HyperFormula yourself for the rest.",
+    "You also need grid features a spreadsheet does not have: grouping with aggregation, master/detail, a server-side row model, charts."
+  ],
+  "whenToChooseCompetitor": [
+    "You depend on HyperFormula's full function library, cross-sheet references or named expressions as a supported feature.",
+    "You need the deepest merged-cell and nested-header editing and the spreadsheet edge cases that come with it.",
+    "You ship the same grid across React, Angular and Vue with vendor wrappers.",
+    "You want a paid plan with code review and a success manager."
+  ],
+  "migration": {
+    "slug": "migrating-from-handsontable",
+    "effort": "2-4 hours per grid for typical spreadsheet workflows",
+    "youLose": [
+      "HyperFormula as a first-party, supported engine; SvGrid's built-in engine covers the common functions and HyperFormula is an optional add-on you wire yourself.",
+      "Nested headers, cell comments and Handsontable's autofill rules.",
+      "Official React, Angular and Vue wrappers.",
+      "Built-in Excel export without a paid pack; SvGrid's is in @svgrid/enterprise."
+    ]
+  },
+  "pricing": {
+    "summary": "Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms",
+    "amount": 999,
+    "unit": "USD per developer (Standard)",
+    "url": "https://handsontable.com/pricing",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "207-blank-sheet",
+    "208-freeze-panes",
+    "95-fill-handle",
+    "173-hyperformula"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/spreadsheet-formulas",
+    "help/cells/cell-text-selection",
+    "help/export"
+  ],
+  "related": [
+    "ag-grid",
+    "mui-x-datagrid",
+    "svar-svelte-datagrid"
+  ],
+  "bottomLine": "When you need HyperFormula's full function library as a supported feature, or the deepest spreadsheet editing edge cases, Handsontable is hard to beat and its licence is the price of that. If you want a spreadsheet-like grid in Svelte under MIT, SvGrid covers the surface most teams use, with ranges, a fill handle, clipboard, freeze panes, merged cells and formulas, and lets you add HyperFormula when the built-in functions run out.",
+  "faq": [
+    {
+      "question": "Is SvGrid a free alternative to Handsontable?",
+      "answer": "Yes. The community core is MIT and free for commercial use with no licence key. handsontable.com's free Hobby licence is for personal, exploratory projects and cannot be used in commercial settings; the commercial plans are priced per developer and the pricing line at the top of this page quotes them as read on that date."
+    },
+    {
+      "question": "Does SvGrid support spreadsheet formulas like Handsontable?",
+      "answer": "It has a dependency-free formula engine for cell references, ranges, arithmetic, comparison and the common functions (SUM, AVERAGE, MIN, MAX, COUNT, COUNTIF, IF, AND, OR, ROUND, text functions, TODAY) with cycle detection. Handsontable's HyperFormula library is far deeper. When you need it, the spreadsheet demos show HyperFormula running underneath SvGrid; HyperFormula's own licence applies to that use."
+    },
+    {
+      "question": "Does Handsontable work with Svelte?",
+      "answer": "Its JavaScript core can be created inside onMount, but handsontable.com names React, Angular and Vue as the supported frameworks and ships no Svelte wrapper. SvGrid is a Svelte 5 component."
+    },
+    {
+      "question": "Can SvGrid do freeze panes and merged cells?",
+      "answer": "Yes. Freeze panes are column pinning plus pinned top rows; merged cells come from colSpan and rowSpan callbacks on a column definition. The freeze-panes demo and the blank-sheet demo on this page are both built on the plain grid."
+    },
+    {
+      "question": "Which grid exports to Excel?",
+      "answer": "Both, on different terms. Handsontable's export plugin writes CSV synchronously and XLSX through its asynchronous method under the commercial licence. SvGrid exports CSV, TSV and JSON in the MIT core; Excel, PDF and styled HTML export and printing are in @svgrid/enterprise."
+    },
+    {
+      "question": "How long does a Handsontable to SvGrid migration take?",
+      "answer": "The migration guide budgets two to four hours per grid for typical spreadsheet workflows, plus more if the sheet leans on HyperFormula functions the built-in engine does not have. Column settings, cell types and validators map directly; the plugin hooks become props and events."
+    }
+  ],
+  "sources": [
+    {
+      "id": "hot-pricing",
+      "url": "https://handsontable.com/pricing",
+      "evidences": "Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; Standard from $999 per developer, Priority from $1299 per developer, Enterprise on custom terms",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "hot-home",
+      "url": "https://handsontable.com/",
+      "evidences": "Works with React, Angular and Vue, no Svelte; highlights an Excel experience with over 400 formulas, sorting, filtering, grouping, freezing, inline editing, copy and paste, undo/redo, validation, WCAG 2.1 AA, RTL and virtualization on both axes; no charts, master/detail, server-side row model, AI or MCP mentioned",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "hot-formulas",
+      "url": "https://handsontable.com/docs/javascript-data-grid/formula-calculation/",
+      "evidences": "The formula engine is HyperFormula with about 400 built-in functions, cross-sheet references and named expressions; using HyperFormula outside a Handsontable instance needs a dedicated HyperFormula licence key",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "hot-export",
+      "url": "https://handsontable.com/docs/javascript-data-grid/export-to-csv/",
+      "evidences": "The export plugin writes CSV synchronously and XLSX through the asynchronous download method",
+      "verified": "2026-09-12"
+    }
+  ]
+}

@@ -578,6 +578,91 @@ describe.skipIf(!hasDist)('svgrid_preview renders a real grid', () => {
  * renames only, word boundaries, scoped to the reported line - and hence the
  * first test below, which is the one that actually matters.
  */
+describe.skipIf(!hasDist)('svgrid_get serves the JSON schemas', () => {
+  it('returns the chart spec schema by id and by asking for it in words', async () => {
+    const byId = await callTool('svgrid_get', { ref: 'chart-spec', kind: 'schema' })
+    const parsed = JSON.parse(byId)
+    expect(parsed.$id).toBe('https://svgrid.com/schemas/chart-spec.json')
+    expect(Object.keys(parsed.properties)).toContain('series')
+    const inWords = await callTool('svgrid_get', { ref: 'chart spec schema' })
+    expect(JSON.parse(inWords).$id).toBe(parsed.$id)
+    const miss = await callTool('svgrid_get', { ref: 'nope', kind: 'schema' })
+    expect(miss).toMatch(/No schema "nope"/)
+  }, 30_000)
+})
+
+describe.skipIf(!hasDist)('svgrid_check_code reads chart specs', () => {
+  const load = async () => {
+    const validate = await import(join(ROOT, 'packages/mcp/dist/validate.js') as string)
+    const { apiSurface } = await import(join(ROOT, 'packages/mcp/dist/data.js') as string)
+    return { ...validate, apiSurface }
+  }
+  const wrap = (body: string) =>
+    ['<script lang="ts">', "  import { SvChart, type ChartSpec } from '@svgrid/grid'", body, '</script>', '', '<SvChart {spec} />'].join('\n')
+
+  it('names a misspelt spec key, a wrong type, a short series and a bad axis, with the fix', async () => {
+    const { checkStatic, apiSurface } = await load()
+    const src = wrap([
+      '  const spec: ChartSpec = {',
+      "    type: 'lines',",
+      "    categories: ['a', 'b', 'c'],",
+      "    serie: [{ label: 's', values: [1, 2], axis: 'top', overlay: 'sma20' }],",
+      '  }',
+    ].join('\n'))
+    const d = checkStatic(src, apiSurface, 'X.svelte')
+    const rules = d.map((x: { rule: string }) => x.rule)
+    expect(rules).toContain('svgrid/chart-unknown-key')
+    expect(rules).toContain('svgrid/chart-unknown-type')
+    const key = d.find((x: { rule: string }) => x.rule === 'svgrid/chart-unknown-key')
+    expect(key.rename).toEqual({ from: 'serie', to: 'series' })
+    expect(key.line).toBe(6)
+    const type = d.find((x: { rule: string }) => x.rule === 'svgrid/chart-unknown-type')
+    expect(type.rename).toEqual({ from: 'lines', to: 'line' })
+    // With the key fixed, the series is checked too.
+    const d2 = checkStatic(src.replace('serie:', 'series:'), apiSurface, 'X.svelte')
+    const rules2 = d2.map((x: { rule: string }) => x.rule)
+    expect(rules2).toContain('svgrid/chart-series-length')
+    expect(rules2).toContain('svgrid/chart-axis')
+    expect(rules2).toContain('svgrid/chart-overlay')
+  }, 30_000)
+
+  it('reads a satisfies expression and an inline spec on the tag', async () => {
+    const { checkStatic, apiSurface } = await load()
+    const sat = wrap("  const spec = { type: 'bar', categoreis: ['a'], series: [{ label: 's', values: [1] }] } satisfies ChartSpec")
+    expect(checkStatic(sat, apiSurface, 'X.svelte').map((x: { rule: string }) => x.rule)).toEqual(['svgrid/chart-unknown-key'])
+    const inline = "<script>\n  import { SvChart } from '@svgrid/grid'\n</script>\n<SvChart spec={{ type: 'pie', categories: ['a'], series: [{ lable: 's', values: [1] }] }} />"
+    expect(checkStatic(inline, apiSurface, 'X.svelte').map((x: { rule: string }) => x.rule)).toEqual(['svgrid/chart-unknown-series-key'])
+  }, 30_000)
+
+  it('stays silent when the literal is not static, and on a valid spec of every type', async () => {
+    const { checkStatic, apiSurface } = await load()
+    const dynamic = wrap([
+      '  const rows = [1, 2, 3]',
+      "  const spec: ChartSpec = { type: 'bar', categories: rows.map(String), serie: rows }",
+    ].join('\n'))
+    expect(checkStatic(dynamic, apiSurface, 'X.svelte')).toEqual([])
+    for (const type of apiSurface.chartSpec.types) {
+      const src = wrap(`  const spec: ChartSpec = { type: '${type}', categories: ['a', 'b'], series: [{ label: 's', values: [1, 2], overlay: 'poly:2' }] }`)
+      expect(checkStatic(src, apiSurface, 'X.svelte'), type).toEqual([])
+    }
+  }, 30_000)
+
+  it('stays silent on every chart doc snippet', async () => {
+    const { checkStatic, apiSurface } = await load()
+    const { readdirSync, readFileSync } = await import('node:fs')
+    const dir = join(ROOT, 'examples', 'src', 'doc-snippets')
+    const files = readdirSync(dir).filter((f: string) => f.startsWith('help-charts') && f.endsWith('.svelte'))
+    expect(files.length).toBeGreaterThan(20)
+    const findings: string[] = []
+    for (const f of files) {
+      for (const d of checkStatic(readFileSync(join(dir, f), 'utf8'), apiSurface, f)) {
+        if (d.rule.startsWith('svgrid/chart-')) findings.push(`${f}:${d.line} [${d.rule}] ${d.message}`)
+      }
+    }
+    expect(findings, findings.join('\n')).toEqual([])
+  }, 60_000)
+})
+
 describe.skipIf(!hasDist)('svgrid_check_code corrects what it can', () => {
   const load = async () => {
     const validate = await import(join(ROOT, 'packages/mcp/dist/validate.js') as string)

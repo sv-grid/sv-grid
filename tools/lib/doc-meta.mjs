@@ -60,6 +60,7 @@ export const SECTION_TITLES = {
   'help/rows': 'Rows',
   'help/server': 'Server data',
   'help/state': 'State & views',
+  'help/charts': 'Charts',
   'help/ui-components': 'UI components',
   recipes: 'Recipes',
   reference: 'API reference',

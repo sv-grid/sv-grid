@@ -27,6 +27,9 @@
 
 import type { RowData, SvGridApi, TableFeatures } from './index'
 import { getExportProvider } from './export-provider'
+import { validateChartSpec, type ChartDiagnostic } from './chart-validate'
+import { chartSummary } from './chart-summary'
+import type { ChartSpec } from './chart-types'
 
 // Export formats an AI export can plan. WRITING the enterprise formats (xlsx /
 // pdf / html / xml / md) needs the export engine from `@svgrid/enterprise`
@@ -68,7 +71,7 @@ export type AIRequest = {
 }
 
 /** Which helper produced a request - carried on {@link AIRequest} for routing and telemetry. */
-export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly' | 'chart'
+export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly' | 'chart' | 'explain-chart'
 
 let provider: AIProvider | null = null
 
@@ -839,16 +842,21 @@ export async function aiFindAnomalies<
  * Chart shapes the model may choose from when planning a visualisation.
  *
  * These are exactly the types the built-in panel can build from a dimension, a
- * measure and an optional split - which is all a chart plan carries. Two
- * families are deliberately absent, because a plan cannot express them:
- * scatter needs a SECOND measure for its y axis, and candlestick / OHLC need
- * four under first/max/min/last. Asking for either would produce a plan the
- * panel renders as an empty frame, which is worse than not offering it.
+ * measure and an optional split - which is all a chart plan carries. Scatter
+ * is deliberately absent, because a plan cannot express its SECOND measure.
+ * A candlestick can be asked for: the panel finds the open / high / low /
+ * close / volume columns by name, so the plan only needs a date dimension.
  */
 export type AIChartType =
   | 'bar' | 'line' | 'area' | 'pie'
   | 'treemap' | 'funnel' | 'waterfall' | 'radar'
   | 'heatmap' | 'boxplot' | 'gauge' | 'calendar' | 'sankey'
+  | 'histogram' | 'lollipop' | 'pareto' | 'sunburst' | 'radial-bar' | 'radial-column' | 'nightingale' | 'bullet' | 'chord' | 'stream'
+  | 'candlestick'
+
+/** The indicators a chart plan may ask for on a candlestick. */
+export type AIChartIndicator = 'volume' | 'rsi' | 'macd' | 'stochastic' | 'atr' | 'obv' | 'sma' | 'ema' | 'bb' | 'vwap'
+const AI_INDICATORS: AIChartIndicator[] = ['volume', 'rsi', 'macd', 'stochastic', 'atr', 'obv', 'sma', 'ema', 'bb', 'vwap']
 
 /** A chart the model proposed: its type, and the fields to plot. */
 export type AIChartPlan = {
@@ -859,13 +867,25 @@ export type AIChartPlan = {
   series: string | null
   /** Measure (value-axis) column field, or null. */
   measure: string | null
-  reduce: 'sum' | 'avg' | 'count'
+  reduce: AIChartReduce
   stacked: boolean
   logScale: boolean
   timeAxis: boolean
   valueFormat: 'number' | 'currency' | 'percent'
+  /** Calendar unit to group a date dimension by, or null for exact values. */
+  bucket: 'day' | 'week' | 'month' | 'quarter' | 'year' | null
+  /** Candlestick only: indicator panes and overlays to add. */
+  indicators?: AIChartIndicator[]
   rationale: string
+  /** With `apply`: what `validateChartSpec` flagged as an error on the spec
+   *  the panel built from the plan, empty when it drew cleanly. */
+  diagnostics?: ChartDiagnostic[]
 }
+
+/** The reducers a chart plan may name: the panel's full list. */
+export type AIChartReduce =
+  | 'sum' | 'avg' | 'count' | 'min' | 'max' | 'median' | 'p90' | 'first' | 'last' | 'countDistinct'
+const AI_REDUCERS: AIChartReduce[] = ['sum', 'avg', 'count', 'min', 'max', 'median', 'p90', 'first', 'last', 'countDistinct']
 
 /** Options for `aiChart` - preview the plan, or render it into the grid. */
 export type AIChartOptions = {
@@ -893,15 +913,17 @@ export async function aiChart<
     `into a strict-JSON chart plan the grid can render.\n\n` +
     `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
     `Output JSON schema:\n` +
-    `{ "type": "bar"|"line"|"area"|"pie"|"treemap"|"funnel"|"waterfall"|"radar"|"heatmap"|"boxplot"|"gauge"|"calendar"|"sankey", ` +
+    `{ "type": "bar"|"line"|"area"|"pie"|"treemap"|"funnel"|"waterfall"|"radar"|"heatmap"|"boxplot"|"gauge"|"calendar"|"sankey"|"histogram"|"lollipop"|"pareto"|"sunburst"|"radial-bar"|"radial-column"|"nightingale"|"bullet"|"chord"|"stream"|"candlestick", ` +
     `"dimension": "<a categorical column to group by>", ` +
     `"series": "<a second categorical column to split into series, or null>", ` +
     `"measure": "<a numeric column to aggregate>", ` +
-    `"reduce": "sum"|"avg"|"count", ` +
+    `"reduce": "sum"|"avg"|"count"|"min"|"max"|"median"|"p90"|"first"|"last"|"countDistinct", ` +
+    `"bucket": "day"|"week"|"month"|"quarter"|"year"|null, ` +
     `"stacked": true|false, ` +
     `"logScale": true|false, ` +
     `"timeAxis": true|false, ` +
     `"valueFormat": "number"|"currency"|"percent", ` +
+    `"indicators": ["volume"|"rsi"|"macd"|"stochastic"|"atr"|"obv"|"sma"|"ema"|"bb"|"vwap", ...] (candlestick only, else omit), ` +
     `"rationale": "<one-sentence explanation>" }\n\n` +
     `Rules: pick "dimension" and "series" from text/date columns and "measure" ` +
     `from a numeric column; use only column names from the list above; ` +
@@ -914,9 +936,17 @@ export async function aiChart<
     `number vs a target -> gauge (leave "dimension" null); a year of daily ` +
     `activity -> calendar (dimension must be a date column); flow between two ` +
     `things -> sankey (needs "series": dimension is the source, series the ` +
-    `target). ` +
+    `target); flows between groups round a circle -> chord (needs "series"); ` +
+    `frequency/how many fall in each range -> histogram (leave "dimension" null); ` +
+    `vital few/80-20/biggest contributors -> pareto; drilldown/rings/nested share -> sunburst; ` +
+    `progress rings/circular -> radial-bar; polar/rose -> nightingale or radial-column; ` +
+    `actual vs target per item -> bullet; layered over time/stream -> stream (needs "series"); ` +
+    `price/candles/OHLC/stock/ticker -> candlestick (dimension is the date column; the open/high/low/close/volume columns are found by name), ` +
+    `with "volume"/"RSI"/"MACD"/"Bollinger"/"moving average" -> indicators. ` +
     `"stacked"/"stack" -> stacked:true; "log"/"logarithmic" -> logScale:true; ` +
     `"over time"/"by date"/a date dimension -> timeAxis:true; ` +
+    `"monthly"/"per month"/"by month" -> bucket:"month" (likewise daily/weekly/quarterly/yearly), else bucket:null; ` +
+    `"median"/"typical" -> reduce:"median"; "highest"/"peak" -> "max"; "lowest" -> "min"; "unique"/"distinct" -> "countDistinct"; ` +
     `money/revenue/price/$ -> valueFormat:"currency"; rate/%/share -> valueFormat:"percent"; ` +
     `else valueFormat:"number". default reduce is "sum". ` +
     `Return JSON only, no prose.\n\n` +
@@ -935,6 +965,8 @@ export async function aiChart<
     'bar', 'line', 'area', 'pie',
     'treemap', 'funnel', 'waterfall', 'radar',
     'heatmap', 'boxplot', 'gauge', 'calendar', 'sankey',
+    'histogram', 'lollipop', 'pareto', 'sunburst', 'radial-bar', 'radial-column', 'nightingale', 'bullet', 'chord', 'stream',
+    'candlestick',
   ]
   plan.type = CHART_TYPES.includes(plan.type) ? plan.type : 'bar'
   plan.dimension = plan.dimension && valid.has(plan.dimension) ? plan.dimension : null
@@ -948,14 +980,28 @@ export async function aiChart<
   // a chart the data cannot make. Fall back to a bar, which any dimension and
   // measure can draw, rather than showing nothing and blaming the request.
   const dateFields = new Set(schema.filter((c) => c.type === 'date').map((c) => c.field))
-  const needsSplit = plan.type === 'heatmap' || plan.type === 'sankey'
+  const needsSplit = plan.type === 'heatmap' || plan.type === 'sankey' || plan.type === 'chord' || plan.type === 'stream'
   if (needsSplit && !plan.series) plan.type = 'bar'
   if (plan.type === 'calendar' && !(plan.dimension && dateFields.has(plan.dimension))) plan.type = 'bar'
+  // A candlestick needs a date to run along and four prices to draw; the
+  // panel finds the price columns by name, so the shape check is the count.
+  if (plan.type === 'candlestick' && !(plan.dimension && dateFields.has(plan.dimension) && numericFields.size >= 4)) plan.type = 'bar'
+  plan.indicators = plan.type === 'candlestick' && Array.isArray(plan.indicators)
+    ? plan.indicators.filter((k): k is AIChartIndicator => AI_INDICATORS.includes(k))
+    : undefined
+  if (plan.indicators === undefined) delete plan.indicators
   // A gauge is one number: it has no category axis, so a dimension is noise.
-  if (plan.type === 'gauge') plan.dimension = null
-  if (plan.type !== 'gauge' && !plan.dimension) plan.type = 'bar'
+  // A histogram bins the measure itself, so a dimension is noise there too.
+  if (plan.type === 'gauge' || plan.type === 'histogram') plan.dimension = null
+  if (plan.type !== 'gauge' && plan.type !== 'histogram' && !plan.dimension) plan.type = 'bar'
 
-  plan.reduce = ['sum', 'avg', 'count'].includes(plan.reduce) ? plan.reduce : 'sum'
+  plan.reduce = AI_REDUCERS.includes(plan.reduce) ? plan.reduce : 'sum'
+  // A bucket only means something on a date dimension.
+  const BUCKETS = ['day', 'week', 'month', 'quarter', 'year'] as const
+  plan.bucket =
+    plan.bucket && (BUCKETS as ReadonlyArray<string>).includes(plan.bucket) && plan.dimension && dateFields.has(plan.dimension)
+      ? plan.bucket
+      : null
   plan.stacked = plan.stacked === true
   plan.logScale = plan.logScale === true
   plan.timeAxis = plan.timeAxis === true
@@ -975,10 +1021,59 @@ export async function aiChart<
       logScale: plan.logScale,
       timeAxis: plan.timeAxis,
       valueFormat: plan.valueFormat,
+      ...(plan.indicators ? { indicators: plan.indicators } : {}),
+      bucket: plan.bucket,
     })
+    // The panel built a spec from the plan; if it cannot draw as intended,
+    // say so on the plan rather than showing an empty frame in silence.
+    const spec = (api as unknown as { getChartSpec?: () => unknown }).getChartSpec?.()
+    if (spec) plan.diagnostics = validateChartSpec(spec).filter((d) => d.severity === 'error')
   }
 
   return plan
+}
+
+/** What `aiExplainChart` returns: the grounded summary and the model's insights. */
+export type AIChartExplanation = {
+  /** The plain-language reading of the chart (`chartSummary`), as the model saw it. */
+  summary: string
+  /** Two to three observations the model added: comparisons, outliers, what to look at next. */
+  insights: string[]
+}
+
+/** Options for `aiExplainChart`. */
+export type AIExplainChartOptions = {
+  /** The spec to explain. Default: the grid panel's active chart. */
+  spec?: ChartSpec
+  signal?: AbortSignal
+}
+
+/**
+ * Explain a chart in plain words. The prompt is grounded on `chartSummary`
+ * (the same sentence a screen reader hears) plus a compact table of the
+ * first 50 categories, so the model comments on numbers it was given rather
+ * than on an image. Returns the summary and up to three insights.
+ */
+export async function aiExplainChart<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>, opts: AIExplainChartOptions = {}): Promise<AIChartExplanation> {
+  const spec = opts.spec ?? (api as unknown as { getChartSpec?: () => ChartSpec | null }).getChartSpec?.() ?? null
+  if (!spec) return { summary: 'No chart to explain.', insights: [] }
+  const summary = chartSummary(spec)
+  const cats = spec.categories.slice(0, 50)
+  const table = cats.length
+    ? `${['category', ...spec.series.map((s) => s.label)].join('\t')}\n` +
+      cats.map((c, i) => [c, ...spec.series.map((s) => String(s.values[i] ?? ''))].join('\t')).join('\n')
+    : ''
+  const prompt =
+    `You are explaining a ${spec.type} chart to a busy reader.\n\n` +
+    `Reading of the chart: ${summary}\n\n` +
+    (table ? `Data (first ${cats.length} categories, tab separated):\n${table}\n\n` : '') +
+    `Return strict JSON only: { "insights": ["<2-3 short observations a reader would miss at a glance: comparisons, outliers, what to look at next>"] }`
+  const out = await callJSON<{ insights?: unknown }>({ prompt, task: 'explain-chart', signal: opts.signal, maxOutputTokens: 300 })
+  const insights = Array.isArray(out.insights) ? out.insights.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
+  return { summary, insights }
 }
 
 /**
@@ -1008,9 +1103,13 @@ export function enableAiCharting<
       logScale: plan.logScale,
       timeAxis: plan.timeAxis,
       valueFormat: plan.valueFormat,
+      bucket: plan.bucket,
       rationale: plan.rationale,
     }
   })
+  // And the Explain button beside it.
+  const explain = api as unknown as { setChartExplainHandler?: (fn: (() => Promise<AIChartExplanation | null>) | null) => void }
+  explain.setChartExplainHandler?.(() => aiExplainChart(api))
 }
 
 /**
@@ -1021,8 +1120,9 @@ export function disableAiCharting<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(api: SvGridApi<TFeatures, TData>): void {
-  const hook = api as unknown as { setChartAiHandler?: (fn: null) => void }
+  const hook = api as unknown as { setChartAiHandler?: (fn: null) => void; setChartExplainHandler?: (fn: null) => void }
   hook.setChartAiHandler?.(null)
+  hook.setChartExplainHandler?.(null)
 }
 
 // ---------------------------------------------------------------------------
@@ -1060,6 +1160,17 @@ export const mockAIProvider: AIProvider = async (req) => {
   if (req.task === 'chart') {
     return JSON.stringify(buildMockChart(req.prompt))
   }
+  if (req.task === 'explain-chart') {
+    // Two canned observations round the reading the prompt was grounded on.
+    const reading = /Reading of the chart: ([^\n]+)/.exec(req.prompt)?.[1] ?? ''
+    const rises = /rises/.test(reading)
+    return JSON.stringify({
+      insights: [
+        rises ? 'The growth is front-loaded: the early categories carry most of the change.' : 'The movement is gradual with no single category driving it.',
+        'Compare the peak against the same category a period earlier before reading it as a trend.',
+      ],
+    })
+  }
   return '{}'
 }
 
@@ -1073,7 +1184,18 @@ function buildMockChart(prompt: string): AIChartPlan {
   // can reach the same charts a model can. Ordered most-specific first: "share
   // of the pipeline" is a funnel request, not a pie one.
   const type: AIChartType =
-    /\bfunnel\b|drop.?off|conversion|\bstages?\b|pipeline/.test(q) ? 'funnel'
+    /\bcandle|\bohlc\b|stock price|price chart|\bticker\b/.test(q) ? 'candlestick'
+    : /\bhistogram\b|frequenc|how many fall|bucket(?:ed)? by value/.test(q) ? 'histogram'
+    : /\bpareto\b|80.?20|vital few|biggest contributors/.test(q) ? 'pareto'
+    : /\bsunburst\b|\brings?\b|drill.?down/.test(q) ? 'sunburst'
+    : /\bchord\b/.test(q) ? 'chord'
+    : /\bstream\b|layered over time/.test(q) ? 'stream'
+    : /\bbullet\b|actual vs target|against (?:a |the )?target per/.test(q) ? 'bullet'
+    : /\bnightingale\b|\brose\b|\bpolar\b/.test(q) ? 'nightingale'
+    : /radial (?:bar|progress)|progress rings?|circular progress/.test(q) ? 'radial-bar'
+    : /radial column/.test(q) ? 'radial-column'
+    : /\blollipop\b/.test(q) ? 'lollipop'
+    : /\bfunnel\b|drop.?off|conversion|\bstages?\b|pipeline/.test(q) ? 'funnel'
     : /\bwaterfall\b|running total|contribution|\bbridge\b/.test(q) ? 'waterfall'
     : /\btree ?map\b|nested|hierarch/.test(q) ? 'treemap'
     : /\bradar\b|spider|multi.?measure/.test(q) ? 'radar'
@@ -1100,12 +1222,24 @@ function buildMockChart(prompt: string): AIChartPlan {
   // check downgrades them to a bar, so the mock would answer "heatmap" with a
   // bar chart and look broken rather than offline.
   const series =
-    /\b(split|stack(?:ed)?|by product|by category|per)\b/.test(q) || type === 'heatmap' || type === 'sankey'
+    /\b(split|stack(?:ed)?|by product|by category|per)\b/.test(q) || type === 'heatmap' || type === 'sankey' || type === 'chord' || type === 'stream'
       ? (textFields.find((t) => t !== dimension) ?? null)
       : null
   const measure = numberFields.find((n) => q.includes(n.toLowerCase())) ?? numberFields[0] ?? null
-  const reduce: 'sum' | 'avg' | 'count' =
-    /\b(average|avg|mean)\b/.test(q) ? 'avg' : /\b(count|number of|how many)\b/.test(q) ? 'count' : 'sum'
+  const reduce: AIChartReduce =
+    /\b(average|avg|mean)\b/.test(q) ? 'avg'
+    : /\b(median|typical)\b/.test(q) ? 'median'
+    : /\b(highest|peak|max(?:imum)?)\b/.test(q) ? 'max'
+    : /\b(lowest|min(?:imum)?)\b/.test(q) ? 'min'
+    : /\b(unique|distinct)\b/.test(q) ? 'countDistinct'
+    : /\b(count|number of|how many)\b/.test(q) ? 'count' : 'sum'
+  const bucket: AIChartPlan['bucket'] =
+    /\b(monthly|per month|by month|each month)\b/.test(q) ? 'month'
+    : /\b(weekly|per week|by week|each week)\b/.test(q) ? 'week'
+    : /\b(daily|per day|by day|each day)\b/.test(q) ? 'day'
+    : /\b(quarterly|per quarter|by quarter)\b/.test(q) ? 'quarter'
+    : /\b(yearly|annually|per year|by year)\b/.test(q) ? 'year'
+    : null
   const stacked = /\bstack(ed)?\b/.test(q)
   const logScale = /\b(log|logarithmic)\b/.test(q)
   const timeAxis = /\b(over time|by date|by day|by month|by week|time series|timeline|trend)\b/.test(q)
@@ -1116,12 +1250,22 @@ function buildMockChart(prompt: string): AIChartPlan {
         ? 'percent'
         : 'number'
 
+  // A candlestick runs along a DATE, and the indicators are named in the request.
+  const dateField = typed.find((f) => f.type === 'date')?.name ?? null
+  const indicators: AIChartIndicator[] | undefined = type === 'candlestick'
+    ? ([
+        /\bvolume\b/.test(q) && 'volume', /\brsi\b|relative strength/.test(q) && 'rsi', /\bmacd\b/.test(q) && 'macd',
+        /\bstochastic\b/.test(q) && 'stochastic', /\batr\b|true range/.test(q) && 'atr', /\bobv\b|on.balance/.test(q) && 'obv',
+        /bollinger|\bbands?\b/.test(q) && 'bb', /\bvwap\b/.test(q) && 'vwap', /\bema\b|exponential/.test(q) && 'ema', /\bsma\b|moving average/.test(q) && 'sma',
+      ].filter(Boolean) as AIChartIndicator[])
+    : undefined
   return {
-    type, dimension, series, measure, reduce, stacked, logScale, timeAxis, valueFormat,
+    type, dimension: type === 'candlestick' ? (dateField ?? dimension) : dimension, series, measure, reduce, stacked, logScale, timeAxis, valueFormat, bucket,
+    ...(indicators?.length ? { indicators } : {}),
     rationale:
       `${type} chart of ${reduce}(${measure ?? 'value'}) by ${dimension ?? 'category'}` +
       `${series ? `, split by ${series}` : ''}${stacked ? ', stacked' : ''}` +
-      `${logScale ? ', log scale' : ''}${timeAxis ? ', date axis' : ''} (mock - wire a real model for genuine parsing).`,
+      `${logScale ? ', log scale' : ''}${timeAxis ? ', date axis' : ''}${bucket ? `, by ${bucket}` : ''} (mock - wire a real model for genuine parsing).`,
   }
 }
 

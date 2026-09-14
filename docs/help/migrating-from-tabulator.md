@@ -9,6 +9,10 @@ cells are snippets, and there is no manual mount / teardown.
 > Estimated effort: **2-4 hours** per grid - column translation plus
 > swapping imperative `setData` for reactive state.
 
+<!-- facts:start tabulator -->
+> **Facts, checked 12 Sep 2026.** `tabulator-tables` 6.5.2, MIT, last published 23 Jun 2026, 672,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `tabulator-tables` 6.5.2 106.9 KB JS + 3.8 KB CSS (measured 12 Sep 2026). Tabulator pricing, as its site states it: Tabulator is MIT and free; no licence or support plan is sold (https://github.com/olifolkerd/tabulator, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/).
+<!-- facts:end -->
+
 ## Vocabulary cheat sheet
 
 | Tabulator                              | sv-grid                                   |

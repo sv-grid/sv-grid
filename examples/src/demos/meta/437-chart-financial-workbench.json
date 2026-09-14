@@ -1,0 +1,24 @@
+{
+  "description": "A year of daily prices as a trading terminal in Svelte 5, free in the grid package. rowsToOhlcSpec turns rows into candles with volume and a weekly toggle rolls them up through resampleOhlc. Bollinger bands, an EMA, an SMA or VWAP ride on the price; volume, RSI, MACD, stochastic, ATR and OBV panes stack under it with one x axis, one gutter and one crosshair. A last-price pill sits on the axis, earnings and dividend flags carry tooltips, and the drawing tools store trend lines, rays, Fibonacci retracements, rectangles, arrows and notes as data points that survive zoom and the daily to weekly switch. Range presets, Ctrl + wheel zoom, PDF export and print. Below, the same rows in the grid panel with Candlestick picked, indicator chips, the chart builder and the link toggle.",
+  "keywords": [
+    "svelte candlestick chart indicators",
+    "svelte rsi macd chart",
+    "svelte bollinger bands chart",
+    "svelte chart drawing tools fibonacci",
+    "svelte chart pdf export"
+  ],
+  "faq": [
+    {
+      "question": "Where do the indicator panes come from?",
+      "answer": "indicatorPane builds a complete spec for one indicator from the price spec, and SvChartPanes stacks those specs under the price chart in a private sync group. Each pane is a full SvChart, so tooltips, keyboard navigation, export and the screen-reader table come along."
+    },
+    {
+      "question": "Do the drawings survive a zoom or new data?",
+      "answer": "Yes. A drawing is anchored in data space: x is a category label or date and y a value. The chart resolves it to pixels on every layout, so a trend line drawn on Tuesday's close stays on Tuesday's close after a zoom, a resize or the weekly roll-up."
+    },
+    {
+      "question": "How is the PDF made without a PDF library?",
+      "answer": "The chart is rasterised through the same path as the PNG export, re-encoded as JPEG and placed on an A4 or Letter page by a small writer that emits the catalog, page, font, image and content stream itself. Title, subtitle and caption are Helvetica text."
+    }
+  ]
+}

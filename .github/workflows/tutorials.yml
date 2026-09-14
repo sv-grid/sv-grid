@@ -1,0 +1,149 @@
+name: Tutorials (record)
+
+# Re-record the 30-second tutorials (tools/tutorials/) on a clean runner: start
+# the example gallery, drive each demo with Playwright while the screen is
+# captured, narrate it with ElevenLabs, mux with ffmpeg, put the blocks on the
+# docs pages, and commit the result to BOTH repos - the muted docs cut, poster
+# and captions go to the private website (website/public/tutorials/), the
+# manifest and the docs markdown to this one. The narrated YouTube master, the
+# GIF, the SRT and the thumbnail are kept as a run artifact for a manual upload
+# from YouTube Studio (or `youtube.mjs upload --post` when the OAuth project has
+# passed Google's compliance audit - see tools/tutorials/README.md).
+#
+# Manual only: recording costs ElevenLabs credits and rewrites media, so it
+# runs when someone asks for it. Record locally first (Windows fonts match the
+# rest of the site's screenshots); this is the reproducible path.
+#
+# Required repo secrets:
+#   WEBSITE_TOKEN        - PAT with write access to sv-grid/website
+#   ELEVENLABS_API_KEY   - narration (omit to record with silent narration)
+# Optional:
+#   vars.ELEVENLABS_VOICE_ID, vars.ELEVENLABS_MODEL_ID
+#   YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN - only for `upload: true`
+
+on:
+  workflow_dispatch:
+    inputs:
+      tutorial:
+        description: 'Tutorial id, comma list, or "all"'
+        type: string
+        default: 'all'
+      commit:
+        description: 'Commit the media (website) and the docs blocks + manifest (this repo)'
+        type: boolean
+        default: true
+      upload:
+        description: 'Also upload the narrated master to YouTube (needs the YT_* secrets)'
+        type: boolean
+        default: false
+      privacy:
+        description: 'YouTube privacy for uploads'
+        type: choice
+        options: [unlisted, private, public]
+        default: unlisted
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tutorials
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      # The media lands in the PRIVATE website repo; a full clone so we can push.
+      - name: Check out the private website
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          rm -rf website
+          git clone --branch main \
+            "https://x-access-token:${WEBSITE_TOKEN}@github.com/sv-grid/website.git" website
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Not on the ubuntu-24.04 image any more (dropped from the runner image).
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg && ffmpeg -version | head -1
+
+      - name: Record + mux
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
+          ELEVENLABS_MODEL_ID: ${{ vars.ELEVENLABS_MODEL_ID }}
+        # --serve starts the gallery on :5174 and stops it when done.
+        run: node tools/tutorials/record.mjs "${{ inputs.tutorial }}" --serve
+
+      - name: Embed on the docs pages + rebuild the indexes
+        run: node tools/tutorials/embed.mjs && node tools/tutorials/embed.mjs --check
+
+      - name: Guardrails
+        run: pnpm vitest run tools/tutorials.test.ts tools/demo-doc-coverage.test.ts tools/docs-corpus.test.ts
+
+      - name: Upload to YouTube
+        if: inputs.upload
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_PLAYLIST_ID: ${{ vars.YT_PLAYLIST_ID }}
+        run: |
+          for id in $(node -e "console.log(require('./tools/tutorials/manifest.json').tutorials.map(t=>t.id).join(' '))"); do
+            case ",${{ inputs.tutorial }}," in
+              *,all,*|*,$id,*) node tools/tutorials/youtube.mjs upload "$id" --post --privacy "${{ inputs.privacy }}" ;;
+            esac
+          done
+          node tools/tutorials/embed.mjs
+
+      # The narrated master, GIF, SRT, thumbnail and youtube.json per tutorial:
+      # everything a manual YouTube Studio upload needs.
+      - name: Keep the masters
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutorials-out
+          path: |
+            tutorials-out/**
+            !tutorials-out/**/raw/**
+          retention-days: 14
+
+      # This repo first (docs blocks, manifest, generated indexes), then the
+      # website (media + its copies of the indexes). A parent push with
+      # GITHUB_TOKEN triggers nothing; the website push, without [skip ci],
+      # lets the website's own dispatch rebuild the site.
+      - name: Commit docs + manifest
+        if: inputs.commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs tools/tutorials/manifest.json
+          git diff --cached --quiet || git commit -m "tutorials: re-record ${{ inputs.tutorial }} [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Commit website media
+        if: inputs.commit
+        working-directory: website
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/tutorials src/lib/docs-index.json public/docs.json public/llms.txt public/llms-full.txt
+          git diff --cached --quiet || git commit -m "tutorials: re-record ${{ inputs.tutorial }}"
+          git push origin HEAD:main

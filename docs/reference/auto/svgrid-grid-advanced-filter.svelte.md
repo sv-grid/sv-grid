@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\advanced-filter.svelte.ts`.
 
 ### `type AdvancedFilterCompileContext`
 
-What the engine needs in order to compile an expression into a predicate. */
+What the engine needs in order to compile an expression into a predicate.
 
 ```ts
 export type AdvancedFilterCompileContext<TRow> = {
@@ -27,7 +27,7 @@ export type AdvancedFilterCompileContext<TRow> = {
 
 ### `type CompiledRowPredicate`
 
-A compiled expression: cheap to call once per row. */
+A compiled expression: cheap to call once per row.
 
 ```ts
 export type CompiledRowPredicate<TRow> = (row: TRow) => boolean
@@ -51,7 +51,7 @@ export type AdvancedFilterEngine = <TRow>(
 
 ### `function registerAdvancedFilterEngine`
 
-Register the engine. Enterprise calls this from `enableAdvancedFilter()`. */
+Register the engine. Enterprise calls this from `enableAdvancedFilter()`.
 
 ```ts
 export function registerAdvancedFilterEngine(fn: AdvancedFilterEngine | null): void {
@@ -61,7 +61,7 @@ export function registerAdvancedFilterEngine(fn: AdvancedFilterEngine | null): v
 
 ### `function getAdvancedFilterEngine`
 
-The registered engine, or null when enterprise is not installed. */
+The registered engine, or null when enterprise is not installed.
 
 ```ts
 export function getAdvancedFilterEngine(): AdvancedFilterEngine | null {
@@ -71,7 +71,7 @@ export function getAdvancedFilterEngine(): AdvancedFilterEngine | null {
 
 ### `function hasAdvancedFilterEngine`
 
-Whether an advanced-filter engine has been registered. */
+Whether an advanced-filter engine has been registered.
 
 ```ts
 export function hasAdvancedFilterEngine(): boolean {

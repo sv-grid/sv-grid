@@ -1,4 +1,4 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/types.md -->
 <script lang="ts">
   /**
    * 150. Scatter / bubble chart

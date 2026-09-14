@@ -1,0 +1,206 @@
+{
+  "slug": "primevue-datatable",
+  "competitor": "PrimeVue / PrimeNG / PrimeReact DataTable",
+  "npm": "primevue",
+  "url": "https://primevue.dev/datatable/",
+  "aliases": [
+    "primevue",
+    "primeng",
+    "primereact",
+    "prime datatable"
+  ],
+  "framework": [
+    "vue",
+    "angular",
+    "react"
+  ],
+  "group": "commercial",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs PrimeVue DataTable - Svelte Alternative",
+  "tagline": "The Prime DataTable is the grid in the PrimeUI suites for Vue, Angular and React; since PrimeVue 5 it ships under the PrimeUI licence, free only for small organisations.",
+  "oneLineVerdict": "Prime DataTable is the natural pick inside the Prime suites for Vue, Angular and React, and since PrimeVue 5 it is a commercial product with a conditional free tier. SvGrid is the Svelte-native alternative with an MIT core, a headless engine and an MCP server.",
+  "alternativeIntro": "The Prime DataTable ships as part of a UI suite for Vue, Angular and React, so on Svelte the real question is what replaces the whole suite. SvGrid answers the grid half and ships a Svelte component kit for much of the rest. If you lean on the full Prime suite and its themes, this is a bigger migration than a grid swap.",
+  "intro": [
+    "The Prime DataTable (PrimeVue, PrimeNG, PrimeReact) is a deeply featured grid - sorting, filtering, grouping, row and column expansion, editing, lazy load, frozen columns, CSV export - shipped as part of the Prime component suites. The primevue package on npm now carries the PrimeUI licence: a free Community License for individuals and organisations under the revenue, headcount and funding limits stated in the licence file, and a per-developer Commercial License with a licence key for everyone else. The version and licence field in the At a glance table are read from npm.",
+    "SvGrid brings a comparable grid to Svelte 5: an MIT core with no licence key, a render component plus a headless engine, Excel-style filters, editing, tree and master/detail, themed entirely through --sg-* tokens."
+  ],
+  "similarities": [
+    "Sorting, filtering, grouping, expansion, editing and lazy or server-side data.",
+    "Frozen columns, row selection modes and a context menu.",
+    "Themeable through CSS variables."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native, not Vue, Angular or React.",
+    "MIT core with no licence key or eligibility conditions; @svgrid/enterprise is the only paid part.",
+    "A headless engine in addition to the component.",
+    "No design-system lock-in: theme through --sg-* tokens or Tailwind.",
+    "In-grid AI helpers and the @svgrid/mcp server for AI assistants."
+  ],
+  "competitorAdvantages": [
+    "First-class fit inside the Prime suite for Vue, Angular or React.",
+    "A very large component library beyond the grid, plus PrimeBlocks and the theme designer in the commercial suite.",
+    "A very large community across three frameworks."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "Vue / Angular / React"
+      }
+    },
+    {
+      "feature": "License (grid core)",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT, no licence key"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "PrimeUI licence: free Community License under revenue and headcount limits, otherwise per developer with a licence key",
+        "source": "primeui-license"
+      }
+    },
+    {
+      "feature": "Sort / filter / group",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "Component-only"
+      }
+    },
+    {
+      "feature": "Design-system lock-in",
+      "svgrid": {
+        "status": "yes",
+        "note": "None (--sg-*)"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Prime theming"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not on the DataTable page",
+        "source": "primevue-datatable"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5, not Vue / Angular / React.",
+    "You want an MIT core with no design-system lock-in.",
+    "You want a headless engine and an MCP server."
+  ],
+  "whenToChooseCompetitor": [
+    "You already use the Prime suite for Vue, Angular or React and qualify for its Community License or have bought the Commercial Suite.",
+    "You want a large matching component library beyond the grid.",
+    "You want Prime themes, templates and blocks."
+  ],
+  "migration": {
+    "slug": "migrating-from-primevue-datatable",
+    "effort": "2-4 hours per grid",
+    "youLose": [
+      "The Prime suite around the grid for Vue, Angular and React, with PrimeBlocks and the theme designer in the commercial tier.",
+      "A large community across three frameworks."
+    ]
+  },
+  "pricing": {
+    "summary": "primeui.dev lists the Commercial Suite at a launch price of $599 per developer (standard $799) as a perpetual licence with one year of updates, renewable at $399 per developer per year; the Community License is free for individuals, non-profits and organisations under $1M revenue, fewer than five developers, fewer than ten employees and under $3M in venture funding",
+    "amount": 599,
+    "unit": "USD per developer, perpetual, launch price",
+    "url": "https://primeui.dev/pricing",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "07-grouping-aggregation"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/grouping-aggregation"
+  ],
+  "related": [
+    "ag-grid",
+    "kendo-ui-grid",
+    "tabulator"
+  ],
+  "bottomLine": "Inside the Prime ecosystem for Vue, Angular or React, the Prime DataTable is the obvious choice, with the PrimeUI licence terms now part of the decision. For Svelte 5, SvGrid is the native fit, with an MIT core, a headless engine and no Prime-theme dependency.",
+  "faq": [
+    {
+      "question": "SvGrid vs PrimeVue DataTable - which for Svelte?",
+      "answer": "SvGrid. Prime DataTable targets Vue, Angular, and React; SvGrid is Svelte-5-native with no design-system lock-in."
+    },
+    {
+      "question": "Is SvGrid open-source like the Prime grid?",
+      "answer": "Yes - MIT, like the Prime component cores. The difference is the framework and the theming model."
+    },
+    {
+      "question": "How do Prime Column definitions map to SvGrid?",
+      "answer": "Each Column with field and header becomes a { field, header } object, and #body slots become renderSnippet cells. See the migration guide."
+    },
+    {
+      "question": "Is PrimeVue still MIT?",
+      "answer": "Not from PrimeVue 5. The package on npm ships the PrimeUI licence: free for individuals, non-profits and organisations under the revenue, developer and employee limits in the licence file, and a per-developer commercial licence with a key for everyone else. The At a glance table reads the licence field from npm on the date shown; SvGrid's core is MIT with no key."
+    }
+  ],
+  "sources": [
+    {
+      "id": "primeui-license",
+      "url": "https://unpkg.com/primevue@5.0.1/LICENSE.md",
+      "evidences": "The primevue package ships the PrimeUI License: a free Community License for organisations under $1,000,000 revenue, fewer than 5 developers, fewer than 10 employees and under $3,000,000 outside funding, and a per-developer perpetual Commercial License with one year of updates; a licence key is required",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "primeui-pricing",
+      "url": "https://primeui.dev/pricing",
+      "evidences": "Commercial per developer $599 launch price (ends Dec 31, 2026) against $799 standard; update renewal $399 per developer; Community License eligibility as in the licence file",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "primevue-datatable",
+      "url": "https://primevue.dev/datatable/",
+      "evidences": "DataTable page lists sorting, filtering, pagination, virtual scroll, row expansion, row grouping, frozen columns, editing, export CSV, lazy loading, selection, context menu, reorder and responsive modes; a PRO Suite with Charts, Scheduler, Task Board and Text Editor",
+      "verified": "2026-09-12"
+    }
+  ]
+}

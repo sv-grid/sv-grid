@@ -25,6 +25,223 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`chartSpecToTable`.** The rows and columns a spec amounts to, in the
+  shape `SvGrid` takes: one row per category with a column per series (a
+  grouped axis adds a Group column, a histogram From and To, candles their
+  four prices, a box plot its five numbers), per point for a scatter, per
+  link for a sankey or chord, per leaf for a tree map or sunburst with a
+  column per level, per day for a calendar, one row for a gauge. Number
+  columns carry the chart's format (a right-axis series its axis's) and a
+  date axis is a date column. The gallery demos' Chart | Grid switch is this
+  behind a sortable grid.
+
+- **The Chart panel charts the pivot in pivot mode.** With `pivot` and
+  `charting` on one grid, the pivot bar carries the Chart toggle and the
+  panel draws the pivot on screen: row groups as categories (nested rows a
+  grouped axis), column groups as series, the measures' format on the axis,
+  totals left out. The data pickers step aside with a note and the Type
+  select keeps the shapes a pivot can take; Stacked, 100%, Horizontal, the
+  Format tab, the builder, saved charts, export and Describe still apply. A
+  click on a bar filters the innermost row dimension when the grid has a
+  column for it, which re-runs the pivot. It used to chart the source rows by
+  the source columns whatever was on screen. The mapping is
+  `pivotResultToChartSpec` (with `pivotChartType`, `pivotFilterColumn`)
+  in the lazy chart engine; enterprise's `pivotToChartSpec` is the same
+  function. `bucketsToChartSpec` (server aggregates as a spec) moved there
+  from the controller, which kept the base bundle at 86.4 KB.
+
+- **Scatter points select.** A click or Enter on a scatter or bubble point
+  selects it the way a bar selects: the point's `label` (or its series) is
+  the category, its y the value, and `selectable`, `bind:selected`,
+  `onSelectionChange` and `onSelect` all apply. The dots had no click
+  handler, so on a scatter chart those props did nothing.
+- **`ChartPointRef.index`.** A selected bar carries its category index
+  beside its label, and two refs with an index match only on the same one.
+  A grouped axis repeats its leaf labels (Q1 to Q4 under each year), so a
+  click on the second Q2 used to select the first Q2 with it. A ref written
+  without an index still matches by label.
+- **Data labels on a 100% chart read the share.** Under `stacked100` the
+  axis is already a share whatever `valueFormat` says; the labels on the
+  bars now say "18%" as well, rather than "$18", or "1800%" when the format
+  was percent. A `dataLabels.formatter` still receives the raw value and the
+  tooltip keeps it.
+- **A series on the right axis reads in that axis's format.** The tooltip,
+  the screen-reader table, the live region and the data labels format a
+  series with `axis: 'right'` through `y2Axis.format` or `formatter`, so a
+  margin of 0.29 beside a revenue in dollars reads "29%" and not "$0.29".
+  Without a format of its own the right axis is plain numbers, as its ticks
+  are.
+- **The breadcrumb survives `toolbar={false}`.** A drilled sunburst, tree
+  map or pie with the toolbar off still shows its breadcrumb in a strip of
+  its own; it used to have no way back up.
+- **Chart axis model.** `xAxis`, `yAxis` and `y2Axis` on a spec take
+  `min`, `max`, `nice`, `tickCount`, `tickInterval`, `format` or a
+  `formatter`, `title`, `gridLines`, `labelRotation`, `reversed` and, for
+  the x axis, `type: 'number'` for a numeric axis that spreads categories by
+  value. `referenceBands` shade a range on either axis, `referenceLines` can
+  be vertical, `title` / `subtitle` / `caption` frame the chart. Series
+  gained `marker` shapes and per-point `markers` / `colors`, `strokeWidth`,
+  `dash`, `opacity`, `gradient`, `step` lines, `connectNulls` and a
+  `nullAs` policy; `dataLabels` takes a placement, a formatter and overlap
+  hiding; the component takes a `tooltip` snippet, `tooltipFormat`,
+  `tooltipMode: 'single'`, a `legend` side and a `legendItem` snippet, and
+  `autosize`. `rowsToChartSpec` reduces with `min`, `max`, `median`,
+  `first`, `last`, `countDistinct` and `pN` and buckets a date dimension by
+  `day` / `week` / `month` / `quarter` / `year`.
+- **Decimation for long series.** `decimate: 'auto'` (the default) thins a
+  line or area with more points than pixels through LTTB, which keeps the
+  shape; `{ method: 'minmax' }` keeps every spike. Zoom is applied first, so
+  zooming into 300 of 100,000 points shows all 300. `lttb`, `minMaxIndices`,
+  `decimateSpec` and `pickCategories` are exported.
+- **Thirteen more chart types**: `histogram` (with `binValues` and
+  `rowsToHistogramSpec`), `range-bar`, `range-area`, `lollipop`,
+  `dumbbell`, `pareto` (`paretoSpec`), `stream` (`stackOffset: 'wiggle'` or
+  `'silhouette'`), `sunburst`, `radial-bar`, `radial-column`,
+  `nightingale`, `chord` and `bullet`; plus hollow and Heikin-Ashi candles
+  (`candleStyle`) and pyramid / cone funnels (`funnelShape`). All of them are
+  in the grid panel's picker, gated on what the current columns can feed.
+- **Zoom, pan and presets.** `zoomable` takes an object: `wheel` (`true` or
+  `'modifier'` for Ctrl + wheel), `pinch`, `pan` (`'shift'`, `'mode'` or
+  both) and `axis` (`'x'`, `'y'`, `'xy'`). The window is a bindable
+  `zoom` prop of category indices with `zoomTo` / `resetZoom` on the
+  component and an `onZoom` callback; `rangePresets` puts 1W / 1M / 3M / 6M /
+  YTD / 1Y / All in the toolbar on a time axis.
+- **Synchronized charts.** Charts with the same `syncGroup` share their
+  crosshair and zoom window, matched by label and then by date. The grid
+  panel's `syncTabs` keeps one window across its chart tabs.
+- **Context menu, animation, drilldown, selection, keyboard.** `contextMenu`
+  (built-in export / zoom / series items, your own `MenuItem`s, or a function
+  of the clicked point; Shift + F10 opens it), `animate` (a data-update tween
+  and `'fade'` / `'grow'` / `'wipe'` enter effects, off under reduced
+  motion), `drillable` + `drillPath` for tree maps and sunbursts with a
+  breadcrumb, `selectable` + `selected` + `onSelectionChange` for point
+  selection with dimming, Up / Down stepping through series with a polite live
+  region (`announce`).
+- **Financial toolkit.** `bollingerBands`, `rsi`, `macd`, `vwap`, `atr`,
+  `stochastic`, `wma` and `obv`, NaN-padded like the moving averages;
+  `'wma:N'`, `'bb:N:K'` (a shaded band) and `'vwap'` overlays;
+  `indicatorPane` and `SvChartPanes`, which stacks indicator panes under a
+  price chart with one x axis, one gutter and one crosshair; `rowsToOhlcSpec`
+  and `resampleOhlc` (daily bars to weeks / months); `lastPriceLine`;
+  annotation `shape` (`'flag'`, `'pin'`, `'square'`) with a tooltip
+  `text`; `volumes` on a series.
+- **Drawing tools.** `drawable` puts trend line, horizontal ray, Fibonacci
+  retracement, rectangle, arrow and note tools in the toolbar; the drawings
+  are data points (`spec.drawings`, `onDrawingsChange`) so they survive a
+  zoom, a resize or new data. A selected drawing has draggable handles and
+  Delete removes it.
+- **PDF and print** with no PDF library: `chartToPdfBlob`, `downloadChartPdf`
+  (a one-page A4 or Letter PDF with the chart as a JPEG and the titles as
+  text) and `printChart`, in the toolbar, the context menu and the panel's
+  export menu.
+- **Chart builder in the grid panel.** The Build button opens a modal with a
+  type gallery (a live thumbnail per type), the data pickers and a Format tab
+  (titles, legend and label placement, axis title / min / max / format / grid
+  lines, per-series colour / type / axis / marker / width). The format is
+  `ChartFormatState` on the chart tab, applied by `applyChartFormat` to every
+  derived spec, saved with the view and reachable through
+  `configureChart({ format })`. A link toggle unlinks a chart from the grid
+  (`configureChart({ frozen: true })`) so it keeps its data while you filter.
+  `charting.onChartCreated` / `onChartChanged` report the panel's lifecycle;
+  `charting` also takes `zoom`, `rangePresets`, `syncGroup`, `syncTabs`,
+  `contextMenu` and `animate`.
+- **Candlesticks from the grid panel.** Pick Candlestick or OHLC bars and the
+  panel finds the Date, Open, High, Low, Close and Volume columns by name;
+  Indicators chips add panes and overlays; `configureChart({ ohlc,
+  indicators })` and the AI chart plan reach the same thing.
+- **A scatter series' `overlay` is a regression of y on x.** Until now the
+  scatter layout ignored `overlay` (the fits ran on the index, which a
+  scatter has no use for). The regressions (`linearFit`, `polynomialFit`,
+  `exponentialFit`, `logarithmicFit`, `powerFit`) take an optional `xs`
+  and return `predict(x)`; `regressionFit(values, overlay, xs)` names one by
+  its overlay string; a scatter series with `overlay` gets the curve drawn
+  across the plot (sampled evenly in log space on a log axis) and its
+  equation and R-squared in the point tooltip.
+- **Chart gallery: fourteen full-size demos, one per family, and a docs page
+  for them.** Bars, lines, areas, pie / donut / sunburst, scatter and bubble,
+  combination, histogram and box plot, heat map and calendar, radar and
+  radial, tree map and sunburst, sankey and chord, waterfall / funnel /
+  pareto, gauges and bullets, and an annotated chart (demos 438 to 451),
+  each with its own data and the switches that family needs, embedded on
+  `help/charts/gallery` and the type pages.
+- **Grid chart panel: a deeper Format tab, one set of pickers, a
+  localized panel and saved charts.** The builder's Format tab adds series
+  labels, the crosshair's axis pills, a compact rule below a width
+  (`compactBelow`, through `CHART_RESPONSIVE_PRESETS.compact`), a stack
+  group per bar or area series and the chart's font, size, background and
+  text colour (`ChartFormatState.seriesLabels` / `crosshairLabels` /
+  `compactBelow` / `series[].stack` / `style`). The panel's pickers and the
+  builder's Data tab are one component (`SvGridChartPickers`), so the two
+  cannot disagree about what a type needs. Every string the panel and the
+  builder show is a `chart*` key on `localization.text`
+  (`GridChartPanelMessages`, loaded with the panel; `GridMessages` is now
+  the chrome map and the panel map together). `api.saveChart(name)`,
+  `applySavedChart`, `removeSavedChart`, `getSavedCharts` and
+  `configureChart({ saved })` keep a tab's whole configuration under a name;
+  the panel has a popover for them and `getState()` carries `savedCharts`
+  when there are any.
+- **Chart diagnostics, a plain-language description, live feeds and a JSON
+  schema.** `validateChartSpec` returns what is off about a spec (unknown
+  keys with the nearest name, an unknown type, a series short of the
+  categories, a log axis at zero, an overlay the engine does not read, an
+  anchor naming no category, and more); `SvChart` logs the findings once per
+  spec in development, `aiChart` attaches the errors to its plan, and the
+  MCP server's `svgrid_check_code` applies the rules to a static spec
+  literal with a rename for a misspelt key. `chartSummary` reads a chart in
+  a sentence (trend, extremes, shares, correlation, last close) and
+  `SvChart` hands it to assistive technology as `aria-description` and the
+  table caption (`describe`), the context menu and the panel copy it, and
+  `aiExplainChart` grounds an Explain button on it. `appendPoints` builds
+  the next spec of a feed with every per-category array kept in step and a
+  rolling window, and `live` on the chart skips the tween and enter effect.
+  `docs/schemas/chart-spec.json` is generated from the types, served at
+  svgrid.com/schemas and by `svgrid_get`, and a test keeps it equal to the
+  validator's lists.
+- **Series and interaction depth.** Areas join `stack` groups like bars
+  (`stacked100` and `stackOffset` run per pile); a numeric x axis takes
+  `scale: 'log'` (even decades, 2 / 5 minors, non-positive categories
+  dropped, decimation in log positions); regression overlays `poly:N`,
+  `exp`, `log` and `power` next to `linear`, each carrying `r2` and
+  `equation` on the overlay line and read in the tooltip, with
+  `linearFit` / `polynomialFit` / `exponentialFit` / `logarithmicFit` /
+  `powerFit` / `rSquared` / `computeOverlayFit` / `overlayName` exported
+  and `charting.trend` accepting the new names; hovering a mark dims the
+  other series (`hoverHighlight`, on by default, snapping within 18px) and
+  `onHover` reports the point once per change; `tooltipPosition` parks the
+  tooltip in a plot corner and `tooltipSticky` pins it on a click; data
+  labels take `rotation` and `connector` (pushed clear of a collision with
+  a leader line); `spec.style` sets a chart's font, size, background and
+  text / grid colours over the tokens (`chartStyleVars`), honoured by the
+  exports.
+- **Accessibility pass on the chart.** Every non-cartesian family (pie,
+  sunburst and the radial charts, heat map, calendar, tree map, funnel,
+  sankey nodes and links, radar, scatter) is one Tab stop with a roving
+  focus: arrows walk the marks (a heat map by row and column, a calendar by
+  day and week), Home / End / PageUp / PageDown jump, the focused mark
+  raises its tooltip, Enter / Space select or drill, and every mark is named
+  and has a focus ring. Zoom from the keyboard: `+` / `-` / `0` on a
+  focused category and Shift + arrows to pan, and the brush is a `slider`
+  (arrows pan and resize, Home / End, `0`). The toolbar is a `toolbar`, the
+  tooltip a `tooltip`, decorative icons are hidden from the tree. Forced
+  colors (Windows High Contrast) keep the data colours and repaint the
+  chrome with the system palette. `localeText` on `SvChart` (and
+  `charting.localeText` for the grid panel) translates every string the
+  chart renders itself, with `ChartMessages`, `defaultChartMessages`,
+  `resolveChartMessages` and `chartMessage` exported. A new
+  `tests/e2e/chart-a11y.spec.ts` runs axe-core against the rendered chart
+  on three demos and drives the keyboard model in a real browser.
+- **Stack groups, series labels, responsive rules, pie callouts.** `stack`
+  on a bar series names the pile it joins, so plan and actual stack side by
+  side in each category and the axis fits the tallest stack; `seriesLabels`
+  names each line at its last point in a reserved gutter, pushed apart where
+  lines end together; `responsive` patches the spec by the rendered size
+  (axes merge one level deep, a rule's `legend` moves or hides the
+  component's legend; `resolveResponsive` and `matchResponsiveRules` are
+  exported); `dataLabels: { placement: 'outside' }` on a pie draws callout
+  labels with leaders instead of percentages, and a spec can carry its own
+  `dataLabels`; `visible: false` starts a series hidden with its legend chip
+  dimmed; the crosshair reads off the axes with a category pill and a value
+  pill (`crosshairLabels={false}` turns them off).
 - **`moveCells` - drag a selected range to move or copy it.** Grab a selected
   range by its border and drop it somewhere else. Move by default, copy with
   Ctrl / Cmd, and the modifier is read at DROP time so it can be pressed or
@@ -140,6 +357,160 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Arrow keys lagged whenever the active cell had to scroll.** On the
+  10,000 x 53 large-dataset demo one ArrowDown at the bottom of the viewport
+  cost about 37 ms of main-thread work and painted over two frames; it is now
+  about 8 ms and paints once. Five things added up. Every rendered row was
+  measured with `getBoundingClientRect` on each scroll tick, on a grid that
+  had no `autoRowHeight` to use the number for, which forced a table layout
+  per row (about 30 per key press). The scroll geometry the custom scrollbar
+  reads was pulled inside a derived at the start of the flush, forcing a
+  second full table layout that the row writes then invalidated. The
+  virtualizer keyed rows by their position in the window, so a one-row
+  scroll rewrote all ~30 rows x every rendered column; rows are now keyed
+  `index mod windowLength`, so the rows that stay keep their `<tr>` untouched
+  and the one that entered is moved with a single `insertBefore`. The row
+  window only updated after the browser's `scroll` event and a
+  `requestAnimationFrame`, a frame after the key press; keyboard navigation
+  now syncs the virtualizer inline, since it knows where it scrolled. And
+  each cell carried three selection-dependent deriveds plus the fill handle's
+  `{#if}`, re-marked on every move; they are one `{@const}` now, `null` for
+  a plain cell. Also closed on the way: `key in editedCellValues` on a deep
+  `$state` proxy created a signal per rendered cell that never went away, and
+  the header checkbox's tri-state walked every row on each arrow key.
+
+- **A heat map drew a series legend in colours its cells never use.** The
+  ramp on the right is its key; the row of palette chips under it (and a
+  calendar's) is gone.
+
+- **A time axis put its ticks on nothing in particular.** `xType: 'time'`
+  stepped a fixed 30 or 365 days from the Unix epoch, so a tick labelled
+  "2025" stood weeks from New Year, a "Jun 25" tick sat mid-June, and a
+  thirty-month axis carried two labels on a plot with room for eight. Ticks
+  now land on calendar boundaries in UTC (days, Mondays, the first of a
+  month, quarter or year, or every few years) at about one label per 90px,
+  and each label is sized to the gap between ticks rather than the axis span,
+  so a quarterly axis no longer reads "2024, 2024, 2024, 2025". The labels
+  are read in UTC too: a local-time read of a 'YYYY-MM-DD' category in the
+  Americas labelled every tick with the day before.
+- **The tooltip echoed the ISO date.** On a time or ordinal-time axis the
+  tooltip title, the crosshair pill and the live region wrote "2025-06-01";
+  they write "Jun 2025" when every category is the first of a month, "2025"
+  when every one is New Year, and "Jun 1, 2025" otherwise, through
+  `xAxis.formatter` when one is set. A calendar cell names its day the same
+  way. The category in `onHover`, `onSelect` and `selected` is unchanged.
+- **The screen-reader table and the CSV read "NaN".** A NaN gap (the way a
+  forecast series marks the months before it starts) wrote the word "NaN"
+  into the hidden data table and the CSV export, and a `null` fell back to
+  0, which told a screen reader the outage month had no sign-ups. Both are
+  empty cells now.
+- **"Double-click again to clear" left a legend chip isolated and hidden.**
+  A double-click arrives as click, click, dblclick: with a chip isolated the
+  first click cleared the isolation, the second hid the chip and the dblclick
+  isolated it again. A click that clears an isolation is remembered for a
+  moment, and the double-click that follows it on the same chip clears; on
+  another chip it moves the isolation there.
+- **A radar ignored `yAxis.min` / `max`.** The rim was always the data
+  maximum, so scores out of 100 filled the dial to whatever the best score
+  was and two radars could not be compared. The rim honours a pinned axis,
+  a value past it sits on it, and a pinned minimum is the centre.
+- **A pie sized its gutters by the widest label on either side.** Small
+  slices with long names on the left kept the same room on the right for a
+  "Chrome 62%", and the pie drew at half the radius the pane had. The
+  gutters are per side, the pie sits centred in what they leave, the floor
+  radius is a quarter of the short side, and each side truncates to its own
+  room.
+- **A waterfall tooltip read "$0" on a total.** A total bar holds 0 in the
+  data and its running sum in the geometry; the tooltip and the
+  screen-reader table now read the drawn value. Its x labels also tilt by
+  the same fit rule as a bar chart's, with the angle the renderer needs:
+  they were flagged as rotated with no angle and drew truncated instead.
+- **Histogram edges read "1.3k, 1.3k".** Bin edges are written at the
+  precision their width needs (whole numbers with separators for a 44ms
+  bin, two decimals for a 0.2 bin) rather than in the compact tick form that
+  gave two neighbouring edges one label.
+- **A heat map ignored `dataLabels` in the spec.** The cell label read the
+  component prop alone, so `dataLabels: { show: true }` in the spec drew
+  nothing. Colour legends on heat maps and calendars also round their steps
+  to the precision the range earns ("20, 94, 167", not "20, 93.5, 167").
+- **The range area read as three lines.** Its band filled at the wash an
+  area under a line gets, with both edges at full stroke. The band is the
+  mark: it fills at 0.35 and its edges are thin.
+- **Annotate mode pinned a tooltip instead of a note** when `tooltipSticky`
+  was on too; the annotate click now owns the click.
+- **Drawings on a time axis warned on every point.** The drawing tools write
+  a timestamp for every pointer position, and the spec validator matched
+  those against the category list. It skips the check on a time or number
+  axis, as it already did for reference lines and annotations.
+- **The panel's export menu and saved-charts dialog ignored Escape.** Both
+  close on Escape and hand focus back to the button that opened them.
+- **A gauge wrote "99.2 %".** A symbol unit (%, degrees) hugs the number; a
+  word unit ("ms") keeps its space.
+- **The right axis title was clipped.** Its glyphs point outward under the
+  rotation and ran past the edge of the SVG.
+- **Pie callout labels ran off the chart in a narrow pane.** The pie kept a
+  fixed 34px margin for its outside labels whatever their length, so a
+  "Samsung Internet 3%" in a 380px pane was clipped to "%" and "Cl". The
+  radius now makes room for the widest label on each side, keeps at least a
+  fifth of the short side, and hands the renderer a per-side character
+  budget to truncate to when even that is not enough.
+- **The brush strip inherited the chart's titles, axis labels and marks.**
+  A title and subtitle took 45 of the strip's 88 pixels and the x labels
+  another 30, leaving the mini-map a five-pixel smear under an empty band.
+  The brush spec now mutes titles, axis titles and labels, reference lines
+  and bands, annotations, drawings, series labels and data labels.
+- **A category chart tilted its x labels by count, not by fit.** More than
+  eight categories, or any label over nine characters, tilted every label
+  to -40 degrees even on a thousand-pixel chart with room to spare. `auto`
+  now tilts only when the widest label does not fit its slot.
+- **A heat map wrote every column label whatever the cell width**, so
+  twenty-four hours at 33px a cell read "00:0001:0002:00". The column
+  labels thin out the way a bar chart's do.
+- **A calendar labelled the padding days of the next year.** The grid pads
+  the range to a full week, and a December ending on a Thursday picked up a
+  "Jan" tick for the two padding days. Month labels stay inside the range.
+- **A waterfall could not open on a value.** A total bar always read the
+  running sum, so "Revenue 4300" marked as a total drew as zero and every
+  bar after it hung below the axis. A total with a value now sets the sum;
+  a total with 0 still reads it.
+- **`rowsToChartSpec` with `topN` duplicated a category called "Other".**
+  A real "Other" in the data came out beside the folded one, two categories
+  with one name, which the renderer threw on as a duplicate key. The tail
+  now folds into that category.
+- **A pin annotation showed "O…" and nothing else.** The head held
+  `truncate(label, 2)`, an initial plus an ellipsis, and no label was written
+  beside it. The head carries the initial and the label sits beside the pin
+  like a dot's does.
+- **A chart's hidden data table took up to 17,000px of scrollable space.**
+  The screen-reader table (one row per category, capped at 1,000) carried the
+  visually-hidden recipe itself, but on a `<table>` `height: 1px` and
+  `width: 1px` are minimums and `overflow: hidden` does not clip, so the
+  table was invisible and as tall as its rows, and every scroll container
+  around a chart (the demo pages first of all) scrolled on through that much
+  empty space. The clip now sits on a wrapping div; the table keeps its id,
+  which the svg still points at.
+- **Two ARIA faults the axe audit found.** The chart's SVG was
+  `role="img"`, whose children are presentational to assistive technology,
+  so the focusable marks inside it (category zones, slices, a drawing) were
+  a nested-interactive violation and could be skipped by a screen reader; an
+  interactive chart is a labelled `group` now (a thumbnail with
+  `interactive={false}` stays an image). Sankey links carried an
+  `aria-label` with no role, which ARIA prohibits; they are named images in
+  the focus order.
+- **A tree map ignored `spec.tree`.** The field is documented as an alias of
+  `treemap` and the sunburst honoured it; the tree map read only `treemap`.
+- **An autosized chart with a side legend grew without end in a plain block.**
+  `legend="left"` / `"right"` lays the chart out as a three-row grid, and a
+  grid puts a gap between every track whether or not the toolbar and brush
+  rows have anything in them. The autosize maths counted a gap only for the
+  chrome that existed, so in a parent that does not pin the height, the host
+  measured 8 or 16px taller than the plot it was told to fit, the plot grew
+  into it, and the next measurement grew again - a few hundred pixels a
+  second until the page ran out. Hiding the legend at runtime had the
+  opposite fault: a dimension binding keeps its last value once its element
+  is gone, so the vanished legend went on being subtracted and the plot
+  ratcheted down to its 120px floor. Both fixed; a fixed-height parent hid
+  them, which is why the docs' sizing example never showed either.
 - **`block` did nothing on eight editors.** The prop is declared once in
   `SvEditorProps`, and its own doc comment describes the symptom: "in a form
   grid a row of inputs each stopping at a different width reads as broken".
@@ -210,6 +581,28 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **The pivot designer's Chart view grew up.** It offers every shape a pivot
+  can take (bar, line, area, lollipop, pareto, the three radial forms, pie,
+  funnel, waterfall, radar, heat map, stream) in the panel's groups, with
+  Stacked, 100% and Horizontal where the type uses them, the chart's own
+  toolbar (PNG, SVG, PDF, print, copy), its spoken summary and a legend
+  under the plot. It had six types and a Stacked box.
+
+- **`pivotToChartSpec` carries the measure's format and name.** Pass the
+  value chip's `format` and the chart reads "$470k" on the axis and
+  "$469,662" in the tooltip, in the measure's currency and locale; percentage
+  points get a formatter that appends the sign. With one measure the value
+  axis is named after it (`yAxisTitle` overrides, `null` for none). The
+  designer's Chart view passes the format when its measures agree, and
+  formats plainly when a layout mixes a currency and a count.
+
+- **PDF export with charts and a KPI strip.** `pdf.charts` prints charts with
+  the table: a rendered chart's element is rasterised on export through the
+  grid chart's PNG path, or pass an image data URL; each takes a title, a
+  caption and a width, and goes above the table or below it
+  (`chartsPosition`). `pdf.kpis` prints a strip of headline numbers, each a
+  label over a big value with an optional coloured delta line. Roadmap
+  discussion 36.
 - **The selection bar renderer, plus bulk edit.** `enableSelectionBar()`
   (or `installEnterprise`) registers the renderer behind the free
   `selectionBar` prop. The bar carries a count chip, your actions, an overflow
@@ -225,6 +618,23 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **A pivot chart drew an empty cell as a zero bar.** An average over no rows
+  is `null` in the pivot and the bridge read it as 0; it is a gap on the
+  chart now. A sum over no rows stays the 0 the engine wrote.
+
+- **PDF export depended on pdfmake's fonts registering themselves.**
+  `pdfmake/build/vfs_fonts` registers its font map only as a side effect of
+  being imported while a global `pdfMake` already exists, and the export's
+  own lookup for the map never matched the shape the module has shipped since
+  pdfmake 0.2.8 (the module is the map), so it registered nothing and relied
+  on that side effect. Under a bundler the global can be a stale instance (a
+  dev server re-optimising its dependencies mid-session is enough), and the
+  export then failed with "File 'Roboto-Medium.ttf' not found in virtual file
+  system" while its promise never settled. The map is now found in every
+  shape the module has had (`resolvePdfVfs`) and handed to the instance that
+  creates the document (`registerPdfFonts`, through `addVirtualFileSystem`
+  and the `vfs` property), and an installed pdfmake whose fonts module has
+  no map is reported instead of failing later.
 - **Studio emitted no theme for the fragment export and the CLI `add`
   scaffolds.** Only the full app's `+layout.svelte` carried the `--sg-*` tokens;
   `eject --fragment` (which drops that file) shipped an `app.css` with one
@@ -249,6 +659,14 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`<sv-chart>`**, the standalone chart as a custom element, at
+  `@svgrid/grid-wc/chart` with React (`/react/chart`), Vue (`/vue/chart`)
+  and Angular (`SvChartComponent`) wrappers. Its surface is generated from
+  `SvChart`'s own props type the way `<sv-grid>`'s is from the grid's, so the
+  26 props and 7 events stay in step; `spec` is a property, the primitives
+  are attributes, and a prop that takes a boolean or a string (`legend`) keeps
+  a string attribute where a bare attribute means true. Its own build in
+  `dist/chart` carries none of the grid.
 - **Typed event handlers.** Each wrapper's `on<Event>` prop used to be
   `(detail: unknown) => void`, so reading `newValue` meant casting first -
   a poor advertisement for a typed wrapper. The detail type is now lifted from
@@ -339,10 +757,31 @@ For machine-readable releases, fetch
   checkboxes - `<SvGrid>`'s prop of that name is an alias of
   `enableCellSelection`, and forwarding it would have silently repointed a
   published attribute at a different feature.
+- **Styles arrive with the code that needs them.** The build used to put every
+  stylesheet in the bundle, lazy chunks included, into the entry, so a page
+  that never opened the chart, a date picker or a menu still downloaded their
+  CSS. Each chunk now carries its own styles and adds them to the document
+  and to every open shadow root when it loads. `<sv-grid>`'s entry went from
+  107 KiB to 98.5 KiB gzip while the chart grew.
 
 ### Tooling & docs
 
 #### Added
+
+- **Every chart gallery demo switches between Chart and Grid.** A segmented
+  control first in each demo's toolbar flips every pane to a sortable grid
+  of the rows the chart was drawn from, and back, the way the board demos
+  switch Board and Table. The from-the-grid page shows the pattern in a
+  runnable.
+
+- **Charting a pivot is documented.** The pivot page has a section on
+  `pivotToChartSpec` (the mapping, every option, a runnable that pivots
+  orders and charts them by quarter) and on the designer's Chart view
+  (`chartable`, `defaultView`); the charts hub and the from-the-grid page
+  link to it, the /api pivot section lists the function, and the generated
+  reference covers `pivot-chart.ts`. Demo 359's data now puts every
+  country in every quarter and category, so its groups are four bars, not
+  one.
 
 - **27 runnable framework examples**, nine each for React, Vue and Angular:
   a first grid, sorting and filtering, editing and saving, row selection,
@@ -412,6 +851,75 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **`build:lib` in the enterprise package deleted the node bundle.**
+  `svelte-package` wipes `dist/`, so a library build alone removed
+  `dist/node/studio.js` and the MCP server failed to start until
+  `build:node` was run by hand. The library build rebuilds the bundle it
+  removed.
+
+- **Docs images and tutorial media 404'd under a site base.** The markdown
+  writes them root-absolute (`/docs-media/...`, `/tutorials/...`), which is
+  right at svgrid.com and wrong under the `/sv-grid/` base the e2e server
+  uses: every docs image and tutorial poster was missing there. The page
+  prefixes the base in the HTML before it paints, and an e2e spec loads a
+  page with both and checks nothing under those roots 404s.
+
+- **Twenty-one links on the chart pages went to GitHub 404s.** The split
+  wrote every cross-link with one `../` too many, and the site's link
+  resolver falls back to a GitHub URL for a page it does not know. Fixed on
+  the pages, and every relative link under docs/ is now a test
+  (`tools/docs-relative-links.test.ts`); the link checker existed but only
+  ran by hand before a release.
+- **Links into the generated reference tree went to GitHub too.** The tree
+  is hidden from the docs routes; a link to it lands on the /api page, on the
+  module's section where it has one.
+- **The chart gallery said "the source is under each example" and it was
+  not.** Each gallery card now carries the demo's own script and markup on a
+  Code tab, written by `tools/gallery-doc-code.mjs` from the demo file and
+  guarded by a drift test, so the code beside a preview is the code that
+  renders it.
+- **A demo page flattened a bulleted banner into one paragraph**, dashes and
+  backticks included. The page reads the pitch as blocks: a list where the
+  banner wrote one, `<code>` where it wrote backticks, on the prerendered
+  and the hydrated page alike.
+- **`demo-doc-embed` skipped a demo the page only linked to**, so a
+  placement for it never landed, and it opened a new "More examples" section
+  below "See also", which the coverage test requires to be last. Present
+  means embedded, and the section opens above "See also".
+- **Regenerating the doc snippets took the dev server's file watcher with
+  it.** The extractor removed and recreated its output directory, and on
+  Windows the watch did not re-attach, so an edited runnable kept serving
+  its old chunk while the source beside it showed the new code. It writes in
+  place and removes only what no longer belongs.
+- **The Getting started chart page had no live example.** Its code blocks
+  were `ts` and a Svelte block referencing rows it never declared; four of
+  them run now, and the hub's first example runs with its own rows and a
+  filter row, so the chart is seen following the grid.
+
+- **The e2e suite adopted any server on :5180.** Playwright reuses whatever
+  answers on the port, and a Vite dev server returns the app shell for any
+  path, so a website dev server started by hand (base `/`) passed the
+  readiness check and the fourteen path-routed and module-importing specs
+  failed with nothing pointing at the server. The config now probes the port
+  first (`tests/e2e/lib/site-server-probe.mjs` reads the base off Vite's
+  client script tag), reuses a server that serves the site under `/sv-grid/`,
+  skips one that serves anything else with a line saying so, and starts its
+  own on the next free port; `SVGRID_E2E_PORT` pins one.
+- **The website dev server re-optimised dependencies mid-session.** The
+  search index, the docs renderer, the /api runner's compilers, the PDF
+  exporter and the grid's `esm-env` sit behind dynamic imports the start-up
+  scan does not reach, so the first page to touch each one triggered
+  "optimized dependencies changed. reloading" on every open page. In the e2e
+  suite that reload landed mid-test on a cold cache and failed whichever spec
+  was on a page at the time. They are pre-bundled at start-up now
+  (`optimizeDeps.include`), and `esm-env` is a declared devDependency of the
+  website so it resolves from there.
+- **The /api runner check sampled an example's outcome two frames after
+  Run.** An example awaiting an export or a fetch was still running, so a
+  failure that arrived later, or one thrown inside a library callback the
+  runner's try/catch cannot see, passed. The check now waits for the runner
+  to report an outcome and counts an uncaught error or rejection during the
+  run as a failure of that example.
 - **181 doc pages had content stranded below "See also".** Authoring passes
   appended new sections to the end of the file, which buried them under what
   reads as the page footer: on `help/filtering/number-filter`, for instance, the

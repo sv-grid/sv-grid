@@ -522,9 +522,8 @@
   const toggleSelectAllRows = $derived(ctrl.toggleSelectAllRows);
   const setActiveCell = $derived(ctrl.setActiveCell);
   const scrollActiveCellIntoView = $derived(ctrl.scrollActiveCellIntoView);
+  const cellSelectionState = $derived(ctrl.cellSelectionState);
   const getColumnWidth = $derived(ctrl.getColumnWidth);
-  const getCellRangeEdges = $derived(ctrl.getCellRangeEdges);
-  const fillHandleCell = $derived(ctrl.fillHandleCell);
   const isInFillPreview = $derived(ctrl.isInFillPreview);
   const fillMarqueeEdges = $derived(ctrl.fillMarqueeEdges);
   const startFillDrag = $derived(ctrl.startFillDrag);
@@ -755,6 +754,19 @@
      rotate-on-open both hang off it (SvGrid.css), and an override that
      dropped the class would lose both silently - which is the kind of bug
      that only shows up in someone else's app. -->
+{#snippet chartToggle()}
+  <button
+    type="button"
+    class="sv-grid-toolbar-btn sv-grid-chart-toggle"
+    class:is-active={ctrl.chartPanelOpen}
+    aria-label={ctrl.chartPanelOpen ? "Close chart" : "Open chart"}
+    aria-expanded={ctrl.chartPanelOpen}
+    onclick={() => (ctrl.chartPanelOpen = !ctrl.chartPanelOpen)}
+  >
+    {@render icon("chart")}
+    Chart
+  </button>
+{/snippet}
 {#snippet icon(name: GridIconName)}
   {@const override = opt.icons?.[name]}
   {#if override}
@@ -1046,6 +1058,9 @@
     </div>
   </div>
 {:else if pivotViewOn}
+  <!-- The Chart panel docks here the way it docks beside the flat grid,
+       and charts the pivot on screen: the root reserves the panel's edge and
+       the pivot bar carries the toggle the toolbar carries in flat mode. -->
   <div
     class="sv-grid-root sv-grid-pivot-root"
     class:sv-grid-root-fill={opt.containerHeight === "100%"}
@@ -1053,7 +1068,7 @@
       typeof opt.containerHeight === "string"
         ? opt.containerHeight
         : `${opt.containerHeight ?? 520}px`
-    }; display: flex; flex-direction: column;`}
+    }; display: flex; flex-direction: column; ${chartDockReserveStyle}`}
   >
     <div class="sv-grid-pivot-bar">
       <span class="sv-grid-pivot-badge">{messages.group}</span>
@@ -1063,6 +1078,9 @@
         aria-pressed="true"
         onclick={() => ctrl.togglePivotMode()}
       >{messages.pivotUpsellTitle}</button>
+      {#if ctrl.chartingEnabled}
+        {@render chartToggle()}
+      {/if}
     </div>
     <div style="flex: 1 1 auto; min-height: 0;">
       {#if pivotResult}
@@ -1081,6 +1099,9 @@
         </div>
       {/if}
     </div>
+    {#if ctrl.chartingEnabled && ctrl.chartPanelOpen && ChartPanelView}
+      <ChartPanelView {ctrl} />
+    {/if}
   </div>
 {:else}
 
@@ -1535,17 +1556,7 @@
           </button>
         {/if}
         {#if ctrl.chartingEnabled}
-          <button
-            type="button"
-            class="sv-grid-toolbar-btn sv-grid-chart-toggle"
-            class:is-active={ctrl.chartPanelOpen}
-            aria-label={ctrl.chartPanelOpen ? "Close chart" : "Open chart"}
-            aria-expanded={ctrl.chartPanelOpen}
-            onclick={() => (ctrl.chartPanelOpen = !ctrl.chartPanelOpen)}
-          >
-            {@render icon("chart")}
-            Chart
-          </button>
+          {@render chartToggle()}
         {/if}
       </div>
     {/if}
@@ -2292,15 +2303,8 @@
                           !!fullRowEdit &&
                           fullRowEdit.rowId === row.id &&
                           rendered.column.id in fullRowEdit.draft}
-                        {@const rangeEdges = getCellRangeEdges(
-                          rowIndex,
-                          colIndex,
-                        )}
+                        {@const cellSel = cellSelectionState(rowIndex, colIndex)}
                         {@const fillEdges = fillMarqueeEdges(rowIndex, colIndex)}
-                        {@const hasFillHandle =
-                          fillHandleCell &&
-                          fillHandleCell.rowIndex === rowIndex &&
-                          fillHandleCell.colIndex === colIndex}
                         {@const userCellClass = computeCellClass(
                           row,
                           rendered.column,
@@ -2316,9 +2320,8 @@
                         <td
                           class={`sv-grid-cell ${userCellClass}`}
                           class:sv-grid-cell-editing={isEditing || inRowEdit}
-                          class:sv-grid-cell-active={activeCell.rowIndex ===
-                            rowIndex && activeCell.colIndex === colIndex}
-                          class:sv-grid-cell-has-fill-handle={hasFillHandle}
+                          class:sv-grid-cell-active={!!cellSel?.active}
+                          class:sv-grid-cell-has-fill-handle={!!cellSel?.fillHandle}
                           class:sv-grid-cell-cf={hasConditionalFormats}
                           class:sv-grid-cell-invalid={cellValidity.invalid}
                           class:sv-grid-cell-has-note={cellNote != null}
@@ -2330,15 +2333,15 @@
                           data-align={getColumnAlign(rendered.column)}
                           data-pinned={isColumnPinned(rendered.column.id) ??
                             undefined}
-                          data-selected-range={rangeEdges ? "true" : undefined}
-                          data-range-top={rangeEdges?.top ? "true" : undefined}
-                          data-range-bottom={rangeEdges?.bottom
+                          data-selected-range={cellSel?.edges ? "true" : undefined}
+                          data-range-top={cellSel?.edges?.top ? "true" : undefined}
+                          data-range-bottom={cellSel?.edges?.bottom
                             ? "true"
                             : undefined}
-                          data-range-left={rangeEdges?.left
+                          data-range-left={cellSel?.edges?.left
                             ? "true"
                             : undefined}
-                          data-range-right={rangeEdges?.right
+                          data-range-right={cellSel?.edges?.right
                             ? "true"
                             : undefined}
                           data-fill-preview={isInFillPreview(rowIndex, colIndex)
@@ -2397,7 +2400,7 @@
                               )}
                             {/if}
                           {/if}
-                          {#if !isEditing && fillHandleCell && fillHandleCell.rowIndex === rowIndex && fillHandleCell.colIndex === colIndex}
+                          {#if !isEditing && cellSel?.fillHandle}
                             <!-- Excel-style fill handle: drag down/right to
                            extend the selection and pattern-fill the new
                            cells on release. Rendered inside the bottom-
@@ -2553,10 +2556,7 @@
                         !!fullRowEdit &&
                         fullRowEdit.rowId === row.id &&
                         rendered.column.id in fullRowEdit.draft}
-                      {@const rangeEdges = getCellRangeEdges(
-                        rowIndex,
-                        colIndex,
-                      )}
+                      {@const cellSel = cellSelectionState(rowIndex, colIndex)}
                       {@const userCellClass = computeCellClass(
                         row,
                         rendered.column,
@@ -2573,8 +2573,7 @@
                       <td
                         class={`sv-grid-cell ${userCellClass}`}
                         class:sv-grid-cell-editing={isEditing || inRowEdit}
-                        class:sv-grid-cell-active={activeCell.rowIndex ===
-                          rowIndex && activeCell.colIndex === colIndex}
+                        class:sv-grid-cell-active={!!cellSel?.active}
                         class:sv-grid-cell-cf={hasConditionalFormats}
                         class:sv-grid-cell-invalid={cellValidity.invalid}
                         class:sv-grid-cell-has-note={cellNote != null}
@@ -2585,13 +2584,13 @@
                         data-align={getColumnAlign(rendered.column)}
                         data-pinned={isColumnPinned(rendered.column.id) ??
                           undefined}
-                        data-selected-range={rangeEdges ? "true" : undefined}
-                        data-range-top={rangeEdges?.top ? "true" : undefined}
-                        data-range-bottom={rangeEdges?.bottom
+                        data-selected-range={cellSel?.edges ? "true" : undefined}
+                        data-range-top={cellSel?.edges?.top ? "true" : undefined}
+                        data-range-bottom={cellSel?.edges?.bottom
                           ? "true"
                           : undefined}
-                        data-range-left={rangeEdges?.left ? "true" : undefined}
-                        data-range-right={rangeEdges?.right
+                        data-range-left={cellSel?.edges?.left ? "true" : undefined}
+                        data-range-right={cellSel?.edges?.right
                           ? "true"
                           : undefined}
                         style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}

@@ -1,0 +1,186 @@
+{
+  "slug": "svelte-ui-kit-tables",
+  "competitor": "Flowbite / Skeleton / shadcn-svelte tables",
+  "url": "https://flowbite-svelte.com/docs/components/table",
+  "aliases": [
+    "flowbite",
+    "flowbite-svelte",
+    "skeleton",
+    "shadcn-svelte",
+    "shadcn table",
+    "ui kit table"
+  ],
+  "framework": [
+    "svelte"
+  ],
+  "group": "svelte-native",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs Flowbite, Skeleton and shadcn-svelte Tables",
+  "tagline": "Flowbite-Svelte, Skeleton, and shadcn-svelte ship styled table components - great for static tables, not data grids.",
+  "oneLineVerdict": "UI-kit tables are perfect for small, mostly-static tables that match your design system. Reach for SvGrid the moment you need sorting, filtering, virtualization, editing, or large datasets.",
+  "alternativeIntro": "A styled table component and a data grid solve different problems. These kits give you markup that already matches your design system; they do not virtualize, edit in place, group rows or talk to a server. SvGrid does those and is themed through CSS custom properties, so it can be made to match the same design system rather than replacing it.",
+  "intro": [
+    "Flowbite-Svelte, Skeleton, and shadcn-svelte all provide beautifully styled table components. They render the rows you pass in and match your design tokens, but they are presentation components - sorting, filtering, virtualization, and editing are yours to build.",
+    "SvGrid is a data grid: the table behaviors (sort, Excel-style filter, group, virtualize, edit, select) are the product. Style it with your own tokens or Tailwind so it still fits the design system."
+  ],
+  "similarities": [
+    "Render tabular data in Svelte.",
+    "MIT-licensed.",
+    "Themeable to match a design system."
+  ],
+  "svgridAdvantages": [
+    "Sorting, filtering, grouping, and pagination are built in, not hand-rolled.",
+    "Row + column virtualization for thousands of rows.",
+    "Inline editing, cell selection, and clipboard.",
+    "Headless engine + imperative API + @svgrid/mcp.",
+    "Still fully themeable via --sg-* tokens / Tailwind."
+  ],
+  "competitorAdvantages": [
+    "Zero learning curve for a small, static table.",
+    "Pixel-perfect match with the rest of the UI kit out of the box.",
+    "Tiny footprint when you truly only need a styled table."
+  ],
+  "features": [
+    {
+      "feature": "Built-in sorting",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "BYO"
+      }
+    },
+    {
+      "feature": "Built-in filtering",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "BYO"
+      }
+    },
+    {
+      "feature": "Virtualization (1000s of rows)",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "BYO"
+      }
+    },
+    {
+      "feature": "Grouping / tree / master-detail",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Cell selection + copy",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Design-system theming",
+      "svgrid": {
+        "status": "yes",
+        "note": "--sg-* / Tailwind"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Native to the kit"
+      }
+    },
+    {
+      "feature": "Footprint for a static table",
+      "svgrid": {
+        "status": "partial",
+        "note": "Larger"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Tiny"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "Your table needs sorting, filtering, or large-dataset virtualization.",
+    "You need inline editing, selection, grouping, or tree data.",
+    "The table is becoming the centre of the screen, not a layout detail."
+  ],
+  "whenToChooseCompetitor": [
+    "You render a small, static table that never sorts or filters.",
+    "You want a pixel-perfect match with your UI kit and nothing more.",
+    "Bundle size for a trivial table is the priority."
+  ],
+  "migration": {
+    "slug": "migrating-from-ui-kit-tables",
+    "effort": "30 minutes to 1 hour per table",
+    "youLose": [
+      "A table that is exactly the kit's markup and nothing else.",
+      "The smallest possible footprint for a static table."
+    ]
+  },
+  "pricing": {
+    "summary": "Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold",
+    "url": "https://github.com/themesberg/flowbite-svelte",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "186-headless-table"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/shadcn",
+    "help/tailwind"
+  ],
+  "related": [
+    "vincjo-datatables",
+    "tanstack-table",
+    "svelte-headless-table"
+  ],
+  "bottomLine": "A styled table from Flowbite, Skeleton, or shadcn-svelte is perfect until the behaviour becomes the work. Once you are hand-writing sort, filter, or virtualization, SvGrid replaces that code and still themes to match your design system.",
+  "faq": [
+    {
+      "question": "When should I replace a UI-kit table with SvGrid?",
+      "answer": "When the table needs sorting, filtering, virtualization, editing, or large datasets. UI-kit tables are presentation components; SvGrid is a data grid."
+    },
+    {
+      "question": "Can SvGrid match my Flowbite or shadcn styling?",
+      "answer": "Yes - it themes through --sg-* CSS variables you can wire to your Tailwind or design-system tokens."
+    },
+    {
+      "question": "Is SvGrid overkill for a static table?",
+      "answer": "For a small static table, a styled table element is lighter and fine. Switch when behaviour, not just styling, becomes the work."
+    }
+  ],
+  "sources": [
+    {
+      "id": "flowbite-readme",
+      "url": "https://github.com/themesberg/flowbite-svelte",
+      "evidences": "The official Flowbite UI component library for Svelte, MIT; a Table is one of its styled Tailwind components",
+      "verified": "2026-09-12"
+    }
+  ]
+}

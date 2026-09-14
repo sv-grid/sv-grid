@@ -19,7 +19,7 @@ import {
 } from './export-serialize'
 import { serializeSpreadsheetML } from './export-xls'
 import { buildXlsxParts, packageXlsx, type XlsxCell, type XlsxCondFormat, type XlsxTableSpec } from './export-ooxml'
-import { buildPdfDocDefinition, type PdfBodyRow, type PdfExportOptions } from './export-pdf'
+import { buildPdfDocDefinition, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
 import { buildConditionalResolver, type ExportCellVisualFn } from './export-conditional'
 import type { ConditionalFormat } from '@svgrid/grid/format'
 
@@ -379,18 +379,16 @@ async function ensureGlobals(format: ExportFormat): Promise<void> {
           'Install it with: pnpm add pdfmake',
       )
     }
-    const pdfMake = ((pdfMakeMod as { default?: unknown }).default ?? pdfMakeMod) as {
-      vfs?: Record<string, string>
+    const pdfMake = ((pdfMakeMod as { default?: unknown }).default ?? pdfMakeMod) as PdfMakeLike & {
       createPdf: (def: unknown) => { download(name: string): void; getBlob(cb: (b: Blob) => void): void }
     }
-    const vfsRoot = (vfsMod as { default?: unknown }).default ?? vfsMod
-    // pdfmake's vfs_fonts file historically exports either { pdfMake: { vfs } }
-    // or { default: { vfs } } or { vfs } depending on bundler. Try each shape.
-    const candidate =
-      (vfsRoot as { pdfMake?: { vfs?: Record<string, string> } }).pdfMake?.vfs ??
-      (vfsRoot as { vfs?: Record<string, string> }).vfs ??
-      (vfsRoot as { default?: { vfs?: Record<string, string> } }).default?.vfs
-    if (candidate) pdfMake.vfs = candidate
+    // Explicit, on this instance: the fonts module's own registration is a
+    // side effect on a global that can point at a stale instance.
+    if (!registerPdfFonts(pdfMake, vfsMod)) {
+      throw new Error(
+        '@svgrid/enterprise: "pdfmake/build/vfs_fonts" did not contain a font map; the installed pdfmake is not one this export knows.',
+      )
+    }
     g.pdfMake = pdfMake
   }
 }
@@ -1035,13 +1033,22 @@ async function exportPdf<
     ...opts.pdf,
     pageOrientation: opts.pdf?.pageOrientation ?? opts.pageOrientation,
   }
+  // Charts handed over as elements are rasterised here, once, through the
+  // grid chart's own PNG path at 2x, so the page gets the picture on screen.
+  // The rasteriser comes from the grid's barrel, imported on demand: the
+  // barrel carries the Svelte components, and a static import would drag them
+  // into every export call site (and into the Svelte-free test project).
+  const charts = await resolvePdfCharts(pdfOpts.charts, async (el) => {
+    const { chartToPngBlob } = await import('@svgrid/grid')
+    return chartToPngBlob(el, { scale: 2 })
+  })
   const now = new Date()
   let def
   if (effGroupBy?.length) {
     // Conditional formatting is skipped for grouped PDFs (group / subtotal
     // rows own the layout); the grid colors still show on screen.
     const body = buildGroupedPdfBody(cols, sourceRows, effGroupBy)
-    def = buildPdfDocDefinition({ columns, body, opts: pdfOpts, now })
+    def = buildPdfDocDefinition({ columns, body, opts: pdfOpts, charts, now })
   } else {
     const projected = await projectRows(sourceRows, cols, opts)
     const dataRows = projected.slice(1).map((r) => fields.map((f) => String(r[f] ?? '')))
@@ -1063,6 +1070,7 @@ async function exportPdf<
       },
       dataCellLink: link,
       opts: pdfOpts,
+      charts,
       now,
     })
   }

@@ -3107,6 +3107,18 @@ select.sv-grid-fr-editor {
 .sv-grid-chart-actions { display: inline-flex; align-items: center; gap: 6px; }
 .sv-grid-chart-controls { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
 .sv-grid-chart-controls:empty { display: none; }
+/* The same pickers on the builder's Data tab, as a labelled form: one control
+   per row, the label in the builder's 110px column. */
+.sv-grid-chart-controls.is-form { flex-direction: column; align-items: stretch; gap: 8px; }
+.sv-grid-chart-controls.is-form .sv-grid-chart-ctl,
+.sv-grid-chart-controls.is-form .sv-grid-chart-toggle {
+  display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 8px; font-weight: 400; font-size: 12px;
+}
+.sv-grid-chart-controls.is-form .sv-grid-chart-toggle { grid-template-columns: 110px auto; justify-content: start; }
+.sv-grid-chart-controls.is-form .sv-grid-chart-toggle > input { order: 1; justify-self: start; }
+.sv-grid-chart-controls.is-form .sv-grid-chart-ctl-lbl { font-size: 12px; font-weight: 400; }
+.sv-grid-chart-controls.is-form .sv-grid-chart-indicators { flex-basis: auto; }
+.sv-grid-chart-controls.is-form .sv-grid-chart-hint { flex-basis: auto; }
 /* Says why the chosen chart type cannot draw yet - a missing Split by, too few
    groups. The picker deliberately does NOT hide such a type: options that come
    and go as the user filters are worse than one sentence of explanation. */
@@ -3118,12 +3130,14 @@ select.sv-grid-fr-editor {
   color: var(--sg-muted, #64748b);
 }
 .sv-grid-chart-ctl { display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: var(--sg-muted, #64748b); }
-.sv-grid-chart-ctl select {
+.sv-grid-chart-ctl select,
+.sv-grid-chart-ctl .sv-grid-chart-num {
   font: inherit; font-size: 12.5px; font-weight: 400; color: var(--sg-fg, #0f172a);
   background: var(--sg-input-bg, var(--sg-bg, #fff));
   border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
   border-radius: var(--sg-radius, 6px); padding: 4px 8px;
 }
+.sv-grid-chart-ctl .sv-grid-chart-num { width: 64px; }
 .sv-grid-chart-toggle {
   display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
   color: var(--sg-muted, #64748b); cursor: pointer; white-space: nowrap;
@@ -3148,6 +3162,18 @@ select.sv-grid-fr-editor {
   display: flex; align-items: stretch; justify-content: center;
 }
 .sv-grid-chart-panel-body > .sv-grid-chart { width: 100%; justify-content: center; }
+.sv-grid-chart-panes-host { width: 100%; height: 100%; overflow: auto; }
+.sv-grid-chart-build-btn { display: inline-flex; align-items: center; gap: 4px; }
+.sv-grid-chart-link-btn.is-unlinked { color: #b45309; border-color: color-mix(in srgb, #b45309 40%, transparent 60%); }
+/* Indicator chips on a price chart */
+.sv-grid-chart-indicators { flex-basis: 100%; }
+.sv-grid-chart-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.sv-grid-chart-chip {
+  font: inherit; font-size: 11px; line-height: 1; padding: 3px 7px;
+  border: 1px solid var(--sg-border, #e2e8f0); border-radius: 999px;
+  background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a); cursor: pointer;
+}
+.sv-grid-chart-chip.is-on { background: var(--sg-accent, #2563eb); border-color: var(--sg-accent, #2563eb); color: #fff; }
 .sv-grid-chart-empty { margin: 0; font-size: 13px; color: var(--sg-muted, #64748b); text-align: center; max-width: 42ch; }
 /* Export menu */
 .sv-grid-chart-export { position: relative; display: inline-flex; }
@@ -3163,6 +3189,20 @@ select.sv-grid-fr-editor {
 }
 .sv-grid-chart-export-menu button:hover:not(:disabled) { background: var(--sg-hover-bg, color-mix(in srgb, var(--sg-accent, #2563eb) 10%, transparent)); }
 .sv-grid-chart-export-menu button:disabled { opacity: 0.45; cursor: default; }
+/* Saved charts: name the active tab, apply or remove a saved one */
+.sv-grid-chart-saved-menu { min-width: 220px; gap: 4px; }
+.sv-grid-chart-saved-row { display: flex; gap: 4px; padding: 2px; }
+.sv-grid-chart-saved-name {
+  flex: 1; min-width: 0; font: inherit; font-size: 12.5px; color: var(--sg-fg, #0f172a);
+  background: var(--sg-input-bg, var(--sg-bg, #fff)); border: 1px solid var(--sg-input-border, var(--sg-border, #e2e8f0));
+  border-radius: var(--sg-radius, 6px); padding: 4px 8px;
+}
+.sv-grid-chart-saved-name:focus { outline: none; border-color: var(--sg-accent, #2563eb); }
+.sv-grid-chart-saved-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sv-grid-chart-saved-item { display: flex; align-items: center; }
+.sv-grid-chart-saved-item .sv-grid-chart-saved-apply { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sv-grid-chart-saved-item .sv-grid-chart-saved-x { flex: none; padding: 4px 8px; color: var(--sg-muted, #64748b); }
+.sv-grid-chart-saved-empty { margin: 0; padding: 4px 8px; font-size: 12px; color: var(--sg-muted, #64748b); }
 /* AI "chart this" */
 .sv-grid-chart-ai-btn { display: inline-flex; align-items: center; gap: 4px; }
 .sv-grid-chart-ai-btn.is-active { border-color: var(--sg-accent, #2563eb); color: var(--sg-accent, #2563eb); }

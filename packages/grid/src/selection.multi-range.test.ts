@@ -58,4 +58,38 @@ describe('multiple range selection', () => {
     // outside every range
     expect(s.getCellRangeEdges(2, 2)).toBeNull()
   })
+
+  it('cellSelectionState folds active cell, range edges and fill handle into one value', () => {
+    const ctx = makeCtx()
+    ctx.activeCell = { rowIndex: 1, colIndex: 1, cellId: null }
+    ctx.fillHandleCell = { rowIndex: 1, colIndex: 1 }
+    const s = createSelection(ctx)
+    s.setSelection(0, 0)
+    s.extendSelection(1, 1)
+
+    // The focus corner: active, on the bottom-right edges, carries the handle.
+    expect(s.cellSelectionState(1, 1)).toEqual({
+      active: true,
+      edges: { top: false, bottom: true, left: false, right: true },
+      fillHandle: true,
+    })
+    // Another cell of the range: in the range, not active, no handle.
+    expect(s.cellSelectionState(0, 1)).toEqual({
+      active: false,
+      edges: { top: true, bottom: false, left: false, right: true },
+      fillHandle: false,
+    })
+    // A plain cell is `null`, not an all-false object, so the view can tell
+    // "nothing changed here" by identity.
+    expect(s.cellSelectionState(5, 5)).toBeNull()
+  })
+
+  it('cellSelectionState reports the active cell even with no range anchored', () => {
+    const ctx = makeCtx()
+    ctx.activeCell = { rowIndex: 2, colIndex: 3, cellId: null }
+    ctx.fillHandleCell = null
+    const s = createSelection(ctx)
+    expect(s.cellSelectionState(2, 3)).toEqual({ active: true, edges: null, fillHandle: false })
+    expect(s.cellSelectionState(2, 4)).toBeNull()
+  })
 })

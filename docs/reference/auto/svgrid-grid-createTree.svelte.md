@@ -40,7 +40,7 @@ export type TreeNode = {
 
 ### `type CheckState`
 
-A node's checkbox state. `'indeterminate'` means some but not all descendants are checked. */
+A node's checkbox state. `'indeterminate'` means some but not all descendants are checked.
 
 ```ts
 export type CheckState = 'checked' | 'indeterminate' | 'unchecked'
@@ -48,7 +48,7 @@ export type CheckState = 'checked' | 'indeterminate' | 'unchecked'
 
 ### `type TreeRow`
 
-A single visible (flattened) tree row. */
+A single visible (flattened) tree row.
 
 ```ts
 export type TreeRow = {
@@ -63,7 +63,7 @@ export type TreeRow = {
 
 ### `function treeDescendantIds`
 
-All descendant ids of `node` (pure, depth-first). */
+All descendant ids of `node` (pure, depth-first).
 
 ```ts
 export function treeDescendantIds(node: TreeNode): string[] {
@@ -76,7 +76,7 @@ export function treeDescendantIds(node: TreeNode): string[] {
 
 ### `function treeCheckState`
 
-Tri-state check status of `node` given the set of checked ids (pure). */
+Tri-state check status of `node` given the set of checked ids (pure).
 
 ```ts
 export function treeCheckState(node: TreeNode, checked: ReadonlySet<string>): CheckState {
@@ -91,7 +91,7 @@ export function treeCheckState(node: TreeNode, checked: ReadonlySet<string>): Ch
 
 ### `type TreeDropPosition`
 
-Where a dragged node lands relative to the drop target. */
+Where a dragged node lands relative to the drop target.
 
 ```ts
 export type TreeDropPosition = 'before' | 'after' | 'inside'
@@ -99,7 +99,7 @@ export type TreeDropPosition = 'before' | 'after' | 'inside'
 
 ### `function treeContains`
 
-True if `id` is inside `node`'s subtree (used to block invalid drops). */
+True if `id` is inside `node`'s subtree (used to block invalid drops).
 
 ```ts
 export function treeContains(node: TreeNode, id: string): boolean {
@@ -152,7 +152,7 @@ export function moveTreeNode(
 
 ### `function sortTreeNodes`
 
-Sort siblings (recursively) by a comparator (pure). */
+Sort siblings (recursively) by a comparator (pure).
 
 ```ts
 export function sortTreeNodes(
@@ -167,7 +167,7 @@ export function sortTreeNodes(
 
 ### `type TreeConfig`
 
-Reactive inputs are passed as getters so the core tracks live prop changes. */
+Reactive inputs are passed as getters so the core tracks live prop changes.
 
 ```ts
 export type TreeConfig = {
@@ -190,7 +190,7 @@ export type TreeConfig = {
 
 ### `function createTree`
 
-Build the headless tree model: expansion, selection and checkbox cascading, with no markup. */
+Build the headless tree model: expansion, selection and checkbox cascading, with no markup.
 
 ```ts
 export function createTree(config: TreeConfig) {
@@ -367,7 +367,7 @@ export function createTree(config: TreeConfig) {
 
 ### `type Tree`
 
-The headless tree instance returned by {@link createTree}. */
+The headless tree instance returned by {@link createTree}.
 
 ```ts
 export type Tree = ReturnType<typeof createTree>

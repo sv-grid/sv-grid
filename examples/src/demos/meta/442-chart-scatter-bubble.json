@@ -1,0 +1,24 @@
+{
+  "description": "Scatter and bubble charts: points as { x, y, r, label } per series, r as the bubble radius, overlay fitting a regression of y on x per series (linear, poly:N, exp, log or power) drawn as a curve across the plot with its equation and R-squared in the tooltip, reference lines on both axes as quadrants, xAxis scale log for values spanning orders of magnitude, and a click that selects the point and filters the grid. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte scatter chart",
+    "svelte bubble chart",
+    "svelte scatter plot trend line",
+    "svelte regression line chart",
+    "svelte chart r squared"
+  ],
+  "faq": [
+    {
+      "question": "How do I add a trend line to a scatter chart?",
+      "answer": "Set overlay on the series: linear, poly:2, exp, log or power. The fit is of y on the points' x values, drawn as a curve across the plot, and the tooltip shows the equation and the R-squared."
+    },
+    {
+      "question": "How do I make a bubble chart?",
+      "answer": "Give each point an r. The radius is scaled between the smallest and largest r across all series; leave it out for plain dots."
+    },
+    {
+      "question": "Can the x axis be logarithmic?",
+      "answer": "Yes: xAxis: { scale: log }. Points at or below zero cannot be placed and are left out; the regression is sampled evenly in log space so it reads right."
+    }
+  ]
+}

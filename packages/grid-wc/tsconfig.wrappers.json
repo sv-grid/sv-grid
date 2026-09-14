@@ -13,8 +13,9 @@
     "rootDir": "src",
     "paths": {
       "@svgrid/grid-wc": ["./dist/sv-grid-element.d.ts"],
-      "@svgrid/grid-wc/shadow": ["./dist/shadow/sv-grid-shadow-element.d.ts"]
+      "@svgrid/grid-wc/shadow": ["./dist/shadow/sv-grid-shadow-element.d.ts"],
+      "@svgrid/grid-wc/chart": ["./dist/chart/sv-chart-element.d.ts"]
     }
   },
-  "include": ["src/react/index.tsx", "src/vue/index.ts", "src/types/elements.d.ts"]
+  "include": ["src/react/index.tsx", "src/react/chart.tsx", "src/vue/index.ts", "src/vue/chart.ts", "src/types/elements.d.ts", "src/types/chart-element.d.ts"]
 }

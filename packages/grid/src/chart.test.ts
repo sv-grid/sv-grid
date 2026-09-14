@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildChart, rowsToChartSpec, niceScale, sliceChartWindow, specToTreemap, specToCalendar, specToSankey, rowsToScatterSpec, rowsToGaugeSpec, boxStats, rowsToBoxSpec, chartScales } from './chart'
+import { buildChart, rowsToChartSpec, niceScale, sliceChartWindow, specToTreemap, specToCalendar, specToSankey, rowsToScatterSpec, rowsToGaugeSpec, boxStats, rowsToBoxSpec, chartScales, layoutDataLabels } from './chart'
 import type { ChartSpec } from './chart'
 
 describe('niceScale', () => {
@@ -116,9 +116,37 @@ describe('buildChart', () => {
     expect(g.donut!.total).toBe(10)
   })
 
-  it('rotates x labels when there are many / long categories', () => {
-    const many = buildChart({ type: 'bar', categories: Array.from({ length: 12 }, (_, i) => `Cat ${i}`), series: [{ label: 's', values: Array(12).fill(1) }] })
+  it('data labels on a 100% chart read the share, the way the axis does', () => {
+    const spec: ChartSpec = {
+      type: 'bar',
+      stacked100: true,
+      categories: ['Q1', 'Q2'],
+      series: [
+        { label: 'a', values: [25, 60] },
+        { label: 'b', values: [75, 40] },
+      ],
+      valueFormat: 'currency',
+      width: 400,
+      height: 200,
+    }
+    const geo = buildChart(spec)
+    const labels = layoutDataLabels(geo, { show: true, placement: 'inside', hideOverlap: false }, (v) => `$${v}`, { stacked: true, share: true })
+    expect(labels.map((l) => l.text)).toEqual(['25%', '60%', '75%', '40%'])
+    // Without the share flag the raw values stay, formatted the chart's way.
+    const raw = layoutDataLabels(geo, { show: true, placement: 'inside', hideOverlap: false }, (v) => `$${v}`, { stacked: true })
+    expect(raw.map((l) => l.text)).toEqual(['$25', '$60', '$75', '$40'])
+    // A formatter still receives the raw value.
+    const custom = layoutDataLabels(geo, { show: true, placement: 'inside', hideOverlap: false, formatter: (v) => `v${v}` }, String, { stacked: true, share: true })
+    expect(custom.map((l) => l.text)).toEqual(['v25', 'v60', 'v75', 'v40'])
+  })
+
+  it('rotates x labels when the widest one does not fit its slot, and only then', () => {
+    const cats = Array.from({ length: 12 }, (_, i) => `Cat ${i}`)
+    const many = buildChart({ type: 'bar', categories: cats, series: [{ label: 's', values: Array(12).fill(1) }] })
     expect(many.xLabelRotated).toBe(true)
+    // The same twelve labels on a chart wide enough for them stay upright.
+    const wide = buildChart({ type: 'bar', categories: cats, width: 1100, series: [{ label: 's', values: Array(12).fill(1) }] })
+    expect(wide.xLabelRotated).toBe(false)
     const few = buildChart({ type: 'bar', categories: ['A', 'B'], series: [{ label: 's', values: [1, 2] }] })
     expect(few.xLabelRotated).toBe(false)
   })
@@ -315,6 +343,31 @@ describe('rowsToChartSpec', () => {
     expect(spec.categories).toEqual(['A', 'B', 'Other'])
     // Other = C + D = 50
     expect(spec.series[0]!.values).toEqual([100, 50, 50])
+  })
+
+  it('topN folds the tail INTO a category already named "Other" instead of duplicating it', () => {
+    // A real "Other" bucket in the data (a browser share's long tail) used
+    // to come out beside the folded one: two categories with one name, which
+    // is a duplicate key the renderer throws on.
+    const many = [
+      { cat: 'A', v: 100, id: 1 },
+      { cat: 'Other', v: 60, id: 2 },
+      { cat: 'B', v: 50, id: 3 },
+      { cat: 'C', v: 30, id: 4 },
+      { cat: 'D', v: 20, id: 5 },
+    ]
+    // "Other" is second by value and would have made the top 3 on its own.
+    const spec = rowsToChartSpec(many, { type: 'bar', category: 'cat', value: 'v', topN: 3, idField: 'id' })
+    expect(spec.categories).toEqual(['A', 'B', 'Other'])
+    expect(spec.series[0]!.values).toEqual([100, 50, 60 + 30 + 20])
+    expect(spec.series[0]!.rowIds).toEqual([[1], [3], [2, 4, 5]])
+    expect(new Set(spec.categories).size).toBe(spec.categories.length)
+    // Below the cut it is folded the same way, and a custom label is honoured.
+    const low = rowsToChartSpec(many.map((r) => (r.cat === 'Other' ? { ...r, v: 5 } : r)), { type: 'bar', category: 'cat', value: 'v', topN: 3 })
+    expect(low.categories).toEqual(['A', 'B', 'C', 'Other'])
+    expect(low.series[0]!.values).toEqual([100, 50, 30, 25])
+    const rest = rowsToChartSpec(many, { type: 'bar', category: 'cat', value: 'v', topN: 3, otherLabel: 'Rest' })
+    expect(rest.categories).toEqual(['A', 'Other', 'B', 'Rest'])
   })
 
   it('stacked100 flag passes through to the spec', () => {

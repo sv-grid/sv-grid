@@ -1,4 +1,4 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/from-the-grid.md -->
 <script lang="ts">
   /**
    * 354. Built-in charting: split-by + stacked

@@ -1,4 +1,4 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/from-the-grid.md -->
 <script lang="ts">
   /**
    * 355. Built-in charting: custom chart via `buildSpec`

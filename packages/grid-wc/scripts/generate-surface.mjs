@@ -1,6 +1,7 @@
 /**
- * Generate the custom elements' prop + event surface from `<SvGrid>`'s own
- * `Props` type.
+ * Generate the custom elements' prop + event surface from the Svelte
+ * components' own props types: `<SvGrid>`'s `Props` for <sv-grid> and
+ * <sv-grid-shadow>, `SvChartProps` for <sv-chart>.
  *
  * Why generated. The elements used to declare SEVEN props and TWO events by
  * hand, against a Props type with 100 data props and 19 callbacks - so
@@ -19,8 +20,8 @@ import { dirname, join } from 'node:path'
 import { parseTypeMembers } from '../../mcp/scripts/api-surface.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const TYPES = join(here, '..', '..', 'grid', 'src', 'SvGrid.types.ts')
-const OUT = join(here, '..', 'src', 'surface.generated.js')
+const GRID_SRC = join(here, '..', '..', 'grid', 'src')
+const DOCS = join(here, '..', '..', '..', 'docs', 'help', 'web-components')
 
 /**
  * Props that are deliberately NOT exposed, with the reason. Anything omitted
@@ -58,12 +59,17 @@ const EXCLUDED = {
  * Two props hit that today. Defaulting them to Object would be right by luck
  * and wrong the first time someone formats a `boolean` prop that way, so read
  * the declaration back out of the source instead of guessing.
+ *
+ * Read from the `Props` declaration onward, not from the top of the file:
+ * `ChartingConfig` is declared first and has its own `contextMenu`, and a
+ * whole-file search handed the chart menu's type to the grid's prop.
  */
-function rawTypeOf(src, name) {
+function rawTypeOf(src, name, typeName) {
   const re = new RegExp(`^[ \\t]*${name}\\??\\s*:`, 'm')
-  const m = re.exec(src)
+  const from = Math.max(0, src.search(new RegExp(`export\\s+type\\s+${typeName}\\b`)))
+  const m = re.exec(src.slice(from))
   if (!m) return ''
-  let i = m.index + m[0].length
+  let i = from + m.index + m[0].length
   let depth = 0
   let out = ''
   // Brackets only, NOT angle brackets. Counting `<`/`>` looks right until you
@@ -79,6 +85,13 @@ function rawTypeOf(src, name) {
       if (depth === 0) break
       depth--
     } else if (depth === 0 && (c === ';' || c === ',')) break
+    else if (depth === 0 && c === '\n') {
+      // SvGridChart.types.ts has no semicolons: a member ends at the line
+      // break when the next line is a JSDoc, a comment, the closing brace or
+      // another member. A continuation line (`| 'right'`) reads on.
+      const ahead = src.slice(i + 1).replace(/^\s*/, '')
+      if (/^(\/\*|\/\/|\}|(?:readonly\s+)?[A-Za-z_$][\w$]*\??\s*[:(<])/.test(ahead)) break
+    }
     out += c
   }
   return out.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\s+/g, ' ').trim()
@@ -100,7 +113,9 @@ function rawTypeOf(src, name) {
  */
 function classify(type) {
   const t = resolveAlias(type).replace(/\s+/g, ' ').trim()
-  const parts = splitUnion(t)
+  // Each part of a union is resolved too: `boolean | ChartLegendPosition` is
+  // a boolean-or-string-literal union once the alias is opened.
+  const parts = splitUnion(t).flatMap((p) => splitUnion(resolveAlias(p)))
   const has = (re) => parts.some((p) => re.test(p))
   const isStringUnion = parts.length > 0 && parts.every((p) => /^['"].*['"]$/.test(p))
 
@@ -109,6 +124,10 @@ function classify(type) {
   // the prop takes one, String is the coercion that loses nothing - Number
   // would turn "100%" into NaN.
   if (has(/^string$/) || isStringUnion) return { type: 'String', attribute: true }
+  // `boolean | 'top' | 'right'` (a chart legend) has to accept the string: as a
+  // Boolean attribute `legend="right"` would collapse to true. The element body
+  // maps "" and "true" / "false" back to booleans for these.
+  if (has(/^boolean$/) && parts.some((p) => /^['"].*['"]$/.test(p))) return { type: 'String', attribute: true }
   if (has(/^boolean$/)) return { type: 'Boolean', attribute: true }
   if (has(/^number$/)) return { type: 'Number', attribute: true }
   if (has(/^(ReadonlyArray|Array)</) || has(/\[\]$/)) return { type: 'Array', attribute: false }
@@ -291,97 +310,132 @@ const LEGACY_EVENTS = [
 
 // ---------------------------------------------------------------------------
 
-const src = readFileSync(TYPES, 'utf8')
-const members = parseTypeMembers(src, 'Props')
-if (members.length < 100) {
-  // The parser silently returns [] when the type moves or is renamed. Emitting
-  // an empty surface would look like a successful run and quietly re-break the
-  // element, so refuse instead.
-  console.error(
-    `generate-surface: parsed only ${members.length} members of Props - expected 100+. ` +
-      `Did SvGrid.types.ts change shape?`,
-  )
-  process.exit(1)
+/**
+ * One generated surface per element family. `typeName` is the props type in
+ * `types`; `elements` are the .svelte files whose <svelte:options> block gets
+ * the props literal; `doc` is the reference page that carries the tables.
+ */
+const TARGETS = [
+  {
+    key: 'grid',
+    component: 'SvGrid',
+    types: join(GRID_SRC, 'SvGrid.types.ts'),
+    typeName: 'Props',
+    out: join(here, '..', 'src', 'surface.generated.js'),
+    elements: ['sv-grid-element.svelte', 'sv-grid-shadow-element.svelte'],
+    doc: join(DOCS, 'sv-grid.md'),
+    excluded: EXCLUDED,
+    legacy: LEGACY_EVENTS,
+    minMembers: 100,
+  },
+  {
+    key: 'chart',
+    component: 'SvChart',
+    types: join(GRID_SRC, 'SvGridChart.types.ts'),
+    typeName: 'SvChartProps',
+    out: join(here, '..', 'src', 'surface-chart.generated.js'),
+    elements: ['sv-chart-element.svelte'],
+    doc: join(DOCS, 'sv-chart.md'),
+    excluded: {
+      // Snippets again: a custom element has nothing to hand them.
+      underlay: 'Svelte snippet - cannot cross the custom-element boundary',
+      overlay: 'Svelte snippet - cannot cross the custom-element boundary',
+      tooltip: 'Svelte snippet - cannot cross the custom-element boundary; use `tooltipFormat`',
+      legendItem: 'Svelte snippet - cannot cross the custom-element boundary',
+    },
+    legacy: [],
+    minMembers: 30,
+  },
+]
+
+/** Read a target's props type into the element surface. */
+function collect(target) {
+  const src = readFileSync(target.types, 'utf8')
+  const members = parseTypeMembers(src, target.typeName)
+  if (members.length < target.minMembers) {
+    // The parser silently returns [] when the type moves or is renamed. Emitting
+    // an empty surface would look like a successful run and quietly re-break the
+    // element, so refuse instead.
+    console.error(
+      `generate-surface: parsed only ${members.length} members of ${target.typeName} - expected ${target.minMembers}+. ` +
+        `Did ${target.types} change shape?`,
+    )
+    process.exit(1)
+  }
+
+  const props = []
+  const events = []
+  const excluded = []
+
+  const fullType = (m) => {
+    // Compared with comments stripped from BOTH, because rawTypeOf already
+    // strips them: a parsed type still carrying its JSDoc looks longer than the
+    // complete declaration and wins on a raw length test, which put `treeData`'s
+    // dangling comment back into the docs table. The longer of the two, rather
+    // than testing for the parser's 120-character cap: the cap applies BEFORE
+    // trimming, so a type can arrive at 118 characters and still be truncated.
+    const parsed = stripDoc(m.type ?? '')
+    const raw = rawTypeOf(src, m.name, target.typeName)
+    return raw.length > parsed.length ? raw : parsed
+  }
+
+  for (const m of members) {
+    if (/^on[A-Z]/.test(m.name)) {
+      const t = fullType(m)
+      events.push({
+        callback: m.name,
+        event: eventName(m.name),
+        params: paramNames(t),
+        detail: detailType(t),
+      })
+      continue
+    }
+    if (target.excluded[m.name]) {
+      excluded.push({ name: m.name, reason: target.excluded[m.name] })
+      continue
+    }
+    const type = fullType(m)
+    if (!type) {
+      console.error(`generate-surface: no type found for prop \`${m.name}\` - refusing to guess.`)
+      process.exit(1)
+    }
+    const { type: ceType, attribute } = classify(type)
+    props.push({ name: m.name, type: ceType, attribute: attribute ? kebab(m.name) : null, ts: type })
+  }
+  return { target, props, events, excluded }
 }
 
-const props = []
-const events = []
-const excluded = []
-
-/**
- * `parseTypeMembers` caps a member's type at 120 characters, which is fine for
- * the MCP manifests it was written for and wrong here: a truncated type cuts
- * `onFiltersChange` before its `) =>` (so it reported NO parameters), and cuts
- * `treeData` and `serverGroup` mid-JSDoc (so the docs table showed a dangling
- * comment). `rawTypeOf` reads the whole declaration out of the source, so use
- * it whenever the parse has hit the cap.
- */
 const stripDoc = (t) =>
   String(t)
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
-const fullType = (m) => {
-  // Compared with comments stripped from BOTH, because rawTypeOf already
-  // strips them: a parsed type still carrying its JSDoc looks longer than the
-  // complete declaration and wins on a raw length test, which put `treeData`'s
-  // dangling comment back into the docs table.
-  const parsed = stripDoc(m.type ?? '')
-  const raw = rawTypeOf(src, m.name)
-  // The longer of the two, rather than testing for the parser's 120-character
-  // cap: the cap applies BEFORE trimming, so a type can arrive at 118
-  // characters and still be truncated - which is how `onFiltersChange` kept
-  // losing its `) =>` and reporting no parameters.
-  return raw.length > parsed.length ? raw : parsed
-}
-
-for (const m of members) {
-  if (/^on[A-Z]/.test(m.name)) {
-    const t = fullType(m)
-    events.push({
-      callback: m.name,
-      event: eventName(m.name),
-      params: paramNames(t),
-      detail: detailType(t),
-    })
-    continue
-  }
-  if (EXCLUDED[m.name]) {
-    excluded.push({ name: m.name, reason: EXCLUDED[m.name] })
-    continue
-  }
-  const type = fullType(m)
-  if (!type) {
-    console.error(`generate-surface: no type found for prop \`${m.name}\` - refusing to guess.`)
-    process.exit(1)
-  }
-  const { type: ceType, attribute } = classify(type)
-  props.push({ name: m.name, type: ceType, attribute: attribute ? kebab(m.name) : null, ts: type })
-}
-
-const banner = `/**
+function render(surface) {
+  const { target, props, events, excluded } = surface
+  const banner = `/**
  * AUTO-GENERATED by scripts/generate-surface.mjs - DO NOT EDIT.
  * Regenerate: pnpm --filter @svgrid/grid-wc generate:surface
  *
- * The full prop + event surface of <SvGrid>, extracted from its own \`Props\`
- * type in packages/grid/src/SvGrid.types.ts, so the custom elements expose what
- * the grid actually has rather than a hand-kept subset that drifts.
+ * The full prop + event surface of <${target.component}>, extracted from its own \`${target.typeName}\`
+ * type in packages/grid/src/${target.types.split(/[\\/]/).pop()}, so the custom elements expose what
+ * the component actually has rather than a hand-kept subset that drifts.
  *
  * \`attribute\` is null for props that cannot be one. An HTML attribute is a
  * string, so arrays, objects and functions are settable only as PROPERTIES
  * (\`el.columns = [...]\`). Primitives get a kebab-case attribute as well.
  */
 `
-
-const output =
-  banner +
-  `export const ELEMENT_PROPS = ${JSON.stringify(props, null, 2)}\n\n` +
-  `export const ELEMENT_EVENTS = ${JSON.stringify(events, null, 2)}\n\n` +
-  `/** Events published before this file existed, whose detail must not change. */\n` +
-  `export const LEGACY_EVENTS = ${JSON.stringify(LEGACY_EVENTS, null, 2)}\n\n` +
-  `/** Props deliberately not exposed, and why. */\n` +
-  `export const ELEMENT_EXCLUDED = ${JSON.stringify(excluded, null, 2)}\n`
+  return (
+    banner +
+    `export const ELEMENT_PROPS = ${JSON.stringify(props, null, 2)}\n\n` +
+    `export const ELEMENT_EVENTS = ${JSON.stringify(events, null, 2)}\n\n` +
+    `/** Events published before this file existed, whose detail must not change. */\n` +
+    `export const LEGACY_EVENTS = ${JSON.stringify(target.legacy, null, 2)}\n\n` +
+    `/** Props deliberately not exposed, and why. */\n` +
+    `export const ELEMENT_EXCLUDED = ${JSON.stringify(excluded, null, 2)}\n`
+  )
+}
 
 /**
  * The element files carry the SAME prop list a second time, inside
@@ -393,7 +447,6 @@ const output =
  * runtime wiring can supply it. The generator therefore writes the literal INTO
  * each element between markers, and the region is regenerated, never edited.
  */
-const ELEMENT_FILES = ['sv-grid-element.svelte', 'sv-grid-shadow-element.svelte']
 const BEGIN = '      /* BEGIN generated props - see scripts/generate-surface.mjs */'
 const END = '      /* END generated props */'
 
@@ -403,11 +456,12 @@ const END = '      /* END generated props */'
  * is stale the week after it is written, and the old page's claim that
  * "grouping, sorting, pagination all come along" was exactly that.
  */
-const DOC = join(here, '..', '..', '..', 'docs', 'help', 'web-components', 'sv-grid.md')
 const DOC_BEGIN = '<!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->'
 const DOC_END = '<!-- END generated reference -->'
 
-function docTables(eol) {
+function docTables(surface, eol) {
+  const { props, events, excluded } = surface
+  const LEGACY_EVENTS = surface.target.legacy
   const attr = props.filter((p) => p.attribute)
   const only = props.filter((p) => !p.attribute)
   const cell = (t) => `\`${docType(t).replace(/\|/g, '\\|')}\``
@@ -474,25 +528,25 @@ function docTables(eol) {
   return lines.join(eol)
 }
 
-function injectDoc() {
-  const text = readFileSync(DOC, 'utf8')
+function injectDoc(surface) {
+  const text = readFileSync(surface.target.doc, 'utf8')
   const eol = text.includes('\r\n') ? '\r\n' : '\n'
   const start = text.indexOf(DOC_BEGIN)
   const stop = text.indexOf(DOC_END)
   if (start < 0 || stop < 0)
-    throw new Error('generate-surface: markers missing in docs/help/web-components/sv-grid.md')
-  return { text, next: text.slice(0, start) + docTables(eol) + text.slice(stop + DOC_END.length) }
+    throw new Error(`generate-surface: markers missing in ${surface.target.doc}`)
+  return { text, next: text.slice(0, start) + docTables(surface, eol) + text.slice(stop + DOC_END.length) }
 }
 
-function propsLiteral(eol) {
-  const lines = props.map((p) => {
+function propsLiteral(surface, eol) {
+  const lines = surface.props.map((p) => {
     const attr = p.attribute ? `, attribute: '${p.attribute}'` : ''
     return `      ${p.name}: { type: '${p.type}'${attr} },`
   })
   return [BEGIN, ...lines, END].join(eol)
 }
 
-function injectInto(file) {
+function injectInto(surface, file) {
   const path = join(here, '..', 'src', file)
   const text = readFileSync(path, 'utf8')
   const eol = text.includes('\r\n') ? '\r\n' : '\n'
@@ -503,60 +557,66 @@ function injectInto(file) {
   return {
     path,
     text,
-    next: text.slice(0, start) + propsLiteral(eol) + text.slice(stop + END.length),
+    next: text.slice(0, start) + propsLiteral(surface, eol) + text.slice(stop + END.length),
   }
 }
 
+const norm = (t) => t.replace(/\r\n/g, '\n')
+const surfaces = TARGETS.map(collect)
+
 if (process.argv.includes('--check')) {
-  for (const file of ELEMENT_FILES) {
-    const { text, next } = injectInto(file)
-    if (text.replace(/\r\n/g, '\n') !== next.replace(/\r\n/g, '\n')) {
+  for (const surface of surfaces) {
+    const { target } = surface
+    for (const file of target.elements) {
+      const { text, next } = injectInto(surface, file)
+      if (norm(text) !== norm(next)) {
+        console.error(
+          `generate-surface: ${file}'s generated props block is STALE. ` +
+            `Run: pnpm --filter @svgrid/grid-wc generate:surface`,
+        )
+        process.exit(1)
+      }
+    }
+    if (existsSync(target.doc)) {
+      const { text, next } = injectDoc(surface)
+      if (norm(text) !== norm(next)) {
+        console.error(
+          `generate-surface: ${target.doc} is STALE. Run: pnpm --filter @svgrid/grid-wc generate:surface`,
+        )
+        process.exit(1)
+      }
+    }
+    let current = ''
+    try {
+      current = readFileSync(target.out, 'utf8')
+    } catch {
+      /* missing counts as stale */
+    }
+    // Compare on normalised newlines: a Windows checkout gives the committed file
+    // CRLF while this script always emits LF, which otherwise reports a false
+    // STALE on content that matches. Same trap as extract-ui-props.mjs.
+    if (norm(current) !== norm(render(surface))) {
       console.error(
-        `generate-surface: ${file}'s generated props block is STALE. ` +
-          `Run: pnpm --filter @svgrid/grid-wc generate:surface`,
+        `generate-surface: ${target.out} is STALE. Run: pnpm --filter @svgrid/grid-wc generate:surface`,
       )
       process.exit(1)
     }
   }
-  if (existsSync(DOC)) {
-    const { text, next } = injectDoc()
-    if (text.replace(/\r\n/g, '\n') !== next.replace(/\r\n/g, '\n')) {
-      console.error(
-        "generate-surface: docs/help/web-components/sv-grid.md is STALE. " +
-          "Run: pnpm --filter @svgrid/grid-wc generate:surface",
-      )
-      process.exit(1)
-    }
-  }
-  let current = ''
-  try {
-    current = readFileSync(OUT, 'utf8')
-  } catch {
-    /* missing counts as stale */
-  }
-  // Compare on normalised newlines: a Windows checkout gives the committed file
-  // CRLF while this script always emits LF, which otherwise reports a false
-  // STALE on content that matches. Same trap as extract-ui-props.mjs.
-  if (current.replace(/\r\n/g, '\n') !== output.replace(/\r\n/g, '\n')) {
-    console.error(
-      'generate-surface: surface.generated.js is STALE. Run: pnpm --filter @svgrid/grid-wc generate:surface',
-    )
-    process.exit(1)
-  }
-  console.log('generate-surface: generated file is current')
+  console.log('generate-surface: generated files are current')
 } else {
-  writeFileSync(OUT, output)
-  for (const file of ELEMENT_FILES) {
-    const { path, next } = injectInto(file)
-    writeFileSync(path, next)
+  for (const surface of surfaces) {
+    const { target } = surface
+    writeFileSync(target.out, render(surface))
+    for (const file of target.elements) {
+      const { path, next } = injectInto(surface, file)
+      writeFileSync(path, next)
+    }
+    // The docs page is optional: the generator must still work in a checkout
+    // where the reference page has not been created yet.
+    if (existsSync(target.doc)) writeFileSync(target.doc, injectDoc(surface).next)
+    console.log(
+      `generate-surface: <${kebab(target.component)}> ${surface.props.length} props (${surface.props.filter((p) => p.attribute).length} with an attribute, ` +
+        `${surface.props.filter((p) => !p.attribute).length} property-only), ${surface.events.length} events, ${surface.excluded.length} excluded -> ${target.out.split(/[\\/]/).pop()} + ${target.elements.length} element(s)`,
+    )
   }
-  // The docs page is optional: the generator must still work in a checkout
-  // where the reference page has not been created yet.
-  if (existsSync(DOC)) writeFileSync(DOC, injectDoc().next)
-  const attrs = props.filter((p) => p.attribute).length
-  console.log(
-    `generate-surface: ${props.length} props (${attrs} with an attribute, ` +
-      `${props.length - attrs} property-only), ${events.length} events, ` +
-      `${excluded.length} excluded -> src/surface.generated.js + ${ELEMENT_FILES.length} elements`,
-  )
 }

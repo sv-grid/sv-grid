@@ -518,8 +518,10 @@ The two ways of running it differ here, so pick deliberately.
 
 ## Building your own MCP integrations
 
-The same docs manifest, JSON Schemas, and `llms.txt` files are also
-served directly from the docs site:
+The same docs manifest, JSON Schemas (column definitions, the grid's
+options, export options, and the chart spec at `schemas/chart-spec.json`,
+which `svgrid_get` also serves for "chart spec schema"), and `llms.txt`
+files are also served directly from the docs site:
 
 ```ts
 const docs    = await fetch('https://svgrid.com/docs.json').then((r) => r.json())

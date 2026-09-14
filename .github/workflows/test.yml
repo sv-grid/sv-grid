@@ -106,7 +106,12 @@ jobs:
         # config includes them, so nothing ran them and all three drifted red.
         # studio-docs + ui-docs read website/src/lib/docs.ts, which needs the
         # private submodule checked out above.
-        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/docs-corpus.test.ts
+        # competitor-facts: every number on a comparison page or in a
+        # comparison guide is a dated ledger value, never typed.
+        # tutorials: every 30-second tutorial embedded on a docs page has a
+        # manifest entry, its media under website/public/tutorials/, and stays
+        # within the size budget.
+        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/docs-corpus.test.ts tools/competitor-facts.test.ts tools/tutorials.test.ts
 
       - name: Demo page parity + meta coverage + search quality
         # A demo page's crawlable half is rendered twice, by the prerenderer

@@ -1,0 +1,178 @@
+{
+  "slug": "gridjs",
+  "competitor": "Grid.js",
+  "npm": "gridjs",
+  "url": "https://gridjs.io/",
+  "aliases": [
+    "grid.js",
+    "gridjs"
+  ],
+  "framework": [
+    "javascript"
+  ],
+  "group": "oss",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "Grid.js is a small, elegant, framework-agnostic table library focused on the essentials, MIT-licensed.",
+  "oneLineVerdict": "Grid.js is a lovely lightweight pick for search / sort / paginate. SvGrid is the fuller, Svelte-native grid when you need virtualization, editing, grouping, or large datasets.",
+  "alternativeIntro": "Grid.js is deliberately small and covers the essentials well. People outgrow it at the same points every time: virtualization for large datasets, inline editing, row grouping and server-side data. SvGrid has those, and keeps a headless core so a simple table does not have to carry the weight of the full component.",
+  "intro": [
+    "Grid.js keeps a deliberately small surface: search, sort, pagination, and basic server-side data, rendered through a tiny vanilla-JS core with framework wrappers. It is MIT-licensed and easy to learn.",
+    "SvGrid trades that minimalism for depth: a Svelte-5-native render component with virtualization, an Excel-style filter menu, inline editing, grouping, tree data, and an imperative API."
+  ],
+  "similarities": [
+    "MIT-licensed.",
+    "Search, sort, and pagination out of the box.",
+    "Server-side data support.",
+    "Small, approachable API."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native instead of a vanilla core + wrapper.",
+    "Row + column virtualization for large datasets.",
+    "Excel-style filters, inline editing, grouping, tree, master/detail.",
+    "Headless engine + imperative API + @svgrid/mcp."
+  ],
+  "competitorAdvantages": [
+    "Tiny footprint if all you need is search / sort / paginate.",
+    "Framework-agnostic core.",
+    "Very fast to learn for a simple table."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "vanilla JavaScript with React, Angular and Vue wrappers",
+        "source": "gridjs-site"
+      }
+    },
+    {
+      "feature": "Search / sort / paginate",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Excel-style filters",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Grouping / tree / master-detail",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Footprint for a simple table",
+      "svgrid": {
+        "status": "partial",
+        "note": "Larger"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Tiny"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You need virtualization, editing, grouping, or tree data.",
+    "You are on Svelte 5 and want a native component.",
+    "You expect the table to grow beyond search / sort / paginate."
+  ],
+  "whenToChooseCompetitor": [
+    "You only need search / sort / paginate over a modest dataset.",
+    "You want the smallest possible footprint.",
+    "You want a framework-agnostic drop-in."
+  ],
+  "migration": {
+    "slug": "migrating-from-gridjs",
+    "effort": "30 minutes to 1 hour per table",
+    "youLose": [
+      "A very small library for a simple table on any page.",
+      "Wrappers for React, Angular and Vue."
+    ]
+  },
+  "pricing": {
+    "summary": "Grid.js is MIT, free and open source; no licence is sold",
+    "url": "https://gridjs.io/",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters"
+  ],
+  "docs": [
+    "help/comparison",
+    "getting-started"
+  ],
+  "related": [
+    "tabulator",
+    "vincjo-datatables",
+    "svelte-ui-kit-tables"
+  ],
+  "bottomLine": "Grid.js is a lovely minimalist table for search, sort, and paginate. When you outgrow that - virtualization, editing, grouping, tree - SvGrid is the Svelte-native grid that already covers it.",
+  "faq": [
+    {
+      "question": "SvGrid vs Grid.js - which should I choose?",
+      "answer": "Grid.js for a small table that only needs search, sort, and paginate; SvGrid when you need virtualization, editing, Excel-style filters, or grouping."
+    },
+    {
+      "question": "Is SvGrid heavier than Grid.js?",
+      "answer": "Yes, because it does much more. For a trivial table Grid.js is lighter; for a real data grid SvGrid pays for itself."
+    },
+    {
+      "question": "Does SvGrid support server-side data like Grid.js?",
+      "answer": "Yes - externalSort and externalFilter, plus the onSortingChange and onFiltersChange events."
+    }
+  ],
+  "sources": [
+    {
+      "id": "gridjs-site",
+      "url": "https://gridjs.io/",
+      "evidences": "Free and open source under MIT; works with React, Angular, Vue and vanilla JavaScript; an extensible data pipeline",
+      "verified": "2026-09-12"
+    }
+  ],
+  "publishBundle": true
+}

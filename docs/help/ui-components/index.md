@@ -89,7 +89,7 @@ group heading is the at-a-glance rollup.
 [SvTabs](./sv-tabs.md) · [SvAccordion](./sv-accordion.md) · [SvSplitter](./sv-splitter.md) ·
 [SvDockLayout](./sv-dock-layout.md) · [SvDockManager](./sv-dock-manager.md) ·
 [SvCard](./sv-card.md) · [SvDivider](./sv-divider.md) · [SvScrollArea](./sv-scroll-area.md) ·
-[SvGridChart](./sv-grid-chart.md) · [SvForm](./sv-form.md) · [SvField](./sv-field.md) ·
+[SvGridChart](./sv-grid-chart.md) · [SvChartPanes](./sv-chart-panes.md) · [SvForm](./sv-form.md) · [SvField](./sv-field.md) ·
 [SvFileUpload](./sv-file-upload.md) · [SvCollapsible](./sv-collapsible.md) ·
 [Layout primitives](./sv-layout-primitives.md) (SvStack · SvGroup · SvSimpleGrid) ·
 [Typography](./sv-typography.md) (SvTitle · SvText · SvAnchor · SvBlockquote · SvMark · SvList) ·

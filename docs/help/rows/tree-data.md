@@ -4,6 +4,19 @@ Nest rows into an expandable hierarchy with the `treeData` prop.
 
 <div data-docs-demo="426-tree-data" data-height="520"></div>
 
+<!-- tutorial:tree-data -->
+<figure class="docs-tutorial" id="tutorial-tree-data" data-docs-tutorial="tree-data">
+<video class="docs-tutorial-video" src="/tutorials/tree-data.mp4" poster="/tutorials/tree-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Tree data in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/tree-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/tree-data.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Tree data in SvGrid</strong> (33 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Tree data is one prop. Point treeData at the parent field and name the tree column, and flat rows become a hierarchy.</p>
+<p>Click an expander to open a branch. Children indent under their parent and keep every column.</p>
+<p>Expand all and Collapse all walk the whole tree through the grid API.</p>
+<p>Nested objects work too: flatten them once with flattenTreeData, and the same prop takes it from there.</p>
+</details>
+</figure>
+<!-- /tutorial:tree-data -->
+
 Tree rows are **real data rows**. They keep their own cells, formatting,
 editing and selection, and only gain an expander plus indentation in the tree
 column. That is the difference from row grouping, where the parent is a
@@ -145,7 +158,7 @@ Phase → task → subtask with % complete that rolls up via effort-weighted ave
 
 ### Bill of Materials
 
-Bicycle BOM, 4 levels deep. Edit any leaf part\'s qty or unit cost; subtotals roll up through the assembly chain to the grand total.
+Bicycle BOM, 4 levels deep. Edit any leaf part's qty or unit cost; subtotals roll up through the assembly chain to the grand total.
 
 <div data-docs-demo="30-bom-tree" data-height="460"></div>
 

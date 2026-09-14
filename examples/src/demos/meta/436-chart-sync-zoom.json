@@ -1,0 +1,24 @@
+{
+  "description": "Two years of daily prices and volumes as two Svelte 5 charts that move as one. A shared syncGroup gives them one crosshair and one zoom window; Ctrl + wheel or a pinch zooms around the pointer, Shift + drag or the hand button pans, and 1W, 1M, 3M, 6M, YTD, 1Y and All presets jump. The zoom window is a bindable prop, so the grid under the charts shows exactly the rows in it. Right-click opens a context menu with export, zoom and series items plus your own. Below, bars that grow in and slide on every data change with multi-selection, and a sunburst that drills down on click with a breadcrumb back up. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte synchronized charts",
+    "svelte chart wheel zoom pan",
+    "svelte chart range presets",
+    "svelte chart context menu",
+    "svelte chart drilldown sunburst"
+  ],
+  "faq": [
+    {
+      "question": "How do two charts share a crosshair?",
+      "answer": "Give both the same syncGroup name. Categories are matched by label first, then by date when both parse, so a daily and a weekly chart still meet at the right week. There is nothing else to wire."
+    },
+    {
+      "question": "Why does a plain wheel scroll the page?",
+      "answer": "zoomable.wheel is set to modifier, so the chart only takes the wheel with Ctrl or Cmd held. Set it to true and the chart takes every wheel event over the plot."
+    },
+    {
+      "question": "Is the zoom window a pixel range?",
+      "answer": "No, it is a pair of category indices into the full spec, i0 and i1, or null for everything. That is why the grid can slice its rows from it and why the window survives a resize."
+    }
+  ]
+}

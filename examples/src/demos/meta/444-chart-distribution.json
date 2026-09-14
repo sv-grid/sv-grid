@@ -1,0 +1,24 @@
+{
+  "description": "Distribution charts: rowsToHistogramSpec bins a sample by count, width or rule (sturges, fd, sqrt) with one series per group sharing the same edges, stacked or side by side, and a reference line marks the p95; rowsToBoxSpec draws the five-number summary per category and series with whisker as the IQR rule and everything past the whiskers as outlier dots; yScale log for a group an order of magnitude apart. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte histogram chart",
+    "svelte box plot chart",
+    "svelte distribution chart",
+    "svelte chart outliers",
+    "svelte latency histogram"
+  ],
+  "faq": [
+    {
+      "question": "How do I choose the bins?",
+      "answer": "Pass bins for a count, binWidth for a fixed width, or method: sturges, fd or sqrt for a rule to rowsToHistogramSpec. Every series is binned with the same edges so the bars line up."
+    },
+    {
+      "question": "What are the outlier dots?",
+      "answer": "Points past the whiskers. The whiskers stop at the last observation inside whisker times the interquartile range, 1.5 by default; a larger rule absorbs more points."
+    },
+    {
+      "question": "Can I draw one box per group and series?",
+      "answer": "Yes: rowsToBoxSpec takes a category and a series field, and draws the boxes side by side within each category."
+    }
+  ]
+}

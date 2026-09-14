@@ -9,6 +9,10 @@ accessibility + standards-compliant HTML.
 > onCellEdited cell-data model is the opposite of sv-grid's
 > data-array model; the mental flip takes the most time.
 
+<!-- facts:start glide-data-grid -->
+> **Facts, checked 12 Sep 2026.** `@glideapps/glide-data-grid` 6.0.3, MIT, last published 3 Feb 2024, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@glideapps/glide-data-grid` 6.0.3 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external (measured 12 Sep 2026). Glide Data Grid pricing, as its site states it: Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid (https://grid.glideapps.com/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/).
+<!-- facts:end -->
+
 ## Mental-model flip
 
 Glide gives you a **canvas + a `getCellContent` callback**: the grid
