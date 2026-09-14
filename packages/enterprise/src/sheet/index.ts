@@ -9,6 +9,28 @@
  */
 export { enableSheet } from '../sheet-enable'
 export {
+  parseFormula, parse,
+} from './parse'
+export { tokenize, type Token } from './tokenize'
+export { evaluate, formatValue, type EvalContext } from './evaluate'
+export {
+  FUNCTIONS, withCustomFunctions, type SheetFunction, type FnArgs,
+} from './functions'
+export {
+  translateFormula, fixupReferences, formatFormula, type StructuralEdit,
+} from './refs'
+export {
+  createDependencyGraph, precedentsOf, cellKey, parseCellKey,
+  type DependencyGraph, type CellKey,
+} from './deps'
+export {
+  parseA1, formatA1, colToLetters, lettersToCol, type CellRef,
+} from './address'
+export {
+  isError, type CellValue, type SheetError, type Node as FormulaNode,
+} from './ast'
+
+export {
   SHEET_BINDINGS, handleSheetKey,
   type SheetBinding, type SheetCommand,
 } from './shortcuts'

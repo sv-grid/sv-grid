@@ -1,359 +1,186 @@
 # Spreadsheet formulas
 
-A minimal Excel-style formula engine that runs in the browser, with no
-dependencies. Cells can hold either a literal value (number, string,
-boolean) or a formula starting with `=`. When the formula resolves
-against the sheet, the cell shows the computed value; when you click
-the cell, the formula bar shows the source.
+An Excel-style formula engine that runs in the browser with no dependencies.
+Cells hold either a literal value or a formula starting with `=`. The engine
+parses it, resolves references against the sheet, and returns a computed value
+or one of Excel's error codes.
 
-![A real formula engine inside cells resolves a cell holding =SUM(A1:A3) into a computed value, with cell refs, ranges, functions, and cycle detection.](/docs-media/grid-formulas.svg)
+```ts
+import {
+  parseFormula,
+  evaluateFormula,
+  formatCellValue,
+} from '@svgrid/enterprise'
+```
 
-Useful for budgets, scorecards, cascading totals, conditional reports,
-lightweight planning - anything that needs in-cell calc without
-bundling a full spreadsheet engine like HyperFormula.
+Or from the `/sheet` subpath, which is the engine and the keyboard layer
+without export, pivot, the scheduler and the board:
+
+```ts
+import { parseFormula, evaluate, formatValue } from '@svgrid/enterprise/sheet'
+```
 
 <div data-docs-demo="83-spreadsheet-formulas" data-height="640"></div>
 
-## What's supported
+## Evaluating a formula
 
-| Category       | Examples                                                           |
-|----------------|--------------------------------------------------------------------|
-| Cell refs      | `A1`, `B2`, `AA10`, `$C$3` (absolute = relative here)              |
-| Ranges         | `A1:A10`, `B2:D5`                                                  |
-| Arithmetic     | `+ - * / ^ %`  (unary `-`)                                         |
-| Comparison     | `=` `<>` `<` `>` `<=` `>=`                                         |
-| String concat  | `&`                                                                |
-| Functions      | `SUM`, `AVG`/`AVERAGE`, `MIN`, `MAX`, `COUNT`, `COUNTA`, `COUNTIF` |
-|                | `IF`, `AND`, `OR`, `NOT`                                           |
-|                | `ROUND`, `ABS`                                                     |
-|                | `LEN`, `LEFT`, `RIGHT`, `UPPER`, `LOWER`, `CONCAT`                 |
-|                | `TODAY`                                                            |
-| Literals       | numbers (`1.5`, `-3`), strings (`"hello"`), booleans (`TRUE`/`FALSE`) |
+`evaluate` needs to know how to read a cell. That is the only thing it asks of
+you, which is what lets the same engine sit on top of a grid, a plain array, or
+several sheets at once.
 
-## Error codes
+```ts
+import { parseFormula, evaluate, formatValue } from '@svgrid/enterprise/sheet'
 
-The engine produces the same error vocabulary as Excel:
+const cells = [
+  [1, 2, 3],
+  [4, 5, 6],
+]
 
-| Code        | When                                          |
-|-------------|-----------------------------------------------|
-| `#REF!`     | Cell reference points outside the sheet       |
-| `#CYCLE!`   | Circular dependency                           |
-| `#DIV/0!`   | Division by zero                              |
-| `#VALUE!`   | Type mismatch (e.g. `="abc"+1`)               |
-| `#NAME?`    | Unknown function name                         |
-| `#PARSE!`   | Syntax error                                  |
+const ctx = {
+  resolve: (sheet, row, col) => cells[row]?.[col] ?? { error: '#REF!' },
+  lastRow: () => cells.length - 1,
+}
 
-## Complete drop-in example
-
-A self-contained budget sheet. The engine code (≈ 280 lines) is the
-same one the demo ships - copy it verbatim, or read the full source
-in [demo 83](../../examples/src/demos/83-spreadsheet-formulas.svelte).
-
-The grid shows the *computed* values; a formula bar above lets the
-user inspect or edit the raw formula behind the active cell.
-
-```svelte
-<script lang="ts">
-  import {
-    SvGrid,
-    tableFeatures,
-    rowSortingFeature,
-    renderSnippet,
-    type ColumnDef,
-  } from '@svgrid/grid'
-
-  // ─────────────────── ENGINE ───────────────────
-  type CellVal = string | number | boolean | { error: string }
-  type Sheet = string[][]
-
-  function isError(v: CellVal): v is { error: string } {
-    return typeof v === 'object' && v !== null && 'error' in v
-  }
-
-  function colToLetters(c: number): string {
-    let n = c, s = ''
-    while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 }
-    return s
-  }
-  function lettersToCol(l: string): number {
-    let c = 0
-    for (const ch of l.toUpperCase()) c = c * 26 + (ch.charCodeAt(0) - 64)
-    return c - 1
-  }
-  function parseRef(ref: string): { row: number; col: number } | null {
-    const m = ref.replace(/\$/g, '').match(/^([A-Z]+)(\d+)$/i)
-    return m ? { row: parseInt(m[2]!, 10) - 1, col: lettersToCol(m[1]!) } : null
-  }
-
-  // (tokenize / parse / evaluate omitted for brevity - copy from demo 83)
-  // Below is the public surface you actually call.
-
-  declare function tokenize(formula: string): unknown[]
-  declare function parse(tokens: unknown[]): unknown
-  declare function evaluate(ast: unknown, resolve: (r: number, c: number) => CellVal): CellVal
-
-  function computeSheet(sheet: Sheet): CellVal[][] {
-    const rowsN = sheet.length
-    const colsN = sheet[0]?.length ?? 0
-    const computed: (CellVal | undefined)[][] =
-      Array.from({ length: rowsN }, () => new Array(colsN))
-    const visiting: boolean[][] =
-      Array.from({ length: rowsN }, () => new Array(colsN).fill(false))
-
-    function resolve(r: number, c: number): CellVal {
-      if (r < 0 || r >= rowsN || c < 0 || c >= colsN) return { error: '#REF!' }
-      if (computed[r]![c] !== undefined) return computed[r]![c]!
-      if (visiting[r]![c]) return { error: '#CYCLE!' }
-      visiting[r]![c] = true
-      const raw = (sheet[r]![c] ?? '').trim()
-      let value: CellVal
-      if (raw === '') value = ''
-      else if (raw.startsWith('=')) {
-        try { value = evaluate(parse(tokenize(raw.slice(1))), resolve) }
-        catch (e) {
-          const msg = e instanceof Error ? e.message : '#ERR!'
-          value = { error: msg.startsWith('#') ? msg : '#PARSE!' }
-        }
-      } else {
-        const n = Number(raw)
-        value = Number.isFinite(n) ? n : raw
-      }
-      visiting[r]![c] = false
-      computed[r]![c] = value
-      return value
-    }
-    for (let r = 0; r < rowsN; r++) for (let c = 0; c < colsN; c++) resolve(r, c)
-    return computed.map((row) => row.map((v) => v ?? '')) as CellVal[][]
-  }
-
-  // ─────────────────── DEMO ───────────────────
-  // raw[row][col] = the text the user typed (formula or literal).
-  let raw = $state<Sheet>([
-    ['Item',     'Cost', 'Qty', 'Subtotal',         'Total'],
-    ['Domain',   '12.99','3',   '=B2*C2',           '=ROUND(D2*1.08,2)'],
-    ['Hosting',  '49',   '12',  '=B3*C3',           '=ROUND(D3*1.08,2)'],
-    ['SSL',      '85',   '1',   '=B4*C4',           '=ROUND(D4*1.08,2)'],
-    ['TOTALS',   '',     '',    '=SUM(D2:D4)',      '=SUM(E2:E4)'],
-    ['Status',   '',     '',    '',                 '=IF(E5>500,"REVIEW","OK")'],
-  ])
-  const computed = $derived(computeSheet(raw))
-
-  let activeRow = $state<number | null>(null)
-  let activeCol = $state<number | null>(null)
-  const activeRaw = $derived(
-    activeRow != null && activeCol != null ? raw[activeRow]?.[activeCol] ?? '' : '',
-  )
-  let formulaInput = $state('')
-  $effect(() => { formulaInput = activeRaw })
-
-  function commit() {
-    if (activeRow == null || activeCol == null) return
-    const next = raw.map((row) => row.slice())
-    next[activeRow]![activeCol] = formulaInput
-    raw = next
-  }
-
-  function formatValue(v: CellVal): string {
-    if (isError(v)) return v.error
-    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2)
-    if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'
-    return String(v)
-  }
-
-  // SvGrid columns - one per spreadsheet column. Each row is a SheetRow.
-  type SheetRow = { rowIndex: number; cells: CellVal[] }
-  const gridRows = $derived<SheetRow[]>(
-    computed.slice(1).map((cells, i) => ({ rowIndex: i + 1, cells })),
-  )
-  const headerCells = $derived(computed[0] ?? [])
-
-  const features = tableFeatures({ rowSortingFeature })
-  const columns = $derived<ColumnDef<typeof features, SheetRow>[]>(
-    Array.from({ length: 5 }, (_, c) => ({
-      id: colToLetters(c),
-      header: `${colToLetters(c)} · ${formatValue(headerCells[c] ?? '')}`,
-      width: c === 0 ? 160 : 130,
-      editable: false,
-      cell: (ctx) => renderSnippet(SheetCell, { row: ctx.row.original, col: c }),
-    })),
-  )
-</script>
-
-{#snippet SheetCell(props: { row: SheetRow; col: number })}
-  {@const r = props.row.rowIndex}
-  {@const c = props.col}
-  {@const v = props.row.cells[c] ?? ''}
-  {@const active = activeRow === r && activeCol === c}
-  <span
-    onclick={() => { activeRow = r; activeCol = c }}
-    style="display: inline-block; width: 100%; cursor: pointer;
-           {active ? 'background: rgba(99,102,241,0.10); box-shadow: inset 0 0 0 2px #6366f1;' : ''}
-           {isError(v) ? 'color: #dc2626; font-family: ui-monospace, Menlo, monospace;' : ''}"
-    title={raw[r]?.[c] ?? ''}
-  >{formatValue(v)}</span>
-{/snippet}
-
-<section style="display: flex; flex-direction: column; gap: 10px; height: 100%;">
-  <!-- Formula bar -->
-  <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1; border-radius: 8px;">
-    <span style="background: #f1f5f9; padding: 8px 12px; font-family: ui-monospace, Menlo, monospace; font-weight: 700; min-width: 64px; text-align: center;">
-      {activeRow != null && activeCol != null ? `${colToLetters(activeCol)}${activeRow + 1}` : '-'}
-    </span>
-    <input
-      type="text"
-      bind:value={formulaInput}
-      placeholder="Click a cell, then type =SUM(D2:D4) here…"
-      onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit() } }}
-      onblur={commit}
-      style="flex: 1; border: 0; outline: none; font-family: ui-monospace, Menlo, monospace; padding: 7px 8px;"
-    />
-  </div>
-
-  <div style="flex: 1; min-height: 0;">
-    <SvGrid
-      data={gridRows}
-      columns={columns}
-      features={features}
-      enableInlineEditing={false}
-      enableCellSelection={false}
-      showRowNumbers={true}
-      rowNumberWidth={48}
-      rowHeight={32}
-      containerHeight="100%"
-    />
-  </div>
-</section>
+evaluate(parseFormula('=SUM(A1:C1)'), ctx)   // 6
+formatValue(evaluate(parseFormula('=1/0'), ctx))  // '#DIV/0!'
 ```
 
-> The `tokenize` / `parse` / `evaluate` functions are declared but not
-> defined inline above - they are ~ 200 lines of TypeScript. Copy
-> them from the
-> [demo source](../../examples/src/demos/83-spreadsheet-formulas.svelte)
-> which is fully self-contained.
+| Field | Purpose |
+| ----- | ------- |
+| `resolve(sheet, row, col)` | Read one cell. Return `{ error: '#REF!' }` out of bounds. `sheet` is null for the sheet the formula lives on. |
+| `lastRow(sheet)` | The last used row, so an open-ended `A:A` knows where to stop. |
+| `resolveName(name)` | Optional. Resolve a defined name; `undefined` becomes `#NAME?`. |
+| `functions` | Optional. Pass `withCustomFunctions({ ... })` to add your own. |
 
-## How the recompute works
+Rows and columns are 0-based, matching the grid's selection model, so nothing
+converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 
-`computeSheet(raw)` runs every time the raw sheet changes. It walks
-every cell once, lazily resolving references:
+## What is supported
 
-1. **Literal** - try `Number(raw)`, fall back to the string.
-2. **Formula** - tokenize, parse to an AST, evaluate against the
-   resolver.
-3. **Memoize** - once a cell is computed, its value is cached so
-   downstream cells don't re-parse the same formula.
-4. **Cycle detection** - a `visiting` flag per cell. If a resolver
-   tries to read a cell that's currently being computed, it returns
-   `#CYCLE!` instead of looping forever.
+| Category | Examples |
+| -------- | -------- |
+| Cell refs | `A1`, `B2`, `AA10`, `$C$3`, `A$1`, `$A1` |
+| Ranges | `A1:A10`, `B2:D5`, `A1 : B2`, whole columns `A:C` |
+| Cross-sheet | `Orders!A1`, `'Price list'!A1:C9` |
+| Defined names | `=Tax*2`, resolved through `resolveName` |
+| Arithmetic | `+ - * / ^ %`, unary `-` and `+` |
+| Comparison | `=` `<>` `<` `>` `<=` `>=` |
+| Concatenation | `&` |
+| Literals | `1.5`, `2.5E-3`, `"text"`, `"say ""hi"""`, `TRUE` / `FALSE` |
 
-The `$derived` wrapper (`computed = $derived(computeSheet(raw))`)
-re-runs the whole sheet whenever any cell changes. For sheets under
-~ 10 000 cells this is fast - the demo's 16 × 8 sheet recomputes in
-under a millisecond.
+### Functions
 
-For very large sheets, switch to incremental recompute by tracking
-which cells depend on which (build a forward edges graph during the
-first pass) and recomputing only the affected sub-DAG. The shape of
-the resolver doesn't change.
+| Group | Functions |
+| ----- | --------- |
+| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` |
+| Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `RANK` |
+| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` |
+| Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
+| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `TRIM` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `FIND` `SEARCH` `TEXT` |
+| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` |
 
-## Try these formulas
+`IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
+is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
 
-In the formula bar of the demo, click a cell and type:
+Need the full ~400? The [HyperFormula adapter](#hyperformula) is still there.
 
-```text
-=SUM(D2:D4)               // sum a range
-=AVG(E2:E4)               // average
-=IF(E5>500,"REVIEW","OK") // conditional text
-=COUNTIF(F2:F4,"REVIEW")  // count matches
-=B2*C2&" units"           // arithmetic + string concat
-=ROUND(E2/E$5*100,1)      // percentage with rounding
-=TODAY()                  // today's date as YYYY-MM-DD
+### Error codes
+
+| Code | When |
+| ---- | ---- |
+| `#REF!` | Reference outside the sheet, or to a deleted cell |
+| `#CYCLE!` | Circular dependency |
+| `#DIV/0!` | Division (or `MOD`) by zero |
+| `#VALUE!` | Type mismatch, e.g. `="abc"+1` |
+| `#NAME?` | Unknown function or defined name |
+| `#NUM!` | Numeric domain error, e.g. `SQRT(-1)` |
+| `#N/A` | A lookup found nothing |
+| `#PARSE!` | Syntax error |
+
+Errors are values, not exceptions, which is what lets `IFERROR` see one.
+
+## Absolute references actually work
+
+`$` pins a reference so it does not move when the formula does. The engine
+keeps that through to the AST, and `translateFormula` is the only thing allowed
+to move a reference:
+
+```ts
+import { translateFormula } from '@svgrid/enterprise/sheet'
+
+translateFormula('=$A$1*B2', 1, 0)   // '=$A$1*B3'
+translateFormula('=$A2*B$1', 3, 4)   // '=$A5*F$1'
 ```
 
-Each commits immediately on `Enter` and recomputes the whole sheet.
+This is what makes `Ctrl+D` correct. `enableSheet()` wires it into fill for
+you, so filling `=$A$1*B1` down a column keeps reading `$A$1` instead of
+walking down the sheet and returning plausible wrong numbers.
 
-## Bridging to xlsx export
+> **If you copied the engine out of a demo before this shipped**, it stripped
+> `$` at parse time and evaluated every reference as relative. Formulas that
+> never got filled or copied were fine; anything that did was quietly wrong.
+> Importing the module fixes it.
 
-The engine stores raw formulas as text. When you export to xlsx via
-`@svgrid/enterprise`, you have two choices:
+## Insert and delete with reference fixup
 
-1. **Export computed values** - default. The xlsx receives numbers
-   and strings, Excel sees them as values.
-2. **Export formulas** - mark formula cells with a leading `=` in the
-   exported value. Excel parses them and recomputes on open. Useful
-   when the recipient wants to drill into the math.
+`fixupReferences` rewrites a formula after rows or columns move:
 
-Both modes preserve cell formatting (currency, dates) you set on the
-columns.
+```ts
+import { fixupReferences } from '@svgrid/enterprise/sheet'
 
-## Limitations & when to reach for HyperFormula
+fixupReferences('=SUM(A1:A10)', { kind: 'insertRows', at: 4, count: 1 })
+// '=SUM(A1:A11)'   the new row joins the total
 
-The bundled engine intentionally covers ~80% of common spreadsheet
-formulas. It does NOT support:
+fixupReferences('=A3', { kind: 'deleteRows', at: 2, count: 1 })
+// '=#REF!'         the cell it pointed at is gone
+```
 
-- VLOOKUP / INDEX / MATCH (planned)
-- Volatile functions beyond `TODAY()` (`NOW`, `RAND`, `RANDBETWEEN`)
-- Array formulas
-- Named ranges
-- 3-D references across multiple sheets
+A range only breaks when the edit removes all of it; deleting rows inside one
+shrinks it, the way Excel does.
 
-If you need full Excel parity, integrate
-[HyperFormula](https://hyperformula.handsontable.com) - it's a 600 KB
-add-on that drops in alongside SvGrid. Reach for it only when you
-actually need it; the bundled engine is < 5 KB minified.
+## Recalculating only what changed
 
-## More examples
+A naive engine recomputes every cell on every keystroke. The dependency graph
+turns that into "recompute what this edit affects, in an order where each cell
+comes after its inputs":
 
-### Blank sheet - just type
+```ts
+import {
+  createDependencyGraph, precedentsOf, cellKey, parseFormula,
+} from '@svgrid/enterprise/sheet'
 
-An empty Excel-style sheet on a plain <SvGrid>: column-letter headers (A..Z), a built-in 1..N row gutter, a name box + formula bar with a browsable function picker, gridlines, range selection and a fill handle. A real HyperFormula engine underneath: type a literal or a formula like =SUM(B2:D2) / =IF(...) and every dependent cell recalculates live. Drag a row or column border to resize; right-click for Cut / Copy / Paste / Clear.
+const graph = createDependencyGraph()
 
-<div data-docs-demo="207-blank-sheet" data-height="560"></div>
+// When a formula is entered or changed:
+graph.setPrecedents(
+  cellKey(null, row, col),
+  precedentsOf(parseFormula(text), { sheet: null }, lastRow),
+)
 
-### Freeze panes
+// When a value changes, recompute these, in this order:
+for (const key of graph.dirtyFrom([cellKey(null, row, col)])) {
+  // ...
+}
 
-The Excel Freeze Panes corner on a plain <SvGrid>: the Account and Owner columns stay pinned while you scroll across a full year of months, and the sticky column-letter + row-number headers stay put as you scroll down. HyperFormula keeps each row total (column O) and the bottom Total row live as you edit any month. Pinning those two columns is one prop: initialColumnPinning.
+graph.cycles()   // every cell in a circular reference
+```
 
-<div data-docs-demo="208-freeze-panes" data-height="560"></div>
+Cells caught in a cycle are still returned by `dirtyFrom`, so they can show
+`#CYCLE!` rather than keep a stale value while the rest of the sheet works.
 
-### Data validation (dropdowns)
+## HyperFormula
 
-Excel Data Validation on a plain <SvGrid>: Status / Priority / Owner / Sprint columns are list-constrained (double-click for a dropdown), and Estimate must be a whole number 0-40. Four cells arrive invalid and light up red with the reason as a tooltip; fix one and it clears live. Dropdowns are editorType:list + editorOptions; the flag is the declarative validate() hook.
+For the full Excel function library, `createHyperFormulaSheet` in
+`@svgrid/grid` wraps [HyperFormula](https://hyperformula.handsontable.com) as
+an optional peer dependency. It is a heavier bundle and a separate licence;
+this engine is the dependency-free option that covers the common ground.
 
-<div data-docs-demo="209-data-validation" data-height="560"></div>
-
-### Format Cells
-
-The Excel Home -> Number experience: select a range and apply a display format - Currency, Percent, Thousands, Number, Date, or General - and only the rendering changes; the stored value and every formula are untouched. HyperFormula keeps Gross profit, Margin and the Total column live, so a computed % formats exactly like a typed number.
-
-<div data-docs-demo="210-format-cells" data-height="560"></div>
-
-### Financial model (amortization)
-
-A real analyst model on the sheet: three blue INPUT cells (Principal, APR, Term) drive a full 360-month amortization schedule built entirely from formulas - PMT for the fixed payment, then per-period interest / principal / running balance that each reference the row above. Change an input and all 360 rows plus the summary recompute instantly. Blue = you type, black = computed.
-
-<div data-docs-demo="211-financial-model" data-height="560"></div>
-
-### Dashboard sheet
-
-A spreadsheet that reads like an Excel dashboard: each channel row carries an inline SVG trend sparkline and an eight-week heatmap shaded by volume. Total and Avg are live =SUM / =AVERAGE formulas - edit any weekly cell and the sparkline reshapes, the heatmap re-shades, and the totals update at once. Sparklines are a per-column custom cell; the heatmap is value-driven cellClass.
-
-<div data-docs-demo="212-dashboard-sheet" data-height="560"></div>
-
-### Chart a spreadsheet
-
-A live formula sheet wired to the built-in Chart panel: edit a Units or Revenue cell and the chart redraws. Customize it in-panel - change Type, swap Group by / Split by / Value, aggregate, Stack, or add data labels.
-
-<div data-docs-demo="356-spreadsheet-chart" data-height="560"></div>
-
-### Per-cell custom borders (KPI)
-
-Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.
-
-<div data-docs-demo="169-cell-borders" data-height="560"></div>
+<div data-docs-demo="173-hyperformula" data-height="520"></div>
 
 ## See also
 
-- [Demo 83 - Spreadsheet + formulas](../../examples/src/demos/83-spreadsheet-formulas.svelte) - the full engine source
-- [Demo 27 - Spreadsheet + Ribbon bar](../../examples/src/demos/27-spreadsheet-ribbon.svelte) - bold / colour / format ribbon
-- [Demo 18 - Cascade editing](../../examples/src/demos/18-cascade-editing.svelte) - the alternative when you want JS-driven recompute instead of formulas
-- [Export and print](./export.md) - xlsx export for the computed sheet
+- [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md) - `Ctrl+D` and
+  friends, which use `translateFormula`.
+- [Missing features](./missing-features.md) - the formula bar, named-range UI
+  and per-cell number formats are not built yet.
