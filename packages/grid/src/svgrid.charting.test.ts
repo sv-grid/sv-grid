@@ -434,6 +434,37 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
+  it('applies valueFormat, logScale and timeAxis to the row-reading types too', async () => {
+    // These three return a spec built directly from the rows, on a path that
+    // used to skip the block applying these settings. So `valueFormat` on a
+    // gauge silently did nothing while the same setting on a bar chart worked,
+    // which reads as the setting being broken rather than type-specific.
+    const { api, destroy } = await mountGrid({ charting: true })
+    try {
+      api.configureChart({
+        type: 'gauge', measure: 'salary', reduce: 'avg', valueFormat: 'currency',
+      })
+      await tick()
+      expect(api.getChartSpec()!.valueFormat).toBe('currency')
+
+      api.configureChart({
+        type: 'boxplot', dimension: 'team', measure: 'salary', logScale: true,
+      })
+      await tick()
+      expect(api.getChartSpec()!.yScale).toBe('log')
+
+      // And the aggregated path still gets them, which is the half that
+      // always worked.
+      api.configureChart({
+        type: 'bar', dimension: 'team', measure: 'salary', valueFormat: 'currency',
+      })
+      await tick()
+      expect(api.getChartSpec()!.valueFormat).toBe('currency')
+    } finally {
+      destroy()
+    }
+  })
+
   it('builds the row-reading types through the panel: scatter, gauge, box plot', async () => {
     // These three do not go through `rowsToChartSpec`, so their dispatch is the
     // one bit of chart wiring a bar-chart test never touches. It lives in the
