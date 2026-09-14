@@ -25,7 +25,7 @@ export type ExportFormat =
 
 ### `type ExportColumn`
 
-One column in an export: which field to read, and how to label and format it. */
+One column in an export: which field to read, and how to label and format it.
 
 ```ts
 export type ExportColumn<TData = RowData> = {
@@ -64,7 +64,7 @@ export type ExportColumn<TData = RowData> = {
 
 Progress reported during an export. `phase` is 'project' while building
  rows, 'serialize' while writing text formats, 'write' around the xlsx/pdf
- writer. `ratio` is 0..1. */
+ writer. `ratio` is 0..1.
 
 ```ts
 export type ExportProgress =
@@ -143,7 +143,7 @@ export type ExportHeaderFooterLine =
 
 ### `type ExportSheet`
 
-One tab of a multi-sheet workbook. Only formats with sheets (xlsx, xls) use these. */
+One tab of a multi-sheet workbook. Only formats with sheets (xlsx, xls) use these.
 
 ```ts
 export type ExportSheet<TData> = {
@@ -172,7 +172,7 @@ export type ExportRowSource<TData> = ReadonlyArray<TData> | 'displayed' | 'selec
 
 ### `type ExportOptions`
 
-Everything `exportGrid` accepts: the format, the filename, which rows and columns, and per-format tuning. */
+Everything `exportGrid` accepts: the format, the filename, which rows and columns, and per-format tuning.
 
 ```ts
 export type ExportOptions<TData> = {
@@ -330,7 +330,7 @@ export type ExportMerge = {
 
 ### `function resolveRowSource`
 
-Resolve the {@link ExportRowSource} shorthand against the grid api. */
+Resolve the {@link ExportRowSource} shorthand against the grid api.
 
 ```ts
 export function resolveRowSource<TFeatures extends TableFeatures, TData extends RowData>(
@@ -353,7 +353,7 @@ export function resolveRowSource<TFeatures extends TableFeatures, TData extends 
 
 ### `function resolveColumns`
 
-Resolve the export columns, carrying grid header labels + `format`. */
+Resolve the export columns, carrying grid header labels + `format`.
 
 ```ts
 export function resolveColumns<TFeatures extends TableFeatures, TData extends RowData>(
@@ -383,7 +383,7 @@ export function resolveColumns<TFeatures extends TableFeatures, TData extends Ro
 ### `function buildLinkResolver`
 
 A `(rowIdx, colIdx) => url` resolver from column `link` hooks, or undefined
- when no column defines links. */
+ when no column defines links.
 
 ```ts
 export function buildLinkResolver<TData extends RowData>(
@@ -460,7 +460,7 @@ export function buildGroupedPdfBody<TData extends RowData>(
 
 ### `type ClipboardFormat`
 
-Native formats that can be placed on the clipboard. */
+Native formats that can be placed on the clipboard.
 
 ```ts
 export type ClipboardFormat = 'csv' | 'tsv' | 'html' | 'json' | 'xml' | 'md'
@@ -468,7 +468,7 @@ export type ClipboardFormat = 'csv' | 'tsv' | 'html' | 'json' | 'xml' | 'md'
 
 ### `type ClipboardExportOptions`
 
-Options for copying a range to the clipboard, as opposed to writing a file. */
+Options for copying a range to the clipboard, as opposed to writing a file.
 
 ```ts
 export type ClipboardExportOptions<TData> = {

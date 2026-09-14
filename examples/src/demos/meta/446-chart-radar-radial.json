@@ -1,0 +1,24 @@
+{
+  "description": "The polar family: a radar chart with one axis per attribute and a polygon per series, the axis pinned through yAxis min and max, series hidden through visible or a legend click; radial-column stacks bars around a circle, nightingale gives every slice the same angle and lets the radius carry the value, and radial-bar draws one ring per category against a shared scale. Every one takes the categories and series a bar chart takes. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte radar chart",
+    "svelte spider chart",
+    "svelte nightingale rose chart",
+    "svelte radial bar chart",
+    "svelte polar chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I pin the radar axis?",
+      "answer": "Set yAxis min and max on the spec, for instance 0 and 100 for scores, so a series that scores low everywhere does not stretch to the rim."
+    },
+    {
+      "question": "What is the difference between a radial column and a nightingale?",
+      "answer": "Both put the categories around a circle. A radial column varies the bar length and keeps the angle; a nightingale keeps every slice the same angle and varies the radius, so the area grows with the square of the value."
+    },
+    {
+      "question": "How do I hide a series?",
+      "answer": "Set visible: false on it, or click its legend item; a double-click isolates one series."
+    }
+  ]
+}

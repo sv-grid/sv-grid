@@ -1,0 +1,202 @@
+{
+  "slug": "vincjo-datatables",
+  "competitor": "@vincjo/datatables",
+  "npm": "@vincjo/datatables",
+  "url": "https://github.com/vincjo/datatables",
+  "aliases": [
+    "vincjo",
+    "@vincjo/datatables",
+    "svelte datatables"
+  ],
+  "framework": [
+    "svelte"
+  ],
+  "group": "svelte-native",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "@vincjo/datatables is a lightweight, headless Svelte datatable helper for sorting, filtering, and paginating your own markup.",
+  "oneLineVerdict": "@vincjo/datatables is a great minimal pick when you want to keep your own table markup and just need sort / filter / paginate. SvGrid is the fuller grid - virtualization, Excel filters, editing, a render component - for heavier apps.",
+  "alternativeIntro": "It is a helper for your own markup rather than a grid, which is exactly right until you need virtualization, inline editing or column pinning and start building them yourself. Moving to SvGrid keeps the headless option and adds those. If your table is a few hundred rows of your own HTML, staying put is the smaller dependency.",
+  "intro": [
+    "@vincjo/datatables gives you a small, ergonomic handler that wraps your data with reactive sorting, filtering, and pagination while you keep full control of the markup. It is MIT-licensed and popular for its simplicity.",
+    "SvGrid scales further up the curve: it keeps a headless engine but also ships a virtualized render component, an Excel-style filter menu, inline editing, cell selection, and an imperative API - for when a hand-rolled table stops being enough."
+  ],
+  "similarities": [
+    "Svelte-native, not a port.",
+    "Headless-friendly: you can drive your own markup.",
+    "MIT-licensed.",
+    "Client- and server-side data modes."
+  ],
+  "svgridAdvantages": [
+    "Built-in virtualized render component - no need to author the table.",
+    "Excel-style filter menu, inline editing, and cell-range selection.",
+    "Row + column virtualization for large datasets.",
+    "Imperative SvGridApi + @svgrid/mcp MCP server.",
+    "Optional Enterprise pack for export, import, pivot, and AI."
+  ],
+  "competitorAdvantages": [
+    "Much smaller surface and bundle if all you need is sort / filter / paginate.",
+    "You keep 100% control of the table markup with zero render opinions.",
+    "Faster to learn for a simple table."
+  ],
+  "features": [
+    {
+      "feature": "Svelte native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Svelte 5 peer range",
+        "source": "vincjo-npm"
+      }
+    },
+    {
+      "feature": "Render component",
+      "svgrid": {
+        "status": "yes",
+        "note": "<SvGrid />"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "headless, you render the markup",
+        "source": "vincjo-docs"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Excel-style filters",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Basic filtering"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "BYO"
+      }
+    },
+    {
+      "feature": "Cell selection + copy",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "BYO"
+      }
+    },
+    {
+      "feature": "Grouping / tree / master-detail",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Footprint for a simple table",
+      "svgrid": {
+        "status": "partial",
+        "note": "Larger"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Tiny"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You need virtualization, editing, or Excel-style filtering.",
+    "You want a render component instead of hand-authoring the table.",
+    "You expect the grid to grow into grouping, tree, or master/detail."
+  ],
+  "whenToChooseCompetitor": [
+    "You only need sort / filter / paginate over a small dataset.",
+    "You want to keep full control of your own table markup.",
+    "You want the smallest possible bundle for a simple table."
+  ],
+  "migration": {
+    "slug": "migrating-from-vincjo-datatables",
+    "effort": "30 minutes to 2 hours per table",
+    "youLose": [
+      "A tiny dependency-free helper when a sortable, filterable list is all you need.",
+      "Full control of the markup without opting into a headless mode."
+    ]
+  },
+  "pricing": {
+    "summary": "@vincjo/datatables is MIT on npm and free; no licence is sold",
+    "url": "https://github.com/vincjo/datatables",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "186-headless-table",
+    "03-excel-filters"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/headless/build-a-table"
+  ],
+  "related": [
+    "svelte-headless-table",
+    "tanstack-table",
+    "svelte-ui-kit-tables"
+  ],
+  "bottomLine": "For a small sort/filter/paginate list you keep full control over, @vincjo/datatables is delightfully light. The moment you need virtualization, Excel-style filters, editing, or grouping, SvGrid is the grid that already has them.",
+  "faq": [
+    {
+      "question": "SvGrid vs @vincjo/datatables - which to pick?",
+      "answer": "Pick @vincjo/datatables for a small, markup-controlled table; pick SvGrid when you need virtualization, editing, filters, or grouping. Both are MIT and Svelte-native."
+    },
+    {
+      "question": "Is @vincjo/datatables lighter than SvGrid?",
+      "answer": "Yes, for a simple table it is smaller. SvGrid carries more because it ships a virtualized render component and a full feature set."
+    },
+    {
+      "question": "Can SvGrid be headless like @vincjo/datatables?",
+      "answer": "Yes - its headless core lets you keep your own markup, the same way @vincjo/datatables does."
+    }
+  ],
+  "sources": [
+    {
+      "id": "vincjo-docs",
+      "url": "https://vincjo.fr/datatables/",
+      "evidences": "A headless, SSR-friendly toolkit with no dependency: sort, filter, search and pagination in client-side and server-side modes; you render the markup",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "vincjo-npm",
+      "url": "https://www.npmjs.com/package/@vincjo/datatables",
+      "evidences": "MIT; the latest version declares a Svelte 5 peer range",
+      "verified": "2026-09-12"
+    }
+  ],
+  "publishBundle": true
+}

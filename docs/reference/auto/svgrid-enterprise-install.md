@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\enterprise\src\install.ts`.
 
 ### `type EnterpriseAIApi`
 
-The `api.ai.*` namespace added by the enterprise install. */
+The `api.ai.*` namespace added by the enterprise install.
 
 ```ts
 export type EnterpriseAIApi<TData extends RowData> = {
@@ -31,7 +31,7 @@ export type EnterpriseAIApi<TData extends RowData> = {
 
 ### `type EnterprisePivotApi`
 
-The `api.pivot.*` namespace added by the enterprise install. */
+The `api.pivot.*` namespace added by the enterprise install.
 
 ```ts
 export type EnterprisePivotApi<
@@ -59,7 +59,7 @@ export type EnterprisePivotApi<
 
 ### `type EnterpriseGridApi`
 
-The grid API plus everything enterprise adds - what `installEnterprise` hands back. */
+The grid API plus everything enterprise adds - what `installEnterprise` hands back.
 
 ```ts
 export type EnterpriseGridApi<

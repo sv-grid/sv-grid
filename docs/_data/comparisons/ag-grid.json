@@ -1,0 +1,407 @@
+{
+  "slug": "ag-grid",
+  "competitor": "AG Grid (community + enterprise)",
+  "npm": "ag-grid-community",
+  "url": "https://www.ag-grid.com/",
+  "aliases": [
+    "ag grid",
+    "ag-grid",
+    "aggrid",
+    "ag-grid-community",
+    "ag-grid-enterprise",
+    "ag grid svelte",
+    "ag grid alternative"
+  ],
+  "framework": [
+    "javascript",
+    "react",
+    "angular",
+    "vue"
+  ],
+  "group": "commercial",
+  "tier": "priority",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs AG Grid - AG Grid Alternative for Svelte 5",
+  "seoDescription": "SvGrid vs AG Grid for Svelte 5: features AG Grid sells as Enterprise that SvGrid ships MIT, measured bundle sizes, benchmark timings and a migration guide.",
+  "tagline": "AG Grid is the most widely used JavaScript data grid, sold for React, Angular, Vue and plain JavaScript, with Svelte covered only by community-built integrations.",
+  "oneLineVerdict": "AG Grid has the longer track record and the wider Enterprise catalogue; SvGrid is Svelte-5-native, smaller on a Svelte page, and puts most of what AG Grid sells as Enterprise into its MIT core. Pick AG Grid for parity with React and Angular teams; pick SvGrid for a Svelte-first stack.",
+  "alternativeIntro": "The usual reason to look is that AG Grid on Svelte means the JavaScript API inside onMount plus a wrapper you do not control. SvGrid gives you a component that speaks runes natively and an MIT core with no row cap and no licence key. What you give up is breadth: AG Grid has more Enterprise modules, more integrations and a far larger body of examples, and if you need one grid across three frameworks it is still the right answer.",
+  "intro": [
+    "AG Grid is the heavyweight of the category: a Community edition under MIT and an Enterprise edition sold per developer that adds the set filter, range selection, master/detail, tree data, row grouping, pivoting, integrated charts, Excel export and the server-side row model. Its own pages mark each of those as Enterprise, and the sources at the bottom of this page link to them.",
+    "For Svelte there is no official package. ag-grid.com names React, Angular, Vue and JavaScript and points Svelte users to community-built integrations, so in practice you call the JavaScript API from onMount and manage the DOM yourself. SvGrid is the inverse: a Svelte 5 component with runes and snippets, and a headless core underneath it."
+  ],
+  "similarities": [
+    "A full grid with sorting, filtering, grouping, virtualization, editing and selection.",
+    "Documentation with a runnable example per feature.",
+    "TypeScript-first APIs with an imperative grid API for code outside the component.",
+    "An MIT core plus a paid tier with support.",
+    "An official MCP server so AI assistants read the real docs instead of guessing."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native: runes for state, snippets for cells, no wrapper layer and no DOM imperatives.",
+    "A smaller bundle on a Svelte page; the At a glance table above carries both measured numbers and the method.",
+    "Set-style Excel filters, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, the server-side row model, integrated charts, the column tool panel and the context menu are in the MIT core. AG Grid lists each of these under Enterprise.",
+    "In-grid AI helpers (natural-language filter, smart fill, summarise, classify, anomalies) ship free in @svgrid/grid with your own model provider.",
+    "@svgrid/mcp validates props and imports against the real API surface and scaffolds a project, on top of docs and examples.",
+    "@svgrid/enterprise costs $599 per developer per year for one application; AG Grid Enterprise's per-developer price is in the pricing line above."
+  ],
+  "competitorAdvantages": [
+    "A longer production record across very large enterprise deployments, and the largest body of third-party examples and answers of any grid.",
+    "The viewport row model and server-side pivoting, which SvGrid's server-side row model does not cover.",
+    "AG Charts, a separately licensed charting product with far more chart types than SvGridChart.",
+    "One grid API across React, Angular and Vue teams.",
+    "Enterprise support through Zendesk with one year of updates on the licence."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes",
+        "note": "runes and snippets"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "JavaScript build; Svelte is pointed to community-built integrations",
+        "source": "ag-home"
+      }
+    },
+    {
+      "feature": "Sorting and filtering",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Excel-style set filter",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "the Set Filter page is marked Enterprise",
+        "source": "ag-set-filter"
+      }
+    },
+    {
+      "feature": "Row and column virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Cell-range selection and clipboard",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core, with a fill handle"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Range Selection and Clipboard are Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Master/detail",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Tree data",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "the Tree Data page is marked Enterprise",
+        "source": "ag-tree-data"
+      }
+    },
+    {
+      "feature": "Row grouping with aggregation",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Pivot tables",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Integrated charts",
+      "svgrid": {
+        "status": "yes",
+        "note": "SvGridChart in the MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise, through AG Charts",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Server-side row model",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core: sort, filter, group, infinite scroll"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "CSV export",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Community, through the API",
+        "source": "ag-csv-export"
+      }
+    },
+    {
+      "feature": "Excel export",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise",
+        "source": "ag-csv-export"
+      }
+    },
+    {
+      "feature": "Column tool panel",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Tool Panels are Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Context menu",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Enterprise",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "MCP server for AI assistants",
+      "svgrid": {
+        "status": "yes",
+        "note": "@svgrid/mcp, MIT: docs, examples, code check, scaffold, preview"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "ag-mcp, MIT: docs search, version detection, upgrade prompts",
+        "source": "ag-mcp"
+      }
+    },
+    {
+      "feature": "In-grid AI helpers (natural-language filter, smart fill)",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core, bring your own model"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
+        "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Paid support",
+      "svgrid": {
+        "status": "yes",
+        "note": "with @svgrid/enterprise, per developer per year"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Enterprise licence, Zendesk",
+        "source": "ag-pricing"
+      }
+    },
+    {
+      "feature": "Core licence",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "MIT (Community)",
+        "source": "ag-pricing"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want a grid shaped by Svelte idioms rather than a wrapper around a JavaScript build.",
+    "You want the set filter, master/detail, tree data, range selection, grouping and the server-side row model without an Enterprise licence.",
+    "You want a paid support tier priced per developer per year at $599.",
+    "You want an assistant that can check the code it writes against the real API, not only read the docs."
+  ],
+  "whenToChooseCompetitor": [
+    "You depend on a specific AG Grid Enterprise module, the viewport row model or server-side pivoting.",
+    "You run the same grid across React, Angular and Vue teams and want one library.",
+    "Your procurement already covers AG Grid Enterprise, or you need AG Charts.",
+    "You want the largest possible pool of existing examples, answers and contractors."
+  ],
+  "migration": {
+    "slug": "migrating-from-ag-grid",
+    "effort": "1-3 hours per grid",
+    "youLose": [
+      "AG Charts as a separately licensed charting product with far more chart types than SvGridChart.",
+      "The viewport row model and server-side pivoting; SvGrid's server-side row model covers sort, filter, group and infinite scroll.",
+      "One grid API across React, Angular and Vue teams.",
+      "The largest body of third-party examples, Stack Overflow answers and contractors of any grid."
+    ]
+  },
+  "pricing": {
+    "summary": "AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer",
+    "amount": 999,
+    "unit": "USD per developer, one year of updates",
+    "url": "https://www.ag-grid.com/license-pricing/",
+    "verified": "2026-09-12"
+  },
+  "publishBundle": true,
+  "demos": [
+    "139-migration-from-ag-grid",
+    "03-excel-filters",
+    "08-tree-and-master-detail",
+    "148-server-row-model"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/benchmarks",
+    "help/server-side-data",
+    "help/mcp-server"
+  ],
+  "related": [
+    "mui-x-datagrid",
+    "handsontable",
+    "tanstack-table"
+  ],
+  "bottomLine": "AG Grid is the safer pick for a multi-framework organisation, or when you need its deepest Enterprise modules, AG Charts or the viewport row model. For a Svelte-first team, SvGrid covers the Enterprise surface most teams actually buy AG Grid for, in the MIT core: master/detail, tree data, range selection, grouping, the server-side row model and integrated charts, with pivot tables and Excel, PDF and print output in the @svgrid/enterprise pack. The bundle and benchmark numbers on this page are measured on the dates shown, so read them rather than either vendor's adjectives.",
+  "faq": [
+    {
+      "question": "Does AG Grid support Svelte?",
+      "answer": "Not with an official package. ag-grid.com names React, Angular, Vue and JavaScript, and points Svelte, Solid and Python users to community-built integrations. In practice you create the grid from the JavaScript API inside onMount and keep its state in sync with your Svelte state by hand."
+    },
+    {
+      "question": "Which AG Grid Enterprise features does SvGrid include in its MIT core?",
+      "answer": "The set-style Excel filter, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, the server-side row model, integrated charts, the column tool panel and the context menu. AG Grid's own pages list each of these under Enterprise. Pivot tables and Excel, PDF and print output are in @svgrid/enterprise, as they are in AG Grid Enterprise."
+    },
+    {
+      "question": "What does SvGrid not have that AG Grid Enterprise has?",
+      "answer": "The viewport row model, server-side pivoting, AG Charts as a full charting product, and the breadth of niche Enterprise modules that come from a decade of enterprise customers. SvGrid's server-side row model handles sort, filter, group and infinite scroll; if your requirements are the two row models above, AG Grid Enterprise is the better fit."
+    },
+    {
+      "question": "Does AG Grid have an MCP server too?",
+      "answer": "Yes. ag-mcp (MIT) gives an assistant AG Grid's docs, examples and version-specific upgrade prompts. @svgrid/mcp covers the same ground for SvGrid and adds a code checker that validates props and imports against the real API surface, a scaffold tool and a preview. Neither is an in-grid feature; SvGrid's natural-language filter, smart fill and summarise helpers are, and they ship free in @svgrid/grid with your own model provider."
+    },
+    {
+      "question": "How much does AG Grid Enterprise cost compared with SvGrid?",
+      "answer": "AG Grid Enterprise is sold per developer with one year of updates; the price as ag-grid.com listed it on the date we read it is in the pricing line at the top of this page. SvGrid's core is MIT and @svgrid/enterprise is $599 per developer per year for a single application or $999 for multiple applications. Compare what each paid tier adds before comparing prices: most of what AG Grid sells as Enterprise is in SvGrid's free core."
+    },
+    {
+      "question": "How long does a migration from AG Grid to SvGrid take?",
+      "answer": "The migration guide budgets one to three hours per grid. Column definitions map almost one to one, the imperative API has equivalents on SvGridApi, and most of the time goes into moving cell renderers to snippets. The guide also lists what does not map, so you can decide before you start."
+    }
+  ],
+  "sources": [
+    {
+      "id": "ag-pricing",
+      "url": "https://www.ag-grid.com/license-pricing/",
+      "evidences": "Enterprise is per developer at $999 USD with one year of updates and Zendesk support; the Enterprise Bundle is $1,498 USD; Community is free under MIT",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-community-vs-enterprise",
+      "url": "https://www.ag-grid.com/javascript-data-grid/community-vs-enterprise/",
+      "evidences": "Lists Range Selection, Clipboard, Master/Detail, Row Grouping, Pivot Tables and Aggregations, Integrated Charts, Excel export, Server-Side Row Model, Tool Panels and Context Menu under Enterprise Features; no AI feature in either list",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-set-filter",
+      "url": "https://www.ag-grid.com/javascript-data-grid/filter-set/",
+      "evidences": "The Set Filter page is marked enterprise",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-tree-data",
+      "url": "https://www.ag-grid.com/javascript-data-grid/tree-data/",
+      "evidences": "The Tree Data page is marked enterprise",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-csv-export",
+      "url": "https://www.ag-grid.com/javascript-data-grid/csv-export/",
+      "evidences": "CSV export is available in Community through the API; the context-menu export and Excel export are Enterprise",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-mcp",
+      "url": "https://www.ag-grid.com/javascript-data-grid/mcp-server/",
+      "evidences": "Official MCP server installed with npx ag-mcp: search_docs, detect_version, set_version and list_versions tools, quick-start and upgrade-grid prompts, docs and examples as resources; described as help for integrating and maintaining grid code, not an in-grid feature. The ag-mcp package on npm is MIT",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-home",
+      "url": "https://www.ag-grid.com/",
+      "evidences": "Names React, Angular, Vue and JavaScript; says Svelte, Solid and Python users can use community-built integrations; the 36.1.0 release notes list an AI Coding Skill",
+      "verified": "2026-09-12"
+    }
+  ]
+}

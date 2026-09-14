@@ -36,7 +36,7 @@ export function applyMask(value: string, pattern: string): { formatted: string; 
 
 ### `function unmask`
 
-Strip literals, returning only the data characters the user supplied. */
+Strip literals, returning only the data characters the user supplied.
 
 ```ts
 export function unmask(value: string, pattern: string): string {
@@ -57,7 +57,7 @@ export function unmask(value: string, pattern: string): string {
 
 ### `function isMaskComplete`
 
-True when every token position in the pattern is filled. */
+True when every token position in the pattern is filled.
 
 ```ts
 export function isMaskComplete(value: string, pattern: string): boolean {

@@ -10,6 +10,10 @@ lower-cost paid tier.
 > DevExtreme's option names vary by framework flavour; map your version's
 > columns and events onto the SvGrid equivalents below.
 
+<!-- facts:start devextreme-datagrid -->
+> **Facts, checked 12 Sep 2026.** `devextreme` 26.1.4, Commercial (see licence file), last published 7 Aug 2026, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026). DevExtreme DataGrid pricing, as its site states it: js.devexpress.com lists DevExtreme Complete at $899.99 per developer for a 12-month subscription with updates and support, renewing at $449.99; no free or non-commercial tier is shown (https://js.devexpress.com/Buy/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/).
+<!-- facts:end -->
+
 ## Concept map
 
 | DevExtreme DataGrid                      | sv-grid                                   |

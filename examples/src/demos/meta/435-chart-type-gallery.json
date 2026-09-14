@@ -1,0 +1,24 @@
+{
+  "description": "Every chart type in the Svelte 5 grid's chart engine, drawn from one dataset as thirty live thumbnails: bar, horizontal bar, line, area, lollipop, dumbbell, range bar, range area, pareto, radial column, radial bar, nightingale, pie and donut, tree map, sunburst, funnel, waterfall, sankey, chord, radar, heat map, scatter, box plot, histogram, gauge, bullet, calendar, stream, candlestick and OHLC. Click a card for the full size chart and its variants: classic, hollow and Heikin-Ashi candles, funnel, pyramid and cone shapes, wiggle and silhouette streams, stacking. Every spec is built with the helpers the grid's chart panel uses. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte chart types",
+    "svelte sunburst chart",
+    "svelte histogram chart",
+    "svelte pareto chart",
+    "svelte chord diagram"
+  ],
+  "faq": [
+    {
+      "question": "Do I need a charting library for these?",
+      "answer": "No. The engine is part of @svgrid/grid and renders SVG with no dependency. Each thumbnail is the same SvChart component the grid panel renders, with a small spec."
+    },
+    {
+      "question": "How does a histogram get its bins?",
+      "answer": "rowsToHistogramSpec bins a numeric column with binValues. Pass bins for a fixed count, binWidth for a fixed width, or a method: sturges, fd or sqrt. The panel exposes the count as a Bins input."
+    },
+    {
+      "question": "What is the difference between a radial column, a radial bar and a nightingale?",
+      "answer": "A radial column wraps a bar chart round a circle, one angular slot per category with the radius carrying the value. A radial bar draws one ring per category with the arc length carrying the value. A nightingale is a radial column with a square root radius and no gap, the rose Florence Nightingale used."
+    }
+  ]
+}

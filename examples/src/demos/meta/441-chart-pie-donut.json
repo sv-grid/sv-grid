@@ -1,0 +1,24 @@
+{
+  "description": "Pie, donut and sunburst charts: innerRadius turns the pie into a donut, dataLabels placement outside draws callout labels on leader lines that never overlap, topN on rowsToChartSpec folds small slices into Other, a slice click selects it and the grid follows, a legend click hides a slice and the shares recompute, and specToTreemap on a split spec builds a sunburst that drills down on click. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte pie chart",
+    "svelte donut chart",
+    "svelte sunburst chart",
+    "svelte pie chart labels outside",
+    "svelte pie chart other slice"
+  ],
+  "faq": [
+    {
+      "question": "How do I turn a pie into a donut?",
+      "answer": "Set innerRadius on the spec, a fraction of the radius from 0 to about 0.85. Anything above zero is a donut."
+    },
+    {
+      "question": "How do I put the labels outside the slices?",
+      "answer": "Set dataLabels: { placement: outside }. The labels sit on leader lines and are pushed apart so they do not overlap; placement inside writes the share on the slice instead."
+    },
+    {
+      "question": "How do I group small slices into Other?",
+      "answer": "Pass topN to rowsToChartSpec. Everything past the top N is summed into one Other category, named by otherLabel."
+    }
+  ]
+}

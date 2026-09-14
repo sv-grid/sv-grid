@@ -144,9 +144,11 @@
   const typeOptions = [
     { value: 'bar', label: 'Bar' }, { value: 'pie', label: 'Pie' }, { value: 'line', label: 'Line' }, { value: 'area', label: 'Area' },
     { value: 'radar', label: 'Radar' }, { value: 'funnel', label: 'Funnel' }, { value: 'waterfall', label: 'Waterfall' }, { value: 'treemap', label: 'Treemap' },
+    { value: 'lollipop', label: 'Lollipop' }, { value: 'pareto', label: 'Pareto' }, { value: 'sunburst', label: 'Sunburst' },
+    { value: 'radial-bar', label: 'Radial bar' }, { value: 'radial-column', label: 'Radial column' }, { value: 'nightingale', label: 'Nightingale' },
   ]
   // Cartesian types get x/y axis titles; radial / area-partition types don't.
-  const CARTESIAN_TYPES = new Set<ChartType>(['bar', 'line', 'area', 'waterfall'])
+  const CARTESIAN_TYPES = new Set<ChartType>(['bar', 'line', 'area', 'waterfall', 'lollipop', 'pareto'])
 
   // Per-category colors from the dimension's enum options (status/stage/etc), in
   // bucket order, so a pie's slices match the grid's badge colors.
@@ -173,7 +175,7 @@
     if (ctype === 'pie') s.innerRadius = 0.6
     // Treemap reads a tree, not a category/series pair - build a flat one from
     // the same buckets (each dimension value is a leaf sized by the measure).
-    if (ctype === 'treemap') s.treemap = { name: measureLabel, children: buckets.map((b) => ({ name: b.category, value: b.value })) }
+    if (ctype === 'treemap' || ctype === 'sunburst') s.treemap = { name: measureLabel, children: buckets.map((b) => ({ name: b.category, value: b.value })) }
     if (CARTESIAN_TYPES.has(ctype)) {
       s.xAxisTitle = labelOf(dim)
       s.yAxisTitle = measureLabel

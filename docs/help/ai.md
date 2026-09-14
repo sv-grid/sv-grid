@@ -307,7 +307,7 @@ Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFil
 
 ### AI: chart this
 
-Open the Chart panel, press the AI button, and describe the chart in words - the model reads the grid\'s column schema and returns a ChartSpec the built-in panel renders. Ships with a deterministic mock provider; swap in your own via setAIProvider.
+Open the Chart panel, press the AI button, and describe the chart in words - the model reads the grid's column schema and returns a ChartSpec the built-in panel renders. Ships with a deterministic mock provider; swap in your own via setAIProvider.
 
 It can ask for any type the panel builds from a dimension, a measure and an
 optional split: bar, line, area, pie, treemap, funnel, waterfall, radar,
@@ -319,6 +319,19 @@ empty frame.
 Every plan is validated against the real schema before it is applied, including
 its shape: a heatmap or sankey without a split, or a calendar whose dimension is
 not a date column, falls back to a bar rather than rendering nothing.
+
+The Explain button beside it runs `aiExplainChart(api)` on the active chart
+(or a `spec` you pass): the prompt is grounded on `chartSummary(spec)`, the
+plain-language reading the chart hands to screen readers, plus a compact
+table of the first 50 categories, so the model comments on numbers it was
+given rather than on a picture. It returns `{ summary, insights }`, and
+`enableAiCharting(api)` registers both handlers.
+
+```ts
+const { summary, insights } = await aiExplainChart(api)
+// summary:  'Revenue rises 42% from 1.2k at Jan to 1.7k at Dec, peaking at 2.0k at Aug.'
+// insights: ['The growth is front-loaded: ...', 'Compare the peak against ...']
+```
 
 <div data-docs-demo="357-ai-chart-this" data-height="560"></div>
 

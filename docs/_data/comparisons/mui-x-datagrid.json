@@ -1,0 +1,156 @@
+{
+  "slug": "mui-x-datagrid",
+  "competitor": "MUI X DataGrid",
+  "npm": "@mui/x-data-grid",
+  "url": "https://mui.com/x/react-data-grid/",
+  "aliases": [
+    "mui",
+    "mui x",
+    "mui datagrid",
+    "mui x data grid",
+    "material ui data grid",
+    "@mui/x-data-grid",
+    "datagridpro",
+    "datagridpremium"
+  ],
+  "framework": [
+    "react"
+  ],
+  "group": "commercial",
+  "tier": "priority",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "seoTitle": "SvGrid vs MUI X DataGrid - the Svelte 5 Alternative",
+  "seoDescription": "Moving a MUI X DataGrid to Svelte 5: what SvGrid ships MIT that MUI X sells as Pro or Premium, measured bundle sizes, dated pricing, and a migration guide.",
+  "tagline": "MUI X DataGrid is the data grid of the Material UI ecosystem on React, split into a free Community tier and paid Pro and Premium tiers.",
+  "oneLineVerdict": "MUI X is the obvious pick if you are already on Material UI and React. SvGrid is Svelte-5-native, ships more in its MIT core (pinning, master/detail, tree data, grouping and cell selection are not Pro or Premium features), and carries no Material Design opinion.",
+  "alternativeIntro": "MUI X DataGrid is React-only, so this is less an alternative than a port. The concepts carry over almost one to one: column definitions, a free tier and a paid tier, server-side rows, an imperative API. What does not carry over is Material Design: SvGrid is themed through CSS custom properties, so you bring your own look, and Emotion and Material UI stay out of the bundle.",
+  "intro": [
+    "MUI X DataGrid is what most React teams on Material UI reach for. The Community edition is MIT and covers sorting, filtering, pagination, CSV export and row virtualization. Column pinning, column virtualization, row reordering, tree data and master/detail are Pro; row grouping, aggregation, cell selection, Excel export, pivoting and the AI assistant are Premium. Both paid tiers are sold per developer per year, and the sources below link to the pages that mark each feature.",
+    "SvGrid is the inverse trade: one Svelte-5-native grid whose MIT core already includes pinning, master/detail, tree data, grouping with aggregation, cell-range selection with a fill handle, integrated charts and in-grid AI helpers you point at your own model, plus an optional @svgrid/enterprise pack for Excel, PDF and print output, import and pivot tables."
+  ],
+  "similarities": [
+    "A Community / paid split with an MIT free tier.",
+    "Sorting, filtering, pagination, virtualization and inline editing.",
+    "Server-side data through a row model the app feeds.",
+    "TypeScript-first with an imperative API for code outside the component.",
+    "An official MCP server so AI assistants read the real docs.",
+    "An in-grid AI assistant driven by natural language."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native: runes and snippets, not a React component behind a wrapper.",
+    "Column pinning, master/detail, tree data, row grouping with aggregation and cell-range selection are in the MIT core; MUI X sells them as Pro or Premium.",
+    "The in-grid AI helpers (natural-language filter, smart fill, summarise, classify) are free in @svgrid/grid and run against a provider you register; MUI X's AI assistant is Premium and routes prompts through MUI's hosted service unless you build your own.",
+    "No Material Design opinion: theme through --sg-* tokens, with no Emotion or Material UI in the bundle. The At a glance table has the measured sizes.",
+    "Integrated charts in the MIT core, without a separate charts package."
+  ],
+  "competitorAdvantages": [
+    "First-class fit if the app is already built on Material UI and React: theming, date pickers and charts share one design system.",
+    "Pro and Premium features are vendor-supported with priority support and guaranteed response times on the Enterprise plan.",
+    "A very large React community and years of production use.",
+    "The Premium AI assistant comes with a hosted prompt service and starter credits, so there is nothing to run yourself."
+  ],
+  "features": [
+    { "feature": "Svelte 5 native", "svgrid": { "status": "yes", "note": "runes and snippets" }, "competitor": { "status": "no", "note": "React only", "source": "mui-overview" } },
+    { "feature": "Sorting, filtering, pagination", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "Community", "source": "mui-overview" } },
+    { "feature": "Row virtualization", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "Community", "source": "mui-overview" } },
+    { "feature": "Column virtualization", "svgrid": { "status": "yes" }, "competitor": { "status": "paid", "note": "Pro", "source": "mui-overview" } },
+    { "feature": "Column pinning", "svgrid": { "status": "yes", "note": "MIT core, left and right" }, "competitor": { "status": "paid", "note": "Pro", "source": "mui-overview" } },
+    { "feature": "Row reordering by drag", "svgrid": { "status": "yes", "note": "MIT core" }, "competitor": { "status": "paid", "note": "Pro", "source": "mui-overview" } },
+    { "feature": "Master/detail", "svgrid": { "status": "yes", "note": "MIT core" }, "competitor": { "status": "paid", "note": "Pro", "source": "mui-master-detail" } },
+    { "feature": "Tree data", "svgrid": { "status": "yes", "note": "MIT core" }, "competitor": { "status": "paid", "note": "Pro", "source": "mui-overview" } },
+    { "feature": "Row grouping with aggregation", "svgrid": { "status": "yes", "note": "MIT core" }, "competitor": { "status": "paid", "note": "Premium", "source": "mui-overview" } },
+    { "feature": "Cell-range selection and clipboard", "svgrid": { "status": "yes", "note": "MIT core, with a fill handle" }, "competitor": { "status": "paid", "note": "Premium", "source": "mui-cell-selection" } },
+    { "feature": "CSV export", "svgrid": { "status": "yes", "note": "MIT core" }, "competitor": { "status": "yes", "note": "Community", "source": "mui-overview" } },
+    { "feature": "Excel export", "svgrid": { "status": "paid", "note": "@svgrid/enterprise" }, "competitor": { "status": "paid", "note": "Premium", "source": "mui-overview" } },
+    { "feature": "Pivot tables", "svgrid": { "status": "paid", "note": "@svgrid/enterprise" }, "competitor": { "status": "paid", "note": "Premium", "source": "mui-overview" } },
+    { "feature": "Integrated charts", "svgrid": { "status": "yes", "note": "SvGridChart in the MIT core" }, "competitor": { "status": "partial", "note": "MUI X Charts is a separate package" } },
+    { "feature": "In-grid AI assistant", "svgrid": { "status": "yes", "note": "MIT core, bring your own model" }, "competitor": { "status": "paid", "note": "Premium, through MUI's hosted service or your own proxy", "source": "mui-ai-assistant" } },
+    { "feature": "MCP server for AI assistants", "svgrid": { "status": "yes", "note": "@svgrid/mcp, MIT: docs, examples, code check, scaffold, preview" }, "competitor": { "status": "yes", "note": "@mui/mcp, free: docs and examples", "source": "mui-mcp" } },
+    { "feature": "Inline editing", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "Community", "source": "mui-overview" } },
+    { "feature": "Design-system independence", "svgrid": { "status": "yes", "note": "--sg-* tokens, no UI framework dependency" }, "competitor": { "status": "partial", "note": "Material UI, Emotion and the MUI system are peer dependencies", "source": "mui-overview" } },
+    { "feature": "Core licence", "svgrid": { "status": "yes", "note": "MIT" }, "competitor": { "status": "yes", "note": "MIT (Community)", "source": "mui-pricing" } }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want a grid shaped by runes, not a React component.",
+    "You want pinning, master/detail, tree data, grouping and cell selection without buying Pro or Premium.",
+    "You do not want Material Design, Emotion or the MUI system in your bundle.",
+    "You want the in-grid AI helpers to talk to a model you choose and host."
+  ],
+  "whenToChooseCompetitor": [
+    "Your app is already built on Material UI and React.",
+    "You need Premium grouping, aggregation, pivoting or Excel export as vendor-supported features with a support contract.",
+    "You want one grid that matches React teammates across the MUI X suite, including date pickers and charts.",
+    "You want a hosted AI assistant with nothing to run yourself."
+  ],
+  "migration": {
+    "slug": "migrating-from-mui-x",
+    "effort": "1-3 hours per grid",
+    "youLose": [
+      "Material Design out of the box; SvGrid ships neutral tokens and you theme it.",
+      "The rest of MUI X in the same design system: date pickers, charts and the tree view.",
+      "A hosted AI assistant with starter credits; SvGrid's helpers need a model provider you register.",
+      "React-specific patterns such as slots and hooks; SvGrid uses snippets and props."
+    ]
+  },
+  "pricing": {
+    "summary": "MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models",
+    "amount": 299,
+    "unit": "USD per developer per year (Pro)",
+    "url": "https://mui.com/pricing/",
+    "verified": "2026-09-12"
+  },
+  "publishBundle": true,
+  "demos": [
+    "08-tree-and-master-detail",
+    "07-grouping-aggregation",
+    "118-range-selection",
+    "51-ai-assistant"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/ai",
+    "help/columns/column-pinning",
+    "help/rows/master-detail"
+  ],
+  "related": [
+    "ag-grid",
+    "react-data-grid",
+    "glide-data-grid"
+  ],
+  "bottomLine": "If your app already lives in Material UI and React, MUI X is the path of least resistance, and its Premium tier now includes a hosted AI assistant. On Svelte 5, SvGrid is the better fit: it puts pinning, master/detail, tree data, grouping and cell selection in the MIT core that MUI X reserves for Pro and Premium, keeps Material UI and Emotion out of the bundle, and runs its AI helpers against a model you choose.",
+  "faq": [
+    {
+      "question": "SvGrid vs MUI X DataGrid: which one for Svelte?",
+      "answer": "SvGrid, if your stack is Svelte. MUI X is React-only and depends on Material UI, Emotion and the MUI system as peer dependencies; SvGrid is Svelte-5-native with no design-system dependency."
+    },
+    {
+      "question": "Which MUI X Pro and Premium features are free in SvGrid?",
+      "answer": "Column pinning, column virtualization, row reordering, master/detail and tree data (Pro in MUI X), and row grouping, aggregation and cell-range selection (Premium in MUI X) ship in the MIT core of SvGrid. Excel export and pivoting are paid on both sides: Premium in MUI X, @svgrid/enterprise in SvGrid."
+    },
+    {
+      "question": "Does MUI X have an AI assistant like SvGrid?",
+      "answer": "Yes, in Premium. mui.com describes a natural-language assistant (sort by name, show amounts larger than a value) that sends prompts through a proxy to MUI's hosted service with an API key, with starter credits included and the option to build your own processing service. SvGrid's natural-language filter, smart fill, summarise and classify helpers are free in @svgrid/grid and only run against a model provider you register, so nothing leaves your infrastructure unless you route it there."
+    },
+    {
+      "question": "Does MUI ship an MCP server?",
+      "answer": "Yes. @mui/mcp gives an AI client the official docs and code examples for Material UI and MUI X, including the Data Grid. @svgrid/mcp does the same for SvGrid and adds a code checker that validates props and imports against the real API surface, a scaffold tool and a preview."
+    },
+    {
+      "question": "Is SvGrid cheaper than MUI X Pro or Premium?",
+      "answer": "The prices mui.com listed on the date we read them are in the pricing line at the top of this page, per developer per year for Pro and Premium. SvGrid's core is MIT and @svgrid/enterprise is $599 per developer per year for a single application or $999 for multiple applications. The difference is what the free tier holds: most features MUI X sells in Pro and Premium are in SvGrid's MIT core, so many teams never need the paid pack."
+    },
+    {
+      "question": "How long does a MUI X to SvGrid migration take?",
+      "answer": "The migration guide budgets one to three hours per grid. Column definitions and the row model map directly; the time goes into replacing React slots and renderCell functions with Svelte snippets and re-theming away from Material Design."
+    }
+  ],
+  "sources": [
+    { "id": "mui-overview", "url": "https://mui.com/x/react-data-grid/", "evidences": "Feature list with plan badges: CSV export, cell editing and row virtualization in Community; column pinning, column reordering, row reordering, tree data and column virtualization Pro; row grouping, aggregation, Excel export and pivoting Premium; React package with Material UI peer dependencies", "verified": "2026-09-12" },
+    { "id": "mui-master-detail", "url": "https://mui.com/x/react-data-grid/master-detail/", "evidences": "Master-detail row panels carry the Pro plan badge", "verified": "2026-09-12" },
+    { "id": "mui-cell-selection", "url": "https://mui.com/x/react-data-grid/cell-selection/", "evidences": "Cell selection carries the Premium plan badge: with the Data Grid Premium, you can apply the cellSelection prop", "verified": "2026-09-12" },
+    { "id": "mui-ai-assistant", "url": "https://mui.com/x/react-data-grid/ai-assistant/", "evidences": "AI Assistant is Premium: natural-language prompts such as sort by name or show amounts larger than 1000, sent through a server-side proxy to MUI's hosted service with an API key from MUI Console; Premium licence holders get starter credits; a self-built prompt service is optional", "verified": "2026-09-12" },
+    { "id": "mui-mcp", "url": "https://mui.com/x/introduction/mcp/", "evidences": "Official MCP server (@mui/mcp) that quotes the official docs and code examples for MUI X components including the Data Grid; installed with npx, no payment", "verified": "2026-09-12" },
+    { "id": "mui-pricing", "url": "https://mui.com/pricing/", "evidences": "Community free forever under MIT; Pro $299 per year per dev; Premium $599 per year per dev; Enterprise $1,399 per year per dev; perpetual and annual models both allow perpetual production use", "verified": "2026-09-12" }
+  ]
+}

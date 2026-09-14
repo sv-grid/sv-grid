@@ -1,0 +1,559 @@
+{
+  "readme": "Measured facts about the grids the comparison pages name. `registry` is written by tools/verify-competitors.mjs from registry.npmjs.org and api.npmjs.org; `bundles` by tools/measure-competitor-bundles.mjs; `benchmarks` by tests/perf/compare.spec.ts through tools/record-benchmarks.mjs. Every entry carries the date it was read or measured. Rendered by tools/lib/compare-page.mjs; guarded by tools/competitor-facts.test.ts. Never edit by hand.",
+  "registry": {
+    "@glideapps/glide-data-grid": {
+      "version": "6.0.3",
+      "license": "MIT",
+      "lastPublished": "2024-02-03",
+      "peerSvelte": null,
+      "downloadsLastMonth": 1180338,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@glideapps/glide-data-grid",
+        "https://api.npmjs.org/downloads/point/last-month/@glideapps/glide-data-grid"
+      ]
+    },
+    "@humanspeak/svelte-headless-table": {
+      "version": "6.2.0",
+      "license": "MIT",
+      "lastPublished": "2026-08-27",
+      "peerSvelte": "^5.30.0",
+      "downloadsLastMonth": 8638,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@humanspeak/svelte-headless-table",
+        "https://api.npmjs.org/downloads/point/last-month/@humanspeak/svelte-headless-table"
+      ]
+    },
+    "@mui/x-data-grid": {
+      "version": "9.13.0",
+      "license": "MIT",
+      "lastPublished": "2026-09-04",
+      "peerSvelte": null,
+      "downloadsLastMonth": 11772986,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@mui/x-data-grid",
+        "https://api.npmjs.org/downloads/point/last-month/@mui/x-data-grid"
+      ]
+    },
+    "@progress/kendo-react-grid": {
+      "version": "16.1.0",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "lastPublished": "2026-09-08",
+      "peerSvelte": null,
+      "downloadsLastMonth": 384713,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@progress/kendo-react-grid",
+        "https://api.npmjs.org/downloads/point/last-month/@progress/kendo-react-grid"
+      ]
+    },
+    "@svgrid/grid": {
+      "version": "3.0.3",
+      "license": "MIT",
+      "lastPublished": "2026-09-11",
+      "peerSvelte": "^5.0.0",
+      "downloadsLastMonth": 16875,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@svgrid/grid",
+        "https://api.npmjs.org/downloads/point/last-month/@svgrid/grid"
+      ]
+    },
+    "@syncfusion/ej2-grids": {
+      "version": "34.2.7",
+      "license": "SEE LICENSE IN license",
+      "lastPublished": "2026-09-08",
+      "peerSvelte": null,
+      "downloadsLastMonth": 710680,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@syncfusion/ej2-grids",
+        "https://api.npmjs.org/downloads/point/last-month/@syncfusion/ej2-grids"
+      ]
+    },
+    "@tanstack/svelte-table": {
+      "version": "9.2.4",
+      "license": "MIT",
+      "lastPublished": "2026-08-28",
+      "peerSvelte": "^5.0.0",
+      "downloadsLastMonth": 231216,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@tanstack/svelte-table",
+        "https://api.npmjs.org/downloads/point/last-month/@tanstack/svelte-table"
+      ]
+    },
+    "@tanstack/table-core": {
+      "version": "9.2.4",
+      "license": "MIT",
+      "lastPublished": "2026-08-28",
+      "peerSvelte": null,
+      "downloadsLastMonth": 79348303,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@tanstack/table-core",
+        "https://api.npmjs.org/downloads/point/last-month/@tanstack/table-core"
+      ]
+    },
+    "@vincjo/datatables": {
+      "version": "2.8.1",
+      "license": "MIT",
+      "lastPublished": "2026-06-04",
+      "peerSvelte": "^5.56.1",
+      "downloadsLastMonth": 72783,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/@vincjo/datatables",
+        "https://api.npmjs.org/downloads/point/last-month/@vincjo/datatables"
+      ]
+    },
+    "ag-grid-community": {
+      "version": "36.1.0",
+      "license": "MIT",
+      "lastPublished": "2026-08-05",
+      "peerSvelte": null,
+      "downloadsLastMonth": 12413163,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/ag-grid-community",
+        "https://api.npmjs.org/downloads/point/last-month/ag-grid-community"
+      ]
+    },
+    "ag-grid-enterprise": {
+      "version": "36.1.0",
+      "license": "Commercial",
+      "lastPublished": "2026-08-05",
+      "peerSvelte": null,
+      "downloadsLastMonth": 5941724,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/ag-grid-enterprise",
+        "https://api.npmjs.org/downloads/point/last-month/ag-grid-enterprise"
+      ]
+    },
+    "devextreme": {
+      "version": "26.1.4",
+      "license": "SEE LICENSE IN README.md",
+      "lastPublished": "2026-08-07",
+      "peerSvelte": null,
+      "downloadsLastMonth": 1180905,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/devextreme",
+        "https://api.npmjs.org/downloads/point/last-month/devextreme"
+      ]
+    },
+    "gridjs": {
+      "version": "6.2.0",
+      "license": "MIT",
+      "lastPublished": "2024-03-03",
+      "peerSvelte": null,
+      "downloadsLastMonth": 160995,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/gridjs",
+        "https://api.npmjs.org/downloads/point/last-month/gridjs"
+      ]
+    },
+    "handsontable": {
+      "version": "18.1.0",
+      "license": "SEE LICENSE IN LICENSE.txt",
+      "lastPublished": "2026-09-01",
+      "peerSvelte": null,
+      "downloadsLastMonth": 1190659,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/handsontable",
+        "https://api.npmjs.org/downloads/point/last-month/handsontable"
+      ]
+    },
+    "jqwidgets-scripts": {
+      "version": "26.0.0",
+      "license": "https://www.jqwidgets.com/license/",
+      "lastPublished": "2026-07-09",
+      "peerSvelte": null,
+      "downloadsLastMonth": 41897,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/jqwidgets-scripts",
+        "https://api.npmjs.org/downloads/point/last-month/jqwidgets-scripts"
+      ]
+    },
+    "primevue": {
+      "version": "5.0.1",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "lastPublished": "2026-08-13",
+      "peerSvelte": null,
+      "downloadsLastMonth": 3009166,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/primevue",
+        "https://api.npmjs.org/downloads/point/last-month/primevue"
+      ]
+    },
+    "react-data-grid": {
+      "version": "7.0.0-beta.61",
+      "license": "MIT",
+      "lastPublished": "2026-07-14",
+      "peerSvelte": null,
+      "downloadsLastMonth": 2182764,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/react-data-grid",
+        "https://api.npmjs.org/downloads/point/last-month/react-data-grid"
+      ]
+    },
+    "smart-webcomponents": {
+      "version": "27.0.1",
+      "license": "ISC",
+      "lastPublished": "2026-08-13",
+      "peerSvelte": null,
+      "downloadsLastMonth": 6621,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/smart-webcomponents",
+        "https://api.npmjs.org/downloads/point/last-month/smart-webcomponents"
+      ]
+    },
+    "svelte-headless-table": {
+      "version": "0.18.3",
+      "license": "MIT",
+      "lastPublished": "2024-10-28",
+      "peerSvelte": "^4.0.0",
+      "downloadsLastMonth": 90149,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/svelte-headless-table",
+        "https://api.npmjs.org/downloads/point/last-month/svelte-headless-table"
+      ]
+    },
+    "tabulator-tables": {
+      "version": "6.5.2",
+      "license": "MIT",
+      "lastPublished": "2026-06-23",
+      "peerSvelte": null,
+      "downloadsLastMonth": 671812,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/tabulator-tables",
+        "https://api.npmjs.org/downloads/point/last-month/tabulator-tables"
+      ]
+    },
+    "wx-svelte-grid": {
+      "version": "2.7.0",
+      "license": "MIT",
+      "lastPublished": "2026-06-03",
+      "peerSvelte": null,
+      "downloadsLastMonth": 62796,
+      "downloadsWindow": {
+        "start": "2026-08-12",
+        "end": "2026-09-10"
+      },
+      "verified": "2026-09-12",
+      "sources": [
+        "https://registry.npmjs.org/wx-svelte-grid",
+        "https://api.npmjs.org/downloads/point/last-month/wx-svelte-grid"
+      ]
+    }
+  },
+  "bundles": {
+    "@glideapps/glide-data-grid": {
+      "version": "6.0.3",
+      "jsGzipKb": 71.1,
+      "cssGzipKb": 0.2,
+      "minKb": 245,
+      "lazyGzipKb": 9,
+      "entry": "DataEditor component",
+      "external": [
+        "lodash",
+        "marked",
+        "react",
+        "react-dom",
+        "react-responsive-carousel"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "@humanspeak/svelte-headless-table": {
+      "version": "6.2.0",
+      "jsGzipKb": 6.1,
+      "cssGzipKb": 0,
+      "minKb": 24.2,
+      "lazyGzipKb": 0,
+      "entry": "whole package",
+      "external": [
+        "svelte"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "@mui/x-data-grid": {
+      "version": "9.13.0",
+      "jsGzipKb": 155,
+      "cssGzipKb": 0,
+      "minKb": 641.3,
+      "lazyGzipKb": 0,
+      "entry": "DataGrid component",
+      "external": [
+        "@emotion/react",
+        "@emotion/styled",
+        "@mui/material",
+        "@mui/system",
+        "react",
+        "react-dom"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "@tanstack/svelte-table": {
+      "version": "9.2.4",
+      "jsGzipKb": 36.3,
+      "cssGzipKb": 0,
+      "minKb": 163.1,
+      "lazyGzipKb": 0,
+      "entry": "whole package",
+      "external": [
+        "svelte"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "@vincjo/datatables": {
+      "version": "2.8.1",
+      "jsGzipKb": 10.2,
+      "cssGzipKb": 0,
+      "minKb": 41.9,
+      "lazyGzipKb": 0,
+      "entry": "whole package",
+      "external": [
+        "svelte"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "ag-grid-community": {
+      "version": "36.1.0",
+      "jsGzipKb": 317.5,
+      "cssGzipKb": 0,
+      "minKb": 1273.7,
+      "lazyGzipKb": 0,
+      "entry": "createGrid + AllCommunityModule + themeQuartz",
+      "external": [],
+      "measuredAt": "2026-09-12"
+    },
+    "gridjs": {
+      "version": "6.2.0",
+      "jsGzipKb": 17.8,
+      "cssGzipKb": 2.4,
+      "minKb": 64.6,
+      "lazyGzipKb": 0,
+      "entry": "Grid",
+      "external": [],
+      "measuredAt": "2026-09-12"
+    },
+    "react-data-grid": {
+      "version": "7.0.0-beta.61",
+      "jsGzipKb": 15.7,
+      "cssGzipKb": 2.1,
+      "minKb": 51.4,
+      "lazyGzipKb": 0,
+      "entry": "DataGrid component",
+      "external": [
+        "react",
+        "react-dom"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "svelte-headless-table": {
+      "version": "0.18.3",
+      "jsGzipKb": 5.7,
+      "cssGzipKb": 0,
+      "minKb": 23.2,
+      "lazyGzipKb": 0,
+      "entry": "whole package",
+      "external": [
+        "svelte"
+      ],
+      "measuredAt": "2026-09-12"
+    },
+    "tabulator-tables": {
+      "version": "6.5.2",
+      "jsGzipKb": 106.9,
+      "cssGzipKb": 3.8,
+      "minKb": 508.1,
+      "lazyGzipKb": 0,
+      "entry": "TabulatorFull",
+      "external": [],
+      "measuredAt": "2026-09-12"
+    },
+    "wx-svelte-grid": {
+      "version": "2.7.0",
+      "jsGzipKb": 51.5,
+      "cssGzipKb": 0,
+      "minKb": 216.9,
+      "lazyGzipKb": 0,
+      "entry": "Grid component",
+      "external": [
+        "svelte"
+      ],
+      "measuredAt": "2026-09-12"
+    }
+  },
+  "benchmarks": {
+    "measuredAt": "2026-09-12",
+    "rows": 100000,
+    "repeats": 7,
+    "cases": [
+      "mount",
+      "sortText",
+      "sortNumber",
+      "filter",
+      "scrollP95"
+    ],
+    "rig": {
+      "statistic": "fastest of 7 samples per operation, each grid in a fresh page",
+      "browser": "Chromium through Playwright, headless",
+      "machine": "win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig",
+      "container": "1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme"
+    },
+    "grids": [
+      {
+        "id": "svgrid",
+        "label": "SvGrid",
+        "npm": "@svgrid/grid",
+        "version": "3.0.3",
+        "results": {
+          "mount": 75.5,
+          "sortText": 149,
+          "sortNumber": 115.7,
+          "filter": 99.6,
+          "scrollP95": 34.6,
+          "scrollDropped": 0,
+          "domRows": 27
+        }
+      },
+      {
+        "id": "aggrid",
+        "label": "AG Grid Community",
+        "npm": "ag-grid-community",
+        "version": "36.1.0",
+        "results": {
+          "mount": 51.4,
+          "sortText": 282.8,
+          "sortNumber": 270,
+          "filter": 170.4,
+          "scrollP95": 35.9,
+          "scrollDropped": 0,
+          "domRows": 35
+        }
+      },
+      {
+        "id": "svar",
+        "label": "SVAR Svelte DataGrid",
+        "npm": "wx-svelte-grid",
+        "version": "2.7.0",
+        "results": {
+          "mount": 11.4,
+          "sortText": 187.2,
+          "sortNumber": 165.1,
+          "filter": 32.6,
+          "scrollP95": 34.8,
+          "scrollDropped": 0,
+          "domRows": 19
+        }
+      },
+      {
+        "id": "tanstack",
+        "label": "TanStack Table, minimal DOM",
+        "npm": "@tanstack/svelte-table",
+        "version": "9.2.4",
+        "results": {
+          "mount": 196,
+          "sortText": 466,
+          "sortNumber": 374.6,
+          "filter": 111.7,
+          "scrollP95": 35.3,
+          "scrollDropped": 1,
+          "domRows": 27
+        }
+      }
+    ]
+  }
+}

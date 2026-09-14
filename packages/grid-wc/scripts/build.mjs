@@ -53,6 +53,8 @@ for (const shadow of ['0', '1']) {
     SVGRID_WC_SHADOW: shadow,
   })
 }
+// 1b. <sv-chart>, the standalone chart element, in dist/chart.
+run('<sv-chart>', [vite, 'build'], { SVGRID_WC_ELEMENT: 'chart' })
 
 // 2. Element type declarations, beside each entry so the `exports` map can
 //    point `types` at them. Without these the package shipped no types at all:
@@ -62,11 +64,13 @@ const types = readFileSync(join(cwd, 'src', 'types', 'elements.d.ts'), 'utf8')
 mkdirSync(join(cwd, 'dist', 'shadow'), { recursive: true })
 writeFileSync(join(cwd, 'dist', 'sv-grid-element.d.ts'), types)
 writeFileSync(join(cwd, 'dist', 'shadow', 'sv-grid-shadow-element.d.ts'), types)
+mkdirSync(join(cwd, 'dist', 'chart'), { recursive: true })
+writeFileSync(join(cwd, 'dist', 'chart', 'sv-chart-element.d.ts'), readFileSync(join(cwd, 'src', 'types', 'chart-element.d.ts'), 'utf8'))
 
 // 3. The React and Vue wrappers. They externalise everything, including
 //    `@svgrid/grid-wc` itself, so a wrapper is a couple of KB that reuses the
 //    one element bundle rather than shipping a second copy of the grid.
-for (const target of ['react', 'vue']) {
+for (const target of ['react', 'vue', 'react-chart', 'vue-chart']) {
   run(`${target} wrapper`, [vite, 'build', '--config', 'vite.wrappers.config.js'], {
     SVGRID_WRAPPER: target,
   })
@@ -97,4 +101,4 @@ if (existsSync(ngPackagr)) {
   process.exit(1)
 }
 
-console.log('grid-wc: built 2 elements, 3 wrappers, and element type declarations')
+console.log('grid-wc: built 3 elements, 3 wrappers (x grid + chart), and element type declarations')

@@ -469,6 +469,39 @@ number / currency columns - matching the xlsx outline export. It's on by
 default (`autoGroup`); pass `groupBy` to override or `autoGroup: false` to get a
 flat table.
 
+#### Charts and a KPI strip
+
+A report is rarely just the table. `pdf.charts` prints charts with it: hand
+over the rendered chart's element (the `SvChart` wrapper or its `<svg>`) and
+the export rasterises it at 2x through the chart's own PNG path, so the page
+gets the picture on screen, theme and all; or pass an image data URL you
+already have. Each takes a `title`, a `caption` and a `width` in pt
+(default: the content width). `pdf.kpis` prints a strip of headline numbers
+above the table, each with a label, the value and an optional `delta` line
+in its own colour:
+
+```svelte
+<div bind:this={chartEl}><SvChart {spec} /></div>
+
+<button onclick={() => api.exportData({
+  format: 'pdf',
+  filename: 'q3-report',
+  pdf: {
+    title: 'Q3 Orders',
+    kpis: [
+      { label: 'Revenue', value: '$1.24M', delta: '+4.2% vs Q2', color: '#16a34a' },
+      { label: 'Orders', value: '842' },
+      { label: 'Avg order', value: '$1,473', delta: '-1.1%', color: '#ef4444' },
+    ],
+    charts: [{ element: chartEl, title: 'Revenue by region', caption: 'Displayed rows, grouped by region' }],
+    chartsPosition: 'above',      // or 'below' the table
+  },
+})}>Export report</button>
+```
+
+A chart block never splits across a page break. `resolvePdfCharts` and
+`buildPdfDocDefinition` are exported for a document you assemble yourself.
+
 #### Merged cells
 
 Pass `merges` to write real merged regions into the sheet. Row / column
@@ -643,7 +676,7 @@ Builds a real OOXML workbook in the browser via JSZip; computed columns export a
 
 ### Export grouped grid to Excel
 
-A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart\'s NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.
+A flat sales grid (Region → Country) exported via api.exportData({ format: "xlsx", groupBy }) which uses Smart's NATIVE Excel row outline grouping. Opens in Excel with +/- buttons in the row header gutter for every group level.
 
 <div data-docs-demo="126-export-grouped-grid" data-height="460"></div>
 

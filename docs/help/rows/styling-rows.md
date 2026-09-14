@@ -116,7 +116,7 @@ The gallery defines these tokens - override at `:root` or on the grid host:
 
 ### Zebra rows
 
-The `zebraRows` prop stripes every other DATA row with the theme\'s --sg-row-alt-bg token. Pinned, group, detail and summary rows keep their single background, so a pinned total row still reads as one solid band. The stripe follows whatever preset or dark mode the page is on.
+The `zebraRows` prop stripes every other DATA row with the theme's --sg-row-alt-bg token. Pinned, group, detail and summary rows keep their single background, so a pinned total row still reads as one solid band. The stripe follows whatever preset or dark mode the page is on.
 
 <div data-docs-demo="174-zebra-rows" data-height="460"></div>
 

@@ -1,0 +1,574 @@
+{
+  "tutorials": [
+    {
+      "id": "chart-from-the-grid",
+      "title": "Chart the grid with one prop",
+      "description": "Add charting to SvGrid and a panel charts the rows on screen: pick a type and a group-by, click a bar to filter the grid, open the builder.",
+      "demo": "353-built-in-charting",
+      "docsPage": "docs/help/charts/from-the-grid.md",
+      "anchorAfter": "<div data-docs-demo=\"353-built-in-charting\"",
+      "tags": [
+        "svelte chart from grid",
+        "data grid chart panel",
+        "chart builder",
+        "cross filter chart"
+      ],
+      "duration": 39.6,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-13",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/chart-from-the-grid.mp4",
+        "poster": "/tutorials/chart-from-the-grid.poster.webp",
+        "vtt": "/tutorials/chart-from-the-grid.vtt"
+      },
+      "bytes": {
+        "mp4": 409896,
+        "poster": 39148
+      },
+      "transcript": [
+        {
+          "start": 1.21,
+          "end": 10.71,
+          "text": "Add the charting prop and the grid grows a chart panel. It charts the rows on screen, so filtering or sorting redraws it."
+        },
+        {
+          "start": 11.2,
+          "end": 15.1,
+          "text": "Pick a type, a group-by column and the aggregate."
+        },
+        {
+          "start": 15.46,
+          "end": 22.16,
+          "text": "Click a bar and the grid filters to that category. Clear filter brings the rows back."
+        },
+        {
+          "start": 22.55,
+          "end": 30.45,
+          "text": "Build opens a gallery with a live thumbnail per type, and a Format tab for titles, axes and series."
+        },
+        {
+          "start": 30.94,
+          "end": 38.04,
+          "text": "Everything here is a config field or an API call, and it round-trips through the saved view."
+        }
+      ]
+    },
+    {
+      "id": "excel-filter-menu",
+      "title": "Excel-style filter menu in SvGrid",
+      "description": "Set filterMode to menu and every column gets an Excel-style filter: a searchable value list with checkboxes that re-filters the grid as you tick.",
+      "demo": "03-excel-filters",
+      "docsPage": "docs/help/filtering/overview.md",
+      "anchorAfter": "<div data-docs-demo=\"03-excel-filters\"",
+      "tags": [
+        "excel filter",
+        "column filter menu",
+        "svelte data grid filtering",
+        "filter by value"
+      ],
+      "duration": 32.7,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/excel-filter-menu.mp4",
+        "poster": "/tutorials/excel-filter-menu.poster.webp",
+        "vtt": "/tutorials/excel-filter-menu.vtt"
+      },
+      "bytes": {
+        "mp4": 277789,
+        "poster": 39706
+      },
+      "transcript": [
+        {
+          "start": 1.21,
+          "end": 9.51,
+          "text": "Set filterMode to menu, and each column header shows a filter button on hover. Click it to open the menu."
+        },
+        {
+          "start": 9.88,
+          "end": 15.78,
+          "text": "The menu lists every distinct value. Untick one, and the grid re-filters right away."
+        },
+        {
+          "start": 16.26,
+          "end": 22.56,
+          "text": "Long value lists have a search box. Type a few letters to narrow the choices."
+        },
+        {
+          "start": 23.22,
+          "end": 31.12,
+          "text": "Done closes the menu. The filtered column keeps its marker, and Clear filter in the same menu resets it."
+        }
+      ]
+    },
+    {
+      "id": "fill-handle",
+      "title": "Excel-style fill handle in SvGrid",
+      "description": "Select a range, drag the corner fill handle, and SvGrid continues the series: numbers, weekdays and dates, or a plain copy for a single cell.",
+      "demo": "95-fill-handle",
+      "docsPage": "docs/help/editing/overview.md",
+      "anchorAfter": "<div data-docs-demo=\"95-fill-handle\"",
+      "tags": [
+        "fill handle",
+        "autofill",
+        "spreadsheet grid",
+        "svelte data grid editing"
+      ],
+      "duration": 36.4,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/fill-handle.mp4",
+        "poster": "/tutorials/fill-handle.poster.webp",
+        "vtt": "/tutorials/fill-handle.vtt"
+      },
+      "bytes": {
+        "mp4": 153478,
+        "poster": 15916
+      },
+      "transcript": [
+        {
+          "start": 1.2,
+          "end": 10.3,
+          "text": "With cell selection on, every range gets a fill handle at its corner. Select the two seed cells of the numeric series."
+        },
+        {
+          "start": 10.67,
+          "end": 19.77,
+          "text": "Drag the handle to the right. Ten and twenty become a series in steps of ten, filled as far as you drag."
+        },
+        {
+          "start": 20.33,
+          "end": 27.83,
+          "text": "Weekdays and dates continue the same way. A single seed switches to copy mode and repeats the value."
+        },
+        {
+          "start": 28.38,
+          "end": 35.07,
+          "text": "Every filled cell goes through the normal edit pipeline, so validation and change tracking still apply."
+        }
+      ]
+    },
+    {
+      "id": "financial-workbench",
+      "title": "A financial chart workbench in Svelte",
+      "description": "Candlesticks with volume, RSI and MACD panes and Bollinger bands: indicator chips, Ctrl + wheel zoom every pane follows, range presets, and the grid panel.",
+      "demo": "437-chart-financial-workbench",
+      "docsPage": "docs/help/charts/financial.md",
+      "anchorAfter": "<div data-docs-demo=\"437-chart-financial-workbench\"",
+      "tags": [
+        "svelte candlestick chart",
+        "financial chart indicators",
+        "rsi macd panes",
+        "data grid candlestick"
+      ],
+      "duration": 32.8,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-13",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/financial-workbench.mp4",
+        "poster": "/tutorials/financial-workbench.poster.webp",
+        "vtt": "/tutorials/financial-workbench.vtt"
+      },
+      "bytes": {
+        "mp4": 716853,
+        "poster": 43342
+      },
+      "transcript": [
+        {
+          "start": 1.21,
+          "end": 9.51,
+          "text": "A year of sessions as candles, with volume, RSI and MACD panes under the price and Bollinger bands on it."
+        },
+        {
+          "start": 10.02,
+          "end": 14.32,
+          "text": "Toggle an indicator chip and its pane comes and goes."
+        },
+        {
+          "start": 14.75,
+          "end": 19.05,
+          "text": "Ctrl plus wheel zooms the price, and every pane follows."
+        },
+        {
+          "start": 19.79,
+          "end": 23.29,
+          "text": "A range preset jumps to the last month."
+        },
+        {
+          "start": 23.67,
+          "end": 31.17,
+          "text": "The grid's own panel draws the same rows: Candlestick picked, indicator chips, the builder, and the link toggle."
+        }
+      ]
+    },
+    {
+      "id": "inline-editing",
+      "title": "Inline editing in SvGrid",
+      "description": "Turn on inline editing with one prop, edit cells with text, dropdown and date editors, and track pending changes before you save.",
+      "demo": "05-inline-editing",
+      "docsPage": "docs/help/editing/overview.md",
+      "tags": [
+        "inline editing",
+        "cell editor",
+        "svelte data grid",
+        "editable table"
+      ],
+      "duration": 31.9,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/inline-editing.mp4",
+        "poster": "/tutorials/inline-editing.poster.webp",
+        "vtt": "/tutorials/inline-editing.vtt"
+      },
+      "bytes": {
+        "mp4": 228105,
+        "poster": 34244
+      },
+      "transcript": [
+        {
+          "start": 1.21,
+          "end": 7.51,
+          "text": "Inline editing in SvGrid is one prop. Set enableInlineEditing and double-click any cell to start."
+        },
+        {
+          "start": 7.99,
+          "end": 12.29,
+          "text": "Type a new value and press Enter to commit it."
+        },
+        {
+          "start": 12.87,
+          "end": 21.57,
+          "text": "Columns pick their own editor. Department is a list, so double-clicking it opens a dropdown, and one click picks the value."
+        },
+        {
+          "start": 22.16,
+          "end": 30.46,
+          "text": "Every change is tracked. The pending edits card counts what is not saved yet, and Save changes commits the batch."
+        }
+      ]
+    },
+    {
+      "id": "kanban-board-drag",
+      "title": "Kanban board mode in SvGrid",
+      "description": "Render the same SvGrid as a Kanban board with one board prop: lanes from a status field, drag and drop between lanes, WIP limits, and a table view.",
+      "demo": "343-kanban-board",
+      "docsPage": "docs/help/rows/kanban-board.md",
+      "anchorAfter": "<div data-docs-demo=\"343-kanban-board\"",
+      "tags": [
+        "kanban board",
+        "svelte kanban",
+        "drag and drop cards",
+        "board view"
+      ],
+      "duration": 37.2,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/kanban-board-drag.mp4",
+        "poster": "/tutorials/kanban-board-drag.poster.webp",
+        "vtt": "/tutorials/kanban-board-drag.vtt"
+      },
+      "bytes": {
+        "mp4": 206361,
+        "poster": 26110
+      },
+      "transcript": [
+        {
+          "start": 1.2,
+          "end": 10.3,
+          "text": "One board prop turns the grid into a Kanban board. Lanes come from the status field, and every card is a row."
+        },
+        {
+          "start": 10.77,
+          "end": 13.87,
+          "text": "Drag a card from Backlog into Review."
+        },
+        {
+          "start": 14.64,
+          "end": 26.94,
+          "text": "The drop writes the new status back to the row, so the data and the board never disagree. In progress carries a WIP limit and refuses a card past it."
+        },
+        {
+          "start": 27.39,
+          "end": 35.29,
+          "text": "Switch to Table, and the same rows show as a grid, with the card you moved already in Review."
+        }
+      ]
+    },
+    {
+      "id": "master-detail-expand",
+      "title": "Master detail rows in SvGrid",
+      "description": "Expand a row into a nested detail grid with two props, isDetailRow and renderDetailRow: the detail is a real row, so scrolling and virtualization still apply.",
+      "demo": "181-master-detail-grid",
+      "docsPage": "docs/help/rows/master-detail.md",
+      "anchorAfter": "<div data-docs-demo=\"181-master-detail-grid\"",
+      "tags": [
+        "master detail",
+        "nested grid",
+        "expandable rows",
+        "svelte data grid"
+      ],
+      "duration": 38.3,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/master-detail-expand.mp4",
+        "poster": "/tutorials/master-detail-expand.poster.webp",
+        "vtt": "/tutorials/master-detail-expand.vtt"
+      },
+      "bytes": {
+        "mp4": 255687,
+        "poster": 30824
+      },
+      "transcript": [
+        {
+          "start": 1.22,
+          "end": 10.32,
+          "text": "Master detail in SvGrid is two props. isDetailRow marks a row as a detail, and renderDetailRow draws whatever you like inside it."
+        },
+        {
+          "start": 10.76,
+          "end": 18.26,
+          "text": "Click the chevron on an account to expand its call records, a nested grid with its own sorting."
+        },
+        {
+          "start": 19.02,
+          "end": 28.12,
+          "text": "Expand as many as you like. Each detail is a real row in the grid, so keyboard navigation and virtualization keep working."
+        },
+        {
+          "start": 28.78,
+          "end": 36.68,
+          "text": "Click the chevron again to collapse. The expanded set is plain state, so you can save and restore it."
+        }
+      ]
+    },
+    {
+      "id": "million-rows-scroll",
+      "title": "One million rows in SvGrid",
+      "description": "Scroll a one million row Svelte data grid: row virtualization draws only the rows in view, with sorting, filtering and editing still on.",
+      "demo": "78-million-rows",
+      "docsPage": "docs/help/benchmarks.md",
+      "anchor": "## Sort, filter, group",
+      "tags": [
+        "virtualization",
+        "one million rows",
+        "svelte data grid performance",
+        "large dataset"
+      ],
+      "duration": 34.2,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/million-rows-scroll.mp4",
+        "poster": "/tutorials/million-rows-scroll.poster.webp",
+        "vtt": "/tutorials/million-rows-scroll.vtt"
+      },
+      "bytes": {
+        "mp4": 362738,
+        "poster": 42698
+      },
+      "transcript": [
+        {
+          "start": 1.21,
+          "end": 8.71,
+          "text": "This SvGrid holds one million rows, generated in the browser, with sorting, filtering and inline editing switched on."
+        },
+        {
+          "start": 9.17,
+          "end": 16.67,
+          "text": "Rows are virtualized, so only the ones in view are drawn. Scroll, and the frame rate stays flat."
+        },
+        {
+          "start": 17.14,
+          "end": 24.64,
+          "text": "Jump anywhere in the set. The row numbers show the scale, and the grid keeps every row reachable."
+        },
+        {
+          "start": 25.11,
+          "end": 32.61,
+          "text": "Row and column virtualization are the same machinery, so wide grids get the same treatment. Nothing to configure."
+        }
+      ]
+    },
+    {
+      "id": "pivot-designer-drag",
+      "title": "Pivot designer in SvGrid",
+      "description": "Drag fields into the Rows, Columns and Values wells of SvPivotDesigner and watch the pivot grid recompute: a self-contained pivot builder for Svelte.",
+      "demo": "168-pivot-designer",
+      "docsPage": "docs/help/pivot.md",
+      "anchorAfter": "<div data-docs-demo=\"168-pivot-designer\"",
+      "tags": [
+        "pivot table",
+        "pivot designer",
+        "svelte pivot grid",
+        "drag and drop fields"
+      ],
+      "duration": 33.5,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/pivot-designer-drag.mp4",
+        "poster": "/tutorials/pivot-designer-drag.poster.webp",
+        "vtt": "/tutorials/pivot-designer-drag.vtt"
+      },
+      "bytes": {
+        "mp4": 260443,
+        "poster": 29338
+      },
+      "transcript": [
+        {
+          "start": 1.21,
+          "end": 10.71,
+          "text": "SvPivotDesigner is a pivot builder in one component: a field list on the left and drop wells for filters, columns, rows and values."
+        },
+        {
+          "start": 11.18,
+          "end": 13.88,
+          "text": "Drag Salesperson into the Rows well."
+        },
+        {
+          "start": 14.6,
+          "end": 21.7,
+          "text": "The pivot grid recomputes at once, one row per salesperson, with the measures summed across the columns."
+        },
+        {
+          "start": 22.16,
+          "end": 31.66,
+          "text": "Measures work the same way. Drop Profit into Values, and click its chip to switch the aggregator between sum, average, count and more."
+        }
+      ]
+    },
+    {
+      "id": "pivot-mode-toggle",
+      "title": "Pivot mode in SvGrid",
+      "description": "Dock the pivot designer beside a flat SvGrid with panelPosition right and flip Pivot mode: the same rows become a pivot table with heat-mapped measures.",
+      "demo": "360-pivot-mode-grid",
+      "docsPage": "docs/help/pivot.md",
+      "anchorAfter": "<div data-docs-demo=\"360-pivot-mode-grid\"",
+      "tags": [
+        "pivot mode",
+        "pivot table",
+        "svelte pivot grid",
+        "docked tool panel"
+      ],
+      "duration": 32.5,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/pivot-mode-toggle.mp4",
+        "poster": "/tutorials/pivot-mode-toggle.poster.webp",
+        "vtt": "/tutorials/pivot-mode-toggle.vtt"
+      },
+      "bytes": {
+        "mp4": 350879,
+        "poster": 49872
+      },
+      "transcript": [
+        {
+          "start": 1.2,
+          "end": 9.5,
+          "text": "With panelPosition set to right, the pivot designer docks beside the grid. The flat rows stay editable, sortable and filterable."
+        },
+        {
+          "start": 9.99,
+          "end": 12.29,
+          "text": "Flip the Pivot mode switch."
+        },
+        {
+          "start": 13.48,
+          "end": 22.18,
+          "text": "The same grid becomes a pivot table. Rows and columns come from the wells, and the measures are heat-mapped by value."
+        },
+        {
+          "start": 22.64,
+          "end": 30.94,
+          "text": "Flip it back, and the flat rows return with their state intact. One grid, two views, no second data source."
+        }
+      ]
+    },
+    {
+      "id": "tree-data",
+      "title": "Tree data in SvGrid",
+      "description": "Nest flat rows into an expandable hierarchy with the treeData prop: a parent field, a tree column, expanders with indent, and expand or collapse all.",
+      "demo": "426-tree-data",
+      "docsPage": "docs/help/rows/tree-data.md",
+      "anchorAfter": "<div data-docs-demo=\"426-tree-data\"",
+      "tags": [
+        "tree data",
+        "tree grid",
+        "hierarchical rows",
+        "svelte tree table"
+      ],
+      "duration": 32.9,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-12",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/tree-data.mp4",
+        "poster": "/tutorials/tree-data.poster.webp",
+        "vtt": "/tutorials/tree-data.vtt"
+      },
+      "bytes": {
+        "mp4": 173775,
+        "poster": 10874
+      },
+      "transcript": [
+        {
+          "start": 1.2,
+          "end": 10.3,
+          "text": "Tree data is one prop. Point treeData at the parent field and name the tree column, and flat rows become a hierarchy."
+        },
+        {
+          "start": 10.72,
+          "end": 17.42,
+          "text": "Click an expander to open a branch. Children indent under their parent and keep every column."
+        },
+        {
+          "start": 18.04,
+          "end": 23.54,
+          "text": "Expand all and Collapse all walk the whole tree through the grid API."
+        },
+        {
+          "start": 24.15,
+          "end": 31.25,
+          "text": "Nested objects work too: flatten them once with flattenTreeData, and the same prop takes it from there."
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\enterprise\src\pivot.ts`.
 
 ### `type PivotAggregatorId`
 
-Built-in pivot measures, named in {@link PivotValueConfig}. */
+Built-in pivot measures, named in {@link PivotValueConfig}.
 
 ```ts
 export type PivotAggregatorId =
@@ -20,7 +20,7 @@ export type PivotAggregatorId =
 
 ### `type PivotAggregator`
 
-A custom measure: reduce the values under one cell to the number to display. */
+A custom measure: reduce the values under one cell to the number to display.
 
 ```ts
 export type PivotAggregator = (values: ReadonlyArray<unknown>) => unknown
@@ -28,7 +28,7 @@ export type PivotAggregator = (values: ReadonlyArray<unknown>) => unknown
 
 ### `type PivotValueConfig`
 
-One measure: the field to aggregate and how to aggregate it. */
+One measure: the field to aggregate and how to aggregate it.
 
 ```ts
 export type PivotValueConfig<TData> = {
@@ -45,7 +45,7 @@ export type PivotValueConfig<TData> = {
 
 ### `type PivotConfig`
 
-A pivot definition: the row axis, the column axis, and the measures at their intersections. */
+A pivot definition: the row axis, the column axis, and the measures at their intersections.
 
 ```ts
 export type PivotConfig<TData> = {
@@ -70,7 +70,7 @@ export type PivotConfig<TData> = {
 
 ### `type PivotRowKind`
 
-What a pivot row represents - a group header, a subtotal, a leaf, or the grand total. */
+What a pivot row represents - a group header, a subtotal, a leaf, or the grand total.
 
 ```ts
 export type PivotRowKind = 'group' | 'subtotal' | 'leaf' | 'grandTotal'
@@ -108,7 +108,7 @@ export type PivotRow = {
 
 ### `type PivotResult`
 
-A built pivot: the rows to display, and the generated column definitions for its column axis. */
+A built pivot: the rows to display, and the generated column definitions for its column axis.
 
 ```ts
 export type PivotResult<TFeatures extends TableFeatures> = {

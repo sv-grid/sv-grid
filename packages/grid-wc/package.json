@@ -5,7 +5,7 @@
     "url": "https://svgrid.com/pricing"
   },
   "version": "3.0.1",
-  "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element, plus <sv-grid-shadow> for an open shadow root). Drop into React, Vue, Angular, or plain HTML - no build step required.",
+  "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element, plus <sv-grid-shadow> for an open shadow root and <sv-chart> for the standalone chart). Drop into React, Vue, Angular, or plain HTML - no build step required.",
   "type": "module",
   "license": "MIT",
   "author": "jQWidgets Ltd",
@@ -63,12 +63,25 @@
       "types": "./dist/vue/index.d.ts",
       "import": "./dist/vue/index.js"
     },
+    "./chart": {
+      "types": "./dist/chart/sv-chart-element.d.ts",
+      "import": "./dist/chart/sv-chart-element.js"
+    },
+    "./react/chart": {
+      "types": "./dist/react/chart.d.ts",
+      "import": "./dist/react/chart.js"
+    },
+    "./vue/chart": {
+      "types": "./dist/vue/chart.d.ts",
+      "import": "./dist/vue/chart.js"
+    },
     "./angular": {
       "types": "./dist/angular/types/svgrid-grid-wc-angular.d.ts",
       "import": "./dist/angular/fesm2022/svgrid-grid-wc-angular.mjs"
     },
     "./dist/sv-grid-element.js": "./dist/sv-grid-element.js",
-    "./dist/shadow/sv-grid-shadow-element.js": "./dist/shadow/sv-grid-shadow-element.js"
+    "./dist/shadow/sv-grid-shadow-element.js": "./dist/shadow/sv-grid-shadow-element.js",
+    "./dist/chart/sv-chart-element.js": "./dist/chart/sv-chart-element.js"
   },
   "unpkg": "./dist/sv-grid-element.js",
   "jsdelivr": "./dist/sv-grid-element.js",

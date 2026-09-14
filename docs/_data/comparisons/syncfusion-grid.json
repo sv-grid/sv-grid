@@ -1,0 +1,190 @@
+{
+  "slug": "syncfusion-grid",
+  "competitor": "Syncfusion Grid",
+  "npm": "@syncfusion/ej2-grids",
+  "url": "https://www.syncfusion.com/javascript-ui-controls/js-data-grid",
+  "aliases": [
+    "syncfusion",
+    "ej2",
+    "syncfusion grid",
+    "syncfusion data grid"
+  ],
+  "framework": [
+    "javascript",
+    "react",
+    "angular",
+    "vue",
+    "blazor"
+  ],
+  "group": "commercial",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "Syncfusion Grid is a comprehensive commercial grid available across JavaScript, React, Vue, Angular, and Blazor, with a community license.",
+  "oneLineVerdict": "Syncfusion is an enormous commercial suite with a free community license for small teams. SvGrid is Svelte-5-native with an MIT core and no revenue / headcount conditions.",
+  "alternativeIntro": "Syncfusion is comprehensive, and its community licence carries revenue and headcount conditions, which is often what sends people looking. The SvGrid core is MIT with no such conditions. Syncfusion still ships far more components across far more platforms, Blazor included, and that breadth is the real trade you are making.",
+  "intro": [
+    "Syncfusion Grid is part of the Essential Studio suite - a very deep grid (grouping, aggregates, editing, export, filtering, virtualization) across JavaScript, React, Vue, Angular, and Blazor. It is commercially licensed, with a free community license for individuals and small companies under a revenue / headcount threshold.",
+    "SvGrid focuses on Svelte 5 with an MIT community core - free for everyone, with no revenue or team-size conditions - plus an optional Enterprise pack for export / import / pivot / AI."
+  ],
+  "similarities": [
+    "Very deep grid feature set.",
+    "Editing, grouping, aggregates, filtering, virtualization.",
+    "Export (SvGrid via the Enterprise pack).",
+    "Paid support available."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native rather than a multi-framework commercial suite.",
+    "MIT core - no revenue / headcount conditions like the community license.",
+    "Headless engine + imperative API + @svgrid/mcp.",
+    "No design-system lock-in."
+  ],
+  "competitorAdvantages": [
+    "One of the largest feature sets and component suites available.",
+    "Parity across JS / React / Vue / Angular / Blazor.",
+    "Free community license for qualifying small teams.",
+    "Enterprise support and long track record."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "JavaScript, React, Vue, Angular and Blazor packages",
+        "source": "sf-pricing"
+      }
+    },
+    {
+      "feature": "License",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT (no conditions)"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "per developer per year; a conditional free Community License",
+        "source": "sf-pricing"
+      }
+    },
+    {
+      "feature": "Grouping + aggregates",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Export",
+      "svgrid": {
+        "status": "yes",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Built in"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want a native grid.",
+    "You want an unconditional MIT license, not a revenue-gated community license.",
+    "You want a headless engine and an MCP server."
+  ],
+  "whenToChooseCompetitor": [
+    "You need the breadth of the Syncfusion suite across many frameworks.",
+    "You qualify for and prefer the free community license.",
+    "You need Blazor or a single vendor across your whole stack."
+  ],
+  "migration": {
+    "slug": "migrating-from-syncfusion",
+    "effort": "3-6 hours per grid",
+    "youLose": [
+      "The Syncfusion suite across JavaScript, React, Vue, Angular and Blazor under one licence.",
+      "Vendor support and the conditional free Community License for small companies."
+    ]
+  },
+  "pricing": {
+    "summary": "syncfusion.com lists the Grid SDK at $959 per developer per year and the UI Component Suite at $1,199 per developer per year, minimum five developers; a free Community License applies to companies and individuals with under $1M annual revenue, up to five developers and no more than ten employees",
+    "amount": 959,
+    "unit": "USD per developer per year (Grid SDK, minimum five developers)",
+    "url": "https://www.syncfusion.com/sales/products",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "07-grouping-aggregation"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/grouping-aggregation"
+  ],
+  "related": [
+    "kendo-ui-grid",
+    "devextreme-datagrid",
+    "ag-grid"
+  ],
+  "bottomLine": "Syncfusion offers one of the largest suites and a free community license for small teams - but with revenue and headcount conditions. The MIT core of SvGrid is free for everyone with no conditions, and is the native fit for Svelte 5.",
+  "faq": [
+    {
+      "question": "Is SvGrid free, unlike the Syncfusion commercial license?",
+      "answer": "Yes - @svgrid/grid is MIT with no revenue or team-size conditions. The Syncfusion community license is free only for qualifying small teams."
+    },
+    {
+      "question": "SvGrid vs Syncfusion Grid - which for Svelte?",
+      "answer": "SvGrid is Svelte-5-native; Syncfusion is a multi-framework commercial suite. For a Svelte stack, SvGrid is the lighter, unconditional-MIT fit."
+    },
+    {
+      "question": "Does SvGrid support Blazor like Syncfusion?",
+      "answer": "No - SvGrid is Svelte 5 only. If you need Blazor, Syncfusion is the better fit."
+    }
+  ],
+  "sources": [
+    {
+      "id": "sf-pricing",
+      "url": "https://www.syncfusion.com/sales/products",
+      "evidences": "Grid SDK $959 per developer per year; UI Component Suite $1,199 per developer per year; minimum 5 developers; Community License for under $1M revenue, up to 5 developers, no more than 10 employees, under $3M outside funding",
+      "verified": "2026-09-12"
+    }
+  ]
+}

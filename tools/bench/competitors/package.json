@@ -1,0 +1,15 @@
+{
+  "name": "svgrid-competitor-bundles",
+  "private": true,
+  "description": "Install target for packages/grid/scripts/measure-competitor-bundles.mjs. Not a workspace package.",
+  "dependencies": {
+    "@glideapps/glide-data-grid": "6.0.3",
+    "@humanspeak/svelte-headless-table": "6.2.0",
+    "@mui/x-data-grid": "9.13.0",
+    "@vincjo/datatables": "2.8.1",
+    "gridjs": "6.2.0",
+    "react-data-grid": "7.0.0-beta.61",
+    "svelte-headless-table": "0.18.3",
+    "tabulator-tables": "6.5.2"
+  }
+}

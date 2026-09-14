@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\dock-model.ts`.
 
 ### `type DockPane`
 
-One dockable pane: its id, title, and the state a tab needs to render. */
+One dockable pane: its id, title, and the state a tab needs to render.
 
 ```ts
 export type DockPane = {
@@ -19,7 +19,7 @@ export type DockPane = {
 
 ### `type DockTabs`
 
-A leaf: a stack of panes rendered as tabs (`active` is the visible one). */
+A leaf: a stack of panes rendered as tabs (`active` is the visible one).
 
 ```ts
 export type DockTabs = {
@@ -32,7 +32,7 @@ export type DockTabs = {
 
 ### `type DockGroup`
 
-A row (side-by-side) or column (stacked) of children with per-child sizes. */
+A row (side-by-side) or column (stacked) of children with per-child sizes.
 
 ```ts
 export type DockGroup = {
@@ -47,7 +47,7 @@ export type DockGroup = {
 
 ### `type DockNode`
 
-A node in the layout tree - either a split group or a tabbed leaf. */
+A node in the layout tree - either a split group or a tabbed leaf.
 
 ```ts
 export type DockNode = DockGroup | DockTabs
@@ -55,7 +55,7 @@ export type DockNode = DockGroup | DockTabs
 
 ### `type DockZone`
 
-Where a dragged pane lands relative to a target leaf. */
+Where a dragged pane lands relative to a target leaf.
 
 ```ts
 export type DockZone = 'left' | 'right' | 'top' | 'bottom' | 'center'
@@ -63,7 +63,7 @@ export type DockZone = 'left' | 'right' | 'top' | 'bottom' | 'center'
 
 ### `type IdGen`
 
-Supplies ids for newly created nodes, so layouts stay deterministic in tests. */
+Supplies ids for newly created nodes, so layouts stay deterministic in tests.
 
 ```ts
 export type IdGen = () => string
@@ -71,7 +71,7 @@ export type IdGen = () => string
 
 ### `function pane`
 
-Build a {@link DockPane}. */
+Build a {@link DockPane}.
 
 ```ts
 export function pane(id: string, title: string, closable = true): DockPane {
@@ -81,7 +81,7 @@ export function pane(id: string, title: string, closable = true): DockPane {
 
 ### `function leafMinSize`
 
-Largest per-pane `minSize` in a leaf (0 if none). Used by splitter clamping. */
+Largest per-pane `minSize` in a leaf (0 if none). Used by splitter clamping.
 
 ```ts
 export function leafMinSize(node: DockTabs): number {
@@ -91,7 +91,7 @@ export function leafMinSize(node: DockTabs): number {
 
 ### `function tabs`
 
-Build a tabbed leaf holding the given panes. */
+Build a tabbed leaf holding the given panes.
 
 ```ts
 export function tabs(genId: IdGen, panes: DockPane[], active = 0): DockTabs {
@@ -101,7 +101,7 @@ export function tabs(genId: IdGen, panes: DockPane[], active = 0): DockTabs {
 
 ### `function group`
 
-Build a split group: panes or nested groups laid out in a row or column. */
+Build a split group: panes or nested groups laid out in a row or column.
 
 ```ts
 export function group(
@@ -116,7 +116,7 @@ export function group(
 
 ### `function normalizeSizes`
 
-Return sizes summing to 1, padded/trimmed to `count`. Even split when absent. */
+Return sizes summing to 1, padded/trimmed to `count`. Even split when absent.
 
 ```ts
 export function normalizeSizes(sizes: number[] | undefined, count: number): number[] {
@@ -130,7 +130,7 @@ export function normalizeSizes(sizes: number[] | undefined, count: number): numb
 
 ### `function findTabsWithPane`
 
-The tabs leaf that holds `paneId`, or null. */
+The tabs leaf that holds `paneId`, or null.
 
 ```ts
 export function findTabsWithPane(root: DockNode, paneId: string): DockTabs | null {
@@ -145,7 +145,7 @@ export function findTabsWithPane(root: DockNode, paneId: string): DockTabs | nul
 
 ### `function allPaneIds`
 
-Every pane id in the tree, in document order. */
+Every pane id in the tree, in document order.
 
 ```ts
 export function allPaneIds(root: DockNode): string[] {
@@ -204,7 +204,7 @@ export function normalize(node: DockNode): DockNode | null {
 
 ### `function setActive`
 
-Set the active tab index of a tabs leaf. */
+Set the active tab index of a tabs leaf.
 
 ```ts
 export function setActive(root: DockNode, tabsId: string, active: number): DockNode {
@@ -216,7 +216,7 @@ export function setActive(root: DockNode, tabsId: string, active: number): DockN
 
 ### `function setSizes`
 
-Replace a group's size weights (e.g. after a splitter drag). */
+Replace a group's size weights (e.g. after a splitter drag).
 
 ```ts
 export function setSizes(root: DockNode, groupId: string, sizes: number[]): DockNode {
@@ -332,7 +332,7 @@ export function dockInto(
 ### `function removeLeaf`
 
 Pull a whole tabs leaf out of the tree (for auto-hide). Returns the tidied
- tree (or null) plus the extracted leaf. */
+ tree (or null) plus the extracted leaf.
 
 ```ts
 export function removeLeaf(root: DockNode, tabsId: string): { root: DockNode | null; leaf: DockTabs | null } {
@@ -361,7 +361,7 @@ export function removeLeaf(root: DockNode, tabsId: string): { root: DockNode | n
 Dock a whole leaf against an EDGE of the entire tree (for pinning an
  auto-hidden panel back in). Wraps the root in a new group as needed; the
  pinned leaf takes `fraction` of that axis (clamped 0.1..0.6), the rest keeps
- the existing content. */
+ the existing content.
 
 ```ts
 export function dockLeafToEdge(
@@ -383,7 +383,7 @@ export function dockLeafToEdge(
 
 ### `function movePane`
 
-Move an existing pane to a new dock position (remove then dock). */
+Move an existing pane to a new dock position (remove then dock).
 
 ```ts
 export function movePane(
@@ -404,7 +404,7 @@ export function movePane(
 
 ### `function dockPane`
 
-A pane (tab). Alias of `pane`, named for the public builder set. */
+A pane (tab). Alias of `pane`, named for the public builder set.
 
 ```ts
 export function dockPane(
@@ -419,7 +419,7 @@ export function dockPane(
 
 ### `function dockTabs`
 
-A tab-leaf holding one or more panes. */
+A tab-leaf holding one or more panes.
 
 ```ts
 export function dockTabs(panes: DockPane[], active = 0): DockTabs {
@@ -429,7 +429,7 @@ export function dockTabs(panes: DockPane[], active = 0): DockTabs {
 
 ### `function dockGroup`
 
-A row (side-by-side) or column (stacked) of children. */
+A row (side-by-side) or column (stacked) of children.
 
 ```ts
 export function dockGroup(

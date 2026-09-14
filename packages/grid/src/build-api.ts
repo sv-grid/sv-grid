@@ -153,6 +153,21 @@ export function createGridApi<
       configureChart(config) {
         if (ctx.chartingEnabled) ctx.applyChartConfig(config);
       },
+      saveChart(name) {
+        if (ctx.chartingEnabled) ctx.saveChart(name);
+      },
+      applySavedChart(name) {
+        return ctx.chartingEnabled ? ctx.applySavedChart(name) : false;
+      },
+      removeSavedChart(name) {
+        if (ctx.chartingEnabled) ctx.removeSavedChart(name);
+      },
+      getSavedCharts() {
+        return ctx.chartingEnabled ? ctx.getSavedCharts() : [];
+      },
+      setChartExplainHandler(handler) {
+        ctx.chartExplainHandler = handler ?? null;
+      },
       setChartAiHandler(handler) {
         ctx.chartAiHandler = handler ?? null;
       },
@@ -759,6 +774,8 @@ export function createGridApi<
                 },
                 charts: ctx.getChartsState(),
                 chartActive: ctx.activeChartIndex,
+                // Only when there is one, for the same snapshot-churn reason.
+                ...(ctx.savedCharts.length ? { savedCharts: ctx.getSavedCharts() } : {}),
               }
             : {}),
         };
@@ -808,6 +825,7 @@ export function createGridApi<
         if ("advancedFilter" in state) {
           ctx.advancedFilter = state.advancedFilter ?? null;
         }
+        if (Array.isArray(state.savedCharts) && ctx.chartingEnabled) ctx.applySavedCharts(state.savedCharts);
         if ((state.chart || state.charts) && ctx.chartingEnabled) {
           if (Array.isArray(state.charts) && state.charts.length) {
             ctx.applyChartsState(state.charts, state.chartActive);

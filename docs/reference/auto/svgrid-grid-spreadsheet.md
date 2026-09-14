@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\spreadsheet.ts`.
 
 ### `type BorderSpec`
 
-A single edge of a cell border. */
+A single edge of a cell border.
 
 ```ts
 export type BorderSpec = {
@@ -21,7 +21,7 @@ export type BorderSpec = {
 
 A merge declaration. The cell at (rowIndex, columnId) is the ORIGIN;
  it spans `colspan` columns to the right + `rowspan` rows downward.
- Covered cells are hidden so the origin visually fills the region. */
+ Covered cells are hidden so the origin visually fills the region.
 
 ```ts
 export type MergeSpec = {
@@ -40,7 +40,7 @@ export type MergeSpec = {
 ### `type SpanColumn`
 
 A column with declarative spanning callbacks, as accepted by
- `spansToMerges`. Matches the relevant slice of `ColumnDef`. */
+ `spansToMerges`. Matches the relevant slice of `ColumnDef`.
 
 ```ts
 export type SpanColumn<TData = Record<string, unknown>> = {
@@ -106,7 +106,7 @@ export function spansToMerges<TData = Record<string, unknown>>(
 ### `type CellBorderSpec`
 
 Borders for one cell. Edges left unset render as the default
- cell border (i.e. no override). */
+ cell border (i.e. no override).
 
 ```ts
 export type CellBorderSpec = {
@@ -122,7 +122,7 @@ export type CellBorderSpec = {
 ### `type SpreadsheetActionOptions`
 
 What the Svelte action receives. Pass new values to update; pass
- `null` / empty arrays to clear. */
+ `null` / empty arrays to clear.
 
 ```ts
 export type SpreadsheetActionOptions = {
@@ -148,7 +148,7 @@ Svelte action. Attach to the element that hosts your `<SvGrid>` so
 
 The action re-applies the layout whenever the grid's body mutates
 (new rows, column reorder, virtualization scroll) and whenever the
-options change. */
+options change.
 
 ```ts
 export function spreadsheetLayout(node: HTMLElement, opts: SpreadsheetActionOptions) {

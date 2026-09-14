@@ -6,6 +6,10 @@ hit the same friction everyone hits: the bridge between AG Grid's
 React/Angular-first API and Svelte 5 runes is brittle, the bundle is
 heavy, and the Enterprise pricing only makes sense at scale.
 
+<!-- facts:start ag-grid -->
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
+<!-- facts:end -->
+
 This page is a 30-minute migration recipe from AG Grid to SvGrid. It
 covers what maps 1:1, what's different by design, and what you'll lose.
 We tell you when **not** to switch at the bottom.
@@ -14,21 +18,29 @@ We tell you when **not** to switch at the bottom.
 
 | | AG Grid Community | AG Grid Enterprise | SvGrid Community | @svgrid/enterprise |
 | --- | --- | --- | --- | --- |
-| **License** | MIT | Commercial (~$999/dev/yr) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
-| **Svelte 5 native** | ❌ (wrapper) | ❌ (wrapper) | ✅ | ✅ |
-| **Bundle (gzipped)** | ~250 KB | ~400 KB | ~2 KB headless / ~77 KB full | lazy-loaded subpaths |
-| **Sorting / filtering / grouping** | ✅ | ✅ | ✅ | (in Community) |
-| **Master/detail, tree, range select** | ❌ Enterprise only | ✅ | ✅ (free) | (in Community) |
-| **Excel export** | ❌ | ✅ Enterprise | ❌ | ✅ |
-| **CSV / TSV / JSON export** | ❌ | Partial | ✅ **free** | ✅ |
-| **Excel / PDF / styled-HTML export** | ❌ | Partial | ❌ | ✅ |
-| **Print view** | ❌ | ❌ | ❌ | ✅ |
-| **Set filter / Excel-style filter menu** | ❌ Enterprise | ✅ | ✅ (free) | (in Community) |
+| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
+| **Svelte 5 native** | No (community-built integration) | No (community-built integration) | Yes | Yes |
+| **Bundle (gzipped)** | measured, in the facts box above | not measured (licence) | measured, in the facts box above | lazy-loaded subpaths |
+| **Sorting / filtering** | Yes | Yes | Yes | (in Community) |
+| **Row grouping + aggregation** | No (Enterprise) | Yes | Yes (free) | (in Community) |
+| **Master/detail, tree, range select** | No (Enterprise) | Yes | Yes (free) | (in Community) |
+| **Set filter / Excel-style filter menu** | No (Enterprise) | Yes | Yes (free) | (in Community) |
+| **Server-side row model** | No (Enterprise) | Yes | Yes (free) | (in Community) |
+| **Integrated charts** | No (Enterprise) | Yes, AG Charts | Yes (free) | (in Community) |
+| **CSV export** | Yes (API) | Yes | Yes, with TSV and JSON | (in Community) |
+| **Excel export** | No | Yes | No | Yes |
+| **PDF / styled-HTML export, print** | No | No | No | Yes |
+| **Pivot tables** | No | Yes | No | Yes |
+| **MCP server for AI assistants** | Yes, `ag-mcp` | Yes | Yes, `@svgrid/mcp` | (in Community) |
+| **In-grid AI helpers** | No | No | Yes (bring your own model) | (in Community) |
 
-**SvGrid Community gives you most of AG Grid Enterprise's features for
-free**, and `@svgrid/enterprise` adds the export + print pack for ~40%
-less than AG Grid Enterprise. The trade-offs are Svelte-only and a much
-smaller ecosystem.
+**SvGrid Community gives you most of what AG Grid sells as Enterprise for
+free**, and `@svgrid/enterprise` adds Excel, PDF and print output, import
+and pivot tables per developer per year. Compare what each paid tier adds
+before comparing prices; both are in the facts box. The trade-offs are
+Svelte-only and a much smaller ecosystem. Every AG Grid cell above follows
+ag-grid.com's own pages; the dated list is on the
+[SvGrid vs AG Grid](https://svgrid.com/compare/ag-grid/) page.
 
 ## Mental model - what changes
 
@@ -319,14 +331,16 @@ await pro.exportData({ format: 'xlsx', filename: 'orders' })
 ## Gotchas - things that don't translate directly
 
 ### 1. Per-column `editable: true`
-SvGrid v1.0 toggles editing at the grid level (`enableInlineEditing`).
-Per-column editability is on the roadmap - until then, you can gate
-edits in your `onCellValueChange` handler.
+Editing is switched on at the grid level (`enableInlineEditing`) and
+narrowed per column with `editable: boolean | (ctx) => boolean` on the
+column definition, so AG Grid's per-column flag and its callback form both
+map directly. What does not map is AG Grid's `editable` on a column
+group: set it on each child column.
 
 ### 2. Column drag-to-reorder
-SvGrid v1.0 supports column reorder via the API (`setColumnOrder`), not
-header drag. Built-in header drag is on the roadmap. Most teams don't
-miss it - it's a power-user feature.
+Header drag is `enableColumnReorder` on `<SvGrid>`; `setColumnOrder`
+on the API does the same from code. See
+[column moving](./columns/column-moving.md) for the events.
 
 ### 3. AG Grid `valueGetter` chains
 AG Grid's `valueGetter` can read other column values via the API. In
@@ -358,8 +372,9 @@ Be honest. Stay on AG Grid if you:
 - **Are mid-project and shipping in <2 weeks** - the migration is a few hours per grid, but only do it when you have buffer.
 - **Have a Svelte 4 codebase you can't upgrade** - SvGrid requires Svelte 5 runes. (Consider [htmlelements.com](https://www.htmlelements.com) for vanilla / multi-framework.)
 
-If none of those apply: switching saves you $400-$1000 per dev per year,
-cuts your bundle by 200+ KB, and gives you a Svelte-native API that
+If none of those apply: switching drops a per-developer Enterprise licence
+for features that are in SvGrid's MIT core, cuts the bundle by the
+difference in the facts box above, and gives you a Svelte-native API that
 plays well with runes.
 
 ## Step-by-step migration
@@ -373,7 +388,7 @@ A typical migration of a single grid takes 1-3 hours:
 5. **Move event handlers** - AG Grid `onCellValueChanged` → SvGrid `onCellValueChange` (signature differs slightly, see above).
 6. **Move API calls** - AG Grid `gridApi.X()` → SvGrid `api.X()` per the API table.
 7. **Test interactions** - sort, filter, edit, select. Most "just works."
-8. **Remove `ag-grid-*` packages** - `pnpm remove ag-grid-community ag-grid-svelte` etc. Inspect your bundle to confirm the 200+ KB drop.
+8. **Remove `ag-grid-*` packages** - `pnpm remove ag-grid-community ag-grid-svelte` etc. Inspect your bundle to confirm the drop; the facts box above has both measured sizes.
 
 ## Need help migrating?
 
@@ -395,9 +410,9 @@ not a rewrite.
 ### What is the SvGrid equivalent of AG Grid Enterprise?
 
 `@svgrid/enterprise`. It adds Excel/PDF/styled-HTML export (CSV, TSV and JSON export are already free in the grid), a printable view, pivot
-tables, data import, and AI helpers. It is licensed per developer
-($599 single-app / $999 multi-app), not per deployment, and the Community
-package is MIT-licensed and free for commercial use.
+tables and data import. The in-grid AI helpers are free in `@svgrid/grid`.
+It is licensed per developer ($599 single-app / $999 multi-app), and the
+Community package is MIT-licensed and free for commercial use.
 
 ### Does SvGrid use Svelte 5 runes, or is it a wrapper?
 
@@ -407,16 +422,18 @@ and no framework bridge to keep in sync.
 
 ### Will my AG Grid bundle size shrink?
 
-Almost always. SvGrid's full render component is ~77 KB gzipped (or ~2 KB
-for the headless core) versus a much heavier AG Grid Community bundle, and you
-only add `@svgrid/enterprise` features you actually use - so you ship a fraction of
-the JavaScript.
+Almost always. The facts box at the top of this page has both packages
+measured the same way on the same date: the full SvGrid render component
+with its stylesheet against `createGrid` with every AG Grid Community
+module registered. You add `@svgrid/enterprise` features only where you
+import them, and the headless core on its own is a small fraction of the
+render component.
 
 ## More examples
 
 ### AG Grid ↔ sv-grid side-by-side
 
-Two real grids over the same dataset: AG Grid Community v35 on the left, sv-grid on the right. Same global filter drives both. Source code panels for either side.
+Two real grids over the same dataset: the installed AG Grid Community on the left, sv-grid on the right. Same global filter drives both. Source code panels for either side.
 
 <div data-docs-demo="139-migration-from-ag-grid" data-height="460"></div>
 
@@ -425,4 +442,7 @@ Two real grids over the same dataset: AG Grid Community v35 on the left, sv-grid
 - [Getting started](../getting-started.md) - full SvGrid walkthrough
 - [Why headless?](../why-headless.md) - the headless / render-component split
 - [Data export and printing](./export.md) - the `@svgrid/enterprise` feature pack
-- [SvGrid vs AG Grid comparison page](https://svgrid.com/compare/ag-grid/)
+- [Comparison: SvGrid vs AG Grid vs TanStack Table](./comparison.md) - the
+  measured benchmark and the feature matrix
+- [SvGrid vs AG Grid comparison page](https://svgrid.com/compare/ag-grid/) -
+  every claim with its source and date

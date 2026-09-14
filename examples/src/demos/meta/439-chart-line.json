@@ -1,0 +1,24 @@
+{
+  "description": "A line chart with the switches a line chart usually needs: xType time spaces the points by date, smooth, step and marker are per series, NaN values draw a gap or are bridged with connectNulls, a forecast runs dashed past a reference line for today, a reference band shades an outage, seriesLabels name each line at its end, crosshairLabels read the hovered month and value off the axes, and yScale log handles plans an order of magnitude apart. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte line chart",
+    "svelte time series chart",
+    "svelte chart missing data gap",
+    "svelte chart forecast dashed line",
+    "svelte step line chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I show missing data as a gap?",
+      "answer": "Put NaN (or null) in the values. With nullAs gap, the default, the line breaks there and no marker is drawn; connectNulls: true on a series bridges its gaps instead, and nullAs zero plots them as 0."
+    },
+    {
+      "question": "How do I draw a forecast as a dashed line?",
+      "answer": "Make the forecast its own series with dash set, NaN before the point where it starts, and the last actual value repeated at that point so the two lines meet. A reference line with axis x marks where the actuals end."
+    },
+    {
+      "question": "How do I put the series names at the end of the lines?",
+      "answer": "Set seriesLabels: true on the spec, or pass a formatter to rename or drop some. The chart reserves a gutter on the right and pushes overlapping labels apart."
+    }
+  ]
+}

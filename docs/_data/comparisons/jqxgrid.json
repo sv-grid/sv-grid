@@ -1,0 +1,201 @@
+{
+  "slug": "jqxgrid",
+  "competitor": "jqxGrid (jQWidgets)",
+  "npm": "jqwidgets-scripts",
+  "url": "https://www.jqwidgets.com/",
+  "aliases": [
+    "jqxgrid",
+    "jqwidgets",
+    "jqx grid"
+  ],
+  "framework": [
+    "jquery",
+    "react",
+    "angular",
+    "vue"
+  ],
+  "group": "commercial",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "jqxGrid is jQWidgets' mature, feature-complete grid for jQuery, Angular, React, and Vue - from the team that builds SvGrid.",
+  "oneLineVerdict": "Same team, same engineering DNA. Choose jqxGrid for jQuery / Angular / React / Vue or a multi-framework codebase; choose SvGrid for a Svelte-5-native stack with an MIT community core.",
+  "alternativeIntro": "Same team, different era: jqxGrid is the jQuery-generation grid, and SvGrid is what that experience looks like rebuilt for Svelte 5 runes. Column definitions and the feature vocabulary will feel familiar, which makes the port shorter than most. jqxGrid remains the answer for jQuery, Angular and React codebases; SvGrid is the Svelte one.",
+  "intro": [
+    "jqxGrid is the flagship grid from jQWidgets - a deeply featured, battle-tested component used in production by 5,000+ companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel. It runs on a jQuery core with Angular, React, Vue, and Web Component integrations.",
+    "SvGrid is built by the same team, specifically for Svelte 5. It inherits the engineering lineage but is rebuilt around runes and snippets, with an MIT community core - the Svelte-native member of the family rather than a competitor."
+  ],
+  "similarities": [
+    "Shared engineering lineage and feature philosophy.",
+    "Enterprise feature set: sorting, filtering, grouping, editing, virtualization.",
+    "Paid support available.",
+    "Long production track record behind the team."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native - runes and snippets, not a jQuery core with integrations.",
+    "MIT-licensed community core (jqxGrid is commercially licensed).",
+    "Reactive data binding and Svelte component cells.",
+    "A headless engine in addition to the render component."
+  ],
+  "competitorAdvantages": [
+    "Multi-framework: jQuery, Angular, React, Vue from one codebase.",
+    "Many years of maturity and a very broad feature set.",
+    "A large widget library beyond the grid (charts, scheduler, inputs).",
+    "Established commercial support and a long enterprise track record.",
+    "Ships its own MCP server for AI assistants, like SvGrid."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "jQuery core + integrations"
+      }
+    },
+    {
+      "feature": "License",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "perpetual per-developer licence; the free Community License excludes the Grid",
+        "source": "jqx-license"
+      }
+    },
+    {
+      "feature": "Reactive data binding",
+      "svgrid": {
+        "status": "yes",
+        "note": "$state"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Imperative source/API"
+      }
+    },
+    {
+      "feature": "Sort / filter / group",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Multi-framework",
+      "svgrid": {
+        "status": "no",
+        "note": "Svelte only"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "jQuery / Angular / React / Vue"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "AI / MCP server",
+      "svgrid": {
+        "status": "yes",
+        "note": "@svgrid/mcp"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "jqxGrid MCP"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "Your stack is Svelte 5 and you want an idiomatic, runes-native grid.",
+    "You want an MIT community core rather than a commercial license.",
+    "You want a headless engine and an MCP server for AI tooling."
+  ],
+  "whenToChooseCompetitor": [
+    "You are on jQuery, Angular, React, or Vue - or several at once.",
+    "You want the wider jQWidgets widget library beyond the grid.",
+    "You want the longest production track record from the team."
+  ],
+  "migration": {
+    "slug": "migrating-from-jqxgrid",
+    "effort": "2-4 hours per grid",
+    "youLose": [
+      "The jQWidgets suite for jQuery, React, Angular and Vue under one perpetual licence.",
+      "A perpetual licence model; @svgrid/enterprise is per developer per year."
+    ]
+  },
+  "pricing": {
+    "summary": "jqwidgets.com lists the Developer License at $499 (on sale at $399) per developer, perpetual and royalty-free with one year of updates and support, and the Team License at $1,499 for five or more developers; the free Community License excludes the Grid",
+    "amount": 499,
+    "unit": "USD per developer, perpetual",
+    "url": "https://www.jqwidgets.com/license/",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "08-tree-and-master-detail"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/mcp-server"
+  ],
+  "related": [
+    "smart-grid",
+    "kendo-ui-grid",
+    "ag-grid"
+  ],
+  "bottomLine": "jqxGrid and SvGrid come from the same team. If your stack is jQuery, Angular, React, or Vue, jqxGrid is the proven choice with a decade-plus track record. If you are building on Svelte 5, SvGrid is the native option in the family, with an MIT core and the same engineering behind it.",
+  "faq": [
+    {
+      "question": "Is SvGrid made by the jqxGrid team?",
+      "answer": "Yes - SvGrid is built by jQWidgets, the makers of jqxGrid, specifically for Svelte 5 with an MIT community core."
+    },
+    {
+      "question": "Should I migrate my jqxGrid app to SvGrid?",
+      "answer": "Only if you are moving it to Svelte 5. On jQuery, Angular, React, or Vue, jqxGrid remains the right tool; SvGrid is the native choice once you are on Svelte."
+    },
+    {
+      "question": "Do both jqxGrid and SvGrid have an MCP server?",
+      "answer": "Yes - both ship MCP servers so AI assistants can answer accurately about each grid."
+    }
+  ],
+  "sources": [
+    {
+      "id": "jqx-license",
+      "url": "https://www.jqwidgets.com/license/",
+      "evidences": "Community License free but excludes Grid, TreeGrid, PivotGrid, Scheduler, DataTable, Chart, Gantt, Editor and Kanban; Developer License $499 (sale $399) per developer, perpetual, one year of updates; Team License $1,499 for 5+ developers",
+      "verified": "2026-09-12"
+    }
+  ]
+}

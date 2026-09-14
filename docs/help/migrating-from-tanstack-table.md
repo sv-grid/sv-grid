@@ -1,12 +1,18 @@
 # Migrating from TanStack Table
 
-TanStack Table (formerly React Table v8) is the closest conceptual
+TanStack Table (formerly React Table) is the closest conceptual
 sibling to sv-grid - both are "headless data grid" libraries with
-explicit row-model pipelines. If you already think in
-`createTable()` + `getCoreRowModel()`, this is a half-day port.
+explicit row-model pipelines, and the v9 Svelte adapter,
+`@tanstack/svelte-table`, targets Svelte 5 with the same runes-first
+shape. If you already think in `createTable()` + a features object,
+this is a half-day port; the vocabulary below covers the v8 names too.
 
 > Estimated effort: **30 min** per grid for read-only views, **2-4
 > hours** for editing-heavy grids.
+
+<!-- facts:start tanstack-table -->
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+<!-- facts:end -->
 
 > **On v9?** SvGrid exports the same feature vocabulary, so most of this
 > page is automated. Run `npx @svgrid/migrate src` to preview the port, and
@@ -184,12 +190,27 @@ accepts a regular component if you prefer SFCs.
 - **Inline editing**. `editorType: 'text' | 'number' | 'date' |
   'list' | ...` - built-in editors with parsing + validation hooks.
 - **CSP-clean**. No `eval`. The shipped tests confirm.
-- **Enterprise features**. Export, import, pivot, AI - in one paid add-on.
+- **In-grid AI helpers**. Natural-language filter, smart fill, summarise
+  and classify, free in `@svgrid/grid` against a model you register.
+- **Enterprise features**. Excel and PDF export, print, import and pivot
+  in one paid add-on; CSV, TSV and JSON export are free.
+
+The headless demo below is the shape a TanStack app has today - a plain
+`<table>` driven by the engine - running on `createSvGrid`:
+
+<div data-docs-demo="186-headless-table" data-height="520"></div>
 
 ## What you give up
 
-- **React-first ecosystem.** Sv-grid is Svelte 5-native. There's no
-  React wrapper.
+- **One engine across frameworks.** TanStack has adapters for React,
+  Vue, Solid, Qwik, Lit and Svelte; sv-grid is Svelte 5-native and has
+  no React wrapper.
+- **The smallest engine-only bundle.** The facts box at the top of the
+  page has both packages measured the same way; the difference is the
+  renderer, virtualizer, filter UI and editors you would otherwise write.
+- **TanStack Virtual and the shadcn-svelte data table recipe.** Sv-grid
+  virtualizes on its own and has its own
+  [shadcn-svelte guide](./migrating-from-shadcn-data-table.md).
 - **`meta` for arbitrary side-channel state.** Pass props directly.
 - **`@tanstack/match-sorter-utils` integration**. The grid's filter
   has a `contains` operator; if you need fuzzy match, plug your
@@ -216,8 +237,17 @@ in one prop pass.
 ### Is SvGrid free like TanStack Table?
 
 Yes - `@svgrid/grid` is MIT-licensed, like TanStack Table. SvGrid
-additionally offers an optional paid `@svgrid/enterprise` pack for export, pivot, and
-import, which TanStack Table does not provide at all.
+additionally offers an optional paid `@svgrid/enterprise` pack for Excel and
+PDF export, print, pivot and import, which TanStack Table does not provide at
+all; TanStack sells Enterprise Support as consulting instead, as the facts box
+above notes.
+
+### Does the TanStack Svelte adapter support Svelte 5?
+
+Yes. The v9 line of `@tanstack/svelte-table` declares a Svelte 5 peer range
+and reads rune data through getters; the version in the facts box above is
+the one read from npm. If you are on the v8 adapter with Svelte 4 stores,
+the port to sv-grid is the same work as the port to v9, minus the markup.
 
 ## What you end up with
 
@@ -229,6 +259,10 @@ The same model you had, with the rendering already written.
 
 ## See also
 
+- [SvGrid vs TanStack Table](https://svgrid.com/compare/tanstack-table/) -
+  the side-by-side comparison, with a source and date for every claim
+- [Comparison: SvGrid vs AG Grid vs TanStack Table](./comparison.md) -
+  the measured benchmark, TanStack column included
 - [Architecture](./architecture.md) - the headless engine + render
   component split
 - [Migrating from AG Grid](./migrating-from-ag-grid.md) - sibling guide

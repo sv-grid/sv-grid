@@ -1,0 +1,24 @@
+{
+  "description": "Tree maps and sunbursts: treemap takes a TreeNode tree with value on the leaves and colour where you say so, here a red-to-green ramp for the day's move like a market map, with the sector label over its block and a click that selects a holding; tree on a sunburst draws the same hierarchy as rings, and drillable with bind:drillPath zooms into the ring you click and gives the breadcrumb back; specToTreemap builds the tree from rows. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte treemap chart",
+    "svelte sunburst chart",
+    "svelte market map chart",
+    "svelte hierarchy chart",
+    "svelte drilldown chart"
+  ],
+  "faq": [
+    {
+      "question": "What shape does a tree map take?",
+      "answer": "A TreeNode: name, value on the leaves, children on the branches, and an optional color per node. Branches are sized from their children."
+    },
+    {
+      "question": "How do I colour the cells by a second measure?",
+      "answer": "Compute the colour per leaf and set color on the node. The demo maps the day's percentage move onto a red-to-green ramp."
+    },
+    {
+      "question": "How does drilling down work?",
+      "answer": "Set drillable on the sunburst. A click zooms into that ring; bind:drillPath holds the path for a breadcrumb, and setting it back to an empty array zooms out."
+    }
+  ]
+}

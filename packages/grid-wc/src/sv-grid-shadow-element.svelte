@@ -133,9 +133,9 @@
   // A <style> in document.head does not cross the boundary, so the stylesheet
   // has to be put in the root explicitly. `shadow: 'open'` is what makes
   // `$host().shadowRoot` non-null and this possible at all.
-  $effect(() => {
-    adoptGridStyles($host().shadowRoot)
-  })
+  // The returned cleanup forgets the root, so a chunk loading after the
+  // element has gone does not try to style it.
+  $effect(() => adoptGridStyles($host().shadowRoot))
 
   // Re-emit grid callbacks as DOM CustomEvents. `composed: true` matters more
   // here than on the light element: without it an event stops at the shadow

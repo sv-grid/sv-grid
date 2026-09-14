@@ -34,10 +34,12 @@ export const DEMO_ABOUT_ORDER = Object.freeze(['about', 'facts', 'faq', 'docs', 
 /**
  * @typedef {{ description: string, faq: Array<{ question: string, answer: string }> }} DemoMetaLike
  * @typedef {{ docs: Array<{ slug: string, title: string }>, posts: Array<{ slug: string, title: string, description?: string }> }} DemoRelated
+ * @typedef {{ code: boolean, text: string }} PitchRun
+ * @typedef {{ kind: 'p', runs: PitchRun[] } | { kind: 'list', items: PitchRun[][] }} PitchBlock
  * @typedef {{
  *   id: string,
  *   description: string,
- *   pitch: string[],
+ *   pitch: PitchBlock[],
  *   facts: { imports: string[], features: string[], columns: Array<{ field: string, header?: string }>, api: string[] } | null,
  *   faq: Array<{ question: string, answer: string }>,
  *   docs: DemoRelated['docs'],
@@ -53,6 +55,60 @@ export const DEMO_ABOUT_ORDER = Object.freeze(['about', 'facts', 'faq', 'docs', 
  * @param {{ id: string, source?: string, meta?: Partial<DemoMetaLike> | null, related?: Partial<DemoRelated> | null }} input
  * @returns {DemoAboutModel}
  */
+/**
+ * A line of the pitch split at its backticks, so `ChartSpec` reads as code on
+ * the page rather than as a pair of backticks in the prose.
+ * @param {string} text
+ * @returns {PitchRun[]}
+ */
+export function pitchRuns(text) {
+  const out = []
+  const re = /`([^`\n]+)`/g
+  let last = 0
+  let m
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push({ code: false, text: text.slice(last, m.index) })
+    out.push({ code: true, text: m[1] })
+    last = m.index + m[0].length
+  }
+  if (last < text.length) out.push({ code: false, text: text.slice(last) })
+  return out
+}
+
+/**
+ * The pitch as blocks: a paragraph, or a list where the banner wrote one
+ * ("- `stacked` piles the channels", each item on its own line, wrapped
+ * lines indented under it). The banners of the chart demos are mostly such
+ * lists, and flattening them into one paragraph put "- `stacked` ... -
+ * `stack` ..." on the page with the dashes and backticks in the text.
+ * @param {string} pitch
+ * @returns {PitchBlock[]}
+ */
+export function pitchBlocks(pitch) {
+  /** @type {PitchBlock[]} */
+  const out = []
+  for (const para of String(pitch ?? '').split(/\n{2,}/)) {
+    const lines = para.split('\n').map((l) => l.trim()).filter(Boolean)
+    if (!lines.length) continue
+    if (!lines.some((l) => /^- /.test(l))) {
+      out.push({ kind: 'p', runs: pitchRuns(lines.join(' ')) })
+      continue
+    }
+    /** @type {string[]} */
+    const items = []
+    /** @type {string[]} */
+    const lead = []
+    for (const l of lines) {
+      if (/^- /.test(l)) items.push(l.slice(2).trim())
+      else if (items.length) items[items.length - 1] += ' ' + l
+      else lead.push(l)
+    }
+    if (lead.length) out.push({ kind: 'p', runs: pitchRuns(lead.join(' ')) })
+    out.push({ kind: 'list', items: items.map(pitchRuns) })
+  }
+  return out
+}
+
 export function demoAboutModel({ id, source = '', meta = null, related = null }) {
   const src = String(source ?? '')
   const pitch = src ? pitchFromSource(src) : ''
@@ -61,7 +117,7 @@ export function demoAboutModel({ id, source = '', meta = null, related = null })
   return {
     id,
     description: typeof meta?.description === 'string' ? meta.description.trim() : '',
-    pitch: pitch ? pitch.split(/\n{2,}/).map((p) => p.replace(/\n/g, ' ').trim()).filter(Boolean) : [],
+    pitch: pitch ? pitchBlocks(pitch) : [],
     facts: hasFacts ? facts : null,
     faq: Array.isArray(meta?.faq) ? meta.faq.filter((f) => f && typeof f.question === 'string' && typeof f.answer === 'string') : [],
     docs: Array.isArray(related?.docs) ? related.docs : [],
@@ -111,7 +167,10 @@ export function renderDemoAboutHtml(model, { href, escape = escapeHtml, sourceLi
     if (key === 'about') {
       html += `<section><h2>${escape(h.about)}</h2>`
       if (model.description) html += `<p>${escape(model.description)}</p>`
-      for (const p of model.pitch) html += `<p>${escape(p)}</p>`
+      const runs = (/** @type {PitchRun[]} */ rs) => rs.map((r) => (r.code ? `<code>${escape(r.text)}</code>` : escape(r.text))).join('')
+      for (const b of model.pitch) {
+        html += b.kind === 'list' ? `<ul>${b.items.map((it) => `<li>${runs(it)}</li>`).join('')}</ul>` : `<p>${runs(b.runs)}</p>`
+      }
       html += `</section>`
     } else if (key === 'facts') {
       const f = model.facts

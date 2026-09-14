@@ -18,8 +18,12 @@ export function loadRegistry(src = readFileSync(REGISTRY, 'utf-8')) {
   // four leading string args positionally rather than splitting on commas.
   const re =
     /\bdemo\(\s*'([^']+)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'((?:[^'\\]|\\.)*)'\s*,\s*'([^']+)'/g
+  // The registry is TypeScript source: a quote inside a single-quoted string
+  // is written \', and that backslash must not reach a docs page (it did:
+  // "the grid\'s", "part\'s qty" in the embedded blurbs).
+  const unesc = (v) => v.replace(/\\(['"\\])/g, '$1')
   for (const m of src.matchAll(re)) {
-    out.push({ id: m[1], title: m[2], description: m[3], category: m[4] })
+    out.push({ id: m[1], title: unesc(m[2]), description: unesc(m[3]), category: m[4] })
   }
   return out
 }

@@ -17,6 +17,11 @@
       "id": "export-options",
       "file": "export-options.json",
       "describes": "@svgrid/enterprise api.exportData({...}) argument."
+    },
+    {
+      "id": "chart-spec",
+      "file": "chart-spec.json",
+      "describes": "The ChartSpec passed to <SvChart spec={...}> and returned by rowsToChartSpec."
     }
   ]
 }

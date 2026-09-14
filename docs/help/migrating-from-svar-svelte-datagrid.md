@@ -15,18 +15,34 @@ also exposes a headless engine and an MCP server).
 > SVAR's exact prop and event names evolve across releases; check the
 > current SVAR docs and map them onto the SvGrid equivalents below.
 
+<!-- facts:start svar-svelte-datagrid -->
+> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
+<!-- facts:end -->
+
 ## Concept map
 
 | SVAR DataGrid (wx-svelte-grid)            | sv-grid                                   |
 | ----------------------------------------- | ----------------------------------------- |
 | `<Grid {data} {columns} />`               | `<SvGrid data={...} columns={...} />`      |
 | `columns: [{ id, header, width, ... }]`   | `columns: [{ field, header, width, ... }]` |
+| `sizes={{ rowHeight, columnWidth }}`      | `rowHeight` prop, `width` per column       |
+| `autoRowHeight`                           | `autoRowHeight`                            |
 | Per-column `editor` / `template`          | `editorType` + `cell` snippet              |
-| Tree / hierarchical data                  | `rowExpandingFeature` + tree row shape     |
-| Built-in sort / filter config             | `rowSortingFeature` / `columnFilteringFeature` |
-| Edit / change events                      | `onCellValueChange`                        |
-| Theme / skin classes                      | `--sg-*` CSS custom properties / Tailwind  |
-| Imperative grid API                       | `SvGridApi` via `onApiReady`               |
+| `sort: true` on a column, `sortMarks`     | `rowSortingFeature`; `initialSorting`      |
+| Header filters, the Filter component      | `columnFilteringFeature`; Excel-style menu and filter row built in |
+| `tree` prop + `data` with children        | `treeData={{ parentField }}` or `rowExpandingFeature` with sub rows |
+| `select` / `multiselect`                  | `selectionMode="row"` (+ checkbox column)  |
+| `split={{ left: n }}` (pinned columns)    | `initialColumnPinning` or `pinned: 'left' \| 'right'` per column |
+| `reorder` (row drag)                      | `rowDragManaged`                           |
+| `undo` prop, undo/redo hotkeys            | `history` prop; `api.undo()` / `api.redo()` |
+| Context menu component                    | `contextMenu` prop with items               |
+| `init={(api) => ...}`                     | `onApiReady={(api) => ...}`                 |
+| `api.exec('sort-rows', { key, order })`   | `api.setSort(field, 'asc' \| 'desc')`      |
+| `api.exec('filter-rows', { filter })`     | `api.setFilter(field, { operator, value })` |
+| `api.on('...')` event bus                 | `onXxx` callback props                      |
+| Export to CSV, print API                  | `api.exportCsv()` (free); print in `@svgrid/enterprise` |
+| `RestDataProvider`                        | server-side row model / `externalSort` + `externalFilter` |
+| Theme / skin components (Willow, Material)| `--sg-*` CSS custom properties / Tailwind  |
 
 ## Before / after (shape, not exact prop names)
 
@@ -96,11 +112,13 @@ The example at the end of this page runs against these rows:
 
 Both grids are MIT and free for commercial use, so licensing is not the
 deciding factor. The difference is monetization: SVAR keeps the whole
-grid free (including CSV export and print) and sells its Gantt instead,
-whereas SvGrid's `@svgrid/grid` core is MIT and the optional
-`@svgrid/enterprise` pack (advanced XLSX/PDF export, pivot, import, AI, support)
-is the paid piece. If all you need is CSV export, SVAR gives it free; if
-you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
+grid free (including CSV export and print) and sells PRO editions of its
+Gantt, Calendar and Kanban instead, whereas SvGrid's `@svgrid/grid` core is
+MIT and the optional `@svgrid/enterprise` pack (XLSX/PDF export, print,
+pivot, import, support) is the paid piece. CSV, TSV and JSON export and the
+in-grid AI helpers are free on SvGrid too. If all you need is CSV export and
+print, SVAR gives both free; if you need pivot, Excel or PDF output, or a
+support SLA, that is Enterprise on SvGrid.
 
 ## What you get with SvGrid
 
@@ -110,14 +128,38 @@ you need pivot, advanced export, or a support SLA, that is Enterprise on SvGrid.
   component, if you want to compose your own layer.
 - **Excel-style filter menu**, **cell-range selection + TSV copy**, a
   **fill handle**, **integrated charts**, and a documented **imperative API**.
-- **@svgrid/mcp** so AI assistants answer accurately about your grid.
+- **In-grid AI helpers** (natural-language filter, smart fill, summarise),
+  free against a model you register, and **@svgrid/mcp** so AI assistants
+  answer accurately about your grid and can check the code they write.
+
+The two features most SVAR teams port for:
+
+<div data-docs-demo="07-grouping-aggregation" data-height="520"></div>
+
+<div data-docs-demo="181-master-detail-grid" data-height="520"></div>
+
+## What you give up
+
+- **Free printing.** SVAR's print API is in the MIT grid; SvGrid's print
+  view is in `@svgrid/enterprise`.
+- **The React and Vue versions** of the same grid. SvGrid is Svelte-only.
+- **A smaller bundle.** The facts box at the top of the page has both
+  packages measured the same way; the difference is the grouping,
+  master/detail, range editing, charts and server-side row model SvGrid
+  carries, and features you never import load as separate chunks.
+- **The SVAR suite around the grid.** Gantt, Calendar, Kanban and File
+  Manager share SVAR's core; SvGrid's Kanban and scheduler are views of the
+  grid in `@svgrid/enterprise`.
 
 ## What to check on the SVAR side
 
-- The **wider SVAR suite** (Gantt, Scheduler) - if you use several SVAR
-  components together, staying on SVAR may be simpler.
+- The **wider SVAR suite** (Gantt, Calendar, Kanban) - if you use several
+  SVAR components together, staying on SVAR may be simpler.
 - Any **SVAR-specific column features** you rely on; map each to a SvGrid
   `cell` snippet, `editorType`, or feature before porting.
+- **Filter functions.** SVAR filters with a predicate you write; SvGrid's
+  filter takes an operator and a value per column, and `externalFilter`
+  hands you the rows when you want to keep a custom predicate.
 
 ## Frequently asked questions
 
@@ -138,9 +180,19 @@ plus re-theming through `--sg-*` tokens.
 ### Are SvGrid and SVAR both free and MIT?
 
 Yes. `@svgrid/grid` and the SVAR DataGrid are both MIT and free for
-commercial, closed-source use. SVAR keeps the whole grid free and monetizes its
-Gantt; on SvGrid, only the optional `@svgrid/enterprise` add-on (advanced export,
-pivot, import, AI, support) is paid.
+commercial, closed-source use. SVAR keeps the whole grid free and sells PRO
+editions of its Gantt, Calendar and Kanban; on SvGrid, only the optional
+`@svgrid/enterprise` add-on (Excel and PDF export, print, pivot, import,
+support) is paid. The dated statement from svar.dev is in the facts box at
+the top of this page.
+
+### How does SVAR's tree data map to SvGrid?
+
+SVAR takes hierarchical data with the `tree` prop. SvGrid takes either a
+flat array with a parent field (`treeData={{ parentField: 'parentId' }}`)
+or nested rows through `rowExpandingFeature`, and the same grid also does
+master/detail, which SVAR's docs do not list. The example below runs the
+flat shape:
 
 ## What you end up with
 
@@ -150,8 +202,16 @@ Grouping with aggregation and a totals row, the main capability step up.
 <SvGrid data={rows} {columns} groupBy={['department']} summary groupable sortable filterable />
 ```
 
+And the tree shape, from the same rows with a parent link, which is what SVAR's `tree` prop becomes:
+
+```svelte {runnable}
+<SvGrid data={rows.map((r, i) => ({ ...r, parentId: i === 0 ? null : rows[0].id }))} {columns} treeData={{ parentField: 'parentId' }} sortable />
+```
+
 ## See also
 
-- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/) - the side-by-side comparison
+- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/) - the side-by-side comparison, with a source and date for every claim and the measured benchmark
+- [Grouping and aggregation](./grouping-aggregation.md) - the first demo above
+- [Master/detail](./rows/master-detail.md) - the second demo above
 - [Architecture](./architecture.md) - the engine + render-component split
 - [Cell components](./cells/cell-components.md) - custom cells and editors

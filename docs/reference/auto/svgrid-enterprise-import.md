@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\enterprise\src\import.ts`.
 
 ### `type ImportFormat`
 
-Source formats `importGrid` reads. `'auto'` picks one from the file extension. */
+Source formats `importGrid` reads. `'auto'` picks one from the file extension.
 
 ```ts
 export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
@@ -12,7 +12,7 @@ export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
 
 ### `type ImportColumnMap`
 
-Maps a source header to the row field it populates, for files whose columns do not match your data. */
+Maps a source header to the row field it populates, for files whose columns do not match your data.
 
 ```ts
 export type ImportColumnMap = Record<string, string>
@@ -38,7 +38,7 @@ export type ImportFieldType =
 
 ### `type ImportColumnTypes`
 
-Per-field coercion, so a column of `"42"` strings arrives as numbers. */
+Per-field coercion, so a column of `"42"` strings arrives as numbers.
 
 ```ts
 export type ImportColumnTypes = Record<string, ImportFieldType>
@@ -61,7 +61,7 @@ export type ImportGridColumn = {
 
 ### `type ImportProgress`
 
-Progress ticks emitted during a large import so a UI can show a bar. */
+Progress ticks emitted during a large import so a UI can show a bar.
 
 ```ts
 export type ImportProgress = {
@@ -78,7 +78,7 @@ export type ImportProgress = {
 
 ### `type ImportRowError`
 
-One row that failed validation, with the reason and where it came from. */
+One row that failed validation, with the reason and where it came from.
 
 ```ts
 export type ImportRowError = {
@@ -92,7 +92,7 @@ export type ImportRowError = {
 
 ### `type ImportValidator`
 
-Per-row check run during import. Return an error message to reject the row, or nothing to accept it. */
+Per-row check run during import. Return an error message to reject the row, or nothing to accept it.
 
 ```ts
 export type ImportValidator<TData> = (
@@ -103,7 +103,7 @@ export type ImportValidator<TData> = (
 
 ### `type ImportOptions`
 
-Everything `importGrid` accepts: the format, the column mapping and types, and the validator. */
+Everything `importGrid` accepts: the format, the column mapping and types, and the validator.
 
 ```ts
 export type ImportOptions<TData> = {
@@ -182,7 +182,7 @@ export type ImportOptions<TData> = {
 
 ### `type ImportResult`
 
-The outcome of an import: the rows that parsed, and the ones that did not with their errors. */
+The outcome of an import: the rows that parsed, and the ones that did not with their errors.
 
 ```ts
 export type ImportResult<TData> = {

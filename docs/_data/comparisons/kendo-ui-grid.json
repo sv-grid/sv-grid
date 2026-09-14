@@ -1,0 +1,192 @@
+{
+  "slug": "kendo-ui-grid",
+  "competitor": "Kendo UI Grid (Telerik)",
+  "npm": "@progress/kendo-react-grid",
+  "url": "https://www.telerik.com/kendo-ui",
+  "aliases": [
+    "kendo",
+    "kendo ui",
+    "kendo grid",
+    "telerik",
+    "telerik grid"
+  ],
+  "framework": [
+    "react",
+    "angular",
+    "vue",
+    "jquery"
+  ],
+  "group": "commercial",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "Kendo UI Grid is the polished, commercial enterprise grid from Telerik / Progress, for jQuery, React, Vue, and Angular.",
+  "oneLineVerdict": "Kendo is a polished enterprise suite with full vendor support - and a commercial license to match. SvGrid is Svelte-5-native with an MIT core and a paid tier at a fraction of the cost.",
+  "alternativeIntro": "Kendo is a polished commercial suite with support contracts behind it, and it has no Svelte target. Teams move for the licence shape as much as the framework: an MIT core with no row cap and no key, and a paid pack only for export, pivot and the board and scheduler views. Kendo still ships far more components and a much longer support track record.",
+  "intro": [
+    "Kendo UI Grid is part of the Telerik / Progress suite: a comprehensive, well-supported enterprise grid available for jQuery, React, Vue, and Angular under a commercial license, with professional support and a large component library.",
+    "SvGrid targets the Svelte 5 stack with an MIT community core that already covers sorting, Excel-style filters, grouping, virtualization, editing, master/detail, and tree data - plus a paid Enterprise + support tier at a fraction of enterprise-suite pricing."
+  ],
+  "similarities": [
+    "Full enterprise feature set: sort, filter, group, edit, virtualize.",
+    "Paid support tier available.",
+    "Mature documentation and examples.",
+    "TypeScript support."
+  ],
+  "svgridAdvantages": [
+    "Svelte 5 native rather than a multi-framework commercial suite.",
+    "MIT-licensed community core - no per-developer license for the grid itself.",
+    "Headless engine + imperative API + @svgrid/mcp.",
+    "Paid support at a fraction of enterprise-suite pricing.",
+    "No design-system lock-in - theme via --sg-* tokens."
+  ],
+  "competitorAdvantages": [
+    "Massive component suite beyond the grid (charts, scheduler, editor).",
+    "Decades of enterprise track record and dedicated vendor support.",
+    "Parity across jQuery, React, Vue, and Angular.",
+    "Compliance / accessibility certifications for procurement."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "jQuery, React, Vue and Angular packages",
+        "source": "kendo-pricing"
+      }
+    },
+    {
+      "feature": "License",
+      "svgrid": {
+        "status": "yes",
+        "note": "MIT core"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "per developer per year, no free tier for the grid",
+        "source": "kendo-pricing"
+      }
+    },
+    {
+      "feature": "Sort / filter / group",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Inline editing",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Headless engine",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    },
+    {
+      "feature": "Paid support",
+      "svgrid": {
+        "status": "yes",
+        "note": "$599/dev/yr"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "support tiers priced into the licence",
+        "source": "kendo-pricing"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You are on Svelte 5 and want a native grid.",
+    "You want an MIT core and a far cheaper paid support tier.",
+    "You do not need an entire commercial component suite."
+  ],
+  "whenToChooseCompetitor": [
+    "You need the full Telerik suite across multiple frameworks.",
+    "Procurement requires a large vendor with certifications and SLAs.",
+    "You want decades of enterprise track record behind the grid."
+  ],
+  "migration": {
+    "slug": "migrating-from-kendo-grid",
+    "effort": "3-6 hours per grid",
+    "youLose": [
+      "The rest of the Kendo suite in one licence: charts, schedulers, editors and the theme builder across jQuery, React, Vue and Angular.",
+      "Telerik support tiers with response-time commitments priced into the licence."
+    ]
+  },
+  "pricing": {
+    "summary": "telerik.com lists the Kendo UI bundle at $799, $849 or $1,299 per developer per year depending on the support tier, and KendoReact alone from $649 per developer per year; no free tier for the grid",
+    "amount": 799,
+    "unit": "USD per developer per year (Kendo UI, Lite support)",
+    "url": "https://www.telerik.com/purchase.aspx",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "03-excel-filters",
+    "08-tree-and-master-detail"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/server-side-data"
+  ],
+  "related": [
+    "devextreme-datagrid",
+    "syncfusion-grid",
+    "ag-grid"
+  ],
+  "bottomLine": "Kendo is a polished enterprise suite with deep multi-framework support and a price to match. For a Svelte team that needs the grid - not the whole suite - SvGrid delivers the common enterprise features under an MIT core, with paid support at a fraction of the cost.",
+  "faq": [
+    {
+      "question": "Is SvGrid a cheaper Kendo UI Grid alternative?",
+      "answer": "For a Svelte stack, yes - the core is MIT and the paid tier is a fraction of enterprise component-suite pricing."
+    },
+    {
+      "question": "SvGrid vs Kendo Grid - what is the trade-off?",
+      "answer": "SvGrid is Svelte-native with an MIT core; Kendo offers a huge multi-framework component suite and decades of vendor support. Choose based on whether you need the grid or the whole suite."
+    },
+    {
+      "question": "Does SvGrid match the Kendo grid feature set?",
+      "answer": "It covers the common enterprise surface - sorting, Excel-style filters, grouping, virtualization, editing, master/detail, tree. The Kendo edge is the wider suite and framework parity."
+    }
+  ],
+  "sources": [
+    {
+      "id": "kendo-pricing",
+      "url": "https://www.telerik.com/purchase.aspx",
+      "evidences": "Kendo UI: $799, $849 or $1,299 per developer per year by support tier, 450+ components across Angular, React, jQuery and Vue; KendoReact from $649 per developer per year; DevCraft bundles from $1,149 per developer per year",
+      "verified": "2026-09-12"
+    }
+  ]
+}

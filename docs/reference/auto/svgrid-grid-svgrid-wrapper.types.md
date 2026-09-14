@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\svgrid-wrapper.types.ts`.
 
 ### `type SvGridFilterOperator`
 
-The comparisons a column filter can use, as shown in the filter menu. */
+The comparisons a column filter can use, as shown in the filter menu.
 
 ```ts
 export type SvGridFilterOperator = FilterOperator
@@ -53,21 +53,64 @@ export type SvGridViewState = {
     reduce: 'sum' | 'avg' | 'count'
     stacked: boolean
   }
-  /** All charts in the tab strip (multi-chart), plus the active index. */
-  charts?: Array<{
+  /** All charts in the tab strip (multi-chart), plus the active index.
+   *  Every field the panel can change is here so a saved view restores the
+   *  chart exactly; `null` inherits the `charting` config. */
+  charts?: ChartTabSnapshot[]
+  chartActive?: number
+  /** The named charts kept with `api.saveChart`; present only when there is one. */
+  savedCharts?: SavedChart[]
+}
+```
+
+### `type ChartTabSnapshot`
+
+One chart tab as the saved view carries it (`GridState.charts[i]`).
+
+```ts
+export type ChartTabSnapshot = {
     title: string
     type: ChartType
     dimension: string | null
     series: string | null
     measure: string | null
-    reduce: 'sum' | 'avg' | 'count'
+    /** Scatter's y measure, a range's high, a bullet's target. */
+    measure2?: string | null
+    reduce: ChartReducer
     stacked: boolean | null
+    stacked100?: boolean | null
+    orientation?: 'vertical' | 'horizontal' | null
+    donut?: boolean | null
+    palette?: string[] | null
     dataLabels: boolean | null
     logScale: boolean | null
     timeAxis: boolean | null
     valueFormat: 'number' | 'currency' | 'percent' | 'compact' | null
-  }>
-  chartActive?: number
+    bucket?: ChartTimeBucket | null
+    bins?: number | null
+    funnelShape?: 'trapezoid' | 'pyramid' | 'cone' | null
+    candleStyle?: 'classic' | 'hollow' | 'heikin-ashi' | null
+    /** The zoom window as category indices, or null for the whole chart. */
+    zoom?: ChartZoomWindow | null
+    ohlc?: { open: string | null; high: string | null; low: string | null; close: string | null; volume: string | null } | null
+    indicators?: string[]
+    format?: ChartFormatState | null
+    /** An unlinked chart carries the spec it was frozen with. */
+    frozen?: { spec: ChartSpec; at: string } | null
+}
+```
+
+### `type SavedChart`
+
+A chart configuration kept under a name (`api.saveChart`).
+
+```ts
+export type SavedChart = {
+  name: string
+  /** ISO timestamp of the save. */
+  savedAt: string
+  /** The tab's state at the time; `applySavedChart` puts it on the active tab. */
+  tab: ChartTabSnapshot
 }
 ```
 
@@ -86,7 +129,7 @@ export type SvGridTransaction<TData> = {
 
 ### `type SvGridTransactionResult`
 
-What a batched `applyTransaction` did: how many rows were added, updated and removed. */
+What a batched `applyTransaction` did: how many rows were added, updated and removed.
 
 ```ts
 export type SvGridTransactionResult = {
@@ -160,13 +203,47 @@ export type SvGridApi<
     dimension?: string | null
     series?: string | null
     measure?: string | null
-    reduce?: 'sum' | 'avg' | 'count'
+    reduce?: ChartReducer
     stacked?: boolean
     dataLabels?: boolean
     logScale?: boolean
     timeAxis?: boolean
     valueFormat?: 'number' | 'currency' | 'percent' | 'compact'
+    /** Group a date dimension by calendar unit; `null` returns to exact values. */
+    bucket?: ChartTimeBucket | null
+    /** Second measure: a scatter's Y, a range's high end, a bullet's target. */
+    measure2?: string | null
+    /** Histogram bin count; `null` for Sturges' rule. */
+    bins?: number | null
+    funnelShape?: 'trapezoid' | 'pyramid' | 'cone' | null
+    candleStyle?: 'classic' | 'hollow' | 'heikin-ashi' | null
+    /** Candlestick / OHLC: the price columns (ids or fields); `null` goes
+     *  back to guessing them from the column names. */
+    ohlc?: { open?: string | null; high?: string | null; low?: string | null; close?: string | null; volume?: string | null } | null
+    /** Indicator panes under a price chart (`volume`, `rsi`, `macd`,
+     *  `stochastic`, `atr`, `obv`) and overlays on it (`sma`, `ema`,
+     *  `bb`, `vwap`). */
+    indicators?: Array<'volume' | 'rsi' | 'macd' | 'stochastic' | 'atr' | 'obv' | 'sma' | 'ema' | 'bb' | 'vwap'>
+    /** The builder's format state (titles, axes, legend, per-series style);
+     *  `null` resets it. */
+    format?: ChartFormatState | null
+    /** `true` unlinks the chart from the grid (it keeps the spec it has),
+     *  `false` links it back. */
+    frozen?: boolean
+    /** Apply a saved chart (by name) to the active tab before the other keys. */
+    saved?: string
   }): void
+  /**
+   * Keep the active chart's whole configuration (type, columns, aggregate,
+   * switches, indicators, format, zoom) under a name. A same-named entry is
+   * replaced. Saved charts travel with `getState()` / `setState()` and show
+   * in the panel's Saved charts popover.
+   */
+  saveChart(name: string): void
+  /** Apply a saved chart to the active tab, which keeps its title. `false` when no chart has that name. */
+  applySavedChart(name: string): boolean
+  removeSavedChart(name: string): void
+  getSavedCharts(): SavedChart[]
   /**
    * Register a natural-language "chart this" handler. When set, the chart
    * panel shows an AI button. `@svgrid/enterprise`'s `enableAiCharting(api)`
@@ -175,6 +252,13 @@ export type SvGridApi<
   setChartAiHandler(
     handler: ((prompt: string) => Promise<Record<string, unknown> | null>) | null,
   ): void
+  /**
+   * Register an "explain this chart" handler. When set, the chart panel's AI
+   * row shows an Explain button that reads the active chart and shows the
+   * summary and insights it returns. `enableAiCharting(api)` fills this with
+   * `aiExplainChart`. Pass `null` to remove it.
+   */
+  setChartExplainHandler(handler: (() => Promise<{ summary: string; insights: string[] } | null>) | null): void
 
   // ----- Rows -----
   /** Add one row. `position` defaults to `'bottom'`. */
@@ -519,7 +603,7 @@ export type SvGridApi<
 
 ### `type SvGridWrapperProps`
 
-The props `<SvGrid>` accepts. See the SvGrid reference for the full list with defaults. */
+The props `<SvGrid>` accepts. See the SvGrid reference for the full list with defaults.
 
 ```ts
 export type SvGridWrapperProps<

@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\dock-manager-model.ts`.
 
 ### `type DockSide`
 
-Which edge a pane docks against when dropped. */
+Which edge a pane docks against when dropped.
 
 ```ts
 export type DockSide = Exclude<DockZone, 'center'>
@@ -12,7 +12,7 @@ export type DockSide = Exclude<DockZone, 'center'>
 
 ### `type FloatWindow`
 
-A floating window: one tabs leaf shown in a movable/resizable frame. */
+A floating window: one tabs leaf shown in a movable/resizable frame.
 
 ```ts
 export type FloatWindow = {
@@ -33,7 +33,7 @@ export type FloatWindow = {
 
 ### `type AutoHideEntry`
 
-A leaf collapsed to an edge; a fly-out reveals it, "pin" re-docks it. */
+A leaf collapsed to an edge; a fly-out reveals it, "pin" re-docks it.
 
 ```ts
 export type AutoHideEntry = {
@@ -47,7 +47,7 @@ export type AutoHideEntry = {
 
 ### `type DockManagerState`
 
-The whole dock manager: its layout tree plus floating and pinned panes. */
+The whole dock manager: its layout tree plus floating and pinned panes.
 
 ```ts
 export type DockManagerState = {
@@ -61,7 +61,7 @@ export type DockManagerState = {
 
 ### `type PaneLocation`
 
-Where a pane currently lives. */
+Where a pane currently lives.
 
 ```ts
 export type PaneLocation =
@@ -72,7 +72,7 @@ export type PaneLocation =
 
 ### `function locatePane`
 
-Find a pane in the layout tree by id, returning it with its parent for mutation. */
+Find a pane in the layout tree by id, returning it with its parent for mutation.
 
 ```ts
 export function locatePane(state: DockManagerState, paneId: string): PaneLocation | null {
@@ -89,7 +89,7 @@ export function locatePane(state: DockManagerState, paneId: string): PaneLocatio
 
 ### `function surfaceOfTabs`
 
-Which surface holds a tabs leaf: 'main', a window id, or null. */
+Which surface holds a tabs leaf: 'main', a window id, or null.
 
 ```ts
 export function surfaceOfTabs(state: DockManagerState, tabsId: string): 'main' | string | null {
@@ -101,7 +101,7 @@ export function surfaceOfTabs(state: DockManagerState, tabsId: string): 'main' |
 
 ### `function reorderTab`
 
-Reorder a tab within its leaf, wherever that leaf lives (main or a float). */
+Reorder a tab within its leaf, wherever that leaf lives (main or a float).
 
 ```ts
 export function reorderTab(state: DockManagerState, tabsId: string, from: number, to: number): DockManagerState {
@@ -122,7 +122,7 @@ export function reorderTab(state: DockManagerState, tabsId: string, from: number
 ### `function resizeGroup`
 
 Resize a group's children (splitter drag). Groups only exist in `main`
- (floating windows are single leaves), so this targets the main tree. */
+ (floating windows are single leaves), so this targets the main tree.
 
 ```ts
 export function resizeGroup(state: DockManagerState, groupId: string, sizes: number[]): DockManagerState {
@@ -133,7 +133,7 @@ export function resizeGroup(state: DockManagerState, groupId: string, sizes: num
 
 ### `function setManagerActive`
 
-Set the active tab of a leaf in main or a floating window. */
+Set the active tab of a leaf in main or a floating window.
 
 ```ts
 export function setManagerActive(state: DockManagerState, tabsId: string, active: number): DockManagerState {
@@ -203,7 +203,7 @@ export function dockPaneOnto(
 ### `function addPaneToMain`
 
 Insert a NEW pane into the main area - the first leaf (as a tab), or as the
- whole main when empty. Used to pop a window/pop-out back into the layout. */
+ whole main when empty. Used to pop a window/pop-out back into the layout.
 
 ```ts
 export function addPaneToMain(state: DockManagerState, p: DockPane, genId: IdGen): DockManagerState {
@@ -224,7 +224,7 @@ export function addPaneToMain(state: DockManagerState, p: DockPane, genId: IdGen
 
 ### `function dockPaneToEmptyMain`
 
-Dock a pane into an empty main area (main becomes a single leaf holding it). */
+Dock a pane into an empty main area (main becomes a single leaf holding it).
 
 ```ts
 export function dockPaneToEmptyMain(state: DockManagerState, paneId: string, genId: IdGen): DockManagerState {
@@ -238,7 +238,7 @@ export function dockPaneToEmptyMain(state: DockManagerState, paneId: string, gen
 
 ### `function floatPane`
 
-Pop a pane out into a new floating window at the given rect. */
+Pop a pane out into a new floating window at the given rect.
 
 ```ts
 export function floatPane(
@@ -271,7 +271,7 @@ export function floatPane(
 
 ### `function dockWindowOnto`
 
-Dock an entire floating window's panes back into a main leaf. */
+Dock an entire floating window's panes back into a main leaf.
 
 ```ts
 export function dockWindowOnto(
@@ -308,7 +308,7 @@ export function dockWindowOnto(
 
 ### `function moveWindow`
 
-Move a floating window (top-left). */
+Move a floating window (top-left).
 
 ```ts
 export function moveWindow(state: DockManagerState, windowId: string, x: number, y: number): DockManagerState {
@@ -318,7 +318,7 @@ export function moveWindow(state: DockManagerState, windowId: string, x: number,
 
 ### `function resizeWindow`
 
-Resize a floating window. */
+Resize a floating window.
 
 ```ts
 export function resizeWindow(
@@ -338,7 +338,7 @@ export function resizeWindow(
 
 ### `function bringToFront`
 
-Raise a floating window to the top of the stack. */
+Raise a floating window to the top of the stack.
 
 ```ts
 export function bringToFront(state: DockManagerState, windowId: string): DockManagerState {
@@ -349,7 +349,7 @@ export function bringToFront(state: DockManagerState, windowId: string): DockMan
 
 ### `function setWindowMinimized`
 
-Collapse a floating window to just its title bar (or restore it). */
+Collapse a floating window to just its title bar (or restore it).
 
 ```ts
 export function setWindowMinimized(state: DockManagerState, windowId: string, minimized: boolean): DockManagerState {
@@ -364,7 +364,7 @@ export function setWindowMinimized(state: DockManagerState, windowId: string, mi
 
 ### `function toggleWindowMaximized`
 
-Toggle a floating window between filling the manager and its own rect. */
+Toggle a floating window between filling the manager and its own rect.
 
 ```ts
 export function toggleWindowMaximized(state: DockManagerState, windowId: string): DockManagerState {
@@ -379,7 +379,7 @@ export function toggleWindowMaximized(state: DockManagerState, windowId: string)
 
 ### `function closeWindow`
 
-Close a floating window and all its panes. */
+Close a floating window and all its panes.
 
 ```ts
 export function closeWindow(state: DockManagerState, windowId: string): DockManagerState {
@@ -389,7 +389,7 @@ export function closeWindow(state: DockManagerState, windowId: string): DockMana
 
 ### `function findLeafById`
 
-Find a tabs leaf anywhere (main or a floating window) by id. */
+Find a tabs leaf anywhere (main or a floating window) by id.
 
 ```ts
 export function findLeafById(state: DockManagerState, tabsId: string): DockTabs | null {
@@ -408,7 +408,7 @@ export function findLeafById(state: DockManagerState, tabsId: string): DockTabs 
 
 ### `function toggleMaximizeLeaf`
 
-Toggle a tiled leaf maximized (filling the docked area). Clears if it is gone. */
+Toggle a tiled leaf maximized (filling the docked area). Clears if it is gone.
 
 ```ts
 export function toggleMaximizeLeaf(state: DockManagerState, tabsId: string): DockManagerState {
@@ -419,7 +419,7 @@ export function toggleMaximizeLeaf(state: DockManagerState, tabsId: string): Doc
 
 ### `function autoHideWindow`
 
-Send a floating window's panel to an edge as an auto-hidden entry. */
+Send a floating window's panel to an edge as an auto-hidden entry.
 
 ```ts
 export function autoHideWindow(
@@ -438,7 +438,7 @@ export function autoHideWindow(
 
 ### `function autoHideLeaf`
 
-Collapse a MAIN leaf to an edge strip (auto-hide) on the given side. */
+Collapse a MAIN leaf to an edge strip (auto-hide) on the given side.
 
 ```ts
 export function autoHideLeaf(
@@ -458,7 +458,7 @@ export function autoHideLeaf(
 ### `function autoHidePaneToSide`
 
 Auto-hide a single pane to an edge (drag a tab to the manager border). The
- pane leaves its leaf and becomes its own collapsed entry on that side. */
+ pane leaves its leaf and becomes its own collapsed entry on that side.
 
 ```ts
 export function autoHidePaneToSide(
@@ -501,7 +501,7 @@ export function pinAutoHidden(
 
 ### `function setAutoHideSize`
 
-Resize an auto-hide fly-out. */
+Resize an auto-hide fly-out.
 
 ```ts
 export function setAutoHideSize(state: DockManagerState, entryId: string, size: number): DockManagerState {
@@ -514,7 +514,7 @@ export function setAutoHideSize(state: DockManagerState, entryId: string, size: 
 
 ### `function closePane`
 
-Close a pane wherever it lives. */
+Close a pane wherever it lives.
 
 ```ts
 export function closePane(state: DockManagerState, paneId: string): DockManagerState {
@@ -524,7 +524,7 @@ export function closePane(state: DockManagerState, paneId: string): DockManagerS
 
 ### `function allManagerPaneIds`
 
-Every pane id across all surfaces. */
+Every pane id across all surfaces.
 
 ```ts
 export function allManagerPaneIds(state: DockManagerState): string[] {
@@ -543,7 +543,7 @@ Every id used anywhere in the workspace: node ids (groups + tabs leaves),
  generated id unique even against a workspace restored from storage - the
  manager's id counter is module-scoped and resets on reload, so without this
  the same `dm-N` can be minted twice and collide (a keyed `{#each}` then throws
- `each_key_duplicate`). */
+ `each_key_duplicate`).
 
 ```ts
 export function allManagerIds(state: DockManagerState): string[] {
@@ -566,7 +566,7 @@ Reassign any duplicate group / tabs NODE id (and floating-window / auto-hide
  entry id) so no keyed sibling list sees a collision. Pane ids are left alone -
  they key the `pane` snippet to its content, so a rename would blank a panel;
  a restored workspace's repeats are always on the generated node ids anyway.
- Idempotent: a clean workspace is returned value-equal. */
+ Idempotent: a clean workspace is returned value-equal.
 
 ```ts
 export function dedupeManagerNodeIds(state: DockManagerState): DockManagerState {

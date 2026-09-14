@@ -1,0 +1,24 @@
+{
+  "description": "Gauges and bullets: a gauge is gaugeValue between gaugeMin and gaugeMax with gaugeRanges as the coloured bands behind the needle, gaugeTarget as a tick and gaugeUnit after the number, and animate sweeps the needle to a new value; a bullet chart is one row per category with the value as a bar, targets as a tick and bulletRanges as the qualitative bands behind every row. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte gauge chart",
+    "svelte bullet chart",
+    "svelte kpi gauge",
+    "svelte speedometer chart",
+    "svelte dashboard gauge"
+  ],
+  "faq": [
+    {
+      "question": "How do I colour the gauge bands?",
+      "answer": "gaugeRanges is a list of { from, to, color } drawn behind the needle, in the order given. gaugeTarget adds a tick at that value."
+    },
+    {
+      "question": "Does the needle animate?",
+      "answer": "Yes, with animate on the component: a change to gaugeValue sweeps the needle from the old value to the new one instead of jumping."
+    },
+    {
+      "question": "What is a bullet chart for?",
+      "answer": "Several KPIs against their targets in little space: each row is a bar for the value, a tick for the target and shaded ranges behind it for poor, fair and good."
+    }
+  ]
+}

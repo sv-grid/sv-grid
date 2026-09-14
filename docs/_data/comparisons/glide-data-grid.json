@@ -1,0 +1,194 @@
+{
+  "slug": "glide-data-grid",
+  "competitor": "Glide Data Grid",
+  "npm": "@glideapps/glide-data-grid",
+  "url": "https://grid.glideapps.com/",
+  "aliases": [
+    "glide",
+    "glide data grid",
+    "canvas data grid",
+    "@glideapps/glide-data-grid"
+  ],
+  "framework": [
+    "react"
+  ],
+  "group": "oss",
+  "tier": "standard",
+  "published": "2026-07-16",
+  "verified": "2026-09-12",
+  "tagline": "Glide Data Grid is a canvas-rendered React data grid built for extreme scroll performance on very large datasets.",
+  "oneLineVerdict": "Glide wins on raw canvas FPS for hundreds of thousands of visible cells. SvGrid renders accessible, selectable DOM with virtualization and is Svelte-5-native - the right call for most apps.",
+  "alternativeIntro": "Glide renders to canvas, which is why it is fast and also why text selection, accessibility and custom cells work differently there. SvGrid renders real DOM with virtualization, so a screen reader and browser find behave normally and a cell can be any Svelte snippet. If your bar is a million-row canvas scroll inside React, Glide is still the specialist.",
+  "intro": [
+    "Glide Data Grid renders to a <canvas> instead of DOM, which gives it exceptional performance on very wide, very tall datasets at the cost of standard HTML semantics. It is React-only and MIT-licensed.",
+    "SvGrid renders virtualized DOM: real table semantics, WAI-ARIA roles, keyboard navigation, and selectable / indexable text. For the vast majority of apps the performance gap is invisible, and you keep accessibility and SEO-friendly markup."
+  ],
+  "similarities": [
+    "MIT-licensed.",
+    "Virtualized rendering for large datasets.",
+    "Cell editing and custom cell content.",
+    "TypeScript-first."
+  ],
+  "svgridAdvantages": [
+    "Renders real DOM - WAI-ARIA, keyboard nav, screen-reader support, selectable text.",
+    "Svelte 5 native rather than React-only.",
+    "Excel-style filter menu, headless engine, and the imperative API out of the box.",
+    "@svgrid/mcp MCP server for AI assistants."
+  ],
+  "competitorAdvantages": [
+    "Peak canvas rendering performance on hundreds of thousands of visible cells.",
+    "Per-pixel custom cell drawing.",
+    "Proven inside Glide's own product at scale."
+  ],
+  "features": [
+    {
+      "feature": "Svelte 5 native",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "React only",
+        "source": "glide-readme"
+      }
+    },
+    {
+      "feature": "Rendering",
+      "svgrid": {
+        "status": "yes",
+        "note": "Accessible DOM"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "canvas",
+        "source": "glide-readme"
+      }
+    },
+    {
+      "feature": "WAI-ARIA + keyboard",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "Limited (canvas)"
+      }
+    },
+    {
+      "feature": "Selectable / indexable text",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "Canvas pixels"
+      }
+    },
+    {
+      "feature": "Peak FPS on 200k+ visible cells",
+      "svgrid": {
+        "status": "partial",
+        "note": "Good"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Best"
+      }
+    },
+    {
+      "feature": "Virtualization",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "yes"
+      }
+    },
+    {
+      "feature": "Excel-style filters",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "BYO"
+      }
+    },
+    {
+      "feature": "AI / MCP integration",
+      "svgrid": {
+        "status": "yes"
+      },
+      "competitor": {
+        "status": "no"
+      }
+    }
+  ],
+  "whenToChooseSvGrid": [
+    "You need accessibility, keyboard support, or selectable text.",
+    "You are on Svelte 5 and want a native grid.",
+    "You want filters, editing, and an imperative API without building them."
+  ],
+  "whenToChooseCompetitor": [
+    "You have measured a need for peak canvas FPS on 200k+ simultaneously visible cells.",
+    "You require per-pixel custom cell drawing.",
+    "Your app is React and accessibility is not a requirement."
+  ],
+  "migration": {
+    "slug": "migrating-from-glide",
+    "effort": "3-6 hours per grid",
+    "youLose": [
+      "Canvas rendering throughput on very wide, very dense sheets.",
+      "The React ecosystem around it, including Glide Data Editor."
+    ]
+  },
+  "pricing": {
+    "summary": "Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid",
+    "url": "https://grid.glideapps.com/",
+    "verified": "2026-09-12"
+  },
+  "demos": [
+    "187-headless-virtual",
+    "118-range-selection"
+  ],
+  "docs": [
+    "help/comparison",
+    "help/headless/virtualization",
+    "help/accessibility"
+  ],
+  "related": [
+    "react-data-grid",
+    "mui-x-datagrid",
+    "ag-grid"
+  ],
+  "bottomLine": "Glide is the right tool when you have measured a need for canvas-level FPS on hundreds of thousands of visible cells. For everyone else - and especially when accessibility, selectable text, or Svelte matter - the virtualized DOM in SvGrid is the better default.",
+  "faq": [
+    {
+      "question": "SvGrid vs Glide Data Grid - which should I use?",
+      "answer": "Use SvGrid unless you have a measured need for canvas rendering at extreme scale. SvGrid renders accessible DOM and is Svelte-native; Glide is React-only and canvas-based."
+    },
+    {
+      "question": "Is Glide faster than SvGrid?",
+      "answer": "At hundreds of thousands of simultaneously visible cells, canvas rendering gives Glide higher peak FPS. For typical datasets the difference is invisible, and SvGrid virtualizes comfortably to 100k+ rows."
+    },
+    {
+      "question": "Does SvGrid handle accessibility better than Glide?",
+      "answer": "Yes. SvGrid renders real DOM with WAI-ARIA roles, keyboard navigation, and selectable text; a canvas grid like Glide cannot offer those natively."
+    }
+  ],
+  "sources": [
+    {
+      "id": "glide-site",
+      "url": "https://grid.glideapps.com/",
+      "evidences": "MIT, fully free and open source; a React data grid that scales to millions of rows with lazy cell rendering and native scrolling",
+      "verified": "2026-09-12"
+    },
+    {
+      "id": "glide-readme",
+      "url": "https://github.com/glideapps/glide-data-grid",
+      "evidences": "README explains why the grid renders on an HTML canvas; supports React 16 and later",
+      "verified": "2026-09-12"
+    }
+  ],
+  "publishBundle": true
+}

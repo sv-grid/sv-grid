@@ -7,11 +7,24 @@
  *
  * This mirrors the editor kit's `resolveMessages` pattern (editor-contract.ts) so
  * chrome and editors share one localization idiom.
+ *
+ * The chart panel's strings are the other half of `GridMessages`
+ * (`GridChartPanelMessages` in chart-panel-messages.ts): same map, same
+ * `localization.text`, but their English defaults load with the panel, not
+ * with every grid.
  */
 import { resolveMessages } from './editor-contract'
+import type { GridChartPanelMessages } from './chart-panel-messages'
+
+/**
+ * Every string `localization.text` accepts: the grid chrome's own
+ * ({@link GridChromeMessages}) and the chart panel's
+ * ({@link GridChartPanelMessages}).
+ */
+export type GridMessages = GridChromeMessages & GridChartPanelMessages
 
 /** Every localizable chrome string, grouped by area in the comments. */
-export type GridMessages = {
+export type GridChromeMessages = {
   // Empty / loading state
   noRows: string
   loading: string
@@ -102,7 +115,7 @@ export type GridMessages = {
 }
 
 /** English defaults - the literal strings the grid shipped before localization. */
-export const defaultGridMessages: GridMessages = {
+export const defaultGridMessages: GridChromeMessages = {
   noRows: 'No rows to display.',
   loading: 'Loading grid data...',
   columns: 'Columns',
@@ -184,6 +197,6 @@ export const defaultGridMessages: GridMessages = {
  * values fall back to the default (via `resolveMessages`), so a partial map only
  * replaces the keys it sets.
  */
-export function resolveGridMessages(overrides?: Partial<GridMessages> | null): GridMessages {
+export function resolveGridMessages(overrides?: Partial<GridMessages> | null): GridChromeMessages {
   return resolveMessages(defaultGridMessages, overrides)
 }

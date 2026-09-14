@@ -4,10 +4,20 @@ Auto-generated. Source: `packages\grid\src\grid-messages.ts`.
 
 ### `type GridMessages`
 
-Every localizable chrome string, grouped by area in the comments. */
+Every string `localization.text` accepts: the grid chrome's own
+({@link GridChromeMessages}) and the chart panel's
+({@link GridChartPanelMessages}).
 
 ```ts
-export type GridMessages = {
+export type GridMessages = GridChromeMessages & GridChartPanelMessages
+```
+
+### `type GridChromeMessages`
+
+Every localizable chrome string, grouped by area in the comments.
+
+```ts
+export type GridChromeMessages = {
   // Empty / loading state
   noRows: string
   loading: string
@@ -100,10 +110,10 @@ export type GridMessages = {
 
 ### `const defaultGridMessages`
 
-English defaults - the literal strings the grid shipped before localization. */
+English defaults - the literal strings the grid shipped before localization.
 
 ```ts
-export const defaultGridMessages: GridMessages = {
+export const defaultGridMessages: GridChromeMessages = {
   noRows: 'No rows to display.',
   loading: 'Loading grid data...',
   columns: 'Columns',
@@ -188,7 +198,7 @@ values fall back to the default (via `resolveMessages`), so a partial map only
 replaces the keys it sets.
 
 ```ts
-export function resolveGridMessages(overrides?: Partial<GridMessages> | null): GridMessages {
+export function resolveGridMessages(overrides?: Partial<GridMessages> | null): GridChromeMessages {
   return resolveMessages(defaultGridMessages, overrides)
 }
 ```

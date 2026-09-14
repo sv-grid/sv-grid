@@ -64,6 +64,9 @@ export function createSelection<
     if (!ctx.scrollContainer) return;
     if (rowIndex < 0 || rowIndex >= ctx.allRows.length) return;
     if (colIndex < 0 || colIndex >= ctx.allColumns.length) return;
+    const container = ctx.scrollContainer as HTMLElement;
+    const topBefore = container.scrollTop;
+    const leftBefore = container.scrollLeft;
 
     if (ctx.rowVirtualizationEnabled) {
       // Prefer the browser's native `scrollIntoView({ block: 'nearest' })`
@@ -170,8 +173,16 @@ export function createSelection<
     } else if (cellEnd > viewEnd) {
       ctx.scrollContainer.scrollLeft = cellEnd - ctx.scrollContainer.clientWidth;
     }
-    // No inline scrollVersion bump - the `scroll` event triggers
-    // onBodyScroll which flushes via rAF, doing one batched update.
+    // The scroll position is known right here, so hand it to the
+    // virtualizers now rather than waiting for the `scroll` event + rAF:
+    // that put the new row window one painted frame behind the active-cell
+    // move (see `syncScrollNow`). Reading the position back is cheap - the
+    // scrollIntoView / scrollTop writes above already laid the tree out.
+    const topAfter = container.scrollTop;
+    const leftAfter = container.scrollLeft;
+    if (topAfter !== topBefore || leftAfter !== leftBefore) {
+      ctx.syncScrollNow(topAfter, leftAfter);
+    }
   }
 
   // Normalize a range to a rectangle, or null when incomplete.
@@ -187,16 +198,34 @@ export function createSelection<
     };
   }
 
+  type SelectionRect = { minRow: number; maxRow: number; minCol: number; maxCol: number };
+  // Memo for `getSelectionRects`, keyed on the identity of its two inputs.
+  // Both are replaced wholesale on every change and never mutated in place,
+  // so identity is a complete change check. Without it, every rendered
+  // cell's outline derived rebuilt this array on every arrow key - ~300
+  // arrays plus their rect objects per key press, for a result that is the
+  // same until the selection moves.
+  let rectsForRange: SelectionRange | null = null;
+  let rectsForRanges: SelectionRange[] | null = null;
+  let rectsMemo: SelectionRect[] = [];
+
   // Every selected rectangle: the committed extra ranges plus the active one.
   // Order matters for copy (added-order); the active range comes last.
-  function getSelectionRects() {
-    const rects = [] as Array<{ minRow: number; maxRow: number; minCol: number; maxCol: number }>;
-    for (const r of (ctx.selectionRanges as SelectionRange[]) ?? []) {
+  // Callers must treat the result as read-only.
+  function getSelectionRects(): SelectionRect[] {
+    const range = ctx.selectionRange as SelectionRange;
+    const ranges = (ctx.selectionRanges as SelectionRange[]) ?? [];
+    if (range === rectsForRange && ranges === rectsForRanges) return rectsMemo;
+    const rects: SelectionRect[] = [];
+    for (const r of ranges) {
       const rect = rangeRect(r);
       if (rect) rects.push(rect);
     }
-    const active = rangeRect(ctx.selectionRange);
+    const active = rangeRect(range);
     if (active) rects.push(active);
+    rectsForRange = range;
+    rectsForRanges = ranges;
+    rectsMemo = rects;
     return rects;
   }
 
@@ -276,6 +305,29 @@ export function createSelection<
       };
     }
     return null;
+  }
+
+  /**
+   * Everything a cell's outline needs from the selection model, in ONE value:
+   * whether it is the active cell, which range edges it sits on (`edges` is
+   * null when it is in no range) and whether it carries the fill handle.
+   * `null` for a cell that is none of those - nearly every cell.
+   *
+   * One value on purpose. The view reads it through a single `{@const}`, so
+   * an active-cell move re-marks one derived per rendered cell instead of
+   * three (active flag, range edges, fill handle) plus the fill handle's
+   * `{#if}`. With ~300 cells rendered, that marking was the largest single
+   * cost of an arrow key that does not scroll. A plain cell returns the same
+   * `null` it returned before the move, so its attribute effect stays put.
+   */
+  function cellSelectionState(rowIndex: number, colIndex: number) {
+    const a = ctx.activeCell;
+    const active = !!a && a.rowIndex === rowIndex && a.colIndex === colIndex;
+    const edges = getCellRangeEdges(rowIndex, colIndex);
+    const fh = ctx.fillHandleCell;
+    const fillHandle = !!fh && fh.rowIndex === rowIndex && fh.colIndex === colIndex;
+    if (!active && !edges && !fillHandle) return null;
+    return { active, edges, fillHandle };
   }
 
   /**
@@ -603,6 +655,7 @@ export function createSelection<
     extendSelection,
     isCellInSelectedRange,
     getCellRangeEdges,
+    cellSelectionState,
     fillMarqueeEdges,
     getSelectionRects,
     isInFillPreview,

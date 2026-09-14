@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\toast-store.svelte.ts`.
 
 ### `type ToastVariant`
 
-A toast's severity, which selects its colour and icon. */
+A toast's severity, which selects its colour and icon.
 
 ```ts
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error'
@@ -12,7 +12,7 @@ export type ToastVariant = 'info' | 'success' | 'warning' | 'error'
 
 ### `type ToastAction`
 
-A button rendered inside a toast (a primary `action` or a secondary `cancel`). */
+A button rendered inside a toast (a primary `action` or a secondary `cancel`).
 
 ```ts
 export type ToastAction = {
@@ -26,7 +26,7 @@ export type ToastAction = {
 
 ### `type ToastOptions`
 
-Options for one toast: its variant, how long it stays, and any action button. */
+Options for one toast: its variant, how long it stays, and any action button.
 
 ```ts
 export type ToastOptions = {
@@ -48,7 +48,7 @@ export type ToastOptions = {
 
 ### `type Toast`
 
-A live toast: its options plus the id needed to dismiss it. */
+A live toast: its options plus the id needed to dismiss it.
 
 ```ts
 export type Toast = {
@@ -66,7 +66,7 @@ export type Toast = {
 
 ### `type UpdateToast`
 
-Patch applied by `toast.update(id, patch)`; every field is optional. */
+Patch applied by `toast.update(id, patch)`; every field is optional.
 
 ```ts
 export type UpdateToast = Partial<Omit<Toast, 'id'>>
@@ -74,7 +74,7 @@ export type UpdateToast = Partial<Omit<Toast, 'id'>>
 
 ### `type PromiseMessages`
 
-Messages for `toast.promise`; success/error may derive from the value/error. */
+Messages for `toast.promise`; success/error may derive from the value/error.
 
 ```ts
 export type PromiseMessages<T> = {
@@ -86,7 +86,7 @@ export type PromiseMessages<T> = {
 
 ### `type ToastFn`
 
-The callable toast API - `toast(msg)` plus `.success` / `.error` / friends. */
+The callable toast API - `toast(msg)` plus `.success` / `.error` / friends.
 
 ```ts
 export type ToastFn = {
@@ -111,7 +111,7 @@ export type ToastFn = {
 
 ### `const toastStore`
 
-Live reactive list of active toasts (read inside a component/effect). */
+Live reactive list of active toasts (read inside a component/effect).
 
 ```ts
 export const toastStore = { get toasts() { return store.toasts } }
@@ -119,7 +119,7 @@ export const toastStore = { get toasts() { return store.toasts } }
 
 ### `const toast`
 
-Show a toast. Returns its id. Has `.info/.success/.warning/.error` helpers. */
+Show a toast. Returns its id. Has `.info/.success/.warning/.error` helpers.
 
 ```ts
 export const toast: ToastFn = store.toast
@@ -127,7 +127,7 @@ export const toast: ToastFn = store.toast
 
 ### `const dismissToast`
 
-Dismiss a toast by id. */
+Dismiss a toast by id.
 
 ```ts
 export const dismissToast = (id: number): void => store.dismiss(id)
@@ -135,7 +135,7 @@ export const dismissToast = (id: number): void => store.dismiss(id)
 
 ### `const updateToast`
 
-Patch an existing toast in place (message/variant/title/action/duration/render). */
+Patch an existing toast in place (message/variant/title/action/duration/render).
 
 ```ts
 export const updateToast = (id: number, patch: UpdateToast): void => store.update(id, patch)
@@ -143,7 +143,7 @@ export const updateToast = (id: number, patch: UpdateToast): void => store.updat
 
 ### `const clearToasts`
 
-Remove every toast (and cancel their timers). */
+Remove every toast (and cancel their timers).
 
 ```ts
 export const clearToasts = (): void => store.clear()
@@ -151,7 +151,7 @@ export const clearToasts = (): void => store.clear()
 
 ### `const pauseToast`
 
-Pause a toast's auto-dismiss countdown (e.g. while hovered). */
+Pause a toast's auto-dismiss countdown (e.g. while hovered).
 
 ```ts
 export const pauseToast = (id: number): void => store.pause(id)
@@ -159,7 +159,7 @@ export const pauseToast = (id: number): void => store.pause(id)
 
 ### `const resumeToast`
 
-Resume a paused toast's countdown with the time it had left. */
+Resume a paused toast's countdown with the time it had left.
 
 ```ts
 export const resumeToast = (id: number): void => store.resume(id)

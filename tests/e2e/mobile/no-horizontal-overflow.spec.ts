@@ -55,6 +55,17 @@ const DEMOS = [
   // chart split (inline fixed-width panel beside the grid)
   '147-integrated-charts',
   '151-time-series-chart',
+  '434-chart-axes-styling',
+  '435-chart-type-gallery',
+  '436-chart-sync-zoom',
+  '437-chart-financial-workbench',
+  // the chart gallery: one full-size chart per family, each in its own layout
+  '438-chart-bar',
+  '441-chart-pie-donut',
+  '442-chart-scatter-bubble',
+  '445-chart-heatmap-calendar',
+  '449-chart-waterfall-funnel',
+  '451-chart-annotations',
   // shared global chrome layers
   '207-blank-sheet',
   '193-studio-live-sql',

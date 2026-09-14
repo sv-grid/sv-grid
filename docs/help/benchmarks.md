@@ -129,6 +129,19 @@ An earlier version of this page claimed a p95 of 8 ms and "~120 fps".
 No harness in the repository could have produced that figure, and this
 one structurally cannot.
 
+<!-- tutorial:million-rows-scroll -->
+<figure class="docs-tutorial" id="tutorial-million-rows-scroll" data-docs-tutorial="million-rows-scroll">
+<video class="docs-tutorial-video" src="/tutorials/million-rows-scroll.mp4" poster="/tutorials/million-rows-scroll.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="One million rows in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/million-rows-scroll.vtt" default>Your browser does not play embedded video. <a href="/tutorials/million-rows-scroll.mp4">Download the MP4</a>.</video>
+<figcaption><strong>One million rows in SvGrid</strong> (34 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>This SvGrid holds one million rows, generated in the browser, with sorting, filtering and inline editing switched on.</p>
+<p>Rows are virtualized, so only the ones in view are drawn. Scroll, and the frame rate stays flat.</p>
+<p>Jump anywhere in the set. The row numbers show the scale, and the grid keeps every row reachable.</p>
+<p>Row and column virtualization are the same machinery, so wide grids get the same treatment. Nothing to configure.</p>
+</details>
+</figure>
+<!-- /tutorial:million-rows-scroll -->
+
 ## Sort, filter, group
 
 **Measured.** Run `pnpm bench` to reproduce. In-memory row-pipeline

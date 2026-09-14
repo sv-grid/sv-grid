@@ -203,6 +203,47 @@ describe('scheduleScrollSync / flushScheduledScrollSync', () => {
   })
 })
 
+describe('syncScrollNow', () => {
+  let cancelled: number[] = []
+  beforeEach(() => {
+    cancelled = []
+    vi.stubGlobal('requestAnimationFrame', () => 42)
+    vi.stubGlobal('cancelAnimationFrame', (h: number) => {
+      cancelled.push(h)
+    })
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('flushes the virtualizers synchronously, without waiting for a frame', () => {
+    const { ctx, ss } = syncFor({
+      rowVirtualizationEnabled: true,
+      columnVirtualizationEnabled: true,
+      domToLogicalRowOffset: (n: number) => n * 2,
+    })
+    ss.syncScrollNow(30, 88)
+    expect(ctx.pendingScrollTop).toBe(30)
+    expect(ctx.pendingScrollLeft).toBe(88)
+    expect(ctx.scrollVersion).toBe(1)
+    expect(ctx.virtualizer.setScrollOffset).toHaveBeenCalledWith(60)
+    expect(ctx.columnVirtualizer.setHorizontalOffset).toHaveBeenCalledWith(88)
+    expect(ctx.scrollSyncRaf).toBeNull()
+    expect(cancelled).toEqual([])
+  })
+
+  it('cancels a frame that a scroll event already scheduled, so the position is not applied twice', () => {
+    const { ctx, ss } = syncFor({ rowVirtualizationEnabled: true })
+    ss.scheduleScrollSync(10, 0)
+    expect(ctx.scrollSyncRaf).toBe(42)
+    ss.syncScrollNow(64, 0)
+    expect(cancelled).toEqual([42])
+    expect(ctx.scrollSyncRaf).toBeNull()
+    expect(ctx.virtualizer.setScrollOffset).toHaveBeenCalledTimes(1)
+    expect(ctx.virtualizer.setScrollOffset).toHaveBeenCalledWith(64)
+  })
+})
+
 describe('onBodyScroll', () => {
   beforeEach(() => {
     // These tests assert what happens BEFORE the frame runs, so the stub just
@@ -321,7 +362,7 @@ describe('createScrollSync wiring', () => {
   it('exposes the documented handler surface', () => {
     const { ss } = syncFor()
     expect(Object.keys(ss).sort()).toEqual(
-      ['flushScheduledScrollSync', 'hideTooltip', 'onBodyScroll', 'scheduleScrollSync', 'showTooltipFor'],
+      ['flushScheduledScrollSync', 'hideTooltip', 'onBodyScroll', 'scheduleScrollSync', 'showTooltipFor', 'syncScrollNow'],
     )
   })
 })

@@ -7,18 +7,22 @@
  *   docs/schemas/column-def.json       — one column entry on `columns={...}`
  *   docs/schemas/svgrid-options.json   — `<SvGrid>` prop bag + headless options
  *   docs/schemas/exportoptions.json    — `api.exportData({...})` argument
+ *   docs/schemas/chart-spec.json       — the `ChartSpec` a chart draws (generated)
  *   docs/schemas/index.json            — manifest listing every schema
  *
- * Hand-written rather than generated through ts-json-schema-generator
- * because the TS types are heavily generic (`ColumnDef<TFeatures, TData>`)
- * and the schemas should describe the runtime surface, not the type
- * parameters. Each schema's `$comment` points back to the .ts source so
- * a reviewer can diff for drift.
+ * The first three are hand-written rather than generated through
+ * ts-json-schema-generator because the TS types are heavily generic
+ * (`ColumnDef<TFeatures, TData>`) and the schemas should describe the
+ * runtime surface, not the type parameters. Each schema's `$comment` points
+ * back to the .ts source so a reviewer can diff for drift. The chart spec is
+ * the exception: its types are plain, so tools/lib/chart-spec-schema.mjs
+ * walks them with the TypeScript compiler and a test guards the drift.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildChartSpecSchema } from './lib/chart-spec-schema.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, where none of these paths exist.
@@ -210,8 +214,12 @@ const manifest = {
     { id: 'column-def',     file: 'column-def.json',     describes: 'One entry in <SvGrid columns={...}>.' },
     { id: 'svgrid-options', file: 'svgrid-options.json', describes: '<SvGrid> Svelte prop bag + createSvGrid options.' },
     { id: 'export-options', file: 'export-options.json', describes: '@svgrid/enterprise api.exportData({...}) argument.' },
+    { id: 'chart-spec',     file: 'chart-spec.json',     describes: 'The ChartSpec passed to <SvChart spec={...}> and returned by rowsToChartSpec.' },
   ],
 }
+
+// ---- ChartSpec (generated) ---------------------------------------------
+const chartSpec = buildChartSpecSchema(ROOT, BASE_URI)
 
 // The docs and the Agent Skill tell models to fetch these at
 // https://svgrid.com/schemas/*.json, so they have to land in the website's
@@ -224,6 +232,7 @@ async function main() {
     ['column-def.json', columnDef],
     ['svgrid-options.json', svgridOptions],
     ['export-options.json', exportOptions],
+    ['chart-spec.json', chartSpec],
     ['index.json', manifest],
   ]
   const written = []

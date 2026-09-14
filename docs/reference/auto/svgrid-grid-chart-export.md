@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\chart-export.ts`.
 
 ### `type ChartExportOptions`
 
-Options for exporting a chart: the filename, and the background to paint behind it. */
+Options for exporting a chart: the filename, and the background to paint behind it.
 
 ```ts
 export type ChartExportOptions = {
@@ -17,7 +17,7 @@ export type ChartExportOptions = {
 
 ### `function chartToSvgString`
 
-Serialize the chart SVG to a standalone, self-styled SVG string. */
+Serialize the chart SVG to a standalone, self-styled SVG string.
 
 ```ts
 export function chartToSvgString(
@@ -92,7 +92,7 @@ export function chartToSvgString(
 
 ### `function downloadChartSvg`
 
-Download the chart as an `.svg` file. */
+Download the chart as an `.svg` file.
 
 ```ts
 export function downloadChartSvg(
@@ -109,7 +109,7 @@ export function downloadChartSvg(
 
 ### `function chartToPngBlob`
 
-Rasterize the chart to a PNG `Blob`. */
+Rasterize the chart to a PNG `Blob`.
 
 ```ts
 export function chartToPngBlob(
@@ -156,7 +156,8 @@ Serialize a chart's data to CSV: one row per category, one column per series
 
 A series that carries more than one number per category widens instead of
 losing them. `ohlc` becomes four columns, `boxes` five plus its outliers,
-`errors` two. This used to write `values` and nothing else, which quietly
+`errors` two, `lowValues` a low / high pair, `targets` a value / target
+pair. This used to write `values` and nothing else, which quietly
 made "Export CSV" on a candlestick chart hand back the closing prices only -
 the screen-reader table was given the four real numbers on purpose and the
 export, which is what people actually take away, was not.
@@ -190,9 +191,11 @@ export function chartSpecToCsv(spec: ChartSpec): string {
   // bare label, so an existing export is byte-identical.
   const header: string[] = ['Category']
   for (const s of series) {
-    if (s.ohlc) header.push(`${s.label} Open`, `${s.label} High`, `${s.label} Low`, `${s.label} Close`)
+    if (s.ohlc) header.push(`${s.label} Open`, `${s.label} High`, `${s.label} Low`, `${s.label} Close`, ...(s.volumes ? [`${s.label} Volume`] : []))
     else if (s.boxes) header.push(`${s.label} Min`, `${s.label} Q1`, `${s.label} Median`, `${s.label} Q3`, `${s.label} Max`, `${s.label} Outliers`)
     else if (s.errors) header.push(s.label, `${s.label} Low`, `${s.label} High`)
+    else if (s.lowValues) header.push(`${s.label} low`, `${s.label} high`)
+    else if (s.targets) header.push(s.label, `${s.label} target`)
     else header.push(s.label)
   }
 
@@ -202,6 +205,7 @@ export function chartSpecToCsv(spec: ChartSpec): string {
       if (s.ohlc) {
         const k = s.ohlc[i]
         cells.push(k?.o ?? '', k?.h ?? '', k?.l ?? '', k?.c ?? '')
+        if (s.volumes) cells.push(s.volumes[i] ?? '')
       } else if (s.boxes) {
         const b = s.boxes[i]
         // Outliers are a list inside one cell; csvCell quotes it.
@@ -212,6 +216,10 @@ export function chartSpecToCsv(spec: ChartSpec): string {
         const lo = e == null ? '' : typeof e === 'number' ? (v ?? 0) - Math.abs(e) : Math.min(e.lo, e.hi)
         const hi = e == null ? '' : typeof e === 'number' ? (v ?? 0) + Math.abs(e) : Math.max(e.lo, e.hi)
         cells.push(v ?? '', lo, hi)
+      } else if (s.lowValues) {
+        cells.push(s.lowValues[i] ?? '', s.values[i] ?? '')
+      } else if (s.targets) {
+        cells.push(s.values[i] ?? '', s.targets[i] ?? '')
       } else {
         cells.push(s.values[i] ?? '')
       }
@@ -242,7 +250,7 @@ export function chartCsvExportable(spec: ChartSpec): boolean {
 ### `function downloadChartCsv`
 
 Download the chart's data as a `.csv` file. Returns false if there's no
- rectangular category/series data to export. */
+ rectangular category/series data to export.
 
 ```ts
 export function downloadChartCsv(spec: ChartSpec, filename = 'chart.csv'): boolean {

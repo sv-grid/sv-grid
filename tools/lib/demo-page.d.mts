@@ -1,7 +1,9 @@
+export type PitchRun = { code: boolean; text: string }
+export type PitchBlock = { kind: 'p'; runs: PitchRun[] } | { kind: 'list'; items: PitchRun[][] }
 export type DemoAboutModel = {
   id: string
   description: string
-  pitch: string[]
+  pitch: PitchBlock[]
   facts: {
     imports: string[]
     features: string[]
@@ -28,6 +30,8 @@ export function demoAboutModel(input: {
   meta?: { description?: string; faq?: { question: string; answer: string }[] } | null
   related?: { docs?: { slug: string; title: string }[]; posts?: { slug: string; title: string; description?: string }[] } | null
 }): DemoAboutModel
+export function pitchRuns(text: string): PitchRun[]
+export function pitchBlocks(pitch: string): PitchBlock[]
 export function demoAboutSections(model: DemoAboutModel): string[]
 export function renderDemoAboutHtml(
   model: DemoAboutModel,

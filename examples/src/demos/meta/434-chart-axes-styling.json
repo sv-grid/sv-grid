@@ -1,0 +1,24 @@
+{
+  "description": "Configure the axes of a Svelte 5 chart: a numeric x axis that spreads payload sizes the way the numbers do, a pinned domain with a fixed tick interval and a formatter per axis, grid lines on or off, a shaded budget band, a vertical reference line, per point markers and colours, a stepped dashed series on the right axis, a title, subtitle and caption, a legend on any side and a tooltip snippet in single series mode. Below it, 50,000 monitoring readings decimated to about one point per pixel with LTTB or min / max, with a toggle that shows what the same chart costs without it. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte chart axis min max",
+    "svelte chart numeric x axis",
+    "svelte chart tick format",
+    "svelte chart reference band",
+    "svelte chart decimation lttb"
+  ],
+  "faq": [
+    {
+      "question": "How do I pin the value axis to a range?",
+      "answer": "Set yAxis.min and yAxis.max on the spec. Add nice: false when the ends must be exactly those numbers and tickInterval when the ticks should land on a fixed step. The right axis takes the same fields under y2Axis."
+    },
+    {
+      "question": "Why does the chart draw an area instead of bars on the numeric axis?",
+      "answer": "Bars on a numeric x axis take their width from the smallest gap between two values, which is 1 KB here against a 100 KB range, so every bar would be a sliver. Lines and areas read the spacing correctly, which is what this demo uses."
+    },
+    {
+      "question": "What does decimation drop?",
+      "answer": "Points, never spikes. LTTB keeps the point in each pixel bucket that preserves the line's shape, and min / max keeps the extremes of every bucket. Zoom is applied first, so zooming into 300 of the 50,000 points shows all 300."
+    }
+  ]
+}

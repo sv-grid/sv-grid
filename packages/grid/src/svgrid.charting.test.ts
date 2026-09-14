@@ -3,7 +3,7 @@
  * panel, its live derivation from displayed rows + selection, and the
  * chart-click -> grid cross-filter loop.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -231,6 +231,41 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
+  it('shows an Explain button beside Chart it when an explain handler is registered, and Describe copies the summary', async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      api.setChartAiHandler(async () => null)
+      await tick()
+      // No explain handler yet: the AI row has no Explain button.
+      target.querySelector<HTMLButtonElement>('[aria-label="Chart with AI"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-explain-btn')).toBeFalsy()
+      api.setChartExplainHandler(async () => ({ summary: 'Salary rises across teams.', insights: ['Engineering leads.', 'Sales trails.'] }))
+      await tick()
+      const btn = target.querySelector<HTMLButtonElement>('.sv-grid-chart-explain-btn')
+      expect(btn).toBeTruthy()
+      btn!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await new Promise((r) => setTimeout(r, 0))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-ai-msg')!.textContent).toBe('Salary rises across teams. Engineering leads. Sales trails.')
+      // The export menu's Describe item copies chartSummary of the panel's spec.
+      const written: string[] = []
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (t: string) => { written.push(t) } }, configurable: true })
+      target.querySelector<HTMLButtonElement>('[aria-label="Export chart"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      const item = [...target.querySelectorAll('.sv-grid-chart-export-menu [role="menuitem"]')].find((n) => n.textContent === 'Describe chart') as HTMLButtonElement
+      item.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await new Promise((r) => setTimeout(r, 20))
+      await tick()
+      expect(written).toHaveLength(1)
+      expect(written[0]).toMatch(/rises|falls|holds/)
+      expect(target.querySelector('.sv-grid-chart-ai-msg')!.textContent).toBe(written[0])
+    } finally {
+      destroy()
+    }
+  })
+
   it('shows an AI button only when a chart-AI handler is registered, and applies its result', async () => {
     const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {
@@ -321,7 +356,59 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
-  it('serializes chart data to CSV and shows an Export menu (PNG/SVG/CSV/Copy)', async () => {
+  it('configureChart takes the new reducers and a calendar bucket, and the panel offers both', async () => {
+    const dateColumns = [
+      { field: 'day', header: 'Day', width: 120, cellDataType: 'date' },
+      { field: 'signups', header: 'Signups', width: 100, cellDataType: 'number' },
+    ]
+    const dateData = [
+      { id: 1, day: '2026-01-05', signups: 10 },
+      { id: 2, day: '2026-01-20', signups: 30 },
+      { id: 3, day: '2026-02-03', signups: 7 },
+      { id: 4, day: '2026-02-17', signups: 9 },
+    ]
+    const { api, target, destroy } = await mountGrid({
+      data: dateData,
+      columns: dateColumns,
+      charting: { defaultOpen: true, dimension: 'day', measures: 'signups' },
+    })
+    try {
+      await tick()
+      // The Aggregate select lists the extended reducers and a Bucket select
+      // appears for a date dimension.
+      const selects = [...target.querySelectorAll('.sv-grid-chart-ctl select')]
+      const options = (label: string) => {
+        const ctl = [...target.querySelectorAll('.sv-grid-chart-ctl')].find((c) => c.querySelector('.sv-grid-chart-ctl-lbl')?.textContent === label)
+        return [...(ctl?.querySelectorAll('option') ?? [])].map((o) => o.textContent)
+      }
+      expect(selects.length).toBeGreaterThan(0)
+      expect(options('Aggregate')).toContain('Median')
+      expect(options('Aggregate')).toContain('Distinct count')
+      expect(options('Bucket')).toEqual(['Exact', 'Day', 'Week', 'Month', 'Quarter', 'Year'])
+
+      api.configureChart({ reduce: 'median', bucket: 'month' })
+      await tick()
+      const spec = api.getChartSpec()!
+      expect(spec.categories).toEqual(['2026-01-01', '2026-02-01'])
+      expect(spec.series[0]!.values).toEqual([20, 8])
+      expect(spec.xType).toBe('ordinal-time')
+      expect(spec.yAxisTitle).toBe('Median of Signups')
+
+      // The bucket round-trips through the saved grid state.
+      const state = api.getState() as { charts?: Array<{ bucket?: string }> }
+      expect(state.charts?.[0]?.bucket).toBe('month')
+      api.configureChart({ bucket: null, reduce: 'max' })
+      await tick()
+      expect(api.getChartSpec()!.categories).toHaveLength(4)
+      api.setState(state as never)
+      await tick()
+      expect(api.getChartSpec()!.categories).toEqual(['2026-01-01', '2026-02-01'])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('serializes chart data to CSV and shows an Export menu (PNG/SVG/PDF/CSV/Copy/Print/Describe)', async () => {
     const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {
       api.configureChart({ dimension: 'team', series: 'name', measure: 'salary' })
@@ -336,7 +423,7 @@ describe('SvGrid built-in charting', () => {
       btn!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
       await tick()
       const items = [...target.querySelectorAll('.sv-grid-chart-export-menu button')].map((b) => b.textContent)
-      expect(items).toEqual(['PNG image', 'SVG vector', 'CSV data', 'Copy to clipboard'])
+      expect(items).toEqual(['PNG image', 'SVG vector', 'PDF document', 'CSV data', 'Copy to clipboard', 'Print', 'Describe chart'])
     } finally {
       destroy()
     }
@@ -611,6 +698,398 @@ describe('SvGrid built-in charting', () => {
       const spec = api.getChartSpec()
       // Two numeric columns in the span -> two series.
       expect(spec!.series.length).toBe(2)
+    } finally {
+      destroy()
+    }
+  })
+
+
+  it('passes zoom, presets, sync and menu config through to the chart, and the window survives tabs and state', async () => {
+    const dateColumns = [
+      { field: 'day', header: 'Day', width: 120, cellDataType: 'date' },
+      { field: 'signups', header: 'Signups', width: 100, cellDataType: 'number' },
+    ]
+    const dateData = Array.from({ length: 40 }, (_, i) => ({
+      id: i + 1,
+      day: new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10),
+      signups: 10 + (i % 7),
+    }))
+    const { api, target, destroy } = await mountGrid({
+      data: dateData,
+      columns: dateColumns,
+      charting: {
+        defaultOpen: true, dimension: 'day', measures: 'signups', defaultType: 'line', timeAxis: true,
+        zoom: { wheel: true }, rangePresets: true, syncTabs: true, contextMenu: [{ label: 'Explain', onSelect: () => {} }],
+      },
+    })
+    try {
+      await tick()
+      const hits = () => target.querySelectorAll('.sv-grid-chart-cat-hit').length
+      expect(hits()).toBe(40)
+      // The presets came through and the pointer-zoom class with them.
+      const presets = [...target.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-preset')]
+      expect(presets.map((b) => b.textContent)).toContain('1W')
+      presets.find((b) => b.textContent === '1W')!.click()
+      await tick()
+      expect(hits()).toBe(8)
+      // The window is on the tab, so it is part of the saved state.
+      const state = api.getState() as { charts: Array<{ zoom?: { i0: number; i1: number } | null }> }
+      expect(state.charts[0]!.zoom).toEqual({ i0: 32, i1: 39 })
+      // A second tab joins the same sync group and opens at that window.
+      target.querySelector<HTMLButtonElement>('[aria-label="Add chart"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      await tick()
+      expect(target.querySelectorAll('.sv-grid-chart-tab.is-active').length).toBe(1)
+      expect(hits()).toBe(8)
+      // Restoring the saved state restores the window; a bad one is dropped.
+      api.setState({ ...state, charts: [{ ...state.charts[0], zoom: { i0: 'x' } }] } as never)
+      await tick()
+      expect(hits()).toBe(40)
+      api.setState(state as never)
+      await tick()
+      expect(hits()).toBe(8)
+    } finally {
+      destroy()
+    }
+  })
+
+
+  it('the builder opens from the panel with a live thumbnail per type, and a card switches the chart', { timeout: 20_000 }, async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      const build = target.querySelector<HTMLButtonElement>('.sv-grid-chart-build-btn')
+      expect(build).toBeTruthy()
+      build!.click()
+      // The builder is a lazy chunk; wait for the modal.
+      await vi.waitFor(() => { expect(document.querySelector('.sv-grid-chart-builder')).toBeTruthy() })
+      await tick()
+      const cards = document.querySelectorAll('.sv-grid-chart-builder-card')
+      expect(cards.length).toBeGreaterThan(20)
+      // Every card holds a rendered chart svg, not an empty frame.
+      expect(document.querySelectorAll('.sv-grid-chart-builder-card .sv-grid-chart-svg').length).toBe(cards.length)
+      const line = [...cards].find((c) => c.querySelector('.sv-grid-chart-builder-card-label')?.textContent === 'Line') as HTMLButtonElement
+      line.click()
+      await tick()
+      expect(api.getChartSpec()?.type).toBe('line')
+      expect(line.getAttribute('aria-pressed')).toBe('true')
+      // Escape closes the modal.
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await tick()
+    } finally {
+      document.querySelector('.sv-modal__backdrop')?.remove()
+      destroy()
+    }
+  })
+
+  it('the Format tab writes a title through the format state and it survives a data change', async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      api.configureChart({ format: { title: 'Head count', yAxis: { max: 50 }, legend: 'right' } })
+      await tick()
+      expect(api.getChartSpec()?.title).toBe('Head count')
+      expect(api.getChartSpec()?.yAxis?.max).toBe(50)
+      expect(target.querySelector('.sv-grid-chart.is-legend-right')).toBeTruthy()
+      // The format is part of the saved view and keeps applying to new rows.
+      const state = api.getState() as { charts?: Array<{ format?: { title?: string } }> }
+      expect(state.charts?.[0]?.format?.title).toBe('Head count')
+      api.addRow({ id: 99, name: 'Zed', team: 'Ops', age: 30, salary: 10 } as Person)
+      await tick()
+      expect(api.getChartSpec()?.title).toBe('Head count')
+      api.configureChart({ format: null })
+      await tick()
+      expect(api.getChartSpec()?.title).toBeUndefined()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('the Format tab writes series labels, crosshair pills, a compact rule, a stack group and a style through configureChart', { timeout: 20_000 }, async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      api.configureChart({ series: 'team', format: { seriesLabels: true, crosshairLabels: false, compactBelow: 300, series: { Research: { stack: 'g' } }, style: { fontSize: 14 } } })
+      await tick()
+      const spec = api.getChartSpec()!
+      expect(spec.seriesLabels).toBe(true)
+      expect(spec.responsive?.at(-1)).toMatchObject({ maxWidth: 300, legend: false })
+      expect(spec.series.find((s) => s.label === 'Research')?.stack).toBe('g')
+      expect(spec.style).toEqual({ fontSize: 14 })
+      // The style lands on the host and the crosshair pills are off.
+      const host = target.querySelector<HTMLElement>('.sv-grid-chart')!
+      expect(host.getAttribute('style')).toContain('--sg-chart-font-scale')
+      ;(target.querySelector('.sv-grid-chart-cat-hit') as SVGElement).dispatchEvent(new FocusEvent('focus'))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-crosshair')).toBeTruthy()
+      expect(target.querySelector('.sv-grid-chart-crosshair-label')).toBeNull()
+      api.configureChart({ format: { crosshairLabels: true } })
+      await tick()
+      ;(target.querySelector('.sv-grid-chart-cat-hit') as SVGElement).dispatchEvent(new FocusEvent('focus'))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-crosshair-label')).toBeTruthy()
+      api.configureChart({ format: { seriesLabels: true, crosshairLabels: false, compactBelow: 300, series: { Research: { stack: 'g' } }, style: { fontSize: 14 } } })
+      await tick()
+      // The builder's Format tab shows the same fields.
+      target.querySelector<HTMLButtonElement>('.sv-grid-chart-build-btn')!.click()
+      await vi.waitFor(() => { expect(document.querySelector('.sv-grid-chart-builder')).toBeTruthy() })
+      const formatTab = [...document.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-builder [role="tab"]')].find((b) => b.textContent?.trim() === 'Format')!
+      formatTab.click()
+      await tick()
+      const rows = [...document.querySelectorAll('.sv-grid-chart-builder-row')].map((r) => r.querySelector('span')?.textContent)
+      expect(rows).toEqual(expect.arrayContaining(['Series labels', 'Crosshair labels', 'Compact under', 'Font size']))
+      const stackInput = document.querySelector<HTMLInputElement>('.sv-grid-chart-builder-series[data-series="Research"] input[type="text"]')
+      expect(stackInput?.value).toBe('g')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await tick()
+    } finally {
+      document.querySelector('.sv-modal__backdrop')?.remove()
+      destroy()
+    }
+  })
+
+  it('the builder Data tab renders the panel pickers and both write the same tab', { timeout: 20_000 }, async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      api.configureChart({ dimension: 'team', measure: 'salary' })
+      await tick()
+      const research = () => { const s = api.getChartSpec()!; return s.series[0]!.values[s.categories.indexOf('Research')] }
+      expect(research()).toBe(360)
+      target.querySelector<HTMLButtonElement>('.sv-grid-chart-build-btn')!.click()
+      await vi.waitFor(() => { expect(document.querySelector('.sv-grid-chart-builder')).toBeTruthy() })
+      const dataTab = [...document.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-builder [role="tab"]')].find((b) => b.textContent?.trim() === 'Data')!
+      dataTab.click()
+      await tick()
+      const form = document.querySelector('.sv-grid-chart-controls[data-scope="builder"]')!
+      expect(form).toBeTruthy()
+      expect(form.classList.contains('is-form')).toBe(true)
+      const lbl = (root: Element, label: string) => [...root.querySelectorAll('.sv-grid-chart-ctl')].find((c) => c.querySelector('.sv-grid-chart-ctl-lbl')?.textContent === label)
+      // No Type select in the builder (the gallery picks it), the rest is there.
+      expect(lbl(form, 'Type')).toBeUndefined()
+      expect(lbl(form, 'Group by')).toBeTruthy()
+      const reduce = lbl(form, 'Aggregate')!.querySelector('select')!
+      reduce.value = 'avg'
+      reduce.dispatchEvent(new Event('change', { bubbles: true }))
+      await tick()
+      expect(research()).toBe(120) // the average of 120 / 130 / 110
+      const panel = target.querySelector('.sv-grid-chart-controls[data-scope="panel"]')!
+      expect(lbl(panel, 'Aggregate')!.querySelector('select')!.value).toBe('avg')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await tick()
+    } finally {
+      document.querySelector('.sv-modal__backdrop')?.remove()
+      destroy()
+    }
+  })
+
+  it('localization.text relabels the panel and the builder; unset keys stay English', { timeout: 20_000 }, async () => {
+    const { target, destroy } = await mountGrid({
+      charting: { defaultOpen: true },
+      localization: { text: { chartPanelTitle: 'Diagramm', chartGroupBy: 'Gruppieren nach', chartTypeBar: 'Balken', chartAdd: 'Diagramm hinzufügen', chartBuilderTitle: 'Diagramm-Editor', chartBuilderTabData: 'Daten', noRows: 'Keine Zeilen' } },
+    })
+    try {
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-title')!.textContent).toBe('Diagramm')
+      expect(target.querySelector('[aria-label="Diagramm hinzufügen"]')).toBeTruthy()
+      const labels = [...target.querySelectorAll('.sv-grid-chart-ctl-lbl')].map((l) => l.textContent)
+      expect(labels).toContain('Gruppieren nach')
+      expect(labels).toContain('Aggregate')
+      const typeSel = target.querySelector<HTMLSelectElement>('.sv-grid-chart-controls select')!
+      const options = [...typeSel.options].map((o) => o.textContent)
+      expect(options).toContain('Balken')
+      expect(options).toContain('Line')
+      target.querySelector<HTMLButtonElement>('.sv-grid-chart-build-btn')!.click()
+      await vi.waitFor(() => { expect(document.querySelector('.sv-grid-chart-builder')).toBeTruthy() })
+      const tabs = [...document.querySelectorAll('.sv-grid-chart-builder [role="tab"]')].map((b) => b.textContent?.trim())
+      expect(tabs).toEqual(['Type', 'Daten', 'Format'])
+      expect(document.querySelector('.sv-grid-chart-builder-card-label')!.textContent).toBe('Balken')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await tick()
+    } finally {
+      document.querySelector('.sv-modal__backdrop')?.remove()
+      destroy()
+    }
+  })
+
+  it('saves a chart under a name, applies it to another tab, and round-trips it through the view state and the popover', async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      api.configureChart({ type: 'line', reduce: 'avg', logScale: true, format: { title: 'Average pay' } })
+      api.saveChart('Avg pay')
+      expect(api.getSavedCharts().map((s) => s.name)).toEqual(['Avg pay'])
+      // A second tab starts as a bar; the saved chart makes it the line, title kept.
+      api.configureChart({ type: 'bar', reduce: 'sum', logScale: false, format: null })
+      target.querySelector<HTMLButtonElement>('[aria-label="Add chart"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      expect(api.getChartSpec()!.type).toBe('bar')
+      expect(api.applySavedChart('Avg pay')).toBe(true)
+      expect(api.applySavedChart('nope')).toBe(false)
+      await tick()
+      expect(api.getChartSpec()!.type).toBe('line')
+      expect(api.getChartSpec()!.title).toBe('Average pay')
+      expect(api.getChartSpec()!.yScale).toBe('log')
+      expect(target.querySelector('.sv-grid-chart-tab.is-active .sv-grid-chart-tab-label')!.textContent).toBe('Chart 2')
+      // The saved list travels with the state, and only when there is one.
+      const state = api.getState() as { savedCharts?: Array<{ name: string; tab: { type: string } }> }
+      expect(state.savedCharts?.[0]).toMatchObject({ name: 'Avg pay', tab: { type: 'line', reduce: 'avg' } })
+      api.removeSavedChart('Avg pay')
+      expect((api.getState() as { savedCharts?: unknown }).savedCharts).toBeUndefined()
+      api.setState({ ...state } as never)
+      await tick()
+      expect(api.getSavedCharts().map((s) => s.name)).toEqual(['Avg pay'])
+      // configureChart({ saved }) applies it first, then the other keys on top.
+      api.configureChart({ saved: 'Avg pay', type: 'area' })
+      await tick()
+      expect(api.getChartSpec()!.type).toBe('area')
+      expect(api.getChartSpec()!.title).toBe('Average pay')
+      // The popover: lists, saves, applies and removes.
+      target.querySelector<HTMLButtonElement>('.sv-grid-chart-saved-btn')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      expect([...target.querySelectorAll('.sv-grid-chart-saved-apply')].map((b) => b.textContent)).toEqual(['Avg pay'])
+      const name = target.querySelector<HTMLInputElement>('.sv-grid-chart-saved-name')!
+      name.value = 'Area'
+      name.dispatchEvent(new Event('input', { bubbles: true }))
+      await tick()
+      target.querySelector<HTMLFormElement>('.sv-grid-chart-saved-row')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+      await tick()
+      expect(api.getSavedCharts().map((s) => s.name)).toEqual(['Avg pay', 'Area'])
+      target.querySelector<HTMLButtonElement>('.sv-grid-chart-saved-x')!.click()
+      await tick()
+      expect(api.getSavedCharts().map((s) => s.name)).toEqual(['Area'])
+      target.querySelector<HTMLButtonElement>('.sv-grid-chart-saved-apply')!.click()
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-saved-menu')).toBeNull()
+      expect(api.getChartSpec()!.type).toBe('area')
+      // Escape closes the popover and hands focus back to its button; the
+      // export menu closes the same way.
+      const savedBtn = target.querySelector<HTMLButtonElement>('.sv-grid-chart-saved-btn')!
+      savedBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-saved-menu')).not.toBeNull()
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-saved-menu')).toBeNull()
+      expect(document.activeElement).toBe(savedBtn)
+      target.querySelector<HTMLButtonElement>('[aria-label="Export chart"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-export-menu')).not.toBeNull()
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await tick()
+      expect(target.querySelector('.sv-grid-chart-export-menu')).toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
+  it('an unlinked chart keeps its spec across a data change and relinks on demand', async () => {
+    const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
+    try {
+      await tick()
+      const before = api.getChartSpec()!
+      const link = target.querySelector<HTMLButtonElement>('.sv-grid-chart-link-btn')!
+      expect(link.getAttribute('aria-pressed')).toBe('false')
+      link.click()
+      await tick()
+      expect(link.getAttribute('aria-pressed')).toBe('true')
+      api.setFacetFilter('team', [people[0]!.team])
+      await tick()
+      expect(api.getChartSpec()!.categories).toEqual(before.categories)
+      // The freeze round-trips through the saved state.
+      const state = api.getState() as { charts?: Array<{ frozen?: { spec: unknown } | null }> }
+      expect(state.charts?.[0]?.frozen?.spec).toBeTruthy()
+      link.click()
+      await tick()
+      expect(api.getChartSpec()!.categories.length).toBeLessThan(before.categories.length)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('fires onChartCreated for the first chart and each added tab, and onChartChanged once per burst', async () => {
+    vi.useFakeTimers()
+    const created: unknown[] = []
+    const changed: unknown[] = []
+    try {
+      const { api, target, destroy } = await mountGrid({
+        charting: { defaultOpen: true, onChartCreated: (i: unknown) => created.push(i), onChartChanged: (i: unknown) => changed.push(i) },
+      })
+      try {
+        await vi.advanceTimersByTimeAsync(10)
+        expect(created).toHaveLength(1)
+        expect(created[0]).toMatchObject({ index: 0, title: 'Chart 1', type: 'bar' })
+        await vi.advanceTimersByTimeAsync(200)
+        const n = changed.length
+        expect(n).toBeGreaterThanOrEqual(1)
+        // Three quick picker changes collapse into one change event.
+        api.configureChart({ type: 'line' })
+        api.configureChart({ type: 'area' })
+        api.configureChart({ reduce: 'avg' })
+        await vi.advanceTimersByTimeAsync(10)
+        expect(changed).toHaveLength(n)
+        await vi.advanceTimersByTimeAsync(200)
+        expect(changed).toHaveLength(n + 1)
+        expect(changed[n]).toMatchObject({ index: 0, type: 'area' })
+        expect((changed[n] as { spec: { type: string } }).spec.type).toBe('area')
+        target.querySelector<HTMLButtonElement>('[aria-label="Add chart"]')!.click()
+        await vi.advanceTimersByTimeAsync(10)
+        expect(created).toHaveLength(2)
+        expect(created[1]).toMatchObject({ index: 1, title: 'Chart 2' })
+      } finally {
+        destroy()
+      }
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a candlestick chart from the panel guesses the price columns, rolls up by week, and stacks the indicator panes', async () => {
+    const priceColumns = [
+      { field: 'day', header: 'Day', width: 120, cellDataType: 'date' },
+      { field: 'open', header: 'Open', width: 80, cellDataType: 'number' },
+      { field: 'high', header: 'High', width: 80, cellDataType: 'number' },
+      { field: 'low', header: 'Low', width: 80, cellDataType: 'number' },
+      { field: 'close', header: 'Close', width: 80, cellDataType: 'number' },
+      { field: 'volume', header: 'Volume', width: 80, cellDataType: 'number' },
+    ]
+    const priceData = Array.from({ length: 30 }, (_, i) => {
+      const c = 100 + Math.sin(i / 4) * 10 + i
+      return { id: i + 1, day: new Date(Date.UTC(2026, 0, 5 + i)).toISOString().slice(0, 10), open: c - 1, high: c + 2, low: c - 3, close: c, volume: 1000 + i * 10 }
+    })
+    const { api, target, destroy } = await mountGrid({
+      data: priceData, columns: priceColumns,
+      charting: { defaultOpen: true, defaultType: 'candlestick' },
+    })
+    try {
+      await tick()
+      const spec = api.getChartSpec()!
+      expect(spec.type).toBe('candlestick')
+      expect(spec.series[0]!.ohlc).toHaveLength(30)
+      expect(spec.series[0]!.volumes).toHaveLength(30)
+      expect(spec.lastPriceLine).toBe(true)
+      // The pickers show the guessed columns and the indicator chips.
+      const labels = [...target.querySelectorAll('.sv-grid-chart-ctl-lbl')].map((l) => l.textContent)
+      expect(labels).toEqual(expect.arrayContaining(['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Indicators']))
+      expect(labels).not.toContain('Aggregate')
+      const chip = (name: string) => [...target.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-chip')].find((b) => b.textContent === name)!
+      chip('Volume').click()
+      chip('RSI').click()
+      chip('Bollinger').click()
+      await tick()
+      expect(target.querySelectorAll('.sv-chart-pane.is-indicator')).toHaveLength(2)
+      expect(api.getChartSpec()!.series[0]!.overlay).toBe('bb:20:2')
+      // Weekly roll-up through the bucket picker.
+      api.configureChart({ bucket: 'week' })
+      await tick()
+      expect(api.getChartSpec()!.categories.length).toBeLessThan(10)
+      // It all round-trips.
+      const state = api.getState() as { charts?: Array<{ indicators?: string[]; ohlc?: unknown }> }
+      expect(state.charts?.[0]?.indicators).toEqual(['volume', 'rsi', 'bb'])
+      api.configureChart({ indicators: [], ohlc: { close: 'open' }, bucket: null })
+      await tick()
+      expect(target.querySelectorAll('.sv-chart-pane.is-indicator')).toHaveLength(0)
+      expect(api.getChartSpec()!.series[0]!.ohlc![0]!.c).toBe(api.getChartSpec()!.series[0]!.ohlc![0]!.o)
     } finally {
       destroy()
     }

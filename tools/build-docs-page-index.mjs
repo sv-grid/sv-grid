@@ -22,10 +22,19 @@ import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isHiddenDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
 import { titleFromMarkdown, descriptionFromMarkdown, faqFromMarkdown } from './lib/docs-page.mjs'
+import { tutorialIdsIn } from './lib/tutorial-media.mjs'
+import { readManifest } from './tutorials/lib/manifest.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR = join(ROOT, 'docs')
 const OUT = join(ROOT, 'website', 'src', 'lib', 'docs-index.json')
+
+// 30-second tutorials embedded on a page (tools/tutorials/embed.mjs). The
+// page entry carries what the hydrated head needs to emit the same
+// VideoObject graph the prerenderer does; the site never loads the manifest.
+const tutorialById = new Map(readManifest().tutorials.map((t) => [t.id, t]))
+const tutorialMeta = ({ id, title, description, duration, recordedAt, publishedAt, youtubeId, files, transcript }) =>
+  ({ id, title, description, duration, recordedAt, publishedAt, youtubeId, files, transcript })
 
 /** @param {string} dir @returns {Promise<string[]>} */
 async function walk(dir) {
@@ -55,6 +64,8 @@ for (const file of (await walk(DOCS_DIR)).sort()) {
   if (meta.keywords?.length) entry.keywords = meta.keywords
   if (meta.seoTitle) entry.seoTitle = meta.seoTitle
   if (meta.noindex) entry.noindex = true
+  const tutorials = tutorialIdsIn(body).map((id) => tutorialById.get(id)).filter(Boolean).map(tutorialMeta)
+  if (tutorials.length) entry.tutorials = tutorials
   pages.push(entry)
 }
 

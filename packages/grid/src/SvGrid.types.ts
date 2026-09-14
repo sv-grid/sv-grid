@@ -11,6 +11,7 @@ import type {
 import type { ConditionalFormat } from "./conditional-formatting";
 import type { GroupDisplayType } from "./group-display";
 import type { GridMessages } from "./grid-messages";
+import type { ChartMessages } from "./chart-messages";
 import type { GridIconName, GridIcons } from "./grid-icons";
 import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { GridPredicateExpr } from "./filtering/predicate-expr";
@@ -68,9 +69,22 @@ import type {
   ChartType,
   ChartSpec,
   ChartAnnotation,
+  ChartReducer,
   ChartReferenceLine,
   ChartValueFormat,
 } from "./chart";
+import type { ChartRangePreset } from "./chart-zoom";
+import type { ChartAnimateConfig, ChartContextTarget, ChartZoomConfig } from "./SvGridChart.types";
+
+/** What the chart panel's lifecycle events carry. */
+export type ChartPanelInfo = {
+  /** Tab index in the panel's strip. */
+  index: number;
+  title: string;
+  type: ChartType;
+  /** The spec the panel is rendering, or null while it cannot build one. */
+  spec: ChartSpec | null;
+};
 
 /** One aggregated bucket returned by a server-side `getAggregate`. */
 export type ChartAggregateBucket = { category: string; series?: string; value: number };
@@ -79,7 +93,7 @@ export type ChartAggregateRequest = {
   dimension: string | undefined;
   measure: string | null;
   series?: string;
-  reduce: "sum" | "avg" | "count";
+  reduce: ChartReducer;
   filterModel: Record<string, unknown>;
 };
 
@@ -107,7 +121,7 @@ export type ChartingConfig<TData extends RowData = RowData> = {
   series?: string;
   /** Measure column, or several for a multi-series chart. */
   measures?: string | string[];
-  reduce?: "sum" | "avg" | "count";
+  reduce?: ChartReducer;
   stacked?: boolean;
   stacked100?: boolean;
   /** Per-series-label type override (combo). */
@@ -116,7 +130,10 @@ export type ChartingConfig<TData extends RowData = RowData> = {
   seriesAxes?: Record<string, "left" | "right">;
   referenceLines?: ChartReferenceLine[];
   averageLine?: boolean;
-  trend?: "sma" | "ema" | "linear";
+  /** An overlay on every series: a 7-point moving average, or a regression
+   *  (`linear`, `poly` for a quadratic, `exp`, `log`, `power`) whose
+   *  R-squared the tooltip reads. */
+  trend?: "sma" | "ema" | "linear" | "poly" | "exp" | "log" | "power";
   annotations?: ChartAnnotation[];
   yScale?: "linear" | "log";
   timeAxis?: boolean;
@@ -137,10 +154,37 @@ export type ChartingConfig<TData extends RowData = RowData> = {
   otherLabel?: string;
   sort?: "value-desc" | "value-asc" | "category" | "none";
   dataLabels?: boolean;
-  zoom?: boolean;
+  /** Zooming: `true` for drag-to-zoom, or an object choosing wheel, pinch,
+   *  pan and the axes (see `ChartZoomConfig`). The window survives tab
+   *  switches and round-trips through `getChartsState`. */
+  zoom?: boolean | ChartZoomConfig;
   brush?: boolean;
+  /** Range buttons (1W / 1M / 3M / 6M / YTD / 1Y / All, or your own) when the
+   *  dimension is a date. */
+  rangePresets?: boolean | ChartRangePreset[];
+  /** Share crosshair and zoom with other charts on the page (any `SvChart`
+   *  with the same `syncGroup`). */
+  syncGroup?: string;
+  /** All chart tabs of this grid share one zoom window: zoom in one tab and
+   *  the others open at the same range. */
+  syncTabs?: boolean;
+  /** Right-click menu on the chart: `true` for the built-in items, your own
+   *  `MenuItem`s appended after them, or a function of the clicked point. */
+  contextMenu?: boolean | MenuItem[] | ((target: ChartContextTarget) => MenuItem[]);
+  /** Motion: `true` for the default data-update tween, or an object choosing
+   *  the enter effect and duration. */
+  animate?: boolean | ChartAnimateConfig;
+  /** Translations for the chart's own strings (toolbar, menu, legend hints,
+   *  what it says to assistive technology); the panel passes them to every
+   *  chart it draws. See `ChartMessages`. */
+  localeText?: Partial<ChartMessages>;
   /** Show the chart's PNG/SVG export toolbar. */
   export?: boolean;
+  /** A chart tab was added (the first one counts, once the panel opens). */
+  onChartCreated?: (info: ChartPanelInfo) => void;
+  /** The active chart's spec changed: a picker, the builder, a filter, an
+   *  edit, new rows. Debounced to one call per burst of changes. */
+  onChartChanged?: (info: ChartPanelInfo) => void;
   /** Escape hatch: build a fully custom ChartSpec from the (scoped) rows. */
   buildSpec?: (rows: TData[]) => ChartSpec | null;
   /** Server-side aggregation: chart the whole dataset, not just loaded rows. */
@@ -416,7 +460,7 @@ export type ChartViewConfig<
   /** Pivot dimension: one series per distinct value of this field. */
   series?: keyof TData & string;
   /** Aggregation when several rows share a category. Default `'sum'`. */
-  reduce?: "sum" | "avg" | "count";
+  reduce?: ChartReducer;
   /** Stack bar / area series instead of grouping them. */
   stacked?: boolean;
   /** Stack to 100% (implies `stacked`). */

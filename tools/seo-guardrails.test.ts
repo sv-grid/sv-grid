@@ -376,3 +376,46 @@ describe('FAQ content reaches non-JS crawlers', () => {
     expect(problems).toEqual([])
   })
 })
+
+describe('comparison pages', () => {
+  // The data itself is checked in tools/competitor-facts.test.ts; this is the
+  // search-facing layer: the head every page gets and what the static HTML
+  // carries. No Review or AggregateRating: the pages are articles, and a
+  // self-issued rating is exactly the structured data Google penalises.
+  it('derive a title and description that fit a search result', async () => {
+    const { loadComparisons } = await import('./lib/compare-data.mjs')
+    const { compareSeo, compareFaq } = await import('./lib/compare-meta.mjs')
+    const problems: string[] = []
+    for (const c of await loadComparisons()) {
+      const { title, description } = compareSeo(c, clampDescription)
+      if (title.length > 65) problems.push(`${c.slug}: title ${title.length} chars`)
+      if (!/svelte/i.test(title)) problems.push(`${c.slug}: title does not say Svelte`)
+      if (description.length > 155 || description.length < 60) problems.push(`${c.slug}: description ${description.length} chars`)
+      if (DASH.test(title + description)) problems.push(`${c.slug}: dash glyph in the head`)
+      if (compareFaq(c).length < 3) problems.push(`${c.slug}: fewer than 3 FAQ entries for the rich result`)
+    }
+    expect(problems).toEqual([])
+  })
+
+  it.skipIf(!hasPrerenderedDist)('ship the facts, the FAQ graph and no rating markup in the static HTML', async () => {
+    const { loadComparisons } = await import('./lib/compare-data.mjs')
+    const { compareSeo } = await import('./lib/compare-meta.mjs')
+    const problems: string[] = []
+    for (const c of await loadComparisons()) {
+      const html = await readFile(join(DIST, 'compare', c.slug, 'index.html'), 'utf-8')
+      const { title } = compareSeo(c, clampDescription)
+      if (!html.includes(`<title>${title.replace(/&/g, '&amp;')}</title>`) && !html.includes(`<title>${title}</title>`)) problems.push(`${c.slug}: title differs from compareSeo`)
+      if (!html.includes('"FAQPage"')) problems.push(`${c.slug}: no FAQPage graph`)
+      if (!html.includes('"TechArticle"')) problems.push(`${c.slug}: no TechArticle graph`)
+      if (/"AggregateRating"|"@type":\s*"Review"/.test(html)) problems.push(`${c.slug}: rating markup`)
+      const body = html.match(/<main[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
+      if (!body.includes('At a glance')) problems.push(`${c.slug}: no At a glance table`)
+      if (!body.includes('Feature by feature')) problems.push(`${c.slug}: no feature table`)
+      if (!body.includes(`href="/docs/help/${c.migration.slug}/"`)) problems.push(`${c.slug}: no link to the migration guide`)
+    }
+    const hub = await readFile(join(DIST, 'compare', 'index.html'), 'utf-8')
+    const hubLinks = hub.match(/href="\/compare\/[a-z0-9-]+\/"/g) ?? []
+    expect(new Set(hubLinks).size).toBeGreaterThanOrEqual((await loadComparisons()).length)
+    expect(problems).toEqual([])
+  })
+})

@@ -13,6 +13,10 @@ instead.
 > your feature registration carry over almost unchanged. Most of the work
 > is deleting files.
 
+<!-- facts:start tanstack-table,svelte-ui-kit-tables -->
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/), [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
+<!-- facts:end -->
+
 ## Why this port is small
 
 SvGrid speaks the same vocabulary TanStack Table v9 introduced. These are

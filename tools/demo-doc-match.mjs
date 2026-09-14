@@ -26,7 +26,7 @@ const tokens = (s) =>
 /** Category -> doc subtrees that category's demos belong under. */
 const CATEGORY_HINTS = {
   'Headless Editors': ['help/ui-components/', 'help/headless/'],
-  Charts: ['help/charts', 'help/analytics'],
+  Charts: ['help/charts', 'help/charts/', 'help/analytics'],
   Layout: ['help/ui-components/'],
   Scheduler: ['help/rows/scheduler'],
   Kanban: ['help/rows/kanban'],

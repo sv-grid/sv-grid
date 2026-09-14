@@ -39,7 +39,7 @@ export function parseDuration(input: string): number | null {
 
 ### `function formatDuration`
 
-Format minutes as `h:mm` (colon) or `Nh Nm` (units). Empty for invalid input. */
+Format minutes as `h:mm` (colon) or `Nh Nm` (units). Empty for invalid input.
 
 ```ts
 export function formatDuration(minutes: number, style: 'colon' | 'units' = 'colon'): string {

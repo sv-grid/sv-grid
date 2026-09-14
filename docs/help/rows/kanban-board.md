@@ -10,6 +10,19 @@ data.
 
 <div data-docs-demo="343-kanban-board" data-height="620"></div>
 
+<!-- tutorial:kanban-board-drag -->
+<figure class="docs-tutorial" id="tutorial-kanban-board-drag" data-docs-tutorial="kanban-board-drag">
+<video class="docs-tutorial-video" src="/tutorials/kanban-board-drag.mp4" poster="/tutorials/kanban-board-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Kanban board mode in SvGrid, 37 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/kanban-board-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/kanban-board-drag.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Kanban board mode in SvGrid</strong> (37 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>One board prop turns the grid into a Kanban board. Lanes come from the status field, and every card is a row.</p>
+<p>Drag a card from Backlog into Review.</p>
+<p>The drop writes the new status back to the row, so the data and the board never disagree. In progress carries a WIP limit and refuses a card past it.</p>
+<p>Switch to Table, and the same rows show as a grid, with the card you moved already in Review.</p>
+</details>
+</figure>
+<!-- /tutorial:kanban-board-drag -->
+
 Every example below runs against this setup. The board *renderer* ships in
 `@svgrid/enterprise`, so `enableBoardView()` is what lights the view up - the
 `board` prop itself is part of the free grid.

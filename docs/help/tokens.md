@@ -60,6 +60,31 @@ secondary is often the whole change:
 }
 ```
 
+The tokens are read where the chart is mounted, so a wrapper can recolour one
+chart without touching the page:
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvChart, type ChartSpec } from '@svgrid/grid'
+  const spec: ChartSpec = {
+    type: 'bar',
+    categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [{ label: 'Plan', values: [40, 45, 50, 55] }, { label: 'Actual', values: [38, 49, 47, 61] }, { label: 'Stretch', values: [45, 50, 56, 62] }],
+    height: 220,
+  }
+</script>
+
+<div style="--sg-chart-1: #7c3aed; --sg-chart-2: #db2777; --sg-chart-3: #0d9488">
+  <SvChart {spec} />
+</div>
+```
+
+A spec's own `palette` beats the tokens, and a per-series `color` beats
+both. The type gallery draws all twenty-nine types from the same eight
+tokens:
+
+<div data-docs-demo="435-chart-type-gallery" data-height="600"></div>
+
 Precedence runs explicit-to-general: a `color` on the series wins, then
 `spec.palette` (or `charting.palette`), then these tokens, then the built-in
 colours. The first two are the author speaking about one chart; the tokens are
