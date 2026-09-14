@@ -82,6 +82,14 @@ export function setFormatDialogHandler(fn: ((cmd: GridCommandContext) => void) |
 export type SheetBinding = {
   /** Matched case-insensitively against `event.key`. */
   key: string
+  /**
+   * Matched against `event.code` INSTEAD of `key`, for bindings where shift
+   * changes the character. Pressing Ctrl+Shift+1 reports `event.key` as '!'
+   * on a US layout, ':' for Ctrl+Shift+; and '~' for Ctrl+Shift+`, so a
+   * binding spelling the unshifted character can never fire in a browser.
+   * `code` is the physical key and does not move.
+   */
+  code?: string
   /** Ctrl on Windows/Linux, Cmd on macOS. Both are accepted for either. */
   mod?: boolean
   shift?: boolean
@@ -216,7 +224,7 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: 'd', mod: true, run: (cmd) => fillDown(cmd), label: 'Fill down' },
   { key: 'r', mod: true, run: (cmd) => fillRight(cmd), label: 'Fill right' },
   { key: ';', mod: true, run: (cmd) => stampDate(cmd, 'date'), label: "Insert today's date" },
-  { key: ';', mod: true, shift: true, run: (cmd) => stampDate(cmd, 'time'), label: 'Insert the current time' },
+  { key: ';', code: 'Semicolon', mod: true, shift: true, run: (cmd) => stampDate(cmd, 'time'), label: 'Insert the current time' },
   { key: "'", mod: true, run: (cmd) => copyFromAbove(cmd), label: 'Copy the cell above, unchanged' },
   { key: '=', alt: true, run: autoSum, label: 'AutoSum the run above or to the left' },
 
@@ -231,19 +239,19 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
     onFormatDialog(cmd)
     return true
   }, label: 'Open Format Cells' },
-  { key: '1', mod: true, shift: true, run: preset('number'), label: 'Number format' },
-  { key: '2', mod: true, shift: true, run: preset('time'), label: 'Time format' },
-  { key: '3', mod: true, shift: true, run: preset('date'), label: 'Date format' },
-  { key: '4', mod: true, shift: true, run: preset('currency'), label: 'Currency format' },
-  { key: '5', mod: true, shift: true, run: preset('percent'), label: 'Percent format' },
-  { key: '6', mod: true, shift: true, run: preset('scientific'), label: 'Scientific format' },
-  { key: '`', mod: true, shift: true, run: preset('general'), label: 'General format' },
+  { key: '1', code: 'Digit1', mod: true, shift: true, run: preset('number'), label: 'Number format' },
+  { key: '2', code: 'Digit2', mod: true, shift: true, run: preset('time'), label: 'Time format' },
+  { key: '3', code: 'Digit3', mod: true, shift: true, run: preset('date'), label: 'Date format' },
+  { key: '4', code: 'Digit4', mod: true, shift: true, run: preset('currency'), label: 'Currency format' },
+  { key: '5', code: 'Digit5', mod: true, shift: true, run: preset('percent'), label: 'Percent format' },
+  { key: '6', code: 'Digit6', mod: true, shift: true, run: preset('scientific'), label: 'Scientific format' },
+  { key: '`', code: 'Backquote', mod: true, shift: true, run: preset('general'), label: 'General format' },
 
   // Structure. Like the format bindings, these decline when nothing is
   // attached. Excel opens a dialog for an ambiguous selection; deciding what
   // that looks like is the consumer's, so an ambiguous selection declines and
   // the consumer can bind its own dialog.
-  { key: '+', mod: true, shift: true, run: (cmd) => structural(cmd, 'insert'), label: 'Insert rows or columns' },
+  { key: '+', code: 'Equal', mod: true, shift: true, run: (cmd) => structural(cmd, 'insert'), label: 'Insert rows or columns' },
   { key: '-', mod: true, run: (cmd) => structural(cmd, 'delete'), label: 'Delete rows or columns' },
   { key: 'h', mod: true, run: (cmd) => {
     if (!onFindReplace || !getFindTarget()) return false
@@ -268,7 +276,16 @@ function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean
 }
 
 function matches(binding: SheetBinding, event: KeyboardEvent): boolean {
-  if (event.key.toLowerCase() !== binding.key.toLowerCase()) return false
+  if (binding.code) {
+    // Fall back to `key` when `code` is absent, which is how synthesized
+    // events in tests and some assistive tech behave.
+    const seen = event.code || ''
+    if (seen ? seen !== binding.code : event.key.toLowerCase() !== binding.key.toLowerCase()) {
+      return false
+    }
+  } else if (event.key.toLowerCase() !== binding.key.toLowerCase()) {
+    return false
+  }
   const mod = event.ctrlKey || event.metaKey
   if (mod !== (binding.mod ?? false)) return false
   if (event.shiftKey !== (binding.shift ?? false)) return false

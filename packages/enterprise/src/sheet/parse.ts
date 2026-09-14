@@ -18,7 +18,7 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
   const next = (): Token | undefined => tokens[pos++]
 
   function expression(minPrec: number): Node {
-    let left = primary()
+    let left = postfix(primary())
     for (;;) {
       const t = peek()
       if (!t || t.t !== 'op') break
@@ -30,6 +30,18 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
       left = { k: 'binary', op: t.v as BinaryOp, left, right: expression(nextMin) }
     }
     return left
+  }
+
+  /** Excel's `%` is POSTFIX and divides by a hundred: `50%` is 0.5 and
+   *  `A1*5%` is five percent of A1. There is no binary modulo operator in
+   *  Excel at all; `MOD()` is the function. */
+  function postfix(node: Node): Node {
+    let out = node
+    while (peek()?.t === 'op' && (peek() as { v: string }).v === '%') {
+      next()
+      out = { k: 'unary', op: '%', arg: out }
+    }
+    return out
   }
 
   function primary(): Node {

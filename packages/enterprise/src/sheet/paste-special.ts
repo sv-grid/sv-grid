@@ -15,7 +15,6 @@
  * the formula.
  */
 import { translateFormula } from './refs'
-import { compileNumberFormat } from './number-format'
 import { entryToStyle, type CellFormatEntry } from './format-store'
 
 export type PasteWhat = 'all' | 'values' | 'formulas' | 'formats'

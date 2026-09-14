@@ -39,7 +39,20 @@ describe('arithmetic', () => {
 
   it('returns #DIV/0! rather than Infinity', () => {
     expect(run('=1/0')).toEqual({ error: '#DIV/0!' })
-    expect(run('=1%0')).toEqual({ error: '#DIV/0!' })
+  })
+
+  it('treats % as Excel does: POSTFIX percent, not binary modulo', () => {
+    // Excel has no binary %; MOD() is the function. Reading it as modulo
+    // makes =50% and =A1*5% parse errors, which is what shipped first.
+    expect(run('=50%')).toBe(0.5)
+    expect(run('=100%')).toBe(1)
+    expect(run('=A1*5%', [[200]])).toBeCloseTo(10, 10)
+    expect(run('=1+50%')).toBe(1.5)
+    expect(run('=MOD(7,3)')).toBe(1)
+  })
+
+  it('stacks percent signs, as Excel does', () => {
+    expect(run('=50%%')).toBeCloseTo(0.005, 10)
   })
 
   it('raises to a power, right associatively', () => {

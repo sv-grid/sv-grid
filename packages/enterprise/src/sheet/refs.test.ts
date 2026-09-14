@@ -44,6 +44,49 @@ describe('the $ matrix', () => {
   })
 })
 
+describe('parentheses survive a round trip', () => {
+  // The AST does not record parentheses, so re-serialising has to rebuild
+  // them from precedence. Emitting operands bare turned =(A1+B1)*2 into
+  // =A2+B2*2 - a silent wrong answer on every fill, paste and insert-row.
+  it('keeps a parenthesised sum inside a product', () => {
+    expect(t('=(A1+B1)*2', 1, 0)).toBe('=(A2+B2)*2')
+  })
+
+  it('keeps them on the right operand too', () => {
+    // a-(b-c) is not a-b-c, so equal precedence on the right still wraps.
+    expect(t('=A1-(B1-C1)', 1, 0)).toBe('=A2-(B2-C2)')
+    expect(t('=A1/(B1*C1)', 1, 0)).toBe('=A2/(B2*C2)')
+  })
+
+  it('does not add parentheses that change nothing', () => {
+    expect(t('=A1+B1*2', 1, 0)).toBe('=A2+B2*2')
+    expect(t('=A1*B1+2', 1, 0)).toBe('=A2*B2+2')
+  })
+
+  it('keeps a negated sum negated', () => {
+    expect(t('=-(A1+B1)', 1, 0)).toBe('=-(A2+B2)')
+  })
+
+  it('keeps nested power grouping, which needs the LEFT parenthesis', () => {
+    // ^ is right-associative, so a^b^c means a^(b^c). That makes (a^b)^c the
+    // case where the parenthesis has to survive on the left - the mirror of
+    // every other operator.
+    expect(t('=(A1^B1)^C1', 1, 0)).toBe('=(A2^B2)^C2')
+    expect(t('=A1^(B1^C1)', 1, 0)).toBe('=A2^B2^C2')
+  })
+
+  it('drops parentheses that were never doing anything', () => {
+    // + already binds tighter than >, so these change nothing and Excel
+    // drops them too. What matters is that the meaning survives, which the
+    // round-trip test below pins.
+    expect(t('=IF((A1+B1)>2,1,0)', 1, 0)).toBe('=IF(A2+B2>2,1,0)')
+  })
+
+  it('round-trips a postfix percent', () => {
+    expect(t('=A1*5%', 1, 0)).toBe('=A2*5%')
+  })
+})
+
 describe('translateFormula', () => {
   it('leaves a literal alone', () => {
     expect(t('42', 1, 0)).toBe('42')

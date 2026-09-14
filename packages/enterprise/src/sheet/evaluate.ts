@@ -59,10 +59,6 @@ function binary(op: string, l: CellValue, r: CellValue): CellValue {
       return d === 0 ? err('#DIV/0!') : toNumber(l) / d
     }
     case '^': return Math.pow(toNumber(l), toNumber(r))
-    case '%': {
-      const d = toNumber(r)
-      return d === 0 ? err('#DIV/0!') : toNumber(l) % d
-    }
     case '&': return toText(l) + toText(r)
     case '=': return looseEquals(l, r)
     case '<>': return !looseEquals(l, r)
@@ -73,6 +69,10 @@ function binary(op: string, l: CellValue, r: CellValue): CellValue {
     default: return err('#VALUE!')
   }
 }
+
+/** Functions handled before the table, because their arguments must not all
+ *  be evaluated up front. */
+const SHORT_CIRCUIT = new Set(['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH'])
 
 function evalNode(node: Node, ctx: EvalContext): CellValue {
   switch (node.k) {
@@ -98,7 +98,9 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
     case 'unary': {
       const v = evalNode(node.arg, ctx)
       if (isError(v)) return v
-      return node.op === '-' ? -toNumber(v) : toNumber(v)
+      if (node.op === '-') return -toNumber(v)
+      if (node.op === '%') return toNumber(v) / 100
+      return toNumber(v)
     }
 
     case 'binary': {
@@ -120,6 +122,11 @@ function evalCall(
   ctx: EvalContext,
 ): CellValue {
   const { name, args } = node
+
+  // Every short-circuiting function below indexes its arguments directly.
+  // `=IF()` parses fine, so without this the index is undefined and the
+  // TypeError escapes the boundary this module promises never to throw past.
+  if (SHORT_CIRCUIT.has(name) && args.length === 0) return err('#VALUE!')
 
   if (name === 'IF') {
     const cond = evalNode(args[0]!, ctx)
@@ -202,6 +209,10 @@ export function evaluate(node: Node, ctx: EvalContext): CellValue {
   } catch (e) {
     if (e instanceof FormulaError) return err(e.code)
     if (e instanceof RangeError) return err('#NUM!')
+    // Last resort. This module promises callers it never throws, and a cell
+    // showing #VALUE! is recoverable where an exception out of a render pass
+    // is not.
+    if (e instanceof TypeError) return err('#VALUE!')
     throw e
   }
 }

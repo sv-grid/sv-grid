@@ -45,12 +45,12 @@ export type Node =
   | { k: 'range'; from: CellRef; to: CellRef }
   /** A defined name (`=Tax`), resolved against the workbook at evaluation. */
   | { k: 'name'; name: string }
-  | { k: 'unary'; op: '-' | '+'; arg: Node }
+  | { k: 'unary'; op: '-' | '+' | '%'; arg: Node }
   | { k: 'binary'; op: BinaryOp; left: Node; right: Node }
   | { k: 'fn'; name: string; args: Node[] }
 
 export type BinaryOp =
-  | '+' | '-' | '*' | '/' | '^' | '%' | '&'
+  | '+' | '-' | '*' | '/' | '^' | '&'
   | '=' | '<>' | '<' | '>' | '<=' | '>='
 
 /** Binding power. Comparison loosest, then concat, then arithmetic. */
@@ -59,7 +59,7 @@ export const PRECEDENCE: Record<BinaryOp, number> = {
   '&': 2,
   '+': 3, '-': 3,
   '*': 4, '/': 4,
-  '^': 5, '%': 5,
+  '^': 5,
 }
 
 /** Walk every node, parents before children. */
