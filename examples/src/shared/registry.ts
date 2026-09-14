@@ -360,6 +360,7 @@ import ProjectTracker            from '../demos/167-project-tracker.svelte'
 import ProjectManagement         from '../demos/205-project-management.svelte'
 import CellValidation            from '../demos/206-cell-validation.svelte'
 import BlankSheet                from '../demos/207-blank-sheet.svelte'
+import SpreadsheetShell          from '../demos/438-spreadsheet-shell.svelte'
 import FreezePanes               from '../demos/208-freeze-panes.svelte'
 import DataValidationSheet       from '../demos/209-data-validation.svelte'
 import FormatCells               from '../demos/210-format-cells.svelte'
@@ -858,6 +859,7 @@ export const demos: Demo[] = [
   demo('165-chart-sankey',          'Sankey diagram (user flow)',  'type: sankey lays nodes out in columns by longest-path depth and renders flow links as bezier ribbons whose width = link value in pixels. User journey from acquisition channel through onboarding to outcome. Hover any ribbon for the source -> target value.', 'Charts', ChartSankey),
 
   // ----- Spreadsheet
+  demo('438-spreadsheet-shell',     'Spreadsheet shell (SvSheet)',  'The whole Excel surface as one component: <SvSheet workbook={wb} />. Ribbon (Home / Insert / Formulas / Data), Name Box and fx bar showing the raw formula, A..L headers over the 1..N gutter, sheet tabs and a Sum / Average / Count status bar. Ribbon buttons and keyboard shortcuts run the same calls, so Ctrl+B lights the Bold button.', 'Spreadsheet', SpreadsheetShell),
   demo('27-spreadsheet-ribbon',     'Spreadsheet + Ribbon bar',    'Excel-style Ribbon UI driving the grid via SvGridApi: cell formatting (bold, color, number format), insert/delete row, sort, live SUM/AVG/COUNT.', 'Spreadsheet', SpreadsheetRibbon),
   demo('83-spreadsheet-formulas',   'Spreadsheet + formulas',      'Real formula engine inside the grid: cell refs (A1), ranges (A1:A10), SUM / AVG / IF / COUNTIF / ROUND, arithmetic, string concat, cycle detection. Excel-like calc without bundling HyperFormula.', 'Spreadsheet', SpreadsheetFormulas),
   demo('169-cell-borders',          'Per-cell custom borders (KPI)','Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.', 'Spreadsheet', CellBordersDemo),

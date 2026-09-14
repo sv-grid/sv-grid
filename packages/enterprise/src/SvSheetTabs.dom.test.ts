@@ -3,9 +3,9 @@
  * renames in place, and refuses to delete the last sheet.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { mount, unmount, flushSync } from 'svelte'
+import { mount, unmount, flushSync, type ComponentProps } from 'svelte'
 import SvSheetTabs from './SvSheetTabs.svelte'
-import { createWorkbook } from './sheet/workbook'
+import { createWorkbook, type Workbook } from './sheet/workbook'
 import { reactiveProps } from './SvSheetTabs.test-harness.svelte'
 
 let host: HTMLElement | null = null
@@ -15,7 +15,9 @@ afterEach(() => {
   if (host) { host.remove(); host = null }
 })
 
-function render(props: Record<string, unknown>): HTMLElement {
+type TabProps = ComponentProps<typeof SvSheetTabs>
+
+function render(props: Partial<TabProps> & { workbook: Workbook }): HTMLElement {
   host = document.createElement('div')
   document.body.appendChild(host)
   comp = mount(SvSheetTabs, { target: host, props })

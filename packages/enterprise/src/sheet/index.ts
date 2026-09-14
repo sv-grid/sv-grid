@@ -57,6 +57,18 @@ export {
 export { setFindReplaceHandler, setPasteSpecialHandler } from './shortcuts'
 
 export { default as SvFormulaBar } from '../SvFormulaBar.svelte'
+export { default as SvSheet } from '../SvSheet.svelte'
+export { default as SvSheetRibbon } from '../SvSheetRibbon.svelte'
+export {
+  RIBBON_TABS, ribbonItems, withDecimals,
+  type RibbonTab, type RibbonGroup, type RibbonItem,
+  type RibbonItemKind, type RibbonActionId,
+} from './ribbon'
+export {
+  move, selectRegion, selectLine, applyFormat, toggleFormat, preset,
+  autoSum, structural, switchSheet, gridOf,
+} from './shortcuts'
+
 export {
   compileNumberFormat, formatWithPattern, FORMAT_PRESETS,
   type CompiledFormat, type FormatPresetName,

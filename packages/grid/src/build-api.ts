@@ -27,6 +27,7 @@ import {
 } from "./cell-values";
 import { hasAdvancedFilterEngine } from "./advanced-filter.svelte";
 import { undoHistory, redoHistory } from "./history";
+import { buildCommandContext } from "./command-context";
 
 export function createGridApi<
   TFeatures extends TableFeatures = TableFeatures,
@@ -601,6 +602,10 @@ export function createGridApi<
       // ---- Undo / redo (history + pointer)
       undo() { return undoHistory(ctx) },
       redo() { return redoHistory(ctx) },
+      // Built fresh per call rather than memoized: it is a handful of getters
+      // over `ctx`, and a caller that holds one keeps reading live state
+      // anyway, so caching would only add a slot to keep in sync.
+      getCommandContext() { return buildCommandContext(ctx, false) },
       canUndo() { void ctx.historyVersion; return ctx.historyPtr >= 0 },
       canRedo() { void ctx.historyVersion; return ctx.historyPtr < ctx.history.length - 1 },
       clearHistory() { ctx.history = []; ctx.historyPtr = -1; ctx.historyVersion += 1 },
