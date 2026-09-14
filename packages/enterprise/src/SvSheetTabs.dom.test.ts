@@ -6,6 +6,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { mount, unmount, flushSync } from 'svelte'
 import SvSheetTabs from './SvSheetTabs.svelte'
 import { createWorkbook } from './sheet/workbook'
+import { reactiveProps } from './SvSheetTabs.test-harness.svelte'
 
 let host: HTMLElement | null = null
 let comp: ReturnType<typeof mount> | null = null
@@ -163,5 +164,74 @@ describe('SvSheetTabs (DOM)', () => {
     const el = render({ workbook: threeSheets(), editable: false })
     expect(el.querySelector('.add')).toBeNull()
     expect(el.querySelector('.close')).toBeNull()
+  })
+})
+
+/**
+ * A Workbook is a plain object, not `$state`, so nothing about reading
+ * `workbook.sheets` makes the strip re-render. Every test above asserts the
+ * WORKBOOK after an interaction, which passes whether or not the DOM ever
+ * caught up - and it did not: the strip rendered once at mount and then showed
+ * a stale sheet list and a stale selected tab for the rest of its life.
+ */
+describe('SvSheetTabs re-renders when the workbook changes', () => {
+  it('shows a sheet added through its own button', () => {
+    const workbook = threeSheets()
+    const el = render({ workbook })
+    el.querySelector<HTMLButtonElement>('.add')!.click()
+    flushSync()
+    expect(tabNames(el)).toEqual(['Budget', 'Orders', 'Summary', 'Sheet1'])
+  })
+
+  it('moves the selected marker when its own tab is clicked', () => {
+    const workbook = threeSheets()
+    const el = render({ workbook })
+    el.querySelectorAll<HTMLButtonElement>('[role="tab"]')[2]!.click()
+    flushSync()
+    expect(el.querySelector('[role="tab"][aria-selected="true"]')!.textContent)
+      .toBe('Summary')
+  })
+
+  it('drops a sheet deleted through its own button', () => {
+    const workbook = threeSheets()
+    const el = render({ workbook })
+    el.querySelector<HTMLButtonElement>('.close')!.click()
+    flushSync()
+    expect(tabNames(el)).toEqual(['Orders', 'Summary'])
+  })
+
+  it('follows an OUTSIDE mutation once `version` is bumped', () => {
+    // What Ctrl+PageUp / Ctrl+PageDown do: the shortcut layer moves the
+    // workbook and the consumer bumps the counter it already keeps.
+    const workbook = threeSheets()
+    const box = reactiveProps({ workbook, version: 0 })
+    const el = render(box.props)
+
+    workbook.setActive('Summary')
+    workbook.addSheet('Notes')
+    flushSync()
+    // Nothing has told the strip yet, so it is still showing the old list.
+    expect(tabNames(el)).toEqual(['Budget', 'Orders', 'Summary'])
+
+    box.set({ version: 1 })
+    flushSync()
+    expect(tabNames(el)).toEqual(['Budget', 'Orders', 'Summary', 'Notes'])
+    expect(el.querySelector('[role="tab"][aria-selected="true"]')!.textContent)
+      .toBe('Notes')
+  })
+
+  it('keeps the tabs owned by the tablist', () => {
+    const el = render({ workbook: threeSheets() })
+    const list = el.querySelector('[role="tablist"]')!
+    for (const tab of el.querySelectorAll('[role="tab"]')) {
+      // Every element between a tab and its tablist must be presentational,
+      // or the tablist does not own the tab as far as ARIA is concerned.
+      let node = tab.parentElement
+      while (node && node !== list) {
+        expect(node.getAttribute('role')).toBe('presentation')
+        node = node.parentElement
+      }
+      expect(node).toBe(list)
+    }
   })
 })

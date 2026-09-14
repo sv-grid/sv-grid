@@ -63,7 +63,9 @@
     rowIdAt: (i: number) => rows[i]?.id ?? null,
     columnIdAt: (i: number) => FIELDS[i] ?? null,
   }
-  store.set([[4, 0, 4, 3]], { bold: true, fill: '#eef2ff' }, lookup)
+  // A fill is a literal colour the way it is in Excel, so a light fill needs
+  // a matching font colour or the total row goes unreadable on a dark theme.
+  store.set([[4, 0, 4, 3]], { bold: true, fill: '#eef2ff', color: '#1e1b4b' }, lookup)
 
   function raw(r: number, c: number): string {
     const field = FIELDS[c]
@@ -313,28 +315,41 @@
   .panel { display: flex; flex-wrap: wrap; gap: 10px; }
   fieldset {
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-    border: 1px solid var(--sg-color-border, #e2e8f0);
+    border: 1px solid var(--sg-border, #e2e8f0);
     border-radius: 6px; padding: 6px 10px; font-size: 12px;
   }
-  legend { padding: 0 4px; color: var(--sg-color-muted, #64748b); }
+  legend { padding: 0 4px; color: var(--sg-muted, #64748b); }
   label { display: inline-flex; align-items: center; gap: 4px; }
-  select, input { font: inherit; }
-  button {
-    font: inherit; padding: 3px 8px; border-radius: 5px; cursor: pointer;
-    border: 1px solid var(--sg-color-border, #cbd5e1);
-    background: var(--sg-color-surface, #fff); color: inherit;
+  /* The controls sit outside the grid, so they take the theme tokens
+     directly rather than inheriting the grid's own control styling. */
+  select,
+  input[type='text'],
+  input:not([type]) {
+    font: inherit;
+    padding: 2px 6px;
+    border-radius: 5px;
+    border: 1px solid var(--sg-input-border, var(--sg-border, #cbd5e1));
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    color: var(--sg-fg, #0f172a);
   }
+  input[type='checkbox'] { accent-color: var(--sg-accent, #6366f1); }
+  .panel button {
+    font: inherit; padding: 3px 8px; border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff); color: var(--sg-fg, #0f172a);
+  }
+  .panel button:hover { background: var(--sg-row-hover-bg, #f1f5f9); }
   .cell {
     display: block; width: 100%; height: 100%; text-align: inherit;
     font: inherit; border: 0; background: transparent; color: inherit;
     padding: 0 2px; cursor: pointer;
   }
-  .cell.active { box-shadow: inset 0 0 0 2px var(--sg-color-accent, #6366f1); border-radius: 2px; }
+  .cell.active { box-shadow: inset 0 0 0 2px var(--sg-accent, #6366f1); border-radius: 2px; }
   .log {
     margin: 0; padding: 0; list-style: none;
     font-family: ui-monospace, Menlo, monospace; font-size: 11px;
-    color: var(--sg-color-muted, #64748b); min-height: 16px;
+    color: var(--sg-muted, #64748b); min-height: 16px;
   }
-  .note { margin: 0; font-size: 13px; line-height: 1.6; color: var(--sg-color-muted, #64748b); }
+  .note { margin: 0; font-size: 13px; line-height: 1.6; color: var(--sg-muted, #64748b); }
   code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
 </style>

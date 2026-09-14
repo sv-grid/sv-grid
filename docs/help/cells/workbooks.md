@@ -77,8 +77,16 @@ break it.
   setWorkbook(wb, () => (version += 1))
 </script>
 
-<SvSheetTabs workbook={wb} onChange={() => (version += 1)} />
+<SvSheetTabs workbook={wb} {version} onChange={() => (version += 1)} />
 ```
+
+Pass `version` back IN as well as out. A `Workbook` is a plain object rather
+than `$state`, so reading `workbook.sheets` creates no reactive dependency and
+the strip would render once and then show whatever the sheet list was at
+mount - it would not notice `Ctrl+PageUp` moving the active sheet underneath
+it. The strip bumps its own counter for its own buttons, so `version` is only
+needed for mutations that come from somewhere else: the shortcuts, or app code
+calling `addSheet`.
 
 Click to switch, double-click or `F2` to rename, drag to reorder, `+` to add.
 The strip owns no state of its own, so the tabs and the keyboard shortcuts

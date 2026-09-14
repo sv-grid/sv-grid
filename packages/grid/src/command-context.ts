@@ -16,7 +16,7 @@
  * no index in it, so that one is left to the api.
  */
 import type { GridCommandContext } from "./shortcut-registry";
-import { runHistoryGroup } from "./history";
+import { pushHistory, runHistoryGroup } from "./history";
 
 export function buildCommandContext(ctx: any, editing: boolean): GridCommandContext {
   function columnIdAt(colIndex: number): string | null {
@@ -59,7 +59,25 @@ export function buildCommandContext(ctx: any, editing: boolean): GridCommandCont
     },
     setCellValue(rowIndex: number, colIndex: number, value: unknown) {
       const columnId = columnIdAt(colIndex);
-      if (columnId != null) ctx.writeCellRaw(rowIndex, columnId, value);
+      if (columnId == null) return;
+      // Record the write so Ctrl+Z walks it back. `writeCellRaw` is the raw
+      // writer and deliberately keeps no history of its own - the fill handle
+      // and paste call it in loops and push their own entries (or, today, none
+      // at all). A command has to push here or every multi-cell command it
+      // runs would be silently un-undoable.
+      //
+      // Both reads happen BEFORE the write: writeCellRaw swaps a fresh row
+      // object into `internalData`, so afterwards the id lookup would miss.
+      const field = ctx.allColumns[colIndex]?.columnDef?.field;
+      const rowId = ctx.allRows[rowIndex]?.id;
+      const before = ctx.readCellRaw(rowIndex, columnId);
+      ctx.writeCellRaw(rowIndex, columnId, value);
+      // Only when something actually changed: writeCellRaw no-ops on an equal
+      // value, and a step whose before and after match would make Ctrl+Z look
+      // like it had swallowed a press.
+      if (field != null && rowId != null && before !== value) {
+        pushHistory(ctx, [{ rowId, columnId, field, before, after: value }]);
+      }
     },
     setActiveCell(rowIndex: number, colIndex: number) {
       ctx.setActiveCell(rowIndex, colIndex);
