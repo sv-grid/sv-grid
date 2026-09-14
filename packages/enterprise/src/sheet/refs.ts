@@ -14,7 +14,7 @@
  * Both re-serialise from the AST rather than editing text, so `SUM( A1 : B2 )`
  * comes back normalised instead of half-rewritten.
  */
-import { mapNode, type Node } from './ast'
+import { mapNode, PRECEDENCE, type Node } from './ast'
 import { formatA1, colToLetters, type CellRef } from './address'
 import { parseFormula } from './parse'
 
@@ -35,6 +35,17 @@ function isBroken(ref: CellRef): boolean {
 /** Serialise an AST back to formula text, with the leading `=`. */
 export function formatFormula(node: Node): string {
   return `=${render(node)}`
+}
+
+/** Render `node` as an operand of something binding at `minPrec`, adding
+ *  parentheses when it would otherwise re-associate. */
+function wrap(node: Node, minPrec: number): string {
+  const text = render(node)
+  if (node.k === 'binary' && PRECEDENCE[node.op] < minPrec) return `(${text})`
+  // A unary minus has to be parenthesised inside anything tighter than it,
+  // so -(A1+B1) and 2^-A1 both survive.
+  if (node.k === 'unary' && node.op !== '%' && minPrec > 5) return `(${text})`
+  return text
 }
 
 function render(node: Node): string {
@@ -58,8 +69,25 @@ function render(node: Node): string {
       return `${from}:${to}`
     }
     case 'name': return node.name
-    case 'unary': return `${node.op}${render(node.arg)}`
-    case 'binary': return `${render(node.left)}${node.op}${render(node.right)}`
+    case 'unary':
+      return node.op === '%'
+        ? `${wrap(node.arg, 6)}%`
+        : `${node.op}${wrap(node.arg, 5)}`
+    case 'binary': {
+      const prec = PRECEDENCE[node.op]
+      // The AST does not record parentheses, so they have to be reconstructed
+      // from precedence. Emitting the operands bare turns =(A1+B1)*2 into
+      // =A2+B2*2, which is a silent wrong answer on every fill and paste.
+      //
+      // Which SIDE needs one at equal precedence depends on associativity.
+      // Left-associative: the right operand does, because a-(b-c) is not
+      // a-b-c. Right-associative `^` is the mirror: the LEFT operand does,
+      // because (a^b)^c is not a^b^c.
+      const rightAssociative = node.op === '^'
+      const leftMin = rightAssociative ? prec + 1 : prec
+      const rightMin = rightAssociative ? prec : prec + 1
+      return `${wrap(node.left, leftMin)}${node.op}${wrap(node.right, rightMin)}`
+    }
     case 'fn': return `${node.name}(${node.args.map(render).join(',')})`
   }
 }

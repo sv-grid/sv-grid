@@ -82,6 +82,22 @@ describe('the shortcut chain inside onGridKeyDown', () => {
     expect(ctx.setActiveCell).toHaveBeenCalledWith(3, 1)
   })
 
+  it('does NOT run for a key typed into a child element', () => {
+    // The chain used to run before the grid-root guard, so a Ctrl+A or Ctrl+D
+    // typed into a filter-row input reached the sheet commands and mutated
+    // grid cells.
+    const handler = vi.fn(() => true)
+    registerGridShortcuts(handler)
+    const ctx = makeCtx()
+    const root = document.createElement('div')
+    const input = document.createElement('input')
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, cancelable: true })
+    Object.defineProperty(event, 'target', { value: input })
+    Object.defineProperty(event, 'currentTarget', { value: root })
+    createKeyboard(ctx).onGridKeyDown(event)
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it('runs before the editing bail, so a mid-edit key still reaches a handler', () => {
     const handler = vi.fn(() => true)
     registerGridShortcuts(handler)

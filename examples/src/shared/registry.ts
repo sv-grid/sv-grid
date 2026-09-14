@@ -261,6 +261,7 @@ import FillHandle                from '../demos/95-fill-handle.svelte'
 import MoveCells429              from '../demos/429-move-cells.svelte'
 import ExcelShortcuts434        from '../demos/434-excel-shortcuts.svelte'
 import FormulaBarFormats435     from '../demos/435-formula-bar-formats.svelte'
+import PasteFindStructure436    from '../demos/436-paste-find-structure.svelte'
 import SelectionBar430          from '../demos/430-selection-bar.svelte'
 import CustomIcons431           from '../demos/431-custom-icons.svelte'
 import Candlestick432           from '../demos/432-chart-candlestick.svelte'
@@ -869,6 +870,7 @@ export const demos: Demo[] = [
   demo('212-dashboard-sheet',       'Dashboard sheet',             'A spreadsheet that reads like an Excel dashboard: each channel row carries an inline SVG trend sparkline and an eight-week heatmap shaded by volume. Total and Avg are live =SUM / =AVERAGE formulas - edit any weekly cell and the sparkline reshapes, the heatmap re-shades, and the totals update at once. Sparklines are a per-column custom cell; the heatmap is value-driven cellClass.', 'Spreadsheet', DashboardSheet),
   demo('434-excel-shortcuts',       'Excel keyboard shortcuts',    'The muscle memory a spreadsheet user arrives with: Ctrl+Arrow jumps to the edge of the data region (a run-boundary search, so it hops gaps rather than running to the end), Ctrl+Shift+Arrow extends there, Ctrl+A takes the current region then the sheet, Ctrl+Space / Shift+Space take the column or row, Ctrl+D / Ctrl+R fill, Ctrl+; stamps the date. One enableSheet() call. Ctrl+Z undoes a whole fill in one press, not one per cell.', 'Spreadsheet', ExcelShortcuts434),
   demo('435-formula-bar-formats',   'Formula bar + cell formats',  'The Excel cell experience: a formula bar showing the RAW text behind the active cell (the grid shows 1,234.50, the bar shows =B2*C2) with function autocomplete and signature hints, a Name Box that jumps to an address, and number formats that live on the CELL rather than the column. Ctrl+Shift+4 for currency, Ctrl+B to bold. The format store keys on row id, so sorting does not leave formatting behind on the old index.', 'Spreadsheet', FormulaBarFormats435),
+  demo('436-paste-find-structure',  'Paste Special, Find/Replace', 'The three Excel operations that write more than one cell: Paste Special (values / formulas / formats / transpose / arithmetic, with a text/html clipboard flavour so formats survive a round trip through Excel), Find and Replace that searches what you SEE but writes what you TYPED so a formula is not destroyed by replacing its result, and insert/delete that rewrites every formula - inserting above =SUM(B1:B4) widens it instead of dropping the new row.', 'Spreadsheet', PasteFindStructure436),
 
   // ----- Themes & Styling
   demo('37-theming-studio',         'Theming studio',              'Live token playground: brand color, density, radius, font, dark/light, zebra. Copy-ready CSS snippet, persists across reloads.', 'Themes & Styling', ThemingStudio),

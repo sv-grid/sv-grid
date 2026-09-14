@@ -63,7 +63,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Ranges | `A1:A10`, `B2:D5`, `A1 : B2`, whole columns `A:C` |
 | Cross-sheet | `Orders!A1`, `'Price list'!A1:C9` |
 | Defined names | `=Tax*2`, resolved through `resolveName` |
-| Arithmetic | `+ - * / ^ %`, unary `-` and `+` |
+| Arithmetic | `+ - * / ^`, unary `-` and `+`, postfix `%` |
 | Comparison | `=` `<>` `<` `>` `<=` `>=` |
 | Concatenation | `&` |
 | Literals | `1.5`, `2.5E-3`, `"text"`, `"say ""hi"""`, `TRUE` / `FALSE` |
@@ -82,6 +82,10 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
+
+`%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
+`=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is
+the function.
 
 Need the full ~400? The [HyperFormula adapter](#hyperformula) is still there.
 
@@ -112,6 +116,11 @@ import { translateFormula } from '@svgrid/enterprise/sheet'
 translateFormula('=$A$1*B2', 1, 0)   // '=$A$1*B3'
 translateFormula('=$A2*B$1', 3, 4)   // '=$A5*F$1'
 ```
+
+Translation re-serialises from the AST, which means it rebuilds parentheses
+from precedence rather than remembering them. `=(A1+B1)*2` comes back as
+`=(A2+B2)*2`, and redundant ones are dropped: `=IF((A1+B1)>2,1,0)` becomes
+`=IF(A2+B2>2,1,0)`, which parses identically.
 
 This is what makes `Ctrl+D` correct. `enableSheet()` wires it into fill for
 you, so filling `=$A$1*B1` down a column keeps reading `$A$1` instead of

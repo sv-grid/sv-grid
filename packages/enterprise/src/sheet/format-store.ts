@@ -74,10 +74,29 @@ export type SheetFormatStore = {
   clearAll(): void
 }
 
-/** Keys are "rowId columnId". Ids come from the grid and may contain anything,
- *  so the key is never split back apart - it is opaque. */
+/**
+ * Keys are "rowId columnId" with each half percent-encoded.
+ *
+ * Encoding is what makes the key reversible. Ids come from the grid and may
+ * contain spaces, so a plain join cannot be split back apart - and `hydrate`
+ * has to split it, or the row and column indexes come back empty and
+ * `forgetRow` / `forgetColumn` become silent no-ops on a restored store.
+ */
 function keyOf(rowId: string, columnId: string): string {
-  return `${rowId} ${columnId}`
+  return `${encodeURIComponent(rowId)} ${encodeURIComponent(columnId)}`
+}
+
+function splitKey(key: string): { rowId: string; columnId: string } | null {
+  const gap = key.indexOf(' ')
+  if (gap < 0) return null
+  try {
+    return {
+      rowId: decodeURIComponent(key.slice(0, gap)),
+      columnId: decodeURIComponent(key.slice(gap + 1)),
+    }
+  } catch {
+    return null
+  }
 }
 
 export function createFormatStore(
@@ -181,7 +200,13 @@ export function createFormatStore(
       cells.clear()
       rowsIndex.clear()
       colsIndex.clear()
-      for (const [key, entry] of Object.entries(entries)) cells.set(key, entry)
+      for (const [key, entry] of Object.entries(entries)) {
+        cells.set(key, entry)
+        // Rebuild the indexes, or forgetRow / forgetColumn do nothing on a
+        // store that came back from storage.
+        const parts = splitKey(key)
+        if (parts) remember(parts.rowId, parts.columnId, key)
+      }
     },
 
     clearAll() {

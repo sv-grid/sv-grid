@@ -17,6 +17,15 @@ export function createKeyboard<
   TData extends RowData = RowData,
 >(ctx: any) {
   function onGridKeyDown(event: KeyboardEvent) {
+    // Only the grid root drives navigation - keys on header buttons, menus,
+    // or the cell editor are handled by those controls themselves.
+    //
+    // The command chain runs AFTER this guard, not before. Running it first
+    // meant a key typed into a filter-row input reached the sheet commands,
+    // so Ctrl+A or Ctrl+D while filtering mutated grid cells. The editor has
+    // its own chain call in editing.ts, which is what Alt+Enter needs.
+    if (event.target !== event.currentTarget) return;
+
     // Registered commands get the key BEFORE the grid interprets it. That is
     // how @svgrid/enterprise binds Ctrl+Arrow, Ctrl+D and the rest without
     // widening the closed GridKeyboardIntent union, which is public API. A
@@ -25,9 +34,6 @@ export function createKeyboard<
       return;
     }
 
-    // Only the grid root drives navigation - keys on header buttons, menus,
-    // or the cell editor are handled by those controls themselves.
-    if (event.target !== event.currentTarget) return;
     if (ctx.editingCell) return;
 
     if ((event.ctrlKey || event.metaKey) && !event.altKey) {

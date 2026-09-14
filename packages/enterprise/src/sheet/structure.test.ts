@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
-  insertRows, deleteRows, insertColumns, deleteColumns,
+  insertRows, deleteRows, deleteColumns,
   axisForSelection, setStructureTarget, rewriteFormulas,
 } from './structure'
 import { handleSheetKey } from './shortcuts'

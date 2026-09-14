@@ -14,7 +14,6 @@
  * rest of the sheet keeps working.
  */
 import { visit, type Node } from './ast'
-import type { CellRef } from './address'
 
 export type CellKey = string
 
