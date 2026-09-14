@@ -75,6 +75,42 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
+// The formula engine. Names are Sheet-prefixed HERE because the barrel already
+// exports a `DependencyGraph` (scheduler) and an `EvalContext` (the expression
+// language), and two different things under one name in one namespace is worse
+// than a prefix. The `@svgrid/enterprise/sheet` subpath exports them unprefixed.
+export { parseFormula, parse as parseFormulaTokens } from './sheet/parse'
+export { tokenize as tokenizeFormula, type Token as FormulaToken } from './sheet/tokenize'
+export {
+  evaluate as evaluateFormula,
+  formatValue as formatCellValue,
+  type EvalContext as SheetEvalContext,
+} from './sheet/evaluate'
+export {
+  FUNCTIONS as SHEET_FUNCTIONS,
+  withCustomFunctions,
+  type SheetFunction,
+  type FnArgs as SheetFnArgs,
+} from './sheet/functions'
+export {
+  translateFormula, fixupReferences, formatFormula, type StructuralEdit,
+} from './sheet/refs'
+export {
+  createDependencyGraph as createSheetDependencyGraph,
+  precedentsOf, cellKey, parseCellKey,
+  type DependencyGraph as SheetDependencyGraph,
+  type CellKey,
+} from './sheet/deps'
+export {
+  parseA1, formatA1, colToLetters, lettersToCol, type CellRef,
+} from './sheet/address'
+export {
+  isError as isFormulaError,
+  type CellValue as SheetCellValue,
+  type SheetError,
+  type Node as FormulaNode,
+} from './sheet/ast'
+
 export {
   SHEET_BINDINGS,
   handleSheetKey,

@@ -22,6 +22,8 @@ import { registerGridShortcuts } from '@svgrid/grid/shortcuts'
 import { isLicenseKeySet } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import { handleSheetKey } from './sheet/shortcuts'
+import { setFillTranslator } from './sheet/commands'
+import { translateFormula } from './sheet/refs'
 
 let enabled = false
 
@@ -36,5 +38,9 @@ export function enableSheet(): void {
   // Priority 100 so the sheet keymap sits above anything an app registers of
   // its own without asking for a priority.
   registerGridShortcuts(handleSheetKey, { id: 'svgrid-sheet', priority: 100 })
+  // Teach fill about formulas. Without this Ctrl+D copies '=A1*2' down as
+  // literal text into every row; with it the relative half of each reference
+  // shifts and the absolute half does not, the way Excel fills.
+  setFillTranslator((value, delta) => translateFormula(value, delta.rows, delta.cols))
   if (!isLicenseKeySet()) emitUnlicensedNudge()
 }
