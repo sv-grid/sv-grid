@@ -45,6 +45,26 @@ export type Node =
   | { k: 'range'; from: CellRef; to: CellRef }
   /** A defined name (`=Tax`), resolved against the workbook at evaluation. */
   | { k: 'name'; name: string }
+  /**
+   * A structured reference: `Orders[Amount]`, `[@Amount]`, `Orders[#Totals]`.
+   *
+   * Deliberately NOT resolved to a range here. The range a table reference
+   * means depends on how many rows the table has right now, and the AST is
+   * cached across the edits that change that. Resolving at parse time is how
+   * a total silently stops covering rows added after it was typed, which is
+   * the exact problem tables exist to fix.
+   */
+  | {
+      k: 'table'
+      /** null for the unqualified `[Amount]` form, which only means
+       *  something inside a table. */
+      table: string | null
+      /** null when the reference names no column, e.g. `Orders[#All]`. */
+      column: string | null
+      /** The far end of a column span: `Orders[[Qty]:[Amount]]`. */
+      columnTo?: string | null
+      specifier: '#All' | '#Data' | '#Headers' | '#Totals' | '#ThisRow'
+    }
   | { k: 'unary'; op: '-' | '+' | '%'; arg: Node }
   | { k: 'binary'; op: BinaryOp; left: Node; right: Node }
   | { k: 'fn'; name: string; args: Node[] }

@@ -20,6 +20,10 @@ import {
 import { toNumber, toBool, toText, looseEquals, compare } from './coerce'
 import { withCustomFunctions, type SheetFunction, type FnArgs } from './functions'
 import type { CellRef } from './address'
+import {
+  resolveTableRange, columnIndexOf,
+  type TableRegion, type TableSpecifier,
+} from './tables'
 
 export type EvalContext = {
   /** Read one cell. Out of bounds should return `{ error: '#REF!' }`. */
@@ -30,6 +34,16 @@ export type EvalContext = {
    *  name (which becomes #NAME?). */
   resolveName?(name: string): CellValue | undefined
   functions?: Record<string, SheetFunction>
+
+  // ---- Structured references -----------------------------------------
+  /** Look a table up by name. */
+  findTable?(name: string): TableRegion | undefined
+  /** The table containing the cell the formula lives in, which is the only
+   *  way the unqualified `[@Amount]` form can mean anything. */
+  tableAt?(sheet: string | null, row: number, col: number): TableRegion | undefined
+  /** Where the formula being evaluated sits. Needed for `[@Column]`, which
+   *  is relative to the formula rather than to the table. */
+  currentCell?: { sheet: string | null; row: number; col: number }
 }
 
 function rangeGrid(from: CellRef, to: CellRef, ctx: EvalContext): CellValue[][] {
@@ -111,9 +125,81 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
       return binary(node.op, l, r)
     }
 
+    case 'table':
+      return evalTableRef(node, ctx)
+
     case 'fn':
       return evalCall(node, ctx)
   }
+}
+
+/**
+ * Turn a structured reference into a rectangle and read it.
+ *
+ * Every failure here is #REF! rather than a throw, because a table reference
+ * naming a column that was renamed is an ordinary thing to find in a sheet,
+ * and one broken total should not take the rest of the workbook with it.
+ */
+function tableRectOf(
+  node: Extract<Node, { k: 'table' }>,
+  ctx: EvalContext,
+): { sheet: string; firstRow: number; lastRow: number; firstCol: number; lastCol: number } | null {
+  const here = ctx.currentCell
+  const table = node.table
+    ? ctx.findTable?.(node.table)
+    : here
+      ? ctx.tableAt?.(here.sheet, here.row, here.col)
+      : undefined
+  if (!table) return null
+
+  const headerAt = (sheet: string, row: number, col: number): string => {
+    const v = ctx.resolve(sheet, row, col)
+    return isError(v) ? '' : toText(v)
+  }
+
+  let columns: { from: number; to: number } | null = null
+  if (node.column !== null) {
+    const from = columnIndexOf(table, node.column, headerAt)
+    if (from < 0) return null
+    const to = node.columnTo != null
+      ? columnIndexOf(table, node.columnTo, headerAt)
+      : from
+    if (to < 0) return null
+    columns = { from: Math.min(from, to), to: Math.max(from, to) }
+  }
+
+  return resolveTableRange(
+    table,
+    node.specifier as TableSpecifier,
+    columns,
+    here ? here.row : null,
+  )
+}
+
+function evalTableRef(
+  node: Extract<Node, { k: 'table' }>,
+  ctx: EvalContext,
+): CellValue {
+  const rect = tableRectOf(node, ctx)
+  if (!rect) return err('#REF!')
+  // Scalar position collapses to the top-left, the same as an A1 range.
+  return ctx.resolve(rect.sheet, rect.firstRow, rect.firstCol)
+}
+
+/** Every cell of a structured reference, for the aggregate functions. */
+function tableGrid(
+  node: Extract<Node, { k: 'table' }>,
+  ctx: EvalContext,
+): CellValue[][] | null {
+  const rect = tableRectOf(node, ctx)
+  if (!rect) return null
+  const out: CellValue[][] = []
+  for (let r = rect.firstRow; r <= rect.lastRow; r += 1) {
+    const line: CellValue[] = []
+    for (let c = rect.firstCol; c <= rect.lastCol; c += 1) line.push(ctx.resolve(rect.sheet, r, c))
+    out.push(line)
+  }
+  return out
 }
 
 /** Functions whose arguments must not all be evaluated up front. */
@@ -182,6 +268,17 @@ function evalCall(
       const grid = rangeGrid(arg.from, arg.to, ctx)
       grids.push(grid)
       perArg.push(grid.flat())
+    } else if (arg.k === 'table') {
+      // A structured reference expands exactly as a range does, which is
+      // what makes =SUM(Orders[Amount]) work.
+      const grid = tableGrid(arg, ctx)
+      if (!grid) {
+        grids.push(null)
+        perArg.push([err('#REF!')])
+      } else {
+        grids.push(grid)
+        perArg.push(grid.flat())
+      }
     } else {
       grids.push(null)
       perArg.push([evalNode(arg, ctx)])

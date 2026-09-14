@@ -13,7 +13,16 @@
 import { parseA1, type CellRef } from './address'
 import { FormulaError, type BinaryOp } from './ast'
 
+export type TableRefToken = {
+  t: 'table'
+  table: string | null
+  column: string | null
+  columnTo?: string | null
+  specifier: '#All' | '#Data' | '#Headers' | '#Totals' | '#ThisRow'
+}
+
 export type Token =
+  | TableRefToken
   | { t: 'num'; v: number }
   | { t: 'str'; v: string }
   | { t: 'bool'; v: boolean }
@@ -27,6 +36,14 @@ export type Token =
   | { t: 'comma' }
 
 const WORD = /[A-Za-z0-9$_.]/
+
+const SPECIFIERS: Record<string, TableRefToken['specifier']> = {
+  '#all': '#All',
+  '#data': '#Data',
+  '#headers': '#Headers',
+  '#totals': '#Totals',
+  '#this row': '#ThisRow',
+}
 const TWO_CHAR_OPS = new Set(['<=', '>=', '<>'])
 const ONE_CHAR_OPS = '+-*/^%&=<>'
 
@@ -45,6 +62,86 @@ export function tokenize(src: string): Token[] {
     const start = i
     while (i < src.length && WORD.test(src[i]!)) i += 1
     return src.slice(start, i)
+  }
+
+  /**
+   * Read a structured reference's bracket, having just consumed the `[`.
+   *
+   * The grammar is small but irregular: `[Amount]` is a column, `[@Amount]`
+   * is this row of it, `[#Totals]` is a specifier, and
+   * `[[Qty]:[Amount]]` is a span whose inner brackets are part of the
+   * syntax rather than nesting. Reading it as balanced brackets and then
+   * picking the pieces apart handles all four without a special case each.
+   */
+  const readTableBracket = (table: string | null): TableRefToken => {
+    let depth = 1
+    const start = i
+    while (i < src.length && depth > 0) {
+      if (src[i] === '[') depth += 1
+      else if (src[i] === ']') depth -= 1
+      if (depth > 0) i += 1
+    }
+    if (depth !== 0) throw new FormulaError('#PARSE!')
+    const body = src.slice(start, i)
+    i += 1  // past the closing ]
+
+    let specifier: TableRefToken['specifier'] = '#Data'
+    let column: string | null = null
+    let columnTo: string | null = null
+
+    // Split on top-level commas, so [#Data],[Amount] arrives as two parts.
+    const parts: string[] = []
+    let current = ''
+    let inner = 0
+    for (const ch of body) {
+      if (ch === '[') inner += 1
+      else if (ch === ']') inner -= 1
+      if (ch === ',' && inner === 0) { parts.push(current); current = ''; continue }
+      current += ch
+    }
+    parts.push(current)
+
+    for (const rawPart of parts) {
+      let part = rawPart.trim()
+      if (part === '') continue
+
+      if (part.startsWith('@')) {
+        specifier = '#ThisRow'
+        part = part.slice(1).trim()
+        if (part === '') continue
+      }
+
+      const known = SPECIFIERS[part.toLowerCase()]
+      if (known) { specifier = known; continue }
+
+      // A span: [Qty]:[Amount]
+      const span = /^\[([^\]]*)\]\s*:\s*\[([^\]]*)\]$/.exec(part)
+      if (span) {
+        column = span[1]!.trim()
+        columnTo = span[2]!.trim()
+        continue
+      }
+
+      // A single bracketed part, which is how a name containing a space or a
+      // comma is written - and also how a specifier arrives inside a
+      // multi-part reference like [[#Headers],[Amount]], so unwrap FIRST
+      // and re-check before assuming it names a column.
+      const wrapped = /^\[([^\]]*)\]$/.exec(part)
+      const unwrapped = (wrapped ? wrapped[1]! : part).trim()
+      const inner = SPECIFIERS[unwrapped.toLowerCase()]
+      if (inner) { specifier = inner; continue }
+      if (unwrapped.startsWith('@')) {
+        specifier = '#ThisRow'
+        const rest = unwrapped.slice(1).trim()
+        if (rest !== '') column = rest
+        continue
+      }
+      column = unwrapped
+    }
+
+    return columnTo === null
+      ? { t: 'table', table, column, specifier }
+      : { t: 'table', table, column, columnTo, specifier }
   }
 
   /** Turn a word (and possibly `:word` after it) into a ref, range or name. */
@@ -158,12 +255,19 @@ export function tokenize(src: string): Token[] {
       if (upper === 'TRUE') { out.push({ t: 'bool', v: true }); continue }
       if (upper === 'FALSE') { out.push({ t: 'bool', v: false }); continue }
 
+      // A word followed by `[` is a table: Orders[Amount].
+      if (src[i] === '[') { i += 1; out.push(readTableBracket(word)); continue }
+
       // A word followed by `(` is a call, whatever else it might look like.
       if (src[skipSpace()] === '(') { out.push({ t: 'fn', v: upper }); continue }
 
       pushWord(word, null)
       continue
     }
+
+    // A bare `[` is the unqualified form, which only means something in a
+    // formula sitting inside a table: [@Amount].
+    if (ch === '[') { i += 1; out.push(readTableBracket(null)); continue }
 
     const two = src.slice(i, i + 2)
     if (TWO_CHAR_OPS.has(two)) { out.push({ t: 'op', v: two as BinaryOp }); i += 2; continue }
