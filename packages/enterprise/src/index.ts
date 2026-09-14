@@ -75,6 +75,12 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
+export {
+  goalSeek, goalSeekCell,
+  type GoalSeekOptions, type GoalSeekResult, type GoalSeekSheet,
+  type CellAddress as GoalSeekCellAddress,
+} from './sheet/goal-seek'
+
 export { default as SvSheetTabs } from './SvSheetTabs.svelte'
 export {
   createWorkbook, isValidSheetName,

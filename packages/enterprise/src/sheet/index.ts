@@ -8,6 +8,12 @@
  * the formula engine lands beside them in phase 2.
  */
 export { enableSheet } from '../sheet-enable'
+export {
+  goalSeek, goalSeekCell,
+  type GoalSeekOptions, type GoalSeekResult, type GoalSeekSheet,
+  type CellAddress as GoalSeekCellAddress,
+} from './goal-seek'
+
 export { default as SvSheetTabs } from '../SvSheetTabs.svelte'
 export {
   createWorkbook, isValidSheetName,
