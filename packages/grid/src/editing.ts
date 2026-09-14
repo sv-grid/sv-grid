@@ -21,14 +21,10 @@ import {
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
+import { pushHistory, nextGroupId, type HistoryStep } from "./history";
+import { hasGridShortcuts, runGridShortcuts } from "./shortcut-registry";
+import { buildCommandContext } from "./command-context";
 
-type HistoryStep = {
-  rowId: string;
-  columnId: string;
-  field: string;
-  before: unknown;
-  after: unknown;
-};
 
 export function createEditing<
   TFeatures extends TableFeatures = TableFeatures,
@@ -197,19 +193,7 @@ export function createEditing<
         before:   oldValue,
         after:    finalValue,
       }
-      const truncated = ctx.history.slice(0, ctx.historyPtr + 1)
-      truncated.push(step)
-      // Cap the buffer at UNDO_LIMIT; drop the OLDEST entries so the
-      // pointer stays valid relative to the newest steps.
-      if (truncated.length > ctx.UNDO_LIMIT) {
-        const drop = truncated.length - ctx.UNDO_LIMIT
-        ctx.history = truncated.slice(drop)
-        ctx.historyPtr = ctx.history.length - 1
-      } else {
-        ctx.history = truncated
-        ctx.historyPtr = ctx.history.length - 1
-      }
-      ctx.historyVersion += 1
+      pushHistory(ctx, [step])
     }
     // Notify the consumer AFTER the row has been updated so any callback-
     // driven recompute (cascade totals, server save, undo stack) sees the
@@ -277,6 +261,13 @@ export function createEditing<
 
   function onEditorKeyDown(event: KeyboardEvent) {
     event.stopPropagation();
+    // Registered commands get the key first here too, with `editing: true`, so
+    // a handler can claim a combination that only means something mid-edit
+    // (Alt+Enter for a newline, F4 to cycle a reference between relative and
+    // absolute) before the editor's own Enter / Tab / Escape handling runs.
+    if (hasGridShortcuts() && runGridShortcuts(event, buildCommandContext(ctx, true))) {
+      return;
+    }
     if (event.key === "Enter") {
       event.preventDefault();
       saveEditingCell();
@@ -452,9 +443,27 @@ export function createEditing<
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
         const raw = fillRange ? lines[0]! : sourceCells?.[j] ?? "";
-        updated[column.columnDef.field] = parseEditorValue(editorType, raw, {
+        const parsedValue = parseEditorValue(editorType, raw, {
           dateOnly: column.columnDef.cellDataType === "dateString",
         });
+        // The inbound half of the clipboard pair. A consumer (or a feature
+        // pack doing paste-special) gets the raw text AND what the grid would
+        // have written, and can return either. `undefined` leaves the cell
+        // alone, which is how "paste values only" skips a formula column.
+        const hook = ctx.props.processCellFromClipboard;
+        if (hook) {
+          const decided = hook({
+            text: raw,
+            parsedValue,
+            row: originalRow as TData,
+            rowIndex: targetRowIndex,
+            columnId: column.id as string,
+          });
+          if (decided === undefined) continue;
+          updated[column.columnDef.field] = decided;
+          continue;
+        }
+        updated[column.columnDef.field] = parsedValue;
       }
       next[dataIndex] = updated as TData;
     }
@@ -563,14 +572,15 @@ export function createEditing<
     }
     // Record the whole-row change as consecutive history steps.
     if (changed.length) {
-      let hist = ctx.history.slice(0, ctx.historyPtr + 1);
-      for (const c of changed) {
-        hist.push({ rowId: fr.rowId, columnId: c.columnId, field: c.field, before: c.before, after: c.after });
-      }
-      if (hist.length > ctx.UNDO_LIMIT) hist = hist.slice(hist.length - ctx.UNDO_LIMIT);
-      ctx.history = hist;
-      ctx.historyPtr = ctx.history.length - 1;
-      ctx.historyVersion += 1;
+      // One full-row commit is ONE undo, not one per changed column.
+      pushHistory(
+        ctx,
+        changed.map((c) => ({
+          rowId: fr.rowId, columnId: c.columnId, field: c.field,
+          before: c.before, after: c.after,
+        })),
+        nextGroupId(),
+      );
     }
     ctx.grid.store.setState((prev: any) => ({ ...prev }));
     if (ctx.props.onCellValueChange && changed.length) {

@@ -59,6 +59,7 @@ import {
     rawToNumber,
   } from "./SvGrid.helpers";
 import { createFeatures } from "./features";
+import type { HistoryStep as SharedHistoryStep } from "./history";
 import {
     createScrollSync,
   } from "./scroll-sync";
@@ -440,14 +441,10 @@ export function createSvGridController<
   // VSCode-style: one ordered history array, plus a pointer to the index
   // of the NEXT undo step. Avoids the dual-stack edge cases where
   // multiple undo-redo cycles can lose entries.
-  // exported for the editing slice (undo/redo)
-  type HistoryStep = {
-    rowId: string
-    columnId: string
-    field: string
-    before: unknown
-    after: unknown
-  }
+  // exported for the editing slice (undo/redo). The shape lives in history.ts
+  // so the controller, editing.ts and clipboard.ts cannot drift apart - they
+  // previously declared it twice and open-coded the push in three places.
+  type HistoryStep = SharedHistoryStep
   const UNDO_LIMIT = 200
   let history    = $state<HistoryStep[]>([])
   /** Index in `history` of the LAST applied step. -1 means "nothing applied".
@@ -457,6 +454,11 @@ export function createSvGridController<
   /** Bumps on every undo / redo / record so $derived consumers can
    *  observe via the api without subscribing to history directly. */
   let historyVersion = $state(0)
+  /** Set while a `runHistoryGroup` call is on the stack, so every step pushed
+   *  inside one action shares a group id and undoes together. Deliberately not
+   *  $state: it is written and read synchronously inside a single call and
+   *  nothing renders from it. */
+  let historyGroupId: string | undefined = undefined
 
   // ---- Hover tooltip (custom popover, not native title=) ---------------
   // Triggered by per-column `tooltip` field OR per-cell `notes` prop.
@@ -2470,6 +2472,19 @@ export function createSvGridController<
     const seriesField = fieldOf(effectiveChartSeriesId);
     const rowsForChart = chartRows as Array<Record<string, unknown>>;
 
+    // Shared by the direct and aggregated paths so the two cannot drift apart
+    // again - which is how these came to be skipped for scatter, gauge and
+    // boxplot in the first place.
+    function applyChartValueSettings<T extends {
+      xType?: string; yScale?: string; valueFormat?: unknown;
+    }>(spec: T): T {
+      if (effectiveChartTimeAxis) spec.xType = "time";
+      if (effectiveChartLogScale) spec.yScale = "log";
+      if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+      applyChartLocale(spec as never);
+      return spec;
+    }
+
     // Some types read the rows directly rather than a grouped grid: a scatter
     // point is one row, a gauge has no category axis at all, and a box plot
     // needs the whole sample per group rather than one reduced number. The
@@ -2490,6 +2505,14 @@ export function createSvGridController<
       ...(chartBins ? { bins: chartBins } : {}),
       ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
     });
+    // Number formatting and the scale/axis-type settings are about how values
+    // READ, so they apply to a scatter or a gauge exactly as they do to a bar
+    // chart. They used to live only on the aggregated path below, so setting
+    // `valueFormat` or `logScale` on a direct type silently did nothing.
+    //
+    // The series-shaped settings (trend, averageLine, seriesTypes) stay on the
+    // aggregated path: a direct spec does not have the series shape they read.
+    if (direct) return applyChartValueSettings(direct);
     if (direct) {
       if (chartIsOhlc) {
         // Overlays ride on the price series; the panes are composed by the
@@ -2544,10 +2567,7 @@ export function createSvGridController<
     }
 
     if (effectiveChartOrientation === "horizontal") spec.orientation = "horizontal";
-    if (effectiveChartTimeAxis) spec.xType = "time";
-    if (effectiveChartLogScale) spec.yScale = "log";
-    if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
-    applyChartLocale(spec);
+    applyChartValueSettings(spec);
     if (chartType !== "pie" && spec.orientation !== "horizontal" && !spec.yAxisTitle && chartAutoYAxisTitle) {
       spec.yAxisTitle = chartAutoYAxisTitle;
     }
@@ -3919,12 +3939,22 @@ export function createSvGridController<
   // state mutation inside the callback (e.g. `api.setGroupBy(...)`) created
   // an infinite update loop. Now it's a true mount-once notification.
   let apiNotified = false;
+  // Memoized: `buildApi()` builds a fresh object each call, and a feature pack
+  // that keys per-grid state on the api (a WeakMap in @svgrid/enterprise) needs
+  // the object the consumer received and the object a command handler sees to
+  // be the same one. Every method reads through `ctx`, so one instance stays
+  // correct for the life of the grid.
+  let apiInstance: ReturnType<typeof buildApi> | null = null;
+  function api() {
+    if (!apiInstance) apiInstance = buildApi();
+    return apiInstance;
+  }
   $effect(() => {
     if (apiNotified) return;
     const cb = props.onApiReady;
     if (!cb) return;
     apiNotified = true;
-    cb(buildApi());
+    cb(api());
   });
 
   const ctx = {
@@ -3987,6 +4017,8 @@ export function createSvGridController<
     set history(v) { history = v as never; },
     get historyPtr() { return historyPtr; },
     set historyPtr(v) { historyPtr = v as never; },
+    get historyGroupId() { return historyGroupId; },
+    set historyGroupId(v) { historyGroupId = v as never; },
     get historyVersion() { return historyVersion; },
     set historyVersion(v) { historyVersion = v as never; },
     get tooltip() { return tooltip; },
@@ -4622,7 +4654,7 @@ export function createSvGridController<
     get clearColumnFilter() { return clearColumnFilter; },
     get onWindowKeydown() { return onWindowKeydown; },
     get columnDefMatchesId() { return columnDefMatchesId; },
-    get buildApi() { return buildApi; },
+    get buildApi() { return api; },
     get apiNotified() { return apiNotified; },
     set apiNotified(v) { apiNotified = v as never; },
   };

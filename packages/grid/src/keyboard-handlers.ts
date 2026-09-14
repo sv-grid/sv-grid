@@ -8,6 +8,9 @@ import {
 import "./sv-grid-scrollbar";
 
 import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
+import { hasGridShortcuts, runGridShortcuts } from "./shortcut-registry";
+import { undoHistory, redoHistory } from "./history";
+import { buildCommandContext } from "./command-context";
 
 export function createKeyboard<
   TFeatures extends TableFeatures = TableFeatures,
@@ -16,7 +19,21 @@ export function createKeyboard<
   function onGridKeyDown(event: KeyboardEvent) {
     // Only the grid root drives navigation - keys on header buttons, menus,
     // or the cell editor are handled by those controls themselves.
+    //
+    // The command chain runs AFTER this guard, not before. Running it first
+    // meant a key typed into a filter-row input reached the sheet commands,
+    // so Ctrl+A or Ctrl+D while filtering mutated grid cells. The editor has
+    // its own chain call in editing.ts, which is what Alt+Enter needs.
     if (event.target !== event.currentTarget) return;
+
+    // Registered commands get the key BEFORE the grid interprets it. That is
+    // how @svgrid/enterprise binds Ctrl+Arrow, Ctrl+D and the rest without
+    // widening the closed GridKeyboardIntent union, which is public API. A
+    // grid with nothing registered pays one array-length read.
+    if (hasGridShortcuts() && runGridShortcuts(event, buildCommandContext(ctx, false))) {
+      return;
+    }
+
     if (ctx.editingCell) return;
 
     if ((event.ctrlKey || event.metaKey) && !event.altKey) {
@@ -45,26 +62,12 @@ export function createKeyboard<
       // and Ctrl+Y both redo. Mirrors VSCode / Sheets / Excel.
       if (lower === "z" && !event.shiftKey) {
         event.preventDefault()
-        if (ctx.historyPtr >= 0) {
-          const step = ctx.history[ctx.historyPtr]
-          if (step) {
-            ctx.applyHistoryStep(step, 'undo')
-            ctx.historyPtr -= 1
-            ctx.historyVersion += 1
-          }
-        }
+        undoHistory(ctx)
         return
       }
       if ((lower === "z" && event.shiftKey) || lower === "y") {
         event.preventDefault()
-        if (ctx.historyPtr < ctx.history.length - 1) {
-          const step = ctx.history[ctx.historyPtr + 1]
-          if (step) {
-            ctx.applyHistoryStep(step, 'redo')
-            ctx.historyPtr += 1
-            ctx.historyVersion += 1
-          }
-        }
+        redoHistory(ctx)
         return
       }
       // Ctrl+F opens the find overlay.

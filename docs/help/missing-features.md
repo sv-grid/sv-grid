@@ -37,8 +37,24 @@ can see both the trajectory and the (short) list of real gaps.
 | Gap | Status | Effort |
 | --- | ------ | ------ |
 | ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
-| ~~Formula language / formula editor~~ | **shipped** - in-grid engine (demo `83-spreadsheet-formulas`), HyperFormula adapter (demo `173-hyperformula`), xlsx formulas (`101`, `119`) | ✓ |
+| ~~Formula language~~ | **shipped** - a real module in `@svgrid/enterprise/sheet`: parser, evaluator, ~50 functions, cross-sheet and whole-column refs, short-circuiting `IF` / `IFERROR`, a dependency graph for incremental recalc, and `translateFormula` / `fixupReferences`. Absolute refs are now absolute (the demo copies stripped `$`, so anything filled or copied was quietly wrong) | ✓ |
+| ~~Formula editor (bar, autocomplete, Name Box)~~ | **shipped** - `<SvFormulaBar>` shows the raw text behind the active cell, autocompletes function names closest-match-first with signature hints, and its Name Box jumps to an address or a defined name; `createNames` defines them. Demo `435` | ✓ |
+| ~~Per-cell number formats and styles~~ | **shipped** - an Excel format-string compiler (`compileNumberFormat`) plus a store keyed on row id so formatting survives a sort, wired to Ctrl+1, Ctrl+Shift+1..6 and Ctrl+B/I/U. Demo `435` | ✓ |
+| ~~AutoSum~~ | **shipped** - Alt+= over the run Excel would guess | ✓ |
+| Reference highlighting in the formula bar | the bar parses as you type (that is where the autocomplete comes from) but does not paint the ranges it finds | S |
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
+| ~~Excel keyboard shortcuts~~ | **shipped** - `enableSheet()` binds Ctrl+Arrow (a run-boundary search, so it hops gaps), Ctrl+Shift+Arrow, Ctrl+A region-then-sheet, Ctrl+Space / Shift+Space, Ctrl+D / Ctrl+R, Ctrl+; and Ctrl+'; demo `434-excel-shortcuts`. Bind your own through the free `registerGridShortcuts` seam | ✓ |
+| ~~Reference-aware fill~~ | **shipped** - `enableSheet()` wires `translateFormula` into Ctrl+D / Ctrl+R, so a filled formula shifts its relative refs and keeps its pinned ones | ✓ |
+| ~~Paste Special~~ | **shipped** - values / formulas / formats / transpose / add-subtract-multiply-divide / skip-blanks, plus a `text/html` clipboard flavour so formats and formulas survive a round trip through Excel. `Ctrl+Shift+V` | ✓ |
+| ~~Find and Replace~~ | **shipped** - match case, whole cell, look in values or formulas, scope to the selection, Replace All as one undo. `Ctrl+H` | ✓ |
+| ~~Text to Columns, Remove Duplicates~~ | **shipped** - `textToColumns` / `splitText` / `guessDelimiter` split a column, quoted fields and doubled quotes included; `findDuplicates` / `removeDuplicates` report before they remove, and match case-insensitively as Excel does | done |
+| ~~Multi-sheet workbook~~ | **shipped** - `createWorkbook` holds named sheets that read each other, with the dependency graph and structural edits spanning them; `<SvSheetTabs>` plus Ctrl+PageUp/PageDown and Shift+F11 | done |
+| ~~Goal Seek~~ | **shipped** - `goalSeekCell` solves for the input that makes a formula hit a target, secant with a bisection fallback, restoring the input cell so a dialog can ask before applying | done |
+| ~~Tables with structured references~~ | **shipped** - `Orders[Amount]`, `[@Amount]`, `[#Headers]` / `[#Totals]` / `[#All]`, column spans and auto-expansion. Resolved at evaluation, so a total keeps covering rows added after it was typed | done |
+| Rewriting formulas on a sheet RENAME | Excel does; this does not. It means a text substitution over every formula in the workbook, which would also hit a string literal containing the name. Left out rather than done badly | M |
+| ~~Insert / delete with reference fixup~~ | **shipped** - `Ctrl+Shift+Plus` / `Ctrl+Minus` rewrite every formula and named range through `fixupReferences` | ✓ |
+| **Freeze panes: the ROW half** | columns freeze properly through pinning, and `splitFrozenRows` does the row arithmetic, but the consumer applies it: the grid renders `pinnedTopRows` into a separate tbody above a body that still renders every row, so true row freeze needs the virtualizer to skip them | M |
+| `Alt+Enter`, `F4` | the command seam runs in the editor as well as on the grid root, so these are wiring rather than plumbing | M |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
 | ~~Drag a selected range to move / copy it~~ | **shipped** - `moveCells`, on by default with cell selection; demo `429-move-cells` | ✓ |
