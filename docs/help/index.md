@@ -155,6 +155,16 @@ and body and ranks matches by where they hit.
 - [View refresh](./cells/view-refresh.md)
 - [Cell text selection](./cells/cell-text-selection.md)
 
+### Spreadsheet
+
+- [The spreadsheet shell](./cells/spreadsheet-shell.md) - `<SvSheet />`: ribbon, formula bar, gutter, sheet tabs, status bar
+- [Formulas](./spreadsheet-formulas.md) - the engine, the function library and the dependency graph
+- [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md)
+- [Number formats](./cells/number-formats.md)
+- [Paste Special, Find and Replace, insert and delete](./cells/paste-find-structure.md)
+- [Workbooks](./cells/workbooks.md) - several sheets behind one engine
+- [Tables and structured references](./cells/tables.md)
+
 ### Filtering
 
 - [Overview](./filtering/overview.md)

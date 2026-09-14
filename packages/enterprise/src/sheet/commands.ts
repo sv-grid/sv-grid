@@ -162,21 +162,64 @@ export function copyFromAbove(cmd: GridCommandContext): boolean {
  */
 export function guessSumRange(
   cmd: GridCommandContext,
-  isNumeric: (value: unknown) => boolean,
+  isNumeric: (value: unknown) => boolean = looksNumeric,
 ): Rect | null {
   const active = cmd.activeCell
   if (!active) return null
   const { rowIndex: row, colIndex: col } = active
 
+  // When an engine is attached the run is measured against evaluated values,
+  // so a column of SUM subtotals counts as numbers the way it does in Excel.
+  const numeric = valueProbe
+    ? (r: number, c: number) => numericAt(cmd, r, c)
+    : (r: number, c: number) => isNumeric(cmd.getCellValue(r, c))
+
   let top = row
-  while (top > 0 && isNumeric(cmd.getCellValue(top - 1, col))) top -= 1
+  while (top > 0 && numeric(top - 1, col)) top -= 1
   if (top < row) return [top, col, row - 1, col]
 
   let left = col
-  while (left > 0 && isNumeric(cmd.getCellValue(row, left - 1))) left -= 1
+  while (left > 0 && numeric(row, left - 1)) left -= 1
   if (left < col) return [row, left, row, col - 1]
 
   return null
+}
+
+/**
+ * How to find out what a cell actually EVALUATES to.
+ *
+ * Cells hold raw text, so a cell containing `=SUM(A1:A3)` reads as the string
+ * "=SUM(A1:A3)" and `looksNumeric` says no. AutoSum under a column of
+ * subtotals then finds no run and declines, which is the opposite of what
+ * Excel does: there, a formula that produces a number IS a number.
+ *
+ * Optional. Without one, a sheet with no engine behind it behaves as before
+ * and only literal numbers count.
+ */
+export type SheetValueProbe = (row: number, col: number) => unknown
+
+let valueProbe: SheetValueProbe | null = null
+
+export function setSheetValueProbe(fn: SheetValueProbe | null): void {
+  valueProbe = fn
+}
+
+export function getSheetValueProbe(): SheetValueProbe | null {
+  return valueProbe
+}
+
+/**
+ * The numeric test AutoSum should use for the cell at (row, col): the
+ * evaluated value when an engine is attached, the raw text otherwise.
+ */
+export function numericAt(cmd: GridCommandContext, row: number, col: number): boolean {
+  const probe = valueProbe
+  if (!probe) return looksNumeric(cmd.getCellValue(row, col))
+  const value = probe(row, col)
+  // An engine reports an error as an object; that is not a number, and it
+  // should end the run rather than be counted as one.
+  if (value !== null && typeof value === 'object') return false
+  return looksNumeric(value)
 }
 
 /** Default numeric test for AutoSum: a finite number, or a string that parses

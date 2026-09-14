@@ -39,7 +39,7 @@
   import { setWorkbook, setFormatTarget, setFindReplaceHandler } from './sheet/shortcuts'
   import { setStructureTarget } from './sheet/structure'
   import { setFindTarget } from './sheet/find-replace'
-  import { setFillTranslator } from './sheet/commands'
+  import { setFillTranslator, setSheetValueProbe } from './sheet/commands'
   import { translateFormula } from './sheet/refs'
   import {
     createFormatStore, entryToStyle,
@@ -88,8 +88,19 @@
     onReady?: (api: SheetApi) => void
   }
 
-  /** Row ids are positional, so the api is typed against that row shape. */
-  type SheetRow = { id: string; index: number }
+  /**
+   * A grid row carries the RAW text of every cell on it, keyed by column
+   * letter, as well as its position.
+   *
+   * It would be tempting to keep the values only in the workbook and let the
+   * cell snippet read them, since the snippet is what paints. That does not
+   * work, and not only for rendering: the grid's own machinery reads
+   * `row[field]`, so an empty row object means `cmd.getCellValue` returns
+   * undefined for every cell, and then Ctrl+Arrow thinks the sheet is blank,
+   * AutoSum finds no run to total, and the inline editor has nothing to open
+   * on. The workbook stays authoritative; this is its projection.
+   */
+  type SheetRow = { id: string; index: number } & Record<string, string | number>
   type SheetApi = SvGridApi<TableFeatures, SheetRow>
 
   let {
@@ -165,7 +176,13 @@
    */
   const gridRows = $derived.by<SheetRow[]>(() => {
     void version
-    return Array.from({ length: rowCount }, (_, index) => ({ id: `r${index}`, index }))
+    return Array.from({ length: rowCount }, (_, index) => {
+      const row = { id: `r${index}`, index } as SheetRow
+      for (let c = 0; c < colCount; c += 1) {
+        row[colToLetters(c)] = wb.getRaw(wb.active, index, c)
+      }
+      return row
+    })
   })
 
   const lookup = {
@@ -217,12 +234,16 @@
         : value,
     )
     setFindReplaceHandler((context) => onAction?.('find-replace', context))
+    // So AutoSum measures its run against evaluated values: a column of
+    // subtotals is a column of numbers, not a column of "=SUM(...)" strings.
+    setSheetValueProbe((r, c) => wb.getValue(wb.active, r, c))
     return () => {
       setWorkbook(null)
       setFormatTarget(null)
       setStructureTarget(null)
       setFindTarget(null)
       setFillTranslator(null)
+      setSheetValueProbe(null)
       setFindReplaceHandler(null)
     }
   })
@@ -290,10 +311,17 @@
   const columns = $derived.by<GridColumns<SheetRow>>(() =>
     Array.from({ length: colCount }, (_, c) => ({
       id: colToLetters(c),
+      // `field` is what makes the cell writable and readable by everything
+      // else: the inline editor, the fill handle, the clipboard, and the
+      // command context the shortcuts and the ribbon run against.
+      field: colToLetters(c),
       header: colToLetters(c),
       width: columnWidths?.[colToLetters(c)] ?? columnWidth,
       headerAlign: 'center' as const,
-      editable: false,
+      // Editing a cell edits its FORMULA, the way F2 does in Excel, which is
+      // why the editor is plain text over the raw value rather than a typed
+      // editor over the computed one.
+      editorType: 'text' as const,
       cell: (ctx: { row: { original: SheetRow } }) =>
         renderSnippet(Cell, { r: ctx.row.original.index, c }),
     })),
@@ -330,25 +358,43 @@
     return on
   })
 
-  function onCellClick(r: number, c: number) {
-    active = { rowIndex: r, colIndex: c }
+  /**
+   * One funnel for every write into the grid, whoever made it.
+   *
+   * Inline edits, the fill handle, paste and each sheet command all land in
+   * the grid's own `writeCellRaw`, which reports here. Catching them in one
+   * place is what keeps the workbook authoritative: without it a fill would
+   * update the projection and leave the engine holding the old values, so
+   * the totals would silently stop matching the cells they add up.
+   */
+  function onCellWritten(change: { rowIndex: number; columnId: string; newValue: unknown }) {
+    const ref = parseA1(`${change.columnId}1`)
+    if (!ref) return
+    const text = change.newValue == null ? '' : String(change.newValue)
+    if (wb.getRaw(wb.active, change.rowIndex, ref.col) === text) return
+    wb.setRaw(wb.active, change.rowIndex, ref.col, text)
+    bump()
   }
 </script>
 
+<!--
+  A plain span, deliberately not a button.
+
+  An interactive element here competes with the grid for the pointer: it
+  takes focus on mousedown, so the first double-click on a cell that was not
+  already active never reached the grid's own dblclick handler and the edit
+  was silently dropped. The grid owns click-to-activate, double-click-to-edit
+  and drag-to-select; this only paints.
+-->
 {#snippet Cell(props: { r: number; c: number })}
   {@const shown = display(props.r, props.c)}
   {@const entry = store.get(`r${props.r}`, colToLetters(props.c))}
-  {@const isActive = active.rowIndex === props.r && active.colIndex === props.c}
-  <button
-    type="button"
+  <span
     class="sheet-cell"
-    class:active={isActive}
     class:formula={showFormulas && shown.text.startsWith('=')}
     style={`${entryToStyle(entry)}${shown.color ? `;color:${shown.color}` : ''}`}
     title={raw(props.r, props.c)}
-    onclick={() => onCellClick(props.r, props.c)}
-    ondblclick={() => onCellClick(props.r, props.c)}
-  >{shown.text}</button>
+  >{shown.text}</span>
 {/snippet}
 
 <div class="sv-sheet">
@@ -382,7 +428,15 @@
     columnResize={true}
     filterMode={filterOn ? 'row' : 'none'}
     containerHeight={height}
+    enableInlineEditing={true}
     onApiReady={(next: SheetApi) => { api = next; onReady?.(next) }}
+    onActiveCellChange={(cell: { rowIndex: number; colIndex: number }) => {
+      // The grid is the single source of truth for where the cursor is, so
+      // the formula bar and the status bar follow it rather than keeping a
+      // second copy that can disagree after a keyboard move.
+      active = { rowIndex: cell.rowIndex, colIndex: cell.colIndex }
+    }}
+    onCellValueChange={onCellWritten}
     onCellSelectionChange={(ranges: Array<[number, number, number, number]>) => {
       selection = ranges
       bump()
@@ -426,20 +480,10 @@
     display: block;
     width: 100%;
     height: 100%;
-    margin: 0;
     padding: 0 4px;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: inherit;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    cursor: cell;
-  }
-  .sheet-cell.active {
-    box-shadow: inset 0 0 0 2px var(--sg-accent, #2563eb);
   }
   .sheet-cell.formula {
     font-family: ui-monospace, Menlo, monospace;
