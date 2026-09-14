@@ -443,9 +443,27 @@ export function createEditing<
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
         const raw = fillRange ? lines[0]! : sourceCells?.[j] ?? "";
-        updated[column.columnDef.field] = parseEditorValue(editorType, raw, {
+        const parsedValue = parseEditorValue(editorType, raw, {
           dateOnly: column.columnDef.cellDataType === "dateString",
         });
+        // The inbound half of the clipboard pair. A consumer (or a feature
+        // pack doing paste-special) gets the raw text AND what the grid would
+        // have written, and can return either. `undefined` leaves the cell
+        // alone, which is how "paste values only" skips a formula column.
+        const hook = ctx.props.processCellFromClipboard;
+        if (hook) {
+          const decided = hook({
+            text: raw,
+            parsedValue,
+            row: originalRow as TData,
+            rowIndex: targetRowIndex,
+            columnId: column.id as string,
+          });
+          if (decided === undefined) continue;
+          updated[column.columnDef.field] = decided;
+          continue;
+        }
+        updated[column.columnDef.field] = parsedValue;
       }
       next[dataIndex] = updated as TData;
     }

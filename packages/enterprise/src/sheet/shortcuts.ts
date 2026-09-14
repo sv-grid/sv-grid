@@ -18,6 +18,11 @@ import {
 import { FORMAT_PRESETS, type FormatPresetName } from './number-format'
 import type { SheetFormatStore, CellAddressLookup, CellFormatEntry } from './format-store'
 import { formatA1 } from './address'
+import {
+  insertRows, deleteRows, insertColumns, deleteColumns,
+  axisForSelection, getStructureTarget,
+} from './structure'
+import { getFindTarget } from './find-replace'
 
 export type SheetCommand = (cmd: GridCommandContext, event: KeyboardEvent) => boolean
 
@@ -45,6 +50,24 @@ export function setFormatTarget(target: SheetFormatTarget | null): void {
 
 export function getFormatTarget(): SheetFormatTarget | null {
   return formatTarget
+}
+
+/** Called when Ctrl+Shift+V fires, so a consumer can open its own Paste
+ *  Special dialog. Same reasoning as the other two: the keyboard layer owns
+ *  the key, the consumer owns the chrome. */
+let onPasteSpecial: ((cmd: GridCommandContext) => void) | null = null
+
+export function setPasteSpecialHandler(fn: ((cmd: GridCommandContext) => void) | null): void {
+  onPasteSpecial = fn
+}
+
+/** Called when Ctrl+H fires, so a consumer can open its own Find and Replace
+ *  panel. Same reasoning as the Format Cells dialog: the keyboard layer owns
+ *  the key, the consumer owns the chrome. */
+let onFindReplace: ((cmd: GridCommandContext) => void) | null = null
+
+export function setFindReplaceHandler(fn: ((cmd: GridCommandContext) => void) | null): void {
+  onFindReplace = fn
 }
 
 /** Called when Ctrl+1 fires, so a consumer can open its own dialog. The
@@ -215,7 +238,34 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: '5', mod: true, shift: true, run: preset('percent'), label: 'Percent format' },
   { key: '6', mod: true, shift: true, run: preset('scientific'), label: 'Scientific format' },
   { key: '`', mod: true, shift: true, run: preset('general'), label: 'General format' },
+
+  // Structure. Like the format bindings, these decline when nothing is
+  // attached. Excel opens a dialog for an ambiguous selection; deciding what
+  // that looks like is the consumer's, so an ambiguous selection declines and
+  // the consumer can bind its own dialog.
+  { key: '+', mod: true, shift: true, run: (cmd) => structural(cmd, 'insert'), label: 'Insert rows or columns' },
+  { key: '-', mod: true, run: (cmd) => structural(cmd, 'delete'), label: 'Delete rows or columns' },
+  { key: 'h', mod: true, run: (cmd) => {
+    if (!onFindReplace || !getFindTarget()) return false
+    onFindReplace(cmd)
+    return true
+  }, label: 'Find and Replace' },
+  { key: 'v', mod: true, shift: true, run: (cmd) => {
+    if (!onPasteSpecial) return false
+    onPasteSpecial(cmd)
+    return true
+  }, label: 'Paste Special' },
 ]
+
+function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean {
+  if (!getStructureTarget()) return false
+  const axis = axisForSelection(cmd)
+  if (axis === 'ambiguous') return false
+  if (kind === 'insert') {
+    return axis === 'rows' ? insertRows(cmd) : insertColumns(cmd)
+  }
+  return axis === 'rows' ? deleteRows(cmd) : deleteColumns(cmd)
+}
 
 function matches(binding: SheetBinding, event: KeyboardEvent): boolean {
   if (event.key.toLowerCase() !== binding.key.toLowerCase()) return false
