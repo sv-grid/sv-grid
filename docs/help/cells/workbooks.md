@@ -96,6 +96,68 @@ These **decline** with no workbook attached, so a single-sheet grid leaves
 `Ctrl+PageDown` to the browser's own tab switching. They do not wrap at either
 end, matching Excel: pressing again on the last sheet leaves you there.
 
+## Goal Seek
+
+"What rate makes the payment 1500?" You know the answer you want and one cell
+you are willing to change; the solver finds it.
+
+```ts
+import { goalSeekCell } from '@svgrid/enterprise/sheet'
+
+const result = goalSeekCell(
+  workbook,
+  { sheet: 'Model', row: 8, col: 1 },   // the formula cell
+  { sheet: 'Model', row: 2, col: 1 },   // the input to change
+  1500,                                  // the target
+)
+
+if (result.converged) {
+  // Ask first, then apply. Excel does.
+  workbook.setRaw('Model', 2, 1, String(result.value))
+}
+```
+
+The input cell is **restored** before `goalSeekCell` returns, whatever the
+outcome. The solver writes to it dozens of times while searching, and leaving
+the last probe behind would be worse than not running: it is also what makes
+Excel's "Goal Seek found a solution, OK or Cancel" possible. Apply
+`result.value` once the user says yes.
+
+### What it does when it cannot
+
+`converged: false` still carries a `value` and a `result`: the closest attempt,
+so a dialog can show it rather than nothing. `reason` says what happened.
+
+| Reason | Means |
+| ------ | ----- |
+| `maxIterations` | Ran out of tries. Raise `maxIterations` or loosen `tolerance`. |
+| `flat` | The formula does not respond to the input at all. |
+| `notNumeric` | The formula produced text or an error. |
+| `outOfBounds` | The answer lies outside `min` / `max`. |
+
+### The method
+
+Secant with a bisection fallback, not Newton. Newton needs a derivative, and
+the function here is "recalculate a spreadsheet", which has no analytic one.
+Secant approximates the slope from two evaluations, which is what a numerical
+derivative would cost anyway.
+
+Bisection is the fallback because secant is fast but not safe: it can step to
+infinity on a flat stretch or oscillate at a kink. Once two inputs are known
+whose results straddle the target, bisection inside that bracket cannot
+diverge, only be slow.
+
+The second probe scales with the guess rather than stepping a fixed amount. A
+step of 1 is enormous next to an interest rate of 0.05 and invisible next to a
+loan of 300000.
+
+`goalSeek` is the bare solver over any function, if the thing you are solving
+is not a spreadsheet:
+
+```ts
+goalSeek((x) => x * x, 9, 1)   // { converged: true, value: 3, ... }
+```
+
 ## Not yet
 
 Renaming a sheet does **not** rewrite formulas that name it. Excel does. Doing
