@@ -76,6 +76,12 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
 export {
+  splitText, textToColumns, guessDelimiter,
+  findDuplicates, removeDuplicates,
+  type SplitOptions, type DuplicateOptions, type DuplicateReport,
+} from './sheet/transforms'
+
+export {
   insertRows, deleteRows, insertColumns, deleteColumns,
   axisForSelection, setStructureTarget, getStructureTarget, rewriteFormulas,
   type StructureTarget,
