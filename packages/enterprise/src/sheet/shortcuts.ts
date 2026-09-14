@@ -27,6 +27,14 @@ import type { Workbook } from './workbook'
 
 export type SheetCommand = (cmd: GridCommandContext, event: KeyboardEvent) => boolean
 
+/*
+ * The action functions below are exported, not private, because the keymap is
+ * not the only thing that invokes them: SvSheetRibbon binds the same functions
+ * to its buttons. A ribbon that re-implemented "bold the selection" against
+ * the format store would be a second code path to keep in step with this one,
+ * and the two would drift the first time either changed.
+ */
+
 /**
  * What the formatting commands write to, and how they turn a display position
  * into the stable ids the store keys on.
@@ -75,7 +83,7 @@ export function getWorkbook(): Workbook | null {
 /** Move `delta` sheets from the active one. Excel does NOT wrap at the ends,
  *  so neither does this: hitting the last sheet and pressing again should
  *  leave you there rather than teleport you to the first. */
-function switchSheet(delta: number): boolean {
+export function switchSheet(delta: number): boolean {
   const wb = workbook
   if (!wb) return false
   const sheets = wb.sheets
@@ -136,7 +144,7 @@ export type SheetBinding = {
 }
 
 /** Read the grid through the command context as a blank-aware matrix. */
-function gridOf(cmd: GridCommandContext): Grid {
+export function gridOf(cmd: GridCommandContext): Grid {
   return {
     rowCount: cmd.rowCount,
     colCount: cmd.colCount,
@@ -144,7 +152,7 @@ function gridOf(cmd: GridCommandContext): Grid {
   }
 }
 
-function move(dir: Direction, extend: boolean): SheetCommand {
+export function move(dir: Direction, extend: boolean): SheetCommand {
   return (cmd) => {
     const active = cmd.activeCell
     if (!active) return false
@@ -158,7 +166,7 @@ function move(dir: Direction, extend: boolean): SheetCommand {
 }
 
 /** Ctrl+A: the current region, then the whole sheet on a second press. */
-const selectRegion: SheetCommand = (cmd) => {
+export const selectRegion: SheetCommand = (cmd) => {
   const active = cmd.activeCell
   if (!active) return false
   const g = gridOf(cmd)
@@ -175,7 +183,7 @@ const selectRegion: SheetCommand = (cmd) => {
 }
 
 /** Ctrl+Space / Shift+Space: the active cell's whole column or row. */
-function selectLine(axis: 'column' | 'row'): SheetCommand {
+export function selectLine(axis: 'column' | 'row'): SheetCommand {
   return (cmd) => {
     const active = cmd.activeCell
     if (!active) return false
@@ -191,7 +199,7 @@ function selectLine(axis: 'column' | 'row'): SheetCommand {
 }
 
 /** Apply a patch to the selection through the attached store. */
-function applyFormat(cmd: GridCommandContext, patch: CellFormatEntry): boolean {
+export function applyFormat(cmd: GridCommandContext, patch: CellFormatEntry): boolean {
   const target = formatTarget
   if (!target) return false
   const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
@@ -201,7 +209,7 @@ function applyFormat(cmd: GridCommandContext, patch: CellFormatEntry): boolean {
   return true
 }
 
-function toggleFormat(
+export function toggleFormat(
   cmd: GridCommandContext,
   field: 'bold' | 'italic' | 'underline' | 'strike',
 ): boolean {
@@ -219,12 +227,12 @@ function rectOfActive(cmd: GridCommandContext): ReadonlyArray<Rect> {
   return rect ? [rect] : []
 }
 
-function preset(name: FormatPresetName): SheetCommand {
+export function preset(name: FormatPresetName): SheetCommand {
   return (cmd) => applyFormat(cmd, { numFmt: FORMAT_PRESETS[name] })
 }
 
 /** Alt+=. Inserts =SUM(range) over the run Excel would guess. */
-const autoSum: SheetCommand = (cmd) => {
+export const autoSum: SheetCommand = (cmd) => {
   const active = cmd.activeCell
   if (!active) return false
   const range = guessSumRange(cmd, looksNumeric)
@@ -313,7 +321,7 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   }, label: 'New sheet' },
 ]
 
-function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean {
+export function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean {
   if (!getStructureTarget()) return false
   const axis = axisForSelection(cmd)
   if (axis === 'ambiguous') return false

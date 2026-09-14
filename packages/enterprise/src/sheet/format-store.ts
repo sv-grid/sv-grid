@@ -15,6 +15,11 @@
 import type { BorderSpec } from '@svgrid/grid'
 
 /** One cell's formatting. Every field optional; absent means inherit. */
+/** The boolean fields `toggle` can flip. Every one of them is a plain
+ *  on/off attribute of a cell, which is what makes Excel's all-on-turns-off
+ *  rule the right one for all of them. */
+export type ToggleableField = 'bold' | 'italic' | 'underline' | 'strike' | 'wrap'
+
 export type CellFormatEntry = {
   /** Excel number-format string, e.g. '#,##0.00'. */
   numFmt?: string
@@ -58,11 +63,7 @@ export type SheetFormatStore = {
   clear(rects: ReadonlyArray<Rect>, at: CellAddressLookup): void
   /** Toggle one boolean field across a range. Excel's rule: if EVERY cell in
    *  the range already has it, turn it off; otherwise turn it on. */
-  toggle(
-    rects: ReadonlyArray<Rect>,
-    field: 'bold' | 'italic' | 'underline' | 'strike',
-    at: CellAddressLookup,
-  ): void
+  toggle(rects: ReadonlyArray<Rect>, field: ToggleableField, at: CellAddressLookup): void
   /** Drop every entry for a row. Call when a row is deleted, or the store
    *  leaks an entry per removed row for the life of the session. */
   forgetRow(rowId: string): void
