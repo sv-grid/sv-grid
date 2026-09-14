@@ -50,18 +50,20 @@
     units: string
     price: string
     revenue: string
-    margin: string
+    share: string
   }
 
-  const FIELDS = ['item', 'units', 'price', 'revenue', 'margin'] as const
-  type Field = (typeof FIELDS)[number]
+  const FIELDS = ['item', 'units', 'price', 'revenue', 'share'] as const
 
+  // Column E is share-of-total, and it is written with the total PINNED as
+  // $D$5. That is the point of absolute refs: fill E1 down and the D moves
+  // with the row while the divisor stays put.
   const start = (): Row[] => [
-    { id: 'r1', item: 'Widget',  units: '1200', price: '24.5',  revenue: '=B1*C1', margin: '=D1/2200' },
-    { id: 'r2', item: 'Gadget',  units: '860',  price: '41',    revenue: '=B2*C2', margin: '=D2/2200' },
-    { id: 'r3', item: 'Doohick', units: '2400', price: '8.75',  revenue: '=B3*C3', margin: '=D3/2200' },
-    { id: 'r4', item: 'Gizmo',   units: '540',  price: '112.4', revenue: '=B4*C4', margin: '=D4/2200' },
-    { id: 'r5', item: 'TOTAL',   units: '=SUM(B1:B4)', price: '', revenue: '=SUM(D1:D4)', margin: '' },
+    { id: 'r1', item: 'Widget',  units: '1200', price: '24.5',  revenue: '=B1*C1', share: '=D1/$D$5' },
+    { id: 'r2', item: 'Gadget',  units: '860',  price: '41',    revenue: '=B2*C2', share: '=D2/$D$5' },
+    { id: 'r3', item: 'Doohick', units: '2400', price: '8.75',  revenue: '=B3*C3', share: '=D3/$D$5' },
+    { id: 'r4', item: 'Gizmo',   units: '540',  price: '112.4', revenue: '=B4*C4', share: '=D4/$D$5' },
+    { id: 'r5', item: 'TOTAL',   units: '=SUM(B1:B4)', price: '', revenue: '=SUM(D1:D4)', share: '' },
   ]
 
   let rows = $state<Row[]>(start())
@@ -203,8 +205,9 @@
     Click a cell, then try <kbd>Ctrl+Shift+4</kbd> (currency),
     <kbd>Ctrl+Shift+5</kbd> (percent), <kbd>Ctrl+B</kbd>. Sort by clicking a
     header: the formatting follows its row rather than staying on the index.
-    Column D holds <code>=B*C</code>; edit units or price in the bar and
-    everything downstream recomputes.
+    Column D holds <code>=B*C</code> and column E holds
+    <code>=D/$D$5</code>; edit units or price in the bar and the revenue, the
+    total and every share recompute together.
   </p>
 </section>
 
@@ -227,19 +230,19 @@
     cursor: pointer;
   }
   .cell.active {
-    box-shadow: inset 0 0 0 2px var(--sg-color-accent, #6366f1);
+    box-shadow: inset 0 0 0 2px var(--sg-accent, #6366f1);
     border-radius: 2px;
   }
   .note {
     margin: 0;
     font-size: 13px;
     line-height: 1.6;
-    color: var(--sg-color-muted, #64748b);
+    color: var(--sg-muted, #64748b);
   }
   kbd {
     font-family: ui-monospace, Menlo, monospace;
     font-size: 11px;
-    border: 1px solid var(--sg-color-border, #cbd5e1);
+    border: 1px solid var(--sg-border, #cbd5e1);
     border-radius: 3px;
     padding: 0 4px;
   }

@@ -145,7 +145,10 @@
     containerHeight={230}
   />
 
-  <SvSheetTabs workbook={wb} onChange={() => (version += 1)} />
+  <!-- `version` goes back IN as well as out: a Workbook is a plain object,
+       so the strip has no reactive dependency on it and would not notice
+       Ctrl+PageUp/PageDown switching the sheet underneath it. -->
+  <SvSheetTabs workbook={wb} {version} onChange={() => (version += 1)} />
 
   <p class="note">
     Change a Unit price on <strong>Prices</strong>, then look at
@@ -162,8 +165,8 @@
     font: inherit; border: 0; background: transparent; color: inherit;
     padding: 0 2px; cursor: pointer;
   }
-  .cell.formula { color: var(--sg-color-accent, #4f46e5); }
-  .cell.error { color: var(--sg-color-danger, #dc2626); font-family: ui-monospace, Menlo, monospace; }
-  .cell.active { box-shadow: inset 0 0 0 2px var(--sg-color-accent, #6366f1); border-radius: 2px; }
-  .note { margin: 0; font-size: 13px; line-height: 1.6; color: var(--sg-color-muted, #64748b); }
+  .cell.formula { color: var(--sg-accent, #4f46e5); }
+  .cell.error { color: var(--sg-danger, #dc2626); font-family: ui-monospace, Menlo, monospace; }
+  .cell.active { box-shadow: inset 0 0 0 2px var(--sg-accent, #6366f1); border-radius: 2px; }
+  .note { margin: 0; font-size: 13px; line-height: 1.6; color: var(--sg-muted, #64748b); }
 </style>

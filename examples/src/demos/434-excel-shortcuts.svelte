@@ -112,19 +112,17 @@
 </script>
 
 <section class="wrap">
-  <div class="grid">
-    <SvGrid
-      data={rows}
-      {columns}
-      {features}
-      selectionMode="cell"
-      enableCellSelection={true}
-      enableInlineEditing={true}
-      statusBar={true}
-      filterMode="none"
-      containerHeight={380}
-    />
-  </div>
+  <SvGrid
+    data={rows}
+    {columns}
+    {features}
+    selectionMode="cell"
+    enableCellSelection={true}
+    enableInlineEditing={true}
+    statusBar={true}
+    filterMode="none"
+    containerHeight={360}
+  />
 
   <aside class="keys">
     <h3>Try these</h3>
@@ -136,70 +134,92 @@
         </div>
       {/each}
     </dl>
-    <p class="note">
-      Click a cell in Q1 first. The blank rows are there on purpose: Ctrl+Down
-      runs to the bottom of a block, then hops the gap on the next press.
-    </p>
-    <button type="button" onclick={() => (rows = start())}>Reset the data</button>
+    <div class="foot">
+      <p class="note">
+        Click a cell in Q1 first. The blank rows are there on purpose:
+        Ctrl+Down runs to the bottom of a block, then hops the gap on the
+        next press.
+      </p>
+      <button type="button" onclick={() => (rows = start())}>
+        Reset the data
+      </button>
+    </div>
   </aside>
 </section>
 
 <style>
   .wrap {
     display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 14px;
   }
-  .grid {
-    flex: 1 1 480px;
-    min-width: 0;
-  }
+  /* The grid sizes itself from its column widths, so it is left to take the
+     full row rather than sharing one with the cheat sheet: a side-by-side
+     flex row makes the table overflow its track and paint over the aside. */
   .keys {
-    flex: 0 1 300px;
-    min-width: 0;
     font-size: 13px;
   }
   h3 {
     margin: 0 0 8px;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--sg-color-muted, #64748b);
+    color: var(--sg-muted, #64748b);
   }
   dl {
     margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 0 20px;
   }
   .row {
     display: flex;
     gap: 10px;
     align-items: baseline;
-    padding: 3px 0;
-    border-bottom: 1px solid var(--sg-color-border, #e2e8f0);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--sg-border, #e2e8f0);
   }
   dt {
-    flex: 0 0 auto;
+    flex: 0 0 130px;
   }
   dd {
     margin: 0;
-    color: var(--sg-color-muted, #64748b);
+    color: var(--sg-muted, #64748b);
   }
   kbd {
     font-family: ui-monospace, Menlo, monospace;
     font-size: 11px;
     white-space: nowrap;
+    border: 1px solid var(--sg-border, #cbd5e1);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
   }
   .note {
-    color: var(--sg-color-muted, #64748b);
+    margin: 0;
+    flex: 1 1 320px;
+    color: var(--sg-muted, #64748b);
     line-height: 1.5;
   }
   button {
-    margin-top: 4px;
+    flex: 0 0 auto;
     font: inherit;
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--sg-color-border, #cbd5e1);
-    background: var(--sg-color-surface, #fff);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--sg-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
     cursor: pointer;
+  }
+  button:hover {
+    background: var(--sg-row-hover-bg, #f1f5f9);
   }
 </style>

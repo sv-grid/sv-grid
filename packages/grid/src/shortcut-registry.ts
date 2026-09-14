@@ -44,6 +44,8 @@ export type GridCommandContext = {
   readonly ranges: ReadonlyArray<readonly [number, number, number, number]>
   columnIdAt(colIndex: number): string | null
   getCellValue(rowIndex: number, colIndex: number): unknown
+  /** Write a cell and record it in the grid's undo history. Inside `batch`
+   *  every write joins one step, so a fill or a replace-all is one Ctrl+Z. */
   setCellValue(rowIndex: number, colIndex: number, value: unknown): void
   setActiveCell(rowIndex: number, colIndex: number): void
   setSelection(rowIndex: number, colIndex: number): void

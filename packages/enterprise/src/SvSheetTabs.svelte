@@ -15,18 +15,48 @@
     onChange?: () => void
     /** Off hides the add button and the context actions. */
     editable?: boolean
+    /**
+     * Bump this whenever the workbook is mutated from OUTSIDE the strip - the
+     * Ctrl+PageUp/PageDown shortcuts, or app code calling `addSheet`.
+     *
+     * A `Workbook` is a plain object, not `$state`, so reading `workbook.sheets`
+     * creates no reactive dependency and the strip would otherwise render once
+     * and then show whatever the sheet list was at mount. Pass the same counter
+     * `onChange` increments.
+     */
+    version?: number
   }
 
-  let { workbook, onChange, editable = true }: Props = $props()
+  let { workbook, onChange, editable = true, version = 0 }: Props = $props()
 
   let renaming = $state<string | null>(null)
   let draft = $state('')
   let error = $state<string | null>(null)
   let dragging = $state<string | null>(null)
 
+  // The strip's own mutations do not go through the consumer's counter, so it
+  // keeps one of its own and reads both.
+  let localVersion = $state(0)
+
+  const sheets = $derived.by(() => {
+    void version
+    void localVersion
+    return workbook.sheets
+  })
+  const activeSheet = $derived.by(() => {
+    void version
+    void localVersion
+    return workbook.active
+  })
+
+  function changed() {
+    localVersion += 1
+    onChange?.()
+  }
+
   function select(name: string) {
     workbook.setActive(name)
-    onChange?.()
+    changed()
   }
 
   function startRename(name: string) {
@@ -51,19 +81,19 @@
       return
     }
     error = null
-    onChange?.()
+    changed()
   }
 
   function add() {
     workbook.addSheet()
-    onChange?.()
+    changed()
   }
 
   function remove(name: string) {
     // The workbook refuses to remove the last sheet; reflect that rather than
     // showing a button that does nothing.
     if (!workbook.removeSheet(name)) return
-    onChange?.()
+    changed()
   }
 
   function onDrop(target: string) {
@@ -73,14 +103,13 @@
     const to = workbook.sheets.indexOf(target)
     if (to < 0) return
     workbook.moveSheet(moved, to)
-    onChange?.()
+    changed()
   }
 
   /** Left and right arrows move between tabs, which is what a tablist owes a
    *  keyboard user; the shortcut layer's Ctrl+PageUp/Down does the same from
    *  anywhere in the grid. */
   function onTabKey(event: KeyboardEvent, name: string) {
-    const sheets = workbook.sheets
     const at = sheets.indexOf(name)
     if (event.key === 'ArrowRight' && at < sheets.length - 1) {
       event.preventDefault()
@@ -97,9 +126,13 @@
 
 <div class="sv-sheet-tabs">
   <div role="tablist" aria-label="Sheets" class="tabs">
-    {#each workbook.sheets as name (name)}
-      {@const isActive = name === workbook.active}
+    {#each sheets as name (name)}
+      {@const isActive = name === activeSheet}
+      <!-- role="presentation" so the tablist still OWNS the role="tab"
+           button: an unmarked wrapper div between them breaks the ARIA
+           tablist / tab relationship. -->
       <div
+        role="presentation"
         class="tab"
         class:active={isActive}
         class:dragging={dragging === name}
@@ -133,7 +166,7 @@
             ondblclick={() => startRename(name)}
             onkeydown={(e) => onTabKey(e, name)}
           >{name}</button>
-          {#if editable && workbook.sheets.length > 1}
+          {#if editable && sheets.length > 1}
             <button
               type="button"
               class="close"
@@ -161,7 +194,7 @@
     align-items: center;
     gap: 4px;
     font-size: 13px;
-    border-top: 1px solid var(--sg-color-border, #e2e8f0);
+    border-top: 1px solid var(--sg-border, #e2e8f0);
     padding: 4px 6px;
     overflow-x: auto;
   }
@@ -174,8 +207,8 @@
     padding: 0 2px 0 6px;
   }
   .tab.active {
-    background: var(--sg-color-surface, #fff);
-    border-color: var(--sg-color-border, #cbd5e1);
+    background: var(--sg-bg, #fff);
+    border-color: var(--sg-border, #cbd5e1);
     border-bottom-color: transparent;
     font-weight: 600;
   }
@@ -190,31 +223,33 @@
     white-space: nowrap;
   }
   button:focus-visible {
-    outline: 2px solid var(--sg-color-accent, #6366f1);
+    outline: 2px solid var(--sg-accent, #6366f1);
     outline-offset: -2px;
     border-radius: 3px;
   }
   .close {
     opacity: 0;
     padding: 0 3px;
-    color: var(--sg-color-muted, #64748b);
+    color: var(--sg-muted, #64748b);
   }
   .tab:hover .close,
   .tab.active .close { opacity: 1; }
   .add {
-    border: 1px solid var(--sg-color-border, #cbd5e1);
+    border: 1px solid var(--sg-border, #cbd5e1);
     border-radius: 5px;
     line-height: 1;
   }
   .rename {
     font: inherit;
     width: 90px;
-    border: 1px solid var(--sg-color-accent, #6366f1);
+    border: 1px solid var(--sg-accent, #6366f1);
     border-radius: 3px;
     padding: 2px 4px;
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    color: var(--sg-fg, #0f172a);
   }
   .error {
-    color: var(--sg-color-danger, #dc2626);
+    color: var(--sg-danger, #dc2626);
     font-size: 12px;
   }
 </style>

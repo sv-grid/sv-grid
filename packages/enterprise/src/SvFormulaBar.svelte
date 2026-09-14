@@ -232,9 +232,10 @@
     align-items: stretch;
     gap: 6px;
     font-size: 13px;
-    border: 1px solid var(--sg-color-border, #cbd5e1);
+    border: 1px solid var(--sg-border, #cbd5e1);
     border-radius: var(--sg-radius, 6px);
-    background: var(--sg-color-surface, #fff);
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    color: var(--sg-fg, #0f172a);
     padding: 3px;
   }
   .name-box {
@@ -242,12 +243,17 @@
     align-items: center;
     gap: 2px;
     flex: 0 0 auto;
-    border-right: 1px solid var(--sg-color-border, #e2e8f0);
+    border-right: 1px solid var(--sg-border, #e2e8f0);
     padding-right: 4px;
   }
   .name-box input {
     width: 84px;
     min-width: 0;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .name-box input::placeholder {
+    color: var(--sg-muted, #64748b);
+    opacity: 1;
   }
   .fx {
     display: flex;
@@ -255,7 +261,7 @@
     padding: 0 4px;
     font-style: italic;
     font-family: ui-serif, Georgia, serif;
-    color: var(--sg-color-muted, #64748b);
+    color: var(--sg-muted, #64748b);
   }
   .field {
     position: relative;
@@ -271,7 +277,7 @@
     padding: 4px 6px;
   }
   input:focus-visible {
-    outline: 2px solid var(--sg-color-accent, #6366f1);
+    outline: 2px solid var(--sg-accent, #6366f1);
     outline-offset: -2px;
     border-radius: 3px;
   }
@@ -282,8 +288,10 @@
   select {
     font: inherit;
     border: 0;
-    background: transparent;
-    color: var(--sg-color-muted, #64748b);
+    /* Not transparent: a native select paints its option list with this
+       background, and a see-through one is unreadable on a dark theme. */
+    background: var(--sg-input-bg, var(--sg-bg, #fff));
+    color: var(--sg-muted, #64748b);
     max-width: 72px;
   }
   .hint {
@@ -294,8 +302,8 @@
     margin-top: 2px;
     padding: 2px 6px;
     border-radius: 4px;
-    background: var(--sg-color-surface-raised, #1e293b);
-    color: var(--sg-color-on-raised, #f8fafc);
+    background: var(--sg-fg, #1e293b);
+    color: var(--sg-bg, #f8fafc);
     font-family: ui-monospace, Menlo, monospace;
     font-size: 11px;
     white-space: nowrap;
@@ -311,9 +319,10 @@
     min-width: 180px;
     max-height: 220px;
     overflow-y: auto;
-    border: 1px solid var(--sg-color-border, #cbd5e1);
+    border: 1px solid var(--sg-border, #cbd5e1);
     border-radius: 6px;
-    background: var(--sg-color-surface, #fff);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
     box-shadow: 0 8px 24px rgb(15 23 42 / 0.12);
   }
   .suggestions button {
@@ -331,6 +340,6 @@
   }
   .suggestions button.active,
   .suggestions button:hover {
-    background: var(--sg-color-accent-soft, #eef2ff);
+    background: var(--sg-row-hover-bg, #eef2ff);
   }
 </style>
