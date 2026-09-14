@@ -75,6 +75,29 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
+export {
+  insertRows, deleteRows, insertColumns, deleteColumns,
+  axisForSelection, setStructureTarget, getStructureTarget, rewriteFormulas,
+  type StructureTarget,
+} from './sheet/structure'
+export {
+  findAll, findNext, replaceOne, replaceAll, replaceInText, cellMatches,
+  setFindTarget, getFindTarget,
+  type FindOptions, type FindHit, type FindTarget,
+} from './sheet/find-replace'
+export {
+  splitFrozenRows, frozenColumnIds, applyFreeze,
+  freezeAtActiveCell, freezeTopRow, freezeFirstColumn, unfreeze,
+  type FreezeState, type FreezeSplit,
+} from './sheet/freeze'
+export {
+  buildClipboardPayload, parseClipboard, parseClipboardText, parseClipboardHtml,
+  readClipboardOrigin, resolvePasteCell, planPaste,
+  type PasteSpecialOptions, type PasteWhat, type PasteOperation,
+  type ClipboardCell, type ClipboardGrid, type PasteResolution,
+} from './sheet/paste-special'
+export { setFindReplaceHandler, setPasteSpecialHandler } from './sheet/shortcuts'
+
 export { default as SvFormulaBar } from './SvFormulaBar.svelte'
 export {
   compileNumberFormat, formatWithPattern, FORMAT_PRESETS,

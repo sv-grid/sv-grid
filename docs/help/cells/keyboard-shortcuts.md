@@ -63,6 +63,19 @@ See [number formats](./number-formats.md).
 | Ctrl/Cmd + Shift + 1..6 | Number, time, date, currency, percent, scientific. |
 | Ctrl/Cmd + Shift + ` | General. |
 
+### Structure, search and paste
+
+These open your own chrome rather than any this layer ships, through
+`setFindReplaceHandler`, `setPasteSpecialHandler` and `setFormatDialogHandler`.
+See [paste, find and structure](./paste-find-structure.md).
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + Shift + Plus | Insert rows or columns, rewriting every formula. |
+| Ctrl/Cmd + Minus | Delete rows or columns, rewriting every formula. |
+| Ctrl/Cmd + H | Find and Replace. |
+| Ctrl/Cmd + Shift + V | Paste Special. |
+
 ## What Ctrl+Arrow actually does
 
 It is not "move a long way". It is a run-boundary search, and the rule depends
@@ -106,8 +119,8 @@ stamping a localised string would put display text in the model.
 
 ## What the grid still owns
 
-`enableSheet()` does not take every key. Copy, cut, paste, undo, redo and find
-stay with the grid, and the plain arrow keys still move one cell. A command
+`enableSheet()` does not take every key. Copy, cut, plain paste, undo, redo and
+find stay with the grid, and the plain arrow keys still move one cell. A command
 only claims a key when it has something to do: `Ctrl+D` on the top row with
 nothing above it declines, and the key falls through to the grid.
 
@@ -150,5 +163,5 @@ Wrap any multi-cell write in `cmd.batch()` so it undoes in one press.
 
 ## Not yet
 
-`Alt+Enter`, `F4` and paste special are not bound yet. See
+`Alt+Enter` and `F4` are not bound yet. See
 [missing features](../missing-features.md).

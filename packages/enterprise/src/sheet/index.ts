@@ -8,6 +8,29 @@
  * the formula engine lands beside them in phase 2.
  */
 export { enableSheet } from '../sheet-enable'
+export {
+  insertRows, deleteRows, insertColumns, deleteColumns,
+  axisForSelection, setStructureTarget, getStructureTarget, rewriteFormulas,
+  type StructureTarget,
+} from './structure'
+export {
+  findAll, findNext, replaceOne, replaceAll, replaceInText, cellMatches,
+  setFindTarget, getFindTarget,
+  type FindOptions, type FindHit, type FindTarget,
+} from './find-replace'
+export {
+  splitFrozenRows, frozenColumnIds, applyFreeze,
+  freezeAtActiveCell, freezeTopRow, freezeFirstColumn, unfreeze,
+  type FreezeState, type FreezeSplit,
+} from './freeze'
+export {
+  buildClipboardPayload, parseClipboard, parseClipboardText, parseClipboardHtml,
+  readClipboardOrigin, resolvePasteCell, planPaste,
+  type PasteSpecialOptions, type PasteWhat, type PasteOperation,
+  type ClipboardCell, type ClipboardGrid, type PasteResolution,
+} from './paste-special'
+export { setFindReplaceHandler, setPasteSpecialHandler } from './shortcuts'
+
 export { default as SvFormulaBar } from '../SvFormulaBar.svelte'
 export {
   compileNumberFormat, formatWithPattern, FORMAT_PRESETS,

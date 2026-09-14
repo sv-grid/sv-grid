@@ -177,7 +177,7 @@ describe('the extended binding table', () => {
   })
 
   it('still leaves the grid its own keys', () => {
-    const reserved = ['c', 'x', 'v', 'z', 'y', 'f', 'h']
+    const reserved = ['c', 'x', 'v', 'z', 'y', 'f']
     for (const b of SHEET_BINDINGS) {
       if (b.mod && !b.shift && !b.alt) expect(reserved).not.toContain(b.key.toLowerCase())
     }
