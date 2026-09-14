@@ -38,11 +38,14 @@ can see both the trajectory and the (short) list of real gaps.
 | --- | ------ | ------ |
 | ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
 | ~~Formula language~~ | **shipped** - a real module in `@svgrid/enterprise/sheet`: parser, evaluator, ~50 functions, cross-sheet and whole-column refs, short-circuiting `IF` / `IFERROR`, a dependency graph for incremental recalc, and `translateFormula` / `fixupReferences`. Absolute refs are now absolute (the demo copies stripped `$`, so anything filled or copied was quietly wrong) | ✓ |
-| Formula **editor** (bar, autocomplete, Name Box) | the ENGINE ships; the UI does not. Demos 83 and 207 still build their own bare input. Named ranges resolve through `resolveName` but nothing defines them yet | M |
+| ~~Formula editor (bar, autocomplete, Name Box)~~ | **shipped** - `<SvFormulaBar>` shows the raw text behind the active cell, autocompletes function names closest-match-first with signature hints, and its Name Box jumps to an address or a defined name; `createNames` defines them. Demo `435` | ✓ |
+| ~~Per-cell number formats and styles~~ | **shipped** - an Excel format-string compiler (`compileNumberFormat`) plus a store keyed on row id so formatting survives a sort, wired to Ctrl+1, Ctrl+Shift+1..6 and Ctrl+B/I/U. Demo `435` | ✓ |
+| ~~AutoSum~~ | **shipped** - Alt+= over the run Excel would guess | ✓ |
+| Reference highlighting in the formula bar | the bar parses as you type (that is where the autocomplete comes from) but does not paint the ranges it finds | S |
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
 | ~~Excel keyboard shortcuts~~ | **shipped** - `enableSheet()` binds Ctrl+Arrow (a run-boundary search, so it hops gaps), Ctrl+Shift+Arrow, Ctrl+A region-then-sheet, Ctrl+Space / Shift+Space, Ctrl+D / Ctrl+R, Ctrl+; and Ctrl+'; demo `434-excel-shortcuts`. Bind your own through the free `registerGridShortcuts` seam | ✓ |
 | ~~Reference-aware fill~~ | **shipped** - `enableSheet()` wires `translateFormula` into Ctrl+D / Ctrl+R, so a filled formula shifts its relative refs and keeps its pinned ones | ✓ |
-| `Alt+Enter`, `F4`, `Alt+=`, `Ctrl+1`, `Ctrl+Shift+V` | the command seam runs in the editor as well as on the grid root, so these are wiring rather than plumbing | M |
+| `Alt+Enter`, `F4`, `Ctrl+Shift+V` | the command seam runs in the editor as well as on the grid root, so these are wiring rather than plumbing | M |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
 | ~~Drag a selected range to move / copy it~~ | **shipped** - `moveCells`, on by default with cell selection; demo `429-move-cells` | ✓ |
