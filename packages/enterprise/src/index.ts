@@ -75,6 +75,13 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
+export { default as SvSheetTabs } from './SvSheetTabs.svelte'
+export {
+  createWorkbook, isValidSheetName,
+  type Workbook, type SheetData, type WorkbookOptions,
+} from './sheet/workbook'
+export { setWorkbook, getWorkbook } from './sheet/shortcuts'
+
 export {
   splitText, textToColumns, guessDelimiter,
   findDuplicates, removeDuplicates,

@@ -76,6 +76,17 @@ See [paste, find and structure](./paste-find-structure.md).
 | Ctrl/Cmd + H | Find and Replace. |
 | Ctrl/Cmd + Shift + V | Paste Special. |
 
+### Workbook
+
+These need a workbook attached with `setWorkbook`; without one they decline,
+so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
+[workbooks](./workbooks.md).
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + Page Down / Page Up | Next / previous sheet. |
+| Shift + F11 | New sheet. |
+
 ## What Ctrl+Arrow actually does
 
 It is not "move a long way". It is a run-boundary search, and the rule depends

@@ -8,6 +8,13 @@
  * the formula engine lands beside them in phase 2.
  */
 export { enableSheet } from '../sheet-enable'
+export { default as SvSheetTabs } from '../SvSheetTabs.svelte'
+export {
+  createWorkbook, isValidSheetName,
+  type Workbook, type SheetData, type WorkbookOptions,
+} from './workbook'
+export { setWorkbook, getWorkbook } from './shortcuts'
+
 export {
   splitText, textToColumns, guessDelimiter,
   findDuplicates, removeDuplicates,
