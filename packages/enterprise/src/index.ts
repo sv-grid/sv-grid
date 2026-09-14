@@ -75,6 +75,27 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 // `<SvGrid pivot={...}>` renders a pivot table in place of the flat table.
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
+export { default as SvFormulaBar } from './SvFormulaBar.svelte'
+export {
+  compileNumberFormat, formatWithPattern, FORMAT_PRESETS,
+  type CompiledFormat, type FormatPresetName,
+} from './sheet/number-format'
+export {
+  createFormatStore, entryToStyle,
+  type SheetFormatStore, type CellFormatEntry, type CellAddressLookup,
+} from './sheet/format-store'
+export {
+  createNames, isValidName, type SheetNames, type DefinedName,
+} from './sheet/names'
+export {
+  suggestFunctions, applySuggestion, signatureAt, partialAt, SIGNATURES,
+  type FunctionSuggestion,
+} from './sheet/autocomplete'
+export {
+  setFormatTarget, getFormatTarget, setFormatDialogHandler,
+  type SheetFormatTarget,
+} from './sheet/shortcuts'
+
 // The formula engine. Names are Sheet-prefixed HERE because the barrel already
 // exports a `DependencyGraph` (scheduler) and an `EvalContext` (the expression
 // language), and two different things under one name in one namespace is worse

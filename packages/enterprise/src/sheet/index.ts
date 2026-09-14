@@ -8,6 +8,27 @@
  * the formula engine lands beside them in phase 2.
  */
 export { enableSheet } from '../sheet-enable'
+export { default as SvFormulaBar } from '../SvFormulaBar.svelte'
+export {
+  compileNumberFormat, formatWithPattern, FORMAT_PRESETS,
+  type CompiledFormat, type FormatPresetName,
+} from './number-format'
+export {
+  createFormatStore, entryToStyle,
+  type SheetFormatStore, type CellFormatEntry, type CellAddressLookup,
+} from './format-store'
+export {
+  createNames, isValidName, type SheetNames, type DefinedName,
+} from './names'
+export {
+  suggestFunctions, applySuggestion, signatureAt, partialAt, SIGNATURES,
+  type FunctionSuggestion,
+} from './autocomplete'
+export {
+  setFormatTarget, getFormatTarget, setFormatDialogHandler,
+  type SheetFormatTarget,
+} from './shortcuts'
+
 export {
   parseFormula, parse,
 } from './parse'

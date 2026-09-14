@@ -47,6 +47,21 @@ import { enableSheet } from '@svgrid/enterprise/sheet'
 | Ctrl/Cmd + ; | Stamp today's date. |
 | Ctrl/Cmd + Shift + ; | Stamp the current time. |
 | Ctrl/Cmd + ' | Copy the cell above, unchanged. |
+| Alt + = | AutoSum the run above, or to the left. |
+
+### Formatting
+
+These write through the store you attach with `setFormatTarget`. Until you
+attach one they decline, so the key falls through rather than looking broken.
+See [number formats](./number-formats.md).
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + B / I / U | Bold, italic, underline. |
+| Ctrl/Cmd + 5 | Strikethrough. |
+| Ctrl/Cmd + 1 | Open Format Cells (calls your `setFormatDialogHandler`). |
+| Ctrl/Cmd + Shift + 1..6 | Number, time, date, currency, percent, scientific. |
+| Ctrl/Cmd + Shift + ` | General. |
 
 ## What Ctrl+Arrow actually does
 
@@ -75,9 +90,13 @@ above instead, which is what makes it useful while typing down a column.
 Both run as one undoable action: filling thirty rows takes one `Ctrl+Z`, not
 thirty.
 
+Fill is reference-aware: `=A1*2` filled one row down becomes `=A2*2`, while
+`=$A$1*B1` keeps its anchor and becomes `=$A$1*B2`. See
+[spreadsheet formulas](../spreadsheet-formulas.md).
+
 `Ctrl+'` is deliberately not a fill. It copies the cell above **verbatim**, so
-when the formula engine lands you get an unshifted copy of the formula to edit
-rather than one that has already moved.
+you get an unshifted copy of the formula to edit rather than one that has
+already moved.
 
 ## Dates land as ISO, not as display text
 
@@ -131,6 +150,5 @@ Wrap any multi-cell write in `cmd.batch()` so it undoes in one press.
 
 ## Not yet
 
-Reference-aware fill (so `=A1*2` becomes `=A2*2` one row down), `Alt+Enter`,
-`F4`, `Alt+=`, `Ctrl+1` and paste special are not bound yet. See
+`Alt+Enter`, `F4` and paste special are not bound yet. See
 [missing features](../missing-features.md).

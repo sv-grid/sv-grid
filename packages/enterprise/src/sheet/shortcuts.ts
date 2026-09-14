@@ -9,13 +9,52 @@
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
   edgeOfRegion, currentRegion, isWholeSheet, wholeSheet, isBlankValue,
-  type Direction, type Grid,
+  type Direction, type Grid, type Rect,
 } from './navigate'
 import {
   fillDown, fillRight, stampDate, copyFromAbove, targetRect,
+  guessSumRange, looksNumeric,
 } from './commands'
+import { FORMAT_PRESETS, type FormatPresetName } from './number-format'
+import type { SheetFormatStore, CellAddressLookup, CellFormatEntry } from './format-store'
+import { formatA1 } from './address'
 
 export type SheetCommand = (cmd: GridCommandContext, event: KeyboardEvent) => boolean
+
+/**
+ * What the formatting commands write to, and how they turn a display position
+ * into the stable ids the store keys on.
+ *
+ * Optional because the shortcuts are useful without it: a grid that only wants
+ * navigation and fill never sets one up, and the format bindings decline
+ * rather than half-working.
+ */
+export type SheetFormatTarget = {
+  store: SheetFormatStore
+  lookup: CellAddressLookup
+  /** Called after a change so the consumer can re-render. */
+  onChange?(): void
+}
+
+let formatTarget: SheetFormatTarget | null = null
+
+/** Attach the store the formatting shortcuts write to. */
+export function setFormatTarget(target: SheetFormatTarget | null): void {
+  formatTarget = target
+}
+
+export function getFormatTarget(): SheetFormatTarget | null {
+  return formatTarget
+}
+
+/** Called when Ctrl+1 fires, so a consumer can open its own dialog. The
+ *  shortcut layer does not ship one: what a Format Cells dialog should look
+ *  like is a design decision, not a keyboard one. */
+let onFormatDialog: ((cmd: GridCommandContext) => void) | null = null
+
+export function setFormatDialogHandler(fn: ((cmd: GridCommandContext) => void) | null): void {
+  onFormatDialog = fn
+}
 
 export type SheetBinding = {
   /** Matched case-insensitively against `event.key`. */
@@ -84,6 +123,56 @@ function selectLine(axis: 'column' | 'row'): SheetCommand {
   }
 }
 
+/** Apply a patch to the selection through the attached store. */
+function applyFormat(cmd: GridCommandContext, patch: CellFormatEntry): boolean {
+  const target = formatTarget
+  if (!target) return false
+  const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
+  if (!rects.length) return false
+  target.store.set(rects, patch, target.lookup)
+  target.onChange?.()
+  return true
+}
+
+function toggleFormat(
+  cmd: GridCommandContext,
+  field: 'bold' | 'italic' | 'underline' | 'strike',
+): boolean {
+  const target = formatTarget
+  if (!target) return false
+  const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
+  if (!rects.length) return false
+  target.store.toggle(rects, field, target.lookup)
+  target.onChange?.()
+  return true
+}
+
+function rectOfActive(cmd: GridCommandContext): ReadonlyArray<Rect> {
+  const rect = targetRect(cmd)
+  return rect ? [rect] : []
+}
+
+function preset(name: FormatPresetName): SheetCommand {
+  return (cmd) => applyFormat(cmd, { numFmt: FORMAT_PRESETS[name] })
+}
+
+/** Alt+=. Inserts =SUM(range) over the run Excel would guess. */
+const autoSum: SheetCommand = (cmd) => {
+  const active = cmd.activeCell
+  if (!active) return false
+  const range = guessSumRange(cmd, looksNumeric)
+  if (!range) return false
+  const [minRow, minCol, maxRow, maxCol] = range
+  const ref = (r: number, c: number) =>
+    formatA1({ col: c, colAbs: false, row: r, rowAbs: false, sheet: null })
+  cmd.setCellValue(
+    active.rowIndex,
+    active.colIndex,
+    `=SUM(${ref(minRow, minCol)}:${ref(maxRow, maxCol)})`,
+  )
+  return true
+}
+
 export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   // Navigation
   { key: 'ArrowUp', mod: true, run: move('up', false), label: 'Jump to the edge of the data region' },
@@ -106,6 +195,26 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: ';', mod: true, run: (cmd) => stampDate(cmd, 'date'), label: "Insert today's date" },
   { key: ';', mod: true, shift: true, run: (cmd) => stampDate(cmd, 'time'), label: 'Insert the current time' },
   { key: "'", mod: true, run: (cmd) => copyFromAbove(cmd), label: 'Copy the cell above, unchanged' },
+  { key: '=', alt: true, run: autoSum, label: 'AutoSum the run above or to the left' },
+
+  // Formatting. These decline when no format store is attached, so the key
+  // falls through instead of looking broken.
+  { key: 'b', mod: true, run: (cmd) => toggleFormat(cmd, 'bold'), label: 'Bold' },
+  { key: 'i', mod: true, run: (cmd) => toggleFormat(cmd, 'italic'), label: 'Italic' },
+  { key: 'u', mod: true, run: (cmd) => toggleFormat(cmd, 'underline'), label: 'Underline' },
+  { key: '5', mod: true, run: (cmd) => toggleFormat(cmd, 'strike'), label: 'Strikethrough' },
+  { key: '1', mod: true, run: (cmd) => {
+    if (!onFormatDialog) return false
+    onFormatDialog(cmd)
+    return true
+  }, label: 'Open Format Cells' },
+  { key: '1', mod: true, shift: true, run: preset('number'), label: 'Number format' },
+  { key: '2', mod: true, shift: true, run: preset('time'), label: 'Time format' },
+  { key: '3', mod: true, shift: true, run: preset('date'), label: 'Date format' },
+  { key: '4', mod: true, shift: true, run: preset('currency'), label: 'Currency format' },
+  { key: '5', mod: true, shift: true, run: preset('percent'), label: 'Percent format' },
+  { key: '6', mod: true, shift: true, run: preset('scientific'), label: 'Scientific format' },
+  { key: '`', mod: true, shift: true, run: preset('general'), label: 'General format' },
 ]
 
 function matches(binding: SheetBinding, event: KeyboardEvent): boolean {
