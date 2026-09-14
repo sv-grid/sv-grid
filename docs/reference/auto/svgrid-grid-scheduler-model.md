@@ -5,7 +5,7 @@ Auto-generated. Source: `packages\grid\src\scheduler-model.ts`.
 ### `type ResolvedEvent`
 
 A concrete event instance placed on the calendar (one row may yield many when
- it recurs). `key` is unique per instance; `rowKey` ties it back to its row. */
+ it recurs). `key` is unique per instance; `rowKey` ties it back to its row.
 
 ```ts
 export type ResolvedEvent<TData = unknown> = {
@@ -36,7 +36,7 @@ export type ResolvedEvent<TData = unknown> = {
 ### `type RecurrenceException`
 
 A per-occurrence override of a recurring event (the model's shape; the
- component maps the consumer's `SchedulerException` onto this). */
+ component maps the consumer's `SchedulerException` onto this).
 
 ```ts
 export type RecurrenceException = {
@@ -56,7 +56,7 @@ export type RecurrenceException = {
 
 Field accessors the model uses to read an event off a row. The component
  builds this from `SchedulerConfig`, applying its move/edit overlay first so
- a dragged event resolves at its new time without mutating the source row. */
+ a dragged event resolves at its new time without mutating the source row.
 
 ```ts
 export type EventSpec<TData> = {
@@ -84,7 +84,7 @@ export type EventSpec<TData> = {
 ### `type WorkingWindow`
 
 One working window: `[start, end)` hours, optionally limited to `days`
- (weekday 0 = Sun … 6 = Sat). Omitting `days` applies it to every day. */
+ (weekday 0 = Sun … 6 = Sat). Omitting `days` applies it to every day.
 
 ```ts
 export type WorkingWindow = {
@@ -127,7 +127,7 @@ export function workingIntervals(
 
 ### `function withinWorking`
 
-True when `[startMin, endMin]` lies wholly inside one working interval. */
+True when `[startMin, endMin]` lies wholly inside one working interval.
 
 ```ts
 export function withinWorking(
@@ -188,7 +188,7 @@ export function overlapCount<TData>(
 
 ### `function overlapsBands`
 
-True when the minute range `[sMin,eMin)` overlaps any of the given hour bands. */
+True when the minute range `[sMin,eMin)` overlaps any of the given hour bands.
 
 ```ts
 export function overlapsBands(
@@ -336,7 +336,7 @@ export function resolveEvents<TData>(
 
 ### `function eventsOnDay`
 
-Events that touch `day` (any calendar day the event spans), timed + all-day. */
+Events that touch `day` (any calendar day the event spans), timed + all-day.
 
 ```ts
 export function eventsOnDay<TData>(
@@ -431,7 +431,7 @@ export function monthWeekSegments<TData>(
 
 A timed event positioned within a time-grid column. `topPct`/`heightPct` are
  0-100 of the visible day; `leftPct`/`widthPct`/`zIndex` place it horizontally
- among overlapping peers (already resolved for the chosen collision mode). */
+ among overlapping peers (already resolved for the chosen collision mode).
 
 ```ts
 export type PositionedEvent<TData = unknown> = {
@@ -448,7 +448,7 @@ export type PositionedEvent<TData = unknown> = {
 
 ### `type OverflowMarker`
 
-A `+N more` tile emitted by `cap` mode for the events that didn't fit. */
+A `+N more` tile emitted by `cap` mode for the events that didn't fit.
 
 ```ts
 export type OverflowMarker<TData = unknown> = {
@@ -465,7 +465,7 @@ export type OverflowMarker<TData = unknown> = {
 
 ### `type DayLayout`
 
-The full time-grid layout for one day: positioned events + any overflow tiles. */
+The full time-grid layout for one day: positioned events + any overflow tiles.
 
 ```ts
 export type DayLayout<TData = unknown> = {
@@ -476,7 +476,7 @@ export type DayLayout<TData = unknown> = {
 
 ### `type LayoutOptions`
 
-Tuning for event layout: how overlapping events share horizontal space. */
+Tuning for event layout: how overlapping events share horizontal space.
 
 ```ts
 export type LayoutOptions = {
@@ -637,7 +637,7 @@ export function layoutDayEvents<TData>(
 
 ### `type AgendaGroup`
 
-One day's bucket of events for the agenda (list) view. */
+One day's bucket of events for the agenda (list) view.
 
 ```ts
 export type AgendaGroup<TData = unknown> = {
@@ -649,7 +649,7 @@ export type AgendaGroup<TData = unknown> = {
 ### `function agendaGroups`
 
 Group resolved events by calendar day for the agenda view (days with no
- events are omitted; groups and their events are in chronological order). */
+ events are omitted; groups and their events are in chronological order).
 
 ```ts
 export function agendaGroups<TData>(
@@ -715,7 +715,7 @@ export function rangeForView(
 
 ### `function daysForView`
 
-The 7 (or fewer) day columns rendered for the week / day views. */
+The 7 (or fewer) day columns rendered for the week / day views.
 
 ```ts
 export function daysForView(view: SchedulerView, anchor: Date, weekStartsOn = 0): Date[] {
@@ -727,7 +727,7 @@ export function daysForView(view: SchedulerView, anchor: Date, weekStartsOn = 0)
 
 ### `function navigateAnchor`
 
-Move the anchor one view-unit in `dir` (-1 back, +1 forward). */
+Move the anchor one view-unit in `dir` (-1 back, +1 forward).
 
 ```ts
 export function navigateAnchor(view: SchedulerView, anchor: Date, dir: number): Date {
@@ -754,7 +754,7 @@ export function navigateAnchor(view: SchedulerView, anchor: Date, dir: number): 
 
 ### `type TimelineTick`
 
-One column of the timeline's minor (tick) header row. */
+One column of the timeline's minor (tick) header row.
 
 ```ts
 export type TimelineTick = {
@@ -769,7 +769,7 @@ export type TimelineTick = {
 
 ### `type TimelineMajor`
 
-One cell of the timeline's major (grouping) header row, spanning several ticks. */
+One cell of the timeline's major (grouping) header row, spanning several ticks.
 
 ```ts
 export type TimelineMajor = { label: string; leftPct: number; widthPct: number }
@@ -778,7 +778,7 @@ export type TimelineMajor = { label: string; leftPct: number; widthPct: number }
 ### `type TimelineAxis`
 
 The horizontal axis: its window [start, end] (the day band for `timelineDay`),
- the minor `ticks`, and the coarser `majors` above them. */
+ the minor `ticks`, and the coarser `majors` above them.
 
 ```ts
 export type TimelineAxis = {
@@ -871,7 +871,7 @@ export function timelineAxis(
 ### `function timelineGeom`
 
 An event's horizontal geometry within the axis window, or `null` when it
- falls entirely outside it. `continuesLeft/Right` flag a clipped edge. */
+ falls entirely outside it. `continuesLeft/Right` flag a clipped edge.
 
 ```ts
 export function timelineGeom(
@@ -896,7 +896,7 @@ export function timelineGeom(
 
 ### `type TimelineRow`
 
-One resource's timeline row: its events lane-packed so overlaps stack. */
+One resource's timeline row: its events lane-packed so overlaps stack.
 
 ```ts
 export type TimelineRow<TData = unknown> = {

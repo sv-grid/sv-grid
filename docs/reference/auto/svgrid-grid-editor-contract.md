@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\editor-contract.ts`.
 
 ### `type EditorSize`
 
-How much room a cell editor asks for, so the grid can size its overlay. */
+How much room a cell editor asks for, so the grid can size its overlay.
 
 ```ts
 export type EditorSize = 'sm' | 'md' | 'lg'
@@ -31,7 +31,7 @@ export type EditorAction = {
 
 ### `type EditorDir`
 
-Text direction. `'auto'` defers to the surrounding document/CSS. */
+Text direction. `'auto'` defers to the surrounding document/CSS.
 
 ```ts
 export type EditorDir = 'ltr' | 'rtl' | 'auto'
@@ -39,7 +39,7 @@ export type EditorDir = 'ltr' | 'rtl' | 'auto'
 
 ### `type SvEditorProps`
 
-Props shared by every value-bearing editor in the kit. */
+Props shared by every value-bearing editor in the kit.
 
 ```ts
 export type SvEditorProps = {
@@ -113,7 +113,7 @@ export type EditorInteraction<V = unknown> = {
 
 ### `const editorErrorId`
 
-Stable DOM id for an editor's error text, for `aria-describedby` wiring. */
+Stable DOM id for an editor's error text, for `aria-describedby` wiring.
 
 ```ts
 export const editorErrorId = (id?: string): string | undefined => (id ? `${id}__error` : undefined)
@@ -121,7 +121,7 @@ export const editorErrorId = (id?: string): string | undefined => (id ? `${id}__
 
 ### `const editorHintId`
 
-Stable DOM id for an editor's hint text, for `aria-describedby` wiring. */
+Stable DOM id for an editor's hint text, for `aria-describedby` wiring.
 
 ```ts
 export const editorHintId = (id?: string): string | undefined => (id ? `${id}__hint` : undefined)
@@ -139,7 +139,7 @@ export const nextEditorId = (prefix = 'sv-ed'): string => `${prefix}-${_autoId++
 
 ### `type EditorAriaState`
 
-A subset of {@link SvEditorProps} that drives ARIA on the focusable control. */
+A subset of {@link SvEditorProps} that drives ARIA on the focusable control.
 
 ```ts
 export type EditorAriaState = Pick<

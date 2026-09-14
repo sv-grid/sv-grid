@@ -34,7 +34,7 @@ export {
   type ClipboardExportOptions,
 } from './export'
 export { default as SvExportMenu } from './SvExportMenu.svelte'
-export { buildPdfDocDefinition, type PdfExportOptions, type PdfPageSize } from './export-pdf'
+export { buildPdfDocDefinition, resolvePdfCharts, resolvePdfVfs, registerPdfFonts, type PdfExportOptions, type PdfPageSize, type PdfChart, type PdfKpi, type PdfChartImage, type PdfVirtualFileSystem, type PdfMakeLike } from './export-pdf'
 export { printGrid, type PrintOptions } from './print'
 export {
   importData,

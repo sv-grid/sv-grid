@@ -130,7 +130,7 @@ features.
 
 ### Smart.Chart integration
 
-Mounts a <smart-chart> web component (htmlelements.com) and pipes the grid\'s displayed rows into its dataSource. Re-aggregates on every filter / sort.
+Mounts a <smart-chart> web component (htmlelements.com) and pipes the grid's displayed rows into its dataSource. Re-aggregates on every filter / sort.
 
 <div data-docs-demo="77-smart-chart" data-height="460"></div>
 

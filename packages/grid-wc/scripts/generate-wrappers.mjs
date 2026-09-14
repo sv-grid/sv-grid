@@ -26,6 +26,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { ELEMENT_PROPS, ELEMENT_EVENTS, LEGACY_EVENTS } from '../src/surface.generated.js'
+import * as CHART from '../src/surface-chart.generated.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const src = join(here, '..', 'src')
@@ -459,15 +460,295 @@ export {}
 `
 }
 
+// ---------------------------------------------------------------------------
+// <sv-chart>: the same three wrappers over the chart surface.
+//
+// Separate functions rather than parameters on the grid's: the chart has no
+// shadow variant, no `api` handle and no legacy events, and threading those
+// three differences through the grid templates would put conditionals in the
+// path that generates a published, byte-compared file.
+// ---------------------------------------------------------------------------
+
+const chartProps = CHART.ELEMENT_PROPS
+const chartEvents = CHART.ELEMENT_EVENTS.map((e) => ({ ...e, legacy: false }))
+const chartPropNames = chartProps.map((p) => p.name)
+const chartEventNames = chartEvents.map((e) => e.event)
+
+function reactChart() {
+  const props = chartProps.map(
+    (p) => `  /** \`${p.attribute ?? 'property only'}\` - ${p.ts.replace(/\s+/g, ' ').slice(0, 90)} */\n  ${p.name}?: ${tsType(p)}`,
+  ).join('\n')
+  const handlers = chartEvents.map(
+    (e) => `  /** \`${e.event}\` */\n  ${handlerName(e)}?: (detail: ${e.detail ?? 'unknown'}) => void`,
+  ).join('\n')
+
+  return `${BANNER('React wrapper for <sv-chart>. Assigns object props (the spec above all) as properties, which React <=18 would otherwise stringify onto attributes.')}
+import { createElement, forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import type { Ref } from 'react'
+import '@svgrid/grid-wc/chart'
+
+export interface SvChartProps {
+${props}
+
+${handlers}
+
+  /** Forwarded to the host element. */
+  className?: string
+  style?: Record<string, string | number>
+}
+
+/** The host element, reachable through a ref. */
+export interface SvChartHandle {
+  element: HTMLElement | null
+}
+
+const PROP_NAMES = ${JSON.stringify(chartPropNames)} as const
+
+const EVENTS: Array<[handler: string, event: string]> = ${JSON.stringify(chartEvents.map((e) => [handlerName(e), e.event]))}
+
+/**
+ * SvChart as a React component. Same shape as the grid wrapper: props are
+ * written as DOM properties when they change, handlers are bound once through
+ * a ref so inline arrows do not rebind on every render.
+ */
+export const SvChart = forwardRef(function SvChart(props: SvChartProps, ref: Ref<SvChartHandle>) {
+  const hostRef = useRef<HTMLElement | null>(null)
+  const { className, style, ...rest } = props
+
+  const written = useRef<Record<string, unknown>>({})
+  useEffect(() => {
+    const el = hostRef.current as unknown as Record<string, unknown> | null
+    if (!el) return
+    for (const name of PROP_NAMES) {
+      const value = (rest as Record<string, unknown>)[name]
+      if (value === undefined || Object.is(written.current[name], value)) continue
+      written.current[name] = value
+      el[name] = value
+    }
+  })
+
+  const handlers = useRef(rest as Record<string, unknown>)
+  handlers.current = rest as Record<string, unknown>
+
+  useEffect(() => {
+    const el = hostRef.current
+    if (!el) return
+    const bound: Array<[string, EventListener]> = []
+    for (const [handler, event] of EVENTS) {
+      const listener: EventListener = (e) => {
+        const fn = handlers.current[handler] as ((detail: unknown) => void) | undefined
+        fn?.((e as CustomEvent).detail)
+      }
+      el.addEventListener(event, listener)
+      bound.push([event, listener])
+    }
+    return () => {
+      for (const [event, listener] of bound) el.removeEventListener(event, listener)
+    }
+  }, [])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      get element() {
+        return hostRef.current
+      },
+    }),
+    [],
+  )
+
+  return createElement('sv-chart', {
+    ref: hostRef,
+    class: className,
+    style: { display: 'block', ...style },
+  })
+})
+
+export default SvChart
+`
+}
+
+function vueChart() {
+  return `${BANNER('Vue wrapper for <sv-chart>. Forwards every prop as a DOM property, so the spec object arrives intact.')}
+import { defineComponent, h, onMounted, ref } from 'vue'
+import type { PropType } from 'vue'
+import '@svgrid/grid-wc/chart'
+
+const PROP_NAMES = ${JSON.stringify(chartPropNames)} as const
+const EVENT_NAMES = ${JSON.stringify(chartEventNames)} as const
+
+export type SvChartProps = {
+${chartProps.map((p) => `  ${p.name}?: ${tsType(p)}`).join('\n')}
+}
+
+/**
+ * SvChart as a Vue component. Props are forwarded as DOM PROPERTIES through
+ * the \`.\`-prefixed vnode key, Vue's own way of forcing a property assignment.
+ */
+export const SvChart = defineComponent({
+  name: 'SvChart',
+  props: {
+    ...Object.fromEntries(PROP_NAMES.map((n) => [n, { type: null as unknown as PropType<unknown>, required: false }])),
+  },
+  emits: [...EVENT_NAMES],
+  setup(props, { emit, expose }) {
+    const host = ref<HTMLElement | null>(null)
+
+    onMounted(() => {
+      const el = host.value
+      if (!el) return
+      for (const name of EVENT_NAMES)
+        el.addEventListener(name, (e) => emit(name, (e as CustomEvent).detail))
+    })
+
+    expose({
+      get element() {
+        return host.value
+      },
+    })
+
+    return () => {
+      const attrs: Record<string, unknown> = { ref: host, style: { display: 'block' } }
+      for (const name of PROP_NAMES) {
+        const value = (props as Record<string, unknown>)[name]
+        if (value !== undefined) attrs['.' + name] = value
+      }
+      return h('sv-chart', attrs)
+    }
+  },
+})
+
+export default SvChart
+`
+}
+
+/**
+ * An Angular output cannot share a name with an input. `zoom` is both the
+ * bindable window and its change event, so the output becomes `zoomChange`,
+ * which is exactly what Angular's two-way `[(zoom)]` binding looks for.
+ */
+const angularOutput = (e) => (chartPropNames.includes(e.event) ? `${e.event}Change` : e.event)
+
+function angularChart() {
+  const inputs = chartProps.map((p) => `  @Input() ${p.name}?: ${tsType(p)}`).join('\n')
+  const outputs = chartEvents.map((e) => `  @Output() ${angularOutput(e)} = new EventEmitter<unknown>()`).join('\n')
+
+  return `${BANNER("Angular wrapper for <sv-chart>. Binds @Input / @Output straight onto the custom element, which IS this component's host.")}
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core'
+import '@svgrid/grid-wc/chart'
+
+const PROP_NAMES: string[] = ${JSON.stringify(chartPropNames)}
+/** DOM event -> output name (\`zoom\` -> \`zoomChange\`, the two-way convention). */
+const EVENTS: Array<[string, string]> = ${JSON.stringify(chartEvents.map((e) => [e.event, angularOutput(e)]))}
+
+/**
+ * SvChart as an Angular component. The selector is the custom element's own
+ * tag and the component has no template: its host IS the \`<sv-chart>\` the
+ * browser upgrades, exactly like the grid wrapper.
+ */
+@Component({
+  selector: 'sv-chart',
+  standalone: true,
+  template: '',
+})
+export class SvChartComponent implements OnInit, OnChanges, OnDestroy {
+${inputs}
+
+${outputs}
+
+  private listeners: Array<[string, EventListener]> = []
+
+  constructor(private readonly elementRef: ElementRef<HTMLElement>) {}
+
+  ngOnInit(): void {
+    const el = this.elementRef.nativeElement
+    for (const [name, output] of EVENTS) {
+      const listener: EventListener = (e) =>
+        (this as any)[output]?.emit((e as CustomEvent).detail)
+      el.addEventListener(name, listener)
+      this.listeners.push([name, listener])
+    }
+    this.sync(PROP_NAMES)
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    this.sync(Object.keys(changes).filter((k) => PROP_NAMES.includes(k)))
+  }
+
+  ngOnDestroy(): void {
+    const el = this.elementRef.nativeElement
+    for (const [name, listener] of this.listeners) el.removeEventListener(name, listener)
+    this.listeners = []
+  }
+
+  /** Assign as DOM PROPERTIES - an attribute is a string, and the spec is not. */
+  private sync(names: string[]): void {
+    const el = this.elementRef.nativeElement as unknown as Record<string, unknown>
+    for (const name of names) {
+      const value = (this as any)[name]
+      if (value !== undefined) el[name] = value
+    }
+  }
+}
+`
+}
+
+function chartElementTypes() {
+  const props = chartProps.map(
+    (p) =>
+      `  /** ${p.attribute ? `attribute \`${p.attribute}\`` : 'property only - an attribute cannot hold this'} */\n  ${p.name}: ${tsType(p)}`,
+  ).join('\n')
+  const events = chartEvents.map((e) => `    ${e.event}: CustomEvent<unknown>`).join('\n')
+
+  return `${BANNER('Type declarations for the <sv-chart> custom element.')}
+
+/**
+ * The chart element's own surface. \`spec\` is \`unknown\` here rather than
+ * wrong: import \`ChartSpec\` from \`@svgrid/grid\` when you want it checked.
+ */
+export interface SvChartElement extends HTMLElement {
+${props}
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'sv-chart': SvChartElement
+  }
+
+  interface HTMLElementEventMap {
+${events}
+  }
+}
+
+export {}
+`
+}
+
 const FILES = [
   ['types/elements.d.ts', elementTypes()],
+  ['types/chart-element.d.ts', chartElementTypes()],
   ['react/index.tsx', react()],
+  ['react/chart.tsx', reactChart()],
   ['vue/index.ts', vue()],
+  ['vue/chart.ts', vueChart()],
   ['angular/svgrid.component.ts', angular()],
+  ['angular/svchart.component.ts', angularChart()],
   [
     'angular/public-api.ts',
     `${BANNER('Angular entry point.')}
 export { SvGridComponent } from './svgrid.component'
+export { SvChartComponent } from './svchart.component'
 `,
   ],
 ]
@@ -497,6 +778,7 @@ if (check) {
   console.log('generate-wrappers: wrapper sources are current')
 } else {
   console.log(
-    `generate-wrappers: react + vue + angular, ${propNames.length} props / ${ALL_EVENTS.length} events each`,
+    `generate-wrappers: react + vue + angular, ${propNames.length} props / ${ALL_EVENTS.length} events each; ` +
+      `<sv-chart> wrappers ${chartPropNames.length} props / ${chartEvents.length} events`,
   )
 }

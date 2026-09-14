@@ -7,6 +7,7 @@ Three GitHub Actions keep the packages and the blog moving without manual work.
 | Blog post (twice weekly) | [daily-blog.yml](workflows/daily-blog.yml) | Tue + Fri 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
 | Publish npm packages | [publish-npm.yml](workflows/publish-npm.yml) | after every green Test run on `main`, plus 06:37 | Publishes each public `@svgrid/*` package whose shipped files changed. |
 | Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Regenerates the blog's SEO structure (tips pages, pillar hubs, "Related reading" blocks), then rebuilds the site so posts whose date has arrived go live. |
+| Tutorials (record) | [tutorials.yml](workflows/tutorials.yml) | manual | Re-records the 30-second tutorials (`tools/tutorials/`): drives each demo in the gallery with Playwright, narrates it with ElevenLabs, muxes with ffmpeg, embeds the clip + transcript on its docs page, commits the media to the website and the manifest + docs here; keeps the YouTube masters as an artifact. |
 
 ## Required secrets and variables
 
@@ -16,6 +17,8 @@ Add these under **Settings -> Secrets and variables -> Actions**:
 - `WEBSITE_TOKEN` (secret) - read access to the private `website` submodule, which is a pnpm workspace member.
 - `ANTHROPIC_API_KEY` (secret) - Anthropic API key used to write each post.
 - `BLOG_MODEL` (variable, optional) - model id for generation. Defaults to `claude-sonnet-4-6`. Use `claude-opus-4-8` for higher quality at higher cost.
+- `ELEVENLABS_API_KEY` (secret) - narration for the tutorials workflow; without it the clips record with silent narration (captions still written). `ELEVENLABS_VOICE_ID` / `ELEVENLABS_MODEL_ID` (variables, optional).
+- `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN` (secrets, optional) - only for the tutorials workflow's `upload` input. `YT_PLAYLIST_ID` (variable, optional). See tools/tutorials/README.md for the one-time `--auth` and the compliance-audit caveat.
 
 ## How the npm publish stays clean
 

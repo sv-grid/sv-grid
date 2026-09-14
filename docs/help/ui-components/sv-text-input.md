@@ -188,7 +188,7 @@ Typed text controls: SvNumberInput (min/max/step, grouping, precision, spinners)
 
 ### Input adornments
 
-Leading/trailing icon snippets and prefix/suffix text affixes on SvTextInput, plus the shared clear button, sizes and invalid/readonly/disabled states - all owned by SvField\'s frame chrome so the whole text-input family behaves identically.
+Leading/trailing icon snippets and prefix/suffix text affixes on SvTextInput, plus the shared clear button, sizes and invalid/readonly/disabled states - all owned by SvField's frame chrome so the whole text-input family behaves identically.
 
 <div data-docs-demo="290-input-adornments" data-height="420"></div>
 

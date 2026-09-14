@@ -61,6 +61,15 @@ export type ApiSurface = {
   }
   readonly props: readonly TypeMember[]
   readonly columnDef: readonly TypeMember[]
+  /** The chart spec's vocabulary; absent on a surface built before it existed. */
+  readonly chartSpec?: {
+    readonly keys: readonly string[]
+    readonly seriesKeys: readonly string[]
+    readonly types: readonly string[]
+    readonly seriesTypes: readonly string[]
+    readonly overlays: readonly string[]
+    readonly overlayPatterns: readonly string[]
+  }
   /** Methods on the free `SvGridApi`. */
   readonly apiMethods: readonly string[]
   /** Methods `installEnterprise(api)` adds on top. */
@@ -1115,6 +1124,203 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+// ---------------------------------------------------------------------------
+// Chart specs
+// ---------------------------------------------------------------------------
+
+type Literal = { value: unknown; keyOffsets: Map<string, number> } | null
+
+/**
+ * Parse an object literal the way a spec is usually written by hand: quoted
+ * or bare keys, single or double quotes, trailing commas, numbers, booleans,
+ * null, nested objects and arrays. Anything else (an identifier, a call, a
+ * template literal, a spread, an arrow, a comment) means the value is not
+ * static, and the whole literal is left alone: the check is only ever run on
+ * what can be read completely, so it never guesses.
+ */
+function parseStaticLiteral(src: string, start: number): Literal {
+  let i = start
+  const keyOffsets = new Map<string, number>()
+  const fail = (): never => { throw new Error('not static') }
+  const ws = () => { while (i < src.length && /\s/.test(src[i]!)) i++ }
+  const value = (path: string): unknown => {
+    ws()
+    const c = src[i]
+    if (c === '{') return object(path)
+    if (c === '[') return array(path)
+    if (c === '"' || c === "'") return string()
+    if (c === '-' || (c! >= '0' && c! <= '9')) return number()
+    if (src.startsWith('true', i)) { i += 4; return true }
+    if (src.startsWith('false', i)) { i += 5; return false }
+    if (src.startsWith('null', i)) { i += 4; return null }
+    return fail()
+  }
+  const string = (): string => {
+    const q = src[i]!
+    let j = i + 1
+    let out = ''
+    while (j < src.length && src[j] !== q) {
+      if (src[j] === '\\') { out += src[j + 1]; j += 2; continue }
+      if (src[j] === '\n') fail()
+      out += src[j]
+      j++
+    }
+    if (src[j] !== q) fail()
+    i = j + 1
+    return out
+  }
+  const number = (): number => {
+    const m = /^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/i.exec(src.slice(i, i + 40))
+    if (!m) fail()
+    i += m![0].length
+    return Number(m![0])
+  }
+  const array = (path: string): unknown[] => {
+    i++
+    const out: unknown[] = []
+    for (;;) {
+      ws()
+      if (src[i] === ']') { i++; return out }
+      out.push(value(`${path}[${out.length}]`))
+      ws()
+      if (src[i] === ',') { i++; continue }
+      if (src[i] === ']') { i++; return out }
+      fail()
+    }
+  }
+  const object = (path: string): Record<string, unknown> => {
+    i++
+    const out: Record<string, unknown> = {}
+    for (;;) {
+      ws()
+      if (src[i] === '}') { i++; return out }
+      const keyAt = i
+      let key: string
+      if (src[i] === '"' || src[i] === "'") key = string()
+      else {
+        const m = /^[A-Za-z_$][\w$]*/.exec(src.slice(i, i + 80))
+        if (!m) fail()
+        key = m![0]
+        i += key.length
+      }
+      ws()
+      if (src[i] !== ':') fail()
+      i++
+      const p = path ? `${path}.${key}` : key
+      keyOffsets.set(p, keyAt)
+      out[key] = value(p)
+      ws()
+      if (src[i] === ',') { i++; continue }
+      if (src[i] === '}') { i++; return out }
+      fail()
+    }
+  }
+  try {
+    return { value: object(''), keyOffsets }
+  } catch {
+    return null
+  }
+}
+
+/** The offset of the `{` that closes back onto `}` at `close`, or -1. */
+function openingBrace(src: string, close: number): number {
+  let depth = 0
+  for (let i = close; i >= 0; i--) {
+    if (src[i] === '}') depth++
+    else if (src[i] === '{') { depth--; if (depth === 0) return i }
+  }
+  return -1
+}
+
+/**
+ * Chart specs written as static literals: a `ChartSpec`-typed const, a
+ * `satisfies ChartSpec` expression, or `spec={{ ... }}` on a chart tag.
+ * Only a literal the parser reads completely is checked; one with a variable
+ * or a call in it is skipped, so a finding is never a guess.
+ */
+function checkChartSpecs(ctx: Ctx) {
+  const vocab = ctx.surface.chartSpec
+  if (!vocab) return
+  const raw = ctx.raw
+  const starts: number[] = []
+  for (const m of raw.matchAll(/:\s*ChartSpec\s*=\s*\{/g)) starts.push(m.index! + m[0].length - 1)
+  for (const m of raw.matchAll(/\}\s*satisfies\s+ChartSpec\b/g)) {
+    const open = openingBrace(raw, m.index!)
+    if (open >= 0) starts.push(open)
+  }
+  for (const m of raw.matchAll(/<(?:SvChart|SvGridChart)\b[^>]*?\sspec=\{\{/g)) starts.push(m.index! + m[0].length - 1)
+  const seen = new Set<number>()
+  for (const start of starts) {
+    if (seen.has(start)) continue
+    seen.add(start)
+    const lit = parseStaticLiteral(raw, start)
+    if (!lit || typeof lit.value !== 'object' || lit.value === null) continue
+    const spec = lit.value as Record<string, unknown>
+    const lineOf = (path: string) => lineAt(raw, lit.keyOffsets.get(path) ?? start)
+    const see = 'help/charts/api'
+    for (const key of Object.keys(spec)) {
+      if (vocab.keys.includes(key)) continue
+      const guess = nearest(key, vocab.keys)
+      push(ctx, {
+        rule: 'svgrid/chart-unknown-key',
+        severity: 'warning',
+        line: lineOf(key),
+        message: guess ? `ChartSpec has no field "${key}"; did you mean "${guess}"?` : `ChartSpec has no field "${key}"; it is ignored`,
+        ...(guess ? { fix: `rename "${key}" to "${guess}"`, rename: { from: key, to: guess } } : {}),
+        see,
+      })
+    }
+    const type = spec.type
+    if (typeof type === 'string' && !vocab.types.includes(type)) {
+      const guess = nearest(type, vocab.types)
+      push(ctx, {
+        rule: 'svgrid/chart-unknown-type',
+        severity: 'error',
+        line: lineOf('type'),
+        message: guess ? `"${type}" is not a chart type; did you mean "${guess}"?` : `"${type}" is not a chart type`,
+        ...(guess ? { fix: `use type: '${guess}'`, rename: { from: type, to: guess } } : {}),
+        see,
+      })
+    }
+    const categories = Array.isArray(spec.categories) ? spec.categories : null
+    const freeLength = typeof type === 'string' && ['scatter', 'gauge', 'treemap', 'sankey', 'calendar', 'sunburst', 'chord', 'histogram'].includes(type)
+    if (Array.isArray(spec.series)) {
+      spec.series.forEach((s, i) => {
+        if (typeof s !== 'object' || s === null || Array.isArray(s)) return
+        const sr = s as Record<string, unknown>
+        const p = `series[${i}]`
+        for (const key of Object.keys(sr)) {
+          if (vocab.seriesKeys.includes(key)) continue
+          const guess = nearest(key, vocab.seriesKeys)
+          push(ctx, {
+            rule: 'svgrid/chart-unknown-series-key',
+            severity: 'warning',
+            line: lineOf(`${p}.${key}`),
+            message: guess ? `a chart series has no field "${key}"; did you mean "${guess}"?` : `a chart series has no field "${key}"; it is ignored`,
+            ...(guess ? { fix: `rename "${key}" to "${guess}"`, rename: { from: key, to: guess } } : {}),
+            see,
+          })
+        }
+        if (categories && !freeLength && Array.isArray(sr.values) && sr.values.length !== categories.length && !(Array.isArray(sr.points) && sr.values.length === 0)) {
+          push(ctx, {
+            rule: 'svgrid/chart-series-length',
+            severity: 'error',
+            line: lineOf(`${p}.values`),
+            message: `series "${String(sr.label ?? i)}" has ${sr.values.length} values for ${categories.length} categories; they run in parallel`,
+            see,
+          })
+        }
+        if (sr.axis !== undefined && sr.axis !== 'left' && sr.axis !== 'right') {
+          push(ctx, { rule: 'svgrid/chart-axis', severity: 'error', line: lineOf(`${p}.axis`), message: `a series axis is 'left' or 'right', not "${String(sr.axis)}"`, see })
+        }
+        if (typeof sr.overlay === 'string' && !vocab.overlays.includes(sr.overlay) && !vocab.overlayPatterns.some((re) => new RegExp(re).test(sr.overlay as string))) {
+          push(ctx, { rule: 'svgrid/chart-overlay', severity: 'error', line: lineOf(`${p}.overlay`), message: `"${sr.overlay}" is not an overlay; expected ${vocab.overlays.join(', ')} or one of ${vocab.overlayPatterns.map((r) => r.replace(/^\^|\$/g, '').replace(/\\d\+\(\?:\\\.\\d\+\)\?/g, 'N')).join(', ')}`, see })
+        }
+      })
+    }
+  }
+}
+
 export function checkStatic(source: string, surface: ApiSurface, filename = 'Component.svelte'): Diagnostic[] {
   const ctx: Ctx = {
     raw: source,
@@ -1135,6 +1341,7 @@ export function checkStatic(source: string, surface: ApiSurface, filename = 'Com
   checkKnownTraps(ctx)
   checkEnterpriseUsage(ctx)
   checkFeatures(ctx)
+  checkChartSpecs(ctx)
 
   const rank: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
   const unique = new Map<string, Diagnostic>()

@@ -49,6 +49,11 @@ Isolation is one-directional, and worth being precise about:
   into `document.head` as well as adopting it into the root. Every rule is
   scoped to an `.sv-grid-*` class, so it does not style your page, but it is
   present in it.
+- **Styles arrive with the code that needs them.** The entry carries the
+  grid's own sheet; a lazy chunk (the chart, the date pickers, the menus)
+  carries the styles of the components inside it and adds them to the page
+  and to every open root when it loads. A page that never charts never
+  downloads the chart's styles.
 
 ## Theming
 

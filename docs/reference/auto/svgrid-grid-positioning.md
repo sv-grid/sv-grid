@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\positioning.ts`.
 
 ### `type Side`
 
-A physical side the floating element is placed on, relative to the reference. */
+A physical side the floating element is placed on, relative to the reference.
 
 ```ts
 export type Side = 'top' | 'bottom' | 'left' | 'right'
@@ -12,7 +12,7 @@ export type Side = 'top' | 'bottom' | 'left' | 'right'
 
 ### `type Align`
 
-Cross-axis alignment. `center` is the bare side (e.g. `'bottom'`). */
+Cross-axis alignment. `center` is the bare side (e.g. `'bottom'`).
 
 ```ts
 export type Align = 'start' | 'center' | 'end'
@@ -20,7 +20,7 @@ export type Align = 'start' | 'center' | 'end'
 
 ### `type Placement`
 
-`'bottom'` = bottom-center; `'bottom-start'` / `'bottom-end'` align the edges. */
+`'bottom'` = bottom-center; `'bottom-start'` / `'bottom-end'` align the edges.
 
 ```ts
 export type Placement = Side | `${Side}-start` | `${Side}-end`
@@ -28,7 +28,7 @@ export type Placement = Side | `${Side}-start` | `${Side}-end`
 
 ### `type Rect`
 
-A viewport-relative rectangle (CSS `getBoundingClientRect` shape suffices). */
+A viewport-relative rectangle (CSS `getBoundingClientRect` shape suffices).
 
 ```ts
 export type Rect = { x: number; y: number; width: number; height: number }
@@ -36,7 +36,7 @@ export type Rect = { x: number; y: number; width: number; height: number }
 
 ### `type Viewport`
 
-The available viewport (defaults to `window` in the browser). */
+The available viewport (defaults to `window` in the browser).
 
 ```ts
 export type Viewport = { width: number; height: number }
@@ -44,7 +44,7 @@ export type Viewport = { width: number; height: number }
 
 ### `type ComputePositionOptions`
 
-Where to put a floating element: its preferred side, offsets, and collision behaviour. */
+Where to put a floating element: its preferred side, offsets, and collision behaviour.
 
 ```ts
 export type ComputePositionOptions = {
@@ -73,7 +73,7 @@ export type ComputePositionOptions = {
 
 ### `type ComputePositionResult`
 
-The resolved position, including the side actually used after collision handling. */
+The resolved position, including the side actually used after collision handling.
 
 ```ts
 export type ComputePositionResult = {
@@ -101,7 +101,7 @@ export type ComputePositionResult = {
 
 ### `function parsePlacement`
 
-Split a placement into its side + alignment (`center` when no suffix). */
+Split a placement into its side + alignment (`center` when no suffix).
 
 ```ts
 export function parsePlacement(p: Placement): { side: Side; align: Align } {

@@ -20,6 +20,9 @@
       ],
       "@svgrid/grid-wc/shadow": [
         "./dist/shadow/sv-grid-shadow-element.d.ts"
+      ],
+      "@svgrid/grid-wc/chart": [
+        "./dist/chart/sv-chart-element.d.ts"
       ]
     }
   },
@@ -29,7 +32,8 @@
   },
   "files": [
     "src/angular/public-api.ts",
-    "src/types/elements.d.ts"
+    "src/types/elements.d.ts",
+    "src/types/chart-element.d.ts"
   ],
   "compileOnSave": false
 }

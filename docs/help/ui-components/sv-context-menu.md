@@ -147,7 +147,7 @@ handler without unwrapping the region.
 
 ### Right-click context menu
 
-Custom row context menu (copy, duplicate, move up/down, delete) wired via a contextmenu listener + the wrapper\'s data-svgrid-row attribute.
+Custom row context menu (copy, duplicate, move up/down, delete) wired via a contextmenu listener + the wrapper's data-svgrid-row attribute.
 
 <div data-docs-demo="67-context-menu" data-height="460"></div>
 

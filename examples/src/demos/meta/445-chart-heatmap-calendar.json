@@ -1,0 +1,24 @@
+{
+  "description": "A heat map matrix where categories are the columns and each series is a row, colorScale sequential, diverging (centred on zero) or custom stops, dataLabels writing the value where there is room and a click that selects the cell; and a calendar of a year of days from calendarValues laid out in weeks with calendarStart and calendarEnd pinning the range. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte heatmap chart",
+    "svelte calendar heatmap",
+    "svelte heat map color scale",
+    "svelte chart diverging colors",
+    "svelte github style calendar chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I feed a heat map?",
+      "answer": "categories are the columns and each series a row, its values the cells. The colour comes from colorScale: sequential, diverging or an array of colour stops."
+    },
+    {
+      "question": "When should I use the diverging scale?",
+      "answer": "For values with a meaningful zero, such as a change or a difference: the scale is centred on zero, so gains and losses take opposite colours and their size the intensity."
+    },
+    {
+      "question": "How do I draw a calendar heat map?",
+      "answer": "type calendar with calendarValues as { date, value } pairs; calendarStart and calendarEnd pin the range so empty months still show."
+    }
+  ]
+}

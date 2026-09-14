@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-12T17:08:11.056Z",
+  "generatedAt": "2026-09-14T02:24:14.711Z",
   "counts": {
-    "pages": 364,
+    "pages": 373,
     "enterprise": 55,
-    "withDemo": 248
+    "withDemo": 259
   },
   "pillars": [
     {
@@ -25,6 +25,7 @@
         "help/headless",
         "help/server",
         "help/state",
+        "help/charts",
         "help/web-components",
         "recipes"
       ]
@@ -87,6 +88,7 @@
       "title": "Help / topic pages",
       "pillar": "grid",
       "pages": [
+        "help/charts.md",
         "help/web-components.md",
         "help/accessibility.md",
         "help/agents.md",
@@ -98,7 +100,6 @@
         "help/architecture.md",
         "help/benchmarks.md",
         "help/browser-support.md",
-        "help/charts.md",
         "help/collaboration.md",
         "help/columns-hierarchy.md",
         "help/comparison.md",
@@ -297,6 +298,48 @@
       "pillar": "grid",
       "pages": [
         "help/state/named-views.md"
+      ]
+    },
+    {
+      "id": "help/charts",
+      "title": "Charts",
+      "pillar": "grid",
+      "pages": [
+        "help/charts/start.md",
+        "help/charts/types.md",
+        "help/charts/gallery.md",
+        "help/charts/axes-and-styling.md",
+        "help/charts/interaction.md",
+        "help/charts/financial.md",
+        "help/charts/accessibility.md",
+        "help/charts/from-the-grid.md",
+        "help/charts/api.md"
+      ],
+      "groups": [
+        {
+          "label": "Start here",
+          "pages": [
+            "help/charts/start.md",
+            "help/charts/types.md",
+            "help/charts/gallery.md",
+            "help/charts/axes-and-styling.md"
+          ]
+        },
+        {
+          "label": "Depth",
+          "pages": [
+            "help/charts/interaction.md",
+            "help/charts/financial.md",
+            "help/charts/accessibility.md"
+          ]
+        },
+        {
+          "label": "Grid and reference",
+          "pages": [
+            "help/charts/from-the-grid.md",
+            "help/charts/api.md"
+          ]
+        }
       ]
     },
     {
@@ -676,8 +719,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 4866,
-      "lastUpdated": "2026-09-06",
+      "words": 10183,
+      "lastUpdated": "2026-09-14",
       "demoIds": []
     },
     {
@@ -1532,7 +1575,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2326,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "17-accessibility",
         "65-keyboard-shortcuts",
@@ -1587,8 +1630,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2038,
-      "lastUpdated": "2026-09-09",
+      "words": 2143,
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "51-ai-assistant",
         "92-nl-filter-bar",
@@ -1605,7 +1648,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 1606,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "399-alert-rules-engine",
         "400-alert-styling-rules",
@@ -1857,10 +1900,183 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 12127,
-      "lastUpdated": "2026-09-12",
+      "words": 605,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "434-chart-axes-styling",
+        "436-chart-sync-zoom",
+        "437-chart-financial-workbench"
+      ]
+    },
+    {
+      "path": "help/charts/accessibility.md",
+      "url": "/docs/help/charts/accessibility/",
+      "title": "Chart accessibility and localization",
+      "summary": "What the chart says to assistive technology and does on its own: the image and its data table, names on every mark, the keyboard model, the live region, reduced motion, forced colors, the axe audit, and localeText for every string it renders.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Depth",
+      "words": 1023,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "156-chart-patterns",
+        "434-chart-axes-styling",
+        "435-chart-type-gallery"
+      ]
+    },
+    {
+      "path": "help/charts/api.md",
+      "url": "/docs/help/charts/api/",
+      "title": "Chart API reference",
+      "summary": "Every field of a ChartSpec and every chart helper the package exports, each with the page that explains it. The generated reference under /api/ has the full signatures; this page is the map.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Grid and reference",
+      "words": 2630,
+      "lastUpdated": "2026-09-14",
+      "demoIds": [
+        "435-chart-type-gallery",
+        "443-chart-combo",
+        "355-charting-custom-buildspec"
+      ]
+    },
+    {
+      "path": "help/charts/axes-and-styling.md",
+      "url": "/docs/help/charts/axes-and-styling/",
+      "title": "Axes, scales and styling",
+      "summary": "The axis model (min, max, ticks, formatters, grid lines, a numeric or time x axis), reference lines and bands, series and marker styling, data labels, series labels, legend placement, responsive rules, custom marks and decimation for long series.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 4356,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "434-chart-axes-styling",
+        "439-chart-line",
+        "442-chart-scatter-bubble",
+        "156-chart-patterns",
+        "155-chart-analytics"
+      ]
+    },
+    {
+      "path": "help/charts/financial.md",
+      "url": "/docs/help/charts/financial/",
+      "title": "Financial charts",
+      "summary": "Candlesticks and OHLC bars, the eight technical indicators as overlays and stacked panes, resampling daily bars into weeks and months, the last-price line and event flags, and the same tools from the grid panel.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Depth",
+      "words": 1690,
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "432-chart-candlestick",
+        "437-chart-financial-workbench",
+        "436-chart-sync-zoom"
+      ],
+      "tutorialIds": [
+        "financial-workbench"
+      ]
+    },
+    {
+      "path": "help/charts/from-the-grid.md",
+      "url": "/docs/help/charts/from-the-grid/",
+      "title": "Charting from the grid",
+      "summary": "The chart panel on the grid: charting the displayed rows with no spec, cross-filtering, the builder with its type gallery and Format tab, linked and unlinked charts, lifecycle events, and export to PNG, SVG, PDF and CSV.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Grid and reference",
+      "words": 2242,
+      "lastUpdated": "2026-09-14",
+      "demoIds": [
+        "353-built-in-charting",
+        "357-ai-chart-this",
+        "407-grid-chart-view"
+      ],
+      "tutorialIds": [
+        "chart-from-the-grid"
+      ]
+    },
+    {
+      "path": "help/charts/gallery.md",
+      "url": "/docs/help/charts/gallery/",
+      "title": "Chart gallery",
+      "summary": "Fourteen full-size charts, one per family, each with its own data and the switches that family usually needs: bars, lines, areas, pies and sunbursts, scatter and bubble, combinations, histograms and box plots, heat maps and calendars, radar and radial, tree maps, sankey and chord, waterfall and funnel, gauges and bullets, and an annotated chart. Every one is a ChartSpec handed to SvChart, and every one flips to a grid: the Chart | Grid switch on each demo shows the rows the chart was drawn from, through chartSpecToTable (one row per category with a column per series, per point for a scatter, per link for a sankey, per leaf for a tree map, in the chart's number format) and a sortable SvGrid. The Code tab on each card is the demo itself, its script and markup, with only the demo page's layout styles left out; the smaller runnables between them isolate one idea each.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 7541,
+      "lastUpdated": "2026-09-14",
+      "demoIds": [
+        "438-chart-bar",
+        "439-chart-line",
+        "440-chart-area",
+        "441-chart-pie-donut",
+        "442-chart-scatter-bubble",
+        "443-chart-combo",
+        "444-chart-distribution",
+        "445-chart-heatmap-calendar",
+        "446-chart-radar-radial",
+        "447-chart-hierarchy",
+        "448-chart-flow",
+        "449-chart-waterfall-funnel",
+        "450-chart-gauge-bullet",
+        "451-chart-annotations"
+      ]
+    },
+    {
+      "path": "help/charts/interaction.md",
+      "url": "/docs/help/charts/interaction/",
+      "title": "Interaction: tooltips, zoom, sync, selection",
+      "summary": "What a reader can do with a chart: the crosshair tooltip and its pills, zoom with gestures, keys and presets, synchronized charts, the context menu, animation, drilldown, series navigation, point selection, pinned notes and drawing tools.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Depth",
+      "words": 3921,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "436-chart-sync-zoom",
+        "451-chart-annotations",
+        "153-chart-zoom-brush",
+        "159-chart-streaming"
+      ]
+    },
+    {
+      "path": "help/charts/start.md",
+      "url": "/docs/help/charts/start/",
+      "title": "Charts: getting started",
+      "summary": "How to turn rows into a ChartSpec, write a spec by hand, and set the titles, number format and size of a chart. Start here; the other chart pages assume this one.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 1682,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "147-integrated-charts",
+        "151-time-series-chart",
+        "157-chart-forecast-band"
+      ]
+    },
+    {
+      "path": "help/charts/types.md",
+      "url": "/docs/help/charts/types/",
+      "title": "Chart types",
+      "summary": "Every chart type the engine draws, with the spec each one reads: the four basic types, a table of the fields each type looks at, bars and lines with stack groups and 100% mode, scatter, horizontal bars, and the other twenty-odd from waterfall to chord, plus how gaps and steps are drawn.",
+      "section": "help/charts",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 4053,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "435-chart-type-gallery",
         "158-chart-waterfall",
         "160-chart-funnel",
         "161-chart-radar",
@@ -1870,14 +2086,7 @@
         "162-chart-calendar",
         "163-chart-gauge",
         "433-chart-boxplot",
-        "353-built-in-charting",
-        "150-scatter-bubble",
-        "151-time-series-chart",
-        "153-chart-zoom-brush",
-        "155-chart-analytics",
-        "156-chart-patterns",
-        "157-chart-forecast-band",
-        "159-chart-streaming"
+        "150-scatter-bubble"
       ]
     },
     {
@@ -2291,8 +2500,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 4603,
-      "lastUpdated": "2026-09-03",
+      "words": 4802,
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "21-export-and-print",
         "93-password-protected-export",
@@ -2627,8 +2836,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1626,
-      "lastUpdated": "2026-09-03",
+      "words": 1782,
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "38-rtl-i18n",
         "15-localization"
@@ -2685,8 +2894,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3183,
-      "lastUpdated": "2026-09-07",
+      "words": 3204,
+      "lastUpdated": "2026-09-13",
       "demoIds": []
     },
     {
@@ -2837,7 +3046,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1081,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -2979,8 +3188,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "enterprise",
-      "words": 1795,
-      "lastUpdated": "2026-09-12",
+      "words": 2821,
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "52-pivot-table",
         "360-pivot-mode-grid",
@@ -3283,7 +3492,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 576,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "62-conditional-styling",
         "174-zebra-rows"
@@ -3312,7 +3521,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 960,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "426-tree-data",
         "29-wbs-project-tree",
@@ -3650,10 +3859,11 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1398,
-      "lastUpdated": "2026-09-08",
+      "words": 1514,
+      "lastUpdated": "2026-09-12",
       "demoIds": [
-        "74-theme-integrations"
+        "74-theme-integrations",
+        "435-chart-type-gallery"
       ]
     },
     {
@@ -4040,9 +4250,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 510,
-      "lastUpdated": "2026-09-12",
-      "demoIds": []
+      "words": 743,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "437-chart-financial-workbench"
+      ]
     },
     {
       "path": "help/ui-components/sv-check-box.md",
@@ -4156,7 +4368,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 906,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "331-app-overlays",
         "67-context-menu",
@@ -4398,8 +4610,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 2021,
-      "lastUpdated": "2026-09-12",
+      "words": 2286,
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "147-integrated-charts",
         "407-grid-chart-view",
@@ -4974,7 +5186,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 1153,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "334-input-editors",
         "254-text-inputs",
@@ -5235,8 +5447,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 573,
-      "lastUpdated": "2026-09-06",
+      "words": 631,
+      "lastUpdated": "2026-09-12",
       "demoIds": [
         "10-custom-cells-and-themes",
         "04-selection-copy-paste"
@@ -5251,9 +5463,13 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 700,
-      "lastUpdated": "2026-09-12",
-      "demoIds": []
+      "words": 838,
+      "lastUpdated": "2026-09-13",
+      "demoIds": [
+        "435-chart-type-gallery",
+        "436-chart-sync-zoom",
+        "437-chart-financial-workbench"
+      ]
     },
     {
       "path": "help/web-components/sv-grid.md",
@@ -5265,7 +5481,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 1360,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-13",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"
@@ -5404,10 +5620,11 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 100,
-      "lastUpdated": "2026-08-28",
+      "words": 357,
+      "lastUpdated": "2026-09-12",
       "demoIds": [
-        "73-chartjs-sync"
+        "73-chartjs-sync",
+        "147-integrated-charts"
       ]
     },
     {
@@ -5526,10 +5743,11 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 95,
-      "lastUpdated": "2026-08-28",
+      "words": 265,
+      "lastUpdated": "2026-09-12",
       "demoIds": [
-        "60-pivot-expandable"
+        "60-pivot-expandable",
+        "435-chart-type-gallery"
       ]
     },
     {
@@ -5755,8 +5973,8 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 95,
-      "lastUpdated": "2026-08-28",
+      "words": 274,
+      "lastUpdated": "2026-09-12",
       "demoIds": [
         "11-stock-market"
       ]

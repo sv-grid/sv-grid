@@ -170,7 +170,9 @@ export async function downloadChartPng(
 }
 
 const csvCell = (v: unknown): string => {
-  const s = v == null ? '' : String(v)
+  // A gap is an empty cell: `null` already was, and a NaN gap (the way a
+  // forecast series marks the months before it starts) wrote the word "NaN".
+  const s = v == null || (typeof v === 'number' && !Number.isFinite(v)) ? '' : String(v)
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
@@ -180,7 +182,8 @@ const csvCell = (v: unknown): string => {
  *
  * A series that carries more than one number per category widens instead of
  * losing them. `ohlc` becomes four columns, `boxes` five plus its outliers,
- * `errors` two. This used to write `values` and nothing else, which quietly
+ * `errors` two, `lowValues` a low / high pair, `targets` a value / target
+ * pair. This used to write `values` and nothing else, which quietly
  * made "Export CSV" on a candlestick chart hand back the closing prices only -
  * the screen-reader table was given the four real numbers on purpose and the
  * export, which is what people actually take away, was not.
@@ -213,9 +216,11 @@ export function chartSpecToCsv(spec: ChartSpec): string {
   // bare label, so an existing export is byte-identical.
   const header: string[] = ['Category']
   for (const s of series) {
-    if (s.ohlc) header.push(`${s.label} Open`, `${s.label} High`, `${s.label} Low`, `${s.label} Close`)
+    if (s.ohlc) header.push(`${s.label} Open`, `${s.label} High`, `${s.label} Low`, `${s.label} Close`, ...(s.volumes ? [`${s.label} Volume`] : []))
     else if (s.boxes) header.push(`${s.label} Min`, `${s.label} Q1`, `${s.label} Median`, `${s.label} Q3`, `${s.label} Max`, `${s.label} Outliers`)
     else if (s.errors) header.push(s.label, `${s.label} Low`, `${s.label} High`)
+    else if (s.lowValues) header.push(`${s.label} low`, `${s.label} high`)
+    else if (s.targets) header.push(s.label, `${s.label} target`)
     else header.push(s.label)
   }
 
@@ -225,6 +230,7 @@ export function chartSpecToCsv(spec: ChartSpec): string {
       if (s.ohlc) {
         const k = s.ohlc[i]
         cells.push(k?.o ?? '', k?.h ?? '', k?.l ?? '', k?.c ?? '')
+        if (s.volumes) cells.push(s.volumes[i] ?? '')
       } else if (s.boxes) {
         const b = s.boxes[i]
         // Outliers are a list inside one cell; csvCell quotes it.
@@ -235,6 +241,10 @@ export function chartSpecToCsv(spec: ChartSpec): string {
         const lo = e == null ? '' : typeof e === 'number' ? (v ?? 0) - Math.abs(e) : Math.min(e.lo, e.hi)
         const hi = e == null ? '' : typeof e === 'number' ? (v ?? 0) + Math.abs(e) : Math.max(e.lo, e.hi)
         cells.push(v ?? '', lo, hi)
+      } else if (s.lowValues) {
+        cells.push(s.lowValues[i] ?? '', s.values[i] ?? '')
+      } else if (s.targets) {
+        cells.push(s.values[i] ?? '', s.targets[i] ?? '')
       } else {
         cells.push(s.values[i] ?? '')
       }

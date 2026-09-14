@@ -58,7 +58,7 @@
  *   node tools/release-packages.mjs --check            # local: detect only, no writes
  *   node tools/release-packages.mjs --publish grid,mcp # CI: publish what was bumped
  */
-import { readFileSync, writeFileSync, appendFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -190,6 +190,21 @@ function emit(lines) {
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, out)
 }
 
+/**
+ * A package that carries its version as a source constant (the enterprise
+ * generator writes `^SVGRID_VERSION` into the apps it scaffolds, and cannot
+ * read package.json in the browser) gets that constant bumped with the
+ * manifest. Its `version.test.ts` asserts the two match, and the 3.0.1
+ * release tripped it: the manifest moved, the constant did not.
+ */
+function syncVersionConstant(dir, version) {
+  const file = join(ROOT, 'packages', dir, 'src', 'version.ts')
+  if (!existsSync(file)) return
+  const text = readFileSync(file, 'utf8')
+  const next = text.replace(/(export const SVGRID_VERSION = ')[^']*(')/, `$1${version}$2`)
+  if (next !== text) writeFileSync(file, next)
+}
+
 // True only when this exact name@version is already on the registry. `npm view`
 // exits non-zero on a 404, which is the normal "not published yet" case.
 function isPublished(name, version) {
@@ -305,6 +320,7 @@ function main() {
     if (!CHECK_ONLY) {
       manifest.version = nextStr
       writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n')
+      syncVersionConstant(pkg.dir, nextStr)
     }
     console.error(
       `- ${manifest.name}: ${reason}: ${fmtVer(current)} -> ${nextStr}${CHECK_ONLY ? ' (check only, not written)' : ''}.`,

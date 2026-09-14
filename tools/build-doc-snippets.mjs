@@ -18,7 +18,7 @@
  *                                                   # candidates that passed
  */
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs'
-import { join, relative, dirname } from 'node:path'
+import { basename, join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // @ts-expect-error - plain .mjs helper with a sibling .d.mts
 import { extractFences, isComponentShaped, splitComponent, mergePreamble, blockKey } from './lib/md-snippets.mjs'
@@ -122,14 +122,25 @@ function write(snippets) {
     seen.set(key, s.id)
   }
 
-  rmSync(OUT, { recursive: true, force: true })
+  // Write in place and drop only the files that no longer belong. Removing
+  // and recreating the directory took the website dev server's file watcher
+  // with it (on Windows the watch does not re-attach to the new directory),
+  // so an edited runnable kept serving its old compiled chunk until the
+  // server was restarted, while the source beside it showed the new code.
   mkdirSync(OUT, { recursive: true })
-
+  const keep = new Set([`${basename(MANIFEST)}`])
   for (const s of snippets) {
+    const file = `${s.id}.svelte`
+    keep.add(file)
     // A trailing newline keeps svelte-check's line numbers aligned with the
     // block as it appears in the markdown.
-    writeFileSync(join(OUT, `${s.id}.svelte`), `${s.code.replace(/\s+$/, '')}\n`)
+    const code = `${s.code.replace(/\s+$/, '')}\n`
+    const path = join(OUT, file)
+    // An unchanged file is left alone so the watcher sees only real edits.
+    if (existsSync(path) && readFileSync(path, 'utf-8') === code) continue
+    writeFileSync(path, code)
   }
+  for (const f of readdirSync(OUT)) if (!keep.has(f)) rmSync(join(OUT, f), { recursive: true, force: true })
 
   const manifest = {
     generatedBy: 'tools/build-doc-snippets.mjs',

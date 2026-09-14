@@ -529,8 +529,32 @@ export { default as SvGridChartPanel } from './SvGridChartPanel.svelte'
 // unprefixed siblings SvGauge / SvSparkline. The `SvGrid*` names remain exported
 // as aliases so existing imports keep working.
 export { default as SvChart } from './SvGridChart.svelte'
+export type {
+  SvChartProps,
+  ChartRenderContext,
+  ChartTooltipContext,
+  ChartTooltipRow,
+  ChartLegendItemContext,
+  ChartLegendPosition,
+  ChartZoomConfig,
+  ChartAnimateConfig,
+  ChartContextTarget,
+  ChartHoverPoint,
+} from './SvGridChart.types'
+export {
+  wheelWindow,
+  panWindow,
+  pinchWindow,
+  presetWindow,
+  nearestIndexByTime,
+  type ChartRangePreset,
+} from './chart-zoom'
+export { interpolateGeometry } from './chart-motion'
+export { drillTree, pathTo } from './chart-hierarchy'
+export { syncGroupState, publishSyncHover, publishSyncZoom, type ChartSyncState } from './chart-sync.svelte'
 export { default as SvChartPanel } from './SvGridChartPanel.svelte'
-export type { ChartingConfig, ChartAggregateRequest, ChartAggregateBucket } from './SvGrid.types'
+export { default as SvChartPanes } from './SvChartPanes.svelte'
+export type { ChartingConfig, ChartAggregateRequest, ChartAggregateBucket, ChartPanelInfo } from './SvGrid.types'
 export type { GridLocalization } from './SvGrid.types'
 export {
   buildChart,
@@ -538,17 +562,72 @@ export {
   rowsToChartSpec,
   rowsToBoxSpec,
   rowsToDirectSpec,
+  rowsToScatterSpec,
+  rowsToGaugeSpec,
+  rowsToHistogramSpec,
+  rowsToRangeSpec,
+  paretoSpec,
+  specToTreemap,
+  specToCalendar,
+  specToSankey,
+  binValues,
+  heikinAshi,
+  resampleOhlc,
+  rowsToOhlcSpec,
+  guessOhlcColumns,
+  splitPanelIndicators,
+  applyChartFormat,
+  CHART_RESPONSIVE_PRESETS,
+  type ChartFormatState,
+  type OhlcColumns,
+  type ChartPanelIndicator,
+  bollingerBands,
+  rsi,
+  macd,
+  vwap,
+  atr,
+  stochastic,
+  wma,
+  obv,
+  indicatorPane,
+  type ChartIndicatorSpec,
+  arcPath,
+  streamBaseline,
   boxStats,
   sliceChartWindow,
+  matchResponsiveRules,
+  resolveResponsive,
+  chartStyleVars,
   chartScales,
   ordinalDateTicks,
   niceScale,
   niceLogScale,
   linearTrend,
+  linearFit,
+  polynomialFit,
+  exponentialFit,
+  logarithmicFit,
+  powerFit,
+  rSquared,
+  pearson,
+  type RegressionFit,
   simpleMovingAverage,
   exponentialMovingAverage,
   computeOverlay,
+  computeOverlayFit,
+  regressionFit,
+  overlayName,
   buildLinePath,
+  layoutDataLabels,
+  markerPath,
+  decimateSpec,
+  pickCategories,
+  lttb,
+  minMaxIndices,
+  reduceValues,
+  percentile,
+  bucketStart,
+  PER_CATEGORY_SERIES_KEYS,
   sampleGradient,
   pickContrastText,
   DEFAULT_PALETTE,
@@ -566,6 +645,9 @@ export {
   type ChartLine,
   type ChartLinePoint,
   type ChartPieSlice,
+  type ChartResponsiveRule,
+  type ChartStyle,
+  type ChartSeriesLabel,
   type ChartSelection,
   type ChartReferenceLine,
   type ChartRefLineGeo,
@@ -587,6 +669,28 @@ export {
   type ChartSankeyLink,
   type ChartValueFormat,
   type TreeNode,
+  type ChartAxisConfig,
+  type ChartReferenceBand,
+  type ChartRefBandGeo,
+  type ChartMarker,
+  type ChartMarkerShape,
+  type ChartDataLabelConfig,
+  type ChartDataLabel,
+  type ChartDecimateConfig,
+  type ChartReducer,
+  type ChartTimeBucket,
+  type ChartFrame,
+  type ChartLineStyle,
+  type ChartBins,
+  type ChartStem,
+  type ChartArc,
+  type ChartChordRibbon,
+  type ChartBullet,
+  type ChartZoomWindow,
+  type ChartPointRef,
+  type ChartDrawing,
+  type ChartDrawingKind,
+  type ChartDrawingGeo,
 } from './chart'
 export {
   chartToSvgString,
@@ -598,6 +702,7 @@ export {
   downloadChartCsv,
   type ChartExportOptions,
 } from './chart-export'
+export { chartToPdfBlob, downloadChartPdf, printChart, buildChartPdf, type ChartPdfOptions } from './chart-export-pdf'
 export {
   buildSparkline,
   toSparklineValues,
@@ -705,7 +810,33 @@ export {
   defaultGridMessages,
   resolveGridMessages,
   type GridMessages,
+  type GridChromeMessages,
 } from './grid-messages'
+export {
+  defaultChartMessages,
+  resolveChartMessages,
+  chartMessage,
+  type ChartMessages,
+} from './chart-messages'
+export {
+  defaultChartPanelMessages,
+  resolveChartPanelMessages,
+  chartPanelMessage,
+  type GridChartPanelMessages,
+} from './chart-panel-messages'
+export {
+  validateChartSpec,
+  warnChartSpec,
+  nearestKey as nearestChartKey,
+  CHART_TYPES,
+  KNOWN_SPEC_KEYS,
+  KNOWN_SERIES_KEYS,
+  type ChartDiagnostic,
+} from './chart-validate'
+export { chartSummary, type ChartSummaryOptions } from './chart-summary'
+export { appendPoints, type ChartPoint, type AppendPointsOptions } from './chart-stream'
+export { pivotResultToChartSpec, pivotChartType, pivotFilterColumn, type PivotResultChartOptions, type PivotResultLike } from './chart-pivot'
+export { chartSpecToTable, type ChartTable, type ChartTableColumn } from './chart-table'
 export {
   GRID_ICON_GLYPHS,
   GRID_ICON_NAMES,
@@ -733,6 +864,8 @@ export type {
   SvGridFilterOperator,
   SvGridViewState,
   SvGridWrapperProps,
+  ChartTabSnapshot,
+  SavedChart,
 } from './svgrid-wrapper.types'
 export {
   parseEditorValue,

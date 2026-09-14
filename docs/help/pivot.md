@@ -210,6 +210,129 @@ the demo's job, not the engine's:
 See demo [52 - Pivot table + Designer](../../examples/src/demos/52-pivot-table.svelte)
 for a full ~400-line example.
 
+## Charting a pivot
+
+A pivot and a chart answer the same question in two shapes, so one layout
+drives both. `pivotToChartSpec(result, options)` turns the `{ rows, columns }`
+the engine produces into a `ChartSpec` for the free `SvChart`:
+
+- The row-axis leaves are the categories. With nested rows the parents form
+  a second axis tier (`categoryGroups`), so the axis reads "Americas | Brazil,
+  Canada, ..." rather than repeating a bare leaf label.
+- The column-axis leaves are the series: "Q1", "Q2", or "Q1 · Revenue" when
+  the layout carries more than one measure. With no column field there is one
+  series per measure.
+- Subtotal rows and the grand-total row and column are left out unless
+  `includeTotals` is set; a chart of the parts should not also draw their sum.
+- The measure's format comes along: pass its `format` and a cell the table
+  shows as "$469,662" charts as "$470k" on the axis and "$469,662" in the
+  tooltip. With one measure the value axis is named after it.
+- An empty cell (an average over no rows is `null`) is a gap on the chart,
+  not a zero bar; a sum over no rows is the 0 the engine wrote.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvChart, type ChartType } from '@svgrid/grid'
+  import { createPivotModel, pivotToChartSpec } from '@svgrid/enterprise'
+
+  const orders = [
+    { region: 'EMEA', country: 'UK', quarter: 'Q1', amount: 4200 },
+    { region: 'EMEA', country: 'UK', quarter: 'Q2', amount: 5100 },
+    { region: 'EMEA', country: 'Germany', quarter: 'Q1', amount: 3900 },
+    { region: 'EMEA', country: 'Germany', quarter: 'Q2', amount: 4400 },
+    { region: 'APAC', country: 'Japan', quarter: 'Q1', amount: 6100 },
+    { region: 'APAC', country: 'Japan', quarter: 'Q2', amount: 5800 },
+    { region: 'APAC', country: 'India', quarter: 'Q1', amount: 2300 },
+    { region: 'APAC', country: 'India', quarter: 'Q2', amount: 3100 },
+  ]
+  const money = { type: 'currency', currency: 'USD' } as const
+  let type = $state<ChartType>('bar')
+  let stacked = $state(false)
+  const pivot = createPivotModel(orders, {
+    rows: ['region', 'country'],
+    cols: ['quarter'],
+    values: [{ field: 'amount', agg: 'sum', label: 'Revenue', format: money }],
+  })
+  const spec = $derived({ ...pivotToChartSpec(pivot, { type, stacked, format: money }), height: 280 })
+</script>
+
+<label style="font-size: 12px">
+  Type
+  <select bind:value={type}>
+    <option value="bar">Bar</option>
+    <option value="line">Line</option>
+    <option value="area">Area</option>
+    <option value="lollipop">Lollipop</option>
+  </select>
+</label>
+<label style="font-size: 12px; margin-left: 10px"><input type="checkbox" bind:checked={stacked} /> Stacked</label>
+<SvChart {spec} legend="bottom" />
+```
+
+| Option | Meaning |
+| --- | --- |
+| `type` | Chart type. Default `'bar'`. Any category type reads the same shape; a pie takes the first series. |
+| `stacked` | Stack the series. |
+| `includeTotals` | Keep the grand-total row and column as a category and a series. Default off. |
+| `maxCategories` | Chart the first N row leaves only. |
+| `format` | The measure's `CellFormatConfig`; becomes `valueFormat`, `currency` and `locale` on the spec. Percentage points get a formatter that appends the sign. |
+| `yAxisTitle` | Name the value axis; default the measure's label when there is one measure, `null` for none. |
+
+The designer does this for you: `<SvPivotDesigner chartable>` (on by
+default) puts a Table / Chart toggle in its toolbar and `defaultView="chart"`
+opens on the chart. The chart view offers every shape a pivot can take (bar,
+line, area, lollipop, pareto, the three radial forms, pie, funnel, waterfall,
+radar, heat map, stream) with Stacked, 100% and Horizontal where the type
+uses them, the chart's own toolbar (PNG, SVG, PDF, print, copy) and its
+spoken summary. It passes the value chips' format when they agree; a layout
+that mixes a currency and a count formats plainly rather than putting a "$"
+on the count. Demo 359 below is that component.
+
+The grid's own Chart panel does the same in pivot mode. With `pivot` and
+`charting` on one grid, the pivot bar carries the Chart toggle and the panel
+charts the pivot on screen: row groups as categories, column groups as
+series, the measures' format on the axis, totals left out. The data pickers
+step aside (there is nothing to choose; a note says so) and the Type select
+keeps the shapes a pivot can take. Stacked, 100% and Horizontal, the Format
+tab, the builder, saved charts, export and Describe all still apply, and a
+click on a bar filters the innermost row dimension when the grid has a column
+for it, which re-runs the pivot over the rows that pass. Flip pivot mode off
+and the panel charts the flat rows again with the pickers back.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import { enablePivot } from '@svgrid/enterprise'
+
+  enablePivot()
+  type Row = { region: string; country: string; quarter: string; amount: number }
+  const rows: Row[] = [
+    { region: 'EMEA', country: 'UK', quarter: 'Q1', amount: 4200 },
+    { region: 'EMEA', country: 'UK', quarter: 'Q2', amount: 5100 },
+    { region: 'EMEA', country: 'Germany', quarter: 'Q1', amount: 3900 },
+    { region: 'EMEA', country: 'Germany', quarter: 'Q2', amount: 4400 },
+    { region: 'APAC', country: 'Japan', quarter: 'Q1', amount: 6100 },
+    { region: 'APAC', country: 'Japan', quarter: 'Q2', amount: 5800 },
+    { region: 'APAC', country: 'India', quarter: 'Q1', amount: 2300 },
+    { region: 'APAC', country: 'India', quarter: 'Q2', amount: 3100 },
+  ]
+  const columns: GridColumns<Row> = [
+    { field: 'region', header: 'Region', width: 110 },
+    { field: 'country', header: 'Country', width: 110 },
+    { field: 'quarter', header: 'Quarter', width: 90 },
+    { field: 'amount', header: 'Amount', width: 100, cellDataType: 'number' },
+  ]
+</script>
+
+<SvGrid
+  data={rows}
+  {columns}
+  pivot={{ rows: ['region', 'country'], cols: ['quarter'], values: [{ field: 'amount', agg: 'sum', label: 'Revenue', format: { type: 'currency', currency: 'USD' } }] }}
+  charting={{ defaultOpen: true, position: 'right', width: 380, defaultType: 'bar' }}
+  containerHeight={380}
+/>
+```
+
 ## Performance notes
 
 The engine is a single pass over the input rows: it builds a row-axis
@@ -238,6 +361,15 @@ Grouping (in Community) rolls rows up along the row axis only. Pivot also spread
 a field across the column axis with nested headers and computes a measure for
 each row/column intersection.
 
+### Can I chart a pivot table?
+
+Yes, three ways, all from the same layout: `pivotToChartSpec` turns a
+computed pivot into a `ChartSpec` for the free chart (rows as categories,
+columns as series); `<SvPivotDesigner chartable>` flips between the table
+and that chart in its toolbar; and a grid with `pivot` and `charting` on it
+charts the pivot on screen in its Chart panel. See
+[Charting a pivot](#charting-a-pivot).
+
 ### Can I export a pivot table?
 
 Yes. A pivot view exports to Excel/PDF/CSV like any other grid view through the
@@ -250,6 +382,19 @@ same `@svgrid/enterprise` export helpers.
 Built on <SvPivotDesigner panelPosition="right">: a docked tool panel with a PIVOT MODE toggle, field checklist, and Columns / Rows / Values wells (drag-and-drop). OFF renders the flat participant grid (column groups, flags, ratings, inline filter row); ON pivots Language -> Country x Game with heat-mapped avg measures.
 
 <div data-docs-demo="360-pivot-mode-grid" data-height="560"></div>
+
+<!-- tutorial:pivot-mode-toggle -->
+<figure class="docs-tutorial" id="tutorial-pivot-mode-toggle" data-docs-tutorial="pivot-mode-toggle">
+<video class="docs-tutorial-video" src="/tutorials/pivot-mode-toggle.mp4" poster="/tutorials/pivot-mode-toggle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot mode in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-mode-toggle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-mode-toggle.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Pivot mode in SvGrid</strong> (33 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>With panelPosition set to right, the pivot designer docks beside the grid. The flat rows stay editable, sortable and filterable.</p>
+<p>Flip the Pivot mode switch.</p>
+<p>The same grid becomes a pivot table. Rows and columns come from the wells, and the measures are heat-mapped by value.</p>
+<p>Flip it back, and the flat rows return with their state intact. One grid, two views, no second data source.</p>
+</details>
+</figure>
+<!-- /tutorial:pivot-mode-toggle -->
 
 ### Pivot - Drill-through
 
@@ -287,6 +432,19 @@ SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-ra
 
 <div data-docs-demo="168-pivot-designer" data-height="560"></div>
 
+<!-- tutorial:pivot-designer-drag -->
+<figure class="docs-tutorial" id="tutorial-pivot-designer-drag" data-docs-tutorial="pivot-designer-drag">
+<video class="docs-tutorial-video" src="/tutorials/pivot-designer-drag.mp4" poster="/tutorials/pivot-designer-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot designer in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-designer-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-designer-drag.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Pivot designer in SvGrid</strong> (34 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvPivotDesigner is a pivot builder in one component: a field list on the left and drop wells for filters, columns, rows and values.</p>
+<p>Drag Salesperson into the Rows well.</p>
+<p>The pivot grid recomputes at once, one row per salesperson, with the measures summed across the columns.</p>
+<p>Measures work the same way. Drop Profit into Values, and click its chip to switch the aggregator between sum, average, count and more.</p>
+</details>
+</figure>
+<!-- /tutorial:pivot-designer-drag -->
+
 ### Pivot chart
 
 One drag-drop pivot layout, two synced views: <SvPivotDesigner chartable> renders the SAME Rows / Columns / Values as either an expandable pivot grid or a chart (Columns -> series, Values -> measure). Powered by the enterprise pivot engine.
@@ -295,6 +453,7 @@ One drag-drop pivot layout, two synced views: <SvPivotDesigner chartable> render
 
 ## See also
 
+- [Charts](./charts.md) - the chart the pivot feeds, and every option `pivotToChartSpec` hands it.
 - [Column groups](./columns/column-groups.md) - multi-level column
   headers; pivot uses these for the column-axis tree.
 - [Demo 52 - Pivot table + Designer](../../examples/src/demos/52-pivot-table.svelte)

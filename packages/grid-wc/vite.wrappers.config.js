@@ -18,17 +18,27 @@ import { defineConfig } from 'vite'
  */
 const TARGET = process.env.SVGRID_WRAPPER
 
-if (!TARGET) throw new Error('vite.wrappers.config.js: set SVGRID_WRAPPER=react|vue')
+if (!TARGET) throw new Error('vite.wrappers.config.js: set SVGRID_WRAPPER=react|vue|react-chart|vue-chart')
+
+// The chart wrappers land NEXT to the grid ones (dist/react/chart.js), so the
+// folder is shared and must not be emptied by the second build into it.
+const ENTRIES = {
+  react: ['src/react/index.tsx', 'dist/react', 'index.js'],
+  vue: ['src/vue/index.ts', 'dist/vue', 'index.js'],
+  'react-chart': ['src/react/chart.tsx', 'dist/react', 'chart.js'],
+  'vue-chart': ['src/vue/chart.ts', 'dist/vue', 'chart.js'],
+}
+const [ENTRY, OUT_DIR, FILE] = ENTRIES[TARGET]
 
 export default defineConfig({
   build: {
     lib: {
-      entry: TARGET === 'react' ? 'src/react/index.tsx' : 'src/vue/index.ts',
+      entry: ENTRY,
       formats: ['es'],
-      fileName: () => 'index.js',
+      fileName: () => FILE,
     },
-    outDir: `dist/${TARGET}`,
-    emptyOutDir: true,
+    outDir: OUT_DIR,
+    emptyOutDir: !TARGET.endsWith('-chart'),
     target: 'es2022',
     rollupOptions: {
       external: [
@@ -38,6 +48,7 @@ export default defineConfig({
         'vue',
         '@svgrid/grid-wc',
         '@svgrid/grid-wc/shadow',
+        '@svgrid/grid-wc/chart',
       ],
     },
   },

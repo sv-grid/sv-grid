@@ -16,7 +16,7 @@ export type AIProvider = (request: AIRequest) => Promise<string>
 
 ### `type AIRequest`
 
-One call out to the model, as the grid builds it. Providers receive this. */
+One call out to the model, as the grid builds it. Providers receive this.
 
 ```ts
 export type AIRequest = {
@@ -40,10 +40,10 @@ export type AIRequest = {
 
 ### `type AITask`
 
-Which helper produced a request - carried on {@link AIRequest} for routing and telemetry. */
+Which helper produced a request - carried on {@link AIRequest} for routing and telemetry.
 
 ```ts
-export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly' | 'chart'
+export type AITask = 'filter' | 'smart-fill' | 'summarize' | 'classify' | 'export' | 'anomaly' | 'chart' | 'explain-chart'
 ```
 
 ### `function setAIProvider`
@@ -60,7 +60,7 @@ export function setAIProvider(p: AIProvider | null): void {
 
 ### `function getAIProvider`
 
-The provider registered with `setAIProvider`, or null when none is. */
+The provider registered with `setAIProvider`, or null when none is.
 
 ```ts
 export function getAIProvider(): AIProvider | null {
@@ -70,7 +70,7 @@ export function getAIProvider(): AIProvider | null {
 
 ### `function hasAIProvider`
 
-Whether an AI provider is registered. Gate AI affordances on this so the UI stays honest. */
+Whether an AI provider is registered. Gate AI affordances on this so the UI stays honest.
 
 ```ts
 export function hasAIProvider(): boolean {
@@ -80,7 +80,7 @@ export function hasAIProvider(): boolean {
 
 ### `type AIFilterClause`
 
-One condition in a filter plan: a column, a comparison, and the value to match. */
+One condition in a filter plan: a column, a comparison, and the value to match.
 
 ```ts
 export type AIFilterClause = {
@@ -92,7 +92,7 @@ export type AIFilterClause = {
 
 ### `type AISortClause`
 
-One ordering clause in a filter plan. */
+One ordering clause in a filter plan.
 
 ```ts
 export type AISortClause = { field: string; desc: boolean }
@@ -100,7 +100,7 @@ export type AISortClause = { field: string; desc: boolean }
 
 ### `type AIFilterResult`
 
-A natural-language query turned into filters and sorting, plus the model's reasoning. */
+A natural-language query turned into filters and sorting, plus the model's reasoning.
 
 ```ts
 export type AIFilterResult = {
@@ -114,7 +114,7 @@ export type AIFilterResult = {
 
 ### `type AIFilterOptions`
 
-Options for `aiFilter` - preview the plan, or apply it straight to the grid. */
+Options for `aiFilter` - preview the plan, or apply it straight to the grid.
 
 ```ts
 export type AIFilterOptions = {
@@ -130,7 +130,7 @@ export type AIFilterOptions = {
 
 ### `type AISmartFillExample`
 
-One worked example teaching smart-fill what to produce for a row. */
+One worked example teaching smart-fill what to produce for a row.
 
 ```ts
 export type AISmartFillExample = { input: Record<string, unknown>; output: unknown }
@@ -138,7 +138,7 @@ export type AISmartFillExample = { input: Record<string, unknown>; output: unkno
 
 ### `type AISmartFillResult`
 
-Proposed values for the blank cells of one column, each with a confidence score. */
+Proposed values for the blank cells of one column, each with a confidence score.
 
 ```ts
 export type AISmartFillResult<TValue = unknown> = {
@@ -150,7 +150,7 @@ export type AISmartFillResult<TValue = unknown> = {
 
 ### `type AISmartFillOptions`
 
-Options for `aiSmartFill` - which column to fill, which rows, and the examples to learn from. */
+Options for `aiSmartFill` - which column to fill, which rows, and the examples to learn from.
 
 ```ts
 export type AISmartFillOptions = {
@@ -173,7 +173,7 @@ export type AISmartFillOptions = {
 
 ### `type AISummarizeTarget`
 
-What to summarise: one row, the selection, a group, or the whole set. */
+What to summarise: one row, the selection, a group, or the whole set.
 
 ```ts
 export type AISummarizeTarget =
@@ -185,7 +185,7 @@ export type AISummarizeTarget =
 
 ### `type AISummary`
 
-A generated summary: prose, bullets, and the columns the model leaned on. */
+A generated summary: prose, bullets, and the columns the model leaned on.
 
 ```ts
 export type AISummary = {
@@ -199,7 +199,7 @@ export type AISummary = {
 
 ### `type AISummarizeOptions`
 
-Options for `aiSummarize` - the target, and optionally the question to answer. */
+Options for `aiSummarize` - the target, and optionally the question to answer.
 
 ```ts
 export type AISummarizeOptions = {
@@ -213,7 +213,7 @@ export type AISummarizeOptions = {
 
 ### `type AIClassifyOptions`
 
-Options for `aiClassify` - the column to label and the categories to choose from. */
+Options for `aiClassify` - the column to label and the categories to choose from.
 
 ```ts
 export type AIClassifyOptions = {
@@ -233,7 +233,7 @@ export type AIClassifyOptions = {
 
 ### `type AIClassifyResult`
 
-Proposed category labels per row, with the model's reasoning. */
+Proposed category labels per row, with the model's reasoning.
 
 ```ts
 export type AIClassifyResult = {
@@ -245,7 +245,7 @@ export type AIClassifyResult = {
 
 ### `type AIExportPlan`
 
-An export the model derived from a request: format, columns, and scope. */
+An export the model derived from a request: format, columns, and scope.
 
 ```ts
 export type AIExportPlan = {
@@ -260,7 +260,7 @@ export type AIExportPlan = {
 
 ### `type AIExportOptions`
 
-Options for `aiExport` - preview the plan, or run the export it describes. */
+Options for `aiExport` - preview the plan, or run the export it describes.
 
 ```ts
 export type AIExportOptions = {
@@ -280,7 +280,7 @@ export type AIExportOptions = {
 
 ### `type AIAnomaly`
 
-One flagged value, with why it stands out and how strongly. */
+One flagged value, with why it stands out and how strongly.
 
 ```ts
 export type AIAnomaly = {
@@ -295,7 +295,7 @@ export type AIAnomaly = {
 
 ### `type AIAnomalyResult`
 
-Everything an anomaly scan flagged across the rows it looked at. */
+Everything an anomaly scan flagged across the rows it looked at.
 
 ```ts
 export type AIAnomalyResult = {
@@ -306,7 +306,7 @@ export type AIAnomalyResult = {
 
 ### `type AIAnomalyOptions`
 
-Options for `aiFindAnomalies` - which rows and columns to scan. */
+Options for `aiFindAnomalies` - which rows and columns to scan.
 
 ```ts
 export type AIAnomalyOptions = {
@@ -323,22 +323,31 @@ export type AIAnomalyOptions = {
 Chart shapes the model may choose from when planning a visualisation.
 
 These are exactly the types the built-in panel can build from a dimension, a
-measure and an optional split - which is all a chart plan carries. Two
-families are deliberately absent, because a plan cannot express them:
-scatter needs a SECOND measure for its y axis, and candlestick / OHLC need
-four under first/max/min/last. Asking for either would produce a plan the
-panel renders as an empty frame, which is worse than not offering it.
+measure and an optional split - which is all a chart plan carries. Scatter
+is deliberately absent, because a plan cannot express its SECOND measure.
+A candlestick can be asked for: the panel finds the open / high / low /
+close / volume columns by name, so the plan only needs a date dimension.
 
 ```ts
 export type AIChartType =
   | 'bar' | 'line' | 'area' | 'pie'
   | 'treemap' | 'funnel' | 'waterfall' | 'radar'
   | 'heatmap' | 'boxplot' | 'gauge' | 'calendar' | 'sankey'
+  | 'histogram' | 'lollipop' | 'pareto' | 'sunburst' | 'radial-bar' | 'radial-column' | 'nightingale' | 'bullet' | 'chord' | 'stream'
+  | 'candlestick'
+```
+
+### `type AIChartIndicator`
+
+The indicators a chart plan may ask for on a candlestick.
+
+```ts
+export type AIChartIndicator = 'volume' | 'rsi' | 'macd' | 'stochastic' | 'atr' | 'obv' | 'sma' | 'ema' | 'bb' | 'vwap'
 ```
 
 ### `type AIChartPlan`
 
-A chart the model proposed: its type, and the fields to plot. */
+A chart the model proposed: its type, and the fields to plot.
 
 ```ts
 export type AIChartPlan = {
@@ -349,23 +358,64 @@ export type AIChartPlan = {
   series: string | null
   /** Measure (value-axis) column field, or null. */
   measure: string | null
-  reduce: 'sum' | 'avg' | 'count'
+  reduce: AIChartReduce
   stacked: boolean
   logScale: boolean
   timeAxis: boolean
   valueFormat: 'number' | 'currency' | 'percent'
+  /** Calendar unit to group a date dimension by, or null for exact values. */
+  bucket: 'day' | 'week' | 'month' | 'quarter' | 'year' | null
+  /** Candlestick only: indicator panes and overlays to add. */
+  indicators?: AIChartIndicator[]
   rationale: string
+  /** With `apply`: what `validateChartSpec` flagged as an error on the spec
+   *  the panel built from the plan, empty when it drew cleanly. */
+  diagnostics?: ChartDiagnostic[]
 }
+```
+
+### `type AIChartReduce`
+
+The reducers a chart plan may name: the panel's full list.
+
+```ts
+export type AIChartReduce =
+  | 'sum' | 'avg' | 'count' | 'min' | 'max' | 'median' | 'p90' | 'first' | 'last' | 'countDistinct'
 ```
 
 ### `type AIChartOptions`
 
-Options for `aiChart` - preview the plan, or render it into the grid. */
+Options for `aiChart` - preview the plan, or render it into the grid.
 
 ```ts
 export type AIChartOptions = {
   /** Apply the plan to the grid's chart panel (open + configure). Default false. */
   apply?: boolean
+  signal?: AbortSignal
+}
+```
+
+### `type AIChartExplanation`
+
+What `aiExplainChart` returns: the grounded summary and the model's insights.
+
+```ts
+export type AIChartExplanation = {
+  /** The plain-language reading of the chart (`chartSummary`), as the model saw it. */
+  summary: string
+  /** Two to three observations the model added: comparisons, outliers, what to look at next. */
+  insights: string[]
+}
+```
+
+### `type AIExplainChartOptions`
+
+Options for `aiExplainChart`.
+
+```ts
+export type AIExplainChartOptions = {
+  /** The spec to explain. Default: the grid panel's active chart. */
+  spec?: ChartSpec
   signal?: AbortSignal
 }
 ```
@@ -399,9 +449,13 @@ export function enableAiCharting<
       logScale: plan.logScale,
       timeAxis: plan.timeAxis,
       valueFormat: plan.valueFormat,
+      bucket: plan.bucket,
       rationale: plan.rationale,
     }
   })
+  // And the Explain button beside it.
+  const explain = api as unknown as { setChartExplainHandler?: (fn: (() => Promise<AIChartExplanation | null>) | null) => void }
+  explain.setChartExplainHandler?.(() => aiExplainChart(api))
 }
 ```
 
@@ -415,8 +469,9 @@ export function disableAiCharting<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(api: SvGridApi<TFeatures, TData>): void {
-  const hook = api as unknown as { setChartAiHandler?: (fn: null) => void }
+  const hook = api as unknown as { setChartAiHandler?: (fn: null) => void; setChartExplainHandler?: (fn: null) => void }
   hook.setChartAiHandler?.(null)
+  hook.setChartExplainHandler?.(null)
 }
 ```
 
@@ -452,6 +507,17 @@ export const mockAIProvider: AIProvider = async (req) => {
   }
   if (req.task === 'chart') {
     return JSON.stringify(buildMockChart(req.prompt))
+  }
+  if (req.task === 'explain-chart') {
+    // Two canned observations round the reading the prompt was grounded on.
+    const reading = /Reading of the chart: ([^\n]+)/.exec(req.prompt)?.[1] ?? ''
+    const rises = /rises/.test(reading)
+    return JSON.stringify({
+      insights: [
+        rises ? 'The growth is front-loaded: the early categories carry most of the change.' : 'The movement is gradual with no single category driving it.',
+        'Compare the peak against the same category a period earlier before reading it as a trend.',
+      ],
+    })
   }
   return '{}'
 }

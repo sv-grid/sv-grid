@@ -13,7 +13,7 @@
  * response is capped and paged, because returning all 375 examples cost ~31k
  * tokens on the call the old description invited a model to start with.
  */
-import { apiReference, apiSurface, docs, examples } from './data.js'
+import { apiReference, apiSurface, docs, examples, schemas } from './data.js'
 import { meaningfulTerms, rankDocs } from './search.js'
 
 export type ToolResult = {
@@ -121,11 +121,11 @@ export const CORE_TOOLS = [
         ref: {
           type: 'string',
           description:
-            'A doc slug, a demo id, or "api". The kind is inferred; pass `kind` to force it.',
+            'A doc slug, a demo id, "api", or a schema id such as "chart-spec" (or "chart spec schema"). The kind is inferred; pass `kind` to force it.',
         },
         kind: {
           type: 'string',
-          enum: ['auto', 'doc', 'example', 'api'],
+          enum: ['auto', 'doc', 'example', 'api', 'schema'],
           description: 'Override the inferred kind. Default "auto".',
           default: 'auto',
         },
@@ -374,6 +374,15 @@ function get(args: Record<string, unknown>): ToolResult {
       return withDocs(json({ group, names }))
     }
     return withDocs(json(apiReference))
+  }
+
+  // A JSON schema by id ("chart-spec"), or by asking for "the chart spec
+  // schema" in words: every schema id's words must appear in the request.
+  if (kind === 'schema' || (kind === 'auto' && /schema/i.test(ref))) {
+    const words = ref.toLowerCase().replace(/schema/g, ' ').split(/[^a-z0-9]+/).filter(Boolean)
+    const hit = schemas.find((s) => s.id === ref) ?? schemas.find((s) => s.id.split('-').every((w) => words.includes(w)))
+    if (hit) return text(clip(hit.json))
+    if (kind === 'schema') return fail(`No schema "${ref}". Available: ${schemas.map((s) => s.id).join(', ')}.`)
   }
 
   if (kind === 'doc' || kind === 'auto') {

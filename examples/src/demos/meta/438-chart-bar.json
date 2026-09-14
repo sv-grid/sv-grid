@@ -1,0 +1,24 @@
+{
+  "description": "Bar charts every way they are drawn, from one spec of eight quarters and three regions: grouped, stacked, 100% stacked and horizontal are three spec fields, categoryGroups puts the year over its quarters as a second axis tier, referenceLines draws the plan as a pill, dataLabels write the values and step aside when the bars get narrow, and a variance chart hangs negative bars from the zero line coloured by their sign. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte bar chart",
+    "svelte stacked bar chart",
+    "svelte horizontal bar chart",
+    "svelte 100 percent stacked bar",
+    "svelte grouped bar chart"
+  ],
+  "faq": [
+    {
+      "question": "How do I stack the bars?",
+      "answer": "Set stacked: true on the spec. stacked100: true normalises every category to 100 percent, and orientation: horizontal turns the bars sideways. Bars that name a stack group through series.stack pile within their group."
+    },
+    {
+      "question": "How do I show negative values?",
+      "answer": "Give the series negative numbers. The bars hang below the zero line, and a colors array on the series, one entry per category, colours them by sign."
+    },
+    {
+      "question": "How do I group the categories under a second label?",
+      "answer": "categoryGroups is a list of { label, span }: each group covers that many consecutive categories and is drawn as a second axis tier under them."
+    }
+  ]
+}

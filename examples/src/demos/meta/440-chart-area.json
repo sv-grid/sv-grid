@@ -1,0 +1,24 @@
+{
+  "description": "Area charts from one spec: stacked piles the channels, stackOffset wiggle and silhouette turn the pile into a streamgraph on a centred baseline, stacked100 normalises each month to a share, stack groups two independent piles on one chart so their totals can be compared, gradient fades each fill towards the baseline, and a range area draws the band between lowValues and values with the mean as a line over it. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte area chart",
+    "svelte stacked area chart",
+    "svelte streamgraph",
+    "svelte range area chart",
+    "svelte area chart gradient"
+  ],
+  "faq": [
+    {
+      "question": "How do I draw a streamgraph?",
+      "answer": "Set stacked: true and stackOffset: wiggle (or silhouette) on the spec. The pile is centred on its own baseline instead of sitting on zero; hide the value axis labels, since the offsets have no zero."
+    },
+    {
+      "question": "How do I draw a band between a low and a high?",
+      "answer": "Use type range-area with values as the high end and lowValues as the low end. Add a line series over it for the mean."
+    },
+    {
+      "question": "Can two stacks share one chart?",
+      "answer": "Yes. Give each series a stack name; series with the same name pile on each other, and each pile is drawn from the baseline on its own."
+    }
+  ]
+}

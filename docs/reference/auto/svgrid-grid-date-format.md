@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\datetime\date-format.ts`.
 
 ### `function tokenizeMask`
 
-Split a mask into an ordered list of token / literal parts. */
+Split a mask into an ordered list of token / literal parts.
 
 ```ts
 export function tokenizeMask(mask: string): Part[] {
@@ -52,7 +52,7 @@ export function tokenizeMask(mask: string): Part[] {
 
 ### `function formatDate`
 
-Render `date` per `mask` in `locale`. */
+Render `date` per `mask` in `locale`.
 
 ```ts
 export function formatDate(date: Date, mask: string, locale = 'en-US'): string {

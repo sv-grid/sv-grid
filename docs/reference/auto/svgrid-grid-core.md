@@ -27,7 +27,7 @@ export type Updater<T> = T | ((prev: T) => T)
 
 ### `type SortingState`
 
-Active sort clauses, outermost first. `desc: false` is ascending. */
+Active sort clauses, outermost first. `desc: false` is ascending.
 
 ```ts
 export type SortingState = Array<{ id: string; desc: boolean }>
@@ -45,7 +45,7 @@ export type ColumnFilter = { id: string; value: unknown; fn?: keyof typeof filte
 
 ### `type ColumnFiltersState`
 
-Every active column filter. A column with no entry here is unfiltered. */
+Every active column filter. A column with no entry here is unfiltered.
 
 ```ts
 export type ColumnFiltersState = Array<ColumnFilter>
@@ -53,7 +53,7 @@ export type ColumnFiltersState = Array<ColumnFilter>
 
 ### `type PaginationState`
 
-Current page position. `pageIndex` is 0-based, so page 1 is index 0. */
+Current page position. `pageIndex` is 0-based, so page 1 is index 0.
 
 ```ts
 export type PaginationState = { pageIndex: number; pageSize: number }
@@ -61,7 +61,7 @@ export type PaginationState = { pageIndex: number; pageSize: number }
 
 ### `type GroupingState`
 
-Column ids the rows are grouped by, outermost first. */
+Column ids the rows are grouped by, outermost first.
 
 ```ts
 export type GroupingState = Array<string>
@@ -69,7 +69,7 @@ export type GroupingState = Array<string>
 
 ### `type ExpandedState`
 
-Which rows are expanded, keyed by row id. Absent means collapsed. */
+Which rows are expanded, keyed by row id. Absent means collapsed.
 
 ```ts
 export type ExpandedState = Record<string, boolean>
@@ -77,7 +77,7 @@ export type ExpandedState = Record<string, boolean>
 
 ### `type RowSelectionState`
 
-Which rows are selected, keyed by row id. Absent means unselected. */
+Which rows are selected, keyed by row id. Absent means unselected.
 
 ```ts
 export type RowSelectionState = Record<string, boolean>
@@ -108,7 +108,7 @@ export type TableFeatures = Record<string, unknown>
 
 ### `type CellData`
 
-A cell's value. Unconstrained - a column can hold anything. */
+A cell's value. Unconstrained - a column can hold anything.
 
 ```ts
 export type CellData = unknown
@@ -116,7 +116,7 @@ export type CellData = unknown
 
 ### `type HeaderContext`
 
-What a column's `header` render function receives. */
+What a column's `header` render function receives.
 
 ```ts
 export type HeaderContext<TData extends RowData> = {
@@ -143,7 +143,7 @@ export type CellContext<TData extends RowData> = {
 
 ### `type CellSpanParams`
 
-Params passed to a column's `colSpan(...)` / `rowSpan(...)` callbacks. */
+Params passed to a column's `colSpan(...)` / `rowSpan(...)` callbacks.
 
 ```ts
 export type CellSpanParams<TData extends RowData = RowData> = {
@@ -160,7 +160,7 @@ export type CellSpanParams<TData extends RowData = RowData> = {
 
 ### `type EditorOptionSource`
 
-The raw option list a column's `editorOptions` can supply. */
+The raw option list a column's `editorOptions` can supply.
 
 ```ts
 export type EditorOptionSource = ReadonlyArray<
@@ -169,7 +169,7 @@ export type EditorOptionSource = ReadonlyArray<
 
 ### `type ValueParserParams`
 
-Params passed to a column's `valueParser(...)` on edit commit. */
+Params passed to a column's `valueParser(...)` on edit commit.
 
 ```ts
 export type ValueParserParams<TData extends RowData = RowData> = {
@@ -268,7 +268,7 @@ export type CellFormatter<TData extends RowData> = (context: {
 
 ### `type ColumnDefTemplate`
 
-A header or cell slot: a literal string, or a function returning renderable content. */
+A header or cell slot: a literal string, or a function returning renderable content.
 
 ```ts
 export type ColumnDefTemplate<TContext> = string | ((context: TContext) => unknown)
@@ -296,7 +296,7 @@ export type GroupAggregator<TData = any> =
 
 ### `function applyGroupAggregate`
 
-Apply a group aggregator over a bucket's leaf rows for one column. */
+Apply a group aggregator over a bucket's leaf rows for one column.
 
 ```ts
 export function applyGroupAggregate<TData extends RowData>(
@@ -675,7 +675,7 @@ export type GridColumnDef<TData extends RowData = RowData> = ColumnDef<TableFeat
 
 ### `type GridColumns`
 
-An array of {@link GridColumnDef} - what you pass to `<SvGrid columns={...}>`. */
+An array of {@link GridColumnDef} - what you pass to `<SvGrid columns={...}>`.
 
 ```ts
 export type GridColumns<TData extends RowData = RowData> = Array<GridColumnDef<TData>>
@@ -719,7 +719,7 @@ export type Header<TData extends RowData> = {
 
 ### `type HeaderGroup`
 
-One row of header cells. A grid with grouped columns has several, outermost first. */
+One row of header cells. A grid with grouped columns has several, outermost first.
 
 ```ts
 export type HeaderGroup<TData extends RowData> = {
@@ -730,7 +730,7 @@ export type HeaderGroup<TData extends RowData> = {
 
 ### `type Cell`
 
-One cell: the intersection of a {@link Row} and a {@link Column}. */
+One cell: the intersection of a {@link Row} and a {@link Column}.
 
 ```ts
 export type Cell<TData extends RowData> = {
@@ -771,7 +771,7 @@ export type Row<TData extends RowData> = {
 
 ### `type RowModel`
 
-The output of the row pipeline: the rows to display, in order. */
+The output of the row pipeline: the rows to display, in order.
 
 ```ts
 export type RowModel<TData extends RowData> = {
@@ -816,7 +816,7 @@ export const rowSortingFeature = { key: 'rowSortingFeature' }
 
 ### `const columnFilteringFeature`
 
-Per-column filtering. Injected by the `filterable` shortcut. */
+Per-column filtering. Injected by the `filterable` shortcut.
 
 ```ts
 export const columnFilteringFeature = { key: 'columnFilteringFeature' }
@@ -824,7 +824,7 @@ export const columnFilteringFeature = { key: 'columnFilteringFeature' }
 
 ### `const rowPaginationFeature`
 
-Paging of the row model. Injected by the `pageable` shortcut. */
+Paging of the row model. Injected by the `pageable` shortcut.
 
 ```ts
 export const rowPaginationFeature = { key: 'rowPaginationFeature' }
@@ -832,7 +832,7 @@ export const rowPaginationFeature = { key: 'rowPaginationFeature' }
 
 ### `const columnGroupingFeature`
 
-Row grouping with aggregation. Injected by the `groupable` shortcut. */
+Row grouping with aggregation. Injected by the `groupable` shortcut.
 
 ```ts
 export const columnGroupingFeature = { key: 'columnGroupingFeature' }
@@ -840,7 +840,7 @@ export const columnGroupingFeature = { key: 'columnGroupingFeature' }
 
 ### `const rowSelectionFeature`
 
-Row selection state (the checkbox column reads it). */
+Row selection state (the checkbox column reads it).
 
 ```ts
 export const rowSelectionFeature = { key: 'rowSelectionFeature' }
@@ -848,7 +848,7 @@ export const rowSelectionFeature = { key: 'rowSelectionFeature' }
 
 ### `const rowExpandingFeature`
 
-Expand / collapse, for tree rows and master-detail. */
+Expand / collapse, for tree rows and master-detail.
 
 ```ts
 export const rowExpandingFeature = { key: 'rowExpandingFeature' }
@@ -1894,7 +1894,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
 
 ### `function isFunction`
 
-Narrowing helper for the many options that accept a value or a function. */
+Narrowing helper for the many options that accept a value or a function.
 
 ```ts
 export function isFunction(value: unknown): value is (...args: Array<any>) => any {

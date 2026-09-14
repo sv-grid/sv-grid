@@ -1,8 +1,49 @@
 import { defineConfig, devices } from '@playwright/test'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+
+/**
+ * The port the website server runs on, and why it is not simply 5180.
+ *
+ * Playwright reuses whatever answers on the port, and a Vite dev server
+ * answers index.html for any path it does not know. So a server started by
+ * hand from website/ (`npm run dev`, which serves the site at "/") passes the
+ * readiness check, the hash-routed specs still work against it, and the
+ * path-routed ones (/sv-grid/compare, /sv-grid/docs/help/web-components/*,
+ * the /api runner's module import) fail together with nothing pointing at
+ * the server. That has been diagnosed from scratch more than once.
+ *
+ * So the config asks first (tests/e2e/lib/site-server-probe.mjs): a port
+ * with the site under /sv-grid/ is reused, a free port gets our own server,
+ * and a port with something else on it is skipped for the next one, with a
+ * line saying so. `SVGRID_E2E_PORT` pins a port outright, and the result is
+ * written back to it so the worker processes, which load this file again,
+ * inherit the decision rather than probing again. CI starts from nothing and
+ * never reuses, so it keeps 5180 without a probe.
+ */
+function websitePort(): number {
+  const pinned = Number(process.env.SVGRID_E2E_PORT)
+  if (pinned) return pinned
+  if (process.env.CI) return 5180
+  const probe = fileURLToPath(new URL('./tests/e2e/lib/site-server-probe.mjs', import.meta.url))
+  for (let port = 5180; port < 5190; port += 1) {
+    const state = spawnSync(process.execPath, [probe, String(port)], { encoding: 'utf8', windowsHide: true }).stdout.trim()
+    if (state === 'other') {
+      console.warn(`[e2e] :${port} serves something other than the site under /sv-grid/ (a hand-started website dev server?), trying :${port + 1}`)
+      continue
+    }
+    process.env.SVGRID_E2E_PORT = String(port)
+    return port
+  }
+  throw new Error('[e2e] no port between 5180 and 5189 is free or serves the site under /sv-grid/; set SVGRID_E2E_PORT')
+}
+const WEBSITE_PORT = websitePort()
 
 /**
  * Playwright config for the sv-grid E2E suite. Tests live in `tests/e2e/`
- * and target the website's demo routes (vite dev server on port 5180).
+ * and target the website's demo routes (vite dev server on port 5180, or
+ * the next free one when 5180 is taken by a server with another base; see
+ * `websitePort` below).
  *
  * Coverage focus: things jsdom CAN'T do reliably:
  *   - Real drag-and-drop pointer sequences (column reorder, row reorder)
@@ -26,7 +67,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
 
   use: {
-    baseURL: 'http://localhost:5180',
+    baseURL: `http://localhost:${WEBSITE_PORT}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -89,9 +130,11 @@ export default defineConfig({
     // WEBSITE_TOKEN, the same way the unit job already did, so these specs do
     // gate. A fork PR without the secret cannot run them - accepted, and the
     // same trade the unit job makes.
-    command: 'pnpm --filter svgrid-website dev',
+    // `exec vite` rather than the dev script so the port can be passed; the
+    // script is `vite` with nothing else.
+    command: `pnpm --filter svgrid-website exec vite --port ${WEBSITE_PORT} --strictPort`,
     env: { SVGRID_SITE_BASE: '/sv-grid/' },
-    url: 'http://localhost:5180/sv-grid/',
+    url: `http://localhost:${WEBSITE_PORT}/sv-grid/`,
     timeout: 60_000,
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',

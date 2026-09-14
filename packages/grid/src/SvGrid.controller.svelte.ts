@@ -25,7 +25,13 @@ import {
     type TableFeatures,
     type ChartType,
     type ChartSpec,
+    type ChartReducer,
+    type ChartTimeBucket,
     type ChartValueFormat,
+    type ChartZoomWindow,
+    type ChartPanelIndicator,
+    type ChartFormatState,
+    type OhlcColumns,
   } from "./index";
 import {
   createRowScrollScaling,
@@ -373,7 +379,12 @@ export function createSvGridController<
   let pendingScrollTop = 0;
   let pendingScrollLeft = 0;
   let scrollSyncRaf: number | null = null;
-  let selectionRange = $state<SelectionRange>({ anchor: null, focus: null });
+  // `$state.raw`: every writer replaces the whole object, and every rendered
+  // cell's selection derived reads it. Under a deep proxy each of those ~300
+  // deriveds tracked the nested anchor/focus row/col signals separately (six
+  // dependencies per cell to mark and re-check on every arrow key) where one
+  // will do.
+  let selectionRange = $state.raw<SelectionRange>({ anchor: null, focus: null });
   // Extra committed ranges for multi-range (Ctrl+drag) selection. The
   // `selectionRange` above is always the ACTIVE range being manipulated; these
   // are the finished ones. Full selection = these + the active range.
@@ -418,7 +429,12 @@ export function createSvGridController<
   // Full-row editing: the row currently in whole-row edit + its per-column
   // draft (keyed by column id). Null when not in full-row mode.
   let fullRowEdit = $state<{ rowId: string; draft: Record<string, unknown> } | null>(null);
-  let editedCellValues = $state<Record<string, unknown>>({});
+  // `$state.raw`, not `$state`: every writer replaces the whole object, and
+  // the render path asks `key in editedCellValues` once per rendered cell. On
+  // a deep proxy that `in` check, run inside an effect, creates and keeps a
+  // per-key signal for every cell that ever scrolls into view - a leak that
+  // grows with rows x columns and a Map lookup per cell per render.
+  let editedCellValues = $state.raw<Record<string, unknown>>({});
 
   // ---- Undo / redo (history + pointer model) ---------------------------
   // VSCode-style: one ordered history array, plus a pointer to the index
@@ -570,26 +586,54 @@ export function createSvGridController<
     const hb = column.columnDef?.hideBelow;
     return hb != null && viewportWidth > 0 && viewportWidth < hb;
   }
-  const scrollMetrics = $derived.by(function scrollMetrics_d() {
+  /**
+   * Live scroll geometry of the scroll container (feeds the custom
+   * scrollbars and `hasVerticalOverflow`).
+   *
+   * Measured from a plain `$effect`, NOT inside a `$derived`, on purpose.
+   * `scrollTop` / `scrollHeight` / `scrollWidth` reads force a synchronous
+   * layout whenever the tree is dirty. As a derived this was pulled by the
+   * shell's `class:sv-grid-has-vscroll` at the very start of every scroll
+   * flush - before the recycled rows had been rewritten - so it forced a
+   * full table layout that the row writes then invalidated again, and the
+   * browser laid the table out a second time before painting. Two table
+   * layouts per arrow key on a large grid. An effect runs after the flush
+   * has written the DOM, so the reads below land on a tree the browser has
+   * to lay out anyway, and the pre-paint pass is incremental.
+   *
+   * The version reads keep the same triggers the derived had: a scroll
+   * tick, a shell resize, and either virtualizer's window/size change (data
+   * load, row / column count change) - without those the scrollbar kept a
+   * stale `content-size` ≈ 0, its hidden-check tripped, it set
+   * `pointer-events: none`, and the user could not drag it.
+   */
+  let scrollMetrics = $state.raw({
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollHeight: 0,
+    scrollWidth: 0,
+  });
+  $effect(function scrollMetrics_e() {
     scrollVersion;
     viewportVersion;
-    // Track the virtualizers' versions too so when data loads or row /
-    // column counts change, scrollMetrics re-reads the DOM's grown
-    // scrollHeight / scrollWidth. Without these deps the scrollbar
-    // receives a stale `content-size` ≈ 0, its hidden-check trips, it
-    // sets `pointer-events: none`, and the user can't drag it. The
-    // identifiers below are declared further down - derived callbacks
-    // run lazily, so by the time this fires they're in scope.
     virtualizer.version;
     columnVirtualizerVersion;
-    return {
-      scrollTop: scrollContainer?.scrollTop ?? 0,
-      scrollLeft: scrollContainer?.scrollLeft ?? 0,
-      clientHeight: scrollContainer?.clientHeight ?? 0,
-      clientWidth: scrollContainer?.clientWidth ?? 0,
-      scrollHeight: scrollContainer?.scrollHeight ?? 0,
-      scrollWidth: scrollContainer?.scrollWidth ?? 0,
-    };
+    const el = scrollContainer;
+    if (!el) return;
+    const scrollTop = el.scrollTop;
+    const scrollLeft = el.scrollLeft;
+    const scrollHeight = el.scrollHeight;
+    const scrollWidth = el.scrollWidth;
+    const prev = untrack(() => scrollMetrics);
+    if (
+      prev.scrollTop === scrollTop &&
+      prev.scrollLeft === scrollLeft &&
+      prev.scrollHeight === scrollHeight &&
+      prev.scrollWidth === scrollWidth
+    ) {
+      return;
+    }
+    scrollMetrics = { scrollTop, scrollLeft, scrollHeight, scrollWidth };
   });
   /** Vertical overflow from the virtualizer's authoritative total size,
    *  NOT from `scrollMetrics.scrollHeight` alone. Reading DOM dimensions
@@ -1697,8 +1741,14 @@ export function createSvGridController<
   const paginationPageSize = $derived(
     externalPaginationEnabled ? (props.pageSize ?? 10) : paginationState.pageSize,
   );
+  // Tracks `dataStateVersion`, which the store subscription bumps when the
+  // rowSelection slice (among others) changes - NOT the catch-all
+  // `gridStateVersion`, which also bumps on every active-cell move. Every
+  // rendered row and cell reads this (`sv-grid-row-selected`, `aria-selected`),
+  // so on the catch-all each arrow key re-marked and re-checked ~400 effects
+  // to find the same object.
   const rowSelectionState = $derived.by(function rowSelectionState_d() {
-    gridStateVersion;
+    dataStateVersion;
     return grid.getState().rowSelection ?? {};
   });
 
@@ -2017,6 +2067,7 @@ export function createSvGridController<
   let chartAiHandler = $state<
     ((prompt: string) => Promise<Record<string, unknown> | null>) | null
   >(null);
+  let chartExplainHandler = $state<(() => Promise<{ summary: string; insights: string[] } | null>) | null>(null);
 
   // Multiple charts, each an independently-configured working set switched by a
   // tab strip. Pickers / spec read the ACTIVE chart.
@@ -2024,7 +2075,7 @@ export function createSvGridController<
     id: string;
     title: string;
     type: ChartType;
-    reduce: "sum" | "avg" | "count";
+    reduce: ChartReducer;
     dimensionId: string | null;
     measureId: string | null;
     seriesId: string | null | undefined;
@@ -2045,8 +2096,28 @@ export function createSvGridController<
     logScale: boolean | null;
     timeAxis: boolean | null;
     valueFormat: ChartValueFormat | null;
+    /** Calendar unit a date dimension is grouped by. Null = exact values. */
+    bucket: ChartTimeBucket | null;
+    /** Histogram bin count. Null = Sturges' rule. */
+    bins: number | null;
+    funnelShape: "trapezoid" | "pyramid" | "cone" | null;
+    candleStyle: "classic" | "hollow" | "heikin-ashi" | null;
+    /** The chart's zoom window (category index range), kept per tab. */
+    zoom: ChartZoomWindow | null;
+    /** Candlestick / OHLC: which columns hold the prices (column ids). Null
+     *  guesses from the column names. */
+    ohlc: { open: string | null; high: string | null; low: string | null; close: string | null; volume: string | null } | null;
+    /** Indicators: panes under the price (volume, rsi, macd, stochastic,
+     *  atr, obv) and overlays on it (sma, ema, bb, vwap). */
+    indicators: ChartPanelIndicator[];
+    /** The builder's Format tab: titles, axes, legend, per-series style. */
+    format: ChartFormatState | null;
+    /** An unlinked chart: the spec it was frozen with and when. */
+    frozen: { spec: ChartSpec; at: string } | null;
   };
   let chartSeq = 0;
+  const isZoomWindow = (v: unknown): v is ChartZoomWindow =>
+    !!v && typeof v === "object" && Number.isInteger((v as ChartZoomWindow).i0) && Number.isInteger((v as ChartZoomWindow).i1);
   const makeChart = (title: string): ChartTabState => ({
     id: `chart-${chartSeq++}`,
     title,
@@ -2067,10 +2138,49 @@ export function createSvGridController<
     logScale: null,
     timeAxis: null,
     valueFormat: null,
+    bucket: null,
+    bins: null,
+    funnelShape: null,
+    candleStyle: null,
+    zoom: null,
+    ohlc: null,
+    indicators: [],
+    format: null,
+    frozen: null,
   });
+  // The saved view (`GridState.charts[i]`) names four fields differently
+  // from the tab; everything else is the tab's own key.
+  const TAB_ALIASES: Record<string, string> = { dimensionId: "dimension", measureId: "measure", seriesId: "series", measure2Id: "measure2" };
+  /** A tab as the saved view carries it, without the runtime id. */
+  const tabToState = (c: ChartTabState): Record<string, unknown> => {
+    const out: Record<string, unknown> = {};
+    for (const k in c) if (k !== "id") out[TAB_ALIASES[k] ?? k] = k === "seriesId" ? (c.seriesId ?? null) : c[k as keyof ChartTabState];
+    return out;
+  };
+  /** A tab from a saved-view snapshot: a fresh tab with every known field
+   *  the snapshot carries, and the shape-checked ones dropped when malformed. */
+  const tabFromState = (c: Record<string, unknown>, i: number): ChartTabState => {
+    const t = makeChart(typeof c.title === "string" ? c.title : `Chart ${i + 1}`) as unknown as Record<string, unknown>;
+    for (const k in t) {
+      const v = c[TAB_ALIASES[k] ?? k];
+      if (k !== "id" && k !== "title" && v !== undefined) t[k] = v;
+    }
+    if (!isZoomWindow(t.zoom)) t.zoom = null;
+    if (!Array.isArray(t.indicators)) t.indicators = [];
+    if (typeof t.bins !== "number") t.bins = null;
+    if (!t.frozen || typeof t.frozen !== "object" || !(t.frozen as { spec?: unknown }).spec) t.frozen = null;
+    return t as unknown as ChartTabState;
+  };
   // svelte-ignore state_referenced_locally
   let charts = $state<ChartTabState[]>([makeChart("Chart 1")]);
   let activeChartIndex = $state(0);
+  /**
+   * Named chart configurations the user keeps: a tab's whole state under a
+   * name, applied to any tab later. Part of the saved view (`GridState.savedCharts`)
+   * only when there is one, so existing snapshots do not change.
+   */
+  type SavedChartEntry = { name: string; savedAt: string; tab: Record<string, unknown> };
+  let savedCharts = $state<SavedChartEntry[]>([]);
   const activeChart = $derived(
     (charts[Math.min(activeChartIndex, charts.length - 1)] ?? charts[0])!,
   );
@@ -2083,6 +2193,10 @@ export function createSvGridController<
   const chartDataLabels = $derived(activeChart.dataLabels);
   const chartLogScale = $derived(activeChart.logScale);
   const chartTimeAxis = $derived(activeChart.timeAxis);
+  const chartBucket = $derived(activeChart.bucket);
+  const chartBins = $derived(activeChart.bins);
+  const chartFunnelShape = $derived(activeChart.funnelShape);
+  const chartCandleStyle = $derived(activeChart.candleStyle);
   const chartValueFormat = $derived(activeChart.valueFormat);
 
   const asMeasureList = (m: string | string[] | undefined): string[] =>
@@ -2198,9 +2312,13 @@ export function createSvGridController<
     const col = allColumns.find((c) => c.id === effectiveChartMeasureId);
     const label = col ? columnLabel(col) : "";
     if (!label) return undefined;
-    return chartReduce === "count"
-      ? "Count"
-      : `${chartReduce === "avg" ? "Average" : "Sum"} of ${label}`;
+    const word: Record<string, string> = {
+      sum: "Sum", avg: "Average", min: "Min", max: "Max", median: "Median",
+      first: "First", last: "Last", countDistinct: "Distinct",
+    };
+    if (chartReduce === "count") return "Count";
+    const w = word[chartReduce] ?? (chartReduce.startsWith("p") ? `P${chartReduce.slice(1)}` : "Sum");
+    return `${w} of ${label}`;
   });
   /**
    * Does this column hold dates? Declared type first, then a probe of the
@@ -2223,6 +2341,41 @@ export function createSvGridController<
   const chartDimensionIsDate = $derived.by<boolean>(() =>
     columnIsDate(allColumns.find((c) => c.id === effectiveChartDimensionId)),
   );
+  // The chart derivation engine (rowsToChartSpec) is loaded lazily the first time
+  // charting is enabled, keeping chart.ts (~11 KB gzip) out of the base <SvGrid>
+  // bundle - it rides in the same lazy chunk as the chart panel. `chartSpec` stays
+  // null until it resolves, a tick after the panel itself starts loading (which it
+  // already does). The `getAggregate` server path uses the local bucketsToSpec and
+  // does not need the engine.
+  // The whole module, not just `rowsToChartSpec`: the panel can now reach
+  // every chart type, and the ones that do not read a categories-by-series
+  // grid (scatter, gauge, treemap, calendar, sankey) need their own builders
+  // from the same lazy chunk. Same `import()`, same boundary.
+  let chartEngine = $state<typeof import("./chart") | null>(null);
+  $effect(() => {
+    if (chartingEnabled && !chartEngine)
+      import("./chart").then((m) => (chartEngine = m));
+  });
+
+  const chartIsOhlc = $derived(chartType === "candlestick" || chartType === "ohlc");
+  /** The price columns: what the reader picked, else the engine's guess
+   *  from the column names (nothing until the engine chunk has loaded). */
+  const effectiveChartOhlc = $derived<OhlcColumns>(
+    chartEngine
+      ? chartEngine.guessOhlcColumns(chartableColumns.measures, activeChart.ohlc)
+      : { open: null, high: null, low: null, close: null, volume: null, ...activeChart.ohlc },
+  );
+  /** The date column a candlestick reads: the picked dimension when it is a
+   *  date, else the first date column. */
+  const effectiveChartOhlcDateId = $derived(
+    chartDimensionIsDate ? effectiveChartDimensionId : (chartableColumns.dates[0]?.id ?? null),
+  );
+  const chartIndicators = $derived(activeChart.indicators);
+  /** The panes under a price chart and the overlay on it, split by the engine. */
+  const chartIndicatorSplit = $derived(
+    chartIsOhlc && chartEngine ? chartEngine.splitPanelIndicators(chartIndicators) : { panes: [], overlay: null },
+  );
+  const chartIndicatorPanes = $derived(chartIndicatorSplit.panes);
   const chartRows = $derived.by<TData[]>(() => {
     const rects = getSelectionRects();
     const pushLeaf = (out: TData[], row: Row<TData> | undefined) => {
@@ -2272,52 +2425,6 @@ export function createSvGridController<
         if (seq === chartReqSeq) chartServerBuckets = [];
       });
   });
-  const bucketsToSpec = (
-    buckets: ReadonlyArray<{ category: string; series?: string; value: number }>,
-    type: ChartType,
-    hasSeries: boolean,
-  ): ChartSpec => {
-    const cats: string[] = [];
-    const catIdx = new Map<string, number>();
-    const ensureCat = (c: string) => {
-      let i = catIdx.get(c);
-      if (i === undefined) { i = cats.length; catIdx.set(c, i); cats.push(c); }
-      return i;
-    };
-    const seriesMap = new Map<string, number[]>();
-    for (const b of buckets) {
-      const ci = ensureCat(b.category);
-      const key = hasSeries ? (b.series ?? "") : "value";
-      let arr = seriesMap.get(key);
-      if (!arr) { arr = []; seriesMap.set(key, arr); }
-      arr[ci] = (arr[ci] ?? 0) + b.value;
-    }
-    return {
-      type,
-      categories: cats,
-      series: [...seriesMap.entries()].map(([label, values]) => ({
-        label,
-        values: cats.map((_, i) => values[i] ?? 0),
-      })),
-    };
-  };
-
-  // The chart derivation engine (rowsToChartSpec) is loaded lazily the first time
-  // charting is enabled, keeping chart.ts (~11 KB gzip) out of the base <SvGrid>
-  // bundle - it rides in the same lazy chunk as the chart panel. `chartSpec` stays
-  // null until it resolves, a tick after the panel itself starts loading (which it
-  // already does). The `getAggregate` server path uses the local bucketsToSpec and
-  // does not need the engine.
-  // The whole module, not just `rowsToChartSpec`: the panel can now reach
-  // every chart type, and the ones that do not read a categories-by-series
-  // grid (scatter, gauge, treemap, calendar, sankey) need their own builders
-  // from the same lazy chunk. Same `import()`, same boundary.
-  let chartEngine = $state<typeof import("./chart") | null>(null);
-  $effect(() => {
-    if (chartingEnabled && !chartEngine)
-      import("./chart").then((m) => (chartEngine = m));
-  });
-
   /** Put the chart's numbers in the same locale as the grid's. A grid that set
    *  `localization.locale` has already said which locale its data is in, and a
    *  chart of that data reading in a different one is a bug nobody would think
@@ -2329,27 +2436,37 @@ export function createSvGridController<
     if (chartCfg?.currency) spec.currency = chartCfg.currency;
   };
 
-  const chartSpec = $derived.by<ChartSpec | null>(() => {
+  const chartSpecLive = $derived.by<ChartSpec | null>(() => {
     if (!chartingEnabled || !chartCfg) return null;
     if (chartCfg.getAggregate) {
-      if (!chartServerBuckets) return null;
-      const spec = bucketsToSpec(chartServerBuckets, chartType, !!effectiveChartSeriesId);
+      if (!chartServerBuckets || !chartEngine) return null;
+      const spec = chartEngine.bucketsToChartSpec(chartServerBuckets, chartType, !!effectiveChartSeriesId);
       if (effectiveChartStacked || chartCfg.stacked100) spec.stacked = true;
       if (chartCfg.stacked100) spec.stacked100 = true;
       if (chartCfg.palette) spec.palette = chartCfg.palette;
       if (effectiveChartTimeAxis) spec.xType = "time";
+    else if (chartBucket && chartDimensionIsDate) spec.xType = "ordinal-time";
       if (effectiveChartLogScale) spec.yScale = "log";
       if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
       applyChartLocale(spec);
       return spec;
     }
     if (chartCfg.buildSpec) return chartCfg.buildSpec(chartRows) ?? null;
-
-    const category = fieldOf(effectiveChartDimensionId);
-    const values = effectiveChartMeasureIds.map((id) => fieldOf(id)).filter((f): f is string => !!f);
-    if (!category || !values.length) return null;
     // Engine not loaded yet (lazy): render nothing until it resolves.
     if (!chartEngine) return null;
+    // Pivot mode: the pivot on screen is the chart, rows as categories and
+    // columns as series; the pickers have nothing to choose.
+    let spec: ChartSpec;
+    if (pivotResult) {
+      spec = chartEngine.pivotResultToChartSpec(pivotResult, {
+        type: chartType, stacked: effectiveChartStacked, stacked100: effectiveChartStacked100,
+        measures: pivotConfig!.values,
+        ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
+      });
+    } else {
+    const category = fieldOf(effectiveChartDimensionId);
+    const values = effectiveChartMeasureIds.map((id) => fieldOf(id)).filter((f): f is string => !!f);
+    if (!chartIsOhlc && (!category || !values.length)) return null;
     const seriesField = fieldOf(effectiveChartSeriesId);
     const rowsForChart = chartRows as Array<Record<string, unknown>>;
 
@@ -2360,26 +2477,47 @@ export function createSvGridController<
     // base bundle, which every grid pays for whether or not it ever charts.
     // Everything else falls through to the aggregation below and is reshaped
     // afterwards, so reduce / sort / topN / "Other" keep working for all of it.
+    const ohlcOpts = chartIsOhlc
+      ? chartEngine.ohlcDirectOptions(fieldOf, effectiveChartOhlcDateId, effectiveChartOhlc, { bucket: chartBucket, candleStyle: chartCandleStyle })
+      : null;
     const direct = chartEngine.rowsToDirectSpec(chartType, rowsForChart, {
-      category: category as string,
+      ...(ohlcOpts ?? {}),
+      category: ohlcOpts?.category ?? (category as string),
       ...(values[0] ? { value: values[0] } : {}),
       ...(fieldOf(effectiveChartMeasure2Id) ? { value2: fieldOf(effectiveChartMeasure2Id)! } : {}),
       ...(seriesField ? { series: seriesField } : {}),
       reduce: chartReduce,
+      ...(chartBins ? { bins: chartBins } : {}),
       ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
     });
-    if (direct) return direct;
+    if (direct) {
+      if (chartIsOhlc) {
+        // Overlays ride on the price series; the panes are composed by the
+        // panel body from `chartIndicatorPanes`.
+        const overlay = chartIndicatorSplit.overlay;
+        if (overlay && direct.series[0]) direct.series[0].overlay = overlay;
+        if (effectiveChartValueFormat) direct.valueFormat = effectiveChartValueFormat;
+        if (effectiveChartLogScale) direct.yScale = "log";
+        applyChartLocale(direct);
+      }
+      return direct;
+    }
     // A direct type that could not build (scatter with no Y picked yet, for
     // instance) must not fall through to the bar-chart path and draw the wrong
     // chart - it renders the panel's empty state instead.
-    if (chartType === "scatter" || chartType === "gauge" || chartType === "boxplot") return null;
+    if (
+      chartType === "scatter" || chartType === "gauge" || chartType === "boxplot" ||
+      chartType === "histogram" || chartType === "range-bar" || chartType === "range-area" ||
+      chartType === "dumbbell" || chartType === "bullet" || chartIsOhlc
+    ) return null;
 
-    const spec = chartEngine.rowsToChartSpec<Record<string, unknown>>(rowsForChart, {
+    spec = chartEngine.rowsToChartSpec<Record<string, unknown>>(rowsForChart, {
       type: chartType,
       category: category as string,
       value: values.length === 1 ? values[0]! : values,
       ...(seriesField ? { series: seriesField } : {}),
       reduce: chartReduce,
+      ...(chartBucket && chartDimensionIsDate ? { bucket: chartBucket } : {}),
       stacked: effectiveChartStacked || effectiveChartStacked100,
       stacked100: effectiveChartStacked100,
       ...(effectiveChartPalette ? { palette: effectiveChartPalette } : {}),
@@ -2388,10 +2526,16 @@ export function createSvGridController<
       ...(chartCfg.sort ? { sort: chartCfg.sort } : {}),
     });
 
+    }
     // Reshape the aggregated grid into whatever this type actually reads.
     // These run AFTER the aggregation so grouping, reduce, sort, topN and the
     // "Other" bucket apply to them exactly as they do to a bar chart.
-    if (chartType === "treemap") spec.treemap = chartEngine.specToTreemap(spec);
+    if (chartType === "treemap" || chartType === "sunburst") spec.treemap = chartEngine.specToTreemap(spec);
+    else if (chartType === "chord") {
+      const flow = chartEngine.specToSankey(spec);
+      spec.sankeyNodes = flow.nodes;
+      spec.sankeyLinks = flow.links;
+    }
     else if (chartType === "calendar") spec.calendarValues = chartEngine.specToCalendar(spec);
     else if (chartType === "sankey") {
       const flow = chartEngine.specToSankey(spec);
@@ -2413,6 +2557,11 @@ export function createSvGridController<
     }
     if (chartCfg.annotations) spec.annotations = chartCfg.annotations;
     if (chartCfg.patternFallback) spec.patternFallback = true;
+    if (chartFunnelShape && chartType === "funnel") spec.funnelShape = chartFunnelShape;
+    if (chartCandleStyle && (chartType === "candlestick" || chartType === "ohlc")) spec.candleStyle = chartCandleStyle;
+    // A stream is a stacked area on a wiggle baseline; the picker's Stacked
+    // box has nothing to add, so the offset is applied here outright.
+    if (chartType === "stream") { spec.stacked = true; spec.stackOffset = "wiggle"; }
     const refLines = [...(chartCfg.referenceLines ?? [])];
     if (chartCfg.averageLine && spec.series[0]?.values.length) {
       const vals = spec.series[0].values;
@@ -2421,7 +2570,10 @@ export function createSvGridController<
     }
     if (refLines.length) spec.referenceLines = refLines;
     for (const s of spec.series) {
-      if (chartCfg.trend) s.overlay = chartCfg.trend === "linear" ? "linear" : `${chartCfg.trend}:7`;
+      if (chartCfg.trend) {
+        const t = chartCfg.trend;
+        s.overlay = t === "sma" || t === "ema" ? `${t}:7` : t === "poly" ? "poly:2" : t;
+      }
       if (chartCfg.smooth) s.smooth = true;
       if (chartCfg.seriesTypes?.[s.label]) s.type = chartCfg.seriesTypes[s.label];
       if (chartCfg.seriesAxes?.[s.label]) s.axis = chartCfg.seriesAxes[s.label];
@@ -2429,6 +2581,43 @@ export function createSvGridController<
     return spec;
   });
 
+  /**
+   * What the panel renders: an unlinked chart's frozen snapshot, else the live
+   * derivation with the builder's format applied. The format runs through
+   * the lazy engine so its code stays out of the base bundle.
+   */
+  const chartSpec = $derived.by<ChartSpec | null>(() => {
+    if (activeChart.frozen) return activeChart.frozen.spec;
+    const live = chartSpecLive;
+    if (!live || !activeChart.format || !chartEngine) return live;
+    return chartEngine.applyChartFormat(live, activeChart.format);
+  });
+  let announcedFirstChart = false;
+  $effect(() => {
+    if (!chartPanelOpen || announcedFirstChart || !chartCfg?.onChartCreated) return;
+    announcedFirstChart = true;
+    const c = charts[0]!;
+    untrack(() => chartCfg?.onChartCreated?.({ index: 0, title: c.title, type: c.type, spec: null }));
+  });
+  // Lifecycle: one `onChartChanged` per burst of spec changes.
+  let chartChangeTimer: ReturnType<typeof setTimeout> | null = null;
+  $effect(() => {
+    const cb = chartCfg?.onChartChanged;
+    const spec = chartSpec;
+    const index = activeChartIndex;
+    if (!cb) return;
+    untrack(() => {
+      if (chartChangeTimer) clearTimeout(chartChangeTimer);
+      chartChangeTimer = setTimeout(() => {
+        chartChangeTimer = null;
+        const c = charts[index] ?? activeChart;
+        cb({ index, title: c.title, type: c.type, spec });
+      }, 150);
+    });
+    return () => {
+      if (chartChangeTimer) { clearTimeout(chartChangeTimer); chartChangeTimer = null; }
+    };
+  });
   /**
    * Can a click on this chart be turned back into a grid filter?
    *
@@ -2438,12 +2627,19 @@ export function createSvGridController<
    * at all), or a scatter (the mark carries a point label, not a group).
    */
   const chartCrossFilterable = $derived(
-    chartType !== "sankey" && chartType !== "gauge" && chartType !== "scatter",
+    chartType !== "sankey" && chartType !== "gauge" && chartType !== "scatter" &&
+      // A chord's arcs are both ends of a flow, a sunburst's are a hierarchy
+      // and a histogram's are bins: none maps a click back to one dimension value.
+      chartType !== "chord" && chartType !== "sunburst" && chartType !== "histogram",
   );
 
+  /** The column a chart click filters: the picked dimension, or in pivot mode the innermost row dimension when it is a grid column. */
+  const chartFilterDimId = $derived(
+    pivotResult ? (chartEngine?.pivotFilterColumn(pivotConfig!.rows, chartableColumns.dims, fieldOf) ?? null) : effectiveChartDimensionId,
+  );
   function applyChartCrossFilter(category: string) {
     if (!chartCrossFilterable) return;
-    const dimId = effectiveChartDimensionId;
+    const dimId = chartFilterDimId;
     if (!dimId) return;
     const existing = valueFilters[dimId];
     const next = new Set(existing && existing.has(category) ? existing : []);
@@ -2452,7 +2648,7 @@ export function createSvGridController<
     valueFilters = { ...valueFilters, [dimId]: next };
   }
   function clearChartCrossFilter() {
-    const dimId = effectiveChartDimensionId;
+    const dimId = chartFilterDimId;
     if (!dimId) return;
     const next = { ...valueFilters };
     delete next[dimId];
@@ -3056,11 +3252,19 @@ export function createSvGridController<
   function measureRowHeight(node: HTMLElement, index: number) {
     let current = index;
     let stop: (() => void) | null = null;
-    const measure = () => reportRowHeight(current, node.getBoundingClientRect().height);
+    // Read the rect only under autoRowHeight. `getBoundingClientRect` forces a
+    // synchronous layout, and the virtualizer's slot keys hand every rendered
+    // <tr> a new index on each one-row scroll, so measuring unconditionally
+    // meant ~30 forced layouts per arrow key on a fixed-height grid whose
+    // measurement `reportRowHeight` then threw away.
+    const measure = () => {
+      if (!autoRowHeightOn) return;
+      reportRowHeight(current, node.getBoundingClientRect().height);
+    };
     const attach = () => {
       stop?.();
       stop = autoRowHeightOn ? observeSizeRaf(node, measure) : null;
-      if (autoRowHeightOn) measure();
+      measure();
     };
     attach();
     return {
@@ -3243,8 +3447,11 @@ export function createSvGridController<
 
 
 
+  // Depends on `allRows` and `rowSelectionState` only. It used to read the
+  // catch-all `gridStateVersion` too, which made every arrow key walk all the
+  // rows (10k iterations on the large-dataset demo, 100k on its top tier) to
+  // recount a selection that had not changed.
   const headerSelectionState = $derived.by(function headerSelectionState_d() {
-    gridStateVersion;
     const selectable = allRows.filter((row) => !isGroupRow(row));
     if (!selectable.length) return "none";
     let selected = 0;
@@ -3873,6 +4080,7 @@ export function createSvGridController<
     get moveCellsEffective() { return moveCellsEffective; },
     get flushScheduledScrollSync() { return flushScheduledScrollSync; },
     get scheduleScrollSync() { return scheduleScrollSync; },
+    get syncScrollNow() { return syncScrollNow; },
     get internalData() { return internalData; },
     set internalData(v) { internalData = v as never; },
     get internalColumns() { return internalColumns; },
@@ -3976,6 +4184,8 @@ export function createSvGridController<
     get moveColumnInPanel() { return moveColumnInPanel; },
     // ---- Localized chrome strings ----
     get messages() { return gridMessages; },
+    /** The raw `localization.text` map, for the lazy chart panel's own strings. */
+    get localizationText() { return props.localization?.text; },
     // ---- In-grid pivot mode ----
     get pivotConfig() { return pivotConfig; },
     get pivotActive() { return pivotActive; },
@@ -4008,6 +4218,32 @@ export function createSvGridController<
     set chartLogScale(v) { activeChart.logScale = v as never; },
     get chartTimeAxis() { return effectiveChartTimeAxis; },
     set chartTimeAxis(v) { activeChart.timeAxis = v as never; },
+    get chartBucket() { return chartBucket; },
+    set chartBucket(v) { activeChart.bucket = v as never; },
+    get chartBins() { return chartBins; },
+    set chartBins(v) { activeChart.bins = v as never; },
+    get chartFunnelShape() { return chartFunnelShape; },
+    set chartFunnelShape(v) { activeChart.funnelShape = v as never; },
+    get chartCandleStyle() { return chartCandleStyle; },
+    set chartCandleStyle(v) { activeChart.candleStyle = v as never; },
+    get chartFormat() { return activeChart.format; },
+    set chartFormat(v) { activeChart.format = v as never; },
+    get chartFrozen() { return activeChart.frozen; },
+    get chartIsOhlc() { return chartIsOhlc; },
+    get chartOhlc() { return effectiveChartOhlc; },
+    set chartOhlc(v) { activeChart.ohlc = v as never; },
+    get chartOhlcDateId() { return effectiveChartOhlcDateId; },
+    get chartIndicators() { return chartIndicators; },
+    set chartIndicators(v) { activeChart.indicators = v as never; },
+    get chartIndicatorPanes() { return chartIndicatorPanes; },
+    get chartZoom() { return activeChart.zoom; },
+    // The panel keeps one chart component across tabs, so "tabs share a
+    // window" is simply every tab carrying the same window: a zoom on one is
+    // written to all, and switching tabs hands the component the same value.
+    set chartZoom(v) {
+      if (chartCfg?.syncTabs) for (const c of charts) c.zoom = v as never;
+      else activeChart.zoom = v as never;
+    },
     get chartValueFormat() { return effectiveChartValueFormat ?? "number"; },
     set chartValueFormat(v) { activeChart.valueFormat = v as never; },
     get chartDimensionIsDate() { return chartDimensionIsDate; },
@@ -4028,8 +4264,21 @@ export function createSvGridController<
     get activeChartIndex() { return Math.min(activeChartIndex, charts.length - 1); },
     set activeChartIndex(v) { activeChartIndex = Math.max(0, Math.min(charts.length - 1, v as number)); },
     addChart() {
-      charts = [...charts, makeChart(`Chart ${charts.length + 1}`)];
+      const next = makeChart(`Chart ${charts.length + 1}`);
+      if (chartCfg?.syncTabs) next.zoom = activeChart.zoom;
+      charts = [...charts, next];
       activeChartIndex = charts.length - 1;
+      chartCfg?.onChartCreated?.({ index: activeChartIndex, title: next.title, type: next.type, spec: null });
+    },
+    /** Unlink the active chart from the grid: it keeps the spec it has now. */
+    freezeChart() {
+      const spec = chartSpec;
+      if (!spec) return;
+      activeChart.frozen = { spec: JSON.parse(JSON.stringify(spec)) as ChartSpec, at: new Date().toISOString() };
+    },
+    /** Link the active chart back to the grid's rows. */
+    unfreezeChart() {
+      activeChart.frozen = null;
     },
     removeChart(index?: number) {
       if (charts.length <= 1) return;
@@ -4042,47 +4291,38 @@ export function createSvGridController<
       if (c) c.title = title;
     },
     getChartsState() {
-      return charts.map((c) => ({
-        title: c.title,
-        type: c.type,
-        dimension: c.dimensionId,
-        series: c.seriesId ?? null,
-        measure: c.measureId,
-        measure2: c.measure2Id,
-        orientation: c.orientation,
-        stacked100: c.stacked100,
-        donut: c.donut,
-        palette: c.palette,
-        reduce: c.reduce,
-        stacked: c.stacked,
-        dataLabels: c.dataLabels,
-        logScale: c.logScale,
-        timeAxis: c.timeAxis,
-        valueFormat: c.valueFormat,
-      }));
+      return charts.map(tabToState);
     },
     applyChartsState(list: ReadonlyArray<Record<string, unknown>>, active?: number) {
-      const restored = list.map((c, i) => ({
-        id: `chart-${chartSeq++}`,
-        title: typeof c.title === "string" ? c.title : `Chart ${i + 1}`,
-        type: (c.type as ChartType) ?? "bar",
-        reduce: (c.reduce as "sum" | "avg" | "count") ?? "sum",
-        dimensionId: (c.dimension as string | null) ?? null,
-        measureId: (c.measure as string | null) ?? null,
-        seriesId: c.series as string | null | undefined,
-        measure2Id: (c.measure2 as string | null) ?? null,
-        orientation: (c.orientation as "vertical" | "horizontal" | null) ?? null,
-        stacked100: (c.stacked100 as boolean | null) ?? null,
-        donut: (c.donut as boolean | null) ?? null,
-        palette: (c.palette as string[] | null) ?? null,
-        stacked: (c.stacked as boolean | null) ?? null,
-        dataLabels: (c.dataLabels as boolean | null) ?? null,
-        logScale: (c.logScale as boolean | null) ?? null,
-        timeAxis: (c.timeAxis as boolean | null) ?? null,
-        valueFormat: (c.valueFormat as ChartValueFormat | null) ?? null,
-      }));
+      const restored = list.map(tabFromState);
       charts = restored.length ? restored : [makeChart("Chart 1")];
       activeChartIndex = Math.max(0, Math.min(charts.length - 1, active ?? 0));
+    },
+    // ---- Saved charts ----
+    get savedCharts() { return savedCharts; },
+    /** Keep the active tab's configuration under a name (replacing a same-named one). */
+    saveChart(name: string) {
+      const entry: SavedChartEntry = { name, savedAt: new Date().toISOString(), tab: tabToState(activeChart) };
+      savedCharts = [...savedCharts.filter((s) => s.name !== name), entry];
+    },
+    /** Apply a saved chart to the active tab; the tab keeps its id and title. */
+    applySavedChart(name: string): boolean {
+      const entry = savedCharts.find((s) => s.name === name);
+      if (!entry) return false;
+      const { id: _id, title: _title, ...rest } = tabFromState(entry.tab, activeChartIndex);
+      Object.assign(activeChart, rest);
+      return true;
+    },
+    removeSavedChart(name: string) {
+      savedCharts = savedCharts.filter((s) => s.name !== name);
+    },
+    getSavedCharts() {
+      return savedCharts.map((s) => ({ ...s, tab: { ...s.tab } }));
+    },
+    applySavedCharts(list: ReadonlyArray<Record<string, unknown>>) {
+      savedCharts = list
+        .filter((s) => typeof s?.name === "string" && s.tab && typeof s.tab === "object")
+        .map((s) => ({ name: s.name as string, savedAt: String(s.savedAt ?? ""), tab: s.tab as Record<string, unknown> }));
     },
     get chartCrossFilterable() { return chartCrossFilterable; },
     get chartOrientation() { return effectiveChartOrientation; },
@@ -4098,19 +4338,40 @@ export function createSvGridController<
     get effectiveChartMeasure2Id() { return effectiveChartMeasure2Id; },
     get chartAiHandler() { return chartAiHandler; },
     set chartAiHandler(v) { chartAiHandler = v as never; },
+    get chartExplainHandler() { return chartExplainHandler; },
+    set chartExplainHandler(v) { chartExplainHandler = v as never; },
     applyChartConfig(config: {
       open?: boolean;
       type?: ChartType;
       dimension?: string | null;
       series?: string | null;
       measure?: string | null;
-      reduce?: "sum" | "avg" | "count";
+      reduce?: ChartReducer;
       stacked?: boolean;
       dataLabels?: boolean;
       logScale?: boolean;
       timeAxis?: boolean;
       valueFormat?: ChartValueFormat;
+      bucket?: ChartTimeBucket | null;
+      bins?: number | null;
+      funnelShape?: "trapezoid" | "pyramid" | "cone" | null;
+      candleStyle?: "classic" | "hollow" | "heikin-ashi" | null;
+      /** Second measure: scatter Y, range high end, bullet target. */
+      measure2?: string | null;
+      /** Candlestick / OHLC price columns (ids or fields). */
+      ohlc?: { open?: string | null; high?: string | null; low?: string | null; close?: string | null; volume?: string | null } | null;
+      /** Indicators: panes (volume, rsi, macd, stochastic, atr, obv) and
+       *  overlays (sma, ema, bb, vwap). */
+      indicators?: ChartPanelIndicator[];
+      /** The builder's format (titles, axes, legend, series style); `null` resets it. */
+      format?: ChartFormatState | null;
+      /** Unlink the chart from the grid (true) or link it back (false). */
+      frozen?: boolean;
+      /** A saved chart's name: applied to the active tab first, then the
+       *  other keys on top. */
+      saved?: string;
     }) {
+      if (config.saved) this.applySavedChart(config.saved);
       const cols = [...chartableColumns.dims, ...chartableColumns.measures];
       const resolve = (v: string | null | undefined): string | null => {
         if (v == null) return null;
@@ -4130,6 +4391,24 @@ export function createSvGridController<
       if (typeof config.logScale === "boolean") activeChart.logScale = config.logScale;
       if (typeof config.timeAxis === "boolean") activeChart.timeAxis = config.timeAxis;
       if (config.valueFormat) activeChart.valueFormat = config.valueFormat;
+      if ("bucket" in config) activeChart.bucket = config.bucket ?? null;
+      if ("bins" in config) activeChart.bins = config.bins ?? null;
+      if ("funnelShape" in config) activeChart.funnelShape = config.funnelShape ?? null;
+      if ("candleStyle" in config) activeChart.candleStyle = config.candleStyle ?? null;
+      if ("measure2" in config) activeChart.measure2Id = resolve(config.measure2);
+      if ("ohlc" in config) {
+        const o = config.ohlc;
+        activeChart.ohlc = o
+          ? { open: resolve(o.open), high: resolve(o.high), low: resolve(o.low), close: resolve(o.close), volume: resolve(o.volume) }
+          : null;
+      }
+      if (config.indicators) activeChart.indicators = [...config.indicators];
+      if ("format" in config) activeChart.format = config.format ?? null;
+      if (config.frozen === false) activeChart.frozen = null;
+      else if (config.frozen === true && !activeChart.frozen) {
+        const spec = chartSpec;
+        if (spec) activeChart.frozen = { spec: JSON.parse(JSON.stringify(spec)) as ChartSpec, at: new Date().toISOString() };
+      }
     },
     get toggleGroupInPanel() { return toggleGroupInPanel; },
     get lastSortingSerialized() { return lastSortingSerialized; },
@@ -4225,6 +4504,7 @@ export function createSvGridController<
     get extendSelection() { return extendSelection; },
     get isCellInSelectedRange() { return isCellInSelectedRange; },
     get getCellRangeEdges() { return getCellRangeEdges; },
+    get cellSelectionState() { return cellSelectionState; },
     get getSelectionRects() { return getSelectionRects; },
     get fillHandleCell() { return fillHandleCell; },
     get isInFillPreview() { return isInFillPreview; },
@@ -4347,7 +4627,7 @@ export function createSvGridController<
     set apiNotified(v) { apiNotified = v as never; },
   };
   const { resolveEffectiveFeatures } = createFeatures<TFeatures, TData>(ctx);
-  const { showTooltipFor, hideTooltip, flushScheduledScrollSync, scheduleScrollSync, onBodyScroll } = createScrollSync<TFeatures, TData>(ctx);
+  const { showTooltipFor, hideTooltip, flushScheduledScrollSync, scheduleScrollSync, syncScrollNow, onBodyScroll } = createScrollSync<TFeatures, TData>(ctx);
   const { onGridKeyDown, onWindowKeydown, onHeaderSortClick } = createKeyboard<TFeatures, TData>(ctx);
   const { computeSummaries, hasRenderedColumn } = createSummaries<TFeatures, TData>(ctx);
   // Hand the aggregator to `eagerSummaries` (declared above `ctx`, which this
@@ -4357,7 +4637,7 @@ export function createSvGridController<
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
-  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
+  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);

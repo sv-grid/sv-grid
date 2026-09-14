@@ -523,17 +523,52 @@
   let view = $state<'table' | 'chart'>(defaultView === 'chart' && chartable ? 'chart' : 'table')
   let chartType = $state<ChartType>('bar')
   let chartStacked = $state(false)
-  const CHART_TYPES: Array<{ value: ChartType; label: string }> = [
-    { value: 'bar', label: 'Bar' },
-    { value: 'line', label: 'Line' },
-    { value: 'area', label: 'Area' },
-    { value: 'pie', label: 'Pie' },
+  let chartStacked100 = $state(false)
+  let chartHorizontal = $state(false)
+  // Every shape a pivot's categories + series can take, grouped the way the
+  // grid panel groups them. The ones missing (scatter, gauge, box plot,
+  // histogram, ranges, bullet, candles) read rows one by one.
+  const CHART_TYPES: Array<{ value: ChartType; label: string; group: string }> = [
+    { value: 'bar', label: 'Bar', group: 'Compare' },
+    { value: 'line', label: 'Line', group: 'Compare' },
+    { value: 'area', label: 'Area', group: 'Compare' },
+    { value: 'lollipop', label: 'Lollipop', group: 'Compare' },
+    { value: 'pareto', label: 'Pareto', group: 'Compare' },
+    { value: 'radial-column', label: 'Radial column', group: 'Compare' },
+    { value: 'radial-bar', label: 'Radial bar', group: 'Compare' },
+    { value: 'nightingale', label: 'Nightingale', group: 'Compare' },
+    { value: 'pie', label: 'Pie', group: 'Part of a whole' },
+    { value: 'funnel', label: 'Funnel', group: 'Flow' },
+    { value: 'waterfall', label: 'Waterfall', group: 'Flow' },
+    { value: 'radar', label: 'Radar', group: 'Distribution' },
+    { value: 'heatmap', label: 'Heat map', group: 'Distribution' },
+    { value: 'stream', label: 'Stream', group: 'Over time' },
   ]
-  const chartSpec = $derived.by(() =>
-    pivot && chartable && view === 'chart'
-      ? pivotToChartSpec(pivot, { type: chartType, stacked: chartStacked })
-      : null,
-  )
+  const CHART_GROUPS = [...new Set(CHART_TYPES.map((t) => t.group))]
+  const STACKABLE: ChartType[] = ['bar', 'line', 'area', 'radial-column']
+  // The measures' formats travel to the chart when they agree; a layout
+  // mixing a currency and a count formats plainly rather than putting a "$"
+  // on the count. The chip's own format wins over the field's.
+  const chartFormat = $derived.by(() => {
+    const formats = layout.values.map((v) => v.format ?? fields.find((f) => f.field === v.field)?.format)
+    const first = formats[0]
+    if (!first) return undefined
+    const same = formats.every((f) => f && f.type === first.type && (f.type !== 'currency' || (f as { currency?: string }).currency === (first as { currency?: string }).currency))
+    return same ? first : undefined
+  })
+  const chartSpec = $derived.by(() => {
+    if (!pivot || !chartable || view !== 'chart') return null
+    const spec = pivotToChartSpec(pivot, {
+      type: chartType,
+      stacked: chartStacked && STACKABLE.includes(chartType),
+      stacked100: chartStacked100 && (chartType === 'bar' || chartType === 'area'),
+      format: chartFormat,
+    })
+    if (chartHorizontal && chartType === 'bar') spec.orientation = 'horizontal'
+    // A stream is a stacked area on a wiggle baseline; the box has nothing to add.
+    if (chartType === 'stream') { spec.stacked = true; spec.stackOffset = 'wiggle' }
+    return spec
+  })
 
   // ---- Expand / collapse (when `expandable` is on) ------------------
   // We hold a `collapsed` set of pivot row ids; descendants of a
@@ -810,13 +845,27 @@
         </div>
         {#if view === 'chart'}
           <label class="pvd-toggle">
-            <select class="pvd-select" value={chartType} onchange={(e) => (chartType = e.currentTarget.value as ChartType)}>
-              {#each CHART_TYPES as t (t.value)}<option value={t.value}>{t.label}</option>{/each}
+            <select class="pvd-select" aria-label="Chart type" value={chartType} onchange={(e) => (chartType = e.currentTarget.value as ChartType)}>
+              {#each CHART_GROUPS as g (g)}
+                <optgroup label={g}>
+                  {#each CHART_TYPES.filter((t) => t.group === g) as t (t.value)}<option value={t.value}>{t.label}</option>{/each}
+                </optgroup>
+              {/each}
             </select>
           </label>
-          {#if chartType !== 'pie'}
+          {#if STACKABLE.includes(chartType)}
             <label class="pvd-toggle">
               <input type="checkbox" checked={chartStacked} onchange={(e) => (chartStacked = e.currentTarget.checked)} /> Stacked
+            </label>
+          {/if}
+          {#if chartType === 'bar' || chartType === 'area'}
+            <label class="pvd-toggle">
+              <input type="checkbox" checked={chartStacked100} onchange={(e) => (chartStacked100 = e.currentTarget.checked)} /> 100%
+            </label>
+          {/if}
+          {#if chartType === 'bar'}
+            <label class="pvd-toggle">
+              <input type="checkbox" checked={chartHorizontal} onchange={(e) => (chartHorizontal = e.currentTarget.checked)} /> Horizontal
             </label>
           {/if}
         {/if}
@@ -1264,7 +1313,9 @@
         />
       {:else if pivot && chartable && view === 'chart'}
         {#if chartSpec && chartSpec.series.length}
-          <div class="pvd-chart"><SvGridChart spec={chartSpec} interactive legend /></div>
+          <!-- The chart's own toolbar (PNG / SVG / PDF / print / copy) and the
+               spoken summary, at the pane's size. -->
+          <div class="pvd-chart"><SvGridChart spec={chartSpec} interactive legend="bottom" toolbar describe autosize /></div>
         {:else}
           <div class="pvd-empty pvd-grid-empty">Add a measure and a row / column field to chart the pivot.</div>
         {/if}

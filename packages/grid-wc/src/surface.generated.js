@@ -4,7 +4,7 @@
  *
  * The full prop + event surface of <SvGrid>, extracted from its own `Props`
  * type in packages/grid/src/SvGrid.types.ts, so the custom elements expose what
- * the grid actually has rather than a hand-kept subset that drifts.
+ * the component actually has rather than a hand-kept subset that drifts.
  *
  * `attribute` is null for props that cannot be one. An HTML attribute is a
  * string, so arrays, objects and functions are settable only as PROPERTIES

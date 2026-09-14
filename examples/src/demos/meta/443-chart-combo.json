@@ -1,0 +1,24 @@
+{
+  "description": "A combination chart: type per series mixes bars, a line and an area in one spec, axis right moves the margin to y2Axis with its own percent format and domain, referenceLines with axis right draws the target on that axis, a dataLabels formatter labels one series only, and tooltipMode shared lists every series for the hovered month. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte combo chart",
+    "svelte bar and line chart",
+    "svelte dual axis chart",
+    "svelte chart second y axis",
+    "svelte mixed chart types"
+  ],
+  "faq": [
+    {
+      "question": "How do I mix bars and lines?",
+      "answer": "Set type on a series: bar, line or area. The spec type is the default; each series can say otherwise. Lines take their points from the bar slot centres, so they line up."
+    },
+    {
+      "question": "How do I put a series on a second axis?",
+      "answer": "Set axis: right on the series and configure y2Axis on the spec: title, format, min, max, gridLines. Reference lines with axis: right are drawn against it."
+    },
+    {
+      "question": "How do I label only some series?",
+      "answer": "Give dataLabels a formatter and return an empty string for the series you do not want labelled."
+    }
+  ]
+}

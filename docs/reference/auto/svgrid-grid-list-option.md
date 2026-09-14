@@ -4,7 +4,7 @@ Auto-generated. Source: `packages\grid\src\list-option.ts`.
 
 ### `type ListOption`
 
-Shared option shape for the SvGrid UI-kit selection controls. */
+Shared option shape for the SvGrid UI-kit selection controls.
 
 ```ts
 export type ListOption = {
@@ -48,7 +48,7 @@ export function normalizeOptions(raw: ReadonlyArray<ListOption | string | number
 
 ### `function filterOptions`
 
-Case-insensitive substring filter over option labels. */
+Case-insensitive substring filter over option labels.
 
 ```ts
 export function filterOptions(options: ReadonlyArray<ListOption>, query: string): ListOption[] {
@@ -60,7 +60,7 @@ export function filterOptions(options: ReadonlyArray<ListOption>, query: string)
 
 ### `type IndexedOption`
 
-An option carrying its position in the flat source array (for prop-getters). */
+An option carrying its position in the flat source array (for prop-getters).
 
 ```ts
 export type IndexedOption = ListOption & { index: number }
@@ -68,7 +68,7 @@ export type IndexedOption = ListOption & { index: number }
 
 ### `type OptionGroup`
 
-A section of options that share a `group` heading (null = ungrouped). */
+A section of options that share a `group` heading (null = ungrouped).
 
 ```ts
 export type OptionGroup = { group: string | null; options: IndexedOption[] }
@@ -97,7 +97,7 @@ export function groupOptions(options: ReadonlyArray<ListOption>): OptionGroup[] 
 
 ### `function hasGroups`
 
-Whether any option declares a `group` (so headings are worth rendering). */
+Whether any option declares a `group` (so headings are worth rendering).
 
 ```ts
 export function hasGroups(options: ReadonlyArray<ListOption>): boolean {
@@ -107,7 +107,7 @@ export function hasGroups(options: ReadonlyArray<ListOption>): boolean {
 
 ### `type RowHeight`
 
-Fixed px, or a per-option function - lets a virtualized list mix row heights. */
+Fixed px, or a per-option function - lets a virtualized list mix row heights.
 
 ```ts
 export type RowHeight = number | ((opt: IndexedOption, index: number) => number)
@@ -115,7 +115,7 @@ export type RowHeight = number | ((opt: IndexedOption, index: number) => number)
 
 ### `type VirtualListRow`
 
-One row of the flattened virtualization model: a group heading or an option. */
+One row of the flattened virtualization model: a group heading or an option.
 
 ```ts
 export type VirtualListRow =
@@ -125,7 +125,7 @@ export type VirtualListRow =
 
 ### `type FlatVirtualModel`
 
-A flattened option list plus its measurements, for virtualizing long dropdowns. */
+A flattened option list plus its measurements, for virtualizing long dropdowns.
 
 ```ts
 export type FlatVirtualModel = {
@@ -235,7 +235,7 @@ export function createTypeaheadBuffer(timeout = 600) {
 
 ### `function isTypeaheadKey`
 
-Whether a keydown is a bare printable character (a type-ahead candidate). */
+Whether a keydown is a bare printable character (a type-ahead candidate).
 
 ```ts
 export function isTypeaheadKey(e: KeyboardEvent): boolean {

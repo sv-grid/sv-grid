@@ -294,7 +294,7 @@ keyboard-only navigation. Pair it with the high-contrast focus toggle and the
 
 ### Keyboard shortcuts + a11y
 
-Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid\'s WAI-ARIA grid pattern + roving tabindex.
+Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid's WAI-ARIA grid pattern + roving tabindex.
 
 <div data-docs-demo="65-keyboard-shortcuts" data-height="460"></div>
 

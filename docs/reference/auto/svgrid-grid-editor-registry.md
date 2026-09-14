@@ -19,7 +19,7 @@ export type CellEditorContext<T = unknown> = Required<
 
 ### `type CellEditorRegistration`
 
-How a registered component is mounted and wired for a cell edit. */
+How a registered component is mounted and wired for a cell edit.
 
 ```ts
 export type CellEditorRegistration = {
@@ -55,7 +55,7 @@ export function registerCellEditor(
 
 ### `function getCellEditor`
 
-Look up a registered cell editor by type. */
+Look up a registered cell editor by type.
 
 ```ts
 export function getCellEditor(type: string): CellEditorRegistration | undefined {
@@ -65,7 +65,7 @@ export function getCellEditor(type: string): CellEditorRegistration | undefined 
 
 ### `function hasCellEditor`
 
-Whether a custom editor is registered for `type`. */
+Whether a custom editor is registered for `type`.
 
 ```ts
 export function hasCellEditor(type: string): boolean {
@@ -75,7 +75,7 @@ export function hasCellEditor(type: string): boolean {
 
 ### `function unregisterCellEditor`
 
-Remove a registered cell editor. */
+Remove a registered cell editor.
 
 ```ts
 export function unregisterCellEditor(type: string): void {
@@ -85,7 +85,7 @@ export function unregisterCellEditor(type: string): void {
 
 ### `function registeredCellEditorTypes`
 
-All registered custom editor type names. */
+All registered custom editor type names.
 
 ```ts
 export function registeredCellEditorTypes(): string[] {
@@ -117,7 +117,7 @@ export function defaultEditorProps(ctx: CellEditorContext): Record<string, unkno
 
 ### `function resolveEditorProps`
 
-Resolve the props to spread onto a registered editor for a given context. */
+Resolve the props to spread onto a registered editor for a given context.
 
 ```ts
 export function resolveEditorProps(

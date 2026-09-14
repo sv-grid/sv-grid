@@ -18,7 +18,7 @@
  *   - Default values (use the hand-written /reference/SvGrid.md tables for those)
  *   - Generic constraints beyond the first level
  */
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 
 // The barrel re-exports from ~208 modules; these are the ones whose public
@@ -36,7 +36,12 @@ const SOURCES = [
       'core.ts', 'svgrid-wrapper.types.ts', 'ai.ts',
       // Models a consumer builds by hand, so their shapes are load-bearing.
       'scheduler-model.ts', 'dock-model.ts', 'dock-manager-model.ts',
-      'chart.ts', 'createTree.svelte.ts',
+      'chart.ts', 'chart-types.ts', 'chart-scale.ts', 'chart-format.ts', 'chart-stats.ts', 'chart-trend.ts', 'chart-axes.ts',
+      'chart-cartesian.ts', 'chart-polar.ts', 'chart-flow.ts', 'chart-grid.ts', 'chart-hierarchy.ts',
+      'chart-decimate.ts', 'chart-financial.ts', 'chart-zoom.ts', 'chart-motion.ts', 'chart-sync.svelte.ts',
+      'chart-indicators.ts', 'chart-export-pdf.ts', 'chart-samples.ts',
+      'SvGridChart.types.ts',
+      'createTree.svelte.ts',
       // Extension points: registering an editor or a filter engine, shaping
       // list options.
       'editor-contract.ts', 'editor-registry.ts', 'list-option.ts',
@@ -45,7 +50,7 @@ const SOURCES = [
       'filtering/filter-operator-catalogue.ts', 'filtering/row-predicate.ts',
       // Localization, icons and cell display - the three ways a consumer
       // changes what the grid's own chrome shows.
-      'grid-messages.ts', 'grid-icons.ts', 'cell-formatting.ts',
+      'grid-messages.ts', 'chart-messages.ts', 'chart-panel-messages.ts', 'chart-validate.ts', 'chart-summary.ts', 'chart-stream.ts', 'chart-pivot.ts', 'chart-table.ts', 'grid-icons.ts', 'cell-formatting.ts',
       // Utilities consumers call directly.
       'positioning.ts', 'toast-store.svelte.ts', 'spreadsheet.ts',
       'chart-export.ts', 'scheduler-ical.ts', 'duration.ts',
@@ -53,7 +58,7 @@ const SOURCES = [
       'datetime/mask.ts', 'datetime/date-format.ts', 'datetime/date-restrict.ts',
     ] },
   { pkg: '@svgrid/enterprise',       dir: 'packages/enterprise/src',
-    files: ['export.ts', 'pivot.ts', 'import.ts', 'install.ts'] },
+    files: ['export.ts', 'pivot.ts', 'pivot-chart.ts', 'import.ts', 'install.ts'] },
 ]
 const OUT_DIR = 'docs/reference/auto'
 
@@ -80,7 +85,9 @@ function extract(src) {
       block.push(lines[i] ?? '')
       i += 1
       doc = block
-        .map((l) => l.replace(/^\s*\/\*\*?/, '').replace(/^\s*\*\/?/, '').replace(/^\s/, ''))
+        // A block whose text starts on the `/**` line ends with ` */` on a
+        // content line; strip that close too or it lands in the page.
+        .map((l) => l.replace(/^\s*\/\*\*?/, '').replace(/^\s*\*\/?/, '').replace(/\s*\*\/\s*$/, '').replace(/^\s/, ''))
         .join('\n').trim()
     }
     // Skip @internal-tagged blocks
@@ -183,8 +190,15 @@ async function main() {
         continue
       }
       const symbols = extract(body)
-      if (symbols.length === 0) continue
       const slug = basename(f, '.ts')
+      if (symbols.length === 0) {
+        // A file whose exports are all @internal has no page; a page a
+        // previous run wrote for it (when one export was still documented,
+        // or when a comment sat between a JSDoc and its declaration) would
+        // otherwise stay on disk and fail the coverage test forever.
+        await rm(join(OUT_DIR, `${pkgSlug}-${slug}.md`), { force: true })
+        continue
+      }
       const out = [
         `# \`${src.pkg}\` · \`${f}\``,
         '',

@@ -17,9 +17,36 @@ const PAGE = '/sv-grid/#/api'
 
 type Failure = { id: string; mode: string; stage: string; message: string }
 
-/** Compose, compile and mount every member example; report what breaks. */
+/**
+ * Compose, compile and mount every member example; report what breaks.
+ *
+ * A Run is awaited to its outcome, not sampled two frames after the click:
+ * an example that awaits an export or a fetch is still running then, and a
+ * check that early passed while the PDF export was failing with "File
+ * 'Roboto-Medium.ttf' not found in virtual file system". The runner marks
+ * both outcomes in the DOM (`data-example-error`, or `.example-out` once it
+ * ran), so the test waits for one of them. An error the runner's try/catch
+ * cannot see - a rejection inside a library callback, an error thrown off a
+ * timer - reaches `window` instead, so those are collected per example too.
+ */
 async function runAll(page: import('@playwright/test').Page, clickRun: boolean): Promise<Failure[]> {
   return page.evaluate(async (withRun: boolean) => {
+    const loose: string[] = []
+    const onError = (e: ErrorEvent) => loose.push(e.message)
+    const onRejection = (e: PromiseRejectionEvent) => loose.push(String((e.reason as Error)?.message ?? e.reason))
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onRejection)
+    /** Wait for the runner to report an outcome, up to `ms`. */
+    const outcome = async (host: HTMLElement, ms: number) => {
+      const t0 = Date.now()
+      while (Date.now() - t0 < ms) {
+        const err = host.querySelector('[data-example-error]')
+        if (err) return { error: (err.textContent ?? '').trim() }
+        if (host.querySelector('.example-out')) return { error: null }
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      return { error: `no outcome after ${ms} ms` }
+    }
     const base = '/sv-grid/src/lib/'
     const { sections } = (await import(/* @vite-ignore */ `${base}api-reference.ts`)) as any
     const { buildRunnableExample } = (await import(/* @vite-ignore */ `${base}api-playground.ts`)) as any
@@ -55,15 +82,19 @@ async function runAll(page: import('@playwright/test').Page, clickRun: boolean):
           if (withRun) {
             const runBtn = host.querySelector('[data-run-example]') as HTMLButtonElement | null
             if (runBtn) {
+              loose.length = 0
               runBtn.click()
-              await settle()
-              const err = host.querySelector('[data-example-error]')
-              if (err) {
+              const { error } = await outcome(host, 20_000)
+              // Give a library callback that fires after the outcome a moment
+              // to surface on window before the example is torn down.
+              await new Promise((r) => setTimeout(r, 100))
+              const message = error ?? loose[0] ?? null
+              if (message) {
                 failures.push({
                   id,
                   mode: built.mode,
-                  stage: 'run',
-                  message: (err.textContent ?? '').trim(),
+                  stage: error ? 'run' : 'run (uncaught)',
+                  message,
                 })
               }
             }
@@ -86,6 +117,8 @@ async function runAll(page: import('@playwright/test').Page, clickRun: boolean):
       }
     }
 
+    window.removeEventListener('error', onError)
+    window.removeEventListener('unhandledrejection', onRejection)
     host.remove()
     return failures
   }, clickRun)

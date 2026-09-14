@@ -235,19 +235,19 @@ scroll/select the row).
 
 ### Styling rules
 
-Alert rules are not just notifications: a highlight or badge action becomes live conditional formatting, painted through the grid\'s own format pipeline. A server fleet lights up by rule - hot CPU turns amber, near-full disks turn red via a cross-column rule (used / total > 0.9). Randomise the load and the colours follow. Add your own styling rule in the visual builder.
+Alert rules are not just notifications: a highlight or badge action becomes live conditional formatting, painted through the grid's own format pipeline. A server fleet lights up by rule - hot CPU turns amber, near-full disks turn red via a cross-column rule (used / total > 0.9). Randomise the load and the colours follow. Add your own styling rule in the visual builder.
 
 <div data-docs-demo="400-alert-styling-rules" data-height="520"></div>
 
 ### KPI & aggregate alerts
 
-Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language\'s SUM / AVG / COUNT reducers.
+Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language's SUM / AVG / COUNT reducers.
 
 <div data-docs-demo="401-alert-aggregate-kpi" data-height="520"></div>
 
 ### Validation guardrails
 
-A validation-trigger alert is evaluated on edit and can veto the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line\'s budget. The pure engine is wired into the grid\'s per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.
+A validation-trigger alert is evaluated on edit and can veto the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line's budget. The pure engine is wired into the grid's per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.
 
 <div data-docs-demo="402-alert-validation-guardrails" data-height="520"></div>
 

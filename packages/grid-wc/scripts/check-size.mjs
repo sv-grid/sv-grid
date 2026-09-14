@@ -1,5 +1,5 @@
 /**
- * Size budget for the two custom elements, measured on the BUILT bundles.
+ * Size budget for the custom elements, measured on the BUILT bundles.
  *
  * Separate from `packages/grid/scripts/measure-size.mjs` because that script
  * bundles from source with its own vite config, and a custom element only
@@ -58,10 +58,88 @@ const dist = join(here, '..', 'dist')
  * custom-series seam, interactive annotations and the large-series work cost a
  * `<sv-grid>` consumer nothing unless they chart. That chunk grew 27.6 -> 31.9
  * KB over the same period, all of it deferred.
+ *
+ * 107.5 -> 98.8 and 107.8 -> 99.4 with the chart depth program (four waves:
+ * axis model, thirteen series types, interaction + motion, financial +
+ * builder). Measured 98.5 / 99.1: DOWN, on a program that added code, because
+ * the wave that grew the chart also fixed how the element carries CSS.
+ *
+ * Lib-mode vite emits ONE stylesheet for the whole bundle, lazy chunks
+ * included, and inlineCss put it in the entry. So every lazy component's
+ * styles (the chart's, the date pickers', the menus', the builder's) were in
+ * the first download of a page that never used them: 15.8 KiB gzip of the
+ * old 114.3 measured after the program's code landed. The build now sets
+ * `cssCodeSplit: true` and inlineCss gives each chunk its own styles, injected
+ * into document.head when that chunk loads and handed to adopt-styles for the
+ * shadow roots. The entry keeps the grid's own sheet only.
+ *
+ * What the program added to the entry underneath that: the grid's base went
+ * 84.7 -> 86.1 KB (see measure-size.mjs), the charting config pass-through and
+ * the per-tab state the builder and the price chart need, all wiring, with
+ * the logic in the lazy engine.
+ *
+ * <sv-chart> is the standalone chart element, in its own build (dist/chart).
+ * Measured 56.8 KiB: the chart component + engine + the Svelte runtime, with
+ * the context menu, PDF writer and export as lazy chunks. It carries none of
+ * the grid.
+ *
+ * 57.1 -> 60.1 for <sv-chart> with the gap-closing pass after the program
+ * (2026-09-13). Measured 59.8: stack groups, series end labels, responsive
+ * rules, pie callouts, the crosshair axis pills and the series `visible`
+ * seed, the same 2.7 KB the grid's chart surface grew by (measure-size.mjs
+ * has the breakdown) plus the surface entry for the new crosshairLabels
+ * attribute. Every one is a spec field a chart may carry, so none is lazy.
+ * The two grid elements did not move.
+ *
+ * 60.1 -> 62.7 for <sv-chart> with the accessibility pass (2026-09-13).
+ * Measured 62.4: the chart's strings as a localizable message map, a roving
+ * focus with arrow navigation and a name on every mark of the ten
+ * non-cartesian families, keyboard zoom on the plot and the brush as a
+ * slider (measure-size.mjs has the breakdown), plus the surface entry for
+ * the new localeText property. The grid elements moved 0.1 KiB for the
+ * localeText pass-through in ChartingConfig.
+ *
+ * 62.7 -> 66.3 for <sv-chart> with the series and interaction depth wave of
+ * program 2 (2026-09-13). Measured 66.0: the regression fits, the log x
+ * axis, area stack piles, hover highlight, corner and pinned tooltips, label
+ * leaders and style vars (measure-size.mjs has the breakdown) plus four
+ * surface entries (hover-highlight, tooltip-position, tooltip-sticky and
+ * the hover event). The grid elements did not move.
+ *
+ * 98.8 -> 99.5 and 99.4 -> 100.1 for the grid elements with the panel and
+ * builder wave of program 2 (2026-09-13). Measured 99.2 / 99.8, so 0.6 KiB:
+ * the saved-charts state and its five API methods on the base controller
+ * (the tab serialisation they share with the view state became one
+ * table-driven pair, which paid for most of them: the grid's base moved
+ * 86.2 -> 86.3 KB), the localizationText getter the lazy panel reads its
+ * strings through, and the panel's stylesheet, which lives in the grid's
+ * own sheet and gained the builder-form layout of the shared pickers and
+ * the saved-charts popover. The pickers, the messages and the builder's
+ * new Format fields are all in the lazy panel chunk. <sv-chart> did not
+ * move.
+ *
+ * 66.3 -> 67.0 for <sv-chart> with the gallery pass (2026-09-13). Measured
+ * 66.7: the scatter regression curve, callout sizing by label width, the
+ * muted brush spec, heat map label thinning, the calendar's month range,
+ * the waterfall opening total, pin labels and fit-based x label rotation,
+ * the same 0.7 KB the grid's chart surface grew by (measure-size.mjs has
+ * the breakdown). No surface entry changed. The grid elements did not move.
+ *
+ * 67.0 -> 68.6 for <sv-chart> with the QA pass after the gallery
+ * (2026-09-13). Measured 68.3: calendar-aligned time ticks with UTC labels,
+ * date categories written out in the tooltip and pill, right-axis series
+ * read in that axis's format, scatter points that select, the breadcrumb
+ * outside the toolbar, the legend double-click fix, indexed selection refs,
+ * share labels on 100% charts, waterfall totals in the tooltip and table,
+ * the radar rim, per-side pie gutters, bin edge precision, heat map labels
+ * from the spec, rounded legend steps, gauge units and the range-area band:
+ * the same 1.6 KB the grid's chart surface grew by (measure-size.mjs has
+ * the list). No surface entry changed. The grid elements did not move.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.5 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 107.8 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 99.5 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 100.1 },
+  '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 
 const failures = []

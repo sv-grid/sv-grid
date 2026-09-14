@@ -94,6 +94,19 @@ Walks through every fill pattern the engine detects: numeric series, date series
 
 <div data-docs-demo="95-fill-handle" data-height="460"></div>
 
+<!-- tutorial:fill-handle -->
+<figure class="docs-tutorial" id="tutorial-fill-handle" data-docs-tutorial="fill-handle">
+<video class="docs-tutorial-video" src="/tutorials/fill-handle.mp4" poster="/tutorials/fill-handle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style fill handle in SvGrid, 36 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/fill-handle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/fill-handle.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Excel-style fill handle in SvGrid</strong> (36 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>With cell selection on, every range gets a fill handle at its corner. Select the two seed cells of the numeric series.</p>
+<p>Drag the handle to the right. Ten and twenty become a series in steps of ten, filled as far as you drag.</p>
+<p>Weekdays and dates continue the same way. A single seed switches to copy mode and repeats the value.</p>
+<p>Every filled cell goes through the normal edit pipeline, so validation and change tracking still apply.</p>
+</details>
+</figure>
+<!-- /tutorial:fill-handle -->
+
 ### Drag a range to move or copy it
 
 Grab the border of a selected block and drag it somewhere else and the values
@@ -101,6 +114,19 @@ move; hold Ctrl (Cmd) as you drop and they are copied. On by default with cell
 selection - see [Drag a range to move or copy it](./move-cells.md).
 
 <div data-docs-demo="429-move-cells" data-height="480"></div>
+
+<!-- tutorial:inline-editing -->
+<figure class="docs-tutorial" id="tutorial-inline-editing" data-docs-tutorial="inline-editing">
+<video class="docs-tutorial-video" src="/tutorials/inline-editing.mp4" poster="/tutorials/inline-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Inline editing in SvGrid, 32 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/inline-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/inline-editing.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Inline editing in SvGrid</strong> (32 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Inline editing in SvGrid is one prop. Set enableInlineEditing and double-click any cell to start.</p>
+<p>Type a new value and press Enter to commit it.</p>
+<p>Columns pick their own editor. Department is a list, so double-clicking it opens a dropdown, and one click picks the value.</p>
+<p>Every change is tracked. The pending edits card counts what is not saved yet, and Save changes commits the batch.</p>
+</details>
+</figure>
+<!-- /tutorial:inline-editing -->
 
 ## See also
 

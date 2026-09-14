@@ -53,6 +53,7 @@
     "demos:audit": "node tools/audit-demos.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@types/node": "^22.10.7",

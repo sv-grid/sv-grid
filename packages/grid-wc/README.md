@@ -81,6 +81,26 @@ import '@svgrid/grid-wc' // registers <sv-grid> globally
 | `rowclick` | the clicked row object |
 | `selectionchange` | array of selected rows |
 
+## The chart element
+
+The standalone chart is a second element in the same package, without the grid:
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@svgrid/grid-wc/dist/chart/sv-chart-element.js"></script>
+<sv-chart id="chart" legend="right" zoomable range-presets></sv-chart>
+<script type="module">
+  document.getElementById('chart').spec = {
+    type: 'line', categories: ['2026-01-01', '2026-01-02', '2026-01-03'],
+    series: [{ label: 'Close', values: [10, 12, 11] }], xType: 'ordinal-time',
+  }
+</script>
+```
+
+From npm: `import '@svgrid/grid-wc/chart'`, with wrappers at
+`@svgrid/grid-wc/react/chart`, `@svgrid/grid-wc/vue/chart` and the
+`SvChartComponent` export of `@svgrid/grid-wc/angular`. Reference:
+[svgrid.com/docs/help/web-components/sv-chart](https://svgrid.com/docs/help/web-components/sv-chart/).
+
 ## Frameworks
 
 - **React 19+**: `<sv-grid sortable .data={rows} .columns={cols} />` (older React: set via a `ref`).

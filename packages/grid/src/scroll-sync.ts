@@ -66,6 +66,30 @@ export function createScrollSync<
     ctx.scrollSyncRaf = requestAnimationFrame(flushScheduledScrollSync);
   }
 
+  /**
+   * Sync the virtualizers to a scroll position NOW instead of on the next
+   * animation frame.
+   *
+   * For a scroll the grid made itself - keyboard navigation bringing the
+   * active cell into view - the position is already known, and going through
+   * the browser's `scroll` event and then the rAF above put the row-window
+   * update one frame behind the key press: the keydown's own flush painted
+   * the active cell on the OLD rows, and the rows only caught up on the next
+   * frame. Two painted frames per arrow key. Syncing inline folds the window
+   * update into the same flush as the active-cell change, so the key press
+   * paints once. The `scroll` event still fires afterwards and re-syncs to
+   * the same offset, which the virtualizers treat as a no-op.
+   */
+  function syncScrollNow(scrollTop: number, scrollLeft: number) {
+    if (ctx.scrollSyncRaf !== null) {
+      cancelAnimationFrame(ctx.scrollSyncRaf);
+      ctx.scrollSyncRaf = null;
+    }
+    ctx.pendingScrollTop = scrollTop;
+    ctx.pendingScrollLeft = scrollLeft;
+    flushScheduledScrollSync();
+  }
+
   function onBodyScroll(event: Event) {
     const container = event.currentTarget as HTMLDivElement | null;
     if (!container) return;
@@ -91,6 +115,7 @@ export function createScrollSync<
     hideTooltip,
     flushScheduledScrollSync,
     scheduleScrollSync,
+    syncScrollNow,
     onBodyScroll,
   };
 }

@@ -372,6 +372,20 @@ describe('downloadChartPng', () => {
   })
 })
 
+describe('chartSpecToCsv: gaps', () => {
+  it('writes a NaN or null value as an empty cell, not the word NaN', () => {
+    const csv = chartSpecToCsv({
+      type: 'line',
+      categories: ['Jan', 'Feb', 'Mar'],
+      series: [
+        { label: 'Actual', values: [10, Number.NaN, 12] },
+        { label: 'Forecast', values: [null as unknown as number, 11, Number.NaN] },
+      ],
+    })
+    expect(csv.split('\n')).toEqual(['Category,Actual,Forecast', 'Jan,10,', 'Feb,,11', 'Mar,12,'])
+  })
+})
+
 describe('chartSpecToCsv: series that carry more than one number', () => {
   it('keeps a plain series byte-identical', () => {
     const csv = chartSpecToCsv({

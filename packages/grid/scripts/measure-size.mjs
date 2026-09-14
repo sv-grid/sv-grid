@@ -436,7 +436,79 @@ const BUDGET_KB = {
   //     moves bytes between chunks and adds none.
   // The builder (SvGridChartBuilder + chart-samples, 12.6 KB) and SvChartPanes
   // are lazy from the grid panel and never load for a chart outside it.
-  'chart surface (SvChart)': 59.6,
+  //
+  // 59.6 -> 62.3 for the gap-closing pass after the program (2026-09-13).
+  // Measured 59.3 before and 62.1 after, so 2.8 KB, all in the engine and the
+  // renderer of a plain chart: stack groups (the bar layout became slot-based
+  // so a named stack, a lone bar and a stem each get a column, and the domain
+  // totals per stack), series end labels (a reserved gutter plus the
+  // push-apart), responsive rules (the rule matcher and the one-level axis
+  // merge, run first in buildChart), pie callouts (the leader layout and the
+  // per-side push-apart), the crosshair axis pills and the series `visible`
+  // seed. Each is a spec field a chart may carry, so none can be lazy.
+  //
+  // 62.3 -> 65.3 for the accessibility pass (2026-09-13). Measured 62.1
+  // before and 65.0 after, so 2.9 KB: the chart's strings moved into
+  // chart-messages (60 keys with English defaults, the resolver and the
+  // placeholder filler, so localeText can replace any of them); a roving
+  // focus with arrow / Home / End / PageUp / PageDown navigation, a focus
+  // tooltip and a name on every mark of the ten non-cartesian families,
+  // each a few closures the compiler emits per element; keyboard zoom and
+  // pan on the plot and the brush as a slider. The forced-colors rules are
+  // CSS and do not count here. None of it can be lazy: the strings and the
+  // handlers are what the first render puts in the DOM.
+  //
+  // 65.3 -> 68.8 for the series and interaction depth wave of program 2
+  // (2026-09-13). Measured 65.0 before and 68.5 after, so 3.5 KB: four
+  // regression fits with their normal-equation solver and R-squared
+  // (chart-stats, reached through the overlay dispatch every cartesian chart
+  // runs, so not lazy), the log x axis in layoutX / layoutScatter /
+  // chartScales and lttb's explicit positions, area piles keyed by stack,
+  // the hover highlight (nearest series with a snap distance, the
+  // once-per-change onHover report), the corner and pinned tooltip, data
+  // label push-apart with leaders, and the style vars on the host. The 32
+  // font-size rules became calc() expressions, which is CSS and not counted.
+  //
+  // 68.8 -> 69.4 for the diagnostics / summary / live wave of program 2
+  // (2026-09-13). Measured 68.5 before and 69.2 after, so 0.7 KB, of which
+  // 0.3 is code: the describe and live props, the summary state and its
+  // lazy import, aria-description and the caption, the Describe menu item
+  // and the dev-only diagnostics hook. The validator (3.6 KB) and the
+  // summary (2.7 KB) load through import() and sit in the lazy column. The
+  // other 0.4 is the bundler: the summary shares formatChartValue with the
+  // engine, so what both use is hoisted into a chunk of its own, and a chunk
+  // gzips worse alone than inlined. It first hoisted all of chart-scale and
+  // chart-stats (1.3 KB of locality for no new code); chart-format.ts and
+  // chart-trend.ts now hold exactly what is shared, so the hoisted chunk is
+  // 0.6 KB. Adding an import from a lazy chart module into a big engine
+  // module brings that cost back; check this line when you do.
+  //
+  // 69.4 -> 70.2 for the gallery pass (2026-09-13). Measured 69.2 before
+  // and 69.9 after, so 0.7 KB, all engine and renderer: the regressions take
+  // an x array and return predict() so a scatter's overlay is y on x, and
+  // the scatter layout samples that curve across the plot; the pie sizes its
+  // radius by the widest callout and hands the renderer a per-side
+  // character budget; the brush spec mutes titles, axis labels and marks;
+  // the heat map thins its column labels; the calendar keeps month labels
+  // inside the range; a waterfall total with a value anchors the running
+  // sum; a pin annotation writes its label; and x labels tilt by fit rather
+  // than by count. Each is a layout rule every chart may hit, so none can be
+  // lazy.
+  //
+  // 70.2 -> 71.9 for the QA pass after the gallery (2026-09-13). Measured
+  // 70.0 before and 71.6 after: calendar-aligned time ticks sized to the
+  // plot with UTC labels; a date category written out in the tooltip, the
+  // crosshair pill and the live region; a series on the right axis read in
+  // that axis's format everywhere; scatter points that select; the
+  // breadcrumb outside the toolbar; a double-click that clears an isolation;
+  // a selection ref that carries its category index; 100% data labels as
+  // shares; the waterfall tooltip and table reading the drawn totals; the
+  // radar rim on yAxis.min / max; per-side pie gutters; bin edges labelled
+  // at their width's precision; heat map cell labels from the spec; legend
+  // steps rounded; gauge units; the range area drawn as a band. Every one
+  // is a rule the renderer or a layout applies on every chart, so none can
+  // be lazy.
+  'chart surface (SvChart)': 71.9,
 }
 
 const CHECK = process.argv.includes('--check')

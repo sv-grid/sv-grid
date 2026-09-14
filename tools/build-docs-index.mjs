@@ -52,6 +52,7 @@ const SECTION_TITLES = {
   'help/rows':         'Rows',
   'help/server':       'Server data',
   'help/state':        'State & views',
+  'help/charts':       'Charts',
   'help/ui-components':'UI components',
   'help/web-components':'Web components',
   'recipes':           'Recipes / cookbook',
@@ -87,6 +88,7 @@ const SECTION_PILLAR = {
   'help/rows':         'grid',
   'help/server':       'grid',
   'help/state':        'grid',
+  'help/charts':       'grid',
   'recipes':           'grid',
   'reference':         'grid',
   'enterprise/studio': 'studio',
@@ -104,7 +106,7 @@ const SECTION_ORDER = [
   '', 'getting-started', 'help',
   'help/cells', 'help/columns', 'help/rows',
   'help/editing', 'help/filtering', 'help/grouping',
-  'help/headless', 'help/server', 'help/state',
+  'help/headless', 'help/server', 'help/state', 'help/charts',
   // Before recipes, matching CATEGORY_ORDER in website/src/lib/docs.ts - this
   // list drives docs.json and llms.txt, that one drives the visible sidebar,
   // and a reader following the topic map should meet them in the same order.
@@ -120,6 +122,15 @@ const SECTION_ORDER = [
 // pages a section has that are not listed here sort after the curated ones,
 // alphabetically. Sections without an entry keep the alphabetical order.
 const PAGE_GROUPS = {
+  // The hub first, then the reading order a newcomer wants: what a spec is,
+  // what it can draw, how it is styled; then the depth; then the grid and the
+  // field index. Mirrors PAGE_ORDER in website/src/lib/docs.ts.
+  'help/charts': [
+    { label: '', pages: ['help/charts.md'] },
+    { label: 'Start here', pages: ['start', 'types', 'gallery', 'axes-and-styling'] },
+    { label: 'Depth', pages: ['interaction', 'financial', 'accessibility'] },
+    { label: 'Grid and reference', pages: ['from-the-grid', 'api'] },
+  ],
   // Reading order, not alphabetical: the attribute-vs-property rule in
   // `quick-start` is the thing every reader needs before anything else, and
   // `limitations` reads as a conclusion rather than an opening.

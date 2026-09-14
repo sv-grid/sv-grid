@@ -5,3 +5,4 @@
  * Angular entry point.
  */
 export { SvGridComponent } from './svgrid.component'
+export { SvChartComponent } from './svchart.component'

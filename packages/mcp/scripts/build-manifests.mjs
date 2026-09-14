@@ -158,6 +158,15 @@ const apiReference = {
 // `check_svgrid_code` validates against, so it must be generated rather than
 // curated - a hand-kept list would go stale and start rejecting valid code.
 const apiSurface = buildApiSurface(repoRoot)
+// The JSON schemas (docs/schemas, built by tools/build-schemas.mjs), so a
+// model can ask for "the chart spec schema" and validate what it writes.
+const schemasDir = join(repoRoot, 'docs', 'schemas')
+const schemaIndex = JSON.parse(readFileSync(join(schemasDir, 'index.json'), 'utf8'))
+const schemas = schemaIndex.schemas.map((s) => ({
+  id: s.id,
+  describes: s.describes,
+  json: readFileSync(join(schemasDir, s.file), 'utf8'),
+}))
 
 // The arrays carry explicit types rather than `as const`. Inferring literal
 // types for 373 demo sources blows past what tsc will serialize into a .d.ts
@@ -189,6 +198,9 @@ export const docs: readonly DocEntry[] = ${JSON.stringify(docs, null, 2)}
 export const apiReference = ${JSON.stringify(apiReference, null, 2)} as const
 
 export const apiSurface: ApiSurface = ${JSON.stringify(apiSurface, null, 2)}
+
+/** The JSON schemas under https://svgrid.com/schemas/, by id. */
+export const schemas: ReadonlyArray<{ id: string; describes: string; json: string }> = ${JSON.stringify(schemas, null, 2)}
 `
 
 mkdirSync(join(pkgRoot, 'src'), { recursive: true })

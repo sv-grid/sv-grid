@@ -163,4 +163,18 @@ describe('demo <-> docs coverage', () => {
     }
     expect(stranded, 'pages with content below "See also"').toEqual([])
   })
+
+  it('every chart page carries at least three live demos', () => {
+    // The chart docs follow the grid docs: a page teaches with running
+    // gallery demos, not prose alone, and three is the floor the user set for
+    // them. Runnables do not count here; they are small and isolate one idea,
+    // while a gallery demo is a whole chart with its controls.
+    const thin: string[] = []
+    for (const [path, raw] of docs) {
+      if (!/^docs\/help\/charts(\/|\.md$)/.test(path)) continue
+      const embeds = (raw.match(/data-docs-demo="/g) ?? []).length
+      if (embeds < 3) thin.push(`${path} (${embeds})`)
+    }
+    expect(thin, 'chart pages with fewer than three demo embeds').toEqual([])
+  })
 })

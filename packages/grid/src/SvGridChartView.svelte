@@ -31,10 +31,9 @@
     localization?: { locale?: string | ReadonlyArray<string> };
   } = $props();
 
-  // Container size -> chart viewBox, so the chart fills the grid area and
-  // re-lays out on resize (the same responsive behaviour a table view has).
-  let w = $state(0);
-  let h = $state(0);
+  // The chart fills the grid area and re-lays out on resize (the same
+  // responsive behaviour a table view has) through its own `autosize`, which
+  // also keeps its legend inside the box instead of below it.
 
   const spec = $derived.by<ChartSpec>(() => {
     const s = rowsToChartSpec((data ?? []) as ReadonlyArray<Record<string, unknown>>, {
@@ -57,20 +56,20 @@
   });
 </script>
 
-<div class="sv-grid-chart-view" bind:clientWidth={w} bind:clientHeight={h}>
-  {#if w > 0 && h > 0}
-    <SvGridChart
-      {spec}
-      width={w}
-      height={h}
-      legend={chart.legend ?? true}
-      dataLabels={chart.dataLabels ?? false}
-    />
-  {/if}
+<div class="sv-grid-chart-view">
+  <SvGridChart
+    {spec}
+    autosize
+    legend={chart.legend ?? true}
+    dataLabels={chart.dataLabels ?? false}
+  />
 </div>
 
 <style>
+  /* A grid, so the autosized chart is stretched to the full height rather
+     than asking for a percentage of it (which cannot be measured reliably). */
   .sv-grid-chart-view {
+    display: grid;
     width: 100%;
     height: 100%;
     min-height: 0;

@@ -3,9 +3,10 @@
  *
  * Each placement becomes a live `data-docs-demo` host appended to the page
  * under a "More examples" heading, with the demo's registry title and
- * description as the caption. Idempotent: a demo already present on the page
- * (in any form - embed, link, or bare id) is skipped, so re-running after
- * hand-editing a page does not duplicate anything.
+ * description as the caption. Idempotent: a demo already embedded on the page
+ * is skipped, so re-running after hand-editing a page does not duplicate
+ * anything. A link to the demo's gallery page is not an embed and does not
+ * count; the section opens above "See also", which stays last.
  *
  *   node tools/demo-doc-embed.mjs --dry     # report only
  *   node tools/demo-doc-embed.mjs           # write
@@ -40,6 +41,23 @@ function heightFor(category) {
   return 460
 }
 
+/** Whether the page already carries a live host for this demo. A link or a bare mention is not one. */
+export function isEmbedded(text, id) {
+  return text.includes(`data-docs-demo="${id}"`)
+}
+
+/**
+ * The page with the blocks added under "More examples": an existing section
+ * grows, otherwise one opens above "See also" (the coverage test keeps that
+ * section last on every page) or at the end when there is none.
+ */
+export function embedInto(text, blocks) {
+  if (text.includes(HEADING)) return text.replace(HEADING, `${HEADING}\n\n${blocks.trimEnd()}\n`)
+  const seeAlso = /\n## See also\b/.exec(text)
+  if (seeAlso) return `${text.slice(0, seeAlso.index).trimEnd()}\n\n${HEADING}\n\n${blocks.trimEnd()}\n${text.slice(seeAlso.index)}`
+  return `${text.trimEnd()}\n\n${HEADING}\n\n${blocks.trimEnd()}\n`
+}
+
 export function apply({ dry = false } = {}) {
   const placements = JSON.parse(readFileSync(PLACEMENTS, 'utf-8'))
   const registry = new Map(loadRegistry().map((d) => [d.id, d]))
@@ -47,6 +65,10 @@ export function apply({ dry = false } = {}) {
   let added = 0
   let skipped = 0
   const touched = []
+  // An id the registry does not know is a typo in the placements, or a
+  // registry entry the parser cannot read (a double-quoted demo() call). It
+  // used to be counted as "already present", which hid exactly that.
+  const unknown = []
 
   for (const [page, ids] of Object.entries(placements)) {
     if (page.startsWith('$')) continue
@@ -60,32 +82,36 @@ export function apply({ dry = false } = {}) {
     const crlf = raw.includes('\r\n')
     let text = raw.replace(/\r\n/g, '\n')
 
-    const fresh = ids.filter((id) => registry.has(id) && !text.includes(id))
-    skipped += ids.length - fresh.length
+    for (const id of ids) if (!registry.has(id)) unknown.push(`${id} (in ${page})`)
+    const known = ids.filter((id) => registry.has(id))
+    // Present means embedded. A page that only linked to a demo's gallery URL
+    // used to count, so a placement for it was skipped and the page stayed
+    // without the live example the placement asked for.
+    const fresh = known.filter((id) => !isEmbedded(text, id))
+    skipped += known.length - fresh.length
     if (!fresh.length) continue
 
     const blocks = fresh
       .map((id) => block(registry.get(id), heightFor(registry.get(id).category)))
       .join('\n')
 
-    if (text.includes(HEADING)) {
-      // Extend the existing section rather than opening a second one.
-      text = text.replace(HEADING, `${HEADING}\n\n${blocks.trimEnd()}\n`)
-    } else {
-      text = `${text.trimEnd()}\n\n${HEADING}\n\n${blocks.trimEnd()}\n`
-    }
+    text = embedInto(text, blocks)
 
     if (!dry) writeFileSync(page, crlf ? text.replace(/\n/g, '\r\n') : text)
     added += fresh.length
     touched.push([page, fresh.length])
   }
 
-  return { added, skipped, touched }
+  return { added, skipped, touched, unknown }
 }
 
 if (process.argv[1]?.endsWith('demo-doc-embed.mjs')) {
   const dry = process.argv.includes('--dry')
-  const { added, skipped, touched } = apply({ dry })
+  const { added, skipped, touched, unknown } = apply({ dry })
   for (const [page, n] of touched) console.log(`  +${String(n).padStart(2)}  ${page}`)
   console.log(`\n${dry ? '[dry] would add' : 'added'} ${added} embeds across ${touched.length} pages (${skipped} already present)`)
+  if (unknown.length) {
+    console.error(`\n${unknown.length} placement id(s) not in the registry (website/src/lib/demos.ts, single-quoted demo() calls):\n  ${unknown.join('\n  ')}`)
+    process.exitCode = 1
+  }
 }

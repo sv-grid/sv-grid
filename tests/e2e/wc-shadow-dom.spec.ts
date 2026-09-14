@@ -4,9 +4,10 @@ import { test, expect, type Page } from '@playwright/test'
  * `<sv-grid-shadow>` - the grid inside an OPEN shadow root.
  *
  * Runs against the BUILT bundles on :4205, not a dev server, because the piece
- * this feature turns on is a build-only plugin: it hoists the bundle's CSS into
- * one string, puts it on `globalThis.__SVGRID_WC_CSS__` for the root to adopt,
- * and appends it to `document.head` for the popups that portal out of the root.
+ * this feature turns on is a build-only plugin: it inlines each chunk's CSS into
+ * that chunk, puts the entry's on `globalThis.__SVGRID_WC_CSS__` for the root
+ * to adopt, appends it to `document.head` for the popups that portal out of
+ * the root, and hands a lazy chunk's CSS to adopt-styles when the chunk loads.
  * In dev that global does not exist and `adoptGridStyles` correctly no-ops, so
  * a dev-server test would pass while asserting nothing.
  *
@@ -153,6 +154,32 @@ test.describe('<sv-grid-shadow>', () => {
     // Unstyled would be a 0px border on a transparent ground.
     expect(panel.border).not.toBe('0px')
     expect(panel.bg).not.toBe('rgba(0, 0, 0, 0)')
+  })
+
+  test('a lazy chunk brings its own styles, into the document and into the root', async ({ page }) => {
+    await setup(page)
+    // Before anything lazy loads: one head <style> (the entry's), one adopted sheet.
+    expect(
+      await page.evaluate(() => ({
+        chunkStyles: document.querySelectorAll('style[data-svgrid-grid-wc-chunk]').length,
+        sheets: document.getElementById('s')!.shadowRoot!.adoptedStyleSheets.length,
+      })),
+    ).toEqual({ chunkStyles: 0, sheets: 1 })
+    // The list editor is a lazy chunk; opening it loads the chunk and its CSS.
+    const cell = (await inRoot(
+      page,
+      `const q = r.querySelector('td[data-svgrid-row="1"][data-svgrid-col="2"]').getBoundingClientRect()
+       return { x: Math.round(q.x + q.width / 2), y: Math.round(q.y + q.height / 2) }`,
+    )) as { x: number; y: number }
+    await page.mouse.dblclick(cell.x, cell.y)
+    await expect
+      .poll(() => page.evaluate(() => document.querySelectorAll('style[data-svgrid-grid-wc-chunk]').length), { timeout: 10_000 })
+      .toBeGreaterThan(0)
+    // The same CSS reached the shadow root as an extra adopted sheet, so
+    // whatever the chunk renders INSIDE the root is styled too.
+    await expect
+      .poll(() => page.evaluate(() => document.getElementById('s')!.shadowRoot!.adoptedStyleSheets.length), { timeout: 10_000 })
+      .toBeGreaterThan(1)
   })
 
   test('events cross the boundary to a listener on the host', async ({ page }) => {

@@ -1,4 +1,4 @@
-<!-- Documented in: docs/help/charts.md -->
+<!-- Documented in: docs/help/charts/axes-and-styling.md -->
 <script lang="ts">
   /**
    * 156. Chart pattern fills (colorblind-safe)

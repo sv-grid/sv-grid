@@ -11,6 +11,8 @@
  *   subpaths     the specifiers a consumer may import from (package.json exports)
  *   props        the top-level keys of <SvGrid>'s Props type, with their types
  *   columnDef    the top-level keys of ColumnDef
+ *   chartSpec    the keys of ChartSpec and ChartSeries, the chart types and
+ *                the overlay strings, so a static spec literal can be checked
  *   themes       the shipped theme stylesheet names
  */
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
@@ -246,6 +248,51 @@ export function subpathsOf(pkgJson, pkgName) {
   return out.sort()
 }
 
+/**
+ * The literal members of a string-union type alias, e.g. `'bar' | 'line'`
+ * for `ChartType`, in source order, plus its template-literal members
+ * (`` `sma:${number}` ``) as regex sources with `${number}` standing for a
+ * number, so a checker can test a string against the whole union.
+ */
+export function parseStringUnion(text, typeName) {
+  const head = new RegExp(`export\\s+type\\s+${typeName}\\s*=`).exec(text)
+  if (!head) return { literals: [], patterns: [] }
+  const rest = text.slice(head.index + head[0].length)
+  // The union runs to the first blank line, and only indented lines continue
+  // it, so the next top-level statement never leaks in.
+  const lines = rest.split('\n')
+  const body = [lines[0]]
+  for (let i = 1; i < lines.length; i += 1) {
+    if (lines[i].trim() === '' || !/^\s/.test(lines[i])) break
+    body.push(lines[i])
+  }
+  const src = body.join('\n')
+  const literals = [...src.matchAll(/'([^'\n]+)'/g)].map((m) => m[1])
+  const escape = (s) => s.replace(/[.*+?^()|[\]\\]/g, '\\$&')
+  const patterns = [...src.matchAll(/`([^`\n]+)`/g)].map((m) =>
+    '^' + m[1].split('${number}').map(escape).join('\\d+(?:\\.\\d+)?') + '$',
+  )
+  return { literals, patterns }
+}
+
+/**
+ * The string literals of one member of an object type, read from the raw
+ * source (the member table blanks strings), e.g. the `type` of a series.
+ */
+export function memberLiterals(text, typeName, member) {
+  const head = new RegExp(`export\\s+type\\s+${typeName}\\s*=\\s*\\{`).exec(text)
+  if (!head) return []
+  const body = text.slice(head.index)
+  const at = new RegExp(`\\n\\s+${member}\\??:`).exec(body)
+  if (!at) return []
+  // The member's type runs until the next member line (a name and a colon at
+  // the member indent), the next member's doc comment, or the closing brace.
+  const rest = body.slice(at.index + at[0].length)
+  const stop = /\n  (?:[A-Za-z_$][\w$]*\??:|\/\*\*|\/\/)|\n\}/.exec(rest)
+  const typeText = rest.slice(0, stop ? stop.index : rest.length)
+  return [...typeText.matchAll(/'([^'\n]+)'/g)].map((x) => x[1])
+}
+
 /** Build the whole surface manifest from the workspace. */
 export function buildApiSurface(repoRoot) {
   const gridSrc = join(repoRoot, 'packages', 'grid', 'src')
@@ -273,6 +320,19 @@ export function buildApiSurface(repoRoot) {
     'EnterpriseGridApi',
   ).map((m) => m.name)
 
+  // The chart spec's vocabulary, for `checkChartSpecs`: every top-level key,
+  // every series key, every chart type and the overlay strings.
+  const chartTypesText = readFileSync(join(gridSrc, 'chart-types.ts'), 'utf8')
+  const overlay = parseStringUnion(chartTypesText, 'SeriesOverlay')
+  const chartSpec = {
+    keys: parseTypeMembers(chartTypesText, 'ChartSpec').map((m) => m.name),
+    seriesKeys: parseTypeMembers(chartTypesText, 'ChartSeries').map((m) => m.name),
+    types: parseStringUnion(chartTypesText, 'ChartType').literals,
+    seriesTypes: memberLiterals(chartTypesText, 'ChartSeries', 'type'),
+    overlays: overlay.literals,
+    overlayPatterns: overlay.patterns,
+  }
+
   const themesDir = join(repoRoot, 'packages', 'grid', 'themes')
   const themes = existsSync(themesDir)
     ? readdirSync(themesDir)
@@ -287,6 +347,7 @@ export function buildApiSurface(repoRoot) {
     enterprise: { ...enterprise, subpaths: subpathsOf(entPkg, '@svgrid/enterprise') },
     props,
     columnDef,
+    chartSpec,
     apiMethods: apiMethods.sort(),
     enterpriseApiMethods: enterpriseApiMethods.sort(),
     themes,

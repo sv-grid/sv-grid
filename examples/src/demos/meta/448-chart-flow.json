@@ -1,0 +1,24 @@
+{
+  "description": "Flow diagrams: a sankey takes sankeyNodes and sankeyLinks (source, target, value), places the nodes in columns by their depth and draws each link as a ribbon whose width is the value; a chord takes the same nodes and links and arranges them on a circle, the shape for flows that go both ways; specToSankey builds nodes and links from a split spec. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte sankey diagram",
+    "svelte chord diagram",
+    "svelte flow chart data",
+    "svelte energy flow chart",
+    "svelte sankey nodes links"
+  ],
+  "faq": [
+    {
+      "question": "How are the sankey columns decided?",
+      "answer": "By depth: a node with no incoming links is in the first column, its targets in the next, and so on. Give a node a colour through sankeyNodes; the links take the colour of their source."
+    },
+    {
+      "question": "When is a chord better than a sankey?",
+      "answer": "When flows run both ways between the same pair, such as exports in each direction. A sankey wants a direction; a chord puts both ribbons between the same two arcs."
+    },
+    {
+      "question": "Can I build the links from rows?",
+      "answer": "Yes: rowsToChartSpec with a category and a series field, then specToSankey turns that split spec into nodes and links."
+    }
+  ]
+}

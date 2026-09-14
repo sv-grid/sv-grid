@@ -1,0 +1,24 @@
+{
+  "description": "Annotations and reference marks: annotations pin a flag, pin, dot or square to a category with a label, a placement and a text the tooltip shows; referenceBands shade a range on either axis and referenceLines mark a value with an optional pill; drawings (a trend line, a rectangle, a text note) are data points that stay put through zoom and resize, drawable puts the tools in the toolbar, annotatable lets a reader pin a note on a click through onAnnotate, and tooltipSticky pins the tooltip so a note can be read. Free, in @svgrid/grid.",
+  "keywords": [
+    "svelte chart annotations",
+    "svelte chart reference line",
+    "svelte chart event markers",
+    "svelte chart drawing tools",
+    "svelte chart shaded region"
+  ],
+  "faq": [
+    {
+      "question": "How do I mark an event on the chart?",
+      "answer": "Add an entry to annotations with at: { category }, a label, a shape (flag, pin, dot or square) and optionally a text for the tooltip and a placement for the label."
+    },
+    {
+      "question": "How do I shade a period?",
+      "answer": "referenceBands with axis: x and from and to as categories. Without axis it shades a value range on the y axis instead."
+    },
+    {
+      "question": "Can readers add their own notes?",
+      "answer": "Yes: annotatable adds an Annotate toggle to the toolbar; while it is on, clicking the plot fires onAnnotate with the data point, and you put it into spec.annotations. The chart owns the gesture and you own the storage."
+    }
+  ]
+}

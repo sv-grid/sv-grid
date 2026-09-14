@@ -14,18 +14,38 @@ own scrollbar position all flip:
 
 ## What ships translated
 
-**Nothing.** The grid has no built-in strings to translate. Every
-visible string in the grid comes from one of three places:
+**No catalogues, English defaults, every string overridable.** What a reader
+sees in the grid comes from four places:
 
 1. Your column `header` strings.
 2. Your cell snippet content.
 3. The `Intl.NumberFormat` / `Intl.DateTimeFormat` output the grid
    uses for `format: { type: 'number' | 'currency' | 'percent' | 'date' }`.
+4. The grid's own chrome: the empty and loading states, the pager, the tool
+   panel, the status bar, the group labels, the filter operators, the
+   context menu, the selection bar and its bulk-edit dialog, the screen
+   reader announcements, the chart panel and its builder. These are English
+   out of the box and live in one flat map, `GridMessages`; pass any subset
+   as `localization.text` and unset keys stay English. Sentences with
+   `{placeholders}` (the announcements, "Remove {title}") let a translator
+   control the word order. `defaultGridMessages` and
+   `defaultChartPanelMessages` are exported, so the full English maps are
+   there to copy from.
 
-If you see an English string in the grid that isn't covered by one of
-the three, it's a bug - please file it. (The unlicensed Enterprise
-watermark and the console nudge are the only literal strings the
-package itself emits, and both are off when a license key is set.)
+```svelte
+<SvGrid {data} {columns} pageable charting
+  localization={{
+    locale: 'de-DE',
+    text: { noRows: 'Keine Zeilen', pageSize: 'Zeilen pro Seite:', opContains: 'Enthält', chartPanelTitle: 'Diagramm' },
+  }} />
+```
+
+The charts the grid draws have a map of their own (`localeText`, see
+[chart localization](charts/accessibility.md#localization)). If you see an
+English string that none of the four covers, it's a bug - please file it.
+(The unlicensed Enterprise watermark and the console nudge are the only
+literal strings the package itself emits, and both are off when a license
+key is set.)
 
 ## Number, currency, date formatting
 
@@ -267,7 +287,11 @@ no special configuration.
 
 The grid is locale-agnostic: every text label is yours to translate, and every
 formatted value (number, currency, percent, date) goes through `Intl` with the
-locale you pass. Wire your own i18n strings into headers and custom cells.
+locale you pass. Wire your own i18n strings into headers and custom cells. The
+grid's own chrome (pager, tool panel, filter operators, context menu) and the
+chart panel translate through `localization.text`; the
+[chart localization page](charts/accessibility.md#localization) lists the
+chart keys.
 
 ### Does SvGrid format numbers and dates per locale?
 
