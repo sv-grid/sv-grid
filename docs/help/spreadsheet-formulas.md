@@ -63,6 +63,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Ranges | `A1:A10`, `B2:D5`, `A1 : B2`, whole columns `A:C` |
 | Cross-sheet | `Orders!A1`, `'Price list'!A1:C9` |
 | Defined names | `=Tax*2`, resolved through `resolveName` |
+| Structured refs | `Orders[Amount]`, `[@Qty]`, `Orders[#Totals]` - see [tables](./cells/tables.md) |
 | Arithmetic | `+ - * / ^`, unary `-` and `+`, postfix `%` |
 | Comparison | `=` `<>` `<` `>` `<=` `>=` |
 | Concatenation | `&` |

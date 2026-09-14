@@ -55,6 +55,13 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
       case 'ref': return { k: 'ref', ref: t.ref }
       case 'range': return { k: 'range', from: t.from, to: t.to }
       case 'name': return { k: 'name', name: t.v }
+      case 'table':
+        return t.columnTo === undefined
+          ? { k: 'table', table: t.table, column: t.column, specifier: t.specifier }
+          : {
+              k: 'table', table: t.table, column: t.column,
+              columnTo: t.columnTo, specifier: t.specifier,
+            }
       case 'lparen': {
         const inner = expression(1)
         const close = next()

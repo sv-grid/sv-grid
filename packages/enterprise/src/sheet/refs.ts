@@ -69,6 +69,17 @@ function render(node: Node): string {
       return `${from}:${to}`
     }
     case 'name': return node.name
+    case 'table': {
+      // Re-serialised, never translated: the whole point of a structured
+      // reference is that it does not move when the formula does.
+      const parts: string[] = []
+      if (node.specifier === '#ThisRow') parts.push(node.column ? `@${node.column}` : '@')
+      else if (node.specifier !== '#Data') parts.push(node.specifier)
+      if (node.specifier !== '#ThisRow' && node.column) {
+        parts.push(node.columnTo ? `[${node.column}]:[${node.columnTo}]` : node.column)
+      }
+      return `${node.table ?? ''}[${parts.join(',')}]`
+    }
     case 'unary':
       return node.op === '%'
         ? `${wrap(node.arg, 6)}%`

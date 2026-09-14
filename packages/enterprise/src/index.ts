@@ -76,6 +76,12 @@ export { default as SvGridBulkEditDrawer } from './SvGridBulkEditDrawer.svelte'
 export { enablePivot } from './pivot-enable'
 export { enableSheet } from './sheet-enable'
 export {
+  createTableRegistry, isValidTableName, resolveTableRange,
+  columnIndexOf, rowCountOf,
+  type TableRegion, type TableRegistry, type TableRange, type TableSpecifier,
+} from './sheet/tables'
+
+export {
   goalSeek, goalSeekCell,
   type GoalSeekOptions, type GoalSeekResult, type GoalSeekSheet,
   type CellAddress as GoalSeekCellAddress,
