@@ -3,6 +3,7 @@ import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
   fillDown, fillRight, fillSelection, stampNow, stampDate, copyFromAbove,
   guessSumRange, looksNumeric, targetRect, setFillTranslator,
+  setSheetValueProbe,
 } from './commands'
 
 /**
@@ -228,5 +229,59 @@ describe('guessSumRange', () => {
   it('counts a zero above as part of the run', () => {
     const { cmd } = fakeCmd([[0], [0], ['']], [], { row: 2, col: 0 })
     expect(guessSumRange(cmd, looksNumeric)).toEqual([0, 0, 1, 0])
+  })
+})
+
+/**
+ * AutoSum over a column that contains formulas.
+ *
+ * Cells hold raw text, so without a value probe `=SUM(A1:A3)` reads as a
+ * string and ends the run. Excel counts a formula that produces a number as
+ * a number, and so does this once an engine is attached.
+ */
+describe('guessSumRange with an engine attached', () => {
+  const RAW: Record<string, string> = {
+    '0:0': '10', '1:0': '20', '2:0': '30', '3:0': '=SUM(A1:A3)',
+  }
+  const VALUES: Record<string, unknown> = {
+    '0:0': 10, '1:0': 20, '2:0': 30, '3:0': 60,
+  }
+
+  function cmdAt(rowIndex: number, colIndex: number): GridCommandContext {
+    return {
+      activeCell: { rowIndex, colIndex, columnId: 'a' },
+      rowCount: 8,
+      colCount: 3,
+      ranges: [],
+      getCellValue: (r: number, c: number) => RAW[`${r}:${c}`],
+      setCellValue: () => {},
+      batch: <T,>(fn: () => T) => fn(),
+    } as unknown as GridCommandContext
+  }
+
+  afterEach(() => setSheetValueProbe(null))
+
+  it('stops at a formula cell with no probe attached', () => {
+    // A5, with A4 holding a formula. The raw text is not a number, so the
+    // run above is empty and AutoSum has nothing to offer.
+    expect(guessSumRange(cmdAt(4, 0), looksNumeric)).toBeNull()
+  })
+
+  it('runs through the formula once the probe reports its value', () => {
+    setSheetValueProbe((r, c) => VALUES[`${r}:${c}`])
+    expect(guessSumRange(cmdAt(4, 0), looksNumeric)).toEqual([0, 0, 3, 0])
+  })
+
+  it('treats an engine error as not a number, ending the run', () => {
+    setSheetValueProbe((r, c) =>
+      r === 3 && c === 0 ? { error: '#DIV/0!' } : VALUES[`${r}:${c}`],
+    )
+    // The run stops below the error rather than swallowing it.
+    expect(guessSumRange(cmdAt(4, 0), looksNumeric)).toBeNull()
+  })
+
+  it('still finds the run to the LEFT through the probe', () => {
+    setSheetValueProbe((r, c) => (r === 5 && c < 3 ? (c + 1) * 10 : undefined))
+    expect(guessSumRange(cmdAt(5, 3), looksNumeric)).toEqual([5, 0, 5, 2])
   })
 })

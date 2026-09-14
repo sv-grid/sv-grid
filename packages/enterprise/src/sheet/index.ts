@@ -121,6 +121,7 @@ export {
 } from './navigate'
 export {
   fillDown, fillRight, fillSelection, stampDate, stampNow, copyFromAbove,
-  guessSumRange, looksNumeric, targetRect, setFillTranslator,
-  type FillTranslator,
+  guessSumRange, looksNumeric, numericAt, targetRect, setFillTranslator,
+  setSheetValueProbe, getSheetValueProbe,
+  type FillTranslator, type SheetValueProbe,
 } from './commands'
