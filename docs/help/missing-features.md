@@ -47,6 +47,7 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Reference-aware fill~~ | **shipped** - `enableSheet()` wires `translateFormula` into Ctrl+D / Ctrl+R, so a filled formula shifts its relative refs and keeps its pinned ones | ✓ |
 | ~~Paste Special~~ | **shipped** - values / formulas / formats / transpose / add-subtract-multiply-divide / skip-blanks, plus a `text/html` clipboard flavour so formats and formulas survive a round trip through Excel. `Ctrl+Shift+V` | ✓ |
 | ~~Find and Replace~~ | **shipped** - match case, whole cell, look in values or formulas, scope to the selection, Replace All as one undo. `Ctrl+H` | ✓ |
+| ~~Text to Columns, Remove Duplicates~~ | **shipped** - `textToColumns` / `splitText` / `guessDelimiter` split a column, quoted fields and doubled quotes included; `findDuplicates` / `removeDuplicates` report before they remove, and match case-insensitively as Excel does | done |
 | ~~Insert / delete with reference fixup~~ | **shipped** - `Ctrl+Shift+Plus` / `Ctrl+Minus` rewrite every formula and named range through `fixupReferences` | ✓ |
 | **Freeze panes: the ROW half** | columns freeze properly through pinning, and `splitFrozenRows` does the row arithmetic, but the consumer applies it: the grid renders `pinnedTopRows` into a separate tbody above a body that still renders every row, so true row freeze needs the virtualizer to skip them | M |
 | `Alt+Enter`, `F4` | the command seam runs in the editor as well as on the grid root, so these are wiring rather than plumbing | M |

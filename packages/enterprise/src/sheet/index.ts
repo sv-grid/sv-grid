@@ -9,6 +9,12 @@
  */
 export { enableSheet } from '../sheet-enable'
 export {
+  splitText, textToColumns, guessDelimiter,
+  findDuplicates, removeDuplicates,
+  type SplitOptions, type DuplicateOptions, type DuplicateReport,
+} from './transforms'
+
+export {
   insertRows, deleteRows, insertColumns, deleteColumns,
   axisForSelection, setStructureTarget, getStructureTarget, rewriteFormulas,
   type StructureTarget,

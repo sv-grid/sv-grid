@@ -189,6 +189,61 @@ So `applyFreeze` does the column half through the api and reports the state;
 the Excel gestures. Split panes stays declined: a second scroll viewport in the
 hot render path, for something freeze already covers.
 
+## Text to Columns and Remove Duplicates
+
+The two one-shot transforms an Excel user reaches for on arriving data. Both
+are pure functions rather than commands, because they get run from a button, a
+menu, a paste handler or a test, and none of those want a keystroke.
+
+```ts
+import {
+  splitText, textToColumns, guessDelimiter,
+  findDuplicates, removeDuplicates,
+} from '@svgrid/enterprise/sheet'
+```
+
+### Text to Columns
+
+```ts
+guessDelimiter(['a;b', 'c;d'])        // ';'
+textToColumns(['a,b,c', 'd,e'])
+// { rows: [['a','b','c'], ['d','e','']], width: 3 }
+```
+
+Every row is padded to the widest. That matters: writing a ragged result into
+a grid leaves whatever was already in the cell, so a row that split into two
+fields would keep stale text in the third column.
+
+`splitText` is a scan, not a `String.split`, because a quoted field may contain
+the delimiter and a doubled quote is an escaped one:
+
+```ts
+splitText('a,"b,c",d')                                      // ['a', 'b,c', 'd']
+splitText('a   b', { delimiters: [' '], collapse: true })   // ['a', 'b']
+splitText('a:b:c', { delimiters: [':'], limit: 2 })         // ['a', 'b:c']
+```
+
+`guessDelimiter` scores a candidate on appearing in most rows **and** the same
+number of times in each, so a comma inside one field does not beat the tab
+that actually separates the columns.
+
+### Remove Duplicates
+
+`findDuplicates` reports rather than removes, so the caller decides what
+removal means for its data structure and a UI can say "3 duplicates found"
+before anything is written:
+
+```ts
+findDuplicates([['a'], ['b'], ['a']])
+// { keep: [0, 1], remove: [2] }
+
+removeDuplicates(rows, (r) => [r.email], { matchCase: true })
+// { rows: [...], removed: 3 }
+```
+
+Comparison is **case-insensitive** by default, matching Excel. That surprises
+people, which is exactly why it matches rather than being tidier.
+
 ## See also
 
 - [Excel keyboard shortcuts](./keyboard-shortcuts.md)
