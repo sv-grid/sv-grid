@@ -1,0 +1,24 @@
+{
+  "description": "Defined names and a Name Manager on a Svelte 5 spreadsheet grid: an assumptions-driven twelve-month forecast where every formula reads a name, =B2*(1+Growth-Churn), instead of an address. The Name Box lists the names and jumps to a name's cell on the Assumptions sheet; Formulas > Name Manager adds, repoints and deletes names while the forecast recomputes. Inputs in blue, negatives red in parentheses, break-even found with INDEX and MATCH. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte named ranges",
+    "svelte spreadsheet name manager",
+    "svelte defined names formulas",
+    "svelte forecast spreadsheet",
+    "svelte grid name box"
+  ],
+  "faq": [
+    {
+      "question": "How is a name defined?",
+      "answer": "Through Formulas > Name Manager, with a name and the range it refers to, or from code with createNames. Formulas then use the name in place of the address, and the Name Box lists it."
+    },
+    {
+      "question": "What happens when a name is repointed?",
+      "answer": "Every formula that reads the name picks up the new cell on the next recalculation, so the forecast follows without editing a single formula."
+    },
+    {
+      "question": "Do names cross sheets?",
+      "answer": "Yes. Growth and Churn live on the Assumptions sheet and the forecast on another; a name carries its sheet, so =B2*(1+Growth-Churn) works from anywhere in the workbook."
+    }
+  ]
+}

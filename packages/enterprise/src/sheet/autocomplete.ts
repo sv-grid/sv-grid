@@ -111,12 +111,36 @@ export function applySuggestion(
   const before = text.slice(0, suggestion.start)
   const after = text.slice(suggestion.end)
   // Do not double up a parenthesis the user already typed.
-  const needsParens = !after.startsWith('(')
-  const inserted = needsParens ? `${suggestion.name}()` : suggestion.name
+  const needsParen = !after.startsWith('(')
+  // Only the OPENING parenthesis, as Excel inserts it. Inserting the pair
+  // put the caret between them, and everyone who then typed the arguments
+  // finished with a ")" of their own and got =SUM(A1:A3)) and #PARSE!.
+  // The closing one is supplied at commit by `balanceParens` when it is
+  // still missing, which is what Excel does too.
+  const inserted = needsParen ? `${suggestion.name}(` : suggestion.name
   return {
     text: before + inserted + after,
-    caret: before.length + suggestion.name.length + (needsParens ? 1 : 0),
+    caret: before.length + inserted.length,
   }
+}
+
+/**
+ * Close the parentheses a formula left open, the way Excel corrects
+ * "=SUM(A1:A3" to "=SUM(A1:A3)" when it is entered. Quoted text is skipped,
+ * so a ")" inside a string neither closes nor needs closing. Text that is
+ * not a formula, or has more closers than openers, is returned as it is:
+ * that one is an error the engine should report, not paper over.
+ */
+export function balanceParens(text: string): string {
+  if (!text.startsWith('=')) return text
+  let depth = 0
+  let inString = false
+  for (const ch of text) {
+    if (ch === '"') inString = !inString
+    else if (!inString && ch === '(') depth += 1
+    else if (!inString && ch === ')') depth -= 1
+  }
+  return depth > 0 ? text + ')'.repeat(depth) : text
 }
 
 /** The signature hint for whatever call the caret is inside, if any. */

@@ -565,6 +565,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
     | ((row: TData) => EditorOptionSource | Promise<EditorOptionSource>)
   /** When true, list/chips allow multiple selections. Cell value becomes an array. */
   editorMultiple?: boolean
+  /**
+   * The text editor accepts line breaks: Alt+Enter inserts one and the
+   * editor grows a line per break, while Enter still commits. What a
+   * spreadsheet cell with wrapped text wants; `editorType: 'textarea'` is
+   * the other shape, where Enter itself is the line break.
+   */
+  editorMultiline?: boolean
   /** Separator used when joining array values for the readonly cell display. Defaults to ', '. */
   editorSeparator?: string
   format?: CellFormatConfig

@@ -233,8 +233,12 @@ export function createVirtualizer(initial: VirtualizerOptions) {
     const sizeFn = options.estimateSize
     const offsets = new Array<number>(count + 1)
     offsets[0] = 0
+    // A size of 0 is a real size: a collapsed row or column takes no room
+    // and both searches below stay monotonic over equal offsets. Only a
+    // negative size is nonsense. The floor used to be 1, which left every
+    // hidden column a one-pixel sliver.
     for (let i = 0; i < count; i += 1) {
-      offsets[i + 1] = offsets[i]! + Math.max(sizeFn(i), 1)
+      offsets[i + 1] = offsets[i]! + Math.max(sizeFn(i), 0)
     }
     offsetCache = { fn: sizeFn, count, offsets }
     return offsets

@@ -68,19 +68,61 @@ describe('SvSheetTabs (DOM)', () => {
     expect(workbook.active).toBe('Sheet1')
   })
 
-  it('deletes a sheet', () => {
+  /** Right-click a tab: the sheet menu Excel opens, with Delete on it. */
+  function openMenu(el: HTMLElement, name: string): HTMLElement {
+    const tab = [...el.querySelectorAll<HTMLElement>('.tab')]
+      .find((t) => t.textContent?.trim() === name)!
+    tab.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 20 }))
+    flushSync()
+    return document.querySelector<HTMLElement>('.sheet-menu')!
+  }
+
+  function menuItem(menu: HTMLElement, label: string): HTMLButtonElement {
+    return [...menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
+      .find((b) => b.textContent?.trim() === label)!
+  }
+
+  it('deletes a sheet from the right-click menu, and from nowhere on the tab face', () => {
+    // Excel keeps Delete behind a right-click; a button on the tab itself
+    // is one stray click from losing a sheet.
     const workbook = threeSheets()
     const el = render({ workbook })
-    el.querySelector<HTMLButtonElement>('[aria-label="Delete Budget"]')!.click()
+    expect(el.querySelector('[aria-label="Delete Budget"]')).toBeNull()
+    menuItem(openMenu(el, 'Budget'), 'Delete').click()
     flushSync()
     expect(workbook.sheets).toEqual(['Orders', 'Summary'])
   })
 
-  it('offers no delete button when one sheet is left', () => {
-    // The workbook refuses to remove it, so showing a button that does
-    // nothing would be worse than not showing one.
+  it('inserts, renames and moves from the same menu', () => {
+    const workbook = threeSheets()
+    const el = render({ workbook })
+    menuItem(openMenu(el, 'Orders'), 'Move Right').click()
+    flushSync()
+    expect(workbook.sheets).toEqual(['Budget', 'Summary', 'Orders'])
+    menuItem(openMenu(el, 'Summary'), 'Insert...').click()
+    flushSync()
+    expect(workbook.sheets).toEqual(['Budget', 'Sheet1', 'Summary', 'Orders'])
+    expect(workbook.active).toBe('Sheet1')
+    menuItem(openMenu(el, 'Sheet1'), 'Rename').click()
+    flushSync()
+    expect(el.querySelector('.rename')).not.toBeNull()
+  })
+
+  it('greys Delete out when one sheet is left', () => {
+    // The workbook refuses to remove it, so an enabled item that does
+    // nothing would be worse than a disabled one.
     const el = render({ workbook: createWorkbook() })
-    expect(el.querySelector('.close')).toBeNull()
+    expect(menuItem(openMenu(el, 'Sheet1'), 'Delete').disabled).toBe(true)
+  })
+
+  it('greys the scroll arrows until the strip has somewhere to scroll', () => {
+    // jsdom lays nothing out, so the strip never overflows: both arrows
+    // read disabled, which is also what one sheet in a wide strip shows.
+    const el = render({ workbook: createWorkbook() })
+    const left = el.querySelector<HTMLButtonElement>('button[aria-label="Scroll tabs left"]')!
+    const right = el.querySelector<HTMLButtonElement>('button[aria-label="Scroll tabs right"]')!
+    expect(left.disabled).toBe(true)
+    expect(right.disabled).toBe(true)
   })
 
   it('renames on double click', () => {
@@ -165,7 +207,10 @@ describe('SvSheetTabs (DOM)', () => {
   it('hides the editing affordances when not editable', () => {
     const el = render({ workbook: threeSheets(), editable: false })
     expect(el.querySelector('.add')).toBeNull()
-    expect(el.querySelector('.close')).toBeNull()
+    const tab = el.querySelector<HTMLElement>('.tab')!
+    tab.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    flushSync()
+    expect(document.querySelector('.sheet-menu')).toBeNull()
   })
 })
 
@@ -194,10 +239,15 @@ describe('SvSheetTabs re-renders when the workbook changes', () => {
       .toBe('Summary')
   })
 
-  it('drops a sheet deleted through its own button', () => {
+  it('drops a sheet deleted through its own menu', () => {
     const workbook = threeSheets()
     const el = render({ workbook })
-    el.querySelector<HTMLButtonElement>('.close')!.click()
+    const tab = el.querySelector<HTMLElement>('.tab')!
+    tab.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    flushSync()
+    const item = [...document.querySelectorAll<HTMLButtonElement>('.sheet-menu [role="menuitem"]')]
+      .find((b) => b.textContent?.trim() === 'Delete')!
+    item.click()
     flushSync()
     expect(tabNames(el)).toEqual(['Orders', 'Summary'])
   })

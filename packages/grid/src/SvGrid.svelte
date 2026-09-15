@@ -3,7 +3,6 @@
   generics="TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData"
 >
   import {
-    getGridCellA11yProps,
     getGridCellDomId,
     getGridHeaderA11yProps,
     getGridRootA11yProps,
@@ -22,6 +21,7 @@
     RenderComponentConfig,
   } from "./render-component";
   import { buildSparkline, toSparklineValues } from "./sparkline";
+  import { mergeDrawAt } from "./merges";
   import { localizeOperatorLabel } from "./filter-operators";
   import { GRID_ICON_GLYPHS, type GridIconName } from "./grid-icons";
   // The whole editor UI - including the lazy SvGridDropdown / SvDateTimePicker
@@ -387,8 +387,9 @@
   );
 
   const rowSizePx = (i: number): number => {
-    // A height the user dragged wins over the declared one, so the row stays
-    // where they put it across re-renders and virtualization recycling.
+    // A height the user dragged, or set through the api, wins over the
+    // declared one, so the row stays where they put it across re-renders
+    // and virtualization recycling.
     const dragged = ctrl.rowResizeHeightPx(i);
     if (dragged != null) return dragged;
     const rh = opt.rowHeight;
@@ -402,10 +403,47 @@
     autoRowHeightOn
       ? `min-height: ${measuredRowHeightPx(i) ?? rowSizePx(i)}px;`
       : `height: ${rowSizePx(i)}px;`;
+  const collapsedColumns = $derived(ctrl.collapsedColumns);
   const columnVirtualizationEnabled = $derived(
     ctrl.columnVirtualizationEnabled,
   );
   const virtualRows = $derived(ctrl.virtualRows);
+  const frozenRowCount = $derived(ctrl.frozenRowCount);
+  const frozenRowList = $derived(ctrl.frozenRowList);
+  // Merged cells. A merge is drawn once per band (the frozen rows, the
+  // scrolling body), by the top-left cell of the part the band shows, with
+  // its spans clamped to the rendered window: a td never spans into rows
+  // the table has not drawn.
+  const mergeIndex = $derived(ctrl.mergeIndex);
+  const mergeColumnWindow = $derived.by(() => ({
+    firstCol: renderedColumns[0]?.item.index ?? 0,
+    lastCol: renderedColumns[renderedColumns.length - 1]?.item.index ?? -1,
+  }));
+  const mergeBodyWindow = $derived.by(() => {
+    const cols = mergeColumnWindow;
+    if (!rowVirtualizationEnabled) return { firstRow: frozenRowCount, lastRow: allRows.length - 1, ...cols };
+    let firstRow = Number.POSITIVE_INFINITY;
+    let lastRow = -1;
+    for (const item of virtualRows) {
+      if (item.index < frozenRowCount) continue;
+      if (item.index < firstRow) firstRow = item.index;
+      if (item.index > lastRow) lastRow = item.index;
+    }
+    return { firstRow: Number.isFinite(firstRow) ? firstRow : frozenRowCount, lastRow, ...cols };
+  });
+  const mergeFrozenWindow = $derived.by(() => ({ firstRow: 0, lastRow: frozenRowCount - 1, ...mergeColumnWindow }));
+  /** The width a td spanning `colSpan` rendered columns from `colIndex` takes. */
+  function mergedWidth(colIndex: number, colSpan: number, own: number): number {
+    if (colSpan <= 1) return own;
+    let total = 0;
+    for (const rendered of renderedColumns) {
+      const i = rendered.item.index;
+      if (i >= colIndex && i < colIndex + colSpan) total += rendered.item.size;
+    }
+    return total || own;
+  }
+  const frozenBandHeight = $derived(ctrl.frozenBandHeight);
+  const frozenRowTop = $derived(ctrl.frozenRowTop);
   const autoRowHeightOn = $derived(ctrl.autoRowHeightOn);
   const measureRowHeight = $derived(ctrl.measureRowHeight);
   const measuredRowHeightPx = $derived(ctrl.measuredRowHeightPx);
@@ -1427,6 +1465,308 @@
        inline editing, no row-selection checkbox, no fill handle.
        Position-sticky CSS keeps it anchored to the top of the body or
        the bottom of the viewport while the rest scrolls. -->
+  <!--
+    One body row, whatever path renders it: the virtualized window, the
+    plain full-list body, or the frozen rows pinned above the window. The
+    two loops used to carry a copy each and had drifted apart (cell
+    tooltips on one, the fill handle on the other), so a feature landed in
+    one mode and not the other. `rowStyle` is the height the caller knows:
+    the virtualizer's measured size, or the declared one.
+  -->
+  {#snippet bodyRow(row: Row<TData>, rowIndex: number, rowStyle: string)}
+                  {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
+                    {@render detailRowMarkup(row, rowIndex)}
+                  {:else if isGroupRow(row) && !groupColumnMode}
+                    <tr
+                      class="sv-grid-row sv-grid-group-row"
+                      class:sv-grid-row-selected={isRowSelected(row.id)}
+                      class:sv-grid-row-frozen={rowIndex < frozenRowCount}
+                      class:sv-grid-row-frozen-last={frozenRowCount > 0 && rowIndex === frozenRowCount - 1}
+                      style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : undefined}
+                      aria-level={row.depth + 1}
+                      aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
+                      {...getGridRowA11yProps(rowIndex + 1)}
+                      class:sv-grid-row-collapsed={ctrl.isRowCollapsed(rowIndex)}
+                      style={rowStyle}
+                    >
+                      <td
+                        class="sv-grid-cell sv-grid-group-cell"
+                        class:sv-grid-cell-active={activeCell.rowIndex ===
+                          rowIndex}
+                        colspan={allColumns.length +
+                          (showRowNumbersEffective ? 1 : 0) +
+                          (showRowSelectionEffective ? 1 : 0)}
+                        onclick={() => row.toggleExpanded?.()}
+                      >
+                        {@render groupRowContent(row)}
+                      </td>
+                    </tr>
+                  {:else}
+                    {@const userRowClass = computeRowClass(row, rowIndex)}
+                    <tr
+                      class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
+                      class:sv-grid-row-selected={isRowSelected(row.id)}
+                      class:sv-grid-row-alt={opt.zebraRows &&
+                        rowIndex % 2 === 1}
+                      class:sv-grid-row-draggable={rowDragManagedEffective}
+                      class:sv-grid-group-footer-row={isGroupFooterRow(row)}
+                      class:sv-grid-grand-total-row={isGrandTotalRow(row)}
+                      class:sv-grid-row-auto-height={autoRowHeightOn}
+                      class:sv-grid-row-frozen={rowIndex < frozenRowCount}
+                      class:sv-grid-row-frozen-last={frozenRowCount > 0 && rowIndex === frozenRowCount - 1}
+                      style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : undefined}
+                      {...getGridRowA11yProps(rowIndex + 1)}
+                      aria-level={sgAriaLevel(row)}
+                      aria-expanded={sgAriaExpanded(row)}
+                      {...rowDragAttrs(rowIndex)}
+                      class:sv-grid-row-collapsed={ctrl.isRowCollapsed(rowIndex)}
+                      style={rowStyle}
+                      use:measureRowHeight={rowIndex}
+                    >
+                      {#if showRowNumbersEffective}
+                        <td
+                          class="sv-grid-cell sv-grid-row-number-cell"
+                          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+                          >{rowIndex + 1}</td
+                        >
+                      {/if}
+                      {#if showRowSelectionEffective}
+                        <td
+                          class="sv-grid-cell sv-grid-selection-cell"
+                          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                          onclick={() => toggleRowSelectionById(row.id)}
+                        >
+                          <button
+                            type="button"
+                            class="sv-grid-checkbox"
+                            role="checkbox"
+                            aria-checked={isRowSelected(row.id)}
+                            aria-label="Select row"
+                            onclick={(event) => {
+                              event.stopPropagation();
+                              toggleRowSelectionById(row.id);
+                            }}
+                            onkeydown={(event) =>
+                              toggleCheckboxWithKeyboard(event, () => {
+                                event.stopPropagation();
+                                toggleRowSelectionById(row.id);
+                              })}
+                          ></button>
+                        </td>
+                      {/if}
+                      {#if columnVirtualizationEnabled && columnWindowStart > 0}
+                        <td
+                          class="sv-grid-cell sv-grid-cell-spacer"
+                          aria-hidden="true"
+                          style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
+                        ></td>
+                      {/if}
+                      {#each renderedColumns as rendered (rendered.column.id)}
+                        {@const colIndex = rendered.item.index}
+                        {@const draw = mergeIndex
+                          ? mergeDrawAt(mergeIndex, rowIndex, colIndex, rowIndex < frozenRowCount ? mergeFrozenWindow : mergeBodyWindow)
+                          : null}
+                        {#if draw?.kind !== "skip"}
+                        {@const cellRow = draw?.kind === "continuation" ? (allRows[draw.merge.rowIndex] ?? row) : row}
+                        {@const cellColumn = draw?.kind === "continuation" ? (allColumns[draw.merge.colIndex] ?? rendered.column) : rendered.column}
+                        {@const baseValue = getColumnBaseValue(
+                          cellRow,
+                          cellColumn,
+                        )}
+                        {@const cellValue = getCellDisplayValue(
+                          cellRow.id,
+                          cellColumn.id,
+                          baseValue,
+                        )}
+                        {@const isEditing =
+                          ctrl.editingCell?.rowId === cellRow.id &&
+                          ctrl.editingCell?.columnId === cellColumn.id}
+                        {@const inRowEdit =
+                          !!fullRowEdit &&
+                          fullRowEdit.rowId === cellRow.id &&
+                          cellColumn.id in fullRowEdit.draft}
+                        {@const cellSel = cellSelectionState(rowIndex, colIndex)}
+                        {@const fillEdges = fillMarqueeEdges(rowIndex, colIndex)}
+                        {@const userCellClass = computeCellClass(
+                          cellRow,
+                          cellColumn,
+                        )}
+                        {@const cellTooltip = computeCellTooltip(
+                          cellRow,
+                          cellColumn,
+                        )}
+                        {@const cellValidity = computeCellValidity(
+                          cellRow,
+                          cellColumn,
+                        )}
+                        {@const cellNote = computeCellNote(
+                          cellRow,
+                          cellColumn,
+                        )}
+                        {@const tdWidth = draw ? mergedWidth(colIndex, draw.colSpan, rendered.item.size) : rendered.item.size}
+                        <td
+                          rowspan={draw && draw.rowSpan > 1 ? draw.rowSpan : undefined}
+                          colspan={draw && draw.colSpan > 1 ? draw.colSpan : undefined}
+                          data-merge-origin={draw ? `${draw.merge.rowIndex}:${draw.merge.colIndex}` : undefined}
+                          class:sv-grid-cell-merged={!!draw}
+                          class={`sv-grid-cell ${userCellClass}`}
+                          class:sv-grid-cell-editing={isEditing || inRowEdit}
+                          class:sv-grid-cell-collapsed={!!collapsedColumns[rendered.column.id]}
+                          class:sv-grid-cell-active={!!cellSel?.active}
+                          class:sv-grid-cell-has-fill-handle={!!cellSel?.fillHandle}
+                          class:sv-grid-cell-cf={hasConditionalFormats}
+                          class:sv-grid-cell-invalid={cellValidity.invalid}
+                          class:sv-grid-cell-has-note={cellNote != null}
+                          aria-invalid={cellValidity.invalid ? "true" : undefined}
+                          data-svgrid-row={rowIndex}
+                          data-svgrid-col={colIndex}
+                          data-col-id={rendered.column.id}
+                          data-align={getColumnAlign(rendered.column)}
+                          data-pinned={isColumnPinned(rendered.column.id) ??
+                            undefined}
+                          data-selected-range={cellSel?.edges ? "true" : undefined}
+                          data-range-top={cellSel?.edges?.top ? "true" : undefined}
+                          data-range-bottom={cellSel?.edges?.bottom
+                            ? "true"
+                            : undefined}
+                          data-range-left={cellSel?.edges?.left
+                            ? "true"
+                            : undefined}
+                          data-range-right={cellSel?.edges?.right
+                            ? "true"
+                            : undefined}
+                          data-fill-preview={isInFillPreview(rowIndex, colIndex)
+                            ? "true"
+                            : undefined}
+                          data-fill-top={fillEdges?.top ? "true" : undefined}
+                          data-fill-bottom={fillEdges?.bottom ? "true" : undefined}
+                          data-fill-left={fillEdges?.left ? "true" : undefined}
+                          data-fill-right={fillEdges?.right ? "true" : undefined}
+                          style={`width: ${tdWidth}px; min-width: ${tdWidth}px; max-width: ${tdWidth}px; ${cellPinStyle(rendered.column.id)}`}
+                          onpointerdown={(event) =>
+                            onCellPointerDown(rowIndex, colIndex, event)}
+                          onpointerenter={(event) => {
+                            onCellPointerEnter(rowIndex, colIndex);
+                            // The column tooltip fires on whole-cell hover; a
+                            // per-cell note waits for its corner below. A
+                            // validation message wins over the column's tooltip.
+                            const tip =
+                              cellValidity.invalid && cellValidity.message
+                                ? cellValidity.message
+                                : cellTooltip;
+                            if (tip)
+                              showTooltipFor(
+                                event.currentTarget as HTMLElement,
+                                tip,
+                              );
+                          }}
+                          onpointerleave={hideTooltip}
+                          ondblclick={() =>
+                            emitCellDoubleClick(rowIndex, colIndex)}
+                          onclick={() => onCellClick(rowIndex, colIndex)}
+                          oncontextmenu={(event) =>
+                            openContextMenu(
+                              event,
+                              rowIndex,
+                              colIndex,
+                              rendered.column.id,
+                            )}
+                          use:cellFlashAction={{
+                            rowId: cellRow.id,
+                            value: cellValue,
+                            active: !!cellColumn.columnDef.cellFlash,
+                            className: flashClassFor(
+                              cellColumn.columnDef.cellFlash,
+                            ),
+                          }}
+                          role="gridcell"
+                          id={getGridCellDomId(ctrl.gridDomId, rowIndex, colIndex)}
+                          aria-colindex={colIndex + 1}
+                          aria-rowindex={rowIndex + 1}
+                          aria-selected={isRowSelected(row.id)}
+                        >
+                          {#if inRowEdit || isEditing}
+                            <!-- The editing cell stays empty until the lazy
+                                 editor chunk lands, exactly as it already did
+                                 for the dropdown / date editors. Falling back
+                                 to the read-only value here would flash stale
+                                 content into a cell the user is editing. -->
+                            {#if CellEditor}
+                              <CellEditor {ctrl} column={cellColumn} row={cellRow} fullRow={inRowEdit} />
+                            {/if}
+                          {:else}
+                            {#if plainCellBody}
+                              {@render cellBody(cellRow, cellColumn, cellValue)}
+                            {:else}
+                              {@render cellBodyWithFormat(
+                                cellRow,
+                                cellColumn,
+                                cellValue,
+                              )}
+                            {/if}
+                          {/if}
+                          {#if !isEditing && cellSel?.fillHandle}
+                            <!-- Excel-style fill handle: drag down/right to
+                           extend the selection and pattern-fill the new
+                           cells on release. Rendered inside the bottom-
+                           right cell of the selection range (or active
+                           cell if there's no range). -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div
+                              class="sv-grid-fill-handle"
+                              role="button"
+                              aria-label="Fill handle"
+                              tabindex={-1}
+                              onpointerdown={(event) =>
+                                startFillDrag(event, rowIndex, colIndex)}
+                              ondblclick={(event) => {
+                                // Not the cell's double-click: this fills
+                                // down as far as the neighbour column goes.
+                                event.stopPropagation();
+                                event.preventDefault();
+                                ctrl.fillDownToNeighbour();
+                              }}
+                            ></div>
+                          {/if}
+                          {#if cellValidity.invalid && cellValidity.message}
+                            <!-- The validation message, for assistive tech: the
+                                 tooltip above is mouse-only, and unlike a title
+                                 a visually-hidden span adds no second native
+                                 tooltip competing with the custom one. -->
+                            <span class="sv-grid-sr-only"
+                              >{cellValidity.message}</span
+                            >
+                          {/if}
+                          {#if cellNote != null && !isEditing}
+                            <span
+                              class="sv-grid-cell-note-corner"
+                              aria-label="Note"
+                              onpointerenter={(event) => {
+                                event.stopPropagation();
+                                showTooltipFor(
+                                  event.currentTarget as HTMLElement,
+                                  cellNote,
+                                );
+                              }}
+                              onpointerleave={(event) => {
+                                event.stopPropagation();
+                                hideTooltip();
+                              }}
+                            ></span>
+                          {/if}
+                        </td>
+                        {/if}
+                      {/each}
+                      {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                        <td
+                          class="sv-grid-cell sv-grid-cell-spacer"
+                          aria-hidden="true"
+                          style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
+                        ></td>
+                      {/if}
+                    </tr>
+                  {/if}
+  {/snippet}
   {#snippet pinnedRowBody(
     rowData: TData,
     where: "top" | "bottom",
@@ -1496,7 +1836,8 @@
       // No gutter column on most grids, so fall back to the first body cell -
       // otherwise `rowResize` would be a prop that silently does nothing.
       anchor: "row",
-      onResize: (index, height) => ctrl.setRowResizeHeight(index, height),
+      onResize: (index, height) => ctrl.resizeRowByUser(index, height),
+      onAutosize: (index) => ctrl.resizeRowByUser(index, null),
     }}
     use:lazyColumnResize={{
       disabled: !columnResizeEnabled,
@@ -1504,12 +1845,13 @@
       onResize: (columnId, width) => {
         ctrl.columnWidths = { ...ctrl.columnWidths, [columnId]: width };
       },
+      onResizeEnd: (columnId, width, startWidth) => ctrl.resizeColumnByUser(columnId, width, startWidth),
       label: (columnId) => {
         const col = ctrl.findColumnById(columnId);
         return col ? toolPanelHeaderLabel(col) : columnId;
       },
       canResize: (columnId) => ctrl.columnResizable(columnId),
-      onAutosize: (columnId) => ctrl.autosizeColumn(columnId),
+      onAutosize: (columnId) => ctrl.autosizeColumnByUser(columnId),
     }}
   >
     {#if showGlobalFilterEffective}
@@ -1571,7 +1913,7 @@
         typeof opt.containerHeight === "string"
           ? opt.containerHeight
           : `${opt.containerHeight ?? 520}px`
-      }; --sg-thead-h: ${headerHeight}px; --sg-pinned-row-h: ${typeof opt.rowHeight === "number" ? opt.rowHeight : 30}px;`}
+      }; --sg-thead-h: ${headerHeight}px; --sg-frozen-h: ${frozenBandHeight}px; --sg-pinned-row-h: ${typeof opt.rowHeight === "number" ? opt.rowHeight : 30}px;`}
     >
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
@@ -1734,6 +2076,7 @@
                     )}
                     <th
                       class="sv-grid-column"
+                      class:sv-grid-column-collapsed={!!collapsedColumns[header.column.id]}
                       class:is-drag-target-before={colDropOnId ===
                         header.column.id && colDropSide === "before"}
                       class:is-drag-target-after={colDropOnId ===
@@ -2191,6 +2534,9 @@
                 </td>
               </tr>
             {:else if rowVirtualizationEnabled}
+              {#each frozenRowList as row, rowIndex (row.id)}
+                {@render bodyRow(row, rowIndex, rowStyleFor(rowIndex))}
+              {/each}
               {#if rowTopSpacer > 0}
                 <tr class="sv-grid-row sv-grid-row-spacer" aria-hidden="true">
                   <td
@@ -2202,248 +2548,17 @@
                   ></td>
                 </tr>
               {/if}
+              <!-- The virtualizer counts every row, frozen ones included, so its
+                   offsets and sizes stay in row-index space; the frozen rows are
+                   rendered in the band above and SKIPPED here. Shifting the
+                   index instead (item i drawn as row i + N) sized every row with
+                   the height of the row N above it, so a row dragged taller under
+                   a freeze showed its neighbour's height. -->
               {#each virtualRows as rowItem (rowItem.key)}
                 {@const rowIndex = rowItem.index}
                 {@const row = allRows[rowIndex]}
-                {#if row}
-                  {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
-                    {@render detailRowMarkup(row, rowIndex)}
-                  {:else if isGroupRow(row) && !groupColumnMode}
-                    <tr
-                      class="sv-grid-row sv-grid-group-row"
-                      class:sv-grid-row-selected={isRowSelected(row.id)}
-                      aria-level={row.depth + 1}
-                      aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
-                      {...getGridRowA11yProps(rowIndex + 1)}
-                      style={rowHeightStyle(rowItem.size)}
-                    >
-                      <td
-                        class="sv-grid-cell sv-grid-group-cell"
-                        class:sv-grid-cell-active={activeCell.rowIndex ===
-                          rowIndex}
-                        colspan={allColumns.length +
-                          (showRowNumbersEffective ? 1 : 0) +
-                          (showRowSelectionEffective ? 1 : 0)}
-                        onclick={() => row.toggleExpanded?.()}
-                      >
-                        {@render groupRowContent(row)}
-                      </td>
-                    </tr>
-                  {:else}
-                    {@const userRowClass = computeRowClass(row, rowIndex)}
-                    <tr
-                      class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
-                      class:sv-grid-row-selected={isRowSelected(row.id)}
-                      class:sv-grid-row-alt={opt.zebraRows &&
-                        rowIndex % 2 === 1}
-                      class:sv-grid-row-draggable={rowDragManagedEffective}
-                      class:sv-grid-group-footer-row={isGroupFooterRow(row)}
-                      class:sv-grid-grand-total-row={isGrandTotalRow(row)}
-                      class:sv-grid-row-auto-height={autoRowHeightOn}
-                      {...getGridRowA11yProps(rowIndex + 1)}
-                      aria-level={sgAriaLevel(row)}
-                      aria-expanded={sgAriaExpanded(row)}
-                      {...rowDragAttrs(rowIndex)}
-                      style={rowHeightStyle(rowItem.size)}
-                      use:measureRowHeight={rowIndex}
-                    >
-                      {#if showRowNumbersEffective}
-                        <td
-                          class="sv-grid-cell sv-grid-row-number-cell"
-                          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-                          >{rowIndex + 1}</td
-                        >
-                      {/if}
-                      {#if showRowSelectionEffective}
-                        <td
-                          class="sv-grid-cell sv-grid-selection-cell"
-                          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
-                          onclick={() => toggleRowSelectionById(row.id)}
-                        >
-                          <button
-                            type="button"
-                            class="sv-grid-checkbox"
-                            role="checkbox"
-                            aria-checked={isRowSelected(row.id)}
-                            aria-label="Select row"
-                            onclick={(event) => {
-                              event.stopPropagation();
-                              toggleRowSelectionById(row.id);
-                            }}
-                            onkeydown={(event) =>
-                              toggleCheckboxWithKeyboard(event, () => {
-                                event.stopPropagation();
-                                toggleRowSelectionById(row.id);
-                              })}
-                          ></button>
-                        </td>
-                      {/if}
-                      {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                        <td
-                          class="sv-grid-cell sv-grid-cell-spacer"
-                          aria-hidden="true"
-                          style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                        ></td>
-                      {/if}
-                      {#each renderedColumns as rendered (rendered.column.id)}
-                        {@const colIndex = rendered.item.index}
-                        {@const baseValue = getColumnBaseValue(
-                          row,
-                          rendered.column,
-                        )}
-                        {@const cellValue = getCellDisplayValue(
-                          row.id,
-                          rendered.column.id,
-                          baseValue,
-                        )}
-                        {@const isEditing =
-                          ctrl.editingCell?.rowId === row.id &&
-                          ctrl.editingCell?.columnId === rendered.column.id}
-                        {@const inRowEdit =
-                          !!fullRowEdit &&
-                          fullRowEdit.rowId === row.id &&
-                          rendered.column.id in fullRowEdit.draft}
-                        {@const cellSel = cellSelectionState(rowIndex, colIndex)}
-                        {@const fillEdges = fillMarqueeEdges(rowIndex, colIndex)}
-                        {@const userCellClass = computeCellClass(
-                          row,
-                          rendered.column,
-                        )}
-                        {@const cellValidity = computeCellValidity(
-                          row,
-                          rendered.column,
-                        )}
-                        {@const cellNote = computeCellNote(
-                          row,
-                          rendered.column,
-                        )}
-                        <td
-                          class={`sv-grid-cell ${userCellClass}`}
-                          class:sv-grid-cell-editing={isEditing || inRowEdit}
-                          class:sv-grid-cell-active={!!cellSel?.active}
-                          class:sv-grid-cell-has-fill-handle={!!cellSel?.fillHandle}
-                          class:sv-grid-cell-cf={hasConditionalFormats}
-                          class:sv-grid-cell-invalid={cellValidity.invalid}
-                          class:sv-grid-cell-has-note={cellNote != null}
-                          aria-invalid={cellValidity.invalid ? "true" : undefined}
-                          title={cellValidity.message ?? undefined}
-                          data-svgrid-row={rowIndex}
-                          data-svgrid-col={colIndex}
-                          data-col-id={rendered.column.id}
-                          data-align={getColumnAlign(rendered.column)}
-                          data-pinned={isColumnPinned(rendered.column.id) ??
-                            undefined}
-                          data-selected-range={cellSel?.edges ? "true" : undefined}
-                          data-range-top={cellSel?.edges?.top ? "true" : undefined}
-                          data-range-bottom={cellSel?.edges?.bottom
-                            ? "true"
-                            : undefined}
-                          data-range-left={cellSel?.edges?.left
-                            ? "true"
-                            : undefined}
-                          data-range-right={cellSel?.edges?.right
-                            ? "true"
-                            : undefined}
-                          data-fill-preview={isInFillPreview(rowIndex, colIndex)
-                            ? "true"
-                            : undefined}
-                          data-fill-top={fillEdges?.top ? "true" : undefined}
-                          data-fill-bottom={fillEdges?.bottom ? "true" : undefined}
-                          data-fill-left={fillEdges?.left ? "true" : undefined}
-                          data-fill-right={fillEdges?.right ? "true" : undefined}
-                          style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
-                          onpointerdown={(event) =>
-                            onCellPointerDown(rowIndex, colIndex, event)}
-                          onpointerenter={() =>
-                            onCellPointerEnter(rowIndex, colIndex)}
-                          ondblclick={() =>
-                            emitCellDoubleClick(rowIndex, colIndex)}
-                          onclick={() => onCellClick(rowIndex, colIndex)}
-                          oncontextmenu={(event) =>
-                            openContextMenu(
-                              event,
-                              rowIndex,
-                              colIndex,
-                              rendered.column.id,
-                            )}
-                          use:cellFlashAction={{
-                            rowId: row.id,
-                            value: cellValue,
-                            active: !!rendered.column.columnDef.cellFlash,
-                            className: flashClassFor(
-                              rendered.column.columnDef.cellFlash,
-                            ),
-                          }}
-                          role="gridcell"
-                          id={getGridCellDomId(ctrl.gridDomId, rowIndex, colIndex)}
-                          aria-colindex={colIndex + 1}
-                          aria-rowindex={rowIndex + 1}
-                          aria-selected={isRowSelected(row.id)}
-                        >
-                          {#if inRowEdit || isEditing}
-                            <!-- The editing cell stays empty until the lazy
-                                 editor chunk lands, exactly as it already did
-                                 for the dropdown / date editors. Falling back
-                                 to the read-only value here would flash stale
-                                 content into a cell the user is editing. -->
-                            {#if CellEditor}
-                              <CellEditor {ctrl} column={rendered.column} {row} fullRow={inRowEdit} />
-                            {/if}
-                          {:else}
-                            {#if plainCellBody}
-                              {@render cellBody(row, rendered.column, cellValue)}
-                            {:else}
-                              {@render cellBodyWithFormat(
-                                row,
-                                rendered.column,
-                                cellValue,
-                              )}
-                            {/if}
-                          {/if}
-                          {#if !isEditing && cellSel?.fillHandle}
-                            <!-- Excel-style fill handle: drag down/right to
-                           extend the selection and pattern-fill the new
-                           cells on release. Rendered inside the bottom-
-                           right cell of the selection range (or active
-                           cell if there's no range). -->
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div
-                              class="sv-grid-fill-handle"
-                              role="button"
-                              aria-label="Fill handle"
-                              tabindex={-1}
-                              onpointerdown={(event) =>
-                                startFillDrag(event, rowIndex, colIndex)}
-                            ></div>
-                          {/if}
-                          {#if cellNote != null && !isEditing}
-                            <span
-                              class="sv-grid-cell-note-corner"
-                              aria-label="Note"
-                              onpointerenter={(event) => {
-                                event.stopPropagation();
-                                showTooltipFor(
-                                  event.currentTarget as HTMLElement,
-                                  cellNote,
-                                );
-                              }}
-                              onpointerleave={(event) => {
-                                event.stopPropagation();
-                                hideTooltip();
-                              }}
-                            ></span>
-                          {/if}
-                        </td>
-                      {/each}
-                      {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
-                        <td
-                          class="sv-grid-cell sv-grid-cell-spacer"
-                          aria-hidden="true"
-                          style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                        ></td>
-                      {/if}
-                    </tr>
-                  {/if}
+                {#if row && rowIndex >= frozenRowCount}
+                  {@render bodyRow(row, rowIndex, rowHeightStyle(rowItem.size))}
                 {/if}
               {/each}
               {#if rowBottomSpacer > 0}
@@ -2459,249 +2574,7 @@
               {/if}
             {:else}
               {#each allRows as row, rowIndex (row.id)}
-                {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
-                  {@render detailRowMarkup(row, rowIndex)}
-                {:else if isGroupRow(row) && !groupColumnMode}
-                  <tr
-                    class="sv-grid-row sv-grid-group-row"
-                    class:sv-grid-row-selected={isRowSelected(row.id)}
-                    aria-level={row.depth + 1}
-                    aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
-                    {...getGridRowA11yProps(rowIndex + 1)}
-                    style={rowStyleFor(rowIndex)}
-                  >
-                    <td
-                      class="sv-grid-cell sv-grid-group-cell"
-                      class:sv-grid-cell-active={activeCell.rowIndex ===
-                        rowIndex}
-                      colspan={allColumns.length +
-                        (showRowNumbersEffective ? 1 : 0) +
-                        (showRowSelectionEffective ? 1 : 0)}
-                      onclick={() => row.toggleExpanded?.()}
-                    >
-                      {@render groupRowContent(row)}
-                    </td>
-                  </tr>
-                {:else}
-                  {@const userRowClass = computeRowClass(row, rowIndex)}
-                  <tr
-                    class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
-                    class:sv-grid-row-selected={isRowSelected(row.id)}
-                    class:sv-grid-row-alt={opt.zebraRows &&
-                      rowIndex % 2 === 1}
-                    class:sv-grid-row-draggable={rowDragManagedEffective}
-                    class:sv-grid-group-footer-row={isGroupFooterRow(row)}
-                    class:sv-grid-grand-total-row={isGrandTotalRow(row)}
-                    class:sv-grid-row-auto-height={autoRowHeightOn}
-                    {...getGridRowA11yProps(rowIndex + 1)}
-                    aria-level={sgAriaLevel(row)}
-                    aria-expanded={sgAriaExpanded(row)}
-                    {...rowDragAttrs(rowIndex)}
-                    style={rowStyleFor(rowIndex)}
-                    use:measureRowHeight={rowIndex}
-                  >
-                    {#if showRowNumbersEffective}
-                      <td
-                        class="sv-grid-cell sv-grid-row-number-cell"
-                        style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-                        >{rowIndex + 1}</td
-                      >
-                    {/if}
-                    {#if showRowSelectionEffective}
-                      <td
-                        class="sv-grid-cell sv-grid-selection-cell"
-                        style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
-                        onclick={() => toggleRowSelectionById(row.id)}
-                      >
-                        <button
-                          type="button"
-                          class="sv-grid-checkbox"
-                          role="checkbox"
-                          aria-checked={isRowSelected(row.id)}
-                          aria-label="Select row"
-                          onclick={(event) => {
-                            event.stopPropagation();
-                            toggleRowSelectionById(row.id);
-                          }}
-                          onkeydown={(event) =>
-                            toggleCheckboxWithKeyboard(event, () => {
-                              event.stopPropagation();
-                              toggleRowSelectionById(row.id);
-                            })}
-                        ></button>
-                      </td>
-                    {/if}
-                    {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                      <td
-                        class="sv-grid-cell sv-grid-cell-spacer"
-                        aria-hidden="true"
-                        style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                      ></td>
-                    {/if}
-                    {#each renderedColumns as rendered (rendered.column.id)}
-                      {@const colIndex = rendered.item.index}
-                      {@const baseValue = getColumnBaseValue(
-                        row,
-                        rendered.column,
-                      )}
-                      {@const cellValue = getCellDisplayValue(
-                        row.id,
-                        rendered.column.id,
-                        baseValue,
-                      )}
-                      {@const isEditing =
-                        ctrl.editingCell?.rowId === row.id &&
-                        ctrl.editingCell?.columnId === rendered.column.id}
-                      {@const inRowEdit =
-                        !!fullRowEdit &&
-                        fullRowEdit.rowId === row.id &&
-                        rendered.column.id in fullRowEdit.draft}
-                      {@const cellSel = cellSelectionState(rowIndex, colIndex)}
-                      {@const userCellClass = computeCellClass(
-                        row,
-                        rendered.column,
-                      )}
-                      {@const cellTooltip = computeCellTooltip(
-                        row,
-                        rendered.column,
-                      )}
-                      {@const cellValidity = computeCellValidity(
-                        row,
-                        rendered.column,
-                      )}
-                      {@const cellNote = computeCellNote(row, rendered.column)}
-                      <td
-                        class={`sv-grid-cell ${userCellClass}`}
-                        class:sv-grid-cell-editing={isEditing || inRowEdit}
-                        class:sv-grid-cell-active={!!cellSel?.active}
-                        class:sv-grid-cell-cf={hasConditionalFormats}
-                        class:sv-grid-cell-invalid={cellValidity.invalid}
-                        class:sv-grid-cell-has-note={cellNote != null}
-                        aria-invalid={cellValidity.invalid ? "true" : undefined}
-                        data-svgrid-row={rowIndex}
-                        data-svgrid-col={colIndex}
-                        data-col-id={rendered.column.id}
-                        data-align={getColumnAlign(rendered.column)}
-                        data-pinned={isColumnPinned(rendered.column.id) ??
-                          undefined}
-                        data-selected-range={cellSel?.edges ? "true" : undefined}
-                        data-range-top={cellSel?.edges?.top ? "true" : undefined}
-                        data-range-bottom={cellSel?.edges?.bottom
-                          ? "true"
-                          : undefined}
-                        data-range-left={cellSel?.edges?.left ? "true" : undefined}
-                        data-range-right={cellSel?.edges?.right
-                          ? "true"
-                          : undefined}
-                        style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
-                        onpointerdown={(event) =>
-                          onCellPointerDown(rowIndex, colIndex, event)}
-                        onpointerenter={(event) => {
-                          onCellPointerEnter(rowIndex, colIndex);
-                          // Column tooltip fires on whole-cell hover.
-                          // Per-cell notes are gated on the corner hot-
-                          // zone below (Excel-style: hover the small
-                          // triangle to read the note). A validation
-                          // message (when the cell is invalid) wins over
-                          // the plain column tooltip.
-                          const tip =
-                            cellValidity.invalid && cellValidity.message
-                              ? cellValidity.message
-                              : cellTooltip;
-                          if (tip)
-                            showTooltipFor(
-                              event.currentTarget as HTMLElement,
-                              tip,
-                            );
-                        }}
-                        onpointerleave={hideTooltip}
-                        ondblclick={() =>
-                          emitCellDoubleClick(rowIndex, colIndex)}
-                        onclick={() => onCellClick(rowIndex, colIndex)}
-                        oncontextmenu={(event) =>
-                          openContextMenu(
-                            event,
-                            rowIndex,
-                            colIndex,
-                            rendered.column.id,
-                          )}
-                        use:cellFlashAction={{
-                          rowId: row.id,
-                          value: cellValue,
-                          active: !!rendered.column.columnDef.cellFlash,
-                          className: flashClassFor(
-                            rendered.column.columnDef.cellFlash,
-                          ),
-                        }}
-                        {...getGridCellA11yProps({
-                          id: getGridCellDomId(ctrl.gridDomId, rowIndex, colIndex),
-                          rowIndex: rowIndex + 1,
-                          colIndex: colIndex + 1,
-                          selected: isRowSelected(row.id),
-                        })}
-                      >
-                        {#if inRowEdit || isEditing}
-                          <!-- Empty until the lazy editor chunk lands - see the
-                               matching branch in the pinned-row body above. -->
-                          {#if CellEditor}
-                            <CellEditor {ctrl} column={rendered.column} {row} fullRow={inRowEdit} />
-                          {/if}
-                        {:else}
-                          {@render cellBodyWithFormat(
-                            row,
-                            rendered.column,
-                            cellValue,
-                          )}
-                        {/if}
-                        {#if cellValidity.invalid && cellValidity.message}
-                          <!-- The validation message, for assistive tech.
-                               On this path the message is shown visually by
-                               the pointerenter tooltip above, which is mouse-
-                               only - a keyboard or screen-reader user would
-                               get `aria-invalid` with no reason attached.
-                               A visually-hidden span inside the cell is read
-                               as part of the cell when focus lands on it, and
-                               unlike `title` it adds no second native tooltip
-                               competing with the custom one. -->
-                          <span class="sv-grid-sr-only"
-                            >{cellValidity.message}</span
-                          >
-                        {/if}
-                        {#if cellNote != null && !isEditing}
-                          <!-- Excel-style per-cell note indicator. The
-                               triangle itself is the hot-zone; hover
-                               just the corner to see the note (Excel
-                               red-dot behaviour). The cell-level
-                               tooltip handler only shows the column
-                               tooltip, so the two surfaces stay
-                               separate. -->
-                          <span
-                            class="sv-grid-cell-note-corner"
-                            aria-label="Note"
-                            onpointerenter={(event) => {
-                              event.stopPropagation();
-                              showTooltipFor(
-                                event.currentTarget as HTMLElement,
-                                cellNote,
-                              );
-                            }}
-                            onpointerleave={(event) => {
-                              event.stopPropagation();
-                              hideTooltip();
-                            }}
-                          ></span>
-                        {/if}
-                      </td>
-                    {/each}
-                    {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
-                      <td
-                        class="sv-grid-cell sv-grid-cell-spacer"
-                        aria-hidden="true"
-                        style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                      ></td>
-                    {/if}
-                  </tr>
-                {/if}
+                {@render bodyRow(row, rowIndex, rowStyleFor(rowIndex))}
               {/each}
             {/if}
           </tbody>

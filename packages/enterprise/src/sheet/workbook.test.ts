@@ -83,6 +83,15 @@ describe('the sheet list', () => {
     expect(wb.sheets).toHaveLength(1)
   })
 
+  it('reads TRUE and FALSE typed into a cell as booleans, whatever their case', () => {
+    const wb = createWorkbook([{ name: 'S', cells: [['true', 'FALSE', '=IF(A1,1,2)', '=A1+1', 'truer']] }])
+    expect(wb.getValue('S', 0, 0)).toBe(true)
+    expect(wb.getValue('S', 0, 1)).toBe(false)
+    expect(wb.getValue('S', 0, 2)).toBe(1)
+    expect(wb.getValue('S', 0, 3)).toBe(2)
+    expect(wb.getValue('S', 0, 4)).toBe('truer')
+  })
+
   it('renames, following the active sheet', () => {
     const wb = createWorkbook()
     expect(wb.renameSheet('Sheet1', 'Data')).toBe(true)
@@ -94,6 +103,23 @@ describe('the sheet list', () => {
     const wb = createWorkbook([{ name: 'A', cells: [['7']] }])
     wb.renameSheet('A', 'B')
     expect(wb.getValue('B', 0, 0)).toBe(7)
+  })
+
+  it('rewrites the formulas and names that point at the renamed sheet', () => {
+    const wb = createWorkbook([
+      { name: 'Orders', cells: [['1', '2'], ['3', '4']] },
+      { name: 'Summary', cells: [['=Orders!B2', '=SUM(orders!A1:B2)', '="Orders!A1"', '=SUM(Sales)']] },
+    ])
+    wb.names.define('Sales', '=Orders!$A$1:$A$2')
+    expect(wb.renameSheet('Orders', 'Q3 Sales')).toBe(true)
+    expect(wb.getRaw('Summary', 0, 0)).toBe("='Q3 Sales'!B2")
+    expect(wb.getRaw('Summary', 0, 1)).toBe("=SUM('Q3 Sales'!A1:B2)")
+    // A string literal is not a reference, whatever it says.
+    expect(wb.getRaw('Summary', 0, 2)).toBe('="Orders!A1"')
+    expect(wb.names.list().find((n) => n.name === 'Sales')?.refersTo).toBe("='Q3 Sales'!$A$1:$A$2")
+    expect(wb.getValue('Summary', 0, 0)).toBe(4)
+    expect(wb.getValue('Summary', 0, 1)).toBe(10)
+    expect(wb.getValue('Summary', 0, 3)).toBe(4)
   })
 
   it('refuses a rename onto another sheet', () => {
@@ -213,6 +239,50 @@ describe('evaluation across sheets', () => {
     wb.names.define('Rate', '=M!A1')
     expect(wb.getValue('M', 1, 0)).toBe(10)
   })
+
+  it('recomputes a formula when the cell behind its name changes', () => {
+    // The formula never mentions A1, so the dependency has to come from the
+    // name. It used to be missing, and the formula kept its first value
+    // until something unrelated forced a recalculation.
+    const wb = createWorkbook([{ name: 'M', cells: [['5'], ['=Rate*2']] }])
+    wb.names.define('Rate', '=M!A1')
+    expect(wb.getValue('M', 1, 0)).toBe(10)
+    wb.setRaw('M', 0, 0, '50')
+    expect(wb.getValue('M', 1, 0)).toBe(100)
+  })
+
+  it('treats a name defined as a range as that range', () => {
+    // =SUM(Sales) over a named column is the whole point of naming it. A
+    // scalar read collapsed it to its top-left cell.
+    const wb = createWorkbook([{
+      name: 'M',
+      cells: [['10'], ['20'], ['30'], ['=SUM(Sales)'], ['=COUNTIF(Sales,">15")'], ['=Sales']],
+    }])
+    wb.names.define('Sales', '=M!A1:A3')
+    expect(wb.getValue('M', 3, 0)).toBe(60)
+    expect(wb.getValue('M', 4, 0)).toBe(2)
+    // In scalar position a range still collapses, as it does in Excel.
+    expect(wb.getValue('M', 5, 0)).toBe(10)
+  })
+
+  it('recomputes when a name is redefined or removed', () => {
+    const wb = createWorkbook([{ name: 'M', cells: [['5', '7'], ['=Rate*2']] }])
+    wb.names.define('Rate', '=M!A1')
+    expect(wb.getValue('M', 1, 0)).toBe(10)
+    wb.names.define('Rate', '=M!B1')
+    expect(wb.getValue('M', 1, 0)).toBe(14)
+    wb.names.remove('Rate')
+    expect(wb.getValue('M', 1, 0)).toEqual({ error: '#NAME?' })
+  })
+
+  it('follows a name defined as another name, and cuts a circular chain', () => {
+    const wb = createWorkbook([{ name: 'M', cells: [['5'], ['=Outer*2'], ['=Loop']] }])
+    wb.names.define('Inner', '=M!A1')
+    wb.names.define('Outer', '=Inner')
+    expect(wb.getValue('M', 1, 0)).toBe(10)
+    wb.names.define('Loop', '=Loop')
+    expect(wb.getValue('M', 2, 0)).toEqual({ error: '#NAME?' })
+  })
 })
 
 describe('writing', () => {
@@ -279,6 +349,32 @@ describe('structural edits reach other sheets', () => {
     expect(wb.getRaw('Other', 0, 0)).toBe('=A1')
   })
 
+  it('leaves a qualified reference to ANOTHER sheet alone on the edited sheet', () => {
+    // Summary holds =Orders!B2. Inserting a column in Summary must not move
+    // it: it points into Orders, whose geometry did not change.
+    const wb = createWorkbook([
+      { name: 'Orders', cells: [['1', '2']] },
+      { name: 'Summary', cells: [['=Orders!B1', '=A1*2']] },
+    ])
+    wb.applyStructuralEdit('Summary', { kind: 'insertCols', at: 0, count: 1 })
+    expect(wb.getRaw('Summary', 0, 1)).toBe('=Orders!B1')
+    expect(wb.getRaw('Summary', 0, 2)).toBe('=B1*2')
+    expect(wb.getValue('Summary', 0, 1)).toBe(2)
+  })
+
+  it('moves only the names that refer to the edited sheet', () => {
+    const wb = createWorkbook([
+      { name: 'Orders', cells: [['1'], ['2']] },
+      { name: 'Summary', cells: [['=SUM(Sales)'], ['x']] },
+    ])
+    wb.names.define('Sales', '=Orders!$A$1:$A$2')
+    wb.names.define('Note', '=Summary!$A$2')
+    wb.applyStructuralEdit('Summary', { kind: 'insertRows', at: 0, count: 1 })
+    expect(wb.names.list().find((n) => n.name === 'Sales')?.refersTo).toBe('=Orders!$A$1:$A$2')
+    expect(wb.names.list().find((n) => n.name === 'Note')?.refersTo).toBe('=Summary!$A$3')
+    expect(wb.getValue('Summary', 1, 0)).toBe(3)
+  })
+
   it('widens a local range that straddles an insertion', () => {
     const wb = createWorkbook([{ name: 'M', cells: [['=SUM(A2:A4)'], ['1'], ['2'], ['3']] }])
     wb.applyStructuralEdit('M', { kind: 'insertRows', at: 2, count: 1 })
@@ -305,6 +401,39 @@ describe('structural edits reach other sheets', () => {
     wb.names.define('Total', '=M!$A$2')
     wb.applyStructuralEdit('M', { kind: 'insertRows', at: 0, count: 1 })
     expect(wb.names.list()[0]!.refersTo).toBe('=M!$A$3')
+  })
+})
+
+describe('evaluateText / evaluateRange', () => {
+  it('evaluates a formula in a sheet without storing it, names and other sheets included', () => {
+    const wb = createWorkbook(budget())
+    wb.names.define('Total', 'Budget!A3')
+    expect(wb.evaluateText('Summary', '=A1*10')).toBe(300)
+    expect(wb.evaluateText('Summary', '=Budget!A1+1')).toBe(11)
+    expect(wb.evaluateText('Budget', '=Total')).toBe(30)
+    expect(wb.getRaw('Summary', 0, 0)).toBe('=Budget!A3')
+    expect(wb.rowCount('Summary')).toBe(2)
+  })
+
+  it('coerces a literal the way a typed cell is', () => {
+    const wb = createWorkbook(budget())
+    expect(wb.evaluateText('Budget', '12')).toBe(12)
+    expect(wb.evaluateText('Budget', 'true')).toBe(true)
+    expect(wb.evaluateText('Budget', 'abc')).toBe('abc')
+    expect(wb.evaluateText('Budget', '')).toBe('')
+    expect(wb.evaluateText('Budget', '=1/0')).toEqual({ error: '#DIV/0!' })
+    expect(wb.evaluateText('Nowhere', '=1')).toEqual({ error: '#REF!' })
+  })
+
+  it('hands back a range or a named range as a grid, and null for a formula', () => {
+    const wb = createWorkbook(budget())
+    wb.names.define('Both', 'Budget!A1:A2')
+    expect(wb.evaluateRange('Budget', '=A1:A3')).toEqual([[10], [20], [30]])
+    expect(wb.evaluateRange('Summary', '=Budget!A1:A2')).toEqual([[10], [20]])
+    expect(wb.evaluateRange('Budget', '=Both')).toEqual([[10], [20]])
+    expect(wb.evaluateRange('Budget', '=A1')).toEqual([[10]])
+    expect(wb.evaluateRange('Budget', '=A1+A2')).toBeNull()
+    expect(wb.evaluateRange('Budget', '1,2,3')).toBeNull()
   })
 })
 

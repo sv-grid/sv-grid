@@ -30,8 +30,16 @@ export type EvalContext = {
   resolve(sheet: string | null, row: number, col: number): CellValue
   /** Last used row of a sheet, for open-ended whole-column ranges. */
   lastRow(sheet: string | null): number
-  /** Resolve a defined name to a value, or undefined when there is no such
-   *  name (which becomes #NAME?). */
+  /**
+   * Resolve a defined name to the reference it stands for, or null when
+   * there is no such name. The node is evaluated in place of the name, so a
+   * name that refers to a range behaves as that range: `=SUM(Sales)` adds
+   * the whole column and `=VLOOKUP(x, Prices, 2)` searches the whole table.
+   * Preferred over `resolveName`, which can only ever produce one value.
+   */
+  resolveNameNode?(name: string): Node | null
+  /** Resolve a defined name to a single value. Consulted when
+   *  `resolveNameNode` is absent or returns null; undefined is #NAME?. */
   resolveName?(name: string): CellValue | undefined
   functions?: Record<string, SheetFunction>
 
@@ -105,6 +113,8 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
     }
 
     case 'name': {
+      const target = nameTarget(node.name, ctx)
+      if (target) return evalNode(target, ctx)
       const v = ctx.resolveName?.(node.name)
       return v === undefined ? err('#NAME?') : v
     }
@@ -202,6 +212,23 @@ function tableGrid(
   return out
 }
 
+/**
+ * The reference a defined name stands for, or null.
+ *
+ * A name may be defined as another name (`Sales` -> `Q3Sales`), so this
+ * follows the chain. It stops after a handful of hops rather than walking a
+ * circular definition forever: `A` -> `B` -> `A` is a mistake in the Name
+ * Manager, and the formula that used it reads #NAME? rather than hanging.
+ */
+function nameTarget(name: string, ctx: EvalContext): Node | null {
+  let node = ctx.resolveNameNode?.(name) ?? null
+  for (let hops = 0; node && node.k === 'name'; hops += 1) {
+    if (hops >= 8) return null
+    node = ctx.resolveNameNode?.(node.name) ?? null
+  }
+  return node
+}
+
 /** Functions whose arguments must not all be evaluated up front. */
 function evalCall(
   node: Extract<Node, { k: 'fn' }>,
@@ -263,7 +290,11 @@ function evalCall(
   // Evaluate every argument, keeping range shape for the lookups that need it.
   const perArg: CellValue[][] = []
   const grids: Array<CellValue[][] | null> = []
-  for (const arg of args) {
+  for (const given of args) {
+    // A name stands for whatever it was defined as. Substituting the node
+    // here, before the shape check, is what lets `Sales` in =SUM(Sales) be a
+    // whole column rather than the top-left cell a scalar read would give.
+    const arg = given.k === 'name' ? (nameTarget(given.name, ctx) ?? given) : given
     if (arg.k === 'range') {
       const grid = rangeGrid(arg.from, arg.to, ctx)
       grids.push(grid)
@@ -300,6 +331,26 @@ function evalCall(
  * Evaluate a parsed formula. Never throws: a `FormulaError` raised anywhere
  * inside becomes the matching error value.
  */
+/**
+ * The values a node stands for as a grid: a range, a reference (one cell),
+ * or a name that refers to either. Null for anything else, which is how a
+ * caller tells "a list source that is a range" from "a formula".
+ */
+export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null {
+  try {
+    if (node.k === 'range') return rangeGrid(node.from, node.to, ctx)
+    if (node.k === 'ref') return [[ctx.resolve(node.ref.sheet, node.ref.row ?? 0, node.ref.col)]]
+    if (node.k === 'name') {
+      const target = nameTarget(node.name, ctx)
+      return target ? rangeValues(target, ctx) : null
+    }
+    return null
+  } catch (e) {
+    if (e instanceof FormulaError) return [[err(e.code)]]
+    throw e
+  }
+}
+
 export function evaluate(node: Node, ctx: EvalContext): CellValue {
   try {
     return evalNode(node, ctx)

@@ -135,9 +135,17 @@ export interface SvGridElement extends HTMLElement {
   /** attribute `copy-headers-to-clipboard` */
   copyHeadersToClipboard: boolean
   /** property only - an attribute cannot hold this */
+  processCellForFill: unknown
+  /** property only - an attribute cannot hold this */
   processCellForClipboard: unknown
+  /** property only - an attribute cannot hold this */
+  clipboardHtml: unknown
+  /** property only - an attribute cannot hold this */
+  processCellFromClipboard: unknown
   /** attribute `enable-inline-editing` */
   enableInlineEditing: boolean
+  /** attribute `edit-on-second-click` */
+  editOnSecondClick: boolean
   /** attribute `full-row-editing` */
   fullRowEditing: boolean
   /** attribute `enable-row-summaries` */
@@ -192,6 +200,10 @@ export interface SvGridElement extends HTMLElement {
   serverFilterValues: unknown
   /** property only - an attribute cannot hold this */
   pinnedTopRows: readonly unknown[]
+  /** attribute `frozen-rows` */
+  frozenRows: number
+  /** property only - an attribute cannot hold this */
+  mergedCells: readonly unknown[]
   /** property only - an attribute cannot hold this */
   pinnedBottomRows: readonly unknown[]
   /** attribute `enable-column-reorder` */
@@ -223,6 +235,9 @@ declare global {
     pivotmodechange: CustomEvent<unknown>
     expandedchange: CustomEvent<unknown>
     paginationchange: CustomEvent<unknown>
+    columnresize: CustomEvent<unknown>
+    rowresize: CustomEvent<unknown>
+    pasteclipboard: CustomEvent<unknown>
     apiready: CustomEvent<unknown>
     rowselectionchange: CustomEvent<unknown>
     cellselectionchange: CustomEvent<unknown>

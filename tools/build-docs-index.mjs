@@ -385,12 +385,16 @@ async function main() {
   // ---- llms.txt --------------------------------------------------------
   // Spec: https://llmstxt.org - a topic map with one-line summaries that
   // LLMs can fetch as a cheap first-pass context.
+  // The header is what an LLM reads first, so it names the product the way
+  // it is searched for (SvGrid, sv-grid, "Svelte data grid") and states the
+  // free / paid split accurately. It used to open with "# sv-grid" alone and
+  // list "AI helpers" under the paid pack; the AI helpers are free.
   const llmsLines = []
-  llmsLines.push('# sv-grid')
+  llmsLines.push('# SvGrid (sv-grid) - the Svelte data grid')
   llmsLines.push('')
-  llmsLines.push('> The Svelte 5-native data grid. Headless engine + render component, AI-native, WAI-ARIA, virtualized to 100k rows.')
+  llmsLines.push('> SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row + column virtualization to 1M rows, Excel-style filters, grouping, tree, master/detail, inline editing, WAI-ARIA, built-in AI helpers and an MCP server. Also searched for as "Svelte datagrid", "Svelte grid" and "Svelte table".')
   llmsLines.push('')
-  llmsLines.push('Two npm packages: `@svgrid/grid` (MIT, open source) and `@svgrid/enterprise` (commercial - export, import, pivot, AI helpers).')
+  llmsLines.push('Two npm packages: `@svgrid/grid` (MIT, open source: the full grid, the AI helpers and the UI components) and `@svgrid/enterprise` (commercial: the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, alert rules and SvGrid Studio).')
   llmsLines.push('')
   llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
   llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')

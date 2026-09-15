@@ -8,6 +8,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RIBBON_TABS, ribbonItems, withDecimals } from './ribbon'
 import { setFormatTarget, setWorkbook } from './shortcuts'
+import { setStructureTarget } from './structure'
 import { createFormatStore } from './format-store'
 import { createWorkbook } from './workbook'
 import { FORMAT_PRESETS } from './number-format'
@@ -35,6 +36,11 @@ function makeCmd(over: Partial<GridCommandContext> = {}): GridCommandContext {
     scrollIntoView: vi.fn(),
     startEditing: vi.fn(() => true),
     batch: <T,>(fn: () => T) => fn(),
+    focus: vi.fn(),
+    paste: vi.fn(async () => {}),
+    copy: vi.fn(),
+    cut: vi.fn(async () => {}),
+    recordUndo: vi.fn(),
     ...over,
   } as GridCommandContext
 }
@@ -59,8 +65,73 @@ beforeEach(() => {
 })
 
 describe('the model is well-formed', () => {
-  it('ships the four tabs that were scoped', () => {
-    expect(RIBBON_TABS.map((t) => t.id)).toEqual(['home', 'insert', 'formulas', 'data'])
+  it('ships the six tabs that have something behind them', () => {
+    expect(RIBBON_TABS.map((t) => t.id)).toEqual(['home', 'insert', 'formulas', 'data', 'review', 'view'])
+  })
+
+  it('View > Show carries Excel\'s three toggles, raised for the shell', () => {
+    const view = RIBBON_TABS.find((t) => t.id === 'view')!
+    expect(view.groups.map((g) => g.id)).toEqual(['show', 'window'])
+    const show = view.groups[0]!.items
+    expect(show.map((i) => [i.kind, i.row, i.emits])).toEqual([
+      ['toggle', 1, 'toggle-gridlines'],
+      ['toggle', 2, 'toggle-formula-bar'],
+      ['toggle', 3, 'toggle-headings'],
+    ])
+  })
+
+  it('Freeze Panes lives on View > Window as Excel\'s dropdown, and Home > Cells is one column', () => {
+    const view = RIBBON_TABS.find((t) => t.id === 'view')!
+    const freeze = view.groups.find((g) => g.id === 'window')!.items[0]!
+    expect(freeze).toMatchObject({ id: 'freeze', kind: 'dropdown', size: 'large' })
+    expect(freeze.options!.map((o) => o.emits)).toEqual(['freeze-panes', 'freeze-top-row', 'freeze-first-column', 'unfreeze-panes'])
+    const cells = RIBBON_TABS[0]!.groups.find((g) => g.id === 'cells')!
+    expect(cells.items.map((i) => i.id)).toEqual(['insert', 'delete', 'format'])
+  })
+
+  it('Home > Styles is the Conditional Formatting dropdown, every entry raised', () => {
+    const styles = RIBBON_TABS[0]!.groups.find((g) => g.id === 'styles')!
+    const cf = styles.items[0]!
+    expect(cf).toMatchObject({ id: 'conditional-formatting', kind: 'dropdown', size: 'large' })
+    const raised = cf.options!.filter((o) => !o.heading).map((o) => o.emits)
+    expect(raised).toEqual([
+      'cf-greater', 'cf-less', 'cf-between', 'cf-equal', 'cf-text', 'cf-duplicates',
+      'cf-top10', 'cf-bottom10', 'cf-above-average', 'cf-below-average',
+      'cf-data-bar', 'cf-color-scale-3', 'cf-color-scale-2', 'cf-icon-set',
+      'cf-clear-selection', 'cf-clear-sheet', 'cf-manage',
+    ])
+  })
+
+  it('the Review tab raises the comment actions and Protect / Unprotect Sheet for the shell', () => {
+    const review = RIBBON_TABS.find((t) => t.id === 'review')!
+    expect(review.groups.map((g) => g.label)).toEqual(['Comments', 'Protect'])
+    const ids = review.groups.flatMap((g) => g.items.map((i) => [i.id, i.emits]))
+    expect(ids).toEqual([
+      ['new-comment', 'new-comment'], ['delete-comment', 'delete-comment'],
+      ['prev-comment', 'prev-comment'], ['next-comment', 'next-comment'],
+      ['toggle-comments', 'toggle-comments'],
+      ['protect-sheet', 'protect-sheet'], ['unprotect-sheet', 'unprotect-sheet'],
+    ])
+  })
+
+  it('Home > Alignment carries Merge & Center as a split dropdown, every kind raised', () => {
+    const merge = ribbonItems().find((i) => i.id === 'merge')!
+    expect(merge).toMatchObject({ kind: 'dropdown', split: true, row: 3 })
+    expect(merge.options!.map((o) => o.emits)).toEqual(['merge-center', 'merge-across', 'merge-cells', 'unmerge-cells'])
+    expect(merge.lit).toBe('merge-center')
+    expect(typeof merge.run).toBe('function')
+  })
+
+  it('Data > Data Tools raises Data Validation', () => {
+    const item = ribbonItems().find((i) => i.id === 'data-validation')!
+    expect(item).toMatchObject({ emits: 'data-validation', size: 'large' })
+  })
+
+  it('the Format menu carries Lock Cell as a toggle under Protection', () => {
+    const format = ribbonItems().find((i) => i.id === 'format')!
+    const options = format.options!
+    const heading = options.findIndex((o) => o.heading && o.label === 'Protection')
+    expect(options[heading + 1]).toMatchObject({ label: 'Lock Cell', emits: 'toggle-lock', toggle: true })
   })
 
   it('gives every item a unique id', () => {
@@ -75,16 +146,30 @@ describe('the model is well-formed', () => {
     }
   })
 
-  it('gives every item exactly one of `run` or `emits`', () => {
+  it('gives every item exactly one of `run` or `emits`, and every dropdown entry the same', () => {
     for (const item of ribbonItems()) {
+      if (item.kind === 'dropdown') {
+        // A dropdown acts through its entries: each one emits, or the item
+        // runs with the entry's value. Headings are labels, not entries. A
+        // split dropdown's `run` is its face, so its entries may emit as well.
+        expect(item.emits, `${item.id} is a dropdown and cannot emit itself`).toBeUndefined()
+        if (item.split) expect(item.run, `${item.id} is split and needs a face action`).toBeTypeOf('function')
+        for (const option of item.options ?? []) {
+          if (option.heading) continue
+          const has = Number(Boolean(option.emits)) + Number(Boolean(item.run))
+          if (item.split) expect(has, `${item.id}/${option.value} must have a way to act`).toBeGreaterThan(0)
+          else expect(has, `${item.id}/${option.value} must emit or be run by the item`).toBe(1)
+        }
+        continue
+      }
       const has = Number(Boolean(item.run)) + Number(Boolean(item.emits))
       expect(has, `${item.id} must either run or emit, not both or neither`).toBe(1)
     }
   })
 
-  it('gives every select and swatch row its options', () => {
+  it('gives every select and menu its options', () => {
     for (const item of ribbonItems()) {
-      if (item.kind === 'select' || item.kind === 'swatches') {
+      if (item.kind === 'select' || item.kind === 'menu' || item.kind === 'dropdown') {
         expect(item.options?.length, item.id).toBeGreaterThan(0)
       }
     }
@@ -94,6 +179,14 @@ describe('the model is well-formed', () => {
     for (const tab of RIBBON_TABS) {
       expect(tab.groups.length, tab.id).toBeGreaterThan(0)
       for (const group of tab.groups) expect(group.label, group.id).toBeTruthy()
+    }
+  })
+
+  it('gives every group an icon of its own for the button it folds into', () => {
+    // A folded group is one large button; without its own icon it borrowed
+    // its first item's, which gave Font a "grow" arrow and Number a dollar.
+    for (const tab of RIBBON_TABS) {
+      for (const group of tab.groups) expect(group.icon, group.id).toBeTruthy()
     }
   })
 })
@@ -127,6 +220,48 @@ describe('the buttons drive the real actions', () => {
     expect(item('bold').isOn!(cmd)).toBe(true)
   })
 
+  it('greys the formatting buttons where the target refuses, and lights them where it allows', () => {
+    const store = createFormatStore()
+    let allow = false
+    setFormatTarget({
+      store,
+      lookup: { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => LETTERS[i] ?? null },
+      guard: () => allow,
+    })
+    const cmd = makeCmd()
+    for (const id of ['bold', 'italic', 'fmt-currency', 'align-left', 'wrap', 'clear-formats']) {
+      expect(item(id).isEnabled!(cmd), id).toBe(false)
+    }
+    expect(item('wrap').run!(cmd)).toBe(false)
+    expect(store.get('r0', 'a')).toBeUndefined()
+    allow = true
+    expect(item('bold').isEnabled!(cmd)).toBe(true)
+    expect(item('wrap').run!(cmd)).toBe(true)
+    expect(store.get('r0', 'a')?.wrap).toBe(true)
+  })
+
+  it('greys Merge & Center where the target refuses formatting, as Excel does on a protected sheet', () => {
+    setFormatTarget({
+      store: createFormatStore(),
+      lookup: { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => LETTERS[i] ?? null },
+      guard: () => false,
+    })
+    expect(item('merge').isEnabled!(makeCmd())).toBe(false)
+  })
+
+  it('greys Insert and Delete where the structure target refuses', () => {
+    const cmd = makeCmd()
+    expect(item('insert').isEnabled!(cmd)).toBe(true)
+    setStructureTarget({ getRaw: () => '', setRaw: () => {}, apply: () => {}, canApply: () => false })
+    try {
+      for (const id of ['insert', 'delete', 'insert-rows', 'delete-rows']) {
+        expect(item(id).isEnabled!(cmd), id).toBe(false)
+      }
+    } finally {
+      setStructureTarget(null)
+    }
+  })
+
   it('declines every formatting button when no store is attached', () => {
     const cmd = makeCmd()
     for (const id of ['bold', 'italic', 'fmt-currency', 'align-left', 'wrap', 'clear-formats']) {
@@ -158,23 +293,19 @@ describe('the buttons drive the real actions', () => {
     expect(written[0]).toBe('=SUM(A1:A3)')
   })
 
-  it('Copy asks the grid api rather than reimplementing the clipboard', () => {
+  it('Copy and Cut are the selection copy and cut Ctrl+C and Ctrl+X run, not the export', () => {
+    // The api's copyToClipboard exports the displayed rows with their
+    // headers; the buttons went there and put the whole sheet on the
+    // clipboard whatever was selected.
     const api = { copyToClipboard: vi.fn(async () => 'x') }
-    const cmd = makeCmd({ api: api as never })
+    const copy = vi.fn()
+    const cut = vi.fn(async () => {})
+    const cmd = makeCmd({ api: api as never, copy, cut })
     expect(item('copy').run!(cmd)).toBe(true)
-    expect(api.copyToClipboard).toHaveBeenCalled()
-  })
-
-  it('Cut copies BEFORE it blanks, so a failed write cannot lose the cells', () => {
-    const order: string[] = []
-    const cleared: Array<[number, number]> = []
-    const cmd = makeCmd({
-      api: { copyToClipboard: vi.fn(async () => { order.push('copy'); return '' }) } as never,
-      setCellValue: (r: number, c: number) => { order.push('clear'); cleared.push([r, c]) },
-    })
+    expect(copy).toHaveBeenCalledTimes(1)
     expect(item('cut').run!(cmd)).toBe(true)
-    expect(order[0]).toBe('copy')
-    expect(cleared).toEqual([[0, 0], [0, 1], [1, 0], [1, 1]])
+    expect(cut).toHaveBeenCalledTimes(1)
+    expect(api.copyToClipboard).not.toHaveBeenCalled()
   })
 
   it('New sheet declines without a workbook and adds one with it', () => {

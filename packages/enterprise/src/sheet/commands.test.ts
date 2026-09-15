@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
-  fillDown, fillRight, fillSelection, stampNow, stampDate, copyFromAbove,
+  fillDown, fillRight, fillSelection, stampNow, stampDate, copyFromAbove, copyValueFromAbove,
   guessSumRange, looksNumeric, targetRect, setFillTranslator,
   setSheetValueProbe,
 } from './commands'
@@ -74,6 +74,20 @@ describe('fillDown', () => {
     expect(cells[1]![0]).toBe('seed')
   })
 
+  it('leaves a cell alone when the context says it may not change', () => {
+    const { cmd, cells } = fakeCmd([['a', 'b'], ['', ''], ['', '']], [[0, 0, 2, 1]])
+    ;(cmd as { canEdit?: (r: number, c: number) => boolean }).canEdit = (r, c) => !(r === 1 && c === 1)
+    expect(fillDown(cmd)).toBe(true)
+    expect(cells).toEqual([['a', 'b'], ['a', ''], ['a', 'b']])
+  })
+
+  it('the single-row form asks too', () => {
+    const { cmd, cells } = fakeCmd([['seed', 'x'], ['', '']], [[1, 0, 1, 1]])
+    ;(cmd as { canEdit?: (r: number, c: number) => boolean }).canEdit = (_r, c) => c === 0
+    expect(fillDown(cmd)).toBe(true)
+    expect(cells[1]).toEqual(['seed', ''])
+  })
+
   it('declines on the top row with nothing above to pull from', () => {
     const { cmd } = fakeCmd([['a']], [[0, 0, 0, 0]])
     expect(fillDown(cmd)).toBe(false)
@@ -104,6 +118,30 @@ describe('fillDown', () => {
     const { cmd, cells } = fakeCmd([['a', 'b'], ['', '']], [[0, 0, 1, 1]])
     fillDown(cmd)
     expect(cells[1]).toEqual(['a', 'b'])
+  })
+})
+
+describe('fillSelection and the copies from above respect canEdit', () => {
+  it('fillSelection skips refused cells', () => {
+    const { cmd, cells } = fakeCmd([['', ''], ['', '']], [[0, 0, 1, 1]])
+    ;(cmd as { canEdit?: (r: number, c: number) => boolean }).canEdit = (r) => r === 0
+    expect(fillSelection(cmd, 'v')).toBe(true)
+    expect(cells).toEqual([['v', 'v'], ['', '']])
+  })
+
+  it('copyFromAbove declines on a refused cell', () => {
+    const { cmd, cells } = fakeCmd([['up'], ['']], [], { row: 1, col: 0 })
+    ;(cmd as { canEdit?: (r: number, c: number) => boolean }).canEdit = () => false
+    expect(copyFromAbove(cmd)).toBe(false)
+    expect(copyValueFromAbove(cmd)).toBe(false)
+    expect(cells[1]![0]).toBe('')
+  })
+
+  it('fillRight skips refused cells', () => {
+    const { cmd, cells } = fakeCmd([['a', '', '']], [[0, 0, 0, 2]])
+    ;(cmd as { canEdit?: (r: number, c: number) => boolean }).canEdit = (_r, c) => c !== 1
+    expect(fillRight(cmd)).toBe(true)
+    expect(cells[0]).toEqual(['a', '', 'a'])
   })
 })
 
@@ -185,6 +223,34 @@ describe('copyFromAbove', () => {
   it('declines on the top row', () => {
     const { cmd } = fakeCmd([['a']])
     expect(copyFromAbove(cmd)).toBe(false)
+  })
+})
+
+describe('copyValueFromAbove', () => {
+  it('copies what the cell above shows, not its formula, when an engine is attached', () => {
+    setSheetValueProbe((r, c) => (r === 0 && c === 0 ? 42 : null))
+    try {
+      const { cmd, cells } = fakeCmd([['=A1*2'], ['']], [], { row: 1, col: 0 })
+      expect(copyValueFromAbove(cmd)).toBe(true)
+      expect(cells[1]![0]).toBe('42')
+    } finally {
+      setSheetValueProbe(null)
+    }
+  })
+
+  it('falls back to the text without an engine, and declines on an error or the top row', () => {
+    const { cmd, cells } = fakeCmd([['hello'], ['']], [], { row: 1, col: 0 })
+    expect(copyValueFromAbove(cmd)).toBe(true)
+    expect(cells[1]![0]).toBe('hello')
+    setSheetValueProbe(() => ({ error: '#DIV/0!' }))
+    try {
+      const bad = fakeCmd([['=1/0'], ['']], [], { row: 1, col: 0 })
+      expect(copyValueFromAbove(bad.cmd)).toBe(false)
+      expect(bad.cells[1]![0]).toBe('')
+    } finally {
+      setSheetValueProbe(null)
+    }
+    expect(copyValueFromAbove(fakeCmd([['a']]).cmd)).toBe(false)
   })
 })
 

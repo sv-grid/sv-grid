@@ -873,7 +873,7 @@
      `--sg-thead-h` pixels of the scroll container. `scrollIntoView`
      and friends use this to avoid scrolling a row underneath the
      sticky header - critical for Excel-style keyboard nav. */
-  scroll-padding-top: var(--sg-thead-h, 36px);
+  scroll-padding-top: calc(var(--sg-thead-h, 36px) + var(--sg-frozen-h, 0px));
 }
 
 .sv-grid-container.sv-grid-container-custom-scrollbars {
@@ -1446,6 +1446,24 @@ select.sv-grid-fr-editor {
   padding: 0;
 }
 
+/* ---- Collapsed columns and rows -------------------------------------------
+   A column folded away by `api.setColumnCollapsed` is laid out at 0px (its
+   width resolves to 0), and here it stops painting: no padding to push the
+   box open, nothing visible, so its neighbours' borders meet at the seam the
+   way they do in a sheet with a hidden column. A collapsed row leaves the
+   flow entirely; a table row can, a table cell cannot. */
+.sv-grid-column.sv-grid-column-collapsed,
+.sv-grid-cell.sv-grid-cell-collapsed {
+  padding: 0;
+  border-left-width: 0;
+  border-right-width: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.sv-grid-row.sv-grid-row-collapsed {
+  display: none;
+}
+
 /* The four CSS variables let us compose a single box-shadow that draws the
    selection rectangle outline only on the cells that sit on its edges. */
 .sv-grid-cell[data-selected-range="true"] {
@@ -1513,6 +1531,36 @@ select.sv-grid-fr-editor {
   font: inherit;
   color: inherit;
   padding: 0 8px;
+}
+/* Frozen rows (`frozenRows`): the grid's own rows, stuck under the header.
+   Each carries its own `top`, set inline from the heights of the frozen rows
+   above it. Below the header in the stacking order, above the body's rows,
+   with the row's own background so the rows scrolling under it do not show
+   through. */
+.sv-grid-row.sv-grid-row-frozen {
+  position: sticky;
+  /* Above the body rows' pinned cells (z 30) and row numbers (z 4), which
+     scroll under the band; below the header (z 35) and the scrollbars. */
+  z-index: 31;
+  background: var(--sg-bg, #fff);
+}
+.sv-grid-row.sv-grid-row-frozen > .sv-grid-cell {
+  background: var(--sg-bg, #fff);
+}
+/* The band's lower edge, so the frozen rows read as a pane. */
+.sv-grid-row.sv-grid-row-frozen-last > .sv-grid-cell {
+  border-bottom: 1px solid var(--sg-frozen-edge, var(--sg-border, #94a3b8));
+}
+
+/* The multiline text editor sizes itself by its lines and keeps the
+   input's single-line look until a break is typed. */
+.sv-grid-cell-editor-multiline {
+  height: auto;
+  min-height: 100%;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  line-height: inherit;
 }
 
 /* Base look for the filter inputs (header filter row, per-column filter, the
@@ -2112,6 +2160,21 @@ select.sv-grid-fr-editor {
 
 .sv-grid-context-menu {
   min-width: 180px;
+}
+/* The icon gutter of a context-menu item: 16px, in the text colour, so a
+   consumer's own glyphs (a spreadsheet's Cut / Copy / Paste) read as one
+   set with the label. Empty on items without an icon, keeping the labels
+   in one column. */
+.sv-grid-menu-icon {
+  display: inline-flex;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+}
+.sv-grid-menu-icon > svg {
+  display: block;
 }
 
 .sv-grid-comment-editor {

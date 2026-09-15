@@ -184,6 +184,14 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   OR: (a) => a.flat.some((v) => toBool(v)),
   XOR: (a) => a.flat.filter((v) => toBool(v)).length % 2 === 1,
 
+  // ---- Information -----------------------------------------------------
+  // What a value IS, not what it can be coerced to: "12" typed as text is
+  // text here, the way Excel answers, and a blank is neither.
+  ISNUMBER: (a) => typeof first(a) === 'number',
+  ISTEXT: (a) => typeof first(a) === 'string' && first(a) !== '',
+  ISLOGICAL: (a) => typeof first(a) === 'boolean',
+  ISBLANK: (a) => first(a) === '',
+
   // ---- Text ------------------------------------------------------------
   LEN: (a) => toText(first(a)).length,
   LEFT: (a) => toText(nth(a, 0)).slice(0, Math.max(0, Math.round(toNumber(a.args[1] ? nth(a, 1) : 1)))),
@@ -258,6 +266,22 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     // Day 0 of the following month is the last day of the target month.
     return iso(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months + 1, 0)))
   },
+  // DAYS(end, start): whole days, negative when the end comes first.
+  DAYS: (a) => Math.round((toDate(nth(a, 0)).getTime() - toDate(nth(a, 1)).getTime()) / 86400000),
+  // DATEDIF(start, end, unit): Excel's "d", "m" and "y", completed units
+  // only, and #NUM! when the start comes after the end, as Excel gives.
+  DATEDIF: (a) => {
+    const start = toDate(nth(a, 0))
+    const end = toDate(nth(a, 1))
+    if (end.getTime() < start.getTime()) return err('#NUM!')
+    const unit = toText(nth(a, 2)).toUpperCase()
+    if (unit === 'D') return Math.floor((end.getTime() - start.getTime()) / 86400000)
+    let months = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth())
+    if (end.getUTCDate() < start.getUTCDate()) months -= 1
+    if (unit === 'M') return months
+    if (unit === 'Y') return Math.floor(months / 12)
+    return err('#NUM!')
+  },
 
   // ---- Lookup ----------------------------------------------------------
   VLOOKUP: (a) => {
@@ -312,9 +336,13 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
       const v = (a.args[0] ?? [])[at - 1]
       return v === undefined ? err('#REF!') : v
     }
-    const rowIndex = Math.round(toNumber(nth(a, 1)))
-    const colIndex = a.args[2] ? Math.round(toNumber(nth(a, 2))) : 1
-    // A one-column range indexes by row even when only one number is given.
+    const given = Math.round(toNumber(nth(a, 1)))
+    // With one number, a one-column range indexes by row and a one-row range
+    // by column, as Excel does: =INDEX(B4:D4, 2) is the second scenario
+    // heading, not #REF!.
+    const oneRow = grid.length === 1 && !a.args[2]
+    const rowIndex = oneRow ? 1 : given
+    const colIndex = oneRow ? given : a.args[2] ? Math.round(toNumber(nth(a, 2))) : 1
     const row = grid[rowIndex - 1]
     if (!row) return err('#REF!')
     const cell = row[colIndex - 1]

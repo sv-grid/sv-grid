@@ -8,8 +8,10 @@ import {
 import "./sv-grid-scrollbar";
 import { untrack } from "svelte";
 import type {
+  ContextMenuIcon,
   FilterOperator,
 } from "./SvGrid.types";
+import type { GridIconName } from "./grid-icons";
 import {
   clampMenuX,
   cssEscape,
@@ -414,7 +416,7 @@ export function createMenus<
 
   // ---- Right-click context menu --------------------------------------
   type CtxTarget = { rowIndex: number; colIndex: number; columnId: string; rowId: string; row: TData | null };
-  type ResolvedItem = { key: string; label: string; separator?: boolean; disabled?: boolean; run?: () => void };
+  type ResolvedItem = { key: string; label: string; icon?: GridIconName | ContextMenuIcon; separator?: boolean; disabled?: boolean; run?: () => void };
 
   function insertRowAt(t: CtxTarget, offset: number) {
     const data = ctx.internalData.slice() as TData[];
@@ -543,11 +545,16 @@ export function createMenus<
         continue;
       }
       if (entry.hidden?.(target)) continue;
+      // An object on a built-in's key with no action of its own is that
+      // built-in with an icon (or a label) of the consumer's choosing.
+      const b = builtins[entry.key];
+      const builtinLabel = b ? ((b.msg && messages?.[b.msg]) || b.label) : entry.key;
       out.push({
         key: entry.key,
-        label: entry.label,
+        label: entry.label ?? builtinLabel,
+        icon: entry.icon,
         disabled: entry.disabled?.(target) ?? false,
-        run: () => entry.action(target),
+        run: entry.action ? () => entry.action(target) : b ? () => b.run(target) : undefined,
       });
     }
     // Drop leading/trailing/double separators.

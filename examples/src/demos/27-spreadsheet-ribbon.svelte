@@ -23,7 +23,7 @@
    * picker at the top left re-skins it along with everything else. Pick
    * "Excel" to see it wearing Excel's palette.
    */
-  import { SvSheet, createWorkbook } from '@svgrid/enterprise'
+  import { SvSheet, createWorkbook, type CellFormatEntry } from '@svgrid/enterprise'
 
   // Formats travel with the document, the way they do in a saved workbook,
   // rather than being something you re-apply every time it opens.
@@ -66,19 +66,26 @@
     },
   ])
 
-  const band = (row: number) =>
-    Object.fromEntries(['A', 'B', 'C', 'D', 'E'].map((c) => [`${c}${row}`, BAND]))
-  const total = (row: number) =>
-    Object.fromEntries(['A', 'B', 'C', 'D', 'E'].map((c) => [`${c}${row}`, TOTAL]))
-  const money = (row: number) =>
-    Object.fromEntries(['B', 'C', 'D', 'E'].map((c) => [`${c}${row}`, MONEY]))
-  const percent = (row: number) =>
-    Object.fromEntries(['B', 'C', 'D', 'E'].map((c) => [`${c}${row}`, PERCENT]))
+  // A bare address formats the sheet that is active at mount (Budget); a
+  // sheet-qualified one reaches the other sheet, the way a formula would.
+  // Formats are per sheet, so a band on Budget's row 5 says nothing about
+  // Headcount's row 5.
+  const on = (sheet: string, cols: string, row: number, entry: CellFormatEntry) =>
+    Object.fromEntries([...cols].map((c) => [`${sheet}${c}${row}`, entry]))
+  const band = (row: number) => on('', 'ABCDE', row, BAND)
+  const total = (row: number) => on('', 'ABCDE', row, TOTAL)
+  const money = (row: number) => on('', 'BCDE', row, MONEY)
+  const percent = (row: number) => on('', 'BCDE', row, PERCENT)
+  const headcount = {
+    ...on('Headcount!', 'ABCD', 1, BAND),
+    ...on('Headcount!', 'CD', 2, MONEY), ...on('Headcount!', 'CD', 3, MONEY), ...on('Headcount!', 'CD', 4, MONEY),
+    ...on('Headcount!', 'ABCD', 5, TOTAL),
+  }
 </script>
 
 <SvSheet
   workbook={wb}
-  height={430}
+  height="100%"
   rows={24}
   columns={9}
   columnWidths={{ A: 150 }}
@@ -90,5 +97,6 @@
     ...total(10),
     ...total(12),
     ...percent(13),
+    ...headcount,
   }}
 />

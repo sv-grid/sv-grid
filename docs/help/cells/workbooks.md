@@ -7,7 +7,7 @@ was promoted. This is the model those references point at.
 import { createWorkbook, SvSheetTabs, setWorkbook } from '@svgrid/enterprise'
 ```
 
-<div data-docs-demo="437-workbook" data-height="560"></div>
+<div data-docs-demo="455-workbook" data-height="560"></div>
 
 ## The model
 
@@ -40,6 +40,41 @@ it.
 | `applyStructuralEdit` | Insert or delete rows/columns, rewriting the whole workbook. |
 | `names` | Workbook-scoped defined names. |
 | `serialize` | Sheets, the active one, and the names. |
+
+## Defined names
+
+`wb.names` is the workbook's Name Manager. A name stands for a cell or a
+range, and a formula uses it in place of the address:
+
+```ts
+wb.names.define('TaxRate', '=Inputs!$B$3')
+wb.names.define('Sales', '=Orders!$I$2:$I$25')
+
+'=Subtotal*TaxRate'      // one cell
+'=SUM(Sales)'            // the whole range
+'=SUMIF(Orders!B2:B25, "North", Sales)'
+```
+
+A name that refers to a range **is** that range wherever a range would do:
+inside `SUM`, `COUNTIF`, `VLOOKUP`, `INDEX`. In scalar position it
+collapses to its top-left cell, as a range does in Excel.
+
+Edits behind a name propagate. `=Subtotal*TaxRate` recomputes when the cell
+behind `TaxRate` changes, because the dependency graph follows the name to
+its cell when the formula is evaluated. Redefining or removing a name drops
+every cached value, so the next read recomputes against the new definition;
+there is nothing to call afterwards.
+
+A name may be defined as another name (`Sales` -> `Q3Sales`). A circular
+chain reads as `#NAME?` rather than hanging.
+
+Rows and columns inserted or deleted through `applyStructuralEdit` move a
+name with the cells it refers to, and only then: `Sales` above follows an
+insertion on Orders and ignores one on Summary. The same rule holds for
+formulas, so `=Orders!B2` on Summary stays put when Summary gains a
+column while `=B2` beside it moves.
+
+<div data-docs-demo="459-named-ranges-forecast" data-height="600"></div>
 
 ## Blank versus `#REF!`
 
@@ -166,13 +201,29 @@ is not a spreadsheet:
 goalSeek((x) => x * x, 9, 1)   // { converged: true, value: 3, ... }
 ```
 
-## Not yet
+## Saving the whole document
 
-Renaming a sheet does **not** rewrite formulas that name it. Excel does. Doing
-it here means a text substitution over every formula in the workbook, which
-would also hit a string literal that happens to contain the name, so it is
-left out rather than done badly. See
-[missing features](../missing-features.md).
+`workbook.serialize()` is the cells, the sheet order, the active sheet and
+the defined names. The spreadsheet shell keeps more beside them (formats,
+column widths, row heights, hidden lines, frozen panes, per sheet), and
+`getState()` / `setState()` on `<SvSheet>`, or `createSheetDocument` on its
+own, carry all of it as one JSON document. See
+[Saving and restoring](./spreadsheet-shell.md#saving-and-restoring).
+
+## More examples
+
+### Autosave: a document that survives a reload
+
+A project tracker that keeps itself in localStorage: onChange fires once per tick with every kind of change, the demo debounces it and writes getState() as JSON, and the next visit rebuilds the document with createSheetDocument({ state }) and hands it to <SvSheet document>. Add a comment, bold a row, hide a column, type a task, reload: it is all back, rules and merged title and frozen rows included. Reset puts the shipped document back with setState().
+
+<div data-docs-demo="465-autosave-document" data-height="560"></div>
+
+
+### What-if analysis: Goal Seek
+
+A pricing model with three scenarios side by side and Excel's Goal Seek over it: Data -> Goal Seek, set the profit cell to 20,000 by changing the price, and the solver (secant with a bisection fallback) finds it. The sheet does not move until the status dialog says "found a solution" and you press OK; OK writes through the grid's command context, so it is one Ctrl+Z.
+
+<div data-docs-demo="457-goal-seek" data-height="560"></div>
 
 ## See also
 

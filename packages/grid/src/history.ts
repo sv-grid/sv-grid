@@ -29,6 +29,13 @@ export type HistoryStep = {
   /** Set when this step is part of a multi-cell action. Steps sharing an id
    *  are contiguous in the array and undo / redo as one. */
   groupId?: string
+  /**
+   * A step that is not a cell write: something outside the grid's data that
+   * still belongs in the same Ctrl+Z stream, such as a cell format kept in a
+   * consumer's store. The cell fields are empty on such a step and the two
+   * functions do the work. Never serialised, since a closure cannot be.
+   */
+  custom?: { undo: () => void; redo: () => void }
 }
 
 /** Ctx surface these helpers touch. The controller satisfies it structurally. */

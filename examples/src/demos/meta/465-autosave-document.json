@@ -1,0 +1,24 @@
+{
+  "description": "A project tracker on the Svelte 5 spreadsheet shell that saves itself: the onChange prop fires once per tick with every kind of change (cells, formats, sizes, hidden lines, comments, rules, merges, filter, protection, structure), the demo debounces it and writes getState() to localStorage as JSON, and on the next visit createSheetDocument({ state }) rebuilds the document and <SvSheet document={doc}> opens it as it was left, with the same comments, validation and conditional formatting rules, merged title, frozen rows and hidden columns. Reset calls setState() with the shipped document and clears the grid's history. The same JSON works against a server or a file, and in Node with no component at all. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet save and restore",
+    "svelte grid autosave localstorage",
+    "svelte spreadsheet getstate setstate",
+    "svelte sheet onchange",
+    "svelte spreadsheet document json"
+  ],
+  "faq": [
+    {
+      "question": "What is in the saved JSON?",
+      "answer": "The workbook (every cell's raw text, formulas as typed, the sheet order, the active sheet, the defined names) and, per sheet, the formats, column widths, row heights, hidden rows and columns, frozen panes, comments, protection, merges, validation rules, conditional formatting rules and the AutoFilter. The bar shows its size."
+    },
+    {
+      "question": "How often does it save?",
+      "answer": "onChange is called once per tick with every reason since the last call, so a paste of forty cells is one call; the demo waits 400ms after the last change before writing, so a burst of typing is one save."
+    },
+    {
+      "question": "Can the document be rebuilt without the component?",
+      "answer": "Yes. createSheetDocument({ state }) builds the workbook and every sheet's parts from the JSON in Node or the browser, and document.getState(), setState() and subscribe() work on it directly."
+    }
+  ]
+}

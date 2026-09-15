@@ -82,9 +82,14 @@ describe('applyFreeze', () => {
     expect(setColumnPinning).toHaveBeenCalledWith({ left: ['c0', 'c1'] })
   })
 
-  it('reports the state so the caller can apply the row half', () => {
+  it('reports the state, and freezes the rows through the api as well', () => {
     const { cmd } = fakeCmd(4)
+    const setOption = vi.fn()
+    ;(cmd as any).api.setOption = setOption
     expect(applyFreeze(cmd, { rows: 3, cols: 1 })).toEqual({ rows: 3, cols: 1 })
+    expect(setOption).toHaveBeenCalledWith('frozenRows', 3)
+    applyFreeze(cmd, { rows: 0, cols: 0 })
+    expect(setOption).toHaveBeenLastCalledWith('frozenRows', undefined)
   })
 
   it('survives an api without pinning rather than throwing', () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 436. Paste Special, Find and Replace, insert and delete
+   * 454. Paste Special, Find and Replace, insert and delete
    * --------------------------------------------------------
    * The three Excel operations that write more than one cell, each of which
    * is ONE Ctrl+Z.
@@ -117,6 +117,9 @@
       startEditing: () => true,
       // One batch = one undo in a real grid; here it just runs the writes.
       batch: <T,>(fn: () => T) => fn(),
+      focus: () => {},
+      paste: async () => {},
+      recordUndo: () => {},
     } as never
   }
 

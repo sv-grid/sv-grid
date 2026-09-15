@@ -77,6 +77,11 @@ function makeCtx(opts: FakeOptions = {}) {
     editorSelectAll: false,
     editedCellValues: {},
     selectionRange: { anchor: null, focus: null },
+    tabRunOrigin: null,
+    activeRangeRect: () => null,
+    isRowCollapsed: () => false,
+    collapsedColumns: {},
+    isCellInSelectedRange: () => false,
     gridRootEl: null,
     props: {},
     history: [] as any[],
@@ -551,9 +556,10 @@ describe('updateEditingCellValue', () => {
 })
 
 describe('onEditorKeyDown', () => {
-  function fakeEvent(key: string) {
+  function fakeEvent(key: string, init: Partial<KeyboardEvent> = {}) {
     return {
       key,
+      ...init,
       stopPropagation: vi.fn(),
       preventDefault: vi.fn(),
     } as unknown as KeyboardEvent
@@ -574,6 +580,74 @@ describe('onEditorKeyDown', () => {
     expect(ctx.internalData[0].a).toBe('new')
     expect(ctx.editingCell).toBeNull()
     expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  })
+
+  it('Enter saves and moves the active cell one row down, Shift+Enter one up', () => {
+    // Typing a column of values: Enter after each one lands on the next row,
+    // as in every spreadsheet, rather than leaving the cursor on the cell
+    // just committed. The last row is a wall, not a wrap.
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text' }],
+      data: [{ a: 'a0' }, { a: 'a1' }, { a: 'a2' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'new' }
+    ed.onEditorKeyDown(fakeEvent('Enter'))
+    expect(ctx.internalData[0].a).toBe('new')
+    expect(ctx.activeCalls.at(-1)).toEqual([1, 0])
+
+    ed.onCellDoubleClick(1, 0)
+    const up = { ...fakeEvent('Enter'), shiftKey: true } as unknown as KeyboardEvent
+    ;(up as any).preventDefault = vi.fn()
+    ;(up as any).stopPropagation = vi.fn()
+    ed.onEditorKeyDown(up)
+    expect(ctx.activeCalls.at(-1)).toEqual([0, 0])
+
+    ed.onCellDoubleClick(2, 0)
+    ed.onEditorKeyDown(fakeEvent('Enter'))
+    expect(ctx.activeCalls.at(-1)).toEqual([2, 0])
+  })
+
+  it('Alt+Enter puts a line break into a multiline editor instead of committing', () => {
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text' }],
+      data: [{ a: 'old' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ctx.editingCell = { rowId: '0', columnId: 'a', editorType: 'text', value: 'ab' }
+    const area = document.createElement('textarea')
+    area.value = 'ab'
+    area.selectionStart = area.selectionEnd = 1
+    const ev = {
+      key: 'Enter', altKey: true, currentTarget: area,
+      stopPropagation: vi.fn(), preventDefault: vi.fn(),
+    } as unknown as KeyboardEvent
+    ed.onEditorKeyDown(ev)
+    expect(ev.preventDefault).toHaveBeenCalled()
+    expect(area.value).toBe('a\nb')
+    expect(area.selectionStart).toBe(2)
+    expect(ctx.editingCell?.value).toBe('a\nb')
+    // Still editing: nothing was saved.
+    expect(ctx.internalData[0].a).toBe('old')
+  })
+
+  it('Alt+Enter in a single-line input is just Enter', () => {
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editorType: 'text' }],
+      data: [{ a: 'old' }, { a: 'next' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'new' }
+    const input = document.createElement('input')
+    const ev = {
+      key: 'Enter', altKey: true, currentTarget: input,
+      stopPropagation: vi.fn(), preventDefault: vi.fn(),
+    } as unknown as KeyboardEvent
+    ed.onEditorKeyDown(ev)
+    expect(ctx.internalData[0].a).toBe('new')
+    expect(ctx.editingCell).toBeNull()
   })
 
   it('Escape cancels without saving and refocuses the grid root', () => {
@@ -628,6 +702,89 @@ describe('onEditorKeyDown', () => {
     expect(ev.preventDefault).toHaveBeenCalled()
     expect(ctx.internalData[0].a).toBe('new')
     expect(ctx.activeCalls.at(-1)).toEqual([0, 1])
+  })
+
+  it('Enter after a run of Tab commits returns to the column the run began in', () => {
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editorType: 'text' },
+        { id: 'b', field: 'b', editorType: 'text' },
+        { id: 'c', field: 'c', editorType: 'text' },
+      ],
+      data: [{ a: '', b: '', c: '' }, { a: '', b: '', c: '' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    // The real setActiveCell forgets the run on a move to another cell;
+    // the fake must too, or the test would pass with the origin never
+    // being written back.
+    const plain = ctx.setActiveCell
+    ctx.setActiveCell = (r: number, c: number) => {
+      const prev = ctx.activeCell
+      if (!prev || prev.rowIndex !== r || prev.colIndex !== c) ctx.tabRunOrigin = null
+      plain(r, c)
+    }
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'one' }
+    ed.onEditorKeyDown(fakeEvent('Tab'))
+    ed.onCellDoubleClick(0, 1)
+    ctx.editingCell = { ...ctx.editingCell, value: 'two' }
+    ed.onEditorKeyDown(fakeEvent('Tab'))
+    expect(ctx.activeCalls.at(-1)).toEqual([0, 2])
+    expect(ctx.tabRunOrigin).toBe(0)
+    ed.onCellDoubleClick(0, 2)
+    ctx.editingCell = { ...ctx.editingCell, value: 'three' }
+    ed.onEditorKeyDown(fakeEvent('Enter'))
+    expect(ctx.internalData[0]).toMatchObject({ a: 'one', b: 'two', c: 'three' })
+    expect(ctx.activeCalls.at(-1)).toEqual([1, 0])
+    expect(ctx.tabRunOrigin).toBe(null)
+    expect(ctx.selectionCalls.at(-1)).toEqual([1, 0])
+  })
+
+  it('Ctrl+Enter writes the entry into every cell of the block, as one undo, and stays put', () => {
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editorType: 'text' },
+        { id: 'b', field: 'b', editorType: 'text' },
+      ],
+      data: [{ a: '', b: '' }, { a: '', b: '' }, { a: 'keep', b: 'keep' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ctx.activeRangeRect = () => ({ minRow: 0, maxRow: 1, minCol: 0, maxCol: 1 })
+    ctx.isCellInSelectedRange = () => true
+    ed.onCellDoubleClick(0, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'x' }
+    const ev = fakeEvent('Enter', { ctrlKey: true })
+    ed.onEditorKeyDown(ev)
+    expect(ev.preventDefault).toHaveBeenCalled()
+    expect(ctx.internalData.slice(0, 2)).toEqual([{ a: 'x', b: 'x' }, { a: 'x', b: 'x' }])
+    expect(ctx.internalData[2]).toEqual({ a: 'keep', b: 'keep' })
+    // The cursor did not move.
+    expect(ctx.activeCalls.at(-1)).toEqual([0, 0])
+    expect(ctx.editingCell).toBeNull()
+    // Four steps, one group.
+    const groups = new Set(ctx.history.map((s: any) => s.groupId))
+    expect(ctx.history.length).toBe(4)
+    expect(groups.size).toBe(1)
+    expect([...groups][0]).toBeTruthy()
+  })
+
+  it('a commit inside a selected block keeps the block and moves within it', () => {
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editorType: 'text' },
+        { id: 'b', field: 'b', editorType: 'text' },
+      ],
+      data: [{ a: '', b: '' }, { a: '', b: '' }],
+    })
+    ctx.gridRootEl = { focus: vi.fn() }
+    ctx.activeRangeRect = () => ({ minRow: 0, maxRow: 1, minCol: 0, maxCol: 1 })
+    ctx.isCellInSelectedRange = () => true
+    ed.onCellDoubleClick(1, 0)
+    ctx.editingCell = { ...ctx.editingCell, value: 'x' }
+    ed.onEditorKeyDown(fakeEvent('Enter'))
+    // Past the block's last row: the top of the next column.
+    expect(ctx.activeCalls.at(-1)).toEqual([0, 1])
+    expect(ctx.selectionCalls).toEqual([])
   })
 
   it('Shift+Tab moves back a column and wraps to the previous row (#48)', () => {
@@ -841,10 +998,131 @@ describe('onCellDoubleClick', () => {
   })
 })
 
+describe('applyPastedText reports and records what it wrote', () => {
+  function pasteReady(text: string) {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: vi.fn().mockResolvedValue(text) },
+      configurable: true,
+    })
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editable: true, editorType: 'text' },
+        { id: 'b', field: 'b', editable: true, editorType: 'text' },
+      ],
+      data: [{ a: 'a0', b: 'b0' }, { a: 'a1', b: 'b1' }, { a: 'a2', b: 'b2' }],
+    })
+    ctx.setActiveCell(1, 0)
+    ctx.selectionRange = { anchor: { rowIndex: 1, colIndex: 0 }, focus: { rowIndex: 1, colIndex: 0 } }
+    return { ctx, ed }
+  }
+
+  it('fires onCellValueChange for every cell a block paste changed', async () => {
+    // A formula engine behind the grid only sees a value through this hook;
+    // a paste that skipped it left the engine holding the old cells.
+    const { ctx, ed } = pasteReady('x\ty\nz\tb2')
+    const onCellValueChange = vi.fn()
+    ctx.props.onCellValueChange = onCellValueChange
+    await ed.pasteFromClipboard()
+    expect(ctx.internalData[1]).toEqual({ a: 'x', b: 'y' })
+    expect(ctx.internalData[2]).toEqual({ a: 'z', b: 'b2' })
+    // b2 was already b2: no event for a cell that did not change.
+    expect(onCellValueChange).toHaveBeenCalledTimes(3)
+    expect(onCellValueChange).toHaveBeenCalledWith(
+      expect.objectContaining({ rowIndex: 1, columnId: 'a', oldValue: 'a1', newValue: 'x' }),
+    )
+    expect(onCellValueChange).toHaveBeenCalledWith(
+      expect.objectContaining({ rowIndex: 2, columnId: 'a', oldValue: 'a2', newValue: 'z' }),
+    )
+  })
+
+  it('records the paste as one grouped history entry', async () => {
+    const { ctx, ed } = pasteReady('x\ty\nz\tw')
+    await ed.pasteFromClipboard()
+    expect(ctx.history).toHaveLength(4)
+    const groups = new Set(ctx.history.map((s: { groupId?: string }) => s.groupId))
+    expect(groups.size).toBe(1)
+    expect([...groups][0]).toBeDefined()
+    expect(ctx.history[0]).toMatchObject({ rowId: '1', columnId: 'a', field: 'a', before: 'a1', after: 'x' })
+  })
+
+  it('writes nothing, records nothing, when the paste changes nothing', async () => {
+    const { ctx, ed } = pasteReady('a1\tb1')
+    const onCellValueChange = vi.fn()
+    ctx.props.onCellValueChange = onCellValueChange
+    const before = ctx.internalData
+    await ed.pasteFromClipboard()
+    expect(ctx.internalData).toBe(before)
+    expect(ctx.history).toHaveLength(0)
+    expect(onCellValueChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('onPasteClipboard', () => {
+  const grid = () => editingFor({
+    columns: [
+      { id: 'a', field: 'a', editorType: 'text', editable: true },
+      { id: 'b', field: 'b', editorType: 'text', editable: true },
+    ],
+    data: [{ a: '', b: '' }, { a: '', b: '' }],
+  })
+
+  it('hands the native paste event\'s text and HTML to the handler and applies nothing itself when it returns true', () => {
+    Object.defineProperty(navigator, 'clipboard', { value: { readText: vi.fn() }, configurable: true })
+    const { ctx, ed } = grid()
+    const seen: unknown[] = []
+    ctx.props.onPasteClipboard = (payload: unknown) => { seen.push(payload); return true }
+    const ev = {
+      clipboardData: { getData: (type: string) => (type === 'text/html' ? '<table><tr><td x:fmla="=A1">1</td></tr></table>' : '1') },
+      preventDefault: vi.fn(),
+    } as unknown as ClipboardEvent
+    ed.onGridPaste(ev)
+    expect(ev.preventDefault).toHaveBeenCalled()
+    expect(seen).toEqual([{ text: '1', html: '<table><tr><td x:fmla="=A1">1</td></tr></table>', source: 'event' }])
+    expect(ctx.internalData[0]).toMatchObject({ a: '', b: '' })
+  })
+
+  it('falls through to the plain paste when the handler declines', () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+    const { ctx, ed } = grid()
+    ctx.props.onPasteClipboard = () => undefined
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    const ev = {
+      clipboardData: { getData: (type: string) => (type === 'text/plain' ? 'X\tY' : '') },
+      preventDefault: vi.fn(),
+    } as unknown as ClipboardEvent
+    ed.onGridPaste(ev)
+    expect(ctx.internalData[0]).toMatchObject({ a: 'X', b: 'Y' })
+  })
+
+  it('reads both types through navigator.clipboard.read on the async path', async () => {
+    const blob = (text: string) => ({ text: async () => text })
+    const read = vi.fn().mockResolvedValue([
+      { types: ['text/plain', 'text/html'], getType: async (t: string) => blob(t === 'text/html' ? '<b>h</b>' : 'p') },
+    ])
+    Object.defineProperty(navigator, 'clipboard', { value: { read, readText: vi.fn() }, configurable: true })
+    const { ctx, ed } = grid()
+    const seen: unknown[] = []
+    ctx.props.onPasteClipboard = (payload: unknown) => { seen.push(payload); return true }
+    await ed.pasteFromClipboard()
+    expect(seen).toEqual([{ text: 'p', html: '<b>h</b>', source: 'async' }])
+  })
+
+  it('the paste is one history group even when the handler writes several cells', () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+    const { ctx, ed } = grid()
+    let groupSeen: unknown = 'unset'
+    ctx.props.onPasteClipboard = () => { groupSeen = ctx.historyGroupId; return true }
+    ed.onGridPaste({ clipboardData: { getData: () => 'x' }, preventDefault: vi.fn() } as unknown as ClipboardEvent)
+    // The handler ran inside an ambient group, and the group closed after it.
+    expect(groupSeen).toBeTruthy()
+    expect(ctx.historyGroupId).toBeUndefined()
+  })
+})
+
 describe('clipboard fallbacks (non-paste branches only)', () => {
   // onGridPaste and pasteFromClipboard guard on navigator.clipboard.readText.
-  // The actual paste transformation is covered by clipboard.test.ts; here we
-  // only assert the early-return guards so we do not duplicate that coverage.
+  // The transformation itself is covered just above; here we only assert
+  // the early-return guards.
 
   it('pasteFromClipboard returns early when the async API is unavailable', async () => {
     Object.defineProperty(navigator, 'clipboard', {

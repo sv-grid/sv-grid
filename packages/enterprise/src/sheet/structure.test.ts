@@ -96,6 +96,61 @@ describe('insert and delete', () => {
     expect(s.raw[0]![0]).toBe('=A3')
   })
 
+  it('a target that refuses gets no edit, no rewrite, no snapshot, and reports the refusal', () => {
+    const s = sheet([['=A2'], ['1']])
+    const refused = vi.fn()
+    const snapshot = vi.fn(() => 'state')
+    setStructureTarget({ ...s.target, canApply: () => false, refused, snapshot, restore: vi.fn() })
+    expect(insertRows(s.cmd, 0, 1)).toBe(false)
+    expect(deleteRows(s.cmd, 0, 1)).toBe(false)
+    expect(s.applied).toEqual([])
+    expect(s.raw[0]![0]).toBe('=A2')
+    expect(snapshot).not.toHaveBeenCalled()
+    expect(refused).toHaveBeenCalledTimes(2)
+  })
+
+  it('records the edit as one undo step when the target can snapshot', () => {
+    // Without this the formula rewrites sit in the history on their own,
+    // and undoing them while the rows stayed inserted would leave the sheet
+    // inconsistent. With a snapshot the whole state comes back in one press.
+    const s = sheet([['=A2'], ['1']])
+    const steps: Array<{ undo: () => void; redo: () => void }> = []
+    const cmd = { ...s.cmd, recordUndo: (undo: () => void, redo: () => void) => steps.push({ undo, redo }) } as GridCommandContext
+    let state = 'before'
+    setStructureTarget({
+      ...s.target,
+      // The edit itself moves the state, as applying to a workbook would.
+      apply: (edit) => { s.target.apply(edit); state = 'after' },
+      snapshot: () => state,
+      restore: (snap) => { state = snap as string },
+    })
+    expect(insertRows(cmd, 0, 1)).toBe(true)
+    expect(state).toBe('after')
+    expect(steps).toHaveLength(1)
+    steps[0]!.undo()
+    expect(state).toBe('before')
+    steps[0]!.redo()
+    expect(state).toBe('after')
+  })
+
+  it('leaves the references to a target that rewrites them itself', () => {
+    // A workbook rewrites every sheet on apply; rewriting here as well moved
+    // each reference twice.
+    const s = sheet([['=A2'], ['1']])
+    setStructureTarget({ ...s.target, rewritesReferences: true })
+    expect(insertRows(s.cmd, 0, 1)).toBe(true)
+    expect(s.raw[0]![0]).toBe('=A2')
+    expect(s.applied).toEqual([{ kind: 'insertRows', at: 0, count: 1 }])
+  })
+
+  it('records nothing without a snapshot, as before', () => {
+    const s = sheet([['1']])
+    const recordUndo = vi.fn()
+    setStructureTarget(s.target)
+    insertRows({ ...s.cmd, recordUndo } as GridCommandContext, 0, 1)
+    expect(recordUndo).not.toHaveBeenCalled()
+  })
+
   it('declines a zero or negative count', () => {
     const s = sheet([['1']])
     setStructureTarget(s.target)

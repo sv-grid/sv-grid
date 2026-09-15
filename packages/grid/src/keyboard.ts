@@ -109,3 +109,131 @@ export function getNextActiveCell(
     cellId: current.cellId,
   }
 }
+
+export type Collapsed = {
+  isRowCollapsed: (rowIndex: number) => boolean
+  isColumnCollapsed: (colIndex: number) => boolean
+}
+
+/**
+ * Where a move lands once collapsed rows and columns are stepped over.
+ *
+ * A sheet's arrow keys never rest on a hidden row or column: the cursor
+ * goes on in the direction of travel to the next one that shows, and when
+ * nothing shows in that direction it comes back to the nearest one before
+ * the landing, which for End on a sheet whose last columns are hidden is the
+ * last visible column. An axis the move did not touch is left alone, so a
+ * cursor sitting on a row the user has just hidden still moves sideways.
+ * With every cell in the direction of travel hidden the cursor stays put.
+ */
+export function pastCollapsed(
+  from: ActiveCellState,
+  next: ActiveCellState,
+  bounds: { maxRow: number; maxCol: number },
+  collapsed: Collapsed,
+): ActiveCellState {
+  const axis = (fromIdx: number, nextIdx: number, max: number, isCollapsed: (i: number) => boolean) => {
+    if (nextIdx === fromIdx) return nextIdx
+    const dir = nextIdx > fromIdx ? 1 : -1
+    let i = nextIdx
+    while (i >= 0 && i <= max && isCollapsed(i)) i += dir
+    if (i >= 0 && i <= max) return i
+    i = nextIdx - dir
+    while (i !== fromIdx && isCollapsed(i)) i -= dir
+    return i
+  }
+  const rowIndex = axis(from.rowIndex, next.rowIndex, bounds.maxRow, collapsed.isRowCollapsed)
+  const colIndex = axis(from.colIndex, next.colIndex, bounds.maxCol, collapsed.isColumnCollapsed)
+  return rowIndex === next.rowIndex && colIndex === next.colIndex ? next : { rowIndex, colIndex, cellId: next.cellId }
+}
+
+export type EntryIntent = 'moveDown' | 'moveUp' | 'tabNext' | 'tabPrev'
+
+export type EntryRect = { minRow: number; maxRow: number; minCol: number; maxCol: number }
+
+export type EntryStep = {
+  cell: ActiveCellState
+  /** The move stayed inside a multi-cell selection, which is kept. */
+  withinRange: boolean
+  /** The column a run of Tabs began in, for the Enter that ends it. */
+  tabOrigin: number | null
+}
+
+/**
+ * Where Enter and Tab put the cursor, the way a sheet's data entry expects.
+ *
+ * Two rules on top of `getNextActiveCell`. A run of Tabs remembers the
+ * column it started in, and the Enter that ends the run goes down from
+ * THAT column, not from the last cell: type across A1, B1, C1 with Tab and
+ * Enter lands on A2, ready for the next record. Any other move clears the
+ * memory, which the callers do by resetting `tabOrigin` on every plain
+ * `setActiveCell`. And inside a selection of more than one cell the cursor
+ * stays inside it: Enter walks down a column and wraps to the top of the
+ * next, Tab walks along a row and wraps to the start of the next, both
+ * back to the first cell after the last, and the selection is left
+ * standing, so a block can be filled without ever reaching for the mouse.
+ * Arrow keys are not entry keys and never come here.
+ */
+export function getEntryStep(
+  current: ActiveCellState,
+  intent: EntryIntent,
+  opts: { maxRow: number; maxCol: number; tabOrigin: number | null; range: EntryRect | null; collapsed?: Collapsed },
+): EntryStep {
+  const step = entryStep(current, intent, opts)
+  const collapsed = opts.collapsed
+  if (!collapsed) return step
+  const hidden = (c: ActiveCellState) => collapsed.isRowCollapsed(c.rowIndex) || collapsed.isColumnCollapsed(c.colIndex)
+  if (!hidden(step.cell)) return step
+  if (!step.withinRange) return { ...step, cell: pastCollapsed(current, step.cell, opts, collapsed) }
+  // Walking a block: the same step again from the hidden cell, until one
+  // shows. A block with nothing showing leaves the cursor where it is.
+  let cell = step.cell
+  for (let guard = (opts.range!.maxRow - opts.range!.minRow + 1) * (opts.range!.maxCol - opts.range!.minCol + 1); guard > 0 && hidden(cell); guard -= 1) {
+    cell = entryStep(cell, intent, opts).cell
+  }
+  return { ...step, cell: hidden(cell) ? current : cell }
+}
+
+function entryStep(
+  current: ActiveCellState,
+  intent: EntryIntent,
+  opts: { maxRow: number; maxCol: number; tabOrigin: number | null; range: EntryRect | null },
+): EntryStep {
+  const range = opts.range
+  const inRange =
+    range !== null &&
+    (range.maxRow > range.minRow || range.maxCol > range.minCol) &&
+    current.rowIndex >= range.minRow && current.rowIndex <= range.maxRow &&
+    current.colIndex >= range.minCol && current.colIndex <= range.maxCol
+  if (inRange) {
+    let { rowIndex, colIndex } = current
+    if (intent === 'moveDown') {
+      rowIndex += 1
+      if (rowIndex > range.maxRow) { rowIndex = range.minRow; colIndex += 1 }
+      if (colIndex > range.maxCol) colIndex = range.minCol
+    } else if (intent === 'moveUp') {
+      rowIndex -= 1
+      if (rowIndex < range.minRow) { rowIndex = range.maxRow; colIndex -= 1 }
+      if (colIndex < range.minCol) colIndex = range.maxCol
+    } else if (intent === 'tabNext') {
+      colIndex += 1
+      if (colIndex > range.maxCol) { colIndex = range.minCol; rowIndex += 1 }
+      if (rowIndex > range.maxRow) rowIndex = range.minRow
+    } else {
+      colIndex -= 1
+      if (colIndex < range.minCol) { colIndex = range.maxCol; rowIndex -= 1 }
+      if (rowIndex < range.minRow) rowIndex = range.maxRow
+    }
+    return { cell: { rowIndex, colIndex, cellId: current.cellId }, withinRange: true, tabOrigin: null }
+  }
+  const bounds = { maxRow: opts.maxRow, maxCol: opts.maxCol }
+  if (intent === 'tabNext' || intent === 'tabPrev') {
+    return {
+      cell: getNextActiveCell(current, intent, bounds),
+      withinRange: false,
+      tabOrigin: opts.tabOrigin ?? current.colIndex,
+    }
+  }
+  const from = opts.tabOrigin === null ? current : { ...current, colIndex: opts.tabOrigin }
+  return { cell: getNextActiveCell(from, intent, bounds), withinRange: false, tabOrigin: null }
+}

@@ -715,6 +715,23 @@
       {@const _reg = getCellEditor(String(ctrl.editingCell?.editorType))!}
       {@const CustomCellEditor = _reg.component}
       <CustomCellEditor {...resolveEditorProps(_reg, buildRegisteredEditorContext())} />
+    {:else if (ctrl.editingCell?.editorType ?? "text") === "text" && column?.columnDef.editorMultiline}
+      <!-- The text editor with room for line breaks: Alt+Enter inserts one
+           (handled in onEditorKeyDown), Enter commits like the input's, and
+           the height follows the lines. -->
+      <textarea
+        use:focusOnMount
+        class="sv-grid-cell-editor sv-grid-cell-editor-text sv-grid-cell-editor-multiline"
+        rows={Math.max(1, String(ctrl.editingCell?.value ?? "").split("\n").length)}
+        value={String(ctrl.editingCell?.value ?? "")}
+        oninput={(event) => {
+          const area = event.currentTarget as HTMLTextAreaElement;
+          area.rows = Math.max(1, area.value.split("\n").length);
+          updateEditingCellValue(area.value);
+        }}
+        onblur={() => saveEditingCell()}
+        onkeydown={onEditorKeyDown}
+      ></textarea>
     {:else}
       {@const editorType = ctrl.editingCell?.editorType ?? "text"}
       {@const isNumberEditor = getCellEditorInputType(editorType) === "text" &&

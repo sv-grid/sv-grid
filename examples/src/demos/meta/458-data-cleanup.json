@@ -1,0 +1,24 @@
+{
+  "description": "Excel's data cleanup on a Svelte 5 spreadsheet grid: a CRM export that landed in column A, semicolon-separated, with the same people in it twice. Data > Text to Columns opens a wizard that has guessed the delimiter and previews the split; Data > Remove Duplicates lets you tick the columns that decide identity, compares case-insensitively as Excel does, and reports how many duplicates went and how many unique rows remain. Each operation is one undo step. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte text to columns",
+    "svelte remove duplicates grid",
+    "svelte spreadsheet data cleanup",
+    "svelte split column by delimiter",
+    "svelte excel data tools"
+  ],
+  "faq": [
+    {
+      "question": "How does Text to Columns pick the delimiter?",
+      "answer": "The wizard scores tab, semicolon, comma, pipe and space over the selected rows: a delimiter that appears in most rows, the same number of times in each, wins; a comma in one row out of fifty is prose. The preview shows the split before anything is written."
+    },
+    {
+      "question": "Which columns decide a duplicate?",
+      "answer": "The ones ticked in the Remove Duplicates dialog. Two rows are the same when those columns match, compared case-insensitively, and the first occurrence stays."
+    },
+    {
+      "question": "Can a cleanup be undone?",
+      "answer": "Yes. Both operations write through the command context in one batch, so Ctrl+Z restores the column or the removed rows in one press."
+    }
+  ]
+}

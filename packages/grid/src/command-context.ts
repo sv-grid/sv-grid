@@ -28,6 +28,11 @@ export function buildCommandContext(ctx: any, editing: boolean): GridCommandCont
       return ctx.buildApi();
     },
     editing,
+    get editor() {
+      const root: HTMLElement | null = ctx.gridRootEl ?? null;
+      const el = root?.querySelector<HTMLInputElement | HTMLTextAreaElement>(".sv-grid-cell-editor") ?? null;
+      return el;
+    },
     get activeCell() {
       const active = ctx.grid.getState().activeCell;
       if (!active) return null;
@@ -36,6 +41,10 @@ export function buildCommandContext(ctx: any, editing: boolean): GridCommandCont
         colIndex: active.colIndex,
         columnId: columnIdAt(active.colIndex),
       };
+    },
+    get selectionFocus() {
+      const focus = ctx.selectionRange?.focus;
+      return focus ? { rowIndex: focus.rowIndex, colIndex: focus.colIndex } : null;
     },
     get rowCount() {
       return ctx.allRows.length;
@@ -100,6 +109,29 @@ export function buildCommandContext(ctx: any, editing: boolean): GridCommandCont
     },
     batch<T>(fn: () => T): T {
       return runHistoryGroup(ctx, fn);
+    },
+    recordUndo(undo: () => void, redo: () => void) {
+      pushHistory(ctx, [
+        { rowId: "", columnId: "", field: "", before: undefined, after: undefined, custom: { undo, redo } },
+      ]);
+    },
+    focus() {
+      // preventScroll: the grid keeps its own scroll position, and a focus
+      // that yanked the viewport to the root's top edge would undo whatever
+      // scrollIntoView the command just asked for.
+      ctx.gridRootEl?.focus({ preventScroll: true });
+    },
+    async paste() {
+      await ctx.pasteFromClipboard?.();
+    },
+    copy() {
+      ctx.copySelectionToClipboard?.();
+    },
+    async cut() {
+      await ctx.cutSelectionToClipboard?.();
+    },
+    canEdit(rowIndex: number, colIndex: number) {
+      return ctx.isCellEditableAt?.(rowIndex, colIndex) ?? true;
     },
   };
 }

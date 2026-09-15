@@ -1,0 +1,24 @@
+{
+  "description": "An expense review sheet on the Svelte 5 spreadsheet shell, opened protected: every cell is locked except the reviewer's Receipt and Status columns, so typing over an amount is refused with a message while a status picked from the in-cell list goes through and moves the SUMIF totals. Three reviewer notes sit on the cells they concern as Excel's red corner: hover for the text, Shift+F2 to edit, Review > Next to walk them, Show All Comments to list them. Protection, the unlocked cells, the notes and the rules are part of the document and come back from getState(). Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet cell comments",
+    "svelte protect sheet locked cells",
+    "svelte grid review notes",
+    "svelte excel comments",
+    "svelte spreadsheet read only cells"
+  ],
+  "faq": [
+    {
+      "question": "How are some cells editable on a protected sheet?",
+      "answer": "Every cell is locked to begin with, as in Excel. The Receipt and Status cells carry locked: false in their format entry (Format Cells > Protection, or the formats prop), and Review > Protect Sheet then locks everything else. Unprotect Sheet opens the whole sheet again."
+    },
+    {
+      "question": "Where do the comments live?",
+      "answer": "In the document, per sheet, keyed by cell: getState().sheets.Claims.comments. They move with an insert or delete, and a saved document comes back with them."
+    },
+    {
+      "question": "Can a comment be edited from the keyboard?",
+      "answer": "Shift+F2 opens the note box on the active cell, Ctrl+Enter saves it, Escape closes it and keeps the text as Excel does. Review > Previous and Next jump between commented cells."
+    }
+  ]
+}

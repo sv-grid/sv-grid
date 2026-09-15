@@ -30,10 +30,11 @@
     "SvGrid is Svelte-5-native and MIT. Its spreadsheet surface is built on the ordinary grid: cell-range selection, a fill handle, clipboard, freeze panes through column pinning and pinned rows, colSpan and rowSpan callbacks for merged cells, and a dependency-free formula engine for the common functions. When you need HyperFormula's library, the spreadsheet demos show it wired underneath SvGrid, so the choice of engine stays yours."
   ],
   "similarities": [
-    "Editing on every cell, range selection, a fill handle and OS clipboard round-trips.",
+    "Editing on every cell, range selection, a fill handle and OS clipboard round-trips that keep formats and formulas.",
     "Formulas with cell references, ranges and functions.",
     "Frozen rows and columns, merged cells and nested (tree) rows.",
     "Excel-style filters, sorting, undo and redo, a context menu.",
+    "Cell comments, data validation, conditional formatting and cell protection on the spreadsheet surface.",
     "Virtualization on both axes, keyboard navigation and WAI-ARIA markup."
   ],
   "svgridAdvantages": [
@@ -45,7 +46,7 @@
   ],
   "competitorAdvantages": [
     "HyperFormula: the most complete formula surface in the category, with cross-sheet references and named expressions.",
-    "Years of spreadsheet edge cases handled: merged-cell editing, nested headers, cell comments, autofill rules.",
+    "Years of spreadsheet edge cases handled: nested headers, threaded comments, Input Messages on validation, Filter by Color.",
     "Official React, Angular and Vue wrappers for a multi-framework shop.",
     "Paid support with code review and a dedicated success manager on the higher plans."
   ],
@@ -131,10 +132,79 @@
       "feature": "Merged cells",
       "svgrid": {
         "status": "yes",
-        "note": "colSpan and rowSpan callbacks per column"
+        "note": "mergedCells prop on the grid; Merge & Center, Merge Across and Unmerge on the spreadsheet shell's ribbon"
       },
       "competitor": {
         "status": "yes"
+      }
+    },
+    {
+      "feature": "Cell comments",
+      "svgrid": {
+        "status": "yes",
+        "note": "notes prop on the grid; Review tab, Shift+F2 and the cell menu on the spreadsheet shell, one note per cell"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "the Comments plugin",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Data validation",
+      "svgrid": {
+        "status": "yes",
+        "note": "valueParser on a column; Excel's Data Validation dialog, Stop and Warning alerts and in-cell lists on the spreadsheet shell"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "per-cell validators",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Conditional formatting",
+      "svgrid": {
+        "status": "yes",
+        "note": "value-driven rules by column on the grid; Highlight Cells, Top/Bottom, Data Bars, Color Scales and Icon Sets over computed values on the spreadsheet shell"
+      },
+      "competitor": {
+        "status": "partial",
+        "note": "through custom renderers"
+      }
+    },
+    {
+      "feature": "AutoFilter menus on the header row",
+      "svgrid": {
+        "status": "yes",
+        "note": "Excel's arrows, value lists and Text or Number Filters on the spreadsheet shell"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "the Filters and Dropdown Menu plugins",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Cell protection",
+      "svgrid": {
+        "status": "yes",
+        "note": "editable per column on the grid; Format Cells > Protection and Protect Sheet on the spreadsheet shell, no password"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "readOnly cell meta"
+      }
+    },
+    {
+      "feature": "Excel and Sheets clipboard with formats and formulas",
+      "svgrid": {
+        "status": "yes",
+        "note": "the spreadsheet shell reads and writes the HTML flavour Excel and Google Sheets use"
+      },
+      "competitor": {
+        "status": "yes",
+        "source": "hot-home"
       }
     },
     {
@@ -289,7 +359,7 @@
     "effort": "2-4 hours per grid for typical spreadsheet workflows",
     "youLose": [
       "HyperFormula as a first-party, supported engine; SvGrid's built-in engine covers the common functions and HyperFormula is an optional add-on you wire yourself.",
-      "Nested headers, cell comments and Handsontable's autofill rules.",
+      "Nested headers, threaded comments and Input Messages on validation.",
       "Official React, Angular and Vue wrappers.",
       "Built-in Excel export without a paid pack; SvGrid's is in @svgrid/enterprise."
     ]

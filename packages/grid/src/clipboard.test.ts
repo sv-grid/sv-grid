@@ -77,6 +77,11 @@ function makeCtx(opts: FakeOptions = {}) {
     _rows: buildRows(),
     selectionRange: { anchor: null, focus: null },
     selectionRanges: [] as Array<{ anchor: any; focus: any }>,
+    history: [] as any[],
+    historyPtr: -1,
+    historyVersion: 0,
+    historyGroupId: undefined as string | undefined,
+    UNDO_LIMIT: 200,
     // Mirrors the real controller's getSelectionRects: committed ranges + active.
     getSelectionRects(): Array<{ minRow: number; maxRow: number; minCol: number; maxCol: number }> {
       const rects: Array<{ minRow: number; maxRow: number; minCol: number; maxCol: number }> = []
@@ -436,6 +441,77 @@ describe('onFillPointerUp / applyFillPattern', () => {
     expect(ctx.selectionRange.focus).toEqual({ rowIndex: 3, colIndex: 0 })
   })
 
+  it('records the drag as one grouped history entry, so Ctrl+Z takes it all back', () => {
+    // The fill used to write through writeCellRaw and push nothing: a drag
+    // over twenty rows was invisible to undo.
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 1 }, { a: 2 }, { a: 0 }, { a: 0 }],
+    })
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 1, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 3, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp()
+    expect(ctx.history).toHaveLength(2)
+    expect(ctx.history[0]).toMatchObject({ rowId: '2', columnId: 'a', field: 'a', before: 0, after: 3 })
+    expect(ctx.history[1]).toMatchObject({ rowId: '3', columnId: 'a', field: 'a', before: 0, after: 4 })
+    expect(ctx.history[0].groupId).toBeDefined()
+    expect(ctx.history[0].groupId).toBe(ctx.history[1].groupId)
+  })
+
+  it('asks processCellForFill first and falls back to the pattern when it declines', () => {
+    // A spreadsheet moves a formula's references by the distance filled;
+    // the pattern rules would read "=A1+B1" as "Item 1" and write "=A1+B2".
+    const seen: Array<{ value: unknown; delta: { rows: number; cols: number } }> = []
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+      data: [{ a: '=A1+B1' }, { a: '' }, { a: '' }],
+    })
+    ctx.props.processCellForFill = ({ value, delta }: { value: unknown; delta: { rows: number; cols: number } }) => {
+      seen.push({ value, delta })
+      return typeof value === 'string' && value.startsWith('=') ? `${value}@${delta.rows}` : undefined
+    }
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 0, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 2, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp()
+    expect(ctx.internalData[1].a).toBe('=A1+B1@1')
+    expect(ctx.internalData[2].a).toBe('=A1+B1@2')
+    expect(seen.map((s) => s.delta.rows)).toEqual([1, 2])
+
+    // Declining leaves the series to the pattern.
+    const numeric = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 1 }, { a: 2 }, { a: 0 }, { a: 0 }],
+    })
+    numeric.props.processCellForFill = () => undefined
+    numeric.fillDrag = { sourceMinRow: 0, sourceMaxRow: 1, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 3, targetCol: 0 }
+    createClipboard(numeric).onFillPointerUp()
+    expect(numeric.internalData[2].a).toBe(3)
+    expect(numeric.internalData[3].a).toBe(4)
+  })
+
+  it('double-click fills down as far as the neighbouring column has data', () => {
+    const ctx = makeCtx({
+      columns: [
+        { id: 'a', field: 'a', editable: true, editorType: 'text' },
+        { id: 'b', field: 'b', editable: true, editorType: 'number' },
+      ],
+      data: [{ a: 'x', b: 1 }, { a: 'y', b: 0 }, { a: 'z', b: 0 }, { a: '', b: 0 }],
+    })
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 1 }, focus: { rowIndex: 0, colIndex: 1 } }
+    createClipboard(ctx).fillDownToNeighbour()
+    // Column a runs to row 3 (index 2); the fill stops there.
+    expect(ctx.internalData.map((r: any) => r.b)).toEqual([1, 1, 1, 0])
+    expect(ctx.selectionRange.focus).toEqual({ rowIndex: 2, colIndex: 1 })
+  })
+
+  it('double-click with nothing beside the selection fills nothing', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 1 }, { a: 0 }, { a: 0 }],
+    })
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    createClipboard(ctx).fillDownToNeighbour()
+    expect(ctx.internalData.map((r: any) => r.a)).toEqual([1, 0, 0])
+  })
+
   it('fills upward, reverse-extrapolating the pattern', () => {
     const ctx = makeCtx({
       columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
@@ -617,6 +693,59 @@ describe('copySelectionToClipboard', () => {
     expect(writeText).toHaveBeenCalledWith('a\tb\na0\tb0\na1\tb1')
   })
 
+  it('writes text and HTML through the copy event when clipboardHtml supplies markup', () => {
+    // The copy event is the first path: execCommand('copy') fires it and the
+    // one-shot listener puts both types on it, attributes intact.
+    const ctx = makeCtx({ data: [{ a: 'a0', b: 'b0' }] })
+    ctx.props.clipboardHtml = ({ text }: { text: string }) => `<table data-x="1"><tr><td>${text}</td></tr></table>`
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 1 } }
+    const set = vi.fn()
+    // jsdom has no execCommand; this one fires the copy event the way a browser's does.
+    ;(document as unknown as { execCommand: (name: string) => boolean }).execCommand = () => {
+      const ev = new Event('copy', { cancelable: true }) as ClipboardEvent
+      Object.defineProperty(ev, 'clipboardData', { value: { setData: set } })
+      document.dispatchEvent(ev)
+      return true
+    }
+    try {
+      createClipboard(ctx).copySelectionToClipboard()
+      expect(set).toHaveBeenCalledWith('text/plain', 'a0\tb0')
+      expect(set).toHaveBeenCalledWith('text/html', '<table data-x="1"><tr><td>a0\tb0</td></tr></table>')
+      expect(writeText).not.toHaveBeenCalled()
+    } finally {
+      delete (document as unknown as { execCommand?: unknown }).execCommand
+    }
+  })
+
+  it('falls back to the async write with both types when the copy event is refused', () => {
+    const ctx = makeCtx({ data: [{ a: 'a0', b: 'b0' }] })
+    ctx.props.clipboardHtml = () => '<b>x</b>'
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    const write = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText, write }, configurable: true })
+    ;(document as unknown as { execCommand: (name: string) => boolean }).execCommand = () => false
+    class FakeItem { constructor(public parts: Record<string, Blob>) {} }
+    ;(globalThis as Record<string, unknown>).ClipboardItem = FakeItem
+    try {
+      createClipboard(ctx).copySelectionToClipboard()
+      expect(write).toHaveBeenCalledTimes(1)
+      const item = write.mock.calls[0]![0][0] as FakeItem
+      expect(Object.keys(item.parts)).toEqual(['text/plain', 'text/html'])
+      expect(writeText).not.toHaveBeenCalled()
+    } finally {
+      delete (document as unknown as { execCommand?: unknown }).execCommand
+      delete (globalThis as Record<string, unknown>).ClipboardItem
+    }
+  })
+
+  it('writes text alone when clipboardHtml returns nothing', () => {
+    const ctx = makeCtx({ data: [{ a: 'a0', b: 'b0' }] })
+    ctx.props.clipboardHtml = () => null
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    createClipboard(ctx).copySelectionToClipboard()
+    expect(writeText).toHaveBeenCalledWith('a0')
+  })
+
   it('runs each value through processCellForClipboard', () => {
     const ctx = makeCtx({
       data: [{ a: 'a0', b: 'b0' }],
@@ -736,6 +865,28 @@ describe('clearSelectedCells', () => {
     expect(onCellValueChange).toHaveBeenCalledWith(
       expect.objectContaining({ rowIndex: 0, columnId: 'a', oldValue: 'hello', newValue: '' }),
     )
+  })
+
+  it('records the clear in the history as one grouped step per cell', () => {
+    // Delete over a block used to leave no trace: the values were gone and
+    // Ctrl+Z skipped past them to whatever edit came before.
+    const ctx = makeCtx({
+      columns: [
+        { id: 'a', field: 'a', editable: true, editorType: 'text' },
+        { id: 'b', field: 'b', editable: true, editorType: 'text' },
+      ],
+      data: [{ a: 'x', b: 'y' }],
+    })
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 0, colIndex: 1 },
+    }
+    createClipboard(ctx).clearSelectedCells()
+    expect(ctx.history).toHaveLength(2)
+    expect(ctx.history[0]).toMatchObject({ rowId: '0', columnId: 'a', field: 'a', before: 'x', after: '' })
+    expect(ctx.history[0].groupId).toBeDefined()
+    expect(ctx.history[1].groupId).toBe(ctx.history[0].groupId)
+    expect(ctx.historyPtr).toBe(1)
   })
 
   it('clears a number cell via parseEditorValue coercion', () => {

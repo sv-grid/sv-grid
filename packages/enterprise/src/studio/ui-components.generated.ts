@@ -7037,10 +7037,25 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "processCellForFill",
+        "label": "Process Cell For Fill",
+        "type": "json",
+        "description": "Decide what the fill handle writes into one cell, ahead of the grid's own pattern rules (series, weekdays, \"Item 1\"). Receives the source cell's value and how far the target sits from it; return the value to write, or `undefined` to let the pattern decide. A spreadsheet uses it to move a formula's references by the distance filled, which the pattern rules would otherwise mangle (\"=A1+B1\" reads as \"Item 1\").",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "processCellForClipboard",
         "label": "Process Cell For Clipboard",
         "type": "json",
-        "description": "Transform each cell value on its way to the clipboard - e.g. strip currency symbols, expand codes to labels, or redact. Receives the display value plus the row/column context; return the string (or value) to copy.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "clipboardHtml",
+        "label": "Clipboard Html",
+        "type": "json",
+        "description": "An HTML rendering of what Ctrl+C copies, written to the clipboard as `text/html` beside the TSV. Excel and Google Sheets read the HTML first, so a table with inline styles pastes into them with its formats, and the same markup can carry what the text cannot (a formula in a `data-` attribute) for a round trip back into a grid that reads it. Called after every cell has been through `processCellForClipboard`, with the rectangles copied and the text about to be written. Return nothing to write text alone. Runs synchronously inside the key press, which is what the clipboard needs.",
         "code": true,
         "group": "advanced"
       },
@@ -7057,6 +7072,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Enable Inline Editing",
         "type": "boolean",
         "description": "Inline cell editing: F2 or double-click opens an editor in the active cell, Enter commits, Esc cancels. Off by default. A column still needs an `editorType` to pick its editor (text, number, date, checkbox, list, ...); without one it gets a plain text editor. `editable` is the shortcut alias and wins over this.",
+        "group": "common"
+      },
+      {
+        "key": "editOnSecondClick",
+        "label": "Edit On Second Click",
+        "type": "boolean",
+        "description": "A click on the cell that is already active opens its editor, the way a second click on a selected file name starts renaming it. On by default. A spreadsheet turns it off: Excel edits on double-click or F2 only, and a user clicking the cell they are on to get back to it after a dialog would otherwise find the next shortcut typed into an editor.",
         "group": "common"
       },
       {
@@ -7268,6 +7290,20 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "frozenRows",
+        "label": "Frozen Rows",
+        "type": "number",
+        "description": "Freeze the first N rows: they stay under the header while the body scrolls, and unlike `pinnedTopRows` they are the grid's own rows, still editable, selectable and numbered as rows 1..N. Excel's Freeze Panes, for the row half; the column half is `columnPinning`. Under `virtualization` the frozen rows are always rendered and the window skips them.",
+        "group": "common"
+      },
+      {
+        "key": "mergedCells",
+        "label": "Merged Cells",
+        "type": "json",
+        "description": "Merged cells: rectangles drawn as one cell, a spreadsheet's Merge & Center. Each entry is the top-left cell (display indices) and how many rows and columns it covers. The origin's td takes the span and shows the origin's value; the covered cells are not drawn, a selection grows to whole merges, the active cell inside a merge is its origin, and the arrow keys step over a merge as one cell. A merge that crosses the frozen boundary or the rendered window is drawn in parts, one per band. The grid does not write into covered cells on its own; a consumer that merges cells keeps them empty or marks them read-only through the column's `editable`.",
+        "group": "common"
+      },
+      {
         "key": "pinnedBottomRows",
         "label": "Pinned Bottom Rows",
         "type": "json",
@@ -7342,6 +7378,24 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Pagination Change",
         "prop": "onPaginationChange",
         "description": "Fires when the user changes page or page size while `externalPagination` is on. Fetch that page and update `data` / `rowCount` / `pageIndex`."
+      },
+      {
+        "key": "columnResize",
+        "label": "Column Resize",
+        "prop": "onColumnResize",
+        "description": "The user dragged a column's edge (or double-clicked it to autosize). Programmatic `api.setColumnWidth` does not fire it."
+      },
+      {
+        "key": "rowResize",
+        "label": "Row Resize",
+        "prop": "onRowResize",
+        "description": "The user dragged a row's edge, or double-clicked it: `height` is then `null`, the row back at its declared height. Programmatic `api.setRowHeight` does not fire it."
+      },
+      {
+        "key": "pasteClipboard",
+        "label": "Paste Clipboard",
+        "prop": "onPasteClipboard",
+        "description": "Take over a paste. Receives the clipboard's `text/plain` and, when the source put one there, its `text/html` (Excel's carries formats and formulas; a grid's own `clipboardHtml` carries whatever it chose to). Return `true` to say the paste was applied; anything else lets the grid paste the text as it always has. Runs inside one history group, so every `setCellValue` and `recordUndo` the handler makes is one Ctrl+Z. With this set, Ctrl+V lets the browser's own `paste` event through (that is where the unsanitised HTML is), and the async Clipboard API is the fallback for a browser that does not deliver it. `source` says which path the payload came by."
       },
       {
         "key": "apiReady",

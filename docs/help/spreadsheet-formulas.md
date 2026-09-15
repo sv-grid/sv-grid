@@ -49,7 +49,8 @@ formatValue(evaluate(parseFormula('=1/0'), ctx))  // '#DIV/0!'
 | ----- | ------- |
 | `resolve(sheet, row, col)` | Read one cell. Return `{ error: '#REF!' }` out of bounds. `sheet` is null for the sheet the formula lives on. |
 | `lastRow(sheet)` | The last used row, so an open-ended `A:A` knows where to stop. |
-| `resolveName(name)` | Optional. Resolve a defined name; `undefined` becomes `#NAME?`. |
+| `resolveNameNode(name)` | Optional. The parsed reference a defined name stands for, or null. Evaluated in place of the name, so a name defined as a range works inside `SUM`, `COUNTIF` and the lookups. This is what a `Workbook` supplies. |
+| `resolveName(name)` | Optional. Resolve a defined name to one value, when `resolveNameNode` is absent or returns null; `undefined` becomes `#NAME?`. |
 | `functions` | Optional. Pass `withCustomFunctions({ ... })` to add your own. |
 
 Rows and columns are 0-based, matching the grid's selection model, so nothing
@@ -62,7 +63,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Cell refs | `A1`, `B2`, `AA10`, `$C$3`, `A$1`, `$A1` |
 | Ranges | `A1:A10`, `B2:D5`, `A1 : B2`, whole columns `A:C` |
 | Cross-sheet | `Orders!A1`, `'Price list'!A1:C9` |
-| Defined names | `=Tax*2`, resolved through `resolveName` |
+| Defined names | `=Tax*2`, `=SUM(Sales)`, resolved through `resolveNameNode` (or `resolveName` for a single value) |
 | Structured refs | `Orders[Amount]`, `[@Qty]`, `Orders[#Totals]` - see [tables](./cells/tables.md) |
 | Arithmetic | `+ - * / ^`, unary `-` and `+`, postfix `%` |
 | Comparison | `=` `<>` `<` `>` `<=` `>=` |
@@ -77,8 +78,9 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `RANK` |
 | Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
+| Information | `ISNUMBER` `ISTEXT` `ISLOGICAL` `ISBLANK` |
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `TRIM` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `FIND` `SEARCH` `TEXT` |
-| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` |
+| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `DAYS` `DATEDIF` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` |
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
@@ -187,6 +189,68 @@ an optional peer dependency. It is a heavier bundle and a separate licence;
 this engine is the dependency-free option that covers the common ground.
 
 <div data-docs-demo="173-hyperformula" data-height="520"></div>
+
+## More examples
+
+### Blank sheet - just type
+
+An empty Excel-style sheet on a plain <SvGrid>: column-letter headers (A..Z), a built-in 1..N row gutter, a name box + formula bar with a browsable function picker, gridlines, range selection and a fill handle. A real HyperFormula engine underneath: type a literal or a formula like =SUM(B2:D2) / =IF(...) and every dependent cell recalculates live. Drag a row or column border to resize; right-click for Cut / Copy / Paste / Clear.
+
+<div data-docs-demo="207-blank-sheet" data-height="560"></div>
+
+### Freeze panes
+
+The Excel Freeze Panes corner on a plain <SvGrid>: the Account and Owner columns stay pinned while you scroll across a full year of months, and the sticky column-letter + row-number headers stay put as you scroll down. HyperFormula keeps each row total (column O) and the bottom Total row live as you edit any month. Pinning those two columns is one prop: initialColumnPinning.
+
+<div data-docs-demo="208-freeze-panes" data-height="560"></div>
+
+### Data validation (dropdowns)
+
+Excel Data Validation on a plain <SvGrid>: Status / Priority / Owner / Sprint columns are list-constrained (double-click for a dropdown), and Estimate must be a whole number 0-40. Four cells arrive invalid and light up red with the reason as a tooltip; fix one and it clears live. Dropdowns are editorType:list + editorOptions; the flag is the declarative validate() hook.
+
+<div data-docs-demo="209-data-validation" data-height="560"></div>
+
+### Format Cells
+
+The Excel Home -> Number experience: select a range and apply a display format - Currency, Percent, Thousands, Number, Date, or General - and only the rendering changes; the stored value and every formula are untouched. HyperFormula keeps Gross profit, Margin and the Total column live, so a computed % formats exactly like a typed number.
+
+<div data-docs-demo="210-format-cells" data-height="560"></div>
+
+### Financial model (amortization)
+
+A real analyst model on the sheet: three blue INPUT cells (Principal, APR, Term) drive a full 360-month amortization schedule built entirely from formulas - PMT for the fixed payment, then per-period interest / principal / running balance that each reference the row above. Change an input and all 360 rows plus the summary recompute instantly. Blue = you type, black = computed.
+
+<div data-docs-demo="211-financial-model" data-height="560"></div>
+
+### Dashboard sheet
+
+A spreadsheet that reads like an Excel dashboard: each channel row carries an inline SVG trend sparkline and an eight-week heatmap shaded by volume. Total and Avg are live =SUM / =AVERAGE formulas - edit any weekly cell and the sparkline reshapes, the heatmap re-shades, and the totals update at once. Sparklines are a per-column custom cell; the heatmap is value-driven cellClass.
+
+<div data-docs-demo="212-dashboard-sheet" data-height="560"></div>
+
+### Chart a spreadsheet
+
+A live formula sheet wired to the built-in Chart panel: edit a Units or Revenue cell and the chart redraws. Customize it in-panel - change Type, swap Group by / Split by / Value, aggregate, Stack, or add data labels.
+
+<div data-docs-demo="356-spreadsheet-chart" data-height="560"></div>
+
+### Per-cell custom borders (KPI)
+
+Editable KPI scorecard. spreadsheetLayout paints spreadsheet-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.
+
+<div data-docs-demo="169-cell-borders" data-height="560"></div>
+
+### Sales report workbook
+
+A three-sheet workbook on the Excel shell: Orders with XLOOKUP prices and IF discounts, a Products price list, and a Summary where every figure is live - COUNTIF / SUMIF by region, share of a named total, RANK, per-rep attainment with an IFS status, INDEX / MATCH for the best region. Edit an order and the whole page follows across sheets. Defined names in the Name Box; bands, currency and percent formats ship with the document.
+
+<div data-docs-demo="456-sales-report-workbook" data-height="560"></div>
+
+### Defined names + Name Manager
+
+An assumptions-driven twelve-month forecast where every formula reads a defined name - =B2*(1+Growth-Churn) - instead of an address. Pick a name in the Name Box to jump to its cell on the Assumptions sheet; open Formulas -> Name Manager to add, repoint or delete names and watch the forecast recompute. Inputs in blue, red negatives in parentheses, break-even found with INDEX / MATCH.
+
+<div data-docs-demo="459-named-ranges-forecast" data-height="560"></div>
 
 ## See also
 

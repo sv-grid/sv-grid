@@ -1,0 +1,28 @@
+{
+  "description": "An order intake form on the Svelte 5 spreadsheet shell with Excel's Data Validation keeping bad entries out at the keyboard: Region and Product are in-cell dropdown lists, Product read from a range on a second sheet; Qty is a whole number from 1 to 500 with a Stop alert whose Retry reopens the cell; Discount is a decimal up to 0.2 with a Warning that asks whether to keep the entry; Ship by is a date on or after the order date, a relative bound (=A2) that moves with the row as in Excel. Unit price is an XLOOKUP into the price list and the total follows. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet data validation",
+    "svelte in-cell dropdown list",
+    "svelte excel validation stop warning",
+    "svelte grid whole number validation",
+    "svelte order form spreadsheet"
+  ],
+  "faq": [
+    {
+      "question": "What does a Stop alert do that a Warning does not?",
+      "answer": "Stop refuses the entry: the cell keeps its old value and Retry reopens it with what was typed. Warning asks whether to keep the entry anyway; Yes writes it, No reopens the cell, Cancel leaves it as it was."
+    },
+    {
+      "question": "Can a list come from another sheet?",
+      "answer": "Yes. The Product rule's source is =Lists!$A$2:$A$7, so adding a product to the Lists sheet adds it to the dropdown. A comma list (Yes,No) or a defined name work the same way."
+    },
+    {
+      "question": "Does the rule move with the row?",
+      "answer": "A relative bound does. Ship by is \"on or after =A2\" written for the first row; on row 5 it reads A5, the way Excel moves a relative reference in a rule. An absolute $A$2 would stay put."
+    },
+    {
+      "question": "Is a paste validated?",
+      "answer": "No, as in Excel: validation checks what is typed. A paste lands as it is, and so does a fill."
+    }
+  ]
+}

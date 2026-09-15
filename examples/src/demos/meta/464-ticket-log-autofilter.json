@@ -1,0 +1,24 @@
+{
+  "description": "A support ticket log on the Svelte 5 spreadsheet shell with Excel's AutoFilter on the header row, opened already filtered to the tickets still open: the funnel on the Status arrow, blue row numbers over the region and \"N of 40 records found\" in the status bar. Each arrow drops Excel's menu with Sort A to Z and Z to A, Clear Filter From the column, Text Filters or Number Filters with two conditions joined by And or Or, a search box, (Select All) and the column's values with their counts. The hidden rows are worked out again after every edit, so a ticket typed Closed folds away at once, and Ctrl+Shift+L turns the filter off and on. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet autofilter",
+    "svelte excel filter arrows",
+    "svelte grid filter menu values with counts",
+    "svelte number filters text filters",
+    "svelte ticket log spreadsheet"
+  ],
+  "faq": [
+    {
+      "question": "How is a filtered row different from a hidden one?",
+      "answer": "A filtered row belongs to the filter: Unhide leaves it folded, getState().hidden leaves it out, and turning the filter off shows it while a row hidden by hand stays hidden."
+    },
+    {
+      "question": "Does the filter follow edits?",
+      "answer": "Yes. The rows are re-evaluated after every change, the way Excel's Reapply would, so a formula that drops out of a Number Filter folds away and a row that comes back returns."
+    },
+    {
+      "question": "Where does the filter get its operators?",
+      "answer": "From the grid's own Excel-filter compiler in @svgrid/grid/filtering: equals, does not equal, begins with, contains, greater than, between and the rest, numeric operators on the value and text operators on the display."
+    }
+  ]
+}

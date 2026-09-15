@@ -87,6 +87,14 @@ for, not a starting point a user can drag away:
 <SvGrid data={people} {columns} containerHeight={140} columnResize />
 ```
 
+### A drag is one undo
+
+A width the user drags, or double-clicks into, is one step in the grid's
+undo history: Ctrl+Z puts it back, Ctrl+Y widens it again. `onColumnResize`
+reports each such change with the column id and the new width.
+`api.setColumnWidth` and `api.autosizeColumn` record nothing and fire
+nothing, so restoring saved widths does not fill the history.
+
 ### Locking one column: `resizable: false`
 
 `columnResize` turns resizing on for the grid; a column opts back out with
@@ -186,6 +194,30 @@ render:
 
 See [examples/src/demos/06-large-dataset.svelte](../../../examples/src/demos/06-large-dataset.svelte)
 for a 100-column virtualized grid.
+
+## Collapsing a column to nothing
+
+`api.setColumnCollapsed(id, true)` folds a column away the way a spreadsheet
+hides one: the column keeps its place, its cells and the width it had, and
+takes no room until `setColumnCollapsed(id, false)` unfolds it. Its
+neighbours' borders meet at the seam. Arrow keys, Tab and Enter step over a
+collapsed column, so the cursor never rests on it; `api.setActiveCell` and a
+sheet's Name Box still can. `api.isColumnCollapsed(id)` reads the state.
+
+This is not `setColumnVisible(id, false)`, which takes the column out of the
+model: every column after a hidden one moves up an index, which is right for
+a "Choose columns" panel and wrong for anything that addresses cells by
+position, such as a sheet's formulas and formats. Collapse when the indices
+must hold; hide when the column should be gone.
+
+```ts
+api.setColumnCollapsed('cost', true)   // folded: cells and width kept, no room
+api.isColumnCollapsed('cost')          // true
+api.setColumnCollapsed('cost', false)  // back at the width it had
+```
+
+The spreadsheet shell's Hide and Unhide (Ctrl+9, Ctrl+0, and the header
+menus) are this, kept per sheet.
 
 ## Gotchas
 

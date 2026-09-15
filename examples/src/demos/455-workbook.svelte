@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 437. Workbook - several sheets that read each other
+   * 455. Workbook - several sheets that read each other
    * ----------------------------------------------------
    * Three sheets and one formula engine spanning them.
    *
@@ -94,8 +94,8 @@
     return wb.getRaw(wb.active, active.rowIndex, active.colIndex)
   })
 
-  function commit(text: string) {
-    wb.setRaw(wb.active, active.rowIndex, active.colIndex, text)
+  function commit(text: string, cell: { rowIndex: number; colIndex: number }) {
+    wb.setRaw(wb.active, cell.rowIndex, cell.colIndex, text)
     version += 1
   }
 

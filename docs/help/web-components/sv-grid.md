@@ -35,7 +35,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (72)
+### Attributes (74)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -90,6 +90,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `enable-row-hover` | `enableRowHover` | `boolean` |
 | `copy-headers-to-clipboard` | `copyHeadersToClipboard` | `boolean` |
 | `enable-inline-editing` | `enableInlineEditing` | `boolean` |
+| `edit-on-second-click` | `editOnSecondClick` | `boolean` |
 | `full-row-editing` | `fullRowEditing` | `boolean` |
 | `enable-row-summaries` | `enableRowSummaries` | `boolean` |
 | `summary` | `summary` | `boolean` |
@@ -107,6 +108,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `external-filter` | `externalFilter` | `boolean` |
 | `editable-comments` | `editableComments` | `boolean` |
 | `conditional-stat-scope` | `conditionalStatScope` | `"filtered" \| "visible" \| "all"` |
+| `frozen-rows` | `frozenRows` | `number` |
 | `enable-column-reorder` | `enableColumnReorder` | `boolean` |
 | `infer-column-types` | `inferColumnTypes` | `boolean` |
 | `row-drag-managed` | `rowDragManaged` | `boolean` |
@@ -114,7 +116,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (26)
+### Properties only (30)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -134,7 +136,10 @@ only be assigned in script: `el.columns = [...]`.
 | `localization` | `GridLocalization` |
 | `pageSizeOptions` | `number[]` |
 | `initialColumnPinning` | `{ ... }` |
+| `processCellForFill` | `(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; col...` |
 | `processCellForClipboard` | `(params: { ... }) => unknown` |
+| `clipboardHtml` | `(params: { rects: ReadonlyArray<{ ... }>; text: string; }) => string \| null \| undefined` |
+| `processCellFromClipboard` | `(params: { ... }) => unknown` |
 | `initialSorting` | `Array<{ id: string; desc: boolean }>` |
 | `initialAdvancedFilter` | `GridPredicateExpr \| null` |
 | `getRowId` | `(row: TData, index: number) => string` |
@@ -145,10 +150,11 @@ only be assigned in script: `el.columns = [...]`.
 | `serverGroup` | `{ ... }` |
 | `serverFilterValues` | `(columnId: string) => Promise<string[]>` |
 | `pinnedTopRows` | `ReadonlyArray<TData>` |
+| `mergedCells` | `ReadonlyArray<{ ... }>` |
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (19)
+### Events (22)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -158,6 +164,9 @@ an object keyed by its parameter names.
 | `pivotmodechange` | `onPivotModeChange` | `on` |
 | `expandedchange` | `onExpandedChange` | `expanded` |
 | `paginationchange` | `onPaginationChange` | `pagination` |
+| `columnresize` | `onColumnResize` | `event` |
+| `rowresize` | `onRowResize` | `event` |
+| `pasteclipboard` | `onPasteClipboard` | `payload` |
 | `apiready` | `onApiReady` | `api` |
 | `rowselectionchange` | `onRowSelectionChange` | `{ selection, rows }` |
 | `cellselectionchange` | `onCellSelectionChange` | `ranges` |

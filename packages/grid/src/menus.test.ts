@@ -621,6 +621,32 @@ describe('createMenus - contextMenuItems', () => {
     expect(ctx.clearSelectedCells).toHaveBeenCalled()
   })
 
+  it('an object on a built-in key with no action keeps the built-in, and carries the icon', () => {
+    const icon = { paths: [{ d: 'M2 2h12v12H2z' }] }
+    const ctx = makeCtx({
+      props: { contextMenu: [{ key: 'cut', icon }, { key: 'copy', label: 'Copy cells', icon: 'columns' }] },
+      contextMenuFor: { rowIndex: 0, colIndex: 0, columnId: 'name', rowId: 'r0', row: { id: 0 } },
+    })
+    const items = createMenus(ctx).contextMenuItems()
+    const cut = items.find((i) => i.key === 'cut')!
+    expect(cut.label).toBe('Cut')
+    expect(cut.icon).toBe(icon)
+    cut.run!()
+    expect(ctx.cutSelectionToClipboard).toHaveBeenCalled()
+    const copy = items.find((i) => i.key === 'copy')!
+    expect(copy.label).toBe('Copy cells')
+    expect(copy.icon).toBe('columns')
+  })
+
+  it('an unknown key with no action resolves to an inert item rather than throwing', () => {
+    const ctx = makeCtx({
+      props: { contextMenu: [{ key: 'nothing', label: 'Nothing' }] },
+      contextMenuFor: { rowIndex: 0, colIndex: 0, columnId: 'name', rowId: 'r0', row: { id: 0 } },
+    })
+    const item = createMenus(ctx).contextMenuItems()[0]!
+    expect(item.label).toBe('Nothing')
+    expect(item.run).toBeUndefined()
+  })
   it('row_above / row_below / remove_row mutate internalData', () => {
     const rowA = { id: 1 }
     const rowB = { id: 2 }

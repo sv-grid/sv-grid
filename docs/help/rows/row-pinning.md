@@ -163,7 +163,24 @@ The built-in CSS supports stacking up to 4 rows per side. For larger stacks, ove
 | `format` | Yes | Yes |
 | Column pinning (left/right) | Yes | Yes |
 
-Pinned rows are **read-only by design** - they represent aggregates or annotations, not transactional data. If you need an editable row at the top, render it OUTSIDE the grid as a separate toolbar, or use a regular row with `data` and filter it to always sort first.
+Pinned rows are **read-only by design** - they represent aggregates or annotations, not transactional data. For an editable band at the top, freeze the grid's own rows instead: see below.
+
+## Frozen rows (`frozenRows`)
+
+`frozenRows={N}` keeps the first N rows under the header while the body
+scrolls, Excel's Freeze Panes for the row half (`columnPinning` is the
+column half). Unlike pinned rows they are the grid's own rows: numbered
+1..N, editable, selectable, sortable with the rest, dragged taller with
+`rowResize`. Under `virtualization` they are always rendered and the
+window skips them.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} frozenRows={2} showRowNumbers enableInlineEditing containerHeight={220} />
+```
+
+`api.setOption('frozenRows', n)` changes it at runtime and `undefined`
+clears it; the spreadsheet shell's Freeze and Unfreeze buttons do exactly
+that, at the active cell, and keep the setting per sheet.
 
 ## Styling
 

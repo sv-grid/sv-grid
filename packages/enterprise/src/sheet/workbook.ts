@@ -12,12 +12,12 @@
  * disagree with the formula above it.
  */
 import { parseFormula } from './parse'
-import { evaluate, type EvalContext } from './evaluate'
+import { evaluate, rangeValues, type EvalContext } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, cellKey, type CellKey } from './deps'
 import { createNames, type SheetNames } from './names'
-import { fixupReferences, type StructuralEdit } from './refs'
+import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
 
 export type SheetData = {
   name: string
@@ -31,6 +31,9 @@ export type WorkbookOptions = {
   /** Fires after a recalculation, with the cells whose value changed. */
   onRecalc?(changed: ReadonlyArray<{ sheet: string; row: number; col: number; value: CellValue }>): void
 }
+
+/** One cell read as text that has not been written: what a validation rule checks. */
+export type CellOverride = { row: number; col: number; text: string }
 
 export type Workbook = {
   readonly sheets: ReadonlyArray<string>
@@ -51,6 +54,18 @@ export type Workbook = {
   getValue(sheet: string, row: number, col: number): CellValue
   /** Every cell of a sheet, computed. */
   snapshot(sheet: string): CellValue[][]
+  /**
+   * What `text` would be worth in a cell of `sheet`, without putting it in
+   * one: a formula is evaluated there (names and other sheets included), a
+   * literal is coerced the way a typed one is. Data validation checks its
+   * bounds and custom rules through this.
+   */
+  evaluateText(sheet: string, text: string, override?: CellOverride): CellValue
+  /**
+   * The values of a range reference, or of a name that refers to one, as a
+   * grid; null when `text` is not a reference. A list source.
+   */
+  evaluateRange(sheet: string, text: string): CellValue[][] | null
 
   /** Apply a structural edit to one sheet, rewriting every formula in the
    *  WORKBOOK that pointed into it. */
@@ -85,7 +100,6 @@ export function createWorkbook(
 ): Workbook {
   const order: string[] = []
   const byName = new Map<string, string[][]>()
-  const names = createNames()
   const graph = createDependencyGraph()
   const functions = withCustomFunctions(options.functions)
 
@@ -98,6 +112,21 @@ export function createWorkbook(
   /** Parsed formulas, keyed by their TEXT rather than their position: a
    *  column of =A1*2 filled down is one parse, not one per row. */
   const astCache = new Map<string, Node | null>()
+  // Changing what a name refers to changes every formula that uses it, and
+  // the dependency graph only knows the CELLS a name pointed at when the
+  // formula was last evaluated. Dropping the cache is the honest answer:
+  // names change rarely, and a full recompute costs less than one stale total.
+  const names = ((): SheetNames => {
+    const inner = createNames()
+    const drop = () => { values.clear(); graph.clear() }
+    return {
+      ...inner,
+      define: (name, refersTo) => { inner.define(name, refersTo); drop() },
+      remove: (name) => { inner.remove(name); drop() },
+      hydrate: (entries) => { inner.hydrate(entries); drop() },
+      clear: () => { inner.clear(); drop() },
+    }
+  })()
 
   let active = ''
 
@@ -123,14 +152,17 @@ export function createWorkbook(
     return ast
   }
 
-  function contextFor(self: string): EvalContext {
+  function contextFor(self: string, override?: CellOverride): EvalContext {
     return {
-      resolve: (sheet, row, col) => compute(resolveSheetName(sheet, self), row, col),
-      lastRow: (sheet) => Math.max(rowCount(resolveSheetName(sheet, self)) - 1, 0),
-      resolveName: (name) => {
-        const node = names.resolve(name)
-        return node ? evaluate(node, contextFor(self)) : undefined
+      resolve: (sheet, row, col) => {
+        const name = resolveSheetName(sheet, self)
+        // A validation rule reads the cell it is checking as the text being
+        // entered, which is not in the sheet yet; nothing else is overridden.
+        if (override && name === self && row === override.row && col === override.col) return literal(override.text)
+        return compute(name, row, col)
       },
+      lastRow: (sheet) => Math.max(rowCount(resolveSheetName(sheet, self)) - 1, 0),
+      resolveNameNode: (name) => names.resolve(name),
       functions,
     }
   }
@@ -164,16 +196,34 @@ export function createWorkbook(
       if (!ast) value = { error: '#PARSE!' }
       else {
         value = evaluate(ast, contextFor(sheet))
-        graph.setPrecedents(key, precedentsOf(ast, { sheet }, (s) =>
-          Math.max(rowCount(s ?? sheet) - 1, 0)))
+        graph.setPrecedents(key, precedentsOf(
+          ast,
+          { sheet },
+          (s) => Math.max(rowCount(s ?? sheet) - 1, 0),
+          (name) => names.resolve(name),
+        ))
       }
     } else {
       const n = Number(text)
-      value = text !== '' && Number.isFinite(n) ? n : text
+      const upper = text.toUpperCase()
+      value = text !== '' && Number.isFinite(n) ? n
+        : upper === 'TRUE' ? true
+        : upper === 'FALSE' ? false
+        : text
     }
     visiting.delete(key)
     values.set(key, value)
     return value
+  }
+
+  /** What typed text is worth when it is not a formula: a number, a boolean or itself. */
+  function literal(text: string): CellValue {
+    const t = text.trim()
+    if (t === '') return ''
+    if (t.startsWith('=')) return t
+    const n = Number(t)
+    const upper = t.toUpperCase()
+    return Number.isFinite(n) ? n : upper === 'TRUE' ? true : upper === 'FALSE' ? false : t
   }
 
   function rowCount(sheet: string): number {
@@ -257,10 +307,22 @@ export function createWorkbook(
       byName.set(to.toLowerCase(), cells)
       order[index] = to
       if (active.toLowerCase() === from.toLowerCase()) active = to
-      // Formulas naming the old sheet are NOT rewritten. Excel does rewrite
-      // them; doing it here means a text substitution over every formula in
-      // the workbook, which would also hit a string literal that happens to
-      // contain the name. Left out deliberately rather than done badly.
+      // Every formula and name that pointed at the old name points at the
+      // new one, as in Excel; otherwise =Orders!B2 on Summary read #REF!
+      // the moment Orders became Sales. The rewrite goes through the parser,
+      // so a string literal holding the old name is not touched.
+      for (const [, sheet] of byName) {
+        for (const line of sheet) {
+          for (let c = 0; c < line.length; c += 1) {
+            const next = renameSheetReferences(line[c], from, to)
+            if (typeof next === 'string') line[c] = next
+          }
+        }
+      }
+      for (const entry of names.list()) {
+        const next = renameSheetReferences(entry.refersTo, from, to)
+        if (typeof next === 'string' && next !== entry.refersTo) names.define(entry.name, next)
+      }
       values.clear()
       graph.clear()
       return true
@@ -297,6 +359,24 @@ export function createWorkbook(
       return compute(sheet, row, col)
     },
 
+    evaluateText(sheet, text, override) {
+      const t = text.trim()
+      if (t === '') return ''
+      if (t.startsWith('=')) {
+        if (!sheetCells(sheet)) return { error: '#REF!' }
+        const ast = parseCached(t)
+        return ast ? evaluate(ast, contextFor(sheet, override)) : { error: '#PARSE!' }
+      }
+      return literal(t)
+    },
+
+    evaluateRange(sheet, text) {
+      const t = text.trim()
+      if (!t.startsWith('=') || !sheetCells(sheet)) return null
+      const ast = parseCached(t)
+      return ast ? rangeValues(ast, contextFor(sheet)) : null
+    },
+
     snapshot(sheet) {
       const rows = rowCount(sheet)
       const cols = colCount(sheet)
@@ -323,18 +403,22 @@ export function createWorkbook(
           for (let c = 0; c < line.length; c += 1) {
             const text = line[c] ?? ''
             if (!text.startsWith('=')) continue
-            // A formula on ANOTHER sheet only shifts if it names this one.
-            // Rewriting unqualified references there would move them against
-            // their own sheet's geometry.
+            // Only references INTO this sheet move: an unqualified one on
+            // another sheet belongs to that sheet's geometry, which did not
+            // change, and a reference on THIS sheet that names another sheet
+            // belongs to that one. The scope tells the rewriter both.
             if (other !== sheet && !text.includes(`${sheet}!`) && !text.includes(`'${sheet}'!`)) continue
-            const next = fixupReferences(text, edit)
+            const next = fixupReferences(text, edit, { sheet, self: other })
             if (typeof next === 'string') line[c] = next
           }
         }
       }
+      // A name has no home sheet, so only one that names this sheet moves.
+      // NetSales = Orders!$I$2:$I$25 must not shift because a column went
+      // into Summary.
       for (const entry of names.list()) {
-        const next = fixupReferences(entry.refersTo, edit)
-        if (typeof next === 'string') names.define(entry.name, next)
+        const next = fixupReferences(entry.refersTo, edit, { sheet, self: null })
+        if (typeof next === 'string' && next !== entry.refersTo) names.define(entry.name, next)
       }
 
       const blankRow = (): string[] => []

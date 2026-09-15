@@ -29,7 +29,14 @@ describe('docs relative links', () => {
     const broken: string[] = []
     for (const file of walk(DOCS)) {
       const src = readFileSync(file, 'utf8')
-      for (const m of src.matchAll(/\]\(([^)]+)\)/g)) {
+      // Code is not prose: a number format such as 0.00;[Red](0.00) in a
+      // fence or in backticks has the shape of a link and is none. Fences
+      // and inline code are blanked (line breaks kept, so line numbers
+      // still point at the right place) before the links are read.
+      const prose = src
+        .replace(/```[\s\S]*?```/g, (block) => block.replace(/[^\n]/g, ' '))
+        .replace(/`[^`\n]*`/g, (code) => ' '.repeat(code.length))
+      for (const m of prose.matchAll(/\]\(([^)]+)\)/g)) {
         const link = m[1]!.trim().split('#')[0]!
         // Absolute URLs, in-page anchors and site-served root paths (/docs-media) are not files here.
         if (!link || /^(https?:|mailto:|#|\/)/.test(link)) continue

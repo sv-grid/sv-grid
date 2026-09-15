@@ -37,7 +37,21 @@ export type GridCommandContext = {
   /** True when the event came from the cell editor rather than the grid root.
    *  Handlers that only make sense mid-edit (Alt+Enter) check this. */
   readonly editing: boolean
+  /**
+   * The open inline editor's element, or null. A binding registered for
+   * `editing: true` reads and rewrites the text through it: F4 in a
+   * spreadsheet pins the reference under the caret.
+   */
+  readonly editor: HTMLInputElement | HTMLTextAreaElement | null
   readonly activeCell: { rowIndex: number; colIndex: number; columnId: string | null } | null
+  /**
+   * The corner the active range grows from: the far end of a Shift+Arrow,
+   * Shift+click or drag, which need not be the active cell. Null while
+   * nothing is anchored. A command that extends the selection steps from
+   * here, not from the active cell, or Ctrl+Shift+Down twice would land
+   * on the same edge twice.
+   */
+  readonly selectionFocus: { rowIndex: number; colIndex: number } | null
   readonly rowCount: number
   readonly colCount: number
   /** Every selected rectangle as [minRow, minCol, maxRow, maxCol], active last. */
@@ -54,6 +68,53 @@ export type GridCommandContext = {
   startEditing(rowIndex: number, colIndex: number, seed?: string): boolean
   /** Run every write inside `fn` as ONE undo step. Returns what `fn` returns. */
   batch<T>(fn: () => T): T
+  /**
+   * Put something that is not a cell write into the grid's undo history:
+   * a format kept in the caller's own store, a structural change the grid
+   * cannot see. `undo` and `redo` are what Ctrl+Z and Ctrl+Y will call.
+   * Inside `batch` the step joins the batch, so a command that writes cells
+   * AND formats is still one press.
+   */
+  recordUndo(undo: () => void, redo: () => void): void
+  /**
+   * Put keyboard focus back on the grid, without scrolling.
+   *
+   * A toolbar button takes focus when it is clicked and a dialog takes it
+   * when it opens, so the keystroke after either - Ctrl+Z to undo what the
+   * button did, typing into the cell the dialog changed - lands on the button
+   * or on `<body>` rather than on the grid. Excel returns focus to the sheet
+   * after every ribbon command and every dialog; a command that owns chrome
+   * calls this once it is done.
+   */
+  focus(): void
+  /**
+   * Paste the system clipboard at the active cell, the way Ctrl+V does:
+   * tab-separated text becomes a block of cells, one undo step. Resolves
+   * once the paste has been applied, or without doing anything when the
+   * clipboard cannot be read (an insecure context, or permission refused),
+   * which is the same silence Ctrl+V keeps there.
+   */
+  paste(): Promise<void>
+  /**
+   * Copy the selection the way Ctrl+C does: every selected rectangle as
+   * tab-separated text, each cell through `processCellForClipboard`. The
+   * api's `copyToClipboard` is the export: the displayed rows with their
+   * headers, whatever the selection.
+   */
+  copy(): void
+  /**
+   * Cut the selection the way Ctrl+X does: the copy above, then the cells
+   * cleared as one undo step.
+   */
+  cut(): Promise<void>
+  /**
+   * Whether a cell may be written: the column's `editable` predicate as
+   * the grid's own editor, fill handle and paste read it. `setCellValue`
+   * does not consult it (a command is trusted to know what it writes), so
+   * a command that fills or stamps a range asks here and skips the cells
+   * that say no. Optional for a context built by hand.
+   */
+  canEdit?(rowIndex: number, colIndex: number): boolean
 }
 
 /** Return true to consume the event. The grid stops there and does not

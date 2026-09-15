@@ -32,7 +32,9 @@ import { compareSeo, compareKeywords, compareJsonLd, COMPARE_HUB } from './lib/c
 import { comparePageModel, renderCompareHtml, compareHubModel, renderCompareHubHtml } from './lib/compare-page.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
-import { prerenderedRoutes } from './lib/route-seo.mjs'
+import { prerenderedRoutes, ROUTE_SEO } from './lib/route-seo.mjs'
+import { productGraph } from './lib/product-ld.mjs'
+import { HOME_GUIDES } from './lib/home-guides.mjs'
 import { tutorialIdsIn, videoObjectLd } from './lib/tutorial-media.mjs'
 import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
 
@@ -530,28 +532,50 @@ async function parseQaPairs(relPath) {
 /** Parse the homeFaqs Q&A from Home.svelte (q/a keys). */
 const parseHomeFaqs = () => parseQaPairs(['website', 'src', 'routes', 'Home.svelte'])
 
-/** Crawlable body for the landing page - hero, features, comparisons, FAQ. */
+/**
+ * Crawlable body for the landing page. AI crawlers and the answer engines run
+ * no JavaScript, so this is the whole home page to them, and they quote it:
+ * the Bing / Google AI summary for "svgrid svelte" repeated the old Enterprise
+ * sentence here word for word months after it went stale. Keep every claim in
+ * step with Home.svelte and the pricing matrix, and lead with the terms people
+ * type ("Svelte data grid", "Svelte datagrid", "Svelte grid"), not only the
+ * "Svelte 5 data grid" wording the hero uses.
+ */
 function homeCrawlBody(faq) {
-  const feats = [
-    'Headless engine plus a drop-in &lt;SvGrid&gt; render component',
-    'Sorting, Excel-style filters, grouping, aggregation, tree, and master/detail',
-    'Row + column virtualization - 100,000 rows by 100 columns stay smooth',
-    'Inline editing with typed editors, validation, and cascade formulas',
-    'Server-side data, WAI-ARIA accessibility, and full keyboard navigation',
-    'AI-native: a bundled MCP server plus llms.txt for Claude, Cursor, and Zed',
-    'MIT-licensed Community core; @svgrid/enterprise adds export, import, print, pivot, the Kanban board and scheduler views, and no-code alert rules',
+  const free = [
+    'Headless engine (createSvGrid) you drive with your own markup, plus a drop-in &lt;SvGrid&gt; render component',
+    'Sorting, Excel-style filters, a filter row, find-in-grid, row grouping with aggregation, tree data, master/detail',
+    'Row + column virtualization: 100,000 rows by 100 columns stay smooth, and there is a 1,000,000-row demo',
+    'Inline editing with typed editors, validation, undo / redo, and cascade formulas',
+    'Cell-range selection, copy / paste, a fill handle, and the sort / filter / page intents to wire your own backend',
+    'WAI-ARIA grid roles, full keyboard navigation, right-to-left layout, 20 themes on CSS custom properties',
+    'AI-native: a bundled MCP server plus llms.txt so Claude, Cursor and Zed answer accurately, and natural-language filter / smart-paste helpers',
+    'Vitest behavioral tests, Playwright end-to-end specs, TypeScript strict mode',
+  ]
+  const enterprise = [
+    'Kanban board view: the same rows as cards in lanes, drag-and-drop, swimlanes, WIP limits, a card drawer',
+    'Scheduler / calendar view: month, week, day, agenda and timeline views, resources, booking rules',
+    'Spreadsheet: an Excel-style shell (&lt;SvSheet&gt;) with a ribbon, formula bar, sheet tabs, a formula engine, cell formats, merged cells, comments, data validation, conditional formatting, AutoFilter and sheet protection',
+    'Server-Side Row Model: one getRows contract for paging, sort, filter and race-safe writes, server-side grouping, and SQL / REST / Supabase sources',
+    'Excel (xlsx) and PDF export, styled HTML export, a paginated printable view, Excel / CSV import',
+    'Pivot tables with a drag-and-drop Pivot Designer, no-code alert rules, and SvGrid Studio for grid-powered CRUD screens',
   ]
   const cmp = [
     ['ag-grid', 'AG Grid'], ['tanstack-table', 'TanStack Table'], ['mui-x-datagrid', 'MUI X DataGrid'],
-    ['handsontable', 'Handsontable'], ['svelte-headless-table', 'svelte-headless-table'],
+    ['handsontable', 'Handsontable'], ['svar-svelte-datagrid', 'SVAR Svelte DataGrid'], ['svelte-headless-table', 'svelte-headless-table'],
   ]
+  const li = (items) => items.map((f) => `<li>${f}</li>`).join('')
   let html = '<main class="prerender-home" data-prerender="1">'
-  html += '<h1>SvGrid - the Svelte 5 data grid</h1>'
-  html += '<p>SvGrid is a modern data grid for Svelte 5: a headless engine you can compose plus a full-featured render component you can drop in. Sorting, filtering, grouping, virtualization, inline editing, server-side data, and 370+ production-quality examples. Free under the MIT License; @svgrid/enterprise adds export, import, print, pivot tables, the Kanban board and scheduler views, and no-code alert rules.</p>'
-  html += `<h2>Features</h2><ul>${feats.map((f) => `<li>${f}</li>`).join('')}</ul>`
+  html += '<h1>SvGrid - the Svelte data grid. Headless-first. Render-ready.</h1>'
+  html += '<p>SvGrid is a Svelte data grid: a headless engine you can compose plus a full-featured render component you can drop in, written for Svelte 5 runes from the first line rather than a React grid wrapped in a Svelte shim. Call it a Svelte datagrid, a Svelte grid or a Svelte table; it is one component, <code>&lt;SvGrid&gt;</code>, from the npm package <code>@svgrid/grid</code>.</p>'
+  html += '<p>Sorting, Excel-style filtering, grouping, virtualization, inline editing and accessibility ship free under the MIT License, with 400+ production-quality examples. The paid <code>@svgrid/enterprise</code> pack adds the Kanban board, Scheduler and Spreadsheet views of the same grid, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.</p>'
+  html += `<h2>What the free Svelte data grid includes</h2><ul>${li(free)}</ul>`
+  html += `<h2>What @svgrid/enterprise adds</h2><ul>${li(enterprise)}</ul>`
+  html += `<h2>Two packages</h2><p><code>npm install @svgrid/grid</code> is the full data grid under the MIT License, including commercial use, with no license key and no row-count cap. <code>npm install @svgrid/enterprise</code> plugs into it: Enterprise - Single App is $599 per developer and Enterprise - Multi App $999 per developer, a perpetual license with one year of updates and support. <a href="${BASE}pricing/">Pricing and the full feature matrix</a>.</p>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}/">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
-  html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 370+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
-  if (faq.length) html += `<h2>Frequently asked questions</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
+  html += `<h2>Guides</h2><ul>${HOME_GUIDES.map((g) => `<li><a href="${BASE}blog/${g.slug}/">${escapeAttr(g.title)}</a></li>`).join('')}</ul>`
+  html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 400+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
+  if (faq.length) html += `<h2>Svelte data grid FAQs</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
   return html + '</main>'
 }
 
@@ -1082,6 +1106,21 @@ async function main() {
     /<div id="root"><main class="prerender-[\s\S]*?<\/main><\/div>/,
     () => '<div id="root"></div>',
   )
+  // Same reason: the home step also injects tagged JSON-LD into its output, so
+  // a template read back from that output would carry the FAQPage and product
+  // graphs into every page. Strip every tagged script before adding our own.
+  template = template.replace(
+    /\s*<script type="application\/ld\+json" data-seo="prerender">[\s\S]*?<\/script>/g,
+    '',
+  )
+  // The product graph (Organization, SoftwareApplication, SoftwareSourceCode,
+  // WebSite) goes into every static page from the one builder seo.ts also
+  // uses, with the version read from the package rather than typed into
+  // index.html, where "1.0.0" outlived 3.0 by months. Tagged so hydration
+  // replaces it with the client's copy instead of stacking a second one.
+  const gridVersion = JSON.parse(await readFile(join(ROOT, 'packages', 'grid', 'package.json'), 'utf-8')).version
+  if (!/^\d+\.\d+\.\d+/.test(gridVersion)) throw new Error(`prerender: packages/grid/package.json version "${gridVersion}" is not a release version`)
+  template = injectJsonLd(template, productGraph({ homepage: `${CANON}/`, version: gridVersion }))
   // Advertise the blog's RSS feed (written in step 5c) from every page, so feed
   // readers autodiscover it from any URL on the site. One insertion into the
   // shell covers every prerendered page, the home page, and 404.html.
@@ -1623,7 +1662,19 @@ async function main() {
   // dist/index.html - that file is this step's own output, so re-reading it
   // makes a second prerender run over the same dist non-idempotent.
   const homeBody = homeCrawlBody(homeFaqs)
-  let homeHtml = injectBody(template, homeBody)
+  // The head goes through applyHead like every other static route: the raw
+  // index.html head used to be served as-is (a 245-char description Google
+  // cut mid-list) while hydration clamped the same table entry to 155.
+  const homeSeo = ROUTE_SEO['']
+  let homeHtml = applyHead(template, {
+    title: homeSeo.title,
+    description: clampDescription(homeSeo.description),
+    canonical: `${CANON}/`,
+    ogType: 'website',
+    keywords: homeSeo.keywords.join(', '),
+    imageAlt: 'SvGrid - the Svelte data grid for Svelte 5',
+  })
+  homeHtml = injectBody(homeHtml, homeBody)
   if (homeFaqs.length) {
     homeHtml = injectJsonLd(homeHtml, {
       '@context': 'https://schema.org', '@type': 'FAQPage',

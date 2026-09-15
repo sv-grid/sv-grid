@@ -164,13 +164,54 @@ function arithmeticStep(nums: ReadonlyArray<number>): number | null {
  * `sourceValues` already in the selection. See module header for the
  * pattern-detection rules.
  */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * The sources as day stamps when every one is a date: `Date` objects, or
+ * `YYYY-MM-DD` text (read as UTC so a fill never crosses a day boundary
+ * with the time zone). Anything else means "not a date series".
+ */
+function datesOf(values: ReadonlyArray<unknown>): { stamps: number[]; iso: boolean } | null {
+  if (values.every((v) => v instanceof Date && Number.isFinite(v.getTime()))) {
+    return { stamps: values.map((v) => (v as Date).getTime()), iso: false }
+  }
+  if (values.every((v) => typeof v === 'string' && ISO_DATE.test(v))) {
+    const stamps = values.map((v) => Date.parse(`${v}T00:00:00Z`))
+    return stamps.every((t) => Number.isFinite(t)) ? { stamps, iso: true } : null
+  }
+  return null
+}
+
 export function buildFillPattern(
   sourceValues: ReadonlyArray<unknown>,
   targetCount: number,
 ): unknown[] {
   if (sourceValues.length === 0 || targetCount <= 0) return []
 
-  // -------- 1) Numeric arithmetic progression (2+ values) -----------
+  // -------- 0) Dates step by the day ---------------------------------
+  // Before the numeric rule, since a Date coerces to a finite number of
+  // milliseconds, and before the prefix rule, which read 2024-01-15 as the
+  // number 2024 with a suffix and filled 2025-01-15. Two dates set the step
+  // (a week apart fills weekly); one date steps by a day, as Excel's does.
+  const dates = datesOf(sourceValues)
+  if (dates) {
+    const DAY = 86_400_000
+    const days = dates.stamps.map((t) => Math.round(t / DAY))
+    const step = days.length >= 2 ? arithmeticStep(days) : 1
+    if (step !== null) {
+      const last = days[days.length - 1]!
+      return Array.from({ length: targetCount }, (_, i) => {
+        const stamp = (last + step * (i + 1)) * DAY
+        return dates.iso ? new Date(stamp).toISOString().slice(0, 10) : new Date(stamp)
+      })
+    }
+  }
+
+  // -------- 1) Numbers: the linear trend (2+ values) -----------------
+  // Excel's AutoFill of two or more numbers continues their least-squares
+  // line: 1, 2, 3 goes on 4, 5, 6, and 1, 2, 4 goes on 5.33, 6.83, ...
+  // rather than repeating. An even step is the same line, so the common
+  // case is unchanged.
   const nums = sourceValues.map((v) => Number(v))
   const allNumericLike =
     sourceValues.every((v) => v !== null && v !== '' && v !== undefined) &&
@@ -181,6 +222,17 @@ export function buildFillPattern(
       const last = nums[nums.length - 1]!
       return Array.from({ length: targetCount }, (_, i) => last + step * (i + 1))
     }
+    const n = nums.length
+    const meanX = (n - 1) / 2
+    const meanY = nums.reduce((a, b) => a + b, 0) / n
+    let sxy = 0
+    let sxx = 0
+    for (let i = 0; i < n; i += 1) { sxy += (i - meanX) * (nums[i]! - meanY); sxx += (i - meanX) ** 2 }
+    const slope = sxx === 0 ? 0 : sxy / sxx
+    const intercept = meanY - slope * meanX
+    // Rounded to the precision floating point gives 5.333333333333333, so
+    // 10, 20, 40 fills 50, 60 and not 50.00000000000001.
+    return Array.from({ length: targetCount }, (_, i) => Number((intercept + slope * (n + i)).toPrecision(15)))
   }
 
   // -------- 2) Known string sequence (days / months / quarters) -----
@@ -200,7 +252,9 @@ export function buildFillPattern(
   if (allStrings && sourceValues.length >= 1) {
     const stringSources = sourceValues as string[]
     const split = findPrefixNumberSuffix(stringSources)
-    if (split) {
+    // A bare number as text ('5') is a number, not 'Item 5': one of them
+    // copies, as a numeric 5 does, and two or more were a progression above.
+    if (split && (split.prefix !== '' || split.suffix !== '')) {
       const step = split.numbers.length >= 2
         ? arithmeticStep(split.numbers) ?? 1
         : 1

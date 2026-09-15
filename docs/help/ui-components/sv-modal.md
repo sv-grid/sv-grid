@@ -62,6 +62,7 @@ import { SvModal } from '@svgrid/grid'
 | `onClose`         | `() => void`         | -       | Called whenever the dialog closes.                   |
 | `title`           | `string`             | -       | Header heading; also names the dialog for a11y.      |
 | `size`            | `sm` \| `md` \| `lg` | `md`    | Preset dialog width (360 / 520 / 720px).             |
+| `width`           | `number`             | -       | Exact dialog width in px; wins over `size`.          |
 | `draggable`       | `boolean`            | `false` | Allow moving the dialog by its header.               |
 | `resizable`       | `boolean`            | `false` | Show a bottom-right handle to resize the dialog.     |
 | `closeOnBackdrop` | `boolean`            | `true`  | Close when the backdrop is clicked.                  |

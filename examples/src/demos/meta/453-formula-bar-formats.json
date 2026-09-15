@@ -1,0 +1,24 @@
+{
+  "description": "A formula bar and per-cell number formats on a Svelte 5 spreadsheet grid: the bar shows the raw text behind the active cell while the cell shows the formatted result, with function autocomplete and signature hints as you type a formula, a Name Box that jumps to an address, and formats that live on the cell rather than the column. Ctrl+Shift+4 applies currency, Ctrl+B bolds. The format store keys on row id, so sorting keeps a format with its cell. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet formula bar",
+    "svelte grid cell number format",
+    "svelte formula autocomplete",
+    "svelte grid name box",
+    "svelte excel cell formatting"
+  ],
+  "faq": [
+    {
+      "question": "Why does the cell show one thing and the bar another?",
+      "answer": "The cell shows the displayed value, 1,234.50 with its number format applied; the bar shows what was typed, the formula =B2*C2, which is what you edit."
+    },
+    {
+      "question": "How do formats survive a sort?",
+      "answer": "The format store keys entries on the row's id, not its index, so when the rows reorder each format moves with its row instead of staying on the old position."
+    },
+    {
+      "question": "Which shortcuts apply formats?",
+      "answer": "Ctrl+Shift+4 for currency, Ctrl+Shift+5 for percent, Ctrl+Shift+1 for a thousands number, Ctrl+Shift+~ for General, and Ctrl+B, Ctrl+I and Ctrl+U for bold, italic and underline."
+    }
+  ]
+}

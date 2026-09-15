@@ -29,9 +29,34 @@ export type StructureTarget = {
   getRaw(rowIndex: number, colIndex: number): string
   /** Apply the structural change to the data itself. */
   apply(edit: StructuralEdit): void
+  /**
+   * Set when `apply` rewrites the references itself. A Workbook does, across
+   * every sheet, which is the whole reason a shell routes the edit through
+   * it; rewriting here as well then moved every reference twice, so one
+   * inserted row turned =SUM(A1:A3) into =SUM(A1:A5) and a cycle.
+   */
+  rewritesReferences?: boolean
   names?: SheetNames
   format?: { store: SheetFormatStore; lookup: CellAddressLookup }
   onChange?(): void
+  /**
+   * Everything a structural edit can touch, as one value, and the way to
+   * put it back. Supplying both makes insert and delete ONE Ctrl+Z: the
+   * command records the state before and after and hands the grid a step
+   * that restores either. Without them the formula rewrites inside the
+   * edit would sit in the history on their own, and undoing those while
+   * the rows stayed inserted would leave the sheet inconsistent.
+   */
+  snapshot?(): unknown
+  restore?(state: unknown): void
+  /**
+   * Whether the edit may happen at all. A protected sheet says no to every
+   * insert and delete, as Excel's does; the ribbon greys Insert and Delete
+   * on the same answer, so it must be cheap and must not talk to the user.
+   */
+  canApply?(edit: StructuralEdit): boolean
+  /** Called when `canApply` refused an edit: the place to say why. */
+  refused?(): void
 }
 
 let target: StructureTarget | null = null
@@ -118,12 +143,29 @@ function run(cmd: GridCommandContext, edit: StructuralEdit): boolean {
   const t = target
   if (!t) return false
   if (edit.count <= 0) return false
+  if (t.canApply?.(edit) === false) {
+    t.refused?.()
+    return false
+  }
   return cmd.batch(() => {
+    const before = t.snapshot?.()
     // Order matters: the rewrite and the cleanup both read the OLD geometry.
-    rewriteFormulas(cmd, t, edit)
+    if (!t.rewritesReferences) rewriteFormulas(cmd, t, edit)
     forgetDeleted(t, edit, cmd)
     t.apply(edit)
     t.onChange?.()
+    // Recorded LAST, so undo runs it first: the whole state comes back, and
+    // the rewrite steps recorded above then re-apply their own "before"
+    // texts, which the snapshot already holds. Redo runs them the other way
+    // round to the same end.
+    const restore = t.restore
+    if (before !== undefined && restore) {
+      const after = t.snapshot?.()
+      cmd.recordUndo?.(
+        () => { restore(before); t.onChange?.() },
+        () => { restore(after); t.onChange?.() },
+      )
+    }
     return true
   })
 }

@@ -23,6 +23,7 @@ function fakeCmd(cells: unknown[][], active = { row: 0, col: 0 }, ranges: any[] 
     extendSelection: vi.fn(), scrollIntoView: vi.fn(),
     startEditing: vi.fn(() => true),
     batch: <T,>(fn: () => T) => fn(),
+    recordUndo: () => {},
   } as unknown as GridCommandContext
 }
 
@@ -63,6 +64,32 @@ describe('AutoSum', () => {
   })
 })
 
+describe('a format target that refuses', () => {
+  it('Ctrl+B declines, writes nothing, and reports the refusal', () => {
+    const store = createFormatStore()
+    const refused = vi.fn()
+    let allow = false
+    setFormatTarget({ store, lookup: at, guard: () => allow, refused })
+    const cmd = fakeCmd([[1], [2]], { row: 0, col: 0 }, [[0, 0, 1, 0]])
+    expect(handleSheetKey(key({ key: 'b', ctrlKey: true }), cmd)).toBe(false)
+    expect(store.get('r0', 'c0')).toBeUndefined()
+    expect(refused).toHaveBeenCalledTimes(1)
+    allow = true
+    expect(handleSheetKey(key({ key: 'b', ctrlKey: true }), cmd)).toBe(true)
+    expect(store.get('r0', 'c0')?.bold).toBe(true)
+    expect(refused).toHaveBeenCalledTimes(1)
+  })
+
+  it('the guard sees the rectangles the change would touch', () => {
+    const store = createFormatStore()
+    const seen: unknown[] = []
+    setFormatTarget({ store, lookup: at, guard: (rects) => { seen.push(rects); return true } })
+    const cmd = fakeCmd([[1, 2], [3, 4]], { row: 1, col: 1 }, [[0, 1, 1, 1]])
+    handleSheetKey(key({ key: 'i', ctrlKey: true }), cmd)
+    expect(seen).toEqual([[[0, 1, 1, 1]]])
+  })
+})
+
 describe('formatting shortcuts without a store', () => {
   it('declines rather than looking broken', () => {
     // No store attached: the key must fall through to the grid, not be
@@ -90,6 +117,26 @@ describe('formatting shortcuts with a store', () => {
     handleSheetKey(key({ key: 'b', ctrlKey: true }), cmd)
     handleSheetKey(key({ key: 'b', ctrlKey: true }), cmd)
     expect(store.get('r0', 'c0')).toBeUndefined()
+  })
+
+  it('records every format change in the grid history, restoring whole entries', () => {
+    // A format is not a cell write, so without this Ctrl+Z would skip it and
+    // the ribbon's Undo would stay grey after Bold. The step restores the
+    // cell's whole entry: undoing bold on a red cell keeps it red.
+    const store = createFormatStore()
+    const onChange = vi.fn()
+    setFormatTarget({ store, lookup: at, onChange })
+    store.set([[0, 0, 0, 0]], { color: '#f00' }, at)
+    const steps: Array<{ undo: () => void; redo: () => void }> = []
+    const cmd = { ...fakeCmd([[1]], { row: 0, col: 0 }, [[0, 0, 0, 0]]), recordUndo: (undo: () => void, redo: () => void) => steps.push({ undo, redo }) } as unknown as GridCommandContext
+    handleSheetKey(key({ key: 'b', ctrlKey: true }), cmd)
+    expect(store.get('r0', 'c0')).toEqual({ color: '#f00', bold: true })
+    expect(steps).toHaveLength(1)
+    steps[0]!.undo()
+    expect(store.get('r0', 'c0')).toEqual({ color: '#f00' })
+    steps[0]!.redo()
+    expect(store.get('r0', 'c0')).toEqual({ color: '#f00', bold: true })
+    expect(onChange).toHaveBeenCalled()
   })
 
   it('applies italic, underline and strike', () => {

@@ -94,6 +94,37 @@ async function openContextMenu(target: HTMLElement) {
 }
 
 describe('SvGrid context menu', () => {
+  it('pulls a menu taller than the guessed 280px back inside the viewport', async () => {
+    // Thirteen entries, the spreadsheet shell's menu: 456px tall in a browser.
+    const items: ContextMenuItem<Row>[] = Array.from({ length: 13 }, (_, i) => ({ key: `k${i}`, label: `Entry ${i}`, action: () => {} }))
+    const { target, destroy } = await mountGrid(items)
+    await tick()
+    const proto = HTMLElement.prototype.getBoundingClientRect
+    const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const box = proto.call(this)
+      if (!this.classList.contains('sv-grid-context-menu')) return box
+      return { ...box, width: 200, height: 456, right: box.left + 200, bottom: box.top + 456, toJSON: () => ({}) } as DOMRect
+    })
+    const innerHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', { value: 900, configurable: true })
+    try {
+      const cell = target.querySelector('.sv-grid-cell[data-svgrid-row]') as HTMLElement
+      // A click at y=600: the 280px guess fits (600 + 280 < 900), so no flip,
+      // but the real 456px would run to 1056.
+      cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 100, clientY: 600 }))
+      await vi.waitFor(() => {
+        const menu = target.querySelector('.sv-grid-context-menu') as HTMLElement
+        expect(menu).not.toBeNull()
+        expect(parseFloat(menu.style.top)).toBe(900 - 456 - 8)
+        expect(parseFloat(menu.style.left)).toBe(100)
+      })
+    } finally {
+      spy.mockRestore()
+      Object.defineProperty(window, 'innerHeight', { value: innerHeight, configurable: true })
+      destroy()
+    }
+  })
+
   it('opens the default menu on right-click with the built-in items', async () => {
     const { target, destroy } = await mountGrid(true)
     await tick()

@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-14T02:24:14.711Z",
+  "generatedAt": "2026-09-15T23:33:13.428Z",
   "counts": {
-    "pages": 373,
+    "pages": 379,
     "enterprise": 55,
-    "withDemo": 259
+    "withDemo": 264
   },
   "pillars": [
     {
@@ -169,12 +169,18 @@
         "help/cells/expressions.md",
         "help/cells/getting-values.md",
         "help/cells/highlighting-changes.md",
+        "help/cells/keyboard-shortcuts.md",
+        "help/cells/number-formats.md",
+        "help/cells/paste-find-structure.md",
         "help/cells/rich-text-cells.md",
         "help/cells/sparklines.md",
+        "help/cells/spreadsheet-shell.md",
         "help/cells/styling-cells.md",
+        "help/cells/tables.md",
         "help/cells/text-formatting.md",
         "help/cells/tooltips.md",
-        "help/cells/view-refresh.md"
+        "help/cells/view-refresh.md",
+        "help/cells/workbooks.md"
       ]
     },
     {
@@ -719,7 +725,7 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 10183,
+      "words": 10441,
       "lastUpdated": "2026-09-14",
       "demoIds": []
     },
@@ -1574,8 +1580,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2326,
-      "lastUpdated": "2026-09-13",
+      "words": 2365,
+      "lastUpdated": "2026-09-14",
       "demoIds": [
         "17-accessibility",
         "65-keyboard-shortcuts",
@@ -1746,8 +1752,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 391,
-      "lastUpdated": "2026-09-03",
+      "words": 518,
+      "lastUpdated": "2026-09-14",
       "demoIds": [
         "04-selection-copy-paste",
         "90-selection-api",
@@ -1762,10 +1768,11 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1226,
-      "lastUpdated": "2026-09-03",
+      "words": 1356,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "141-conditional-formatting",
+        "462-regional-scorecard-cf",
         "94-conditional-formatting",
         "100-anomaly-highlights"
       ]
@@ -1813,6 +1820,50 @@
       ]
     },
     {
+      "path": "help/cells/keyboard-shortcuts.md",
+      "url": "/docs/help/cells/keyboard-shortcuts/",
+      "title": "Excel keyboard shortcuts",
+      "summary": "The muscle memory a spreadsheet user arrives with, on any <SvGrid> with cell selection on. One call turns it on:",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1820,
+      "lastUpdated": "2026-09-15",
+      "demoIds": [
+        "452-excel-shortcuts"
+      ]
+    },
+    {
+      "path": "help/cells/number-formats.md",
+      "url": "/docs/help/cells/number-formats/",
+      "title": "Number formats and cell styles",
+      "summary": "In Excel, format is a property of the **cell**, not the column. Two cells in the same column can show $1,234.50 and 123450% from the same stored number. @svgrid/enterprise ships that: an Excel format-string compiler, and a store that keeps per-cell formatting alive through sorting.",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 872,
+      "lastUpdated": "2026-09-14",
+      "demoIds": [
+        "453-formula-bar-formats"
+      ]
+    },
+    {
+      "path": "help/cells/paste-find-structure.md",
+      "url": "/docs/help/cells/paste-find-structure/",
+      "title": "Paste Special, Find and Replace, and structural edits",
+      "summary": "The three Excel operations that write more than one cell, plus freeze panes.",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 2067,
+      "lastUpdated": "2026-09-15",
+      "demoIds": [
+        "466-paste-from-excel",
+        "454-paste-find-structure",
+        "458-data-cleanup"
+      ]
+    },
+    {
       "path": "help/cells/rich-text-cells.md",
       "url": "/docs/help/cells/rich-text-cells/",
       "title": "Rich text and Markdown cells",
@@ -1839,6 +1890,30 @@
       ]
     },
     {
+      "path": "help/cells/spreadsheet-shell.md",
+      "url": "/docs/help/cells/spreadsheet-shell/",
+      "title": "The spreadsheet shell",
+      "summary": "Everything between the ribbon and the sheet tabs, as one component.",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 7648,
+      "lastUpdated": "2026-09-15",
+      "demoIds": [
+        "27-spreadsheet-ribbon",
+        "456-sales-report-workbook",
+        "457-goal-seek",
+        "458-data-cleanup",
+        "460-review-comments-protection",
+        "461-order-intake-validation",
+        "462-regional-scorecard-cf",
+        "463-merged-report-headers",
+        "464-ticket-log-autofilter",
+        "465-autosave-document",
+        "466-paste-from-excel"
+      ]
+    },
+    {
       "path": "help/cells/styling-cells.md",
       "url": "/docs/help/cells/styling-cells/",
       "title": "Styling cells",
@@ -1851,6 +1926,18 @@
       "demoIds": [
         "62-conditional-styling"
       ]
+    },
+    {
+      "path": "help/cells/tables.md",
+      "url": "/docs/help/cells/tables/",
+      "title": "Tables and structured references",
+      "summary": "A table is a named region with a header row, so a formula can say Orders[Amount] instead of D2:D57.",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 592,
+      "lastUpdated": "2026-09-14",
+      "demoIds": []
     },
     {
       "path": "help/cells/text-formatting.md",
@@ -1891,6 +1978,23 @@
       "words": 963,
       "lastUpdated": "2026-09-03",
       "demoIds": []
+    },
+    {
+      "path": "help/cells/workbooks.md",
+      "url": "/docs/help/cells/workbooks/",
+      "title": "Workbooks: several sheets that read each other",
+      "summary": "The formula engine parsed Orders!A1 and 'Price list'!A1:C9 from the day it was promoted. This is the model those references point at.",
+      "section": "help/cells",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1493,
+      "lastUpdated": "2026-09-15",
+      "demoIds": [
+        "455-workbook",
+        "459-named-ranges-forecast",
+        "465-autosave-document",
+        "457-goal-seek"
+      ]
     },
     {
       "path": "help/charts.md",
@@ -2222,8 +2326,8 @@
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
-      "words": 1011,
-      "lastUpdated": "2026-09-03",
+      "words": 1247,
+      "lastUpdated": "2026-09-14",
       "demoIds": [
         "63-column-layout-api"
       ]
@@ -2232,14 +2336,15 @@
       "path": "help/columns/column-spanning.md",
       "url": "/docs/help/columns/column-spanning/",
       "title": "Column & row spanning (merged cells)",
-      "summary": "Spanning lets a single body cell cover **multiple columns** and/or **rows** - merged report headers, grouped labels, financial statements. SvGrid does this with a real colspan / rowspan merge engine; there are two ways to drive it.",
+      "summary": "Spanning lets a single body cell cover **multiple columns** and/or **rows** - merged report headers, grouped labels, financial statements. SvGrid does this with a real colspan / rowspan merge engine; there are three ways to drive it, and the first is the one to reach for on a new grid.",
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
-      "words": 407,
-      "lastUpdated": "2026-08-19",
+      "words": 785,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
-        "170-cell-merging"
+        "170-cell-merging",
+        "463-merged-report-headers"
       ]
     },
     {
@@ -2379,8 +2484,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 807,
-      "lastUpdated": "2026-09-12",
+      "words": 1188,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "05-inline-editing",
         "206-cell-validation",
@@ -2956,8 +3061,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1571,
-      "lastUpdated": "2026-09-12",
+      "words": 2109,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -3150,8 +3255,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1820,
-      "lastUpdated": "2026-09-12",
+      "words": 2439,
+      "lastUpdated": "2026-09-14",
       "demoIds": []
     },
     {
@@ -3380,8 +3485,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1390,
-      "lastUpdated": "2026-09-04",
+      "words": 1581,
+      "lastUpdated": "2026-09-14",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -3408,8 +3513,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1055,
-      "lastUpdated": "2026-09-03",
+      "words": 1140,
+      "lastUpdated": "2026-09-14",
       "demoIds": [
         "108-pinned-rows-engine",
         "107-pinned-rows"
@@ -3751,14 +3856,15 @@
       "path": "help/spreadsheet-formulas.md",
       "url": "/docs/help/spreadsheet-formulas/",
       "title": "Spreadsheet formulas",
-      "summary": "A minimal Excel-style formula engine that runs in the browser, with no dependencies. Cells can hold either a literal value (number, string, boolean) or a formula starting with =. When the formula resolves against the sheet, the cell shows the computed value; when you click the cell, the formula bar shows the source.",
+      "summary": "An Excel-style formula engine that runs in the browser with no dependencies. Cells hold either a literal value or a formula starting with =. The engine parses it, resolves references against the sheet, and returns a computed value or one of Excel's error codes.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2174,
-      "lastUpdated": "2026-09-03",
+      "words": 1845,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "83-spreadsheet-formulas",
+        "173-hyperformula",
         "207-blank-sheet",
         "208-freeze-panes",
         "209-data-validation",
@@ -3766,7 +3872,9 @@
         "211-financial-model",
         "212-dashboard-sheet",
         "356-spreadsheet-chart",
-        "169-cell-borders"
+        "169-cell-borders",
+        "456-sales-report-workbook",
+        "459-named-ranges-forecast"
       ]
     },
     {
@@ -4769,8 +4877,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 883,
-      "lastUpdated": "2026-09-03",
+      "words": 899,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "288-overlays"
       ]
@@ -5464,7 +5572,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 838,
-      "lastUpdated": "2026-09-13",
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "435-chart-type-gallery",
         "436-chart-sync-zoom",
@@ -5480,8 +5588,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1360,
-      "lastUpdated": "2026-09-13",
+      "words": 1449,
+      "lastUpdated": "2026-09-15",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"

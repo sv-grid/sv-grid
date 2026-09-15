@@ -59,7 +59,8 @@ import {
     rawToNumber,
   } from "./SvGrid.helpers";
 import { createFeatures } from "./features";
-import type { HistoryStep as SharedHistoryStep } from "./history";
+import { pushHistory, type HistoryStep as SharedHistoryStep } from "./history";
+import { buildMergeIndex } from "./merges";
 import {
     createScrollSync,
   } from "./scroll-sync";
@@ -497,6 +498,24 @@ export function createSvGridController<
   let editorSelectAll = true;
   /** Per-column width overrides set by the resize handles. */
   let columnWidths = $state<Record<string, number>>({});
+  /**
+   * Columns folded to nothing, the way a sheet hides a column: the column
+   * keeps its index, its cells and its width for later, and takes no room.
+   * Distinct from `hiddenColumns`, which takes a column out of the model
+   * and shifts every index after it; a spreadsheet's formulas and formats
+   * are keyed by index and could not follow that.
+   */
+  let collapsedColumns = $state<Record<string, boolean>>({});
+  function setColumnCollapsed(columnId: string, collapsed: boolean): void {
+    if (!!collapsedColumns[columnId] === collapsed) return;
+    if (collapsed) {
+      collapsedColumns = { ...collapsedColumns, [columnId]: true };
+    } else {
+      const next = { ...collapsedColumns };
+      delete next[columnId];
+      collapsedColumns = next;
+    }
+  }
   const MIN_COLUMN_WIDTH = 40;
   /** Columns pinned to the left or right edge of the grid (sticky positioning).
    *  Seeded from `props.initialColumnPinning` so demos / tests can show the
@@ -2456,6 +2475,21 @@ export function createSvGridController<
     if (chartCfg.buildSpec) return chartCfg.buildSpec(chartRows) ?? null;
     // Engine not loaded yet (lazy): render nothing until it resolves.
     if (!chartEngine) return null;
+    // Shared by the direct and aggregated paths so the two cannot drift apart
+    // again - which is how these came to be skipped for scatter, gauge and
+    // boxplot in the first place. Declared here, at the derived's own scope:
+    // a function declaration inside the `else` block below is block-scoped,
+    // and the aggregated path calls it after that block has closed.
+    function applyChartValueSettings<T extends {
+      xType?: string; yScale?: string; valueFormat?: unknown;
+    }>(spec: T): T {
+      if (effectiveChartTimeAxis) spec.xType = "time";
+      if (effectiveChartLogScale) spec.yScale = "log";
+      if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
+      applyChartLocale(spec as never);
+      return spec;
+    }
+
     // Pivot mode: the pivot on screen is the chart, rows as categories and
     // columns as series; the pickers have nothing to choose.
     let spec: ChartSpec;
@@ -2471,19 +2505,6 @@ export function createSvGridController<
     if (!chartIsOhlc && (!category || !values.length)) return null;
     const seriesField = fieldOf(effectiveChartSeriesId);
     const rowsForChart = chartRows as Array<Record<string, unknown>>;
-
-    // Shared by the direct and aggregated paths so the two cannot drift apart
-    // again - which is how these came to be skipped for scatter, gauge and
-    // boxplot in the first place.
-    function applyChartValueSettings<T extends {
-      xType?: string; yScale?: string; valueFormat?: unknown;
-    }>(spec: T): T {
-      if (effectiveChartTimeAxis) spec.xType = "time";
-      if (effectiveChartLogScale) spec.yScale = "log";
-      if (effectiveChartValueFormat) spec.valueFormat = effectiveChartValueFormat;
-      applyChartLocale(spec as never);
-      return spec;
-    }
 
     // Some types read the rows directly rather than a grouped grid: a scatter
     // point is one row, a gauge has no category axis at all, and a box plot
@@ -2512,18 +2533,14 @@ export function createSvGridController<
     //
     // The series-shaped settings (trend, averageLine, seriesTypes) stay on the
     // aggregated path: a direct spec does not have the series shape they read.
-    if (direct) return applyChartValueSettings(direct);
     if (direct) {
       if (chartIsOhlc) {
         // Overlays ride on the price series; the panes are composed by the
         // panel body from `chartIndicatorPanes`.
         const overlay = chartIndicatorSplit.overlay;
         if (overlay && direct.series[0]) direct.series[0].overlay = overlay;
-        if (effectiveChartValueFormat) direct.valueFormat = effectiveChartValueFormat;
-        if (effectiveChartLogScale) direct.yScale = "log";
-        applyChartLocale(direct);
       }
-      return direct;
+      return applyChartValueSettings(direct);
     }
     // A direct type that could not build (scatter with no Y picked yet, for
     // instance) must not fall through to the bar-chart path and draw the wrong
@@ -2863,9 +2880,46 @@ export function createSvGridController<
     const logical = virtualizer.getState().scrollOffset;
     return logical - rowScrollScaling.logicalToDom(logical);
   });
+  /**
+   * The first `frozenRows` rows are rendered ahead of the virtual window
+   * and stick under the header. The virtualizer still counts them, so its
+   * offsets stay in row-index space and nothing downstream has to translate;
+   * the window skips them, and the top spacer gives back the height they
+   * already occupy in the flow.
+   */
+  const frozenRowCount = $derived(
+    Math.max(0, Math.min(Math.floor(props.frozenRows ?? 0), allRows.length)),
+  );
+  const frozenRowList = $derived(frozenRowCount ? allRows.slice(0, frozenRowCount) : []);
+  /** The merged cells, indexed; null (the usual case) costs nothing. */
+  const mergeIndex = $derived(buildMergeIndex(props.mergedCells));
+  const frozenBandHeight = $derived.by(() => {
+    if (!frozenRowCount) return 0;
+    rowResizeVersion;
+    autoRowHeightVersion;
+    let total = 0;
+    for (let i = 0; i < frozenRowCount; i += 1) total += rowSizePxOf(i);
+    return total;
+  });
+  /** The declared or dragged height of one row; measured under auto height. */
+  function rowSizePxOf(i: number): number {
+    if (isRowCollapsed(i)) return 0;
+    if (autoRowHeightOn) return measuredRowHeights.get(i) ?? autoRowHeightFallback;
+    const own = rowResizeHeightPx(i);
+    if (own != null) return own;
+    const rh = props.rowHeight;
+    return typeof rh === "function" ? rh(i) : (rh ?? 30);
+  }
+  /** Where frozen row i sticks: under the header and the frozen rows above it. */
+  function frozenRowTop(i: number): number {
+    let top = headerHeight;
+    for (let k = 0; k < i; k += 1) top += rowSizePxOf(k);
+    return top;
+  }
   // Spacer heights in DOM space. With scaling inert these equal the original
-  // virtualRowStart / virtualRowBottomSpacer.
-  const rowTopSpacer = $derived(Math.max(virtualRowStart - rowOffsetAdjustment, 0));
+  // virtualRowStart / virtualRowBottomSpacer. The frozen band is in the flow
+  // before the spacer whatever the window shows, so it comes off the spacer.
+  const rowTopSpacer = $derived(Math.max(virtualRowStart - rowOffsetAdjustment - frozenBandHeight, 0));
   const rowBottomSpacer = $derived(
     Math.max(rowDomTotalSize - (virtualRowEnd - rowOffsetAdjustment), 0),
   );
@@ -3219,35 +3273,104 @@ export function createSvGridController<
   );
 
   // ----- Interactive row resize (`rowResize` prop) -----
-  // Heights the user has dragged, by row index. A plain Map plus a version
-  // counter, exactly like `measuredRowHeights` above and for the same reason:
-  // the reset effect below has to read this collection to know whether there is
-  // anything to clear, and if the collection were reactive that read would make
-  // every resize re-trigger the reset and wipe the height it just stored.
-  const rowResizeHeights = new Map<number, number>();
+  // Heights the user has dragged, or set through `api.setRowHeight`, keyed
+  // by ROW ID so they belong to the row rather than to a slot: the height
+  // follows its row through a sort or a filter and survives the data being
+  // replaced. They used to be keyed by index and wiped on every data change,
+  // which in a spreadsheet meant every keystroke, so a row dragged taller
+  // snapped back the moment the next cell was typed. A plain Map plus a
+  // version counter, like `measuredRowHeights` above: the readers touch the
+  // version, and the Map itself stays out of the reactive graph.
+  const rowResizeHeights = new Map<string, number>();
   let rowResizeVersion = $state(0);
-
-  function setRowResizeHeight(index: number, height: number): void {
-    if (!rowResizeOn || !Number.isFinite(index) || height <= 0) return;
-    rowResizeHeights.set(index, Math.round(height));
+  /**
+   * Rows folded to nothing, the row-side twin of `collapsedColumns`: the
+   * row keeps its index and its cells and takes no height. Keyed by row id
+   * like the heights and announced through the same version counter, so
+   * every reader of a row's size sees the change.
+   */
+  const collapsedRows = new Set<string>();
+  function isRowCollapsed(index: number): boolean {
+    rowResizeVersion;
+    const id = allRows[index]?.id;
+    return id != null && collapsedRows.has(id);
+  }
+  function setRowCollapsed(index: number, collapsed: boolean): void {
+    const id = allRows[index]?.id;
+    if (id == null) return;
+    if (collapsed === collapsedRows.has(id)) return;
+    if (collapsed) collapsedRows.add(id);
+    else collapsedRows.delete(id);
     rowResizeVersion += 1;
   }
-  /** A user-dragged height for this row, or undefined when it has not been
-   *  resized. Read by the view AND by the virtualizer's `estimateSize`. */
+
+  /**
+   * A size the user changed by hand is one undo step, as it is in a
+   * spreadsheet: Ctrl+Z after a column drag puts the width back. Recorded
+   * only for the user's gestures; the api's own setters record nothing, so
+   * a consumer restoring saved sizes does not fill the history.
+   */
+  function recordSizeUndo(undo: () => void, redo: () => void): void {
+    pushHistory(ctx, [
+      { rowId: "", columnId: "", field: "", before: undefined, after: undefined, custom: { undo, redo } },
+    ]);
+  }
+  // The undo and redo of a size step report through the same callbacks as
+  // the gesture did: a consumer keeping the sizes (a sheet saving its
+  // document) would otherwise hold the width the user dragged to while the
+  // grid showed the one Ctrl+Z put back.
+  function resizeColumnByUser(columnId: string, width: number, before: number): void {
+    const apply = (w: number) => {
+      columnWidths = { ...columnWidths, [columnId]: w };
+      props.onColumnResize?.({ columnId, width: w });
+    };
+    apply(width);
+    if (before !== width) recordSizeUndo(() => apply(before), () => apply(width));
+  }
+  function autosizeColumnByUser(columnId: string): void {
+    const before = getColumnWidth(columnId);
+    autosizeColumn(columnId);
+    const width = getColumnWidth(columnId);
+    const apply = (w: number) => {
+      columnWidths = { ...columnWidths, [columnId]: w };
+      props.onColumnResize?.({ columnId, width: w });
+    };
+    if (before !== width) recordSizeUndo(() => apply(before), () => apply(width));
+    else props.onColumnResize?.({ columnId, width });
+  }
+  function resizeRowByUser(index: number, height: number | null): void {
+    const before = rowResizeHeightPx(index) ?? null;
+    const apply = (h: number | null) => {
+      setRowResizeHeight(index, h);
+      props.onRowResize?.({ rowIndex: index, height: h });
+    };
+    apply(height);
+    if (before !== height) recordSizeUndo(() => apply(before), () => apply(height));
+  }
+
+  function setRowResizeHeight(index: number, height: number | null): void {
+    const id = allRows[index]?.id;
+    if (id == null) return;
+    if (height == null) {
+      if (!rowResizeHeights.delete(id)) return;
+    } else {
+      if (!Number.isFinite(height) || height <= 0) return;
+      rowResizeHeights.set(id, Math.round(height));
+    }
+    rowResizeVersion += 1;
+  }
+  /** A row's own height, or undefined when it has none. Read by the view AND
+   *  by the virtualizer's `estimateSize`. Auto height wins over it: the
+   *  content decides the height there, and a manual one would be overwritten
+   *  by the next measurement. */
   function rowResizeHeightPx(index: number): number | undefined {
-    return rowResizeOn ? rowResizeHeights.get(index) : undefined;
+    const id = allRows[index]?.id;
+    if (id == null) return undefined;
+    // A collapsed row is 0 whatever else it has, under auto height too.
+    if (collapsedRows.has(id)) return 0;
+    if (autoRowHeightOn) return undefined;
+    return rowResizeHeights.get(id);
   }
-
-  // A row index means a different row once the data changes, so keeping the
-  // heights would size new rows by the old ones - the same reasoning as the
-  // measured-height reset below.
-  $effect(() => {
-    void allRows.length;
-    void internalData;
-    if (rowResizeHeights.size === 0) return;
-    rowResizeHeights.clear();
-    rowResizeVersion += 1;
-  });
 
   /** Report a row's measured height. Called by the view's measuring action.
    *  Sub-pixel churn is ignored so a fractional layout can't loop. */
@@ -3336,9 +3459,9 @@ export function createSvGridController<
       : typeof rh === "function"
         ? rh
         : (rh ?? 30);
-    const estimateSize = rowResizeOn
+    const estimateSize = rowResizeHeights.size > 0 || collapsedRows.size > 0
       ? (index: number) =>
-          rowResizeHeights.get(index) ??
+          rowResizeHeightPx(index) ??
           (typeof base === "function" ? base(index) : base)
       : base;
     virtualizer.setOptions({
@@ -3399,6 +3522,7 @@ export function createSvGridController<
     // closure each run; the virtualizer sees a new function reference and
     // re-derives its layout from the current per-column widths.
     columnWidths;
+    collapsedColumns;
     columnVirtualizer.setOptions({
       count: allColumns.length,
       estimateSize: (index: number) => {
@@ -3488,6 +3612,10 @@ export function createSvGridController<
    *  from a user-focused (0,0). The fill handle keys off this flag so it
    *  stays hidden until the user actually selects something. */
   let userHasActivatedCell = $state(false);
+  /** The column a run of Tabs began in, so the Enter that ends the run goes
+   *  down from there (`getEntryStep`). Plain, not state: nothing renders
+   *  it. `setActiveCell` clears it; the Tab and Enter paths set it back. */
+  let tabRunOrigin: number | null = null;
 
 
 
@@ -3513,7 +3641,7 @@ export function createSvGridController<
     if (!props.fitColumns || isNarrowResponsive) return null;
     // Exclude columns hidden by a collapsed group too (#57) - otherwise their
     // widths stay in the fit distribution and leave a blank gap at the edge.
-    const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id] && !hiddenByGroupCollapse[c.id]);
+    const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id] && !hiddenByGroupCollapse[c.id] && !collapsedColumns[c.id]);
     if (!cols.length) return null;
     const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
     const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
@@ -4041,6 +4169,9 @@ export function createSvGridController<
     get editorSelectAll() { return editorSelectAll; },
     set editorSelectAll(v) { editorSelectAll = v as never; },
     get columnWidths() { return columnWidths; },
+    get collapsedColumns() { return collapsedColumns; },
+    get mergeIndex() { return mergeIndex; },
+    get setColumnCollapsed() { return setColumnCollapsed; },
     set columnWidths(v) { columnWidths = v as never; },
     get MIN_COLUMN_WIDTH() { return MIN_COLUMN_WIDTH; },
     get columnPinning() { return columnPinning; },
@@ -4463,8 +4594,17 @@ export function createSvGridController<
     },
     /** True when the `rowResize` prop is on and nothing overrides it. */
     get rowResizeOn() { return rowResizeOn; },
+    get frozenRowCount() { return frozenRowCount; },
+    get frozenRowList() { return frozenRowList; },
+    get frozenBandHeight() { return frozenBandHeight; },
+    get frozenRowTop() { return frozenRowTop; },
     /** Record the height the user dragged a row to. */
     get setRowResizeHeight() { return setRowResizeHeight; },
+    get isRowCollapsed() { return isRowCollapsed; },
+    get setRowCollapsed() { return setRowCollapsed; },
+    get resizeRowByUser() { return resizeRowByUser; },
+    get resizeColumnByUser() { return resizeColumnByUser; },
+    get autosizeColumnByUser() { return autosizeColumnByUser; },
     /** A row's dragged height, or undefined when it has not been resized. */
     get rowResizeHeightPx() {
       rowResizeVersion;
@@ -4527,6 +4667,8 @@ export function createSvGridController<
     get toggleSelectAllRows() { return toggleSelectAllRows; },
     get userHasActivatedCell() { return userHasActivatedCell; },
     set userHasActivatedCell(v) { userHasActivatedCell = v as never; },
+    get tabRunOrigin() { return tabRunOrigin; },
+    set tabRunOrigin(v) { tabRunOrigin = v; },
     get setActiveCell() { return setActiveCell; },
     get scrollActiveCellIntoView() { return scrollActiveCellIntoView; },
     get getColumnBaseWidth() { return getColumnBaseWidth; },
@@ -4536,6 +4678,7 @@ export function createSvGridController<
     get extendSelection() { return extendSelection; },
     get isCellInSelectedRange() { return isCellInSelectedRange; },
     get getCellRangeEdges() { return getCellRangeEdges; },
+    get activeRangeRect() { return activeRangeRect; },
     get cellSelectionState() { return cellSelectionState; },
     get getSelectionRects() { return getSelectionRects; },
     get fillHandleCell() { return fillHandleCell; },
@@ -4559,6 +4702,7 @@ export function createSvGridController<
     get startFillDrag() { return startFillDrag; },
     get onFillPointerMove() { return onFillPointerMove; },
     get onFillPointerUp() { return onFillPointerUp; },
+    get fillDownToNeighbour() { return fillDownToNeighbour; },
     get isOnMoveGrabStrip() { return isOnMoveGrabStrip; },
     get startMoveDrag() { return startMoveDrag; },
     get onMovePointerMove() { return onMovePointerMove; },
@@ -4578,6 +4722,7 @@ export function createSvGridController<
     get cutSelectionToClipboard() { return cutSelectionToClipboard; },
     get pasteFromClipboard() { return pasteFromClipboard; },
     get onGridPaste() { return onGridPaste; },
+    get armPasteFallback() { return armPasteFallback; },
     get clearSelectedCells() { return clearSelectedCells; },
     get onCellDoubleClick() { return onCellDoubleClick; },
     get startEditingWithChar() { return startEditingWithChar; },
@@ -4668,13 +4813,13 @@ export function createSvGridController<
 
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
-  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste } = createEditing<TFeatures, TData>(ctx);
-  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
+  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
+  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
-  const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
+  const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, fillDownToNeighbour, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
 
   // Dev-time configuration checks. Silent misconfiguration was the grid's
   // biggest usability gap - a misspelled `field` rendered a column of blank
