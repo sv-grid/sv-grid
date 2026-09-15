@@ -93,6 +93,33 @@ export {
   type Workbook, type SheetData, type WorkbookOptions,
 } from './sheet/workbook'
 export { setWorkbook, getWorkbook } from './sheet/shortcuts'
+export {
+  createSheetDocument,
+  type SheetDocument, type SheetDocumentInit, type SheetState, type SheetStateEntry, type PerSheetState, type SheetChangeReason,
+} from './sheet/document'
+export { shiftRect, shiftRects, subtractRect, rectContains, rectsIntersect, remapNotes, lineShift, type NotesMap } from './sheet/rects'
+export { isLocked, rectsHaveLocked, rectsMixLocked, PROTECTED_MESSAGE } from './sheet/protection'
+export { commentAt, withComment, listComments, nextComment } from './sheet/comments'
+export {
+  ruleAt, rulesIn, checkEntry, listChoices, shiftValidation, removeValidation, describeRule, dateValue, validationId,
+  DEFAULT_ALERT_MESSAGE, OPERATOR_LABELS,
+  type ValidationRule, type ValidationAllow, type ValidationOperator, type ValidationContext, type ValidationVerdict, type ValidationSpec,
+} from './sheet/validation'
+export {
+  ruleStats, evaluateCf, shiftCf, removeCf, cfIn, describeCf, scaleColor, iconIndex, hasStyle, cfId,
+  CF_PRESET_STYLES, COLOR_SCALES, DATA_BAR_COLOR,
+  type CfRule, type CfRuleBody, type CfStyledRule, type CfBody, type CfPreset, type CfStyle, type CfStats, type CfResult, type CfContext,
+  type CfOperator, type CfTextMatch, type CfIconSet, type CfScaleColors, type CfKind,
+} from './sheet/conditional-formats'
+export {
+  mergePlan, unmergePlan, mergeDropsValues, mergesIn, mergeAt as sheetMergeAt, isCoveredCell, selectionMerged, toGridMerges,
+  sortBlockedByMerges, reorderMerges, normalRect,
+  type MergeKind, type MergePlan,
+} from './sheet/merges'
+export {
+  distinctValues, hiddenRowsFor, passesFilter, isFiltering, withColumnFilter, valuesFilter, shiftAutoFilter, describeFilter,
+  type AutoFilterState, type ColumnFilter, type FilterCondition, type FilterValue,
+} from './sheet/auto-filter'
 
 export {
   splitText, textToColumns, guessDelimiter,
@@ -117,20 +144,42 @@ export {
 } from './sheet/freeze'
 export {
   buildClipboardPayload, parseClipboard, parseClipboardText, parseClipboardHtml,
-  readClipboardOrigin, resolvePasteCell, planPaste,
+  readClipboardOrigin, anchorForeignFormulas, resolvePasteCell, planPaste, msoNumberFormat, numFmtFromMso, isR1C1, r1c1ToA1,
   type PasteSpecialOptions, type PasteWhat, type PasteOperation,
   type ClipboardCell, type ClipboardGrid, type PasteResolution,
 } from './sheet/paste-special'
-export { setFindReplaceHandler, setPasteSpecialHandler } from './sheet/shortcuts'
+export { setFindReplaceHandler, setPasteSpecialHandler, setRibbonActionHandler, nudgeFontSize, type RibbonKeyAction } from './sheet/shortcuts'
 
 export { default as SvFormulaBar } from './SvFormulaBar.svelte'
 export { default as SvSheet } from './SvSheet.svelte'
 export { default as SvSheetRibbon } from './SvSheetRibbon.svelte'
+export { default as SvSheetFindReplace } from './SvSheetFindReplace.svelte'
+export { default as SvSheetPasteSpecial } from './SvSheetPasteSpecial.svelte'
+export { default as SvSheetFormatCells } from './SvSheetFormatCells.svelte'
+export { default as SvSheetInsertFunction } from './SvSheetInsertFunction.svelte'
+export { default as SvSheetSizeDialog } from './SvSheetSizeDialog.svelte'
+export { default as SvSheetComment } from './SvSheetComment.svelte'
+export { default as SvSheetDataValidation } from './SvSheetDataValidation.svelte'
+export { default as SvSheetValidationAlert } from './SvSheetValidationAlert.svelte'
+export { default as SvSheetListPicker } from './SvSheetListPicker.svelte'
+export { default as SvSheetConditionalFormat } from './SvSheetConditionalFormat.svelte'
+export { default as SvSheetManageRules } from './SvSheetManageRules.svelte'
+export { default as SvSheetFilterMenu } from './SvSheetFilterMenu.svelte'
+export { default as SvSheetNameManager } from './SvSheetNameManager.svelte'
+export { default as SvSheetGoalSeek } from './SvSheetGoalSeek.svelte'
+export { default as SvSheetTextToColumns } from './SvSheetTextToColumns.svelte'
+export { default as SvSheetRemoveDuplicates } from './SvSheetRemoveDuplicates.svelte'
+export { functionCatalog, FUNCTION_GROUPS, type FunctionInfo, type FunctionGroup } from './sheet/function-catalog'
+export { parseEntry, completeEntry, type ParsedEntry } from './sheet/entry'
+export { cycleReference, type TextEdit } from './sheet/edit-keys'
 export {
-  RIBBON_TABS, ribbonItems, withDecimals,
-  type RibbonTab, type RibbonGroup, type RibbonItem,
-  type RibbonItemKind, type RibbonActionId,
+  RIBBON_TABS, ribbonItems, withDecimals, applyBorders,
+  type RibbonTab, type RibbonGroup, type RibbonItem, type RibbonOption,
+  type RibbonItemKind, type RibbonActionId, type BorderPreset,
 } from './sheet/ribbon'
+export { RIBBON_ICONS, RIBBON_ICON_NAMES, type RibbonIconName, type IconPath } from './sheet/ribbon-icons'
+export { THEME_COLOURS, STANDARD_COLOURS, ALL_COLOURS, tint, type PaletteColour } from './sheet/palette'
+export { default as SvRibbonIcon } from './SvRibbonIcon.svelte'
 export {
   move, selectRegion, selectLine, applyFormat, toggleFormat, preset,
   autoSum, structural, switchSheet, gridOf,
@@ -140,7 +189,7 @@ export {
   type CompiledFormat, type FormatPresetName,
 } from './sheet/number-format'
 export {
-  createFormatStore, entryToStyle,
+  createFormatStore, entryToStyle, borderShadows,
   type SheetFormatStore, type CellFormatEntry, type CellAddressLookup,
 } from './sheet/format-store'
 export {
@@ -173,7 +222,9 @@ export {
   type FnArgs as SheetFnArgs,
 } from './sheet/functions'
 export {
-  translateFormula, fixupReferences, formatFormula, type StructuralEdit,
+  translateFormula, fixupReferences, renameSheetReferences, formatFormula,
+  referenceSpans, REFERENCE_COLOURS,
+  type StructuralEdit, type EditScope, type ReferenceSpan,
 } from './sheet/refs'
 export {
   createDependencyGraph as createSheetDependencyGraph,
@@ -210,6 +261,7 @@ export {
   stampDate,
   stampNow,
   copyFromAbove,
+  copyValueFromAbove,
   guessSumRange,
   looksNumeric,
   setFillTranslator,

@@ -86,6 +86,7 @@ export { registerBoardView, getBoardView, hasBoardView } from './board-view.svel
 export type {
   SelectionBarAction,
   SelectionBarTarget,
+  ContextMenuIcon,
   ContextMenuItem,
   ContextMenuTarget,
 } from './SvGrid.types'
@@ -854,7 +855,11 @@ export {
   type GroupPaginationOptions,
   type GroupPaginationResult,
 } from './group-display'
-export { getKeyboardIntent, getNextActiveCell, type GridKeyboardIntent } from './keyboard'
+export { getKeyboardIntent, getNextActiveCell, getEntryStep, pastCollapsed, type GridKeyboardIntent, type EntryIntent, type EntryRect, type EntryStep, type Collapsed } from './keyboard'
+export { buildMergeIndex, mergeAt, isCovered, originOf, endOf, expandRectToMerges, stepPastMerge, mergeDrawAt, type MergedCell, type MergeIndex, type MergeRect, type MergeDraw } from './merges'
+// The fill handle's series (2, 4, 6; Jan, Feb; dates by the day), for a host
+// that wants to show what a fill will write before it lands.
+export { buildFillPattern } from './fill-patterns'
 export {
   registerGridShortcuts,
   hasGridShortcuts,
@@ -872,6 +877,8 @@ export type {
   SvGridFilterOperator,
   SvGridViewState,
   SvGridWrapperProps,
+  SvGridSelectedRange,
+  SvGridCellCoords,
   ChartTabSnapshot,
   SavedChart,
 } from './svgrid-wrapper.types'

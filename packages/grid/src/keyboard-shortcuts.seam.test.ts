@@ -40,6 +40,10 @@ function makeCtx(overrides: Partial<any> = {}) {
     extendSelection: vi.fn(),
     setSelection: vi.fn(),
     closeMenus: vi.fn(),
+    tabRunOrigin: null,
+    activeRangeRect: () => null,
+    isRowCollapsed: () => false,
+    collapsedColumns: {},
     ...overrides,
   }
   return ctx

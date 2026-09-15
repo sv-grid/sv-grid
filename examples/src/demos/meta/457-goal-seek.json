@@ -1,0 +1,24 @@
+{
+  "description": "Excel's Goal Seek on a Svelte 5 spreadsheet grid: a pricing model with three scenarios side by side, and Data > Goal Seek to set the profit cell to a target by changing the price. The solver is a secant method with a bisection fallback. The sheet does not move until the status dialog reports the solution and OK is pressed; OK writes through the grid's command context, so the whole seek is one undo step. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte goal seek",
+    "svelte spreadsheet what if analysis",
+    "svelte grid solver",
+    "svelte excel goal seek dialog",
+    "svelte pricing model spreadsheet"
+  ],
+  "faq": [
+    {
+      "question": "How does Goal Seek find the input?",
+      "answer": "It evaluates the formula cell for trial values of the input cell with a secant step, and falls back to bisection when the secant step leaves the bracket, until the formula lands within tolerance of the target or the iteration limit is hit."
+    },
+    {
+      "question": "Does the sheet change while it searches?",
+      "answer": "No. The search runs on a scratch evaluation; the status dialog shows the value found, and only OK writes it into the input cell. Cancel leaves the sheet as it was."
+    },
+    {
+      "question": "Is the result one undo step?",
+      "answer": "Yes. OK writes through the command context, so Ctrl+Z puts the input back in one press."
+    }
+  ]
+}

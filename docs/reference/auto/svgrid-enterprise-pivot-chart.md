@@ -12,6 +12,8 @@ export type PivotChartOptions = {
   type?: ChartType
   /** Stack the series. Default false. */
   stacked?: boolean
+  /** Stack to 100%. Implies `stacked`. Default false. */
+  stacked100?: boolean
   /** Include the grand-total column / row as a series / category. Default false. */
   includeTotals?: boolean
   /** Cap the number of categories (row leaves) charted. */

@@ -22,6 +22,11 @@
     onClose?: () => void
     title?: string
     size?: 'sm' | 'md' | 'lg'
+    /**
+     * Panel width in px, when the three presets miss the content's natural
+     * width. Wins over `size`; the user's own resize wins over both.
+     */
+    width?: number
     draggable?: boolean
     resizable?: boolean
     closeOnBackdrop?: boolean
@@ -37,6 +42,7 @@
     onClose,
     title,
     size = 'md',
+    width,
     draggable = false,
     resizable = false,
     closeOnBackdrop = true,
@@ -118,7 +124,7 @@
       class:is-resized={!!box}
       {...overlay.dialogProps({ labelledBy: title ? titleId : undefined })}
       style:transform={`translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y}px))`}
-      style:width={box ? `${box.w}px` : undefined}
+      style:width={box ? `${box.w}px` : width ? `${width}px` : undefined}
       style:height={box ? `${box.h}px` : undefined}
     >
       {#if title || !hideClose}

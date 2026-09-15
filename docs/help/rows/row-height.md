@@ -95,7 +95,7 @@ it to them: drag a row's bottom edge, or focus the grip and use Up/Down
 (Shift for 1px steps). It is **off by default**, because it puts a drag target
 on every row and most grids do not want one.
 
-The grid stores the dragged heights itself, keyed by row index, so this works as
+The grid stores the dragged heights itself, keyed by row id, so this works as
 a bare boolean - you do not need a function-valued `rowHeight` as well:
 
 ```svelte {runnable}
@@ -132,11 +132,32 @@ Two things to know:
 - **`autoRowHeight` wins.** Under auto height the content decides the size, so a
   dragged height would be overwritten by the next measurement pass. The grid
   suppresses the grips rather than letting the two fight.
-- **Heights are keyed by row index, and reset when the data changes.** Index 3 is
-  a different row after a filter, so keeping the height would size the new row by
-  the old one. If you need heights that survive - persisted per record, restored
-  on reload - own them yourself with a function-valued `rowHeight` and the
-  `rowResize` action, which reports every change to you.
+- **A height belongs to its row.** It is keyed by the row's id, so it follows
+  the row through a sort or a filter and survives the data being replaced; a
+  row that leaves the data takes its height with it. To persist heights per
+  record or restore them on reload, own them yourself with a function-valued
+  `rowHeight` and the `rowResize` action, which reports every change to you.
+
+A dragged height is one undo step, like a typed value, and `onRowResize`
+reports it. Double-clicking a row's grip takes the row back to its declared
+height (`height: null` in the event), which is where a spreadsheet refits
+wrapped text.
+
+The same heights are reachable from the api, with or without the grips:
+`api.getRowHeight(rowIndex)` reads a row's height (its own, else the declared
+one) and `api.setRowHeight(rowIndex, px)` gives it one, `null` taking it back
+to the declared height. The spreadsheet shell uses the pair to grow a row for
+wrapped text and to keep each sheet's heights apart.
+
+## Collapsing a row to nothing
+
+`api.setRowCollapsed(rowIndex, true)` folds a row away the way a spreadsheet
+hides one: the row keeps its index and its cells and takes no height,
+`getRowHeight` reads 0, and the arrow keys, Tab and Enter step over it. The
+fold belongs to the row, like a dragged height, so it follows the row
+through a sort and survives the data being replaced; `setRowCollapsed(i,
+false)` brings the row back at the height it had. Under `autoRowHeight` a
+collapsed row is 0 too. `api.isRowCollapsed(rowIndex)` reads the state.
 
 ## Header height
 

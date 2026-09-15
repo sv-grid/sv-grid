@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import {
-  compileNumberFormat, formatWithPattern, FORMAT_PRESETS,
+  compileNumberFormat, formatWithPattern, FORMAT_PRESETS, formatCategory,
 } from './number-format'
 
 const f = (value: unknown, pattern: string) => formatWithPattern(value, pattern)
 const colorOf = (value: unknown, pattern: string) =>
   compileNumberFormat(pattern).format(value).color
+
+describe('formatCategory', () => {
+  it('names the category of every preset and of the patterns typed entries carry', () => {
+    for (const [name, pattern] of Object.entries(FORMAT_PRESETS)) {
+      expect(formatCategory(pattern).category).toBe(name)
+    }
+    expect(formatCategory('0%')).toEqual({ category: 'percent', decimals: 0, thousands: false })
+    expect(formatCategory('$#,##0;($#,##0)')).toEqual({ category: 'currency', decimals: 0, thousands: true })
+    expect(formatCategory('#,##0.0')).toEqual({ category: 'number', decimals: 1, thousands: true })
+    expect(formatCategory('0.000')).toEqual({ category: 'number', decimals: 3, thousands: false })
+    expect(formatCategory(undefined).category).toBe('general')
+    expect(formatCategory('[Red]0.0;[Blue]-0.0').category).toBe('custom')
+  })
+})
 
 describe('General', () => {
   it('prints integers plainly and trims float noise', () => {

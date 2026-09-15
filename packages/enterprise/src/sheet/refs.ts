@@ -15,7 +15,7 @@
  * comes back normalised instead of half-rewritten.
  */
 import { mapNode, PRECEDENCE, type Node } from './ast'
-import { formatA1, colToLetters, type CellRef } from './address'
+import { formatA1, colToLetters, lettersToCol, type CellRef } from './address'
 import { parseFormula } from './parse'
 
 /** Shift a single reference's relative parts. */
@@ -130,6 +130,86 @@ export function translateFormula(text: unknown, dRow: number, dCol: number): unk
   return formatFormula(moved)
 }
 
+/**
+ * Point every reference that names sheet `from` at `to` instead: what a
+ * sheet rename owes the formulas on the other sheets and the defined
+ * names, and what Excel does on one. Parsed and re-rendered rather than
+ * substituted as text, so a string literal that happens to contain the old
+ * name is left alone and a new name with a space comes out quoted. A
+ * formula that names no such sheet is returned as it was, untouched.
+ */
+/**
+ * Excel's reference colours: the A1 references in a formula being typed,
+ * each occurrence with the colour of its range, so the cells a formula
+ * names and the text that names them can be painted alike. Colours go by
+ * distinct range in order of first appearance, so `B5` twice is one
+ * colour; `$` anchors and case do not tell ranges apart; a reference into
+ * another sheet and anything inside a string are skipped. `rect` is
+ * [row1, col1, row2, col2], zero-based and normalised.
+ */
+export type ReferenceSpan = {
+  start: number
+  end: number
+  key: string
+  colour: string
+  rect: readonly [number, number, number, number]
+}
+
+export const REFERENCE_COLOURS: ReadonlyArray<string> = ['#1e6fd9', '#d62828', '#8e44ad', '#0f9d58', '#e67e22', '#0097a7']
+
+export function referenceSpans(text: string, colours: ReadonlyArray<string> = REFERENCE_COLOURS): ReferenceSpan[] {
+  const out: ReferenceSpan[] = []
+  if (!text.startsWith('=')) return out
+  const blanked = text
+    .replace(/"[^"]*"/g, (m) => ' '.repeat(m.length))
+    // A sheet-qualified reference belongs to another sheet.
+    .replace(/(?:'[^']*'|[A-Za-z_][\w.]*)!\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?/gi, (m) => ' '.repeat(m.length))
+  // Case-insensitive: a reference is typed as "b5" as often as "B5", and
+  // the engine reads both.
+  const re = /(?<![A-Za-z0-9_.!])\$?([A-Za-z]{1,3})\$?(\d{1,7})(?::\$?([A-Za-z]{1,3})\$?(\d{1,7}))?(?![A-Za-z0-9_(])/g
+  const order = new Map<string, number>()
+  for (const m of blanked.matchAll(re)) {
+    const key = m[0].replace(/\$/g, '').toUpperCase()
+    const c1 = lettersToCol(m[1]!.toUpperCase()), r1 = Number(m[2]) - 1
+    const c2 = m[3] ? lettersToCol(m[3].toUpperCase()) : c1, r2 = m[4] ? Number(m[4]) - 1 : r1
+    if (c1 < 0 || c2 < 0 || r1 < 0 || r2 < 0) continue
+    let index = order.get(key)
+    if (index === undefined) { index = order.size; order.set(key, index) }
+    out.push({
+      start: m.index!,
+      end: m.index! + m[0].length,
+      key,
+      colour: colours[index % colours.length]!,
+      rect: [Math.min(r1, r2), Math.min(c1, c2), Math.max(r1, r2), Math.max(c1, c2)],
+    })
+  }
+  return out
+}
+
+export function renameSheetReferences(text: unknown, from: string, to: string): unknown {
+  if (typeof text !== 'string' || !text.startsWith('=')) return text
+  const wanted = from.toLowerCase()
+  if (!text.toLowerCase().includes(wanted)) return text
+  let ast: Node
+  try {
+    ast = parseFormula(text)
+  } catch {
+    return text
+  }
+  let changed = false
+  const swap = (ref: CellRef): CellRef => {
+    if (ref.sheet === null || ref.sheet.toLowerCase() !== wanted) return ref
+    changed = true
+    return { ...ref, sheet: to }
+  }
+  const moved = mapNode(ast, (n) => {
+    if (n.k === 'ref') return { ...n, ref: swap(n.ref) }
+    if (n.k === 'range') return { ...n, from: swap(n.from), to: swap(n.to) }
+    return n
+  })
+  return changed ? formatFormula(moved) : text
+}
+
 export type StructuralEdit = {
   kind: 'insertRows' | 'deleteRows' | 'insertCols' | 'deleteCols'
   /** 0-based index the edit happens at. */
@@ -171,7 +251,25 @@ function fixRef(ref: CellRef, edit: StructuralEdit): CellRef | null {
  * range shrinks it, which is what Excel does and what keeps `=SUM(A1:A10)`
  * meaningful after you delete row 5.
  */
-export function fixupReferences(text: unknown, edit: StructuralEdit): unknown {
+/**
+ * Which sheet an edit happened on, and which sheet the formula being
+ * rewritten lives on. With a scope, only references INTO the edited sheet
+ * move: an unqualified reference belongs to `self`, a qualified one to the
+ * sheet it names. Without one every reference moves, which is right for a
+ * single grid that has no sheets to tell apart.
+ */
+export type EditScope = {
+  /** The sheet the rows or columns were inserted in or deleted from. */
+  sheet: string
+  /** The sheet the formula lives on; null for a defined name, which has no
+   *  home sheet, so only its qualified references can match. */
+  self: string | null
+}
+
+const sameSheet = (a: string | null, b: string): boolean =>
+  a !== null && a.toLowerCase() === b.toLowerCase()
+
+export function fixupReferences(text: unknown, edit: StructuralEdit, scope?: EditScope): unknown {
   if (typeof text !== 'string' || !text.startsWith('=')) return text
   if (edit.count <= 0) return text
   let ast: Node
@@ -182,13 +280,17 @@ export function fixupReferences(text: unknown, edit: StructuralEdit): unknown {
   }
 
   const broken: CellRef = { col: -1, colAbs: false, row: -1, rowAbs: false, sheet: null }
+  const touched = (sheet: string | null): boolean =>
+    !scope || sameSheet(sheet ?? scope.self, scope.sheet)
 
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') {
+      if (!touched(n.ref.sheet)) return n
       const next = fixRef(n.ref, edit)
       return next === null ? { k: 'ref' as const, ref: broken } : { ...n, ref: next }
     }
     if (n.k === 'range') {
+      if (!touched(n.from.sheet ?? n.to.sheet)) return n
       const from = fixRef(n.from, edit)
       const to = fixRef(n.to, edit)
       // Both ends gone means the whole range was deleted.

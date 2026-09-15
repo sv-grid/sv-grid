@@ -27,6 +27,9 @@ export type ColumnResizeOptions = {
   getWidth: (columnId: string) => number
   /** Called on every animation frame of the drag, and once at the end. */
   onResize: (columnId: string, width: number) => void
+  /** Called once when a drag ends or an arrow key has resized, with the
+   *  width the gesture started from: what an undo puts back. */
+  onResizeEnd?: (columnId: string, width: number, startWidth: number) => void
   /** Accessible name for the handle. Defaults to the column id. */
   label?: (columnId: string) => string
   /**
@@ -90,6 +93,7 @@ export function columnResize(node: HTMLElement, opts: ColumnResizeOptions) {
     // Commit the final width even if the last frame was cancelled mid-flight.
     pendingWidth = Math.max(minWidth(), drag.startWidth + (e.clientX - drag.startX))
     commit()
+    current.onResizeEnd?.(drag.columnId, pendingWidth, drag.startWidth)
     drag.handle.classList.remove('is-resizing')
     syncAria(drag.handle, drag.columnId)
     try {
@@ -144,8 +148,10 @@ export function columnResize(node: HTMLElement, opts: ColumnResizeOptions) {
     if (!columnId || current.canResize?.(columnId) === false) return
     e.preventDefault()
     e.stopPropagation()
-    const next = Math.max(minWidth(), Math.round(current.getWidth(columnId) + delta))
+    const start = current.getWidth(columnId)
+    const next = Math.max(minWidth(), Math.round(start + delta))
     current.onResize(columnId, next)
+    current.onResizeEnd?.(columnId, next, start)
     syncAria(t, columnId)
   }
 

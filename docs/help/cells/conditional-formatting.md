@@ -1,5 +1,10 @@
 # Conditional formatting
 
+> The spreadsheet shell has its own conditional formatting, Excel's: rules
+> over ranges of cells evaluated on computed values, from Home > Styles on
+> the ribbon. See [the spreadsheet shell](./spreadsheet-shell.md#conditional-formatting).
+> This page is the grid's column-scoped, value-driven rules.
+
 Conditional formatting colors a cell by its value. SvGrid ships it as a
 declarative engine prop, `conditionalFormats`, so you describe the rules once
 and the grid paints every cell - no per-cell `cell` snippet required.
@@ -206,6 +211,13 @@ See the live [Conditional formatting](https://svgrid.com/demos/141-conditional-f
 demo.
 
 ## More examples
+
+### Regional scorecard: conditional formatting
+
+Eight regions, three months, a target, and every colour on the page is a conditional formatting rule over computed values: Highlight Cells on attainment (under 90% red, 100% and over green), a Data Bar and a Top 3 on the quarter, a Green - Yellow - Red Color Scale across the months, an Icon Set on the trend. Edit a month and the arrow, the bar, the fill and the rank all move; Manage Rules lists the six in priority order.
+
+<div data-docs-demo="462-regional-scorecard-cf" data-height="560"></div>
+
 
 ### Conditional formatting
 

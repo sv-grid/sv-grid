@@ -704,6 +704,72 @@ describe('SvGrid - fitColumns', () => {
   })
 })
 
+describe('SvGrid - frozenRows', () => {
+  const frozen = (target: HTMLElement) => [...target.querySelectorAll<HTMLElement>('tr.sv-grid-row-frozen')]
+
+  it('marks the first N rows frozen with a sticky top under the header, and keeps them as the rows they are', async () => {
+    const { api, target, destroy } = await mountGrid({ frozenRows: 2, virtualization: true })
+    try {
+      await tick()
+      const rows = frozen(target)
+      expect(rows).toHaveLength(2)
+      expect(rows[0]!.querySelector('[data-svgrid-row]')?.getAttribute('data-svgrid-row')).toBe('0')
+      expect(rows[1]!.querySelector('[data-svgrid-row]')?.getAttribute('data-svgrid-row')).toBe('1')
+      // Under the header, then under each other: the second sits a row lower.
+      expect(rows[1]!.style.top).not.toBe(rows[0]!.style.top)
+      expect(rows[1]!.classList.contains('sv-grid-row-frozen-last')).toBe(true)
+      // Still numbered and still data rows: the body renders the rest once.
+      const bodyRows = [...target.querySelectorAll('tbody.sv-grid-body tr.sv-grid-row:not(.sv-grid-row-spacer)')]
+      const indices = bodyRows.map((tr) => tr.querySelector('[data-svgrid-row]')?.getAttribute('data-svgrid-row')).filter(Boolean)
+      expect(new Set(indices).size).toBe(indices.length)
+      expect(indices.slice(0, 3)).toEqual(['0', '1', '2'])
+      expect(api.getRowHeight(0)).toBe(36)
+    } finally {
+      destroy()
+    }
+  })
+
+  it('a row below the frozen band keeps its own height, not the height of the row N above it', async () => {
+    // The virtual loop used to draw item i as row i + N while the
+    // virtualizer had sized item i as row i, so under a freeze of two rows
+    // a taller row 3 was drawn 36px and row 1 got the 60px.
+    const { api, target, destroy } = await mountGrid({ frozenRows: 2, virtualization: true })
+    try {
+      await tick()
+      api.setRowHeight(3, 60)
+      await tick()
+      const tr = (index: number) => target.querySelector(`[data-svgrid-row="${index}"]`)?.closest('tr') as HTMLElement | null
+      expect(tr(3)?.style.height).toBe('60px')
+      expect(tr(1)?.style.height).toBe('36px')
+      expect(tr(2)?.style.height).toBe('36px')
+      // The last rows are still reachable: every row index renders once.
+      const indices = [...target.querySelectorAll('tbody.sv-grid-body tr.sv-grid-row:not(.sv-grid-row-spacer)')]
+        .map((row) => row.querySelector('[data-svgrid-row]')?.getAttribute('data-svgrid-row'))
+        .filter(Boolean)
+      expect(new Set(indices).size).toBe(indices.length)
+      expect(indices).toContain(String(api.getData().length - 1))
+    } finally {
+      destroy()
+    }
+  })
+
+  it('setOption frozenRows freezes and unfreezes at runtime', async () => {
+    const { api, target, destroy } = await mountGrid()
+    try {
+      await tick()
+      expect(frozen(target)).toHaveLength(0)
+      api.setOption('frozenRows', 1)
+      await tick()
+      expect(frozen(target)).toHaveLength(1)
+      api.setOption('frozenRows', undefined)
+      await tick()
+      expect(frozen(target)).toHaveLength(0)
+    } finally {
+      destroy()
+    }
+  })
+})
+
 describe('SvGrid - selectable shortcut (cell selection)', () => {
   // The gated path a user actually takes: pointerdown on a cell runs through
   // createSelection.setSelection, which bails on !enableCellSelectionEffective.
@@ -906,6 +972,75 @@ describe('SvGrid - homepage snippet (shortcuts only, no features import)', () =>
         (r) => r.firstName,
       )
       expect(names).toEqual(['Ada'])
+    } finally {
+      destroy()
+    }
+  })
+})
+
+describe('SvGrid - mergedCells', () => {
+  const td = (target: HTMLElement, r: number, c: number) =>
+    target.querySelector(`td[data-svgrid-row="${r}"][data-svgrid-col="${c}"]`) as HTMLElement | null
+
+  it('draws a merge as one td with its spans and leaves the covered cells out', async () => {
+    const { api, target, destroy } = await mountGrid({
+      mergedCells: [
+        { rowIndex: 0, colIndex: 1, rowSpan: 1, colSpan: 2 },
+        { rowIndex: 2, colIndex: 0, rowSpan: 2, colSpan: 1 },
+      ],
+    })
+    try {
+      await tick()
+      const wide = td(target, 0, 1)
+      expect(wide?.getAttribute('colspan')).toBe('2')
+      expect(wide?.dataset.mergeOrigin).toBe('0:1')
+      expect(wide?.classList.contains('sv-grid-cell-merged')).toBe(true)
+      expect(td(target, 0, 2)).toBeNull()
+      const tall = td(target, 2, 0)
+      expect(tall?.getAttribute('rowspan')).toBe('2')
+      expect(td(target, 3, 0)).toBeNull()
+      // The wide td is as wide as the two columns it covers, read off a plain row.
+      const px = (el: HTMLElement | null) => parseFloat(el?.style.width ?? '0')
+      expect(px(wide)).toBe(px(td(target, 1, 1)) + px(td(target, 1, 2)))
+      // A plain cell is untouched.
+      expect(td(target, 1, 1)?.hasAttribute('colspan')).toBe(false)
+      expect(api.getMergedCells()).toEqual([
+        { rowIndex: 0, colIndex: 1, rowSpan: 1, colSpan: 2 },
+        { rowIndex: 2, colIndex: 0, rowSpan: 2, colSpan: 1 },
+      ])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('the active cell inside a merge is its origin, a range grows to whole merges, and the arrows step over it', async () => {
+    const { api, target, destroy } = await mountGrid({
+      mergedCells: [{ rowIndex: 0, colIndex: 1, rowSpan: 1, colSpan: 2 }],
+    })
+    try {
+      await tick()
+      const ctx = api.getCommandContext()
+      ctx.setActiveCell(0, 2)
+      expect(ctx.activeCell).toMatchObject({ rowIndex: 0, colIndex: 1 })
+      ctx.setSelection(0, 2)
+      expect(api.getSelected()).toEqual([[0, 1, 0, 2]])
+      // A range from B2 up to C1 pulls in the whole of B1:C1.
+      ctx.setSelection(1, 1)
+      ctx.extendSelection(0, 1)
+      expect(api.getSelected()).toEqual([[0, 1, 1, 2]])
+      // Right from the merge lands past it; left from D1 lands on the origin.
+      ctx.setActiveCell(0, 1)
+      ctx.setSelection(0, 1)
+      // The grid listens on its table, and only for keys aimed at it.
+      const root = target.querySelector('table.sv-grid-table') as HTMLElement
+      root.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+      await tick()
+      expect(ctx.activeCell).toMatchObject({ rowIndex: 0, colIndex: 3 })
+      root.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+      await tick()
+      expect(ctx.activeCell).toMatchObject({ rowIndex: 0, colIndex: 1 })
+      // The td that draws the merge carries the selection's right edge.
+      expect(td(target, 0, 1)?.dataset.rangeRight).toBe('true')
     } finally {
       destroy()
     }

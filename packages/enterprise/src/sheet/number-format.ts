@@ -436,3 +436,26 @@ export const FORMAT_PRESETS = {
 } as const
 
 export type FormatPresetName = keyof typeof FORMAT_PRESETS
+
+/**
+ * Which of Excel's categories a pattern belongs to, with the decimals and
+ * separator it carries, so the ribbon's combo can say "Percentage" for a
+ * cell holding `0%` (a typed 12%) as well as for the preset's `0.00%`, and
+ * Format Cells can open on the right category. A pattern that is none of
+ * them is 'custom'.
+ */
+export function formatCategory(fmt: string | undefined): {
+  category: FormatPresetName | 'custom'
+  decimals: number
+  thousands: boolean
+} {
+  if (!fmt || fmt === 'General') return { category: 'general', decimals: 2, thousands: true }
+  const decimals = fmt.match(/\.(0+)/)?.[1]?.length ?? 0
+  if (/E\+/i.test(fmt)) return { category: 'scientific', decimals, thousands: false }
+  if (/%$/.test(fmt)) return { category: 'percent', decimals, thousands: false }
+  if (/^\$/.test(fmt)) return { category: 'currency', decimals, thousands: true }
+  if (/[hs]:|AM\/PM/i.test(fmt)) return { category: 'time', decimals: 0, thousands: false }
+  if (/y|d/i.test(fmt) && !/[#0]/.test(fmt)) return { category: 'date', decimals: 0, thousands: false }
+  if (/^#?,?#*0(\.0+)?$/.test(fmt)) return { category: 'number', decimals, thousands: fmt.includes(',') }
+  return { category: 'custom', decimals, thousands: false }
+}

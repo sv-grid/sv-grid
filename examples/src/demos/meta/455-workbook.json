@@ -1,0 +1,24 @@
+{
+  "description": "A multi-sheet workbook on a Svelte 5 spreadsheet grid with one formula engine spanning the sheets: Prices is a lookup table, Orders VLOOKUPs into it and Summary SUMs over Orders, so editing a unit price travels two sheets and recomputes only what depended on it. Sheet tabs switch, rename and reorder; Ctrl+PageUp and Ctrl+PageDown move between sheets and Shift+F11 inserts one, from anywhere in the grid. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte multi sheet workbook",
+    "svelte spreadsheet sheet tabs",
+    "svelte cross sheet formulas",
+    "svelte vlookup between sheets",
+    "svelte workbook component"
+  ],
+  "faq": [
+    {
+      "question": "How do formulas reach another sheet?",
+      "answer": "With the Sheet!A1 form, Prices!B2 or Prices!A2:B20 in a VLOOKUP. The workbook keeps one dependency graph across every sheet, so a change on Prices recalculates the cells on Orders and Summary that read it."
+    },
+    {
+      "question": "Can sheets be renamed?",
+      "answer": "Yes, double-click a tab or use its menu. References in formulas follow the rename, so =SUM(Orders!D2:D9) keeps working after Orders becomes Sales."
+    },
+    {
+      "question": "Which keys move between sheets?",
+      "answer": "Ctrl+PageUp and Ctrl+PageDown switch to the previous and next sheet, and Shift+F11 inserts a new one, all while the focus stays in the grid."
+    }
+  ]
+}

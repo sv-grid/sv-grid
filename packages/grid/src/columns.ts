@@ -161,6 +161,8 @@ export function createColumns<
   }
 
   function getColumnWidth(columnId: string) {
+    // Collapsed: no room at all, whatever width it keeps for later.
+    if (ctx.collapsedColumns?.[columnId]) return 0;
     const fitted = ctx.fittedColumnWidths?.[columnId];
     if (fitted !== undefined && ctx.columnWidths[columnId] === undefined)
       return fitted;

@@ -33,6 +33,9 @@ export type RowResizeOptions = {
   onResize: (rowIndex: number, height: number) => void
   /** Optional callback fired during the drag (every pointermove). */
   onResizeMove?: (rowIndex: number, height: number) => void
+  /** Double-click on the strip: size the row to its content, the
+   *  spreadsheet gesture. Without it a double-click does nothing. */
+  onAutosize?: (rowIndex: number) => void
   /** Min row height in px. Default 20. */
   min?: number
   /** Max row height in px. Default 320. */
@@ -63,6 +66,8 @@ type ActiveDrag = {
 export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
   let current = opts
   let drag: ActiveDrag | null = null
+  /** The last press on a strip, for telling a double-click from two drags. */
+  let lastPress: { rowIndex: number; at: number } | null = null
 
   function rowIndexOf(tr: HTMLTableRowElement): number {
     const dataRow = tr.querySelector<HTMLElement>('[data-svgrid-row]')
@@ -133,6 +138,18 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
     if (!Number.isFinite(rowIndex)) return
     e.preventDefault()
     e.stopPropagation()
+    // The second press of a double-click: size the row to its content
+    // instead of starting another drag. Timed here rather than read from
+    // a dblclick event, whose target is the row once the first press's
+    // resize has re-rendered the strip; pointerdown carries no count.
+    const now = e.timeStamp
+    const again = lastPress !== null && lastPress.rowIndex === rowIndex && now - lastPress.at < 400
+    lastPress = { rowIndex, at: now }
+    if (again && current.onAutosize) {
+      lastPress = null
+      current.onAutosize(rowIndex)
+      return
+    }
     t.classList.add('is-resizing')
     drag = {
       rowIndex,

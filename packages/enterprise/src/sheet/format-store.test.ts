@@ -148,6 +148,34 @@ describe('forgetting', () => {
   })
 })
 
+describe('remapping ids', () => {
+  it('moves rows down past an insertion and drops deleted ones', () => {
+    const store = createFormatStore()
+    store.set([[0, 0, 0, 0]], { bold: true }, at)   // r1
+    store.set([[2, 1, 2, 1]], { italic: true }, at) // r3
+    // Insert one row before the third: r3 becomes r4, r1 stays.
+    store.remapRows((id) => (id === 'r3' ? 'r4' : id))
+    expect(store.get('r1', 'a')?.bold).toBe(true)
+    expect(store.get('r3', 'b')).toBeUndefined()
+    expect(store.get('r4', 'b')?.italic).toBe(true)
+    // Delete the first row: null drops it, the rest shift up.
+    store.remapRows((id) => (id === 'r1' ? null : id === 'r4' ? 'r3' : id))
+    expect(store.size).toBe(1)
+    expect(store.get('r3', 'b')?.italic).toBe(true)
+    // The indexes are rebuilt, so forgetRow still finds the moved entry.
+    store.forgetRow('r3')
+    expect(store.size).toBe(0)
+  })
+
+  it('remaps columns the same way', () => {
+    const store = createFormatStore()
+    store.set([[0, 2, 0, 2]], { fill: '#ff0' }, at) // c
+    store.remapColumns((id) => (id === 'c' ? 'd' : id))
+    expect(store.get('r1', 'c')).toBeUndefined()
+    expect(store.get('r1', 'd')?.fill).toBe('#ff0')
+  })
+})
+
 describe('persistence', () => {
   it('round-trips through serialize and hydrate', () => {
     const s = createFormatStore()

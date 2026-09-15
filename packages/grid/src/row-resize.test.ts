@@ -209,6 +209,50 @@ describe('rowResize - strip injection', () => {
 // Drag lifecycle
 // ---------------------------------------------------------------------------
 
+describe('rowResize - double-click', () => {
+  it('asks for an autosize of the row and keeps the click from the row itself', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }, { rowIndex: 1 }])
+    track(host)
+    const onAutosize = vi.fn()
+    const rowSaw = vi.fn()
+    rows[1]!.addEventListener('dblclick', rowSaw)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize, onAutosize })
+    const strip = stripOf(rows[1]!)!
+    // Two presses on one strip inside 400ms are a double-click.
+    strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
+    window.dispatchEvent(pointer('pointerup', { clientY: 100 }))
+    strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
+    expect(onAutosize).toHaveBeenCalledWith(1)
+    // No drag started, so nothing to release.
+    expect(strip.classList.contains('is-resizing')).toBe(false)
+    window.dispatchEvent(pointer('pointerup', { clientY: 100 }))
+    // The first press's release reported the unchanged height; the second
+    // press started no drag.
+    expect(onResize).toHaveBeenCalledTimes(1)
+    expect(rowSaw).not.toHaveBeenCalled()
+    action.destroy()
+  })
+
+  it('does nothing without an onAutosize handler', () => {
+    const { host, rows } = buildGrid([{ rowIndex: 0 }])
+    track(host)
+    const rowSaw = vi.fn()
+    rows[0]!.addEventListener('dblclick', rowSaw)
+    const onResize = vi.fn()
+    const action = rowResize(host, { onResize })
+    const strip = stripOf(rows[0]!)!
+    strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
+    window.dispatchEvent(pointer('pointerup', { clientY: 100 }))
+    strip.dispatchEvent(pointer('pointerdown', { clientY: 100 }))
+    // Without a handler the second press is an ordinary drag start.
+    expect(strip.classList.contains('is-resizing')).toBe(true)
+    window.dispatchEvent(pointer('pointerup', { clientY: 100 }))
+    expect(rowSaw).not.toHaveBeenCalled()
+    action.destroy()
+  })
+})
+
 describe('rowResize - drag', () => {
   it('reports the new height on pointerup and fires move callbacks', () => {
     const { host, rows } = buildGrid([{ rowIndex: 0 }])

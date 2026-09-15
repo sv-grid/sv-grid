@@ -29,6 +29,42 @@ import { hasAdvancedFilterEngine } from "./advanced-filter.svelte";
 import { undoHistory, redoHistory } from "./history";
 import { buildCommandContext } from "./command-context";
 
+type OrientedRange = {
+  from: { row: number; col: number }
+  to: { row: number; col: number }
+  highlight: { row: number; col: number }
+}
+
+/**
+ * The selection as the user made it: committed ranges first, the active one
+ * last, each keeping its anchor as `from` and its focus as `to`. The active
+ * cell is the highlight of the range it sits in and of no other, which is
+ * how Handsontable reports it and what a range-aware paste needs to know.
+ */
+function selectedRanges(ctx: any): OrientedRange[] {
+  type Point = { rowIndex: number; colIndex: number } | null
+  type Range = { anchor: Point; focus: Point }
+  const committed: Range[] = ctx.selectionRanges ?? []
+  const active: Range = ctx.selectionRange ?? { anchor: null, focus: null }
+  const cursor = ctx.grid.getState().activeCell as Point
+  const toRange = (r: Range): OrientedRange | null => {
+    if (!r.anchor || !r.focus) return null
+    const from = { row: r.anchor.rowIndex, col: r.anchor.colIndex }
+    const to = { row: r.focus.rowIndex, col: r.focus.colIndex }
+    const inside =
+      cursor &&
+      cursor.rowIndex >= Math.min(from.row, to.row) && cursor.rowIndex <= Math.max(from.row, to.row) &&
+      cursor.colIndex >= Math.min(from.col, to.col) && cursor.colIndex <= Math.max(from.col, to.col)
+    const highlight = inside ? { row: cursor!.rowIndex, col: cursor!.colIndex } : from
+    return { from, to, highlight }
+  }
+  const out: OrientedRange[] = []
+  for (const r of committed) { const o = toRange(r); if (o) out.push(o) }
+  const last = toRange(active)
+  if (last) out.push(last)
+  return out
+}
+
 export function createGridApi<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
@@ -131,11 +167,27 @@ export function createGridApi<
         ctx.setActiveCell(active.anchor.rowIndex, active.anchor.colIndex);
       },
       getSelected() {
+        // Rectangles only. With cell selection off none is ever recorded and
+        // this stays [], which is how `selectable={false}` is observable from
+        // the API; the focused cell is `getActiveCell()`, not a selection.
         return ctx
           .getSelectionRects()
           .map((r: { minRow: number; minCol: number; maxRow: number; maxCol: number }) =>
             [r.minRow, r.minCol, r.maxRow, r.maxCol] as [number, number, number, number],
           );
+      },
+      getSelectedLast() {
+        const all = selectedRanges(ctx);
+        const last = all[all.length - 1];
+        return last ? [last.from.row, last.from.col, last.to.row, last.to.col] : undefined;
+      },
+      getSelectedRange() {
+        const all = selectedRanges(ctx);
+        return all.length ? all : undefined;
+      },
+      getSelectedRangeLast() {
+        const all = selectedRanges(ctx);
+        return all[all.length - 1];
       },
       openChart() {
         ctx.chartPanelOpen = true;
@@ -368,6 +420,11 @@ export function createGridApi<
       clearFilter(columnId) {
         ctx.clearColumnFilter(columnId);
       },
+      openContextMenu(event, rowIndex, colIndex) {
+        const columnId = ctx.allColumns[colIndex]?.id;
+        if (columnId == null) return;
+        ctx.openContextMenu(event, rowIndex, colIndex, columnId);
+      },
       refreshEditorOptions(columnId) {
         // Async `editorOptions` are cached per column (or per column+row for a
         // per-row source) so opening an editor twice does not refetch. This
@@ -572,6 +629,30 @@ export function createGridApi<
       },
       autosizeColumn(columnId: string) {
         ctx.autosizeColumn(columnId);
+      },
+      getRowHeight(rowIndex: number) {
+        const own = ctx.rowResizeHeightPx(rowIndex);
+        if (own != null) return own;
+        const declared = ctx.props.rowHeight;
+        return typeof declared === "function" ? declared(rowIndex) : (declared ?? 30);
+      },
+      setRowHeight(rowIndex: number, height: number | null) {
+        ctx.setRowResizeHeight(rowIndex, height);
+      },
+      setColumnCollapsed(columnId: string, collapsed: boolean) {
+        ctx.setColumnCollapsed(columnId, collapsed);
+      },
+      isColumnCollapsed(columnId: string) {
+        return !!ctx.collapsedColumns[columnId];
+      },
+      setRowCollapsed(rowIndex: number, collapsed: boolean) {
+        ctx.setRowCollapsed(rowIndex, collapsed);
+      },
+      getMergedCells() {
+        return (ctx.props.mergedCells ?? []).map((m: { rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }) => ({ ...m }));
+      },
+      isRowCollapsed(rowIndex: number) {
+        return ctx.isRowCollapsed(rowIndex);
       },
       autosizeAllColumns() {
         ctx.autosizeAllColumns();

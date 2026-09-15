@@ -27,12 +27,12 @@ function render(props: Record<string, unknown>): HTMLElement {
 }
 
 const formulaInput = (el: HTMLElement) =>
-  el.querySelector<HTMLInputElement>('input.formula')!
+  el.querySelector<HTMLTextAreaElement>('textarea.formula')!
 const nameBox = (el: HTMLElement) =>
   el.querySelector<HTMLInputElement>('.name-box input')!
 
 /** Type into an input the way a user does, so Svelte sees the event. */
-function type(input: HTMLInputElement, text: string): void {
+function type(input: HTMLInputElement | HTMLTextAreaElement, text: string): void {
   input.value = text
   input.selectionStart = text.length
   input.dispatchEvent(new Event('input', { bubbles: true }))
@@ -60,7 +60,7 @@ describe('SvFormulaBar (DOM)', () => {
     const input = formulaInput(el)
     type(input, '=1+1')
     press(input, 'Enter')
-    expect(onCommit).toHaveBeenCalledWith('=1+1')
+    expect(onCommit).toHaveBeenCalledWith('=1+1', active, 'enter')
   })
 
   it('reverts on Escape rather than committing', () => {
@@ -104,7 +104,7 @@ describe('SvFormulaBar (DOM)', () => {
     const first = el.querySelector<HTMLButtonElement>('.suggestions button')!
     first.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
     flushSync()
-    expect(input.value).toBe('=SUM()')
+    expect(input.value).toBe('=SUM(')
   })
 
   it('moves the highlight with the arrow keys', () => {

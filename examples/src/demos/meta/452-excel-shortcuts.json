@@ -1,0 +1,24 @@
+{
+  "description": "Excel keyboard shortcuts on a Svelte 5 SvGrid with one enableSheet() call: Ctrl+Arrow jumps to the edge of the data region with a run-boundary search that hops gaps instead of running to the last row, Ctrl+Shift+Arrow extends the selection there, Ctrl+A takes the current region and then the sheet, Ctrl+Space and Shift+Space take the column or row, Ctrl+D and Ctrl+R fill down and right, Ctrl+; stamps the date. A whole fill is one undo step. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte excel keyboard shortcuts",
+    "svelte grid ctrl arrow navigation",
+    "svelte spreadsheet fill down",
+    "svelte grid ctrl a select region",
+    "svelte excel muscle memory"
+  ],
+  "faq": [
+    {
+      "question": "How do the shortcuts get onto the grid?",
+      "answer": "enableSheet() registers them once on the grid's shortcut registry; every SvGrid on the page then answers Ctrl+Arrow, Ctrl+Shift+Arrow, Ctrl+A, Ctrl+Space, Shift+Space, Ctrl+D, Ctrl+R and Ctrl+; the way Excel does."
+    },
+    {
+      "question": "What does Ctrl+Arrow do at a gap?",
+      "answer": "It stops at the edge of the current run of filled cells, or at the next filled cell when it starts on a blank one, so it hops across gaps rather than running to the end of the sheet."
+    },
+    {
+      "question": "Is a fill one undo step?",
+      "answer": "Yes. Ctrl+D and Ctrl+R write through the grid's command context in one batch, so Ctrl+Z takes the whole fill back at once, not one cell per press."
+    }
+  ]
+}

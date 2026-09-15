@@ -1,0 +1,24 @@
+{
+  "description": "A three-sheet sales report on the Svelte 5 spreadsheet shell: Orders with XLOOKUP prices and IF discounts, a Products price list, and a Summary where every figure is live: COUNTIF and SUMIF by region, share of a named total, RANK, per-rep attainment with an IFS status, INDEX and MATCH for the best region. Edit an order and the whole page follows across the sheets. Defined names in the Name Box; bands, currency and percent formats ship with the document. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte sales report spreadsheet",
+    "svelte sumif countif by region",
+    "svelte xlookup grid",
+    "svelte spreadsheet defined names",
+    "svelte multi sheet report"
+  ],
+  "faq": [
+    {
+      "question": "Which functions does the report use?",
+      "answer": "XLOOKUP for prices, IF for discounts, COUNTIF and SUMIF by region, RANK for the region order, IFS for the attainment status, INDEX and MATCH for the best region, and SUM over a defined name for the total."
+    },
+    {
+      "question": "How do the formats arrive with the sheet?",
+      "answer": "The bands, the currency and the percent formats are part of the document the demo loads, the same state getState() returns, so a saved report comes back looking as it did."
+    },
+    {
+      "question": "What is in the Name Box?",
+      "answer": "The defined names of the workbook, NetSales among them. Picking one switches to its sheet and selects its range; typing an address jumps to it."
+    }
+  ]
+}

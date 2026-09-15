@@ -38,6 +38,15 @@ export function setFillTranslator(fn: FillTranslator | null): void {
 
 /** The rectangle a command should act on: the active range, or the active cell
  *  alone when nothing is selected. Returns null when there is no active cell. */
+/**
+ * Whether a command may write a cell. `setCellValue` trusts its caller, so
+ * a fill over a protected sheet has to ask for itself and leave the locked
+ * cells as they are, the way the grid's own fill handle does.
+ */
+function writable(cmd: GridCommandContext, r: number, c: number): boolean {
+  return cmd.canEdit?.(r, c) !== false
+}
+
 export function targetRect(cmd: GridCommandContext): Rect | null {
   const last = cmd.ranges[cmd.ranges.length - 1]
   if (last) return last
@@ -63,6 +72,7 @@ export function fillDown(cmd: GridCommandContext): boolean {
     if (minRow === 0) return false
     return cmd.batch(() => {
       for (let c = minCol; c <= maxCol; c += 1) {
+        if (!writable(cmd, minRow, c)) continue
         const value = cmd.getCellValue(minRow - 1, c)
         cmd.setCellValue(minRow, c, translator(value, { rows: 1, cols: 0 }))
       }
@@ -74,6 +84,7 @@ export function fillDown(cmd: GridCommandContext): boolean {
     for (let c = minCol; c <= maxCol; c += 1) {
       const source = cmd.getCellValue(minRow, c)
       for (let r = minRow + 1; r <= maxRow; r += 1) {
+        if (!writable(cmd, r, c)) continue
         cmd.setCellValue(r, c, translator(source, { rows: r - minRow, cols: 0 }))
       }
     }
@@ -91,6 +102,7 @@ export function fillRight(cmd: GridCommandContext): boolean {
     if (minCol === 0) return false
     return cmd.batch(() => {
       for (let r = minRow; r <= maxRow; r += 1) {
+        if (!writable(cmd, r, minCol)) continue
         const value = cmd.getCellValue(r, minCol - 1)
         cmd.setCellValue(r, minCol, translator(value, { rows: 0, cols: 1 }))
       }
@@ -102,6 +114,7 @@ export function fillRight(cmd: GridCommandContext): boolean {
     for (let r = minRow; r <= maxRow; r += 1) {
       const source = cmd.getCellValue(r, minCol)
       for (let c = minCol + 1; c <= maxCol; c += 1) {
+        if (!writable(cmd, r, c)) continue
         cmd.setCellValue(r, c, translator(source, { rows: 0, cols: c - minCol }))
       }
     }
@@ -116,7 +129,9 @@ export function fillSelection(cmd: GridCommandContext, value: unknown): boolean 
   const [minRow, minCol, maxRow, maxCol] = rect
   return cmd.batch(() => {
     for (let r = minRow; r <= maxRow; r += 1) {
-      for (let c = minCol; c <= maxCol; c += 1) cmd.setCellValue(r, c, value)
+      for (let c = minCol; c <= maxCol; c += 1) {
+        if (writable(cmd, r, c)) cmd.setCellValue(r, c, value)
+      }
     }
     return true
   })
@@ -150,7 +165,31 @@ export function stampDate(
 export function copyFromAbove(cmd: GridCommandContext): boolean {
   const active = cmd.activeCell
   if (!active || active.rowIndex === 0) return false
+  if (!writable(cmd, active.rowIndex, active.colIndex)) return false
   const value = cmd.getCellValue(active.rowIndex - 1, active.colIndex)
+  cmd.setCellValue(active.rowIndex, active.colIndex, value)
+  return true
+}
+
+/**
+ * Ctrl+Shift+". The VALUE of the cell above: what a formula there shows,
+ * not the formula, so a running total can be frozen as a number. With an
+ * engine attached the evaluated value is what goes in; without one there is
+ * nothing but the text, which is what Ctrl+' copies. An error above copies
+ * nothing.
+ */
+export function copyValueFromAbove(cmd: GridCommandContext): boolean {
+  const active = cmd.activeCell
+  if (!active || active.rowIndex === 0) return false
+  if (!writable(cmd, active.rowIndex, active.colIndex)) return false
+  const probe = valueProbe
+  const raw = cmd.getCellValue(active.rowIndex - 1, active.colIndex)
+  let value: unknown = raw
+  if (probe) {
+    const shown = probe(active.rowIndex - 1, active.colIndex)
+    if (shown !== null && typeof shown === 'object') return false
+    if (shown !== undefined && shown !== null) value = typeof shown === 'boolean' ? (shown ? 'TRUE' : 'FALSE') : String(shown)
+  }
   cmd.setCellValue(active.rowIndex, active.colIndex, value)
   return true
 }

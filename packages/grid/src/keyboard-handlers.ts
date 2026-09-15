@@ -7,7 +7,8 @@ import {
 } from "./index";
 import "./sv-grid-scrollbar";
 
-import { getKeyboardIntent, getNextActiveCell } from "./keyboard";
+import { getKeyboardIntent, getNextActiveCell, getEntryStep, pastCollapsed } from "./keyboard";
+import { stepPastMerge } from "./merges";
 import { hasGridShortcuts, runGridShortcuts } from "./shortcut-registry";
 import { undoHistory, redoHistory } from "./history";
 import { buildCommandContext } from "./command-context";
@@ -44,6 +45,14 @@ export function createKeyboard<
         return;
       }
       if (lower === "v") {
+        // A consumer taking the paste over wants the browser's own `paste`
+        // event, which carries the clipboard's HTML unsanitised; the key is
+        // left alone and the async API is armed as the fallback for a
+        // browser that never delivers the event to a non-editable element.
+        if (ctx.props.onPasteClipboard) {
+          ctx.armPasteFallback();
+          return;
+        }
         // Secure context: read via the async Clipboard API and swallow the
         // key. Insecure context (no navigator.clipboard): DON'T preventDefault
         // so the browser delivers a native `paste` event to `onGridPaste`.
@@ -207,25 +216,74 @@ export function createKeyboard<
       const usable = Math.max(0, clientHeight - headerHeight)
       return Math.max(1, Math.floor(usable / Math.max(rowHeight, 1)) - 1)
     }
-    const next = getNextActiveCell(current, intent, {
+    const bounds = {
       maxRow: Math.max(ctx.allRows.length - 1, 0),
       maxCol: Math.max(ctx.allColumns.length - 1, 0),
-      pageSize: pageStep(),
-    });
-    ctx.setActiveCell(next.rowIndex, next.colIndex);
-    ctx.scrollActiveCellIntoView(next.rowIndex, next.colIndex);
-    // Shift extends the selection ONLY for arrow keys (Excel-style).
-    // Shift+Enter / Shift+Tab just change direction; they don't grow the
-    // range, otherwise hammering Shift+Tab to backspace through a row
-    // would paint a creeping rectangle behind the cursor.
-    const shouldExtend =
+    };
+    // Collapsed rows and columns are stepped over, as a sheet's hidden ones.
+    const collapsed = {
+      isRowCollapsed: (i: number) => ctx.isRowCollapsed(i) as boolean,
+      isColumnCollapsed: (i: number) => !!ctx.collapsedColumns[ctx.allColumns[i]?.id],
+    };
+    // Enter and Tab are entry keys: they remember a Tab run and stay inside
+    // a selected block (getEntryStep). ArrowDown shares the moveDown intent
+    // and is a plain move, hence the key check.
+    if (
+      (event.key === "Enter" || event.key === "Tab") &&
+      (intent === "moveDown" || intent === "moveUp" || intent === "tabNext" || intent === "tabPrev")
+    ) {
+      const step = getEntryStep(current, intent, {
+        ...bounds,
+        tabOrigin: ctx.tabRunOrigin,
+        range: ctx.activeRangeRect(),
+        collapsed,
+      });
+      const landed = stepPastMerge(ctx.mergeIndex, current, step.cell, bounds);
+      ctx.setActiveCell(landed.rowIndex, landed.colIndex);
+      ctx.tabRunOrigin = step.tabOrigin;
+      ctx.scrollActiveCellIntoView(landed.rowIndex, landed.colIndex);
+      if (!step.withinRange) ctx.setSelection(landed.rowIndex, landed.colIndex);
+      return;
+    }
+    // Shift+Arrow grows the range from its far corner, and the active cell
+    // stays where it is, as in Excel: it is the cell the formula bar shows
+    // and the one the next keystroke edits. Shift+Home, Shift+End,
+    // Shift+PageUp / PageDown and Ctrl+Shift+Home / End grow it the same
+    // way, to where the plain key would have moved. Shift+Enter and
+    // Shift+Tab never come this way (they are entry keys, above), so
+    // hammering Shift+Tab back through a row cannot paint a creeping
+    // rectangle. A grid without cell selection has no range to grow and
+    // moves the active cell instead.
+    const extending =
       event.shiftKey &&
+      ctx.enableCellSelectionEffective !== false &&
       (intent === "moveLeft" ||
         intent === "moveRight" ||
         intent === "moveUp" ||
-        intent === "moveDown");
-    if (shouldExtend) ctx.extendSelection(next.rowIndex, next.colIndex);
-    else ctx.setSelection(next.rowIndex, next.colIndex);
+        intent === "moveDown" ||
+        intent === "rowStart" ||
+        intent === "rowEnd" ||
+        intent === "pageUp" ||
+        intent === "pageDown" ||
+        intent === "gridStart" ||
+        intent === "gridEnd");
+    if (extending) {
+      const anchored = !!ctx.selectionRange?.anchor;
+      if (!anchored) ctx.setSelection(current.rowIndex, current.colIndex);
+      const from = anchored ? ctx.selectionRange.focus ?? current : current;
+      const next = stepPastMerge(ctx.mergeIndex, from, pastCollapsed(from, getNextActiveCell(from, intent, { ...bounds, pageSize: pageStep() }), bounds, collapsed), bounds);
+      ctx.extendSelection(next.rowIndex, next.colIndex);
+      // Scroll along the axis of the key only, as Excel does: Shift+Right
+      // brings the new column into view without moving the rows, so a
+      // whole-column selection (its far corner on the last row) stays put.
+      const sideways = intent === "moveLeft" || intent === "moveRight" || intent === "rowStart" || intent === "rowEnd";
+      ctx.scrollActiveCellIntoView(sideways ? current.rowIndex : next.rowIndex, sideways ? next.colIndex : current.colIndex);
+      return;
+    }
+    const next = stepPastMerge(ctx.mergeIndex, current, pastCollapsed(current, getNextActiveCell(current, intent, { ...bounds, pageSize: pageStep() }), bounds, collapsed), bounds);
+    ctx.setActiveCell(next.rowIndex, next.colIndex);
+    ctx.scrollActiveCellIntoView(next.rowIndex, next.colIndex);
+    ctx.setSelection(next.rowIndex, next.colIndex);
   }
 
   function onWindowKeydown(event: KeyboardEvent) {

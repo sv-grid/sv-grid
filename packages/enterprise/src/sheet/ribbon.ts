@@ -16,18 +16,29 @@
  * and set `emits` instead. The renderer reports those through `onAction` and
  * the host decides what a dialog looks like, which is the same split
  * `setFormatDialogHandler` already makes.
+ *
+ * Layout is Excel's, and it is in the data too. A group is a block three
+ * rows high: a LARGE button (icon over label) takes a whole column, SMALL
+ * buttons stack three to a column, and each small item says which row it
+ * sits on. The renderer lays that out on a grid, which is what makes Cut /
+ * Copy / Paste Special line up under each other beside a tall Paste, the
+ * way they do in Excel, without per-group pixel widths.
  */
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
-  applyFormat, toggleFormat, preset, autoSum, structural,
-  getFormatTarget, getWorkbook,
-  type SheetCommand,
+  applyFormat, toggleFormat, preset, autoSum, structural, clearFormats,
+  getFormatTarget, getWorkbook, withFormatUndo, nudgeFontSize, activeEntry,
+  FONT_SIZES, DEFAULT_FONT_SIZE, applyBorders, formatAllowed, raiseRibbonAction,
+  type SheetCommand, type BorderPreset,
 } from './shortcuts'
+export { FONT_SIZES, applyBorders, type BorderPreset } from './shortcuts'
+import { insertRows, deleteRows, getStructureTarget } from './structure'
 import { fillDown, fillRight, targetRect } from './commands'
 import type { Rect } from './navigate'
-import { freezeAtActiveCell, unfreeze } from './freeze'
-import { FORMAT_PRESETS, type FormatPresetName } from './number-format'
+import { FORMAT_PRESETS, formatCategory, type FormatPresetName } from './number-format'
 import type { CellFormatEntry } from './format-store'
+import type { RibbonIconName } from './ribbon-icons'
+import { ALL_COLOURS } from './palette'
 
 /** What the host has to render for one control. */
 export type RibbonItemKind =
@@ -35,50 +46,100 @@ export type RibbonItemKind =
   | 'button'
   /** Runs, and paints itself on when `isOn` reports true for the selection. */
   | 'toggle'
-  /** A dropdown; `run` receives the chosen value. */
+  /** A dropdown showing the selection's current value; `run` receives the pick. */
   | 'select'
-  /** A row of colour chips; `run` receives the chosen colour. */
-  | 'swatches'
+  /**
+   * Excel's split button: the face applies the last value picked (or
+   * `initial`), the arrow opens a menu of `options`. A `palette` menu is
+   * the colour picker; otherwise it is a list, with an icon per entry.
+   */
+  | 'menu'
+  /**
+   * Excel's plain menu button (Format, Sort & Filter): the face opens the
+   * list and each entry is an action of its own, raised through `emits`
+   * or run through `run(cmd, value)`. Entries with `heading` are the
+   * section labels Excel prints between the groups.
+   */
+  | 'dropdown'
+
+export type RibbonOption = {
+  value: string
+  label: string
+  /** List menus: the glyph beside the label. */
+  icon?: RibbonIconName
+  /** Dropdowns: the entry raises this action rather than running the item. */
+  emits?: RibbonActionId
+  /** Dropdowns: printed after the label, the way Excel prints Ctrl+1. */
+  keys?: string
+  /** Dropdowns: a section label, not an entry. */
+  heading?: boolean
+  /** Dropdowns: the entry is a toggle, lit while its action is active. */
+  toggle?: boolean
+}
+
 
 export type RibbonItem = {
   id: string
-  /** The button face. Kept to text and typographic glyphs on purpose: the
-   *  grid ships no icon set, and a ribbon of emoji reads as a toy. */
+  /** The button face, or the label under a large button. */
   label: string
   /** Long form for the tooltip and the accessible name. */
   title: string
-  /**
-   * Draw a shape instead of printing `label`.
-   *
-   * Only the alignment controls need one: three identical `≡` glyphs are
-   * indistinguishable, and the obvious arrow characters have patchy font
-   * coverage. The renderer draws these as CSS bars, so they look the same
-   * everywhere without an icon font. `label` stays as the fallback.
-   */
-  icon?: 'align-left' | 'align-center' | 'align-right'
+  /** Drawn on the face. Without one the face prints `label`, which is what
+   *  Bold, Italic and the number-format buttons want: B, I, $, %. */
+  icon?: RibbonIconName
   /** Shown after the title in the tooltip, the way Excel does it. */
   keys?: string
   kind: RibbonItemKind
-  /** Wider face for a text label that will not fit a square button. */
+  /**
+   * Excel's two button sizes. A large button is an icon over a label and
+   * fills the group's height; a small one is a 24px strip. Large is the
+   * command a group exists for (Paste, Sort & Filter, Text to Columns);
+   * everything else is small.
+   */
+  size?: 'large' | 'small'
+  /** Small buttons only: which of the group's three rows this sits on. */
+  row?: 1 | 2 | 3
+  /** Small buttons only: print the label beside the icon. */
   wide?: boolean
   /** Run the action. Returns false when it declined (nothing selected, no
    *  store attached), which the renderer uses to avoid claiming it worked. */
   run?: (cmd: GridCommandContext, value?: string) => boolean
   /** Toggles only. */
   isOn?: (cmd: GridCommandContext) => boolean
+  /**
+   * Lit while this action is among the shell's active actions, for an item
+   * that runs rather than emits: Merge & Center's face lights while the
+   * active cell is merged, as Excel's does.
+   */
+  lit?: RibbonActionId
   /** Defaults to enabled. Reports false when the action has nothing to act
    *  on, so the button greys out rather than doing nothing on click. */
   isEnabled?: (cmd: GridCommandContext) => boolean
-  /** `select` and `swatches` only. */
-  options?: ReadonlyArray<{ value: string; label: string }>
+  /** `select` and `menu` only. */
+  options?: ReadonlyArray<RibbonOption>
+  /** `select` only: the value the selection currently has, so the control
+   *  reads "Calibri" or "General" for the active cell rather than a blank. */
+  current?: (cmd: GridCommandContext) => string
+  /** `menu` only: render `options` as Excel's colour grid. */
+  palette?: boolean
+  /** Palette menus: the "No Fill" / "Automatic" entry at the top. */
+  none?: RibbonOption
+  /** Menus: the value the face applies before anything has been picked.
+   *  Excel starts Fill Colour on yellow and Font Colour on red. */
+  initial?: string
   /** Set instead of `run` when the action needs chrome this layer does not
    *  own. The renderer calls `onAction(emits, cmd)`. */
   emits?: RibbonActionId
+  /**
+   * Dropdowns only: Excel's split button. The face runs the item (Paste
+   * pastes) and the arrow opens the entries, each an action of its own;
+   * an entry without `emits` runs the item with its value.
+   */
+  split?: boolean
 }
 
 /** Actions the ribbon delegates to the host rather than running itself. */
 export type RibbonActionId =
-  | 'paste'
   | 'paste-special'
   | 'format-cells'
   | 'find-replace'
@@ -94,20 +155,64 @@ export type RibbonActionId =
   | 'sort-asc'
   | 'sort-desc'
   | 'toggle-filter'
+  | 'freeze-panes'
+  | 'unfreeze-panes'
+  | 'hide-rows'
+  | 'hide-columns'
+  | 'unhide-rows'
+  | 'unhide-columns'
+  | 'row-height'
+  | 'column-width'
+  | 'autofit-rows'
+  | 'autofit-columns'
+  | 'paste-values'
+  | 'paste-formulas'
+  | 'paste-formats'
+  | 'paste-transpose'
+  | 'format-painter'
+  | 'protect-sheet'
+  | 'unprotect-sheet'
+  | 'toggle-lock'
+  | 'new-comment'
+  | 'edit-comment'
+  | 'delete-comment'
+  | 'prev-comment'
+  | 'next-comment'
+  | 'toggle-comments'
+  | 'data-validation'
+  | 'open-list'
+  | 'freeze-top-row'
+  | 'freeze-first-column'
+  | 'toggle-gridlines'
+  | 'toggle-formula-bar'
+  | 'toggle-headings'
+  | 'toggle-ribbon'
+  | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
+  | 'cf-top10' | 'cf-bottom10' | 'cf-above-average' | 'cf-below-average'
+  | 'cf-data-bar' | 'cf-color-scale-3' | 'cf-color-scale-2' | 'cf-icon-set'
+  | 'cf-clear-selection' | 'cf-clear-sheet' | 'cf-manage'
+  | 'merge-center' | 'merge-across' | 'merge-cells' | 'unmerge-cells'
 
 export type RibbonGroup = {
   id: string
   /** Printed under the group, which is what makes a ribbon a ribbon. */
   label: string
+  /** What the group's one button shows once the band has folded it. */
+  icon?: RibbonIconName
   /**
-   * How wide the control block may grow before it wraps, in px.
+   * How the small items are arranged.
    *
-   * Left to the renderer this is one width for every group, and the controls
-   * then wrap wherever that happens to fall: the Clipboard group breaks after
-   * "Paste Cut" and drops "Copy" onto a line of its own. Excel's groups are
-   * each sized to their contents, so each one says how wide it wants to be.
+   * `grid` (the default) is Excel's column model: items on the same row
+   * line up in columns, so a stack of Cut / Copy / Paste Special is one
+   * neat column and AutoSum / Fill / Clear another. `flow` lets each row
+   * run freely, which is what the Font group needs: a wide font box next
+   * to a size box on row one, and a run of narrow B I U buttons under it,
+   * with nothing forcing the two rows into shared columns.
    */
-  width?: number
+  layout?: 'grid' | 'flow'
+  /** Excel's dialog box launcher: the small arrow in the group's corner
+   *  that opens the full dialog for what the group does. */
+  launcher?: RibbonActionId
   items: ReadonlyArray<RibbonItem>
 }
 
@@ -138,7 +243,15 @@ function rectsOf(cmd: GridCommandContext): ReadonlyArray<Rect> {
 /** Formatting needs somewhere to write. Without a store the keyboard
  *  bindings decline, so the buttons grey out for the same reason. */
 function canFormat(cmd: GridCommandContext): boolean {
-  return getFormatTarget() !== null && hasTarget(cmd)
+  const target = getFormatTarget()
+  if (!target || !hasTarget(cmd)) return false
+  return target.guard?.(rectsOf(cmd)) !== false
+}
+
+/** Insert and Delete grey out where the sheet refuses structural edits. */
+function canRestructure(): boolean {
+  const target = getStructureTarget()
+  return !target || target.canApply?.({ kind: 'insertRows', at: 0, count: 1 }) !== false
 }
 
 /**
@@ -184,7 +297,7 @@ function alignItem(align: 'left' | 'center' | 'right', title: string): RibbonIte
   return {
     id: `align-${align}`,
     label: '≡',
-    icon: `align-${align}`,
+    icon: `align-${align}` as RibbonIconName,
     title,
     kind: 'toggle',
     run: (cmd) => applyFormat(cmd, { align }),
@@ -282,52 +395,56 @@ function countLeading(text: string, ch: string): number {
   return n
 }
 
-/** Excel's default fill palette, trimmed to one readable row. */
-const FILL_COLOURS = [
-  { value: 'transparent', label: 'No fill' },
-  { value: '#fee2e2', label: 'Red' },
-  { value: '#ffedd5', label: 'Orange' },
-  { value: '#fef9c3', label: 'Yellow' },
-  { value: '#dcfce7', label: 'Green' },
-  { value: '#dbeafe', label: 'Blue' },
-  { value: '#ede9fe', label: 'Purple' },
-  { value: '#e5e7eb', label: 'Grey' },
-] as const
+// ---------------------------------------------------------------------------
+// Fonts, sizes, borders
+// ---------------------------------------------------------------------------
 
-const TEXT_COLOURS = [
-  { value: 'inherit', label: 'Automatic' },
-  { value: '#b91c1c', label: 'Red' },
-  { value: '#c2410c', label: 'Orange' },
-  { value: '#15803d', label: 'Green' },
-  { value: '#1d4ed8', label: 'Blue' },
-  { value: '#6d28d9', label: 'Purple' },
-  { value: '#64748b', label: 'Grey' },
-] as const
-
-const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 24].map((n) => ({
-  value: String(n), label: String(n),
-}))
-
-const FONT_FAMILIES = [
+/**
+ * The fonts a spreadsheet user reaches for, with the stacks that make each
+ * render on a machine that lacks it. The empty value is the theme's own
+ * font, which is what "Default" means here and what a fresh cell has.
+ */
+export const FONT_FAMILIES: ReadonlyArray<{ value: string; label: string }> = [
   { value: '', label: 'Default' },
-  { value: 'ui-sans-serif, system-ui, sans-serif', label: 'Sans' },
-  { value: 'ui-serif, Georgia, serif', label: 'Serif' },
-  { value: 'ui-monospace, Menlo, monospace', label: 'Mono' },
+  { value: 'Aptos, "Aptos Narrow", "Segoe UI", sans-serif', label: 'Aptos' },
+  { value: 'Calibri, Carlito, "Segoe UI", sans-serif', label: 'Calibri' },
+  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
+  { value: '"Segoe UI", system-ui, sans-serif', label: 'Segoe UI' },
+  { value: 'Verdana, Geneva, sans-serif', label: 'Verdana' },
+  { value: 'Georgia, "Times New Roman", serif', label: 'Georgia' },
+  { value: '"Times New Roman", Times, serif', label: 'Times New Roman' },
+  { value: '"Courier New", Courier, monospace', label: 'Courier New' },
+  { value: 'ui-monospace, Menlo, Consolas, monospace', label: 'Consolas' },
 ]
 
 const NUMBER_FORMATS: ReadonlyArray<{ value: FormatPresetName; label: string }> = [
   { value: 'general', label: 'General' },
   { value: 'number', label: 'Number' },
   { value: 'currency', label: 'Currency' },
-  { value: 'percent', label: 'Percent' },
+  { value: 'percent', label: 'Percentage' },
   { value: 'date', label: 'Date' },
   { value: 'time', label: 'Time' },
   { value: 'scientific', label: 'Scientific' },
 ]
 
+
+const BORDER_OPTIONS: ReadonlyArray<{ value: BorderPreset; label: string; icon: RibbonIconName }> = [
+  { value: 'bottom', label: 'Bottom Border', icon: 'border-bottom' },
+  { value: 'top', label: 'Top Border', icon: 'border-top' },
+  { value: 'left', label: 'Left Border', icon: 'border-left' },
+  { value: 'right', label: 'Right Border', icon: 'border-right' },
+  { value: 'none', label: 'No Border', icon: 'border-none' },
+  { value: 'all', label: 'All Borders', icon: 'border-all' },
+  { value: 'outside', label: 'Outside Borders', icon: 'border-outside' },
+  { value: 'thick-bottom', label: 'Thick Bottom Border', icon: 'border-thick-bottom' },
+]
+
+
 // ---------------------------------------------------------------------------
 // The tabs
 // ---------------------------------------------------------------------------
+
+const small = (row: 1 | 2 | 3, item: Omit<RibbonItem, 'row'>): RibbonItem => ({ ...item, row })
 
 const HOME: RibbonTab = {
   id: 'home',
@@ -335,182 +452,297 @@ const HOME: RibbonTab = {
   groups: [
     {
       id: 'clipboard',
-      width: 118,
+      icon: 'paste',
       label: 'Clipboard',
+      launcher: 'paste-special',
       items: [
+        // Excel's Clipboard group: the large Paste, and beside it Cut, Copy and
+        // Format Painter as icons alone, which is how Excel draws them at
+        // every width but the widest. Paste is a split button: the face
+        // pastes, the arrow opens the paste kinds with Paste Special... last.
         {
-          id: 'paste', label: 'Paste', title: 'Paste', keys: 'Ctrl+V',
-          kind: 'button', wide: true, emits: 'paste',
+          id: 'paste', label: 'Paste', title: 'Paste', keys: 'Ctrl+V', icon: 'paste',
+          kind: 'dropdown', split: true, size: 'large',
+          run: (cmd) => { void cmd.paste(); return true },
+          options: [
+            { value: 'paste', label: 'Paste', keys: 'Ctrl+V', icon: 'paste' },
+            { value: 'paste-formulas', label: 'Formulas', emits: 'paste-formulas' },
+            { value: 'paste-values', label: 'Values', emits: 'paste-values' },
+            { value: 'paste-formats', label: 'Formatting', emits: 'paste-formats' },
+            { value: 'paste-transpose', label: 'Transpose', emits: 'paste-transpose' },
+            { value: 'paste-special', label: 'Paste Special...', keys: 'Ctrl+Shift+V', emits: 'paste-special' },
+          ],
         },
-        {
-          id: 'cut', label: 'Cut', title: 'Cut', keys: 'Ctrl+X', kind: 'button',
+        // The same copy and cut as Ctrl+C and Ctrl+X: the selection, cell
+        // by cell through the sheet's clipboard hook. They went through the
+        // api's copyToClipboard, which is the export, and put the whole
+        // sheet with its column letters on the clipboard whatever was
+        // selected; Cut then blanked the selection by hand.
+        small(1, {
+          id: 'cut', label: 'Cut', title: 'Cut', keys: 'Ctrl+X', icon: 'cut', kind: 'button',
           isEnabled: hasTarget,
-          run: (cmd) => {
-            const rect = targetRect(cmd)
-            if (!rect) return false
-            // Copy first, then blank: a cut that cleared before the clipboard
-            // write landed would lose the cells outright.
-            void cmd.api.copyToClipboard()
-            return cmd.batch(() => {
-              const [minRow, minCol, maxRow, maxCol] = rect
-              for (let r = minRow; r <= maxRow; r += 1) {
-                for (let c = minCol; c <= maxCol; c += 1) cmd.setCellValue(r, c, '')
-              }
-              return true
-            })
-          },
-        },
-        {
-          id: 'copy', label: 'Copy', title: 'Copy', keys: 'Ctrl+C', kind: 'button',
+          run: (cmd) => { void cmd.cut(); return true },
+        }),
+        small(2, {
+          id: 'copy', label: 'Copy', title: 'Copy', keys: 'Ctrl+C', icon: 'copy', kind: 'button',
           isEnabled: hasTarget,
-          run: (cmd) => { void cmd.api.copyToClipboard(); return true },
-        },
-        {
-          id: 'paste-special', label: 'Paste Special', title: 'Paste Special',
-          keys: 'Ctrl+Shift+V', kind: 'button', wide: true, emits: 'paste-special',
-        },
+          run: (cmd) => { cmd.copy(); return true },
+        }),
+        // Raised: the shell holds the copied formats and paints them onto the
+        // next selection. The button reads pressed while it is armed.
+        small(3, {
+          id: 'format-painter', label: 'Format Painter', title: 'Format Painter',
+          icon: 'format-painter', kind: 'button', emits: 'format-painter',
+        }),
       ],
     },
     {
       id: 'font',
-      width: 190,
+      icon: 'font',
       label: 'Font',
+      layout: 'flow',
+      launcher: 'format-cells',
       items: [
-        {
-          id: 'font-family', label: 'Font', title: 'Font family', kind: 'select',
+        small(1, {
+          id: 'font-family', label: 'Font', title: 'Font', kind: 'select',
           options: FONT_FAMILIES, isEnabled: canFormat,
+          current: (cmd) => activeEntry(cmd)?.fontFamily ?? '',
           run: (cmd, value) => applyFormat(cmd, { fontFamily: value || undefined }),
-        },
-        {
-          id: 'font-size', label: 'Size', title: 'Font size', kind: 'select',
-          options: FONT_SIZES, isEnabled: canFormat,
-          run: (cmd, value) => applyFormat(cmd, { fontSize: value ? Number(value) : undefined }),
-        },
-        { id: 'bold', label: 'B', title: 'Bold', keys: 'Ctrl+B', ...styleToggle('bold') } as RibbonItem,
-        { id: 'italic', label: 'I', title: 'Italic', keys: 'Ctrl+I', ...styleToggle('italic') } as RibbonItem,
-        { id: 'underline', label: 'U', title: 'Underline', keys: 'Ctrl+U', ...styleToggle('underline') } as RibbonItem,
-        { id: 'strike', label: 'S', title: 'Strikethrough', keys: 'Ctrl+5', ...styleToggle('strike') } as RibbonItem,
-        {
-          id: 'fill', label: 'Fill', title: 'Fill colour', kind: 'swatches',
-          options: FILL_COLOURS as unknown as RibbonItem['options'],
+        }),
+        small(1, {
+          id: 'font-size', label: 'Size', title: 'Font Size', kind: 'select',
+          options: FONT_SIZES.map((n) => ({ value: String(n), label: String(n) })),
           isEnabled: canFormat,
+          current: (cmd) => String(activeEntry(cmd)?.fontSize ?? DEFAULT_FONT_SIZE),
           run: (cmd, value) =>
-            applyFormat(cmd, { fill: value === 'transparent' ? undefined : value }),
-        },
-        {
-          id: 'text-colour', label: 'A', title: 'Text colour', kind: 'swatches',
-          options: TEXT_COLOURS as unknown as RibbonItem['options'],
-          isEnabled: canFormat,
+            applyFormat(cmd, { fontSize: Number(value) === DEFAULT_FONT_SIZE ? undefined : Number(value) }),
+        }),
+        small(1, {
+          id: 'font-grow', label: 'A', title: 'Increase Font Size', keys: 'Ctrl+Shift+>',
+          icon: 'font-grow', kind: 'button', isEnabled: canFormat, run: fromCommand(nudgeFontSize(1)),
+        }),
+        small(1, {
+          id: 'font-shrink', label: 'A', title: 'Decrease Font Size', keys: 'Ctrl+Shift+<',
+          icon: 'font-shrink', kind: 'button', isEnabled: canFormat, run: fromCommand(nudgeFontSize(-1)),
+        }),
+        small(2, { id: 'bold', label: 'B', title: 'Bold', keys: 'Ctrl+B', ...styleToggle('bold') } as RibbonItem),
+        small(2, { id: 'italic', label: 'I', title: 'Italic', keys: 'Ctrl+I', ...styleToggle('italic') } as RibbonItem),
+        small(2, { id: 'underline', label: 'U', title: 'Underline', keys: 'Ctrl+U', ...styleToggle('underline') } as RibbonItem),
+        small(2, { id: 'strike', label: 'S', title: 'Strikethrough', keys: 'Ctrl+5', ...styleToggle('strike') } as RibbonItem),
+        small(2, {
+          id: 'borders', label: 'Borders', title: 'Borders', icon: 'borders', kind: 'menu',
+          options: BORDER_OPTIONS, isEnabled: canFormat,
+          run: (cmd, value) => applyBorders(cmd, (value || 'bottom') as BorderPreset),
+        }),
+        small(2, {
+          id: 'fill', label: 'Fill Color', title: 'Fill Color', icon: 'fill-colour', kind: 'menu',
+          palette: true, none: { value: 'transparent', label: 'No Fill' }, initial: '#FFFF00',
+          options: ALL_COLOURS, isEnabled: canFormat,
           run: (cmd, value) =>
-            applyFormat(cmd, { color: value === 'inherit' ? undefined : value }),
-        },
+            applyFormat(cmd, { fill: !value || value === 'transparent' ? undefined : value }),
+        }),
+        small(2, {
+          id: 'text-colour', label: 'A', title: 'Font Color', icon: 'font-colour', kind: 'menu',
+          palette: true, none: { value: 'inherit', label: 'Automatic' }, initial: '#FF0000',
+          options: ALL_COLOURS, isEnabled: canFormat,
+          run: (cmd, value) =>
+            applyFormat(cmd, { color: !value || value === 'inherit' ? undefined : value }),
+        }),
       ],
     },
     {
       id: 'alignment',
-      width: 108,
+      icon: 'align-center',
       label: 'Alignment',
+      layout: 'flow',
+      launcher: 'format-cells',
       items: [
-        alignItem('left', 'Align left'),
-        alignItem('center', 'Center'),
-        alignItem('right', 'Align right'),
-        {
-          id: 'wrap', label: 'Wrap', title: 'Wrap text', kind: 'toggle', wide: true,
+        small(1, {
+          id: 'wrap', label: 'Wrap Text', title: 'Wrap Text', icon: 'wrap', kind: 'toggle', wide: true,
           run: (cmd) => toggleWrap(cmd),
           isOn: (cmd) => everyCellHas(cmd, (entry) => entry?.wrap === true),
           isEnabled: canFormat,
-        },
+        }),
+        small(2, alignItem('left', 'Align Left')),
+        small(2, alignItem('center', 'Center')),
+        small(2, alignItem('right', 'Align Right')),
+        // Excel's split button: the face merges and centres, the arrow
+        // opens the kinds. Raised for the shell, which keeps the merges
+        // per sheet and hands them to the grid.
+        small(3, {
+          id: 'merge', label: 'Merge & Center', title: 'Merge & Center', icon: 'merge',
+          kind: 'dropdown', split: true, wide: true, lit: 'merge-center',
+          // Greyed on a protected sheet, as Excel's is: merging is a format.
+          isEnabled: canFormat,
+          run: (cmd) => raiseRibbonAction('merge-center', cmd),
+          options: [
+            { value: 'merge-center', label: 'Merge & Center', icon: 'merge', emits: 'merge-center' },
+            { value: 'merge-across', label: 'Merge Across', emits: 'merge-across' },
+            { value: 'merge-cells', label: 'Merge Cells', emits: 'merge-cells' },
+            { value: 'unmerge-cells', label: 'Unmerge Cells', icon: 'unmerge', emits: 'unmerge-cells' },
+          ],
+        }),
       ],
     },
     {
       id: 'number',
-      width: 176,
+      icon: 'number',
       label: 'Number',
+      layout: 'flow',
+      launcher: 'format-cells',
       items: [
-        {
-          id: 'num-format', label: 'Format', title: 'Number format', kind: 'select',
+        small(1, {
+          id: 'num-format', label: 'General', title: 'Number Format', kind: 'select',
           options: NUMBER_FORMATS, isEnabled: canFormat,
+          // The category, not the exact pattern: a typed 12% carries 0%,
+          // and Excel's combo calls that Percentage too. A pattern outside
+          // every category shows as itself.
+          current: (cmd) => {
+            const fmt = activeEntry(cmd)?.numFmt
+            const { category } = formatCategory(fmt)
+            return category === 'custom' ? fmt ?? 'general' : category
+          },
           run: (cmd, value) =>
             applyFormat(cmd, { numFmt: FORMAT_PRESETS[value as FormatPresetName] }),
-        },
-        presetItem('fmt-currency', '$', 'Currency format', 'currency', 'Ctrl+Shift+4'),
-        presetItem('fmt-percent', '%', 'Percent format', 'percent', 'Ctrl+Shift+5'),
-        presetItem('fmt-number', ',', 'Thousands format', 'number', 'Ctrl+Shift+1'),
-        {
-          id: 'dec-more', label: '.0→', title: 'Increase decimal', kind: 'button',
+        }),
+        small(2, presetItem('fmt-currency', '$', 'Accounting Number Format', 'currency', 'Ctrl+Shift+4')),
+        small(2, presetItem('fmt-percent', '%', 'Percent Style', 'percent', 'Ctrl+Shift+5')),
+        small(2, presetItem('fmt-number', ',', 'Comma Style', 'number', 'Ctrl+Shift+1')),
+        small(2, {
+          id: 'dec-more', label: '.00', title: 'Increase Decimal', icon: 'dec-more', kind: 'button',
           isEnabled: canFormat, run: nudgeDecimals(1),
-        },
-        {
-          id: 'dec-less', label: '←.0', title: 'Decrease decimal', kind: 'button',
+        }),
+        small(2, {
+          id: 'dec-less', label: '.0', title: 'Decrease Decimal', icon: 'dec-less', kind: 'button',
           isEnabled: canFormat, run: nudgeDecimals(-1),
-        },
-        {
-          id: 'format-cells', label: 'Format Cells', title: 'Format Cells',
-          keys: 'Ctrl+1', kind: 'button', wide: true, emits: 'format-cells',
-        },
+        }),
       ],
     },
     {
       id: 'cells',
-      width: 128,
+      icon: 'table',
       label: 'Cells',
       items: [
+        small(1, {
+          id: 'insert', label: 'Insert', title: 'Insert Cells', keys: 'Ctrl+Shift++',
+          icon: 'insert-cells', kind: 'button', wide: true,
+          // A plain cell is ambiguous for the keystroke, which declines; the
+          // button behaves as Excel's does with a cell selected and inserts
+          // a row, shifting the sheet down.
+          run: (cmd) => structural(cmd, 'insert') || insertRows(cmd),
+          isEnabled: canRestructure,
+        }),
+        small(2, {
+          id: 'delete', label: 'Delete', title: 'Delete Cells', keys: 'Ctrl+-',
+          icon: 'delete-cells', kind: 'button', wide: true,
+          run: (cmd) => structural(cmd, 'delete') || deleteRows(cmd),
+          isEnabled: canRestructure,
+        }),
+        // Excel's Format menu: Cell Size, Visibility, and Format Cells at
+        // the end. Each entry is raised for the shell, which owns the size
+        // dialogs and keeps hidden lines per sheet.
+        small(3, {
+          id: 'format', label: 'Format', title: 'Format', icon: 'format-cells', kind: 'dropdown', wide: true,
+          options: [
+            { value: 'cell-size', label: 'Cell Size', heading: true },
+            { value: 'row-height', label: 'Row Height...', emits: 'row-height' },
+            { value: 'autofit-rows', label: 'AutoFit Row Height', emits: 'autofit-rows' },
+            { value: 'column-width', label: 'Column Width...', emits: 'column-width' },
+            { value: 'autofit-columns', label: 'AutoFit Column Width', emits: 'autofit-columns' },
+            { value: 'visibility', label: 'Visibility', heading: true },
+            { value: 'hide-rows', label: 'Hide Rows', keys: 'Ctrl+9', emits: 'hide-rows' },
+            { value: 'hide-columns', label: 'Hide Columns', keys: 'Ctrl+0', emits: 'hide-columns' },
+            { value: 'unhide-rows', label: 'Unhide Rows', keys: 'Ctrl+Shift+9', emits: 'unhide-rows' },
+            { value: 'unhide-columns', label: 'Unhide Columns', keys: 'Ctrl+Shift+0', emits: 'unhide-columns' },
+            { value: 'protection', label: 'Protection', heading: true },
+            { value: 'lock-cell', label: 'Lock Cell', icon: 'lock', emits: 'toggle-lock', toggle: true },
+            { value: 'format-cells', label: 'Format Cells...', keys: 'Ctrl+1', emits: 'format-cells' },
+          ],
+        }),
+      ],
+    },
+    {
+      // Excel's Styles group, the part with something behind it: one large
+      // Conditional Formatting dropdown. Its entries are raised for the
+      // shell, which owns the small dialogs and the rules per sheet; the
+      // headings are Excel's submenus, flattened.
+      id: 'styles',
+      icon: 'cf',
+      label: 'Styles',
+      items: [
         {
-          id: 'insert', label: 'Insert', title: 'Insert rows or columns',
-          keys: 'Ctrl+Shift++', kind: 'button', wide: true,
-          run: (cmd) => structural(cmd, 'insert'),
-        },
-        {
-          id: 'delete', label: 'Delete', title: 'Delete rows or columns',
-          keys: 'Ctrl+-', kind: 'button', wide: true,
-          run: (cmd) => structural(cmd, 'delete'),
-        },
-        {
-          id: 'freeze', label: 'Freeze', title: 'Freeze panes at the active cell',
-          kind: 'button', wide: true,
-          run: (cmd) => { freezeAtActiveCell(cmd); return true },
-        },
-        {
-          id: 'unfreeze', label: 'Unfreeze', title: 'Unfreeze panes',
-          kind: 'button', wide: true,
-          run: (cmd) => { unfreeze(cmd); return true },
+          id: 'conditional-formatting', label: 'Conditional Formatting', title: 'Conditional Formatting',
+          icon: 'cf', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'h', label: 'Highlight Cells Rules', heading: true },
+            { value: 'cf-greater', label: 'Greater Than...', icon: 'cf-greater', emits: 'cf-greater' },
+            { value: 'cf-less', label: 'Less Than...', icon: 'cf-less', emits: 'cf-less' },
+            { value: 'cf-between', label: 'Between...', icon: 'cf-between', emits: 'cf-between' },
+            { value: 'cf-equal', label: 'Equal To...', icon: 'cf-equal', emits: 'cf-equal' },
+            { value: 'cf-text', label: 'Text that Contains...', icon: 'cf-text', emits: 'cf-text' },
+            { value: 'cf-duplicates', label: 'Duplicate Values...', icon: 'cf-duplicates', emits: 'cf-duplicates' },
+            { value: 't', label: 'Top/Bottom Rules', heading: true },
+            { value: 'cf-top10', label: 'Top 10 Items...', icon: 'cf-top', emits: 'cf-top10' },
+            { value: 'cf-bottom10', label: 'Bottom 10 Items...', icon: 'cf-bottom', emits: 'cf-bottom10' },
+            { value: 'cf-above-average', label: 'Above Average...', icon: 'cf-above', emits: 'cf-above-average' },
+            { value: 'cf-below-average', label: 'Below Average...', icon: 'cf-below', emits: 'cf-below-average' },
+            { value: 'b', label: 'Data Bars, Color Scales, Icon Sets', heading: true },
+            { value: 'cf-data-bar', label: 'Data Bar', icon: 'cf-bar', emits: 'cf-data-bar' },
+            { value: 'cf-color-scale-3', label: 'Green - Yellow - Red Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-3' },
+            { value: 'cf-color-scale-2', label: 'Green - White Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-2' },
+            { value: 'cf-icon-set', label: 'Icon Set (3 Arrows)', icon: 'cf-icons', emits: 'cf-icon-set' },
+            { value: 'c', label: 'Clear Rules', heading: true },
+            { value: 'cf-clear-selection', label: 'Clear Rules from Selected Cells', emits: 'cf-clear-selection' },
+            { value: 'cf-clear-sheet', label: 'Clear Rules from Entire Sheet', emits: 'cf-clear-sheet' },
+            { value: 'm', label: 'Manage', heading: true },
+            { value: 'cf-manage', label: 'Manage Rules...', emits: 'cf-manage' },
+          ],
         },
       ],
     },
     {
       id: 'editing',
-      width: 132,
+      icon: 'find',
       label: 'Editing',
       items: [
-        {
-          id: 'autosum', label: 'Σ', title: 'AutoSum', keys: 'Alt+=',
-          kind: 'button', run: fromCommand(autoSum),
-        },
-        {
-          id: 'fill-down', label: 'Fill ↓', title: 'Fill down', keys: 'Ctrl+D',
-          kind: 'button', wide: true, run: (cmd) => fillDown(cmd),
-        },
-        {
-          id: 'fill-right', label: 'Fill →', title: 'Fill right', keys: 'Ctrl+R',
-          kind: 'button', wide: true, run: (cmd) => fillRight(cmd),
-        },
-        {
-          id: 'clear-formats', label: 'Clear', title: 'Clear formatting (keeps values)',
-          kind: 'button', wide: true, isEnabled: canFormat,
-          run: (cmd) => {
-            const target = getFormatTarget()
-            if (!target) return false
-            const rects = rectsOf(cmd)
-            if (!rects.length) return false
-            target.store.clear(rects, target.lookup)
-            target.onChange?.()
-            return true
-          },
-        },
-        {
-          id: 'find', label: 'Find', title: 'Find and Replace', keys: 'Ctrl+H',
-          kind: 'button', wide: true, emits: 'find-replace',
-        },
+        // Undo and Redo open the group as a column of two small icons, the
+        // way Cut and Copy stand beside Paste; the owner wanted them here
+        // rather than in a group of their own.
+        small(1, {
+          id: 'undo', label: 'Undo', title: 'Undo', keys: 'Ctrl+Z', icon: 'undo', kind: 'button',
+          isEnabled: (cmd) => cmd.api.canUndo(),
+          run: (cmd) => cmd.api.undo(),
+        }),
+        small(2, {
+          id: 'redo', label: 'Redo', title: 'Redo', keys: 'Ctrl+Y', icon: 'redo', kind: 'button',
+          isEnabled: (cmd) => cmd.api.canRedo(),
+          run: (cmd) => cmd.api.redo(),
+        }),
+        small(1, {
+          id: 'autosum', label: 'AutoSum', title: 'AutoSum', keys: 'Alt+=',
+          icon: 'autosum', kind: 'button', wide: true, run: fromCommand(autoSum),
+        }),
+        small(2, {
+          id: 'fill-down', label: 'Fill Down', title: 'Fill Down', keys: 'Ctrl+D',
+          icon: 'fill-down', kind: 'button', wide: true, run: (cmd) => fillDown(cmd),
+        }),
+        small(3, {
+          id: 'fill-right', label: 'Fill Right', title: 'Fill Right', keys: 'Ctrl+R',
+          icon: 'fill-right', kind: 'button', wide: true, run: (cmd) => fillRight(cmd),
+        }),
+        small(1, {
+          id: 'clear-formats', label: 'Clear', title: 'Clear Formats (keeps values)',
+          icon: 'clear', kind: 'button', wide: true, isEnabled: canFormat,
+          run: clearFormats,
+        }),
+        small(2, {
+          id: 'filter', label: 'Filter', title: 'Filter', keys: 'Ctrl+Shift+L',
+          icon: 'filter', kind: 'toggle', wide: true, emits: 'toggle-filter',
+        }),
+        small(3, {
+          id: 'find', label: 'Find & Select', title: 'Find and Replace', keys: 'Ctrl+H',
+          icon: 'find', kind: 'button', wide: true, emits: 'find-replace',
+        }),
       ],
     },
   ],
@@ -521,38 +753,54 @@ const INSERT: RibbonTab = {
   label: 'Insert',
   groups: [
     {
-      id: 'insert-cells',
-      width: 92,
-      label: 'Cells',
+      id: 'tables',
+      icon: 'table',
+      label: 'Tables',
       items: [
-        {
-          id: 'insert-rows', label: 'Rows', title: 'Insert rows', kind: 'button', wide: true,
-          run: (cmd) => structural(cmd, 'insert'),
-        },
-        {
-          id: 'delete-rows', label: 'Delete', title: 'Delete rows or columns',
-          kind: 'button', wide: true, run: (cmd) => structural(cmd, 'delete'),
-        },
+        { id: 'table', label: 'Table', title: 'Format the selection as a table', keys: 'Ctrl+T', icon: 'table', kind: 'button', size: 'large', emits: 'insert-table' },
       ],
     },
     {
-      id: 'insert-objects',
-      width: 92,
-      label: 'Objects',
+      id: 'charts',
+      icon: 'chart',
+      label: 'Charts',
       items: [
-        { id: 'chart', label: 'Chart', title: 'Chart the selected range', kind: 'button', wide: true, emits: 'insert-chart' },
-        { id: 'table', label: 'Table', title: 'Format the selection as a table', keys: 'Ctrl+T', kind: 'button', wide: true, emits: 'insert-table' },
-        { id: 'function', label: 'Function', title: 'Insert function', keys: 'Shift+F3', kind: 'button', wide: true, emits: 'insert-function' },
+        { id: 'chart', label: 'Chart', title: 'Chart the selected range', icon: 'chart', kind: 'button', size: 'large', emits: 'insert-chart' },
+      ],
+    },
+    {
+      id: 'insert-cells',
+      icon: 'insert-cells',
+      label: 'Cells',
+      items: [
+        small(1, {
+          id: 'insert-rows', label: 'Insert', title: 'Insert rows or columns', icon: 'insert-cells', kind: 'button', wide: true,
+          run: (cmd) => structural(cmd, 'insert') || insertRows(cmd),
+          isEnabled: canRestructure,
+        }),
+        small(2, {
+          id: 'delete-rows', label: 'Delete', title: 'Delete rows or columns', icon: 'delete-cells', kind: 'button', wide: true,
+          run: (cmd) => structural(cmd, 'delete') || deleteRows(cmd),
+          isEnabled: canRestructure,
+        }),
+      ],
+    },
+    {
+      id: 'insert-function',
+      icon: 'function',
+      label: 'Functions',
+      items: [
+        { id: 'function', label: 'Insert Function', title: 'Insert Function', keys: 'Shift+F3', icon: 'function', kind: 'button', size: 'large', emits: 'insert-function' },
       ],
     },
     {
       id: 'insert-sheet',
-      width: 92,
+      icon: 'new-sheet',
       label: 'Sheets',
       items: [
         {
-          id: 'new-sheet', label: 'New sheet', title: 'New sheet', keys: 'Shift+F11',
-          kind: 'button', wide: true,
+          id: 'new-sheet', label: 'New Sheet', title: 'New sheet', keys: 'Shift+F11',
+          icon: 'new-sheet', kind: 'button', size: 'large',
           isEnabled: () => getWorkbook() !== null,
           run: () => {
             const wb = getWorkbook()
@@ -572,36 +820,36 @@ const FORMULAS: RibbonTab = {
   groups: [
     {
       id: 'function-library',
-      width: 124,
+      icon: 'function',
       label: 'Function Library',
       items: [
-        { id: 'f-autosum', label: 'Σ AutoSum', title: 'AutoSum', keys: 'Alt+=', kind: 'button', wide: true, run: fromCommand(autoSum) },
-        { id: 'f-insert', label: 'Insert Function', title: 'Insert function', keys: 'Shift+F3', kind: 'button', wide: true, emits: 'insert-function' },
+        { id: 'f-insert', label: 'Insert Function', title: 'Insert Function', keys: 'Shift+F3', icon: 'function', kind: 'button', size: 'large', emits: 'insert-function' },
+        { id: 'f-autosum', label: 'AutoSum', title: 'AutoSum', keys: 'Alt+=', icon: 'autosum', kind: 'button', size: 'large', run: fromCommand(autoSum) },
       ],
     },
     {
       id: 'defined-names',
-      width: 110,
+      icon: 'name-manager',
       label: 'Defined Names',
       items: [
-        { id: 'name-manager', label: 'Name Manager', title: 'Name Manager', keys: 'Ctrl+F3', kind: 'button', wide: true, emits: 'name-manager' },
+        { id: 'name-manager', label: 'Name Manager', title: 'Name Manager', keys: 'Ctrl+F3', icon: 'name-manager', kind: 'button', size: 'large', emits: 'name-manager' },
       ],
     },
     {
       id: 'auditing',
-      width: 118,
+      icon: 'show-formulas',
       label: 'Formula Auditing',
       items: [
-        { id: 'show-formulas', label: 'Show Formulas', title: 'Show formulas instead of their results', keys: 'Ctrl+`', kind: 'toggle', wide: true, emits: 'toggle-formulas' },
+        small(1, { id: 'show-formulas', label: 'Show Formulas', title: 'Show formulas instead of their results', keys: 'Ctrl+`', icon: 'show-formulas', kind: 'toggle', wide: true, emits: 'toggle-formulas' }),
       ],
     },
     {
       id: 'calculation',
-      width: 116,
+      icon: 'calculate',
       label: 'Calculation',
       items: [
-        { id: 'recalc', label: 'Calculate Now', title: 'Recalculate the workbook', keys: 'F9', kind: 'button', wide: true, emits: 'recalculate' },
-        { id: 'goal-seek-f', label: 'Goal Seek', title: 'Goal Seek', kind: 'button', wide: true, emits: 'goal-seek' },
+        { id: 'recalc', label: 'Calculate Now', title: 'Recalculate the workbook', keys: 'F9', icon: 'calculate', kind: 'button', size: 'large', emits: 'recalculate' },
+        small(1, { id: 'goal-seek-f', label: 'Goal Seek', title: 'Goal Seek', icon: 'goal-seek', kind: 'button', wide: true, emits: 'goal-seek' }),
       ],
     },
   ],
@@ -613,29 +861,30 @@ const DATA: RibbonTab = {
   groups: [
     {
       id: 'sort-filter',
-      width: 108,
+      icon: 'filter',
       label: 'Sort & Filter',
       items: [
-        { id: 'sort-asc', label: 'A→Z', title: 'Sort ascending', kind: 'button', emits: 'sort-asc' },
-        { id: 'sort-desc', label: 'Z→A', title: 'Sort descending', kind: 'button', emits: 'sort-desc' },
-        { id: 'filter', label: 'Filter', title: 'Toggle the filter row', keys: 'Ctrl+Shift+L', kind: 'toggle', wide: true, emits: 'toggle-filter' },
+        small(1, { id: 'sort-asc', label: 'Sort A to Z', title: 'Sort A to Z', icon: 'sort-asc', kind: 'button', emits: 'sort-asc' }),
+        small(2, { id: 'sort-desc', label: 'Sort Z to A', title: 'Sort Z to A', icon: 'sort-desc', kind: 'button', emits: 'sort-desc' }),
+        { id: 'filter-data', label: 'Filter', title: 'Filter', keys: 'Ctrl+Shift+L', icon: 'filter', kind: 'toggle', size: 'large', emits: 'toggle-filter' },
       ],
     },
     {
       id: 'data-tools',
-      width: 132,
+      icon: 'text-to-columns',
       label: 'Data Tools',
       items: [
-        { id: 'text-to-columns', label: 'Text to Columns', title: 'Split the selected column on a delimiter', kind: 'button', wide: true, emits: 'text-to-columns' },
-        { id: 'remove-duplicates', label: 'Remove Duplicates', title: 'Remove duplicate rows', kind: 'button', wide: true, emits: 'remove-duplicates' },
+        { id: 'text-to-columns', label: 'Text to Columns', title: 'Split the selected column on a delimiter', icon: 'text-to-columns', kind: 'button', size: 'large', emits: 'text-to-columns' },
+        { id: 'remove-duplicates', label: 'Remove Duplicates', title: 'Remove duplicate rows', icon: 'remove-duplicates', kind: 'button', size: 'large', emits: 'remove-duplicates' },
+        { id: 'data-validation', label: 'Data Validation', title: 'Data Validation: what may be typed into the selected cells', icon: 'validation', kind: 'button', size: 'large', emits: 'data-validation' },
       ],
     },
     {
       id: 'forecast',
-      width: 96,
+      icon: 'goal-seek',
       label: 'Forecast',
       items: [
-        { id: 'goal-seek', label: 'Goal Seek', title: 'Change one input until a formula hits a target', kind: 'button', wide: true, emits: 'goal-seek' },
+        { id: 'goal-seek', label: 'Goal Seek', title: 'Change one input until a formula hits a target', icon: 'goal-seek', kind: 'button', size: 'large', emits: 'goal-seek' },
       ],
     },
   ],
@@ -646,12 +895,95 @@ function toggleWrap(cmd: GridCommandContext): boolean {
   if (!target) return false
   const rects = rectsOf(cmd)
   if (!rects.length) return false
-  target.store.toggle(rects, 'wrap', target.lookup)
+  if (!formatAllowed(target, rects)) return false
+  withFormatUndo(cmd, target, rects, () => target.store.toggle(rects, 'wrap', target.lookup))
   target.onChange?.()
   return true
 }
 
-export const RIBBON_TABS: ReadonlyArray<RibbonTab> = [HOME, INSERT, FORMULAS, DATA]
+/**
+ * Excel's Review tab, the parts with something behind them. Comments are
+ * the sheet's notes: New Comment opens the editor on the active cell (and
+ * edits the one there), Delete, Previous and Next walk them, Show All
+ * Comments lists them. Protect Sheet and Unprotect Sheet are one slot, the
+ * shell leaving off whichever does not apply. There is no password, as the
+ * sheet documents.
+ */
+const REVIEW: RibbonTab = {
+  id: 'review',
+  label: 'Review',
+  groups: [
+    {
+      id: 'comments',
+      icon: 'comment',
+      label: 'Comments',
+      items: [
+        { id: 'new-comment', label: 'New Comment', title: 'New Comment', keys: 'Shift+F2', icon: 'comment', kind: 'button', size: 'large', emits: 'new-comment' },
+        small(1, { id: 'delete-comment', label: 'Delete', title: 'Delete Comment', icon: 'comment-delete', kind: 'button', wide: true, emits: 'delete-comment' }),
+        small(2, { id: 'prev-comment', label: 'Previous', title: 'Previous Comment', icon: 'comment-prev', kind: 'button', wide: true, emits: 'prev-comment' }),
+        small(3, { id: 'next-comment', label: 'Next', title: 'Next Comment', icon: 'comment-next', kind: 'button', wide: true, emits: 'next-comment' }),
+        { id: 'toggle-comments', label: 'Show All Comments', title: 'Show All Comments', icon: 'comments-all', kind: 'toggle', size: 'large', emits: 'toggle-comments' },
+      ],
+    },
+    {
+      id: 'protect',
+      icon: 'protect',
+      label: 'Protect',
+      items: [
+        {
+          id: 'protect-sheet', label: 'Protect Sheet', title: 'Protect Sheet: locked cells can no longer be changed',
+          icon: 'protect', kind: 'button', size: 'large', emits: 'protect-sheet',
+        },
+        {
+          id: 'unprotect-sheet', label: 'Unprotect Sheet', title: 'Unprotect Sheet',
+          icon: 'unprotect', kind: 'button', size: 'large', emits: 'unprotect-sheet',
+        },
+      ],
+    },
+  ],
+}
+
+/**
+ * Excel's View tab, the part with something behind it: Window > Freeze
+ * Panes, Excel's dropdown of Freeze Panes / Freeze Top Row / Freeze First
+ * Column / Unfreeze Panes. Raised rather than run here: the sheet shell
+ * keeps the freeze per sheet and puts it back when the sheet comes up
+ * again.
+ */
+const VIEW: RibbonTab = {
+  id: 'view',
+  label: 'View',
+  groups: [
+    {
+      id: 'show',
+      icon: 'gridlines',
+      label: 'Show',
+      items: [
+        small(1, { id: 'gridlines', label: 'Gridlines', title: 'Show or hide the gridlines', icon: 'gridlines', kind: 'toggle', wide: true, emits: 'toggle-gridlines' }),
+        small(2, { id: 'formula-bar', label: 'Formula Bar', title: 'Show or hide the formula bar', icon: 'formula-bar', kind: 'toggle', wide: true, emits: 'toggle-formula-bar' }),
+        small(3, { id: 'headings', label: 'Headings', title: 'Show or hide the row numbers and column letters', icon: 'headings', kind: 'toggle', wide: true, emits: 'toggle-headings' }),
+      ],
+    },
+    {
+      id: 'window',
+      icon: 'freeze',
+      label: 'Window',
+      items: [
+        {
+          id: 'freeze', label: 'Freeze Panes', title: 'Freeze Panes', icon: 'freeze', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'freeze-panes', label: 'Freeze Panes', icon: 'freeze', emits: 'freeze-panes' },
+            { value: 'freeze-top-row', label: 'Freeze Top Row', emits: 'freeze-top-row' },
+            { value: 'freeze-first-column', label: 'Freeze First Column', emits: 'freeze-first-column' },
+            { value: 'unfreeze-panes', label: 'Unfreeze Panes', icon: 'unfreeze', emits: 'unfreeze-panes' },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
+export const RIBBON_TABS: ReadonlyArray<RibbonTab> = [HOME, INSERT, FORMULAS, DATA, REVIEW, VIEW]
 
 /** Every item across every tab, for tests and for a command palette. */
 export function ribbonItems(): ReadonlyArray<RibbonItem> {

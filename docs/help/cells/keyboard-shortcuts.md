@@ -24,7 +24,7 @@ the pack (export, pivot, the scheduler, the board) stays out of your bundle:
 import { enableSheet } from '@svgrid/enterprise/sheet'
 ```
 
-<div data-docs-demo="434-excel-shortcuts" data-height="520"></div>
+<div data-docs-demo="452-excel-shortcuts" data-height="520"></div>
 
 ## The keymap
 
@@ -33,10 +33,25 @@ import { enableSheet } from '@svgrid/enterprise/sheet'
 | Key | Action |
 | --- | ------ |
 | Ctrl/Cmd + Arrow | Jump to the edge of the data region. |
-| Ctrl/Cmd + Shift + Arrow | The same jump, extending the selection. |
-| Ctrl/Cmd + A | Select the current region; press again for the whole sheet. |
-| Ctrl/Cmd + Space | Select the active cell's column. |
-| Shift + Space | Select the active cell's row. |
+| Ctrl/Cmd + Shift + Arrow | The same jump, extending the selection from its far corner; the active cell stays at the anchor. |
+| Ctrl/Cmd + A, Ctrl/Cmd + Shift + Space | Select the current region; press again for the whole sheet. |
+| Ctrl/Cmd + Shift + 8 (Ctrl + \*) | Select the current region, and only that. |
+| Ctrl/Cmd + Space | Select the whole columns the selection touches; the active cell stays. |
+| Shift + Space | Select the whole rows the selection touches; the active cell stays. |
+| Ctrl/Cmd + End | The last used cell (the grid's own Ctrl+Home is A1). |
+| Ctrl/Cmd + Shift + End / Home | Extend the selection to the last used cell, or to A1. |
+| Shift + Home, Shift + PageUp / PageDown | The grid's own: extend the selection to column A, or by a page, from its far corner. |
+
+The mouse follows Excel's rules too: a click on a column letter or a row
+number selects the whole line and puts the active cell on its first VISIBLE
+row or column, a drag along the letters or the numbers selects a run,
+Shift+click extends the run from the active cell's line, Ctrl+click adds a
+line beside the selection, and the corner selects everything without moving
+the active cell. The keyboard stays on the sheet afterwards: an arrow
+collapses to the active cell, Shift+Arrow grows a run of whole lines, and
+typing lands in the active cell. Shift+Arrow and the extending keys scroll
+along their own axis only, so a whole-column selection does not jump to
+the bottom of the sheet when it grows sideways.
 
 ### Fill and entry
 
@@ -47,7 +62,15 @@ import { enableSheet } from '@svgrid/enterprise/sheet'
 | Ctrl/Cmd + ; | Stamp today's date. |
 | Ctrl/Cmd + Shift + ; | Stamp the current time. |
 | Ctrl/Cmd + ' | Copy the cell above, unchanged. |
+| Ctrl/Cmd + Shift + " | Copy the value of the cell above: what a formula there shows, as a number or text. |
 | Alt + = | AutoSum the run above, or to the left. |
+| F4 (while editing) | Turn the reference at the caret through `$A$1`, `A$1`, `$A1`, `A1`; a range turns both ends. Also in the formula bar. |
+| Alt + Enter (while editing) | A line break in the cell, which turns on Wrap Text. |
+| Enter after a run of Tabs | Down a row and back to the column the run began in. |
+| Ctrl/Cmd + 9 / Ctrl/Cmd + 0 | Hide the selected rows / columns (raised as `hide-rows` / `hide-columns`). |
+| Ctrl/Cmd + Shift + 9 / Ctrl/Cmd + Shift + 0 | Unhide the rows / columns the selection spans (`unhide-rows` / `unhide-columns`). |
+| Enter / Tab inside a selected block | Walk the block, wrapping at its edges; the block stays selected. |
+| Ctrl/Cmd + Enter (while editing) | The entry into every cell of the selected block, staying put. |
 
 ### Formatting
 
@@ -59,9 +82,12 @@ See [number formats](./number-formats.md).
 | --- | ------ |
 | Ctrl/Cmd + B / I / U | Bold, italic, underline. |
 | Ctrl/Cmd + 5 | Strikethrough. |
-| Ctrl/Cmd + 1 | Open Format Cells (calls your `setFormatDialogHandler`). |
+| Ctrl/Cmd + 1 | Open Format Cells: the sheet shell's own dialog, or your `setFormatDialogHandler` on a plain grid. |
 | Ctrl/Cmd + Shift + 1..6 | Number, time, date, currency, percent, scientific. |
 | Ctrl/Cmd + Shift + ` | General. |
+| Ctrl/Cmd + Shift + > / < | Increase / decrease the font size one rung. |
+| Ctrl/Cmd + Shift + & | Outline border around the selection. |
+| Ctrl/Cmd + Shift + _ | Remove every border in the selection. |
 
 ### Structure, search and paste
 
@@ -75,6 +101,25 @@ See [paste, find and structure](./paste-find-structure.md).
 | Ctrl/Cmd + Minus | Delete rows or columns, rewriting every formula. |
 | Ctrl/Cmd + H | Find and Replace. |
 | Ctrl/Cmd + Shift + V | Paste Special. |
+| Enter, while the marching ants are up | Paste the copied block here once and leave copy mode; Ctrl+V pastes and keeps the ants. |
+| F9 | Recalculate. |
+| Ctrl/Cmd + ` | Show formulas instead of values. |
+| Ctrl/Cmd + Shift + L | The filter row. |
+| Shift + F3 | Insert Function. |
+| Shift + F2 | Insert or edit the comment on the active cell (raised as `edit-comment`). |
+| Alt + Down | Drop the list a validated cell offers (raised as `open-list`). |
+| Ctrl/Cmd + F1 | Collapse or expand the ribbon (raised as `toggle-ribbon`). |
+| Ctrl/Cmd + F3 | Name Manager. |
+| Ctrl/Cmd + T | Format as Table, when the application answers Insert > Table (`extras`). |
+
+The last seven raise the same actions as the ribbon buttons that name them;
+on a plain grid, `setRibbonActionHandler` decides what answers.
+
+A command that needs the clipboard calls `cmd.copy()`, `cmd.cut()` or
+`cmd.paste()` on its `GridCommandContext`: the selection copy, cut and
+paste that Ctrl+C, Ctrl+X and Ctrl+V run, cell by cell through
+`processCellForClipboard`. The api's `copyToClipboard` is something else,
+the export of the displayed rows with their headers.
 
 ### Workbook
 
@@ -172,7 +217,10 @@ and mixing the two gives you the wrong cell as soon as the grid is sorted.
 
 Wrap any multi-cell write in `cmd.batch()` so it undoes in one press.
 
-## Not yet
+## While editing
 
-`Alt+Enter` and `F4` are not bound yet. See
-[missing features](../missing-features.md).
+A binding marked `editing: true` runs only inside the cell editor, and the
+others only outside it, so Ctrl+D while typing stays a keystroke for the text.
+The editor's element reaches such a binding as `cmd.editor`, which is how F4
+reads and rewrites the draft. Alt+Enter needs no binding: the grid's
+multiline text editor takes it as a line break itself.

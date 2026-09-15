@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 435. Formula bar, Name Box and per-cell number formats
+   * 453. Formula bar, Name Box and per-cell number formats
    * ------------------------------------------------------
    * The Excel "cell" experience on a plain <SvGrid>: a formula bar showing the
    * RAW text behind the active cell, a Name Box that jumps to an address, and
@@ -134,14 +134,10 @@
 
   const activeRaw = $derived(active ? raw(active.rowIndex, active.colIndex) : '')
 
-  function commit(text: string) {
-    if (!active) return
-    const field = FIELDS[active.colIndex]
+  function commit(text: string, cell: { rowIndex: number; colIndex: number }) {
+    const field = FIELDS[cell.colIndex]
     if (!field) return
-    const next = rows.map((row, i) =>
-      i === active!.rowIndex ? { ...row, [field]: text } : row,
-    )
-    rows = next
+    rows = rows.map((row, i) => (i === cell.rowIndex ? { ...row, [field]: text } : row))
   }
 
   const features = tableFeatures({ rowSortingFeature })

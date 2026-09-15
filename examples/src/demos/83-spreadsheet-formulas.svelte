@@ -62,7 +62,7 @@
   workbook={wb}
   showRibbon={false}
   showTabs={false}
-  height={430}
+  height="100%"
   rows={20}
   columns={7}
   columnWidths={{ A: 160, B: 150 }}

@@ -526,7 +526,6 @@
                 >
                   <span class="demo-row-title">
                     {@html highlight(demo.title, toks)}
-                    {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
                   </span>
                   <span class="demo-row-cat">{demo.category}</span>
                 </button>
@@ -564,7 +563,6 @@
                       class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 {active ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : ''}"
                     >
                       <span class="demo-leaf-title">{demo.title}</span>
-                      {#if demo.pro}<span class="demo-pro-dot" title="Enterprise feature" aria-label="Enterprise"></span>{/if}
                     </button>
                   </li>
                 {/each}
@@ -975,21 +973,12 @@
     letter-spacing: 0.04em;
   }
 
-  /* Leaf row with optional Pro dot */
+  /* Leaf row */
   .demo-leaf { display: flex; align-items: center; gap: 6px; }
   .demo-leaf-title {
     flex: 1; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .demo-pro-dot {
-    display: inline-block;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    box-shadow: 0 0 0 2px color-mix(in oklab, #8b5cf6 30%, transparent);
-    flex-shrink: 0;
-  }
-
   /* Quiet "star on GitHub" nudge: muted until hovered, then the star warms to
      gold. No animation or fill-pop - present, not pushy. */
   .gh-star {

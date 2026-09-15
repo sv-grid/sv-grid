@@ -114,7 +114,7 @@ const rows = raw.slice(1).map((cells) =>
 | `type: 'checkbox'`                             | `editorType: 'checkbox'`                          |
 | `type: 'dropdown', source: [...]`              | `editorType: 'list', editorOptions: [...]`        |
 | `type: 'autocomplete'`                         | `editorType: 'list'` (combobox UI ships)          |
-| `type: 'time'`                                 | Use `editorType: 'text'` + your own format        |
+| `type: 'time'`                                 | `editorType: 'time'`                              |
 | `type: 'password'`                             | Use `editorType: 'text'` + a custom snippet       |
 
 ## Selection + clipboard
@@ -122,8 +122,10 @@ const rows = raw.slice(1).map((cells) =>
 | Handsontable                            | sv-grid                                                 |
 | --------------------------------------- | ------------------------------------------------------- |
 | `selectCells([[0,0,2,5]])`              | `api.selectCells(ranges)`, with `selectionMode='cell'`   |
-| `getSelected()`                         | Combine `onActiveCellChange` + `onRowSelectionChange`    |
-| `copyPaste: true` (default)             | Ships built-in; `enableCellSelection={true}`             |
+| `getSelected()`                         | `api.getSelected()`: the same `[[startRow, startCol, endRow, endCol], ...]`, normalised to top-left / bottom-right and `[]` rather than `undefined` when nothing is selected |
+| `getSelectedLast()`                     | `api.getSelectedLast()`: `[startRow, startCol, endRow, endCol]` with the orientation kept (a range dragged upwards has `startRow > endRow`), or `undefined` |
+| `getSelectedRange()` / `getSelectedRangeLast()` | `api.getSelectedRange()` / `api.getSelectedRangeLast()`: `{ from, to, highlight }` per rectangle, the same three fields as `CellRange`; plain data rather than a class, so use `Math.min` / `Math.max` for the corners |
+| `copyPaste: true` (default)             | Ships built-in; `enableCellSelection={true}`. The spreadsheet shell also exchanges formats, number formats and formulas with Excel and Google Sheets through the HTML clipboard |
 | `fillHandle: true`                      | Ships built-in (drag-to-fill on selected range)          |
 | `moveCells: true`                       | `moveCells` - drag the range border to move it, Ctrl / Cmd to copy. On by default; see [move or copy a range](./editing/move-cells.md) |
 
@@ -134,6 +136,7 @@ const rows = raw.slice(1).map((cells) =>
 | `fixedColumnsStart: 2`             | `api.setColumnPinning({ left: ['firstColId', 'secondColId'] })` |
 | `fixedRowsTop: 1`                  | `pinnedTopRows` (and `pinnedBottomRows`)               |
 | `manualColumnFreeze: true`         | Ships via the column-header right-click menu             |
+| `mergeCells: [{ row, col, rowspan, colspan }]` | `mergedCells={[{ rowIndex, colIndex, rowSpan, colSpan }]}` on `<SvGrid>`; the spreadsheet shell adds Merge & Center, Merge Across, Merge Cells and Unmerge on the ribbon and the cell menu |
 
 Freeze panes on a plain `<SvGrid>`: two pinned columns and the sticky
 letter and number headers, with formulas underneath.
@@ -149,7 +152,40 @@ letter and number headers, with formulas underneath.
 | `afterFilter(...)`                     | `onFiltersChange((f) => {...})`                         |
 | `afterColumnSort(...)`                 | `onSortingChange((s) => {...})`                          |
 | `beforeChange((changes) => false)`     | Throw / return `false` from your inline validator; see [validation](./editing/validation.md) |
-| `afterCreateRow / afterRemoveRow`      | Wrap `api.addRow / removeRow` in your own emitter        |
+| `afterCreateRow / afterRemoveRow`      | Wrap `api.addRow / removeRow` in your own emitter; on the spreadsheet shell, `onChange` reports a `structure` reason with the edit |
+| `afterMergeCells / afterUnmergeCells`  | On the spreadsheet shell, `onChange` reports `merges`; `api.getMergedCells()` reads the grid's list |
+| `afterSetCellMeta` (comments, validation) | `onChange` reports `comments`, `validation`, `conditional-formats` and `protection` on the shell |
+| `afterFilter` (the Filters plugin)      | `onChange` reports `filter` on the shell; `getState().sheets[name].autoFilter` is the state |
+
+On the spreadsheet shell (`<SvSheet>` in `@svgrid/enterprise`) one callback
+covers the lot: `onChange(reasons)` fires once per tick with every kind of
+change since the last call (`cells`, `formats`, `sizes`, `hidden`,
+`freeze`, `sheets`, `comments`, `protection`, `validation`,
+`conditional-formats`, `merges`, `filter`, `structure` with the insert or
+delete, `restore`), which is where Handsontable's `afterChange` autosave
+goes. `getState()` gives the document to save and `setState()` puts it back.
+
+## Cell meta → the sheet document
+
+Handsontable keeps comments, validators, read-only flags and merges as cell
+meta on the instance. On the spreadsheet shell they are parts of the
+document, per sheet, saved with it and moved by inserts and deletes:
+
+| Handsontable                                        | sv-grid spreadsheet shell                                       |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| `comments: true`, `cell: [{ row, col, comment }]`  | Review > New Comment, Shift+F2, the cell menu; `getState().sheets[name].comments` |
+| `validator: 'numeric'`, `allowInvalid: false`    | Data > Data Validation (Whole number, Decimal, List, Date, Text length, Custom), Stop or Warning; `validation` in the state |
+| `readOnly: true` on a cell                          | Format Cells > Protection unlocks the cells that may change, Review > Protect Sheet locks the rest; `locked: false` in the format entry, `protected` per sheet |
+| `mergeCells`                                        | Merge & Center on the ribbon and the cell menu; `merges` in the state |
+| `filters: true` + `dropdownMenu`                    | Ctrl+Shift+L or Data > Filter: Excel's AutoFilter arrows and menus; `autoFilter` in the state |
+| conditional formatting (a custom renderer)          | Home > Styles > Conditional Formatting: Highlight Cells, Top/Bottom, Data Bars, Color Scales, Icon Sets, Manage Rules; `conditionalFormats` in the state |
+| `autofill` rules                                    | The fill handle's own series: numbers, dates by day or by the set gap, `Item 1`, weekdays and months |
+
+On a plain `<SvGrid>` the free grid has the primitives instead: `notes`
+and `editableComments` for comments, `editable` and `valueParser` on a
+column for read-only cells and validation, `mergedCells` for merges, the
+filter row and its Excel-style menu for filtering, and value-driven
+`conditionalFormats` by column.
 
 ## Formulas (HyperFormula)
 
@@ -202,9 +238,11 @@ around.
 
 - **Full HyperFormula surface as a supported feature.** Sv-grid ships a
   subset and lets you wire HyperFormula yourself; see above.
-- **Comments + named ranges.** Not in sv-grid today.
-- **Merge cells UI.** Sv-grid merges through `colSpan` and `rowSpan`
-  callbacks on a column, with no drag-to-merge UI.
+- **Nested headers.** Handsontable's `nestedHeaders` have no
+  counterpart beyond column groups.
+- **Threaded comments and a validation Input Message.** Comments on the
+  shell are Excel's notes, one text per cell; validation shows its message
+  on a refusal, not on arrival.
 - **Excel export without a paid pack.** Handsontable's export plugin writes
   XLSX through its asynchronous method; on sv-grid, CSV, TSV and JSON export
   are free and Excel, PDF and print output are in `@svgrid/enterprise`.

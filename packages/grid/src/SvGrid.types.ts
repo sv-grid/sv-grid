@@ -256,17 +256,42 @@ export type ContextMenuTarget<TData extends RowData = RowData> = {
  * "chart"`. The `"chart"` item (chart the selected range) is only shown when
  * `charting` is enabled; it is appended to the default menu automatically.
  */
+/**
+ * An icon of your own for a context-menu item: path data on a 16 x 16 grid,
+ * drawn in the text colour with a 1.4px round stroke (`fill` for a solid
+ * part, `width` and `dash` to vary the stroke). The same shape a
+ * spreadsheet ribbon's icon set uses, so one set serves both.
+ */
+export type ContextMenuIcon = {
+  paths: ReadonlyArray<{ d: string; fill?: boolean; width?: number; dash?: string }>;
+};
+
 export type ContextMenuItem<TData extends RowData = RowData> =
   | string
   | {
       key: string;
-      label: string;
+      /**
+       * The text. An object whose `key` names a built-in (`copy`, `cut`,
+       * `paste`, `clear`, `row_above`, `row_below`, `remove_row`,
+       * `remove_col`, `comment`, `chart`) keeps the built-in's own label
+       * when this is omitted.
+       */
+      label?: string;
+      /**
+       * A glyph before the label: one of the grid's icons by name, or path
+       * data of your own. Items without one keep the gutter, so the labels
+       * line up.
+       */
+      icon?: GridIconName | ContextMenuIcon;
       /** Hide the item entirely for this target. */
       hidden?: (target: ContextMenuTarget<TData>) => boolean;
       /** Render the item greyed-out and non-clickable for this target. */
       disabled?: (target: ContextMenuTarget<TData>) => boolean;
-      /** Invoked on click. The menu closes afterwards. */
-      action: (target: ContextMenuTarget<TData>) => void;
+      /**
+       * Invoked on click. The menu closes afterwards. Omit it on a built-in
+       * key to keep what the built-in does and only give it an icon.
+       */
+      action?: (target: ContextMenuTarget<TData>) => void;
     };
 
 /** What a {@link SelectionBarAction} is handed when it runs. */
@@ -1601,6 +1626,17 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   columnResize?: boolean;
   /**
+   * The user dragged a column's edge (or double-clicked it to autosize).
+   * Programmatic `api.setColumnWidth` does not fire it.
+   */
+  onColumnResize?: (event: { columnId: string; width: number }) => void;
+  /**
+   * The user dragged a row's edge, or double-clicked it: `height` is then
+   * `null`, the row back at its declared height. Programmatic
+   * `api.setRowHeight` does not fire it.
+   */
+  onRowResize?: (event: { rowIndex: number; height: number | null }) => void;
+  /**
    * Make the grid usable on narrow screens. When the grid's own width drops
    * below the breakpoint (default `640`px), pinned columns are un-pinned so the
    * whole grid pans, `fitColumns` scaling is suspended (columns keep their
@@ -1662,6 +1698,22 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * currency symbols, expand codes to labels, or redact. Receives the display
    * value plus the row/column context; return the string (or value) to copy.
    */
+  /**
+   * Decide what the fill handle writes into one cell, ahead of the grid's
+   * own pattern rules (series, weekdays, "Item 1"). Receives the source
+   * cell's value and how far the target sits from it; return the value to
+   * write, or `undefined` to let the pattern decide. A spreadsheet uses it
+   * to move a formula's references by the distance filled, which the
+   * pattern rules would otherwise mangle ("=A1+B1" reads as "Item 1").
+   */
+  processCellForFill?: (params: {
+    /** The source cell's value the target cycles back to. */
+    value: unknown;
+    /** Rows and columns from that source cell to the target. */
+    delta: { rows: number; cols: number };
+    rowIndex: number;
+    columnId: string;
+  }) => unknown;
   processCellForClipboard?: (params: {
     value: unknown;
     column: unknown;
@@ -1669,6 +1721,39 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     rowIndex: number;
     columnId: string;
   }) => unknown;
+  /**
+   * An HTML rendering of what Ctrl+C copies, written to the clipboard as
+   * `text/html` beside the TSV. Excel and Google Sheets read the HTML
+   * first, so a table with inline styles pastes into them with its formats,
+   * and the same markup can carry what the text cannot (a formula in a
+   * `data-` attribute) for a round trip back into a grid that reads it.
+   * Called after every cell has been through `processCellForClipboard`,
+   * with the rectangles copied and the text about to be written. Return
+   * nothing to write text alone. Runs synchronously inside the key press,
+   * which is what the clipboard needs.
+   */
+  clipboardHtml?: (params: {
+    rects: ReadonlyArray<{ minRow: number; maxRow: number; minCol: number; maxCol: number }>;
+    text: string;
+  }) => string | null | undefined;
+  /**
+   * Take over a paste. Receives the clipboard's `text/plain` and, when the
+   * source put one there, its `text/html` (Excel's carries formats and
+   * formulas; a grid's own `clipboardHtml` carries whatever it chose to).
+   * Return `true` to say the paste was applied; anything else lets the grid
+   * paste the text as it always has. Runs inside one history group, so
+   * every `setCellValue` and `recordUndo` the handler makes is one Ctrl+Z.
+   *
+   * With this set, Ctrl+V lets the browser's own `paste` event through
+   * (that is where the unsanitised HTML is), and the async Clipboard API is
+   * the fallback for a browser that does not deliver it. `source` says
+   * which path the payload came by.
+   */
+  onPasteClipboard?: (payload: {
+    text: string;
+    html: string | null;
+    source: "event" | "async";
+  }) => boolean | void;
   /**
    * Transform each cell on its way IN from the clipboard, before the grid
    * coerces it for the column's editor. Symmetric with
@@ -1699,6 +1784,14 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * `editable` is the shortcut alias and wins over this.
    */
   enableInlineEditing?: boolean;
+  /**
+   * A click on the cell that is already active opens its editor, the way a
+   * second click on a selected file name starts renaming it. On by default.
+   * A spreadsheet turns it off: Excel edits on double-click or F2 only, and
+   * a user clicking the cell they are on to get back to it after a dialog
+   * would otherwise find the next shortcut typed into an editor.
+   */
+  editOnSecondClick?: boolean;
   /**
    * Full-row editing. When `true`, starting an edit puts the WHOLE row into
    * edit mode - every editable cell shows an inline editor at once - and a
@@ -2056,6 +2149,28 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * main grid; field/format/cell/cellClass all apply.
    */
   pinnedTopRows?: ReadonlyArray<TData>;
+  /**
+   * Freeze the first N rows: they stay under the header while the body
+   * scrolls, and unlike `pinnedTopRows` they are the grid's own rows,
+   * still editable, selectable and numbered as rows 1..N. Excel's Freeze
+   * Panes, for the row half; the column half is `columnPinning`. Under
+   * `virtualization` the frozen rows are always rendered and the window
+   * skips them.
+   */
+  frozenRows?: number;
+  /**
+   * Merged cells: rectangles drawn as one cell, a spreadsheet's Merge &
+   * Center. Each entry is the top-left cell (display indices) and how many
+   * rows and columns it covers. The origin's td takes the span and shows
+   * the origin's value; the covered cells are not drawn, a selection grows
+   * to whole merges, the active cell inside a merge is its origin, and the
+   * arrow keys step over a merge as one cell. A merge that crosses the
+   * frozen boundary or the rendered window is drawn in parts, one per
+   * band. The grid does not write into covered cells on its own; a
+   * consumer that merges cells keeps them empty or marks them read-only
+   * through the column's `editable`.
+   */
+  mergedCells?: ReadonlyArray<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }>;
   /**
    * Rows to pin to the BOTTOM of the grid - rendered below the regular
    * rows and sticky-positioned (sticks to the bottom of the viewport

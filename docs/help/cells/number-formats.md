@@ -11,7 +11,7 @@ import {
 } from '@svgrid/enterprise/sheet'
 ```
 
-<div data-docs-demo="435-formula-bar-formats" data-height="560"></div>
+<div data-docs-demo="453-formula-bar-formats" data-height="560"></div>
 
 > This is different from the column-level [`format`](./cell-data-types.md)
 > prop, which is `Intl`-based and applies to every cell in a column. Use that

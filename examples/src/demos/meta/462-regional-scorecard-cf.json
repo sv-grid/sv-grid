@@ -1,0 +1,24 @@
+{
+  "description": "A regional sales scorecard on the Svelte 5 spreadsheet shell where every colour is a conditional formatting rule over computed values: Highlight Cells on the attainment column (under 90% Light Red Fill with Dark Red Text, 100% and over Green Fill with Dark Green Text), a Data Bar measured from zero and a Top 3 Items rule on the quarter, a Green - Yellow - Red Color Scale across the three months and an Icon Set of arrows on the month-over-month trend. Attainment, trend and rank are formulas, so an edit to any month moves the colours, the bar, the arrow and the rank. Manage Rules lists the six rules in priority order with Stop If True; Clear Rules from Entire Sheet strips them and Ctrl+Z restores them. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet conditional formatting",
+    "svelte data bars color scales icon sets",
+    "svelte excel highlight cells rules",
+    "svelte grid rules manager",
+    "svelte sales scorecard spreadsheet"
+  ],
+  "faq": [
+    {
+      "question": "Do the rules see formulas or typed values?",
+      "answer": "The computed values. Attainment is =F/B, so a rule \"less than 0.9\" on it follows the months as they are edited, which is why the fill changes when Sep does."
+    },
+    {
+      "question": "What decides when two rules apply to a cell?",
+      "answer": "Priority, the Rules Manager's order: the first rule that decides a property (the fill, the text colour, the bar, the icon) keeps it, and a rule with Stop If True stops the ones below it for the cells it matches. A bar and a bold do not compete, so both show."
+    },
+    {
+      "question": "How long is a data bar?",
+      "answer": "The value's share of the largest value in the rule's range, measured from zero as Excel has done since 2010, so the smallest positive value still shows a sliver rather than nothing."
+    }
+  ]
+}

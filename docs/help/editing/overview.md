@@ -33,9 +33,32 @@ A column with no `editorType` is **read-only** even when
 | Action | Keys | Outcome |
 | ------ | ---- | ------- |
 | Enter edit mode | `Enter` / `F2` / double-click | Editor opens on the active cell |
-| Commit | `Enter` / `Tab` | Saves the new value |
+| Commit and move down | `Enter` / `Shift+Enter` | Saves the new value and moves the cursor a row down (up with Shift); stays put on the last row |
+| Commit and move right | `Tab` / `Shift+Tab` | Saves and moves a column right (left with Shift), wrapping at the end of the row |
+| Commit into the block | `Ctrl+Enter` | Saves the entry into every editable cell of the selected block and stays put; one undo |
 | Cancel | `Esc` | Discards |
-| Move to next field while editing | `Tab` / `Shift+Tab` | Commits and re-enters edit on the neighbour |
+
+Two more rules make a run of entries feel like a sheet. A run of Tabs
+remembers the column it started in, and the Enter that ends the run goes
+down from that column: type across A1, B1 and C1 with Tab, press Enter, and
+the cursor is on A2 for the next record. An arrow key or a click ends the
+run. And inside a selection of more than one cell the cursor stays inside
+it: Enter walks down a column and wraps to the top of the next, Tab walks
+along a row and wraps to the start of the next, both come back to the first
+cell after the last, and the selection stays put, so a block can be filled
+without reaching for the mouse. Both rules apply whether the key commits an
+edit or just moves the cursor, and `getEntryStep` from `@svgrid/grid` is the
+pure function behind them if you need the same stepping elsewhere.
+
+A click on the cell that is already active also opens the editor, the way a
+second click on a selected file name starts a rename. `editOnSecondClick={false}`
+turns that off; the spreadsheet shell does, since Excel edits on double-click
+or F2 only.
+
+A text column with `editorMultiline: true` takes line breaks: Alt+Enter
+inserts one and the editor grows a line per break, while Enter still commits.
+It is the spreadsheet's shape of a multi-line cell; `editorType: 'textarea'`
+is the other, where Enter itself is the line break and Ctrl+Enter commits.
 
 ## What gets saved
 
@@ -90,7 +113,13 @@ Declarative per-column `validate()` hook, Handsontable-style. Invalid cells - in
 
 ### Excel-style fill handle
 
-Walks through every fill pattern the engine detects: numeric series, date series, weekday sequence, reverse-fill, horizontal fill, copy-mode.
+Walks through every fill pattern the engine detects: numeric series (an even step continues it; an uneven run continues its linear trend, as Excel's AutoFill does), date series, weekday sequence, reverse-fill, horizontal fill, copy-mode.
+
+The handle follows the grid's pattern rules (a series, weekdays, "Item 1"),
+and `processCellForFill` runs ahead of them: it receives the source value
+and how far the target sits from it, and returns the value to write or
+`undefined` to leave it to the pattern. Double-click the handle to fill
+down as far as the neighbouring column has data. A drag is one undo.
 
 <div data-docs-demo="95-fill-handle" data-height="460"></div>
 

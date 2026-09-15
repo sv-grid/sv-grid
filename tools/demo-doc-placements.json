@@ -227,7 +227,9 @@
     "211-financial-model",
     "212-dashboard-sheet",
     "356-spreadsheet-chart",
-    "169-cell-borders"
+    "169-cell-borders",
+    "456-sales-report-workbook",
+    "459-named-ranges-forecast"
   ],
   "docs/help/server-side-data.md": [
     "79-loading-from-rest",
@@ -245,7 +247,8 @@
   ],
   "docs/help/cells/conditional-formatting.md": [
     "94-conditional-formatting",
-    "100-anomaly-highlights"
+    "100-anomaly-highlights",
+    "462-regional-scorecard-cf"
   ],
   "docs/help/rows/styling-rows.md": [
     "174-zebra-rows"
@@ -338,5 +341,37 @@
     "435-chart-type-gallery",
     "443-chart-combo",
     "355-charting-custom-buildspec"
+  ],
+  "docs/help/cells/paste-find-structure.md": [
+    "454-paste-find-structure",
+    "458-data-cleanup",
+    "466-paste-from-excel"
+  ],
+  "docs/help/cells/spreadsheet-shell.md": [
+    "456-sales-report-workbook",
+    "457-goal-seek",
+    "458-data-cleanup",
+    "460-review-comments-protection",
+    "461-order-intake-validation",
+    "462-regional-scorecard-cf",
+    "463-merged-report-headers",
+    "464-ticket-log-autofilter",
+    "465-autosave-document",
+    "466-paste-from-excel"
+  ],
+  "docs/help/cells/workbooks.md": [
+    "455-workbook",
+    "459-named-ranges-forecast",
+    "457-goal-seek",
+    "465-autosave-document"
+  ],
+  "docs/help/cells/keyboard-shortcuts.md": [
+    "452-excel-shortcuts"
+  ],
+  "docs/help/cells/number-formats.md": [
+    "453-formula-bar-formats"
+  ],
+  "docs/help/columns/column-spanning.md": [
+    "463-merged-report-headers"
   ]
 }

@@ -11,7 +11,7 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
-import { getNextActiveCell } from "./keyboard";
+import { getEntryStep } from "./keyboard";
 import {
   getCellKey,
   toValueArray,
@@ -21,7 +21,7 @@ import {
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
-import { pushHistory, nextGroupId, type HistoryStep } from "./history";
+import { pushHistory, nextGroupId, runHistoryGroup, type HistoryStep } from "./history";
 import { hasGridShortcuts, runGridShortcuts } from "./shortcut-registry";
 import { buildCommandContext } from "./command-context";
 
@@ -128,11 +128,29 @@ export function createEditing<
       rowRef: row.original,
     };
     ctx.setActiveCell(rowIndex, colIndex);
-    ctx.setSelection(rowIndex, colIndex);
+    selectForEdit(rowIndex, colIndex);
     return true;
   }
 
+  /**
+   * The selection an edit starts with. A cell already inside the selection
+   * leaves it standing: typing into the active cell of a selected block
+   * used to collapse the block to that one cell, so Enter could never walk
+   * on inside it. A cell outside the selection becomes the selection.
+   */
+  function selectForEdit(rowIndex: number, colIndex: number) {
+    if (ctx.isCellInSelectedRange(rowIndex, colIndex)) return;
+    ctx.setSelection(rowIndex, colIndex);
+  }
+
   function saveEditingCell() {
+    // One group: a consumer's onCellValueChange may record a step of its own
+    // (a spreadsheet gives "12%" a percent format as it lands), and that
+    // belongs to the same Ctrl+Z as the value.
+    runHistoryGroup(ctx, () => commitEditingCell());
+  }
+
+  function commitEditingCell() {
     if (!ctx.editingCell) return;
     const editing = ctx.editingCell;
     // Resolve the row this edit belongs to. `allRows` is only the current page,
@@ -214,6 +232,11 @@ export function createEditing<
   /** Apply an undo / redo step directly to the underlying row, bypassing
    *  the editor pipeline so we don't accidentally re-push to the stack. */
   function applyHistoryStep(step: HistoryStep, direction: 'undo' | 'redo') {
+    if (step.custom) {
+      if (direction === 'undo') step.custom.undo()
+      else step.custom.redo()
+      return
+    }
     const row = ctx.allRows.find((r: any) => r.id === step.rowId)
     const col = ctx.allColumns.find((c: any) => c.id === step.columnId)
     if (!row?.original || !col) return
@@ -245,18 +268,79 @@ export function createEditing<
    * move, Tab committed the edit and then let the browser walk focus out of the
    * grid entirely (#48). Shared by every editor type, including the textarea.
    */
-  function commitAndMoveByTab(shiftKey: boolean) {
+  /**
+   * Commit the edit and step the cursor the way data entry expects: Tab a
+   * column to the right (wrapping at the row's end), Enter a row down, Shift
+   * reversing either. Enter used to commit and stay, so a column of numbers
+   * took a click or an arrow between every value; Excel and every other
+   * sheet move down, and the accessibility page has always said this grid
+   * does too. At the last row or column the cursor stays put.
+   */
+  function commitAndMove(intent: "tabNext" | "tabPrev" | "moveDown" | "moveUp") {
     const active = ctx.activeCell;
     saveEditingCell();
     ctx.gridRootEl?.focus({ preventScroll: true });
     if (!active) return;
-    const next = getNextActiveCell(active, shiftKey ? "tabPrev" : "tabNext", {
+    // The same stepping as Enter and Tab on the grid root: a Tab run's Enter
+    // goes back to the run's first column, and a selected block keeps the
+    // cursor inside it.
+    const step = getEntryStep(active, intent, {
       maxRow: ctx.allRows.length - 1,
       maxCol: ctx.allColumns.length - 1,
+      tabOrigin: ctx.tabRunOrigin,
+      range: ctx.activeRangeRect(),
+      collapsed: {
+        isRowCollapsed: (i: number) => ctx.isRowCollapsed(i) as boolean,
+        isColumnCollapsed: (i: number) => !!ctx.collapsedColumns[ctx.allColumns[i]?.id],
+      },
     });
+    const next = step.cell;
     ctx.setActiveCell(next.rowIndex, next.colIndex);
-    ctx.setSelection(next.rowIndex, next.colIndex);
+    ctx.tabRunOrigin = step.tabOrigin;
+    if (!step.withinRange) ctx.setSelection(next.rowIndex, next.colIndex);
     ctx.scrollActiveCellIntoView(next.rowIndex, next.colIndex);
+  }
+
+  function commitAndMoveByTab(shiftKey: boolean) {
+    commitAndMove(shiftKey ? "tabPrev" : "tabNext");
+  }
+
+  /**
+   * Ctrl+Enter: the entry goes into every cell of the selected block and the
+   * cursor stays where it is, as in Excel, where it is how a block is filled
+   * with one value in one go. Each cell takes the same raw entry through the
+   * ordinary commit, so its column's parser, the history and
+   * `onCellValueChange` all see it, and the whole block is one undo. A cell
+   * that cannot be edited is left alone. With nothing but the active cell
+   * selected it is a commit that does not move.
+   */
+  function commitToSelection() {
+    const editing = ctx.editingCell;
+    if (!editing) return;
+    const raw = editing.value;
+    const active = ctx.activeCell;
+    const range = ctx.activeRangeRect();
+    runHistoryGroup(ctx, () => {
+      commitEditingCell();
+      if (!active || !range) return;
+      for (let r = range.minRow; r <= range.maxRow; r += 1) {
+        for (let c = range.minCol; c <= range.maxCol; c += 1) {
+          if (r === active.rowIndex && c === active.colIndex) continue;
+          const row = ctx.allRows[r];
+          const column = ctx.allColumns[c];
+          if (!row || !column || isGroupRow(row) || !isCellEditable(column, row)) continue;
+          ctx.editingCell = {
+            rowId: row.id,
+            columnId: column.id,
+            editorType: (column.columnDef.editorType ?? "text") as CellEditorType,
+            value: raw,
+            rowRef: row.original,
+          };
+          commitEditingCell();
+        }
+      }
+    });
+    ctx.gridRootEl?.focus({ preventScroll: true });
   }
 
   function onEditorKeyDown(event: KeyboardEvent) {
@@ -268,10 +352,27 @@ export function createEditing<
     if (hasGridShortcuts() && runGridShortcuts(event, buildCommandContext(ctx, true))) {
       return;
     }
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && event.altKey) {
+      // A line break, in an editor that can hold one (`editorMultiline`).
+      // In a single-line editor Alt+Enter is just Enter.
+      const el = event.currentTarget;
+      if (el instanceof HTMLTextAreaElement) {
+        event.preventDefault();
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? start;
+        el.value = el.value.slice(0, start) + "\n" + el.value.slice(end);
+        el.selectionStart = el.selectionEnd = start + 1;
+        updateEditingCellValue(el.value);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+    }
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
-      saveEditingCell();
-      ctx.gridRootEl?.focus({ preventScroll: true });
+      commitToSelection();
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      commitAndMove(event.shiftKey ? "moveUp" : "moveDown");
     } else if (event.key === "Tab") {
       event.preventDefault();
       commitAndMoveByTab(event.shiftKey);
@@ -347,7 +448,7 @@ export function createEditing<
       rowRef: row.original,
     };
     ctx.setActiveCell(rowIndex, colIndex);
-    ctx.setSelection(rowIndex, colIndex);
+    selectForEdit(rowIndex, colIndex);
   }
 
   async function pasteFromClipboard() {
@@ -357,6 +458,28 @@ export function createEditing<
     // On plain HTTP (a XAMPP/Apache LAN host) `navigator.clipboard` is
     // undefined - there the Ctrl+V keydown handler skips preventDefault and
     // lets the browser deliver a native `paste` event to `onGridPaste`.
+    if (ctx.props.onPasteClipboard && navigator.clipboard?.read) {
+      // Both types, for a handler that reads the HTML.
+      try {
+        const items = await navigator.clipboard.read();
+        let text = "";
+        let html: string | null = null;
+        for (const item of items) {
+          if (item.types.includes("text/html")) html = await (await item.getType("text/html")).text();
+          if (item.types.includes("text/plain")) text = await (await item.getType("text/plain")).text();
+        }
+        if (text || html) applyPastedPayload({ text, html, source: "async" });
+      } catch {
+        // No permission or nothing readable: the text-only read below may still work.
+        if (!navigator.clipboard.readText) return;
+        try {
+          applyPastedPayload({ text: await navigator.clipboard.readText(), html: null, source: "async" });
+        } catch {
+          return;
+        }
+      }
+      return;
+    }
     if (!navigator.clipboard?.readText) return;
     let text: string;
     try {
@@ -365,6 +488,26 @@ export function createEditing<
       return;
     }
     applyPastedText(text);
+  }
+
+  /**
+   * With `onPasteClipboard` set, Ctrl+V leaves the key to the browser so the
+   * `paste` event arrives with the HTML. A browser that does not deliver
+   * that event to the grid root (Firefox, a non-editable element) would
+   * paste nothing, so the async read is armed to run shortly after unless
+   * the event lands first and disarms it.
+   */
+  let pasteFallback: ReturnType<typeof setTimeout> | null = null;
+  function armPasteFallback() {
+    if (pasteFallback) clearTimeout(pasteFallback);
+    pasteFallback = setTimeout(() => {
+      pasteFallback = null;
+      void pasteFromClipboard();
+    }, 80);
+  }
+  function disarmPasteFallback() {
+    if (pasteFallback) clearTimeout(pasteFallback);
+    pasteFallback = null;
   }
 
   /**
@@ -381,6 +524,17 @@ export function createEditing<
     // preventDefault the editor's paste and write to the data cell instead,
     // so the edit "wouldn't update".
     if (ctx.editingCell) return;
+    if (ctx.props.onPasteClipboard) {
+      // The event is the preferred path for a handler: it carries the HTML
+      // as the source wrote it, needs no permission, and works over HTTP.
+      disarmPasteFallback();
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      const html = event.clipboardData?.getData("text/html") || null;
+      if (!text && !html) return;
+      event.preventDefault();
+      applyPastedPayload({ text, html, source: "event" });
+      return;
+    }
     // When the async API is available the keydown handler already pasted via
     // pasteFromClipboard(); ignore the (suppressed) native event so we don't
     // paste twice.
@@ -392,6 +546,22 @@ export function createEditing<
   }
 
   function applyPastedText(text: string) {
+    // One history group for the whole paste, so whatever a consumer's
+    // processCellFromClipboard records alongside the values (a format, via
+    // recordUndo) comes back with them on a single Ctrl+Z.
+    runHistoryGroup(ctx, () => applyPastedCells(text));
+  }
+
+  /** A paste with both types: the handler first, the plain text otherwise. */
+  function applyPastedPayload(payload: { text: string; html: string | null; source: "event" | "async" }) {
+    runHistoryGroup(ctx, () => {
+      const handled = ctx.props.onPasteClipboard?.(payload);
+      if (handled === true) return;
+      if (payload.text) applyPastedCells(payload.text);
+    });
+  }
+
+  function applyPastedCells(text: string) {
     const anchor = ctx.selectionRange.anchor ?? ctx.grid.getState().activeCell;
     if (!anchor) return;
     const focus = ctx.selectionRange.focus ?? anchor;
@@ -420,6 +590,15 @@ export function createEditing<
 
     const next = ctx.internalData.slice() as Array<TData>;
     const dataIndexOf = createDataIndexLookup(next);
+    // Every cell the paste changes: one grouped history entry for the lot,
+    // so Ctrl+Z takes the whole paste back, and one onCellValueChange each,
+    // so a consumer keeping its own model behind the grid (a formula engine)
+    // learns the values. The loop used to swap the rows in and stop, which
+    // left the undo stack blind to a paste and the consumer never told.
+    const changed: Array<{
+      row: TData; rowId: string; rowIndex: number; columnId: string; field: string;
+      before: unknown; after: unknown;
+    }> = [];
     for (let i = 0; i < rowSpan; i += 1) {
       const targetRowIndex = startRow + i;
       const row = ctx.allRows[targetRowIndex];
@@ -436,10 +615,19 @@ export function createEditing<
       const updated: Record<string, unknown> = {
         ...(originalRow as Record<string, unknown>),
       };
+      const rowChanges: typeof changed = [];
+      const record = (column: { id: string; columnDef: { field?: string } }, before: unknown, after: unknown) => {
+        if (before === after) return;
+        rowChanges.push({
+          row: updated as TData, rowId: row.id, rowIndex: dataIndex, columnId: column.id,
+          field: column.columnDef.field as string, before, after,
+        });
+      };
       for (let j = 0; j < colSpan; j += 1) {
         const column = ctx.allColumns[startCol + j];
         if (!column?.columnDef.field) continue;
         if (!isCellEditableAt(targetRowIndex, startCol + j)) continue;
+        const before = updated[column.columnDef.field];
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
         const raw = fillRange ? lines[0]! : sourceCells?.[j] ?? "";
@@ -461,14 +649,33 @@ export function createEditing<
           });
           if (decided === undefined) continue;
           updated[column.columnDef.field] = decided;
+          record(column, before, decided);
           continue;
         }
         updated[column.columnDef.field] = parsedValue;
+        record(column, before, parsedValue);
       }
+      if (!rowChanges.length) continue;
       next[dataIndex] = updated as TData;
+      changed.push(...rowChanges);
     }
+    if (!changed.length) return;
     ctx.internalData = next;
     ctx.grid.store.setState((prev: any) => ({ ...prev }));
+    pushHistory(
+      ctx,
+      changed.map((c) => ({
+        rowId: c.rowId, columnId: c.columnId, field: c.field, before: c.before, after: c.after,
+      })),
+      nextGroupId(),
+    );
+    if (ctx.props.onCellValueChange) {
+      for (const c of changed) {
+        ctx.props.onCellValueChange({
+          rowIndex: c.rowIndex, columnId: c.columnId, oldValue: c.before, newValue: c.after, row: c.row,
+        });
+      }
+    }
   }
 
   /** Programmatically begin editing a cell (mirrors a double-click). */
@@ -624,5 +831,6 @@ export function createEditing<
     onCellDoubleClick,
     pasteFromClipboard,
     onGridPaste,
+    armPasteFallback,
   };
 }

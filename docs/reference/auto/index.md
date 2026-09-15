@@ -8,7 +8,7 @@ see [the main reference index](../index.md).
 ## @svgrid/grid
 
 - [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 57 exports
-- [`@svgrid/grid/svgrid-wrapper.types.ts`](./svgrid-grid-svgrid-wrapper.types.md) - 8 exports
+- [`@svgrid/grid/svgrid-wrapper.types.ts`](./svgrid-grid-svgrid-wrapper.types.md) - 10 exports
 - [`@svgrid/grid/ai.ts`](./svgrid-grid-ai.md) - 33 exports
 - [`@svgrid/grid/scheduler-model.ts`](./svgrid-grid-scheduler-model.md) - 30 exports
 - [`@svgrid/grid/dock-model.ts`](./svgrid-grid-dock-model.md) - 25 exports

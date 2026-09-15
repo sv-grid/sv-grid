@@ -1,22 +1,15 @@
 /**
- * Freeze panes, over the pinning the grid already has.
+ * Freeze panes, over what the grid already has.
  *
- * Columns freeze properly and for free: `api.setColumnPinning({ left: [...] })`
- * makes them sticky and excludes them from the horizontal scroll, which is
- * exactly Excel's behaviour.
+ * Columns freeze through `api.setColumnPinning({ left: [...] })`, which
+ * makes them sticky and excludes them from the horizontal scroll, and rows
+ * through the grid's `frozenRows` prop, set here with `api.setOption`: the
+ * first N rows stay under the header, still the grid's own rows, editable
+ * and numbered, while the virtualized body scrolls beneath them. Both halves
+ * go through the api, so Freeze Panes is one call for any consumer.
  *
- * Rows are the honest part of this module. The grid renders `pinnedTopRows`
- * into a SEPARATE tbody above a virtualized body that still renders every
- * row, so handing it the first three displayed rows shows them twice.
- * Excluding them from the body means changing the virtualizer, which is the
- * path built for a million rows, and freeze is not worth that risk.
- *
- * So this does the column half through the api, and for rows it computes the
- * split and hands it back for the consumer to apply. That is the fiddly part
- * done once and correctly rather than reinvented per grid, and it does not
- * pretend to a rendering change that has not happened.
- *
- * `docs/help/missing-features.md` records the remaining gap.
+ * `splitFrozenRows` stays for a grid that renders its own pinned band from
+ * `pinnedTopRows` instead.
  */
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 
@@ -67,17 +60,17 @@ export function frozenColumnIds(
 type PinningApi = {
   setColumnPinning?(pinning: { left?: string[]; right?: string[] }): void
   getColumnPinning?(): { left?: string[]; right?: string[] }
+  setOption?(key: string, value: unknown): void
 }
 
 /**
- * Apply the COLUMN half through the api and report the whole state.
- *
- * The caller applies the row half with `splitFrozenRows`, which is why this
- * returns the state rather than swallowing it.
+ * Apply both halves through the api and report the state: the columns pin,
+ * the rows freeze. Zero rows clears the row half.
  */
 export function applyFreeze(cmd: GridCommandContext, state: FreezeState): FreezeState {
   const api = cmd.api as unknown as PinningApi
   api.setColumnPinning?.({ left: frozenColumnIds(cmd, state.cols) })
+  api.setOption?.('frozenRows', state.rows > 0 ? state.rows : undefined)
   return state
 }
 

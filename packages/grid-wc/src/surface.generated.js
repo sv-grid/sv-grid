@@ -378,15 +378,39 @@ export const ELEMENT_PROPS = [
     "ts": "boolean"
   },
   {
+    "name": "processCellForFill",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; columnId: string; }) => unknown"
+  },
+  {
     "name": "processCellForClipboard",
     "type": "Object",
     "attribute": null,
     "ts": "(params: { value: unknown; column: unknown; row: TData; rowIndex: number; columnId: string; }) => unknown"
   },
   {
+    "name": "clipboardHtml",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(params: { rects: ReadonlyArray<{ minRow: number; maxRow: number; minCol: number; maxCol: number }>; text: string; }) => string | null | undefined"
+  },
+  {
+    "name": "processCellFromClipboard",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(params: { text: string; parsedValue: unknown; row: TData; rowIndex: number; columnId: string; }) => unknown"
+  },
+  {
     "name": "enableInlineEditing",
     "type": "Boolean",
     "attribute": "enable-inline-editing",
+    "ts": "boolean"
+  },
+  {
+    "name": "editOnSecondClick",
+    "type": "Boolean",
+    "attribute": "edit-on-second-click",
     "ts": "boolean"
   },
   {
@@ -552,6 +576,18 @@ export const ELEMENT_PROPS = [
     "ts": "ReadonlyArray<TData>"
   },
   {
+    "name": "frozenRows",
+    "type": "Number",
+    "attribute": "frozen-rows",
+    "ts": "number"
+  },
+  {
+    "name": "mergedCells",
+    "type": "Array",
+    "attribute": null,
+    "ts": "ReadonlyArray<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }>"
+  },
+  {
     "name": "pinnedBottomRows",
     "type": "Array",
     "attribute": null,
@@ -625,6 +661,30 @@ export const ELEMENT_EVENTS = [
       "pagination"
     ],
     "detail": "{ pageIndex: number; pageSize: number }"
+  },
+  {
+    "callback": "onColumnResize",
+    "event": "columnresize",
+    "params": [
+      "event"
+    ],
+    "detail": "{ columnId: string; width: number }"
+  },
+  {
+    "callback": "onRowResize",
+    "event": "rowresize",
+    "params": [
+      "event"
+    ],
+    "detail": "{ rowIndex: number; height: number | null }"
+  },
+  {
+    "callback": "onPasteClipboard",
+    "event": "pasteclipboard",
+    "params": [
+      "payload"
+    ],
+    "detail": "{ text: string; html: string | null; source: \"event\" | \"async\"; }"
   },
   {
     "callback": "onApiReady",

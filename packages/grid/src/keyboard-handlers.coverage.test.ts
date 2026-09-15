@@ -54,6 +54,10 @@ function makeCtx(overrides: Partial<any> = {}) {
     extendSelection: vi.fn(),
     setSelection: vi.fn(),
     closeMenus: vi.fn(),
+    tabRunOrigin: null,
+    activeRangeRect: () => null,
+    isRowCollapsed: () => false,
+    collapsedColumns: {},
     ...overrides,
   }
   ctx._state = state
@@ -344,12 +348,32 @@ describe('onGridKeyDown / navigation', () => {
     expect(ctx.extendSelection).not.toHaveBeenCalled()
   })
 
-  it('Shift+ArrowRight extends the selection rectangle', () => {
-    const ctx = navCtx()
+  it('Shift+ArrowRight extends the selection rectangle and leaves the active cell', () => {
+    const ctx = navCtx({
+      selectionRange: { anchor: { rowIndex: 1, colIndex: 1 }, focus: { rowIndex: 1, colIndex: 1 } },
+    })
     const { onGridKeyDown } = createKeyboard(ctx)
     onGridKeyDown(rootKeyEvent({ key: 'ArrowRight', shiftKey: true }))
-    expect(ctx.setActiveCell).toHaveBeenCalledWith(1, 2)
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
     expect(ctx.extendSelection).toHaveBeenCalledWith(1, 2)
+    expect(ctx.scrollActiveCellIntoView).toHaveBeenCalledWith(1, 2)
+    expect(ctx.setSelection).not.toHaveBeenCalled()
+  })
+
+  it('Shift+Home, Shift+PageDown and Ctrl+Shift+Home grow the range to where the plain key goes', () => {
+    const ctx = navCtx({
+      selectionRange: { anchor: { rowIndex: 1, colIndex: 1 }, focus: { rowIndex: 3, colIndex: 2 } },
+    })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'Home', shiftKey: true }))
+    expect(ctx.extendSelection).toHaveBeenLastCalledWith(3, 0)
+    onGridKeyDown(rootKeyEvent({ key: 'Home', shiftKey: true, ctrlKey: true }))
+    expect(ctx.extendSelection).toHaveBeenLastCalledWith(0, 0)
+    onGridKeyDown(rootKeyEvent({ key: 'PageDown', shiftKey: true }))
+    const [row, col] = ctx.extendSelection.mock.lastCall
+    expect(col).toBe(2)
+    expect(row).toBeGreaterThan(3)
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
     expect(ctx.setSelection).not.toHaveBeenCalled()
   })
 
@@ -364,13 +388,109 @@ describe('onGridKeyDown / navigation', () => {
     expect(ctx.setSelection).toHaveBeenCalledWith(1, 0)
   })
 
-  it('Shift+Enter (moveUp) DOES extend the selection (arrow-family intent)', () => {
+  it('Shift+Arrow grows from the far corner of the range, not from the active cell', () => {
+    const ctx = navCtx({
+      selectionRange: { anchor: { rowIndex: 1, colIndex: 1 }, focus: { rowIndex: 3, colIndex: 2 } },
+    })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'ArrowDown', shiftKey: true }))
+    expect(ctx.extendSelection).toHaveBeenCalledWith(4, 2)
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
+  })
+
+  it('Shift+Arrow with nothing anchored anchors at the active cell first', () => {
+    const ctx = navCtx({ selectionRange: { anchor: null, focus: null } })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'ArrowDown', shiftKey: true }))
+    expect(ctx.setSelection).toHaveBeenCalledWith(1, 1)
+    expect(ctx.extendSelection).toHaveBeenCalledWith(2, 1)
+  })
+
+  it('Shift+Arrow moves the active cell when cell selection is off', () => {
+    const ctx = navCtx({ enableCellSelectionEffective: false })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'ArrowDown', shiftKey: true }))
+    expect(ctx.setActiveCell).toHaveBeenCalledWith(2, 1)
+    expect(ctx.extendSelection).not.toHaveBeenCalled()
+  })
+
+  it('Ctrl+V with onPasteClipboard leaves the key to the browser and arms the async fallback', () => {
+    const arm = vi.fn()
+    const ctx = navCtx({ props: { rowHeight: 30, onPasteClipboard: () => true }, armPasteFallback: arm, pasteFromClipboard: vi.fn() })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    const ev = rootKeyEvent({ key: 'v', ctrlKey: true })
+    onGridKeyDown(ev)
+    expect(ev.defaultPrevented).toBe(false)
+    expect(arm).toHaveBeenCalledTimes(1)
+    expect(ctx.pasteFromClipboard).not.toHaveBeenCalled()
+  })
+
+  it('Shift+Enter moves up without extending the selection', () => {
+    // Shift+Enter shares the moveUp intent with Shift+ArrowUp, and used to
+    // grow the range like the arrow does. In Excel it only reverses Enter.
     const ctx = navCtx()
     const { onGridKeyDown } = createKeyboard(ctx)
     onGridKeyDown(rootKeyEvent({ key: 'Enter', shiftKey: true }))
-    // Enter+shift -> moveUp, which is in the extend set.
     expect(ctx.setActiveCell).toHaveBeenCalledWith(0, 1)
-    expect(ctx.extendSelection).toHaveBeenCalledWith(0, 1)
+    expect(ctx.setSelection).toHaveBeenCalledWith(0, 1)
+    expect(ctx.extendSelection).not.toHaveBeenCalled()
+  })
+
+  it('Enter after a run of Tabs goes down from the column the run began in', () => {
+    const ctx = navCtx({ state: { activeCell: { rowIndex: 0, colIndex: 0, cellId: null } } })
+    // The fake setActiveCell does what the real one does: forgets the run.
+    ctx.setActiveCell = vi.fn((r: number, c: number) => {
+      const prev = ctx._state.activeCell
+      if (!prev || prev.rowIndex !== r || prev.colIndex !== c) ctx.tabRunOrigin = null
+      ctx._state.activeCell = { rowIndex: r, colIndex: c, cellId: null }
+    })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'Tab' }))
+    onGridKeyDown(rootKeyEvent({ key: 'Tab' }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 0, colIndex: 2 })
+    expect(ctx.tabRunOrigin).toBe(0)
+    onGridKeyDown(rootKeyEvent({ key: 'Enter' }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 1, colIndex: 0 })
+    expect(ctx.tabRunOrigin).toBe(null)
+    expect(ctx.setSelection).toHaveBeenLastCalledWith(1, 0)
+  })
+
+  it('an arrow between the Tabs ends the run', () => {
+    const ctx = navCtx({ state: { activeCell: { rowIndex: 0, colIndex: 0, cellId: null } } })
+    ctx.setActiveCell = vi.fn((r: number, c: number) => {
+      const prev = ctx._state.activeCell
+      if (!prev || prev.rowIndex !== r || prev.colIndex !== c) ctx.tabRunOrigin = null
+      ctx._state.activeCell = { rowIndex: r, colIndex: c, cellId: null }
+    })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'Tab' }))
+    onGridKeyDown(rootKeyEvent({ key: 'ArrowRight' }))
+    expect(ctx.tabRunOrigin).toBe(null)
+    onGridKeyDown(rootKeyEvent({ key: 'Enter' }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 1, colIndex: 2 })
+  })
+
+  it('Enter and Tab stay inside a selected block and keep the selection', () => {
+    const ctx = navCtx({
+      state: { activeCell: { rowIndex: 1, colIndex: 1, cellId: null } },
+      activeRangeRect: () => ({ minRow: 1, maxRow: 2, minCol: 1, maxCol: 2 }),
+    })
+    ctx.setActiveCell = vi.fn((r: number, c: number) => {
+      const prev = ctx._state.activeCell
+      if (!prev || prev.rowIndex !== r || prev.colIndex !== c) ctx.tabRunOrigin = null
+      ctx._state.activeCell = { rowIndex: r, colIndex: c, cellId: null }
+    })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    onGridKeyDown(rootKeyEvent({ key: 'Enter' }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 2, colIndex: 1 })
+    onGridKeyDown(rootKeyEvent({ key: 'Enter' }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 1, colIndex: 2 })
+    onGridKeyDown(rootKeyEvent({ key: 'Tab' }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 2, colIndex: 1 })
+    onGridKeyDown(rootKeyEvent({ key: 'Tab', shiftKey: true }))
+    expect(ctx._state.activeCell).toMatchObject({ rowIndex: 1, colIndex: 2 })
+    expect(ctx.setSelection).not.toHaveBeenCalled()
+    expect(ctx.extendSelection).not.toHaveBeenCalled()
   })
 
   it('Tab moves right and wraps using getNextActiveCell', () => {

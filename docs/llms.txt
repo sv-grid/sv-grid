@@ -1,8 +1,8 @@
-# sv-grid
+# SvGrid (sv-grid) - the Svelte data grid
 
-> The Svelte 5-native data grid. Headless engine + render component, AI-native, WAI-ARIA, virtualized to 100k rows.
+> SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row + column virtualization to 1M rows, Excel-style filters, grouping, tree, master/detail, inline editing, WAI-ARIA, built-in AI helpers and an MCP server. Also searched for as "Svelte datagrid", "Svelte grid" and "Svelte table".
 
-Two npm packages: `@svgrid/grid` (MIT, open source) and `@svgrid/enterprise` (commercial - export, import, pivot, AI helpers).
+Two npm packages: `@svgrid/grid` (MIT, open source: the full grid, the AI helpers and the UI components) and `@svgrid/enterprise` (commercial: the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, alert rules and SvGrid Studio).
 
 For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).
 For a machine-readable manifest: see [docs.json](/docs.json).
@@ -87,7 +87,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Server-side data](https://svgrid.com/docs/help/server-side-data/): The patterns for moving sort, filter, group, and pagination off the client and onto your API. Three flavours, ranked by complexity:
 - [shadcn-svelte integration](https://svgrid.com/docs/help/shadcn/): If your Svelte 5 app already uses shadcn-svelte, SvGrid drops in without a redesign. You keep the exact palette, radius, font, and dark mode you already have - the grid reads them straight from the…
 - [Agent Skill](https://svgrid.com/docs/help/skill/): The SvGrid **Agent Skill** gives AI coding assistants project-aware context for writing correct SvGrid code. It is the always-on counterpart to the MCP server: the skill carries the API surface and…
-- [Spreadsheet formulas](https://svgrid.com/docs/help/spreadsheet-formulas/): A minimal Excel-style formula engine that runs in the browser, with no dependencies. Cells can hold either a literal value (number, string, boolean) or a formula starting with =. When the formula r…
+- [Spreadsheet formulas](https://svgrid.com/docs/help/spreadsheet-formulas/): An Excel-style formula engine that runs in the browser with no dependencies. Cells hold either a literal value or a formula starting with =. The engine parses it, resolves references against the sh…
 - [State maintenance](https://svgrid.com/docs/help/state-maintenance/): The pattern for snapshotting every dimension the user can change about the grid - sort, filters, group-by, column visibility + widths, pagination, expansion, selection, active cell - into a single …
 - [Status bar](https://svgrid.com/docs/help/status-bar/): The status bar is the strip under the grid that shows live aggregates of the **selected cell range** - count, sum, average, min, max - the way Excel does at the bottom-right when you select a block…
 - [Tailwind integration](https://svgrid.com/docs/help/tailwind/): SvGrid was built alongside Tailwind v4 (the gallery is the proof). The two compose cleanly because they have **non-overlapping concerns**:
@@ -106,12 +106,18 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Expressions](https://svgrid.com/docs/help/cells/expressions/): SvGrid does not ship a formula / expression language for cells. Computed values are JavaScript - either via fieldFn or inside a cell callback.
 - [Getting values](https://svgrid.com/docs/help/cells/getting-values/): You get cell values in three ways depending on context.
 - [Highlighting changes](https://svgrid.com/docs/help/cells/highlighting-changes/): Set cellFlash on a column and the grid flashes that cell whenever its value changes - edits, streaming feeds, server pushes. It is keyed by row identity, so scrolling a virtualized grid (which recy…
+- [Excel keyboard shortcuts](https://svgrid.com/docs/help/cells/keyboard-shortcuts/): The muscle memory a spreadsheet user arrives with, on any <SvGrid> with cell selection on. One call turns it on:
+- [Number formats and cell styles](https://svgrid.com/docs/help/cells/number-formats/): In Excel, format is a property of the **cell**, not the column. Two cells in the same column can show $1,234.50 and 123450% from the same stored number. @svgrid/enterprise ships that: an Excel form…
+- [Paste Special, Find and Replace, and structural edits](https://svgrid.com/docs/help/cells/paste-find-structure/): The three Excel operations that write more than one cell, plus freeze panes.
 - [Rich text and Markdown cells](https://svgrid.com/docs/help/cells/rich-text-cells/): Some columns hold formatted text: a note with a bold phrase and a link, a description written in Markdown, a comment pasted out of another system. Render those with SvRichCell, which sanitizes the …
 - [Sparklines](https://svgrid.com/docs/help/cells/sparklines/): A sparkline is a tiny, word-sized chart drawn inside a single cell. SvGrid renders them as a first-class column type: set sparkline on a column whose value is an array of numbers and the grid paint…
+- [The spreadsheet shell](https://svgrid.com/docs/help/cells/spreadsheet-shell/): Everything between the ribbon and the sheet tabs, as one component.
 - [Styling cells](https://svgrid.com/docs/help/cells/styling-cells/): Cells render as <td> and pick up the same CSS variable tokens as the rest of the grid.
+- [Tables and structured references](https://svgrid.com/docs/help/cells/tables/): A table is a named region with a header row, so a formula can say Orders[Amount] instead of D2:D57.
 - [Text formatting](https://svgrid.com/docs/help/cells/text-formatting/): The format field on a column produces locale-aware formatted strings without you writing a renderer.
 - [Tooltips](https://svgrid.com/docs/help/cells/tooltips/): There is no built-in tooltip API on ColumnDef. Use the standard title attribute, an accessible <dialog>, or any popover library - wired through a custom cell renderer.
 - [View refresh](https://svgrid.com/docs/help/cells/view-refresh/): The grid renders reactively - it does **not** have a refresh() method, because it doesn't need one. To make the grid re-display, change the data that drives it.
+- [Workbooks: several sheets that read each other](https://svgrid.com/docs/help/cells/workbooks/): The formula engine parsed Orders!A1 and 'Price list'!A1:C9 from the day it was promoted. This is the model those references point at.
 
 ### Columns
 

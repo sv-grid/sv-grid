@@ -38,8 +38,9 @@ function stripAllowedRegions(src: string): string {
 describe('icon seam', () => {
   it('leaves no inline <svg> outside the built-in catalogue', () => {
     // Data visualisation is not chrome: these draw values, not affordances, and
-    // there is nothing for a consumer's icon set to say about them.
-    const ALLOWED = ['sv-grid-sparkline']
+    // there is nothing for a consumer's icon set to say about them. Nor is a
+    // context-menu item's own path icon: that IS the consumer's drawing.
+    const ALLOWED = ['sv-grid-sparkline', 'sv-grid-menu-icon-own']
 
     const offenders: string[] = []
     for (const file of CHROME) {

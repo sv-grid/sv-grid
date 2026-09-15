@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-14 from 373 pages, 18 comparison pages, plus 66 API reference pages.
+Generated 2026-09-15 from 379 pages, 18 comparison pages, plus 66 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -364,6 +364,28 @@ For machine-readable releases, fetch
   (`allowPopout={false}`); opt in explicitly. Added a dedicated pop-out demo.
 
 #### Fixed
+
+- **Arrow keys lagged whenever the active cell had to scroll.** On the
+  10,000 x 53 large-dataset demo one ArrowDown at the bottom of the viewport
+  cost about 37 ms of main-thread work and painted over two frames; it is now
+  about 8 ms and paints once. Five things added up. Every rendered row was
+  measured with `getBoundingClientRect` on each scroll tick, on a grid that
+  had no `autoRowHeight` to use the number for, which forced a table layout
+  per row (about 30 per key press). The scroll geometry the custom scrollbar
+  reads was pulled inside a derived at the start of the flush, forcing a
+  second full table layout that the row writes then invalidated. The
+  virtualizer keyed rows by their position in the window, so a one-row
+  scroll rewrote all ~30 rows x every rendered column; rows are now keyed
+  `index mod windowLength`, so the rows that stay keep their `<tr>` untouched
+  and the one that entered is moved with a single `insertBefore`. The row
+  window only updated after the browser's `scroll` event and a
+  `requestAnimationFrame`, a frame after the key press; keyboard navigation
+  now syncs the virtualizer inline, since it knows where it scrolled. And
+  each cell carried three selection-dependent deriveds plus the fill handle's
+  `{#if}`, re-marked on every move; they are one `{@const}` now, `null` for
+  a plain cell. Also closed on the way: `key in editedCellValues` on a deep
+  `$state` proxy created a signal per rendered cell that never went away, and
+  the header checkbox's tri-state walked every row on each arrow key.
 
 - **A heat map drew a series legend in colours its cells never use.** The
   ramp on the right is its key; the row of palette chips under it (and a
@@ -13443,6 +13465,7 @@ shortcuts:
 | End                 | Active cell → last column in the row.                                 |
 | Ctrl/Cmd + Home     | Active cell → top-left of the grid.                                   |
 | Ctrl/Cmd + End      | Active cell → bottom-right.                                           |
+| Ctrl/Cmd + Arrow    | Reserved. The grid does not move the active cell; `enableSheet()` in `@svgrid/enterprise` binds it to Excel's jump-to-edge-of-data-region. See [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md). |
 | Page Up / Page Down | Scroll a viewport's worth of rows.                                    |
 
 ### Selection (when `rowSelectionFeature` is on)
@@ -13450,7 +13473,7 @@ shortcuts:
 | Key                       | Action                                                          |
 | ------------------------- | --------------------------------------------------------------- |
 | Space                     | Toggle the active row's selection.                              |
-| Ctrl/Cmd + A              | Select all rows on the current page.                            |
+| Ctrl/Cmd + A              | Not bound by the grid; the browser's select-all applies. The header checkbox selects every row, and `api.selectCells` selects ranges. |
 | Shift + Arrow Up/Down     | Extend the row selection.                                       |
 | Ctrl/Cmd + Click on a row | Toggle that row's selection without affecting others.           |
 
@@ -16684,7 +16707,11 @@ separate TSV blocks.
 ```
 
 `processCellForClipboard` runs per cell on its way to the clipboard - strip
-currency symbols, expand codes to labels, redact, etc.
+currency symbols, expand codes to labels, redact, etc. `clipboardHtml` runs
+once per copy with the rectangles and the assembled text, and returns an
+HTML table to put on the clipboard beside it, so a spreadsheet pasting the
+copy gets formats too; `onPasteClipboard` is its inbound half. Both are
+described under [Paste Special](./paste-find-structure.md#the-grids-clipboard-hooks).
 
 ## Gotchas
 
@@ -16705,6 +16732,14 @@ Drive cell selection with api.selectCells / api.getSelected; subscribe to change
 
 Drag any rectangle of cells, or Ctrl/Cmd+drag to add MORE ranges - all stay highlighted and copy together. Toolbar issues common ranges; live SUM/AVG/MIN/MAX/COUNT status bar; copy as TSV.
 
+The active cell stays where a range started. A drag, a Shift+click or
+Shift+Arrow grows the range from its far corner and leaves the active cell
+at the anchor, as in Excel: it is the cell the next keystroke edits and
+the one a formula bar shows, and it is drawn without the range tint. The
+next Shift+Arrow continues from the far corner, not from the active cell.
+A command that extends the selection reads that corner from
+`selectionFocus` on its command context.
+
 <div data-docs-demo="118-range-selection" data-height="460"></div>
 
 ## See also
@@ -16717,6 +16752,11 @@ Drag any rectangle of cells, or Ctrl/Cmd+drag to add MORE ranges - all stay high
      ================================================================== -->
 
 # Conditional formatting
+
+> The spreadsheet shell has its own conditional formatting, Excel's: rules
+> over ranges of cells evaluated on computed values, from Home > Styles on
+> the ribbon. See [the spreadsheet shell](./spreadsheet-shell.md#conditional-formatting).
+> This page is the grid's column-scoped, value-driven rules.
 
 Conditional formatting colors a cell by its value. SvGrid ships it as a
 declarative engine prop, `conditionalFormats`, so you describe the rules once
@@ -16924,6 +16964,13 @@ See the live [Conditional formatting](https://svgrid.com/demos/141-conditional-f
 demo.
 
 ## More examples
+
+### Regional scorecard: conditional formatting
+
+Eight regions, three months, a target, and every colour on the page is a conditional formatting rule over computed values: Highlight Cells on attainment (under 90% red, 100% and over green), a Data Bar and a Top 3 on the quarter, a Green - Yellow - Red Color Scale across the months, an Icon Set on the trend. Edit a month and the arrow, the bar, the fill and the rank all move; Manage Rules lists the six in priority order.
+
+<div data-docs-demo="462-regional-scorecard-cf" data-height="560"></div>
+
 
 ### Conditional formatting
 
@@ -17456,6 +17503,761 @@ the usual next request, and it is CSS rather than configuration.
 - [demos/05-inline-editing.svelte](../../../examples/src/demos/05-inline-editing.svelte)
 
 <!-- =================================================================
+     /docs/help/cells/keyboard-shortcuts/  (community)
+     ================================================================== -->
+
+# Excel keyboard shortcuts
+
+The muscle memory a spreadsheet user arrives with, on any `<SvGrid>` with cell
+selection on. One call turns it on:
+
+```ts
+import { setLicenseKey, enableSheet } from '@svgrid/enterprise'
+
+setLicenseKey('YOUR-KEY')
+enableSheet()
+```
+
+```svelte
+<SvGrid {data} {columns} enableCellSelection enableInlineEditing />
+```
+
+`enableSheet()` is idempotent, so call it from every component that wants it or
+once at app start. `installEnterprise()` calls it for you.
+
+If you only want the shortcuts, import from the `/sheet` subpath so the rest of
+the pack (export, pivot, the scheduler, the board) stays out of your bundle:
+
+```ts
+import { enableSheet } from '@svgrid/enterprise/sheet'
+```
+
+<div data-docs-demo="452-excel-shortcuts" data-height="520"></div>
+
+## The keymap
+
+### Navigation
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + Arrow | Jump to the edge of the data region. |
+| Ctrl/Cmd + Shift + Arrow | The same jump, extending the selection from its far corner; the active cell stays at the anchor. |
+| Ctrl/Cmd + A, Ctrl/Cmd + Shift + Space | Select the current region; press again for the whole sheet. |
+| Ctrl/Cmd + Shift + 8 (Ctrl + \*) | Select the current region, and only that. |
+| Ctrl/Cmd + Space | Select the whole columns the selection touches; the active cell stays. |
+| Shift + Space | Select the whole rows the selection touches; the active cell stays. |
+| Ctrl/Cmd + End | The last used cell (the grid's own Ctrl+Home is A1). |
+| Ctrl/Cmd + Shift + End / Home | Extend the selection to the last used cell, or to A1. |
+| Shift + Home, Shift + PageUp / PageDown | The grid's own: extend the selection to column A, or by a page, from its far corner. |
+
+The mouse follows Excel's rules too: a click on a column letter or a row
+number selects the whole line and puts the active cell on its first VISIBLE
+row or column, a drag along the letters or the numbers selects a run,
+Shift+click extends the run from the active cell's line, Ctrl+click adds a
+line beside the selection, and the corner selects everything without moving
+the active cell. The keyboard stays on the sheet afterwards: an arrow
+collapses to the active cell, Shift+Arrow grows a run of whole lines, and
+typing lands in the active cell. Shift+Arrow and the extending keys scroll
+along their own axis only, so a whole-column selection does not jump to
+the bottom of the sheet when it grows sideways.
+
+### Fill and entry
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + D | Fill down. |
+| Ctrl/Cmd + R | Fill right. |
+| Ctrl/Cmd + ; | Stamp today's date. |
+| Ctrl/Cmd + Shift + ; | Stamp the current time. |
+| Ctrl/Cmd + ' | Copy the cell above, unchanged. |
+| Ctrl/Cmd + Shift + " | Copy the value of the cell above: what a formula there shows, as a number or text. |
+| Alt + = | AutoSum the run above, or to the left. |
+| F4 (while editing) | Turn the reference at the caret through `$A$1`, `A$1`, `$A1`, `A1`; a range turns both ends. Also in the formula bar. |
+| Alt + Enter (while editing) | A line break in the cell, which turns on Wrap Text. |
+| Enter after a run of Tabs | Down a row and back to the column the run began in. |
+| Ctrl/Cmd + 9 / Ctrl/Cmd + 0 | Hide the selected rows / columns (raised as `hide-rows` / `hide-columns`). |
+| Ctrl/Cmd + Shift + 9 / Ctrl/Cmd + Shift + 0 | Unhide the rows / columns the selection spans (`unhide-rows` / `unhide-columns`). |
+| Enter / Tab inside a selected block | Walk the block, wrapping at its edges; the block stays selected. |
+| Ctrl/Cmd + Enter (while editing) | The entry into every cell of the selected block, staying put. |
+
+### Formatting
+
+These write through the store you attach with `setFormatTarget`. Until you
+attach one they decline, so the key falls through rather than looking broken.
+See [number formats](./number-formats.md).
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + B / I / U | Bold, italic, underline. |
+| Ctrl/Cmd + 5 | Strikethrough. |
+| Ctrl/Cmd + 1 | Open Format Cells: the sheet shell's own dialog, or your `setFormatDialogHandler` on a plain grid. |
+| Ctrl/Cmd + Shift + 1..6 | Number, time, date, currency, percent, scientific. |
+| Ctrl/Cmd + Shift + ` | General. |
+| Ctrl/Cmd + Shift + > / < | Increase / decrease the font size one rung. |
+| Ctrl/Cmd + Shift + & | Outline border around the selection. |
+| Ctrl/Cmd + Shift + _ | Remove every border in the selection. |
+
+### Structure, search and paste
+
+These open your own chrome rather than any this layer ships, through
+`setFindReplaceHandler`, `setPasteSpecialHandler` and `setFormatDialogHandler`.
+See [paste, find and structure](./paste-find-structure.md).
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + Shift + Plus | Insert rows or columns, rewriting every formula. |
+| Ctrl/Cmd + Minus | Delete rows or columns, rewriting every formula. |
+| Ctrl/Cmd + H | Find and Replace. |
+| Ctrl/Cmd + Shift + V | Paste Special. |
+| Enter, while the marching ants are up | Paste the copied block here once and leave copy mode; Ctrl+V pastes and keeps the ants. |
+| F9 | Recalculate. |
+| Ctrl/Cmd + ` | Show formulas instead of values. |
+| Ctrl/Cmd + Shift + L | The filter row. |
+| Shift + F3 | Insert Function. |
+| Shift + F2 | Insert or edit the comment on the active cell (raised as `edit-comment`). |
+| Alt + Down | Drop the list a validated cell offers (raised as `open-list`). |
+| Ctrl/Cmd + F1 | Collapse or expand the ribbon (raised as `toggle-ribbon`). |
+| Ctrl/Cmd + F3 | Name Manager. |
+| Ctrl/Cmd + T | Format as Table, when the application answers Insert > Table (`extras`). |
+
+The last seven raise the same actions as the ribbon buttons that name them;
+on a plain grid, `setRibbonActionHandler` decides what answers.
+
+A command that needs the clipboard calls `cmd.copy()`, `cmd.cut()` or
+`cmd.paste()` on its `GridCommandContext`: the selection copy, cut and
+paste that Ctrl+C, Ctrl+X and Ctrl+V run, cell by cell through
+`processCellForClipboard`. The api's `copyToClipboard` is something else,
+the export of the displayed rows with their headers.
+
+### Workbook
+
+These need a workbook attached with `setWorkbook`; without one they decline,
+so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
+[workbooks](./workbooks.md).
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + Page Down / Page Up | Next / previous sheet. |
+| Shift + F11 | New sheet. |
+
+## What Ctrl+Arrow actually does
+
+It is not "move a long way". It is a run-boundary search, and the rule depends
+on what you are standing on:
+
+- On a filled cell whose neighbour is also filled: run to the **last filled
+  cell before the next blank**. This is how you get from the top of a column to
+  its bottom in one press.
+- On a filled cell whose neighbour is blank: **skip the gap** and land on the
+  next filled cell. This is how you hop between blocks.
+- On a blank cell: skip to the next filled cell.
+- Nothing filled ahead: land on the last cell of the sheet in that direction.
+
+A cell holding `null`, `undefined` or `''` counts as blank. A `0`, a `false`
+and a whitespace-only string are content, so a column of zeroes does not trap
+the cursor.
+
+## Fill has two behaviours, like Excel
+
+`Ctrl+D` with a **range** selected copies the top row of that range into every
+row below it. With a **single cell** selected it pulls from the cell directly
+above instead, which is what makes it useful while typing down a column.
+`Ctrl+R` mirrors both, across instead of down.
+
+Both run as one undoable action: filling thirty rows takes one `Ctrl+Z`, not
+thirty.
+
+Fill is reference-aware: `=A1*2` filled one row down becomes `=A2*2`, while
+`=$A$1*B1` keeps its anchor and becomes `=$A$1*B2`. See
+[spreadsheet formulas](../spreadsheet-formulas.md).
+
+`Ctrl+'` is deliberately not a fill. It copies the cell above **verbatim**, so
+you get an unshifted copy of the formula to edit rather than one that has
+already moved.
+
+## Dates land as ISO, not as display text
+
+`Ctrl+;` writes `2026-09-13`, not `13/09/2026`. The value goes into your data
+and a column's own [`format`](./cell-data-types.md) decides how it reads;
+stamping a localised string would put display text in the model.
+
+## What the grid still owns
+
+`enableSheet()` does not take every key. Copy, cut, plain paste, undo, redo and
+find stay with the grid, and the plain arrow keys still move one cell. A command
+only claims a key when it has something to do: `Ctrl+D` on the top row with
+nothing above it declines, and the key falls through to the grid.
+
+While a cell editor is open, every shortcut here declines, so nothing swallows
+a keystroke you meant for the editor.
+
+## Binding your own
+
+The registry the sheet keymap uses is public and free, in `@svgrid/grid`:
+
+```ts
+import { registerGridShortcuts } from '@svgrid/grid/shortcuts'
+
+const off = registerGridShortcuts((event, cmd) => {
+  if (!(event.ctrlKey && event.key === 'k')) return false
+  const active = cmd.activeCell
+  if (!active) return false
+  cmd.batch(() => {
+    for (const [minRow, minCol, maxRow, maxCol] of cmd.ranges) {
+      for (let r = minRow; r <= maxRow; r += 1) {
+        for (let c = minCol; c <= maxCol; c += 1) cmd.setCellValue(r, c, 0)
+      }
+    }
+  })
+  return true          // claim the key; the grid stops here
+}, { id: 'my-app', priority: 10 })
+```
+
+Return `true` to consume the event, `false` to let it fall through. Higher
+`priority` runs first; the sheet keymap registers at 100. Reusing an `id`
+replaces that handler rather than stacking a second copy. The returned function
+unregisters.
+
+Indices in `cmd` are **display** indices, matching the selection model, so they
+follow sort, filter and pagination. That is why `cmd.getCellValue` exists
+alongside `api.getCellValue`: the api pair indexes the underlying data array,
+and mixing the two gives you the wrong cell as soon as the grid is sorted.
+
+Wrap any multi-cell write in `cmd.batch()` so it undoes in one press.
+
+## While editing
+
+A binding marked `editing: true` runs only inside the cell editor, and the
+others only outside it, so Ctrl+D while typing stays a keystroke for the text.
+The editor's element reaches such a binding as `cmd.editor`, which is how F4
+reads and rewrites the draft. Alt+Enter needs no binding: the grid's
+multiline text editor takes it as a line break itself.
+
+<!-- =================================================================
+     /docs/help/cells/number-formats/  (community)
+     ================================================================== -->
+
+# Number formats and cell styles
+
+In Excel, format is a property of the **cell**, not the column. Two cells in
+the same column can show `$1,234.50` and `123450%` from the same stored number.
+`@svgrid/enterprise` ships that: an Excel format-string compiler, and a store
+that keeps per-cell formatting alive through sorting.
+
+```ts
+import {
+  compileNumberFormat, createFormatStore, entryToStyle,
+} from '@svgrid/enterprise/sheet'
+```
+
+<div data-docs-demo="453-formula-bar-formats" data-height="560"></div>
+
+> This is different from the column-level [`format`](./cell-data-types.md)
+> prop, which is `Intl`-based and applies to every cell in a column. Use that
+> when a column has one meaning; use this when the user picks per cell.
+
+## Formatting a value
+
+```ts
+const money = compileNumberFormat('$#,##0.00;($#,##0.00)')
+
+money.format(1234.5)    // { text: '$1,234.50' }
+money.format(-1234.5)   // { text: '($1,234.50)' }
+```
+
+Compilation is cached per pattern, so a column of ten thousand cells sharing
+one format parses it once. `formatWithPattern(value, pattern)` is the one-shot
+convenience.
+
+## The pattern grammar
+
+### Sections
+
+A pattern has up to four sections separated by `;`:
+
+```
+positive ; negative ; zero ; text
+```
+
+With **two**, the second covers negatives *and* zero. With **one**, it covers
+everything.
+
+A negative rendered by its own section uses its **absolute** value, because
+that section supplies the sign:
+
+```ts
+formatWithPattern(-1.5, '0.00;(0.00)')   // '(1.50)'  not '(-1.50)'
+```
+
+### Digit placeholders
+
+| Token | Meaning |
+| ----- | ------- |
+| `0` | A digit, or a zero if there is none |
+| `#` | A digit, or nothing |
+| `?` | A digit, or a space (so decimal points line up) |
+
+```ts
+formatWithPattern(5, '000')       // '005'
+formatWithPattern(0, '#')         // ''      hides zeros
+formatWithPattern(1.5, '0.0#')    // '1.5'   second decimal only when present
+formatWithPattern(1.55, '0.0#')   // '1.55'
+```
+
+### Separators and scaling
+
+`,` between placeholders groups thousands. `,` immediately before the decimal
+point or at the end of the pattern **divides** by a thousand per comma:
+
+```ts
+formatWithPattern(1234567, '#,##0')      // '1,234,567'
+formatWithPattern(1500000, '0,,"M"')     // '2M'
+formatWithPattern(1500, '0.0,"k"')       // '1.5k'
+```
+
+`%` multiplies by 100 and prints the sign. `E+` switches to scientific, where
+the placeholders **after** the `E+` size the exponent rather than the mantissa:
+
+```ts
+formatWithPattern(0.425, '0.00%')        // '42.50%'
+formatWithPattern(12345, '0.00E+00')     // '1.23E+04'
+```
+
+### Colours and literals
+
+`[Red]`, `[Blue]`, `[Green]`, `[Black]`, `[White]`, `[Cyan]`, `[Magenta]` and
+`[Yellow]` set a colour rather than printing. It comes back on the result:
+
+```ts
+compileNumberFormat('0.00;[Red](0.00)').format(-5)
+// { text: '(5.00)', color: '#ff0000' }
+```
+
+Text in quotes, or after a backslash, is emitted as-is. `@` in the fourth
+section is the text placeholder.
+
+Conditions like `[<100]` are **not** supported; they are dropped rather than
+printed.
+
+### Dates
+
+A pattern containing date tokens is a date pattern.
+
+| Token | Gives |
+| ----- | ----- |
+| `yyyy` `yy` | 2026, 26 |
+| `mmmm` `mmm` `mm` `m` | September, Sep, 09, 9 |
+| `dddd` `ddd` `dd` `d` | Monday, Mon, 14, 14 |
+| `hh` `h` `ss` `s` | Hours and seconds |
+| `AM/PM` | Meridiem |
+
+`m` and `mm` mean **minutes** after an hour token and **months** otherwise, so
+`hh:mm` gives `15:05` rather than `15:09`.
+
+Numbers are read as Excel serial days against the 1899-12-30 epoch. That is
+correct from 1900-03-01 on; Excel itself is a day out below serial 61 because
+it counts a 1900-02-29 that never existed, and matching that bug exactly would
+break real dates.
+
+### Presets
+
+`FORMAT_PRESETS` holds what `Ctrl+Shift+1` through `6` apply: `number`, `time`,
+`date`, `currency`, `percent`, `scientific`, plus `general`.
+
+## The per-cell store
+
+```ts
+const store = createFormatStore()
+
+const lookup = {
+  rowIdAt: (i) => rows[i]?.id ?? null,
+  columnIdAt: (i) => FIELDS[i] ?? null,
+}
+
+store.set([[0, 2, 4, 3]], { numFmt: '$#,##0.00' }, lookup)
+store.toggle([[0, 0, 0, 4]], 'bold', lookup)
+store.get('r1', 'price')     // { numFmt: '$#,##0.00' }
+```
+
+Ranges are `[minRow, minCol, maxRow, maxCol]` in **display** coordinates, the
+same as `cmd.ranges`. The store converts them to row and column **ids** on the
+way in, which is what makes formatting survive a sort: keying by display index
+means sorting leaves the bold on whatever row now sits at that position.
+
+| Method | Does |
+| ------ | ---- |
+| `set(rects, patch, at)` | Merge. A field set to `undefined` is removed. |
+| `clear(rects, at)` | Remove every entry in the range. |
+| `toggle(rects, field, at)` | Excel's rule: all-on turns off, mixed turns on. |
+| `forgetRow(id)` / `forgetColumn(id)` | Call when one is deleted, or entries leak. |
+| `serialize()` / `hydrate()` | The only persistence path. |
+
+`entryToStyle(entry)` renders one to inline CSS for a cell renderer.
+
+### Wiring the shortcuts
+
+`Ctrl+B`, `Ctrl+Shift+4` and the rest write through whatever store you attach.
+Until you attach one they decline, so the key falls through to the grid rather
+than looking broken:
+
+```ts
+import { enableSheet, setFormatTarget } from '@svgrid/enterprise'
+
+enableSheet()
+setFormatTarget({ store, lookup, onChange: () => (version += 1) })
+```
+
+`Ctrl+1` calls `setFormatDialogHandler(fn)` if you registered one. The shortcut
+layer ships no dialog: what a Format Cells dialog should look like is a design
+decision, not a keyboard one.
+
+## Exporting
+
+Per-cell formats round-trip to xlsx through the exporter's existing
+`cellVisual` hook, so a sheet formatted in the browser opens formatted in
+Excel. See [export](../export.md).
+
+## See also
+
+- [Excel keyboard shortcuts](./keyboard-shortcuts.md)
+- [Spreadsheet formulas](../spreadsheet-formulas.md)
+
+<!-- =================================================================
+     /docs/help/cells/paste-find-structure/  (community)
+     ================================================================== -->
+
+# Paste Special, Find and Replace, and structural edits
+
+The three Excel operations that write more than one cell, plus freeze panes.
+
+```ts
+import {
+  parseClipboard, buildClipboardPayload, planPaste, resolvePasteCell,
+  findAll, replaceAll, setFindTarget,
+  insertRows, deleteColumns, setStructureTarget,
+  splitFrozenRows, freezeAtActiveCell,
+} from '@svgrid/enterprise/sheet'
+```
+
+All of them run inside `cmd.batch()`, so each is **one** `Ctrl+Z`.
+
+## Paste Special
+
+### Why the clipboard needed an HTML flavour
+
+The grid's clipboard is TSV only: `writeText` out, `readText` in. Values
+survive; formats, formulas and merges do not. Excel writes both `text/plain`
+and `text/html` and reads the HTML back when it is there, so matching that is
+what makes a round trip work.
+
+`buildClipboardPayload` produces both:
+
+```ts
+const { text, html } = buildClipboardPayload(grid, { row: 2, col: 0 })
+
+await navigator.clipboard.write([
+  new ClipboardItem({
+    'text/plain': new Blob([text], { type: 'text/plain' }),
+    'text/html': new Blob([html], { type: 'text/html' }),
+  }),
+])
+```
+
+The HTML is a plain `<table>`. Formats ride on inline styles every app reads,
+with Excel's own `mso-number-format` beside them so Excel keeps the number
+format rather than guessing one from the text; the number behind a formatted
+display rides in Excel's `x:num`; the formula travels in a `data-formula`
+attribute they all ignore. So a paste into Excel keeps the look and the
+numbers, and a paste back into the grid keeps the formula.
+
+`parseClipboardHtml` reads the other direction. Excel's clipboard puts every
+cell's format in a `<style>` block keyed by class, the formula in `x:fmla`
+and the raw number in `x:num`; Google Sheets writes `data-sheets-value`,
+`data-sheets-numberformat` and `data-sheets-formula` (in R1C1). All of
+them come through: the cell's `text` is the number when the source wrote
+one, its `format` carries `numFmt`, bold, italic, colour, fill, font and
+wrap, and `formula` is what the source held. `resolvePasteCell` turns an
+R1C1 formula into A1 for the cell it lands in when you pass the destination
+as its fifth argument. Excel's formulas come as written, since its HTML
+says nothing about where they were copied from; `anchorForeignFormulas`
+settles them the way the shell does: a formula whose references all fall
+inside the block, read as if copied from A1, is kept with that origin so
+the paste moves it, and one that reaches outside the block is replaced by
+its value.
+
+The second argument records where the copy came from, which is how a pasted
+formula knows how far it moved. Omit it and references paste unshifted, which
+is correct for a paste from another application: it has no position in this
+sheet to have moved from.
+
+Reading is symmetric, and falls back to TSV when the HTML holds no table:
+
+```ts
+const grid = parseClipboard({ text, html })
+```
+
+### The options
+
+```ts
+type PasteSpecialOptions = {
+  what?: 'all' | 'values' | 'formulas' | 'formats'
+  operation?: 'none' | 'add' | 'subtract' | 'multiply' | 'divide'
+  transpose?: boolean
+  skipBlanks?: boolean
+}
+```
+
+`planPaste` says where each source cell lands; `resolvePasteCell` says what it
+becomes. Both are pure, so the option matrix is testable without a clipboard:
+
+```ts
+for (const { row, col, source, offset } of planPaste(grid, at, opts, origin)) {
+  const decision = resolvePasteCell(source, getValue(row, col), opts, offset)
+  switch (decision.kind) {
+    case 'skip': break
+    case 'value': setRaw(row, col, decision.value); break
+    case 'format': store.set([[row, col, row, col]], decision.format ?? {}, lookup); break
+    case 'both': /* both of the above */ break
+  }
+}
+```
+
+Arithmetic operates on values, ignoring formats and formulas, as Excel does. A
+non-numeric cell or a divide by zero **skips** rather than writing `NaN`.
+
+`Ctrl+Shift+V` calls the handler you register with `setPasteSpecialHandler`.
+The keyboard layer owns the key; the dialog is yours.
+
+### The grid's clipboard hooks
+
+`@svgrid/grid` has two per-cell hooks, `processCellForClipboard` on the way
+out and `processCellFromClipboard` on the way in, and two whole-clipboard
+ones for the HTML flavour:
+
+```svelte
+<SvGrid
+  clipboardHtml={({ rects, text }) => buildClipboardPayload(gridOf(rects)).html}
+  onPasteClipboard={({ text, html, source }) => {
+    const grid = html ? parseClipboardHtml(html) : null
+    if (!grid) return          // plain text: the grid pastes it as usual
+    landBlock(grid)
+    return true                // handled; the grid writes nothing itself
+  }}
+/>
+```
+
+`clipboardHtml` runs once per copy, after the text is assembled; return the
+HTML to put beside it, or nothing for a text-only copy. The grid writes both
+through the `copy` event (`execCommand`), so it works on plain HTTP too,
+and through `navigator.clipboard.write` where the event is refused.
+
+`onPasteClipboard` runs on Ctrl+V and on a Paste command with the text and,
+when the clipboard has one, the HTML. With the hook set the grid leaves the
+key to the browser, so the native `paste` event delivers the HTML as the
+source wrote it (`source: 'event'`); where the event does not arrive, the
+async clipboard is read for both types (`source: 'async'`). Return `true`
+once you have written the cells; anything else lets the grid paste the text
+the way it always has. Whatever the hook writes lands in one undo step with
+the grid's own writes.
+
+`processCellFromClipboard` receives the raw clipboard text and what the grid
+would have written, and returns the value to write, or `undefined` to leave
+the cell alone:
+
+```svelte
+<SvGrid
+  processCellFromClipboard={({ text, parsedValue }) =>
+    text.startsWith('=') ? text : parsedValue}
+/>
+```
+
+### Writes that ask first
+
+Every command here writes through `cmd.setCellValue`, which trusts its
+caller. A sheet that refuses some cells (a protected sheet with locked
+cells) says so through `cmd.canEdit(r, c)`, the grid's own editability
+answer, and the fills, stamps, AutoSum and the copies from above skip a
+cell that says no. The format target can refuse a change too
+(`guard(rects)`, with `refused()` called when it does), and the
+structure target can refuse an insert or delete (`canApply(edit)`), which
+is how the ribbon knows to grey Bold and Insert on a protected sheet.
+
+## Find and Replace
+
+Finding looks at what the user **sees**. Replacing writes what the user
+**typed**, which for a formula cell is the formula, not its result. Replacing
+`100` inside a cell showing `100` that actually holds `=B2*C2` would either do
+nothing or destroy the formula, depending on which text you reached for. So
+`lookIn` chooses what is searched, and replace always writes through the raw
+text.
+
+```ts
+setFindTarget({
+  getRaw: (r, c) => raw[r][c],
+  getDisplay: (r, c) => displayed[r][c],
+  setRaw: (r, c, text) => { raw[r][c] = text },
+  isEditable: (r, c) => true,
+})
+
+findAll(cmd, 'cat', { matchCase: true })
+replaceAll(cmd, 'cat', 'dog', { lookIn: 'formulas', scope: 'selection' })
+```
+
+| Option | Default | Does |
+| ------ | ------- | ---- |
+| `matchCase` | false | Case sensitive. |
+| `matchEntireCell` | false | The cell must equal the text, not contain it. |
+| `lookIn` | `'values'` | Search displayed values, or formula source. |
+| `scope` | `'sheet'` | Restrict to the current selection. |
+
+The needle is treated as literal text, not a pattern, so `.` and `$1` mean
+themselves.
+
+`replaceAll` is the command most likely to overflow a 200-step undo history,
+which is why the grouping seam came first. `Ctrl+H` calls
+`setFindReplaceHandler`.
+
+## Insert and delete with reference fixup
+
+`api.addRow` and friends always existed. What was missing is the fixup pass:
+inserting a row above `=SUM(D2:D11)` without widening the range silently
+produces the wrong total, and deleting a referenced row leaves a formula
+pointing at whatever moved in. Neither shows an error, which is why this
+waited for the engine.
+
+```ts
+setStructureTarget({
+  getRaw, setRaw,
+  apply: (edit) => { /* do the structural change to your data */ },
+  names,                                  // rewritten too
+  format: { store, lookup },              // entries for deleted rows dropped
+})
+
+insertRows(cmd)        // span taken from the selection
+deleteColumns(cmd, 2, 1)
+```
+
+Order is fixed: rewrite formulas, drop format entries for what is going, then
+apply the change. The first two read the OLD geometry.
+
+Nothing needs *shifting* in the format store. It keys on row and column **ids**,
+and an id travels with the thing it names, so an insert moves nothing. A
+delete drops those ids, which is what `forgetRow` / `forgetColumn` are for.
+
+`Ctrl+Shift+Plus` and `Ctrl+Minus` act on rows when the selection spans every
+column, columns when it spans every row, and **decline** otherwise. Excel opens
+a dialog for the ambiguous case; deciding what that looks like is yours, so the
+key falls through and you can bind your own.
+
+## Freeze panes
+
+Columns freeze properly and for free through column pinning. Rows are the
+honest part of this module.
+
+The grid renders `pinnedTopRows` into a **separate** tbody above a virtualized
+body that still renders every row, so handing it the first three displayed rows
+shows them twice. Excluding them from the body means changing the virtualizer,
+which is the path built for a million rows, and freeze is not worth that risk.
+
+So `applyFreeze` does the column half through the api and reports the state;
+`splitFrozenRows` does the row arithmetic and you apply it:
+
+```svelte
+<script>
+  let freeze = $state({ rows: 2, cols: 1 })
+  const split = $derived(splitFrozenRows(rows, freeze.rows))
+</script>
+
+<SvGrid data={split.bodyRows} pinnedTopRows={split.pinnedTopRows} {columns} />
+```
+
+`freezeAtActiveCell`, `freezeTopRow`, `freezeFirstColumn` and `unfreeze` are
+the Excel gestures. Split panes stays declined: a second scroll viewport in the
+hot render path, for something freeze already covers.
+
+## Text to Columns and Remove Duplicates
+
+The two one-shot transforms an Excel user reaches for on arriving data. Both
+are pure functions rather than commands, because they get run from a button, a
+menu, a paste handler or a test, and none of those want a keystroke.
+
+```ts
+import {
+  splitText, textToColumns, guessDelimiter,
+  findDuplicates, removeDuplicates,
+} from '@svgrid/enterprise/sheet'
+```
+
+### Text to Columns
+
+```ts
+guessDelimiter(['a;b', 'c;d'])        // ';'
+textToColumns(['a,b,c', 'd,e'])
+// { rows: [['a','b','c'], ['d','e','']], width: 3 }
+```
+
+Every row is padded to the widest. That matters: writing a ragged result into
+a grid leaves whatever was already in the cell, so a row that split into two
+fields would keep stale text in the third column.
+
+`splitText` is a scan, not a `String.split`, because a quoted field may contain
+the delimiter and a doubled quote is an escaped one:
+
+```ts
+splitText('a,"b,c",d')                                      // ['a', 'b,c', 'd']
+splitText('a   b', { delimiters: [' '], collapse: true })   // ['a', 'b']
+splitText('a:b:c', { delimiters: [':'], limit: 2 })         // ['a', 'b:c']
+```
+
+`guessDelimiter` scores a candidate on appearing in most rows **and** the same
+number of times in each, so a comma inside one field does not beat the tab
+that actually separates the columns.
+
+### Remove Duplicates
+
+`findDuplicates` reports rather than removes, so the caller decides what
+removal means for its data structure and a UI can say "3 duplicates found"
+before anything is written:
+
+```ts
+findDuplicates([['a'], ['b'], ['a']])
+// { keep: [0, 1], remove: [2] }
+
+removeDuplicates(rows, (r) => [r.email], { matchCase: true })
+// { rows: [...], removed: 3 }
+```
+
+Comparison is **case-insensitive** by default, matching Excel. That surprises
+people, which is exactly why it matches rather than being tidier.
+
+## More examples
+
+### Paste from Excel: formats and formulas survive
+
+Excel puts an HTML document on the clipboard beside the tab-separated text: formats in a style block keyed by class, formulas in x:fmla, raw numbers in x:num. The sheet reads it, so a pasted block arrives bold, filled, with its number formats, and with its formulas moved to where they landed; Google Sheets' data-sheets-formula flavour reads the same. Two buttons put exactly what Excel and Sheets put on the clipboard; click a cell and Ctrl+V.
+
+<div data-docs-demo="466-paste-from-excel" data-height="560"></div>
+
+
+### Paste Special, Find/Replace
+
+The three Excel operations that write more than one cell: Paste Special (values / formulas / formats / transpose / arithmetic, with a text/html clipboard flavour so formats survive a round trip through Excel), Find and Replace that searches what you SEE but writes what you TYPED so a formula is not destroyed by replacing its result, and insert/delete that rewrites every formula - inserting above =SUM(B1:B4) widens it instead of dropping the new row.
+
+<div data-docs-demo="454-paste-find-structure" data-height="560"></div>
+
+### Data cleanup: Text to Columns, Remove Duplicates
+
+A CRM export landed in column A, semicolon-separated, with the same people in it twice. Data -> Text to Columns opens a wizard that has already guessed the delimiter and previews the split; Data -> Remove Duplicates lets you tick the columns that decide identity, compares case-insensitively like Excel, and reports "3 duplicate values found and removed; 11 unique values remain". Each operation is one Ctrl+Z.
+
+<div data-docs-demo="458-data-cleanup" data-height="560"></div>
+
+## See also
+
+- [Excel keyboard shortcuts](./keyboard-shortcuts.md)
+- [Number formats](./number-formats.md)
+- [Spreadsheet formulas](../spreadsheet-formulas.md)
+
+<!-- =================================================================
      /docs/help/cells/rich-text-cells/  (community)
      ================================================================== -->
 
@@ -17768,6 +18570,790 @@ so pick one per column.
 ```
 
 <!-- =================================================================
+     /docs/help/cells/spreadsheet-shell/  (community)
+     ================================================================== -->
+
+# The spreadsheet shell
+
+Everything between the ribbon and the sheet tabs, as one component.
+
+```svelte
+<script>
+  import { SvSheet, createWorkbook } from '@svgrid/enterprise'
+
+  const wb = createWorkbook([
+    { name: 'Budget', cells: [['Line', 'Jan'], ['Rent', '2400']] },
+  ])
+</script>
+
+<SvSheet workbook={wb} />
+```
+
+<div data-docs-demo="27-spreadsheet-ribbon" data-height="640"></div>
+
+That is the whole required API. `<SvSheet />` with no props at all opens an
+empty single-sheet workbook, which is what "open a spreadsheet" means.
+
+## What you get
+
+| Part | Comes from |
+| --- | --- |
+| Ribbon: Home, Insert, Formulas, Data, Review, View | `SvSheetRibbon` |
+| Name Box and fx bar, showing the RAW text of the active cell | `SvFormulaBar` |
+| A..Z headers over the built-in 1..N row gutter | `SvGrid` |
+| Sheet tabs: switch, rename, reorder, add | `SvSheetTabs` |
+| Sum / Average / Count of the selection | the shell |
+| Every Excel shortcut | `enableSheet()` |
+
+This is composition, not a second grid. All of it already existed and was
+being re-assembled by hand in four separate demos. What the component adds is
+the wiring BETWEEN the parts, done once:
+
+- The formula bar shows the raw text while the grid shows the computed value.
+  Editing in the bar edits the formula, not its result.
+- The format store is keyed by row id, so sorting cannot strand formatting on
+  whatever row took that index.
+- Insert and delete go through the workbook, so references are rewritten on
+  every sheet rather than only the active one.
+- The fill handle translates references, so `=B2` filled down becomes `=B3`.
+- The tab strip is told when a shortcut moved the active sheet, so
+  `Ctrl+PageUp` and the tabs cannot disagree.
+- AutoSum measures its run against evaluated values, so a column of subtotals
+  counts as numbers rather than as `"=SUM(...)"` strings.
+- Formats are kept per sheet, as they are in Excel. Bold on Summary!C5 says
+  nothing about Orders!C5, and the store follows a sheet through a rename.
+- The Name Box lists the workbook's defined names. Pick one and the shell
+  selects what it refers to, switching sheets first when it lives elsewhere;
+  type an address and press Enter to go there. Either way focus comes back
+  to the sheet, so the next keystroke edits the cell just reached. Beside it
+  sit Excel's three: Cancel and Enter while a formula is being typed, and
+  fx, which raises `insert-function`.
+- A formula-bar entry lands in the cell the edit started in, however the
+  edit ends: Enter, or a click on another cell. It is one step in the
+  grid's history, so Ctrl+Z takes it back.
+- Enter after an in-cell edit commits and moves down, Shift+Enter up, Tab
+  right, as in Excel. Alt+Enter is a line break: the cell turns on Wrap
+  Text and its row grows to show every line, as a wrapped row does after
+  Wrap Text on the ribbon or in Format Cells. F4 while editing turns the
+  reference at the caret through `$A$1`, `A$1`, `$A1` and back.
+- AutoComplete, as Excel's: while a cell is typed into, the text entries in
+  the same column that run without a blank above and below it are matched
+  against what was typed, and when exactly one fits, the rest of it appears
+  selected in the cell. Typing on overwrites it, Backspace takes it away,
+  and Enter or Tab accepts it in the entry's own case, so "jo" under "John
+  Smith" commits "John Smith". Numbers, formulas and booleans are never
+  offered, and two entries that both fit ("Apple", "Apricot" for "Ap")
+  offer nothing until the typing tells them apart. `completeEntry(typed,
+  entries)` is the rule on its own.
+- Data entry steps the way Excel's does: the Enter that ends a run of Tabs
+  goes down from the column the run began in, and inside a selected block
+  Enter and Tab walk the block and wrap at its edges while the block stays
+  selected. Ctrl+Enter puts the entry into every cell of the block at once,
+  each taking its value and format as if typed there, as one undo. A drag, Shift+click or Shift+Arrow grows the selection from
+  its far corner and leaves the active cell at the anchor, white inside the
+  tinted range, and the formula bar shows that cell.
+- The formula bar follows an in-cell edit as it is typed, and the cell
+  follows the bar; both go back when the edit is cancelled.
+- The formula bar keeps a cell's line breaks. It shows one line until the
+  chevron at its end expands it to every line (up to six), and Alt+Enter
+  typed in the bar breaks the line there and expands the bar.
+- A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
+  shown as currency, `1,234.5` keeps its separator: the entry names a value
+  and a format, and the cell takes both unless it already has a number
+  format of its own. `=A1*2` over a `12%` cell is 0.24.
+- The fill handle fills the way Excel's does: a lone value repeats, `1, 2`
+  continues, `Jan` runs on to `Feb`, and a formula moves every relative
+  reference by the distance dragged. Double-click it to fill down as far as
+  the column beside the selection has data. A number too wide for its
+  column reads as `####` until the column fits it; `TRUE` and `FALSE`
+  typed into a cell are booleans, centred.
+- Freeze Panes freezes everything above and left of the active cell, both
+  halves, per sheet: the rows stay under the column letters and the columns
+  beside the row numbers while the rest scrolls, and every frozen cell is
+  still an ordinary cell. Unfreeze clears both.
+- A dragged column width or row height is one Ctrl+Z, and double-clicking
+  a row number's lower edge fits the row to its wrapped text, as a
+  double-click on a column letter's edge fits the column to its text.
+- Row heights are the sheet's: a row dragged taller stays that way through
+  every edit, moves with its row when rows are inserted or deleted above it,
+  comes back with an undo, and belongs to one sheet. The fill handle's drag
+  is one undo, like Ctrl+D. Column widths move with their columns the same
+  way.
+- Hide and Unhide, on the column letter and row number menus and on Ctrl+9
+  (rows), Ctrl+0 (columns), Ctrl+Shift+9 and Ctrl+Shift+0: a hidden line
+  keeps its letter or number and every reference to it, and takes no room,
+  so the headers read A, B, D. Unhide reveals what the selection spans, or
+  the hidden lines right next to it when it spans none. The cursor steps
+  over hidden lines, Ctrl+Arrow lands on the last cell of a run that shows
+  rather than its hidden end, and the Name Box can still reach a hidden
+  cell; a hide is one Ctrl+Z, moves with an insert or delete, and belongs
+  to its sheet.
+- Text spills over empty neighbours and is clipped by the first cell that
+  holds something, so a title in A1 reads in full and a label beside a
+  number does not run under it. Numbers never spill.
+- General alignment: numbers right, text left, errors and booleans centred,
+  unless the cell says otherwise.
+- The headers of every column and row the selection touches are shaded and
+  marked with a line in the accent, the Select All corner sits top-left,
+  and the status bar reads Ready on the left and Average / Count / Sum on
+  the right.
+- Sheet tabs delete, insert, rename and move from a right-click menu, as in
+  Excel; nothing on the tab face can remove a sheet.
+- Click a column letter to select the column, a row number to select the
+  row, the corner to select the sheet; Shift+click extends. Drag the edge of
+  a row number to resize the row, as with a column letter.
+- Copy puts two things on the system clipboard: the text each cell shows,
+  which is what a text editor expects, and an HTML table with the formats,
+  the numbers behind the formatted text and the formulas, written the way
+  Excel writes its own (`mso-number-format`, `x:num`), so a paste into
+  Excel or Google Sheets keeps the number format, the bold and the fill. A
+  paste back into the sheet gets the formula, moved by the distance it
+  travelled (`=A1*2` copied from B1 to B3 reads `=A3*2`), and the cell's
+  format, as Excel pastes. A cut block is moved, not translated. The block
+  Ctrl+C or Ctrl+X took is outlined by Excel's marching ants until Escape,
+  a typed entry, a structural edit, the paste of a cut, or the next copy; a
+  Ctrl+V paste of a copy keeps them, so the block can be pasted again, and
+  Enter pastes it once and drops them, as Excel's Enter does. The Copy and
+  Cut buttons on the ribbon and in the cell menu are the same commands as
+  the keys.
+- Paste reads what the clipboard carries. A block copied from Excel arrives
+  with its values (the number, not the text `1,234.50`), its number
+  formats, fonts, colours and fills, and its formulas: Excel's HTML says
+  nothing about where a block was copied from, so a formula whose
+  references all fall inside the block is kept and moved with the paste as
+  if the block came from A1 (a totals column keeps totalling), and one that
+  reaches outside the block lands as its value. A block from Google Sheets
+  the same, with its R1C1 formulas turned into A1 for the cells they land
+  in. Plain text lands as typed. One copied cell fills the
+  selected range, and a block that fits the selection a whole number of
+  times is repeated over it, as in Excel. One paste is one Ctrl+Z, formats
+  included.
+- Selecting works as it does in Excel. A click on a column letter or a
+  row number selects the whole line and puts the active cell on its first
+  visible row or column; a drag along the letters or the numbers selects a
+  run; Shift+click extends the run from the active cell's line; Ctrl+click
+  adds a line beside the selection; the corner selects everything and
+  leaves the active cell where it was. Shift+Arrow grows a run of whole
+  lines, an arrow collapses to the active cell, and typing lands in the
+  active cell, so the keyboard never leaves the sheet. Shift+Space and
+  Ctrl+Space take the whole rows or columns the selection touches, Ctrl+A
+  the current region then the sheet, Ctrl+Shift+8 the region alone. A
+  column or row selected whole paints its letter or number in the accent,
+  white on green as Excel's; a line the selection merely touches is
+  tinted. While a range is dragged out the Name Box reads "3R x 2C".
+- The pointer reads as it does in Excel: the white cross over the cells,
+  a black arrow down a column letter or along a row number, the
+  double-headed arrows on the borders, the crosshair on the fill handle.
+  Dragging a border shows Excel's tip beside the pointer, "Width: 8.43 (64
+  pixels)" or "Height: 15.00 (20 pixels)", with a dotted guide across the
+  sheet at the new edge; dragging the fill handle shows what the cell
+  under the pointer will get (Feb, 7, 2026-09-18), in the source cell's
+  number format.
+- A General cell shrinks a number to its column before it hashes, as
+  Excel's does: the decimals go first (5.333333 reads 5.3333, then 5.33),
+  then a whole part too wide turns scientific (1.76E+04). A formatted
+  number hashes as soon as its format does not fit, since the format said
+  what to show.
+- Right-click a column letter or a row number for its menu: the column or
+  row is selected first, unless it was already inside the selection, and the
+  menu offers Insert, Delete and Column Width... or Row Height... for that
+  axis alone, as Excel's does.
+- Right-click a cell for Excel's menu: Cut, Copy, Paste, Paste Special,
+  Insert / Delete Rows and Columns, Clear Contents, Clear Formats, Merge &
+  Center or Unmerge, the comment entries, Format Cells, each with the
+  ribbon's icon for it so the two read as one set. Structure goes through
+  the sheet's own insert and delete, which rewrite every formula the
+  change reaches, move the formats with their cells, and undo as one step.
+- The in-cell editor opens with the caret after the text and widens over
+  the cells to its right as a long formula is typed. While a formula is
+  being written, in the cell or in the formula bar, every range it refers
+  to is outlined in its own colour, one rectangle per range, and the
+  reference in the text takes the same colour, in the cell and in the bar:
+  Excel's range finder. Colours go by distinct range in order of first
+  appearance, so `B5:B8` twice is one colour and `b5`, `$B$5` and `B5` are
+  one range. `referenceSpans(text)` is the rule, exported.
+
+## The ribbon is Excel's ribbon
+
+The layout is Excel's, down to the geometry: a group is three rows of 24px,
+a **large** button (icon over label) fills a column of that height and
+**small** buttons stack three to a column, so Cut / Copy / Format Painter
+line up beside a tall Paste, as icons alone the way Excel draws them. The
+Home tab runs Clipboard, Font, Alignment, Number, Cells, Styles, Editing in
+Excel's order, with Excel's names on the buttons (Undo and Redo open the
+Editing group as a column of small icons), a dialog-box launcher in the corner of the groups that have a
+dialog, and the group label underneath, which is what makes a ribbon read
+as a ribbon rather than a toolbar.
+
+Some things worth knowing are in there because Excel users reach for them
+without looking:
+
+- **Paste is Excel's split button.** The icon pastes; "Paste" with its
+  chevron under it opens the kinds: Paste, Formulas, Values, Formatting,
+  Transpose, and Paste Special... at the end, each raised as an action
+  (`paste-formulas`, `paste-values`, `paste-formats`, `paste-transpose`,
+  `paste-special`) that the shell answers through its Paste Special engine.
+- **Format Painter is the brush.** Select the cells whose look you want,
+  press the brush, and the next click or drag takes it, as one undo: a
+  single cell takes the whole block from that corner, a dragged range has
+  the block tiled over it, and a cell whose source had no format loses its
+  own, as in Excel. The button reads pressed while the brush is up, the
+  pointer is a brush over the cells, Enter paints onto the current
+  selection, and Escape or the button again puts it down. Raised as
+  `format-painter`.
+- **Fill Colour, Font Colour and Borders are split buttons.** The face
+  re-applies the last pick (yellow and red to start, as in Excel); the arrow
+  opens the menu. The colour menus are Excel's picker: the theme row, five
+  tints and shades under each colour, then the standard colours. Borders
+  applies to the *selection* the way Excel does: Bottom Border lines the
+  bottom edge of the block, All Borders lines every cell, Outside frames it.
+- **The combos show the cell.** Font, size and number format read the
+  active cell, so a 17px title says 17 even though 17 is not on the list.
+- **Every format change is one Ctrl+Z**, through the grid's own history,
+  so the ribbon's Undo lights up after Bold and undoing it puts the cell's
+  whole entry back. A command that writes cells and formats together is
+  still one press.
+- **Paste pastes.** It reads the system clipboard the way Ctrl+V does, so
+  it needs a secure context; elsewhere it stays quiet, as Ctrl+V does.
+
+**It is responsive the way Excel's is, in Excel's two steps.** When the
+band is narrower than its groups, the groups go compact from the right
+first: their small buttons keep the icon and drop the label, so Fill Down
+becomes an arrow and Wrap Text a glyph, with the title still in the
+tooltip. Only when every group is compact and the band is still too
+narrow do groups fold, again from the right, into one large button each
+(the group's own icon over its name and a chevron) that opens the group in
+a dropdown. Nothing is hidden, only folded; widen the window and it all
+comes back in the same order. Every width is measured off an invisible
+copy of the band, never estimated, so a group folds exactly when it would
+not fit. On a phone the folded band scrolls sideways.
+
+**It collapses the way Excel's does.** Double-click a tab, press the
+chevron at the band's end, or Ctrl+F1, and the band goes away leaving the
+tab row. A click on a tab then shows that tab's band over the sheet until
+a command runs, Escape, or a click elsewhere; the pin at its end, a
+double-click or Ctrl+F1 brings the band back for good. The state is the
+`collapsed` prop of `SvSheetRibbon`, bindable, and the action is raised
+as `toggle-ribbon` so `onAction` can watch or take it over.
+
+## The ribbon and the keyboard are the same thing
+
+Click a bold cell and the Bold button lights up. Press `Ctrl+B` and it goes
+out. Neither is reacting to the other: both call one function in
+`sheet/shortcuts.ts`, and the button's pressed state is read from the format
+store rather than tracked separately.
+
+That is why `sheet/ribbon.ts` is a table of data rather than markup. An item
+either carries a `run` that calls a real action, or an `emits` naming
+something the ribbon cannot do alone:
+
+```ts
+{ id: 'bold', label: 'B', title: 'Bold', keys: 'Ctrl+B',
+  kind: 'toggle',
+  run: (cmd) => toggleFormat(cmd, 'bold'),
+  isOn: (cmd) => everyCellHas(cmd, (e) => e?.bold === true) }
+```
+
+Buttons that open a dialog set `emits` and raise an action. Every action
+reaches your `onAction` handler first; return `true` to take it over,
+otherwise the shell's own dialog opens:
+
+```svelte
+<SvSheet
+  {wb}
+  onAction={(action, cmd) => {
+    if (action === 'goal-seek') { openMyGoalSeekDialog(cmd); return true }
+  }}
+/>
+```
+
+The shell answers everything on the ribbon itself: `recalculate`,
+`toggle-formulas` (Excel's `Ctrl+` `` ` ``), `toggle-filter`, `sort-asc` /
+`sort-desc`, and the dialogs listed below. Two buttons have nothing behind
+them in the library, Insert > Table and Insert > Chart, and are left off the
+ribbon unless `extras={['insert-table', 'insert-chart']}` says the
+application answers them.
+
+## Props
+
+| Prop | Default | What it does |
+| --- | --- | --- |
+| `document` | one built from `workbook` or `data` | The sheet document: the workbook plus every sheet's formats, sizes, hidden lines, frozen panes, comments, protection, validation and conditional formatting. Build it with `createSheetDocument` to save, restore or listen to it outside the component. |
+| `workbook` | a new empty one | The workbook to edit, when not supplying a document. |
+| `data` | | Seed sheets, when not supplying a workbook. |
+| `rows` / `columns` | 50 / 12 | Minimum size, so a sparse sheet still looks like a sheet. |
+| `height` | 420 | Grid viewport height. |
+| `columnWidth` | 96 | Default column width. |
+| `rowHeight` | 22 | Row height. Excel's is 20 at 100%; 22 fits the 13px cell font. |
+| `look` | `'theme'` | `theme` paints the shell with the host's `--sg-*` tokens, so it follows the app's theme; `excel` pins Excel's own palette and geometry, light or dark with the page. |
+| `columnWidths` | | Per-column overrides keyed by letter: `{ A: 150 }`. |
+| `formats` | | Cell formats keyed by address: `{ B2: { bold: true } }` for the sheet active at mount, `{ 'Orders!F2': ... }` for another sheet. |
+| `showRibbon` / `showFormulaBar` / `showTabs` / `showStatusBar` | `true` | Hide any part of the chrome. |
+| `onAction` | | Every ribbon action, first; return `true` to take one over. |
+| `extras` | `[]` | Which of Insert > Table and Insert > Chart to show, because the application answers them. |
+| `onReady` | | The `SvGridApi` and the document, once the grid has mounted. |
+| `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
+
+`formats` matters more than it looks: without it a sheet can only be
+formatted by hand after it loads, which makes it impossible to ship a
+document that opens the way it was saved.
+
+A bare address formats the sheet that is active when the shell mounts.
+Qualify it to reach another sheet, the way a formula would - `Orders!F2`,
+or `'Price list'!C2` when the name has a space:
+
+```svelte
+<SvSheet
+  workbook={wb}
+  columnWidths={{ A: 150 }}
+  formats={{
+    A1: { bold: true, fill: '#e2e8f0', color: '#0f172a' },
+    E2: { numFmt: '#,##0' },
+    B13: { numFmt: '0.0%' },
+    'Orders!F2': { numFmt: '$#,##0.00' },
+  }}
+/>
+```
+
+<div data-docs-demo="456-sales-report-workbook" data-height="600"></div>
+
+## Saving and restoring
+
+Everything the user does lands in the sheet's document: the workbook (raw
+text, formulas as typed, names, the active sheet), and per sheet the
+formats (locked flags included), column widths, row heights, hidden lines,
+frozen panes, comments, the protection flag, the validation rules and the
+conditional formatting rules. `getState()` returns it as plain JSON and
+`setState()` puts it back into the same workbook object, so an autosave
+is an `onChange` handler and a reload is one call after mount:
+
+```svelte
+<script lang="ts">
+  import { SvSheet, type SheetState } from '@svgrid/enterprise'
+
+  let sheet = $state<SvSheet>()
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  function autosave() {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      if (sheet) localStorage.setItem('budget', JSON.stringify(sheet.getState()))
+    }, 400)
+  }
+
+  const saved = localStorage.getItem('budget')
+</script>
+
+<SvSheet
+  bind:this={sheet}
+  onChange={autosave}
+  onReady={() => { if (saved) sheet?.setState(JSON.parse(saved) as SheetState) }}
+/>
+```
+
+`onChange` is called once per tick with every reason since the last call,
+so a paste of forty cells is one call, and it says what changed
+(`reasons.some((r) => r.kind === 'structure')` for an insert or delete, with
+the edit on the reason). `setState` clears the grid's undo history, since
+none of it describes the restored sheet, and reports a single `restore`.
+
+The same document is available outside the component: build it with
+`createSheetDocument({ sheets })` or `createSheetDocument({ state })`, pass
+it as `document`, and call `document.getState()`, `document.setState()` and
+`document.subscribe()` on it directly. A document built this way can be
+saved and restored in Node, with no component at all.
+
+The shape, `SheetState` (exported with `SheetStateEntry`, `ValidationRule`
+and `CfRule`):
+
+```ts
+{
+  version: 1,
+  workbook: { sheets: [{ name, cells }], active, names },
+  sheets: {
+    Budget: {
+      formats: { 'r0 A': { bold: true, numFmt: '#,##0', locked: false } },
+      columnWidths: { A: 150 },
+      rowHeights: [[4, 44]],
+      hidden: { rows: [7], cols: [] },
+      freeze: { rows: 1, cols: 0 },
+      comments: { r1: { B: 'Check with finance' } },
+      protected: false,
+      merges: [],
+      validation: [{ id, rects, allow: 'whole', operator: 'between', value1: '1', value2: '10', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' } }],
+      conditionalFormats: [{ id, rects, kind: 'cellIs', operator: 'greater', value1: '50000', style: { fill: '#FFC7CE', color: '#9C0006' } }],
+    },
+  },
+}
+```
+
+Rows are `r` plus the 0-based index and columns are letters, a format key is the two with a
+space between; rectangles are `[minRow, minCol, maxRow, maxCol]`,
+0-based. A hidden row keeps the height it had before it was hidden, not
+the 0 it shows while hidden, so an Unhide after a restore brings it back
+at its size.
+
+## A component, not a mode
+
+Kanban, the scheduler and charts are modes of `<SvGrid>` (`board`,
+`scheduler`, `chart`) because they are different pictures of the same
+rows: the grid keeps the data, the row model, sorting and filtering, and the
+mode draws cards, a calendar or a chart from them. The spreadsheet is the
+other way round: the same picture, a table, over a different data model. It
+owns a document (formulas, address-keyed formats, comments, rules) and uses
+the grid as its rendering primitive, which is why it is a component that
+composes `<SvGrid>` rather than a prop on it. `installEnterprise()` enables
+it along with everything else; there is nothing extra to register.
+
+## Writing to the workbook from outside
+
+Every edit made through the shell repaints it: typing, the ribbon, a
+shortcut, the fill handle, and `cmd.setCellValue` from an `onAction`
+handler, which is also how a dialog should write a cell - the write lands in
+the grid's undo history and the shell sees it.
+
+A write the shell cannot see does not repaint: a Name Manager redefining a
+name, an import replacing a sheet, a solver applying its answer with
+`wb.setRaw`. Call `refresh()` on the component afterwards:
+
+```svelte
+<script>
+  let sheet
+</script>
+
+<SvSheet bind:this={sheet} workbook={wb} onAction={(action, cmd) => {
+  if (action === 'name-manager') { openNameManager(wb.names, () => sheet.refresh()); return true }
+}} />
+```
+
+The shell carries Goal Seek, Text to Columns, Remove Duplicates and the
+Name Manager itself. The demos below each replace one with a dialog of
+their own, returning `true` from `onAction`, and show the write paths a
+replacement should use: Goal Seek applies through `cmd.setCellValue`, Text
+to Columns and Remove Duplicates write inside `cmd.batch` so each is one
+Ctrl+Z, and the Name Manager calls `refresh()`.
+
+<div data-docs-demo="457-goal-seek" data-height="600"></div>
+
+<div data-docs-demo="458-data-cleanup" data-height="560"></div>
+
+## Theming
+
+Every part of the shell is painted with the grid's `--sg-*` tokens, so
+by default it follows the app's theme the way the grid does: the accent
+on the selection and the active tab, the header and ribbon grounds, the
+font and the corner radius are the host's. The icons are one set of line
+glyphs drawn in the text colour, black on a light ribbon and white on a
+dark one, as Excel's monochrome set is; the only colour on the ribbon is
+the bar under Fill Colour and Font Colour, which is the colour the button
+will apply.
+
+`look="excel"` pins Excel's palette instead: the shell sets the tokens on
+its own root to Office's light theme, or its dark theme when the page is
+dark, so it reads as Excel whatever theme the app around it runs, and the
+grid inside picks the same tokens up. Nothing else changes: the geometry,
+the icons and the layout are the same either way.
+
+## Using the parts separately
+
+`SvSheet` is a composition of exported components, so anything it does you
+can do by hand when you want a different arrangement:
+
+```svelte
+<SvSheetRibbon cmd={() => api?.getCommandContext() ?? null} onChange={refresh} />
+<SvFormulaBar {active} value={raw} onCommit={commit} />
+<SvGrid ... />
+<SvSheetTabs workbook={wb} {version} onChange={refresh} />
+```
+
+`api.getCommandContext()` is the seam that makes this work. A keyboard
+command is handed a context on every keystroke; a ribbon button has no
+keystroke to ride in on, and without it every action would have to be
+re-implemented against the public api and kept in step by hand.
+
+## The dialogs
+
+Four of Excel's dialogs are the shell's own, so nothing on the ribbon or in
+the cell menu is a button that does nothing:
+
+| Dialog | Opens from |
+| ------ | ---------- |
+| Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
+| Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
+| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
+| Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
+| Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
+| Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
+| Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
+| Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
+| Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
+| Conditional formatting | Home > Styles > Conditional Formatting: Greater Than..., Less Than..., Between..., Equal To..., Text that Contains..., Duplicate Values..., Top 10 Items..., Bottom 10 Items..., Above Average..., Below Average... each open the small dialog (the value or values, and the "with" style); Manage Rules... opens the Rules Manager. See Conditional formatting below. |
+
+Home > Cells > Format is Excel's menu: Row Height..., AutoFit Row Height,
+Column Width... and AutoFit Column Width for the rows and columns the
+selection spans (`row-height`, `autofit-rows`, `column-width`,
+`autofit-columns`; an AutoFit is one undo), Hide Rows, Hide Columns, Unhide
+Rows and Unhide Columns with their keys, Lock Cell under Protection (a
+toggle, lit while the active cell is locked, raised as `toggle-lock`), and
+Format Cells... at the end. A ribbon item of kind `dropdown` is that shape:
+the face opens the list and every entry raises its own action.
+
+### AutoFilter
+
+Excel's Filter: Ctrl+Shift+L, Home > Editing > Filter or Data > Filter puts
+an arrow on every header cell of the current region (the block around the
+active cell, its first row the headers; a selected range is the region
+instead). An arrow drops Excel's menu: Sort A to Z and Z to A (Smallest to
+Largest on a column of numbers), Clear Filter From the column, Text
+Filters or Number Filters (equals, does not equal, begins with, contains,
+greater than, between and the rest, two of them joined with And or Or), a
+search box, (Select All) and the column's values with their counts, the
+blanks last. A search narrows the list and OK (or Enter in the box)
+applies what it shows, as Excel does; Alt+Down on a header cell drops the
+menu. OK folds the rows that fail; the arrow turns into a funnel,
+the row numbers of the region turn blue and the status bar reads "N of M
+records found". A folded row is the filter's, not a hidden row: Unhide
+leaves it, `getState().hidden` leaves it out, and Filter off (Ctrl+Shift+L
+again) shows it while a row hidden by hand stays hidden. The rows are
+worked out again after every change, so a formula that drops out of a
+Number Filter folds away and one that comes back returns, as Excel's
+Reapply would; a sort from the menu keeps the header row where it is.
+Conditions run through the grid's own Excel-filter compiler
+(`@svgrid/grid/filtering`), so the operators are the ones the grid's
+filter row has. The filter is per sheet, moves with an insert or delete,
+rides in `getState()` as `autoFilter` (`{ range, filters }`) and reports
+`{ kind: 'filter' }` on `onChange`. Raised as `toggle-filter`.
+
+### Merged cells
+
+Excel's Merge & Center, on Home > Alignment as Excel's split button: the
+face merges the selection into one cell and centres it, the arrow opens
+Merge & Center, Merge Across (one merge per row), Merge Cells (no centring)
+and Unmerge Cells; the cell menu offers Merge & Center on a range and
+Unmerge Cells on a merge, and Merge & Center on a merged cell unmerges it.
+A merge keeps the top-left cell's value and drops the rest, so a merge
+over values asks first, with Excel's words; the clears, the centring and
+the merge are one undo. The grid draws a merge as one cell (its
+`mergedCells`): it is selected as one, the arrow keys step over it, a
+click anywhere on it lands on its top-left cell, which is what the formula
+bar shows and an edit writes, and the covered cells take no entry, fill or
+paste. A merge moves with an insert or delete (and grows when rows are
+inserted inside it), a one-row merge rides with its row through a sort,
+and a sort over a range a merge crosses is refused with Excel's sentence.
+Merges are per sheet, ride in `getState()` as `merges`
+(`[minRow, minCol, maxRow, maxCol]`) and report `{ kind: 'merges' }` on
+`onChange`. Raised as `merge-center`, `merge-across`, `merge-cells`
+and `unmerge-cells`.
+
+### Conditional formatting
+
+Excel's rules that colour cells by what they hold, on Home > Styles >
+Conditional Formatting. Highlight Cells Rules (Greater Than, Less Than,
+Between, Equal To, Text that Contains, Duplicate Values) and Top/Bottom
+Rules (Top 10 Items, Bottom 10 Items, Above Average, Below Average) open
+the small dialog: the value or values (a literal or a formula, so
+`=$B$1` follows B1) and the "with" style, Excel's Light Red Fill with
+Dark Red Text and the rest. Data Bar, the Green - Yellow - Red and Green -
+White Color Scales and the Icon Set (3 Arrows) apply to the selection at
+once; a data bar measures from zero, as Excel's do, so 10, 20 and 40 draw
+a quarter, a half and the full width. Clear Rules from Selected Cells cuts the selection out of every rule
+it touches; Clear Rules from Entire Sheet empties the sheet's rules.
+Manage Rules... is the Rules Manager: every rule in priority order with what
+it does, a sample and where it applies, Edit Rule (for the rules the
+dialog can edit), Delete Rule, Move Up, Move Down and Stop If True, for
+this worksheet or the current selection; OK applies the lot as one undo.
+
+Rules are evaluated over the COMPUTED values, so a Greater Than on a
+column of formulas follows their results and a cell drops out when an
+input changes. Priority is the Rules Manager's order (a new rule goes
+first, as in Excel): the first rule that decides a property (the fill,
+the text colour, the bar, the icon) keeps it, and a rule with Stop If True
+stops the rules below it for the cells it matches. A rule's fill and text
+colour paint over the cell's own format, as they do in Excel. The rules
+are per sheet, move with an insert or delete, ride in `getState()` as
+`conditionalFormats` and report `{ kind: 'conditional-formats' }` on
+`onChange`. `evaluateCf`, `ruleStats`, `removeCf`, `shiftCf`,
+`describeCf` and the rule types are exported from
+`@svgrid/enterprise/sheet`; the grid's own value-driven
+[conditional formatting](./conditional-formatting.md) is a different thing
+(rules by column over raw values) and the shell does not use it.
+
+Freeze Panes lives on the View tab, Excel's dropdown: Freeze Panes (at the
+active cell), Freeze Top Row, Freeze First Column, Unfreeze Panes
+(`freeze-panes`, `freeze-top-row`, `freeze-first-column`,
+`unfreeze-panes`). Beside it, View > Show has Excel's three toggles:
+Gridlines, Formula Bar and Headings (the row numbers and column letters),
+raised as `toggle-gridlines`, `toggle-formula-bar` and
+`toggle-headings`. They are view settings of the component, not part of
+the document, so `getState()` leaves them out.
+
+### Data validation
+
+Excel's rules over cells: Data > Data Validation opens on the rule at the
+active cell and puts one over the selection. Allow is Any value, Whole
+number, Decimal, List, Date, Text length or Custom; the bounds (between,
+not between, equal to, greater than and the rest) are literals or
+formulas, so `=$B$1` as a maximum follows B1 and a relative `=A2` on
+G2:G17 reads the same row's A, as in Excel; a List is a comma list or a
+range or a name starting with `=`; a Custom formula is written for the
+top-left cell of the selection and moves with each cell, TRUE (or a number
+other than 0) allowing the entry. A typed entry that breaks the rule never
+reaches the workbook: the alert box shows the rule's title and message (or
+Excel's own words) with Retry, which reopens the editor with the entry,
+and Cancel; a Warning rule asks "Continue?" and Yes lets the entry through.
+The formula bar is checked the same way. Only typed entries are checked,
+as in Excel: paste, fill, Ctrl+D and the commands write what they are
+given.
+
+A List rule with In-cell dropdown draws an arrow on the active cell; the
+arrow, or Alt+Down, drops the list (arrows and Enter pick, Escape leaves
+the cell alone), and a pick is one undo. A typed entry is matched against
+the list without regard to case.
+
+The rules are per sheet, move with an insert or delete (and drop when
+their cells go), ride in `getState()` as `validation` and report
+`{ kind: 'validation' }` on `onChange`. `ruleAt`, `checkEntry`,
+`listChoices`, `removeValidation` and `shiftValidation` are exported
+from `@svgrid/enterprise/sheet` for a shell of your own, with
+`wb.evaluateText` and `wb.evaluateRange` evaluating a bound or a list
+source in the sheet without storing it. Raised as `data-validation` and
+`open-list`.
+
+### Comments
+
+Excel's notes: a text on a cell, marked by a red corner and read by
+hovering the cell. Review > New Comment, Shift+F2 and the cell menu's New
+Comment open the note box beside the active cell (Edit Comment when there
+is one); Ctrl+Enter or Save closes it, and so does Escape or a click
+elsewhere, keeping what was typed, as Excel keeps a note. Delete (on
+Review, in the box, in the cell menu) removes it; Previous and Next walk
+the sheet's comments row by row and wrap; Show All Comments opens a strip
+under the formula bar listing every comment, each a jump to its cell, which
+is the honest form over a sheet that only paints the rows in view. Every
+change is one undo. Comments are per sheet, move with an insert or delete,
+ride in `getState()` as `comments` (`r4` -> `B` -> text, the grid's
+`notes` shape re-keyed) and report `{ kind: 'comments' }` on `onChange`.
+Raised as `new-comment`, `edit-comment`, `delete-comment`,
+`prev-comment`, `next-comment` and `toggle-comments`.
+
+### Protection
+
+Excel's model, without the password. Every cell is locked to begin with;
+Format Cells > Protection (or Format > Lock Cell) unlocks the ones that may
+change; Review > Protect Sheet turns the flags on. From then on a locked
+cell refuses to change wherever the change comes from: typing, F2, Delete,
+the formula bar, paste, a fill, Ctrl+D, Find and Replace (which skips it),
+a sort of the region, and the formats (the Font, Alignment and Number
+buttons grey out while the selection holds a locked cell, and Ctrl+B
+declines). Insert and Delete grey out for the whole sheet, so do Row
+Height, Column Width, AutoFit, Hide and Unhide, and the resize handles go
+away. The refusal is a sentence in the status bar, Excel's own: "The cell
+you're trying to change is on a protected sheet. To make a change,
+unprotect the sheet." Unlocked cells take every edit as before.
+
+Protect Sheet and Unprotect Sheet share one slot on the Review tab
+(`protect-sheet`, `unprotect-sheet`); each is one undo, so Ctrl+Z after
+Unprotect protects again. The flag is per sheet and rides in
+`getState()` as `protected`, the unlocked cells as `locked: false` in
+their format entries; `onChange` reports `{ kind: 'protection' }`. A
+command written against the grid asks `cmd.canEdit(r, c)` before it writes
+and gets the same answer the editor does.
+
+There is no password and no "allow users to" list: the protection is
+against mistakes, not against the person at the keyboard, who can unprotect
+with one click.
+
+Data > Sort A to Z and Z to A sort the current region (or the selection) by
+the active cell's column: numbers before text, blanks last, a header row of
+text over numbers left in place, values and formats moving together, one
+undo.
+
+Every one of them raises its `onAction` first. A handler that returns
+`true` has taken the action over and the shell's dialog stays closed, so an
+application can put its own Format Cells in place of this one:
+
+```svelte
+<SvSheet workbook={wb} onAction={(action, cmd) => {
+  if (action === 'format-cells') { openMyDialog(cmd); return true }
+}} />
+```
+
+## What it does not do
+
+The shell is the part of Excel a team's spreadsheet uses every day; these
+are the parts it leaves out, on purpose, so nothing on the ribbon is a
+button that does nothing.
+
+- **Tabs:** no Page Layout (print setup has nothing behind it in the
+  grid), no track-changes on Review.
+- **Comments** are notes, not threads: one text per cell, no replies, no
+  author, no timestamp.
+- **Protection** takes no password and has no "allow users to" list: it
+  guards against mistakes, not against the person at the keyboard.
+- **Validation** checks what is typed and pasted-over cells are left as
+  they land; there is no Circle Invalid Data and no Input Message.
+- **Conditional formatting** has Excel's presets and Excel's "with"
+  styles, one data bar colour (and no negative axis: a range with
+  negatives runs from its minimum), one icon set per flavour and no
+  formula rule; the grid's own value-driven rules are a separate feature.
+- **Format Cells** has no Number > Special or Accounting, since nothing in
+  the sheet reads them.
+- **AutoFilter** has no Date Filters, no Filter by Color and no custom
+  Top 10; the values list is the whole column, unvirtualised, which is
+  what a sheet's region holds.
+
+## More examples
+
+### Review workflow: comments + Protect Sheet
+
+An expense sheet under review on the Excel shell. It opens protected: every cell is locked except the reviewer's Receipt and Status columns, so a keystroke on an amount is refused and the status bar says why. Three reviewer notes sit on the cells they are about (Excel's red corner): hover, Shift+F2, Review > Next, Show All Comments. Status is a list, the totals by status are SUMIFs, and protection, notes and rules all ride in the document.
+
+<div data-docs-demo="460-review-comments-protection" data-height="560"></div>
+
+### Order intake: data validation
+
+An order form with Excel's Data Validation on it: Region and Product are lists (the arrow or Alt+Down drops them; Product reads the price list on a second sheet), Qty is a whole number from 1 to 500 with a Stop alert and Retry, Discount is a decimal up to 20% with a Warning you can keep, Ship by is a date on or after the order date through a relative bound (=A2 moves with the row). Unit price is an XLOOKUP, the total follows.
+
+<div data-docs-demo="461-order-intake-validation" data-height="560"></div>
+
+### Regional scorecard: conditional formatting
+
+Eight regions, three months, a target, and every colour on the page is a conditional formatting rule over computed values: Highlight Cells on attainment (under 90% red, 100% and over green), a Data Bar and a Top 3 on the quarter, a Green - Yellow - Red Color Scale across the months, an Icon Set on the trend. Edit a month and the arrow, the bar, the fill and the rank all move; Manage Rules lists the six in priority order.
+
+<div data-docs-demo="462-regional-scorecard-cf" data-height="560"></div>
+
+### Budget report: merged headers
+
+A half-year budget report laid out with merged cells the way Excel lays one out: a title merged across the page, Q1 / Q2 / H1 group headers merged over their months, a Line corner merged down two rows, a notes paragraph merged into one wrapped block. A merge is one cell to the grid: click inside Q1 and the Name Box says B2, Merge & Center lights, the arrows step over it and its column letters are shaded. Unmerge and merge again from the ribbon; Ctrl+Z each step.
+
+<div data-docs-demo="463-merged-report-headers" data-height="560"></div>
+
+### Support ticket log: AutoFilter
+
+Forty support tickets with Excel's Filter on the header row, opened already filtered to what is still open: the funnel on Status, blue row numbers, "N of 40 records found" in the status bar. The arrows drop Excel's menu: sort, Clear Filter, Text and Number Filters with two conditions, a search box, (Select All) and the values with counts. The rows are worked out again after every edit, so a ticket typed Closed folds away at once. Ctrl+Shift+L toggles it.
+
+<div data-docs-demo="464-ticket-log-autofilter" data-height="560"></div>
+
+### Autosave: a document that survives a reload
+
+A project tracker that keeps itself in localStorage: onChange fires once per tick with every kind of change, the demo debounces it and writes getState() as JSON, and the next visit rebuilds the document with createSheetDocument({ state }) and hands it to <SvSheet document>. Add a comment, bold a row, hide a column, type a task, reload: it is all back, rules and merged title and frozen rows included. Reset puts the shipped document back with setState().
+
+<div data-docs-demo="465-autosave-document" data-height="560"></div>
+
+### Paste from Excel: formats and formulas survive
+
+Excel puts an HTML document on the clipboard beside the tab-separated text: formats in a style block keyed by class, formulas in x:fmla, raw numbers in x:num. The sheet reads it, so a pasted block arrives bold, filled, with its number formats, and with its formulas moved to where they landed; Google Sheets' data-sheets-formula flavour reads the same. Two buttons put exactly what Excel and Sheets put on the clipboard; click a cell and Ctrl+V.
+
+<div data-docs-demo="466-paste-from-excel" data-height="560"></div>
+
+## See also
+
+- [Excel keyboard shortcuts](./keyboard-shortcuts.md)
+- [Formulas](../spreadsheet-formulas.md)
+- [Number formats](./number-formats.md)
+- [Workbooks](./workbooks.md)
+
+<!-- =================================================================
      /docs/help/cells/styling-cells/  (community)
      ================================================================== -->
 
@@ -17966,6 +19552,117 @@ identifier.
 
 - [Highlighting changes](./highlighting-changes.md)
 - [Cell components](./cell-components.md)
+
+<!-- =================================================================
+     /docs/help/cells/tables/  (community)
+     ================================================================== -->
+
+# Tables and structured references
+
+A table is a named region with a header row, so a formula can say
+`Orders[Amount]` instead of `D2:D57`.
+
+The point is not shorter text. A1 references are **positional**: a total under
+a table has to be re-pointed every time rows are added, and a reference typed
+against 57 rows silently stops covering row 58. A structured reference names
+the **column**, and resolves to whatever the table currently is.
+
+```ts
+import { createTableRegistry } from '@svgrid/enterprise/sheet'
+
+const tables = createTableRegistry([{
+  name: 'Orders',
+  sheet: 'Sheet1',
+  headerRow: 0,      // data starts on the next row
+  firstCol: 0,
+  lastCol: 3,
+  lastRow: 24,       // last DATA row, not counting a totals row
+  hasTotals: false,
+}])
+```
+
+Wire it into the evaluation context:
+
+```ts
+const ctx = {
+  resolve, lastRow, functions,
+  findTable: (name) => tables.get(name),
+  tableAt: (sheet, row, col) => tables.at(sheet ?? 'Sheet1', row, col),
+  currentCell: { sheet: 'Sheet1', row, col },   // where the formula lives
+}
+```
+
+`currentCell` is what makes `[@Amount]` mean anything: "this row" is relative
+to the **formula**, not to the table.
+
+## The grammar
+
+| Form | Means |
+| ---- | ----- |
+| `Orders[Amount]` | The data body of one column. |
+| `Orders[@Amount]` | That column, on the formula's own row. |
+| `[@Amount]` | The same, unqualified. Only works **inside** a table. |
+| `Orders[#Headers]` | The header row. |
+| `Orders[#Totals]` | The totals row, if the table has one. |
+| `Orders[#Data]` | Every data row. The default. |
+| `Orders[#All]` | Headers through totals. |
+| `Orders[[Qty]:[Amount]]` | A span of columns. |
+| `Orders[[#Headers],[Amount]]` | One part of one column. |
+| `Orders[[Unit Price]]` | A column name containing a space. |
+
+Column names match case-insensitively, as Excel does.
+
+```ts
+'=SUM(Orders[Amount])'
+'=[@Qty]*[@Price]'
+'=SUM(Orders[[Qty]:[Amount]])'
+'=Orders[[#Totals],[Amount]]'
+```
+
+## What it does not resolve, and when
+
+A structured reference resolves at **evaluation**, not at parse. The range it
+means depends on how many rows the table has right now, and the AST is cached
+across the edits that change that. Resolving at parse time is how a total
+silently stops covering rows added after it was typed, which is the exact
+problem tables exist to fix.
+
+`translateFormula` therefore leaves them alone: filling `=SUM(Orders[Amount])`
+down a column gives the same formula in every cell, because that is what it
+means.
+
+## Failures are `#REF!`, never a throw
+
+A reference naming a column that has since been renamed is an ordinary thing
+to find in a sheet. One broken total should not take the rest of the workbook
+with it, so every failure below is a value:
+
+- the table does not exist
+- the column does not exist
+- `[@Column]` outside any table, or on the header row
+- `[#Totals]` on a table with no totals row
+- `[#Data]` on an **empty** table, rather than falling back to the header row,
+  which would make `=SUM(Orders[Amount])` add the word "Amount"
+
+## Auto-expansion
+
+`growToInclude(sheet, row, col)` extends a table over the row immediately
+below its data, the way Excel's does when you type under one:
+
+```ts
+tables.growToInclude('Sheet1', 25, 0)   // true, Orders now ends at row 25
+tables.growToInclude('Sheet1', 40, 0)   // false
+```
+
+Only the **next** row extends it. A write five rows below is a separate thing
+the user put there, and swallowing it would be worse than not expanding. A
+totals row occupying the slot blocks it too, because Excel inserts above a
+totals row, which is a structural edit rather than a grow.
+
+## See also
+
+- [Workbooks](./workbooks.md)
+- [Spreadsheet formulas](../spreadsheet-formulas.md)
 
 <!-- =================================================================
      /docs/help/cells/text-formatting/  (community)
@@ -18501,6 +20198,242 @@ symptom.
 
 - [Row data](../rows/row-data.md)
 - [Accessing rows](../rows/accessing-rows.md)
+
+<!-- =================================================================
+     /docs/help/cells/workbooks/  (community)
+     ================================================================== -->
+
+# Workbooks: several sheets that read each other
+
+The formula engine parsed `Orders!A1` and `'Price list'!A1:C9` from the day it
+was promoted. This is the model those references point at.
+
+```ts
+import { createWorkbook, SvSheetTabs, setWorkbook } from '@svgrid/enterprise'
+```
+
+<div data-docs-demo="455-workbook" data-height="560"></div>
+
+## The model
+
+```ts
+const wb = createWorkbook([
+  { name: 'Budget',  cells: [['10'], ['20'], ['=SUM(A1:A2)']] },
+  { name: 'Summary', cells: [['=Budget!A3'], ['=Budget!A3*2']] },
+])
+
+wb.getValue('Summary', 1, 0)     // 60
+wb.setRaw('Budget', 0, 0, '100')
+wb.getValue('Summary', 1, 0)     // 240
+```
+
+Editing `Budget!A1` reaches `Summary!A2`, which never mentions `A1`: the
+dependency graph spans sheets, so a change propagates as far as it needs to
+and no further.
+
+Cells hold **raw text and nothing else**. The computed value, the dependency
+edges and the display string are all recomputed from it, so there is one copy
+of the truth and no way for a cached value to disagree with the formula above
+it.
+
+| Method | Does |
+| ------ | ---- |
+| `getRaw` / `setRaw` | The text as typed. `setRaw` recalculates what depends on it. |
+| `getValue` | The computed value, cached until something it reads changes. |
+| `snapshot(sheet)` | The whole sheet computed, as a rectangle. |
+| `addSheet` / `removeSheet` / `renameSheet` / `moveSheet` | The tab operations. |
+| `applyStructuralEdit` | Insert or delete rows/columns, rewriting the whole workbook. |
+| `names` | Workbook-scoped defined names. |
+| `serialize` | Sheets, the active one, and the names. |
+
+## Defined names
+
+`wb.names` is the workbook's Name Manager. A name stands for a cell or a
+range, and a formula uses it in place of the address:
+
+```ts
+wb.names.define('TaxRate', '=Inputs!$B$3')
+wb.names.define('Sales', '=Orders!$I$2:$I$25')
+
+'=Subtotal*TaxRate'      // one cell
+'=SUM(Sales)'            // the whole range
+'=SUMIF(Orders!B2:B25, "North", Sales)'
+```
+
+A name that refers to a range **is** that range wherever a range would do:
+inside `SUM`, `COUNTIF`, `VLOOKUP`, `INDEX`. In scalar position it
+collapses to its top-left cell, as a range does in Excel.
+
+Edits behind a name propagate. `=Subtotal*TaxRate` recomputes when the cell
+behind `TaxRate` changes, because the dependency graph follows the name to
+its cell when the formula is evaluated. Redefining or removing a name drops
+every cached value, so the next read recomputes against the new definition;
+there is nothing to call afterwards.
+
+A name may be defined as another name (`Sales` -> `Q3Sales`). A circular
+chain reads as `#NAME?` rather than hanging.
+
+Rows and columns inserted or deleted through `applyStructuralEdit` move a
+name with the cells it refers to, and only then: `Sales` above follows an
+insertion on Orders and ignores one on Summary. The same rule holds for
+formulas, so `=Orders!B2` on Summary stays put when Summary gains a
+column while `=B2` beside it moves.
+
+<div data-docs-demo="459-named-ranges-forecast" data-height="600"></div>
+
+## Blank versus `#REF!`
+
+A sheet has no size in this model beyond what has been typed into it, so
+reading past the written area returns **blank**. `=SUM(A1:A100)` over a
+twelve-row sheet is an ordinary thing to write, and returning `#REF!` for the
+empty rows would poison the total.
+
+`#REF!` is reserved for the two cases that really are broken: a sheet that
+does not exist, and a negative index, which is what a reference shifted off
+the top by a delete becomes.
+
+A range that contains its own formula is a **circular reference**, so
+`=SUM(A1:A100)` sitting in `A3` reports `#CYCLE!`. Excel agrees.
+
+## Structural edits reach the whole workbook
+
+```ts
+wb.applyStructuralEdit('Orders', { kind: 'insertRows', at: 0, count: 1 })
+```
+
+A formula on another sheet holding `=Orders!A3` becomes `=Orders!A4`, because
+the row it pointed at moved. An **unqualified** reference on another sheet is
+left alone: its own sheet's geometry did not change, and shifting it would
+break it.
+
+## Sheet tabs
+
+```svelte
+<script>
+  import { SvSheetTabs, setWorkbook } from '@svgrid/enterprise'
+
+  let version = $state(0)
+  const wb = createWorkbook(...)
+  setWorkbook(wb, () => (version += 1))
+</script>
+
+<SvSheetTabs workbook={wb} {version} onChange={() => (version += 1)} />
+```
+
+Pass `version` back IN as well as out. A `Workbook` is a plain object rather
+than `$state`, so reading `workbook.sheets` creates no reactive dependency and
+the strip would render once and then show whatever the sheet list was at
+mount - it would not notice `Ctrl+PageUp` moving the active sheet underneath
+it. The strip bumps its own counter for its own buttons, so `version` is only
+needed for mutations that come from somewhere else: the shortcuts, or app code
+calling `addSheet`.
+
+Click to switch, double-click or `F2` to rename, drag to reorder, `+` to add.
+The strip owns no state of its own, so the tabs and the keyboard shortcuts
+cannot disagree about which sheet is active. A duplicate or invalid name is
+reported rather than silently ignored, and the delete button is not rendered
+on the last sheet, because the workbook refuses to remove it.
+
+| Key | Action |
+| --- | ------ |
+| Ctrl/Cmd + Page Down | Next sheet. |
+| Ctrl/Cmd + Page Up | Previous sheet. |
+| Shift + F11 | New sheet. |
+
+These **decline** with no workbook attached, so a single-sheet grid leaves
+`Ctrl+PageDown` to the browser's own tab switching. They do not wrap at either
+end, matching Excel: pressing again on the last sheet leaves you there.
+
+## Goal Seek
+
+"What rate makes the payment 1500?" You know the answer you want and one cell
+you are willing to change; the solver finds it.
+
+```ts
+import { goalSeekCell } from '@svgrid/enterprise/sheet'
+
+const result = goalSeekCell(
+  workbook,
+  { sheet: 'Model', row: 8, col: 1 },   // the formula cell
+  { sheet: 'Model', row: 2, col: 1 },   // the input to change
+  1500,                                  // the target
+)
+
+if (result.converged) {
+  // Ask first, then apply. Excel does.
+  workbook.setRaw('Model', 2, 1, String(result.value))
+}
+```
+
+The input cell is **restored** before `goalSeekCell` returns, whatever the
+outcome. The solver writes to it dozens of times while searching, and leaving
+the last probe behind would be worse than not running: it is also what makes
+Excel's "Goal Seek found a solution, OK or Cancel" possible. Apply
+`result.value` once the user says yes.
+
+### What it does when it cannot
+
+`converged: false` still carries a `value` and a `result`: the closest attempt,
+so a dialog can show it rather than nothing. `reason` says what happened.
+
+| Reason | Means |
+| ------ | ----- |
+| `maxIterations` | Ran out of tries. Raise `maxIterations` or loosen `tolerance`. |
+| `flat` | The formula does not respond to the input at all. |
+| `notNumeric` | The formula produced text or an error. |
+| `outOfBounds` | The answer lies outside `min` / `max`. |
+
+### The method
+
+Secant with a bisection fallback, not Newton. Newton needs a derivative, and
+the function here is "recalculate a spreadsheet", which has no analytic one.
+Secant approximates the slope from two evaluations, which is what a numerical
+derivative would cost anyway.
+
+Bisection is the fallback because secant is fast but not safe: it can step to
+infinity on a flat stretch or oscillate at a kink. Once two inputs are known
+whose results straddle the target, bisection inside that bracket cannot
+diverge, only be slow.
+
+The second probe scales with the guess rather than stepping a fixed amount. A
+step of 1 is enormous next to an interest rate of 0.05 and invisible next to a
+loan of 300000.
+
+`goalSeek` is the bare solver over any function, if the thing you are solving
+is not a spreadsheet:
+
+```ts
+goalSeek((x) => x * x, 9, 1)   // { converged: true, value: 3, ... }
+```
+
+## Saving the whole document
+
+`workbook.serialize()` is the cells, the sheet order, the active sheet and
+the defined names. The spreadsheet shell keeps more beside them (formats,
+column widths, row heights, hidden lines, frozen panes, per sheet), and
+`getState()` / `setState()` on `<SvSheet>`, or `createSheetDocument` on its
+own, carry all of it as one JSON document. See
+[Saving and restoring](./spreadsheet-shell.md#saving-and-restoring).
+
+## More examples
+
+### Autosave: a document that survives a reload
+
+A project tracker that keeps itself in localStorage: onChange fires once per tick with every kind of change, the demo debounces it and writes getState() as JSON, and the next visit rebuilds the document with createSheetDocument({ state }) and hands it to <SvSheet document>. Add a comment, bold a row, hide a column, type a task, reload: it is all back, rules and merged title and frozen rows included. Reset puts the shipped document back with setState().
+
+<div data-docs-demo="465-autosave-document" data-height="560"></div>
+
+
+### What-if analysis: Goal Seek
+
+A pricing model with three scenarios side by side and Excel's Goal Seek over it: Data -> Goal Seek, set the profit cell to 20,000 by changing the price, and the solver (secant with a bisection fallback) finds it. The sheet does not move until the status dialog says "found a solution" and you press OK; OK writes through the grid's command context, so it is one Ctrl+Z.
+
+<div data-docs-demo="457-goal-seek" data-height="560"></div>
+
+## See also
+
+- [Spreadsheet formulas](../spreadsheet-formulas.md)
+- [Excel keyboard shortcuts](./keyboard-shortcuts.md)
 
 <!-- =================================================================
      /docs/help/charts/  (community)
@@ -24989,6 +26922,14 @@ for, not a starting point a user can drag away:
 <SvGrid data={people} {columns} containerHeight={140} columnResize />
 ```
 
+### A drag is one undo
+
+A width the user drags, or double-clicks into, is one step in the grid's
+undo history: Ctrl+Z puts it back, Ctrl+Y widens it again. `onColumnResize`
+reports each such change with the column id and the new width.
+`api.setColumnWidth` and `api.autosizeColumn` record nothing and fire
+nothing, so restoring saved widths does not fill the history.
+
 ### Locking one column: `resizable: false`
 
 `columnResize` turns resizing on for the grid; a column opts back out with
@@ -25089,6 +27030,30 @@ render:
 See [examples/src/demos/06-large-dataset.svelte](../../../examples/src/demos/06-large-dataset.svelte)
 for a 100-column virtualized grid.
 
+## Collapsing a column to nothing
+
+`api.setColumnCollapsed(id, true)` folds a column away the way a spreadsheet
+hides one: the column keeps its place, its cells and the width it had, and
+takes no room until `setColumnCollapsed(id, false)` unfolds it. Its
+neighbours' borders meet at the seam. Arrow keys, Tab and Enter step over a
+collapsed column, so the cursor never rests on it; `api.setActiveCell` and a
+sheet's Name Box still can. `api.isColumnCollapsed(id)` reads the state.
+
+This is not `setColumnVisible(id, false)`, which takes the column out of the
+model: every column after a hidden one moves up an index, which is right for
+a "Choose columns" panel and wrong for anything that addresses cells by
+position, such as a sheet's formulas and formats. Collapse when the indices
+must hold; hide when the column should be gone.
+
+```ts
+api.setColumnCollapsed('cost', true)   // folded: cells and width kept, no room
+api.isColumnCollapsed('cost')          // true
+api.setColumnCollapsed('cost', false)  // back at the width it had
+```
+
+The spreadsheet shell's Hide and Unhide (Ctrl+9, Ctrl+0, and the header
+menus) are this, kept per sheet.
+
 ## Gotchas
 
 - Under `columnResize`, a `width` in the column def is an **initial** width:
@@ -25125,14 +27090,45 @@ on, including over `fitColumns`.
 
 Spanning lets a single body cell cover **multiple columns** and/or **rows** -
 merged report headers, grouped labels, financial statements. SvGrid does this
-with a real `colspan` / `rowspan` merge engine; there are two ways to drive it.
+with a real `colspan` / `rowspan` merge engine; there are three ways to drive
+it, and the first is the one to reach for on a new grid.
 
 <div data-docs-demo="170-cell-merging" data-height="480"></div>
 
-## 1. Explicit merges (spreadsheet-style)
+## 0. The `mergedCells` prop (the renderer's own)
+
+The grid draws merges itself from a list of origins with their spans, in
+display indices:
+
+```svelte
+<SvGrid
+  {data} {columns}
+  mergedCells={[
+    { rowIndex: 0, colIndex: 0, rowSpan: 1, colSpan: 4 },   // a title across A1:D1
+    { rowIndex: 3, colIndex: 1, rowSpan: 3, colSpan: 1 },   // B4:B6 as one cell
+  ]}
+/>
+```
+
+The origin's td takes the `rowspan` / `colspan` and shows the origin's
+value; the covered cells are not drawn at all, so there is nothing to
+hide after the fact. A selection grows to whole merges (a merged cell is
+one cell), the active cell inside a merge is its origin, the arrow keys
+step over a merge as one cell, and `api.getMergedCells()` reads the list
+back. Under row virtualization a merge whose origin has scrolled out of
+the rendered window is drawn from its first rendered row with the rows
+that remain, and one that crosses the frozen boundary is drawn in two
+parts; nothing needs the covered rows mounted. The grid does not write
+into covered cells on its own; a consumer that merges keeps them empty or
+marks them read-only through the column's `editable`, which is what the
+spreadsheet shell's Merge & Center does.
+
+## 1. Explicit merges (spreadsheet-style, DOM action)
 
 Declare exact merges as `MergeSpec[]` and apply them with the
-`spreadsheetLayout` action. The origin cell `(rowIndex, columnId)` spans
+`spreadsheetLayout` action, which works on a grid you do not own the
+render of (it edits the table after each paint). Prefer `mergedCells`
+where you can. The origin cell `(rowIndex, columnId)` spans
 `colspan` columns right and `rowspan` rows down; covered cells are hidden.
 
 ```svelte
@@ -25193,10 +27189,21 @@ covered-cell bookkeeping so overlapping spans never double-emit.
 
 ## Virtualization note
 
-`rowSpan` uses real `rowspan`, which needs the covered rows mounted in the
-render window. For very large spanning grids, keep spans modest or disable row
-virtualization (`virtualization={false}`) on that grid so the origin cell stays
-mounted while its covered rows are on screen.
+The declarative `rowSpan` and the `spreadsheetLayout` action use real
+`rowspan` and need the covered rows mounted in the render window. For very
+large spanning grids on those two, keep spans modest or disable row
+virtualization (`virtualization={false}`) so the origin cell stays mounted
+while its covered rows are on screen. The `mergedCells` prop has no such
+limit: it clamps every span to the rendered window and continues a merge
+from its first rendered row.
+
+## More examples
+
+### Budget report: merged headers
+
+A half-year budget report laid out with merged cells the way Excel lays one out: a title merged across the page, Q1 / Q2 / H1 group headers merged over their months, a Line corner merged down two rows, a notes paragraph merged into one wrapped block. A merge is one cell to the grid: click inside Q1 and the Name Box says B2, Merge & Center lights, the arrows step over it and its column letters are shaded. Unmerge and merge again from the ribbon; Ctrl+Z each step.
+
+<div data-docs-demo="463-merged-report-headers" data-height="560"></div>
 
 ## See also
 
@@ -27100,9 +29107,32 @@ A column with no `editorType` is **read-only** even when
 | Action | Keys | Outcome |
 | ------ | ---- | ------- |
 | Enter edit mode | `Enter` / `F2` / double-click | Editor opens on the active cell |
-| Commit | `Enter` / `Tab` | Saves the new value |
+| Commit and move down | `Enter` / `Shift+Enter` | Saves the new value and moves the cursor a row down (up with Shift); stays put on the last row |
+| Commit and move right | `Tab` / `Shift+Tab` | Saves and moves a column right (left with Shift), wrapping at the end of the row |
+| Commit into the block | `Ctrl+Enter` | Saves the entry into every editable cell of the selected block and stays put; one undo |
 | Cancel | `Esc` | Discards |
-| Move to next field while editing | `Tab` / `Shift+Tab` | Commits and re-enters edit on the neighbour |
+
+Two more rules make a run of entries feel like a sheet. A run of Tabs
+remembers the column it started in, and the Enter that ends the run goes
+down from that column: type across A1, B1 and C1 with Tab, press Enter, and
+the cursor is on A2 for the next record. An arrow key or a click ends the
+run. And inside a selection of more than one cell the cursor stays inside
+it: Enter walks down a column and wraps to the top of the next, Tab walks
+along a row and wraps to the start of the next, both come back to the first
+cell after the last, and the selection stays put, so a block can be filled
+without reaching for the mouse. Both rules apply whether the key commits an
+edit or just moves the cursor, and `getEntryStep` from `@svgrid/grid` is the
+pure function behind them if you need the same stepping elsewhere.
+
+A click on the cell that is already active also opens the editor, the way a
+second click on a selected file name starts a rename. `editOnSecondClick={false}`
+turns that off; the spreadsheet shell does, since Excel edits on double-click
+or F2 only.
+
+A text column with `editorMultiline: true` takes line breaks: Alt+Enter
+inserts one and the editor grows a line per break, while Enter still commits.
+It is the spreadsheet's shape of a multi-line cell; `editorType: 'textarea'`
+is the other, where Enter itself is the line break and Ctrl+Enter commits.
 
 ## What gets saved
 
@@ -27157,7 +29187,13 @@ Declarative per-column `validate()` hook, Handsontable-style. Invalid cells - in
 
 ### Excel-style fill handle
 
-Walks through every fill pattern the engine detects: numeric series, date series, weekday sequence, reverse-fill, horizontal fill, copy-mode.
+Walks through every fill pattern the engine detects: numeric series (an even step continues it; an uneven run continues its linear trend, as Excel's AutoFill does), date series, weekday sequence, reverse-fill, horizontal fill, copy-mode.
+
+The handle follows the grid's pattern rules (a series, weekdays, "Item 1"),
+and `processCellForFill` runs ahead of them: it receives the source value
+and how far the target sits from it, and returns the value to write or
+`undefined` to leave it to the pattern. Double-click the handle to fill
+down as far as the neighbouring column has data. A drag is one undo.
 
 <div data-docs-demo="95-fill-handle" data-height="460"></div>
 
@@ -36932,7 +38968,7 @@ const rows = raw.slice(1).map((cells) =>
 | `type: 'checkbox'`                             | `editorType: 'checkbox'`                          |
 | `type: 'dropdown', source: [...]`              | `editorType: 'list', editorOptions: [...]`        |
 | `type: 'autocomplete'`                         | `editorType: 'list'` (combobox UI ships)          |
-| `type: 'time'`                                 | Use `editorType: 'text'` + your own format        |
+| `type: 'time'`                                 | `editorType: 'time'`                              |
 | `type: 'password'`                             | Use `editorType: 'text'` + a custom snippet       |
 
 ## Selection + clipboard
@@ -36940,8 +38976,10 @@ const rows = raw.slice(1).map((cells) =>
 | Handsontable                            | sv-grid                                                 |
 | --------------------------------------- | ------------------------------------------------------- |
 | `selectCells([[0,0,2,5]])`              | `api.selectCells(ranges)`, with `selectionMode='cell'`   |
-| `getSelected()`                         | Combine `onActiveCellChange` + `onRowSelectionChange`    |
-| `copyPaste: true` (default)             | Ships built-in; `enableCellSelection={true}`             |
+| `getSelected()`                         | `api.getSelected()`: the same `[[startRow, startCol, endRow, endCol], ...]`, normalised to top-left / bottom-right and `[]` rather than `undefined` when nothing is selected |
+| `getSelectedLast()`                     | `api.getSelectedLast()`: `[startRow, startCol, endRow, endCol]` with the orientation kept (a range dragged upwards has `startRow > endRow`), or `undefined` |
+| `getSelectedRange()` / `getSelectedRangeLast()` | `api.getSelectedRange()` / `api.getSelectedRangeLast()`: `{ from, to, highlight }` per rectangle, the same three fields as `CellRange`; plain data rather than a class, so use `Math.min` / `Math.max` for the corners |
+| `copyPaste: true` (default)             | Ships built-in; `enableCellSelection={true}`. The spreadsheet shell also exchanges formats, number formats and formulas with Excel and Google Sheets through the HTML clipboard |
 | `fillHandle: true`                      | Ships built-in (drag-to-fill on selected range)          |
 | `moveCells: true`                       | `moveCells` - drag the range border to move it, Ctrl / Cmd to copy. On by default; see [move or copy a range](./editing/move-cells.md) |
 
@@ -36952,6 +38990,7 @@ const rows = raw.slice(1).map((cells) =>
 | `fixedColumnsStart: 2`             | `api.setColumnPinning({ left: ['firstColId', 'secondColId'] })` |
 | `fixedRowsTop: 1`                  | `pinnedTopRows` (and `pinnedBottomRows`)               |
 | `manualColumnFreeze: true`         | Ships via the column-header right-click menu             |
+| `mergeCells: [{ row, col, rowspan, colspan }]` | `mergedCells={[{ rowIndex, colIndex, rowSpan, colSpan }]}` on `<SvGrid>`; the spreadsheet shell adds Merge & Center, Merge Across, Merge Cells and Unmerge on the ribbon and the cell menu |
 
 Freeze panes on a plain `<SvGrid>`: two pinned columns and the sticky
 letter and number headers, with formulas underneath.
@@ -36967,7 +39006,40 @@ letter and number headers, with formulas underneath.
 | `afterFilter(...)`                     | `onFiltersChange((f) => {...})`                         |
 | `afterColumnSort(...)`                 | `onSortingChange((s) => {...})`                          |
 | `beforeChange((changes) => false)`     | Throw / return `false` from your inline validator; see [validation](./editing/validation.md) |
-| `afterCreateRow / afterRemoveRow`      | Wrap `api.addRow / removeRow` in your own emitter        |
+| `afterCreateRow / afterRemoveRow`      | Wrap `api.addRow / removeRow` in your own emitter; on the spreadsheet shell, `onChange` reports a `structure` reason with the edit |
+| `afterMergeCells / afterUnmergeCells`  | On the spreadsheet shell, `onChange` reports `merges`; `api.getMergedCells()` reads the grid's list |
+| `afterSetCellMeta` (comments, validation) | `onChange` reports `comments`, `validation`, `conditional-formats` and `protection` on the shell |
+| `afterFilter` (the Filters plugin)      | `onChange` reports `filter` on the shell; `getState().sheets[name].autoFilter` is the state |
+
+On the spreadsheet shell (`<SvSheet>` in `@svgrid/enterprise`) one callback
+covers the lot: `onChange(reasons)` fires once per tick with every kind of
+change since the last call (`cells`, `formats`, `sizes`, `hidden`,
+`freeze`, `sheets`, `comments`, `protection`, `validation`,
+`conditional-formats`, `merges`, `filter`, `structure` with the insert or
+delete, `restore`), which is where Handsontable's `afterChange` autosave
+goes. `getState()` gives the document to save and `setState()` puts it back.
+
+## Cell meta → the sheet document
+
+Handsontable keeps comments, validators, read-only flags and merges as cell
+meta on the instance. On the spreadsheet shell they are parts of the
+document, per sheet, saved with it and moved by inserts and deletes:
+
+| Handsontable                                        | sv-grid spreadsheet shell                                       |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| `comments: true`, `cell: [{ row, col, comment }]`  | Review > New Comment, Shift+F2, the cell menu; `getState().sheets[name].comments` |
+| `validator: 'numeric'`, `allowInvalid: false`    | Data > Data Validation (Whole number, Decimal, List, Date, Text length, Custom), Stop or Warning; `validation` in the state |
+| `readOnly: true` on a cell                          | Format Cells > Protection unlocks the cells that may change, Review > Protect Sheet locks the rest; `locked: false` in the format entry, `protected` per sheet |
+| `mergeCells`                                        | Merge & Center on the ribbon and the cell menu; `merges` in the state |
+| `filters: true` + `dropdownMenu`                    | Ctrl+Shift+L or Data > Filter: Excel's AutoFilter arrows and menus; `autoFilter` in the state |
+| conditional formatting (a custom renderer)          | Home > Styles > Conditional Formatting: Highlight Cells, Top/Bottom, Data Bars, Color Scales, Icon Sets, Manage Rules; `conditionalFormats` in the state |
+| `autofill` rules                                    | The fill handle's own series: numbers, dates by day or by the set gap, `Item 1`, weekdays and months |
+
+On a plain `<SvGrid>` the free grid has the primitives instead: `notes`
+and `editableComments` for comments, `editable` and `valueParser` on a
+column for read-only cells and validation, `mergedCells` for merges, the
+filter row and its Excel-style menu for filtering, and value-driven
+`conditionalFormats` by column.
 
 ## Formulas (HyperFormula)
 
@@ -37020,9 +39092,11 @@ around.
 
 - **Full HyperFormula surface as a supported feature.** Sv-grid ships a
   subset and lets you wire HyperFormula yourself; see above.
-- **Comments + named ranges.** Not in sv-grid today.
-- **Merge cells UI.** Sv-grid merges through `colSpan` and `rowSpan`
-  callbacks on a column, with no drag-to-merge UI.
+- **Nested headers.** Handsontable's `nestedHeaders` have no
+  counterpart beyond column groups.
+- **Threaded comments and a validation Input Message.** Comments on the
+  shell are Excel's notes, one text per cell; validation shows its message
+  on a refusal, not on arrival.
 - **Excel export without a paid pack.** Handsontable's export plugin writes
   XLSX through its asynchronous method; on sv-grid, CSV, TSV and JSON export
   are free and Excel, PDF and print output are in `@svgrid/enterprise`.
@@ -39826,8 +41900,24 @@ can see both the trajectory and the (short) list of real gaps.
 | Gap | Status | Effort |
 | --- | ------ | ------ |
 | ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
-| ~~Formula language / formula editor~~ | **shipped** - in-grid engine (demo `83-spreadsheet-formulas`), HyperFormula adapter (demo `173-hyperformula`), xlsx formulas (`101`, `119`) | ✓ |
+| ~~Formula language~~ | **shipped** - a real module in `@svgrid/enterprise/sheet`: parser, evaluator, ~50 functions, cross-sheet and whole-column refs, short-circuiting `IF` / `IFERROR`, a dependency graph for incremental recalc, and `translateFormula` / `fixupReferences`. Absolute refs are now absolute (the demo copies stripped `$`, so anything filled or copied was quietly wrong) | ✓ |
+| ~~Formula editor (bar, autocomplete, Name Box)~~ | **shipped** - `<SvFormulaBar>` shows the raw text behind the active cell, autocompletes function names closest-match-first with signature hints, and its Name Box jumps to an address or a defined name; `createNames` defines them. Demo `453` | ✓ |
+| ~~Per-cell number formats and styles~~ | **shipped** - an Excel format-string compiler (`compileNumberFormat`) plus a store keyed on row id so formatting survives a sort, wired to Ctrl+1, Ctrl+Shift+1..6 and Ctrl+B/I/U. Demo `453` | ✓ |
+| ~~AutoSum~~ | **shipped** - Alt+= over the run Excel would guess | ✓ |
+| ~~Reference highlighting~~ | **shipped** - the sheet shell outlines every cell a formula in progress refers to, each in its own colour, whether the formula is typed in the cell or in the bar | ✓ |
 | ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
+| ~~Excel keyboard shortcuts~~ | **shipped** - `enableSheet()` binds Ctrl+Arrow (a run-boundary search, so it hops gaps), Ctrl+Shift+Arrow, Ctrl+A region-then-sheet, Ctrl+Space / Shift+Space, Ctrl+D / Ctrl+R, Ctrl+; and Ctrl+'; demo `452-excel-shortcuts`. Bind your own through the free `registerGridShortcuts` seam | ✓ |
+| ~~Reference-aware fill~~ | **shipped** - `enableSheet()` wires `translateFormula` into Ctrl+D / Ctrl+R, so a filled formula shifts its relative refs and keeps its pinned ones | ✓ |
+| ~~Paste Special~~ | **shipped** - values / formulas / formats / transpose / add-subtract-multiply-divide / skip-blanks, plus a `text/html` clipboard flavour so formats and formulas survive a round trip through Excel. `Ctrl+Shift+V` | ✓ |
+| ~~Find and Replace~~ | **shipped** - match case, whole cell, look in values or formulas, scope to the selection, Replace All as one undo. `Ctrl+H` | ✓ |
+| ~~Text to Columns, Remove Duplicates~~ | **shipped** - `textToColumns` / `splitText` / `guessDelimiter` split a column, quoted fields and doubled quotes included; `findDuplicates` / `removeDuplicates` report before they remove, and match case-insensitively as Excel does | done |
+| ~~Multi-sheet workbook~~ | **shipped** - `createWorkbook` holds named sheets that read each other, with the dependency graph and structural edits spanning them; `<SvSheetTabs>` plus Ctrl+PageUp/PageDown and Shift+F11 | done |
+| ~~Goal Seek~~ | **shipped** - `goalSeekCell` solves for the input that makes a formula hit a target, secant with a bisection fallback, restoring the input cell so a dialog can ask before applying | done |
+| ~~Tables with structured references~~ | **shipped** - `Orders[Amount]`, `[@Amount]`, `[#Headers]` / `[#Totals]` / `[#All]`, column spans and auto-expansion. Resolved at evaluation, so a total keeps covering rows added after it was typed | done |
+| ~~Rewriting formulas on a sheet RENAME~~ | **shipped** - `renameSheet` rewrites every qualified reference and defined name through the parser, so a string literal that happens to hold the old name is untouched and a new name with a space comes out quoted | ✓ |
+| ~~Insert / delete with reference fixup~~ | **shipped** - `Ctrl+Shift+Plus` / `Ctrl+Minus` rewrite every formula and named range through `fixupReferences` | ✓ |
+| ~~Freeze panes: the ROW half~~ | **shipped** - `frozenRows={N}` on the grid keeps the first N rows under the header, the grid's own rows still, with the virtual window skipping them; `applyFreeze` / `freezeAtActiveCell` set both halves through the api and the shell keeps the panes per sheet | ✓ |
+| ~~`Alt+Enter`, `F4`~~ | **shipped** - Alt+Enter is a line break in the grid's multiline text editor and turns on Wrap Text in the sheet, whose rows grow to fit; F4 turns the reference at the caret through its anchorings, in the cell and in the formula bar | ✓ |
 | ~~Notes~~ | **shipped** - `notes` prop + cell comments; demos `85-tooltips-and-notes`, `91-cell-comments` | ✓ |
 | ~~Built-in cell flash / animated change highlight~~ | **shipped** - `cellFlash` on `ColumnDef` | ✓ |
 | ~~Drag a selected range to move / copy it~~ | **shipped** - `moveCells`, on by default with cell selection; demo `429-move-cells` | ✓ |
@@ -43623,7 +45713,7 @@ it to them: drag a row's bottom edge, or focus the grip and use Up/Down
 (Shift for 1px steps). It is **off by default**, because it puts a drag target
 on every row and most grids do not want one.
 
-The grid stores the dragged heights itself, keyed by row index, so this works as
+The grid stores the dragged heights itself, keyed by row id, so this works as
 a bare boolean - you do not need a function-valued `rowHeight` as well:
 
 ```svelte {runnable}
@@ -43660,11 +45750,32 @@ Two things to know:
 - **`autoRowHeight` wins.** Under auto height the content decides the size, so a
   dragged height would be overwritten by the next measurement pass. The grid
   suppresses the grips rather than letting the two fight.
-- **Heights are keyed by row index, and reset when the data changes.** Index 3 is
-  a different row after a filter, so keeping the height would size the new row by
-  the old one. If you need heights that survive - persisted per record, restored
-  on reload - own them yourself with a function-valued `rowHeight` and the
-  `rowResize` action, which reports every change to you.
+- **A height belongs to its row.** It is keyed by the row's id, so it follows
+  the row through a sort or a filter and survives the data being replaced; a
+  row that leaves the data takes its height with it. To persist heights per
+  record or restore them on reload, own them yourself with a function-valued
+  `rowHeight` and the `rowResize` action, which reports every change to you.
+
+A dragged height is one undo step, like a typed value, and `onRowResize`
+reports it. Double-clicking a row's grip takes the row back to its declared
+height (`height: null` in the event), which is where a spreadsheet refits
+wrapped text.
+
+The same heights are reachable from the api, with or without the grips:
+`api.getRowHeight(rowIndex)` reads a row's height (its own, else the declared
+one) and `api.setRowHeight(rowIndex, px)` gives it one, `null` taking it back
+to the declared height. The spreadsheet shell uses the pair to grow a row for
+wrapped text and to keep each sheet's heights apart.
+
+## Collapsing a row to nothing
+
+`api.setRowCollapsed(rowIndex, true)` folds a row away the way a spreadsheet
+hides one: the row keeps its index and its cells and takes no height,
+`getRowHeight` reads 0, and the arrow keys, Tab and Enter step over it. The
+fold belongs to the row, like a dragged height, so it follows the row
+through a sort and survives the data being replaced; `setRowCollapsed(i,
+false)` brings the row back at the height it had. Under `autoRowHeight` a
+collapsed row is 0 too. `api.isRowCollapsed(rowIndex)` reads the state.
 
 ## Header height
 
@@ -44070,7 +46181,24 @@ The built-in CSS supports stacking up to 4 rows per side. For larger stacks, ove
 | `format` | Yes | Yes |
 | Column pinning (left/right) | Yes | Yes |
 
-Pinned rows are **read-only by design** - they represent aggregates or annotations, not transactional data. If you need an editable row at the top, render it OUTSIDE the grid as a separate toolbar, or use a regular row with `data` and filter it to always sort first.
+Pinned rows are **read-only by design** - they represent aggregates or annotations, not transactional data. For an editable band at the top, freeze the grid's own rows instead: see below.
+
+## Frozen rows (`frozenRows`)
+
+`frozenRows={N}` keeps the first N rows under the header while the body
+scrolls, Excel's Freeze Panes for the row half (`columnPinning` is the
+column half). Unlike pinned rows they are the grid's own rows: numbered
+1..N, editable, selectable, sortable with the rest, dragged taller with
+`rowResize`. Under `virtualization` they are always rendered and the
+window skips them.
+
+```svelte {runnable}
+<SvGrid data={people} {columns} frozenRows={2} showRowNumbers enableInlineEditing containerHeight={220} />
+```
+
+`api.setOption('frozenRows', n)` changes it at runtime and `undefined`
+clears it; the spreadsheet shell's Freeze and Unfreeze buttons do exactly
+that, at the active cell, and keep the setting per sheet.
 
 ## Styling
 
@@ -50418,306 +52546,195 @@ model on-convention, and the server answers "what's the exact signature of
 
 # Spreadsheet formulas
 
-A minimal Excel-style formula engine that runs in the browser, with no
-dependencies. Cells can hold either a literal value (number, string,
-boolean) or a formula starting with `=`. When the formula resolves
-against the sheet, the cell shows the computed value; when you click
-the cell, the formula bar shows the source.
+An Excel-style formula engine that runs in the browser with no dependencies.
+Cells hold either a literal value or a formula starting with `=`. The engine
+parses it, resolves references against the sheet, and returns a computed value
+or one of Excel's error codes.
 
-![A real formula engine inside cells resolves a cell holding =SUM(A1:A3) into a computed value, with cell refs, ranges, functions, and cycle detection.](/docs-media/grid-formulas.svg)
+```ts
+import {
+  parseFormula,
+  evaluateFormula,
+  formatCellValue,
+} from '@svgrid/enterprise'
+```
 
-Useful for budgets, scorecards, cascading totals, conditional reports,
-lightweight planning - anything that needs in-cell calc without
-bundling a full spreadsheet engine like HyperFormula.
+Or from the `/sheet` subpath, which is the engine and the keyboard layer
+without export, pivot, the scheduler and the board:
+
+```ts
+import { parseFormula, evaluate, formatValue } from '@svgrid/enterprise/sheet'
+```
 
 <div data-docs-demo="83-spreadsheet-formulas" data-height="640"></div>
 
-## What's supported
+## Evaluating a formula
 
-| Category       | Examples                                                           |
-|----------------|--------------------------------------------------------------------|
-| Cell refs      | `A1`, `B2`, `AA10`, `$C$3` (absolute = relative here)              |
-| Ranges         | `A1:A10`, `B2:D5`                                                  |
-| Arithmetic     | `+ - * / ^ %`  (unary `-`)                                         |
-| Comparison     | `=` `<>` `<` `>` `<=` `>=`                                         |
-| String concat  | `&`                                                                |
-| Functions      | `SUM`, `AVG`/`AVERAGE`, `MIN`, `MAX`, `COUNT`, `COUNTA`, `COUNTIF` |
-|                | `IF`, `AND`, `OR`, `NOT`                                           |
-|                | `ROUND`, `ABS`                                                     |
-|                | `LEN`, `LEFT`, `RIGHT`, `UPPER`, `LOWER`, `CONCAT`                 |
-|                | `TODAY`                                                            |
-| Literals       | numbers (`1.5`, `-3`), strings (`"hello"`), booleans (`TRUE`/`FALSE`) |
+`evaluate` needs to know how to read a cell. That is the only thing it asks of
+you, which is what lets the same engine sit on top of a grid, a plain array, or
+several sheets at once.
 
-## Error codes
+```ts
+import { parseFormula, evaluate, formatValue } from '@svgrid/enterprise/sheet'
 
-The engine produces the same error vocabulary as Excel:
+const cells = [
+  [1, 2, 3],
+  [4, 5, 6],
+]
 
-| Code        | When                                          |
-|-------------|-----------------------------------------------|
-| `#REF!`     | Cell reference points outside the sheet       |
-| `#CYCLE!`   | Circular dependency                           |
-| `#DIV/0!`   | Division by zero                              |
-| `#VALUE!`   | Type mismatch (e.g. `="abc"+1`)               |
-| `#NAME?`    | Unknown function name                         |
-| `#PARSE!`   | Syntax error                                  |
+const ctx = {
+  resolve: (sheet, row, col) => cells[row]?.[col] ?? { error: '#REF!' },
+  lastRow: () => cells.length - 1,
+}
 
-## Complete drop-in example
-
-A self-contained budget sheet. The engine code (≈ 280 lines) is the
-same one the demo ships - copy it verbatim, or read the full source
-in [demo 83](../../examples/src/demos/83-spreadsheet-formulas.svelte).
-
-The grid shows the *computed* values; a formula bar above lets the
-user inspect or edit the raw formula behind the active cell.
-
-```svelte
-<script lang="ts">
-  import {
-    SvGrid,
-    tableFeatures,
-    rowSortingFeature,
-    renderSnippet,
-    type ColumnDef,
-  } from '@svgrid/grid'
-
-  // ─────────────────── ENGINE ───────────────────
-  type CellVal = string | number | boolean | { error: string }
-  type Sheet = string[][]
-
-  function isError(v: CellVal): v is { error: string } {
-    return typeof v === 'object' && v !== null && 'error' in v
-  }
-
-  function colToLetters(c: number): string {
-    let n = c, s = ''
-    while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 }
-    return s
-  }
-  function lettersToCol(l: string): number {
-    let c = 0
-    for (const ch of l.toUpperCase()) c = c * 26 + (ch.charCodeAt(0) - 64)
-    return c - 1
-  }
-  function parseRef(ref: string): { row: number; col: number } | null {
-    const m = ref.replace(/\$/g, '').match(/^([A-Z]+)(\d+)$/i)
-    return m ? { row: parseInt(m[2]!, 10) - 1, col: lettersToCol(m[1]!) } : null
-  }
-
-  // (tokenize / parse / evaluate omitted for brevity - copy from demo 83)
-  // Below is the public surface you actually call.
-
-  declare function tokenize(formula: string): unknown[]
-  declare function parse(tokens: unknown[]): unknown
-  declare function evaluate(ast: unknown, resolve: (r: number, c: number) => CellVal): CellVal
-
-  function computeSheet(sheet: Sheet): CellVal[][] {
-    const rowsN = sheet.length
-    const colsN = sheet[0]?.length ?? 0
-    const computed: (CellVal | undefined)[][] =
-      Array.from({ length: rowsN }, () => new Array(colsN))
-    const visiting: boolean[][] =
-      Array.from({ length: rowsN }, () => new Array(colsN).fill(false))
-
-    function resolve(r: number, c: number): CellVal {
-      if (r < 0 || r >= rowsN || c < 0 || c >= colsN) return { error: '#REF!' }
-      if (computed[r]![c] !== undefined) return computed[r]![c]!
-      if (visiting[r]![c]) return { error: '#CYCLE!' }
-      visiting[r]![c] = true
-      const raw = (sheet[r]![c] ?? '').trim()
-      let value: CellVal
-      if (raw === '') value = ''
-      else if (raw.startsWith('=')) {
-        try { value = evaluate(parse(tokenize(raw.slice(1))), resolve) }
-        catch (e) {
-          const msg = e instanceof Error ? e.message : '#ERR!'
-          value = { error: msg.startsWith('#') ? msg : '#PARSE!' }
-        }
-      } else {
-        const n = Number(raw)
-        value = Number.isFinite(n) ? n : raw
-      }
-      visiting[r]![c] = false
-      computed[r]![c] = value
-      return value
-    }
-    for (let r = 0; r < rowsN; r++) for (let c = 0; c < colsN; c++) resolve(r, c)
-    return computed.map((row) => row.map((v) => v ?? '')) as CellVal[][]
-  }
-
-  // ─────────────────── DEMO ───────────────────
-  // raw[row][col] = the text the user typed (formula or literal).
-  let raw = $state<Sheet>([
-    ['Item',     'Cost', 'Qty', 'Subtotal',         'Total'],
-    ['Domain',   '12.99','3',   '=B2*C2',           '=ROUND(D2*1.08,2)'],
-    ['Hosting',  '49',   '12',  '=B3*C3',           '=ROUND(D3*1.08,2)'],
-    ['SSL',      '85',   '1',   '=B4*C4',           '=ROUND(D4*1.08,2)'],
-    ['TOTALS',   '',     '',    '=SUM(D2:D4)',      '=SUM(E2:E4)'],
-    ['Status',   '',     '',    '',                 '=IF(E5>500,"REVIEW","OK")'],
-  ])
-  const computed = $derived(computeSheet(raw))
-
-  let activeRow = $state<number | null>(null)
-  let activeCol = $state<number | null>(null)
-  const activeRaw = $derived(
-    activeRow != null && activeCol != null ? raw[activeRow]?.[activeCol] ?? '' : '',
-  )
-  let formulaInput = $state('')
-  $effect(() => { formulaInput = activeRaw })
-
-  function commit() {
-    if (activeRow == null || activeCol == null) return
-    const next = raw.map((row) => row.slice())
-    next[activeRow]![activeCol] = formulaInput
-    raw = next
-  }
-
-  function formatValue(v: CellVal): string {
-    if (isError(v)) return v.error
-    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2)
-    if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE'
-    return String(v)
-  }
-
-  // SvGrid columns - one per spreadsheet column. Each row is a SheetRow.
-  type SheetRow = { rowIndex: number; cells: CellVal[] }
-  const gridRows = $derived<SheetRow[]>(
-    computed.slice(1).map((cells, i) => ({ rowIndex: i + 1, cells })),
-  )
-  const headerCells = $derived(computed[0] ?? [])
-
-  const features = tableFeatures({ rowSortingFeature })
-  const columns = $derived<ColumnDef<typeof features, SheetRow>[]>(
-    Array.from({ length: 5 }, (_, c) => ({
-      id: colToLetters(c),
-      header: `${colToLetters(c)} · ${formatValue(headerCells[c] ?? '')}`,
-      width: c === 0 ? 160 : 130,
-      editable: false,
-      cell: (ctx) => renderSnippet(SheetCell, { row: ctx.row.original, col: c }),
-    })),
-  )
-</script>
-
-{#snippet SheetCell(props: { row: SheetRow; col: number })}
-  {@const r = props.row.rowIndex}
-  {@const c = props.col}
-  {@const v = props.row.cells[c] ?? ''}
-  {@const active = activeRow === r && activeCol === c}
-  <span
-    onclick={() => { activeRow = r; activeCol = c }}
-    style="display: inline-block; width: 100%; cursor: pointer;
-           {active ? 'background: rgba(99,102,241,0.10); box-shadow: inset 0 0 0 2px #6366f1;' : ''}
-           {isError(v) ? 'color: #dc2626; font-family: ui-monospace, Menlo, monospace;' : ''}"
-    title={raw[r]?.[c] ?? ''}
-  >{formatValue(v)}</span>
-{/snippet}
-
-<section style="display: flex; flex-direction: column; gap: 10px; height: 100%;">
-  <!-- Formula bar -->
-  <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1; border-radius: 8px;">
-    <span style="background: #f1f5f9; padding: 8px 12px; font-family: ui-monospace, Menlo, monospace; font-weight: 700; min-width: 64px; text-align: center;">
-      {activeRow != null && activeCol != null ? `${colToLetters(activeCol)}${activeRow + 1}` : '-'}
-    </span>
-    <input
-      type="text"
-      bind:value={formulaInput}
-      placeholder="Click a cell, then type =SUM(D2:D4) here…"
-      onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit() } }}
-      onblur={commit}
-      style="flex: 1; border: 0; outline: none; font-family: ui-monospace, Menlo, monospace; padding: 7px 8px;"
-    />
-  </div>
-
-  <div style="flex: 1; min-height: 0;">
-    <SvGrid
-      data={gridRows}
-      columns={columns}
-      features={features}
-      enableInlineEditing={false}
-      enableCellSelection={false}
-      showRowNumbers={true}
-      rowNumberWidth={48}
-      rowHeight={32}
-      containerHeight="100%"
-    />
-  </div>
-</section>
+evaluate(parseFormula('=SUM(A1:C1)'), ctx)   // 6
+formatValue(evaluate(parseFormula('=1/0'), ctx))  // '#DIV/0!'
 ```
 
-> The `tokenize` / `parse` / `evaluate` functions are declared but not
-> defined inline above - they are ~ 200 lines of TypeScript. Copy
-> them from the
-> [demo source](../../examples/src/demos/83-spreadsheet-formulas.svelte)
-> which is fully self-contained.
+| Field | Purpose |
+| ----- | ------- |
+| `resolve(sheet, row, col)` | Read one cell. Return `{ error: '#REF!' }` out of bounds. `sheet` is null for the sheet the formula lives on. |
+| `lastRow(sheet)` | The last used row, so an open-ended `A:A` knows where to stop. |
+| `resolveNameNode(name)` | Optional. The parsed reference a defined name stands for, or null. Evaluated in place of the name, so a name defined as a range works inside `SUM`, `COUNTIF` and the lookups. This is what a `Workbook` supplies. |
+| `resolveName(name)` | Optional. Resolve a defined name to one value, when `resolveNameNode` is absent or returns null; `undefined` becomes `#NAME?`. |
+| `functions` | Optional. Pass `withCustomFunctions({ ... })` to add your own. |
 
-## How the recompute works
+Rows and columns are 0-based, matching the grid's selection model, so nothing
+converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 
-`computeSheet(raw)` runs every time the raw sheet changes. It walks
-every cell once, lazily resolving references:
+## What is supported
 
-1. **Literal** - try `Number(raw)`, fall back to the string.
-2. **Formula** - tokenize, parse to an AST, evaluate against the
-   resolver.
-3. **Memoize** - once a cell is computed, its value is cached so
-   downstream cells don't re-parse the same formula.
-4. **Cycle detection** - a `visiting` flag per cell. If a resolver
-   tries to read a cell that's currently being computed, it returns
-   `#CYCLE!` instead of looping forever.
+| Category | Examples |
+| -------- | -------- |
+| Cell refs | `A1`, `B2`, `AA10`, `$C$3`, `A$1`, `$A1` |
+| Ranges | `A1:A10`, `B2:D5`, `A1 : B2`, whole columns `A:C` |
+| Cross-sheet | `Orders!A1`, `'Price list'!A1:C9` |
+| Defined names | `=Tax*2`, `=SUM(Sales)`, resolved through `resolveNameNode` (or `resolveName` for a single value) |
+| Structured refs | `Orders[Amount]`, `[@Qty]`, `Orders[#Totals]` - see [tables](./cells/tables.md) |
+| Arithmetic | `+ - * / ^`, unary `-` and `+`, postfix `%` |
+| Comparison | `=` `<>` `<` `>` `<=` `>=` |
+| Concatenation | `&` |
+| Literals | `1.5`, `2.5E-3`, `"text"`, `"say ""hi"""`, `TRUE` / `FALSE` |
 
-The `$derived` wrapper (`computed = $derived(computeSheet(raw))`)
-re-runs the whole sheet whenever any cell changes. For sheets under
-~ 10 000 cells this is fast - the demo's 16 × 8 sheet recomputes in
-under a millisecond.
+### Functions
 
-For very large sheets, switch to incremental recompute by tracking
-which cells depend on which (build a forward edges graph during the
-first pass) and recomputing only the affected sub-DAG. The shape of
-the resolver doesn't change.
+| Group | Functions |
+| ----- | --------- |
+| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` |
+| Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `RANK` |
+| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` |
+| Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
+| Information | `ISNUMBER` `ISTEXT` `ISLOGICAL` `ISBLANK` |
+| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `TRIM` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `FIND` `SEARCH` `TEXT` |
+| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `DAYS` `DATEDIF` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` |
 
-## Try these formulas
+`IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
+is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
 
-In the formula bar of the demo, click a cell and type:
+`%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
+`=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is
+the function.
 
-```text
-=SUM(D2:D4)               // sum a range
-=AVG(E2:E4)               // average
-=IF(E5>500,"REVIEW","OK") // conditional text
-=COUNTIF(F2:F4,"REVIEW")  // count matches
-=B2*C2&" units"           // arithmetic + string concat
-=ROUND(E2/E$5*100,1)      // percentage with rounding
-=TODAY()                  // today's date as YYYY-MM-DD
+Need the full ~400? The [HyperFormula adapter](#hyperformula) is still there.
+
+### Error codes
+
+| Code | When |
+| ---- | ---- |
+| `#REF!` | Reference outside the sheet, or to a deleted cell |
+| `#CYCLE!` | Circular dependency |
+| `#DIV/0!` | Division (or `MOD`) by zero |
+| `#VALUE!` | Type mismatch, e.g. `="abc"+1` |
+| `#NAME?` | Unknown function or defined name |
+| `#NUM!` | Numeric domain error, e.g. `SQRT(-1)` |
+| `#N/A` | A lookup found nothing |
+| `#PARSE!` | Syntax error |
+
+Errors are values, not exceptions, which is what lets `IFERROR` see one.
+
+## Absolute references actually work
+
+`$` pins a reference so it does not move when the formula does. The engine
+keeps that through to the AST, and `translateFormula` is the only thing allowed
+to move a reference:
+
+```ts
+import { translateFormula } from '@svgrid/enterprise/sheet'
+
+translateFormula('=$A$1*B2', 1, 0)   // '=$A$1*B3'
+translateFormula('=$A2*B$1', 3, 4)   // '=$A5*F$1'
 ```
 
-Each commits immediately on `Enter` and recomputes the whole sheet.
+Translation re-serialises from the AST, which means it rebuilds parentheses
+from precedence rather than remembering them. `=(A1+B1)*2` comes back as
+`=(A2+B2)*2`, and redundant ones are dropped: `=IF((A1+B1)>2,1,0)` becomes
+`=IF(A2+B2>2,1,0)`, which parses identically.
 
-## Bridging to xlsx export
+This is what makes `Ctrl+D` correct. `enableSheet()` wires it into fill for
+you, so filling `=$A$1*B1` down a column keeps reading `$A$1` instead of
+walking down the sheet and returning plausible wrong numbers.
 
-The engine stores raw formulas as text. When you export to xlsx via
-`@svgrid/enterprise`, you have two choices:
+> **If you copied the engine out of a demo before this shipped**, it stripped
+> `$` at parse time and evaluated every reference as relative. Formulas that
+> never got filled or copied were fine; anything that did was quietly wrong.
+> Importing the module fixes it.
 
-1. **Export computed values** - default. The xlsx receives numbers
-   and strings, Excel sees them as values.
-2. **Export formulas** - mark formula cells with a leading `=` in the
-   exported value. Excel parses them and recomputes on open. Useful
-   when the recipient wants to drill into the math.
+## Insert and delete with reference fixup
 
-Both modes preserve cell formatting (currency, dates) you set on the
-columns.
+`fixupReferences` rewrites a formula after rows or columns move:
 
-## Limitations & when to reach for HyperFormula
+```ts
+import { fixupReferences } from '@svgrid/enterprise/sheet'
 
-The bundled engine intentionally covers ~80% of common spreadsheet
-formulas. It does NOT support:
+fixupReferences('=SUM(A1:A10)', { kind: 'insertRows', at: 4, count: 1 })
+// '=SUM(A1:A11)'   the new row joins the total
 
-- VLOOKUP / INDEX / MATCH (planned)
-- Volatile functions beyond `TODAY()` (`NOW`, `RAND`, `RANDBETWEEN`)
-- Array formulas
-- Named ranges
-- 3-D references across multiple sheets
+fixupReferences('=A3', { kind: 'deleteRows', at: 2, count: 1 })
+// '=#REF!'         the cell it pointed at is gone
+```
 
-If you need full Excel parity, integrate
-[HyperFormula](https://hyperformula.handsontable.com) - it's a 600 KB
-add-on that drops in alongside SvGrid. Reach for it only when you
-actually need it; the bundled engine is < 5 KB minified.
+A range only breaks when the edit removes all of it; deleting rows inside one
+shrinks it, the way Excel does.
+
+## Recalculating only what changed
+
+A naive engine recomputes every cell on every keystroke. The dependency graph
+turns that into "recompute what this edit affects, in an order where each cell
+comes after its inputs":
+
+```ts
+import {
+  createDependencyGraph, precedentsOf, cellKey, parseFormula,
+} from '@svgrid/enterprise/sheet'
+
+const graph = createDependencyGraph()
+
+// When a formula is entered or changed:
+graph.setPrecedents(
+  cellKey(null, row, col),
+  precedentsOf(parseFormula(text), { sheet: null }, lastRow),
+)
+
+// When a value changes, recompute these, in this order:
+for (const key of graph.dirtyFrom([cellKey(null, row, col)])) {
+  // ...
+}
+
+graph.cycles()   // every cell in a circular reference
+```
+
+Cells caught in a cycle are still returned by `dirtyFrom`, so they can show
+`#CYCLE!` rather than keep a stale value while the rest of the sheet works.
+
+## HyperFormula
+
+For the full Excel function library, `createHyperFormulaSheet` in
+`@svgrid/grid` wraps [HyperFormula](https://hyperformula.handsontable.com) as
+an optional peer dependency. It is a heavier bundle and a separate licence;
+this engine is the dependency-free option that covers the common ground.
+
+<div data-docs-demo="173-hyperformula" data-height="520"></div>
 
 ## More examples
 
@@ -50765,16 +52782,28 @@ A live formula sheet wired to the built-in Chart panel: edit a Units or Revenue 
 
 ### Per-cell custom borders (KPI)
 
-Editable KPI scorecard. spreadsheetLayout paints HOT-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.
+Editable KPI scorecard. spreadsheetLayout paints spreadsheet-style per-edge custom borders via an absolute-positioned overlay (no border-collapse conflicts). Edit any quarter or target - the borders re-derive: green double = beat target, blue solid = hit, amber dotted = near miss, red dashed = bad miss; row champion gets a colored full frame.
 
 <div data-docs-demo="169-cell-borders" data-height="560"></div>
 
+### Sales report workbook
+
+A three-sheet workbook on the Excel shell: Orders with XLOOKUP prices and IF discounts, a Products price list, and a Summary where every figure is live - COUNTIF / SUMIF by region, share of a named total, RANK, per-rep attainment with an IFS status, INDEX / MATCH for the best region. Edit an order and the whole page follows across sheets. Defined names in the Name Box; bands, currency and percent formats ship with the document.
+
+<div data-docs-demo="456-sales-report-workbook" data-height="560"></div>
+
+### Defined names + Name Manager
+
+An assumptions-driven twelve-month forecast where every formula reads a defined name - =B2*(1+Growth-Churn) - instead of an address. Pick a name in the Name Box to jump to its cell on the Assumptions sheet; open Formulas -> Name Manager to add, repoint or delete names and watch the forecast recompute. Inputs in blue, red negatives in parentheses, break-even found with INDEX / MATCH.
+
+<div data-docs-demo="459-named-ranges-forecast" data-height="560"></div>
+
 ## See also
 
-- [Demo 83 - Spreadsheet + formulas](../../examples/src/demos/83-spreadsheet-formulas.svelte) - the full engine source
-- [Demo 27 - Spreadsheet + Ribbon bar](../../examples/src/demos/27-spreadsheet-ribbon.svelte) - bold / colour / format ribbon
-- [Demo 18 - Cascade editing](../../examples/src/demos/18-cascade-editing.svelte) - the alternative when you want JS-driven recompute instead of formulas
-- [Export and print](./export.md) - xlsx export for the computed sheet
+- [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md) - `Ctrl+D` and
+  friends, which use `translateFormula`.
+- [Missing features](./missing-features.md) - the formula bar, named-range UI
+  and per-cell number formats are not built yet.
 
 <!-- =================================================================
      /docs/help/state-maintenance/  (community)
@@ -63386,6 +65415,7 @@ import { SvModal } from '@svgrid/grid'
 | `onClose`         | `() => void`         | -       | Called whenever the dialog closes.                   |
 | `title`           | `string`             | -       | Header heading; also names the dialog for a11y.      |
 | `size`            | `sm` \| `md` \| `lg` | `md`    | Preset dialog width (360 / 520 / 720px).             |
+| `width`           | `number`             | -       | Exact dialog width in px; wins over `size`.          |
 | `draggable`       | `boolean`            | `false` | Allow moving the dialog by its header.               |
 | `resizable`       | `boolean`            | `false` | Show a bottom-right handle to resize the dialog.     |
 | `closeOnBackdrop` | `boolean`            | `true`  | Close when the backdrop is clicked.                  |
@@ -72436,7 +74466,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (72)
+### Attributes (74)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -72491,6 +74521,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `enable-row-hover` | `enableRowHover` | `boolean` |
 | `copy-headers-to-clipboard` | `copyHeadersToClipboard` | `boolean` |
 | `enable-inline-editing` | `enableInlineEditing` | `boolean` |
+| `edit-on-second-click` | `editOnSecondClick` | `boolean` |
 | `full-row-editing` | `fullRowEditing` | `boolean` |
 | `enable-row-summaries` | `enableRowSummaries` | `boolean` |
 | `summary` | `summary` | `boolean` |
@@ -72508,6 +74539,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `external-filter` | `externalFilter` | `boolean` |
 | `editable-comments` | `editableComments` | `boolean` |
 | `conditional-stat-scope` | `conditionalStatScope` | `"filtered" \| "visible" \| "all"` |
+| `frozen-rows` | `frozenRows` | `number` |
 | `enable-column-reorder` | `enableColumnReorder` | `boolean` |
 | `infer-column-types` | `inferColumnTypes` | `boolean` |
 | `row-drag-managed` | `rowDragManaged` | `boolean` |
@@ -72515,7 +74547,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (26)
+### Properties only (30)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -72535,7 +74567,10 @@ only be assigned in script: `el.columns = [...]`.
 | `localization` | `GridLocalization` |
 | `pageSizeOptions` | `number[]` |
 | `initialColumnPinning` | `{ ... }` |
+| `processCellForFill` | `(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; col...` |
 | `processCellForClipboard` | `(params: { ... }) => unknown` |
+| `clipboardHtml` | `(params: { rects: ReadonlyArray<{ ... }>; text: string; }) => string \| null \| undefined` |
+| `processCellFromClipboard` | `(params: { ... }) => unknown` |
 | `initialSorting` | `Array<{ id: string; desc: boolean }>` |
 | `initialAdvancedFilter` | `GridPredicateExpr \| null` |
 | `getRowId` | `(row: TData, index: number) => string` |
@@ -72546,10 +74581,11 @@ only be assigned in script: `el.columns = [...]`.
 | `serverGroup` | `{ ... }` |
 | `serverFilterValues` | `(columnId: string) => Promise<string[]>` |
 | `pinnedTopRows` | `ReadonlyArray<TData>` |
+| `mergedCells` | `ReadonlyArray<{ ... }>` |
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (19)
+### Events (22)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -72559,6 +74595,9 @@ an object keyed by its parameter names.
 | `pivotmodechange` | `onPivotModeChange` | `on` |
 | `expandedchange` | `onExpandedChange` | `expanded` |
 | `paginationchange` | `onPaginationChange` | `pagination` |
+| `columnresize` | `onColumnResize` | `event` |
+| `rowresize` | `onRowResize` | `event` |
+| `pasteclipboard` | `onPasteClipboard` | `payload` |
 | `apiready` | `onApiReady` | `api` |
 | `rowselectionchange` | `onRowSelectionChange` | `{ selection, rows }` |
 | `cellselectionchange` | `onCellSelectionChange` | `ranges` |
@@ -78710,10 +80749,11 @@ If you came for the spreadsheet behaviour, the part that matters is that cell ra
 
 ## What they have in common
 
-- Editing on every cell, range selection, a fill handle and OS clipboard round-trips.
+- Editing on every cell, range selection, a fill handle and OS clipboard round-trips that keep formats and formulas.
 - Formulas with cell references, ranges and functions.
 - Frozen rows and columns, merged cells and nested (tree) rows.
 - Excel-style filters, sorting, undo and redo, a context menu.
+- Cell comments, data validation, conditional formatting and cell protection on the spreadsheet surface.
 - Virtualization on both axes, keyboard navigation and WAI-ARIA markup.
 
 ## Where SvGrid is stronger
@@ -78727,7 +80767,7 @@ If you came for the spreadsheet behaviour, the part that matters is that cell ra
 ## Where Handsontable is stronger
 
 - HyperFormula: the most complete formula surface in the category, with cross-sheet references and named expressions.
-- Years of spreadsheet edge cases handled: merged-cell editing, nested headers, cell comments, autofill rules.
+- Years of spreadsheet edge cases handled: nested headers, threaded comments, Input Messages on validation, Filter by Color.
 - Official React, Angular and Vue wrappers for a multi-framework shop.
 - Paid support with code review and a dedicated success manager on the higher plans.
 
@@ -78744,7 +80784,13 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 | Formulas | Partial - built-in engine for the common functions; HyperFormula optional | Yes - HyperFormula, about four hundred functions |
 | Virtualization on both axes | Yes | Yes |
 | Excel-style filters and sorting | Yes | Yes |
-| Merged cells | Yes - colSpan and rowSpan callbacks per column | Yes |
+| Merged cells | Yes - mergedCells prop on the grid; Merge & Center, Merge Across and Unmerge on the spreadsheet shell's ribbon | Yes |
+| Cell comments | Yes - notes prop on the grid; Review tab, Shift+F2 and the cell menu on the spreadsheet shell, one note per cell | Yes - the Comments plugin |
+| Data validation | Yes - valueParser on a column; Excel's Data Validation dialog, Stop and Warning alerts and in-cell lists on the spreadsheet shell | Yes - per-cell validators |
+| Conditional formatting | Yes - value-driven rules by column on the grid; Highlight Cells, Top/Bottom, Data Bars, Color Scales and Icon Sets over computed values on the spreadsheet shell | Partial - through custom renderers |
+| AutoFilter menus on the header row | Yes - Excel's arrows, value lists and Text or Number Filters on the spreadsheet shell | Yes - the Filters and Dropdown Menu plugins |
+| Cell protection | Yes - editable per column on the grid; Format Cells > Protection and Protect Sheet on the spreadsheet shell, no password | Yes - readOnly cell meta |
+| Excel and Sheets clipboard with formats and formulas | Yes - the spreadsheet shell reads and writes the HTML flavour Excel and Google Sheets use | Yes |
 | Frozen rows and columns | Yes - column pinning left and right, pinned top and bottom rows | Yes |
 | Nested (tree) rows | Yes | Yes |
 | Row grouping with aggregation | Yes - MIT core | No - nested rows only; no group rows with aggregates in the feature list |
@@ -78779,7 +80825,7 @@ Estimated effort: 2-4 hours per grid for typical spreadsheet workflows.
 What you give up:
 
 - HyperFormula as a first-party, supported engine; SvGrid's built-in engine covers the common functions and HyperFormula is an optional add-on you wire yourself.
-- Nested headers, cell comments and Handsontable's autofill rules.
+- Nested headers, threaded comments and Input Messages on validation.
 - Official React, Angular and Vue wrappers.
 - Built-in Excel export without a paid pack; SvGrid's is in @svgrid/enterprise.
 
@@ -81784,6 +83830,10 @@ export function installEnterprise<
   registerExportProvider(exportGrid as never)
   enablePivot()
   enableAdvancedFilter()
+  // Register the Excel keymap (Ctrl+Arrow, Ctrl+D, Ctrl+A and the rest). The
+  // grid interprets a key itself only when nothing claims it, so a free grid
+  // is unaffected.
+  enableSheet()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),
@@ -81816,6 +83866,8 @@ export type PivotChartOptions = {
   type?: ChartType
   /** Stack the series. Default false. */
   stacked?: boolean
+  /** Stack to 100%. Implies `stacked`. Default false. */
+  stacked100?: boolean
   /** Include the grand-total column / row as a series / category. Default false. */
   includeTotals?: boolean
   /** Cap the number of categories (row leaves) charted. */
@@ -90472,6 +92524,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
     | ((row: TData) => EditorOptionSource | Promise<EditorOptionSource>)
   /** When true, list/chips allow multiple selections. Cell value becomes an array. */
   editorMultiple?: boolean
+  /**
+   * The text editor accepts line breaks: Alt+Enter inserts one and the
+   * editor grows a line per break, while Enter still commits. What a
+   * spreadsheet cell with wrapped text wants; `editorType: 'textarea'` is
+   * the other shape, where Enter itself is the line break.
+   */
+  editorMultiline?: boolean
   /** Separator used when joining array values for the readonly cell display. Defaults to ', '. */
   editorSeparator?: string
   format?: CellFormatConfig
@@ -96711,6 +98770,30 @@ export type SavedChart = {
 }
 ```
 
+### `type SvGridCellCoords`
+
+One cell, in the 0-based display coordinates every selection method uses.
+
+```ts
+export type SvGridCellCoords = { row: number; col: number }
+```
+
+### `type SvGridSelectedRange`
+
+A selected rectangle with its orientation kept: `from` is where the
+selection was started (the anchor) and `to` where it ended (the focus),
+so a range dragged upwards has `from.row > to.row`. `highlight` is the
+active cell inside it. The same three fields as Handsontable's CellRange,
+so code written against `getSelectedRange()` there reads the same here.
+
+```ts
+export type SvGridSelectedRange = {
+  from: SvGridCellCoords
+  to: SvGridCellCoords
+  highlight: SvGridCellCoords
+}
+```
+
 ### `type SvGridTransaction`
 
 A batch of row mutations for `api.applyTransaction`. `update` / `remove`
@@ -96769,17 +98852,44 @@ export type SvGridApi<
    * range is `[rowStart, colStart, rowEnd, colEnd]` in 0-indexed grid
    * coordinates. Pass an empty array to clear the selection.
    *
-   * The grid currently honours the FIRST range only (single-range
-   * engine); subsequent ranges are accepted for API forward compat
-   * but ignored. The grid's active cell jumps to the range's start
-   * corner.
+   * Every range is honoured: the last one becomes the active range and
+   * the others stay highlighted beside it, as after a Ctrl+drag. The
+   * active cell goes to the last range's start corner.
    */
   selectCells(ranges: ReadonlyArray<readonly [number, number, number, number]>): void
   /**
-   * Returns the current cell-selection rectangles in the same shape
-   * `selectCells` accepts. Empty array when no range is active.
+   * The current cell-selection rectangles in the same shape `selectCells`
+   * accepts, each normalised to `[minRow, minCol, maxRow, maxCol]`, in the
+   * order they were selected with the active one last. Empty array when no
+   * range is active.
+   *
+   * Handsontable's method of the same name. Two differences, both on
+   * purpose: an empty array rather than `undefined`, so `getSelected()[0]`
+   * never throws; and normalised corners, so a loop from the first row to
+   * the last cannot run zero times because the range was dragged upwards.
+   * For the orientation, and the active cell inside a range, use
+   * `getSelectedRange()`.
+   *
+   * With cell selection off (`selectable={false}`) no rectangle is ever
+   * recorded and this stays `[]`; the focused cell is `getActiveCell()`.
    */
   getSelected(): Array<[number, number, number, number]>
+  /**
+   * The most recently selected rectangle as `[startRow, startCol, endRow,
+   * endCol]`, start being where the selection began, or `undefined` when
+   * nothing is selected. Handsontable's `getSelectedLast()`, orientation
+   * included: a range dragged upwards has `startRow > endRow`.
+   */
+  getSelectedLast(): [number, number, number, number] | undefined
+  /**
+   * Every selected rectangle with its orientation and active cell, oldest
+   * first, or `undefined` when nothing is selected. Handsontable's
+   * `getSelectedRange()`.
+   */
+  getSelectedRange(): SvGridSelectedRange[] | undefined
+  /** The most recently selected rectangle, or `undefined`. Handsontable's
+   *  `getSelectedRangeLast()`. */
+  getSelectedRangeLast(): SvGridSelectedRange | undefined
 
   // ----- Integrated charting (requires the `charting` prop) -----
   /** Open the built-in chart panel. */
@@ -96952,6 +99062,13 @@ export type SvGridApi<
    */
   refreshEditorOptions(columnId?: string): void
   /**
+   * Open the `contextMenu` at the pointer, for the cell at (rowIndex,
+   * colIndex), from an element of your own: a spreadsheet's column letters
+   * and row numbers offer the cell menu for the column or row they select.
+   * Does nothing without a `contextMenu` prop.
+   */
+  openContextMenu(event: MouseEvent, rowIndex: number, colIndex: number): void
+  /**
    * Clear every active column filter (menu, filter-row, set-list, global, and
    * the advanced filter). Resets the grid to "no filtering" in a single call.
    */
@@ -97062,6 +99179,38 @@ export type SvGridApi<
    * "Autosize" item.
    */
   autosizeColumn(columnId: string): void
+  /**
+   * The height of a row in px: the one it was dragged or set to, else the
+   * declared `rowHeight` (30 when none). `rowIndex` is a display index.
+   */
+  getRowHeight(rowIndex: number): number
+  /**
+   * Give a row its own height, the way dragging its grip does with
+   * `rowResize`; `null` takes it back to the declared height. The height
+   * belongs to the row (its id), so it follows the row through a sort and
+   * survives the data being replaced. Ignored under `autoRowHeight`, where
+   * the content decides.
+   */
+  setRowHeight(rowIndex: number, height: number | null): void
+  /**
+   * Fold a column to nothing, the way a spreadsheet hides one: it keeps
+   * its index, its cells and its width, and takes no room until it is
+   * unfolded. Unlike `setColumnVisible(id, false)`, which takes the
+   * column out of the model and shifts every index after it, references
+   * by index stay valid, so a sheet's formulas and formats are untouched.
+   * Arrow keys, Tab and Enter step over a collapsed column.
+   */
+  setColumnCollapsed(columnId: string, collapsed: boolean): void
+  isColumnCollapsed(columnId: string): boolean
+  /**
+   * Fold a row to nothing, the row-side twin of `setColumnCollapsed`.
+   * `rowIndex` is a display index; the fold belongs to the row (its id)
+   * and follows it through a sort.
+   */
+  setRowCollapsed(rowIndex: number, collapsed: boolean): void
+  isRowCollapsed(rowIndex: number): boolean
+  /** The `mergedCells` in force, copied: origins with their spans. */
+  getMergedCells(): Array<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }>
   /** Run `autosizeColumn` on every column. */
   autosizeAllColumns(): void
   /**
@@ -97115,6 +99264,20 @@ export type SvGridApi<
   canRedo(): boolean
   /** Wipe both stacks (e.g. after a server save commits the buffer). */
   clearHistory(): void
+
+  // ----- Keyboard commands -----
+  /**
+   * The same `GridCommandContext` a registered shortcut handler receives.
+   *
+   * Keyboard commands are handed one on every keystroke, but a button in a
+   * ribbon or a toolbar has no keystroke to ride in on, and re-implementing
+   * "bold the selection" against the api would give the button and the key
+   * two code paths that drift. Both go through this instead.
+   *
+   * Live, not a snapshot: the object reads through to the grid, so one built
+   * once at mount still reports the current selection.
+   */
+  getCommandContext(): GridCommandContext
 
   // ----- Find in grid -----
   /** Open the built-in find overlay (Ctrl+F also opens it). */

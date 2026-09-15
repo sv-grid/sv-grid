@@ -14,6 +14,7 @@
   import SvListBox from "./SvListBox.svelte";
   import type {
     FilterOperator,
+    MenuPosition,
   } from "./SvGrid.types";
   import {
     getEditorInputType,
@@ -174,6 +175,29 @@
     if (!MenuRangePicker)
       import("./SvDateRangeInput.svelte").then((m) => (MenuRangePicker = m.default));
   });
+
+  /**
+   * The context menu is placed on a guessed height (280px, flipped above the
+   * click when that would not fit) before it exists. A consumer's menu can be
+   * far taller - the spreadsheet shell's has thirteen entries - and then the
+   * guess leaves its tail below the viewport. Once the menu is in the DOM its
+   * real box is measured and the position pulled back inside: up when it runs
+   * off the bottom, left when it runs off the right. The style reads
+   * `contextMenuPos`, so writing it moves the menu; the action's `update`
+   * runs on every position change and settles in one pass.
+   */
+  function keepInViewport(node: HTMLElement, _pos: MenuPosition) {
+    const fit = () => {
+      const pos = ctrl.contextMenuPos;
+      const box = node.getBoundingClientRect();
+      if (!box.width && !box.height) return;
+      const x = Math.max(8, Math.min(pos.x, window.innerWidth - box.width - 8));
+      const y = Math.max(8, Math.min(pos.y, window.innerHeight - box.height - 8));
+      if (x !== pos.x || y !== pos.y) ctrl.contextMenuPos = { x, y };
+    };
+    fit();
+    return { update: fit };
+  }
 
   /**
    * Opening the filter popover used to leave focus on the funnel button
@@ -832,6 +856,8 @@
   {/if}
 
   {#if contextMenuFor}
+    {@const items = contextMenuItems()}
+    {@const gutter = items.some((it) => it.icon)}
     <div
       class="sv-grid-menu-backdrop"
       role="presentation"
@@ -843,8 +869,9 @@
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${contextMenuPos.x}px; top: ${contextMenuPos.y}px;`}
+      use:keepInViewport={contextMenuPos}
     >
-      {#each contextMenuItems() as item (item.key)}
+      {#each items as item (item.key)}
         {#if item.separator}
           <div class="sv-grid-menu-sep"></div>
         {:else}
@@ -854,7 +881,22 @@
             role="menuitem"
             disabled={item.disabled}
             onclick={() => { item.run?.(); closeContextMenu(); }}
-          >{item.label}</button>
+          >
+            <!-- Every item keeps the gutter once one has an icon, so the labels
+                 line up. The label is its own span with no whitespace text
+                 around it, so the button reads exactly its label. -->
+            {#if gutter}<span class="sv-grid-menu-icon" aria-hidden="true">
+                {#if typeof item.icon === "string"}
+                  {@render icon(item.icon)}
+                {:else if item.icon}
+                  <svg class="sv-grid-menu-icon-own" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                    {#each item.icon.paths as path, i (i)}
+                      <path d={path.d} fill={path.fill ? "currentColor" : "none"} stroke-width={path.width} stroke-dasharray={path.dash} />
+                    {/each}
+                  </svg>
+                {/if}
+              </span>{/if}<span class="sv-grid-menu-label">{item.label}</span>
+          </button>
         {/if}
       {/each}
     </div>

@@ -1,0 +1,24 @@
+{
+  "description": "Paste from Excel into the Svelte 5 spreadsheet shell and keep the formatting: Excel puts an HTML document on the clipboard beside the tab-separated text, with the formats in a style block keyed by class, the formulas in x:fmla and the raw numbers in x:num, and the sheet reads it, so a pasted block arrives bold, filled, with its currency and percent formats and with its formulas moved to the cells they landed on; Google Sheets' inline styles and data-sheets-formula (R1C1) read the same way. Two buttons put on the clipboard exactly what Excel and Sheets put there, for a browser with no Excel in it; a copy out of the sheet writes both flavours back. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte paste from excel formatting",
+    "svelte spreadsheet excel clipboard",
+    "svelte grid paste formulas from excel",
+    "svelte google sheets paste",
+    "svelte excel html clipboard"
+  ],
+  "faq": [
+    {
+      "question": "How do the formulas end up in the right cells?",
+      "answer": "Excel's HTML does not say where a block was copied from, so the sheet checks whether the formulas are self-contained: when every reference falls inside the block read as if copied from A1 (a totals column, a running sum), they are kept and moved with the paste; one that reaches outside the block is pasted as its value instead. Sheets writes R1C1, which is resolved against the cell it lands in."
+    },
+    {
+      "question": "Why does 1,234.50 paste as a number?",
+      "answer": "Excel writes the raw number in x:num beside the display text, and the sheet takes the number and the mso-number-format, so the cell holds 1234.5 and shows $1,234.50, the way it did in Excel."
+    },
+    {
+      "question": "Does copying out of the sheet work in Excel?",
+      "answer": "Yes. A copy writes text/plain and text/html together, the HTML with inline mso-number-format, bold, colours and the formula in x:fmla, so a paste into Excel keeps the look and the numbers."
+    }
+  ]
+}

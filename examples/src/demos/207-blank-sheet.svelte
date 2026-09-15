@@ -22,8 +22,34 @@
    *
    * Drag the fill handle on the active cell's corner to extend a series;
    * drag a column border in the header to resize.
+   *
+   * Everything typed, formatted, resized, hidden or frozen is the sheet's
+   * document: `getState()` returns it as JSON and `setState()` puts it
+   * back, and `onChange` says when something landed. In development the
+   * pair is on `window.svSheet` so the browser tests can save and restore.
    */
   import { SvSheet } from '@svgrid/enterprise'
+
+  let sheet = $state<SvSheet>()
+  $effect(() => {
+    const mounted = sheet
+    if (!import.meta.env.DEV || !mounted) return
+    ;(window as unknown as { svSheet?: unknown }).svSheet = {
+      getState: () => mounted.getState(),
+      setState: (state: Parameters<SvSheet['setState']>[0]) => mounted.setState(state),
+      changes: [] as string[],
+    }
+  })
 </script>
 
-<SvSheet height={470} rows={60} columns={14} />
+<SvSheet
+  bind:this={sheet}
+  height="100%"
+  rows={60}
+  columns={14}
+  onChange={(reasons) => {
+    if (!import.meta.env.DEV) return
+    const handle = (window as unknown as { svSheet?: { changes: string[] } }).svSheet
+    handle?.changes.push(...reasons.map((r) => r.kind))
+  }}
+/>

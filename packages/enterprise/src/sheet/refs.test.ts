@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { translateFormula, fixupReferences, formatFormula } from './refs'
+import { translateFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, REFERENCE_COLOURS } from './refs'
 import { parseFormula } from './parse'
 
 const t = (src: string, dRow: number, dCol: number) => translateFormula(src, dRow, dCol)
@@ -84,6 +84,20 @@ describe('parentheses survive a round trip', () => {
 
   it('round-trips a postfix percent', () => {
     expect(t('=A1*5%', 1, 0)).toBe('=A2*5%')
+  })
+})
+
+describe('renameSheetReferences', () => {
+  it('renames a qualified reference, a range, and quotes a name that needs it', () => {
+    expect(renameSheetReferences('=Data!A1+1', 'Data', 'Q3 Data')).toBe("='Q3 Data'!A1+1")
+    expect(renameSheetReferences("=SUM('Q3 Data'!A1:B2)", 'q3 data', 'Data')).toBe('=SUM(Data!A1:B2)')
+  })
+
+  it('leaves unqualified references, other sheets, strings and non-formulas alone', () => {
+    expect(renameSheetReferences('=A1+Other!A1', 'Data', 'X')).toBe('=A1+Other!A1')
+    expect(renameSheetReferences('="Data!A1"', 'Data', 'X')).toBe('="Data!A1"')
+    expect(renameSheetReferences('Data!A1', 'Data', 'X')).toBe('Data!A1')
+    expect(renameSheetReferences(7, 'Data', 'X')).toBe(7)
   })
 })
 
@@ -229,5 +243,40 @@ describe('formatFormula round trips', () => {
       // Stable: parsing the output and re-rendering gives the same text.
       expect(formatFormula(parseFormula(once))).toBe(once)
     }
+  })
+})
+
+describe('referenceSpans', () => {
+  const [blue, red, purple] = REFERENCE_COLOURS
+
+  it('colours each range in order of first appearance, every occurrence alike', () => {
+    const spans = referenceSpans('=SUM(B5:B8)+C2*b5:B8-$C$2')
+    expect(spans.map((s) => [s.key, s.colour, s.start, s.end])).toEqual([
+      ['B5:B8', blue, 5, 10],
+      ['C2', red, 12, 14],
+      ['B5:B8', blue, 15, 20],
+      ['C2', red, 21, 25],
+    ])
+    expect(spans[0]!.rect).toEqual([4, 1, 7, 1])
+    expect(spans[1]!.rect).toEqual([1, 2, 1, 2])
+  })
+
+  it('normalises a range typed backwards and skips strings, other sheets and function names', () => {
+    const spans = referenceSpans('=IF(A1="B2", Orders!C3, D4:A1)')
+    expect(spans.map((s) => s.key)).toEqual(['A1', 'D4:A1'])
+    expect(spans[1]!.rect).toEqual([0, 0, 3, 3])
+    expect(spans[1]!.colour).toBe(red)
+    expect(referenceSpans('=LOG10(5)+ATAN2(1,2)')).toEqual([])
+  })
+
+  it('has nothing for text that is not a formula', () => {
+    expect(referenceSpans('A1 and B2')).toEqual([])
+    expect(referenceSpans('')).toEqual([])
+  })
+
+  it('cycles the palette past six ranges', () => {
+    const spans = referenceSpans('=A1+B1+C1+D1+E1+F1+G1')
+    expect(spans[6]!.colour).toBe(blue)
+    expect(spans[2]!.colour).toBe(purple)
   })
 })

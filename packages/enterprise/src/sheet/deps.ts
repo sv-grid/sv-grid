@@ -50,9 +50,24 @@ export function precedentsOf(
   ast: Node,
   self: { sheet: string | null },
   lastRow: (sheet: string | null) => number,
+  /**
+   * The reference behind a defined name. Without it a formula that reads
+   * `=Subtotal*Tax` records no precedents at all, so editing the cell behind
+   * `Tax` leaves the formula showing its old value until something else
+   * forces a recalculation.
+   */
+  resolveName?: (name: string) => Node | null,
+  depth = 0,
 ): CellKey[] {
   const out: CellKey[] = []
   visit(ast, (n) => {
+    if (n.k === 'name') {
+      // A name defined as another name is followed; a circular chain is cut
+      // after a few hops rather than recursing forever.
+      const target = depth < 8 ? resolveName?.(n.name) : null
+      if (target) out.push(...precedentsOf(target, self, lastRow, resolveName, depth + 1))
+      return
+    }
     if (n.k === 'ref' && n.ref.row !== null) {
       out.push(cellKey(n.ref.sheet ?? self.sheet, n.ref.row, n.ref.col))
       return

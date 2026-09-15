@@ -177,6 +177,190 @@ describe("SvGridApi - cell selection", () => {
   });
 });
 
+describe("SvGridApi - Handsontable's selection readers", () => {
+  it("getSelectedLast keeps the orientation the selection was made in", async () => {
+    const { api, destroy } = await mountGrid();
+    try {
+      // Programmatic ranges are normalised on the way in, so the orientation
+      // has to come from a gesture: anchor at (2,1), then extend up-left.
+      api.selectCells([[2, 1, 2, 1]]);
+      await flush();
+      api.getCommandContext().extendSelection(0, 0);
+      await flush();
+      expect(api.getSelected()).toEqual([[0, 0, 2, 1]]);
+      expect(api.getSelectedLast()).toEqual([2, 1, 0, 0]);
+      const last = api.getSelectedRangeLast();
+      expect(last?.from).toEqual({ row: 2, col: 1 });
+      expect(last?.to).toEqual({ row: 0, col: 0 });
+    } finally {
+      destroy();
+    }
+  });
+
+  it("getSelectedRange lists every rectangle oldest first, the active cell as its highlight", async () => {
+    const { api, destroy } = await mountGrid();
+    try {
+      api.selectCells([[0, 0, 1, 1], [3, 2, 4, 2]]);
+      await flush();
+      const ranges = api.getSelectedRange();
+      expect(ranges?.map((r) => [r.from, r.to])).toEqual([
+        [{ row: 0, col: 0 }, { row: 1, col: 1 }],
+        [{ row: 3, col: 2 }, { row: 4, col: 2 }],
+      ]);
+      // The active cell sits in the last range and highlights only that one.
+      expect(ranges?.[1]?.highlight).toEqual({ row: 3, col: 2 });
+      expect(ranges?.[0]?.highlight).toEqual({ row: 0, col: 0 });
+    } finally {
+      destroy();
+    }
+  });
+
+  it("returns undefined, as Handsontable does, when nothing is selected", async () => {
+    const { api, destroy } = await mountGrid();
+    try {
+      expect(api.getSelectedLast()).toBeUndefined();
+      expect(api.getSelectedRange()).toBeUndefined();
+      expect(api.getSelectedRangeLast()).toBeUndefined();
+    } finally {
+      destroy();
+    }
+  });
+
+  it("reports nothing selected when cell selection is off, whatever cell has focus", async () => {
+    // selectable={false} is observable through getSelected() staying [];
+    // the focused cell is getActiveCell()'s business, not a selection.
+    const { api, destroy } = await mountGrid({ enableCellSelection: false });
+    try {
+      api.getCommandContext().setActiveCell(1, 2);
+      await flush();
+      expect(api.getSelected()).toEqual([]);
+      expect(api.getSelectedLast()).toBeUndefined();
+      expect(api.getSelectedRange()).toBeUndefined();
+      expect(api.getSelectedRangeLast()).toBeUndefined();
+    } finally {
+      destroy();
+    }
+  });
+});
+
+describe("SvGridApi - row heights", () => {
+  it("getRowHeight reads the declared height until one is set", async () => {
+    const { api, destroy } = await mountGrid({ rowHeight: 24 });
+    try {
+      expect(api.getRowHeight(2)).toBe(24);
+      api.setRowHeight(2, 52);
+      await flush();
+      expect(api.getRowHeight(2)).toBe(52);
+      expect(api.getRowHeight(1)).toBe(24);
+      api.setRowHeight(2, null);
+      await flush();
+      expect(api.getRowHeight(2)).toBe(24);
+    } finally {
+      destroy();
+    }
+  });
+
+  it("a height belongs to its row: it follows a sort and survives new data", async () => {
+    // Keyed by index, a resized row snapped back on every data change and
+    // the height stayed in the slot when the rows were sorted.
+    const { api, destroy } = await mountGrid({ rowHeight: 24 });
+    try {
+      api.setRowHeight(0, 60); // Ada
+      await flush();
+      api.setSort("name", "asc");
+      await flush();
+      const rows = api.getDisplayedRows() as Row[];
+      const ada = rows.findIndex((r) => r.name === "Ada Lovelace");
+      expect(ada).toBeGreaterThan(-1);
+      expect(api.getRowHeight(ada)).toBe(60);
+      for (let i = 0; i < rows.length; i += 1) if (i !== ada) expect(api.getRowHeight(i)).toBe(24);
+
+      // A data change: a row added on top shifts every index by one.
+      api.addRow({ id: 9, name: "Aaron", team: "QA", salary: 1 } as Row, "top");
+      await flush();
+      const again = (api.getDisplayedRows() as Row[]).findIndex((r) => r.name === "Ada Lovelace");
+      expect(again).toBe(ada + 1);
+      expect(api.getRowHeight(again)).toBe(60);
+      expect(api.getRowHeight(ada)).toBe(24);
+    } finally {
+      destroy();
+    }
+  });
+});
+
+describe("SvGridApi - collapsed columns and rows", () => {
+  it("a collapsed column keeps its index and its width and takes no room", async () => {
+    const { api, target, destroy } = await mountGrid();
+    try {
+      expect(api.isColumnCollapsed("team")).toBe(false);
+      api.setColumnCollapsed("team", true);
+      await flush();
+      expect(api.isColumnCollapsed("team")).toBe(true);
+      // Still the second column: nothing after it shifted.
+      expect(api.getCommandContext().columnIdAt(1)).toBe("team");
+      expect(api.getCommandContext().columnIdAt(2)).toBe("salary");
+      expect(api.getColumnWidths().team).toBe(0);
+      const th = target.querySelector('[data-svgrid-header-col="team"]')!;
+      expect(th.classList.contains("sv-grid-column-collapsed")).toBe(true);
+      expect(target.querySelectorAll("td.sv-grid-cell-collapsed").length).toBe(baseRows.length);
+      api.setColumnCollapsed("team", false);
+      await flush();
+      expect(api.getColumnWidths().team).toBe(160);
+      expect(target.querySelectorAll("td.sv-grid-cell-collapsed").length).toBe(0);
+    } finally {
+      destroy();
+    }
+  });
+
+  it("a collapsed row is 0 high, leaves the flow, and follows its row through a sort", async () => {
+    const { api, target, destroy } = await mountGrid({ rowHeight: 24 });
+    try {
+      api.setRowCollapsed(0, true); // Ada
+      await flush();
+      expect(api.isRowCollapsed(0)).toBe(true);
+      expect(api.getRowHeight(0)).toBe(0);
+      expect(target.querySelectorAll("tr.sv-grid-row-collapsed").length).toBe(1);
+      api.setSort("name", "desc");
+      await flush();
+      const rows = api.getDisplayedRows() as Row[];
+      const ada = rows.findIndex((r) => r.name === "Ada Lovelace");
+      expect(api.isRowCollapsed(ada)).toBe(true);
+      expect(api.isRowCollapsed(0)).toBe(false);
+      api.setRowCollapsed(ada, false);
+      await flush();
+      expect(api.getRowHeight(ada)).toBe(24);
+      expect(target.querySelectorAll("tr.sv-grid-row-collapsed").length).toBe(0);
+    } finally {
+      destroy();
+    }
+  });
+
+  it("the arrow keys step over collapsed rows and columns", async () => {
+    const { api, target, destroy } = await mountGrid();
+    try {
+      api.setColumnCollapsed("team", true);
+      api.setRowCollapsed(1, true);
+      await flush();
+      const cmd = api.getCommandContext();
+      cmd.setActiveCell(0, 0);
+      await flush();
+      const root = target.querySelector<HTMLElement>("table.sv-grid-table")!;
+      root.focus();
+      root.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+      await flush();
+      expect(api.getActiveCell()).toMatchObject({ rowIndex: 0, colIndex: 2 });
+      root.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+      await flush();
+      expect(api.getActiveCell()).toMatchObject({ rowIndex: 2, colIndex: 2 });
+      root.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true, cancelable: true }));
+      await flush();
+      expect(api.getActiveCell()).toMatchObject({ rowIndex: 2, colIndex: 0 });
+    } finally {
+      destroy();
+    }
+  });
+});
+
 describe("SvGridApi - row mutations", () => {
   it("addRow appends to the bottom by default", async () => {
     const { api, destroy } = await mountGrid();

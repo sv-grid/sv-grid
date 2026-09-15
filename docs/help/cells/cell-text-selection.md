@@ -60,7 +60,11 @@ separate TSV blocks.
 ```
 
 `processCellForClipboard` runs per cell on its way to the clipboard - strip
-currency symbols, expand codes to labels, redact, etc.
+currency symbols, expand codes to labels, redact, etc. `clipboardHtml` runs
+once per copy with the rectangles and the assembled text, and returns an
+HTML table to put on the clipboard beside it, so a spreadsheet pasting the
+copy gets formats too; `onPasteClipboard` is its inbound half. Both are
+described under [Paste Special](./paste-find-structure.md#the-grids-clipboard-hooks).
 
 ## Gotchas
 
@@ -80,6 +84,14 @@ Drive cell selection with api.selectCells / api.getSelected; subscribe to change
 ### Range selection (Excel-style)
 
 Drag any rectangle of cells, or Ctrl/Cmd+drag to add MORE ranges - all stay highlighted and copy together. Toolbar issues common ranges; live SUM/AVG/MIN/MAX/COUNT status bar; copy as TSV.
+
+The active cell stays where a range started. A drag, a Shift+click or
+Shift+Arrow grows the range from its far corner and leaves the active cell
+at the anchor, as in Excel: it is the cell the next keystroke edits and
+the one a formula bar shows, and it is drawn without the range tint. The
+next Shift+Arrow continues from the far corner, not from the active cell.
+A command that extends the selection reads that corner from
+`selectionFocus` on its command context.
 
 <div data-docs-demo="118-range-selection" data-height="460"></div>
 

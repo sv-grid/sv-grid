@@ -42,6 +42,12 @@ export type CellFormatEntry = {
     bottom?: BorderSpec
     left?: BorderSpec
   }
+  /**
+   * Excel's Locked flag from Format Cells > Protection. Every cell is locked
+   * unless told otherwise, so only `false` is ever stored; the flag means
+   * nothing until the sheet is protected, when a locked cell refuses edits.
+   */
+  locked?: boolean
 }
 
 export type Rect = readonly [minRow: number, minCol: number, maxRow: number, maxCol: number]
@@ -73,6 +79,17 @@ export type SheetFormatStore = {
   serialize(): Record<string, CellFormatEntry>
   hydrate(entries: Record<string, CellFormatEntry>): void
   clearAll(): void
+  /**
+   * Rename every row id at once; `fn` returns the new id, or null to drop
+   * the row's entries. For a store keyed on record ids this is never
+   * needed - an id travels with its record - but a SHEET keys rows by
+   * position (`r4` is the fifth row and nothing else), so inserting a row
+   * above the fifth has to move its formats to `r5`, or the band stays on
+   * row five while the cells it belonged to move down.
+   */
+  remapRows(fn: (rowId: string) => string | null): void
+  /** The same for column ids. */
+  remapColumns(fn: (columnId: string) => string | null): void
 }
 
 /**
@@ -215,6 +232,28 @@ export function createFormatStore(
       rowsIndex.clear()
       colsIndex.clear()
     },
+
+    remapRows(fn) {
+      const next: Record<string, CellFormatEntry> = {}
+      for (const [key, entry] of cells) {
+        const parts = splitKey(key)
+        if (!parts) continue
+        const rowId = fn(parts.rowId)
+        if (rowId !== null) next[keyOf(rowId, parts.columnId)] = entry
+      }
+      store.hydrate(next)
+    },
+
+    remapColumns(fn) {
+      const next: Record<string, CellFormatEntry> = {}
+      for (const [key, entry] of cells) {
+        const parts = splitKey(key)
+        if (!parts) continue
+        const columnId = fn(parts.columnId)
+        if (columnId !== null) next[keyOf(parts.rowId, columnId)] = entry
+      }
+      store.hydrate(next)
+    },
   }
 
   if (initial) store.hydrate(initial)
@@ -235,7 +274,31 @@ export function entryToStyle(entry: CellFormatEntry | undefined): string {
   if (entry.align) parts.push(`text-align:${entry.align}`)
   if (entry.fontFamily) parts.push(`font-family:${entry.fontFamily}`)
   if (entry.fontSize) parts.push(`font-size:${entry.fontSize}px`)
-  if (entry.wrap) parts.push('white-space:normal')
+  if (entry.wrap) parts.push('white-space:pre-wrap')
   if (entry.indent) parts.push(`padding-left:${entry.indent * 12}px`)
+  const borders = borderShadows(entry.border)
+  if (borders) parts.push(`box-shadow:${borders}`)
   return parts.join(';')
+}
+
+/**
+ * Cell borders as inset shadows, one per side.
+ *
+ * The cell span fills its td edge to edge, so an inset shadow along one
+ * edge is a border that costs no layout: a real border would push the text
+ * and change the cell's size, and a bordered cell next to a plain one would
+ * misalign. Shadows stack, so a cell can carry any combination of sides.
+ */
+export function borderShadows(border: CellFormatEntry['border']): string {
+  if (!border) return ''
+  const parts: string[] = []
+  const line = (spec: { width?: number; color?: string } | undefined) => ({
+    w: spec?.width ?? 1,
+    c: spec?.color ?? 'currentColor',
+  })
+  if (border.top) { const { w, c } = line(border.top); parts.push(`inset 0 ${w}px 0 0 ${c}`) }
+  if (border.bottom) { const { w, c } = line(border.bottom); parts.push(`inset 0 -${w}px 0 0 ${c}`) }
+  if (border.left) { const { w, c } = line(border.left); parts.push(`inset ${w}px 0 0 0 ${c}`) }
+  if (border.right) { const { w, c } = line(border.right); parts.push(`inset -${w}px 0 0 0 ${c}`) }
+  return parts.join(',')
 }

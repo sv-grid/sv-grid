@@ -8,6 +8,14 @@ describe('buildFillPattern - numeric', () => {
     expect(buildFillPattern([100, 90, 80], 3)).toEqual([70, 60, 50])
   })
 
+  it('continues an uneven run of numbers along its linear trend, as Excel does', () => {
+    // 1, 2, 4: slope 1.5, intercept -2/3, so the next three are 5.33, 6.83, 8.33.
+    const next = buildFillPattern([1, 2, 4], 3) as number[]
+    expect(next.map((v) => Number(v.toFixed(4)))).toEqual([5.3333, 6.8333, 8.3333])
+    expect((buildFillPattern([10, 20, 40], 2) as number[]).map((v) => Number(v.toFixed(4)))).toEqual([53.3333, 68.3333])
+    expect(buildFillPattern([18200, 4200, 1200], 2)).toEqual([-9133.33333333333, -17633.3333333333])
+  })
+
   it('repeats a single numeric value (Excel default)', () => {
     expect(buildFillPattern([42], 4)).toEqual([42, 42, 42, 42])
   })
@@ -87,7 +95,34 @@ describe('buildFillPattern - fallback cycle', () => {
     ])
   })
 
+  it('repeats a single number held as text, the way a numeric one repeats', () => {
+    // A sheet stores what was typed, so 5 arrives as '5'. It is a number,
+    // not 'Item 5' with an empty prefix: one copy, no 6, 7, 8.
+    expect(buildFillPattern(['5'], 3)).toEqual(['5', '5', '5'])
+    expect(buildFillPattern(['Item 5'], 2)).toEqual(['Item 6', 'Item 7'])
+  })
+
   it('repeats a single non-numeric string', () => {
     expect(buildFillPattern(['hello'], 3)).toEqual(['hello', 'hello', 'hello'])
+  })
+
+  it('steps an ISO date by a day, and by the gap two dates set', () => {
+    // Used to read 2024-01-15 as the number 2024 with a suffix and fill
+    // 2025-01-15, 2026-01-15.
+    expect(buildFillPattern(['2024-01-15'], 3)).toEqual(['2024-01-16', '2024-01-17', '2024-01-18'])
+    expect(buildFillPattern(['2024-01-01', '2024-01-08'], 2)).toEqual(['2024-01-15', '2024-01-22'])
+    expect(buildFillPattern(['2024-02-28'], 2)).toEqual(['2024-02-29', '2024-03-01'])
+    expect(buildFillPattern(['2024-03-03', '2024-03-02'], 2)).toEqual(['2024-03-01', '2024-02-29'])
+  })
+
+  it('steps Date objects by the day and keeps them Dates', () => {
+    const out = buildFillPattern([new Date(Date.UTC(2024, 0, 31))], 2)
+    expect(out.every((d) => d instanceof Date)).toBe(true)
+    expect((out as Date[]).map((d) => d.toISOString().slice(0, 10))).toEqual(['2024-02-01', '2024-02-02'])
+  })
+
+  it('still counts a prefixed number that happens to hold digits and dashes', () => {
+    expect(buildFillPattern(['Run-001'], 2)).toEqual(['Run-002', 'Run-003'])
+    expect(buildFillPattern(['2024-1-5'], 1)).not.toEqual(['2024-01-06'])
   })
 })

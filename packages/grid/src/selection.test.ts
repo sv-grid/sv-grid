@@ -369,6 +369,19 @@ describe('createSelection - onCellPointerDown', () => {
     expect(ctx.selectionRange.anchor).toEqual({ rowIndex: 0, colIndex: 0 })
     expect(ctx.selectionRange.focus).toEqual({ rowIndex: 1, colIndex: 1 })
     expect(ctx.activeAtPointerDown).toEqual({ rowIndex: 0, colIndex: 0 })
+    // The active cell stays at the anchor, as in Excel.
+    expect(ctx.grid.setActiveCell).not.toHaveBeenCalled()
+  })
+
+  it('Shift+click on a grid never clicked makes the cell active', () => {
+    const ctx = makeCtx({
+      allRows: [makeDataRow('r0'), makeDataRow('r1')],
+      allColumns: [makeColumn('c0'), makeColumn('c1')],
+      activeCell: null,
+    })
+    const sel = createSelection(ctx)
+    sel.onCellPointerDown(1, 1, { button: 0, shiftKey: true } as any)
+    expect(ctx.grid.setActiveCell).toHaveBeenCalled()
   })
 })
 
@@ -380,7 +393,7 @@ describe('createSelection - onCellPointerEnter / drag', () => {
     expect(ctx.grid.setActiveCell).not.toHaveBeenCalled()
   })
 
-  it('extends selection and moves active cell while dragging', () => {
+  it('extends the selection while dragging and leaves the active cell where the drag began', () => {
     const ctx = makeCtx({
       isDraggingSelection: true,
       selectionRange: { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } },
@@ -390,7 +403,7 @@ describe('createSelection - onCellPointerEnter / drag', () => {
     const sel = createSelection(ctx)
     sel.onCellPointerEnter(1, 1)
     expect(ctx.selectionRange.focus).toEqual({ rowIndex: 1, colIndex: 1 })
-    expect(ctx.grid.setActiveCell).toHaveBeenCalled()
+    expect(ctx.grid.setActiveCell).not.toHaveBeenCalled()
   })
 
   it('ignores group rows while dragging', () => {
@@ -649,6 +662,19 @@ describe('createSelection - onCellClick', () => {
     const sel = createSelection(ctx)
     sel.onCellClick(0, 0)
     expect(ctx.onCellDoubleClick).toHaveBeenCalledWith(0, 0)
+  })
+
+  it('leaves the cell alone on a second click when editOnSecondClick is off', () => {
+    // A sheet: clicking the active cell again is a click, not an edit.
+    const ctx = clickCtx({
+      editingEnabled: true,
+      activeAtPointerDown: { rowIndex: 0, colIndex: 0 },
+      props: { editOnSecondClick: false },
+    })
+    const sel = createSelection(ctx)
+    sel.onCellClick(0, 0)
+    expect(ctx.onCellDoubleClick).not.toHaveBeenCalled()
+    expect(ctx.editingCell).toBeNull()
   })
 
   it('clears editing when not re-clicking the active cell', () => {

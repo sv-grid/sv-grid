@@ -8,8 +8,8 @@ import { defineComponent, h, onMounted, ref, watchEffect } from 'vue'
 import type { PropType } from 'vue'
 import '@svgrid/grid-wc'
 
-const PROP_NAMES = ["data","columns","board","scheduler","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForClipboard","enableInlineEditing","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","isDetailRow","serverGroup","serverFilterValues","pinnedTopRows","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"] as const
-const EVENT_NAMES = ["pivotmodechange","expandedchange","paginationchange","apiready","rowselectionchange","cellselectionchange","sortingchange","advancedfilterchange","filterschange","notechange","cellvaluechange","activecellchange","cellclick","rowclick","celldoubleclick","rowdoubleclick","scrollbottomreached","columnorderchange","rowdragend","selectionchange"] as const
+const PROP_NAMES = ["data","columns","board","scheduler","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","isDetailRow","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"] as const
+const EVENT_NAMES = ["pivotmodechange","expandedchange","paginationchange","columnresize","rowresize","pasteclipboard","apiready","rowselectionchange","cellselectionchange","sortingchange","advancedfilterchange","filterschange","notechange","cellvaluechange","activecellchange","cellclick","rowclick","celldoubleclick","rowdoubleclick","scrollbottomreached","columnorderchange","rowdragend","selectionchange"] as const
 
 export type SvGridProps = {
   data?: readonly unknown[]
@@ -73,8 +73,12 @@ export type SvGridProps = {
   moveCells?: boolean
   enableRowHover?: boolean
   copyHeadersToClipboard?: boolean
+  processCellForFill?: unknown
   processCellForClipboard?: unknown
+  clipboardHtml?: unknown
+  processCellFromClipboard?: unknown
   enableInlineEditing?: boolean
+  editOnSecondClick?: boolean
   fullRowEditing?: boolean
   enableRowSummaries?: boolean
   summary?: boolean
@@ -102,6 +106,8 @@ export type SvGridProps = {
   serverGroup?: unknown
   serverFilterValues?: unknown
   pinnedTopRows?: readonly unknown[]
+  frozenRows?: number
+  mergedCells?: readonly unknown[]
   pinnedBottomRows?: readonly unknown[]
   enableColumnReorder?: boolean
   columnOrder?: readonly unknown[]
@@ -119,7 +125,7 @@ export type SvGridProps = {
  * Props are declared loosely (`null` type) and forwarded as DOM PROPERTIES
  * through the `.`-prefixed vnode key, which is Vue's own way of forcing a
  * property assignment - the same thing `:columns.prop` does in a template,
- * applied to all 98 of them so a consumer never has to think about it.
+ * applied to all 104 of them so a consumer never has to think about it.
  */
 export const SvGrid = defineComponent({
   name: 'SvGrid',

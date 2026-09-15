@@ -104,6 +104,22 @@ export type SavedChart = {
   tab: ChartTabSnapshot
 }
 
+/** One cell, in the 0-based display coordinates every selection method uses. */
+export type SvGridCellCoords = { row: number; col: number }
+
+/**
+ * A selected rectangle with its orientation kept: `from` is where the
+ * selection was started (the anchor) and `to` where it ended (the focus),
+ * so a range dragged upwards has `from.row > to.row`. `highlight` is the
+ * active cell inside it. The same three fields as Handsontable's CellRange,
+ * so code written against `getSelectedRange()` there reads the same here.
+ */
+export type SvGridSelectedRange = {
+  from: SvGridCellCoords
+  to: SvGridCellCoords
+  highlight: SvGridCellCoords
+}
+
 /**
  * A batch of row mutations for `api.applyTransaction`. `update` / `remove`
  * (by id) match on `getRowId`; `remove` also accepts row object references.
@@ -152,17 +168,44 @@ export type SvGridApi<
    * range is `[rowStart, colStart, rowEnd, colEnd]` in 0-indexed grid
    * coordinates. Pass an empty array to clear the selection.
    *
-   * The grid currently honours the FIRST range only (single-range
-   * engine); subsequent ranges are accepted for API forward compat
-   * but ignored. The grid's active cell jumps to the range's start
-   * corner.
+   * Every range is honoured: the last one becomes the active range and
+   * the others stay highlighted beside it, as after a Ctrl+drag. The
+   * active cell goes to the last range's start corner.
    */
   selectCells(ranges: ReadonlyArray<readonly [number, number, number, number]>): void
   /**
-   * Returns the current cell-selection rectangles in the same shape
-   * `selectCells` accepts. Empty array when no range is active.
+   * The current cell-selection rectangles in the same shape `selectCells`
+   * accepts, each normalised to `[minRow, minCol, maxRow, maxCol]`, in the
+   * order they were selected with the active one last. Empty array when no
+   * range is active.
+   *
+   * Handsontable's method of the same name. Two differences, both on
+   * purpose: an empty array rather than `undefined`, so `getSelected()[0]`
+   * never throws; and normalised corners, so a loop from the first row to
+   * the last cannot run zero times because the range was dragged upwards.
+   * For the orientation, and the active cell inside a range, use
+   * `getSelectedRange()`.
+   *
+   * With cell selection off (`selectable={false}`) no rectangle is ever
+   * recorded and this stays `[]`; the focused cell is `getActiveCell()`.
    */
   getSelected(): Array<[number, number, number, number]>
+  /**
+   * The most recently selected rectangle as `[startRow, startCol, endRow,
+   * endCol]`, start being where the selection began, or `undefined` when
+   * nothing is selected. Handsontable's `getSelectedLast()`, orientation
+   * included: a range dragged upwards has `startRow > endRow`.
+   */
+  getSelectedLast(): [number, number, number, number] | undefined
+  /**
+   * Every selected rectangle with its orientation and active cell, oldest
+   * first, or `undefined` when nothing is selected. Handsontable's
+   * `getSelectedRange()`.
+   */
+  getSelectedRange(): SvGridSelectedRange[] | undefined
+  /** The most recently selected rectangle, or `undefined`. Handsontable's
+   *  `getSelectedRangeLast()`. */
+  getSelectedRangeLast(): SvGridSelectedRange | undefined
 
   // ----- Integrated charting (requires the `charting` prop) -----
   /** Open the built-in chart panel. */
@@ -335,6 +378,13 @@ export type SvGridApi<
    */
   refreshEditorOptions(columnId?: string): void
   /**
+   * Open the `contextMenu` at the pointer, for the cell at (rowIndex,
+   * colIndex), from an element of your own: a spreadsheet's column letters
+   * and row numbers offer the cell menu for the column or row they select.
+   * Does nothing without a `contextMenu` prop.
+   */
+  openContextMenu(event: MouseEvent, rowIndex: number, colIndex: number): void
+  /**
    * Clear every active column filter (menu, filter-row, set-list, global, and
    * the advanced filter). Resets the grid to "no filtering" in a single call.
    */
@@ -445,6 +495,38 @@ export type SvGridApi<
    * "Autosize" item.
    */
   autosizeColumn(columnId: string): void
+  /**
+   * The height of a row in px: the one it was dragged or set to, else the
+   * declared `rowHeight` (30 when none). `rowIndex` is a display index.
+   */
+  getRowHeight(rowIndex: number): number
+  /**
+   * Give a row its own height, the way dragging its grip does with
+   * `rowResize`; `null` takes it back to the declared height. The height
+   * belongs to the row (its id), so it follows the row through a sort and
+   * survives the data being replaced. Ignored under `autoRowHeight`, where
+   * the content decides.
+   */
+  setRowHeight(rowIndex: number, height: number | null): void
+  /**
+   * Fold a column to nothing, the way a spreadsheet hides one: it keeps
+   * its index, its cells and its width, and takes no room until it is
+   * unfolded. Unlike `setColumnVisible(id, false)`, which takes the
+   * column out of the model and shifts every index after it, references
+   * by index stay valid, so a sheet's formulas and formats are untouched.
+   * Arrow keys, Tab and Enter step over a collapsed column.
+   */
+  setColumnCollapsed(columnId: string, collapsed: boolean): void
+  isColumnCollapsed(columnId: string): boolean
+  /**
+   * Fold a row to nothing, the row-side twin of `setColumnCollapsed`.
+   * `rowIndex` is a display index; the fold belongs to the row (its id)
+   * and follows it through a sort.
+   */
+  setRowCollapsed(rowIndex: number, collapsed: boolean): void
+  isRowCollapsed(rowIndex: number): boolean
+  /** The `mergedCells` in force, copied: origins with their spans. */
+  getMergedCells(): Array<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }>
   /** Run `autosizeColumn` on every column. */
   autosizeAllColumns(): void
   /**

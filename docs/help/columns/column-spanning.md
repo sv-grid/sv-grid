@@ -2,14 +2,45 @@
 
 Spanning lets a single body cell cover **multiple columns** and/or **rows** -
 merged report headers, grouped labels, financial statements. SvGrid does this
-with a real `colspan` / `rowspan` merge engine; there are two ways to drive it.
+with a real `colspan` / `rowspan` merge engine; there are three ways to drive
+it, and the first is the one to reach for on a new grid.
 
 <div data-docs-demo="170-cell-merging" data-height="480"></div>
 
-## 1. Explicit merges (spreadsheet-style)
+## 0. The `mergedCells` prop (the renderer's own)
+
+The grid draws merges itself from a list of origins with their spans, in
+display indices:
+
+```svelte
+<SvGrid
+  {data} {columns}
+  mergedCells={[
+    { rowIndex: 0, colIndex: 0, rowSpan: 1, colSpan: 4 },   // a title across A1:D1
+    { rowIndex: 3, colIndex: 1, rowSpan: 3, colSpan: 1 },   // B4:B6 as one cell
+  ]}
+/>
+```
+
+The origin's td takes the `rowspan` / `colspan` and shows the origin's
+value; the covered cells are not drawn at all, so there is nothing to
+hide after the fact. A selection grows to whole merges (a merged cell is
+one cell), the active cell inside a merge is its origin, the arrow keys
+step over a merge as one cell, and `api.getMergedCells()` reads the list
+back. Under row virtualization a merge whose origin has scrolled out of
+the rendered window is drawn from its first rendered row with the rows
+that remain, and one that crosses the frozen boundary is drawn in two
+parts; nothing needs the covered rows mounted. The grid does not write
+into covered cells on its own; a consumer that merges keeps them empty or
+marks them read-only through the column's `editable`, which is what the
+spreadsheet shell's Merge & Center does.
+
+## 1. Explicit merges (spreadsheet-style, DOM action)
 
 Declare exact merges as `MergeSpec[]` and apply them with the
-`spreadsheetLayout` action. The origin cell `(rowIndex, columnId)` spans
+`spreadsheetLayout` action, which works on a grid you do not own the
+render of (it edits the table after each paint). Prefer `mergedCells`
+where you can. The origin cell `(rowIndex, columnId)` spans
 `colspan` columns right and `rowspan` rows down; covered cells are hidden.
 
 ```svelte
@@ -70,10 +101,21 @@ covered-cell bookkeeping so overlapping spans never double-emit.
 
 ## Virtualization note
 
-`rowSpan` uses real `rowspan`, which needs the covered rows mounted in the
-render window. For very large spanning grids, keep spans modest or disable row
-virtualization (`virtualization={false}`) on that grid so the origin cell stays
-mounted while its covered rows are on screen.
+The declarative `rowSpan` and the `spreadsheetLayout` action use real
+`rowspan` and need the covered rows mounted in the render window. For very
+large spanning grids on those two, keep spans modest or disable row
+virtualization (`virtualization={false}`) so the origin cell stays mounted
+while its covered rows are on screen. The `mergedCells` prop has no such
+limit: it clamps every span to the rendered window and continues a merge
+from its first rendered row.
+
+## More examples
+
+### Budget report: merged headers
+
+A half-year budget report laid out with merged cells the way Excel lays one out: a title merged across the page, Q1 / Q2 / H1 group headers merged over their months, a Line corner merged down two rows, a notes paragraph merged into one wrapped block. A merge is one cell to the grid: click inside Q1 and the Name Box says B2, Merge & Center lights, the arrows step over it and its column letters are shaded. Unmerge and merge again from the ribbon; Ctrl+Z each step.
+
+<div data-docs-demo="463-merged-report-headers" data-height="560"></div>
 
 ## See also
 

@@ -134,6 +134,25 @@ describe('references', () => {
   it('returns #NAME? for an unknown name', () => {
     expect(run('=Nope')).toEqual({ error: '#NAME?' })
   })
+
+  it('INDEX reads a one-row range by column when given one number', () => {
+    const cells = [['Base', 'Growth', 'Downturn'], [1, 2, 3]]
+    expect(run('=INDEX(A1:C1,2)', cells)).toBe('Growth')
+    expect(run('=INDEX(A1:A2,2)', cells)).toBe(1)
+    expect(run('=INDEX(A1:C2,2,3)', cells)).toBe(3)
+  })
+
+  it('expands a name that resolves to a range inside a function', () => {
+    const ctx = ctxOf([[1], [2], [3]])
+    ctx.resolveNameNode = (n) => (n === 'Nums' ? parseFormula('=A1:A3') : null)
+    expect(evaluate(parseFormula('=SUM(Nums)'), ctx)).toBe(6)
+    expect(evaluate(parseFormula('=MAX(Nums)'), ctx)).toBe(3)
+    // Scalar position collapses to the top-left cell, as a range does.
+    expect(evaluate(parseFormula('=Nums+1'), ctx)).toBe(2)
+    // resolveName still answers when the node resolver does not know a name.
+    ctx.resolveName = (n) => (n === 'Tax' ? 0.2 : undefined)
+    expect(evaluate(parseFormula('=Tax*10'), ctx)).toBe(2)
+  })
 })
 
 describe('short circuiting', () => {
@@ -267,6 +286,12 @@ describe('the function library', () => {
     expect(run('=DATE(2026, 9, 14)')).toBe('2026-09-14')
     expect(run('=EOMONTH("2026-01-15", 0)')).toBe('2026-01-31')
     expect(run('=EOMONTH("2026-01-15", 1)')).toBe('2026-02-28')
+    expect(run('=DAYS("2026-09-19", "2026-09-15")')).toBe(4)
+    expect(run('=DAYS("2026-09-12", "2026-09-15")')).toBe(-3)
+    expect(run('=DATEDIF("2026-09-15", "2026-09-19", "d")')).toBe(4)
+    expect(run('=DATEDIF("2026-01-31", "2026-03-30", "m")')).toBe(1)
+    expect(run('=DATEDIF("2024-02-29", "2026-02-28", "y")')).toBe(1)
+    expect(run('=DATEDIF("2026-09-19", "2026-09-15", "d")')).toEqual({ error: '#NUM!' })
   })
 
   it('does the lookups', () => {
@@ -291,6 +316,19 @@ describe('the function library', () => {
 
   it('propagates an error out of a range into an aggregate', () => {
     expect(run('=SUM(A1:A2)', [[1], [{ error: '#REF!' }]])).toEqual({ error: '#REF!' })
+  })
+})
+
+describe('the information functions', () => {
+  it('answer what a value is, not what it coerces to', () => {
+    expect(run('=ISNUMBER(A1)', [[12]])).toBe(true)
+    expect(run('=ISNUMBER(A1)', [['12']])).toBe(false)
+    expect(run('=ISTEXT(A1)', [['12']])).toBe(true)
+    expect(run('=ISTEXT(A1)', [['']])).toBe(false)
+    expect(run('=ISBLANK(A1)', [['']])).toBe(true)
+    expect(run('=ISBLANK(A1)', [[0]])).toBe(false)
+    expect(run('=ISLOGICAL(1=1)')).toBe(true)
+    expect(run('=ISLOGICAL(1)')).toBe(false)
   })
 })
 

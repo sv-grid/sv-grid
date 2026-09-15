@@ -22,14 +22,21 @@
  * `description` is clamped to a meta budget by both consumers, and `path` is
  * page-relative with no trailing slash except on the homepage.
  *
- * Dependency-free so Vite can bundle it into the site.
+ * Dependency-free (product-ld.mjs aside, which is too) so Vite can bundle it
+ * into the site.
  */
+import { PRODUCT_KEYWORDS } from './product-ld.mjs'
+
 export const ROUTE_SEO = {
   '': {
-    title: 'SvGrid - The Svelte 5 Data Grid with Headless Core + Render Component',
+    // The head terms people type are 'svelte data grid', 'svelte datagrid' and
+    // 'svelte grid'; the page used to say only 'Svelte 5 data grid' and ranked
+    // for none of them. Same title in index.html, the static home body and the
+    // hydrated hero.
+    title: 'SvGrid - Svelte Data Grid for Svelte 5: Headless Core + Render Component',
     description:
-      'SvGrid is a modern Svelte 5 data grid. Headless-first engine plus a full render component. Enterprise-grade features: sorting, Excel-style filters, grouping, virtualization, inline editing, server-side data. 100% Svelte runes, MIT-style license.',
-    keywords: ['svelte data grid', 'svelte 5 grid', 'svelte table', 'tanstack table svelte', 'sv-grid', 'data grid', 'headless table', 'enterprise svelte grid'],
+      'SvGrid is a Svelte data grid for Svelte 5: headless core plus render component, virtualization, Excel-style filters, grouping, inline editing. MIT core.',
+    keywords: [...PRODUCT_KEYWORDS, 'enterprise svelte grid'],
     path: '/',
     prerender: false,
   },
@@ -101,7 +108,7 @@ export const ROUTE_SEO = {
     // Kept as the prerendered wording: this is the title Google has indexed.
     title: 'Pricing - SvGrid Community (Free) + @svgrid/enterprise',
     description:
-      'SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer: Enterprise - Single App ($599) or Enterprise - Multi App ($999) - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support. AI helpers are built into the free @svgrid/grid.',
+      'SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer: Enterprise - Single App ($599) or Enterprise - Multi App ($999) - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support. AI helpers are built into the free @svgrid/grid.',
     keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'enterprise single app developer license', 'enterprise multi app developer license', 'enterprise custom svelte grid', 'svelte table commercial license'],
     path: '/pricing',
   },

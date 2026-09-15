@@ -18,7 +18,7 @@ import {
   isGroupRow,
   toolPanelHeaderLabel,
 } from "./cell-values";
-import { pushHistory, nextGroupId } from "./history";
+import { pushHistory, nextGroupId, runHistoryGroup, type HistoryStep } from "./history";
 
 export function createClipboard<
   TFeatures extends TableFeatures = TableFeatures,
@@ -85,7 +85,91 @@ export function createClipboard<
   /** Apply the pattern fill on pointerup. Each NEW row (or column) is
    *  filled from a pattern derived from the matching column (or row) of
    *  the source. Handles all four drag directions. */
+  /**
+   * Write one filled cell and remember it, so the drag undoes as a unit.
+   * `writeCellRaw` keeps no history of its own; the fill used to call it in
+   * a loop and push nothing, which left Ctrl+Z blind to a whole drag.
+   */
+  function writeFilled(steps: HistoryStep[], rowIndex: number, columnId: string, value: unknown) {
+    const row = ctx.allRows[rowIndex];
+    const column = ctx.findColumnById(columnId);
+    const field = column?.columnDef.field;
+    if (!row || field == null) return;
+    const before = readCellRaw(rowIndex, columnId);
+    writeCellRaw(rowIndex, columnId, value);
+    if (before !== value) steps.push({ rowId: row.id, columnId, field, before, after: value });
+  }
+
   function applyFillPattern() {
+    const steps: HistoryStep[] = [];
+    runHistoryGroup(ctx, () => applyFillCells(steps));
+    if (steps.length) pushHistory(ctx, steps, nextGroupId());
+  }
+
+  /**
+   * The value for the i-th filled cell: the consumer's, when its hook has
+   * one for the source cell the target cycles back to, else the pattern's.
+   * `sourceStart` is the row (or column) of the first source value and
+   * `targetStart` that of the first target; `step` is -1 filling upward.
+   */
+  function filledValue(
+    sources: unknown[],
+    pattern: unknown[],
+    i: number,
+    sourceStart: number,
+    targetStart: number,
+    step: 1 | -1,
+    axis: "rows" | "cols",
+    rowIndex: number,
+    columnId: string,
+  ): unknown {
+    const hook = ctx.props.processCellForFill;
+    if (hook && sources.length) {
+      const k = i % sources.length;
+      const distance = (targetStart + step * i) - (sourceStart + step * k);
+      const delta = axis === "rows" ? { rows: distance, cols: 0 } : { rows: 0, cols: distance };
+      const decided = hook({ value: sources[k], delta, rowIndex, columnId });
+      if (decided !== undefined) return decided;
+    }
+    return pattern[i];
+  }
+
+  /**
+   * Double-click on the fill handle: fill down as far as the column beside
+   * the selection has data, the way Excel's does. The column to the left
+   * decides; when it is blank below the selection (or there is none) the
+   * one to the right does. Nothing to follow, nothing filled.
+   */
+  function fillDownToNeighbour() {
+    const anchor = ctx.selectionRange.anchor ?? ctx.grid.getState().activeCell;
+    if (!anchor) return;
+    const focus = ctx.selectionRange.focus ?? anchor;
+    const minRow = Math.min(anchor.rowIndex, focus.rowIndex);
+    const maxRow = Math.max(anchor.rowIndex, focus.rowIndex);
+    const minCol = Math.min(anchor.colIndex, focus.colIndex);
+    const maxCol = Math.max(anchor.colIndex, focus.colIndex);
+    const filled = (r: number, c: number) => {
+      const col = ctx.allColumns[c];
+      if (!col) return false;
+      const v = readCellRaw(r, col.id);
+      return v != null && v !== "";
+    };
+    const extent = (c: number): number => {
+      let r = maxRow;
+      while (r + 1 < ctx.allRows.length && filled(r + 1, c)) r += 1;
+      return r;
+    };
+    let target = minCol > 0 ? extent(minCol - 1) : maxRow;
+    if (target === maxRow) target = extent(maxCol + 1);
+    if (target <= maxRow) return;
+    ctx.fillDrag = {
+      sourceMinRow: minRow, sourceMaxRow: maxRow, sourceMinCol: minCol, sourceMaxCol: maxCol,
+      targetRow: target, targetCol: maxCol,
+    };
+    applyFillPattern();
+  }
+
+  function applyFillCells(steps: HistoryStep[]) {
     const d = ctx.fillDrag;
     if (!d) return;
     // Clear fillDrag FIRST so a thrown error doesn't leave the grid
@@ -119,7 +203,8 @@ export function createClipboard<
           for (let i = 0; i < targetRows; i += 1) {
             const targetRow = d.sourceMaxRow + 1 + i;
             if (ctx.isCellEditableAt(targetRow, c))
-              writeCellRaw(targetRow, column.id, fills[i]);
+              writeFilled(steps, targetRow, column.id,
+                filledValue(sourceColValues, fills, i, d.sourceMinRow, d.sourceMaxRow + 1, 1, "rows", targetRow, column.id));
           }
         }
         if (newMinRow < d.sourceMinRow) {
@@ -130,7 +215,8 @@ export function createClipboard<
           for (let i = 0; i < targetRows; i += 1) {
             const targetRow = d.sourceMinRow - 1 - i;
             if (ctx.isCellEditableAt(targetRow, c))
-              writeCellRaw(targetRow, column.id, fills[i]);
+              writeFilled(steps, targetRow, column.id,
+                filledValue(reversed, fills, i, d.sourceMaxRow, d.sourceMinRow - 1, -1, "rows", targetRow, column.id));
           }
         }
       }
@@ -151,7 +237,8 @@ export function createClipboard<
             const targetCol = d.sourceMaxCol + 1 + i;
             const col = ctx.allColumns[targetCol];
             if (col && ctx.isCellEditableAt(r, targetCol))
-              writeCellRaw(r, col.id, fills[i]);
+              writeFilled(steps, r, col.id,
+                filledValue(sourceRowValues, fills, i, d.sourceMinCol, d.sourceMaxCol + 1, 1, "cols", r, col.id));
           }
         }
         if (newMinCol < d.sourceMinCol) {
@@ -162,7 +249,8 @@ export function createClipboard<
             const targetCol = d.sourceMinCol - 1 - i;
             const col = ctx.allColumns[targetCol];
             if (col && ctx.isCellEditableAt(r, targetCol))
-              writeCellRaw(r, col.id, fills[i]);
+              writeFilled(steps, r, col.id,
+                filledValue(reversed, fills, i, d.sourceMaxCol, d.sourceMinCol - 1, -1, "cols", r, col.id));
           }
         }
       }
@@ -673,6 +761,40 @@ export function createClipboard<
     legacyCopyText(text);
   }
 
+  /**
+   * Text and HTML together. The `copy` event is the first path: a listener
+   * armed for this one call puts both types on the event's clipboardData
+   * while the legacy textarea copy runs, which works in a secure and an
+   * insecure context alike and keeps every attribute of the HTML. Only when
+   * the browser refuses that does the async `ClipboardItem` write run, and
+   * text alone after that.
+   */
+  function writeClipboard(text: string, html: string) {
+    if (typeof document !== "undefined") {
+      let armed = true;
+      const onCopy = (event: ClipboardEvent) => {
+        if (!armed || !event.clipboardData) return;
+        armed = false;
+        event.clipboardData.setData("text/plain", text);
+        event.clipboardData.setData("text/html", html);
+        event.preventDefault();
+      };
+      document.addEventListener("copy", onCopy, { once: true, capture: true });
+      const ok = legacyCopyText(text);
+      document.removeEventListener("copy", onCopy, { capture: true });
+      if (ok && !armed) return;
+    }
+    if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+      const item = new ClipboardItem({
+        "text/plain": new Blob([text], { type: "text/plain" }),
+        "text/html": new Blob([html], { type: "text/html" }),
+      });
+      void navigator.clipboard.write([item]).catch(() => writeClipboardText(text));
+      return;
+    }
+    writeClipboardText(text);
+  }
+
   function legacyCopyText(text: string): boolean {
     if (typeof document === "undefined") return false;
     const active = document.activeElement as HTMLElement | null;
@@ -753,7 +875,13 @@ export function createClipboard<
       }
       blocks.push(lines.join("\n"));
     }
-    writeClipboardText(blocks.join("\n\n"));
+    const text = blocks.join("\n\n");
+    const toHtml = ctx.props.clipboardHtml as
+      | ((params: { rects: typeof rects; text: string }) => string | null | undefined)
+      | undefined;
+    const html = toHtml?.({ rects, text });
+    if (html) writeClipboard(text, html);
+    else writeClipboardText(text);
   }
 
   /**
@@ -780,6 +908,10 @@ export function createClipboard<
       newValue: unknown
       row: TData
     }> = [];
+    // One history step per cleared cell, grouped, so Delete over a block is
+    // one Ctrl+Z. Clearing used to record nothing at all: the values were
+    // gone and undo skipped straight past them to whatever came before.
+    const steps: HistoryStep[] = [];
     const dataIndexOf = createDataIndexLookup(next);
     for (let r = startRow; r <= endRow; r += 1) {
       const row = ctx.allRows[r];
@@ -807,6 +939,7 @@ export function createClipboard<
         const cleared = parseEditorValue(editorType, "");
         updated[field] = cleared;
         rowChanged = true;
+        steps.push({ rowId: row.id, columnId: column.id, field, before: oldValue, after: cleared });
         changes.push({
           rowIndex: dataIndex,
           columnId: column.id,
@@ -823,6 +956,7 @@ export function createClipboard<
     if (mutated) {
       ctx.internalData = next;
       ctx.grid.store.setState((prev: any) => ({ ...prev }));
+      pushHistory(ctx, steps, nextGroupId());
       // Fire onCellValueChange per cleared cell - same as paste's writeCellRaw -
       // so consumers (formula engines, autosave) recompute. Clear IS a value
       // change; without this, a HyperFormula-backed grid wouldn't re-evaluate.
@@ -851,6 +985,7 @@ export function createClipboard<
     startFillDrag,
     onFillPointerMove,
     onFillPointerUp,
+    fillDownToNeighbour,
     isOnMoveGrabStrip,
     startMoveDrag,
     onMovePointerMove,

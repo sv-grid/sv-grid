@@ -1,0 +1,24 @@
+{
+  "description": "A half-year budget report on the Svelte 5 spreadsheet shell laid out with merged cells: the title merged across A1:I1 and centred, Q1 / Q2 / H1 group headers merged over their months, the Line corner merged down two rows, and a notes paragraph merged into one wrapped block. The grid draws a merge as one cell with a real rowspan and colspan: clicking anywhere inside selects the whole merge, the Name Box reads its top-left address, Merge & Center lights, the arrow keys step over it and the column letters it spans are shaded. Merge & Center, Merge Across, Merge Cells and Unmerge Cells are on Home > Alignment and the cell menu; the merges are saved with the document and move with inserts and deletes. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet merged cells",
+    "svelte merge and center",
+    "svelte grid colspan rowspan cells",
+    "svelte excel report layout",
+    "svelte merged header cells"
+  ],
+  "faq": [
+    {
+      "question": "What happens to the values under a merge?",
+      "answer": "Merge & Center keeps the top-left cell's value and clears the rest, after Excel's warning when there is something to lose. Unmerge leaves the value in the top-left cell; the cleared cells stay empty, as in Excel. Both are one Ctrl+Z."
+    },
+    {
+      "question": "Is the merge real or just drawn?",
+      "answer": "Real: the grid emits one td with a rowspan and colspan and none for the covered cells. Selection, keyboard navigation, the fill handle and the clipboard all treat it as one cell, and a merge that scrolls half out of view keeps its continuation."
+    },
+    {
+      "question": "How do the merges survive a save?",
+      "answer": "They are part of the document: getState().sheets.Report.merges is the list of rectangles, and setState puts them back. An insert inside a merge grows it; deleting all of its rows drops it."
+    }
+  ]
+}

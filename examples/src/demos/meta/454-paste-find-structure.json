@@ -1,0 +1,24 @@
+{
+  "description": "The three Excel operations that write more than one cell, on a Svelte 5 spreadsheet grid: Paste Special with values, formulas, formats, transpose and arithmetic, carried on a text/html clipboard flavour so formats survive a round trip through Excel; Find and Replace that searches what you see but writes what you typed, so replacing a formula's result does not destroy the formula; and row and column insert and delete that rewrite every reference, widening =SUM(B1:B4) when a row is inserted inside it. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet paste special",
+    "svelte grid find and replace formulas",
+    "svelte insert row rewrite formulas",
+    "svelte paste values only",
+    "svelte grid transpose paste"
+  ],
+  "faq": [
+    {
+      "question": "What does Paste Special offer?",
+      "answer": "All, Values, Formulas, Formats, plus Transpose and the Add, Subtract, Multiply and Divide operations, the same set as Excel's dialog, applied to the copied block at the selection."
+    },
+    {
+      "question": "Does Find and Replace break formulas?",
+      "answer": "No. It matches against the displayed text so you can search for a result, but the replacement is written into the cell's raw text, so a formula cell keeps being a formula."
+    },
+    {
+      "question": "What happens to references when a row is inserted?",
+      "answer": "Every formula on the sheet is rewritten: references below the insert move down, and a range that spans the insert point grows to include the new row."
+    }
+  ]
+}

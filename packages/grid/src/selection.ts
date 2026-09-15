@@ -14,6 +14,7 @@ import {
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
+import { expandRectToMerges, originOf, endOf } from "./merges";
 
 export function createSelection<
   TFeatures extends TableFeatures = TableFeatures,
@@ -41,7 +42,18 @@ export function createSelection<
   }
 
   function setActiveCell(rowIndex: number, colIndex: number) {
+    // The active cell inside a merge is its origin: the one that draws, the
+    // one the formula bar shows, the one an edit writes.
+    ({ rowIndex, colIndex } = originOf(ctx.mergeIndex, rowIndex, colIndex));
     ctx.userHasActivatedCell = true;
+    // A click, an arrow, a jump: the Tab run is over. The Tab and Enter
+    // paths put the origin back after this call when it should live on.
+    // Activating the cell the cursor is already on (typing into it, F2, a
+    // double-click) is not a move and keeps the run.
+    const prev = ctx.grid.getState().activeCell;
+    if (!prev || prev.rowIndex !== rowIndex || prev.colIndex !== colIndex) {
+      ctx.tabRunOrigin = null;
+    }
     ctx.grid.setActiveCell({
       rowIndex,
       colIndex,
@@ -67,8 +79,13 @@ export function createSelection<
     const container = ctx.scrollContainer as HTMLElement;
     const topBefore = container.scrollTop;
     const leftBefore = container.scrollLeft;
+    // A frozen row is always in view; only the column may need to move.
+    const frozen: number = ctx.frozenRowCount ?? 0;
+    const frozenBand: number = ctx.frozenBandHeight ?? 0;
 
-    if (ctx.rowVirtualizationEnabled) {
+    if (rowIndex < frozen) {
+      // Always in view; only the column below may need to move.
+    } else if (ctx.rowVirtualizationEnabled) {
       // Prefer the browser's native `scrollIntoView({ block: 'nearest' })`
       // when the target row is already mounted. It does Excel-style
       // minimum-scroll, respects the sticky thead via the
@@ -119,8 +136,10 @@ export function createSelection<
         const rowHeight    = ctx.virtualizer.getSizeForIndex(rowIndex)
         const rowBottom    = rowTopScroll + rowHeight
         let nextTop = currentTop
-        if (rowTopScroll < currentTop + headerHeight) {
-          nextTop = rowTopScroll - headerHeight
+        // The frozen band sits under the header, so a row is hidden until
+        // it clears both.
+        if (rowTopScroll < currentTop + headerHeight + frozenBand) {
+          nextTop = rowTopScroll - headerHeight - frozenBand
         } else if (rowBottom > currentTop + clientHeight) {
           nextTop = rowBottom - clientHeight
         }
@@ -185,20 +204,27 @@ export function createSelection<
     }
   }
 
-  // Normalize a range to a rectangle, or null when incomplete.
+  // Normalize a range to a rectangle, or null when incomplete. A merge
+  // the rectangle touches is in it whole, as a spreadsheet's selection
+  // has it: a merged cell is one cell.
   function rangeRect(range: SelectionRange | null) {
     const a = range?.anchor;
     const f = range?.focus;
     if (!a || !f) return null;
-    return {
+    return expandRectToMerges(ctx.mergeIndex, {
       minRow: Math.min(a.rowIndex, f.rowIndex),
       maxRow: Math.max(a.rowIndex, f.rowIndex),
       minCol: Math.min(a.colIndex, f.colIndex),
       maxCol: Math.max(a.colIndex, f.colIndex),
-    };
+    });
   }
 
   type SelectionRect = { minRow: number; maxRow: number; minCol: number; maxCol: number };
+
+  /** The active range as a rectangle, or null while nothing is anchored. */
+  function activeRangeRect(): SelectionRect | null {
+    return rangeRect(ctx.selectionRange as SelectionRange);
+  }
   // Memo for `getSelectionRects`, keyed on the identity of its two inputs.
   // Both are replaced wholesale on every change and never mutated in place,
   // so identity is a complete change check. Without it, every rendered
@@ -288,6 +314,9 @@ export function createSelection<
     // that work to return null every time.
     if (!hasAnySelectionRect()) return null;
 
+    // A td inside a merge draws to the merge's far corner, so its bottom and
+    // right edges are the merge's, not the cell's.
+    const end = endOf(ctx.mergeIndex, rowIndex, colIndex);
     for (const rect of getSelectionRects()) {
       if (
         rowIndex < rect.minRow ||
@@ -299,9 +328,9 @@ export function createSelection<
       }
       return {
         top: rowIndex === rect.minRow,
-        bottom: rowIndex === rect.maxRow,
+        bottom: end.rowIndex === rect.maxRow,
         left: colIndex === rect.minCol,
-        right: colIndex === rect.maxCol,
+        right: end.colIndex === rect.maxCol,
       };
     }
     return null;
@@ -325,7 +354,10 @@ export function createSelection<
     const active = !!a && a.rowIndex === rowIndex && a.colIndex === colIndex;
     const edges = getCellRangeEdges(rowIndex, colIndex);
     const fh = ctx.fillHandleCell;
-    const fillHandle = !!fh && fh.rowIndex === rowIndex && fh.colIndex === colIndex;
+    // The handle sits on the range's bottom-right cell; when that is inside
+    // a merge, the td that draws the merge carries it.
+    const end = fh ? endOf(ctx.mergeIndex, rowIndex, colIndex) : null;
+    const fillHandle = !!fh && !!end && fh.rowIndex === end.rowIndex && fh.colIndex === end.colIndex;
     if (!active && !edges && !fillHandle) return null;
     return { active, edges, fillHandle };
   }
@@ -447,8 +479,12 @@ export function createSelection<
       ? { rowIndex: active.rowIndex, colIndex: active.colIndex }
       : null;
     if (event.shiftKey) {
+      // The range grows to the clicked cell and the active cell stays where
+      // it is, as in Excel: it is the cell the formula bar shows and the
+      // one the next keystroke edits. Used to jump to the clicked corner,
+      // so a Shift+click to select B2:D5 then typing wrote into D5.
       extendSelection(rowIndex, colIndex);
-      setActiveCell(rowIndex, colIndex);
+      if (!active) setActiveCell(rowIndex, colIndex);
     } else {
       setActiveCell(rowIndex, colIndex);
       // Ctrl/Cmd starts an ADDITIONAL range, keeping prior ranges highlighted.
@@ -466,8 +502,9 @@ export function createSelection<
     if (!ctx.isDraggingSelection) return;
     const row = ctx.allRows[rowIndex];
     if (!row || isGroupRow(row)) return;
+    // The active cell is where the drag began; only the range's far corner
+    // follows the pointer.
     extendSelection(rowIndex, colIndex);
-    setActiveCell(rowIndex, colIndex);
   }
 
   /** `event` is the window `pointerup` when this comes from the real gesture,
@@ -602,12 +639,13 @@ export function createSelection<
     }
 
     // onCellPointerDown already set active+selection for data cells. Only
-    // decide whether to enter edit mode (click on the previously-active cell).
+    // decide whether to enter edit mode (click on the previously-active cell,
+    // unless the grid was told a second click is just a click).
     const wasActive =
       ctx.activeAtPointerDown !== null &&
       ctx.activeAtPointerDown.rowIndex === rowIndex &&
       ctx.activeAtPointerDown.colIndex === colIndex;
-    if (wasActive && ctx.editingEnabled) {
+    if (wasActive && ctx.editingEnabled && ctx.props.editOnSecondClick !== false) {
       ctx.onCellDoubleClick(rowIndex, colIndex);
       return;
     }
@@ -655,6 +693,7 @@ export function createSelection<
     extendSelection,
     isCellInSelectedRange,
     getCellRangeEdges,
+    activeRangeRect,
     cellSelectionState,
     fillMarqueeEdges,
     getSelectionRects,

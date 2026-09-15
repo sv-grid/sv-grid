@@ -13,6 +13,14 @@
     workbook: Workbook
     /** Called after any change, so the consumer can re-render. */
     onChange?: () => void
+    /**
+     * Called after a sheet is renamed or removed, before `onChange`. Anything
+     * the consumer keeps per sheet and keys by name - the shell keeps a
+     * format store per sheet - has to follow the rename or drop the entry,
+     * and the workbook itself has no event for either.
+     */
+    onRename?: (from: string, to: string) => void
+    onRemove?: (name: string) => void
     /** Off hides the add button and the context actions. */
     editable?: boolean
     /**
@@ -27,7 +35,7 @@
     version?: number
   }
 
-  let { workbook, onChange, editable = true, version = 0 }: Props = $props()
+  let { workbook, onChange, onRename, onRemove, editable = true, version = 0 }: Props = $props()
 
   let renaming = $state<string | null>(null)
   let draft = $state('')
@@ -81,6 +89,7 @@
       return
     }
     error = null
+    onRename?.(from, to)
     changed()
   }
 
@@ -93,7 +102,78 @@
     // The workbook refuses to remove the last sheet; reflect that rather than
     // showing a button that does nothing.
     if (!workbook.removeSheet(name)) return
+    onRemove?.(name)
     changed()
+  }
+
+  // ---- Excel's right-click menu on a tab ------------------------------------
+  let menu = $state<{ name: string; x: number; y: number } | null>(null)
+
+  function openMenu(event: MouseEvent, name: string) {
+    if (!editable) return
+    event.preventDefault()
+    select(name)
+    menu = { name, x: event.clientX, y: event.clientY }
+  }
+  /**
+   * The tabs sit at the foot of the sheet, so a menu dropped from the click
+   * runs off the bottom of the window; it opens upward from the click, as
+   * Excel's does, and is pulled back inside at the right edge.
+   */
+  function keepMenuInView(node: HTMLElement, _at: { x: number; y: number } | null) {
+    const fit = () => {
+      const box = node.getBoundingClientRect()
+      if (!menu) return
+      const x = Math.max(8, Math.min(menu.x, window.innerWidth - box.width - 8))
+      const y = menu.y + box.height > window.innerHeight - 8 ? Math.max(8, menu.y - box.height) : menu.y
+      if (x !== menu.x || y !== menu.y) menu = { ...menu, x, y }
+    }
+    fit()
+    return { update: fit }
+  }
+
+  function moveBy(name: string, delta: -1 | 1) {
+    const at = workbook.sheets.indexOf(name)
+    const to = at + delta
+    if (at < 0 || to < 0 || to >= workbook.sheets.length) return
+    workbook.moveSheet(name, to)
+    changed()
+  }
+
+  function insertBefore(name: string) {
+    const at = workbook.sheets.indexOf(name)
+    const added = workbook.addSheet(undefined, Math.max(at, 0))
+    workbook.setActive(added)
+    changed()
+  }
+
+  // ---- the scroll arrows, for more tabs than fit --------------------------
+  // Excel greys each arrow until it can move something: with every tab in
+  // view both are grey, and at either end of a long strip the arrow that
+  // points off it is. Read from the strip's scroll box after every scroll,
+  // resize and tab change.
+  let strip = $state<HTMLDivElement | null>(null)
+  let canLeft = $state(false)
+  let canRight = $state(false)
+  function measureStrip() {
+    const el = strip
+    if (!el) { canLeft = false; canRight = false; return }
+    canLeft = el.scrollLeft > 1
+    canRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+  }
+  $effect(() => {
+    const el = strip
+    if (!el) return
+    void version
+    void sheets
+    measureStrip()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measureStrip)
+    ro?.observe(el)
+    el.addEventListener('scroll', measureStrip)
+    return () => { ro?.disconnect(); el.removeEventListener('scroll', measureStrip) }
+  })
+  function scrollTabs(delta: number) {
+    strip?.scrollBy({ left: delta, behavior: 'smooth' })
   }
 
   function onDrop(target: string) {
@@ -124,8 +204,23 @@
   }
 </script>
 
+<svelte:window
+  onpointerdown={(e) => { if (menu && !(e.target as HTMLElement).closest('.sheet-menu')) menu = null }}
+  onkeydown={(e) => { if (e.key === 'Escape') menu = null }}
+/>
+
 <div class="sv-sheet-tabs">
-  <div role="tablist" aria-label="Sheets" class="tabs">
+  <!-- Excel's tab-scrolling arrows: always drawn, greyed until they can move something. -->
+  <div class="nav">
+    <button type="button" class="nav-btn" tabindex="-1" aria-label="Scroll tabs left" disabled={!canLeft} onclick={() => scrollTabs(-120)}>
+      <svg viewBox="0 0 8 8" width="8" height="8"><path d="M5.5 1L2.5 4l3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+    <button type="button" class="nav-btn" tabindex="-1" aria-label="Scroll tabs right" disabled={!canRight} onclick={() => scrollTabs(120)}>
+      <svg viewBox="0 0 8 8" width="8" height="8"><path d="M2.5 1l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </button>
+  </div>
+
+  <div role="tablist" aria-label="Sheets" class="tabs" bind:this={strip}>
     {#each sheets as name (name)}
       {@const isActive = name === activeSheet}
       <!-- role="presentation" so the tablist still OWNS the role="tab"
@@ -141,6 +236,7 @@
         ondragover={(e) => e.preventDefault()}
         ondrop={() => onDrop(name)}
         ondragend={() => (dragging = null)}
+        oncontextmenu={(e) => openMenu(e, name)}
       >
         {#if renaming === name}
           <!-- svelte-ignore a11y_autofocus -->
@@ -166,21 +262,15 @@
             ondblclick={() => startRename(name)}
             onkeydown={(e) => onTabKey(e, name)}
           >{name}</button>
-          {#if editable && sheets.length > 1}
-            <button
-              type="button"
-              class="close"
-              aria-label={`Delete ${name}`}
-              onclick={() => remove(name)}
-            >&times;</button>
-          {/if}
         {/if}
       </div>
     {/each}
   </div>
 
   {#if editable}
-    <button type="button" class="add" aria-label="New sheet" onclick={add}>+</button>
+    <button type="button" class="add" aria-label="New sheet" title="New sheet (Shift+F11)" onclick={add}>
+      <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M5 1.5v7M1.5 5h7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></svg>
+    </button>
   {/if}
 
   {#if error}
@@ -188,68 +278,164 @@
   {/if}
 </div>
 
+{#if menu}
+  <!--
+    The sheet menu Excel opens on right-click. Delete lives here and nowhere
+    on the tab face, so a stray click cannot remove a sheet.
+  -->
+  <div class="sheet-menu" role="menu" aria-label={`${menu.name} sheet`} style:left={`${menu.x}px`} style:top={`${menu.y}px`} use:keepMenuInView={menu}>
+    <button type="button" role="menuitem" onclick={() => { insertBefore(menu!.name); menu = null }}>Insert...</button>
+    <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { remove(menu!.name); menu = null }}>Delete</button>
+    <button type="button" role="menuitem" onclick={() => { startRename(menu!.name); menu = null }}>Rename</button>
+    <div class="sep" role="separator"></div>
+    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === 0} onclick={() => { moveBy(menu!.name, -1); menu = null }}>Move Left</button>
+    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === sheets.length - 1} onclick={() => { moveBy(menu!.name, 1); menu = null }}>Move Right</button>
+  </div>
+{/if}
+
 <style>
   .sv-sheet-tabs {
     display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    border-top: 1px solid var(--sg-border, #e2e8f0);
-    padding: 4px 6px;
-    overflow-x: auto;
+    align-items: stretch;
+    height: 26px;
+    font-family: var(--sg-font, "Segoe UI", system-ui, sans-serif);
+    font-size: 12px;
+    background: var(--sg-header-bg, #f3f3f3);
+    border-top: 1px solid var(--sg-border, #d1d1d1);
+    color: var(--sg-fg, #242424);
   }
-  .tabs { display: flex; align-items: center; gap: 2px; }
-  .tab {
+
+  .nav {
     display: flex;
     align-items: center;
-    border: 1px solid transparent;
-    border-radius: 5px 5px 0 0;
-    padding: 0 2px 0 6px;
+    padding: 0 4px 0 6px;
+    gap: 2px;
+    color: var(--sg-muted, #616161);
   }
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #e6e6e6); color: var(--sg-fg, #242424); }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .tabs {
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  /* Excel's tabs: grey strip, the active one lifted to white with the accent
+     drawn as a line along its bottom edge and its name in the accent. */
+  .tab {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-width: 64px;
+    border-right: 1px solid var(--sg-border, #d1d1d1);
+  }
+  .tab:first-child { border-left: 1px solid var(--sg-border, #d1d1d1); }
   .tab.active {
     background: var(--sg-bg, #fff);
-    border-color: var(--sg-border, #cbd5e1);
-    border-bottom-color: transparent;
+    box-shadow: inset 0 -2px 0 0 var(--sg-accent, #107c41);
+  }
+  .tab.active button {
+    color: var(--sg-accent, #107c41);
     font-weight: 600;
   }
+  .tab:not(.active):hover { background: var(--sg-row-hover-bg, #e9e9e9); }
   .tab.dragging { opacity: 0.5; }
-  button {
+  button[role='tab'] {
+    flex: 1 1 auto;
     font: inherit;
     border: 0;
     background: transparent;
-    color: inherit;
-    padding: 3px 4px;
+    color: var(--sg-muted, #444);
+    padding: 0 12px;
     cursor: pointer;
     white-space: nowrap;
+    text-align: center;
   }
-  button:focus-visible {
-    outline: 2px solid var(--sg-accent, #6366f1);
+  button[role='tab']:focus-visible {
+    outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #107c41));
     outline-offset: -2px;
-    border-radius: 3px;
   }
-  .close {
-    opacity: 0;
-    padding: 0 3px;
-    color: var(--sg-muted, #64748b);
-  }
-  .tab:hover .close,
-  .tab.active .close { opacity: 1; }
+
   .add {
-    border: 1px solid var(--sg-border, #cbd5e1);
-    border-radius: 5px;
-    line-height: 1;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    padding: 0;
+    border: 1px solid var(--sg-border, #c8c6c4);
+    border-radius: 50%;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-muted, #616161);
+    cursor: pointer;
   }
+  .add:hover { color: var(--sg-fg, #242424); border-color: var(--sg-muted, #8a8886); }
+  .add:focus-visible {
+    outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #107c41));
+    outline-offset: 1px;
+  }
+
   .rename {
     font: inherit;
-    width: 90px;
-    border: 1px solid var(--sg-accent, #6366f1);
-    border-radius: 3px;
-    padding: 2px 4px;
+    width: 92px;
+    margin: 2px 4px;
+    border: 1px solid var(--sg-accent, #107c41);
+    border-radius: 2px;
+    padding: 1px 4px;
     background: var(--sg-input-bg, var(--sg-bg, #fff));
-    color: var(--sg-fg, #0f172a);
+    color: var(--sg-fg, #242424);
   }
   .error {
+    align-self: center;
+    margin-left: 8px;
     color: var(--sg-danger, #dc2626);
     font-size: 12px;
   }
+
+  .sheet-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 150px;
+    padding: 4px;
+    font-family: var(--sg-font, "Segoe UI", system-ui, sans-serif);
+    font-size: 12px;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #242424);
+    border: 1px solid var(--sg-border, #d1d1d1);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+  }
+  .sheet-menu button {
+    display: block;
+    width: 100%;
+    padding: 5px 10px;
+    font: inherit;
+    text-align: left;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .sheet-menu button:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f0f0f0); }
+  .sheet-menu button:disabled { opacity: 0.4; cursor: default; }
+  .sheet-menu .sep { height: 1px; margin: 4px 6px; background: var(--sg-border, #e0e0e0); }
 </style>

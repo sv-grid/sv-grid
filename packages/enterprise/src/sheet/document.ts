@@ -1,0 +1,369 @@
+/**
+ * The sheet document: the workbook plus everything a sheet keeps beside its
+ * cells, per sheet, in one model.
+ *
+ * The shell used to keep five Maps (format stores, column widths, row
+ * heights, hidden lines, frozen panes), each keyed by sheet name, each
+ * swapped on a sheet switch and each moved by hand on an insert or delete.
+ * Comments, validation rules, conditional formats, protection and merges
+ * would have made it ten. The document holds all of it, moves all of it in
+ * one `shift()` when rows or columns are inserted or deleted, saves and
+ * restores all of it through one `getState()` / `setState()` pair, and tells
+ * a listener once per tick what changed. `SvSheet` is a view over it: it
+ * puts the active sheet's sizes and hidden lines on the grid and writes
+ * them back here whenever they change, so the document is always the
+ * truth and the grid a rendering of it.
+ *
+ * Nothing in here touches the DOM, so a document can be built, edited,
+ * saved and restored in Node, in a test, or on a server.
+ */
+import { createWorkbook, type Workbook, type SheetData } from './workbook'
+import { createFormatStore, type SheetFormatStore, type CellFormatEntry } from './format-store'
+import type { FreezeState } from './freeze'
+import type { StructuralEdit } from './refs'
+import { lineShift, remapNotes, shiftRect, type NotesMap, type Rect } from './rects'
+import { colToLetters, lettersToCol } from './address'
+import { shiftValidation, type ValidationRule } from './validation'
+import { shiftCf, type CfRule } from './conditional-formats'
+import { shiftAutoFilter, type AutoFilterState } from './auto-filter'
+
+/** Why the document changed. A listener gets every reason since its last call. */
+export type SheetChangeReason =
+  | { kind: 'cells' }
+  | { kind: 'formats' }
+  | { kind: 'sizes' }
+  | { kind: 'hidden' }
+  | { kind: 'freeze' }
+  | { kind: 'sheets' }
+  | { kind: 'comments' }
+  | { kind: 'validation' }
+  | { kind: 'conditional-formats' }
+  | { kind: 'protection' }
+  | { kind: 'merges' }
+  | { kind: 'filter' }
+  | { kind: 'structure'; sheet: string; edit: StructuralEdit }
+  | { kind: 'restore' }
+
+/** What one sheet keeps beside its cells. Live objects, not a snapshot. */
+export type PerSheetState = {
+  formats: SheetFormatStore
+  /** Column widths in px by letter; a letter absent here reads the default. */
+  widths: Record<string, number>
+  /** Row heights in px by row index; a row absent here reads the default. */
+  heights: Map<number, number>
+  hidden: { rows: Set<number>; cols: Set<number> }
+  freeze: FreezeState
+  /** Cell comments in the grid's `notes` shape: `r4` -> `B` -> text. */
+  notes: NotesMap
+  protected: boolean
+  merges: Rect[]
+  /** Data validation rules, in order; the last one covering a cell applies. */
+  validation: ValidationRule[]
+  /** Conditional formatting rules, in priority order: the first one decides. */
+  conditionalFormats: CfRule[]
+  /** Excel's AutoFilter over a region, or null when the arrows are off. */
+  autoFilter: AutoFilterState | null
+  /** The rows the AutoFilter hides right now; worked out, never saved. */
+  filterHidden: Set<number>
+}
+
+/** One sheet's part of a saved document. JSON-safe. */
+export type SheetStateEntry = {
+  formats: Record<string, CellFormatEntry>
+  columnWidths: Record<string, number>
+  rowHeights: Array<[row: number, px: number]>
+  hidden: { rows: number[]; cols: number[] }
+  freeze: FreezeState
+  comments: NotesMap
+  protected: boolean
+  merges: Array<[number, number, number, number]>
+  validation: ValidationRule[]
+  conditionalFormats: CfRule[]
+  autoFilter: AutoFilterState | null
+}
+
+/**
+ * A saved document. `workbook` is the raw text of every cell (formulas as
+ * typed), the sheet order, the active sheet and the defined names; `sheets`
+ * is keyed by the sheet's spelled name.
+ */
+export type SheetState = {
+  version: 1
+  workbook: ReturnType<Workbook['serialize']>
+  sheets: Record<string, SheetStateEntry>
+}
+
+export type SheetDocument = {
+  readonly workbook: Workbook
+  /** The sheet's state, created on first use. Names compare case-insensitively. */
+  get(name: string): PerSheetState
+  has(name: string): boolean
+  rename(from: string, to: string): void
+  remove(name: string): void
+  /** The sheets that have state, in no particular order. */
+  names(): string[]
+  /**
+   * Move every position-keyed part of a sheet for an insert or delete:
+   * formats, heights, hidden lines, comments, merges. The workbook's own
+   * cells and formulas move through `workbook.applyStructuralEdit`; the
+   * shell calls both.
+   */
+  shift(name: string, edit: StructuralEdit): void
+  getState(): SheetState
+  /**
+   * Put a saved document back. The workbook is edited in place (sheets
+   * added, removed and reordered to match, cells written where they differ,
+   * names and the active sheet set), so the workbook a consumer holds stays
+   * the same object.
+   */
+  setState(state: SheetState): void
+  /** Hear about changes, once per tick with every reason since the last call. */
+  subscribe(listener: (reasons: ReadonlyArray<SheetChangeReason>) => void): () => void
+  /** Record a change. Coalesced per microtask; silent while muted. */
+  changed(reason: SheetChangeReason): void
+  /** Run `fn` without reporting changes: restores and mount-time seeding. */
+  mute<T>(fn: () => T): T
+}
+
+export type SheetDocumentInit = {
+  /** An existing workbook to wrap. Created from `sheets` or `state` when absent. */
+  workbook?: Workbook
+  sheets?: ReadonlyArray<SheetData>
+  /** A saved document to start from; wins over `sheets`. */
+  state?: SheetState
+}
+
+function emptySheetState(): PerSheetState {
+  return {
+    formats: createFormatStore(),
+    widths: {},
+    heights: new Map(),
+    hidden: { rows: new Set(), cols: new Set() },
+    freeze: { rows: 0, cols: 0 },
+    notes: {},
+    protected: false,
+    merges: [],
+    validation: [],
+    conditionalFormats: [],
+    autoFilter: null,
+    filterHidden: new Set(),
+  }
+}
+
+export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument {
+  const workbook: Workbook =
+    init.workbook ??
+    createWorkbook(
+      init.state ? init.state.workbook.sheets.map((s) => ({ name: s.name, cells: s.cells })) : (init.sheets ? [...init.sheets] : [{ name: 'Sheet1', cells: [] }]),
+    )
+  const entries = new Map<string, PerSheetState>()
+  const listeners = new Set<(reasons: ReadonlyArray<SheetChangeReason>) => void>()
+  let pending: SheetChangeReason[] = []
+  let scheduled = false
+  let muted = 0
+
+  const key = (name: string) => name.toLowerCase()
+
+  function get(name: string): PerSheetState {
+    let found = entries.get(key(name))
+    if (!found) {
+      found = emptySheetState()
+      entries.set(key(name), found)
+    }
+    return found
+  }
+
+  function flush() {
+    scheduled = false
+    const batch = pending
+    pending = []
+    for (const listener of listeners) listener(batch)
+  }
+
+  function changed(reason: SheetChangeReason) {
+    if (muted > 0) return
+    // The same plain reason twice in a tick says nothing new; a structural
+    // edit is worth hearing about each time.
+    if (reason.kind !== 'structure' && pending.some((r) => r.kind === reason.kind)) return
+    pending.push(reason)
+    if (scheduled) return
+    scheduled = true
+    queueMicrotask(flush)
+  }
+
+  function serializeEntry(state: PerSheetState): SheetStateEntry {
+    return {
+      formats: state.formats.serialize(),
+      columnWidths: { ...state.widths },
+      rowHeights: [...state.heights].map(([r, h]) => [r, h] as [number, number]),
+      hidden: { rows: [...state.hidden.rows], cols: [...state.hidden.cols] },
+      freeze: { ...state.freeze },
+      comments: Object.fromEntries(Object.entries(state.notes).map(([r, line]) => [r, { ...line }])),
+      protected: state.protected,
+      merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
+      validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
+      conditionalFormats: state.conditionalFormats.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect) })),
+      autoFilter: state.autoFilter ? { range: [...state.autoFilter.range] as unknown as Rect, filters: { ...state.autoFilter.filters } } : null,
+    }
+  }
+
+  function hydrateEntry(state: PerSheetState, entry: Partial<SheetStateEntry>) {
+    state.formats.hydrate(entry.formats ?? {})
+    state.widths = { ...(entry.columnWidths ?? {}) }
+    state.heights = new Map(entry.rowHeights ?? [])
+    state.hidden = { rows: new Set(entry.hidden?.rows ?? []), cols: new Set(entry.hidden?.cols ?? []) }
+    state.freeze = { rows: entry.freeze?.rows ?? 0, cols: entry.freeze?.cols ?? 0 }
+    state.notes = Object.fromEntries(Object.entries(entry.comments ?? {}).map(([r, line]) => [r, { ...line }]))
+    state.protected = entry.protected ?? false
+    state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
+    state.validation = (entry.validation ?? []).map((rule) => ({
+      ...rule,
+      rects: rule.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const),
+      alert: { ...rule.alert },
+    }))
+    state.conditionalFormats = (entry.conditionalFormats ?? []).map((rule) => ({
+      ...rule,
+      rects: rule.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const),
+    }))
+    const af = entry.autoFilter
+    state.autoFilter = af ? { range: [af.range[0], af.range[1], af.range[2], af.range[3]] as const, filters: { ...af.filters } } : null
+    state.filterHidden = new Set()
+  }
+
+  const document: SheetDocument = {
+    workbook,
+    get,
+    has: (name) => entries.has(key(name)),
+    rename(from, to) {
+      const moved = entries.get(key(from))
+      entries.delete(key(from))
+      if (moved) entries.set(key(to), moved)
+    },
+    remove(name) {
+      entries.delete(key(name))
+    },
+    names: () => [...entries.keys()],
+
+    shift(name, edit) {
+      const state = get(name)
+      const shift = lineShift(edit)
+      const rows = edit.kind === 'insertRows' || edit.kind === 'deleteRows'
+      if (rows) {
+        state.formats.remapRows((id) => {
+          const i = Number(id.slice(1))
+          const next = Number.isInteger(i) ? shift(i) : i
+          return next === null ? null : `r${next}`
+        })
+        const heights = new Map<number, number>()
+        for (const [r, h] of state.heights) {
+          const next = shift(r)
+          if (next !== null) heights.set(next, h)
+        }
+        state.heights = heights
+        const hiddenRows = new Set<number>()
+        for (const r of state.hidden.rows) {
+          const next = shift(r)
+          if (next !== null) hiddenRows.add(next)
+        }
+        state.hidden = { rows: hiddenRows, cols: state.hidden.cols }
+        state.notes = remapNotes(state.notes, 'rows', shift)
+      } else {
+        state.formats.remapColumns((id) => {
+          const i = lettersToCol(id)
+          const next = i < 0 ? i : shift(i)
+          return next === null ? null : colToLetters(next)
+        })
+        const widths: Record<string, number> = {}
+        for (const [letter, w] of Object.entries(state.widths)) {
+          const i = lettersToCol(letter)
+          const next = i < 0 ? i : shift(i)
+          if (next !== null) widths[i < 0 ? letter : colToLetters(next)] = w
+        }
+        state.widths = widths
+        const hiddenCols = new Set<number>()
+        for (const c of state.hidden.cols) {
+          const next = shift(c)
+          if (next !== null) hiddenCols.add(next)
+        }
+        state.hidden = { rows: state.hidden.rows, cols: hiddenCols }
+        state.notes = remapNotes(state.notes, 'cols', shift)
+      }
+      state.merges = state.merges.map((m) => shiftRect(m, edit)).filter((m): m is Rect => m !== null)
+      state.validation = shiftValidation(state.validation, edit)
+      state.conditionalFormats = shiftCf(state.conditionalFormats, edit)
+      state.autoFilter = shiftAutoFilter(state.autoFilter, edit)
+    },
+
+    getState() {
+      const sheets: Record<string, SheetStateEntry> = {}
+      for (const name of workbook.sheets) sheets[name] = serializeEntry(get(name))
+      return { version: 1, workbook: workbook.serialize(), sheets }
+    },
+
+    setState(state) {
+      document.mute(() => {
+        const wanted = state.workbook.sheets.map((s) => s.name)
+        const wantedKeys = new Set(wanted.map(key))
+        // Sheets to add, then the ones to drop (never the last one standing),
+        // then the order, then the cells.
+        for (const name of wanted) {
+          if (!workbook.sheets.some((s) => key(s) === key(name))) workbook.addSheet(name)
+        }
+        for (const name of [...workbook.sheets]) {
+          if (!wantedKeys.has(key(name)) && workbook.sheets.length > 1) {
+            workbook.removeSheet(name)
+            entries.delete(key(name))
+          }
+        }
+        wanted.forEach((name, index) => {
+          if (workbook.sheets[index]?.toLowerCase() !== key(name)) workbook.moveSheet(name, index)
+        })
+        for (const sheet of state.workbook.sheets) {
+          const rows = Math.max(workbook.rowCount(sheet.name), sheet.cells.length)
+          for (let r = 0; r < rows; r += 1) {
+            const cols = Math.max(workbook.colCount(sheet.name), sheet.cells[r]?.length ?? 0)
+            for (let c = 0; c < cols; c += 1) {
+              const text = sheet.cells[r]?.[c] ?? ''
+              if (workbook.getRaw(sheet.name, r, c) !== text) workbook.setRaw(sheet.name, r, c, text)
+            }
+          }
+        }
+        workbook.names.hydrate(state.workbook.names ?? {})
+        if (workbook.sheets.some((s) => key(s) === key(state.workbook.active))) workbook.setActive(state.workbook.active)
+        // Entries are hydrated in place, never replaced: a format store the
+        // shell has registered as its target must stay the store in use, or
+        // every format written after a restore would land in an orphan.
+        const kept = new Set(Object.keys(state.sheets ?? {}).map(key))
+        for (const name of [...entries.keys()]) if (!kept.has(name) && !wantedKeys.has(name)) entries.delete(name)
+        for (const name of workbook.sheets) hydrateEntry(get(name), state.sheets?.[name] ?? {})
+      })
+      changed({ kind: 'restore' })
+    },
+
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    changed,
+    mute(fn) {
+      muted += 1
+      try {
+        return fn()
+      } finally {
+        muted -= 1
+      }
+    },
+  }
+
+  if (init.state) {
+    document.mute(() => {
+      workbook.names.hydrate(init.state!.workbook.names ?? {})
+      if (workbook.sheets.some((s) => key(s) === key(init.state!.workbook.active))) workbook.setActive(init.state!.workbook.active)
+      for (const [name, entry] of Object.entries(init.state!.sheets ?? {})) hydrateEntry(get(name), entry)
+    })
+  }
+
+  return document
+}

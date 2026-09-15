@@ -9,10 +9,10 @@
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
   edgeOfRegion, currentRegion, isWholeSheet, wholeSheet, isBlankValue,
-  type Direction, type Grid, type Rect,
+  type Direction, type Grid, type Rect, type Cell,
 } from './navigate'
 import {
-  fillDown, fillRight, stampDate, copyFromAbove, targetRect,
+  fillDown, fillRight, stampDate, copyFromAbove, copyValueFromAbove, targetRect,
   guessSumRange, looksNumeric,
 } from './commands'
 import { FORMAT_PRESETS, type FormatPresetName } from './number-format'
@@ -23,6 +23,7 @@ import {
   axisForSelection, getStructureTarget,
 } from './structure'
 import { getFindTarget } from './find-replace'
+import { cycleReference } from './edit-keys'
 import type { Workbook } from './workbook'
 
 export type SheetCommand = (cmd: GridCommandContext, event: KeyboardEvent) => boolean
@@ -48,6 +49,23 @@ export type SheetFormatTarget = {
   lookup: CellAddressLookup
   /** Called after a change so the consumer can re-render. */
   onChange?(): void
+  /**
+   * Whether the rectangles may be formatted. A protected sheet says no for
+   * a selection with a locked cell in it; the ribbon greys its buttons on
+   * the same answer, so it must be cheap and must not talk to the user.
+   */
+  guard?(rects: ReadonlyArray<Rect>): boolean
+  /** Called when a change was refused by `guard`: the place to say why. */
+  refused?(): void
+}
+
+/** The guard's answer, with the refusal reported when it is no. */
+export function formatAllowed(target: SheetFormatTarget, rects: ReadonlyArray<Rect>): boolean {
+  if (target.guard?.(rects) === false) {
+    target.refused?.()
+    return false
+  }
+  return true
 }
 
 let formatTarget: SheetFormatTarget | null = null
@@ -117,6 +135,61 @@ export function setFindReplaceHandler(fn: ((cmd: GridCommandContext) => void) | 
 /** Called when Ctrl+1 fires, so a consumer can open its own dialog. The
  *  shortcut layer does not ship one: what a Format Cells dialog should look
  *  like is a design decision, not a keyboard one. */
+/**
+ * Ribbon actions a key raises: F9 recalculates, Ctrl+` shows formulas,
+ * Ctrl+Shift+L toggles the filter, Shift+F3 and Ctrl+F3 open Insert
+ * Function and the Name Manager, Ctrl+T formats as a table. The shell
+ * answers them the way it answers the ribbon button; returning false means
+ * nothing is behind the action and the key falls through.
+ */
+export type RibbonKeyAction =
+  | 'recalculate' | 'toggle-formulas' | 'toggle-filter'
+  | 'insert-function' | 'name-manager' | 'insert-table'
+  | 'hide-rows' | 'hide-columns' | 'unhide-rows' | 'unhide-columns'
+  | 'edit-comment' | 'open-list' | 'toggle-ribbon'
+  | 'merge-center' | 'merge-across' | 'merge-cells' | 'unmerge-cells'
+let onRibbonAction: ((action: RibbonKeyAction, cmd: GridCommandContext) => boolean) | null = null
+
+export function setRibbonActionHandler(
+  fn: ((action: RibbonKeyAction, cmd: GridCommandContext) => boolean) | null,
+): void {
+  onRibbonAction = fn
+}
+
+const raise = (action: RibbonKeyAction): SheetCommand => (cmd) => onRibbonAction?.(action, cmd) ?? false
+
+/** Raise a ribbon action from a button whose face is not an entry of its own. */
+export function raiseRibbonAction(action: RibbonKeyAction, cmd: GridCommandContext): boolean {
+  return onRibbonAction?.(action, cmd) ?? false
+}
+
+/** Excel's size ladder. Pixels here, since that is what the cell renders. */
+export const FONT_SIZES = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
+/** A cell with no size of its own renders at the grid's 13px. */
+export const DEFAULT_FONT_SIZE = 13
+
+/** The format entry under the active cell, or undefined. */
+export function activeEntry(cmd: GridCommandContext): CellFormatEntry | undefined {
+  const target = formatTarget
+  const active = cmd.activeCell
+  if (!target || !active) return undefined
+  const rowId = target.lookup.rowIdAt(active.rowIndex)
+  const columnId = target.lookup.columnIdAt(active.colIndex)
+  return rowId != null && columnId != null ? target.store.get(rowId, columnId) : undefined
+}
+
+/** Excel's Increase / Decrease Font Size: the next rung of the ladder. */
+export function nudgeFontSize(direction: 1 | -1): SheetCommand {
+  return (cmd) => {
+    const current = activeEntry(cmd)?.fontSize ?? DEFAULT_FONT_SIZE
+    const larger = FONT_SIZES.filter((s) => s > current)
+    const smaller = FONT_SIZES.filter((s) => s < current)
+    const next = direction > 0 ? larger[0] : smaller[smaller.length - 1]
+    if (next === undefined) return false
+    return applyFormat(cmd, { fontSize: next === DEFAULT_FONT_SIZE ? undefined : next })
+  }
+}
+
 let onFormatDialog: ((cmd: GridCommandContext) => void) | null = null
 
 export function setFormatDialogHandler(fn: ((cmd: GridCommandContext) => void) | null): void {
@@ -138,6 +211,12 @@ export type SheetBinding = {
   mod?: boolean
   shift?: boolean
   alt?: boolean
+  /**
+   * Runs while a cell is being edited, and only then. The other bindings
+   * act on the selection and stay out of the editor, where Ctrl+D is a
+   * keystroke the user meant for the text.
+   */
+  editing?: boolean
   run: SheetCommand
   /** For docs and the demo's cheat sheet. */
   label: string
@@ -152,17 +231,125 @@ export function gridOf(cmd: GridCommandContext): Grid {
   }
 }
 
+/**
+ * Ctrl+End: the bottom-right corner of what has been typed, as in Excel,
+ * rather than the grid's last cell. A sheet has thousands of empty rows
+ * below the data, and the last of them is never where the user wanted to
+ * go. Ctrl+Home is the grid's own and already lands on A1.
+ */
+export function lastUsedCell(cmd: GridCommandContext): { row: number; col: number } {
+  let row = -1
+  let col = -1
+  for (let r = 0; r < cmd.rowCount; r += 1) {
+    for (let c = 0; c < cmd.colCount; c += 1) {
+      if (isBlankValue(cmd.getCellValue(r, c))) continue
+      if (r > row) row = r
+      if (c > col) col = c
+    }
+  }
+  return row < 0 ? { row: 0, col: 0 } : { row, col }
+}
+
+export const goToLastUsed: SheetCommand = (cmd) => {
+  const { row, col } = lastUsedCell(cmd)
+  cmd.setActiveCell(row, col)
+  cmd.setSelection(row, col)
+  cmd.scrollIntoView(row, col)
+  return true
+}
+
+/** Ctrl+Shift+End / Home: extend the selection to the last used cell, or to A1. */
+function extendTo(where: 'end' | 'home'): SheetCommand {
+  return (cmd) => {
+    if (!cmd.activeCell) return false
+    const { row, col } = where === 'end' ? lastUsedCell(cmd) : { row: 0, col: 0 }
+    cmd.extendSelection(row, col)
+    cmd.scrollIntoView(row, col)
+    return true
+  }
+}
+
+/** F4 while editing: turn the reference at the caret through its anchorings. */
+export const pinReference: SheetCommand = (cmd) => {
+  const el = cmd.editor
+  if (!el) return false
+  const edit = cycleReference(el.value, el.selectionStart ?? el.value.length)
+  if (!edit) return false
+  el.value = edit.text
+  el.setSelectionRange(edit.caret, edit.caret)
+  // The grid keeps its own copy of the draft and reads it from input events.
+  el.dispatchEvent(new Event('input', { bubbles: true }))
+  return true
+}
+
 export function move(dir: Direction, extend: boolean): SheetCommand {
   return (cmd) => {
     const active = cmd.activeCell
     if (!active) return false
-    const to = edgeOfRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }, dir)
+    if (extend) {
+      // The range grows from its far corner and the active cell stays put,
+      // as in Excel; stepping from the active cell would reach the same
+      // edge on every press.
+      const from = cmd.selectionFocus ?? { rowIndex: active.rowIndex, colIndex: active.colIndex }
+      const to = pastHidden(cmd, { row: from.rowIndex, col: from.colIndex }, edgeOfRegion(gridOf(cmd), { row: from.rowIndex, col: from.colIndex }, dir), dir)
+      cmd.extendSelection(to.row, to.col)
+      // Along the axis of the key only, as Excel scrolls: a sideways jump
+      // keeps the rows where they are.
+      const sideways = dir === 'left' || dir === 'right'
+      cmd.scrollIntoView(sideways ? active.rowIndex : to.row, sideways ? to.col : active.colIndex)
+      return true
+    }
+    const to = pastHidden(cmd, { row: active.rowIndex, col: active.colIndex }, edgeOfRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }, dir), dir)
     cmd.setActiveCell(to.row, to.col)
     cmd.scrollIntoView(to.row, to.col)
-    if (extend) cmd.extendSelection(to.row, to.col)
-    else cmd.setSelection(to.row, to.col)
+    cmd.setSelection(to.row, to.col)
     return true
   }
+}
+
+/**
+ * A jump never rests on a hidden row or column, as Excel's does not. The
+ * edge it found is the end of a run of data, or the first cell of the next
+ * run; a hidden edge stands in for the nearest cell of the same run that
+ * shows, which lies back toward the start when the run continues behind
+ * the landing, and further on when the landing began a new run. With no
+ * such cell the cursor goes on to the next line that shows at all. Only the
+ * grid's api knows what is hidden; a context without one (a test's fake)
+ * hides nothing.
+ */
+function pastHidden(cmd: GridCommandContext, from: Cell, to: Cell, dir: Direction): Cell {
+  const api = cmd.api as { isRowCollapsed?: (i: number) => boolean; isColumnCollapsed?: (id: string) => boolean } | undefined
+  const vertical = dir === 'up' || dir === 'down'
+  const hidden = vertical
+    ? (i: number) => api?.isRowCollapsed?.(i) ?? false
+    : (i: number) => { const id = cmd.columnIdAt(i); return id != null && (api?.isColumnCollapsed?.(id) ?? false) }
+  const at = vertical ? to.row : to.col
+  if (!hidden(at)) return to
+  const grid = gridOf(cmd)
+  const count = vertical ? cmd.rowCount : cmd.colCount
+  const step = dir === 'down' || dir === 'right' ? 1 : -1
+  const cell = (i: number): Cell => (vertical ? { row: i, col: to.col } : { row: to.row, col: i })
+  const blank = (i: number) => i < 0 || i >= count || grid.isBlank(cell(i).row, cell(i).col)
+  const origin = vertical ? from.row : from.col
+  // The run continues back toward the start: the last of it that shows,
+  // unless that is where the jump began, in which case the run is done and
+  // the jump goes on from its hidden end to the next run.
+  if (!blank(at - step)) {
+    for (let i = at - step; i !== origin && i >= 0 && i < count; i -= step) {
+      if (blank(i)) break
+      if (!hidden(i)) return cell(i)
+    }
+    const next = edgeOfRegion(grid, to, dir)
+    if (next.row !== to.row || next.col !== to.col) return pastHidden(cmd, to, next, dir)
+  }
+  // The landing began a run: the first of it that shows.
+  for (let i = at + step; i >= 0 && i < count && !blank(i); i += step) {
+    if (!hidden(i)) return cell(i)
+  }
+  // Nothing of the run shows: the next line that shows at all, else stay.
+  for (let i = at + step; i >= 0 && i < count; i += step) if (!hidden(i)) return cell(i)
+  for (let i = at - step; i !== origin - step && i >= 0 && i < count; i -= step) if (!hidden(i)) return cell(i)
+  return to
 }
 
 /** Ctrl+A: the current region, then the whole sheet on a second press. */
@@ -182,20 +369,82 @@ export const selectRegion: SheetCommand = (cmd) => {
   return true
 }
 
-/** Ctrl+Space / Shift+Space: the active cell's whole column or row. */
+/**
+ * Ctrl+Space / Shift+Space: the whole columns or rows the selection
+ * touches (B2:C3 gives rows 2:3), as in Excel; the active cell stays.
+ */
 export function selectLine(axis: 'column' | 'row'): SheetCommand {
   return (cmd) => {
-    const active = cmd.activeCell
-    if (!active) return false
+    const rect = targetRect(cmd)
+    if (!rect) return false
+    const [r1, c1, r2, c2] = rect
     if (axis === 'column') {
-      cmd.setSelection(0, active.colIndex)
-      cmd.extendSelection(Math.max(cmd.rowCount - 1, 0), active.colIndex)
+      cmd.setSelection(0, c1)
+      cmd.extendSelection(Math.max(cmd.rowCount - 1, 0), c2)
     } else {
-      cmd.setSelection(active.rowIndex, 0)
-      cmd.extendSelection(active.rowIndex, Math.max(cmd.colCount - 1, 0))
+      cmd.setSelection(r1, 0)
+      cmd.extendSelection(r2, Math.max(cmd.colCount - 1, 0))
     }
     return true
   }
+}
+
+/** Ctrl+Shift+8 (Ctrl+*): the current region, and only that. */
+export const selectCurrentRegion: SheetCommand = (cmd) => {
+  const active = cmd.activeCell
+  if (!active) return false
+  const region = currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
+  cmd.setSelection(region[0], region[1])
+  cmd.extendSelection(region[2], region[3])
+  return true
+}
+
+/**
+ * Run a format change over `rects` as ONE undo step.
+ *
+ * The format store is not the grid's data, so a write to it is invisible
+ * to Ctrl+Z on its own: Bold would land and the Undo button would stay
+ * grey, which is not how a spreadsheet behaves. This snapshots every cell
+ * the change touches before and after, and hands the grid a step that puts
+ * either snapshot back. A cell's whole entry is restored rather than the
+ * one field, so undoing "bold" on a cell that was also made red does not
+ * have to know which of the two the press was about.
+ */
+export function withFormatUndo(
+  cmd: GridCommandContext,
+  target: SheetFormatTarget,
+  rects: ReadonlyArray<Rect>,
+  mutate: () => void,
+): void {
+  const snapshot = () => {
+    const cells: Array<{ r: number; c: number; entry: CellFormatEntry | undefined }> = []
+    for (const [minRow, minCol, maxRow, maxCol] of rects) {
+      for (let r = minRow; r <= maxRow; r += 1) {
+        for (let c = minCol; c <= maxCol; c += 1) {
+          const rowId = target.lookup.rowIdAt(r)
+          const columnId = target.lookup.columnIdAt(c)
+          if (rowId == null || columnId == null) continue
+          const entry = target.store.get(rowId, columnId)
+          cells.push({ r, c, entry: entry ? { ...entry, border: entry.border ? { ...entry.border } : undefined } : undefined })
+        }
+      }
+    }
+    return cells
+  }
+  const restore = (cells: ReturnType<typeof snapshot>) => () => {
+    for (const { r, c, entry } of cells) {
+      target.store.clear([[r, c, r, c]], target.lookup)
+      if (entry) target.store.set([[r, c, r, c]], entry, target.lookup)
+    }
+    target.onChange?.()
+  }
+  const before = snapshot()
+  mutate()
+  const after = snapshot()
+  // Optional at runtime: a context built by hand (a demo, an older integration)
+  // may predate the seam, and a format that cannot be undone is still a
+  // format that landed.
+  cmd.recordUndo?.(restore(before), restore(after))
 }
 
 /** Apply a patch to the selection through the attached store. */
@@ -204,7 +453,8 @@ export function applyFormat(cmd: GridCommandContext, patch: CellFormatEntry): bo
   if (!target) return false
   const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
   if (!rects.length) return false
-  target.store.set(rects, patch, target.lookup)
+  if (!formatAllowed(target, rects)) return false
+  withFormatUndo(cmd, target, rects, () => target.store.set(rects, patch, target.lookup))
   target.onChange?.()
   return true
 }
@@ -217,7 +467,69 @@ export function toggleFormat(
   if (!target) return false
   const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
   if (!rects.length) return false
-  target.store.toggle(rects, field, target.lookup)
+  if (!formatAllowed(target, rects)) return false
+  withFormatUndo(cmd, target, rects, () => target.store.toggle(rects, field, target.lookup))
+  target.onChange?.()
+  return true
+}
+
+export type BorderPreset =
+  | 'none' | 'bottom' | 'top' | 'left' | 'right' | 'all' | 'outside' | 'thick-bottom'
+
+type Side = 'top' | 'right' | 'bottom' | 'left'
+
+/**
+ * Excel's Borders menu, applied the way Excel applies it: "Bottom Border"
+ * puts a line under the bottom edge of the SELECTION, not under every
+ * cell; "All Borders" lines every cell; "Outside" frames the block. Sides
+ * merge with what a cell already has, so a top border does not erase a
+ * bottom one, and "No Border" clears all four.
+ */
+export function applyBorders(cmd: GridCommandContext, preset: BorderPreset): boolean {
+  const target = formatTarget
+  if (!target) return false
+  const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
+  if (!rects.length) return false
+  if (!formatAllowed(target, rects)) return false
+  const line = { width: preset === 'thick-bottom' ? 2 : 1 }
+  const { store, lookup } = target
+  withFormatUndo(cmd, target, rects, () => {
+  for (const [minRow, minCol, maxRow, maxCol] of rects) {
+    for (let r = minRow; r <= maxRow; r += 1) {
+      for (let c = minCol; c <= maxCol; c += 1) {
+        const rowId = lookup.rowIdAt(r)
+        const columnId = lookup.columnIdAt(c)
+        if (rowId == null || columnId == null) continue
+        const sides = new Set<Side>()
+        if (preset === 'all') { sides.add('top'); sides.add('right'); sides.add('bottom'); sides.add('left') }
+        if (preset === 'outside' || preset === 'top') { if (r === minRow) sides.add('top') }
+        if (preset === 'outside' || preset === 'bottom' || preset === 'thick-bottom') { if (r === maxRow) sides.add('bottom') }
+        if (preset === 'outside' || preset === 'left') { if (c === minCol) sides.add('left') }
+        if (preset === 'outside' || preset === 'right') { if (c === maxCol) sides.add('right') }
+        if (preset === 'none') {
+          store.set([[r, c, r, c]], { border: undefined }, lookup)
+          continue
+        }
+        if (sides.size === 0) continue
+        const border = { ...(store.get(rowId, columnId)?.border ?? {}) }
+        for (const side of sides) border[side] = line
+        store.set([[r, c, r, c]], { border }, lookup)
+      }
+    }
+  }
+  })
+  target.onChange?.()
+  return true
+}
+
+/** Excel's Clear Formats: drop every format on the selection, keep the values. */
+export function clearFormats(cmd: GridCommandContext): boolean {
+  const target = formatTarget
+  if (!target) return false
+  const rects = cmd.ranges.length ? cmd.ranges : rectOfActive(cmd)
+  if (!rects.length) return false
+  if (!formatAllowed(target, rects)) return false
+  withFormatUndo(cmd, target, rects, () => target.store.clear(rects, target.lookup))
   target.onChange?.()
   return true
 }
@@ -237,6 +549,7 @@ export const autoSum: SheetCommand = (cmd) => {
   if (!active) return false
   const range = guessSumRange(cmd, looksNumeric)
   if (!range) return false
+  if (cmd.canEdit?.(active.rowIndex, active.colIndex) === false) return false
   const [minRow, minCol, maxRow, maxCol] = range
   const ref = (r: number, c: number) =>
     formatA1({ col: c, colAbs: false, row: r, rowAbs: false, sheet: null })
@@ -258,9 +571,17 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: 'ArrowDown', mod: true, shift: true, run: move('down', true), label: 'Extend the selection to the edge' },
   { key: 'ArrowLeft', mod: true, shift: true, run: move('left', true), label: 'Extend the selection to the edge' },
   { key: 'ArrowRight', mod: true, shift: true, run: move('right', true), label: 'Extend the selection to the edge' },
+  { key: 'End', mod: true, run: goToLastUsed, label: 'Go to the last used cell' },
+  { key: 'End', mod: true, shift: true, run: extendTo('end'), label: 'Extend the selection to the last used cell' },
+  { key: 'Home', mod: true, shift: true, run: extendTo('home'), label: 'Extend the selection to A1' },
+
+  // While editing
+  { key: 'F4', editing: true, run: pinReference, label: 'Pin the reference at the caret ($A$1, A$1, $A1)' },
 
   // Selection
   { key: 'a', mod: true, run: selectRegion, label: 'Select the current region, then the sheet' },
+  { key: ' ', mod: true, shift: true, run: selectRegion, label: 'Select the current region, then the sheet' },
+  { key: '*', code: 'Digit8', mod: true, shift: true, run: selectCurrentRegion, label: 'Select the current region' },
   { key: ' ', mod: true, run: selectLine('column'), label: 'Select the column' },
   { key: ' ', shift: true, run: selectLine('row'), label: 'Select the row' },
 
@@ -270,6 +591,9 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: ';', mod: true, run: (cmd) => stampDate(cmd, 'date'), label: "Insert today's date" },
   { key: ';', code: 'Semicolon', mod: true, shift: true, run: (cmd) => stampDate(cmd, 'time'), label: 'Insert the current time' },
   { key: "'", mod: true, run: (cmd) => copyFromAbove(cmd), label: 'Copy the cell above, unchanged' },
+  { key: '"', code: 'Quote', mod: true, shift: true, run: (cmd) => copyValueFromAbove(cmd), label: 'Copy the value of the cell above' },
+  { key: '&', code: 'Digit7', mod: true, shift: true, run: (cmd) => applyBorders(cmd, 'outside'), label: 'Outline border' },
+  { key: '_', code: 'Minus', mod: true, shift: true, run: (cmd) => applyBorders(cmd, 'none'), label: 'Remove borders' },
   { key: '=', alt: true, run: autoSum, label: 'AutoSum the run above or to the left' },
 
   // Formatting. These decline when no format store is attached, so the key
@@ -290,6 +614,19 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: '5', code: 'Digit5', mod: true, shift: true, run: preset('percent'), label: 'Percent format' },
   { key: '6', code: 'Digit6', mod: true, shift: true, run: preset('scientific'), label: 'Scientific format' },
   { key: '`', code: 'Backquote', mod: true, shift: true, run: preset('general'), label: 'General format' },
+  { key: '>', code: 'Period', mod: true, shift: true, run: nudgeFontSize(1), label: 'Increase font size' },
+  { key: '<', code: 'Comma', mod: true, shift: true, run: nudgeFontSize(-1), label: 'Decrease font size' },
+
+  // What the ribbon's tooltips promise: the same actions from the keyboard.
+  { key: 'F9', run: raise('recalculate'), label: 'Recalculate' },
+  { key: '`', code: 'Backquote', mod: true, run: raise('toggle-formulas'), label: 'Show formulas' },
+  { key: 'l', mod: true, shift: true, run: raise('toggle-filter'), label: 'Filter' },
+  { key: 'F3', shift: true, run: raise('insert-function'), label: 'Insert Function' },
+  { key: 'F2', shift: true, run: raise('edit-comment'), label: 'Insert or edit the comment on the active cell' },
+  { key: 'ArrowDown', alt: true, run: raise('open-list'), label: 'Open the list a validated cell offers' },
+  { key: 'F1', mod: true, run: raise('toggle-ribbon'), label: 'Collapse or expand the ribbon' },
+  { key: 'F3', mod: true, run: raise('name-manager'), label: 'Name Manager' },
+  { key: 't', mod: true, run: raise('insert-table'), label: 'Format as Table' },
 
   // Structure. Like the format bindings, these decline when nothing is
   // attached. Excel opens a dialog for an ambiguous selection; deciding what
@@ -297,6 +634,12 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   // the consumer can bind its own dialog.
   { key: '+', code: 'Equal', mod: true, shift: true, run: (cmd) => structural(cmd, 'insert'), label: 'Insert rows or columns' },
   { key: '-', mod: true, run: (cmd) => structural(cmd, 'delete'), label: 'Delete rows or columns' },
+  // Hide and Unhide are raised, as Freeze is: the sheet shell keeps what
+  // is hidden per sheet and moves it with an insert or delete.
+  { key: '9', code: 'Digit9', mod: true, run: raise('hide-rows'), label: 'Hide the selected rows' },
+  { key: '0', code: 'Digit0', mod: true, run: raise('hide-columns'), label: 'Hide the selected columns' },
+  { key: '(', code: 'Digit9', mod: true, shift: true, run: raise('unhide-rows'), label: 'Unhide rows in the selection' },
+  { key: ')', code: 'Digit0', mod: true, shift: true, run: raise('unhide-columns'), label: 'Unhide columns in the selection' },
   { key: 'h', mod: true, run: (cmd) => {
     if (!onFindReplace || !getFindTarget()) return false
     onFindReplace(cmd)
@@ -353,14 +696,15 @@ function matches(binding: SheetBinding, event: KeyboardEvent): boolean {
  * The handler registered with the grid. Returns true when a binding ran, which
  * is what tells the grid to stop and not interpret the key itself.
  *
- * Mid-edit keys are left alone for now: every phase-1 binding acts on the
- * selection, and claiming Ctrl+D while someone is typing in a cell would eat a
- * keystroke they meant for the editor. Alt+Enter and F4 arrive with the editor
- * work and will check `cmd.editing` themselves.
+ * A binding marked `editing` runs only inside the editor and the others
+ * only outside it: Ctrl+D while someone is typing in a cell is a keystroke
+ * they meant for the text, and F4 on the grid root has nothing to pin.
+ * Alt+Enter needs no binding: the grid's multiline text editor takes it as
+ * a line break itself.
  */
 export function handleSheetKey(event: KeyboardEvent, cmd: GridCommandContext): boolean {
-  if (cmd.editing) return false
   for (const binding of SHEET_BINDINGS) {
+    if ((binding.editing ?? false) !== cmd.editing) continue
     if (!matches(binding, event)) continue
     if (!binding.run(cmd, event)) return false
     event.preventDefault()

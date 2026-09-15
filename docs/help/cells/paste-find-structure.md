@@ -35,9 +35,27 @@ await navigator.clipboard.write([
 ])
 ```
 
-The HTML is a plain `<table>`. Formats ride on inline styles every app reads;
-the formula travels in a `data-formula` attribute they all ignore. So a paste
-into Excel keeps the look, and a paste back into the grid keeps the formula.
+The HTML is a plain `<table>`. Formats ride on inline styles every app reads,
+with Excel's own `mso-number-format` beside them so Excel keeps the number
+format rather than guessing one from the text; the number behind a formatted
+display rides in Excel's `x:num`; the formula travels in a `data-formula`
+attribute they all ignore. So a paste into Excel keeps the look and the
+numbers, and a paste back into the grid keeps the formula.
+
+`parseClipboardHtml` reads the other direction. Excel's clipboard puts every
+cell's format in a `<style>` block keyed by class, the formula in `x:fmla`
+and the raw number in `x:num`; Google Sheets writes `data-sheets-value`,
+`data-sheets-numberformat` and `data-sheets-formula` (in R1C1). All of
+them come through: the cell's `text` is the number when the source wrote
+one, its `format` carries `numFmt`, bold, italic, colour, fill, font and
+wrap, and `formula` is what the source held. `resolvePasteCell` turns an
+R1C1 formula into A1 for the cell it lands in when you pass the destination
+as its fifth argument. Excel's formulas come as written, since its HTML
+says nothing about where they were copied from; `anchorForeignFormulas`
+settles them the way the shell does: a formula whose references all fall
+inside the block, read as if copied from A1, is kept with that origin so
+the paste moves it, and one that reaches outside the block is replaced by
+its value.
 
 The second argument records where the copy came from, which is how a pasted
 formula knows how far it moved. Omit it and references paste unshifted, which
@@ -82,12 +100,41 @@ non-numeric cell or a divide by zero **skips** rather than writing `NaN`.
 `Ctrl+Shift+V` calls the handler you register with `setPasteSpecialHandler`.
 The keyboard layer owns the key; the dialog is yours.
 
-### The inbound grid hook
+### The grid's clipboard hooks
 
-`@svgrid/grid` gained `processCellFromClipboard`, symmetric with the existing
-`processCellForClipboard`. It receives the raw clipboard text and what the grid
-would have written, and returns the value to write, or `undefined` to leave the
-cell alone:
+`@svgrid/grid` has two per-cell hooks, `processCellForClipboard` on the way
+out and `processCellFromClipboard` on the way in, and two whole-clipboard
+ones for the HTML flavour:
+
+```svelte
+<SvGrid
+  clipboardHtml={({ rects, text }) => buildClipboardPayload(gridOf(rects)).html}
+  onPasteClipboard={({ text, html, source }) => {
+    const grid = html ? parseClipboardHtml(html) : null
+    if (!grid) return          // plain text: the grid pastes it as usual
+    landBlock(grid)
+    return true                // handled; the grid writes nothing itself
+  }}
+/>
+```
+
+`clipboardHtml` runs once per copy, after the text is assembled; return the
+HTML to put beside it, or nothing for a text-only copy. The grid writes both
+through the `copy` event (`execCommand`), so it works on plain HTTP too,
+and through `navigator.clipboard.write` where the event is refused.
+
+`onPasteClipboard` runs on Ctrl+V and on a Paste command with the text and,
+when the clipboard has one, the HTML. With the hook set the grid leaves the
+key to the browser, so the native `paste` event delivers the HTML as the
+source wrote it (`source: 'event'`); where the event does not arrive, the
+async clipboard is read for both types (`source: 'async'`). Return `true`
+once you have written the cells; anything else lets the grid paste the text
+the way it always has. Whatever the hook writes lands in one undo step with
+the grid's own writes.
+
+`processCellFromClipboard` receives the raw clipboard text and what the grid
+would have written, and returns the value to write, or `undefined` to leave
+the cell alone:
 
 ```svelte
 <SvGrid
@@ -95,6 +142,17 @@ cell alone:
     text.startsWith('=') ? text : parsedValue}
 />
 ```
+
+### Writes that ask first
+
+Every command here writes through `cmd.setCellValue`, which trusts its
+caller. A sheet that refuses some cells (a protected sheet with locked
+cells) says so through `cmd.canEdit(r, c)`, the grid's own editability
+answer, and the fills, stamps, AutoSum and the copies from above skip a
+cell that says no. The format target can refuse a change too
+(`guard(rects)`, with `refused()` called when it does), and the
+structure target can refuse an insert or delete (`canApply(edit)`), which
+is how the ribbon knows to grey Bold and Insert on a protected sheet.
 
 ## Find and Replace
 
@@ -243,6 +301,27 @@ removeDuplicates(rows, (r) => [r.email], { matchCase: true })
 
 Comparison is **case-insensitive** by default, matching Excel. That surprises
 people, which is exactly why it matches rather than being tidier.
+
+## More examples
+
+### Paste from Excel: formats and formulas survive
+
+Excel puts an HTML document on the clipboard beside the tab-separated text: formats in a style block keyed by class, formulas in x:fmla, raw numbers in x:num. The sheet reads it, so a pasted block arrives bold, filled, with its number formats, and with its formulas moved to where they landed; Google Sheets' data-sheets-formula flavour reads the same. Two buttons put exactly what Excel and Sheets put on the clipboard; click a cell and Ctrl+V.
+
+<div data-docs-demo="466-paste-from-excel" data-height="560"></div>
+
+
+### Paste Special, Find/Replace
+
+The three Excel operations that write more than one cell: Paste Special (values / formulas / formats / transpose / arithmetic, with a text/html clipboard flavour so formats survive a round trip through Excel), Find and Replace that searches what you SEE but writes what you TYPED so a formula is not destroyed by replacing its result, and insert/delete that rewrites every formula - inserting above =SUM(B1:B4) widens it instead of dropping the new row.
+
+<div data-docs-demo="454-paste-find-structure" data-height="560"></div>
+
+### Data cleanup: Text to Columns, Remove Duplicates
+
+A CRM export landed in column A, semicolon-separated, with the same people in it twice. Data -> Text to Columns opens a wizard that has already guessed the delimiter and previews the split; Data -> Remove Duplicates lets you tick the columns that decide identity, compares case-insensitively like Excel, and reports "3 duplicate values found and removed; 11 unique values remain". Each operation is one Ctrl+Z.
+
+<div data-docs-demo="458-data-cleanup" data-height="560"></div>
 
 ## See also
 

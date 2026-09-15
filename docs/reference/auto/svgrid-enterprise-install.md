@@ -130,6 +130,10 @@ export function installEnterprise<
   registerExportProvider(exportGrid as never)
   enablePivot()
   enableAdvancedFilter()
+  // Register the Excel keymap (Ctrl+Arrow, Ctrl+D, Ctrl+A and the rest). The
+  // grid interprets a key itself only when nothing claims it, so a free grid
+  // is unaffected.
+  enableSheet()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

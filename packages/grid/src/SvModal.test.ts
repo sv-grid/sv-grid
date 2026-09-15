@@ -38,6 +38,15 @@ describe('SvModal', () => {
     } finally { destroy() }
   })
 
+  it('takes an exact width over the size preset', () => {
+    const { destroy } = mountModal({ open: true, size: 'sm', width: 440 })
+    try {
+      const el = dialog()!
+      expect(el.classList.contains('sv-modal--sm')).toBe(true)
+      expect(el.style.width).toBe('440px')
+    } finally { destroy() }
+  })
+
   it('locks body scroll while open and restores it on close', () => {
     document.body.style.overflow = 'auto'
     const { destroy } = mountModal({ open: true })
