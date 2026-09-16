@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-15 from 379 pages, 18 comparison pages, plus 66 API reference pages.
+Generated 2026-09-16 from 379 pages, 18 comparison pages, plus 66 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -72410,7 +72410,7 @@ project, with no local setup.
   `<sv-grid>` like any built-in element.
 - **One bundle, no framework lock-in.** Ship a single file to a CDN; consumers
   add one `<script type="module">` and a tag.
-- **The whole grid.** 98 properties and 20 events, so virtualization,
+- **The whole grid.** 104 properties and 23 events, so virtualization,
   Excel-style filters, inline editing, grouping, tree data, pinning, pagination
   and the enterprise features are all reachable - not a hand-picked subset. The
   surface is **generated** from `<SvGrid>`'s own `Props` type and CI fails if
@@ -73243,7 +73243,7 @@ local setup, nothing to configure.
 | Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` | `<SvGrid :data="rows" :columns="cols" sortable filterable />` |
 | Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` | `<sv-grid [data]="rows" [columns]="cols" [sortable]="true" />` |
 
-That is the whole integration. All 98 properties and 20 events of the grid are
+That is the whole integration. All 104 properties and 23 events of the grid are
 typed props on every one of them.
 
 **Or skip step 1** and open a working project right now:
@@ -73590,7 +73590,7 @@ export default function Screen() {
 ```
 
 That is the whole integration. The component is generated from `<SvGrid>`'s
-own types, so all 98 properties and 20 events are typed props, and it works the
+own types, so all 104 properties and 23 events are typed props, and it works the
 same on React 17, 18 and 19.
 
 ## Why the wrapper rather than the raw element
@@ -74204,8 +74204,8 @@ flag can switch it, so no attribute can either.
 </script>
 ```
 
-Everything else is identical: the same 98 properties, the same 72 attributes,
-the same 20 events. Events are dispatched `composed: true`, so
+Everything else is identical: the same 104 properties, the same 74 attributes,
+the same 23 events. Events are dispatched `composed: true`, so
 `addEventListener` on the host works exactly as it does on `<sv-grid>`.
 
 
