@@ -22,8 +22,8 @@ flag can switch it, so no attribute can either.
 </script>
 ```
 
-Everything else is identical: the same 98 properties, the same 72 attributes,
-the same 20 events. Events are dispatched `composed: true`, so
+Everything else is identical: the same 104 properties, the same 74 attributes,
+the same 23 events. Events are dispatched `composed: true`, so
 `addEventListener` on the host works exactly as it does on `<sv-grid>`.
 
 

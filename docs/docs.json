@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-15T23:33:13.428Z",
+  "generatedAt": "2026-09-16T00:05:01.739Z",
   "counts": {
     "pages": 379,
     "enterprise": 55,
@@ -5454,7 +5454,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 725,
-      "lastUpdated": "2026-09-06",
+      "lastUpdated": "2026-09-16",
       "demoIds": []
     },
     {
@@ -5495,7 +5495,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 788,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-16",
       "demoIds": []
     },
     {
@@ -5535,13 +5535,13 @@
       "path": "help/web-components/react.md",
       "url": "/docs/help/web-components/react/",
       "title": "SvGrid in React",
-      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 98 properties and 20 events are typed props, and it works the same on React 17, 18 and 19.",
+      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 104 properties and 23 events are typed props, and it works the same on React 17, 18 and 19.",
       "section": "help/web-components",
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
       "words": 2547,
-      "lastUpdated": "2026-09-06",
+      "lastUpdated": "2026-09-16",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -5556,7 +5556,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 631,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-16",
       "demoIds": [
         "10-custom-cells-and-themes",
         "04-selection-copy-paste"
