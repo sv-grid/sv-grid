@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element, plus <sv-grid-shadow> for an open shadow root and <sv-chart> for the standalone chart). Drop into React, Vue, Angular, or plain HTML - no build step required.",
   "type": "module",
   "license": "MIT",
