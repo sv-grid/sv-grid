@@ -49,6 +49,11 @@ credit you by name, and can be upvoted on GitHub.
   repository's MIT license.
 - Reviewers check that it compiles, is on-topic (a grid demo), and is something
   you'd be comfortable pasting into your own app.
+- **Only this folder.** Community PRs may add or update demos here and nothing
+  else; a check on the PR fails if any other file is touched. Found a bug in the
+  grid while building your demo? Open an issue and the team will fix it.
+  Run the same check locally before pushing:
+  `node tools/check-community-demo.mjs examples/src/demos/community/<your-slug>.svelte`
 
 ## Upvotes (GitHub-native stars)
 

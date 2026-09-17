@@ -1,0 +1,117 @@
+name: Community demo guard
+
+# Outside contributions are accepted for community demos only. This check
+# enforces that on every pull request:
+#
+#   - A PR from an owner, org member or collaborator passes untouched. The
+#     Test workflow covers their code.
+#   - A PR from anyone else must touch nothing but .svelte files under
+#     examples/src/demos/community/ (the template and README excluded). Each
+#     file needs the attribution header, may import only from @svgrid/grid
+#     and @svgrid/enterprise, and must compile with the Svelte 5 compiler.
+#
+# Make this check required in branch protection so a failing guard blocks the
+# merge button. Review is still yours: CODEOWNERS routes every PR to the
+# maintainers, and "Require review from Code Owners" makes that binding.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: community-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Outside PRs touch community demos only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Classify the author and the changed files
+        id: classify
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const TRUSTED = new Set(['OWNER', 'MEMBER', 'COLLABORATOR'])
+            const DIR = 'examples/src/demos/community/'
+            const EXCLUDED = new Set([DIR + 'README.md', DIR + 'example-status-board.svelte'])
+            const SLUG = /^examples\/src\/demos\/community\/[a-z0-9]+(?:-[a-z0-9]+)*\.svelte$/
+
+            const pr = context.payload.pull_request
+            const association = pr.author_association
+            core.info(`Author @${pr.user.login}, association ${association}`)
+
+            if (TRUSTED.has(association)) {
+              core.info('Trusted author: the guard does not apply.')
+              core.setOutput('files', '')
+              return
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            })
+
+            const problems = []
+            const demos = []
+            for (const f of files) {
+              const name = f.filename
+              if (f.status === 'removed' || f.status === 'renamed') {
+                problems.push(`${name}: community PRs may add or update demos, not remove or rename them`)
+                continue
+              }
+              if (EXCLUDED.has(name)) {
+                problems.push(`${name}: the template and README are maintained by the team`)
+                continue
+              }
+              if (!SLUG.test(name)) {
+                problems.push(`${name}: outside ${DIR} or not a kebab-case .svelte file`)
+                continue
+              }
+              demos.push({ name, added: f.status === 'added' })
+            }
+
+            if (demos.length === 0 && problems.length === 0) {
+              problems.push('No community demo in this PR')
+            }
+
+            if (problems.length) {
+              core.summary.addHeading('Community demo guard')
+              core.summary.addRaw(
+                'Pull requests from outside the team are accepted for community demos only. ' +
+                'See examples/src/demos/community/README.md. For anything else, open an issue and the team will take it from there.\n\n',
+              )
+              core.summary.addList(problems)
+              await core.summary.write()
+              core.setFailed(problems.join('\n'))
+              return
+            }
+
+            core.setOutput('files', JSON.stringify(demos))
+
+      - uses: actions/checkout@v5
+        if: steps.classify.outputs.files != ''
+
+      - name: Check headers, imports and encoding
+        if: steps.classify.outputs.files != ''
+        env:
+          FILES: ${{ steps.classify.outputs.files }}
+        run: node tools/check-community-demo.mjs
+
+      - name: Compile each demo with the Svelte 5 compiler
+        if: steps.classify.outputs.files != ''
+        env:
+          FILES: ${{ steps.classify.outputs.files }}
+        run: |
+          mkdir -p /tmp/svelte-compile && cd /tmp/svelte-compile
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund svelte@5 >/dev/null
+          cd "$GITHUB_WORKSPACE"
+          NODE_PATH=/tmp/svelte-compile/node_modules node tools/check-community-demo.mjs --compile
