@@ -14,6 +14,29 @@ Only `packages/grid`, `packages/grid-wc`, `packages/svgrid-ui`, and the two
 Enterprise pack, Studio, the MCP server, and the website are commercial: bug
 reports are very welcome, pull requests against them are not.
 
+## Repository layout
+
+This is a **pnpm workspace** monorepo:
+
+```
+packages/grid/            @svgrid/grid          - MIT data grid + UI component suite
+packages/enterprise/      @svgrid/enterprise    - paid feature pack + Studio codegen
+packages/studio/          @svgrid/studio        - Studio CLI + visual designer
+packages/mcp/             @svgrid/mcp           - MCP server
+packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
+packages/svgrid-ui/       @svgrid/ui            - UI component CLI
+packages/create-sv-grid/  @svgrid/create        - grid scaffolder
+packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
+packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
+packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
+examples/                                       - 370+ live demos
+website/                                        - svgrid.com source (private submodule)
+docs/                                           - markdown docs
+```
+
+`website/` is a private git submodule, so a fresh clone shows it as an empty
+directory. Nothing in the MIT packages depends on it.
+
 ## Setup
 
 ```bash
@@ -23,7 +46,53 @@ pnpm dev                  # demo gallery at http://localhost:5174
 ```
 
 Node 18+ is required. The example gallery links the library through the
-workspace, so edits in `packages/grid/src/**` hot-reload with no rebuild.
+workspace (`"@svgrid/grid": "workspace:*"`), so edits in `packages/grid/src/**`
+hot-reload with no rebuild.
+
+Other commands you will reach for:
+
+```bash
+pnpm build              # build packages/grid/dist
+pnpm build:example      # build the demo gallery
+pnpm test               # run the grid test suite
+pnpm test:types         # type-check every package
+pnpm lint               # encoding + mobile-CSS + API-example checks, then eslint
+pnpm size               # re-measure the gzipped bundle
+pnpm demos:count        # re-count the live demos
+pnpm ssr:check          # verify the SSR output against a real server build
+```
+
+## Library entry points
+
+```ts
+import {
+  SvGrid,
+  FlexRender,
+  // headless core + row-model factories
+  createSvGrid,
+  createCoreRowModel,
+  createFilteredRowModel,
+  createSortedRowModel,
+  createGroupedRowModel,
+  createExpandedRowModel,
+  createPaginatedRowModel,
+  // features
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+  columnGroupingFeature,
+  rowExpandingFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  // cell renderers
+  renderSnippet,
+  renderComponent,
+} from '@svgrid/grid'
+```
+
+The markdown docs in [`docs/`](docs/) are the source for svgrid.com/docs:
+[getting started](docs/getting-started.md), [why headless?](docs/why-headless.md),
+the [help index](docs/help/index.md) and the [bundle size](docs/reference/bundle-size.md) page.
 
 ## Before you open a PR
 
