@@ -9,10 +9,50 @@ kinds of contributions we take, and the conventions the codebase follows.
 - **Questions and ideas** go in [Discussions](https://github.com/sv-grid/sv-grid/discussions).
 - **Security vulnerabilities** do not go in either. See [SECURITY.md](SECURITY.md).
 
-Only `packages/grid`, `packages/grid-wc`, `packages/svgrid-ui`, and the two
-`create-*` scaffolders are MIT-licensed and open to code contributions. The
-Enterprise pack, Studio, the MCP server, and the website are commercial: bug
-reports are very welcome, pull requests against them are not.
+## What we accept from outside the team
+
+**Community demos.** Pull requests from outside the team are accepted for one
+thing: a demo under `examples/src/demos/community/`. Copy the template, keep it
+to one self-contained file, open a PR. The
+[community demo guard](.github/workflows/community-demo-guard.yml) checks the
+header, the imports and that it compiles, and a maintainer reviews the rest.
+The full recipe is in
+[examples/src/demos/community/README.md](examples/src/demos/community/README.md).
+
+**Everything else goes through an issue.** The grid, the packages and the docs
+are written by the maintainers so that one team stays accountable for code
+quality and for the API that paying customers depend on. If you found a bug,
+have a fix in mind, or want a feature, open an issue with a minimal
+reproduction or a sketch of the change, and we will take it from there. A PR
+against the packages from outside the team is closed with thanks and a pointer
+here; the idea is not lost, the code is just ours to write.
+
+Of the packages, only `packages/grid`, `packages/grid-wc`, `packages/svgrid-ui`,
+`packages/migrate`, `packages/svgrid-sv`, `packages/mcp` and the two `create-*`
+scaffolders are MIT. The Enterprise pack, Studio and the website are commercial.
+
+## Repository layout
+
+This is a **pnpm workspace** monorepo:
+
+```
+packages/grid/            @svgrid/grid          - MIT data grid + UI component suite
+packages/enterprise/      @svgrid/enterprise    - paid feature pack + Studio codegen
+packages/studio/          @svgrid/studio        - Studio CLI + visual designer
+packages/mcp/             @svgrid/mcp           - MCP server
+packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
+packages/svgrid-ui/       @svgrid/ui            - UI component CLI
+packages/create-sv-grid/  @svgrid/create        - grid scaffolder
+packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
+packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
+packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
+examples/                                       - 370+ live demos
+website/                                        - svgrid.com source (private submodule)
+docs/                                           - markdown docs
+```
+
+`website/` is a private git submodule, so a fresh clone shows it as an empty
+directory. Nothing in the MIT packages depends on it.
 
 ## Setup
 
@@ -23,7 +63,53 @@ pnpm dev                  # demo gallery at http://localhost:5174
 ```
 
 Node 18+ is required. The example gallery links the library through the
-workspace, so edits in `packages/grid/src/**` hot-reload with no rebuild.
+workspace (`"@svgrid/grid": "workspace:*"`), so edits in `packages/grid/src/**`
+hot-reload with no rebuild.
+
+Other commands you will reach for:
+
+```bash
+pnpm build              # build packages/grid/dist
+pnpm build:example      # build the demo gallery
+pnpm test               # run the grid test suite
+pnpm test:types         # type-check every package
+pnpm lint               # encoding + mobile-CSS + API-example checks, then eslint
+pnpm size               # re-measure the gzipped bundle
+pnpm demos:count        # re-count the live demos
+pnpm ssr:check          # verify the SSR output against a real server build
+```
+
+## Library entry points
+
+```ts
+import {
+  SvGrid,
+  FlexRender,
+  // headless core + row-model factories
+  createSvGrid,
+  createCoreRowModel,
+  createFilteredRowModel,
+  createSortedRowModel,
+  createGroupedRowModel,
+  createExpandedRowModel,
+  createPaginatedRowModel,
+  // features
+  tableFeatures,
+  rowSortingFeature,
+  columnFilteringFeature,
+  columnGroupingFeature,
+  rowExpandingFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  // cell renderers
+  renderSnippet,
+  renderComponent,
+} from '@svgrid/grid'
+```
+
+The markdown docs in [`docs/`](docs/) are the source for svgrid.com/docs:
+[getting started](docs/getting-started.md), [why headless?](docs/why-headless.md),
+the [help index](docs/help/index.md) and the [bundle size](docs/reference/bundle-size.md) page.
 
 ## Before you open a PR
 
@@ -46,13 +132,13 @@ pnpm demos:count          # live demo count
 
 ## Adding a demo
 
-Demos live in `examples/src/demos/<id>-<slug>.svelte`. Every demo must also be
-registered in `website/src/lib/demos.ts` with a matching id, or
-`pnpm demos:count` will fail. The website reuses the same `.svelte` files but
-keeps its own curated list.
-
-Community demos are a lighter path: see
+Community demos (the path for everyone) are covered in
 [examples/src/demos/community/README.md](examples/src/demos/community/README.md).
+
+Gallery demos (maintainers) live in `examples/src/demos/<id>-<slug>.svelte`.
+Every gallery demo must also be registered in `website/src/lib/demos.ts` with a
+matching id, or `pnpm demos:count` will fail. The website reuses the same
+`.svelte` files but keeps its own curated list.
 
 ## Conventions
 
@@ -73,5 +159,6 @@ User-visible changes need a changeset. See
 
 ## Licensing of contributions
 
-By submitting a pull request against an MIT-licensed package, you agree that
-your contribution is licensed under that package's MIT License.
+By submitting a pull request, you agree that your contribution is licensed
+under the MIT License. Community demos ship under the same MIT terms as
+`@svgrid/grid`.
