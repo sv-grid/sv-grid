@@ -7,6 +7,7 @@ Three GitHub Actions keep the packages and the blog moving without manual work.
 | Blog post (twice weekly) | [daily-blog.yml](workflows/daily-blog.yml) | Tue + Fri 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
 | Publish npm packages | [publish-npm.yml](workflows/publish-npm.yml) | after every green Test run on `main`, plus 06:37 | Publishes each public `@svgrid/*` package whose shipped files changed. |
 | Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Regenerates the blog's SEO structure (tips pages, pillar hubs, "Related reading" blocks), then rebuilds the site so posts whose date has arrived go live. |
+| Community demo guard | [community-demo-guard.yml](workflows/community-demo-guard.yml) | every pull request | Lets a PR from outside the team through only if it adds or updates community demos: path check, header, imports, Svelte compile. Team PRs pass untouched. |
 | Tutorials (record) | [tutorials.yml](workflows/tutorials.yml) | manual | Re-records the 30-second tutorials (`tools/tutorials/`): drives each demo in the gallery with Playwright, narrates it with ElevenLabs, muxes with ffmpeg, embeds the clip + transcript on its docs page, commits the media to the website and the manifest + docs here; keeps the YouTube masters as an artifact. |
 
 ## Required secrets and variables
