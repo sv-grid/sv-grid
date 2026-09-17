@@ -17,6 +17,10 @@ permissions:
 jobs:
   test:
     name: Lint, type-check, unit tests + coverage
+    # Fork PRs cannot read the private website submodule (no WEBSITE_TOKEN),
+    # so this job cannot run for them. They are limited to community demos,
+    # which the Community demo guard workflow checks instead.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -25,7 +29,7 @@ jobs:
       # member (else `pnpm install --frozen-lockfile` fails on the missing
       # importer). Only the submodule fetch uses WEBSITE_TOKEN (read access to
       # sv-grid/website); the main checkout stays on the default token. Fork PRs
-      # lack the secret and will fail here - accepted, per the private submodule.
+      # are skipped by the job-level `if` above because they lack the secret.
       - name: Check out the private website submodule
         env:
           WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}

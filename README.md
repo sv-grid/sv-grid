@@ -181,8 +181,9 @@ properties. Tailwind works too, see the [Tailwind guide](https://svgrid.com/docs
 
 - **Bug or feature request?** [Open an issue](https://github.com/sv-grid/sv-grid/issues).
 - **Question or showing something you built?** [Discussions](https://github.com/sv-grid/sv-grid/discussions).
-- **Want to contribute?** [CONTRIBUTING.md](CONTRIBUTING.md) covers setup, repo layout and conventions. Issues tagged
-  [help wanted](https://github.com/sv-grid/sv-grid/labels/help%20wanted) are a good place to start.
+- **Built something worth showing?** Add a [community demo](examples/src/demos/community/README.md). It gets your
+  name on it, a place in the playground and upvotes. Bugs and feature ideas go through issues; the team writes the
+  package code. See [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Security issue?** [SECURITY.md](SECURITY.md).
 - **What is not built yet?** The [roadmap](https://svgrid.com/roadmap/) and the [missing features](docs/help/missing-features.md) list.
 
