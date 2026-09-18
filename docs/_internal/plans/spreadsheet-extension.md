@@ -63,6 +63,15 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Phase F item 3: collaboration. `sheet/delta.ts` with `createDeltaStream`,
+  `applySheetDelta` and four delta kinds (cells as raw text, a structural
+  edit, one part of one sheet's state, the whole document for sheets and a
+  restore), last-writer-wins per cell and said so. It needed three seams
+  that ship on their own: `workbook.subscribeWrites`, `document.patch`, and
+  a shell that follows its document rather than waiting for `refresh()`.
+  Demo 478 wires two sheets together and logs the wire. Presence is left
+  where the plan put it, as a grid overlay over the selection. Phase F is
+  complete but for item 2, which the bench says is not called for yet.
 - Phase F item 1: the spreadsheet bench. `tools/bench/sheet-cases.mjs` fills
   a sheet with a formula per row at 1k, 10k and 50k, times opening it and
   one keystroke in it (plain, under a 10k-cell SUM, and at the top of a 10k
@@ -353,11 +362,14 @@ own, and a sparkline is an x14 extension).
    about 84 MB. The one thing it did say, a deep chain overflowing the
    stack, is fixed. Revisit at 500k rows, or when a sheet arrives that is
    mostly empty, where dense `string[][]` storage is the waste.
-3. Collaboration: turn `SheetChangeReason` into a delta stream (each
+3. ~~Collaboration: turn `SheetChangeReason` into a delta stream (each
    reason already names its sheet and kind; add the payload), an
    `applyDelta` on the document, and a recipe with a socket server. Presence
    (other users' active cells) is a grid overlay. Conflict handling starts as
-   last-writer-wins per cell, documented as such.
+   last-writer-wins per cell, documented as such.~~ Shipped as
+   `createDeltaStream` / `applySheetDelta`, with the socket recipe in the
+   shell's docs and demo 478. Presence is still a grid overlay and still to
+   do.
 
 ## 4. Rules that apply to every phase
 

@@ -158,6 +158,13 @@ export type SheetDocument = {
   setState(state: SheetState): void
   /** Hear about changes, once per tick with every reason since the last call. */
   subscribe(listener: (reasons: ReadonlyArray<SheetChangeReason>) => void): () => void
+  /**
+   * Put back only the parts `entry` names, leaving the rest of the sheet as
+   * it is: what a delta from another user applies, and what a host that
+   * wants to set one feature calls. Reports the change, so the shell
+   * repaints; wrap it in `mute` where it should not.
+   */
+  patch(name: string, entry: Partial<SheetStateEntry>): void
   /** Record a change. Coalesced per microtask; silent while muted. */
   changed(reason: SheetChangeReason): void
   /** Run `fn` without reporting changes: restores and mount-time seeding. */
@@ -171,6 +178,27 @@ export type SheetDocumentInit = {
   /** A saved document to start from; wins over `sheets`. */
   state?: SheetState
 }
+
+/** Which change a patched part of a sheet counts as, so listeners hear it. */
+function reasonsForEntry(entry: Partial<SheetStateEntry>): SheetChangeReason[] {
+  const out: SheetChangeReason[] = []
+  if (entry.formats !== undefined) out.push({ kind: 'formats' })
+  if (entry.columnWidths !== undefined || entry.rowHeights !== undefined) out.push({ kind: 'sizes' })
+  if (entry.hidden !== undefined || entry.sheetHidden !== undefined) out.push({ kind: 'hidden' })
+  if (entry.freeze !== undefined) out.push({ kind: 'freeze' })
+  if (entry.comments !== undefined) out.push({ kind: 'comments' })
+  if (entry.protected !== undefined || entry.protection !== undefined) out.push({ kind: 'protection' })
+  if (entry.pageSetup !== undefined) out.push({ kind: 'page-setup' })
+  if (entry.objects !== undefined) out.push({ kind: 'objects' })
+  if (entry.sparklines !== undefined) out.push({ kind: 'sparklines' })
+  if (entry.pivots !== undefined) out.push({ kind: 'pivots' })
+  if (entry.merges !== undefined) out.push({ kind: 'merges' })
+  if (entry.validation !== undefined) out.push({ kind: 'validation' })
+  if (entry.conditionalFormats !== undefined) out.push({ kind: 'conditional-formats' })
+  if (entry.autoFilter !== undefined) out.push({ kind: 'filter' })
+  return out
+}
+
 
 function emptySheetState(): PerSheetState {
   return {
@@ -265,6 +293,47 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     }
   }
 
+  /**
+   * Put back only the parts an entry names, leaving the rest as they are.
+   * `hydrateEntry` below is the whole-sheet version, which resets what is
+   * absent to its default; this one is what a delta applies, since a delta
+   * carries the one feature that changed.
+   */
+  function patchEntry(state: PerSheetState, entry: Partial<SheetStateEntry>) {
+    if (entry.formats !== undefined) state.formats.hydrate(entry.formats)
+    if (entry.columnWidths !== undefined) state.widths = { ...entry.columnWidths }
+    if (entry.rowHeights !== undefined) state.heights = new Map(entry.rowHeights)
+    if (entry.hidden !== undefined) state.hidden = { rows: new Set(entry.hidden.rows ?? []), cols: new Set(entry.hidden.cols ?? []) }
+    if (entry.freeze !== undefined) state.freeze = { rows: entry.freeze.rows ?? 0, cols: entry.freeze.cols ?? 0 }
+    if (entry.comments !== undefined) state.notes = Object.fromEntries(Object.entries(entry.comments).map(([r, line]) => [r, copyLine(line)]))
+    if (entry.protected !== undefined) state.protected = entry.protected
+    if (entry.protection !== undefined) state.protection = copyProtection({ allow: entry.protection.allow ?? {}, ranges: entry.protection.ranges ?? [] })
+    if (entry.pageSetup !== undefined) state.pageSetup = copyPageSetup({ ...defaultPageSetup(), ...entry.pageSetup })
+    if (entry.objects !== undefined) state.objects = entry.objects.map(copyObject)
+    if (entry.sparklines !== undefined) state.sparklines = entry.sparklines.map(copySparkline)
+    if (entry.pivots !== undefined) state.pivots = entry.pivots.map(copyPivot)
+    if (entry.sheetHidden !== undefined) state.sheetHidden = entry.sheetHidden
+    if (entry.merges !== undefined) state.merges = entry.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
+    if (entry.validation !== undefined) {
+      state.validation = entry.validation.map((rule) => ({
+        ...rule,
+        rects: rule.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const),
+        alert: { ...rule.alert },
+      }))
+    }
+    if (entry.conditionalFormats !== undefined) {
+      state.conditionalFormats = entry.conditionalFormats.map((rule) => ({
+        ...rule,
+        rects: rule.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const),
+      }))
+    }
+    if (entry.autoFilter !== undefined) {
+      const af = entry.autoFilter
+      state.autoFilter = af ? { range: [af.range[0], af.range[1], af.range[2], af.range[3]] as const, filters: { ...af.filters } } : null
+      state.filterHidden = new Set()
+    }
+  }
+
   function hydrateEntry(state: PerSheetState, entry: Partial<SheetStateEntry>) {
     state.formats.hydrate(entry.formats ?? {})
     state.widths = { ...(entry.columnWidths ?? {}) }
@@ -297,6 +366,10 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
   const document: SheetDocument = {
     workbook,
     get,
+    patch(name, entry) {
+      patchEntry(get(name), entry)
+      for (const reason of reasonsForEntry(entry)) changed(reason)
+    },
     has: (name) => entries.has(key(name)),
     rename(from, to) {
       const moved = entries.get(key(from))

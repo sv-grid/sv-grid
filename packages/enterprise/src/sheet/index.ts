@@ -87,6 +87,10 @@ export {
   type SheetPivot, type SheetPivotValue, type SheetPivotAgg,
 } from './pivot-range'
 export {
+  createDeltaStream, applySheetDelta, partsOfReasons,
+  type SheetDelta, type SheetDeltaStream, type SheetDeltaOptions, type SheetCellWrite,
+} from './delta'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './hyperformula-engine'

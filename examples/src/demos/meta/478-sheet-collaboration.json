@@ -1,0 +1,24 @@
+{
+  "description": "Two Svelte 5 spreadsheets over two separate documents, kept in step by a delta stream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes. A formula travels as its text, so the other side works out its own answer; an insert travels as the edit, so both sides rewrite their own formulas; a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell. A real app puts a socket in the middle with the same onDelta out and apply in. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet collaboration",
+    "svelte sheet realtime sync",
+    "svelte collaborative spreadsheet",
+    "svelte sheet delta stream",
+    "svelte spreadsheet websocket"
+  ],
+  "faq": [
+    {
+      "question": "What actually crosses the wire?",
+      "answer": "A delta of one of four kinds: the raw text of the cells that were written, a structural edit, one part of one sheet's state (the formats, the merges, a rule, the objects), or the whole document for adding a sheet and for a first read. A keystroke is one small message, not a copy of the sheet."
+    },
+    {
+      "question": "Why send a formula's text rather than its value?",
+      "answer": "Because the other side has to keep the formula. A collaborator receives =SUM(B2:C2) and their own workbook works out the answer, so the two cannot disagree about a number, and the receiving sheet keeps a formula in the cell rather than a frozen figure."
+    },
+    {
+      "question": "What happens when two people type in the same cell?",
+      "answer": "Last writer wins, per cell, and both sides converge on whatever arrived last. There is no version vector and no transform: two people in different cells never conflict, which is the case that actually happens, and anything stronger belongs in a different piece of work."
+    }
+  ]
+}

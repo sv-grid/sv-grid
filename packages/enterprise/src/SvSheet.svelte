@@ -295,10 +295,18 @@
 
   /** Report a change to the document; the `onChange` prop hears it once per tick. */
   const changed = (reason: SheetChangeReason) => doc.changed(reason)
-  $effect(() => {
-    if (!onChange) return
-    return doc.subscribe((reasons) => onChange(reasons))
-  })
+  /**
+   * The shell follows its document. A change the shell itself made has
+   * already bumped, and one more is cheap; a change from OUTSIDE - a
+   * collaborator's delta applied through `applySheetDelta`, a host calling
+   * `doc.patch` - would otherwise sit in the document unpainted, which is
+   * what `refresh()` used to be for. That stays, for a write made straight
+   * to the workbook, which the document never hears about.
+   */
+  $effect(() => doc.subscribe((reasons) => {
+    bump()
+    onChange?.(reasons)
+  }))
 
   /**
    * The document as it stands, for saving: every sheet's cells and names
