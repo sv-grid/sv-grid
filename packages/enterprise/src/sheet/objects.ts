@@ -49,7 +49,24 @@ export type SheetChartObject = {
   series: 'columns' | 'rows'
   title?: string
   stacked?: boolean
+  /**
+   * A trend line over every series: Excel's Add Trendline, in the two
+   * shapes people actually pick. Drawn by the chart's own overlay, so it
+   * follows the data rather than being a second set of numbers.
+   */
+  trend?: SheetChartTrend
+  /**
+   * The series plotted against a second value axis on the right, by its
+   * label. Excel's "Plot series on secondary axis", which is what makes a
+   * revenue-and-margin chart readable when the two are orders of magnitude
+   * apart. Unknown labels are ignored.
+   */
+  secondary?: string
 }
+
+/** The trend lines the sheet offers: a straight fit, or a moving average. */
+export const SHEET_CHART_TRENDS = ['linear', 'sma3'] as const
+export type SheetChartTrend = (typeof SHEET_CHART_TRENDS)[number]
 
 export type SheetImageObject = {
   id: string
@@ -167,7 +184,15 @@ export function chartSpecOf(
       values.push(n ?? 0)
     }
     if (!numeric) continue
-    series.push({ label: label.trim() === '' ? (byColumns ? colToLetters(s) : String(s + 1)) : label, values })
+    const name = label.trim() === '' ? (byColumns ? colToLetters(s) : String(s + 1)) : label
+    series.push({
+      label: name,
+      values,
+      // The trend line and the second axis are per series in the chart, and
+      // a sheet says them once: over everything, and for one series.
+      ...(object.trend ? { overlay: object.trend === 'sma3' ? 'sma:3' as const : 'linear' as const } : {}),
+      ...(object.secondary && object.secondary === name ? { axis: 'right' as const } : {}),
+    })
   }
 
   return {

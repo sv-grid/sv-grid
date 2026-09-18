@@ -8,19 +8,28 @@
    */
   import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
-  import { SHEET_CHART_TYPES, copyObject, type SheetChartObject, type SheetChartType } from './sheet/objects'
+  import {
+    SHEET_CHART_TYPES, SHEET_CHART_TRENDS, copyObject,
+    type SheetChartObject, type SheetChartType, type SheetChartTrend,
+  } from './sheet/objects'
   import { colToLetters } from './sheet/address'
 
   type Props = {
     open?: boolean
     /** The chart as it stands. */
     chart: SheetChartObject
+    /**
+     * The series it is drawing, by the labels the range gives them: what
+     * the secondary-axis list offers. The dialog has the chart, not the
+     * cells, so the shell reads them off the drawing.
+     */
+    seriesLabels?: ReadonlyArray<string>
     onApply: (chart: SheetChartObject) => void
     onDelete: () => void
     onClose?: () => void
   }
 
-  let { open = $bindable(false), chart, onApply, onDelete, onClose }: Props = $props()
+  let { open = $bindable(false), chart, seriesLabels = [], onApply, onDelete, onClose }: Props = $props()
   const t = useSheetText()
 
   let type = $state<SheetChartType>('bar')
@@ -28,6 +37,8 @@
   let headers = $state(true)
   let series = $state<'columns' | 'rows'>('columns')
   let stacked = $state(false)
+  let trend = $state<SheetChartTrend | ''>('')
+  let secondary = $state('')
   let first = $state<HTMLSelectElement | null>(null)
 
   $effect(() => {
@@ -37,6 +48,8 @@
     headers = chart.headers
     series = chart.series
     stacked = Boolean(chart.stacked)
+    trend = chart.trend ?? ''
+    secondary = chart.secondary ?? ''
     queueMicrotask(() => first?.focus())
   })
 
@@ -46,6 +59,8 @@
   })
   /** Stacking means nothing on a pie or a scatter. */
   const stackable = $derived(type === 'bar' || type === 'area' || type === 'line')
+  /** A pie has one axis and no trend to draw over it. */
+  const twoAxes = $derived(type !== 'pie')
 
   function ok() {
     const next = copyObject(chart) as SheetChartObject
@@ -56,6 +71,14 @@
     else delete next.title
     if (stacked && stackable) next.stacked = true
     else delete next.stacked
+    // A pie has one axis and no line to trend, so neither setting survives
+    // a change to one: keeping a hidden setting is how a dialog lies.
+    if (trend && twoAxes) next.trend = trend
+    else delete next.trend
+    // A second axis means nothing on a pie, and nothing for a series that
+    // is no longer there.
+    if (secondary && twoAxes && seriesLabels.includes(secondary)) next.secondary = secondary
+    else delete next.secondary
     open = false
     onApply(next)
     onClose?.()
@@ -87,6 +110,24 @@
         <option value="rows">{t('chartSetup.series.rows')}</option>
       </select>
     </label>
+    {#if twoAxes}
+      <label class="field">
+        <span>{t('chartSetup.trend')}</span>
+        <select bind:value={trend}>
+          <option value="">{t('chartSetup.trend.none')}</option>
+          {#each SHEET_CHART_TRENDS as kind (kind)}<option value={kind}>{t(`chartSetup.trend.${kind}`)}</option>{/each}
+        </select>
+      </label>
+      {#if seriesLabels.length > 1}
+        <label class="field">
+          <span>{t('chartSetup.secondary')}</span>
+          <select bind:value={secondary}>
+            <option value="">{t('chartSetup.secondary.none')}</option>
+            {#each seriesLabels as label (label)}<option value={label}>{label}</option>{/each}
+          </select>
+        </label>
+      {/if}
+    {/if}
     <div class="checks">
       <label class="check"><input type="checkbox" bind:checked={headers} /> {t('chartSetup.headers')}</label>
       {#if stackable}

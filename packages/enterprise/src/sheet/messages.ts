@@ -618,6 +618,12 @@ export const defaultDialogMessages = {
   'chartSetup.series.rows': 'Rows',
   'chartSetup.headers': 'First row and column are labels',
   'chartSetup.stacked': 'Stack the series',
+  'chartSetup.trend': 'Trendline:',
+  'chartSetup.trend.none': 'None',
+  'chartSetup.trend.linear': 'Linear',
+  'chartSetup.trend.sma3': 'Moving average (3)',
+  'chartSetup.secondary': 'Secondary axis:',
+  'chartSetup.secondary.none': 'None',
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
   // Create Table
   'table.title': 'Create Table',

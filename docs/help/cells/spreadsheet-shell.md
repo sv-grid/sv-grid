@@ -703,7 +703,7 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
-| Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking; Delete removes the chart. |
+| Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking, a trendline over every series and one series on a secondary axis; Delete removes the chart. |
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
 | Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
 | Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
@@ -903,7 +903,11 @@ address rather than a picture it cannot use, and the file stores it as
 
 An object floats over the cells rather than living in them: drag it to
 move, drag its corner to resize, press Delete to remove it, and
-double-click a chart (or Insert > Setup) to open the Chart dialog. Each
+double-click a chart (or Insert > Setup) to open the Chart dialog, where a
+trendline (linear or a three-point moving average) goes over every series
+and one series can be moved to a secondary axis on the right, which is
+what makes a revenue-and-margin chart readable when the two are orders of
+magnitude apart. Each
 change is one undo. It hangs from a cell and an offset inside it, the way
 Excel's does, so inserting a row above moves it, deleting that row takes
 it with it, and resizing a column under it moves it without reshaping it.
@@ -1360,8 +1364,9 @@ button that does nothing.
 - **Tabs:** no track-changes on Review; Page Layout has no themes, no
   page breaks and no header or footer text, and Print has no preview of
   its own beyond the browser's.
-- **Objects** are charts and pictures: a chart has no trend lines or
-  secondary axis of its own beyond what the Chart dialog sets, and a
+- **Objects** are charts and pictures: a chart is what the Chart dialog
+  sets and no more, so there are no per-series colours, no data labels and
+  no axis titles, and a
   FLOATING picture whose source is a URL rather than a `data:` URL is left
   out of the .xlsx, since its bytes are not in the document to write. A
   picture in a cell, `=IMAGE(...)`, has no such limit: the formula is what

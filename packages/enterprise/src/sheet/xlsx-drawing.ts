@@ -239,7 +239,12 @@ function chartPart(object: SheetChartObject, context: DrawingContext): string {
         + (categories ? `<c:xVal><c:numRef><c:f>${esc(categories)}</c:f></c:numRef></c:xVal>` : '')
         + `<c:yVal><c:numRef><c:f>${esc(s.values)}</c:f></c:numRef></c:yVal></c:ser>`
     }
-    return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${name}${cat}`
+    // Excel's own trendline element, so the line drawn here is a trendline
+    // there rather than a second series of numbers.
+    const trend = object.trend
+      ? `<c:trendline><c:trendlineType val="${object.trend === 'sma3' ? 'movingAvg' : 'linear'}"/>${object.trend === 'sma3' ? '<c:period val="3"/>' : ''}</c:trendline>`
+      : ''
+    return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${name}${cat}${trend}`
       + `<c:val><c:numRef><c:f>${esc(s.values)}</c:f></c:numRef></c:val></c:ser>`
   }).join('')
 
@@ -426,6 +431,7 @@ function chartFromPart(xml: string, anchor: SheetObject['anchor'], context: Draw
   const title = first(root, NS_C, 'title')
   const titleText = title ? [...tags(title, NS_A, 't')].map((t) => t.textContent ?? '').join('').trim() : ''
   const grouping = first(plot, NS_C, 'grouping')?.getAttribute('val')
+  const trendKind = first(plot, NS_C, 'trendlineType')?.getAttribute('val')
   return {
     id: context.newId(),
     kind: 'chart',
@@ -436,6 +442,7 @@ function chartFromPart(xml: string, anchor: SheetObject['anchor'], context: Draw
     series,
     ...(titleText ? { title: titleText } : {}),
     ...(grouping === 'stacked' || grouping === 'percentStacked' ? { stacked: true } : {}),
+    ...(trendKind === 'linear' ? { trend: 'linear' as const } : trendKind === 'movingAvg' ? { trend: 'sma3' as const } : {}),
   }
 }
 
