@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createTableRegistry, isValidTableName, resolveTableRange, columnIndexOf,
-  rowCountOf, type TableRegion,
+  rowCountOf, shiftTable, shiftTables, type TableRegion,
 } from './tables'
 import { parseFormula } from './parse'
 import { evaluate, type EvalContext } from './evaluate'
@@ -317,5 +317,33 @@ describe('re-serialising', () => {
       const once = round(src)
       expect(round(once)).toBe(once)
     }
+  })
+})
+
+describe('shiftTable', () => {
+  const table = (over: Partial<TableRegion> = {}): TableRegion => ({
+    name: 'Orders', sheet: 'S', headerRow: 2, firstCol: 1, lastCol: 4, lastRow: 9, hasTotals: false, ...over,
+  })
+
+  it('moves with an insert above it and shrinks with a delete inside it', () => {
+    expect(shiftTable(table(), 'S', { kind: 'insertRows', at: 0, count: 2 })).toMatchObject({ headerRow: 4, lastRow: 11 })
+    expect(shiftTable(table(), 'S', { kind: 'insertCols', at: 0, count: 1 })).toMatchObject({ firstCol: 2, lastCol: 5 })
+    // A row inserted INSIDE grows it, which is what Excel does.
+    expect(shiftTable(table(), 'S', { kind: 'insertRows', at: 5, count: 1 })).toMatchObject({ headerRow: 2, lastRow: 10 })
+    expect(shiftTable(table(), 'S', { kind: 'deleteRows', at: 5, count: 2 })).toMatchObject({ headerRow: 2, lastRow: 7 })
+  })
+
+  it('goes when its header row or its data does, and stays put on another sheet', () => {
+    expect(shiftTable(table(), 'S', { kind: 'deleteRows', at: 0, count: 12 })).toBeNull()
+    // Every data row deleted leaves a header with nothing under it.
+    expect(shiftTable(table(), 'S', { kind: 'deleteRows', at: 3, count: 7 })).toBeNull()
+    expect(shiftTable(table(), 'Other', { kind: 'insertRows', at: 0, count: 2 })).toMatchObject({ headerRow: 2 })
+    expect(shiftTables([table(), table({ name: 'Two', sheet: 'Other' })], 'S', { kind: 'deleteRows', at: 0, count: 12 }))
+      .toEqual([table({ name: 'Two', sheet: 'Other' })])
+  })
+
+  it('a totals row rides below the data', () => {
+    const t = table({ hasTotals: true })
+    expect(shiftTable(t, 'S', { kind: 'insertRows', at: 0, count: 1 })).toMatchObject({ headerRow: 3, lastRow: 10, hasTotals: true })
   })
 })

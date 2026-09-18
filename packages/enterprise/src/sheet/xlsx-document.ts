@@ -57,6 +57,7 @@ const REL_THREADS = 'http://schemas.microsoft.com/office/2017/10/relationships/t
 const REL_PERSONS = 'http://schemas.microsoft.com/office/2017/10/relationships/person'
 const REL_METADATA = `${NS_REL}/sheetMetadata`
 const REL_HYPERLINK = `${NS_REL}/hyperlink`
+const REL_TABLE = `${NS_REL}/table`
 /** What Excel puts in the legacy note of a threaded comment, for readers that predate threads. */
 const THREAD_LEGACY_HEAD = '[Threaded comment]\n\nYour version of Excel allows you to read this threaded comment; however, any edits to it will get removed if the file is opened in a newer version of Excel. Learn more: https://go.microsoft.com/fwlink/?linkid=870924\n\n'
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
@@ -381,6 +382,8 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
   const parts: Record<string, string> = {}
   const overrides: string[] = []
   let hasVml = false
+  /** Table parts are numbered across the workbook, not per sheet. */
+  let tableCount = 0
   let hasSpills = false
   // The people a thread names, one part for the workbook; an entry
   // without an author is a person with no name.
@@ -546,6 +549,38 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     // `location` on the element itself and needs no relationship. The ids
     // start at 4 because the comment parts above take 1 to 3 when they are
     // there.
+    // Tables: one part each, a relationship from the sheet, and the
+    // `tableParts` list that ties them together. This is what makes Excel
+    // show the block as a table rather than as cells that look like one,
+    // and what makes a structured reference in the file resolve.
+    const sheetTables = (doc.workbook.serialize().tables ?? []).filter((t) => t.sheet.toLowerCase() === name.toLowerCase())
+    let tableParts = ''
+    if (sheetTables.length) {
+      const refs: string[] = []
+      sheetTables.forEach((table, i) => {
+        const id = tableCount + i + 1
+        const rel = `rIdT${id}`
+        const last = table.lastRow + (table.hasTotals ? 1 : 0)
+        const ref = `${colToLetters(table.firstCol)}${table.headerRow + 1}:${colToLetters(table.lastCol)}${last + 1}`
+        const columns = Array.from({ length: table.lastCol - table.firstCol + 1 }, (_, c) => {
+          const header = (doc.workbook.getRaw(name, table.headerRow, table.firstCol + c) || `Column${c + 1}`).replace(/^=/, '')
+          return `<tableColumn id="${c + 1}" name="${esc(header)}"/>`
+        }).join('')
+        parts[`xl/tables/table${id}.xml`] = XML_HEAD
+          + `<table xmlns="${NS_MAIN}" id="${id}" name="${esc(table.name)}" displayName="${esc(table.name)}" ref="${ref}"`
+          + ` headerRowCount="1" totalsRowCount="${table.hasTotals ? 1 : 0}">`
+          + `<autoFilter ref="${colToLetters(table.firstCol)}${table.headerRow + 1}:${colToLetters(table.lastCol)}${table.lastRow + 1}"/>`
+          + `<tableColumns count="${table.lastCol - table.firstCol + 1}">${columns}</tableColumns>`
+          + '<tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>'
+          + '</table>'
+        sheetRels += `<Relationship Id="${rel}" Type="${REL_TABLE}" Target="../tables/table${id}.xml"/>`
+        overrides.push(`<Override PartName="/xl/tables/table${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"/>`)
+        refs.push(`<tablePart r:id="${rel}"/>`)
+      })
+      tableCount += sheetTables.length
+      tableParts = `<tableParts count="${refs.length}">${refs.join('')}</tableParts>`
+    }
+
     const links = listLinks(state.links)
     let hyperlinks = ''
     if (links.length) {
@@ -583,7 +618,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       + `<sheetViews>${sheetView}</sheetViews><sheetFormatPr defaultRowHeight="15"/>`
       + (colXml.length ? `<cols>${colXml.join('')}</cols>` : '')
       + `<sheetData>${rowXml.join('')}</sheetData>`
-      + protection + editRanges + autoFilter + merges + cf + dv + hyperlinks + printOptions + pageMargins + pageSetup + legacyDrawing
+      + protection + editRanges + autoFilter + merges + cf + dv + hyperlinks + printOptions + pageMargins + pageSetup + legacyDrawing + tableParts
       + '</worksheet>'
     overrides.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
     return { name, n, hidden: state.sheetHidden }
@@ -931,6 +966,8 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 
   const sheets: SheetState['workbook']['sheets'] = []
   const entries: Record<string, SheetStateEntry> = {}
+  /** Tables are workbook-wide, though each part hangs off its own sheet. */
+  const tables: NonNullable<SheetState['workbook']['tables']> = []
   const sheetNodes = kids(kid(wbRoot, 'sheets'), 'sheet')
   sheetNodes.forEach((sheetNode, index) => {
     const name = attr(sheetNode, 'name') ?? `Sheet${index + 1}`
@@ -1143,6 +1180,31 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
       const relsPath = path.replace(/worksheets\/([^/]+)$/, 'worksheets/_rels/$1.rels')
       const rels = readRels(parts, relsPath, path)
 
+      // Tables, through the sheet's relationships: the part carries the
+      // range, the header count and whether there is a totals row.
+      for (const part of kids(kid(root, 'tableParts'), 'tablePart')) {
+        const id = part.getAttribute('r:id') ?? part.getAttributeNS(NS_REL, 'id')
+        const target = id ? rels.get(id)?.target : undefined
+        const xml = target ? parts[target] : undefined
+        if (!xml) continue
+        const table = parseXml(xml, target!).documentElement
+        const ref = attr(table, 'ref') ?? ''
+        const [fromText, toText] = ref.split(':')
+        const from = parseA1(fromText ?? '')
+        const to = parseA1(toText ?? fromText ?? '')
+        if (!from || from.row === null || !to || to.row === null) continue
+        const totals = num(table, 'totalsRowCount') ?? 0
+        tables.push({
+          name: attr(table, 'displayName') || attr(table, 'name') || `Table${tables.length + 1}`,
+          sheet: name,
+          headerRow: from.row,
+          firstCol: from.col,
+          lastCol: to.col,
+          lastRow: to.row - (totals > 0 ? 1 : 0),
+          hasTotals: totals > 0,
+        })
+      }
+
       // Hyperlinks: an external one points at a relationship whose target is
       // the URL, an internal one carries its address as `location`.
       for (const link of kids(kid(root, 'hyperlinks'), 'hyperlink')) {
@@ -1225,7 +1287,11 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
   const active = sheets[activeTab]?.name ?? sheets[0]?.name ?? 'Sheet1'
   if (!sheets.length) sheets.push({ name: 'Sheet1', cells: [] })
 
-  return { version: 1, workbook: { sheets, active, names }, sheets: entries }
+  return {
+    version: 1,
+    workbook: { sheets, active, names, ...(tables.length ? { tables } : {}) },
+    sheets: entries,
+  }
 }
 
 // ---------------------------------------------------------------------------

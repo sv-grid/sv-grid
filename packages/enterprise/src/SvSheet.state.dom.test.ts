@@ -671,4 +671,66 @@ describe('SvSheet marching ants', () => {
     await tick()
     expect(doc.get('S').links).toEqual({})
   })
+
+  it('Insert > Table names the columns, a structured reference reads them, and typing under it grows the table', async () => {
+    const { api, doc, sheet } = await mountSheet({
+      data: [{
+        name: 'S',
+        cells: [
+          ['Product', 'Qty', 'Price', 'Total'],
+          ['A', '2', '10', '=[@Qty]*[@Price]'],
+          ['B', '3', '20', '=[@Qty]*[@Price]'],
+          ['', '', '', ''],
+        ],
+      }],
+      rows: 10, columns: 6,
+    })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    cmd.extendSelection(2, 3)
+    flushSync()
+    sheet.act('insert-table')
+    flushSync()
+    const dialog = document.querySelector('.sv-modal')!
+    expect(dialog.textContent).toContain('Create Table')
+    const fields = [...dialog.querySelectorAll('input[type="text"]')] as HTMLInputElement[]
+    expect(fields.map((f) => f.value)).toEqual(['A1:D3', 'Table1'])
+    ;[...dialog.querySelectorAll('button')].find((b) => b.textContent === 'OK')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    await tick()
+
+    const wb = doc.workbook
+    expect(wb.tables.list()).toEqual([
+      { name: 'Table1', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 3, lastRow: 2, hasTotals: false },
+    ])
+    // The per-row formula reads its own row through [@Qty], and a whole
+    // column through the table's name.
+    expect(wb.getValue('S', 1, 3)).toBe(20)
+    expect(wb.evaluateText('S', '=SUM(Table1[Total])')).toBe(80)
+    // The arrows came with it, as Excel's table does.
+    expect(doc.get('S').autoFilter?.range).toEqual([0, 0, 2, 3])
+    // And the definition rides the state.
+    const state = JSON.parse(JSON.stringify(sheet.getState()))
+    expect(state.workbook.tables[0].name).toBe('Table1')
+
+    // Auto-expand: a row typed under the last one joins the table.
+    cmd.setActiveCell(3, 0)
+    cmd.setSelection(3, 0)
+    flushSync()
+    cmd.setCellValue(3, 0, 'C')
+    flushSync()
+    await tick()
+    expect(wb.tables.get('Table1')?.lastRow).toBe(3)
+
+    // Convert to Range leaves the cells and takes the table.
+    cmd.setActiveCell(1, 1)
+    cmd.setSelection(1, 1)
+    flushSync()
+    sheet.act('remove-table')
+    flushSync()
+    await tick()
+    expect(wb.tables.list()).toEqual([])
+    expect(wb.getRaw('S', 1, 3)).toBe('=[@Qty]*[@Price]')
+  })
 })

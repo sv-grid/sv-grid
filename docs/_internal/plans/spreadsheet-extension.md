@@ -63,6 +63,13 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Format as Table: a table registry on the workbook wired into the eval
+  context, so the structured references the parser already read finally
+  resolve; Insert > Table and Ctrl+T with Excel's dialog, the banded look
+  drawn rather than written, auto-expand that fills the calculated columns
+  into a new row, the cells behind a structured reference recorded in the
+  dependency graph, and the tables in the .xlsx both ways. `extras` is dead
+  and the prop is ignored.
 - LET and LAMBDA, with MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY: a
   lexical scope in the evaluator's context, lambdas as a value only the
   formula can hold, immediate and curried calls through a `(` node the
@@ -212,7 +219,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Comments as threads (author, time, replies, resolve)~~ | shipped: the thread card, `commentAuthor`, and Excel's threaded parts in the xlsx | done |
 | ~~Protection: allowed ranges and the allow list~~ | shipped: the Protect Sheet dialog, Allow Edit Ranges, `sheetProtection` in the xlsx. A password is still not one: a lock in the browser is not a secret | done |
 | ~~Sheet tabs: hide / unhide, duplicate, delete with confirm~~ | shipped; move between workbooks not done | done |
-| Styles gallery and Format as Table | `styles` ribbon id exists; verify what it does | S |
+| ~~Format as Table~~ | shipped: `workbook.tables`, Insert > Table and Ctrl+T, the banded look, auto-expand, the xlsx both ways. A styles GALLERY (the twenty-odd presets) is still not one | done |
 
 ### Objects on the sheet
 

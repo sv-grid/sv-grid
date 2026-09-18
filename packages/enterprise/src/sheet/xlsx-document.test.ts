@@ -354,3 +354,40 @@ describe('future functions', () => {
     expect(back.workbook.sheets[0]!.cells[2]![0]).toBe('=BYROW(A1:A2, LAMBDA(r, SUM(r)))')
   })
 })
+
+describe('tables', () => {
+  it('go out as a table part with its columns, and come back as the same region', () => {
+    const doc = createSheetDocument({
+      sheets: [{ name: 'S', cells: [['Product', 'Qty'], ['A', '2'], ['B', '3']] }],
+    })
+    doc.workbook.tables.define({ name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false })
+    const parts = documentToXlsxParts(doc)
+    const table = parts['xl/tables/table1.xml']!
+    expect(table).toContain('name="Orders" displayName="Orders" ref="A1:B3"')
+    expect(table).toContain('<tableColumn id="1" name="Product"/>')
+    expect(table).toContain('<tableColumn id="2" name="Qty"/>')
+    expect(parts['xl/worksheets/sheet1.xml']).toContain('<tableParts count="1">')
+    expect(parts['xl/worksheets/_rels/sheet1.xml.rels']).toContain('Target="../tables/table1.xml"')
+    expect(parts['[Content_Types].xml']).toContain('/xl/tables/table1.xml')
+
+    const back = documentFromXlsxParts(parts)
+    expect(back.workbook.tables).toEqual([
+      { name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false },
+    ])
+    // And a document rebuilt from it resolves a structured reference again.
+    const again = createSheetDocument({ state: back })
+    expect(again.workbook.evaluateText('S', '=SUM(Orders[Qty])')).toBe(5)
+  })
+
+  it('a totals row is counted out of the data rows, both ways', () => {
+    const doc = createSheetDocument({
+      sheets: [{ name: 'S', cells: [['Qty'], ['2'], ['3'], ['=SUM(A2:A3)']] }],
+    })
+    doc.workbook.tables.define({ name: 'T', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 2, hasTotals: true })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/tables/table1.xml']).toContain('ref="A1:A4" headerRowCount="1" totalsRowCount="1"')
+    expect(documentFromXlsxParts(parts).workbook.tables).toEqual([
+      { name: 'T', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 2, hasTotals: true },
+    ])
+  })
+})

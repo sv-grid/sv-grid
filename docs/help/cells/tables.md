@@ -36,6 +36,37 @@ const ctx = {
 `currentCell` is what makes `[@Amount]` mean anything: "this row" is relative
 to the **formula**, not to the table.
 
+## In the spreadsheet shell
+
+None of the wiring above is needed there. A `Workbook` holds a registry of
+its own on `workbook.tables`, hands it to every formula it evaluates, and
+moves each table with an insert or a delete; `<SvSheet>` puts Excel's
+Create Table dialog on Insert > Table and Ctrl+T.
+
+```svelte
+<SvSheet {document} />
+```
+
+What that gets you:
+
+- **The look.** A header band and stripes, drawn rather than written into
+  the cells, so a row that joins the table is banded without a format being
+  written anywhere. The filter arrows come with it.
+- **The calculated column.** A row typed under the last one joins the table
+  (Excel's auto-expand), and every column whose cell above holds a formula
+  is filled down into it, references translated, so `=[@Qty]*[@Price]`
+  works itself out on the new line.
+- **Recalculation.** Editing a cell inside a table recomputes the formulas
+  that read it through a structured reference, because the dependency graph
+  records the cells behind `Orders[Amount]` rather than nothing at all.
+- **The file.** A table goes into the .xlsx as a real table part with its
+  columns and its style, and one in a file being opened comes back, so
+  Excel shows a table rather than cells that look like one.
+
+Insert > To Range removes the table and leaves the cells. Defining, growing
+or removing a table settles the workbook again, since a table decides what
+`Orders[Amount]` means for every formula that mentions it.
+
 ## The grammar
 
 | Form | Means |
@@ -100,7 +131,19 @@ the user put there, and swallowing it would be worse than not expanding. A
 totals row occupying the slot blocks it too, because Excel inserts above a
 totals row, which is a structural edit rather than a grow.
 
+In the shell this happens on every edit: typing under the last row grows
+the table, fills the calculated columns into the new row, and recomputes
+what reads it.
+
 ## See also
 
 - [Workbooks](./workbooks.md)
 - [Spreadsheet formulas](../spreadsheet-formulas.md)
+
+## More examples
+
+### Format as Table and structured references
+
+Excel's Ctrl+T: a block becomes a table with a header row, the banded look, filter arrows and a name its columns are read by, so a formula says Orders[Amount] instead of E2:E13 and keeps meaning it as rows are added. [@Qty] is this row's cell. Typing under the last row grows the table, and every total that reads it grows too.
+
+<div data-docs-demo="481-sheet-tables" data-height="560"></div>

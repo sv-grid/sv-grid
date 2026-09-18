@@ -51,6 +51,7 @@ export type SheetChangeReason =
   | { kind: 'sparklines' }
   | { kind: 'pivots' }
   | { kind: 'links' }
+  | { kind: 'tables' }
   | { kind: 'merges' }
   | { kind: 'filter' }
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }
@@ -236,6 +237,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     init.workbook ??
     createWorkbook(
       init.state ? init.state.workbook.sheets.map((s) => ({ name: s.name, cells: s.cells })) : (init.sheets ? [...init.sheets] : [{ name: 'Sheet1', cells: [] }]),
+      init.state?.workbook.tables?.length ? { tables: init.state.workbook.tables } : {},
     )
   const entries = new Map<string, PerSheetState>()
   const listeners = new Set<(reasons: ReadonlyArray<SheetChangeReason>) => void>()
@@ -498,6 +500,10 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
           }
         }
         workbook.names.hydrate(state.workbook.names ?? {})
+        // Tables are workbook-wide, and the registry is what a structured
+        // reference resolves through: put back exactly the saved set.
+        workbook.tables.clear()
+        for (const table of state.workbook.tables ?? []) workbook.tables.define({ ...table })
         if (workbook.sheets.some((s) => key(s) === key(state.workbook.active))) workbook.setActive(state.workbook.active)
         // Entries are hydrated in place, never replaced: a format store the
         // shell has registered as its target must stay the store in use, or

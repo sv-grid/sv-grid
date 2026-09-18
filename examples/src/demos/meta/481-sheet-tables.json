@@ -1,0 +1,24 @@
+{
+  "description": "Excel's Ctrl+T in a Svelte 5 spreadsheet: a block becomes a table with a header row, the banded look, filter arrows and a name its columns are read by, so a formula says Orders[Amount] instead of E2:E13 and keeps meaning it as rows are added. [@Qty] is this row's cell, which is how each line works out its own amount. Auto-expand is the point: typing under the last row grows the table, and every total that reads it grows too, with no formula re-pointed. Tables ride in getState() and go into the .xlsx as real table parts, so Excel shows a table there too. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet table",
+    "svelte excel structured references",
+    "svelte sheet format as table",
+    "svelte spreadsheet Ctrl+T",
+    "svelte sheet auto expand table"
+  ],
+  "faq": [
+    {
+      "question": "What does a table buy over a range?",
+      "answer": "A structured reference names the column rather than the cells, so the range it resolves to is whatever the table currently is. Add a row and every formula reading Orders[Amount] covers it, with nothing re-pointed. A1 references are positional, which is why a total under a plain block silently stops covering the row you just typed."
+    },
+    {
+      "question": "What is [@Qty]?",
+      "answer": "This row's cell in the Qty column, which only means something inside the table. It is how the Amount column works out its own line, =[@Qty]*[@Price], and why the formula is the same in every row."
+    },
+    {
+      "question": "Does the table survive a save?",
+      "answer": "Yes. It rides in getState() with the workbook, and it goes into the .xlsx as a real table part with its columns and its style, so Excel opens it as a table rather than as cells that look like one. A file with a table in it reads back the same way."
+    }
+  ]
+}
