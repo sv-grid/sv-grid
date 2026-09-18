@@ -45,6 +45,8 @@ export interface SvSheetProps {
   showTabs?: boolean
   /** `show-status-bar` - boolean */
   showStatusBar?: boolean
+  /** `property only` - ReadonlyArray<SheetPresence> */
+  presence?: readonly unknown[]
 
   /** `action` - call event.preventDefault() to take the action over */
   onAction?: (detail: { action: unknown; cmd: unknown }, event: CustomEvent) => void
@@ -52,6 +54,8 @@ export interface SvSheetProps {
   onReady?: (detail: { api: unknown; document: unknown }, event: CustomEvent) => void
   /** `change` */
   onChange?: (detail: unknown, event: CustomEvent) => void
+  /** `presence` */
+  onPresence?: (detail: unknown, event: CustomEvent) => void
 
   className?: string
   style?: Record<string, string | number>
@@ -62,8 +66,8 @@ export interface SvSheetHandle {
   element: (HTMLElement & Record<string, unknown>) | null
 }
 
-const PROP_NAMES = ["document","workbook","data","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar"] as const
-const EVENTS: Array<[handler: string, event: string]> = [["onAction","action"],["onReady","ready"],["onChange","change"]]
+const PROP_NAMES = ["document","workbook","data","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar","presence"] as const
+const EVENTS: Array<[handler: string, event: string]> = [["onAction","action"],["onReady","ready"],["onChange","change"],["onPresence","presence"]]
 
 export const SvSheet = forwardRef(function SvSheet(props: SvSheetProps, ref: Ref<SvSheetHandle>) {
   const hostRef = useRef<HTMLElement | null>(null)

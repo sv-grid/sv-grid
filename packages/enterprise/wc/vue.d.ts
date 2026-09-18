@@ -24,6 +24,7 @@ export type SvSheetProps = {
   showFormulaBar?: boolean
   showTabs?: boolean
   showStatusBar?: boolean
+  presence?: readonly unknown[]
 }
 export declare const SvSheet: DefineComponent<SvSheetProps>
 export default SvSheet

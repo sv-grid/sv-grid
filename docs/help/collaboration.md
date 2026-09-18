@@ -66,6 +66,12 @@ fires for edits from **other** users only (never echoes your own).
 See the live [Real-time collaboration](https://svgrid.com/demos/149-realtime-collaboration/)
 demo (open it in two tabs).
 
+**In the spreadsheet shell** this is a different pair of pieces, because a
+sheet's unit of change is a cell's raw text rather than a row's field:
+`createDeltaStream` sends the deltas and carries presence on the same wire,
+and `<SvSheet presence onPresence>` draws the other cursors. See
+[the spreadsheet shell](./cells/spreadsheet-shell.md#two-people-on-one-sheet).
+
 ## Try it
 
 There is no `collab` prop: collaboration is a pattern you assemble from the

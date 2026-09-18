@@ -118,7 +118,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `show-tabs` | `showTabs` | `boolean` |
 | `show-status-bar` | `showStatusBar` | `boolean` |
 
-### Properties only (7)
+### Properties only (8)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.document = doc`.
@@ -132,8 +132,9 @@ only be assigned in script: `el.document = doc`.
 | `formats` | `Readonly<Record<string, CellFormatEntry>>` |
 | `extras` | `ReadonlyArray<'insert-table' \| 'insert-chart'>` |
 | `localization` | `SheetLocalization` |
+| `presence` | `ReadonlyArray<SheetPresence>` |
 
-### Events (3)
+### Events (4)
 
 `detail` is the callback's argument, or an object keyed by the parameter names
 when it takes more than one. `action` is cancelable: `event.preventDefault()`
@@ -144,6 +145,7 @@ takes the action over, as returning `true` from `onAction` does.
 | `action` | `onAction` | `{ action, cmd }` |
 | `ready` | `onReady` | `{ api, document }` |
 | `change` | `onChange` | `reasons` |
+| `presence` | `onPresence` | `me` |
 
 ### Methods (10)
 

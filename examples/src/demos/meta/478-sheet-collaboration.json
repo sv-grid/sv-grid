@@ -1,5 +1,5 @@
 {
-  "description": "Two Svelte 5 spreadsheets over two separate documents, kept in step by a delta stream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes. A formula travels as its text, so the other side works out its own answer; an insert travels as the edit, so both sides rewrite their own formulas; a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell. A real app puts a socket in the middle with the same onDelta out and apply in. Enterprise, in @svgrid/enterprise.",
+  "description": "Two Svelte 5 spreadsheets over two separate documents, kept in step by a delta stream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes. A formula travels as its text, so the other side works out its own answer; an insert travels as the edit, so both sides rewrite their own formulas; a format travels as the one part of the one sheet that changed. Presence rides the same wire and is never part of the document: each window draws the other's selection as a coloured box with a name on it. Conflicts are last writer wins, per cell. A real app puts a socket in the middle with the same onDelta out and apply in. Enterprise, in @svgrid/enterprise.",
   "keywords": [
     "svelte spreadsheet collaboration",
     "svelte sheet realtime sync",
@@ -10,7 +10,11 @@
   "faq": [
     {
       "question": "What actually crosses the wire?",
-      "answer": "A delta of one of four kinds: the raw text of the cells that were written, a structural edit, one part of one sheet's state (the formats, the merges, a rule, the objects), or the whole document for adding a sheet and for a first read. A keystroke is one small message, not a copy of the sheet."
+      "answer": "A delta of one of five kinds: the raw text of the cells that were written, a structural edit, one part of one sheet's state (the formats, the merges, a rule, the objects), the whole document for adding a sheet and for a first read, or a presence message saying where someone's cursor is. A keystroke is one small message, not a copy of the sheet."
+    },
+    {
+      "question": "Is presence part of the document?",
+      "answer": "No, and deliberately so. It is a prop on the component and a delta kind that the receiving stream hands to onPresence rather than to the document, so it is never in getState() and never in the .xlsx. A cursor belongs to a session, not to a file."
     },
     {
       "question": "Why send a formula's text rather than its value?",

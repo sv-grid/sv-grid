@@ -112,6 +112,12 @@ export const ELEMENT_PROPS = [
     "type": "Boolean",
     "attribute": "show-status-bar",
     "ts": "boolean"
+  },
+  {
+    "name": "presence",
+    "type": "Array",
+    "attribute": null,
+    "ts": "ReadonlyArray<SheetPresence>"
   }
 ]
 
@@ -141,6 +147,14 @@ export const ELEMENT_EVENTS = [
       "reasons"
     ],
     "ts": "(reasons: ReadonlyArray<SheetChangeReason>) => void"
+  },
+  {
+    "callback": "onPresence",
+    "event": "presence",
+    "params": [
+      "me"
+    ],
+    "ts": "(me: { sheet: string; rect: Rect; active: { row: number; col: number } }) => void"
   }
 ]
 

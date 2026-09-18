@@ -22,6 +22,7 @@
       showFormulaBar: { type: 'Boolean', attribute: 'show-formula-bar' },
       showTabs: { type: 'Boolean', attribute: 'show-tabs' },
       showStatusBar: { type: 'Boolean', attribute: 'show-status-bar' },
+      presence: { type: 'Array' },
       /* END generated props */
     },
   }}

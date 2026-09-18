@@ -103,6 +103,11 @@ export {
   type ErrorFinding, type ErrorFindingKind, type SheetReader,
 } from './sheet/error-check'
 
+export {
+  livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials,
+  PRESENCE_COLOURS, type SheetPresence,
+} from './sheet/presence'
+
 export { default as SvSheetTabs } from './SvSheetTabs.svelte'
 export {
   createWorkbook, isValidSheetName, cleanIteration, DEFAULT_ITERATION,

@@ -63,6 +63,12 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Presence, the last of Phase F item 3: `sheet/presence.ts` (a person, a
+  stable colour, the sheet and rectangle they are on, the fifteen-second
+  prune), a `presence` prop the shell draws over the cells and an
+  `onPresence` callback for this user's own selection, a fifth delta kind
+  that rides the same wire without touching the document, and demo 478
+  showing both cursors.
 - The table styles gallery: `sheet/table-styles.ts` with Excel's eighteen
   built-in names and their accents, `style` on a table region, the shell
   drawing each table in its own colours, the gallery in the Create Table
@@ -268,7 +274,7 @@ weeks, L a quarter-scale piece of work.
 | --- | --- | --- |
 | Large sheets | `Workbook` keeps `string[][]` per sheet plus a `values` map; defaults are 50 x 12; no measured ceiling | M (measure first) |
 | Recalculation off the main thread | none | L |
-| Co-editing (deltas, presence, conflict) | `onChange` reports fourteen change kinds (`SheetChangeReason` in `document.ts`), full-state save and restore; the grid has `real-time.md` and `collaboration.md`, neither mentions the sheet | L |
+| ~~Co-editing (deltas, presence, conflict)~~ | shipped: `createDeltaStream` with five delta kinds, `applySheetDelta`, the presence overlay and `onPresence`, last writer wins per cell and said so. No server and no operational transform, on purpose | done |
 
 ## 3. Phases
 

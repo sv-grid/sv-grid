@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSheetDocument } from './document'
 import { applySheetDelta, createDeltaStream, partsOfReasons, type SheetDelta } from './delta'
+import type { SheetPresence } from './presence'
 
 const tick = () => new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)))
 
@@ -139,5 +140,38 @@ describe('partsOfReasons', () => {
     expect(partsOfReasons([{ kind: 'formats' }, { kind: 'sizes' }])).toEqual(['formats', 'columnWidths', 'rowHeights'])
     expect(partsOfReasons([{ kind: 'protection' }, { kind: 'protection' }])).toEqual(['protected', 'protection'])
     expect(partsOfReasons([{ kind: 'cells' }, { kind: 'restore' }])).toEqual([])
+  })
+})
+
+describe('presence on the delta stream', () => {
+  it('goes out as a delta, arrives through onPresence, and changes no document', async () => {
+    const cells = [['1', '2']]
+    const left = createSheetDocument({ sheets: [{ name: 'S', cells: cells.map((r) => [...r]) }] })
+    const right = createSheetDocument({ sheets: [{ name: 'S', cells: cells.map((r) => [...r]) }] })
+    const sent: SheetDelta[] = []
+    const seen: SheetPresence[] = []
+    const a = createDeltaStream(left, { onDelta: (d) => sent.push(d) })
+    const b = createDeltaStream(right, { onDelta: () => {}, onPresence: (who) => seen.push(who) })
+
+    const me: SheetPresence = { id: 'ada', name: 'Ada', sheet: 'S', rect: [0, 0, 2, 1] }
+    a.sendPresence(me)
+    expect(sent).toEqual([{ kind: 'presence', who: me }])
+    for (const delta of sent) b.apply(delta)
+    expect(seen).toEqual([me])
+
+    // Nothing about the document moved, and nothing was echoed back.
+    const before = JSON.stringify(right.getState())
+    b.apply({ kind: 'presence', who: me })
+    await Promise.resolve()
+    expect(JSON.stringify(right.getState())).toBe(before)
+    a.stop()
+    b.stop()
+  })
+
+  it('applySheetDelta ignores a presence delta', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1']] }] })
+    const before = JSON.stringify(doc.getState())
+    applySheetDelta(doc, { kind: 'presence', who: { id: 'x', name: 'X', sheet: 'S', rect: [0, 0, 0, 0] } })
+    expect(JSON.stringify(doc.getState())).toBe(before)
   })
 })
