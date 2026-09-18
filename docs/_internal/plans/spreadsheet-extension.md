@@ -63,6 +63,13 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Phase D, sparklines: `sheet/sparklines.ts` (the group, its two ranges,
+  the series a cell draws, the shared scale, shifting), `sparklines` per
+  sheet in the document, the Sparklines group on the Insert tab (Line,
+  Column, Win/Loss, Edit, Clear), the Create Sparklines dialog, and the
+  drawing inside the cell over the free `<SvSparkline>`. Not done: the
+  sparklines in the .xlsx (Excel keeps them in an x14 extension) and on
+  the printed page, which is built from what each cell says.
 - Phase E item 2: the RTL, touch and accessibility audits, as
   `tests/e2e/sheet-a11y.spec.ts` (an axe pass over every band of the shell
   on five demos, light and dark, plus the keyboard model), `sheet-rtl.spec.ts`
@@ -174,7 +181,7 @@ weeks, L a quarter-scale piece of work.
 | Gap | Today | Effort |
 | --- | --- | --- |
 | ~~Charts anchored to cells, fed by a range~~ | shipped: the object layer, Insert > Chart, the Chart dialog; not in the .xlsx | done |
-| Sparklines in cells | the grid has sparkline columns, the sheet has no Insert > Sparkline | M |
+| ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`; not in the .xlsx and not on the printed page | done |
 | Hyperlinks (HYPERLINK function and Insert > Link) | none | S |
 | ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL; not in the .xlsx. In a cell is still not done | done |
 | PivotTable from a range | the pivot engine exists; no Insert > PivotTable | L |
@@ -284,11 +291,13 @@ line from "What it does not do":
 and demo 356 proves the data path. An object layer over the grid holds
 anchored rectangles (chart, image, sparkline group), stored in the document,
 moved with insert and delete through `shiftRect` in `rects.ts`, and
-serialised by Phase A.~~ Charts and pictures shipped: the layer, the
-anchor, the Chart dialog, Insert > Chart and Insert > Picture. Not done:
-the objects in the .xlsx (a chart part is a large piece of OOXML of its
-own), a sparkline group, and PivotTable from a range, which comes last and
-reuses `pivot.ts` with a sheet range as its row source.
+serialised by Phase A.~~ Charts, pictures and sparklines shipped: the
+layer, the anchor, the Chart dialog, Insert > Chart and Insert > Picture,
+and the sparkline groups with their own dialog on the Insert tab. Not
+done: any of them in the .xlsx (a chart part is a large piece of OOXML of
+its own, and a sparkline is an x14 extension), and PivotTable from a
+range, which comes last and reuses `pivot.ts` with a sheet range as its
+row source.
 
 ### Phase E. Reach (M)
 

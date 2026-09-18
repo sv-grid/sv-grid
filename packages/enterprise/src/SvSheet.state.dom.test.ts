@@ -507,4 +507,62 @@ describe('SvSheet marching ants', () => {
     await tick()
     expect(doc.get('S').objects).toEqual([])
   })
+
+  it('Insert > Sparklines draws one per row, the kind buttons change the group, and Clear takes it away', async () => {
+    const { api, doc, sheet } = await mountSheet({
+      data: [{ name: 'S', cells: [['North', '10', '20', '30'], ['South', '5', '-15', '25']] }],
+      rows: 10, columns: 6,
+    })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 1)
+    cmd.setSelection(0, 1)
+    cmd.extendSelection(1, 3)
+    flushSync()
+    // The dialog opens on the block, with the location the column past it.
+    sheet.act('sparkline-line')
+    flushSync()
+    const dialog = document.querySelector('.sv-modal')!
+    expect(dialog.textContent).toContain('Create Sparklines')
+    const fields = [...dialog.querySelectorAll('input[type="text"]')] as HTMLInputElement[]
+    expect(fields.map((f) => f.value)).toEqual(['B1:D2', 'E1:E2'])
+    // Drawn in column A instead, which is inside the window jsdom renders.
+    fields[1]!.value = 'A1:A2'
+    fields[1]!.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    ;[...dialog.querySelectorAll('button')].find((b) => b.textContent === 'OK')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    await tick()
+
+    const s = doc.get('S')
+    expect(s.sparklines).toHaveLength(1)
+    expect(s.sparklines[0]).toMatchObject({ type: 'line', markers: true, data: [0, 1, 1, 3], location: [0, 0, 1, 0] })
+    // One sparkline per row of the data, drawn in the cells of the location.
+    expect(document.querySelectorAll('.sheet-sparkline svg').length).toBe(2)
+
+    // It rides the state, and a structural edit moves both rectangles.
+    const state = JSON.parse(JSON.stringify(sheet.getState()))
+    expect(state.sheets.S.sparklines[0].location).toEqual([0, 0, 1, 0])
+    doc.shift('S', { kind: 'insertRows', at: 0, count: 1 })
+    expect(s.sparklines[0]!.location).toEqual([1, 0, 2, 0])
+    sheet.setState(state)
+    flushSync()
+    await tick()
+    expect(doc.get('S').sparklines[0]!.location).toEqual([0, 0, 1, 0])
+
+    // With a group under the cell, a kind button changes that group instead
+    // of opening the dialog, the way Excel's Sparkline tab does.
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    flushSync()
+    sheet.act('sparkline-column')
+    flushSync()
+    await tick()
+    expect(document.querySelector('.sv-modal')).toBeNull()
+    expect(doc.get('S').sparklines[0]!.type).toBe('column')
+
+    sheet.act('clear-sparklines')
+    flushSync()
+    await tick()
+    expect(doc.get('S').sparklines).toEqual([])
+  })
 })

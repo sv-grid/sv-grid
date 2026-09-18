@@ -174,6 +174,11 @@ export type RibbonActionId =
   | 'insert-picture'
   | 'chart-setup'
   | 'delete-object'
+  | 'sparkline-line'
+  | 'sparkline-column'
+  | 'sparkline-winloss'
+  | 'sparkline-setup'
+  | 'clear-sparklines'
   | 'insert-table'
   | 'recalculate'
   | 'toggle-formulas'
@@ -924,6 +929,20 @@ const INSERT: RibbonTab = {
         { id: 'chart', label: 'Chart', title: 'Chart the selected range', icon: 'chart', kind: 'button', size: 'large', emits: 'insert-chart' },
         small(1, { id: 'chart-setup', label: 'Setup', title: 'Chart: type, title, labels and series', icon: 'chart-setup', kind: 'button', wide: true, emits: 'chart-setup' }),
         small(2, { id: 'delete-object', label: 'Delete', title: 'Delete the selected chart or picture', icon: 'delete-cells', kind: 'button', wide: true, emits: 'delete-object' }),
+      ],
+    },
+    {
+      // Excel's Sparklines group: the three kinds, each opening the Create
+      // Sparklines dialog on the selection, and Clear for the group under it.
+      id: 'sparklines',
+      icon: 'sparkline-line',
+      label: 'Sparklines',
+      items: [
+        { id: 'sparkline-line', label: 'Line', title: 'A line sparkline in each cell of a range', icon: 'sparkline-line', kind: 'button', size: 'large', emits: 'sparkline-line' },
+        { id: 'sparkline-column', label: 'Column', title: 'A column sparkline in each cell of a range', icon: 'sparkline-column', kind: 'button', size: 'large', emits: 'sparkline-column' },
+        { id: 'sparkline-winloss', label: 'Win/Loss', title: 'A win/loss sparkline in each cell of a range', icon: 'sparkline-winloss', kind: 'button', size: 'large', emits: 'sparkline-winloss' },
+        small(1, { id: 'sparkline-setup', label: 'Edit', title: 'The sparkline group here: its ranges, kind and colours', icon: 'chart-setup', kind: 'button', wide: true, emits: 'sparkline-setup' }),
+        small(2, { id: 'sparkline-clear', label: 'Clear', title: 'Clear the sparklines in the selection', icon: 'delete-cells', kind: 'button', wide: true, emits: 'clear-sparklines' }),
       ],
     },
     {

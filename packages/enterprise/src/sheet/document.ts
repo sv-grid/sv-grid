@@ -26,6 +26,7 @@ import type { CommentsMap, CommentValue } from './comments'
 import { copyProtection, defaultProtection, type SheetProtection } from './protection'
 import { copyPageSetup, defaultPageSetup, shiftPageSetup, type PageSetup } from './page-setup'
 import { copyObject, shiftObjects, type SheetObject } from './objects'
+import { copySparkline, shiftSparklines, type SparklineGroup } from './sparklines'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
@@ -45,6 +46,7 @@ export type SheetChangeReason =
   | { kind: 'protection' }
   | { kind: 'page-setup' }
   | { kind: 'objects' }
+  | { kind: 'sparklines' }
   | { kind: 'merges' }
   | { kind: 'filter' }
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }
@@ -68,6 +70,7 @@ export type PerSheetState = {
   pageSetup: PageSetup
   /** Charts and pictures anchored over the cells, back to front. */
   objects: SheetObject[]
+  sparklines: SparklineGroup[]
   /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
   sheetHidden: boolean
   merges: Rect[]
@@ -97,6 +100,8 @@ export type SheetStateEntry = {
   pageSetup?: PageSetup
   /** Absent in documents saved before objects existed. */
   objects?: SheetObject[]
+  /** Absent in documents saved before sparklines existed. */
+  sparklines?: SparklineGroup[]
   /** Absent in documents saved before hidden sheets existed. */
   sheetHidden?: boolean
   merges: Array<[number, number, number, number]>
@@ -174,6 +179,7 @@ function emptySheetState(): PerSheetState {
     protection: defaultProtection(),
     pageSetup: defaultPageSetup(),
     objects: [],
+    sparklines: [],
     sheetHidden: false,
     merges: [],
     validation: [],
@@ -243,6 +249,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       protection: copyProtection(state.protection),
       pageSetup: copyPageSetup(state.pageSetup),
       objects: state.objects.map(copyObject),
+      sparklines: state.sparklines.map(copySparkline),
       sheetHidden: state.sheetHidden,
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
       validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
@@ -262,6 +269,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.protection = entry.protection ? copyProtection({ allow: entry.protection.allow ?? {}, ranges: entry.protection.ranges ?? [] }) : defaultProtection()
     state.pageSetup = entry.pageSetup ? copyPageSetup({ ...defaultPageSetup(), ...entry.pageSetup }) : defaultPageSetup()
     state.objects = (entry.objects ?? []).map(copyObject)
+    state.sparklines = (entry.sparklines ?? []).map(copySparkline)
     state.sheetHidden = entry.sheetHidden ?? false
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     state.validation = (entry.validation ?? []).map((rule) => ({
@@ -352,6 +360,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       state.autoFilter = shiftAutoFilter(state.autoFilter, edit)
       state.pageSetup = shiftPageSetup(state.pageSetup, edit)
       state.objects = shiftObjects(state.objects, edit)
+      state.sparklines = shiftSparklines(state.sparklines, edit)
       state.protection = {
         allow: state.protection.allow,
         ranges: state.protection.ranges

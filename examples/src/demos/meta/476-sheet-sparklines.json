@@ -1,0 +1,24 @@
+{
+  "description": "Excel's smallest chart inside a Svelte 5 spreadsheet cell: a sparkline is not an object floating over the sheet, it is the cell. One per row of a block of numbers, read from the range rather than a copy, so editing a number redraws it. Insert > Sparklines offers Line, Column and Win/Loss, plus Edit for the group's ranges, kind and colours and Clear for the groups the selection touches. The sheet keeps them per group the way Excel does, a data range and a location range of the same shape, and they ride in getState() and move with an insert or a delete. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet sparkline",
+    "svelte sheet in-cell chart",
+    "svelte excel sparklines",
+    "svelte sheet win loss chart",
+    "svelte spreadsheet trend column"
+  ],
+  "faq": [
+    {
+      "question": "How is a sparkline different from a chart on the sheet?",
+      "answer": "A chart is an object: it floats over the cells, anchored to one, with a size in pixels. A sparkline is the cell. It has no anchor and no size of its own, it moves and dies with the cells the way a conditional format does, and it is kept as a group: a data range, a location range of the same shape, and the settings they share."
+    },
+    {
+      "question": "Can I change the kind after the fact?",
+      "answer": "Yes. Select a cell that holds one and the Line, Column and Win/Loss buttons change that group instead of making another, the way Excel's Sparkline tab does. Edit opens the group's ranges, colours and whether the whole group shares one value scale."
+    },
+    {
+      "question": "Do sparklines ride in the .xlsx?",
+      "answer": "No. Save As writes the cells, the formats and the rules; sparklines, charts and pictures are left behind, in both directions. The document, getState(), is what carries them."
+    }
+  ]
+}

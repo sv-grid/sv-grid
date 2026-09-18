@@ -814,6 +814,53 @@ Objects do not ride in the .xlsx, in either direction: Save As writes the
 cells, the formats and the rules, and a chart or a picture in a file that
 is opened is left behind.
 
+### Sparklines
+
+Excel's smallest chart, and the one that is not an object: a sparkline IS
+the cell. Insert > Sparklines offers Line, Column and Win/Loss, each
+opening the Create Sparklines dialog on the selected block with the data
+range filled in and the location the column just past it. One sparkline
+is drawn per row of the data (per column, when the location is a row),
+read from the range rather than a copy of it, so editing a number redraws
+the cell.
+
+They are kept per GROUP, the way Excel keeps them: a data range, a
+location range of the same shape and the settings they share. So
+
+- selecting a cell that holds one turns the three kind buttons into a
+  change to that group, Excel's Sparkline tab in one press;
+- Insert > Sparklines > Edit reopens the dialog on the group here, for
+  its ranges, its colours, whether the whole group is drawn on one value
+  scale and whether a line marks its last point;
+- Insert > Sparklines > Clear removes every group the selection touches.
+
+Each of those is one undo. A group moves with an insert or a delete, and
+goes when the cells it is drawn in, or the cells it reads, are deleted.
+Sparklines are per sheet, ride in `getState()` as `sparklines` and report
+`{ kind: 'sparklines' }` on `onChange`. The drawing is the free
+`<SvSparkline>` from `@svgrid/grid`. Raised as `sparkline-line`,
+`sparkline-column`, `sparkline-winloss`, `sparkline-setup` and
+`clear-sparklines`.
+
+A sparkline is behind whatever the cell shows, so a label typed over one
+still reads, and the pointer goes through it: the cell is selected,
+dragged and edited as a cell. Like the objects above, sparklines do not
+ride in the .xlsx, and File > Print leaves them out, since the printed
+page is built from what each cell says.
+
+```svelte
+<script>
+  const doc = createSheetDocument({ workbook: wb })
+  doc.get('Traffic').sparklines = [{
+    id: sparklineId(),
+    data: [1, 1, 4, 12],        // B2:M5, one row per channel
+    location: [1, 13, 4, 13],   // N2:N5, the cells they are drawn in
+    type: 'line',
+    markers: true,
+  }]
+</script>
+```
+
 ### Comments
 
 Excel's notes and its threaded comments: a text on a cell, marked by a red
@@ -1003,6 +1050,10 @@ button that does nothing.
 - **Objects** are charts and pictures, and they stay in the document: a
   chart has no trend lines or secondary axis of its own beyond what the
   Chart dialog sets, and neither kind rides in the .xlsx.
+- **Sparklines** are the three Excel draws, and they stay in the document
+  too: no axis options beyond one scale for the group, no high and low
+  point marks beyond the last one, and they neither ride in the .xlsx nor
+  reach the printed page.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
@@ -1057,6 +1108,24 @@ A project tracker that keeps itself in localStorage: onChange fires once per tic
 Excel puts an HTML document on the clipboard beside the tab-separated text: formats in a style block keyed by class, formulas in x:fmla, raw numbers in x:num. The sheet reads it, so a pasted block arrives bold, filled, with its number formats, and with its formulas moved to where they landed; Google Sheets' data-sheets-formula flavour reads the same. Two buttons put exactly what Excel and Sheets put on the clipboard; click a cell and Ctrl+V.
 
 <div data-docs-demo="466-paste-from-excel" data-height="560"></div>
+
+### Loan model: PMT, accounting formats and the File tab
+
+A mortgage model built from the sheet's own financial functions: PMT for the payment, IPMT and PPMT for each period's split, NPER and RATE for the term and the rate that fit, SUMPRODUCT for the first year of interest. The money cells wear the Accounting format, Extra Payment carries a validation rule with an Input Message, and Circle Invalid Data rings what breaks it. The File tab is the point: Save As writes the whole model as an .xlsx Excel opens with its formulas, formats and rules, Open reads one back, Export CSV takes the active sheet.
+
+<div data-docs-demo="474-loan-model-files" data-height="560"></div>
+
+### Charts and pictures on the sheet
+
+Charts anchored over the cells the way Excel anchors one: each reads a range rather than a copy of the numbers, so typing into a cell redraws it. Insert > Chart charts the selected block and reads its first row and column as the labels, Insert > Picture puts an image on the sheet, and a double-click opens the Chart dialog for the type, the title, series in columns or rows and stacking. Drag an object to move it, its corner to resize, Delete to remove. It hangs from a cell, so inserting a row above moves it, and it rides in getState().
+
+<div data-docs-demo="475-sheet-charts-objects" data-height="560"></div>
+
+### Sparklines: a chart inside the cell
+
+Excel's smallest chart, and not an object: a sparkline IS the cell. One per row of a block of numbers, drawn from the range rather than a copy, so editing a number redraws it. Insert > Sparklines offers Line, Column and Win/Loss, with Edit for the group's ranges, kind and colours and Clear for the groups the selection touches; selecting a cell that holds one turns the kind buttons into a change to that group. They are kept per group the way Excel keeps them, ride in getState() and move with an insert or a delete.
+
+<div data-docs-demo="476-sheet-sparklines" data-height="560"></div>
 
 ## See also
 

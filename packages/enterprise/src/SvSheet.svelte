@@ -85,11 +85,16 @@
   import SvSheetEditRanges from './SvSheetEditRanges.svelte'
   import SvSheetPageSetup from './SvSheetPageSetup.svelte'
   import SvSheetChartSetup from './SvSheetChartSetup.svelte'
+  import SvSheetSparklines from './SvSheetSparklines.svelte'
   import {
     chartSpecOf, chartFromRange, copyObject, objectId,
     type SheetObject, type SheetChartObject, type ObjectAnchor,
   } from './sheet/objects'
-  import { SvChart } from '@svgrid/grid'
+  import {
+    sparklinesFromRange, sparklineAt, sparklineSeries, sparklineScale, clearSparklines, copySparkline,
+    type SparklineGroup, type SheetSparklineType,
+  } from './sheet/sparklines'
+  import { SvChart, SvSparkline } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
@@ -1387,6 +1392,82 @@
     if (selectedObject === id) selectedObject = null
   }
 
+  // --- sparklines: Excel's tiny chart inside a cell ------------------------
+  /**
+   * A sparkline is not an object: it has no anchor and no size, it IS the
+   * cell. The document keeps the GROUPS per sheet, each a data range and a
+   * location range of the same shape, so changing the kind or clearing one
+   * works on the group the way Excel's Sparkline tab does. The numbers are
+   * read live, so editing one redraws the cell.
+   */
+  const sparklinesNow = (): SparklineGroup[] => doc.get(wb.active).sparklines
+  const activeSparklines = $derived.by(() => { void version; return sparklinesNow() })
+  let sparklineSetup = $state<{ group: SparklineGroup; existing: boolean } | null>(null)
+
+  /** Replace the active sheet's sparkline groups, one undo. */
+  function putSparklines(next: SparklineGroup[]) {
+    const sheet = wb.active
+    const before = doc.get(sheet).sparklines
+    const put = (value: SparklineGroup[]) => {
+      doc.get(sheet).sparklines = value
+      bump()
+      changed({ kind: 'sparklines' })
+    }
+    put(next)
+    cmdOf()?.recordUndo(() => put(before), () => put(next))
+  }
+  const addSparklines = (group: SparklineGroup) => putSparklines([...sparklinesNow(), group])
+  const replaceSparklines = (group: SparklineGroup) =>
+    putSparklines(sparklinesNow().map((g) => (g.id === group.id ? group : g)))
+
+  /** The group the active cell belongs to, which the ribbon works on. */
+  const sparklineHere = (): SparklineGroup | null => sparklineAt(sparklinesNow(), active.rowIndex, active.colIndex)
+
+  /**
+   * Insert > Sparklines: with a group under the cell, the kind buttons change
+   * that group, the way Excel's Sparkline tab does. Without one, they open
+   * the Create Sparklines dialog on the selected block.
+   */
+  function startSparklines(type: SheetSparklineType) {
+    if (protectedNow()) { refuse(); return }
+    const here = sparklineHere()
+    if (here) {
+      replaceSparklines({ ...copySparkline(here), type, markers: type === 'line' ? here.markers : undefined })
+      return
+    }
+    const rects = selectedRects().map(normalRect)
+    const rect = rects[rects.length - 1]
+    if (!rect || (rect[0] === rect[2] && rect[1] === rect[3])) { say(t('selectRangeForSparklines')); return }
+    sparklineSetup = { group: sparklinesFromRange(rect, type), existing: false }
+  }
+
+  /** The Sparkline tab's Edit Data: the dialog again, on the group here. */
+  function setupSparklines() {
+    const here = sparklineHere()
+    if (!here) { say(t('noSparklinesHere')); return }
+    sparklineSetup = { group: here, existing: true }
+  }
+
+  function clearSparklinesHere() {
+    if (protectedNow()) { refuse(); return }
+    const rects = selectedRects().map(normalRect)
+    const next = clearSparklines(sparklinesNow(), rects)
+    if (next.length === sparklinesNow().length) { say(t('noSparklinesHere')); return }
+    putSparklines(next)
+    say(t('sparklinesCleared'))
+  }
+
+  /** What one cell's sparkline draws right now, or null. */
+  function sparkAt(row: number, col: number): { group: SparklineGroup; values: number[]; min?: number; max?: number } | null {
+    const group = sparklineAt(activeSparklines, row, col)
+    if (!group) return null
+    const read = (r: number, c: number) => wb.getValue(wb.active, r, c)
+    const values = sparklineSeries(group, row, col, read)
+    if (!values) return null
+    const scale = sparklineScale(group, read)
+    return { group, values, min: scale?.min, max: scale?.max }
+  }
+
   /** The spec a chart object draws right now: its range, read live. */
   function specOf(object: SheetChartObject) {
     void version
@@ -2534,6 +2615,20 @@
         if (selectedObject) removeObject(selectedObject)
         return
       }
+      case 'sparkline-line':
+      case 'sparkline-column':
+      case 'sparkline-winloss':
+        if (onAction?.(action, context) === true) return
+        startSparklines(action === 'sparkline-line' ? 'line' : action === 'sparkline-column' ? 'column' : 'winloss')
+        return
+      case 'sparkline-setup':
+        if (onAction?.(action, context) === true) return
+        setupSparklines()
+        return
+      case 'clear-sparklines':
+        if (onAction?.(action, context) === true) return
+        clearSparklinesHere()
+        return
       case 'trace-precedents': trace('precedents'); return
       case 'trace-dependents': trace('dependents'); return
       case 'remove-arrows': removeArrows(); return
@@ -3855,6 +3950,25 @@
       <span class="sheet-databar-axis" style:left="{Math.round(cf.dataBar.axis * 100)}%"></span>
     {/if}
   {/if}
+  {@const spark = showFormulas || typing ? null : sparkAt(props.r, props.c)}
+  {#if spark}
+    <!-- Excel's sparkline: the cell IS the chart, drawn behind whatever the
+         cell shows, so a label typed over it still reads. -->
+    <span class="sheet-sparkline" aria-hidden="true">
+      <SvSparkline
+        data={spark.values}
+        type={spark.group.type === 'column' ? 'bar' : spark.group.type === 'winloss' ? 'winloss' : 'line'}
+        width={Math.max(16, cellWidth(props.r, props.c) - 8)}
+        height={Math.max(10, (doc.get(wb.active).heights.get(props.r) ?? rowHeight) - 8)}
+        color={spark.group.color}
+        negativeColor={spark.group.negativeColor}
+        min={spark.min}
+        max={spark.max}
+        lastPoint={Boolean(spark.group.markers)}
+        ariaLabel={t('sparklineObject', { type: spark.group.type })}
+      />
+    </span>
+  {/if}
   {@const spilled = spillEdges(props.r, props.c)}
   {#if spilled}
     <span class="sheet-spill-edge {spilled}" aria-hidden="true"></span>
@@ -4221,6 +4335,24 @@
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
   <input class="sheet-file-input" type="file" accept="image/*" bind:this={imageInput} onchange={pickedPicture} aria-hidden="true" tabindex="-1" />
+  {#if sparklineSetup}
+    <SvSheetSparklines
+      open={true}
+      group={sparklineSetup.group}
+      existing={sparklineSetup.existing}
+      onApply={(next) => {
+        const was = sparklineSetup
+        if (was?.existing) replaceSparklines(next)
+        else addSparklines(next)
+      }}
+      onDelete={() => {
+        const id = sparklineSetup?.group.id
+        sparklineSetup = null
+        if (id) putSparklines(sparklinesNow().filter((g) => g.id !== id))
+      }}
+      onClose={() => { sparklineSetup = null; afterDialog() }}
+    />
+  {/if}
   {#if chartSetup}
     <SvSheetChartSetup
       open={true}
@@ -4474,6 +4606,17 @@
     border: 1px solid var(--sg-border, #d1d1d1);
     border-radius: 3px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+  /* The sparkline fills its cell, behind the text and out of the way of the
+     pointer: the cell is still selected, dragged and edited as a cell. */
+  .sheet-sparkline {
+    position: absolute;
+    inset: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    overflow: hidden;
   }
   .sheet-cell-anchor {
     position: absolute;

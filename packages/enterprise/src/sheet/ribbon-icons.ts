@@ -50,6 +50,7 @@ export type RibbonIconName =
   | 'protect' | 'unprotect' | 'lock' | 'edit-ranges'
   | 'print' | 'page-setup' | 'margins' | 'orientation' | 'paper' | 'print-area' | 'print-titles'
   | 'picture' | 'chart-setup'
+  | 'sparkline-line' | 'sparkline-column' | 'sparkline-winloss'
   | 'comment' | 'comment-delete' | 'comment-prev' | 'comment-next' | 'comments-all'
   | 'validation'
   | 'cf' | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
@@ -332,6 +333,19 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
     { d: 'M2.5 13.5h7M3.5 13.5v-4M6 13.5v-7' },
     { d: 'M11.5 5.5a2 2 0 1 0 .01 0z' },
     { d: 'M11.5 2.5v1.2M11.5 7.3v1.2M14.5 5.5h-1.2M9.7 5.5H8.5', width: 1.2 },
+  ],
+  // The three sparklines, each drawn as what it draws: a line over a cell,
+  // a run of small columns, and the win/loss pair above and below the axis.
+  'sparkline-line': [
+    { d: 'M2.5 11.5l3-4 3 2 5-6' },
+    { d: 'M2.5 13.5h11', width: 1.2 },
+  ],
+  'sparkline-column': [
+    { d: 'M3 13.5v-4M6 13.5v-7M9 13.5v-3M12 13.5v-8' },
+  ],
+  'sparkline-winloss': [
+    { d: 'M2.5 8h11', width: 1.2 },
+    { d: 'M3.5 8V5M6.5 8v3M9.5 8V5M12.5 8v3' },
   ],
   // A printer: the tray, the page going in, the page coming out.
   print: [
