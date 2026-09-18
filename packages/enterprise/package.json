@@ -63,6 +63,19 @@
       "svelte": "./dist/studio/index.js",
       "import": "./dist/studio/index.js"
     },
+    "./wc": {
+      "types": "./dist/wc/sv-sheet-element.d.ts",
+      "import": "./dist/wc/sv-sheet-element.js",
+      "default": "./dist/wc/sv-sheet-element.js"
+    },
+    "./wc/react": {
+      "types": "./dist/wc/react.d.ts",
+      "import": "./dist/wc/react.js"
+    },
+    "./wc/vue": {
+      "types": "./dist/wc/vue.d.ts",
+      "import": "./dist/wc/vue.js"
+    },
     "./cdn/svelte-external": {
       "import": "./dist/cdn/svgrid-enterprise.svelte-external.js",
       "default": "./dist/cdn/svgrid-enterprise.svelte-external.js"
@@ -82,12 +95,14 @@
   "scripts": {
     "test": "vitest run",
     "test:types": "tsc -p tsconfig.json --noEmit",
-    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "build": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs && node ./scripts/generate-sheet-surface.mjs --check && node ./scripts/build-wc.mjs",
     "build:lib": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-node.mjs",
     "build:cdn": "node ./scripts/build-cdn.mjs",
+    "build:wc": "node ./scripts/build-wc.mjs",
+    "generate:wc": "node ./scripts/generate-sheet-surface.mjs",
     "build:node": "node ./scripts/build-node.mjs",
     "build:designer": "node ./scripts/build-designer.mjs",
-    "prepublishOnly": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs",
+    "prepublishOnly": "svelte-package --input ./src --output ./dist && node ../../tools/strip-dist-tests.mjs ./dist && node ../../tools/add-dist-extensions.mjs ./dist && node ./scripts/build-cdn.mjs && node ./scripts/build-node.mjs && node ./scripts/build-designer.mjs && node ./scripts/generate-sheet-surface.mjs --check && node ./scripts/build-wc.mjs",
     "extract:ui-props": "node scripts/extract-ui-props.mjs",
     "lint": "eslint ./src"
   },

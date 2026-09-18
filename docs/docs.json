@@ -361,6 +361,7 @@
         "help/web-components/quick-start.md",
         "help/web-components/sv-grid.md",
         "help/web-components/sv-chart.md",
+        "help/web-components/sv-sheet.md",
         "help/web-components/shadow-dom.md",
         "help/web-components/react.md",
         "help/web-components/vue.md",
@@ -377,6 +378,7 @@
             "help/web-components/quick-start.md",
             "help/web-components/sv-grid.md",
             "help/web-components/sv-chart.md",
+            "help/web-components/sv-sheet.md",
             "help/web-components/shadow-dom.md"
           ]
         },
@@ -5655,6 +5657,19 @@
         "436-chart-sync-zoom",
         "437-chart-financial-workbench"
       ]
+    },
+    {
+      "path": "help/web-components/sv-sheet.md",
+      "url": "/docs/help/web-components/sv-sheet/",
+      "title": "`<sv-sheet>`: the spreadsheet as a custom element",
+      "summary": "The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain script tag.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 994,
+      "lastUpdated": "2026-09-18",
+      "demoIds": []
     },
     {
       "path": "help/web-components/sv-grid.md",

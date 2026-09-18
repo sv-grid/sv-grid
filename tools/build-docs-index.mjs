@@ -136,7 +136,7 @@ const PAGE_GROUPS = {
   // `limitations` reads as a conclusion rather than an opening.
   'help/web-components': [
     { label: '', pages: ['help/web-components.md'] },
-    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'sv-chart', 'shadow-dom'] },
+    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'sv-chart', 'sv-sheet', 'shadow-dom'] },
     { label: 'Frameworks', pages: ['react', 'vue', 'angular'] },
     { label: 'Reference', pages: ['typescript', 'enterprise', 'limitations'] },
   ],

@@ -999,6 +999,10 @@ Excel puts an HTML document on the clipboard beside the tab-separated text: form
 
 ## See also
 
+- [`<sv-sheet>`](../web-components/sv-sheet.md): the shell as a custom
+  element for React, Vue, Angular or a plain page, with React and Vue
+  wrappers.
+
 - [Excel keyboard shortcuts](./keyboard-shortcuts.md)
 - [Formulas](../spreadsheet-formulas.md)
 - [Number formats](./number-formats.md)
