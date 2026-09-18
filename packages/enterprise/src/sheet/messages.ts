@@ -168,6 +168,11 @@ export type SheetTextMessages = {
   noPivotHere: string
   linkRemoved: string
   noLinkHere: string
+  selectBlockToTable: string
+  noTableHere: string
+  tableRemoved: string
+  tableMade: string
+  tableNameTaken: string
   cannotOpenLink: string
   pivotRefreshed: string
   pivotWritten: string
@@ -603,6 +608,17 @@ export const defaultDialogMessages = {
   'chartSetup.headers': 'First row and column are labels',
   'chartSetup.stacked': 'Stack the series',
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
+  // Create Table
+  'table.title': 'Create Table',
+  'table.range': 'Where are the cells?',
+  'table.rangePlaceholder': 'A1:D20',
+  'table.name': 'Name:',
+  'table.namePlaceholder': 'Table1',
+  'table.headers': 'My table has headers',
+  'table.totals': 'Show a totals row',
+  'table.hint': 'A table names its columns, so a formula can say Orders[Amount] and keep meaning it as rows are added. Typing under the last row grows it.',
+  'table.badRange': 'That is not a range on this sheet.',
+  'table.badName': 'A table name starts with a letter and holds no spaces.',
   // Insert Link
   'link.title': 'Link',
   'link.address': 'Address:',
@@ -859,6 +875,11 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   noPivotHere: 'No PivotTable here. Select a cell inside one.',
   linkRemoved: 'Link removed.',
   noLinkHere: 'No link in the selection.',
+  selectBlockToTable: 'Select the cells to make a table of, headers included.',
+  noTableHere: 'No table here. Select a cell inside one.',
+  tableRemoved: '{name} is ordinary cells again.',
+  tableMade: '{name} covers {range}.',
+  tableNameTaken: 'A table called {name} already exists.',
   cannotOpenLink: 'That link goes nowhere on this workbook.',
   pivotRefreshed: 'PivotTable refreshed.',
   pivotWritten: 'PivotTable written to {range}.',

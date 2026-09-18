@@ -309,7 +309,7 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
  * naming a column that was renamed is an ordinary thing to find in a sheet,
  * and one broken total should not take the rest of the workbook with it.
  */
-function tableRectOf(
+export function tableRectOf(
   node: Extract<Node, { k: 'table' }>,
   ctx: EvalContext,
 ): { sheet: string; firstRow: number; lastRow: number; firstCol: number; lastCol: number } | null {

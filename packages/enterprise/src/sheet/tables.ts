@@ -15,6 +15,9 @@
  * time.
  */
 
+import { shiftRect, type Rect } from './rects'
+import type { StructuralEdit } from './refs'
+
 export type TableRegion = {
   name: string
   sheet: string
@@ -190,4 +193,33 @@ export function resolveTableRange(
 /** How many data rows a table holds. */
 export function rowCountOf(table: TableRegion): number {
   return Math.max(0, table.lastRow - table.headerRow)
+}
+
+/**
+ * A table after an insert or delete on its own sheet: its header row, its
+ * columns and its last row move with the cells. Null when the edit took the
+ * header row, or every column, which is what deleting a table looks like.
+ *
+ * A totals row sits on `lastRow + 1`, so it moves with the rest; an insert
+ * INSIDE the table grows it, which is what Excel does when a row is added
+ * in the middle of one.
+ */
+export function shiftTable(table: TableRegion, sheet: string, edit: StructuralEdit): TableRegion | null {
+  if (table.sheet.toLowerCase() !== sheet.toLowerCase()) return table
+  const rows = edit.kind === 'insertRows' || edit.kind === 'deleteRows'
+  const rect: Rect = rows
+    ? ([table.headerRow, table.firstCol, table.lastRow + (table.hasTotals ? 1 : 0), table.lastCol] as unknown as Rect)
+    : ([table.headerRow, table.firstCol, table.lastRow + (table.hasTotals ? 1 : 0), table.lastCol] as unknown as Rect)
+  const moved = shiftRect(rect, edit)
+  if (!moved) return null
+  const [r1, c1, r2, c2] = moved
+  // A table with no data rows left is gone, as is one whose header went.
+  const lastRow = r2 - (table.hasTotals ? 1 : 0)
+  if (lastRow < r1 + 1) return null
+  return { ...table, headerRow: r1, firstCol: c1, lastCol: c2, lastRow }
+}
+
+/** Every table after an edit, the gone ones dropped. */
+export function shiftTables(tables: ReadonlyArray<TableRegion>, sheet: string, edit: StructuralEdit): TableRegion[] {
+  return tables.map((t) => shiftTable(t, sheet, edit)).filter((t): t is TableRegion => t !== null)
 }

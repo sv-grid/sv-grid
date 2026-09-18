@@ -88,6 +88,7 @@
   import SvSheetSparklines from './SvSheetSparklines.svelte'
   import SvSheetPivot from './SvSheetPivot.svelte'
   import SvSheetLink from './SvSheetLink.svelte'
+  import SvSheetTable from './SvSheetTable.svelte'
   import {
     chartSpecOf, chartFromRange, copyObject, objectId,
     type SheetObject, type SheetChartObject, type ObjectAnchor,
@@ -103,6 +104,7 @@
   import {
     linkAt, setLink, removeLink, parseLinkTarget, linkTitle, hyperlinkArgument, type SheetLink,
   } from './sheet/links'
+  import { isValidTableName, type TableRegion } from './sheet/tables'
   import { SvChart, SvSparkline } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -199,9 +201,12 @@
      */
     formats?: Readonly<Record<string, CellFormatEntry>>
     /**
-     * Ribbon buttons the shell has nothing behind: Insert > Table and
-     * Insert > Chart. Left off unless listed here, which says the
-     * application answers them in `onAction`.
+     * Kept for the applications that passed it: the shell answers Insert >
+     * Table and Insert > Chart itself now, so nothing has to be listed
+     * here. An application that wants its own can still take either over
+     * through `onAction`.
+     *
+     * @deprecated Both buttons are always on.
      */
     extras?: ReadonlyArray<'insert-table' | 'insert-chart'>
     /**
@@ -1485,6 +1490,141 @@
     return { group, values, min: scale?.min, max: scale?.max }
   }
 
+  // --- tables ---------------------------------------------------------------
+  /**
+   * Excel's Format as Table. The workbook holds the tables, because a
+   * structured reference (`Orders[Amount]`) is resolved while a formula is
+   * evaluated and can name a table on another sheet. What the shell adds is
+   * the making of one, the look, and Excel's auto-expand: a row typed under
+   * the last one joins the table, so the references that read it grow too.
+   */
+  const tablesNow = (): TableRegion[] => wb.tables.list()
+  const activeTables = $derived.by(() => { void version; return tablesNow().filter((t) => t.sheet.toLowerCase() === wb.active.toLowerCase()) })
+  let tableSetup = $state<{ range: Rect; name: string; headers: boolean; totals: boolean; existing: string | null } | null>(null)
+
+  /** Replace the workbook's tables, one undo. */
+  function putTables(next: ReadonlyArray<TableRegion>) {
+    const before = tablesNow().map((t) => ({ ...t }))
+    const put = (value: ReadonlyArray<TableRegion>) => {
+      wb.tables.clear()
+      for (const table of value) wb.tables.define({ ...table })
+      wb.recalculate()
+      bump()
+      changed({ kind: 'tables' })
+    }
+    const after = next.map((t) => ({ ...t }))
+    put(after)
+    cmdOf()?.recordUndo(() => put(before), () => put(after))
+  }
+
+  /** The table the active cell sits in, or null. */
+  const tableHere = (): TableRegion | undefined => wb.tables.at(wb.active, active.rowIndex, active.colIndex)
+
+  /** A name no table has yet: Table1, Table2, ... as Excel names them. */
+  function nextTableName(): string {
+    const taken = new Set(tablesNow().map((t) => t.name.toLowerCase()))
+    for (let i = 1; ; i += 1) {
+      const name = `Table${i}`
+      if (!taken.has(name.toLowerCase())) return name
+    }
+  }
+
+  /** Insert > Table, or Ctrl+T: the dialog on the selection, or on the table here. */
+  function insertTable() {
+    if (protectedNow()) { refuse(); return }
+    const here = tableHere()
+    if (here) {
+      tableSetup = {
+        range: [here.headerRow, here.firstCol, here.lastRow + (here.hasTotals ? 1 : 0), here.lastCol] as unknown as Rect,
+        name: here.name,
+        headers: true,
+        totals: here.hasTotals,
+        existing: here.name,
+      }
+      return
+    }
+    const cmd = cmdOf()
+    const rects = selectedRects(cmd).map(normalRect)
+    const last = rects[rects.length - 1]
+    const region = cmd ? currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }) : null
+    const block: Rect | null = last && (last[0] !== last[2] || last[1] !== last[3]) ? last : region ?? last ?? null
+    if (!block || block[0] === block[2]) { say(t('selectBlockToTable')); return }
+    tableSetup = { range: block, name: nextTableName(), headers: true, totals: false, existing: null }
+  }
+
+  /** OK in the dialog: the table defined, and the filter arrows over it. */
+  function applyTable(next: { range: Rect; name: string; headers: boolean; totals: boolean }) {
+    const cmd = cmdOf()
+    const [r1, c1, r2, c2] = next.range
+    const existing = tableSetup?.existing
+    if (!isValidTableName(next.name)) { say(t('table.badName')); return }
+    const clash = tablesNow().find((t) => t.name.toLowerCase() === next.name.toLowerCase() && t.name !== existing)
+    if (clash) { say(t('tableNameTaken', { name: next.name })); return }
+    // Without a header row the table still needs one to name its columns,
+    // so the first row becomes it, as Excel does when the box is unticked.
+    const table: TableRegion = {
+      name: next.name,
+      sheet: wb.active,
+      headerRow: r1,
+      firstCol: c1,
+      lastCol: c2,
+      lastRow: next.totals ? r2 - 1 : r2,
+      hasTotals: next.totals,
+    }
+    const rest = tablesNow().filter((t) => t.name !== existing)
+    cmd?.batch(() => {
+      putTables([...rest, table])
+      if (!next.headers) {
+        // The first row holds data: push it down and write the column names.
+        wb.applyStructuralEdit(wb.active, { kind: 'insertRows', at: r1, count: 1 })
+        doc.shift(wb.active, { kind: 'insertRows', at: r1, count: 1 })
+        for (let c = c1; c <= c2; c += 1) cmd.setCellValue(r1, c, `Column${c - c1 + 1}`)
+      }
+      applyAutoFilter({ range: [r1, c1, next.totals ? r2 - 1 : r2, c2] as unknown as Rect, filters: {} }, cmd)
+    })
+    bump()
+    say(t('tableMade', { name: next.name, range: `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${r2 + 1}` }))
+  }
+
+  /** Convert to Range: the cells stay, the table goes. */
+  function removeTableHere() {
+    if (protectedNow()) { refuse(); return }
+    const here = tableHere()
+    if (!here) { say(t('noTableHere')); return }
+    putTables(tablesNow().filter((t) => t.name !== here.name))
+    say(t('tableRemoved', { name: here.name }))
+  }
+
+  /**
+   * A row that just joined a table takes the calculated columns with it:
+   * every column whose cell above holds a formula and whose own cell is
+   * still empty is filled down, references translated one row.
+   */
+  function fillTableFormulas(row: number, col: number) {
+    const table = wb.tables.at(wb.active, row, col)
+    if (!table || row <= table.headerRow + 1) return
+    for (let c = table.firstCol; c <= table.lastCol; c += 1) {
+      if (wb.getRaw(wb.active, row, c) !== '') continue
+      const above = wb.getRaw(wb.active, row - 1, c)
+      if (!above.startsWith('=')) continue
+      const filled = translateFormula(above, 1, 0)
+      if (typeof filled === 'string') wb.setRaw(wb.active, row, c, filled)
+    }
+  }
+
+  /** What part of a table a cell is, for the banded look Excel gives one. */
+  function tablePartAt(row: number, col: number): 'header' | 'band' | 'totals' | 'row' | null {
+    for (const table of activeTables) {
+      if (col < table.firstCol || col > table.lastCol) continue
+      if (row === table.headerRow) return 'header'
+      const last = table.lastRow + (table.hasTotals ? 1 : 0)
+      if (row < table.headerRow || row > last) continue
+      if (table.hasTotals && row === last) return 'totals'
+      return (row - table.headerRow) % 2 === 0 ? 'band' : 'row'
+    }
+    return null
+  }
+
   // --- hyperlinks -----------------------------------------------------------
   /**
    * Excel's links live on the CELL, not in its text: the cell keeps whatever
@@ -2120,10 +2260,8 @@
     setFindReplaceHandler((context) => delegate('find-replace', context))
     setFormatDialogHandler((context) => delegate('format-cells', context))
     setPasteSpecialHandler((context) => delegate('paste-special', context))
-    // The keys the ribbon's tooltips promise. Ctrl+T falls through unless
-    // the application answers Insert > Table.
+    // The keys the ribbon's tooltips promise, Ctrl+T among them.
     setRibbonActionHandler((action, context) => {
-      if (action === 'insert-table' && !extras.includes('insert-table')) return false
       handleAction(action, context)
       return true
     })
@@ -2606,9 +2744,9 @@
 
   /** The ribbon leaves off what nobody answers. */
   const without = $derived.by<RibbonActionId[]>(() => {
-    // Insert > Table is the one the library still has nothing behind.
-    const all: Array<'insert-table'> = ['insert-table']
-    const out: RibbonActionId[] = all.filter((a) => !extras.includes(a))
+    // Everything on the ribbon has something behind it now; the list stays
+    // because the shell still hides one pair by state, below.
+    const out: RibbonActionId[] = []
     // Protect Sheet and Unprotect Sheet share one slot on the Review tab.
     out.push(isProtected ? 'protect-sheet' : 'unprotect-sheet')
     return out
@@ -2844,6 +2982,14 @@
       case 'clear-sparklines':
         if (onAction?.(action, context) === true) return
         clearSparklinesHere()
+        return
+      case 'insert-table':
+        if (onAction?.(action, context) === true) return
+        insertTable()
+        return
+      case 'remove-table':
+        if (onAction?.(action, context) === true) return
+        removeTableHere()
         return
       case 'insert-link':
         if (onAction?.(action, context) === true) return
@@ -3193,6 +3339,16 @@
       return
     }
     wb.setRaw(wb.active, r, c, stored)
+    // Excel's auto-expand: a row typed under the last one, or a column typed
+    // beside the last, joins the table, so every structured reference that
+    // reads it grows with it. The calculated columns are filled down into
+    // the new row, which is the other half of what Excel does: a table's
+    // Amount column works itself out on a row that was just typed.
+    if (stored !== '' && wb.tables.growToInclude(wb.active, r, c)) {
+      fillTableFormulas(r, c)
+      wb.recalculate()
+      changed({ kind: 'tables' })
+    }
     bump()
     changed({ kind: 'cells' })
     if (patch.wrap || entry?.wrap) fitWrappedRows()
@@ -4237,6 +4393,14 @@
   {/if}
   {@const link = showFormulas ? undefined : linkAt(activeLinks, props.r, props.c)}
   {@const linked = !!link || (!showFormulas && !!hyperlinkArgument(raw(props.r, props.c)))}
+  {@const part = activeTables.length ? tablePartAt(props.r, props.c) : null}
+  {#if part}
+    <!-- Excel's table style, drawn rather than written into the cells: the
+         header band, and every other row tinted. A row typed under the last
+         one joins the table, and the look follows it without a format
+         being written anywhere. -->
+    <span class="sheet-table-fill {part}" aria-hidden="true"></span>
+  {/if}
   <span
     class="sheet-cell"
     class:linked={linked}
@@ -4593,6 +4757,19 @@
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
   <input class="sheet-file-input" type="file" accept="image/*" bind:this={imageInput} onchange={pickedPicture} aria-hidden="true" tabindex="-1" />
+  {#if tableSetup}
+    <SvSheetTable
+      open={true}
+      range={tableSetup.range}
+      name={tableSetup.name}
+      headers={tableSetup.headers}
+      totals={tableSetup.totals}
+      existing={Boolean(tableSetup.existing)}
+      onApply={(next) => applyTable(next)}
+      onRemove={() => { tableSetup = null; removeTableHere() }}
+      onClose={() => { tableSetup = null; afterDialog() }}
+    />
+  {/if}
   {#if linkSetup}
     <SvSheetLink
       open={true}
@@ -5528,6 +5705,24 @@
     white-space: nowrap;
     overflow: hidden;
   }
+  /* The table style: a filled header, a tinted band on alternate rows, a
+     line over the totals. Behind everything the cell itself draws, and out
+     of the pointer's way. */
+  .sheet-table-fill {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .sheet-table-fill.header {
+    background: color-mix(in srgb, var(--sg-accent, #107c41) 16%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent);
+  }
+  .sheet-table-fill.band { background: color-mix(in srgb, var(--sg-accent, #107c41) 7%, transparent); }
+  .sheet-table-fill.totals {
+    background: color-mix(in srgb, var(--sg-accent, #107c41) 12%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent);
+  }
+
   /* Excel's link: the theme's link colour, underlined, and a hand over it.
      The cell is still a cell - it is selected, dragged and typed into the
      same way - so this is a span rather than an anchor. */

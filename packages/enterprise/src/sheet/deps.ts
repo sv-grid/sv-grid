@@ -57,6 +57,13 @@ export function precedentsOf(
    * forces a recalculation.
    */
   resolveName?: (name: string) => Node | null,
+  /**
+   * The rectangle behind a structured reference (`Orders[Amount]`,
+   * `[@Qty]`). Without it a formula over a table records no precedents, so
+   * editing a cell in the table leaves every total reading it stale until
+   * something forces a full recalculation.
+   */
+  resolveTable?: (node: Extract<Node, { k: 'table' }>) => { sheet: string; firstRow: number; lastRow: number; firstCol: number; lastCol: number } | null,
   depth = 0,
 ): CellKey[] {
   const out: CellKey[] = []
@@ -65,7 +72,15 @@ export function precedentsOf(
       // A name defined as another name is followed; a circular chain is cut
       // after a few hops rather than recursing forever.
       const target = depth < 8 ? resolveName?.(n.name) : null
-      if (target) out.push(...precedentsOf(target, self, lastRow, resolveName, depth + 1))
+      if (target) out.push(...precedentsOf(target, self, lastRow, resolveName, resolveTable, depth + 1))
+      return
+    }
+    if (n.k === 'table') {
+      const rect = resolveTable?.(n)
+      if (!rect) return
+      for (let r = rect.firstRow; r <= rect.lastRow; r += 1) {
+        for (let c = rect.firstCol; c <= rect.lastCol; c += 1) out.push(cellKey(rect.sheet, r, c))
+      }
       return
     }
     if (n.k === 'ref' && n.ref.row !== null) {

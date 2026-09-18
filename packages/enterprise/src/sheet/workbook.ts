@@ -12,10 +12,11 @@
  * disagree with the formula above it.
  */
 import { parseFormula } from './parse'
-import { evaluate, rangeValues, type EvalContext } from './evaluate'
+import { evaluate, rangeValues, type EvalContext, tableRectOf } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
+import { createTableRegistry, shiftTables, type TableRegion, type TableRegistry } from './tables'
 import { createNames, type SheetNames } from './names'
 import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
 import { builtinEngine, type SheetEngine } from './engine'
@@ -46,6 +47,8 @@ export type WorkbookOptions = {
    * cycles and the spills whichever engine answers.
    */
   engine?: SheetEngine
+  /** Tables the workbook starts with, for a document being restored. */
+  tables?: ReadonlyArray<TableRegion>
 }
 
 /** One cell read as text that has not been written: what a validation rule checks. */
@@ -55,6 +58,12 @@ export type Workbook = {
   readonly sheets: ReadonlyArray<string>
   readonly active: string
   readonly names: SheetNames
+  /**
+   * Excel's tables, which is what a structured reference resolves through.
+   * Defining one here is what makes `=SUM(Orders[Amount])` mean anything;
+   * the shell's Insert > Table does it, and a document restores it.
+   */
+  readonly tables: TableRegistry
 
   setActive(name: string): void
   addSheet(name?: string, at?: number): string
@@ -127,7 +136,7 @@ export type Workbook = {
   spills(sheet: string): Array<{ row: number; col: number; rect: readonly [number, number, number, number] }>
   rowCount(sheet: string): number
   colCount(sheet: string): number
-  serialize(): { sheets: SheetData[]; active: string; names: Record<string, string> }
+  serialize(): { sheets: SheetData[]; active: string; names: Record<string, string>; tables?: TableRegion[] }
 }
 
 /** A name Excel would accept for a sheet. */
@@ -153,6 +162,38 @@ export function createWorkbook(
   const order: string[] = []
   const byName = new Map<string, string[][]>()
   const graph = createDependencyGraph()
+  /**
+   * The workbook's tables. The parser has always read a structured
+   * reference (`Orders[Amount]`, `[@Qty]`); this is what makes one resolve,
+   * because a reference like that means nothing until something says where
+   * the table is.
+   */
+  const rawTables = createTableRegistry(options.tables)
+  /**
+   * The registry as the workbook hands it out: every change drops the
+   * cached values and settles again.
+   *
+   * A table decides what `Orders[Amount]` means, so defining one, removing
+   * one or growing one changes the answer of every formula that mentions
+   * it. Without this, a table defined after the cells were read leaves each
+   * of those formulas showing the `#REF!` it worked out when there was no
+   * table, which is the first thing anyone hits.
+   */
+  const tables: TableRegistry = {
+    get: (name) => rawTables.get(name),
+    list: () => rawTables.list(),
+    at: (sheet, row, col) => rawTables.at(sheet, row, col),
+    define(table) { rawTables.define(table); afterTables() },
+    remove(name) { const gone = rawTables.remove(name); if (gone) afterTables(); return gone },
+    growToInclude(sheet, row, col) { const grew = rawTables.growToInclude(sheet, row, col); if (grew) afterTables(); return grew },
+    clear() { rawTables.clear(); afterTables() },
+  }
+
+  function afterTables(): void {
+    dropAll()
+    loadEngine()
+    settleAll()
+  }
   const functions = withCustomFunctions(options.functions)
   const engine = options.engine ?? builtinEngine()
 
@@ -235,6 +276,8 @@ export function createWorkbook(
       },
       lastRow: (sheet) => Math.max(rowCount(resolveSheetName(sheet, self)) - 1, 0),
       resolveNameNode: (name) => names.resolve(name),
+      findTable: (name) => rawTables.get(name),
+      tableAt: (sheet, row, col) => rawTables.at(resolveSheetName(sheet, self), row, col),
       functions,
     }
   }
@@ -472,6 +515,18 @@ export function createWorkbook(
           { sheet },
           (s) => Math.max(rowCount(s ?? sheet) - 1, 0),
           (name) => names.resolve(name),
+          // A structured reference's cells, so a total over a table is
+          // recalculated when a cell inside the table is typed. Best effort:
+          // a reference that cannot be resolved records no precedents rather
+          // than taking the cell's value down with it, since the value has
+          // already been worked out by the time this runs.
+          (node) => {
+            try {
+              return tableRectOf(node, contextFor(sheet, undefined, { row, col }))
+            } catch {
+              return null
+            }
+          },
         ))
       } else {
         graph.setPrecedents(key, null)
@@ -550,6 +605,7 @@ export function createWorkbook(
     get sheets() { return [...order] },
     get active() { return active },
     get names() { return names },
+    get tables() { return tables },
 
     setActive(name) {
       if (sheetCells(name)) active = order.find((n) => n.toLowerCase() === name.toLowerCase()) ?? active
@@ -724,6 +780,12 @@ export function createWorkbook(
       const target = sheetCells(sheet)
       if (!target || edit.count <= 0) return
 
+      // The tables move with their cells, so a structured reference keeps
+      // meaning the same column after a row is inserted above the table.
+      const moved = shiftTables(rawTables.list(), sheet, edit)
+      rawTables.clear()
+      for (const table of moved) rawTables.define(table)
+
       // Rewrite every formula in the WORKBOOK, not just this sheet: another
       // sheet may hold =Orders!A5, and inserting a row in Orders has to move
       // it exactly as if it were local.
@@ -843,10 +905,14 @@ export function createWorkbook(
     colCount,
 
     serialize() {
+      const list = rawTables.list()
       return {
         sheets: order.map((name) => ({ name, cells: sheetCells(name)!.map((r) => [...r]) })),
         active,
         names: names.serialize(),
+        // Absent rather than empty in a workbook with no tables, so a saved
+        // document from before they existed reads the same either way.
+        ...(list.length ? { tables: list.map((t) => ({ ...t })) } : {}),
       }
     },
   }
