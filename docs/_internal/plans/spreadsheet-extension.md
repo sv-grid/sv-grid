@@ -38,6 +38,9 @@ per item:
   list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
   beside the flag, and `sheetProtection` attributes and `protectedRanges`
   in the xlsx both ways. Phase C is complete.
+- Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
+  rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
+  in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
 - Phase E item 1: `SheetMessages`, `SheetLocalization` and the
   `localization` prop, threaded through Svelte context to the ribbon,
   the formula bar, the tab strip, every dialog and the status bar; the
@@ -251,10 +254,12 @@ serialised by Phase A. PivotTable from a range comes last and reuses
    external), with wrappers generated the way `grid-wc` generates React,
    Vue and Angular ones. Licensing rule from `AGENTS.md`: nothing moves into
    an MIT package.
-4. Studio codegen for a sheet page, MCP eval prompts that ask for a sheet,
+4. ~~Studio codegen for a sheet page, MCP eval prompts that ask for a sheet,
    and a `skills/svgrid/rules/sheet.md` with the shell's house rules
    (`refresh()` after outside writes, `cmd.batch` for one undo, qualified
-   addresses in `formats`).
+   addresses in `formats`).~~ Shipped: a Spreadsheet block in Studio over
+   `sheetCellsFromRows`, a `build_sheet` prompt on the MCP server, and the
+   rules file.
 
 ### Phase F. Scale and collaboration (L)
 

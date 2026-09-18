@@ -83,7 +83,7 @@ export type EntityDataSource = MemorySource | RestSource | SqlSource | SupabaseS
 /** The kinds of block a screen can hold: data-bound (entity-derived) or the
  *  entity-agnostic `'component'` (a UI-kit component from `UI_COMPONENT_REGISTRY`,
  *  usable on any screen, including a freestanding one with no entity). */
-export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'accordion' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail' | 'component'
+export type BlockKind = 'grid' | 'form' | 'chart' | 'dashboard' | 'kpi' | 'gauge' | 'tree' | 'tabs' | 'accordion' | 'master-detail' | 'lookup' | 'pivot' | 'filter' | 'record' | 'board' | 'calendar' | 'detail' | 'sheet' | 'component'
 
 export type GridAlign = 'left' | 'center' | 'right'
 /** No-code per-column value formatting. Compiles to the grid's `format` (CellFormatConfig):
@@ -365,6 +365,11 @@ export type DetailRelated = { entity: string; foreignKey: string; label?: string
  *  timeline of the children pointing back at the record). The universal signature
  *  view for relation-heavy entities where a board / calendar does not fit. */
 export type DetailConfig = { kind: 'detail'; titleField: string; subtitleField?: string; statusField?: string; metricFields?: string[]; sections?: { label: string; fields: string[] }[]; related?: DetailRelated[] }
+/** The entity's rows on the spreadsheet shell (SvSheet): a header row of field
+ *  labels, a row per record, and, with `totals`, a SUM row under every numeric
+ *  column. `fields` narrows and orders the columns (empty = every field). The
+ *  sheet is Excel over the dataset: formulas, formats, filters and an xlsx out. */
+export type SheetConfig = { kind: 'sheet'; fields?: string[]; totals?: boolean }
 /** A UI-kit component (from `UI_COMPONENT_REGISTRY`, keyed by `component`) dropped
  *  onto a screen. Entity-agnostic - works on a freestanding page or mixed onto an
  *  entity-bound screen alike. `props` holds its configured "chrome" values, keyed
@@ -381,7 +386,7 @@ export type ComponentBinding =
 export type ComponentConfig = { kind: 'component'; component: string; props: Record<string, unknown>; name?: string; bindings?: Record<string, ComponentBinding> }
 export type BlockConfig =
   | GridConfig | FormConfig | ChartConfig | KpiConfig | GaugeConfig | TreeConfig | TabsConfig | AccordionConfig | DashboardConfig | MasterDetailConfig | LookupConfig
-  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig | ComponentConfig
+  | PivotConfig | FilterPanelConfig | RecordConfig | BoardConfig | CalendarConfig | DetailConfig | SheetConfig | ComponentConfig
 
 /** Block kinds allowed inside a Tabs / Accordion container: the controller-free,
  *  `allRows`-driven display blocks (no grid / form / master-detail, which need the
@@ -1099,6 +1104,7 @@ export const blockPalette: ReadonlyArray<PaletteItem> = [
   { kind: 'board', label: 'Board' },
   { kind: 'calendar', label: 'Calendar' },
   { kind: 'detail', label: 'Detail page' },
+  { kind: 'sheet', label: 'Spreadsheet' },
   { kind: 'filter', label: 'Filter panel' },
   { kind: 'record', label: 'Record panel' },
   { kind: 'lookup', label: 'Lookup' },
@@ -1214,6 +1220,8 @@ export function defaultBlockConfig(kind: BlockKind, entity: EntitySchema): Block
       const metrics = nonKey.filter((f) => f.type === 'number').slice(0, 3).map((f) => f.field)
       return { kind, titleField: titleF, ...(subF ? { subtitleField: subF } : {}), ...(statusF ? { statusField: statusF } : {}), ...(metrics.length ? { metricFields: metrics } : {}) }
     }
+    case 'sheet':
+      return { kind, totals: entity.fields.some((f) => f.type === 'number' && !f.primaryKey) }
     case 'component':
       // Entity-agnostic - built directly by `addComponentBlock`, never through here.
       return { kind, component: '', props: {} }
@@ -1232,7 +1240,7 @@ export function pickFacetFields(entity: EntitySchema): string[] {
 const facetRank = (t: EntityFieldType): number => (t === 'enum' ? 0 : t === 'boolean' ? 1 : 2)
 
 const DEFAULT_SPAN: Record<BlockKind, 1 | 2 | 3> = {
-  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, accordion: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3, component: 1,
+  grid: 3, form: 1, chart: 2, dashboard: 3, kpi: 1, gauge: 1, tree: 2, tabs: 3, accordion: 3, 'master-detail': 3, lookup: 1, pivot: 3, filter: 1, record: 1, board: 3, calendar: 3, detail: 3, sheet: 3, component: 1,
 }
 
 function makeBlock(kind: BlockKind, entity: EntitySchema, taken: ReadonlySet<string>): Block {
@@ -1970,7 +1978,7 @@ function dockPaneTitle(block: Block): string {
     grid: 'Grid', form: 'Form', chart: 'Chart', dashboard: 'Dashboard', tree: 'Tree', pivot: 'Pivot',
     filter: 'Filters', record: 'Record', detail: 'Detail', board: 'Board', calendar: 'Calendar',
     'master-detail': 'Master / detail', lookup: 'Lookup', tabs: 'Tabs', accordion: 'Accordion',
-    kpi: 'KPI', gauge: 'Gauge', component: 'Component',
+    kpi: 'KPI', gauge: 'Gauge', sheet: 'Spreadsheet', component: 'Component',
   }
   return c.label || c.title || c.name || c.component || byKind[c.kind] || 'Panel'
 }

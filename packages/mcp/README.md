@@ -38,8 +38,8 @@ tools, 79% of them Studio tools most sessions never call once.
 | `svgrid_scaffold` | Studio: turn a Drizzle schema, sample rows or an `EntitySchema` into runnable SvelteKit files. |
 
 The docs and demos are also served as **MCP resources**
-(`svgrid://doc/<slug>`, `svgrid://example/<id>`), and three **prompts** ship
-ready to run: `build_grid`, `explain_api`, `review_grid_code`.
+(`svgrid://doc/<slug>`, `svgrid://example/<id>`), and four **prompts** ship
+ready to run: `build_grid`, `build_sheet`, `explain_api`, `review_grid_code`.
 
 Every pre-3.0 tool name still answers - `search_docs`, `get_doc`,
 `list_examples`, `get_example_source`, `list_docs`, `get_api_reference`,

@@ -713,6 +713,7 @@ describe('validateProject', () => {
   it('the palette lists every block kind', () => {
     expect(blockPalette.map((p) => p.kind)).toContain('grid')
     expect(blockPalette.map((p) => p.kind)).toContain('dashboard')
+    expect(blockPalette.map((p) => p.kind)).toContain('sheet')
   })
 
   it('warns when a master-detail points at a missing child entity', () => {
