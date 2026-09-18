@@ -188,6 +188,19 @@ describe('the round trip', () => {
     expect(state.workbook.sheets[0]!.cells[1]).toEqual(['Widget', '2', '9.5', '=B2*C2', '2026-03-04'])
     expect(state.sheets.Orders!.merges).toEqual([[4, 0, 4, 3]])
   })
+
+  it('carries a picture through the zip as real bytes', async () => {
+    const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1']] }] })
+    doc.get('S').objects = [{ id: 'i', kind: 'image', anchor: { row: 1, col: 1, dx: 0, dy: 0, width: 80, height: 40 }, src: png }]
+    const blob = await documentToXlsx(doc, JSZip)
+    const state = await documentFromXlsx(await blob.arrayBuffer(), JSZip)
+    const objects = state.sheets.S!.objects!
+    expect(objects).toHaveLength(1)
+    // The bytes went in as base64 and came back as the same data URL, which
+    // is what the document holds and what an <img> takes.
+    expect(objects[0]).toMatchObject({ kind: 'image', src: png, anchor: { row: 1, col: 1, width: 80, height: 40 } })
+  })
 })
 
 describe('reading what Excel writes', () => {

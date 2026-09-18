@@ -63,6 +63,11 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Objects in the .xlsx: `sheet/xlsx-drawing.ts` (the drawing part, a
+  picture in `xl/media`, a chart part carrying its references rather than
+  cached numbers, and the reader that gives both back, two-cell anchors
+  included), plus sparklines in the worksheet's x14 extension list both
+  ways. A picture whose source is a URL is left out on purpose.
 - Presence, the last of Phase F item 3: `sheet/presence.ts` (a person, a
   stable colour, the sheet and rectangle they are on, the fifteen-second
   prune), a `presence` prop the shell draws over the cells and an
@@ -251,28 +256,28 @@ weeks, L a quarter-scale piece of work.
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| ~~Charts anchored to cells, fed by a range~~ | shipped: the object layer, Insert > Chart, the Chart dialog; not in the .xlsx | done |
-| ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`; not in the .xlsx and not on the printed page | done |
+| ~~Charts anchored to cells, fed by a range~~ | shipped: the object layer, Insert > Chart, the Chart dialog, and the chart part in the .xlsx both ways | done |
+| ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`, and in the .xlsx both ways; still not on the printed page | done |
 | ~~Hyperlinks (HYPERLINK function and Insert > Link)~~ | shipped: links per sheet, Insert > Link and Ctrl+K, the function, internal targets, and the xlsx both ways | done |
-| ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL; not in the .xlsx. In a cell is still not done | done |
+| ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL, and in the .xlsx both ways. In a cell is still not done, and a picture that is a URL rather than a data URL is left out of the file | done |
 | ~~PivotTable from a range~~ | shipped: `SheetPivot` in the document, Insert > PivotTable and Refresh, the result written as cells | done |
 
 ### Reach
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| Localised ribbon, dialog and status-bar strings | English literals; the grid's `localization` prop does not reach the shell; the status bar hard-codes `en-US` | M |
-| RTL sheet (columns run right to left, A on the right) | grid supports RTL; the shell is untested | S to audit, M to fix |
-| Touch: fill handle, range drag, ribbon on phones | ribbon folds at narrow widths; five touch mentions in the shell | M |
-| Accessibility audit of ribbon and dialogs | grid is WAI-ARIA 1.2; shell not audited | M |
-| `<sv-sheet>` web component with React / Vue / Angular wrappers | `grid-wc` has `<sv-grid>` and `<sv-chart>` only; the sheet is commercial, so the element cannot live in the MIT `grid-wc` | L |
-| Studio, MCP, skill rules know the sheet | MCP demo data carries the sheet demos; Studio codegen and `skills/svgrid/rules` do not mention it | S |
+| ~~Localised ribbon, dialog and status-bar strings~~ | shipped: `SheetMessages` in one flat map, `localization={{ text, locale }}`, the ribbon's keys read off the model | done |
+| ~~RTL sheet (columns run right to left, A on the right)~~ | shipped: audited with a Playwright spec, and the sticky pinning, the object layer and the row-resize maths fixed with logical properties | done |
+| ~~Touch: fill handle, range drag, ribbon on phones~~ | shipped: audited on a phone viewport with a Playwright spec, the shell's touch targets and the ribbon fold fixed where it found them | done |
+| ~~Accessibility audit of ribbon and dialogs~~ | shipped: axe over the shell in both themes, the ribbon tablist given a roving tabindex, and what it found fixed | done |
+| ~~`<sv-sheet>` web component with React / Vue / Angular wrappers~~ | shipped under `@svgrid/enterprise/wc`, its surface generated from the shell's props with a `--check` the tests run | done |
+| ~~Studio, MCP, skill rules know the sheet~~ | shipped: `skills/svgrid/rules/sheet.md`, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block in Studio | done |
 
 ### Scale and collaboration
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| Large sheets | `Workbook` keeps `string[][]` per sheet plus a `values` map; defaults are 50 x 12; no measured ceiling | M (measure first) |
+| ~~Large sheets~~ | measured: `pnpm bench` over the engine at 1k, 10k and 50k rows, the ceiling published in `docs/help/benchmarks.md`, and the deep-chain stack overflow it found fixed. Sparse storage is not called for | done |
 | Recalculation off the main thread | none | L |
 | ~~Co-editing (deltas, presence, conflict)~~ | shipped: `createDeltaStream` with five delta kinds, `applySheetDelta`, the presence overlay and `onPresence`, last writer wins per cell and said so. No server and no operational transform, on purpose | done |
 
