@@ -80,7 +80,9 @@
   import { balanceParens } from './sheet/autocomplete'
   import { parseEntry, completeEntry } from './sheet/entry'
   import { isError, type CellValue } from './sheet/ast'
-  import { isLocked, rectsHaveLocked, rectsMixLocked, PROTECTED_MESSAGE } from './sheet/protection'
+  import { isLocked, rectsHaveLocked, rectsMixLocked } from './sheet/protection'
+  import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
+  import { provideSheetText, useSheetText } from './sheet-text'
   import { commentAt, withComment, nextComment, listComments, type NotesMap } from './sheet/comments'
   import SvSheetComment from './SvSheetComment.svelte'
   import SvSheetListPicker from './SvSheetListPicker.svelte'
@@ -176,6 +178,13 @@
      * application answers them in `onAction`.
      */
     extras?: ReadonlyArray<'insert-table' | 'insert-chart'>
+    /**
+     * The shell's language: `text` overrides any of its strings (the
+     * ribbon's, the dialogs', the status bar's; see `SheetMessages`) and
+     * `locale` formats the status bar's numbers and the grid's own
+     * matching. Unset keys stay English, so a partial map is fine.
+     */
+    localization?: SheetLocalization
     /** Hide any part of the chrome. */
     showRibbon?: boolean
     showFormulaBar?: boolean
@@ -228,6 +237,7 @@
     columnWidths,
     formats,
     extras = [],
+    localization,
     showRibbon = true,
     showFormulaBar = true,
     showTabs = true,
@@ -238,6 +248,13 @@
   }: Props = $props()
 
   enableSheet()
+
+  /** The strings, resolved once per `localization` change and handed to
+   *  every part of the shell through context. */
+  const messages = $derived(resolveSheetMessages(localization?.text))
+  provideSheetText(() => messages)
+  const t = useSheetText()
+  const gridLocalization = $derived(localization?.locale ? { locale: localization.locale } : undefined)
 
   // Read once, on purpose: the document IS what is being edited. Rebuilding
   // it when the prop identity changed would throw away every edit, so a
@@ -344,9 +361,9 @@
     if (!file) return
     try {
       await open(file)
-      say(`Opened ${file.name}.`)
+      say(t('openedFile', { name: file.name }))
     } catch (e) {
-      say(e instanceof Error ? e.message : `Could not open ${file.name}.`)
+      say(e instanceof Error ? e.message : t('couldNotOpen', { name: file.name }))
     }
   }
 
@@ -354,7 +371,7 @@
     try {
       downloadBlobFile(await toXlsx(), `${fileName}.xlsx`)
     } catch (e) {
-      say(e instanceof Error ? e.message : 'Could not save the workbook.')
+      say(e instanceof Error ? e.message : t('couldNotSave'))
     }
   }
 
@@ -421,7 +438,7 @@
       }
     }
     if (!added.length && !fromFrontier) {
-      say(kind === 'precedents' ? 'The Trace Precedents command found no formula references in the active cell.' : 'The Trace Dependents command found no formulas that refer to the active cell.')
+      say(t(kind === 'precedents' ? 'noPrecedents' : 'noDependents'))
     }
     traces = [...traces, ...added]
     traceFrontier = { kind, at: here, cells: next }
@@ -491,7 +508,7 @@
   /** The tab menu's Duplicate: cells, formats, sizes, rules and the rest. */
   function duplicateSheet(name: string) {
     const made = doc.duplicate(name)
-    if (made === null) { say(`Could not copy ${name}.`); return }
+    if (made === null) { say(t('couldNotCopySheet', { name })); return }
     active = { rowIndex: 0, colIndex: 0 }
     bump()
   }
@@ -625,7 +642,7 @@
   function locked(r: number, c: number): boolean {
     return protectedNow() && isLocked(storeFor().get(`r${r}`, colToLetters(c)))
   }
-  function refuse() { say(PROTECTED_MESSAGE) }
+  function refuse() { say(t('protectedCell')) }
   /** The selection, or the active cell, as rectangles. */
   function selectedRects(cmd?: GridCommandContext | null): ReadonlyArray<readonly [number, number, number, number]> {
     if (cmd?.ranges.length) return cmd.ranges
@@ -728,7 +745,7 @@
   /** Review > Previous / Next Comment: walk to it and open it. */
   function walkComments(dir: 1 | -1) {
     const to = nextComment(notesNow(), { row: active.rowIndex, col: active.colIndex }, dir)
-    if (!to) { say('No comments on this sheet.'); return }
+    if (!to) { say(t('noComments')); return }
     openCommentEditor(to.row, to.col)
   }
 
@@ -1044,7 +1061,7 @@
     const af = autoFilterNow()
     if (!isFiltering(af)) return null
     const total = af!.range[2] - af!.range[0]
-    return `${total - doc.get(wb.active).filterHidden.size} of ${total} records found`
+    return t('statusRecordsFound', { shown: total - doc.get(wb.active).filterHidden.size, total })
   })
 
   /** Replace the rules of the active sheet, one undo. */
@@ -1209,7 +1226,7 @@
     }
     put(on)
     cmd.recordUndo(() => put(before), () => put(on))
-    say(on ? 'Sheet protected. Locked cells can no longer be changed.' : 'Sheet unprotected.')
+    say(t(on ? 'sheetProtected' : 'sheetUnprotected'))
   }
 
   // --- the seams the keyboard layer and the ribbon both act through --------
@@ -1346,7 +1363,7 @@
     // A row the AutoFilter folded is not a hidden row: Unhide leaves it to the filter.
     if (axis === 'rows' && !hide) for (const r of doc.get(wb.active).filterHidden) targets.delete(r)
     if (targets.size === 0) {
-      say(hide ? `Nothing to hide` : `Nothing hidden in the selection`)
+      say(t(hide ? 'nothingToHide' : 'nothingHidden'))
       return
     }
     const apply = (on: boolean) => { for (const i of targets) setHidden(i, on); stashHidden(); bump(); changed({ kind: 'hidden' }) }
@@ -1366,7 +1383,8 @@
         }
       }
     }
-    say(`${targets.size} ${axis === 'rows' ? 'row' : 'column'}${targets.size === 1 ? '' : 's'} ${hide ? 'hidden' : 'shown'}`)
+    const unit = axis === 'rows' ? (targets.size === 1 ? 'unitRow' : 'unitRows') : targets.size === 1 ? 'unitColumn' : 'unitColumns'
+    say(t('linesToggled', { count: targets.size, unit: t(unit), state: t(hide ? 'stateHidden' : 'stateShown') }))
   }
 
   let targetsBoundTo = ''
@@ -1694,8 +1712,8 @@
     return { count, numeric, sum, average: numeric ? sum / numeric : null }
   })
 
-  /** Excel's status bar prints with thousands separators and two decimals at most. */
-  const money = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  /** Excel's status bar prints with thousands separators and two decimals at most, in the shell's locale. */
+  const money = (n: number) => n.toLocaleString(localization?.locale ?? 'en-US', { maximumFractionDigits: 2 })
 
   /**
    * Excel shades the header of every column and row the selection touches.
@@ -2005,7 +2023,7 @@
     if (r2 <= r1) return
     if (protectedNow()) { refuse(); return }
     if (sortBlockedByMerges(mergesNow(), [r1, c1, r2, c2])) {
-      say('To do this, all the merged cells need to be the same size.')
+      say(t('mergeSameSize'))
       return
     }
     const valueAt = (r: number, c: number) => wb.getValue(wb.active, r, c)
@@ -2088,7 +2106,7 @@
       case 'remove-duplicates': removeDuplicatesOpen = true; return
       case 'sort-custom': {
         const block = sortBlock()
-        if (!block || block.bottom <= block.top) { say('Select a block with more than one row to sort.'); return }
+        if (!block || block.bottom <= block.top) { say(t('selectBlockToSort')); return }
         const keyCol = Math.min(Math.max(active.colIndex, block.left), block.right)
         sortDialog = { block, headerGuess: guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol) }
         return
@@ -2104,7 +2122,7 @@
         try {
           downloadBlobFile(new Blob([toCsv()], { type: 'text/csv;charset=utf-8' }), `${wb.active}.csv`)
         } catch (e) {
-          say(e instanceof Error ? e.message : 'Could not export the sheet.')
+          say(e instanceof Error ? e.message : t('couldNotExport'))
         }
         return
       }
@@ -2115,7 +2133,7 @@
         circlesOn = wb.active
         bump()
         const count = circled.size
-        say(count === 0 ? 'No invalid data was found.' : `${count} ${count === 1 ? 'cell breaks' : 'cells break'} a validation rule.`)
+        say(count === 0 ? t('noInvalidData') : t(count === 1 ? 'invalidCellFound' : 'invalidCellsFound', { count }))
         return
       }
       case 'clear-circles': circlesOn = null; bump(); return
@@ -2302,7 +2320,7 @@
       entries.push(line)
     }
     painter = { rows: r2 - r1 + 1, cols: c2 - c1 + 1, entries }
-    say('Select where to paste the format, or press Esc')
+    say(t('formatPainterHint'))
   }
   function paintFormats() {
     const src = painter
@@ -2621,22 +2639,22 @@
   }
   /** The menu's glyphs are the ribbon's, so the two read as one set. */
   const glyph = (name: RibbonIconName): ContextMenuIcon => ({ paths: RIBBON_ICONS[name] })
-  const contextMenu: ContextMenuItem<SheetRow>[] = [
+  const contextMenu = $derived.by((): ContextMenuItem<SheetRow>[] => [
     // The grid's own Cut / Copy / Paste, with the ribbon's icons on them.
     { key: 'cut', icon: glyph('cut') },
     { key: 'copy', icon: glyph('copy') },
     { key: 'paste', icon: glyph('paste') },
-    { key: 'paste-special', label: 'Paste Special...', icon: glyph('paste-special'), action: () => withCmd((c) => delegate('paste-special', c)) },
+    { key: 'paste-special', label: t('menuPasteSpecial'), icon: glyph('paste-special'), action: () => withCmd((c) => delegate('paste-special', c)) },
     'separator',
     // A column letter's menu says Insert and Delete, as Excel's does; a
     // cell's spells both axes out.
-    { key: 'insert-rows', label: 'Insert Rows', icon: glyph('insert-cells'), hidden: () => axis() === 'cols', action: () => withCmd((c) => insertRows(c)) },
-    { key: 'insert-columns', label: 'Insert Columns', icon: glyph('insert-cells'), hidden: () => axis() === 'rows', action: () => withCmd((c) => insertColumns(c)) },
-    { key: 'delete-rows', label: 'Delete Rows', icon: glyph('delete-cells'), hidden: () => axis() === 'cols', action: () => withCmd((c) => deleteRows(c)) },
-    { key: 'delete-columns', label: 'Delete Columns', icon: glyph('delete-cells'), hidden: () => axis() === 'rows', action: () => withCmd((c) => deleteColumns(c)) },
+    { key: 'insert-rows', label: t('menuInsertRows'), icon: glyph('insert-cells'), hidden: () => axis() === 'cols', action: () => withCmd((c) => insertRows(c)) },
+    { key: 'insert-columns', label: t('menuInsertColumns'), icon: glyph('insert-cells'), hidden: () => axis() === 'rows', action: () => withCmd((c) => insertColumns(c)) },
+    { key: 'delete-rows', label: t('menuDeleteRows'), icon: glyph('delete-cells'), hidden: () => axis() === 'cols', action: () => withCmd((c) => deleteRows(c)) },
+    { key: 'delete-columns', label: t('menuDeleteColumns'), icon: glyph('delete-cells'), hidden: () => axis() === 'rows', action: () => withCmd((c) => deleteColumns(c)) },
     'separator',
     {
-      key: 'clear-contents', label: 'Clear Contents', icon: glyph('clear'),
+      key: 'clear-contents', label: t('menuClearContents'), icon: glyph('clear'),
       action: () => withCmd((c) => {
         const rects = c.ranges.length
           ? c.ranges
@@ -2649,24 +2667,24 @@
         })
       }),
     },
-    { key: 'clear-formats', label: 'Clear Formats', icon: glyph('clear-formats'), action: () => withCmd((c) => clearFormats(c)) },
+    { key: 'clear-formats', label: t('menuClearFormats'), icon: glyph('clear-formats'), action: () => withCmd((c) => clearFormats(c)) },
     'separator',
-    { key: 'merge-center', label: 'Merge & Center', icon: glyph('merge'), hidden: () => axis() !== 'ambiguous' || selectionHasMerge(), action: () => withCmd((c) => handleAction('merge-center', c)) },
-    { key: 'unmerge-cells', label: 'Unmerge Cells', icon: glyph('unmerge'), hidden: () => axis() !== 'ambiguous' || !selectionHasMerge(), action: () => withCmd((c) => handleAction('unmerge-cells', c)) },
+    { key: 'merge-center', label: t('menuMergeCenter'), icon: glyph('merge'), hidden: () => axis() !== 'ambiguous' || selectionHasMerge(), action: () => withCmd((c) => handleAction('merge-center', c)) },
+    { key: 'unmerge-cells', label: t('menuUnmergeCells'), icon: glyph('unmerge'), hidden: () => axis() !== 'ambiguous' || !selectionHasMerge(), action: () => withCmd((c) => handleAction('unmerge-cells', c)) },
     'separator',
     // Excel's New Comment / Edit Comment / Delete Comment, one pair shown.
-    { key: 'new-comment', label: 'New Comment', icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || hasComment(), action: () => withCmd((c) => handleAction('new-comment', c)) },
-    { key: 'edit-comment', label: 'Edit Comment', icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('edit-comment', c)) },
-    { key: 'delete-comment', label: 'Delete Comment', icon: glyph('comment-delete'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('delete-comment', c)) },
+    { key: 'new-comment', label: t('menuNewComment'), icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || hasComment(), action: () => withCmd((c) => handleAction('new-comment', c)) },
+    { key: 'edit-comment', label: t('menuEditComment'), icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('edit-comment', c)) },
+    { key: 'delete-comment', label: t('menuDeleteComment'), icon: glyph('comment-delete'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('delete-comment', c)) },
     'separator',
-    { key: 'format-cells', label: 'Format Cells...', icon: glyph('format-cells'), action: () => withCmd((c) => delegate('format-cells', c)) },
-    { key: 'column-width', label: 'Column Width...', icon: glyph('column-width'), hidden: () => axis() !== 'cols', action: () => openSizeDialog('cols') },
-    { key: 'row-height', label: 'Row Height...', icon: glyph('row-height'), hidden: () => axis() !== 'rows', action: () => openSizeDialog('rows') },
-    { key: 'hide-columns', label: 'Hide', icon: glyph('hide'), hidden: () => axis() !== 'cols', action: () => withCmd((c) => handleAction('hide-columns', c)) },
-    { key: 'unhide-columns', label: 'Unhide', icon: glyph('unhide'), hidden: () => axis() !== 'cols', action: () => withCmd((c) => handleAction('unhide-columns', c)) },
-    { key: 'hide-rows', label: 'Hide', icon: glyph('hide'), hidden: () => axis() !== 'rows', action: () => withCmd((c) => handleAction('hide-rows', c)) },
-    { key: 'unhide-rows', label: 'Unhide', icon: glyph('unhide'), hidden: () => axis() !== 'rows', action: () => withCmd((c) => handleAction('unhide-rows', c)) },
-  ]
+    { key: 'format-cells', label: t('menuFormatCells'), icon: glyph('format-cells'), action: () => withCmd((c) => delegate('format-cells', c)) },
+    { key: 'column-width', label: t('menuColumnWidth'), icon: glyph('column-width'), hidden: () => axis() !== 'cols', action: () => openSizeDialog('cols') },
+    { key: 'row-height', label: t('menuRowHeight'), icon: glyph('row-height'), hidden: () => axis() !== 'rows', action: () => openSizeDialog('rows') },
+    { key: 'hide-columns', label: t('menuHide'), icon: glyph('hide'), hidden: () => axis() !== 'cols', action: () => withCmd((c) => handleAction('hide-columns', c)) },
+    { key: 'unhide-columns', label: t('menuUnhide'), icon: glyph('unhide'), hidden: () => axis() !== 'cols', action: () => withCmd((c) => handleAction('unhide-columns', c)) },
+    { key: 'hide-rows', label: t('menuHide'), icon: glyph('hide'), hidden: () => axis() !== 'rows', action: () => withCmd((c) => handleAction('hide-rows', c)) },
+    { key: 'unhide-rows', label: t('menuUnhide'), icon: glyph('unhide'), hidden: () => axis() !== 'rows', action: () => withCmd((c) => handleAction('unhide-rows', c)) },
+  ])
 
   // --- Column Width... and Row Height... --------------------------------------
   let sizeDialog = $state<'cols' | 'rows' | null>(null)
@@ -3415,7 +3433,7 @@
   {/if}
   {#if circled.has(`${props.r},${props.c}`)}
     <!-- Circle Invalid Data: Excel's red oval around a cell that breaks its rule. -->
-    <span class="sheet-invalid-circle" aria-label="Breaks its validation rule" role="img"></span>
+    <span class="sheet-invalid-circle" aria-label={t('invalidCellMark')} role="img"></span>
   {/if}
   {#if props.r === active.rowIndex && props.c === active.colIndex && listRuleAt(props.r, props.c)}
     <!-- Excel's in-cell dropdown arrow, on the active cell of a list rule.
@@ -3424,7 +3442,7 @@
     <button
       type="button"
       class="sheet-dropdown-arrow"
-      aria-label="Open the list"
+      aria-label={t('openList')}
       onpointerdown={(event) => event.stopPropagation()}
       onclick={(event) => { event.stopPropagation(); openListPicker(props.r, props.c) }}
     ><svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
@@ -3486,9 +3504,9 @@
   {#if showComments}
     <!-- Show All Comments: the honest form over a virtualised sheet is a
          list, each entry a jump to its cell. -->
-    <div class="sheet-comments" aria-label="Comments on this sheet">
+    <div class="sheet-comments" aria-label={t('commentsOnSheet')}>
       {#if allComments.length === 0}
-        <span class="none">No comments on this sheet.</span>
+        <span class="none">{t('noComments')}</span>
       {:else}
         {#each allComments as entry (`${entry.row}:${entry.col}`)}
           <button type="button" class="entry" onclick={() => openCommentEditor(entry.row, entry.col)}>
@@ -3556,7 +3574,7 @@
         placement={cellPopover.kind === 'comment' ? 'right-start' : 'bottom-start'}
         offset={cellPopover.kind === 'comment' ? 6 : 2}
         arrow={cellPopover.kind === 'comment'}
-        ariaLabel={cellPopover.kind === 'list' ? 'Choices' : cellPopover.kind === 'filter' ? 'Filter' : 'Comment'}
+        ariaLabel={t(cellPopover.kind === 'list' ? 'choices' : cellPopover.kind === 'filter' ? 'filter' : 'comment')}
       >
         {#snippet anchor()}<span class="box" style:width="{anchorRect!.width}px" style:height="{anchorRect!.height}px"></span>{/snippet}
         {#if cellPopover.kind === 'comment'}
@@ -3603,6 +3621,7 @@
     columnResize={!isProtected}
     rowResize={!isProtected}
     {contextMenu}
+    localization={gridLocalization}
     notes={activeNotes}
     mergedCells={activeMerges}
     rowClass={({ rowIndex }: { rowIndex: number }) =>
@@ -3672,15 +3691,15 @@
   {#if showStatusBar}
     <!-- Excel's status bar: Ready on the left, the selection's Average / Count / Sum on the right. -->
     <div class="status" role="status" aria-live="off">
-      <span class="mode">{statusMessage ?? filterSummary ?? 'Ready'}</span>
+      <span class="mode">{statusMessage ?? filterSummary ?? t('statusReady')}</span>
       <span class="grow"></span>
       {#if aggregate.count > 1}
         {#if aggregate.numeric > 0}
-          <span>Average: <b>{money(aggregate.average ?? 0)}</b></span>
+          <span>{t('statusAverage')} <b>{money(aggregate.average ?? 0)}</b></span>
         {/if}
-        <span>Count: <b>{aggregate.count}</b></span>
+        <span>{t('statusCount')} <b>{aggregate.count}</b></span>
         {#if aggregate.numeric > 0}
-          <span>Sum: <b>{money(aggregate.sum)}</b></span>
+          <span>{t('statusSum')} <b>{money(aggregate.sum)}</b></span>
         {/if}
       {/if}
     </div>
@@ -3748,32 +3767,32 @@
     onCancel={() => { pendingAlert = null; const c = cmdOf(); if (c) focusSheet(c) }}
   />
   <input class="sheet-file-input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
-  <SvModal open={newConfirm} title="New workbook" size="sm" onClose={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>
+  <SvModal open={newConfirm} title={t('newWorkbookTitle')} size="sm" onClose={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>
     <div class="sv-sheet-dialog">
-      <p class="note">Start a new workbook? What is on these sheets goes away unless it was saved.</p>
+      <p class="note">{t('newWorkbookMessage')}</p>
     </div>
     {#snippet footer()}
       <div class="sv-sheet-dialog-buttons">
-        <button type="button" class="btn primary" onclick={() => { newConfirm = false; newWorkbook(); const c = cmdOf(); if (c) focusSheet(c) }}>New workbook</button>
-        <button type="button" class="btn" onclick={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>Cancel</button>
+        <button type="button" class="btn primary" onclick={() => { newConfirm = false; newWorkbook(); const c = cmdOf(); if (c) focusSheet(c) }}>{t('newWorkbookButton')}</button>
+        <button type="button" class="btn" onclick={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>{t('cancel')}</button>
       </div>
     {/snippet}
   </SvModal>
-  <SvModal open={mergeConfirm !== null} title="Merge cells" size="sm" onClose={() => { mergeConfirm = null; const c = cmdOf(); if (c) focusSheet(c) }}>
+  <SvModal open={mergeConfirm !== null} title={t('mergeCellsTitle')} size="sm" onClose={() => { mergeConfirm = null; const c = cmdOf(); if (c) focusSheet(c) }}>
     <div class="sv-sheet-dialog">
-      <p class="note">Merging cells only keeps the upper-left cell value and discards the other values.</p>
+      <p class="note">{t('mergeCellsMessage')}</p>
     </div>
     {#snippet footer()}
       <div class="sv-sheet-dialog-buttons">
-        <button type="button" class="btn primary" onclick={() => { const pending = mergeConfirm; mergeConfirm = null; const c = cmdOf(); if (pending && c) applyMerge(pending.plan, c) }}>OK</button>
-        <button type="button" class="btn" onclick={() => { mergeConfirm = null; const c = cmdOf(); if (c) focusSheet(c) }}>Cancel</button>
+        <button type="button" class="btn primary" onclick={() => { const pending = mergeConfirm; mergeConfirm = null; const c = cmdOf(); if (pending && c) applyMerge(pending.plan, c) }}>{t('ok')}</button>
+        <button type="button" class="btn" onclick={() => { mergeConfirm = null; const c = cmdOf(); if (c) focusSheet(c) }}>{t('cancel')}</button>
       </div>
     {/snippet}
   </SvModal>
   <SvSheetSizeDialog
     open={sizeDialogOpen}
-    title={sizeDialog === 'rows' ? 'Row Height' : 'Column Width'}
-    label={sizeDialog === 'rows' ? 'Row height (px):' : 'Column width (px):'}
+    title={t(sizeDialog === 'rows' ? 'rowHeightTitle' : 'columnWidthTitle')}
+    label={t(sizeDialog === 'rows' ? 'rowHeightLabel' : 'columnWidthLabel')}
     value={sizeCurrent}
     onApply={applySize}
     onClose={() => (sizeDialog = null)}

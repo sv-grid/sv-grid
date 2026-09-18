@@ -183,6 +183,12 @@ export {
 } from './sheet/ribbon'
 export { RIBBON_ICONS, RIBBON_ICON_NAMES, type RibbonIconName, type IconPath } from './sheet/ribbon-icons'
 export { THEME_COLOURS, STANDARD_COLOURS, ALL_COLOURS, tint, type PaletteColour } from './sheet/palette'
+export {
+  defaultSheetMessages, defaultSheetTextMessages, defaultDialogMessages, ribbonMessageDefaults,
+  resolveSheetMessages, formatMessage,
+  type SheetMessages, type SheetTextMessages, type SheetDialogMessages, type SheetLocalization,
+} from './sheet/messages'
+export { provideSheetText, useSheetText, type SheetText } from './sheet-text'
 export { default as SvRibbonIcon } from './SvRibbonIcon.svelte'
 export {
   move, selectRegion, selectLine, applyFormat, toggleFormat, preset,

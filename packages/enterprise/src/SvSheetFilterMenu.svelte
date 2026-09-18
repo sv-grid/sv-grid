@@ -7,6 +7,7 @@
    * column's values to tick, OK and Cancel. The shell mounts it inside the
    * popover anchored to the header cell.
    */
+  import { useSheetText } from './sheet-text'
   import type { ExcelFilterOperator } from '@svgrid/grid/filtering'
   import { valuesFilter, type ColumnFilter, type FilterValue, type FilterCondition, type DatePeriod } from './sheet/auto-filter'
 
@@ -30,24 +31,20 @@
   }
 
   let { header, values, filter, numeric, dates = false, fills = [], onSort, onApply, onCancel }: Props = $props()
+  const t = useSheetText()
 
-  const PERIODS: ReadonlyArray<[DatePeriod, string]> = [
-    ['equals', 'Equals'], ['before', 'Before'], ['after', 'After'], ['between', 'Between'],
-    ['tomorrow', 'Tomorrow'], ['today', 'Today'], ['yesterday', 'Yesterday'],
-    ['nextWeek', 'Next Week'], ['thisWeek', 'This Week'], ['lastWeek', 'Last Week'],
-    ['nextMonth', 'Next Month'], ['thisMonth', 'This Month'], ['lastMonth', 'Last Month'],
-    ['nextQuarter', 'Next Quarter'], ['thisQuarter', 'This Quarter'], ['lastQuarter', 'Last Quarter'],
-    ['nextYear', 'Next Year'], ['thisYear', 'This Year'], ['lastYear', 'Last Year'], ['yearToDate', 'Year to Date'],
+  const PERIODS: ReadonlyArray<DatePeriod> = [
+    'equals', 'before', 'after', 'between', 'tomorrow', 'today', 'yesterday',
+    'nextWeek', 'thisWeek', 'lastWeek', 'nextMonth', 'thisMonth', 'lastMonth',
+    'nextQuarter', 'thisQuarter', 'lastQuarter', 'nextYear', 'thisYear', 'lastYear', 'yearToDate',
   ]
   const typedPeriod = (p: DatePeriod) => p === 'equals' || p === 'before' || p === 'after' || p === 'between'
 
-  const TEXT_OPS: ReadonlyArray<[ExcelFilterOperator, string]> = [
-    ['equals', 'Equals'], ['notEquals', 'Does Not Equal'], ['startsWith', 'Begins With'], ['endsWith', 'Ends With'],
-    ['contains', 'Contains'], ['notContains', 'Does Not Contain'], ['isBlank', 'Is Blank'], ['isNotBlank', 'Is Not Blank'],
+  const TEXT_OPS: ReadonlyArray<ExcelFilterOperator> = [
+    'equals', 'notEquals', 'startsWith', 'endsWith', 'contains', 'notContains', 'isBlank', 'isNotBlank',
   ]
-  const NUMBER_OPS: ReadonlyArray<[ExcelFilterOperator, string]> = [
-    ['equals', 'Equals'], ['notEquals', 'Does Not Equal'], ['greaterThan', 'Greater Than'], ['lessThan', 'Less Than'],
-    ['between', 'Between'], ['isBlank', 'Is Blank'], ['isNotBlank', 'Is Not Blank'],
+  const NUMBER_OPS: ReadonlyArray<ExcelFilterOperator> = [
+    'equals', 'notEquals', 'greaterThan', 'lessThan', 'between', 'isBlank', 'isNotBlank',
   ]
   const ops = $derived(numeric ? NUMBER_OPS : TEXT_OPS)
 
@@ -157,16 +154,16 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="sv-sheet-filter-menu" role="dialog" aria-label={`Filter ${header}`} onkeydown={onKeyDown}>
-  <button type="button" class="row" onclick={() => onSort('asc')}>{numeric ? 'Sort Smallest to Largest' : 'Sort A to Z'}</button>
-  <button type="button" class="row" onclick={() => onSort('desc')}>{numeric ? 'Sort Largest to Smallest' : 'Sort Z to A'}</button>
+<div class="sv-sheet-filter-menu" role="dialog" aria-label={t('filter.label', { header })} onkeydown={onKeyDown}>
+  <button type="button" class="row" onclick={() => onSort('asc')}>{t(numeric ? 'filter.sortSmallest' : 'filter.sortAsc')}</button>
+  <button type="button" class="row" onclick={() => onSort('desc')}>{t(numeric ? 'filter.sortLargest' : 'filter.sortDesc')}</button>
   <hr />
-  <button type="button" class="row" disabled={!filter} onclick={() => onApply(null)}>Clear Filter From "{header}"</button>
+  <button type="button" class="row" disabled={!filter} onclick={() => onApply(null)}>{t('filter.clear', { header })}</button>
   {#if fills.length > 1}
     <!-- Excel's Filter by Color: the fills the column carries, as swatches. -->
     <details class="conditions colours" open={filter?.kind === 'color'}>
-      <summary>Filter by Color</summary>
-      <div class="swatches" role="group" aria-label="Filter by cell colour">
+      <summary>{t('filter.byColor')}</summary>
+      <div class="swatches" role="group" aria-label={t('filter.byColorGroup')}>
         {#each fills as fill (fill ?? '')}
           <button
             type="button"
@@ -174,83 +171,83 @@
             class:none={fill === null}
             class:on={filter?.kind === 'color' && (filter.fill ?? '') === (fill ?? '')}
             style:background={fill ?? undefined}
-            title={fill ?? 'No Fill'}
-            aria-label={fill ? `Filter by ${fill}` : 'Filter by no fill'}
+            title={fill ?? t('filter.noFill')}
+            aria-label={fill ? t('filter.byFill', { fill }) : t('filter.byNoFill')}
             onclick={() => onApply({ kind: 'color', fill })}
-          >{#if fill === null}No Fill{/if}</button>
+          >{#if fill === null}{t('filter.noFill')}{/if}</button>
         {/each}
       </div>
     </details>
   {/if}
   {#if dates}
     <details class="conditions" open={mode === 'date'} ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) mode = 'date' }}>
-      <summary>Date Filters</summary>
+      <summary>{t('filter.dateFilters')}</summary>
       <div class="condition">
-        <select bind:value={period} aria-label="Date period" onchange={() => (mode = 'date')}>
-          {#each PERIODS as [id, label] (id)}<option value={id}>{label}</option>{/each}
+        <select bind:value={period} aria-label={t('filter.datePeriod')} onchange={() => (mode = 'date')}>
+          {#each PERIODS as id (id)}<option value={id}>{t(`filter.period.${id}`)}</option>{/each}
         </select>
-        {#if typedPeriod(period)}<input type="date" bind:value={d1} aria-label="Date" oninput={() => (mode = 'date')} />{/if}
-        {#if period === 'between'}<span>and</span><input type="date" bind:value={d2} aria-label="Second date" />{/if}
+        {#if typedPeriod(period)}<input type="date" bind:value={d1} aria-label={t('filter.date')} oninput={() => (mode = 'date')} />{/if}
+        {#if period === 'between'}<span>{t('filter.and')}</span><input type="date" bind:value={d2} aria-label={t('filter.secondDate')} />{/if}
       </div>
     </details>
   {/if}
   <details class="conditions" open={mode === 'condition'} ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) mode = 'condition' }}>
-    <summary>{numeric ? 'Number Filters' : 'Text Filters'}</summary>
+    <summary>{t(numeric ? 'filter.numberFilters' : 'filter.textFilters')}</summary>
     <div class="condition">
-      <select bind:value={op1} aria-label="First condition" onchange={() => (mode = 'condition')}>
-        {#each ops as [op, label] (op)}<option value={op}>{label}</option>{/each}
+      <select bind:value={op1} aria-label={t('filter.firstCondition')} onchange={() => (mode = 'condition')}>
+        {#each ops as op (op)}<option value={op}>{t(`filter.op.${op}`)}</option>{/each}
       </select>
-      {#if needsValue(op1)}<input type="text" bind:value={v1} aria-label="First value" oninput={() => (mode = 'condition')} />{/if}
-      {#if op1 === 'between'}<span>and</span><input type="text" bind:value={v1to} aria-label="First upper value" />{/if}
+      {#if needsValue(op1)}<input type="text" bind:value={v1} aria-label={t('filter.firstValue')} oninput={() => (mode = 'condition')} />{/if}
+      {#if op1 === 'between'}<span>{t('filter.and')}</span><input type="text" bind:value={v1to} aria-label={t('filter.firstUpperValue')} />{/if}
     </div>
     <div class="join">
-      <label class="check"><input type="radio" name="sv-sheet-filter-join" value="and" bind:group={join} /> And</label>
-      <label class="check"><input type="radio" name="sv-sheet-filter-join" value="or" bind:group={join} /> Or</label>
+      <label class="check"><input type="radio" name="sv-sheet-filter-join" value="and" bind:group={join} /> {t('filter.joinAnd')}</label>
+      <label class="check"><input type="radio" name="sv-sheet-filter-join" value="or" bind:group={join} /> {t('filter.joinOr')}</label>
     </div>
     <div class="condition">
-      <select bind:value={op2} aria-label="Second condition">
-        <option value="">(none)</option>
-        {#each ops as [op, label] (op)}<option value={op}>{label}</option>{/each}
+      <select bind:value={op2} aria-label={t('filter.secondCondition')}>
+        <option value="">{t('filter.none')}</option>
+        {#each ops as op (op)}<option value={op}>{t(`filter.op.${op}`)}</option>{/each}
       </select>
-      {#if needsValue(op2)}<input type="text" bind:value={v2} aria-label="Second value" />{/if}
-      {#if op2 === 'between'}<span>and</span><input type="text" bind:value={v2to} aria-label="Second upper value" />{/if}
+      {#if needsValue(op2)}<input type="text" bind:value={v2} aria-label={t('filter.secondValue')} />{/if}
+      {#if op2 === 'between'}<span>{t('filter.and')}</span><input type="text" bind:value={v2to} aria-label={t('filter.secondUpperValue')} />{/if}
     </div>
   </details>
   {#if numeric}
     <details class="conditions" open={mode === 'top'} ontoggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) mode = 'top' }}>
-      <summary>Top 10</summary>
+      <summary>{t('filter.top10')}</summary>
       <div class="condition top">
-        <select bind:value={topSide} aria-label="Top or bottom" onchange={() => (mode = 'top')}>
-          <option value="top">Top</option>
-          <option value="bottom">Bottom</option>
+        <select bind:value={topSide} aria-label={t('filter.topOrBottom')} onchange={() => (mode = 'top')}>
+          <option value="top">{t('filter.top')}</option>
+          <option value="bottom">{t('filter.bottom')}</option>
         </select>
-        <input type="number" min="1" bind:value={topCount} aria-label="How many" oninput={() => (mode = 'top')} />
-        <select bind:value={topUnit} aria-label="Items or percent">
-          <option value="items">Items</option>
-          <option value="percent">Percent</option>
+        <input type="number" min="1" bind:value={topCount} aria-label={t('filter.howMany')} oninput={() => (mode = 'top')} />
+        <select bind:value={topUnit} aria-label={t('filter.itemsOrPercent')}>
+          <option value="items">{t('filter.items')}</option>
+          <option value="percent">{t('filter.percent')}</option>
         </select>
       </div>
     </details>
   {/if}
   <hr />
-  <input bind:this={searchBox} type="search" class="search" placeholder="Search" aria-label="Search values" bind:value={search} />
-  <div class="values" role="group" aria-label="Values">
+  <input bind:this={searchBox} type="search" class="search" placeholder={t('filter.search')} aria-label={t('filter.searchValues')} bind:value={search} />
+  <div class="values" role="group" aria-label={t('filter.values')}>
     <label class="check all">
       <input type="checkbox" checked={allShownTicked} indeterminate={!allShownTicked && !noneShownTicked} onchange={toggleAll} />
-      (Select All{search.trim() ? ' Search Results' : ''})
+      {t(search.trim() ? 'filter.selectAllResults' : 'filter.selectAll')}
     </label>
     {#each shown as v (v.text)}
       <label class="check">
         <input type="checkbox" checked={ticked.has(v.text)} onchange={() => toggle(v.text)} />
-        <span class="text">{v.text === '' ? '(Blanks)' : v.text}</span>
+        <span class="text">{v.text === '' ? t('filter.blanks') : v.text}</span>
         <span class="count">{v.count}</span>
       </label>
     {/each}
-    {#if shown.length === 0}<div class="none">No matches.</div>{/if}
+    {#if shown.length === 0}<div class="none">{t('filter.noMatches')}</div>{/if}
   </div>
   <div class="sv-sheet-dialog-buttons">
-    <button type="button" class="btn primary" onclick={ok} disabled={mode === 'condition' ? !conditionValid : mode === 'date' ? !dateValid : mode === 'top' ? !topValid : noneShownTicked && !search.trim()}>OK</button>
-    <button type="button" class="btn" onclick={onCancel}>Cancel</button>
+    <button type="button" class="btn primary" onclick={ok} disabled={mode === 'condition' ? !conditionValid : mode === 'date' ? !dateValid : mode === 'top' ? !topValid : noneShownTicked && !search.trim()}>{t('ok')}</button>
+    <button type="button" class="btn" onclick={onCancel}>{t('cancel')}</button>
   </div>
 </div>
 

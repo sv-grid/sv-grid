@@ -6,6 +6,7 @@
    * rest. Add Level, Delete Level, OK; the shell does the sorting, in one
    * undo, from the keys handed back.
    */
+  import { useSheetText } from './sheet-text'
   import { untrack } from 'svelte'
   import { SvModal } from '@svgrid/grid'
   import type { Workbook } from './sheet/workbook'
@@ -27,6 +28,7 @@
   }
 
   let { open = $bindable(false), workbook, block, headerGuess, activeCol, onApply, onClose }: Props = $props()
+  const t = useSheetText()
 
   let levels = $state<SortKey[]>([])
   let hasHeaders = $state(true)
@@ -37,7 +39,7 @@
   const columns = $derived.by(() =>
     Array.from({ length: block.right - block.left + 1 }, (_, i) => {
       const col = block.left + i
-      const letter = `Column ${colToLetters(col)}`
+      const letter = t('sort.columnLetter', { letter: colToLetters(col) })
       return { col, label: hasHeaders ? raw(block.top, col) || letter : letter }
     }),
   )
@@ -76,37 +78,37 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Sort" size="sm" width={460}>
+<SvModal bind:open onClose={onClose} title={t('sort.title')} size="sm" width={460}>
   <form class="sv-sheet-dialog sort" onsubmit={(e) => { e.preventDefault(); ok() }}>
     <div class="toolbar">
-      <button type="button" class="btn" onclick={addLevel} disabled={levels.length >= columns.length}>Add Level</button>
-      <button type="button" class="btn" onclick={() => deleteLevel(levels.length - 1)} disabled={levels.length <= 1}>Delete Level</button>
+      <button type="button" class="btn" onclick={addLevel} disabled={levels.length >= columns.length}>{t('sort.addLevel')}</button>
+      <button type="button" class="btn" onclick={() => deleteLevel(levels.length - 1)} disabled={levels.length <= 1}>{t('sort.deleteLevel')}</button>
       <span class="spacer"></span>
-      <label class="check"><input type="checkbox" bind:checked={hasHeaders} /> My data has headers</label>
+      <label class="check"><input type="checkbox" bind:checked={hasHeaders} /> {t('sort.hasHeaders')}</label>
     </div>
-    <div class="levels" role="list" aria-label="Sort levels">
+    <div class="levels" role="list" aria-label={t('sort.levels')}>
       {#each levels as level, index (index)}
+        {@const by = t(index === 0 ? 'sort.sortBy' : 'sort.thenBy')}
         <div class="level" role="listitem">
-          <span class="by">{index === 0 ? 'Sort by' : 'Then by'}</span>
-          <select aria-label={`${index === 0 ? 'Sort by' : 'Then by'} column`} bind:value={level.col}>
+          <span class="by">{by}</span>
+          <select aria-label={t('sort.column', { by })} bind:value={level.col}>
             {#each columns as c (c.col)}<option value={c.col}>{c.label}</option>{/each}
           </select>
-          <select aria-label={`${index === 0 ? 'Sort by' : 'Then by'} order`} bind:value={level.direction}>
-            <option value="asc">A to Z</option>
-            <option value="desc">Z to A</option>
+          <select aria-label={t('sort.order', { by })} bind:value={level.direction}>
+            <option value="asc">{t('sort.asc')}</option>
+            <option value="desc">{t('sort.desc')}</option>
           </select>
         </div>
       {/each}
     </div>
     <p class="hint">
-      Sorting {colToLetters(block.left)}{block.top + 1}:{colToLetters(block.right)}{block.bottom + 1}.
-      Numbers sort before text, blanks go last, and formats move with their rows.
+      {t('sort.hint', { range: `${colToLetters(block.left)}${block.top + 1}:${colToLetters(block.right)}${block.bottom + 1}` })}
     </p>
   </form>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={ok} disabled={!levels.length}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={ok} disabled={!levels.length}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

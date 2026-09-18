@@ -7,6 +7,7 @@
    * at the active cell and, on OK, hands back one rule for the shell to put
    * over the selection; Clear All removes the validation from the selection.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
   import {
     OPERATOR_LABELS,
@@ -25,20 +26,21 @@
   }
 
   let { open = $bindable(false), rule, address, onApply, onClear, onClose }: Props = $props()
+  const t = useSheetText()
 
   type Tab = 'settings' | 'input' | 'alert'
   let tab = $state<Tab>('settings')
 
   const ALLOWS: ReadonlyArray<{ id: ValidationAllow; label: string }> = [
-    { id: 'any', label: 'Any value' },
-    { id: 'whole', label: 'Whole number' },
-    { id: 'decimal', label: 'Decimal' },
-    { id: 'list', label: 'List' },
-    { id: 'date', label: 'Date' },
-    { id: 'textLength', label: 'Text length' },
-    { id: 'custom', label: 'Custom' },
+    { id: 'any', label: 'validation.allow.any' },
+    { id: 'whole', label: 'validation.allow.whole' },
+    { id: 'decimal', label: 'validation.allow.decimal' },
+    { id: 'list', label: 'validation.allow.list' },
+    { id: 'date', label: 'validation.allow.date' },
+    { id: 'textLength', label: 'validation.allow.textLength' },
+    { id: 'custom', label: 'validation.allow.custom' },
   ]
-  const OPERATORS = Object.entries(OPERATOR_LABELS) as Array<[ValidationOperator, string]>
+  const OPERATORS = Object.keys(OPERATOR_LABELS) as ValidationOperator[]
 
   let allow = $state<ValidationAllow>('any')
   let operator = $state<ValidationOperator>('between')
@@ -75,12 +77,12 @@
   const bounded = $derived(allow === 'whole' || allow === 'decimal' || allow === 'date' || allow === 'textLength')
   const twoBounds = $derived(operator === 'between' || operator === 'notBetween')
   const firstLabel = $derived(
-    allow === 'list' ? 'Source:'
-      : allow === 'custom' ? 'Formula:'
-      : twoBounds ? (allow === 'date' ? 'Start date:' : 'Minimum:')
-      : allow === 'date' ? 'Date:' : allow === 'textLength' ? 'Length:' : 'Value:',
+    allow === 'list' ? t('validation.source')
+      : allow === 'custom' ? t('validation.formula')
+      : twoBounds ? t(allow === 'date' ? 'validation.startDate' : 'validation.minimum')
+      : t(allow === 'date' ? 'validation.date' : allow === 'textLength' ? 'validation.length' : 'validation.value'),
   )
-  const secondLabel = $derived(allow === 'date' ? 'End date:' : 'Maximum:')
+  const secondLabel = $derived(t(allow === 'date' ? 'validation.endDate' : 'validation.maximum'))
   const valid = $derived(
     allow === 'any'
       || (allow === 'list' && value1.trim() !== '')
@@ -124,35 +126,35 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Data Validation" size="sm" width={400}>
+<SvModal bind:open onClose={onClose} title={t('validation.title')} size="sm" width={400}>
   <form class="sv-sheet-dialog validation" onsubmit={(e) => { e.preventDefault(); ok() }}>
     <div class="where">{address}</div>
-    <div class="tabs" role="tablist" aria-label="Data Validation tabs">
-      {#each [['settings', 'Settings'], ['input', 'Input Message'], ['alert', 'Error Alert']] as [id, label] (id)}
-        <button type="button" role="tab" class="tab" class:on={tab === id} aria-selected={tab === id} onclick={() => (tab = id as Tab)}>{label}</button>
+    <div class="tabs" role="tablist" aria-label={t('validation.tabs')}>
+      {#each ['settings', 'input', 'alert'] as id (id)}
+        <button type="button" role="tab" class="tab" class:on={tab === id} aria-selected={tab === id} onclick={() => (tab = id as Tab)}>{t(`validation.tab.${id}`)}</button>
       {/each}
     </div>
     <div class="panel" role="tabpanel">
       {#if tab === 'settings'}
-        <div class="lead">Validation criteria</div>
+        <div class="lead">{t('validation.criteria')}</div>
         <label class="field">
-          <span>Allow:</span>
+          <span>{t('validation.allow')}</span>
           <select bind:this={first} bind:value={allow}>
-            {#each ALLOWS as a (a.id)}<option value={a.id}>{a.label}</option>{/each}
+            {#each ALLOWS as a (a.id)}<option value={a.id}>{t(a.label)}</option>{/each}
           </select>
         </label>
         {#if bounded}
           <label class="field">
-            <span>Data:</span>
+            <span>{t('validation.data')}</span>
             <select bind:value={operator}>
-              {#each OPERATORS as [id, label] (id)}<option value={id}>{label}</option>{/each}
+              {#each OPERATORS as id (id)}<option value={id}>{t(`validation.operator.${id}`)}</option>{/each}
             </select>
           </label>
         {/if}
         {#if allow !== 'any'}
           <label class="field">
             <span>{firstLabel}</span>
-            <input type="text" bind:value={value1} spellcheck="false" placeholder={allow === 'list' ? 'Red, Green, Blue or =$D$1:$D$5' : allow === 'custom' ? '=B1<>""' : ''} />
+            <input type="text" bind:value={value1} spellcheck="false" placeholder={allow === 'list' ? t('validation.listPlaceholder') : allow === 'custom' ? '=B1<>""' : ''} />
           </label>
         {/if}
         {#if bounded && twoBounds}
@@ -162,56 +164,56 @@
           </label>
         {/if}
         <div class="checks">
-          <label class="check"><input type="checkbox" bind:checked={ignoreBlank} /> Ignore blank</label>
+          <label class="check"><input type="checkbox" bind:checked={ignoreBlank} /> {t('validation.ignoreBlank')}</label>
           {#if allow === 'list'}
-            <label class="check"><input type="checkbox" bind:checked={inCellDropdown} /> In-cell dropdown</label>
+            <label class="check"><input type="checkbox" bind:checked={inCellDropdown} /> {t('validation.inCellDropdown')}</label>
           {/if}
         </div>
         {#if allow === 'custom'}
-          <p class="hint">Written for the top-left cell of the selection; it moves with each cell, as a copied formula would. TRUE (or a number other than 0) allows the entry.</p>
+          <p class="hint">{t('validation.customHint')}</p>
         {:else if allow === 'list'}
-          <p class="hint">A comma-separated list, or a range or a defined name starting with =.</p>
+          <p class="hint">{t('validation.listHint')}</p>
         {:else if allow !== 'any'}
-          <p class="hint">A bound can be a formula, so =$B$1 follows B1.</p>
+          <p class="hint">{t('validation.boundHint')}</p>
         {/if}
       {:else if tab === 'input'}
-        <label class="check"><input type="checkbox" bind:checked={showInput} /> Show input message when cell is selected</label>
-        <div class="lead">When cell is selected, show this input message:</div>
+        <label class="check"><input type="checkbox" bind:checked={showInput} /> {t('validation.showInput')}</label>
+        <div class="lead">{t('validation.inputLead')}</div>
         <label class="field">
-          <span>Title:</span>
+          <span>{t('validation.inputTitle')}</span>
           <input type="text" bind:value={inputTitle} disabled={!showInput} />
         </label>
         <label class="field message">
-          <span>Input message:</span>
+          <span>{t('validation.inputMessage')}</span>
           <textarea rows="4" bind:value={inputMessage} disabled={!showInput}></textarea>
         </label>
       {:else}
-        <div class="lead">When the user enters invalid data, show this alert:</div>
+        <div class="lead">{t('validation.alertLead')}</div>
         <label class="field">
-          <span>Style:</span>
+          <span>{t('validation.style')}</span>
           <select bind:value={style}>
-            <option value="stop">Stop</option>
-            <option value="warning">Warning</option>
+            <option value="stop">{t('validation.stop')}</option>
+            <option value="warning">{t('validation.warning')}</option>
           </select>
         </label>
         <label class="field">
-          <span>Title:</span>
+          <span>{t('validation.errorTitle')}</span>
           <input type="text" bind:value={title} />
         </label>
         <label class="field message">
-          <span>Error message:</span>
+          <span>{t('validation.errorMessage')}</span>
           <textarea rows="4" bind:value={message}></textarea>
         </label>
-        <p class="hint">Stop refuses the entry and offers Retry; Warning asks whether to keep it anyway.</p>
+        <p class="hint">{t('validation.alertHint')}</p>
       {/if}
     </div>
   </form>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn" onclick={clearAll}>Clear All</button>
+      <button type="button" class="btn" onclick={clearAll}>{t('validation.clearAll')}</button>
       <span class="spacer"></span>
-      <button type="button" class="btn primary" onclick={ok} disabled={!valid}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={ok} disabled={!valid}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

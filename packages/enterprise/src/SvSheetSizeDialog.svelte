@@ -4,6 +4,7 @@
    * shell opens it from the column letter's and the row number's menus and
    * applies the size to every column or row the selection spans.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
 
   type Props = {
@@ -16,6 +17,7 @@
   }
 
   let { open = $bindable(false), title, label, value, onApply, onClose }: Props = $props()
+  const t = useSheetText()
 
   let draft = $state('')
   let input = $state<HTMLInputElement | null>(null)
@@ -51,8 +53,8 @@
   </form>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={ok} disabled={!valid}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={ok} disabled={!valid}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

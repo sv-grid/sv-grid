@@ -30,6 +30,11 @@ per item:
 - Phase A items 1 to 3: `documentToXlsx` / `documentFromXlsx` with a
   round-trip test, and the File tab (New, Open, Save As, Export CSV, with
   Ctrl+O and Ctrl+S). Print and Page Layout (item 4) are not done.
+- Phase E item 1: `SheetMessages`, `SheetLocalization` and the
+  `localization` prop, threaded through Svelte context to the ribbon,
+  the formula bar, the tab strip, every dialog and the status bar; the
+  ribbon's keys are read off the model. The rule descriptions in the
+  Rules Manager and the function names stay English.
 
 Deviations from the plan: Data Validation is a plain dropdown, not a split
 button, because the ribbon model forbids a dropdown that emits its own
@@ -227,10 +232,10 @@ serialised by Phase A. PivotTable from a range comes last and reuses
 
 ### Phase E. Reach (M)
 
-1. **Localisation**: a `SheetMessages` type and a `localization` prop on
+1. ~~**Localisation**: a `SheetMessages` type and a `localization` prop on
    `SvSheet`, threaded to the ribbon, dialogs and status bar the way
    `GridMessages` works. Format the status-bar numbers with the locale
-   instead of `en-US`.
+   instead of `en-US`.~~ Shipped.
 2. RTL, touch and accessibility audits with Playwright specs under
    `tests/`, fixing what they find.
 3. **`<sv-sheet>`**: a commercial web component entry under

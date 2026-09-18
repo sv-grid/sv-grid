@@ -5,6 +5,7 @@
    * page shows what it found; OK keeps the answer through the command
    * context, so it lands in the grid's history like a typed number.
    */
+  import { useSheetText } from './sheet-text'
   import { untrack } from 'svelte'
   import { SvModal } from '@svgrid/grid'
   import type { GridCommandContext } from '@svgrid/grid/shortcuts'
@@ -21,6 +22,7 @@
   }
 
   let { open = $bindable(false), workbook, cmd, onClose }: Props = $props()
+  const t = useSheetText()
 
   let step = $state<'ask' | 'done'>('ask')
   let setCell = $state('')
@@ -56,12 +58,12 @@
     const formula = address(setCell)
     const input = address(byCell)
     const target = Number(toValue)
-    if (!formula) { problem = `"${setCell}" is not a cell address`; return }
-    if (!input) { problem = `"${byCell}" is not a cell address`; return }
-    if (toValue.trim() === '' || !Number.isFinite(target)) { problem = 'To value must be a number'; return }
+    if (!formula) { problem = t('goalSeek.notAddress', { text: setCell }); return }
+    if (!input) { problem = t('goalSeek.notAddress', { text: byCell }); return }
+    if (toValue.trim() === '' || !Number.isFinite(target)) { problem = t('goalSeek.toValueNumber'); return }
     const sheet = workbook.active
     if (!workbook.getRaw(sheet, formula.row, formula.col).startsWith('=')) {
-      problem = `${setCell.toUpperCase()} must contain a formula`
+      problem = t('goalSeek.needsFormula', { cell: setCell.toUpperCase() })
       return
     }
     if (workbook.getRaw(sheet, input.row, input.col).startsWith('=')) {
@@ -91,19 +93,19 @@
   const money = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 })
 </script>
 
-<SvModal bind:open onClose={onClose} title={step === 'ask' ? 'Goal Seek' : 'Goal Seek Status'} size="sm">
+<SvModal bind:open onClose={onClose} title={t(step === 'ask' ? 'goalSeek.title' : 'goalSeek.statusTitle')} size="sm">
   {#if step === 'ask'}
     <form class="sv-sheet-dialog" onsubmit={(e) => { e.preventDefault(); solve() }}>
       <label class="field">
-        <span>Set cell:</span>
+        <span>{t('goalSeek.setCell')}</span>
         <input bind:this={firstInput} type="text" bind:value={setCell} spellcheck="false" />
       </label>
       <label class="field">
-        <span>To value:</span>
+        <span>{t('goalSeek.toValue')}</span>
         <input type="text" bind:value={toValue} inputmode="decimal" />
       </label>
       <label class="field">
-        <span>By changing cell:</span>
+        <span>{t('goalSeek.byChanging')}</span>
         <input type="text" bind:value={byCell} spellcheck="false" />
       </label>
       {#if problem}<p class="status problem" role="alert">{problem}</p>{/if}
@@ -111,21 +113,20 @@
   {:else if found}
     <div class="sv-sheet-dialog">
       <p class="lead">
-        Goal Seeking with Cell <strong>{setCell.toUpperCase()}</strong>
-        {found.converged ? 'found a solution.' : 'may not have found a solution.'}
+        {t(found.converged ? 'goalSeek.found' : 'goalSeek.notFound', { cell: setCell.toUpperCase() })}
       </p>
       <dl class="facts">
-        <dt>Target value:</dt><dd>{money(Number(toValue))}</dd>
-        <dt>Current value:</dt><dd>{money(found.result)}</dd>
-        <dt>{byCell.toUpperCase()} becomes:</dt><dd>{money(round(found.value))}</dd>
+        <dt>{t('goalSeek.target')}</dt><dd>{money(Number(toValue))}</dd>
+        <dt>{t('goalSeek.current')}</dt><dd>{money(found.result)}</dd>
+        <dt>{t('goalSeek.becomes', { cell: byCell.toUpperCase() })}</dt><dd>{money(round(found.value))}</dd>
       </dl>
-      <p class="status">{found.iterations} iterations.</p>
+      <p class="status">{t('goalSeek.iterations', { count: found.iterations })}</p>
     </div>
   {/if}
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={step === 'ask' ? solve : keep}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={step === 'ask' ? solve : keep}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

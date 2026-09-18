@@ -44,6 +44,8 @@
     type RibbonTab, type RibbonGroup, type RibbonItem, type RibbonOption, type RibbonActionId,
   } from './sheet/ribbon'
   import { THEME_COLOURS, STANDARD_COLOURS } from './sheet/palette'
+  import { useSheetText } from './sheet-text'
+  import { defaultSheetMessages } from './sheet/messages'
 
   type Props = {
     /**
@@ -184,8 +186,20 @@
   }
 
   /** Excel puts the shortcut after the name in the tooltip. */
+  // Every string the ribbon prints goes through the shell's map, keyed
+  // off the model, so a translation covers a button the model gains later.
+  const t = useSheetText()
+  const label = (item: RibbonItem): string => t(`ribbon.${item.id}.label`)
+  const title = (item: RibbonItem): string => t(`ribbon.${item.id}.title`)
+  /** An option's text, unless its key belongs to an earlier option with the
+   *  same value (two palette colours on one hex): that one keeps its own label. */
+  const optionLabel = (item: RibbonItem, option: RibbonOption): string => {
+    const key = `ribbon.${item.id}.option.${option.value}`
+    return defaultSheetMessages[key] === option.label ? t(key) : option.label
+  }
+  const groupLabel = (group: RibbonGroup): string => t(`ribbon.group.${group.id}`)
   function tip(item: RibbonItem): string {
-    return item.keys ? `${item.title} (${item.keys})` : item.title
+    return item.keys ? `${title(item)} (${item.keys})` : title(item)
   }
 
   /**
@@ -375,17 +389,17 @@
     class:on={state.on}
     disabled={!state.enabled}
     title={tip(item)}
-    aria-label={item.title}
+    aria-label={title(item)}
     aria-pressed={item.kind === 'toggle' ? state.on : undefined}
     onclick={() => run(item)}
   >
     {#if item.icon}
       <SvRibbonIcon name={item.icon} size={item.size === 'large' ? 32 : 16} />
     {:else}
-      <span class="glyph" data-glyph={item.id}>{item.label}</span>
+      <span class="glyph" data-glyph={item.id}>{label(item)}</span>
     {/if}
     {#if item.size === 'large' || item.wide}
-      <span class="label">{item.label}</span>
+      <span class="label">{label(item)}</span>
     {/if}
   </button>
 {/snippet}
@@ -401,38 +415,38 @@
       class:has-bar={item.palette}
       disabled={!state.enabled}
       title={tip(item)}
-      aria-label={item.title}
+      aria-label={title(item)}
       onclick={() => run(item, faceValue(item))}
     >
       {#if item.icon && !(item.palette && item.id === 'text-colour')}
         <SvRibbonIcon name={item.icon} />
       {:else}
-        <span class="glyph" data-glyph={item.id}>{item.label}</span>
+        <span class="glyph" data-glyph={item.id}>{label(item)}</span>
       {/if}
       {#if item.palette}
         <span class="bar" class:none={colour === null} style:background={colour ?? 'transparent'}></span>
       {/if}
     </button>
     {#if live}
-      <SvPopover bind:open={menuOpen[item.id]} placement="bottom-start" arrow={false} offset={2} ariaLabel={item.title}>
+      <SvPopover bind:open={menuOpen[item.id]} placement="bottom-start" arrow={false} offset={2} ariaLabel={title(item)}>
         {#snippet anchor()}
           <button
             type="button"
             class="btn arrow"
             disabled={!state.enabled}
-            aria-label={`${item.title} options`}
+            aria-label={t('menuOptions', { title: title(item) })}
             aria-haspopup="menu"
             aria-expanded={menuOpen[item.id] ?? false}
           ><SvRibbonIcon name="chevron-down" size={10} /></button>
         {/snippet}
         {#if item.palette}
-          <div class="palette" role="menu" aria-label={item.title}>
+          <div class="palette" role="menu" aria-label={title(item)}>
             {#if item.none}
               <button type="button" class="palette-none" role="menuitem" onclick={() => pick(item, item.none!.value)}>
-                <span class="swatch no-colour" aria-hidden="true"></span>{item.none.label}
+                <span class="swatch no-colour" aria-hidden="true"></span>{t(`ribbon.${item.id}.none`)}
               </button>
             {/if}
-            <div class="palette-title">Theme Colors</div>
+            <div class="palette-title">{t('paletteThemeColors')}</div>
             <div class="swatches">
               {#each THEME_COLOURS as row, r (r)}
                 {#each row as c (c.value + r)}
@@ -440,7 +454,7 @@
                 {/each}
               {/each}
             </div>
-            <div class="palette-title">Standard Colors</div>
+            <div class="palette-title">{t('paletteStandardColors')}</div>
             <div class="swatches">
               {#each STANDARD_COLOURS as c (c.value)}
                 <button type="button" class="swatch" role="menuitem" title={c.label} aria-label={c.label} style:background={c.value} onclick={() => pick(item, c.value)}></button>
@@ -448,11 +462,11 @@
             </div>
           </div>
         {:else}
-          <div class="menu" role="menu" aria-label={item.title}>
+          <div class="menu" role="menu" aria-label={title(item)}>
             {#each item.options ?? [] as option (option.value)}
               <button type="button" class="menu-item" role="menuitem" onclick={() => pick(item, option.value)}>
                 {#if option.icon}<SvRibbonIcon name={option.icon} />{/if}
-                <span>{option.label}</span>
+                <span>{optionLabel(item, option)}</span>
               </button>
             {/each}
           </div>
@@ -475,38 +489,38 @@
       class:large={item.size === 'large'}
       disabled={!state.enabled}
       title={tip(item)}
-      aria-label={item.title}
+      aria-label={title(item)}
       aria-haspopup="menu"
       aria-expanded={live ? (menuOpen[item.id] ?? false) : false}
     >
       {#if item.icon}
         <SvRibbonIcon name={item.icon} size={item.size === 'large' ? 32 : 16} />
       {:else}
-        <span class="glyph" data-glyph={item.id}>{item.label}</span>
+        <span class="glyph" data-glyph={item.id}>{label(item)}</span>
       {/if}
       {#if item.size === 'large' || item.wide}
-        <span class="label">{item.label}</span>
+        <span class="label">{label(item)}</span>
       {/if}
       <SvRibbonIcon name="chevron-down" size={8} />
     </button>
   {/snippet}
   {#snippet entries()}
-    <div class="menu" role="menu" aria-label={item.title}>
+    <div class="menu" role="menu" aria-label={title(item)}>
       {#each item.options ?? [] as option (option.value)}
         {#if option.heading}
-          <div class="menu-heading" role="presentation">{option.label}</div>
+          <div class="menu-heading" role="presentation">{optionLabel(item, option)}</div>
         {:else}
           {#if option.toggle && option.emits}
             {@const on = live && activeActions.includes(option.emits)}
             <button type="button" class="menu-item" class:on role="menuitemcheckbox" aria-checked={on} onclick={() => pickOption(item, option)}>
               {#if option.icon}<SvRibbonIcon name={option.icon} />{/if}
-              <span>{option.label}</span>
+              <span>{optionLabel(item, option)}</span>
               {#if option.keys}<span class="keys">{option.keys}</span>{/if}
             </button>
           {:else}
             <button type="button" class="menu-item" role="menuitem" onclick={() => pickOption(item, option)}>
               {#if option.icon}<SvRibbonIcon name={option.icon} />{/if}
-              <span>{option.label}</span>
+              <span>{optionLabel(item, option)}</span>
               {#if option.keys}<span class="keys">{option.keys}</span>{/if}
             </button>
           {/if}
@@ -525,38 +539,38 @@
         class:large={item.size === 'large'}
         disabled={!state.enabled}
         title={tip(item)}
-        aria-label={item.title}
+        aria-label={title(item)}
         onclick={() => run(item)}
       >
         {#if item.icon}
           <SvRibbonIcon name={item.icon} size={item.size === 'large' ? 32 : 16} />
         {:else}
-          <span class="glyph" data-glyph={item.id}>{item.label}</span>
+          <span class="glyph" data-glyph={item.id}>{label(item)}</span>
         {/if}
         <!-- A small wide split (Merge & Center) prints its label on the face, as
              Excel does; the colour splits stay icon-only. -->
-        {#if item.wide && item.size !== 'large'}<span class="label">{item.label}</span>{/if}
+        {#if item.wide && item.size !== 'large'}<span class="label">{label(item)}</span>{/if}
       </button>
       {#if live}
-        <SvPopover bind:open={menuOpen[item.id]} placement="bottom-start" arrow={false} offset={2} ariaLabel={item.title}>
+        <SvPopover bind:open={menuOpen[item.id]} placement="bottom-start" arrow={false} offset={2} ariaLabel={title(item)}>
           {#snippet anchor()}
             <button
               type="button"
               class="btn arrow"
               disabled={!state.enabled}
-              aria-label={`${item.title} options`}
+              aria-label={t('menuOptions', { title: title(item) })}
               aria-haspopup="menu"
               aria-expanded={menuOpen[item.id] ?? false}
-            >{#if item.size === 'large'}<span class="label">{item.label}</span>{/if}<SvRibbonIcon name="chevron-down" size={10} /></button>
+            >{#if item.size === 'large'}<span class="label">{label(item)}</span>{/if}<SvRibbonIcon name="chevron-down" size={10} /></button>
           {/snippet}
           {@render entries()}
         </SvPopover>
       {:else}
-        <span class="btn arrow" aria-hidden="true">{#if item.size === 'large'}<span class="label">{item.label}</span>{/if}<SvRibbonIcon name="chevron-down" size={10} /></span>
+        <span class="btn arrow" aria-hidden="true">{#if item.size === 'large'}<span class="label">{label(item)}</span>{/if}<SvRibbonIcon name="chevron-down" size={10} /></span>
       {/if}
     </div>
   {:else if live}
-    <SvPopover bind:open={menuOpen[item.id]} placement="bottom-start" arrow={false} offset={2} ariaLabel={item.title}>
+    <SvPopover bind:open={menuOpen[item.id]} placement="bottom-start" arrow={false} offset={2} ariaLabel={title(item)}>
       {#snippet anchor()}
         {@render face()}
       {/snippet}
@@ -574,7 +588,7 @@
       class="select"
       data-select={item.id}
       title={tip(item)}
-      aria-label={item.title}
+      aria-label={title(item)}
       disabled={!state.enabled}
       value={live ? currentOf(item) : ''}
       onchange={(e) => run(item, e.currentTarget.value)}
@@ -585,7 +599,7 @@
         <option value={currentOf(item)}>{currentOf(item)}</option>
       {/if}
       {#each item.options ?? [] as option (option.value)}
-        <option value={option.value}>{option.value === '' && item.id === 'font-family' ? themeFont : option.label}</option>
+        <option value={option.value}>{option.value === '' && item.id === 'font-family' ? themeFont : optionLabel(item, option)}</option>
       {/each}
     </select>
   {:else if item.kind === 'menu'}
@@ -621,8 +635,8 @@
   {/if}
 {/snippet}
 
-<div class="sv-ribbon" class:collapsed role="toolbar" aria-label="Spreadsheet ribbon" aria-orientation="horizontal" bind:this={rootEl}>
-  <div class="tabs" role="tablist" aria-label="Ribbon tabs">
+<div class="sv-ribbon" class:collapsed role="toolbar" aria-label={t('ribbonLabel')} aria-orientation="horizontal" bind:this={rootEl}>
+  <div class="tabs" role="tablist" aria-label={t('ribbonTabs')}>
     {#each tabs as entry (entry.id)}
       <button
         type="button"
@@ -634,11 +648,11 @@
         onclick={() => onTabClick(entry.id)}
         ondblclick={toggleCollapsed}
         onkeydown={onTabKey}
-      >{entry.label}</button>
+      >{t(`ribbon.tab.${entry.id}`)}</button>
     {/each}
     <span class="tabs-grow"></span>
     {#if collapsed && !peek}
-      <button type="button" class="ribbon-toggle" title="Expand the Ribbon (Ctrl+F1)" aria-label="Expand the Ribbon" aria-expanded="false" onclick={toggleCollapsed}>
+      <button type="button" class="ribbon-toggle" title={`${t('ribbonExpand')} (Ctrl+F1)`} aria-label={t('ribbonExpand')} aria-expanded="false" onclick={toggleCollapsed}>
         <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
       </button>
     {/if}
@@ -647,27 +661,27 @@
   <div class="band" class:away={collapsed && !peek} class:peek={collapsed && peek} bind:clientWidth={bandWidth}>
     {#each current?.groups ?? [] as group (group.id)}
       {#if collapsedGroups.has(group.id)}
-        <section class="group folded" aria-label={group.label}>
-          <SvPopover bind:open={groupOpen[group.id]} placement="bottom-start" arrow={false} offset={4} ariaLabel={group.label}>
+        <section class="group folded" aria-label={groupLabel(group)}>
+          <SvPopover bind:open={groupOpen[group.id]} placement="bottom-start" arrow={false} offset={4} ariaLabel={groupLabel(group)}>
             {#snippet anchor()}
-              <button type="button" class="btn large" aria-haspopup="true" aria-expanded={groupOpen[group.id] ?? false} title={group.label}>
+              <button type="button" class="btn large" aria-haspopup="true" aria-expanded={groupOpen[group.id] ?? false} title={groupLabel(group)}>
                 <span class="fold-icon"><SvRibbonIcon name={groupIcon(group)} size={32} /></span>
-                <span class="label">{group.label} <SvRibbonIcon name="chevron-down" size={10} /></span>
+                <span class="label">{groupLabel(group)} <SvRibbonIcon name="chevron-down" size={10} /></span>
               </button>
             {/snippet}
             <div class="popup-group">
               {@render body(group, true)}
-              <div class="label-row"><span class="group-label">{group.label}</span></div>
+              <div class="label-row"><span class="group-label">{groupLabel(group)}</span></div>
             </div>
           </SvPopover>
         </section>
       {:else}
-        <section class="group" class:compact={fit.compact.has(group.id)} aria-label={group.label}>
+        <section class="group" class:compact={fit.compact.has(group.id)} aria-label={groupLabel(group)}>
           {@render body(group, true)}
           <div class="label-row">
-            <span class="group-label">{group.label}</span>
+            <span class="group-label">{groupLabel(group)}</span>
             {#if group.launcher}
-              <button type="button" class="launcher" title={`${group.label} settings`} aria-label={`${group.label} settings`} onclick={() => launch(group.launcher!)}>
+              <button type="button" class="launcher" title={t('groupSettings', { group: groupLabel(group) })} aria-label={t('groupSettings', { group: groupLabel(group) })} onclick={() => launch(group.launcher!)}>
                 <svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true"><path d="M1 1h3.5M1 1v3.5M1.5 1.5L6.5 6.5M6.5 3.5V6.5H3.5" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </button>
             {/if}
@@ -677,7 +691,7 @@
     {/each}
     <!-- Excel's chevron at the band's end: collapse, or pin the peeked band. -->
     <span class="band-grow"></span>
-    <button type="button" class="ribbon-toggle in-band" title={collapsed ? 'Pin the Ribbon (Ctrl+F1)' : 'Collapse the Ribbon (Ctrl+F1)'} aria-label={collapsed ? 'Pin the Ribbon' : 'Collapse the Ribbon'} onclick={toggleCollapsed}>
+    <button type="button" class="ribbon-toggle in-band" title={`${collapsed ? t('ribbonPin') : t('ribbonCollapse')} (Ctrl+F1)`} aria-label={collapsed ? t('ribbonPin') : t('ribbonCollapse')} onclick={toggleCollapsed}>
       {#if collapsed}
         <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M4 1.5h4M6 1.5v3.5M3.5 5l2.5 2.5L8.5 5M6 7.5V11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
       {:else}
@@ -697,7 +711,7 @@
     {#each current?.groups ?? [] as group (group.id)}
       <section class="group" use:measure={group.id}>
         {@render body(group, false)}
-        <div class="label-row"><span class="group-label">{group.label}</span></div>
+        <div class="label-row"><span class="group-label">{groupLabel(group)}</span></div>
       </section>
     {/each}
   </div>
@@ -705,7 +719,7 @@
     {#each current?.groups ?? [] as group (group.id)}
       <section class="group compact" use:measure={`${group.id}:compact`}>
         {@render body(group, false)}
-        <div class="label-row"><span class="group-label">{group.label}</span></div>
+        <div class="label-row"><span class="group-label">{groupLabel(group)}</span></div>
       </section>
     {/each}
   </div>
@@ -714,7 +728,7 @@
       <section class="group folded" use:measure={`${group.id}:folded`}>
         <button type="button" class="btn large" tabindex="-1">
           <span class="fold-icon"><SvRibbonIcon name={groupIcon(group)} size={32} /></span>
-          <span class="label">{group.label} <SvRibbonIcon name="chevron-down" size={10} /></span>
+          <span class="label">{groupLabel(group)} <SvRibbonIcon name="chevron-down" size={10} /></span>
         </button>
       </section>
     {/each}

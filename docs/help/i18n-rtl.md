@@ -41,7 +41,10 @@ sees in the grid comes from four places:
 ```
 
 The charts the grid draws have a map of their own (`localeText`, see
-[chart localization](charts/accessibility.md#localization)). If you see an
+[chart localization](charts/accessibility.md#localization)), and so does
+the spreadsheet shell (`SheetMessages`, passed as `<SvSheet localization>`;
+see [the shell's Localisation section](cells/spreadsheet-shell.md#localisation)).
+If you see an
 English string that none of the four covers, it's a bug - please file it.
 (The unlicensed Enterprise watermark and the console nudge are the only
 literal strings the package itself emits, and both are off when a license

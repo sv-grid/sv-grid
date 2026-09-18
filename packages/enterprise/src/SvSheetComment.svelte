@@ -8,6 +8,7 @@
    * and the shell saves the draft on dismissal. Ctrl+Enter saves too.
    * The shell mounts it inside the popover anchored to the cell.
    */
+  import { useSheetText } from './sheet-text'
   type Props = {
     /** The comment as it is, empty for a new one. */
     text: string
@@ -20,6 +21,7 @@
   }
 
   let { text, address, onDraft, onSave, onDelete }: Props = $props()
+  const t = useSheetText()
 
   let draft = $state('')
   let box = $state<HTMLTextAreaElement | null>(null)
@@ -39,22 +41,22 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="sv-sheet-comment" role="dialog" aria-label="Comment on {address}" onkeydown={onKeyDown}>
+<div class="sv-sheet-comment" role="dialog" aria-label={t('commentOn', { address })} onkeydown={onKeyDown}>
   <div class="head">{address}</div>
   <textarea
     bind:this={box}
     bind:value={draft}
     oninput={() => onDraft(draft)}
     rows="4"
-    aria-label="Comment"
-    placeholder="Type a comment"
+    aria-label={t('comment')}
+    placeholder={t('commentPlaceholder')}
     spellcheck="false"
   ></textarea>
   <div class="sv-sheet-dialog-buttons">
-    <span class="keys">Ctrl+Enter saves</span>
-    <button type="button" class="btn primary" onclick={() => onSave(draft)}>Save</button>
+    <span class="keys">{t('commentSaves')}</span>
+    <button type="button" class="btn primary" onclick={() => onSave(draft)}>{t('save')}</button>
     {#if text}
-      <button type="button" class="btn" onclick={onDelete}>Delete</button>
+      <button type="button" class="btn" onclick={onDelete}>{t('delete')}</button>
     {/if}
   </div>
 </div>

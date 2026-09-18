@@ -5,6 +5,7 @@
    * and Enter to pick, Escape to leave the cell as it is. The shell mounts
    * it inside the popover anchored to the cell.
    */
+  import { useSheetText } from './sheet-text'
   type Props = {
     choices: ReadonlyArray<string>
     /** The cell's current text, marked in the list. */
@@ -14,6 +15,7 @@
   }
 
   let { choices, value, onPick, onCancel }: Props = $props()
+  const t = useSheetText()
 
   let list = $state<HTMLDivElement | null>(null)
   let index = $state(0)
@@ -42,13 +44,13 @@
   bind:this={list}
   class="sv-sheet-list-picker"
   role="listbox"
-  aria-label="Choices"
+  aria-label={t('choices')}
   tabindex="0"
   aria-activedescendant={choices.length ? `sv-sheet-choice-${index}` : undefined}
   onkeydown={onKeyDown}
 >
   {#if choices.length === 0}
-    <div class="empty">The list is empty.</div>
+    <div class="empty">{t('listEmpty')}</div>
   {:else}
     {#each choices as choice, i (i)}
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus -->

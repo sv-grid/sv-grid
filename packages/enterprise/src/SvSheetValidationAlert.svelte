@@ -5,6 +5,7 @@
    * the message, "Continue?", Yes (the entry lands anyway), No (retry) and
    * Cancel. Enter takes the first button, Escape cancels.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
 
   type Props = {
@@ -17,6 +18,7 @@
   }
 
   let { open = $bindable(false), alert, onRetry, onAccept, onCancel }: Props = $props()
+  const t = useSheetText()
   let first = $state<HTMLButtonElement | null>(null)
 
   $effect(() => {
@@ -30,23 +32,23 @@
   }
 </script>
 
-<SvModal bind:open onClose={onCancel} title={alert?.title ?? 'Data validation'} size="sm">
+<SvModal bind:open onClose={onCancel} title={alert?.title ?? t('dataValidationTitle')} size="sm">
   <div class="sv-sheet-dialog alert" role="alertdialog" aria-describedby="sv-sheet-validation-message">
     <span class="mark" class:warning={alert?.style === 'warning'} aria-hidden="true">{alert?.style === 'warning' ? '!' : '×'}</span>
     <div>
       <p id="sv-sheet-validation-message" class="message">{alert?.message}</p>
-      {#if alert?.style === 'warning'}<p class="message">Continue?</p>{/if}
+      {#if alert?.style === 'warning'}<p class="message">{t('validationContinue')}</p>{/if}
     </div>
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
       {#if alert?.style === 'warning'}
-        <button bind:this={first} type="button" class="btn primary" onclick={() => done(onAccept)}>Yes</button>
-        <button type="button" class="btn" onclick={() => done(onRetry)}>No</button>
+        <button bind:this={first} type="button" class="btn primary" onclick={() => done(onAccept)}>{t('yes')}</button>
+        <button type="button" class="btn" onclick={() => done(onRetry)}>{t('no')}</button>
       {:else}
-        <button bind:this={first} type="button" class="btn primary" onclick={() => done(onRetry)}>Retry</button>
+        <button bind:this={first} type="button" class="btn primary" onclick={() => done(onRetry)}>{t('retry')}</button>
       {/if}
-      <button type="button" class="btn" onclick={() => done(onCancel)}>Cancel</button>
+      <button type="button" class="btn" onclick={() => done(onCancel)}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

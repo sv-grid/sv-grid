@@ -118,6 +118,11 @@ export {
   createNames, isValidName, type SheetNames, type DefinedName,
 } from './names'
 export {
+  defaultSheetMessages, defaultSheetTextMessages, defaultDialogMessages, ribbonMessageDefaults,
+  resolveSheetMessages, formatMessage,
+  type SheetMessages, type SheetTextMessages, type SheetDialogMessages, type SheetLocalization,
+} from './messages'
+export {
   suggestFunctions, applySuggestion, signatureAt, partialAt, SIGNATURES,
   type FunctionSuggestion,
 } from './autocomplete'

@@ -11,6 +11,7 @@
    * through props and reports edits through `onCommit`, so it works over a
    * `<SvGrid>`, a plain array, or a workbook with several sheets.
    */
+  import { useSheetText } from './sheet-text'
   import {
     suggestFunctions,
     applySuggestion,
@@ -79,6 +80,7 @@
     autocomplete = true,
     disabled = false,
   }: Props = $props()
+  const t = useSheetText()
 
   let draft = $state('')
   let editing = $state(false)
@@ -252,7 +254,7 @@
   }
 </script>
 
-<div class="sv-formula-bar" role="group" aria-label="Formula bar">
+<div class="sv-formula-bar" role="group" aria-label={t('formulaBar')}>
   {#if showNameBox}
     <!--
       Excel's Name Box: one field that takes an address and, behind its arrow,
@@ -263,7 +265,7 @@
     <div class="name-box">
       <input
         type="text"
-        aria-label="Name box"
+        aria-label={t('nameBox')}
         placeholder={label ?? address}
         value={nameBoxText}
         {disabled}
@@ -277,7 +279,7 @@
       {#if names.length > 0}
         <select
           class="names"
-          aria-label="Defined names"
+          aria-label={t('definedNames')}
           {disabled}
           onchange={(e) => {
             const picked = e.currentTarget.value
@@ -285,7 +287,7 @@
             e.currentTarget.selectedIndex = 0
           }}
         >
-          <option value="">Names</option>
+          <option value="">{t('namesHeading')}</option>
           {#each names as entry (entry.name)}
             <option value={entry.name}>{entry.name}</option>
           {/each}
@@ -299,8 +301,8 @@
     <button
       type="button"
       class="action"
-      title="Cancel"
-      aria-label="Cancel"
+      title={t('formulaBarCancel')}
+      aria-label={t('formulaBarCancel')}
       disabled={!editing}
       onmousedown={(e) => e.preventDefault()}
       onclick={cancel}
@@ -308,8 +310,8 @@
     <button
       type="button"
       class="action"
-      title="Enter"
-      aria-label="Enter"
+      title={t('formulaBarEnter')}
+      aria-label={t('formulaBarEnter')}
       disabled={!editing}
       onmousedown={(e) => e.preventDefault()}
       onclick={() => commit()}
@@ -318,8 +320,8 @@
       <button
         type="button"
         class="action fx"
-        title="Insert Function (Shift+F3)"
-        aria-label="Insert Function"
+        title={`${t('insertFunction')} (Shift+F3)`}
+        aria-label={t('insertFunction')}
         {disabled}
         onclick={() => onInsertFunction?.()}
       >fx</button>
@@ -339,7 +341,7 @@
       bind:this={input}
       class="formula"
       class:coloured={runs.length > 0}
-      aria-label="Formula"
+      aria-label={t('formula')}
       autocomplete="off"
       spellcheck="false"
       {rows}
@@ -362,8 +364,8 @@
       type="button"
       class="expand"
       class:on={expanded}
-      title={expanded ? 'Collapse the formula bar' : 'Expand the formula bar'}
-      aria-label={expanded ? 'Collapse the formula bar' : 'Expand the formula bar'}
+      title={expanded ? t('collapseFormulaBar') : t('expandFormulaBar')}
+      aria-label={expanded ? t('collapseFormulaBar') : t('expandFormulaBar')}
       aria-expanded={expanded}
       onclick={() => (expanded = !expanded)}
     ><svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
@@ -373,7 +375,7 @@
     {/if}
 
     {#if suggestions.length > 0}
-      <ul class="suggestions" role="listbox" aria-label="Function suggestions">
+      <ul class="suggestions" role="listbox" aria-label={t('functionSuggestions')}>
         {#each suggestions as suggestion, i (suggestion.name)}
           <li role="option" aria-selected={i === highlighted}>
             <button
