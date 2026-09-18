@@ -230,7 +230,8 @@ export {
   type SheetDelta, type SheetDeltaStream, type SheetDeltaOptions, type SheetCellWrite,
 } from './sheet/delta'
 export {
-  linkAt, setLink, removeLink, listLinks, shiftLinks, copyLinks, parseLinkTarget, linkTitle,
+  linkAt, setLink, removeLink, listLinks, shiftLinks, copyLinks, parseLinkTarget, isSafeLinkTarget,
+  linkTitle,
   type SheetLink, type LinksMap, type LinkTarget,
 } from './sheet/links'
 export {

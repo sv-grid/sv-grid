@@ -1854,7 +1854,10 @@
   /** Follow a link: out of the page, or to a cell on this workbook. */
   async function followLink(link: SheetLink) {
     const target = parseLinkTarget(link.target)
-    if (!target) return
+    // Null is a target this shell will not follow: an empty one, or a
+    // scheme that is not on the safe list. Saying so is better than a click
+    // that does nothing.
+    if (!target) { say(t('cannotOpenLink')); return }
     if (target.kind === 'external') {
       window.open(target.href, '_blank', 'noopener,noreferrer')
       return
