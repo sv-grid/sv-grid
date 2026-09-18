@@ -19,6 +19,10 @@
     {
       "question": "Can I sort and filter the plan?",
       "answer": "Yes. Sort by start date or filter by owner from the column menus; the timeline column reflows because it is derived per row."
+    },
+    {
+      "question": "Do I need the Enterprise Gantt for this?",
+      "answer": "No - this recipe is plain grid cells and ships in the free package. Reach for the Enterprise Gantt view when you want the parts a wide cell cannot give you: a work-breakdown tree with rolled-up phases, dependency arrows, drag to reschedule with a cascade, a zoomable axis, critical path and baselines. That is the gantt prop, rendered by @svgrid/enterprise."
     }
   ]
 }

@@ -871,10 +871,15 @@ export type CpmResult = {
 export function criticalPath(
   times: ReadonlyMap<string, EventTimes>,
   deps: ReadonlyArray<SchedulerDependency>,
-  opts?: { keys?: Iterable<string> },
 ): CpmResult
-export function slackDays(result: CpmResult, key: string, cal: WorkingCalendar): number
+export function slackDays(result: CpmResult, key: string): number
 ```
+
+*Built as shown.* Neither extra argument earned its place: `keys` would only
+have re-stated the map's own key set, and slack in working days would disagree
+with the `finish` date on the same result, which is calendar time. The column
+says calendar days and the header says so.
+
 
 Forward pass in `topoOrder`: `ES = max(own start, requiredStart over
 predecessors)`, `EF = ES + duration`. Project finish = max EF. Backward
@@ -882,10 +887,14 @@ pass in reverse order: `LF = min(finish, over successors of the latest
 start that link allows)`, `LS = LF - duration`. `slack = LS - ES`; critical
 when slack is below one minute. Tasks outside every link keep their own
 dates and a slack of `finish - own end`, so an unlinked late task is not
-"critical". Cyclic links are ignored, as in `cascade`. Parents are excluded
-from the pass (their bars are rollups); a link that names a parent is
-treated as a link to its last-finishing leaf for FS / FF and first-starting
-leaf for SS / SF.
+"critical". Cyclic links are ignored, as in `cascade`.
+
+*Built differently, and more simply.* Parents are not excluded and leaves are
+not resolved: the renderer passes each row the span its bar DRAWS, which for a
+parent is its rollup. A link to a phase then means "after the whole phase" by
+arithmetic rather than by a special case, and the pass has no idea parents
+exist. It also stays right when a phase is collapsed, which the leaf-resolving
+version would not.
 
 The renderer adds `sv-gantt-critical` to critical bars and their arrows;
 the demo adds a Slack column to the table through `slackDays`. Tests: a
@@ -912,10 +921,31 @@ before the label shows the constraint kind.
 
 ### 8.4 Pro axis and hours
 
-`zoom` as a number or `ZoomLevel` switches to `buildAxis` / `timeToX` with
-`pxPerMinute` from `resolveZoom`, which brings hour-level ticks for short
-projects and `collapseWeekends`. `zoomLevels` may then be the Scheduler's
-`zoomPresets` ladder. The stepper and the wheel work the same.
+> **Cut, and the type went with it.** The Gantt keeps its own day-granular
+> axis; hour ticks are what the Scheduler is for, and a plan measured in hours
+> is a booking timeline wearing a Gantt's clothes. `zoom` stays a `GanttZoom`,
+> and `GanttProConfig` no longer advertises a number or a `ZoomLevel` - an
+> option nothing reads is worse than no option.
+
+What was worth keeping is the compression, and it did not need the Scheduler's
+pixel axis to get it. `ganttScale(start, end, totalPx, { collapsed, gapPx })`
+in `gantt-model.ts` replaces the renderer's one-line date-to-pixel map with a
+piecewise one: runs of days the predicate answers true for fold to a fixed
+`gapPx` instead of their real width, everything else keeps its rate, and the
+inverse `dateAt` reads a drag back. With no predicate it is the plain linear
+mapping the read-only chart already used, so the two share one code path.
+
+`collapseWeekends` supplies the predicate and `collapsedGapPx` the width (12
+by default; `0` removes the folded days outright). Two consequences worth
+stating:
+
+- The axis header moved from percentages to pixels, because percentages of a
+  window no longer describe a folded chart. Ticks have their own dates;
+  majors are converted through their `leftPct`, which is still an exact tick
+  boundary.
+- Only the day-granular presets fold. At `month` and coarser a tick is never
+  wholly non-working, so folding would shrink a week by part of itself; the
+  option is ignored there rather than lying.
 
 ### 8.5 Resources
 
@@ -924,6 +954,25 @@ projects and `collapseWeekends`. `zoomLevels` may then be the Scheduler's
 resource from `resourceLoad`; over-capacity ticks paint red through
 `overallocations`. Assigning is edited in the drawer, not by drag, in this
 phase.
+
+*Built with its own model, not the scheduler's.* `resourceLoad` /
+`overallocations` live in `gantt/gantt-resources.ts`: the scheduler's
+assignment helpers answer a different question (which resource COLUMN a
+booking belongs to), and reusing them would have meant a shim in both
+directions. The Gantt's version is 100 lines and pure. Two definitions it
+pins down, because a histogram that quietly means something else is worse
+than none:
+
+- A cell counts the tasks OVERLAPPING the column - not an average, not
+  person-hours. On a day or week axis that is concurrency; on a coarser one
+  it counts everything touching the column, which reads high rather than low.
+- Only leaves count. A phase is its children, so counting it too would book
+  its owner twice for the same work.
+
+Capacity is per resource, read from a field the config names
+(`resourceHistogram: { capacityField }`), defaulting to one. Omit `resources`
+and the rows come from the data in first-seen order, so a plan that just types
+owner names into a field still gets a strip.
 
 ## 9. Demos, docs and the sweep
 
@@ -1051,11 +1100,18 @@ the served copies.
    gesture that should fire it and the source rows are unchanged until the
    consumer writes them.
 5. Phase 3 (planning). `gantt-critical-path.ts` + tests, the `bounds`
-   argument on `cascade` + tests, baselines, constraints, Pro axis,
-   resources; demo 476.
+   argument on `cascade` + tests, baselines, constraints, the folded axis,
+   resources; demos 476 and 477.
    Done when: the diamond fixture highlights the longer branch and the
    histogram paints the over-allocated tick.
+   *Shipped, with the Pro pixel axis cut (see 8.4) and the compression kept
+   as `ganttScale` / `collapseWeekends` on the Gantt's own axis. Resources
+   grew a second demo rather than crowding 476.*
 6. The sweep. README and skill lines, Studio, MCP regen, thumbnails.
+   *The README, skill and cross-reference lines landed with their phases.
+   Still open: `website/src/lib/demos.ts` entries for 474-477 and the
+   thumbnails that follow them (private submodule, not checked out here),
+   plus everything in 9.4.*
 
 Every PR runs `pnpm test`, `pnpm test:types`, `pnpm lint`,
 `pnpm --filter @svgrid/enterprise test`, and PR 1 also `pnpm size` and the
@@ -1080,7 +1136,9 @@ grid-wc build + size check, matching `.github/workflows/test.yml`.
 - Inclusive date-only ends: documented and tested, but a consumer whose
   end strings already mean exclusive midnight will see bars a day too
   long. `endInclusive: false` can be added if it comes up.
-- Time zones and sub-day durations: deferred to the Pro axis in Phase 3.
+- Time zones and sub-day durations: *not deferred any more, declined.* The
+  Pro pixel axis that would have carried them is cut (8.4); a plan measured
+  in hours is a booking timeline, which is what the Scheduler is for.
 - Bundle budgets: the grid-wc entry has 0.3 KiB of headroom. Phase 0 needs
   a measured bump in both budget files.
 - `cascade` gains an optional `bounds` argument in Phase 3; every
