@@ -373,7 +373,18 @@ const BUDGET_KB = {
   // was 91.6; the block cache and the seams are on the render and scroll
   // path, so none of it can be lazy. The row model itself, transactions,
   // selection rules and pivot are Enterprise and add nothing here.
-  'full render component (SvGrid)': 93.3,
+  //
+  // 93.3 -> 93.7 for the Gantt view's free half (2026-09-18). Measured 93.4,
+  // up from 93.1. The whole Gantt is in @svgrid/enterprise - the renderer, the
+  // layout model, the axis, the planning helpers. What lands here is only what
+  // `<SvGrid gantt={...}>` needs to compile and mount it: the `gantt` prop and
+  // its config types (erased), the gantt-view registry seam, the view branch in
+  // SvGrid.svelte (its root, the search box, the upsell note) and three
+  // localized strings. That is the same shape the board and scheduler already
+  // pay for, and the price of the prop living on the grid rather than behind a
+  // second component import. The two-edit cost the grid-wc note describes
+  // applies: the elements moved by the same amount.
+  'full render component (SvGrid)': 93.7,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for

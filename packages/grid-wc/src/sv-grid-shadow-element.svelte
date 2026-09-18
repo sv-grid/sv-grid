@@ -12,6 +12,7 @@
       columns: { type: 'Array' },
       board: { type: 'Object' },
       scheduler: { type: 'Object' },
+      gantt: { type: 'Object' },
       chart: { type: 'Object' },
       pivot: { type: 'Object' },
       pivotMode: { type: 'Boolean', attribute: 'pivot-mode' },

@@ -36,6 +36,12 @@ export const ELEMENT_PROPS = [
     "ts": "SchedulerConfig<TFeatures, TData>"
   },
   {
+    "name": "gantt",
+    "type": "Object",
+    "attribute": null,
+    "ts": "GanttConfig<TFeatures, TData>"
+  },
+  {
     "name": "chart",
     "type": "Object",
     "attribute": null,

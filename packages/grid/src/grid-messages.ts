@@ -112,6 +112,10 @@ export type GridChromeMessages = {
   // Upsell notes (enterprise views not installed)
   pivotUpsellTitle: string
   pivotUpsellBody: string
+  ganttUpsellTitle: string
+  ganttUpsellBody: string
+  /** Placeholder in the Gantt view's search box. */
+  ganttSearchPlaceholder: string
   /** Shared licensing line under every Enterprise upsell note. */
   upsellLicense: string
   upsellLicenseLink: string
@@ -192,6 +196,9 @@ export const defaultGridMessages: GridChromeMessages = {
   rowLoadRetry: 'Retry',
   pivotUpsellTitle: 'Pivot mode',
   pivotUpsellBody: 'Pivot mode is an Enterprise feature. Install @svgrid/enterprise and call enablePivot() to use it.',
+  ganttUpsellTitle: 'Gantt view',
+  ganttUpsellBody: 'The Gantt view is an Enterprise feature. Install @svgrid/enterprise and call enableGanttView() to render it.',
+  ganttSearchPlaceholder: 'Search tasks...',
   upsellLicense:
     'A license key is required for production use. Without one the feature still works, but the grid renders an unlicensed watermark.',
   upsellLicenseLink: 'View licensing',
