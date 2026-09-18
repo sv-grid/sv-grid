@@ -1,5 +1,5 @@
 {
-  "description": "Excel's Ctrl+T in a Svelte 5 spreadsheet: a block becomes a table with a header row, the banded look, filter arrows and a name its columns are read by, so a formula says Orders[Amount] instead of E2:E13 and keeps meaning it as rows are added. [@Qty] is this row's cell, which is how each line works out its own amount. Auto-expand is the point: typing under the last row grows the table, and every total that reads it grows too, with no formula re-pointed. Tables ride in getState() and go into the .xlsx as real table parts, so Excel shows a table there too. Enterprise, in @svgrid/enterprise.",
+  "description": "Excel's Ctrl+T in a Svelte 5 spreadsheet: a block becomes a table with a header row, the banded look, filter arrows and a name its columns are read by, so a formula says Orders[Amount] instead of E2:E13 and keeps meaning it as rows are added. [@Qty] is this row's cell, which is how each line works out its own amount. Auto-expand is the point: typing under the last row grows the table, and every total that reads it grows too, with no formula re-pointed. Insert > Table Styles picks the look from eighteen presets, six colours in three tones, under the names Excel stores them by. Tables ride in getState() and go into the .xlsx as real table parts, style included, so Excel shows a table there too. Enterprise, in @svgrid/enterprise.",
   "keywords": [
     "svelte spreadsheet table",
     "svelte excel structured references",
@@ -19,6 +19,10 @@
     {
       "question": "Does the table survive a save?",
       "answer": "Yes. It rides in getState() with the workbook, and it goes into the .xlsx as a real table part with its columns and its style, so Excel opens it as a table rather than as cells that look like one. A file with a table in it reads back the same way."
+    },
+    {
+      "question": "Where does the style live?",
+      "answer": "On the table, as the name Excel knows it by, such as TableStyleMedium2. The look is drawn rather than written into the cells, so a row typed under the last one arrives already banded and no format has to be cleaned up when the table becomes a range again. Picking None keeps the cells exactly as they are."
     }
   ]
 }

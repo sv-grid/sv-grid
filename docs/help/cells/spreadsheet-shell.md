@@ -710,6 +710,7 @@ the cell menu is a button that does nothing:
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
+| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range, the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. Insert > Table Styles opens the same dialog on the table the cursor is in. |
 | Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
 | Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
 | Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |

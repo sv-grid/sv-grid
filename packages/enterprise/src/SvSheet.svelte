@@ -108,6 +108,7 @@
     linkAt, setLink, removeLink, parseLinkTarget, linkTitle, hyperlinkArgument, type SheetLink,
   } from './sheet/links'
   import { isValidTableName, type TableRegion } from './sheet/tables'
+  import { tableStyleColours, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
   import { SvChart, SvSparkline } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -1503,7 +1504,7 @@
    */
   const tablesNow = (): TableRegion[] => wb.tables.list()
   const activeTables = $derived.by(() => { void version; return tablesNow().filter((t) => t.sheet.toLowerCase() === wb.active.toLowerCase()) })
-  let tableSetup = $state<{ range: Rect; name: string; headers: boolean; totals: boolean; existing: string | null } | null>(null)
+  let tableSetup = $state<{ range: Rect; name: string; headers: boolean; totals: boolean; style: string; existing: string | null } | null>(null)
 
   /** Replace the workbook's tables, one undo. */
   function putTables(next: ReadonlyArray<TableRegion>) {
@@ -1542,6 +1543,7 @@
         name: here.name,
         headers: true,
         totals: here.hasTotals,
+        style: here.style ?? DEFAULT_TABLE_STYLE,
         existing: here.name,
       }
       return
@@ -1552,11 +1554,11 @@
     const region = cmd ? currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }) : null
     const block: Rect | null = last && (last[0] !== last[2] || last[1] !== last[3]) ? last : region ?? last ?? null
     if (!block || block[0] === block[2]) { say(t('selectBlockToTable')); return }
-    tableSetup = { range: block, name: nextTableName(), headers: true, totals: false, existing: null }
+    tableSetup = { range: block, name: nextTableName(), headers: true, totals: false, style: DEFAULT_TABLE_STYLE, existing: null }
   }
 
   /** OK in the dialog: the table defined, and the filter arrows over it. */
-  function applyTable(next: { range: Rect; name: string; headers: boolean; totals: boolean }) {
+  function applyTable(next: { range: Rect; name: string; headers: boolean; totals: boolean; style: string }) {
     const cmd = cmdOf()
     const [r1, c1, r2, c2] = next.range
     const existing = tableSetup?.existing
@@ -1573,6 +1575,7 @@
       lastCol: c2,
       lastRow: next.totals ? r2 - 1 : r2,
       hasTotals: next.totals,
+      style: next.style,
     }
     const rest = tablesNow().filter((t) => t.name !== existing)
     cmd?.batch(() => {
@@ -1615,15 +1618,25 @@
     }
   }
 
-  /** What part of a table a cell is, for the banded look Excel gives one. */
-  function tablePartAt(row: number, col: number): 'header' | 'band' | 'totals' | 'row' | null {
+  /**
+   * What part of a table a cell is, and the colours that table wears, for
+   * the banded look Excel gives one. The colours ride along because each
+   * table has its own style, so they cannot live in a stylesheet.
+   */
+  function tablePartAt(row: number, col: number): { part: 'header' | 'band' | 'totals' | 'row'; style: string; text: string } | null {
     for (const table of activeTables) {
       if (col < table.firstCol || col > table.lastCol) continue
-      if (row === table.headerRow) return 'header'
+      const colours = tableStyleColours(table.style ?? DEFAULT_TABLE_STYLE)
+      if (!colours) return null
+      const css = `--sheet-table-header:${colours.header};--sheet-table-header-text:${colours.headerText};--sheet-table-band:${colours.band};--sheet-table-totals:${colours.totals};--sheet-table-border:${colours.border}`
+      // A filled header needs its own text colour to stay readable; a
+      // tinted one keeps the cell's. Either way a format written on the cell
+      // still wins, because it is applied after this.
+      if (row === table.headerRow) return { part: 'header', style: css, text: colours.headerText }
       const last = table.lastRow + (table.hasTotals ? 1 : 0)
       if (row < table.headerRow || row > last) continue
-      if (table.hasTotals && row === last) return 'totals'
-      return (row - table.headerRow) % 2 === 0 ? 'band' : 'row'
+      if (table.hasTotals && row === last) return { part: 'totals', style: css, text: 'inherit' }
+      return { part: (row - table.headerRow) % 2 === 0 ? 'band' : 'row', style: css, text: 'inherit' }
     }
     return null
   }
@@ -3007,6 +3020,13 @@
       case 'remove-table':
         if (onAction?.(action, context) === true) return
         removeTableHere()
+        return
+      case 'table-style':
+        if (onAction?.(action, context) === true) return
+        // The same dialog, opened on the table the cursor is in: its gallery
+        // is where a look is chosen, whether the table is new or not.
+        if (!tableHere()) { say(t('noTableHere')); return }
+        insertTable()
         return
       case 'insert-link':
         if (onAction?.(action, context) === true) return
@@ -4413,10 +4433,10 @@
   {@const part = activeTables.length ? tablePartAt(props.r, props.c) : null}
   {#if part}
     <!-- Excel's table style, drawn rather than written into the cells: the
-         header band, and every other row tinted. A row typed under the last
-         one joins the table, and the look follows it without a format
-         being written anywhere. -->
-    <span class="sheet-table-fill {part}" aria-hidden="true"></span>
+         header band, and every other row tinted, in the colours of the style
+         the table wears. A row typed under the last one joins the table, and
+         the look follows it without a format being written anywhere. -->
+    <span class="sheet-table-fill {part.part}" style={part.style} aria-hidden="true"></span>
   {/if}
   <span
     class="sheet-cell"
@@ -4425,7 +4445,7 @@
     class:spill={spill > 0}
     class:wrap={!!entry?.wrap}
     class:has-icon={!!cf?.icon}
-    style={`text-align:${align};${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
+    style={`text-align:${align};${part && part.text !== 'inherit' ? `color:${part.text};` : ''}${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
     title={link ? linkTitle(link) : hashes ? shown.text : raw(props.r, props.c)}
   >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{hashes ?? shown.text}</span>
   {@const arrow = filterArrowAt(props.r, props.c)}
@@ -4781,6 +4801,7 @@
       name={tableSetup.name}
       headers={tableSetup.headers}
       totals={tableSetup.totals}
+      style={tableSetup.style}
       existing={Boolean(tableSetup.existing)}
       onApply={(next) => applyTable(next)}
       onRemove={() => { tableSetup = null; removeTableHere() }}
@@ -5757,13 +5778,13 @@
     pointer-events: none;
   }
   .sheet-table-fill.header {
-    background: color-mix(in srgb, var(--sg-accent, #107c41) 16%, transparent);
-    border-bottom: 1px solid color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent);
+    background: var(--sheet-table-header, color-mix(in srgb, var(--sg-accent, #107c41) 16%, transparent));
+    border-bottom: 1px solid var(--sheet-table-border, color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent));
   }
-  .sheet-table-fill.band { background: color-mix(in srgb, var(--sg-accent, #107c41) 7%, transparent); }
+  .sheet-table-fill.band { background: var(--sheet-table-band, color-mix(in srgb, var(--sg-accent, #107c41) 7%, transparent)); }
   .sheet-table-fill.totals {
-    background: color-mix(in srgb, var(--sg-accent, #107c41) 12%, transparent);
-    border-top: 1px solid color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent);
+    background: var(--sheet-table-totals, color-mix(in srgb, var(--sg-accent, #107c41) 12%, transparent));
+    border-top: 1px solid var(--sheet-table-border, color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent));
   }
 
   /* Excel's link: the theme's link colour, underlined, and a hand over it.

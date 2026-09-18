@@ -35,6 +35,7 @@ import { listLinks, parseLinkTarget } from './links'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
 import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
 import { cleanIteration, DEFAULT_ITERATION } from './workbook'
+import { findTableStyle, DEFAULT_TABLE_STYLE, NO_TABLE_STYLE } from './table-styles'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -572,7 +573,11 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
           + ` headerRowCount="1" totalsRowCount="${table.hasTotals ? 1 : 0}">`
           + `<autoFilter ref="${colToLetters(table.firstCol)}${table.headerRow + 1}:${colToLetters(table.lastCol)}${table.lastRow + 1}"/>`
           + `<tableColumns count="${table.lastCol - table.firstCol + 1}">${columns}</tableColumns>`
-          + '<tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>'
+          // The style by Excel's own name, so the table opens there wearing
+          // what it wears here. `None` writes no style element at all.
+          + (table.style === NO_TABLE_STYLE
+            ? ''
+            : `<tableStyleInfo name="${esc(findTableStyle(table.style)?.id ?? DEFAULT_TABLE_STYLE)}" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>`)
           + '</table>'
         sheetRels += `<Relationship Id="${rel}" Type="${REL_TABLE}" Target="../tables/table${id}.xml"/>`
         overrides.push(`<Override PartName="/xl/tables/table${id}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"/>`)
@@ -1221,6 +1226,9 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
           lastCol: to.col,
           lastRow: to.row - (totals > 0 ? 1 : 0),
           hasTotals: totals > 0,
+          // A style Excel knows keeps its name; one it does not, or none at
+          // all, reads as no style rather than as a guess.
+          style: findTableStyle(attr(kid(table, 'tableStyleInfo'), 'name') ?? undefined)?.id ?? NO_TABLE_STYLE,
         })
       }
 

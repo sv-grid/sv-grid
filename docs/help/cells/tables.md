@@ -51,7 +51,12 @@ What that gets you:
 
 - **The look.** A header band and stripes, drawn rather than written into
   the cells, so a row that joins the table is banded without a format being
-  written anywhere. The filter arrows come with it.
+  written anywhere. The filter arrows come with it. Insert > Table Styles,
+  and the gallery in the Create Table dialog, pick from eighteen presets:
+  six colours in three tones, under the names Excel stores them by
+  (`TableStyleMedium2`), plus None for cells that keep exactly what they
+  carry. The style lives on the table as `style`, so it rides in
+  `getState()` and goes into the file.
 - **The calculated column.** A row typed under the last one joins the table
   (Excel's auto-expand), and every column whose cell above holds a formula
   is filled down into it, references translated, so `=[@Qty]*[@Price]`
@@ -62,6 +67,16 @@ What that gets you:
 - **The file.** A table goes into the .xlsx as a real table part with its
   columns and its style, and one in a file being opened comes back, so
   Excel shows a table rather than cells that look like one.
+
+The presets are exported too, for an application that wants to show them
+its own way:
+
+```ts
+import { TABLE_STYLES, tableStyleColours, DEFAULT_TABLE_STYLE } from '@svgrid/enterprise'
+
+tableStyleColours('TableStyleDark6')
+// { header, headerText, band, totals, border }, as CSS colours
+```
 
 Insert > To Range removes the table and leaves the cells. Defining, growing
 or removing a table settles the workbook again, since a table decides what

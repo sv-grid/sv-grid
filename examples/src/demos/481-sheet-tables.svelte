@@ -13,6 +13,8 @@
    *   [@Qty]                    this row's cell, which is how the Amount
    *                             column works out its own line.
    *   Orders[#Totals]           the totals row under it.
+   *   Insert > Table Styles     the look: six colours in three tones, by
+   *                             the names Excel stores them under.
    *   Insert > To Range         the cells stay, the table goes.
    *
    * Auto-expand is the point: type a product under the last row and the
@@ -21,8 +23,9 @@
    * never mentions an address.
    *
    * Try: type a new order in row 14 and watch the summary follow. Put the
-   * cursor in the table and press Ctrl+T to rename it. Save As and open the
-   * file in Excel: the table is a table there too.
+   * cursor in the table and press Ctrl+T to rename it or pick another style
+   * from the gallery. Save As and open the file in Excel: the table is a
+   * table there too, wearing the style it wears here.
    */
   import { SvSheet, createWorkbook, createSheetDocument } from '@svgrid/enterprise'
 
@@ -67,6 +70,9 @@
     lastCol: 4,
     lastRow: orders.length,
     hasTotals: false,
+    // The gallery's names are Excel's own, so this is the style Excel
+    // opens the saved file with too.
+    style: 'TableStyleMedium6',
   })
   wb.recalculate()
 
