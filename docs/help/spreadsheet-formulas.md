@@ -184,7 +184,9 @@ Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `NUMBERVALUE(text, decimal, group)` is `VALUE` for a number written the way
 another country writes one: the separators are given rather than guessed,
 because `1.234,56` is a thousand in Germany and one point two in
-Britain.
+Britain. Spaces are ignored, trailing `%` signs each divide by a hundred,
+and a group separator after the decimal one is `#VALUE!` rather than a
+number, which is Excel's rule for it.
 
 `%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is

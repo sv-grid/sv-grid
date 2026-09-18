@@ -403,6 +403,10 @@ describe('NUMBERVALUE', () => {
     expect(run('=NUMBERVALUE("twelve")')).toEqual({ error: '#VALUE!' })
     // The same separator twice cannot be read either way.
     expect(run('=NUMBERVALUE("1.2", ".", ".")')).toEqual({ error: '#VALUE!' })
+    // A thousands mark after the decimal point is a typo rather than a
+    // number written another way, which is Excel's rule for it.
+    expect(run('=NUMBERVALUE("1.5,5")')).toEqual({ error: '#VALUE!' })
+    expect(run('=NUMBERVALUE("1,5.5", ",", ".")')).toEqual({ error: '#VALUE!' })
   })
 
   it('passes a number straight through', () => {

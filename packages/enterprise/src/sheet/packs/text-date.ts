@@ -137,6 +137,11 @@ export const TEXT_DATE_FUNCTIONS: Record<string, SheetFunction> = {
     // Trailing percent signs each divide by a hundred, as Excel's do.
     let percents = 0
     while (text.endsWith('%')) { percents += 1; text = text.slice(0, -1).trim() }
+    // Excel reads the group separator as a thousands mark, so one AFTER the
+    // decimal separator is not a number written another way, it is a typo:
+    // "1.5,5" is #VALUE! rather than fifteen and a half.
+    const point = text.indexOf(decimal)
+    if (group !== '' && point >= 0 && text.indexOf(group, point) > point) return err('#VALUE!')
     // The group separator is dropped and the decimal one becomes a point;
     // spaces are dropped too, since a space is a group separator in half of
     // Europe whatever was asked for.
