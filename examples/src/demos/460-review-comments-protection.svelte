@@ -12,10 +12,12 @@
    *                keystroke on an Amount does nothing and the status bar
    *                says why. Review > Unprotect Sheet opens everything;
    *                Format Cells > Protection shows which cells were unlocked.
-   *   Comments     three reviewer notes sit on the cells they are about,
-   *                the red corner Excel draws. Hover for the text, Shift+F2
-   *                to edit, Review > Next to walk them, Show All Comments to
-   *                list them under the ribbon.
+   *   Comments     three reviewer comments sit on the cells they are about,
+   *                the red corner Excel draws. Two are threads with a reply,
+   *                one of them resolved; the third is a plain note. Hover for
+   *                the text, Shift+F2 to open the box, Reply to answer,
+   *                Review > Next to walk them, Show All Comments to list them.
+   *                `commentAuthor` signs what the reviewer writes.
    *   Validation   Status is a list, so the reviewer picks Approved /
    *                Rejected / On hold from the arrow rather than typing it.
    *   Formulas     the totals by status are SUMIFs, so a decision moves the
@@ -65,9 +67,20 @@
   // left it, exactly as a saved document would come back.
   const doc = createSheetDocument({ workbook: wb })
   const sheet = doc.get('Claims')
+  // Two are threads, Excel's threaded comments: an author and a time on
+  // each entry, replies under the first, one resolved. The third is a
+  // plain note, the shape every earlier document carries.
   sheet.notes = {
-    r2: { D: 'Three days of meals at 70 a day: over the 60 limit. Needs a director\'s sign-off before it goes through.' },
-    r4: { E: 'No receipt attached. On hold until it arrives; the airline can reissue one.' },
+    r2: { D: {
+      text: 'Three days of meals at 70 a day: over the 60 limit. Needs a director\'s sign-off before it goes through.',
+      author: 'Finance review', at: '2026-03-02T09:10:00.000Z',
+      replies: [{ text: 'Signed off by M. Chen this morning, see the ticket.', author: 'Ben Okafor', at: '2026-03-03T08:05:00.000Z' }],
+    } },
+    r4: { E: {
+      text: 'No receipt attached. On hold until it arrives; the airline can reissue one.',
+      author: 'Finance review', at: '2026-03-02T09:14:00.000Z', resolved: true,
+      replies: [{ text: 'Reissued receipt attached now.', author: 'Dev Patel', at: '2026-03-04T16:40:00.000Z' }],
+    } },
     r6: { A: 'Same fare and dates as EXP-2041 on row 2. Check it is not the same ticket claimed twice.' },
   }
   sheet.validation = [
@@ -108,7 +121,7 @@
 </script>
 
 <section class="wrap flex flex-col flex-1 min-h-0">
-  <SvSheet document={doc} height="100%" rows={24} columns={9} columnWidths={{ A: 130, B: 130 }} {formats} />
+  <SvSheet document={doc} height="100%" rows={24} columns={9} columnWidths={{ A: 130, B: 130 }} {formats} commentAuthor="Finance review" />
   <p class="note shrink-0">
     The sheet opens <strong>protected</strong>: only the tinted Receipt and
     Status cells take an edit. Pick a status from the arrow on row 3 and the

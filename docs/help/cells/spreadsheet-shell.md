@@ -320,6 +320,7 @@ application answers them.
 | `showRibbon` / `showFormulaBar` / `showTabs` / `showStatusBar` | `true` | Hide any part of the chrome. |
 | `onAction` | | Every ribbon action, first; return `true` to take one over. |
 | `extras` | `[]` | Which of Insert > Table and Insert > Chart to show, because the application answers them. |
+| `commentAuthor` | | Who signs a new comment and a reply, with the time; unset, a new comment is a plain note. |
 | `localization` | | `{ locale, text }`: the language of the chrome. `text` overrides any of the shell's strings (see [Localisation](#localisation)); `locale` formats the status bar's numbers and reaches the grid underneath. |
 | `onReady` | | The `SvGridApi` and the document, once the grid has mounted. |
 | `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
@@ -733,20 +734,32 @@ source in the sheet without storing it. Raised as `data-validation` and
 
 ### Comments
 
-Excel's notes: a text on a cell, marked by a red corner and read by
-hovering the cell. Review > New Comment, Shift+F2 and the cell menu's New
-Comment open the note box beside the active cell (Edit Comment when there
-is one); Ctrl+Enter or Save closes it, and so does Escape or a click
-elsewhere, keeping what was typed, as Excel keeps a note. Delete (on
-Review, in the box, in the cell menu) removes it; Previous and Next walk
-the sheet's comments row by row and wrap; Show All Comments opens a strip
-under the formula bar listing every comment, each a jump to its cell, which
-is the honest form over a sheet that only paints the rows in view. Every
-change is one undo. Comments are per sheet, move with an insert or delete,
-ride in `getState()` as `comments` (`r4` -> `B` -> text, the grid's
-`notes` shape re-keyed) and report `{ kind: 'comments' }` on `onChange`.
-Raised as `new-comment`, `edit-comment`, `delete-comment`,
-`prev-comment`, `next-comment` and `toggle-comments`.
+Excel's notes and its threaded comments: a text on a cell, marked by a red
+corner and read by hovering the cell, and under it the replies, each with
+its author and time. Review > New Comment, Shift+F2 and the cell menu's
+New Comment open the box beside the active cell; for a new comment it is
+the note editor, and Ctrl+Enter or Save closes it, as does Escape or a
+click elsewhere, keeping what was typed, as Excel keeps a note. On a cell
+that has one, the box is the thread: the first entry with Edit and Delete,
+the replies with theirs, a reply box (Ctrl+Enter posts) and Resolve in the
+head, which greys the thread in the list and hides the reply box until
+Reopen. Delete (on Review, in the box, in the cell menu) removes the whole
+thread; Previous and Next walk the sheet's comments row by row and wrap;
+Show All Comments opens a strip under the formula bar listing every
+comment with its author, each a jump to its cell, which is the honest form
+over a sheet that only paints the rows in view. Every change is one undo.
+
+`commentAuthor` is who signs: with it set, a new comment and every reply
+carry that name and the time, the way Excel signs a threaded comment with
+the signed-in user; without it a new comment is a plain note and a reply
+carries its time alone. Comments are per sheet, move with an insert or
+delete, ride in `getState()` as `comments` (`r4` -> `B` -> a note's text,
+or `{ text, author, at, replies, resolved }` for a thread; every document
+saved before threads existed reads as it did) and report
+`{ kind: 'comments' }` on `onChange`. Save As writes a note as Excel's
+legacy note and a thread as its threaded comment with the persons part,
+and Open reads both. Raised as `new-comment`, `edit-comment`,
+`delete-comment`, `prev-comment`, `next-comment` and `toggle-comments`.
 
 ### Protection
 
@@ -850,8 +863,6 @@ button that does nothing.
 - **Tabs:** no Page Layout (print setup has nothing behind it in the
   grid), no track-changes on Review; File has New, Open, Save As and
   Export CSV, not Print.
-- **Comments** are notes, not threads: one text per cell, no replies, no
-  author, no timestamp.
 - **Protection** takes no password and has no "allow users to" list: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they

@@ -102,6 +102,13 @@ export type SheetTextMessages = {
   filter: string
   comment: string
   commentPlaceholder: string
+  commentReply: string
+  commentReplyPlaceholder: string
+  commentPosts: string
+  commentEdit: string
+  commentResolve: string
+  commentReopen: string
+  commentResolved: string
   dataValidationTitle: string
   /** "Comment on {address}" */
   commentOn: string
@@ -659,6 +666,13 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   filter: 'Filter',
   comment: 'Comment',
   commentPlaceholder: 'Type a comment',
+  commentReply: 'Reply',
+  commentReplyPlaceholder: 'Reply...',
+  commentPosts: 'Ctrl+Enter posts',
+  commentEdit: 'Edit',
+  commentResolve: 'Resolve thread',
+  commentReopen: 'Reopen',
+  commentResolved: 'Resolved',
   dataValidationTitle: 'Data validation',
   commentOn: 'Comment on {address}',
   commentSaves: 'Ctrl+Enter saves',

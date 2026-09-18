@@ -32,7 +32,10 @@ function fullDocument() {
   orders.hidden.cols.add(4)
   orders.hidden.rows.add(2)
   orders.freeze = { rows: 1, cols: 1 }
-  orders.notes = { r1: { A: 'Check the price' }, r3: { D: 'Sum of the totals' } }
+  orders.notes = {
+    r1: { A: 'Check the price' },
+    r3: { D: { text: 'Sum of the totals', author: 'Ana', at: '2026-03-04T10:00:00.000Z', resolved: true, replies: [{ text: 'Checked', author: 'Ben', at: '2026-03-05T09:30:00.000Z' }, { text: 'Thanks', at: '2026-03-05T09:31:00.000Z' }] } },
+  }
   orders.protected = true
   orders.merges = [[4, 0, 4, 3]]
   orders.autoFilter = { range: [0, 0, 2, 4], filters: {} }
@@ -66,7 +69,8 @@ describe('documentToXlsxParts', () => {
     }
     expect(Object.keys(parts).sort()).toEqual([
       '[Content_Types].xml', '_rels/.rels', 'xl/_rels/workbook.xml.rels', 'xl/comments1.xml', 'xl/drawings/vmlDrawing1.vml',
-      'xl/styles.xml', 'xl/workbook.xml', 'xl/worksheets/_rels/sheet1.xml.rels', 'xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml',
+      'xl/persons/person.xml', 'xl/styles.xml', 'xl/threadedComments/threadedComment1.xml', 'xl/workbook.xml',
+      'xl/worksheets/_rels/sheet1.xml.rels', 'xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml',
     ])
     const sheet = parts['xl/worksheets/sheet1.xml']!
     // Formulas go out as formulas with their cached value; a text date as a serial.
@@ -89,6 +93,20 @@ describe('documentToXlsxParts', () => {
     expect(parts['xl/worksheets/sheet2.xml']).toContain('<c r="B3" t="b"><v>1</v></c>')
     expect(parts['xl/worksheets/sheet2.xml']).toContain('<c r="B4" t="e"><f>1/0</f><v>#DIV/0!</v></c>')
     expect(parts['xl/comments1.xml']).toContain('<comment ref="A2" authorId="0">')
+    // A thread: the legacy note Excel writes for old readers, and the threaded part with its persons.
+    expect(parts['xl/comments1.xml']).toContain('<author>tc={00000001-0000-0000-0000-000000000001}</author>')
+    expect(parts['xl/comments1.xml']).toContain('[Threaded comment]')
+    expect(parts['xl/comments1.xml']).toContain('Comment:\n    Sum of the totals\nReply:\n    Checked\nReply:\n    Thanks</t>')
+    const threads = parts['xl/threadedComments/threadedComment1.xml']!
+    expect(threads).toContain('<threadedComment ref="D4" dT="2026-03-04T10:00:00.00" personId="{00000000-0000-0000-0000-000000000001}" id="{00000001-0000-0000-0000-000000000001}" done="1"><text>Sum of the totals</text></threadedComment>')
+    expect(threads).toContain('<threadedComment ref="D4" dT="2026-03-05T09:30:00.00" personId="{00000000-0000-0000-0000-000000000002}" id="{000003E9-0000-0000-0000-000000000001}" parentId="{00000001-0000-0000-0000-000000000001}"><text>Checked</text></threadedComment>')
+    expect(threads).toContain('personId="{00000000-0000-0000-0000-000000000003}" id="{000003E9-0000-0000-0000-000000000002}" parentId="{00000001-0000-0000-0000-000000000001}"><text>Thanks</text>')
+    expect(parts['xl/persons/person.xml']).toContain('<person displayName="Ana" id="{00000000-0000-0000-0000-000000000001}" userId="Ana" providerId="None"/>')
+    expect(parts['xl/persons/person.xml']).toContain('<person displayName="" id="{00000000-0000-0000-0000-000000000003}"')
+    expect(parts['xl/_rels/workbook.xml.rels']).toContain('Target="persons/person.xml"')
+    expect(parts['xl/worksheets/_rels/sheet1.xml.rels']).toContain('Target="../threadedComments/threadedComment1.xml"')
+    expect(parts['[Content_Types].xml']).toContain('/xl/threadedComments/threadedComment1.xml')
+    expect(parts['[Content_Types].xml']).toContain('/xl/persons/person.xml')
     expect(parts['xl/styles.xml']).toContain('<dxfs count="6">')
     expect(sheet).toContain('<cfRule type="expression" dxfId="5" priority="9"><formula>$B2&gt;2</formula></cfRule>')
   })
@@ -127,7 +145,7 @@ describe('the round trip', () => {
     expect([...o.hidden.cols]).toEqual([4])
     expect([...o.hidden.rows]).toEqual([2])
     expect(o.freeze).toEqual({ rows: 1, cols: 1 })
-    expect(o.notes).toEqual({ r1: { A: 'Check the price' }, r3: { D: 'Sum of the totals' } })
+    expect(o.notes).toEqual(before.sheets.Orders.comments)
     expect(o.protected).toBe(true)
     expect(o.merges).toEqual([[4, 0, 4, 3]])
     expect(o.autoFilter).toEqual({ range: [0, 0, 2, 4], filters: {} })
@@ -202,6 +220,28 @@ describe('reading what Excel writes', () => {
     expect(s.conditionalFormats).toEqual([{ id: expect.any(String), rects: [[0, 0, 8, 0]], kind: 'average', above: false, style: { color: '#9c0006', fill: '#ffc7ce' } }])
     expect(s.validation[0]).toMatchObject({ allow: 'list', value1: 'a,b', inCellDropdown: false, ignoreBlank: true })
     expect(s.comments).toEqual({ r0: { A: 'Bo:\nlook here' } })
+  })
+
+  it('a threaded comment Excel wrote: persons, replies in order, done, and the legacy note ignored', () => {
+    const state = documentFromXlsxParts({
+      ...wrap(
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/></worksheet>',
+        {
+          'xl/worksheets/_rels/sheet1.xml.rels': '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="../comments1.xml"/><Relationship Id="rId3" Type="http://schemas.microsoft.com/office/2017/10/relationships/threadedComment" Target="../threadedComments/threadedComment1.xml"/></Relationships>',
+          'xl/comments1.xml': '<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><authors><author>tc={A}</author><author>Bo</author></authors><commentList><comment ref="B2" authorId="0"><text><t>[Threaded comment] old readers</t></text></comment><comment ref="C3" authorId="1"><text><t>a note</t></text></comment></commentList></comments>',
+          'xl/threadedComments/threadedComment1.xml': '<ThreadedComments xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments"><threadedComment ref="B2" dT="2024-05-06T07:08:09.10" personId="{P1}" id="{A}" done="1"><text>Root</text></threadedComment><threadedComment ref="B2" dT="2024-05-06T08:00:00.00" personId="{P2}" id="{B}" parentId="{A}"><text>First reply</text></threadedComment><threadedComment ref="B2" dT="2024-05-07T08:00:00.00" personId="{P1}" id="{C}" parentId="{A}"><text>Second</text></threadedComment></ThreadedComments>',
+          'xl/persons/person.xml': '<personList xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments"><person displayName="Ana Ruiz" id="{P1}" userId="ana" providerId="AD"/><person displayName="Ben" id="{P2}" userId="ben" providerId="AD"/></personList>',
+        },
+      ),
+      'xl/_rels/workbook.xml.rels': '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId4" Type="http://schemas.microsoft.com/office/2017/10/relationships/person" Target="persons/person.xml"/></Relationships>',
+    })
+    expect(state.sheets.Data!.comments).toEqual({
+      r1: { B: { text: 'Root', author: 'Ana Ruiz', at: '2024-05-06T07:08:09.100Z', resolved: true, replies: [
+        { text: 'First reply', author: 'Ben', at: '2024-05-06T08:00:00.000Z' },
+        { text: 'Second', author: 'Ana Ruiz', at: '2024-05-07T08:00:00.000Z' },
+      ] } },
+      r2: { C: 'a note' },
+    })
   })
 
   it('refuses a package with no workbook', () => {

@@ -5,7 +5,8 @@
  * every sheet's cells with formulas as formulas, the formats, column widths
  * and row heights, hidden lines and sheets, frozen panes, merges, the
  * AutoFilter's region, data validation, conditional formatting, sheet
- * protection, comments and the defined names. What comes back through
+ * protection, comments (a note as a legacy note, a thread as Excel's
+ * threaded comment with its persons part) and the defined names. What comes back through
  * `documentFromXlsxParts(documentToXlsxParts(doc))` is the document that
  * went in, and a workbook Excel or Google Sheets saved opens with the same
  * parts read the same way.
@@ -29,6 +30,7 @@ import type { Rect } from './rects'
 import { colToLetters, lettersToCol, parseA1 } from './address'
 import { translateFormula } from './refs'
 import { isError, type CellValue } from './ast'
+import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -47,6 +49,11 @@ const REL_STYLES = `${NS_REL}/styles`
 const REL_SHARED = `${NS_REL}/sharedStrings`
 const REL_COMMENTS = `${NS_REL}/comments`
 const REL_VML = `${NS_REL}/vmlDrawing`
+const NS_THREADS = 'http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments'
+const REL_THREADS = 'http://schemas.microsoft.com/office/2017/10/relationships/threadedComment'
+const REL_PERSONS = 'http://schemas.microsoft.com/office/2017/10/relationships/person'
+/** What Excel puts in the legacy note of a threaded comment, for readers that predate threads. */
+const THREAD_LEGACY_HEAD = '[Threaded comment]\n\nYour version of Excel allows you to read this threaded comment; however, any edits to it will get removed if the file is opened in a newer version of Excel. Learn more: https://go.microsoft.com/fwlink/?linkid=870924\n\n'
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
 
 const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30)
@@ -318,6 +325,18 @@ function cfRuleXml(rule: CfRule, priority: number, dxf: (style: CfStyle) => numb
   }
 }
 
+/** A stable id in the GUID spelling the threaded parts want. */
+function guid(group: number, n: number): string {
+  return `{${group.toString(16).padStart(8, '0')}-0000-0000-0000-${n.toString(16).padStart(12, '0')}}`.toUpperCase()
+}
+
+/** An ISO time as Excel spells `dT`: UTC to hundredths, no zone. */
+function threadTime(at: string | undefined): string {
+  const ms = at ? Date.parse(at) : NaN
+  const d = Number.isFinite(ms) ? new Date(ms) : new Date(0)
+  return d.toISOString().replace(/\.(\d{2})\dZ$/, '.$1')
+}
+
 /** The legacy VML part a comment needs before Excel will show it. */
 function vmlXml(comments: ReadonlyArray<{ row: number; col: number }>): string {
   const shapes = comments.map(({ row, col }, i) =>
@@ -341,6 +360,10 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
   const parts: Record<string, string> = {}
   const overrides: string[] = []
   let hasVml = false
+  // The people a thread names, one part for the workbook; an entry
+  // without an author is a person with no name.
+  const persons: string[] = []
+  const personId = (name: string) => { let i = persons.indexOf(name); if (i < 0) { i = persons.length; persons.push(name) } return guid(0, i + 1) }
 
   const sheetEntries = wb.sheets.map((name, index) => {
     const n = index + 1
@@ -431,28 +454,44 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       }).join('')}</dataValidations>`
       : ''
 
-    // Comments: the part, its VML, and the relationships that bind them.
-    const comments: Array<{ row: number; col: number; text: string }> = []
-    for (const [rowId, line] of Object.entries(state.notes)) {
-      const row = Number(rowId.slice(1))
-      if (!Number.isInteger(row)) continue
-      for (const [letter, text] of Object.entries(line)) {
-        const col = lettersToCol(letter)
-        if (col >= 0 && text) comments.push({ row, col, text })
-      }
-    }
-    comments.sort((a, b) => a.row - b.row || a.col - b.col)
+    // Comments: the legacy part and its VML for every one, and for a
+    // thread the threaded part too, with the legacy text Excel itself
+    // writes for readers that predate threads.
+    const comments = listComments(state.notes)
     let legacyDrawing = ''
     if (comments.length) {
       hasVml = true
-      parts[`xl/comments${n}.xml`] = XML_HEAD + `<comments xmlns="${NS_MAIN}"><authors><author></author></authors><commentList>`
-        + comments.map((c) => `<comment ref="${colToLetters(c.col)}${c.row + 1}" authorId="0"><text><t xml:space="preserve">${esc(c.text)}</t></text></comment>`).join('')
-        + '</commentList></comments>'
+      const authors: string[] = ['']
+      const authorId = (name: string) => { let i = authors.indexOf(name); if (i < 0) { i = authors.length; authors.push(name) } return i }
+      const threaded = comments.filter((c) => isThreaded(c.thread))
+      const threadIds = new Map<string, string>()
+      const legacy = comments.map((c) => {
+        const ref = `${colToLetters(c.col)}${c.row + 1}`
+        if (!isThreaded(c.thread)) return `<comment ref="${ref}" authorId="0"><text><t xml:space="preserve">${esc(c.thread.text)}</t></text></comment>`
+        const id = guid(n, threadIds.size + 1)
+        threadIds.set(ref, id)
+        const text = THREAD_LEGACY_HEAD + `Comment:\n    ${c.thread.text}` + (c.thread.replies ?? []).map((r) => `\nReply:\n    ${r.text}`).join('')
+        return `<comment ref="${ref}" authorId="${authorId(`tc=${id}`)}"><text><t xml:space="preserve">${esc(text)}</t></text></comment>`
+      }).join('')
+      parts[`xl/comments${n}.xml`] = XML_HEAD + `<comments xmlns="${NS_MAIN}"><authors>${authors.map((a) => `<author>${esc(a)}</author>`).join('')}</authors><commentList>${legacy}</commentList></comments>`
       parts[`xl/drawings/vmlDrawing${n}.vml`] = vmlXml(comments)
-      parts[`xl/worksheets/_rels/sheet${n}.xml.rels`] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">`
-        + `<Relationship Id="rId1" Type="${REL_VML}" Target="../drawings/vmlDrawing${n}.vml"/>`
+      let rels = `<Relationship Id="rId1" Type="${REL_VML}" Target="../drawings/vmlDrawing${n}.vml"/>`
         + `<Relationship Id="rId2" Type="${REL_COMMENTS}" Target="../comments${n}.xml"/>`
-        + '</Relationships>'
+      if (threaded.length) {
+        let replyCount = 0
+        const one = (ref: string, entry: CommentEntry, id: string, parentId: string | null, done: boolean) =>
+          `<threadedComment ref="${ref}" dT="${threadTime(entry.at)}" personId="${personId(entry.author ?? '')}" id="${id}"${parentId ? ` parentId="${parentId}"` : ''}${done ? ' done="1"' : ''}><text>${esc(entry.text)}</text></threadedComment>`
+        const xml = threaded.map((c) => {
+          const ref = `${colToLetters(c.col)}${c.row + 1}`
+          const id = threadIds.get(ref)!
+          return one(ref, c.thread, id, null, Boolean(c.thread.resolved))
+            + (c.thread.replies ?? []).map((r) => one(ref, r, guid(n + 1000, (replyCount += 1)), id, false)).join('')
+        }).join('')
+        parts[`xl/threadedComments/threadedComment${n}.xml`] = XML_HEAD + `<ThreadedComments xmlns="${NS_THREADS}" xmlns:x="${NS_MAIN}">${xml}</ThreadedComments>`
+        rels += `<Relationship Id="rId3" Type="${REL_THREADS}" Target="../threadedComments/threadedComment${n}.xml"/>`
+        overrides.push(`<Override PartName="/xl/threadedComments/threadedComment${n}.xml" ContentType="application/vnd.ms-excel.threadedcomments+xml"/>`)
+      }
+      parts[`xl/worksheets/_rels/sheet${n}.xml.rels`] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">${rels}</Relationships>`
       legacyDrawing = '<legacyDrawing r:id="rId1"/>'
       overrides.push(`<Override PartName="/xl/comments${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>`)
     }
@@ -479,7 +518,14 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
   parts['xl/_rels/workbook.xml.rels'] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">`
     + sheetEntries.map((s) => `<Relationship Id="rId${s.n}" Type="${REL_WORKSHEET}" Target="worksheets/sheet${s.n}.xml"/>`).join('')
     + `<Relationship Id="rId${sheetEntries.length + 1}" Type="${REL_STYLES}" Target="styles.xml"/>`
+    + (persons.length ? `<Relationship Id="rId${sheetEntries.length + 2}" Type="${REL_PERSONS}" Target="persons/person.xml"/>` : '')
     + '</Relationships>'
+  if (persons.length) {
+    parts['xl/persons/person.xml'] = XML_HEAD + `<personList xmlns="${NS_THREADS}" xmlns:x="${NS_MAIN}">`
+      + persons.map((name, i) => `<person displayName="${esc(name)}" id="${guid(0, i + 1)}" userId="${esc(name)}" providerId="None"/>`).join('')
+      + '</personList>'
+    overrides.push('<Override PartName="/xl/persons/person.xml" ContentType="application/vnd.ms-excel.person+xml"/>')
+  }
   parts['xl/styles.xml'] = styles.build()
   parts['_rels/.rels'] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}"><Relationship Id="rId1" Type="${NS_REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`
   parts['[Content_Types].xml'] = XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -520,6 +566,13 @@ const num = (el: Element | null | undefined, name: string): number | null => {
   return Number.isFinite(n) ? n : null
 }
 const flag = (el: Element | null | undefined, name: string): boolean => { const v = attr(el, name); return v === '1' || v === 'true' }
+
+/** Excel's `dT` (UTC, no zone) as ISO 8601; null when it does not parse. */
+function readThreadTime(dT: string | null): string | null {
+  if (!dT) return null
+  const ms = Date.parse(/[zZ]|[+-]\d\d:\d\d$/.test(dT) ? dT : `${dT}Z`)
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null
+}
 
 /** Every `<t>` under a rich-text element, joined. */
 function textOf(el: Element | null): string {
@@ -705,6 +758,14 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
   const sharedPath = [...wbRels.values()].find((r) => r.type === REL_SHARED)?.target ?? 'xl/sharedStrings.xml'
   const styles = readStyles(parts[stylesPath])
   const shared = readSharedStrings(parts[sharedPath])
+  const personsPath = [...wbRels.values()].find((r) => r.type === REL_PERSONS)?.target
+  const persons = new Map<string, string>()
+  if (personsPath && parts[personsPath]) {
+    for (const person of kids(parseXml(parts[personsPath], personsPath).documentElement, 'person')) {
+      const id = attr(person, 'id')
+      if (id) persons.set(id, attr(person, 'displayName') ?? '')
+    }
+  }
 
   const sheets: SheetState['workbook']['sheets'] = []
   const entries: Record<string, SheetStateEntry> = {}
@@ -869,15 +930,40 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
         entry.validation.push(rule)
       }
 
-      // Comments, through the sheet's relationships.
+      // Comments, through the sheet's relationships: a threaded part wins
+      // over the legacy note that stands in for it.
       const relsPath = path.replace(/worksheets\/([^/]+)$/, 'worksheets/_rels/$1.rels')
       const rels = readRels(parts, relsPath, path)
+      const threadsPath = [...rels.values()].find((r) => r.type === REL_THREADS)?.target
+      const threadsXml = threadsPath ? parts[threadsPath] : undefined
+      const threaded = new Set<string>()
+      if (threadsXml) {
+        const roots = new Map<string, { row: number; col: number; thread: CommentThread }>()
+        for (const tc of kids(parseXml(threadsXml, threadsPath!).documentElement, 'threadedComment')) {
+          const ref = parseA1(attr(tc, 'ref') ?? '')
+          const id = attr(tc, 'id')
+          if (!ref || ref.row === null || !id) continue
+          const at = readThreadTime(attr(tc, 'dT'))
+          const author = persons.get(attr(tc, 'personId') ?? '')
+          const item: CommentEntry = { text: kid(tc, 'text')?.textContent ?? '', ...(author ? { author } : {}), ...(at ? { at } : {}) }
+          const parentId = attr(tc, 'parentId')
+          const parent = parentId ? roots.get(parentId) : undefined
+          if (parent) { parent.thread.replies = [...(parent.thread.replies ?? []), item] } else {
+            roots.set(id, { row: ref.row, col: ref.col, thread: { ...item, ...(flag(tc, 'done') ? { resolved: true } : {}) } })
+          }
+        }
+        for (const { row, col, thread } of roots.values()) {
+          const rowId = `r${row}`
+          entry.comments[rowId] = { ...(entry.comments[rowId] ?? {}), [colToLetters(col)]: thread }
+          threaded.add(`${row},${col}`)
+        }
+      }
       const commentsPath = [...rels.values()].find((r) => r.type === REL_COMMENTS)?.target
       const commentsXml = commentsPath ? parts[commentsPath] : undefined
       if (commentsXml) {
         for (const comment of kids(kid(parseXml(commentsXml, commentsPath!).documentElement, 'commentList'), 'comment')) {
           const ref = parseA1(attr(comment, 'ref') ?? '')
-          if (!ref || ref.row === null) continue
+          if (!ref || ref.row === null || threaded.has(`${ref.row},${ref.col}`)) continue
           const text = textOf(kid(comment, 'text'))
           if (!text) continue
           const rowId = `r${ref.row}`

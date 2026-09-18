@@ -21,7 +21,8 @@ import { createWorkbook, type Workbook, type SheetData } from './workbook'
 import { createFormatStore, type SheetFormatStore, type CellFormatEntry } from './format-store'
 import type { FreezeState } from './freeze'
 import type { StructuralEdit } from './refs'
-import { lineShift, remapNotes, shiftRect, type NotesMap, type Rect } from './rects'
+import { lineShift, remapNotes, shiftRect, type Rect } from './rects'
+import type { CommentsMap, CommentValue } from './comments'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
@@ -53,8 +54,8 @@ export type PerSheetState = {
   heights: Map<number, number>
   hidden: { rows: Set<number>; cols: Set<number> }
   freeze: FreezeState
-  /** Cell comments in the grid's `notes` shape: `r4` -> `B` -> text. */
-  notes: NotesMap
+  /** Cell comments keyed like the grid's `notes`: `r4` -> `B` -> a note's text or a thread. */
+  notes: CommentsMap
   protected: boolean
   /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
   sheetHidden: boolean
@@ -76,7 +77,8 @@ export type SheetStateEntry = {
   rowHeights: Array<[row: number, px: number]>
   hidden: { rows: number[]; cols: number[] }
   freeze: FreezeState
-  comments: NotesMap
+  /** `r4` -> `B` -> a note's text, or a thread with its author, replies and state. */
+  comments: CommentsMap
   protected: boolean
   /** Absent in documents saved before hidden sheets existed. */
   sheetHidden?: boolean
@@ -202,6 +204,13 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     queueMicrotask(flush)
   }
 
+  /** A row of comments copied deep enough that a saved thread is not the live one. */
+  function copyLine(line: Record<string, CommentValue>): Record<string, CommentValue> {
+    const out: Record<string, CommentValue> = {}
+    for (const [c, v] of Object.entries(line)) out[c] = typeof v === 'string' ? v : { ...v, ...(v.replies ? { replies: v.replies.map((r) => ({ ...r })) } : {}) }
+    return out
+  }
+
   function serializeEntry(state: PerSheetState): SheetStateEntry {
     return {
       formats: state.formats.serialize(),
@@ -209,7 +218,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       rowHeights: [...state.heights].map(([r, h]) => [r, h] as [number, number]),
       hidden: { rows: [...state.hidden.rows], cols: [...state.hidden.cols] },
       freeze: { ...state.freeze },
-      comments: Object.fromEntries(Object.entries(state.notes).map(([r, line]) => [r, { ...line }])),
+      comments: Object.fromEntries(Object.entries(state.notes).map(([r, line]) => [r, copyLine(line)])),
       protected: state.protected,
       sheetHidden: state.sheetHidden,
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
@@ -225,7 +234,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.heights = new Map(entry.rowHeights ?? [])
     state.hidden = { rows: new Set(entry.hidden?.rows ?? []), cols: new Set(entry.hidden?.cols ?? []) }
     state.freeze = { rows: entry.freeze?.rows ?? 0, cols: entry.freeze?.cols ?? 0 }
-    state.notes = Object.fromEntries(Object.entries(entry.comments ?? {}).map(([r, line]) => [r, { ...line }]))
+    state.notes = Object.fromEntries(Object.entries(entry.comments ?? {}).map(([r, line]) => [r, copyLine(line)]))
     state.protected = entry.protected ?? false
     state.sheetHidden = entry.sheetHidden ?? false
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
