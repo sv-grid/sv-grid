@@ -19,11 +19,22 @@ export type FunctionSuggestion = {
 }
 
 /** The evaluator dispatches these itself, so they are not in the table. */
-const EVALUATOR_NAMES = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT']
+const EVALUATOR_NAMES = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT',
+  // LET, LAMBDA and the helpers that take one: the evaluator answers these
+  // itself, since a lambda is an AST rather than a value.
+  'LET', 'LAMBDA', 'MAP', 'BYROW', 'BYCOL', 'REDUCE', 'SCAN', 'MAKEARRAY']
 const NAMES = [...new Set([...Object.keys(FUNCTIONS), ...Object.keys(ARRAY_FUNCTIONS), ...EVALUATOR_NAMES])].sort()
 
 /** Signature hints, for the ones whose argument order is not obvious. */
 export const SIGNATURES: Record<string, string> = {
+  LET: 'LET(name, value, ..., calculation)',
+  LAMBDA: 'LAMBDA(parameter, ..., calculation)',
+  MAP: 'MAP(array, ..., lambda)',
+  BYROW: 'BYROW(array, lambda)',
+  BYCOL: 'BYCOL(array, lambda)',
+  REDUCE: 'REDUCE(initial, array, lambda)',
+  SCAN: 'SCAN(initial, array, lambda)',
+  MAKEARRAY: 'MAKEARRAY(rows, columns, lambda)',
   VLOOKUP: 'VLOOKUP(lookup, table, colIndex)',
   HLOOKUP: 'HLOOKUP(lookup, table, rowIndex)',
   XLOOKUP: 'XLOOKUP(lookup, haystack, results, [ifMissing])',

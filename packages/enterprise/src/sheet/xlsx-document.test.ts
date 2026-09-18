@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 import { createSheetDocument } from './document'
-import { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './xlsx-document'
+import { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx, xlsxFormula } from './xlsx-document'
 
 const lookup = { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => String.fromCharCode(65 + i) }
 
@@ -82,7 +82,8 @@ describe('documentToXlsxParts', () => {
     expect(sheet).toContain('<c r="E2" s="3"><v>46085</v></c>')
     expect(sheet).toContain('<mergeCell ref="A5:D5"/>')
     // The dynamic array: an array formula over its spill with the metadata flag, and the spilled value under it.
-    expect(sheet).toContain('<c r="F1" cm="1"><f t="array" ref="F1:F2">SEQUENCE(2, 1, 7)</f><v>7</v></c>')
+    // SEQUENCE is one of Excel's future functions, so it goes out prefixed.
+    expect(sheet).toContain('<c r="F1" cm="1"><f t="array" ref="F1:F2">_xlfn.SEQUENCE(2, 1, 7)</f><v>7</v></c>')
     expect(sheet).toContain('<c r="F2"><v>8</v></c>')
     expect(parts['xl/metadata.xml']).toContain('<xda:dynamicArrayProperties fDynamic="1" fCollapsed="0"/>')
     expect(parts['xl/_rels/workbook.xml.rels']).toContain('Target="metadata.xml"')
@@ -329,5 +330,27 @@ describe('hyperlinks', () => {
     const parts = documentToXlsxParts(doc)
     expect(parts['xl/worksheets/sheet1.xml']).not.toContain('<hyperlinks>')
     expect(parts['xl/worksheets/_rels/sheet1.xml.rels']).toBeUndefined()
+  })
+})
+
+describe('future functions', () => {
+  it('are written under the prefix Excel stores them with, and read back plain', () => {
+    // A name inside a string, and one that only contains a future name, are
+    // left alone; a call is prefixed, worksheet-only ones doubly so.
+    expect(xlsxFormula('SUM(A1:A9)')).toBe('SUM(A1:A9)')
+    expect(xlsxFormula('LET(x, 2, x * 3)')).toBe('_xlfn.LET(x, 2, x * 3)')
+    expect(xlsxFormula('MAP(A1:A3, LAMBDA(v, v * 2))')).toBe('_xlfn.MAP(A1:A3, _xlfn.LAMBDA(v, v * 2))')
+    expect(xlsxFormula('FILTER(A1:B9, B1:B9>3)')).toBe('_xlfn._xlws.FILTER(A1:B9, B1:B9>3)')
+    expect(xlsxFormula('"SORT(x)" & MYSORT(1) & SORTED')).toBe('"SORT(x)" & MYSORT(1) & SORTED')
+  })
+
+  it('round-trip through the file as the engine spells them', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['3'], ['=LET(n, A1, n * 2)'], ['=BYROW(A1:A2, LAMBDA(r, SUM(r)))']] }] })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/worksheets/sheet1.xml']).toContain('_xlfn.LET(')
+    expect(parts['xl/worksheets/sheet1.xml']).toContain('_xlfn.BYROW(')
+    const back = documentFromXlsxParts(parts)
+    expect(back.workbook.sheets[0]!.cells[1]![0]).toBe('=LET(n, A1, n * 2)')
+    expect(back.workbook.sheets[0]!.cells[2]![0]).toBe('=BYROW(A1:A2, LAMBDA(r, SUM(r)))')
   })
 })

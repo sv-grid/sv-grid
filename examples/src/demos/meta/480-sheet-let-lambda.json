@@ -1,0 +1,24 @@
+{
+  "description": "LET and LAMBDA in a Svelte 5 spreadsheet, with the helpers that make a lambda worth writing. LET names a value inside a formula so it is written once and read by name, and a later binding can read an earlier one; LAMBDA is a function written in the sheet, bound by LET and called by name or called where it stands. MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY put one to work over every cell, every row, every column, a fold, its running total, and an array built from its own indexes. They spill like any other array formula and go into the .xlsx under the prefix Excel stores them with. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet LET function",
+    "svelte sheet LAMBDA",
+    "svelte excel MAP BYROW REDUCE",
+    "svelte spreadsheet custom function",
+    "svelte sheet SCAN running total"
+  ],
+  "faq": [
+    {
+      "question": "What does LET buy over repeating the expression?",
+      "answer": "It is written once and read by name, so the formula says what it means, and the value is worked out once rather than once per mention. A later binding can read an earlier one, which is what lets a long calculation be built in steps inside a single cell."
+    },
+    {
+      "question": "How is a LAMBDA called?",
+      "answer": "Three ways. Bind it with LET and call it by name, LET(double, LAMBDA(x, x * 2), double(21)); call it where it stands, LAMBDA(x, x * 2)(21); or hand it to MAP, BYROW, BYCOL, REDUCE, SCAN or MAKEARRAY, which call it for you. A lambda that is never called shows #CALC!, as in Excel."
+    },
+    {
+      "question": "Do these survive a save to .xlsx?",
+      "answer": "Yes. Excel stores functions added after the file format was frozen under an _xlfn. prefix, and worksheet-only ones under _xlfn._xlws.; the writer puts the prefixes on and the reader takes them off, so a file written here opens in Excel with the formulas intact rather than #NAME? in every cell."
+    }
+  ]
+}

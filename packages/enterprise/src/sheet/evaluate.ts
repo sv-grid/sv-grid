@@ -54,6 +54,47 @@ export type EvalContext = {
   /** Where the formula being evaluated sits. Needed for `[@Column]`, which
    *  is relative to the formula rather than to the table. */
   currentCell?: { sheet: string | null; row: number; col: number }
+
+  // ---- LET and LAMBDA --------------------------------------------------
+  /**
+   * Names bound INSIDE the formula, by `LET` or by a lambda's parameters.
+   * Looked up before the workbook's own names, which is what makes
+   * `=LET(x, 2, x * 3)` mean 6 on a sheet that also has a name `x`.
+   * Copied rather than chained: a scope holds a handful of names, and a
+   * flat map is faster to read than a chain is to walk.
+   */
+  locals?: ReadonlyMap<string, LocalBinding>
+}
+
+/** A lambda, closed over the scope it was written in. */
+export type Lambda = {
+  readonly lambda: true
+  params: string[]
+  body: Node
+  scope: ReadonlyMap<string, LocalBinding> | undefined
+}
+
+/** What a name bound inside a formula can hold: a value, a grid, a lambda. */
+export type LocalBinding = CellValue | Grid | Lambda
+
+const isLambda = (v: LocalBinding | undefined): v is Lambda =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && 'lambda' in v
+
+const isGrid = (v: LocalBinding | undefined): v is Grid => Array.isArray(v)
+
+/** The names a lambda helper takes its function in. */
+const LAMBDA_HELPERS = new Set(['MAP', 'BYROW', 'BYCOL', 'REDUCE', 'SCAN', 'MAKEARRAY'])
+
+/** A local binding, by name, case-insensitively as Excel reads a name. */
+function localOf(ctx: EvalContext, name: string): LocalBinding | undefined {
+  return ctx.locals?.get(name.toUpperCase())
+}
+
+/** The same context with more names bound over it. */
+function withLocals(ctx: EvalContext, added: ReadonlyArray<[string, LocalBinding]>): EvalContext {
+  const next = new Map(ctx.locals ?? [])
+  for (const [name, value] of added) next.set(name.toUpperCase(), value)
+  return { ...ctx, locals: next }
 }
 
 function rangeGrid(from: CellRef, to: CellRef, ctx: EvalContext): CellValue[][] {
@@ -221,6 +262,16 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
     }
 
     case 'name': {
+      // A name bound inside the formula wins over the workbook's own, which
+      // is what makes `=LET(x, 2, x * 3)` mean 6 on a sheet that has an `x`.
+      const local = localOf(ctx, node.name)
+      if (local !== undefined) {
+        // A lambda that is never called is #CALC!, as Excel shows it; a
+        // grid in scalar position reads as its top-left cell.
+        if (isLambda(local)) return err('#CALC!')
+        if (isGrid(local)) return local[0]?.[0] ?? ''
+        return local
+      }
       const target = nameTarget(node.name, ctx)
       if (target) return evalNode(target, ctx)
       const v = ctx.resolveName?.(node.name)
@@ -349,6 +400,23 @@ function evalCall(
   // TypeError escapes the boundary this module promises never to throw past.
   if (SHORT_CIRCUIT.has(name) && args.length === 0) return err('#VALUE!')
 
+  // LET, LAMBDA and the helpers that take one see the AST rather than
+  // evaluated arguments: a lambda IS its body, and a name bound by LET has
+  // to exist before the expression that reads it is evaluated.
+  if (name === 'LET') return evalLet(args, ctx)
+  // The call the parser builds for `LAMBDA(x, x * 2)(5)`: the callee first,
+  // then the arguments it is called with.
+  if (name === '(') return scalarOf(bindingOf(node, ctx))
+  if (name === 'LAMBDA') return err('#CALC!')
+  if (LAMBDA_HELPERS.has(name)) {
+    const grid = lambdaCall(node, ctx)
+    return Array.isArray(grid) ? grid[0]?.[0] ?? '' : grid
+  }
+  // `=LET(double, LAMBDA(x, x * 2), double(21))`: a call on a name the
+  // formula bound rather than on a function the library ships.
+  const bound = localOf(ctx, name)
+  if (isLambda(bound)) return applyLambda(bound, args.map((a) => bindingOf(a, ctx)), ctx)
+
   if (name === 'IF') {
     const cond = evalNode(args[0]!, ctx)
     if (isError(cond)) return cond
@@ -436,12 +504,208 @@ function evalCall(
   return fn(payload)
 }
 
+/**
+ * `LET(name1, value1, [name2, value2, ...], calculation)`.
+ *
+ * Each value is evaluated in the scope built so far, so a later binding can
+ * read an earlier one, and the calculation sees them all. A binding holds a
+ * GRID where its expression is one, which is what lets `LET(r, A1:A9,
+ * SUM(r))` add the range rather than its first cell.
+ */
+function evalLet(args: ReadonlyArray<Node>, ctx: EvalContext): CellValue {
+  if (args.length < 3 || args.length % 2 === 0) return err('#VALUE!')
+  let scope = ctx
+  for (let i = 0; i + 1 < args.length - 1; i += 2) {
+    const nameNode = args[i]!
+    if (nameNode.k !== 'name') return err('#VALUE!')
+    scope = withLocals(scope, [[nameNode.name, bindingOf(args[i + 1]!, scope)]])
+  }
+  const result = bindingOf(args[args.length - 1]!, scope)
+  if (isLambda(result)) return err('#CALC!')
+  if (isGrid(result)) return result[0]?.[0] ?? ''
+  return result
+}
+
+/** The grid a LET's calculation stands for, or null when it is one value. */
+function letGrid(args: ReadonlyArray<Node>, ctx: EvalContext): Grid | null {
+  if (args.length < 3 || args.length % 2 === 0) return null
+  let scope = ctx
+  for (let i = 0; i + 1 < args.length - 1; i += 2) {
+    const nameNode = args[i]!
+    if (nameNode.k !== 'name') return null
+    scope = withLocals(scope, [[nameNode.name, bindingOf(args[i + 1]!, scope)]])
+  }
+  const result = bindingOf(args[args.length - 1]!, scope)
+  return isGrid(result) ? result : null
+}
+
+/** What a name is bound to: a lambda, a grid, or a plain value. */
+function bindingOf(node: Node, ctx: EvalContext): LocalBinding {
+  if (node.k === 'fn' && node.name === 'LAMBDA') return lambdaOf(node, ctx)
+  if (node.k === 'fn' && node.name === '(') {
+    const fn = lambdaArg(node.args[0], ctx)
+    if (!fn) return err('#VALUE!')
+    return callLambda(fn, node.args.slice(1).map((a) => bindingOf(a, ctx)), ctx)
+  }
+  if (node.k === 'fn') {
+    const bound = localOf(ctx, node.name)
+    if (isLambda(bound)) return callLambda(bound, node.args.map((a) => bindingOf(a, ctx)), ctx)
+  }
+  if (node.k === 'name') {
+    const local = localOf(ctx, node.name)
+    if (local !== undefined) return local
+  }
+  // Arithmetic over ranges is a grid too, cell by cell: `B2:B6 * D2:D6` is
+  // what a REDUCE or a BYROW is usually handed.
+  if ((node.k === 'binary' || node.k === 'unary') && hasArray(node, ctx)) return gridOf(node, ctx)
+  const grid = hasArray(node, ctx) ? rangeValues(node, ctx) : null
+  if (grid && (grid.length > 1 || (grid[0]?.length ?? 0) > 1)) return grid
+  return evalNode(node, ctx)
+}
+
+/** The lambda a `LAMBDA(p1, ..., body)` node stands for, closed over `ctx`. */
+function lambdaOf(node: Extract<Node, { k: 'fn' }>, ctx: EvalContext): Lambda | CellValue {
+  const args = node.args
+  if (args.length < 1) return err('#VALUE!')
+  const params: string[] = []
+  for (let i = 0; i < args.length - 1; i += 1) {
+    const p = args[i]!
+    if (p.k !== 'name') return err('#VALUE!')
+    params.push(p.name)
+  }
+  return { lambda: true, params, body: args[args.length - 1]!, scope: ctx.locals }
+}
+
+/**
+ * Call a lambda, keeping whatever it answers with: a value, a grid, or
+ * another lambda, which is what a curried `LAMBDA(x, LAMBDA(y, x + y))`
+ * gives back.
+ */
+function callLambda(fn: Lambda, values: ReadonlyArray<LocalBinding>, ctx: EvalContext): LocalBinding {
+  // Excel is strict about the count: too few is #VALUE!, and so is too many.
+  if (values.length !== fn.params.length) return err('#VALUE!')
+  const scope = withLocals({ ...ctx, locals: fn.scope }, fn.params.map((p, i) => [p, values[i]!] as [string, LocalBinding]))
+  return bindingOf(fn.body, scope)
+}
+
+/** The same, in a place that wants one value. */
+function applyLambda(fn: Lambda, values: ReadonlyArray<LocalBinding>, ctx: EvalContext): CellValue {
+  return scalarOf(callLambda(fn, values, ctx))
+}
+
+/** A binding where one value is wanted: a lambda is #CALC!, a grid its corner. */
+function scalarOf(binding: LocalBinding): CellValue {
+  if (isLambda(binding)) return err('#CALC!')
+  if (isGrid(binding)) return binding[0]?.[0] ?? ''
+  return binding
+}
+
+/** The lambda an argument names: written there, or bound to a name. */
+function lambdaArg(node: Node | undefined, ctx: EvalContext): Lambda | null {
+  if (!node) return null
+  if (node.k === 'fn' && node.name === 'LAMBDA') {
+    const made = lambdaOf(node, ctx)
+    return isLambda(made) ? made : null
+  }
+  if (node.k === 'name') {
+    const local = localOf(ctx, node.name)
+    if (isLambda(local)) return local
+    return null
+  }
+  // A call that answers with another lambda: `LAMBDA(x, LAMBDA(y, x + y))(2)`.
+  if (node.k === 'fn' && (node.name === '(' || isLambda(localOf(ctx, node.name)))) {
+    const made = bindingOf(node, ctx)
+    return isLambda(made) ? made : null
+  }
+  return null
+}
+
+/** An argument as a grid, one cell wide where it is a plain value. */
+function gridArgOf(node: Node | undefined, ctx: EvalContext): Grid {
+  if (!node) return [['']]
+  const binding = bindingOf(node, ctx)
+  if (isGrid(binding)) return binding
+  if (isLambda(binding)) return [[err('#CALC!')]]
+  return [[binding]]
+}
+
+/**
+ * Excel's lambda helpers, which is where a lambda earns its keep:
+ *
+ *   MAP(array, ..., fn)        every cell through the function
+ *   BYROW(array, fn)           one answer per row, as a column
+ *   BYCOL(array, fn)           one answer per column, as a row
+ *   REDUCE(init, array, fn)    folded to one value, accumulator first
+ *   SCAN(init, array, fn)      the same, keeping every step
+ *   MAKEARRAY(rows, cols, fn)  built from the row and column numbers
+ */
+function lambdaCall(node: Extract<Node, { k: 'fn' }>, ctx: EvalContext): Grid | CellValue {
+  const { name, args } = node
+  const fn = lambdaArg(args[args.length - 1], ctx)
+  if (!fn) return err('#VALUE!')
+
+  if (name === 'MAKEARRAY') {
+    const rows = Math.trunc(toNumber(evalNode(args[0] ?? { k: 'num', v: 0 }, ctx)))
+    const cols = Math.trunc(toNumber(evalNode(args[1] ?? { k: 'num', v: 0 }, ctx)))
+    if (!(rows > 0) || !(cols > 0)) return err('#VALUE!')
+    if (rows * cols > 1_000_000) return err('#NUM!')
+    return Array.from({ length: rows }, (_, r) =>
+      Array.from({ length: cols }, (_, c) => applyLambda(fn, [r + 1, c + 1], ctx)))
+  }
+
+  if (name === 'MAP') {
+    const grids = args.slice(0, -1).map((a) => gridArgOf(a, ctx))
+    if (!grids.length) return err('#VALUE!')
+    const rows = grids[0]!.length
+    const cols = grids[0]![0]?.length ?? 0
+    // Every array has to be the same shape, as Excel asks.
+    for (const g of grids) if (g.length !== rows || (g[0]?.length ?? 0) !== cols) return err('#VALUE!')
+    return Array.from({ length: rows }, (_, r) =>
+      Array.from({ length: cols }, (_, c) => applyLambda(fn, grids.map((g) => g[r]?.[c] ?? ''), ctx)))
+  }
+
+  if (name === 'BYROW' || name === 'BYCOL') {
+    const grid = gridArgOf(args[0], ctx)
+    if (name === 'BYROW') {
+      // Each row goes in as a grid one row tall, and the answers come back
+      // as a column, which is the shape Excel spills.
+      return grid.map((row) => [applyLambda(fn, [[row]], ctx)])
+    }
+    // Each column goes in as a grid one column wide, answers along a row.
+    return [transposeGrid(grid).map((col) => applyLambda(fn, [col.map((v) => [v])], ctx))]
+  }
+
+  // REDUCE and SCAN: the accumulator, then each cell in reading order.
+  const grid = gridArgOf(args[1], ctx)
+  let acc: CellValue = args[0] ? evalNode(args[0], ctx) : ''
+  const steps: CellValue[][] = []
+  for (const row of grid) {
+    const line: CellValue[] = []
+    for (const cell of row) {
+      acc = applyLambda(fn, [acc, cell], ctx)
+      line.push(acc)
+    }
+    steps.push(line)
+  }
+  return name === 'SCAN' ? steps : acc
+}
+
+/** A grid with its rows and columns swapped. */
+function transposeGrid(grid: Grid): Grid {
+  const cols = grid.reduce((m, row) => Math.max(m, row.length), 0)
+  return Array.from({ length: cols }, (_, c) => grid.map((row) => row[c] ?? ''))
+}
+
 /** Whether a node stands for a grid: a range, an array or reference function, a name to one, or arithmetic over those. */
 function hasArray(node: Node, ctx: EvalContext, depth = 0): boolean {
   switch (node.k) {
     case 'range': return true
-    case 'name': { const target = depth < 8 ? nameTarget(node.name, ctx) : null; return target ? hasArray(target, ctx, depth + 1) : false }
-    case 'fn': return REFERENCE_FUNCTIONS.has(node.name) || Boolean(ARRAY_FUNCTIONS[node.name])
+    case 'name': {
+      if (isGrid(localOf(ctx, node.name))) return true
+      const target = depth < 8 ? nameTarget(node.name, ctx) : null
+      return target ? hasArray(target, ctx, depth + 1) : false
+    }
+    case 'fn': return REFERENCE_FUNCTIONS.has(node.name) || Boolean(ARRAY_FUNCTIONS[node.name]) || LAMBDA_HELPERS.has(node.name) || node.name === 'LET'
     case 'binary': return hasArray(node.left, ctx, depth) || hasArray(node.right, ctx, depth)
     case 'unary': return hasArray(node.arg, ctx, depth)
     default: return false
@@ -500,6 +764,16 @@ function collectArgs(args: ReadonlyArray<Node>, ctx: EvalContext): { perArg: Cel
   const perArg: CellValue[][] = []
   const grids: Array<CellValue[][] | null> = []
   for (const given of args) {
+    // A name bound inside the formula, by LET or as a lambda's parameter,
+    // hands over its grid: `LET(r, A1:C1, SUM(r))` adds the range.
+    if (given.k === 'name') {
+      const local = localOf(ctx, given.name)
+      if (isGrid(local)) {
+        grids.push(local)
+        perArg.push(local.flat())
+        continue
+      }
+    }
     // A name stands for whatever it was defined as. Substituting the node
     // here, before the shape check, is what lets `Sales` in =SUM(Sales) be a
     // whole column rather than the top-left cell a scalar read would give.
@@ -564,6 +838,8 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
     if (node.k === 'range') return rangeGrid(node.from, node.to, ctx)
     if (node.k === 'ref') return [[ctx.resolve(node.ref.sheet, node.ref.row ?? 0, node.ref.col)]]
     if (node.k === 'name') {
+      const local = localOf(ctx, node.name)
+      if (isGrid(local)) return local
       const target = nameTarget(node.name, ctx)
       return target ? rangeValues(target, ctx) : null
     }
@@ -571,6 +847,15 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
     if (node.k === 'fn' && ARRAY_FUNCTIONS[node.name]) {
       const grid = arrayCall(node, ctx)
       return Array.isArray(grid) ? grid : [[grid]]
+    }
+    if (node.k === 'fn' && LAMBDA_HELPERS.has(node.name)) {
+      const grid = lambdaCall(node, ctx)
+      return Array.isArray(grid) ? grid : [[grid]]
+    }
+    // `=LET(r, A1:A9, SORT(r))` spills what its calculation is.
+    if (node.k === 'fn' && node.name === 'LET') {
+      const grid = letGrid(node.args, ctx)
+      return grid ?? [[evalNode(node, ctx)]]
     }
     return null
   } catch (e) {
@@ -588,7 +873,8 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
 export function evaluateSpill(node: Node, ctx: EvalContext): Grid | null {
   try {
     let grid: Grid | null = null
-    if (node.k === 'range' || node.k === 'name' || (node.k === 'fn' && (REFERENCE_FUNCTIONS.has(node.name) || ARRAY_FUNCTIONS[node.name]))) {
+    if (node.k === 'range' || node.k === 'name'
+      || (node.k === 'fn' && (REFERENCE_FUNCTIONS.has(node.name) || ARRAY_FUNCTIONS[node.name] || LAMBDA_HELPERS.has(node.name) || node.name === 'LET'))) {
       grid = rangeValues(node, ctx)
     } else if ((node.k === 'binary' || node.k === 'unary') && hasArray(node, ctx)) {
       grid = gridOf(node, ctx)

@@ -84,6 +84,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
+| Names and lambdas | `LET` `LAMBDA` `MAP` `BYROW` `BYCOL` `REDUCE` `SCAN` `MAKEARRAY` `HYPERLINK` |
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
@@ -108,6 +109,52 @@ are: a workbook recomputes a cell holding one on every write, since the
 dependency graph cannot see what text it will point at next. `ROW()` and
 `COLUMN()` without an argument need to know the cell they sit in, which a
 `Workbook` supplies as `currentCell`.
+
+### LET and LAMBDA
+
+`LET` names a value inside the formula, so it is written once and read by
+name, and worked out once rather than once per mention. A later binding
+can read an earlier one, which is how a long calculation is built in
+steps inside one cell:
+
+```
+=LET(revenue, SUMPRODUCT(B2:B9, D2:D9),
+     cost,    SUMPRODUCT(C2:C9, D2:D9),
+     (revenue - cost) / revenue)
+```
+
+A name bound this way wins over a defined name of the same name, and only
+inside the call. A binding holds a RANGE where its expression is one, so
+`=LET(r, A1:A9, SUM(r))` adds the range rather than its first cell.
+
+`LAMBDA` is a function written in the sheet: its parameters, then what it
+works out. Three ways to call one:
+
+```
+=LET(double, LAMBDA(x, x * 2), double(21))    a name holds it
+=LAMBDA(x, x * 2)(21)                          called where it stands
+=MAP(A1:A9, LAMBDA(v, v * 2))                  a helper calls it
+```
+
+A lambda closes over what was in scope where it was written, so
+`=LET(n, 10, addN, LAMBDA(x, x + n), addN(5))` is 15, and it can answer
+with another lambda, which is what makes `=LAMBDA(x, LAMBDA(y, x + y))(2)(3)`
+mean 5. One that is never called shows `#CALC!`, as Excel shows it, and
+one called with the wrong number of arguments `#VALUE!`.
+
+The six helpers are where a lambda earns its keep, and each spills:
+
+| Helper | What it does |
+| ------ | ------------ |
+| `MAP(array, ..., lambda)` | every cell through the function; several arrays of the same shape go in together |
+| `BYROW(array, lambda)` | one answer per row, as a column |
+| `BYCOL(array, lambda)` | one answer per column, as a row |
+| `REDUCE(initial, array, lambda)` | folded to one value, the accumulator first |
+| `SCAN(initial, array, lambda)` | the same, keeping every step: a running total |
+| `MAKEARRAY(rows, cols, lambda)` | built from the row and column numbers |
+
+Arithmetic over ranges is a grid, so `=REDUCE(0, B2:B9 * D2:D9, LAMBDA(a, v, a + v))`
+folds the products rather than the first one.
 
 ### Dynamic arrays
 
@@ -336,6 +383,12 @@ A three-sheet workbook on the Excel shell: Orders with XLOOKUP prices and IF dis
 An assumptions-driven twelve-month forecast where every formula reads a defined name - =B2*(1+Growth-Churn) - instead of an address. Pick a name in the Name Box to jump to its cell on the Assumptions sheet; open Formulas -> Name Manager to add, repoint or delete names and watch the forecast recompute. Inputs in blue, red negatives in parentheses, break-even found with INDEX / MATCH.
 
 <div data-docs-demo="459-named-ranges-forecast" data-height="560"></div>
+
+### LET and LAMBDA
+
+The two modern Excel functions that turn a formula into something you can read, and the helpers that make a lambda worth writing. LET names a value inside the formula so it is written once and read by name; LAMBDA is a function written in the sheet, bound by LET and called by name, or called where it stands. MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY put one over every cell, every row, every column, a fold, a running total, and an array built from its own indexes.
+
+<div data-docs-demo="480-sheet-let-lambda" data-height="560"></div>
 
 ## See also
 
