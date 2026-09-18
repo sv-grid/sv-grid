@@ -20,11 +20,15 @@
    * it, so inserting a row above moves it and deleting that row takes it
    * with it. Everything here is part of the document: `getState()`
    * carries the charts with the cells, and `onChange` reports `objects`.
+   * They go into the .xlsx too, as Excel's own drawing part, a chart
+   * carrying the references its series read rather than a copy of the
+   * numbers.
    *
    * Try: change a number in B2:E4 and watch both charts. Select A1:E4 and
    * press Insert > Chart for a third. Double-click the line chart and
    * make it an area chart. Insert a row above row 1 and watch the charts
-   * move with their cells.
+   * move with their cells. Save As and open the file in Excel: the charts
+   * are charts there too.
    */
   import { SvSheet, createWorkbook, createSheetDocument, objectId, type SheetObject } from '@svgrid/enterprise'
 

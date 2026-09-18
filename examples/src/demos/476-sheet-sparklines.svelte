@@ -16,12 +16,14 @@
    * The sheet keeps them per group, the way Excel does: a data range, a
    * location range of the same shape and the settings they share. Select a
    * cell that holds one and the three kind buttons change that group
-   * instead of making another. They ride in `getState()` and move with an
-   * insert or a delete.
+   * instead of making another. They ride in `getState()`, move with an
+   * insert or a delete, and go into the .xlsx where Excel keeps them, in
+   * the worksheet's extension list.
    *
    * Try: type over a number in B2:M4 and watch its row redraw. Select N2
    * and press Column, then Edit to put the whole group on one scale.
    * Select B5:M5 and press Line for a fourth sparkline of the totals.
+   * Save As and open the file in Excel: the sparklines are there too.
    */
   import { SvSheet, createWorkbook, createSheetDocument, sparklineId, type SparklineGroup } from '@svgrid/enterprise'
 
