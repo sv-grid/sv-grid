@@ -622,6 +622,7 @@ the cell menu is a button that does nothing:
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
+| Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
 | Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it) and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
@@ -841,6 +842,28 @@ They go into the .xlsx as real hyperlinks, an external one as a
 relationship with `TargetMode="External"` and an internal one as a
 `location`, tooltips included, and a file opened back carries both.
 Raised as `insert-link` and `remove-link`.
+
+### Iterative calculation
+
+A circular reference is normally an error, and the shell says so: every
+cell in the loop shows `#CYCLE!` while the rest of the sheet keeps working.
+Some models are circular on purpose, because the answer is a fixed point: a
+bonus that is a tenth of the profit the bonus is taken out of, interest
+charged on the balance the interest is part of.
+
+**Formulas > Calculation Options** is Excel's switch for those, raised from
+File > Options because it is the one setting there that changes what a
+formula is worth. It takes the maximum number of passes over the loop, 100
+by default, and the smallest change worth another pass, 0.001 by default.
+With it on, the loop runs from the values it last had until the numbers
+stop moving or the passes run out, and every cell in it holds a number
+instead of an error.
+
+It is workbook-wide rather than per sheet, so `wb.iteration` reads it and
+`wb.setIteration({ enabled: true })` sets it from code, recalculating as it
+goes. It rides in `getState()` beside the defined names and the tables, and
+it goes into the .xlsx as `calcPr`, which is where Excel keeps it, so a
+file saved with iteration on opens with it on. Raised as `calc-options`.
 
 ### PivotTable from a range
 
@@ -1278,6 +1301,12 @@ Excel's Insert > PivotTable over a block of cells, on the same pivot engine the 
 Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
 
 <div data-docs-demo="478-sheet-collaboration" data-height="620"></div>
+
+### Iterative calculation
+
+A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas > Calculation Options turns iteration on with its two limits, and both settle on their fixed point; turn it off and the cycle is an error again. The setting rides in getState() and goes into the .xlsx as calcPr.
+
+<div data-docs-demo="482-sheet-iterative" data-height="560"></div>
 
 ### Hyperlinks: Insert > Link and HYPERLINK
 

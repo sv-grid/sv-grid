@@ -89,8 +89,8 @@ export {
 
 export { default as SvSheetTabs } from './SvSheetTabs.svelte'
 export {
-  createWorkbook, isValidSheetName,
-  type Workbook, type SheetData, type WorkbookOptions,
+  createWorkbook, isValidSheetName, cleanIteration, DEFAULT_ITERATION,
+  type Workbook, type SheetData, type WorkbookOptions, type IterationSettings,
 } from './sheet/workbook'
 export { setWorkbook, getWorkbook } from './sheet/shortcuts'
 export {

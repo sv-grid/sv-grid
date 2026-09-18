@@ -237,7 +237,10 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     init.workbook ??
     createWorkbook(
       init.state ? init.state.workbook.sheets.map((s) => ({ name: s.name, cells: s.cells })) : (init.sheets ? [...init.sheets] : [{ name: 'Sheet1', cells: [] }]),
-      init.state?.workbook.tables?.length ? { tables: init.state.workbook.tables } : {},
+      {
+        ...(init.state?.workbook.tables?.length ? { tables: init.state.workbook.tables } : {}),
+        ...(init.state?.workbook.iteration ? { iteration: init.state.workbook.iteration } : {}),
+      },
     )
   const entries = new Map<string, PerSheetState>()
   const listeners = new Set<(reasons: ReadonlyArray<SheetChangeReason>) => void>()
@@ -504,6 +507,9 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
         // reference resolves through: put back exactly the saved set.
         workbook.tables.clear()
         for (const table of state.workbook.tables ?? []) workbook.tables.define({ ...table })
+        // Iterative calculation is workbook-wide too, and absent in a saved
+        // document that never turned it on, which means off.
+        workbook.setIteration(state.workbook.iteration ?? { enabled: false })
         if (workbook.sheets.some((s) => key(s) === key(state.workbook.active))) workbook.setActive(state.workbook.active)
         // Entries are hydrated in place, never replaced: a format store the
         // shell has registered as its target must stay the store in use, or

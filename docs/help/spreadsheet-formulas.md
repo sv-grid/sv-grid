@@ -279,6 +279,44 @@ graph.cycles()   // every cell in a circular reference
 Cells caught in a cycle are still returned by `dirtyFrom`, so they can show
 `#CYCLE!` rather than keep a stale value while the rest of the sheet works.
 
+## Circular references on purpose
+
+`#CYCLE!` is the right answer almost every time: a total that includes
+itself, a formula dragged one row too far. Some models are circular on
+purpose, though, because the answer is a fixed point rather than a mistake.
+A bonus that is a tenth of the profit the bonus is taken out of is the
+classic one: the bonus depends on the profit, the profit depends on the
+bonus, and exactly one pair of numbers satisfies both.
+
+Excel's answer is to run the loop from the values it last had, over and
+over, until the numbers stop moving or the passes run out. The shell has the
+same switch on **Formulas -> Calculation Options**, and it is the same
+setting from code:
+
+```ts
+const wb = createWorkbook(sheets, { iteration: { enabled: true } })
+
+// Or later, which recalculates:
+wb.setIteration({ enabled: true, maxIterations: 100, maxChange: 0.001 })
+wb.iteration          // { enabled: true, maxIterations: 100, maxChange: 0.001 }
+```
+
+`maxIterations` is how many passes before the answer is taken as it stands,
+and `maxChange` is how small a move counts as settled, so a model that
+converges stops early rather than burning every pass. Both default to
+Excel's own, 100 and 0.001. Neither promises convergence: `=A1+1` climbs
+by one on every pass and stops at the cap, exactly as it does in Excel.
+
+While iteration is on, a cell asked for its own value reads what it was
+worth on the last pass, starting from 0. Everything outside a cycle is
+unaffected, and turning the setting off turns those cells back into
+`#CYCLE!`.
+
+The setting is workbook-wide. It rides in `getState()` next to the defined
+names and the tables, and it goes into the `.xlsx` as `calcPr` with
+`iterate`, `iterateCount` and `iterateDelta`, which is where Excel keeps it,
+so a file saved with iteration on opens with it on.
+
 ## A different engine under the same sheet
 
 What works a formula out is one option on `createWorkbook`. The built-in
@@ -383,6 +421,12 @@ A three-sheet workbook on the Excel shell: Orders with XLOOKUP prices and IF dis
 An assumptions-driven twelve-month forecast where every formula reads a defined name - =B2*(1+Growth-Churn) - instead of an address. Pick a name in the Name Box to jump to its cell on the Assumptions sheet; open Formulas -> Name Manager to add, repoint or delete names and watch the forecast recompute. Inputs in blue, red negatives in parentheses, break-even found with INDEX / MATCH.
 
 <div data-docs-demo="459-named-ranges-forecast" data-height="560"></div>
+
+### Iterative calculation
+
+A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas -> Calculation Options turns on iterative calculation with its two limits, and both models settle on their fixed point; turn it off and the cycle is an error again.
+
+<div data-docs-demo="482-sheet-iterative" data-height="560"></div>
 
 ### LET and LAMBDA
 

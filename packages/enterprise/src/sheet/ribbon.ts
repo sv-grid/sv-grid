@@ -186,6 +186,7 @@ export type RibbonActionId =
   | 'remove-link'
   | 'insert-table'
   | 'recalculate'
+  | 'calc-options'
   | 'toggle-formulas'
   | 'trace-precedents'
   | 'trace-dependents'
@@ -1059,6 +1060,7 @@ const FORMULAS: RibbonTab = {
       items: [
         { id: 'recalc', label: 'Calculate Now', title: 'Recalculate the workbook', keys: 'F9', icon: 'calculate', kind: 'button', size: 'large', emits: 'recalculate' },
         small(1, { id: 'goal-seek-f', label: 'Goal Seek', title: 'Goal Seek', icon: 'goal-seek', kind: 'button', wide: true, emits: 'goal-seek' }),
+        small(2, { id: 'calc-options', label: 'Calculation Options', title: 'Iterative calculation: let a circular reference settle instead of showing #CYCLE!', icon: 'calculate', kind: 'button', wide: true, emits: 'calc-options' }),
       ],
     },
   ],
