@@ -164,6 +164,10 @@ export type SheetTextMessages = {
   chartObject: string
   pictureObject: string
   sparklineObject: string
+  selectBlockToPivot: string
+  noPivotHere: string
+  pivotRefreshed: string
+  pivotWritten: string
   selectRangeForSparklines: string
   sparklinesCleared: string
   noSparklinesHere: string
@@ -596,6 +600,30 @@ export const defaultDialogMessages = {
   'chartSetup.headers': 'First row and column are labels',
   'chartSetup.stacked': 'Stack the series',
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
+  // Create PivotTable
+  'pivot.title': 'PivotTable',
+  'pivot.source': 'Source block:',
+  'pivot.sourcePlaceholder': 'A1:D200',
+  'pivot.target': 'Put it at:',
+  'pivot.targetPlaceholder': 'F1',
+  'pivot.field': 'Field',
+  'pivot.place': 'Use as',
+  'pivot.summarise': 'Summarise by',
+  'pivot.place.none': 'Not used',
+  'pivot.place.rows': 'Rows',
+  'pivot.place.cols': 'Columns',
+  'pivot.place.values': 'Values',
+  'pivot.agg.sum': 'Sum',
+  'pivot.agg.avg': 'Average',
+  'pivot.agg.count': 'Count',
+  'pivot.agg.countDistinct': 'Distinct count',
+  'pivot.agg.min': 'Min',
+  'pivot.agg.max': 'Max',
+  'pivot.grandTotal': 'Grand total row',
+  'pivot.subtotals': 'Subtotal rows',
+  'pivot.hint': 'The result is written as cells, so it can be formatted, charted and saved like any other block. Refresh rebuilds it from the source.',
+  'pivot.badRange': 'That is not a range and a cell on this sheet.',
+  'pivot.needValue': 'Pick at least one field to summarise.',
   // Create Sparklines
   'sparklines.title': 'Create Sparklines',
   'sparklines.type': 'Type:',
@@ -813,6 +841,10 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   chartObject: 'Chart',
   pictureObject: 'Picture',
   sparklineObject: '{type} sparkline',
+  selectBlockToPivot: 'Select the block to summarise, its header row included.',
+  noPivotHere: 'No PivotTable here. Select a cell inside one.',
+  pivotRefreshed: 'PivotTable refreshed.',
+  pivotWritten: 'PivotTable written to {range}.',
   selectRangeForSparklines: 'Select the numbers the sparklines read.',
   sparklinesCleared: 'Sparklines cleared.',
   noSparklinesHere: 'No sparklines in the selection.',

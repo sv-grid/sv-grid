@@ -565,4 +565,62 @@ describe('SvSheet marching ants', () => {
     await tick()
     expect(doc.get('S').sparklines).toEqual([])
   })
+
+  it('Insert > PivotTable writes the summary as cells, keeps the definition and refreshes it', async () => {
+    const { api, doc, sheet } = await mountSheet({
+      data: [{
+        name: 'S',
+        cells: [
+          ['Region', 'Amount'],
+          ['North', '100'],
+          ['South', '80'],
+          ['North', '150'],
+        ],
+      }],
+      rows: 12, columns: 6,
+    })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    cmd.extendSelection(3, 1)
+    flushSync()
+    sheet.act('insert-pivot')
+    flushSync()
+    const dialog = document.querySelector('.sv-modal')!
+    expect(dialog.textContent).toContain('PivotTable')
+    // Region down the rows, Amount summed: what the dialog opens on.
+    const fields = [...dialog.querySelectorAll('input[type="text"]')] as HTMLInputElement[]
+    expect(fields.map((f) => f.value)).toEqual(['A1:B4', 'D1'])
+    fields[1]!.value = 'C1'
+    fields[1]!.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    ;[...dialog.querySelectorAll('button')].find((b) => b.textContent === 'OK')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    await tick()
+
+    const block = (r: number, c: number) => String(api.getCommandContext().getCellValue(r, c) ?? '')
+    expect([block(0, 2), block(0, 3)]).toEqual(['Region', 'Amount (sum)'])
+    expect([block(1, 2), block(1, 3)]).toEqual(['North', '250'])
+    expect([block(2, 2), block(2, 3)]).toEqual(['South', '80'])
+    expect([block(3, 2), block(3, 3)]).toEqual(['Grand total', '330'])
+
+    const s = doc.get('S')
+    expect(s.pivots).toHaveLength(1)
+    expect(s.pivots[0]).toMatchObject({ rows: ['Region'], cols: [], written: [0, 2, 3, 3] })
+    // The definition rides the state.
+    const state = JSON.parse(JSON.stringify(sheet.getState()))
+    expect(state.sheets.S.pivots[0].source).toEqual([0, 0, 3, 1])
+
+    // A changed source, then Refresh from a cell inside the written block.
+    cmd.setCellValue(1, 1, '400')
+    flushSync()
+    cmd.setActiveCell(1, 2)
+    cmd.setSelection(1, 2)
+    flushSync()
+    sheet.act('refresh-pivot')
+    flushSync()
+    await tick()
+    expect([block(1, 2), block(1, 3)]).toEqual(['North', '550'])
+    expect(block(3, 3)).toBe('630')
+  })
 })

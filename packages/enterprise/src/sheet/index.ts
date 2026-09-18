@@ -82,6 +82,11 @@ export {
   type SparklineGroup, type SheetSparklineType,
 } from './sparklines'
 export {
+  pivotFields, pivotRecords, pivotBlock, pivotFromRange, pivotWrittenRect, flattenPivotColumns,
+  shiftPivot, shiftPivots, copyPivot, pivotId, SHEET_PIVOT_AGGS,
+  type SheetPivot, type SheetPivotValue, type SheetPivotAgg,
+} from './pivot-range'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './hyperformula-engine'

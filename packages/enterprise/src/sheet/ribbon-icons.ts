@@ -51,6 +51,7 @@ export type RibbonIconName =
   | 'print' | 'page-setup' | 'margins' | 'orientation' | 'paper' | 'print-area' | 'print-titles'
   | 'picture' | 'chart-setup'
   | 'sparkline-line' | 'sparkline-column' | 'sparkline-winloss'
+  | 'pivot'
   | 'comment' | 'comment-delete' | 'comment-prev' | 'comment-next' | 'comments-all'
   | 'validation'
   | 'cf' | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
@@ -333,6 +334,13 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
     { d: 'M2.5 13.5h7M3.5 13.5v-4M6 13.5v-7' },
     { d: 'M11.5 5.5a2 2 0 1 0 .01 0z' },
     { d: 'M11.5 2.5v1.2M11.5 7.3v1.2M14.5 5.5h-1.2M9.7 5.5H8.5', width: 1.2 },
+  ],
+  // A PivotTable: a grid whose first row and column are the axes it is
+  // summarised by, the body blocked in.
+  pivot: [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M2.5 6h11M6 2.5v11' },
+    { d: 'M7.5 7.5h2v2h-2zM10.5 7.5h2v2h-2zM7.5 10.5h2v2h-2zM10.5 10.5h2v2h-2z', fill: true },
   ],
   // The three sparklines, each drawn as what it draws: a line over a cell,
   // a run of small columns, and the win/loss pair above and below the axis.

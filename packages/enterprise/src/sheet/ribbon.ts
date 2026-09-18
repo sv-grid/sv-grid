@@ -179,6 +179,8 @@ export type RibbonActionId =
   | 'sparkline-winloss'
   | 'sparkline-setup'
   | 'clear-sparklines'
+  | 'insert-pivot'
+  | 'refresh-pivot'
   | 'insert-table'
   | 'recalculate'
   | 'toggle-formulas'
@@ -918,7 +920,11 @@ const INSERT: RibbonTab = {
       icon: 'table',
       label: 'Tables',
       items: [
+        // Excel's Tables group leads with PivotTable, and Refresh sits beside
+        // the pair for the pivot the cursor is in.
+        { id: 'pivot-table', label: 'PivotTable', title: 'Summarise the selected block', icon: 'pivot', kind: 'button', size: 'large', emits: 'insert-pivot' },
         { id: 'table', label: 'Table', title: 'Format the selection as a table', keys: 'Ctrl+T', icon: 'table', kind: 'button', size: 'large', emits: 'insert-table' },
+        small(1, { id: 'pivot-refresh', label: 'Refresh', title: 'Rebuild the PivotTable here from its source', icon: 'calculate', kind: 'button', wide: true, emits: 'refresh-pivot' }),
       ],
     },
     {

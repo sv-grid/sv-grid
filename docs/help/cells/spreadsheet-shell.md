@@ -814,6 +814,35 @@ Objects do not ride in the .xlsx, in either direction: Save As writes the
 cells, the formats and the rules, and a chart or a picture in a file that
 is opened is left behind.
 
+### PivotTable from a range
+
+Insert > PivotTable summarises the selected block on the same pivot engine
+the grid uses for its own pivot mode. The dialog takes the source block
+(its first row the field names), where the result goes, and which field is
+a row, a column or a measure, with Sum, Average, Count, Distinct count,
+Min and Max to summarise by.
+
+What the sheet keeps is the **definition**; what it writes is **cells**. A
+pivot's result is an ordinary block, so it can be formatted, charted,
+filtered, printed and saved to an .xlsx like anything else you typed.
+Insert > Refresh rebuilds it from the source and clears whatever the last
+one wrote, which is what a pivot over live cells owes the user. With the
+cursor inside a written block, Insert > PivotTable opens the dialog on
+that pivot instead of making another, so moving a field or changing an
+aggregation is two clicks. Each write is one undo, cells and definition
+together.
+
+Pivots are per sheet, ride in `getState()` as `pivots` and report
+`{ kind: 'pivots' }` on `onChange`. The definition moves with an insert or
+a delete, and is dropped when its source or its target cell is deleted.
+Raised as `insert-pivot` and `refresh-pivot`.
+
+With one measure the block is Excel's compact form: the column values
+carry the corner label, the row labels run down the first column indented
+by level, and the grand total row and column can be turned off in the
+dialog. With two or more measures each column value gets one column per
+measure, under a header row naming them.
+
 ### Sparklines
 
 Excel's smallest chart, and the one that is not an object: a sparkline IS
@@ -1054,6 +1083,10 @@ button that does nothing.
   too: no axis options beyond one scale for the group, no high and low
   point marks beyond the last one, and they neither ride in the .xlsx nor
   reach the printed page.
+- **A PivotTable** is a definition plus the cells it writes, not a live
+  object: no drag-and-drop field list, no slicers, no drill-down on a
+  double-click, and no report filter. Refresh is what brings it up to
+  date.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
@@ -1126,6 +1159,12 @@ Charts anchored over the cells the way Excel anchors one: each reads a range rat
 Excel's smallest chart, and not an object: a sparkline IS the cell. One per row of a block of numbers, drawn from the range rather than a copy, so editing a number redraws it. Insert > Sparklines offers Line, Column and Win/Loss, with Edit for the group's ranges, kind and colours and Clear for the groups the selection touches; selecting a cell that holds one turns the kind buttons into a change to that group. They are kept per group the way Excel keeps them, ride in getState() and move with an insert or a delete.
 
 <div data-docs-demo="476-sheet-sparklines" data-height="560"></div>
+
+### PivotTable from a range
+
+Excel's Insert > PivotTable over a block of cells, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source, and opening the dialog from inside one edits it.
+
+<div data-docs-demo="477-sheet-pivot-range" data-height="560"></div>
 
 ## See also
 
