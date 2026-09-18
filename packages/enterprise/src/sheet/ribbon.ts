@@ -180,6 +180,8 @@ export type RibbonActionId =
   | 'next-comment'
   | 'toggle-comments'
   | 'data-validation'
+  | 'circle-invalid'
+  | 'clear-circles'
   | 'open-list'
   | 'freeze-top-row'
   | 'freeze-first-column'
@@ -886,7 +888,17 @@ const DATA: RibbonTab = {
       items: [
         { id: 'text-to-columns', label: 'Text to Columns', title: 'Split the selected column on a delimiter', icon: 'text-to-columns', kind: 'button', size: 'large', emits: 'text-to-columns' },
         { id: 'remove-duplicates', label: 'Remove Duplicates', title: 'Remove duplicate rows', icon: 'remove-duplicates', kind: 'button', size: 'large', emits: 'remove-duplicates' },
-        { id: 'data-validation', label: 'Data Validation', title: 'Data Validation: what may be typed into the selected cells', icon: 'validation', kind: 'button', size: 'large', emits: 'data-validation' },
+        // Excel's menu: the dialog, then Circle Invalid Data and Clear
+        // Validation Circles, each raised for the shell.
+        {
+          id: 'data-validation', label: 'Data Validation', title: 'Data Validation: what may be typed into the selected cells',
+          icon: 'validation', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'data-validation', label: 'Data Validation...', emits: 'data-validation' },
+            { value: 'circle-invalid', label: 'Circle Invalid Data', emits: 'circle-invalid' },
+            { value: 'clear-circles', label: 'Clear Validation Circles', emits: 'clear-circles' },
+          ],
+        },
       ],
     },
     {

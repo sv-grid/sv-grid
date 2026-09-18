@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ruleAt, rulesIn, checkEntry, listChoices, shiftValidation, removeValidation, dateValue, describeRule,
+  ruleAt, rulesIn, checkEntry, listChoices, shiftValidation, removeValidation, dateValue, describeRule, invalidCells,
   DEFAULT_ALERT_MESSAGE, type ValidationRule, type ValidationContext,
 } from './validation'
 import { createWorkbook } from './workbook'
@@ -233,5 +233,38 @@ describe('describeRule', () => {
     expect(describeRule(rule({ allow: 'decimal', operator: 'greater', value1: '0' }))).toBe('Decimal greater than 0')
     expect(describeRule(rule({ allow: 'list', value1: 'a,b' }))).toBe('List: a,b')
     expect(describeRule(rule({ allow: 'any' }))).toBe('Any value')
+  })
+})
+
+describe('invalidCells', () => {
+  const cells = [
+    ['5', 'x', ''],
+    ['50', '=1+1', 'ok'],
+    ['abc', '3', ''],
+  ]
+  const ctx: ValidationContext = {
+    evaluate: (text) => (text === '=1+1' ? 2 : Number(text)),
+    range: () => null,
+  }
+  const rawAt = (r: number, c: number) => cells[r]?.[c] ?? ''
+  const rule = (over: ValidationRule['rects'], extra: Partial<ValidationRule> = {}): ValidationRule => ({
+    id: 'v', rects: over, allow: 'whole', operator: 'between', value1: '1', value2: '10',
+    ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' }, ...extra,
+  })
+
+  it('lists the cells under a rule that break it, blanks left alone', () => {
+    expect(invalidCells([rule([[0, 0, 2, 2]])], ctx, rawAt, 3, 3)).toEqual([
+      { row: 0, col: 1 }, { row: 1, col: 0 }, { row: 1, col: 2 }, { row: 2, col: 0 },
+    ])
+  })
+
+  it('counts a blank when the rule does not ignore it', () => {
+    expect(invalidCells([rule([[0, 2, 0, 2]], { ignoreBlank: false })], ctx, rawAt, 3, 3)).toEqual([{ row: 0, col: 2 }])
+  })
+
+  it('clips to the sheet extent and lets the last rule over a cell decide', () => {
+    const any: ValidationRule = { ...rule([[0, 0, 0, 0]]), id: 'w', allow: 'any' }
+    expect(invalidCells([rule([[0, 0, 1000, 0]]), any], ctx, rawAt, 3, 3)).toEqual([{ row: 1, col: 0 }, { row: 2, col: 0 }])
+    expect(invalidCells([any, rule([[0, 0, 0, 0]])], ctx, rawAt, 3, 3)).toEqual([])
   })
 })

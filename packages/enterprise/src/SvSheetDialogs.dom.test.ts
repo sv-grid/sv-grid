@@ -415,6 +415,32 @@ describe('SvSheetDataValidation (DOM)', () => {
     })
   })
 
+  it('the Input Message tab rides on the rule, and an unticked box drops it', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetDataValidation, { target: host!, props: { open: true, rule: undefined, address: 'C2', onApply, onClear: vi.fn() } })
+    flushSync()
+    click(qa('.sv-modal [role="tab"]').find((t) => t.textContent === 'Input Message'))
+    expect(input('Show input message').checked).toBe(true)
+    typeInto(input('Title'), 'Quantity')
+    typeInto(input('Input message'), 'Whole units, 1 to 500')
+    click(button('OK'))
+    expect(onApply.mock.calls[0]![0]).toMatchObject({ allow: 'any', input: { title: 'Quantity', message: 'Whole units, 1 to 500' } })
+
+    unmount(comp!); comp = null
+    const again = vi.fn()
+    comp = mount(SvSheetDataValidation, {
+      target: host!,
+      props: { open: true, address: 'C2', onApply: again, onClear: vi.fn(), rule: { id: 'x', rects: [[1, 2, 1, 2]], allow: 'any', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' }, input: { message: 'Hi' } } },
+    })
+    flushSync()
+    click(qa('.sv-modal [role="tab"]').find((t) => t.textContent === 'Input Message'))
+    expect(input('Input message').value).toBe('Hi')
+    input('Show input message').click()
+    flushSync()
+    click(button('OK'))
+    expect('input' in again.mock.calls[0]![0]).toBe(false)
+  })
+
   it('opens on the rule it is given, a list keeps its dropdown, Clear All reports', () => {
     const onApply = vi.fn(); const onClear = vi.fn()
     comp = mount(SvSheetDataValidation, {

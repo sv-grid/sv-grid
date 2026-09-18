@@ -202,6 +202,35 @@ describe('SvSheet document state', () => {
 })
 
 
+describe('SvSheet data validation chrome', () => {
+  it('shows a rule\'s input message under the selected cell, and circles the cells that break rules', async () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'Sheet1', cells: [['7', 'x'], ['abc', '']] }] })
+    const s = doc.get('Sheet1')
+    s.validation = [{
+      id: 'v1', rects: [[0, 0, 1, 0]], allow: 'whole', operator: 'between', value1: '1', value2: '10',
+      ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' }, input: { title: 'Score', message: '1 to 10' },
+    }]
+    const { sheet } = await mountSheet({ document: doc, data: undefined })
+    await tick()
+    await new Promise((r) => requestAnimationFrame(() => r(null)))
+    flushSync()
+    const box = host!.querySelector('.sheet-input-message')
+    expect(box?.querySelector('.title')?.textContent).toBe('Score')
+    expect(box?.querySelector('.text')?.textContent).toBe('1 to 10')
+    // Nothing circled until asked; then A2 ("abc" under a whole-number rule) is.
+    expect(host!.querySelectorAll('.sheet-invalid-circle')).toHaveLength(0)
+    sheet.act('circle-invalid')
+    flushSync()
+    await tick()
+    const circled = [...host!.querySelectorAll('td .sheet-invalid-circle')].map((el) => el.closest('td')!.getAttribute('data-svgrid-row') + ',' + el.closest('td')!.getAttribute('data-svgrid-col'))
+    expect(circled).toEqual(['1,0'])
+    sheet.act('clear-circles')
+    flushSync()
+    await tick()
+    expect(host!.querySelectorAll('.sheet-invalid-circle')).toHaveLength(0)
+  })
+})
+
 describe('SvSheet marching ants', () => {
   const outline = () => [...document.querySelectorAll('.sheet-ants')].map((el) => {
     const td = el.closest('td')!

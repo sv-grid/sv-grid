@@ -97,7 +97,7 @@
   } from './sheet/auto-filter'
   import SvSheetFilterMenu from './SvSheetFilterMenu.svelte'
   import {
-    ruleAt, checkEntry, listChoices, removeValidation, validationId,
+    ruleAt, checkEntry, listChoices, removeValidation, validationId, invalidCells,
     type ValidationRule, type ValidationContext, type ValidationVerdict, type ValidationSpec,
   } from './sheet/validation'
   import type { RibbonActionId } from './sheet/ribbon'
@@ -318,6 +318,18 @@
    *   wb.names.define('TaxRate', 'Inputs!B3'); wb.recalculate(); sheet.refresh()
    */
   export function refresh() { bump() }
+
+  /**
+   * Run a ribbon action as if its button had been clicked: `act('sort-asc')`,
+   * `act('circle-invalid')`. What the ribbon would raise for `onAction` is
+   * raised here too, so a handler that takes an action over still does.
+   * For a host with chrome of its own, and for tests.
+   */
+  export function act(action: RibbonActionId): void {
+    const context = cmdOf()
+    if (!context) return
+    handleAction(action, context)
+  }
 
   // The Name Box lists the defined names. Read under `version` like every
   // other view of the workbook: names are defined at runtime too, and a list
@@ -544,6 +556,50 @@
   /** The alert waiting to be shown, with the entry that caused it. */
   let pendingAlert = $state<{ r: number; c: number; text: string; verdict: Extract<ValidationVerdict, { ok: false }> } | null>(null)
   let dataValidationOpen = $state(false)
+  /**
+   * Excel's Circle Invalid Data: the sheet the circles were asked for, or
+   * null while they are off. They are worked out again on every repaint
+   * while on, so a cell corrected under its rule loses its circle at once
+   * and one broken gains it, as in Excel; Clear Validation Circles, or a
+   * switch to another sheet, turns them off.
+   */
+  let circlesOn = $state<string | null>(null)
+  const circled = $derived.by<Set<string>>(() => {
+    void version
+    const out = new Set<string>()
+    if (circlesOn === null || circlesOn.toLowerCase() !== wb.active.toLowerCase()) return out
+    const hits = invalidCells(rulesNow(), validationCtx, (r, c) => wb.getRaw(wb.active, r, c), wb.rowCount(wb.active), wb.colCount(wb.active))
+    for (const hit of hits) out.add(`${hit.row},${hit.col}`)
+    return out
+  })
+  /**
+   * The rule's Input Message under the active cell, as Excel shows it while
+   * the cell is selected. Measured like the popovers and hidden while one of
+   * them is up, so a list never opens on top of it.
+   */
+  const inputMessage = $derived.by<{ r: number; c: number; title?: string; message?: string } | null>(() => {
+    void version
+    if (cellPopover) return null
+    const rule = ruleAt(rulesNow(), active.rowIndex, active.colIndex)
+    if (!rule?.input) return null
+    return { r: active.rowIndex, c: active.colIndex, title: rule.input.title, message: rule.input.message }
+  })
+  let messageRect = $state<{ left: number; top: number; height: number } | null>(null)
+  function measureMessage() {
+    const at = inputMessage
+    const host = gridHost
+    if (!at || !host) { messageRect = null; return }
+    const td = host.querySelector<HTMLElement>(`td[data-svgrid-row="${at.r}"][data-svgrid-col="${at.c}"]`)
+    if (!td) { messageRect = null; return }
+    const a = td.getBoundingClientRect()
+    const b = host.getBoundingClientRect()
+    messageRect = { left: a.left - b.left, top: a.top - b.top, height: a.height }
+  }
+  $effect(() => {
+    void inputMessage
+    void version
+    void tick().then(() => requestAnimationFrame(measureMessage))
+  })
 
   // --- conditional formatting -------------------------------------------------
   /**
@@ -1820,6 +1876,14 @@
       case 'text-to-columns': textToColumnsOpen = true; return
       case 'remove-duplicates': removeDuplicatesOpen = true; return
       case 'data-validation': dataValidationOpen = true; return
+      case 'circle-invalid': {
+        circlesOn = wb.active
+        bump()
+        const count = circled.size
+        say(count === 0 ? 'No invalid data was found.' : `${count} ${count === 1 ? 'cell breaks' : 'cells break'} a validation rule.`)
+        return
+      }
+      case 'clear-circles': circlesOn = null; bump(); return
     }
   }
 
@@ -3105,6 +3169,10 @@
       onclick={(event) => { event.stopPropagation(); openFilterMenu(props.c) }}
     >{#if arrow === 'filtered'}<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M1 1.5h8L6 5.5v3L4 9.5v-4z" fill="currentColor" /></svg>{:else}<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>{/if}</button>
   {/if}
+  {#if circled.has(`${props.r},${props.c}`)}
+    <!-- Circle Invalid Data: Excel's red oval around a cell that breaks its rule. -->
+    <span class="sheet-invalid-circle" aria-label="Breaks its validation rule" role="img"></span>
+  {/if}
   {#if props.r === active.rowIndex && props.c === active.colIndex && listRuleAt(props.r, props.c)}
     <!-- Excel's in-cell dropdown arrow, on the active cell of a list rule.
          The pointer stops here so the click opens the list rather than
@@ -3201,13 +3269,22 @@
     onkeydowncapture={onSheetKeyDownCapture}
     onpointerupcapture={onSheetPointerUp}
     class:painting={painter !== null}
-    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor() }}
+    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage() }}
   >
   {#if resizeGuide}
     <div class="sheet-resize-guide" class:col={resizeGuide.axis === 'col'} class:row={resizeGuide.axis === 'row'} aria-hidden="true" style:left={resizeGuide.axis === 'col' ? `${resizeGuide.at}px` : '0'} style:top={resizeGuide.axis === 'row' ? `${resizeGuide.at}px` : '0'}></div>
   {/if}
   {#if resizeTip}
     <div class="sheet-resize-tip" role="status" style:left={`${resizeTip.x}px`} style:top={`${resizeTip.y}px`}>{resizeTip.text}</div>
+  {/if}
+  {#if inputMessage && messageRect}
+    <!-- Excel's Input Message: a small box under the selected cell, the
+         title in bold over the text. Nothing to click, so the pointer goes
+         through it to the cells beneath. -->
+    <div class="sheet-input-message" role="note" style:left="{messageRect.left}px" style:top="{messageRect.top + messageRect.height + 2}px">
+      {#if inputMessage.title}<div class="title">{inputMessage.title}</div>{/if}
+      {#if inputMessage.message}<div class="text">{inputMessage.message}</div>{/if}
+    </div>
   {/if}
   {#if cellPopover && anchorRect}
     <!-- An invisible box over the cell for the note to point at. -->
@@ -3566,6 +3643,32 @@
     pointer-events: none;
   }
   .sheet-cell-anchor .box { display: inline-block; }
+  /* Circle Invalid Data: a red oval on the cell's box, over its content. */
+  .sheet-invalid-circle {
+    position: absolute;
+    inset: 0;
+    border: 1.5px solid #d03a2c;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+  }
+  /* The Input Message: Excel's small pale box under the selected cell. */
+  .sheet-input-message {
+    position: absolute;
+    z-index: 7;
+    max-width: 240px;
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    pointer-events: none;
+    color: var(--sg-fg, #242424);
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #d1d1d1);
+    border-radius: 3px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    white-space: pre-wrap;
+  }
+  .sheet-input-message .title { font-weight: 700; }
   /* The in-cell dropdown arrow: a small button at the cell's right edge,
      above the cell text like the note corner. */
   .sheet-dropdown-arrow {
