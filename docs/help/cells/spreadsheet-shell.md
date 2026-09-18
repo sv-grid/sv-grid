@@ -555,7 +555,7 @@ the cell menu is a button that does nothing:
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
-| Conditional formatting | Home > Styles > Conditional Formatting: Greater Than..., Less Than..., Between..., Equal To..., Text that Contains..., Duplicate Values..., Top 10 Items..., Bottom 10 Items..., Above Average..., Below Average... each open the small dialog (the value or values, and the "with" style); Manage Rules... opens the Rules Manager. See Conditional formatting below. |
+| Conditional formatting | Home > Styles > Conditional Formatting: Greater Than..., Less Than..., Between..., Equal To..., Text that Contains..., Duplicate Values..., Top 10 Items..., Bottom 10 Items..., Above Average..., Below Average... and New Rule > Use a Formula... each open the small dialog (the value or values, or the formula, and the "with" style); Manage Rules... opens the Rules Manager. See Conditional formatting below. |
 
 Home > Cells > Format is Excel's menu: Row Height..., AutoFit Row Height,
 Column Width... and AutoFit Column Width for the rows and columns the
@@ -650,7 +650,16 @@ stops the rules below it for the cells it matches. A rule's fill and text
 colour paint over the cell's own format, as they do in Excel. The rules
 are per sheet, move with an insert or delete, ride in `getState()` as
 `conditionalFormats` and report `{ kind: 'conditional-formats' }` on
-`onChange`. `evaluateCf`, `ruleStats`, `removeCf`, `shiftCf`,
+`onChange`.
+
+New Rule > Use a Formula... is Excel's "format values where this formula
+is true": the formula is written for the top-left cell of the selection
+and moves with each cell as a copied formula would, so `=$B2>100` on
+A2:A9 reads each row's B, and TRUE (or a number other than 0) formats.
+The rule is `{ kind: 'formula', formula, style }`. A data bar over a range
+with negatives puts its axis where zero falls between the minimum and the
+maximum, and the bars grow away from it: right for a positive value, left
+and in red (or the rule's `negativeColor`) for a negative one. `evaluateCf`, `ruleStats`, `removeCf`, `shiftCf`,
 `describeCf` and the rule types are exported from
 `@svgrid/enterprise/sheet`; the grid's own value-driven
 [conditional formatting](./conditional-formatting.md) is a different thing
@@ -782,9 +791,9 @@ button that does nothing.
 - **Validation** checks what is typed; pasted-over cells are left as they
   land until Circle Invalid Data is asked for.
 - **Conditional formatting** has Excel's presets and Excel's "with"
-  styles, one data bar colour (and no negative axis: a range with
-  negatives runs from its minimum), one icon set per flavour and no
-  formula rule; the grid's own value-driven rules are a separate feature.
+  styles, one icon set per flavour, and no colour pickers of its own for
+  bars and scales; the grid's own value-driven rules are a separate
+  feature.
 - **AutoFilter**'s values list is the whole column, unvirtualised, which
   is what a sheet's region holds.
 

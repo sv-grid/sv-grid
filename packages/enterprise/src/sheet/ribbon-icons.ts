@@ -41,6 +41,7 @@ export type RibbonIconName =
   | 'sort-asc' | 'sort-desc' | 'sort'
   | 'chart' | 'table' | 'function' | 'new-sheet'
   | 'file-new' | 'file-open' | 'file-save' | 'file-csv'
+  | 'cf-formula'
   | 'name-manager' | 'show-formulas' | 'calculate' | 'goal-seek'
   | 'text-to-columns' | 'remove-duplicates'
   | 'chevron-down' | 'format-cells'
@@ -280,6 +281,11 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'new-sheet': [
     ...SHEET,
     { d: 'M8.2 6.5v5M5.7 9h5', width: 1.7 },
+  ],
+  // A formula rule: an fx over a shaded cell.
+  'cf-formula': [
+    { d: 'M2 10.5h12v3.5H2z', fill: true },
+    { d: 'M5 8V4.5a1.5 1.5 0 0 1 3 0M3.5 6h3M9.5 3.5l3 4.5M12.5 3.5l-3 4.5', width: 1.3 },
   ],
   // The File tab: a blank page, an opening folder, a floppy, a page of
   // commas.

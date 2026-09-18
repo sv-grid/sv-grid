@@ -51,6 +51,7 @@ function fullDocument() {
     { id: 'c6', rects: [[1, 3, 3, 3]], kind: 'average', above: false, style: { strike: true, numFmt: '0.0' } },
     { id: 'c7', rects: [[1, 0, 3, 0]], kind: 'duplicates', unique: true, style: { color: '#9c0006' } },
     { id: 'c8', rects: [[1, 1, 3, 1]], kind: 'iconSet', set: 'traffic' },
+    { id: 'c9', rects: [[1, 0, 3, 4]], kind: 'formula', formula: '=$B2>2', style: { bold: true } },
   ]
   const prices = doc.get('Price list')
   prices.sheetHidden = true
@@ -88,7 +89,8 @@ describe('documentToXlsxParts', () => {
     expect(parts['xl/worksheets/sheet2.xml']).toContain('<c r="B3" t="b"><v>1</v></c>')
     expect(parts['xl/worksheets/sheet2.xml']).toContain('<c r="B4" t="e"><f>1/0</f><v>#DIV/0!</v></c>')
     expect(parts['xl/comments1.xml']).toContain('<comment ref="A2" authorId="0">')
-    expect(parts['xl/styles.xml']).toContain('<dxfs count="5">')
+    expect(parts['xl/styles.xml']).toContain('<dxfs count="6">')
+    expect(sheet).toContain('<cfRule type="expression" dxfId="5" priority="9"><formula>$B2&gt;2</formula></cfRule>')
   })
 })
 

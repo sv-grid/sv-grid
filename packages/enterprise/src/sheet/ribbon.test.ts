@@ -102,7 +102,7 @@ describe('the model is well-formed', () => {
     expect(raised).toEqual([
       'cf-greater', 'cf-less', 'cf-between', 'cf-equal', 'cf-text', 'cf-duplicates',
       'cf-top10', 'cf-bottom10', 'cf-above-average', 'cf-below-average',
-      'cf-data-bar', 'cf-color-scale-3', 'cf-color-scale-2', 'cf-icon-set',
+      'cf-data-bar', 'cf-color-scale-3', 'cf-color-scale-2', 'cf-icon-set', 'cf-formula',
       'cf-clear-selection', 'cf-clear-sheet', 'cf-manage',
     ])
   })

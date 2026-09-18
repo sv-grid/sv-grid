@@ -727,7 +727,7 @@
    * so the rule wins where both speak, as in Excel.
    */
   const cfNow = (): ReadonlyArray<CfRule> => doc.get(wb.active).conditionalFormats
-  const cfCtx: CfContext = { evaluate: (text) => wb.evaluateText(wb.active, text) }
+  const cfCtx: CfContext = { evaluate: (text, at) => wb.evaluateText(wb.active, text, undefined, at) }
   const cfStatsCache = new Map<string, CfStats>()
   function cfStatsFor(rule: CfRule): CfStats {
     let stats = cfStatsCache.get(rule.id)
@@ -1008,7 +1008,7 @@
   const CF_PRESETS: Partial<Record<RibbonActionId, CfPreset>> = {
     'cf-greater': 'greater', 'cf-less': 'less', 'cf-between': 'between', 'cf-equal': 'equal',
     'cf-text': 'text', 'cf-duplicates': 'duplicates', 'cf-top10': 'top10', 'cf-bottom10': 'bottom10',
-    'cf-above-average': 'aboveAverage', 'cf-below-average': 'belowAverage',
+    'cf-above-average': 'aboveAverage', 'cf-below-average': 'belowAverage', 'cf-formula': 'formula',
   }
 
   /** The Conditional Formatting menu's entries. */
@@ -1802,7 +1802,7 @@
         return
       case 'cf-greater': case 'cf-less': case 'cf-between': case 'cf-equal': case 'cf-text': case 'cf-duplicates':
       case 'cf-top10': case 'cf-bottom10': case 'cf-above-average': case 'cf-below-average':
-      case 'cf-data-bar': case 'cf-color-scale-3': case 'cf-color-scale-2': case 'cf-icon-set':
+      case 'cf-data-bar': case 'cf-color-scale-3': case 'cf-color-scale-2': case 'cf-icon-set': case 'cf-formula':
       case 'cf-clear-selection': case 'cf-clear-sheet': case 'cf-manage':
         if (onAction?.(action, context) === true) return
         cfAction(action, context)
@@ -3292,7 +3292,16 @@
   {@const hashes = typeof value === 'number' && !showFormulas && !typing ? hashesFor(shown.text, props.c, entry, props.r, entry?.numFmt || cf?.style?.numFmt ? undefined : value) : null}
   {#if cf?.dataBar}
     <!-- Excel's data bar: behind the text, the value's share of the cell. -->
-    <span class="sheet-databar" style:width="{Math.round(cf.dataBar.ratio * 100)}%" style:background={cf.dataBar.color}></span>
+    <span
+      class="sheet-databar"
+      style:left="{cf.dataBar.negative ? Math.round((cf.dataBar.axis - cf.dataBar.ratio) * 100) : Math.round(cf.dataBar.axis * 100)}%"
+      style:width="{Math.round(cf.dataBar.ratio * 100)}%"
+      style:background={cf.dataBar.color}
+    ></span>
+    {#if cf.dataBar.axis > 0}
+      <!-- The axis at zero, a hairline the bars grow away from. -->
+      <span class="sheet-databar-axis" style:left="{Math.round(cf.dataBar.axis * 100)}%"></span>
+    {/if}
   {/if}
   {@const ants = marqueeEdges(props.r, props.c)}
   {#if ants}
@@ -3621,6 +3630,7 @@
         : rule.kind === 'text' ? 'text'
         : rule.kind === 'duplicates' ? 'duplicates'
         : rule.kind === 'topBottom' ? (rule.top ? 'top10' : 'bottom10')
+        : rule.kind === 'formula' ? 'formula'
         : rule.above ? 'aboveAverage' : 'belowAverage'
       cfDialog = { preset, rule, replace }
     }}
@@ -3900,11 +3910,19 @@
      as Excel draws it. */
   .sheet-databar {
     position: absolute;
-    left: 1px;
     top: 2px;
     bottom: 2px;
     border-radius: 1px;
     opacity: 0.85;
+    pointer-events: none;
+  }
+  .sheet-databar-axis {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    width: 0;
+    border-left: 1px dashed var(--sg-muted, #616161);
+    opacity: 0.6;
     pointer-events: none;
   }
   /* Excel's marching ants: a dashed line on the cell's outline edges, the

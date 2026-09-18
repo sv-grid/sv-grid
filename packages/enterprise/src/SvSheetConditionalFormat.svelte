@@ -28,6 +28,7 @@
     greater: 'Greater Than', less: 'Less Than', between: 'Between', equal: 'Equal To',
     text: 'Text That Contains', duplicates: 'Duplicate Values',
     top10: 'Top 10 Items', bottom10: 'Bottom 10 Items', aboveAverage: 'Above Average', belowAverage: 'Below Average',
+    formula: 'New Formatting Rule',
   }
   const LEADS: Record<CfPreset, string> = {
     greater: 'Format cells that are GREATER THAN:', less: 'Format cells that are LESS THAN:',
@@ -36,6 +37,7 @@
     top10: 'Format cells that rank in the TOP:', bottom10: 'Format cells that rank in the BOTTOM:',
     aboveAverage: 'Format cells that are ABOVE AVERAGE for the selected range:',
     belowAverage: 'Format cells that are BELOW AVERAGE for the selected range:',
+    formula: 'Format values where this formula is true:',
   }
 
   let value1 = $state('')
@@ -60,13 +62,14 @@
       else if (r.kind === 'text') value1 = r.value
       else if (r.kind === 'duplicates') unique = !!r.unique
       else if (r.kind === 'topBottom') { rank = String(r.rank); percent = !!r.percent }
+      else if (r.kind === 'formula') value1 = r.formula
       const match = CF_PRESET_STYLES.find((p) => JSON.stringify(p.style) === JSON.stringify(r.style))
       if (match) styleId = match.id
     }
     queueMicrotask(() => first?.focus())
   })
 
-  const needsValue = $derived(preset === 'greater' || preset === 'less' || preset === 'between' || preset === 'equal' || preset === 'text')
+  const needsValue = $derived(preset === 'greater' || preset === 'less' || preset === 'between' || preset === 'equal' || preset === 'text' || preset === 'formula')
   const valid = $derived(
     (!needsValue || value1.trim() !== '')
       && (preset !== 'between' || value2.trim() !== '')
@@ -86,6 +89,10 @@
       case 'bottom10': return { kind: 'topBottom', top: false, rank: Number(rank), percent, style }
       case 'aboveAverage': return { kind: 'average', above: true, style }
       case 'belowAverage': return { kind: 'average', above: false, style }
+      case 'formula': {
+        const text = value1.trim()
+        return { kind: 'formula', formula: text.startsWith('=') ? text : `=${text}`, style }
+      }
     }
   }
 
@@ -114,7 +121,7 @@
         <span>and</span>
         <input type="text" bind:value={value2} aria-label="Upper value" spellcheck="false" />
       {:else if needsValue}
-        <input bind:this={first} type="text" bind:value={value1} aria-label="Value" spellcheck="false" placeholder={preset === 'text' ? 'text' : 'value or =formula'} />
+        <input bind:this={first} type="text" bind:value={value1} aria-label={preset === 'formula' ? 'Formula' : 'Value'} spellcheck="false" placeholder={preset === 'text' ? 'text' : preset === 'formula' ? '=$B2>100' : 'value or =formula'} />
       {:else if preset === 'duplicates'}
         <select bind:this={first} bind:value={unique} aria-label="Duplicate or unique">
           <option value={false}>Duplicate</option>
@@ -130,6 +137,9 @@
         {#each CF_PRESET_STYLES as p (p.id)}<option value={p.id}>{p.label}</option>{/each}
       </select>
     </div>
+    {#if preset === 'formula'}
+      <p class="hint">Written for the top-left cell of the range; it moves with each cell as a copied formula would, so =$B2>100 on A2:A9 reads each row's B. TRUE formats.</p>
+    {/if}
     <div class="sample" style:background={sample.fill ?? 'transparent'} style:color={sample.color ?? 'inherit'}>AaBbCcYyZz</div>
   </form>
   {#snippet footer()}

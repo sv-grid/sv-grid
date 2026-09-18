@@ -301,8 +301,14 @@ function cfRuleXml(rule: CfRule, priority: number, dxf: (style: CfStyle) => numb
       return `${open(`type="top10" rank="${rule.rank}"${rule.top ? '' : ' bottom="1"'}${rule.percent ? ' percent="1"' : ''}`)}</cfRule>`
     case 'average':
       return `${open(`type="aboveAverage"${rule.above ? '' : ' aboveAverage="0"'}`)}</cfRule>`
-    case 'dataBar':
+    case 'formula':
+      return `${open('type="expression"')}<formula>${esc(rule.formula.replace(/^=/, ''))}</formula></cfRule>`
+    case 'dataBar': {
+      // The negative colour is an extension Excel keeps in x14; the plain
+      // part carries the bar colour, and Excel draws negatives in red by
+      // itself, as this reader assumes when the extension is absent.
       return `${open('type="dataBar"')}<dataBar><cfvo type="min"/><cfvo type="max"/><color rgb="${argb(rule.color) ?? 'FF638EC6'}"/></dataBar></cfRule>`
+    }
     case 'colorScale': {
       const cfvo = rule.colors.length === 3 ? '<cfvo type="min"/><cfvo type="percentile" val="50"/><cfvo type="max"/>' : '<cfvo type="min"/><cfvo type="max"/>'
       return `${open('type="colorScale"')}<colorScale>${cfvo}${rule.colors.map((c) => `<color rgb="${argb(c) ?? 'FFFFFFFF'}"/>`).join('')}</colorScale></cfRule>`
@@ -817,6 +823,8 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
             rule = { ...base, kind: 'topBottom', top: !flag(node, 'bottom'), rank: num(node, 'rank') ?? 10, ...(flag(node, 'percent') ? { percent: true } : {}), style }
           } else if (type === 'aboveAverage') {
             rule = { ...base, kind: 'average', above: attr(node, 'aboveAverage') !== '0', style }
+          } else if (type === 'expression') {
+            rule = { ...base, kind: 'formula', formula: engineFormula(formulas[0] ?? 'FALSE'), style }
           } else if (type === 'dataBar') {
             rule = { ...base, kind: 'dataBar', color: fromArgb(attr(kid(kid(node, 'dataBar'), 'color'), 'rgb')) ?? '#638ec6' }
           } else if (type === 'colorScale') {
