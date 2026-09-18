@@ -9,8 +9,14 @@ commit (`43c01c2`). Accepted the same day.
 
 ## Status
 
-The first milestone (section 5) shipped on the plan's branch, one commit
-per item:
+**Every gap in section 2 is shipped**, bar one the measurements argued
+against: recalculation off the main thread, and the sparse storage that
+would go with it. The bench says a 50k-row sheet opens in about half a
+second and an edit costs one evaluation, so a worker would add a boundary
+and buy nothing today; the row is left standing rather than struck through
+so the decision is visible rather than forgotten.
+
+Shipped on the plan's branch, one commit per item:
 
 - Phase B item 1: the function packs (financial, math and statistics, text
   and date, CHOOSE / ROWS / COLUMNS, the ISERROR family), on by default
