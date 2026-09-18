@@ -43,11 +43,26 @@ export type SheetPivot = {
   /** Column fields, outermost first. */
   cols: string[]
   values: SheetPivotValue[]
+  /**
+   * Excel's Filters area: a field, and the one value the whole pivot is
+   * narrowed to. An empty value is "(All)", which narrows nothing.
+   *
+   * It is written above the block, a line per filter, so the reader can
+   * see what the numbers are of; typing another value there and refreshing
+   * is the fast way to change it.
+   */
+  filters?: SheetPivotFilter[]
   grandTotalRow?: boolean
   grandTotalCol?: boolean
   rowSubtotals?: boolean
   /** The block the last refresh wrote, so the next one can clear it. */
   written?: Rect
+}
+
+export type SheetPivotFilter = {
+  field: string
+  /** The value to keep, as text. Empty means every value. */
+  value: string
 }
 
 let nextPivotId = 1
@@ -63,6 +78,7 @@ export function copyPivot(pivot: SheetPivot): SheetPivot {
     rows: [...pivot.rows],
     cols: [...pivot.cols],
     values: pivot.values.map((v) => ({ ...v })),
+    ...(pivot.filters?.length ? { filters: pivot.filters.map((f) => ({ ...f })) } : {}),
     ...(pivot.written ? { written: [...pivot.written] as unknown as Rect } : {}),
   }
 }
@@ -177,6 +193,38 @@ export function flattenPivotColumns(columns: ReadonlyArray<unknown>): {
   return { headerRows, leaves }
 }
 
+/**
+ * The records a pivot's filters leave.
+ *
+ * Excel's report filter narrows the whole pivot, not one part of it, so it
+ * applies before anything is grouped: the totals, the subtotals and the
+ * drill-down all see the same rows, which is the only way the numbers on
+ * the page add up.
+ */
+export function filteredRecords(
+  pivot: SheetPivot,
+  records: ReadonlyArray<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
+  const active = (pivot.filters ?? []).filter((f) => f.field && f.value !== '')
+  if (!active.length) return [...records]
+  return records.filter((record) => active.every((f) => String(record[f.field] ?? '') === f.value))
+}
+
+/** The values a field carries, each once, in the order they appear. */
+export function pivotFieldValues(
+  field: string,
+  source: Rect,
+  valueAt: (row: number, col: number) => CellValue,
+  textAt: (row: number, col: number) => string,
+): string[] {
+  const seen: string[] = []
+  for (const record of pivotRecords(source, valueAt, textAt)) {
+    const value = String(record[field] ?? '')
+    if (value !== '' && !seen.includes(value)) seen.push(value)
+  }
+  return seen
+}
+
 /** A number without the float noise a sum of decimals leaves behind. */
 function cellText(value: unknown): string {
   if (value === null || value === undefined || value === '') return ''
@@ -230,7 +278,7 @@ export function pivotLayout(
 ): PivotLayout {
   const empty: PivotLayout = { cells: [], headerCount: 0, rowPaths: [], colPaths: [] }
   if (!pivot.values.length) return empty
-  const records = pivotRecords(pivot.source, valueAt, textAt)
+  const records = filteredRecords(pivot, pivotRecords(pivot.source, valueAt, textAt))
   const result = createPivotModel<TableFeatures, Record<string, unknown>>(records, {
     rows: pivot.rows,
     cols: pivot.cols,
@@ -262,6 +310,18 @@ export function pivotLayout(
   if (pivot.values.length === 1 && out.length > 1) {
     const measures = out.pop()!
     out[out.length - 1]![0] = measures[0] ?? ''
+  }
+  // Excel writes the Filters area above the block, one line per filter and
+  // a blank line under them, so the reader sees what the numbers are of
+  // before reading a number.
+  const filters = (pivot.filters ?? []).filter((f) => f.field)
+  if (filters.length) {
+    const width = out[0]?.length ?? 2
+    const pad = (line: string[]) => {
+      while (line.length < Math.max(width, 2)) line.push('')
+      return line
+    }
+    out.unshift(...filters.map((f) => pad([f.field, f.value === '' ? ALL_VALUES : f.value])), pad([]))
   }
   const headerCount = out.length
   const rowPaths: Array<string[] | null> = Array.from({ length: headerCount }, () => null)
@@ -309,6 +369,9 @@ export function pivotLayout(
   return { cells: out, headerCount, rowPaths, colPaths }
 }
 
+/** What a filter with no value chosen shows, and what clears one. */
+export const ALL_VALUES = '(All)'
+
 /** The source rows behind one cell of a written pivot. */
 export type PivotDrill = {
   /** The row and column field values that pin the cell, outermost first. */
@@ -344,7 +407,7 @@ export function pivotDrill(
   const colPath = layout.colPaths[column]
   if (!rowPath || !colPath) return null
 
-  const records = pivotRecords(pivot.source, valueAt, textAt)
+  const records = filteredRecords(pivot, pivotRecords(pivot.source, valueAt, textAt))
   const matches = records.filter((record) => {
     for (let i = 0; i < rowPath.length; i += 1) {
       const field = pivot.rows[i]

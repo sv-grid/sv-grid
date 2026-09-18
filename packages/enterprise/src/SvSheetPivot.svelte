@@ -9,7 +9,10 @@
   import { useSheetText } from './sheet-text'
   import { parseRangeText, rangeText } from './sheet/protection'
   import { parseA1, formatA1 } from './sheet/address'
-  import { SHEET_PIVOT_AGGS, type SheetPivot, type SheetPivotAgg, type SheetPivotValue } from './sheet/pivot-range'
+  import {
+    SHEET_PIVOT_AGGS, ALL_VALUES,
+    type SheetPivot, type SheetPivotAgg, type SheetPivotValue, type SheetPivotFilter,
+  } from './sheet/pivot-range'
   import type { Rect } from './sheet/format-store'
 
   type Props = {
@@ -18,13 +21,19 @@
     pivot: SheetPivot
     /** The source's field names, read from its header row. */
     fields: ReadonlyArray<string>
+    /**
+     * The values each field carries, for the Filters area's value list.
+     * The dialog has the definition, not the cells, so the shell reads
+     * them off the source.
+     */
+    valuesOf?: (field: string) => ReadonlyArray<string>
     existing?: boolean
     onApply: (pivot: SheetPivot) => void
     onDelete?: () => void
     onClose?: () => void
   }
 
-  let { open = $bindable(false), pivot, fields, existing = false, onApply, onDelete, onClose }: Props = $props()
+  let { open = $bindable(false), pivot, fields, valuesOf, existing = false, onApply, onDelete, onClose }: Props = $props()
   const t = useSheetText()
 
   let source = $state('')
@@ -32,6 +41,7 @@
   let rows = $state<string[]>([])
   let cols = $state<string[]>([])
   let values = $state<SheetPivotValue[]>([])
+  let filters = $state<SheetPivotFilter[]>([])
   let grandTotalRow = $state(true)
   let rowSubtotals = $state(true)
   let error = $state('')
@@ -44,6 +54,7 @@
     rows = [...pivot.rows]
     cols = [...pivot.cols]
     values = pivot.values.map((v) => ({ ...v }))
+    filters = (pivot.filters ?? []).map((f) => ({ ...f }))
     grandTotalRow = pivot.grandTotalRow !== false
     rowSubtotals = pivot.rowSubtotals !== false
     error = ''
@@ -51,20 +62,29 @@
   })
 
   /** Where a field sits now: down the rows, across the columns, or a measure. */
-  function placeOf(field: string): 'none' | 'rows' | 'cols' | 'values' {
+  function placeOf(field: string): Placement {
     if (rows.includes(field)) return 'rows'
     if (cols.includes(field)) return 'cols'
     if (values.some((v) => v.field === field)) return 'values'
+    if (filters.some((f) => f.field === field)) return 'filters'
     return 'none'
   }
 
-  function place(field: string, to: 'none' | 'rows' | 'cols' | 'values') {
+  type Placement = 'none' | 'rows' | 'cols' | 'values' | 'filters'
+
+  function place(field: string, to: Placement) {
     rows = rows.filter((f) => f !== field)
     cols = cols.filter((f) => f !== field)
     values = values.filter((v) => v.field !== field)
+    filters = filters.filter((f) => f.field !== field)
     if (to === 'rows') rows = [...rows, field]
     else if (to === 'cols') cols = [...cols, field]
     else if (to === 'values') values = [...values, { field, agg: 'sum' }]
+    else if (to === 'filters') filters = [...filters, { field, value: '' }]
+  }
+
+  function setFilter(field: string, value: string) {
+    filters = filters.map((f) => (f.field === field ? { ...f, value } : f))
   }
 
   function setAgg(field: string, agg: SheetPivotAgg) {
@@ -84,9 +104,11 @@
       rows: [...rows],
       cols: [...cols],
       values: values.map((v) => ({ ...v })),
+      ...(filters.length ? { filters: filters.map((f) => ({ ...f })) } : { filters: [] }),
       grandTotalRow,
       rowSubtotals,
     }
+    if (!next.filters?.length) delete next.filters
     open = false
     onApply(next)
     onClose?.()
@@ -118,16 +140,23 @@
         {@const place_ = placeOf(field)}
         <div class="row">
           <span class="name" title={field}>{field}</span>
-          <select value={place_} onchange={(e) => place(field, e.currentTarget.value as 'none' | 'rows' | 'cols' | 'values')}>
+          <select value={place_} onchange={(e) => place(field, e.currentTarget.value as Placement)}>
             <option value="none">{t('pivot.place.none')}</option>
             <option value="rows">{t('pivot.place.rows')}</option>
             <option value="cols">{t('pivot.place.cols')}</option>
             <option value="values">{t('pivot.place.values')}</option>
+            <option value="filters">{t('pivot.place.filters')}</option>
           </select>
           {#if place_ === 'values'}
             {@const agg = values.find((v) => v.field === field)?.agg ?? 'sum'}
             <select value={agg} onchange={(e) => setAgg(field, e.currentTarget.value as SheetPivotAgg)}>
               {#each SHEET_PIVOT_AGGS as id (id)}<option value={id}>{t(`pivot.agg.${id}`)}</option>{/each}
+            </select>
+          {:else if place_ === 'filters'}
+            {@const chosen = filters.find((f) => f.field === field)?.value ?? ''}
+            <select value={chosen} onchange={(e) => setFilter(field, e.currentTarget.value)} aria-label={t('pivot.filterValue', { field })}>
+              <option value="">{ALL_VALUES}</option>
+              {#each valuesOf?.(field) ?? [] as value (value)}<option value={value}>{value}</option>{/each}
             </select>
           {:else}
             <span class="dash">&mdash;</span>

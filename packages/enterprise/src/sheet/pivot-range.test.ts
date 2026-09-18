@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  copyPivot, pivotBlock, pivotDrill, pivotFields, pivotFromRange, pivotId, pivotLayout, pivotRecords,
+  copyPivot, pivotBlock, pivotDrill, pivotFields, pivotFieldValues, pivotFromRange, pivotId, pivotLayout, pivotRecords,
   pivotWrittenRect, shiftPivot, shiftPivots, type SheetPivot,
 } from './pivot-range'
 import type { Rect } from './format-store'
@@ -165,5 +165,49 @@ describe('drilling into a pivot cell', () => {
     expect(pivotDrill(p, p.target.row + 1, p.target.col, valueAt, textAt)).toBeNull()
     expect(pivotDrill(p, p.target.row + 99, p.target.col + 1, valueAt, textAt)).toBeNull()
     expect(pivotDrill(p, p.target.row + 1, p.target.col - 1, valueAt, textAt)).toBeNull()
+  })
+})
+
+describe('a report filter', () => {
+  const filtered = (value: string) => pivot({ filters: [{ field: 'Quarter', value }] })
+
+  it('narrows every number to the value chosen', () => {
+    const block = pivotBlock(filtered('Q1'), valueAt, textAt)
+    const numbers = block.slice(-4).map((line) => line.map((c) => c.trim()))
+    // Only the Q1 rows: North 100, South 80.
+    expect(numbers.some((line) => line[0] === 'North' && line[1] === '100')).toBe(true)
+    expect(numbers.some((line) => line[0] === 'South' && line[1] === '80')).toBe(true)
+  })
+
+  it('writes the filter above the block, and (All) when nothing is chosen', () => {
+    expect(pivotBlock(filtered('Q2'), valueAt, textAt)[0]).toEqual(['Quarter', 'Q2'])
+    expect(pivotBlock(filtered(''), valueAt, textAt)[0]).toEqual(['Quarter', '(All)'])
+    // A blank line separates the filter from the headers, as Excel leaves one.
+    expect(pivotBlock(filtered('Q2'), valueAt, textAt)[1]!.every((c) => c === '')).toBe(true)
+  })
+
+  it('leaves the block alone when there is no filter', () => {
+    expect(pivotBlock(pivot(), valueAt, textAt)[0]![0]).not.toBe('Quarter')
+  })
+
+  it('drills into the filtered rows, not all of them', () => {
+    const p = filtered('Q2')
+    const block = pivotBlock(p, valueAt, textAt)
+    const line = block.findIndex((row) => row[0]?.trim() === 'South')
+    const drill = pivotDrill(p, p.target.row + line, p.target.col + 1, valueAt, textAt)!
+    expect(drill.records.map((r) => r.Amount)).toEqual([120, 20])
+  })
+
+  it('offers the values a field carries, each once', () => {
+    expect(pivotFieldValues('Quarter', rect(0, 0, 5, 2), valueAt, textAt)).toEqual(['Q1', 'Q2'])
+    expect(pivotFieldValues('Region', rect(0, 0, 5, 2), valueAt, textAt)).toEqual(['North', 'South'])
+    expect(pivotFieldValues('Nothing', rect(0, 0, 5, 2), valueAt, textAt)).toEqual([])
+  })
+
+  it('keeps the filters through a copy and a shift', () => {
+    const p = filtered('Q1')
+    expect(copyPivot(p).filters).toEqual([{ field: 'Quarter', value: 'Q1' }])
+    const moved = shiftPivot(p, { kind: 'insertRows', at: 0, count: 2 })!
+    expect(moved.filters).toEqual([{ field: 'Quarter', value: 'Q1' }])
   })
 })

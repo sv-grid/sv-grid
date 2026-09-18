@@ -1003,6 +1003,15 @@ that pivot instead of making another, so moving a field or changing an
 aggregation is two clicks. Each write is one undo, cells and definition
 together.
 
+A field placed in **Filter** narrows the whole pivot to one of its values.
+The filter is written above the block, a line per filter with the field
+and the value, so a reader sees what the numbers are of before reading
+one; the dialog offers the values that field carries, and typing another
+value straight into the cell (or `(All)` to clear it) narrows the pivot at
+once, since the cell IS the control. The filter applies before anything is
+grouped, so the totals, the subtotals and Show Details all see the same
+rows.
+
 **Insert > Show Details** is Excel's drill-down: the source rows behind
 the number in the cell the cursor is in, written to a sheet of their own,
 with the field names across the top and the first row frozen. A cell in a
@@ -1366,18 +1375,18 @@ button that does nothing.
   its own beyond the browser's.
 - **Objects** are charts and pictures: a chart is what the Chart dialog
   sets and no more, so there are no per-series colours, no data labels and
-  no axis titles, and a
-  FLOATING picture whose source is a URL rather than a `data:` URL is left
-  out of the .xlsx, since its bytes are not in the document to write. A
-  picture in a cell, `=IMAGE(...)`, has no such limit: the formula is what
-  the file carries.
+  no axis titles. A floating picture whose source is a URL rather than a
+  `data:` URL is left out of the .xlsx, since its bytes are not in the
+  document to write; a picture in a cell, `=IMAGE(...)`, has no such limit,
+  because the formula is what the file carries.
 - **Sparklines** are the three Excel draws: no axis options beyond one
   scale for the group, and no high and low point marks beyond the last one.
   They ride in the .xlsx as Excel's sparkline groups, both ways, and they
   print with the sheet.
 - **A PivotTable** is a definition plus the cells it writes, not a live
-  object: no drag-and-drop field list, no slicers and no report filter.
-  Refresh is what brings it up to date, and Show Details is the drill-down.
+  object: no drag-and-drop field list and no slicers, and a report filter
+  holds one value at a time rather than a tick list. Refresh brings it up
+  to date and Show Details is the drill-down.
 - **Collaboration** is the delta stream and the presence overlay above and
   nothing more: no server, no operational transform, no follow-the-leader
   scrolling, and last writer wins per cell.

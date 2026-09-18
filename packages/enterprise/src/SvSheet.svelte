@@ -102,7 +102,7 @@
     type SparklineGroup, type SheetSparklineType,
   } from './sheet/sparklines'
   import {
-    pivotFields, pivotBlock, pivotDrill, pivotFromRange, pivotWrittenRect, copyPivot,
+    pivotFields, pivotFieldValues, pivotBlock, pivotDrill, pivotFromRange, pivotWrittenRect, copyPivot, ALL_VALUES,
     type SheetPivot,
   } from './sheet/pivot-range'
   import {
@@ -1915,6 +1915,16 @@
    * wrote, and keep the definition with the rectangle it now covers. One
    * undo for the cells and the definition together.
    */
+  /**
+   * True while a pivot is writing its own cells.
+   *
+   * Every cell it writes comes back through `onCellWritten`, and one of
+   * them is the report filter's own value: without this, writing the filter
+   * line would read as someone typing into it and the pivot would rewrite
+   * itself forever.
+   */
+  let writingPivot = false
+
   function writePivot(pivot: SheetPivot, replacing: boolean) {
     const cmd = cmdOf()
     if (!cmd) return
@@ -1923,6 +1933,8 @@
     if (!block.length) { say(t('pivot.needValue')); return }
     const rect = pivotWrittenRect(pivot, block)
     const next = { ...copyPivot(pivot), written: rect }
+    writingPivot = true
+    try {
     cmd.batch(() => {
       // The old block first, so a smaller result leaves nothing behind.
       const old = pivot.written
@@ -1936,6 +1948,9 @@
       })
       putPivots(replacing ? pivotsNow().map((p) => (p.id === next.id ? next : p)) : [...pivotsNow(), next])
     })
+    } finally {
+      writingPivot = false
+    }
     wb.recalculate()
     bump()
     say(t('pivotWritten', { range: `${colToLetters(rect[1])}${rect[0] + 1}:${colToLetters(rect[3])}${rect[2] + 1}` }))
@@ -3603,7 +3618,36 @@
     }
     bump()
     changed({ kind: 'cells' })
+    // A value typed into a pivot's report filter narrows the pivot at once,
+    // rather than waiting for a Refresh: the filter cell IS the control, so
+    // a number that does not follow it would be a lie on the page.
+    refilterPivot(r, c, stored)
     if (patch.wrap || entry?.wrap) fitWrappedRows()
+  }
+
+  /**
+   * The report filter written above a pivot, typed into rather than picked
+   * in the dialog. The value cell is the one beside the field name, on the
+   * filter's own line.
+   */
+  function refilterPivot(row: number, col: number, text: string) {
+    if (writingPivot) return
+    const pivot = pivotsNow().find((p) => {
+      const filters = p.filters ?? []
+      if (!filters.length || col !== p.target.col + 1) return false
+      return row >= p.target.row && row < p.target.row + filters.length
+    })
+    if (!pivot) return
+    const index = row - pivot.target.row
+    const filter = (pivot.filters ?? [])[index]
+    if (!filter) return
+    const wanted = text.trim() === ALL_VALUES ? '' : text.trim()
+    if (wanted === filter.value) return
+    const next = {
+      ...copyPivot(pivot),
+      filters: (pivot.filters ?? []).map((f, i) => (i === index ? { ...f, value: wanted } : { ...f })),
+    }
+    writePivot(next, true)
   }
 
   /**
@@ -5081,6 +5125,7 @@
       open={true}
       pivot={pivotSetup.pivot}
       fields={pivotSetup.fields}
+      valuesOf={(field) => pivotFieldValues(field, pivotSetup!.pivot.source, cellValueAt, cellTextAt)}
       existing={pivotSetup.existing}
       onApply={(next) => {
         const was = pivotSetup
