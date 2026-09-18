@@ -144,6 +144,24 @@ export type RibbonActionId =
   | 'file-open'
   | 'file-save-xlsx'
   | 'file-export-csv'
+  | 'file-print'
+  | 'page-portrait'
+  | 'page-landscape'
+  | 'paper-a4'
+  | 'paper-a3'
+  | 'paper-a5'
+  | 'paper-letter'
+  | 'paper-legal'
+  | 'paper-tabloid'
+  | 'margins-normal'
+  | 'margins-narrow'
+  | 'margins-wide'
+  | 'print-area-set'
+  | 'print-area-clear'
+  | 'print-titles'
+  | 'page-setup'
+  | 'print-gridlines'
+  | 'print-headings'
   | 'paste-special'
   | 'format-cells'
   | 'find-replace'
@@ -500,6 +518,79 @@ const FILE: RibbonTab = {
       items: [
         { id: 'file-save-xlsx', label: 'Save As', title: 'Save the workbook as an .xlsx file', keys: 'Ctrl+S', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-xlsx' },
         { id: 'file-export-csv', label: 'Export CSV', title: 'Export the active sheet as CSV', icon: 'file-csv', kind: 'button', size: 'large', emits: 'file-export-csv' },
+      ],
+    },
+    {
+      id: 'file-print',
+      icon: 'print',
+      label: 'Print',
+      items: [
+        { id: 'file-print', label: 'Print', title: 'Print the active sheet as its Page Layout says', keys: 'Ctrl+P', icon: 'print', kind: 'button', size: 'large', emits: 'file-print' },
+      ],
+    },
+  ],
+}
+
+/**
+ * Excel's Page Layout tab, the part with something behind it: Page Setup
+ * (Margins, Orientation, Size, Print Area, Print Titles, with the dialog
+ * on the launcher) and Sheet Options (whether gridlines and headings
+ * print). Raised rather than run here: the shell keeps the setup per
+ * sheet in the document, and File > Print reads it.
+ */
+const PAGE_LAYOUT: RibbonTab = {
+  id: 'page-layout',
+  label: 'Page Layout',
+  groups: [
+    {
+      id: 'page-setup',
+      icon: 'page-setup',
+      label: 'Page Setup',
+      launcher: 'page-setup',
+      items: [
+        {
+          id: 'margins', label: 'Margins', title: 'Margins', icon: 'margins', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'normal', label: 'Normal', emits: 'margins-normal', toggle: true },
+            { value: 'narrow', label: 'Narrow', emits: 'margins-narrow', toggle: true },
+            { value: 'wide', label: 'Wide', emits: 'margins-wide', toggle: true },
+          ],
+        },
+        {
+          id: 'orientation', label: 'Orientation', title: 'Orientation', icon: 'orientation', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'portrait', label: 'Portrait', emits: 'page-portrait', toggle: true },
+            { value: 'landscape', label: 'Landscape', emits: 'page-landscape', toggle: true },
+          ],
+        },
+        {
+          id: 'paper', label: 'Size', title: 'Page Size', icon: 'paper', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'letter', label: 'Letter', emits: 'paper-letter', toggle: true },
+            { value: 'legal', label: 'Legal', emits: 'paper-legal', toggle: true },
+            { value: 'tabloid', label: 'Tabloid', emits: 'paper-tabloid', toggle: true },
+            { value: 'a3', label: 'A3', emits: 'paper-a3', toggle: true },
+            { value: 'a4', label: 'A4', emits: 'paper-a4', toggle: true },
+            { value: 'a5', label: 'A5', emits: 'paper-a5', toggle: true },
+          ],
+        },
+        {
+          id: 'print-area', label: 'Print Area', title: 'Print Area', icon: 'print-area', kind: 'dropdown', size: 'large',
+          options: [
+            { value: 'set', label: 'Set Print Area', emits: 'print-area-set' },
+            { value: 'clear', label: 'Clear Print Area', emits: 'print-area-clear' },
+          ],
+        },
+        { id: 'print-titles', label: 'Print Titles', title: 'Print Titles: rows to repeat at the top of every page', icon: 'print-titles', kind: 'button', size: 'large', emits: 'print-titles' },
+      ],
+    },
+    {
+      id: 'sheet-options',
+      icon: 'gridlines',
+      label: 'Sheet Options',
+      items: [
+        small(1, { id: 'print-gridlines', label: 'Print Gridlines', title: 'Print the gridlines', icon: 'gridlines', kind: 'toggle', wide: true, emits: 'print-gridlines' }),
+        small(2, { id: 'print-headings', label: 'Print Headings', title: 'Print the row numbers and column letters', icon: 'headings', kind: 'toggle', wide: true, emits: 'print-headings' }),
       ],
     },
   ],
@@ -1065,7 +1156,7 @@ const VIEW: RibbonTab = {
   ],
 }
 
-export const RIBBON_TABS: ReadonlyArray<RibbonTab> = [FILE, HOME, INSERT, FORMULAS, DATA, REVIEW, VIEW]
+export const RIBBON_TABS: ReadonlyArray<RibbonTab> = [FILE, HOME, INSERT, PAGE_LAYOUT, FORMULAS, DATA, REVIEW, VIEW]
 
 /** Every item across every tab, for tests and for a command palette. */
 export function ribbonItems(): ReadonlyArray<RibbonItem> {

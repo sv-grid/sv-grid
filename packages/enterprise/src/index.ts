@@ -180,6 +180,11 @@ export { default as SvSheetSort } from './SvSheetSort.svelte'
 export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sheet/sort'
 export { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
 export { csvText } from './sheet/csv'
+export {
+  defaultPageSetup, copyPageSetup, marginPresetOf, shiftPageSetup, marginsCss, MARGIN_PRESETS, PAPER_SIZES,
+  type PageSetup, type PageMargins, type PageOrientation, type PaperSize, type MarginPreset,
+} from './sheet/page-setup'
+export { sheetPrintHtml, printAreas, type SheetPrintInput, type SheetPrintCell } from './sheet/print'
 export { sheetCellsFromRows, cellTextOf, type SheetField, type SheetFromRowsOptions } from './sheet/from-rows'
 export { functionCatalog, FUNCTION_GROUPS, type FunctionInfo, type FunctionGroup } from './sheet/function-catalog'
 export { parseEntry, completeEntry, type ParsedEntry } from './sheet/entry'

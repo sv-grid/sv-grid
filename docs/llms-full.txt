@@ -17658,6 +17658,7 @@ so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
 | Shift + F11 | New sheet. |
 | Ctrl/Cmd + O | Open an .xlsx (the shell's File > Open). |
 | Ctrl/Cmd + S | Save As .xlsx (File > Save As). |
+| Ctrl/Cmd + P | Print the active sheet as its Page Layout says (File > Print). |
 
 ## What Ctrl+Arrow actually does
 
@@ -18955,7 +18956,7 @@ application answers them.
 | `commentAuthor` | | Who signs a new comment and a reply, with the time; unset, a new comment is a plain note. |
 | `localization` | | `{ locale, text }`: the language of the chrome. `text` overrides any of the shell's strings (see [Localisation](#localisation)); `locale` formats the status bar's numbers and reaches the grid underneath. |
 | `onReady` | | The `SvGridApi` and the document, once the grid has mounted. |
-| `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
+| `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `page-setup`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
 
 `formats` matters more than it looks: without it a sheet can only be
 formatted by hand after it loads, which makes it impossible to ship a
@@ -18983,7 +18984,7 @@ or `'Price list'!C2` when the name has a space:
 ## Files
 
 The File tab is the part of Excel's a document in a page can do: New,
-Open, Save As and Export CSV. Open takes an .xlsx from disk and replaces
+Open, Save As, Export CSV and Print. Open takes an .xlsx from disk and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
 sheets, frozen panes, merges, the filter region, validation, conditional
@@ -18991,15 +18992,19 @@ formatting, protection, comments, names, the active sheet); Save As
 downloads the document as an .xlsx that Excel and Google Sheets open with
 the same parts; Export CSV downloads the active sheet as its cells show;
 New starts over with one empty sheet, asking first when the sheets hold
-anything. `documentToXlsx` and `documentFromXlsx` are the two halves, in
-`@svgrid/enterprise/sheet`, and need the `jszip` peer.
+anything; Print (Ctrl+P) opens the active sheet in the browser's print
+dialog as its Page Layout says (below). `documentToXlsx` and
+`documentFromXlsx` are the two halves, in `@svgrid/enterprise/sheet`, and
+need the `jszip` peer.
 
 An app that keeps its workbooks somewhere other than the user's disk takes
 the actions over through `onAction` (`file-open`, `file-save-xlsx`,
-`file-new`, `file-export-csv`) and calls the component's own methods:
-`open(file)` replaces the document with an .xlsx Blob, `toXlsx()` returns
-the document as a Blob, `toCsv()` the active sheet as text, and
-`newWorkbook()` empties it.
+`file-new`, `file-export-csv`, `file-print`) and calls the component's
+own methods: `open(file)` replaces the document with an .xlsx Blob,
+`toXlsx()` returns the document as a Blob, `toCsv()` the active sheet as
+text, `newWorkbook()` empties it, `print()` opens the print dialog and
+`printHtml()` returns the page it would print, for an app that prints
+its own way.
 
 ```svelte
 <SvSheet bind:this={sheet} onAction={(action) => {
@@ -19013,13 +19018,36 @@ a text date goes out as a serial under a date format, and a serial under a
 date format comes back as text. Tables, charts and images are not carried
 either way.
 
+## Page Layout and Print
+
+The Page Layout tab is Excel's Page Setup group and Sheet Options, per
+sheet and part of the document: Margins (Normal, Narrow, Wide),
+Orientation, Size (Letter, Legal, Tabloid, A3, A4, A5), Print Area (Set
+takes the selection, Clear puts the whole sheet back), Print Titles (the
+rows that repeat at the top of every page), the group's launcher opening
+the Page Setup dialog with all of it and the scale, and Print Gridlines
+and Print Headings. Each change is one undo and reports
+`{ kind: 'page-setup' }`.
+
+File > Print (Ctrl+P) lays the sheet out as one HTML document and hands it
+to the browser's own print engine, so fonts, CJK and RTL come out right
+and nothing is bundled: the print area or the used range, column widths
+and row heights as the sheet shows them, hidden lines left out, merges as
+spans, every cell as it shows with its format and its conditional style,
+the title rows repeated on each page, gridlines and headings when asked,
+and the orientation, paper and margins in `@page`. "Save as PDF" in that
+dialog is the PDF. The setup rides in `getState()` as `pageSetup` and in
+the xlsx as `pageSetup`, `pageMargins`, `printOptions` and Excel's own
+`Print_Area` and `Print_Titles` names, both ways.
+
 ## Saving and restoring
 
 Everything the user does lands in the sheet's document: the workbook (raw
 text, formulas as typed, names, the active sheet), and per sheet the
 formats (locked flags included), column widths, row heights, hidden lines,
 frozen panes, comments, the protection flag with its allow list and edit
-ranges, the validation rules and the conditional formatting rules.
+ranges, the page setup, the validation rules and the conditional
+formatting rules.
 `getState()` returns it as plain JSON and
 `setState()` puts it back into the same workbook object, so an autosave
 is an `onChange` handler and a reload is one call after mount:
@@ -19077,6 +19105,7 @@ and `CfRule`):
       comments: { r1: { B: 'Check with finance' }, r4: { D: { text: 'Over budget?', author: 'Ana', at: '2026-03-04T10:00:00.000Z', replies: [{ text: 'By 3%', author: 'Ben', at: '2026-03-04T11:00:00.000Z' }] } } },
       protected: false,
       protection: { allow: { formatRows: true }, ranges: [{ id, title: 'Inputs', rects: [[1, 1, 9, 1]] }] },
+      pageSetup: { orientation: 'landscape', paper: 'A4', margins: { top: 0.75, bottom: 0.75, left: 0.7, right: 0.7, header: 0.3, footer: 0.3 }, printArea: null, printTitleRows: [0, 0], gridlines: false, headings: false, scale: 100 },
       merges: [],
       validation: [{ id, rects, allow: 'whole', operator: 'between', value1: '1', value2: '10', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' } }],
       conditionalFormats: [{ id, rects, kind: 'cellIs', operator: 'greater', value1: '50000', style: { fill: '#FFC7CE', color: '#9C0006' } }],
@@ -19218,6 +19247,7 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
+| Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
 | Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
 | Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
 | Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
@@ -19542,9 +19572,9 @@ The shell is the part of Excel a team's spreadsheet uses every day; these
 are the parts it leaves out, on purpose, so nothing on the ribbon is a
 button that does nothing.
 
-- **Tabs:** no Page Layout (print setup has nothing behind it in the
-  grid), no track-changes on Review; File has New, Open, Save As and
-  Export CSV, not Print.
+- **Tabs:** no track-changes on Review; Page Layout has no themes, no
+  page breaks and no header or footer text, and Print has no preview of
+  its own beyond the browser's.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they

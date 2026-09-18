@@ -24,6 +24,7 @@ import type { StructuralEdit } from './refs'
 import { lineShift, remapNotes, shiftRect, type Rect } from './rects'
 import type { CommentsMap, CommentValue } from './comments'
 import { copyProtection, defaultProtection, type SheetProtection } from './protection'
+import { copyPageSetup, defaultPageSetup, shiftPageSetup, type PageSetup } from './page-setup'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
@@ -41,6 +42,7 @@ export type SheetChangeReason =
   | { kind: 'validation' }
   | { kind: 'conditional-formats' }
   | { kind: 'protection' }
+  | { kind: 'page-setup' }
   | { kind: 'merges' }
   | { kind: 'filter' }
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }
@@ -60,6 +62,8 @@ export type PerSheetState = {
   protected: boolean
   /** What stays allowed while protected, and the ranges that take an edit anyway. */
   protection: SheetProtection
+  /** Page Layout: orientation, paper, margins, print area, title rows, gridlines, headings, scale. */
+  pageSetup: PageSetup
   /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
   sheetHidden: boolean
   merges: Rect[]
@@ -85,6 +89,8 @@ export type SheetStateEntry = {
   protected: boolean
   /** Absent in documents saved before the allow list and edit ranges existed. */
   protection?: SheetProtection
+  /** Absent in documents saved before Page Layout existed. */
+  pageSetup?: PageSetup
   /** Absent in documents saved before hidden sheets existed. */
   sheetHidden?: boolean
   merges: Array<[number, number, number, number]>
@@ -160,6 +166,7 @@ function emptySheetState(): PerSheetState {
     notes: {},
     protected: false,
     protection: defaultProtection(),
+    pageSetup: defaultPageSetup(),
     sheetHidden: false,
     merges: [],
     validation: [],
@@ -227,6 +234,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       comments: Object.fromEntries(Object.entries(state.notes).map(([r, line]) => [r, copyLine(line)])),
       protected: state.protected,
       protection: copyProtection(state.protection),
+      pageSetup: copyPageSetup(state.pageSetup),
       sheetHidden: state.sheetHidden,
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
       validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
@@ -244,6 +252,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.notes = Object.fromEntries(Object.entries(entry.comments ?? {}).map(([r, line]) => [r, copyLine(line)]))
     state.protected = entry.protected ?? false
     state.protection = entry.protection ? copyProtection({ allow: entry.protection.allow ?? {}, ranges: entry.protection.ranges ?? [] }) : defaultProtection()
+    state.pageSetup = entry.pageSetup ? copyPageSetup({ ...defaultPageSetup(), ...entry.pageSetup }) : defaultPageSetup()
     state.sheetHidden = entry.sheetHidden ?? false
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     state.validation = (entry.validation ?? []).map((rule) => ({
@@ -332,6 +341,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       state.validation = shiftValidation(state.validation, edit)
       state.conditionalFormats = shiftCf(state.conditionalFormats, edit)
       state.autoFilter = shiftAutoFilter(state.autoFilter, edit)
+      state.pageSetup = shiftPageSetup(state.pageSetup, edit)
       state.protection = {
         allow: state.protection.allow,
         ranges: state.protection.ranges

@@ -38,6 +38,11 @@ per item:
   list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
   beside the flag, and `sheetProtection` attributes and `protectedRanges`
   in the xlsx both ways. Phase C is complete.
+- Phase A items 4 and 5: `PageSetup` per sheet, the Page Layout tab
+  (margins, orientation, size, print area, print titles, gridlines,
+  headings, the Page Setup dialog), File > Print over `sheetPrintHtml`,
+  and `pageSetup` / `pageMargins` / `printOptions` / the print names in
+  the xlsx both ways. Phase A is complete.
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
@@ -101,7 +106,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Open an xlsx as a whole document~~ | shipped: `documentFromXlsx`, File > Open | done |
 | ~~Save the document as xlsx~~ | shipped: `documentToXlsx`, File > Save As | done |
 | ~~CSV out of the active sheet~~ | shipped: File > Export CSV; CSV in is still the grid's importer | done |
-| Print and Page Layout | `export-print.ts` prints grid rows; no Page Layout tab, no page setup, no print area | M |
+| ~~Print and Page Layout~~ | shipped: the Page Layout tab, the Page Setup dialog, File > Print, `pageSetup` in the state and the xlsx | done |
 | Persistence hooks (autosave to a server) | `onChange` + `getState()`; demo 465 does localStorage | S (docs and a recipe) |
 
 ### Formula engine
@@ -185,10 +190,15 @@ The single most-asked question a spreadsheet gets is "can I open my file".
    Open and Save use the browser's file input and download; a host can take
    any of them over through `onAction`, which is how a server-backed app
    will save.
-4. **Print**: a Page Layout tab with orientation, margins, print area,
-   repeat header rows, feeding `export-print.ts` with the sheet's formats.
-5. Docs: a new `docs/help/cells/sheet-files.md`; remove "no Page Layout"
-   from the shell page; a demo that opens a bundled xlsx.
+4. ~~**Print**: a Page Layout tab with orientation, margins, print area,
+   repeat header rows, feeding `export-print.ts` with the sheet's formats.~~
+   Shipped, with a builder of its own (`sheet/print.ts`) rather than the
+   grid's, because merges, widths and per-cell formats need a different
+   table.
+5. ~~Docs: a new `docs/help/cells/sheet-files.md`; remove "no Page Layout"
+   from the shell page; a demo that opens a bundled xlsx.~~ Done as the
+   Files and Page Layout sections of the shell page rather than a page of
+   their own, and demo 474 saves and reopens a file.
 
 ### Phase B. Engine breadth (M, then L for spill)
 
