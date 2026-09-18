@@ -184,6 +184,7 @@ export type RibbonActionId =
   | 'insert-link'
   | 'remove-table'
   | 'table-style'
+  | 'pivot-details'
   | 'remove-link'
   | 'insert-table'
   | 'recalculate'
@@ -932,6 +933,7 @@ const INSERT: RibbonTab = {
         { id: 'pivot-table', label: 'PivotTable', title: 'Summarise the selected block', icon: 'pivot', kind: 'button', size: 'large', emits: 'insert-pivot' },
         { id: 'table', label: 'Table', title: 'Format the selection as a table', keys: 'Ctrl+T', icon: 'table', kind: 'button', size: 'large', emits: 'insert-table' },
         small(1, { id: 'pivot-refresh', label: 'Refresh', title: 'Rebuild the PivotTable here from its source', icon: 'calculate', kind: 'button', wide: true, emits: 'refresh-pivot' }),
+        small(1, { id: 'pivot-details', label: 'Show Details', title: 'Show Details: the source rows behind the number in this PivotTable cell, on a sheet of their own', icon: 'pivot', kind: 'button', wide: true, emits: 'pivot-details' }),
         small(2, { id: 'table-remove', label: 'To Range', title: 'Convert the table here back to ordinary cells', icon: 'delete-cells', kind: 'button', wide: true, emits: 'remove-table' }),
         small(3, { id: 'table-style', label: 'Table Styles', title: 'Pick the look of the table the cursor is in', icon: 'table', kind: 'button', wide: true, emits: 'table-style' }),
       ],

@@ -166,6 +166,9 @@ export type SheetTextMessages = {
   sparklineObject: string
   selectBlockToPivot: string
   noPivotHere: string
+  noPivotDetails: string
+  pivotDetails: string
+  pivotDetailsSheet: string
   linkRemoved: string
   noLinkHere: string
   selectBlockToTable: string
@@ -910,6 +913,9 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   sparklineObject: '{type} sparkline',
   selectBlockToPivot: 'Select the block to summarise, its header row included.',
   noPivotHere: 'No PivotTable here. Select a cell inside one.',
+  noPivotDetails: 'That cell has no source rows behind it.',
+  pivotDetails: '{count} rows behind that cell, on "{name}".',
+  pivotDetailsSheet: 'Details',
   linkRemoved: 'Link removed.',
   noLinkHere: 'No link in the selection.',
   selectBlockToTable: 'Select the cells to make a table of, headers included.',

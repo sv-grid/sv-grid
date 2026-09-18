@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  copyPivot, pivotBlock, pivotFields, pivotFromRange, pivotId, pivotRecords,
+  copyPivot, pivotBlock, pivotDrill, pivotFields, pivotFromRange, pivotId, pivotLayout, pivotRecords,
   pivotWrittenRect, shiftPivot, shiftPivots, type SheetPivot,
 } from './pivot-range'
 import type { Rect } from './format-store'
@@ -113,5 +113,57 @@ describe('pivotFromRange, pivotWrittenRect and shifting', () => {
     expect(two).toEqual(one)
     expect(two.source).not.toBe(one.source)
     expect(two.values[0]).not.toBe(one.values[0])
+  })
+})
+
+describe('drilling into a pivot cell', () => {
+  it('opens the rows behind one cell of a row-by-column pivot', () => {
+    const p = pivot({ cols: ['Quarter'] })
+    const block = pivotBlock(p, valueAt, textAt)
+    // Find the South / Q2 cell in the written block, then drill it.
+    const line = block.findIndex((row) => row[0]?.trim() === 'South')
+    const column = block[0]!.findIndex((cell) => cell === 'Q2')
+    expect(line).toBeGreaterThan(0)
+    expect(column).toBeGreaterThan(0)
+    const drill = pivotDrill(p, p.target.row + line, p.target.col + column, valueAt, textAt)!
+    expect(drill.rowPath).toEqual(['South'])
+    expect(drill.colPath).toEqual(['Q2'])
+    expect(drill.records.map((r) => r.Amount)).toEqual([120, 20])
+    expect(drill.fields).toEqual(['Region', 'Quarter', 'Amount'])
+  })
+
+  it('opens a whole row for a cell in the grand total column', () => {
+    const p = pivot({ cols: ['Quarter'] })
+    const block = pivotBlock(p, valueAt, textAt)
+    const line = block.findIndex((row) => row[0]?.trim() === 'North')
+    const drill = pivotDrill(p, p.target.row + line, p.target.col + block[0]!.length - 1, valueAt, textAt)!
+    expect(drill.colPath).toEqual([])
+    expect(drill.records.map((r) => r.Amount)).toEqual([100, 150])
+  })
+
+  it('opens every row for the grand total line', () => {
+    const p = pivot()
+    const block = pivotBlock(p, valueAt, textAt)
+    const line = block.length - 1
+    const drill = pivotDrill(p, p.target.row + line, p.target.col + 1, valueAt, textAt)!
+    expect(drill.rowPath).toEqual([])
+    expect(drill.records).toHaveLength(5)
+  })
+
+  it('opens the group when the cell is a subtotal of one', () => {
+    const p = pivot({ rows: ['Region', 'Quarter'] })
+    const layout = pivotLayout(p, valueAt, textAt)
+    const line = layout.cells.findIndex((row, i) => i >= layout.headerCount && row[0]?.trim() === 'South')
+    expect(layout.rowPaths[line]).toEqual(['South'])
+    const drill = pivotDrill(p, p.target.row + line, p.target.col + 1, valueAt, textAt)!
+    expect(drill.records.map((r) => r.Amount)).toEqual([80, 120, 20])
+  })
+
+  it('says nothing for a header, the label column, or a cell outside the block', () => {
+    const p = pivot()
+    expect(pivotDrill(p, p.target.row, p.target.col + 1, valueAt, textAt)).toBeNull()
+    expect(pivotDrill(p, p.target.row + 1, p.target.col, valueAt, textAt)).toBeNull()
+    expect(pivotDrill(p, p.target.row + 99, p.target.col + 1, valueAt, textAt)).toBeNull()
+    expect(pivotDrill(p, p.target.row + 1, p.target.col - 1, valueAt, textAt)).toBeNull()
   })
 })

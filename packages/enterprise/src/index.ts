@@ -220,9 +220,9 @@ export {
   type SparklineGroup, type SheetSparklineType,
 } from './sheet/sparklines'
 export {
-  pivotFields, pivotRecords, pivotBlock, pivotFromRange, pivotWrittenRect, flattenPivotColumns,
+  pivotFields, pivotRecords, pivotBlock, pivotLayout, pivotDrill, pivotFromRange, pivotWrittenRect, flattenPivotColumns,
   shiftPivot, shiftPivots, copyPivot, pivotId, SHEET_PIVOT_AGGS,
-  type SheetPivot, type SheetPivotValue, type SheetPivotAgg,
+  type SheetPivot, type SheetPivotValue, type SheetPivotAgg, type PivotLayout as SheetPivotLayout, type PivotDrill,
 } from './sheet/pivot-range'
 export {
   createDeltaStream, applySheetDelta, partsOfReasons,

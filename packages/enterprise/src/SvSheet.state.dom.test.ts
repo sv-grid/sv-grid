@@ -856,3 +856,58 @@ describe('SvSheet IMAGE cells', () => {
     expect(html).toContain(`<span class="im"><img src="${PNG}" alt="A widget">`)
   })
 })
+
+describe('SvSheet PivotTable Show Details', () => {
+  it('writes the rows behind a pivot cell to a sheet of their own', async () => {
+    const doc = createSheetDocument({
+      sheets: [{ name: 'Sales', cells: [
+        ['Region', 'Quarter', 'Amount'],
+        ['North', 'Q1', '100'],
+        ['North', 'Q2', '150'],
+        ['South', 'Q1', '80'],
+        ['South', 'Q2', '120'],
+      ] }],
+    })
+    // A pivot of Amount by Region, written beside the data.
+    doc.get('Sales').pivots = [{
+      id: 'p1',
+      source: [0, 0, 4, 2] as never,
+      // Below the data rather than beside it: jsdom lays out only the
+      // first few columns, and the write goes through the grid.
+      target: { row: 6, col: 0 },
+      rows: ['Region'],
+      cols: [],
+      values: [{ field: 'Amount', agg: 'sum' }],
+      written: [6, 0, 9, 1] as never,
+    }]
+    const { api, sheet } = await mountSheet({ document: doc, rows: 20, columns: 4 })
+    const cmd = api.getCommandContext()
+    const paint = async () => { flushSync(); await tick() }
+
+    // Refresh acts on the pivot the cursor is in, as Excel's does.
+    cmd.setActiveCell(6, 0)
+    cmd.setSelection(6, 0)
+    await paint()
+    sheet.act('refresh-pivot')
+    await paint()
+
+    // The North line of the pivot, and its number.
+    expect(doc.workbook.getRaw('Sales', 7, 0).trim()).toBe('North')
+    cmd.setActiveCell(7, 1)
+    cmd.setSelection(7, 1)
+    await paint()
+    sheet.act('pivot-details')
+    await paint()
+
+    // A new sheet, active, with the header and the two North rows.
+    const names = doc.workbook.sheets
+    expect(names).toContain('Details')
+    expect(doc.workbook.active).toBe('Details')
+    expect(doc.workbook.getRaw('Details', 0, 0)).toBe('Region')
+    expect(doc.workbook.getRaw('Details', 1, 0)).toBe('North')
+    expect(doc.workbook.getRaw('Details', 1, 2)).toBe('100')
+    expect(doc.workbook.getRaw('Details', 2, 2)).toBe('150')
+    expect(doc.workbook.getRaw('Details', 3, 0)).toBe('')
+    expect(doc.get('Details').freeze).toEqual({ rows: 1, cols: 0 })
+  })
+})
