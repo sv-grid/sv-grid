@@ -63,6 +63,12 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Phase D, PivotTable: `sheet/pivot-range.ts` (the definition, the records
+  read from a range, the block the engine's result becomes, shifting) over
+  the existing `pivot.ts`, `pivots` per sheet in the document, Insert >
+  PivotTable and Insert > Refresh on the Tables group, and the Create
+  PivotTable dialog with its field list. The result is written as cells in
+  one undo. Phase D is complete but for the objects in the .xlsx.
 - Phase D, sparklines: `sheet/sparklines.ts` (the group, its two ranges,
   the series a cell draws, the shared scale, shifting), `sparklines` per
   sheet in the document, the Sparklines group on the Insert tab (Line,
@@ -184,7 +190,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`; not in the .xlsx and not on the printed page | done |
 | Hyperlinks (HYPERLINK function and Insert > Link) | none | S |
 | ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL; not in the .xlsx. In a cell is still not done | done |
-| PivotTable from a range | the pivot engine exists; no Insert > PivotTable | L |
+| ~~PivotTable from a range~~ | shipped: `SheetPivot` in the document, Insert > PivotTable and Refresh, the result written as cells | done |
 
 ### Reach
 
@@ -293,11 +299,10 @@ anchored rectangles (chart, image, sparkline group), stored in the document,
 moved with insert and delete through `shiftRect` in `rects.ts`, and
 serialised by Phase A.~~ Charts, pictures and sparklines shipped: the
 layer, the anchor, the Chart dialog, Insert > Chart and Insert > Picture,
-and the sparkline groups with their own dialog on the Insert tab. Not
-done: any of them in the .xlsx (a chart part is a large piece of OOXML of
-its own, and a sparkline is an x14 extension), and PivotTable from a
-range, which comes last and reuses `pivot.ts` with a sheet range as its
-row source.
+and the sparkline groups with their own dialog on the Insert tab. The PivotTable over a range came last, as
+planned, on `pivot.ts` with the sheet range as its row source. Not done:
+any of them in the .xlsx (a chart part is a large piece of OOXML of its
+own, and a sparkline is an x14 extension).
 
 ### Phase E. Reach (M)
 

@@ -86,6 +86,7 @@
   import SvSheetPageSetup from './SvSheetPageSetup.svelte'
   import SvSheetChartSetup from './SvSheetChartSetup.svelte'
   import SvSheetSparklines from './SvSheetSparklines.svelte'
+  import SvSheetPivot from './SvSheetPivot.svelte'
   import {
     chartSpecOf, chartFromRange, copyObject, objectId,
     type SheetObject, type SheetChartObject, type ObjectAnchor,
@@ -94,6 +95,10 @@
     sparklinesFromRange, sparklineAt, sparklineSeries, sparklineScale, clearSparklines, copySparkline,
     type SparklineGroup, type SheetSparklineType,
   } from './sheet/sparklines'
+  import {
+    pivotFields, pivotBlock, pivotFromRange, pivotWrittenRect, copyPivot,
+    type SheetPivot,
+  } from './sheet/pivot-range'
   import { SvChart, SvSparkline } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -1468,6 +1473,97 @@
     return { group, values, min: scale?.min, max: scale?.max }
   }
 
+  // --- PivotTable over a range ---------------------------------------------
+  /**
+   * Excel's PivotTable, on the pivot engine the grid already has. The
+   * document keeps the DEFINITION per sheet: the source block, where the
+   * result goes and the fields on each axis. The result itself is plain
+   * cells, written in one undo, so every other part of the shell works on
+   * it. Refresh rebuilds the block, which is what a pivot over live cells
+   * owes the user.
+   */
+  const pivotsNow = (): SheetPivot[] => doc.get(wb.active).pivots
+  let pivotSetup = $state<{ pivot: SheetPivot; fields: string[]; existing: boolean } | null>(null)
+
+  function putPivots(next: SheetPivot[]) {
+    const sheet = wb.active
+    const before = doc.get(sheet).pivots
+    const put = (value: SheetPivot[]) => {
+      doc.get(sheet).pivots = value
+      bump()
+      changed({ kind: 'pivots' })
+    }
+    put(next)
+    cmdOf()?.recordUndo(() => put(before), () => put(next))
+  }
+
+  const cellValueAt = (r: number, c: number) => wb.getValue(wb.active, r, c)
+  const cellTextAt = (r: number, c: number) => String(wb.getValue(wb.active, r, c) ?? '')
+
+  /** The pivot whose written block holds this cell, or null. */
+  function pivotAt(row: number, col: number): SheetPivot | null {
+    for (const pivot of pivotsNow()) {
+      const w = pivot.written
+      if (w && row >= w[0] && row <= w[2] && col >= w[1] && col <= w[3]) return pivot
+      if (!w && row === pivot.target.row && col === pivot.target.col) return pivot
+    }
+    return null
+  }
+
+  /**
+   * Write a pivot's block into the cells, clearing what the last refresh
+   * wrote, and keep the definition with the rectangle it now covers. One
+   * undo for the cells and the definition together.
+   */
+  function writePivot(pivot: SheetPivot, replacing: boolean) {
+    const cmd = cmdOf()
+    if (!cmd) return
+    if (protectedNow()) { refuse(); return }
+    const block = pivotBlock(pivot, cellValueAt, cellTextAt)
+    if (!block.length) { say(t('pivot.needValue')); return }
+    const rect = pivotWrittenRect(pivot, block)
+    const next = { ...copyPivot(pivot), written: rect }
+    cmd.batch(() => {
+      // The old block first, so a smaller result leaves nothing behind.
+      const old = pivot.written
+      if (old) {
+        for (let r = old[0]; r <= old[2]; r += 1) {
+          for (let c = old[1]; c <= old[3]; c += 1) cmd.setCellValue(r, c, '')
+        }
+      }
+      block.forEach((line, i) => {
+        line.forEach((text, j) => cmd.setCellValue(pivot.target.row + i, pivot.target.col + j, text))
+      })
+      putPivots(replacing ? pivotsNow().map((p) => (p.id === next.id ? next : p)) : [...pivotsNow(), next])
+    })
+    wb.recalculate()
+    bump()
+    say(t('pivotWritten', { range: `${colToLetters(rect[1])}${rect[0] + 1}:${colToLetters(rect[3])}${rect[2] + 1}` }))
+  }
+
+  /** Insert > PivotTable: the dialog on the selected block, or on the one here. */
+  function insertPivot() {
+    if (protectedNow()) { refuse(); return }
+    const here = pivotAt(active.rowIndex, active.colIndex)
+    if (here) {
+      pivotSetup = { pivot: here, fields: pivotFields(here.source, cellTextAt), existing: true }
+      return
+    }
+    const rects = selectedRects().map(normalRect)
+    const rect = rects[rects.length - 1]
+    if (!rect || rect[0] === rect[2] || rect[1] === rect[3]) { say(t('selectBlockToPivot')); return }
+    const fields = pivotFields(rect, cellTextAt)
+    pivotSetup = { pivot: pivotFromRange(rect, fields), fields, existing: false }
+  }
+
+  /** Refresh: the block again from the source, in place. */
+  function refreshPivot() {
+    const here = pivotAt(active.rowIndex, active.colIndex)
+    if (!here) { say(t('noPivotHere')); return }
+    writePivot(here, true)
+    say(t('pivotRefreshed'))
+  }
+
   /** The spec a chart object draws right now: its range, read live. */
   function specOf(object: SheetChartObject) {
     void version
@@ -2628,6 +2724,14 @@
       case 'clear-sparklines':
         if (onAction?.(action, context) === true) return
         clearSparklinesHere()
+        return
+      case 'insert-pivot':
+        if (onAction?.(action, context) === true) return
+        insertPivot()
+        return
+      case 'refresh-pivot':
+        if (onAction?.(action, context) === true) return
+        refreshPivot()
         return
       case 'trace-precedents': trace('precedents'); return
       case 'trace-dependents': trace('dependents'); return
@@ -4335,6 +4439,24 @@
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
   <input class="sheet-file-input" type="file" accept="image/*" bind:this={imageInput} onchange={pickedPicture} aria-hidden="true" tabindex="-1" />
+  {#if pivotSetup}
+    <SvSheetPivot
+      open={true}
+      pivot={pivotSetup.pivot}
+      fields={pivotSetup.fields}
+      existing={pivotSetup.existing}
+      onApply={(next) => {
+        const was = pivotSetup
+        writePivot(next, Boolean(was?.existing))
+      }}
+      onDelete={() => {
+        const id = pivotSetup?.pivot.id
+        pivotSetup = null
+        if (id) putPivots(pivotsNow().filter((p) => p.id !== id))
+      }}
+      onClose={() => { pivotSetup = null; afterDialog() }}
+    />
+  {/if}
   {#if sparklineSetup}
     <SvSheetSparklines
       open={true}

@@ -1,0 +1,24 @@
+{
+  "description": "Excel's Insert > PivotTable over a block of cells in a Svelte 5 spreadsheet, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source. This sheet opens with sales by region down the rows and quarters across the columns. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet pivot table",
+    "svelte sheet insert pivottable",
+    "svelte excel pivot from range",
+    "svelte pivot refresh cells",
+    "svelte spreadsheet summarise range"
+  ],
+  "faq": [
+    {
+      "question": "Is the result live, like Excel's?",
+      "answer": "The definition is live, the cells are cells. The sheet remembers the source block, the axes and the measures; Refresh rebuilds the block from the source and clears whatever the last one wrote. Between refreshes the result is ordinary cells, which is what lets you format, chart, print and save it."
+    },
+    {
+      "question": "Can I change the fields after the fact?",
+      "answer": "Yes. Put the cursor inside the written block and press Insert > PivotTable: the dialog opens on that pivot, with the fields as they stand. Move a field between Rows, Columns and Values, change how a value is summarised, or turn the grand total and the subtotals off."
+    },
+    {
+      "question": "What happens when rows are inserted above it?",
+      "answer": "The definition moves with the cells: the source block, the target cell and the rectangle the last refresh wrote all shift. A pivot whose source is deleted, or whose target cell is, is dropped."
+    }
+  ]
+}
