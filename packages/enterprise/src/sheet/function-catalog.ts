@@ -175,6 +175,7 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   PROPER: { group: 'Text', description: 'Converts a text string to proper case: the first letter in each word to uppercase, and all other letters to lowercase.', signature: 'PROPER(text)' },
   REPT: { group: 'Text', description: 'Repeats text a given number of times.', signature: 'REPT(text, count)' },
   VALUE: { group: 'Text', description: 'Converts a text string that represents a number to a number.', signature: 'VALUE(text)' },
+  IMAGE: { group: 'Lookup & Reference', description: 'Puts a picture in the cell, from a web address or a data URL.', signature: 'IMAGE(source, [alt_text])' },
   NUMBERVALUE: { group: 'Text', description: 'Converts text to a number, with the decimal and group separators given rather than guessed.', signature: 'NUMBERVALUE(text, [decimal_separator], [group_separator])' },
   CHAR: { group: 'Text', description: 'Returns the character specified by the code number.', signature: 'CHAR(number)' },
   CODE: { group: 'Text', description: 'Returns a numeric code for the first character in a text string.', signature: 'CODE(text)' },

@@ -108,6 +108,7 @@
   import {
     linkAt, setLink, removeLink, parseLinkTarget, linkTitle, hyperlinkArgument, type SheetLink,
   } from './sheet/links'
+  import { imageCall, isDrawableImageSource } from './sheet/cell-images'
   import { isValidTableName, type TableRegion } from './sheet/tables'
   import { tableStyleColours, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
   import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, type SheetPresence } from './sheet/presence'
@@ -475,6 +476,9 @@
         // The sparkline the cell draws, at the size the printed cell will
         // be rather than the one on screen, since a print column is the
         // width the setup gives it.
+        // A picture in the cell prints in the cell, as it is drawn.
+        const picture = imageAt(r, c)
+        const image = picture ? `<img src="${escapeHtml(picture.src)}" alt="${escapeHtml(picture.alt)}">` : ''
         const spark = sparkAt(r, c)
         const sparkline = spark
           ? sparklineSvg(spark.values, {
@@ -488,7 +492,7 @@
             markers: spark.group.markers,
           })
           : ''
-        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}), ...(sparkline ? { sparkline } : {}) }
+        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}), ...(sparkline ? { sparkline } : {}), ...(image ? { image } : {}) }
       },
       widths: api ? api.getColumnWidths() : state.widths,
       defaultWidth: columnWidth,
@@ -1581,6 +1585,29 @@
   }
 
   /** What one cell's sparkline draws right now, or null. */
+  /**
+   * The picture a cell holding `=IMAGE(...)` shows: the source it works out
+   * to, and the alt text its second argument works out to.
+   *
+   * The source is the cell's own value, since that is what the function
+   * answers; the alt text is evaluated separately, because a cell has one
+   * value and a picture needs two things said about it.
+   */
+  function imageAt(row: number, col: number): { src: string; alt: string } | null {
+    const call = imageCall(raw(row, col))
+    if (!call) return null
+    const value = wb.getValue(wb.active, row, col)
+    if (isError(value)) return null
+    const src = String(value ?? '')
+    if (!isDrawableImageSource(src)) return null
+    let alt = ''
+    if (call.alt) {
+      const answered = wb.evaluateText(wb.active, `=${call.alt}`, undefined, { row, col })
+      alt = isError(answered) ? '' : String(answered ?? '')
+    }
+    return { src, alt }
+  }
+
   function sparkAt(row: number, col: number): { group: SparklineGroup; values: number[]; min?: number; max?: number } | null {
     const group = sparklineAt(activeSparklines, row, col)
     if (!group) return null
@@ -4573,6 +4600,13 @@
   {/if}
   {@const link = showFormulas ? undefined : linkAt(activeLinks, props.r, props.c)}
   {@const linked = !!link || (!showFormulas && !!hyperlinkArgument(raw(props.r, props.c)))}
+  {@const cellImage = showFormulas || typing ? null : imageAt(props.r, props.c)}
+  {#if cellImage}
+    <!-- Excel's IMAGE: the picture IS the cell, so it sorts, filters and
+         moves with its row and nothing has to be kept in step. It fits the
+         cell, which is what Excel's default sizing does. -->
+    <img class="sheet-cell-image" src={cellImage.src} alt={cellImage.alt} draggable="false" />
+  {/if}
   {@const part = activeTables.length ? tablePartAt(props.r, props.c) : null}
   {#if part}
     <!-- Excel's table style, drawn rather than written into the cells: the
@@ -4590,7 +4624,7 @@
     class:has-icon={!!cf?.icon}
     style={`text-align:${align};${part && part.text !== 'inherit' ? `color:${part.text};` : ''}${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
     title={link ? linkTitle(link) : hashes ? shown.text : raw(props.r, props.c)}
-  >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{hashes ?? shown.text}</span>
+  >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{cellImage ? '' : hashes ?? shown.text}</span>
   {@const arrow = filterArrowAt(props.r, props.c)}
   {#if arrow}
     <!-- Excel's AutoFilter arrow on the region's header row: a funnel once
@@ -5959,6 +5993,17 @@
   .sheet-table-fill.totals {
     background: var(--sheet-table-totals, color-mix(in srgb, var(--sg-accent, #107c41) 12%, transparent));
     border-top: 1px solid var(--sheet-table-border, color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent));
+  }
+
+  /* A picture in the cell: fitted inside it, and out of the pointer's way
+     so the cell is selected, dragged and typed into as a cell. */
+  .sheet-cell-image {
+    position: absolute;
+    inset: 1px 2px;
+    width: calc(100% - 4px);
+    height: calc(100% - 2px);
+    object-fit: contain;
+    pointer-events: none;
   }
 
   /* Presence: a thin box in the person's colour around their selection, and

@@ -93,6 +93,7 @@ export const SIGNATURES: Record<string, string> = {
   FORECAST: 'FORECAST(x, known_ys, known_xs)',
   'FORECAST.LINEAR': 'FORECAST.LINEAR(x, known_ys, known_xs)',
   REPT: 'REPT(text, count)',
+  IMAGE: 'IMAGE(source, [alt_text])',
   NUMBERVALUE: 'NUMBERVALUE(text, [decimal_separator], [group_separator])',
   REPLACE: 'REPLACE(old_text, start, count, new_text)',
   EXACT: 'EXACT(text1, text2)',

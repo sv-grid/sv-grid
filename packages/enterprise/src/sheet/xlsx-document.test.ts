@@ -418,6 +418,22 @@ describe('tables', () => {
   })
 })
 
+describe('the newer functions', () => {
+  it('writes IMAGE and NUMBERVALUE under the prefix Excel stores them with', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['=IMAGE("https://example.com/a.png")'],
+      ['=NUMBERVALUE("1.234,56", ",", ".")'],
+    ] }] })
+    const sheet = documentToXlsxParts(doc)['xl/worksheets/sheet1.xml']!
+    expect(sheet).toContain('_xlfn.IMAGE(')
+    expect(sheet).toContain('_xlfn.NUMBERVALUE(')
+    // And they come back as the engine spells them.
+    const back = documentFromXlsxParts(documentToXlsxParts(doc)).workbook.sheets[0]!.cells
+    expect(back[0]![0]).toBe('=IMAGE("https://example.com/a.png")')
+    expect(back[1]![0]).toBe('=NUMBERVALUE("1.234,56", ",", ".")')
+  })
+})
+
 describe('iterative calculation', () => {
   it('goes out as calcPr and comes back on, limits included', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['100000'], ['=0.1*(A1-A2)']] }] })

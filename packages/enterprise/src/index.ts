@@ -103,6 +103,8 @@ export {
   type ErrorFinding, type ErrorFindingKind, type SheetReader,
 } from './sheet/error-check'
 
+export { imageCall, isDrawableImageSource, type ImageCall } from './sheet/cell-images'
+
 export {
   livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials,
   PRESENCE_COLOURS, type SheetPresence,

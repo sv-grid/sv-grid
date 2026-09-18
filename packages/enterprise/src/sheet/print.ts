@@ -25,6 +25,11 @@ export type SheetPrintCell = {
    * reads on the page.
    */
   sparkline?: string
+  /**
+   * The picture an `IMAGE` cell shows, as markup ready to place. Fitted
+   * inside the cell, as it is on screen.
+   */
+  image?: string
   /** An error's colour, as the sheet paints it. */
   color?: string
   /** Numbers right, text left, unless the format says. */
@@ -151,15 +156,18 @@ export function sheetPrintHtml(input: SheetPrintInput): string {
     // allowed to overflow it, which is what makes a chart bigger than one
     // cell print as a chart rather than as a sliver.
     const spark = cell.sparkline ? `<span class="sp">${cell.sparkline}</span>` : ''
+    const picture = cell.image ? `<span class="im">${cell.image}</span>` : ''
     const objects = (byAnchor.get(`${r},${c}`) ?? [])
       .map((o) => `<span class="ob" style="inset-inline-start:${o.dx}px;top:${o.dy}px;width:${o.width}px;height:${o.height}px">${o.html}</span>`)
       .join('')
-    const classes = [spark ? 'sp-cell' : '', objects ? 'ob-cell' : ''].filter(Boolean).join(' ')
+    const classes = [spark || picture ? 'sp-cell' : '', objects ? 'ob-cell' : ''].filter(Boolean).join(' ')
     const cls = classes ? ` class="${classes}"` : ''
     // A cell past the written area has nothing to say, and a caller reading
     // one is not a reason to throw during a print.
     const text = esc(cell.text ?? '')
-    const body = spark || objects ? `${spark}${objects}<span class="tx">${text}</span>` : text
+    const body = spark || picture || objects
+      ? `${spark}${picture}${objects}<span class="tx">${cell.image ? '' : text}</span>`
+      : text
     return `<${tag}${span}${cls}${style}>${body}</${tag}>`
   }
 
@@ -203,6 +211,8 @@ export function sheetPrintHtml(input: SheetPrintInput): string {
   td.ob-cell { overflow: visible; }
   td .sp { position: absolute; inset: 1px 4px; display: block; }
   td .sp svg { width: 100%; height: 100%; }
+  td .im { position: absolute; inset: 1px 2px; display: block; }
+  td .im img { width: 100%; height: 100%; object-fit: contain; }
   td .ob { position: absolute; display: block; overflow: hidden; }
   td .ob img, td .ob svg { width: 100%; height: 100%; object-fit: contain; }
   td .tx { position: relative; }
