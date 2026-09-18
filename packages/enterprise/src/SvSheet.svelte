@@ -1394,6 +1394,25 @@
   }
 
   /** Where every object sits, from its anchor cell's box; off-screen ones are left out. */
+  /** True while the sheet is laid out right to left, which mirrors the layer. */
+  function sheetIsRtl(): boolean {
+    return Boolean(gridHost) && getComputedStyle(gridHost!).direction === 'rtl'
+  }
+  /**
+   * A box's `left` is the offset from the layer's INLINE start, not from the
+   * physical left: the layer is placed with `inset-inline-start`, so a sheet
+   * with `dir="rtl"` hangs an object from its anchor cell's right edge and
+   * grows leftwards, the way Excel mirrors a sheet. These two helpers are the
+   * only places that know which edge that is.
+   */
+  function startOf(a: DOMRect, b: DOMRect): number {
+    return sheetIsRtl() ? b.right - a.right : a.left - b.left
+  }
+  /** The physical x of an inline-start offset, for a hit test. */
+  function xOfStart(start: number, b: DOMRect): number {
+    return sheetIsRtl() ? b.right - start : b.left + start
+  }
+
   function measureObjects() {
     const host = gridHost
     const objects = objectsNow()
@@ -1405,7 +1424,7 @@
       if (!td) continue
       const a = td.getBoundingClientRect()
       next[object.id] = {
-        left: a.left - b.left + object.anchor.dx,
+        left: startOf(a, b) + object.anchor.dx,
         top: a.top - b.top + object.anchor.dy,
         width: object.anchor.width,
         height: object.anchor.height,
@@ -1443,8 +1462,8 @@
     objectBoxes = {
       ...objectBoxes,
       [drag.id]: drag.kind === 'move'
-        ? { ...box, left: box.left + (event.movementX || 0), top: box.top + (event.movementY || 0) }
-        : { ...box, width: Math.max(80, drag.anchor.width + dx), height: Math.max(60, drag.anchor.height + dy) },
+        ? { ...box, left: box.left + (sheetIsRtl() ? -(event.movementX || 0) : (event.movementX || 0)), top: box.top + (event.movementY || 0) }
+        : { ...box, width: Math.max(80, drag.anchor.width + (sheetIsRtl() ? -dx : dx)), height: Math.max(60, drag.anchor.height + dy) },
     }
   }
   function onObjectPointerUp(event: PointerEvent) {
@@ -1463,14 +1482,16 @@
     const host = gridHost
     if (!host) return
     const b = host.getBoundingClientRect()
-    const under = host.ownerDocument.elementsFromPoint(b.left + box.left + 1, b.top + box.top + 1)
+    const rtl = sheetIsRtl()
+    const corner = xOfStart(box.left, b) + (rtl ? -1 : 1)
+    const under = host.ownerDocument.elementsFromPoint(corner, b.top + box.top + 1)
       .find((el) => el instanceof HTMLElement && el.matches('td[data-svgrid-row]')) as HTMLElement | undefined
     const anchor = { ...object.anchor }
     if (under) {
       const a = under.getBoundingClientRect()
       anchor.row = Number(under.dataset.svgridRow)
       anchor.col = Number(under.dataset.svgridCol)
-      anchor.dx = Math.round(b.left + box.left - a.left)
+      anchor.dx = Math.round(box.left - startOf(a, b))
       anchor.dy = Math.round(b.top + box.top - a.top)
     } else {
       anchor.dx = Math.round(anchor.dx + (box.left - (objectBoxes[drag.id]?.left ?? box.left)))
@@ -4006,7 +4027,7 @@
             class:selected={selectedObject === object.id}
             role="figure"
             aria-label={object.kind === 'chart' ? t('chartObject') : object.alt || t('pictureObject')}
-            style:left="{box.left}px"
+            style:inset-inline-start="{box.left}px"
             style:top="{box.top}px"
             style:width="{box.width}px"
             style:height="{box.height}px"
@@ -4508,7 +4529,7 @@
   }
   .sheet-object-grip {
     position: absolute;
-    right: -1px;
+    inset-inline-end: -1px;
     bottom: -1px;
     width: 12px;
     height: 12px;
@@ -4517,6 +4538,7 @@
     cursor: nwse-resize;
     touch-action: none;
   }
+  :global([dir="rtl"]) .sheet-object-grip { cursor: nesw-resize; }
   .sheet-trace-layer {
     position: absolute;
     inset: 0;
@@ -4591,9 +4613,12 @@
     z-index: 6;
   }
   .sheet-filter-arrow:hover { background: var(--sg-row-hover-bg, #f0f0f0); }
-  .sheet-filter-arrow.filtered { color: var(--sg-info, #0f6cbd); }
+  .sheet-filter-arrow.filtered { color: color-mix(in srgb, var(--sg-info, #0f6cbd) 80%, var(--sg-fg, #242424)); }
   /* Excel turns the row numbers of a filtered region blue. */
-  .sv-sheet :global(tr.sheet-filtered > td.sv-grid-row-number-cell) { color: var(--sg-info, #0f6cbd); }
+  /* Excel's blue row numbers under a filter. Mixed toward the text colour so
+     a host theme whose info colour is a light cyan still clears 4.5:1 at the
+     gutter's 13px; Excel's own #0f6cbd already does. */
+  .sv-sheet :global(tr.sheet-filtered > td.sv-grid-row-number-cell) { color: color-mix(in srgb, var(--sg-info, #0f6cbd) 80%, var(--sg-fg, #242424)); }
   /* A data bar behind the cell text, a third of the height off the edges
      as Excel draws it. */
   .sheet-databar {

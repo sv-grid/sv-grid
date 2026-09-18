@@ -46,6 +46,9 @@ function press(input: HTMLElement, key: string): void {
 
 describe('SvFormulaBar (DOM)', () => {
   it('shows the active cell address in the name box', () => {
+    // The address is the field's value (and its placeholder as a fallback),
+    // so assistive tech reads B2 rather than an empty box.
+    expect(nameBox(render({})).value).toBe('B2')
     expect(nameBox(render({})).placeholder).toBe('B2')
   })
 

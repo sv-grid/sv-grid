@@ -206,6 +206,14 @@ grid uses `currentColor` for every border and focus ring, so the
 system's color tokens take over without overrides leaking. We test
 against the [W3C forced-colors test page](https://web.dev/articles/forced-colors).
 
+## Right to left
+
+Set `dir="rtl"` on the page or any element above the grid and the layout
+mirrors: the row-number gutter and every pinned column stick to the right
+edge and stay there while the cells scroll under them, because the pins
+are logical (`inset-inline-start`, `inset-inline-end`) rather than a
+physical `left`. Nothing to opt into and no second stylesheet.
+
 ## Reduced motion
 
 When `prefers-reduced-motion: reduce` matches:

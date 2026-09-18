@@ -36,6 +36,7 @@
    * `sheet/ribbon.ts`, which calls the same function the matching keystroke
    * does, so a button and its shortcut cannot drift apart.
    */
+  import { tick } from 'svelte'
   import { SvPopover } from '@svgrid/grid'
   import type { GridCommandContext } from '@svgrid/grid/shortcuts'
   import SvRibbonIcon from './SvRibbonIcon.svelte'
@@ -365,11 +366,31 @@
     if (first) themeFont = first
   })
 
+  /**
+   * The tab strip's keyboard model, as WAI-ARIA asks for a tablist: the arrows
+   * move between tabs, Home and End jump to the ends, and FOCUS FOLLOWS the
+   * selection - without that last part a screen reader announces the old tab
+   * while the band under it has changed. The arrows are mirrored on a
+   * right-to-left ribbon, where the next tab is to the left.
+   */
   function onTabKey(event: KeyboardEvent) {
     const ids = tabs.map((t) => t.id)
     const at = ids.indexOf(tab)
-    if (event.key === 'ArrowRight' && at < ids.length - 1) { event.preventDefault(); tab = ids[at + 1]! }
-    if (event.key === 'ArrowLeft' && at > 0) { event.preventDefault(); tab = ids[at - 1]! }
+    const strip = (event.currentTarget as HTMLElement).parentElement
+    const rtl = strip ? getComputedStyle(strip).direction === 'rtl' : false
+    const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
+    const back = rtl ? 'ArrowRight' : 'ArrowLeft'
+    let next = -1
+    if (event.key === forward && at < ids.length - 1) next = at + 1
+    else if (event.key === back && at > 0) next = at - 1
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = ids.length - 1
+    if (next < 0 || next === at) return
+    event.preventDefault()
+    tab = ids[next]!
+    // After the strip re-renders, the selected tab is the one Tab reaches, so
+    // it is the one that should hold focus.
+    void tick().then(() => strip?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus())
   }
 </script>
 
@@ -774,7 +795,15 @@
     border-radius: 4px 4px 0 0;
   }
   .tab:hover { background: var(--sg-row-hover-bg, rgba(0, 0, 0, 0.04)); }
-  .tab.active { color: var(--sg-accent, #107c41); font-weight: 600; }
+  /* The label is the accent mixed toward the text colour, not the raw
+     accent: a 12px label in a host theme's accent (an orange, a cyan) lands
+     under 4.5:1 on the ribbon's near-white band, which axe fails and a
+     low-vision reader feels. The underline below keeps the accent pure, so
+     the tab still reads as Excel's. */
+  .tab.active {
+    color: color-mix(in srgb, var(--sg-accent, #107c41) 72%, var(--sg-fg, #242424));
+    font-weight: 600;
+  }
   /* Excel's selected-tab mark: a short rounded underline, not a full-width
      border, inset from the label's edges. */
   .tab.active::after {

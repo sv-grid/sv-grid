@@ -57,14 +57,14 @@ describe('cellPinStyle', () => {
   it('returns a left sticky style when the column has a left offset', () => {
     const ctx = makeCtx({ pinnedOffsets: { left: { a: 0, b: 120 }, right: {} } })
     const h = createColumns(ctx)
-    expect(h.cellPinStyle('a')).toBe('position: sticky; left: 0px; z-index: 30;')
-    expect(h.cellPinStyle('b')).toBe('position: sticky; left: 120px; z-index: 30;')
+    expect(h.cellPinStyle('a')).toBe('position: sticky; inset-inline-start: 0px; z-index: 30;')
+    expect(h.cellPinStyle('b')).toBe('position: sticky; inset-inline-start: 120px; z-index: 30;')
   })
 
   it('returns a right sticky style when the column has a right offset', () => {
     const ctx = makeCtx({ pinnedOffsets: { left: {}, right: { d: 0 } } })
     const h = createColumns(ctx)
-    expect(h.cellPinStyle('d')).toBe('position: sticky; right: 0px; z-index: 30;')
+    expect(h.cellPinStyle('d')).toBe('position: sticky; inset-inline-end: 0px; z-index: 30;')
   })
 
   it('returns empty string for an unpinned column', () => {
@@ -75,7 +75,7 @@ describe('cellPinStyle', () => {
   it('prefers the left offset when a column appears in both maps', () => {
     const ctx = makeCtx({ pinnedOffsets: { left: { a: 5 }, right: { a: 9 } } })
     const h = createColumns(ctx)
-    expect(h.cellPinStyle('a')).toBe('position: sticky; left: 5px; z-index: 30;')
+    expect(h.cellPinStyle('a')).toBe('position: sticky; inset-inline-start: 5px; z-index: 30;')
   })
 })
 

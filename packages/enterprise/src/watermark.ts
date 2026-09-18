@@ -78,7 +78,30 @@ function attachToAllGrids(): void {
   document
     .querySelectorAll(`[${WATERMARK_ATTR}="fixed"]`)
     .forEach((el) => el.remove())
-  grids.forEach(attachWatermarkTo)
+  const hosts = new Set<HTMLElement>()
+  grids.forEach((grid) => {
+    const host = watermarkHost(grid)
+    if (host) hosts.add(host)
+  })
+  hosts.forEach(attachWatermarkTo)
+}
+
+/**
+ * Where the watermark for a matched grid actually hangs.
+ *
+ * The selector above matches the grid's root container AND the `role="grid"`
+ * element inside it, which is the TABLE. A link is not a legal child of a
+ * table, and `role="grid"` allows only rows under it, so appending there is
+ * invalid HTML and an axe `aria-required-children` violation on every
+ * unlicensed grid. So: the grid's own root when the match sits inside one,
+ * otherwise the nearest ancestor outside the table's content model.
+ */
+function watermarkHost(grid: HTMLElement): HTMLElement | null {
+  const root = grid.closest<HTMLElement>('.sv-grid-root')
+  if (root) return root
+  let host: HTMLElement | null = grid
+  while (host && /^(TABLE|THEAD|TBODY|TFOOT|TR|COLGROUP)$/.test(host.tagName)) host = host.parentElement
+  return host
 }
 
 function attachWatermarkTo(grid: HTMLElement): void {

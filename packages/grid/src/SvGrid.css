@@ -1018,13 +1018,14 @@
   z-index: 4;
 }
 
-/* Row-number column: sticks to the left edge of the scroll viewport. */
+/* Row-number column: sticks to the inline-start edge of the scroll viewport,
+   which is the right edge under `dir="rtl"`. */
 .sv-grid-row-number-column,
 .sv-grid-row-number-cell {
   text-align: right;
   padding-inline: 8px;
   position: sticky;
-  left: 0;
+  inset-inline-start: 0;
   z-index: 4;
   /* Match the column-header band so the row-number gutter and the column
      headers form one continuous header chrome. */

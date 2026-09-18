@@ -69,6 +69,20 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
   /** The last press on a strip, for telling a double-click from two drags. */
   let lastPress: { rowIndex: number; at: number } | null = null
 
+  /**
+   * A focusable `role="separator"` is a splitter, and a splitter carries its
+   * position: axe's `aria-required-attr` fails one without `aria-valuenow`,
+   * and a screen reader reading the strip says nothing useful without it. The
+   * value is the row's height in pixels, between the action's min and max.
+   */
+  function setStripValue(strip: HTMLElement, height: number): void {
+    const min = current.min ?? 20
+    const max = current.max ?? 320
+    strip.setAttribute('aria-valuemin', String(min))
+    strip.setAttribute('aria-valuemax', String(max))
+    strip.setAttribute('aria-valuenow', String(Math.round(Math.max(min, Math.min(max, height || min)))))
+  }
+
   function rowIndexOf(tr: HTMLTableRowElement): number {
     const dataRow = tr.querySelector<HTMLElement>('[data-svgrid-row]')
     const val = dataRow?.dataset.svgridRow
@@ -81,6 +95,7 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
     const max = current.max ?? 320
     const next = Math.max(min, Math.min(max, drag.startHeight + (e.clientY - drag.startY)))
     drag.trEl.style.height = `${Math.round(next)}px`
+    setStripValue(drag.strip, next)
     current.onResizeMove?.(drag.rowIndex, Math.round(next))
   }
   function onPointerUp(e: PointerEvent) {
@@ -124,6 +139,7 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
       Math.max(min, Math.min(max, tr.getBoundingClientRect().height + delta)),
     )
     tr.style.height = `${next}px`
+    setStripValue(t, next)
     current.onResizeMove?.(rowIndex, next)
     current.onResize(rowIndex, next)
   }
@@ -189,7 +205,13 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
           ? tr.querySelector<HTMLTableCellElement>('.sv-grid-cell')
           : null)
       if (!gutter) continue
-      if (gutter.querySelector(`:scope > .${STRIP_CLASS}`)) continue
+      const already = gutter.querySelector<HTMLElement>(`:scope > .${STRIP_CLASS}`)
+      if (already) {
+        // The row may have been resized from outside the action (a saved
+        // height, a double-click autofit); keep the separator's value honest.
+        setStripValue(already, tr.getBoundingClientRect().height)
+        continue
+      }
       // Anchor the strip to the gutter cell + allow it to overflow
       // downward into the row gap so the hit-area straddles the
       // row boundary the way Excel does.
@@ -203,6 +225,7 @@ export function rowResize(node: HTMLElement, opts: RowResizeOptions) {
       // A separator used as an interactive splitter has to be focusable so
       // keyboard-only users can reach it and drive `onKeyDown` (#79).
       strip.tabIndex = 0
+      setStripValue(strip, tr.getBoundingClientRect().height)
       // Inline the geometry + pointer-events so the strip works even
       // before SvGrid.css is parsed; the hover tint still comes from
       // the stylesheet. We keep the strip fully inside the gutter

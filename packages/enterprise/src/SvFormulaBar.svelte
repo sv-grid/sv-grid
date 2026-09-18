@@ -122,6 +122,8 @@
   const lines = $derived(draft.split('\n').length)
   const rows = $derived(expanded ? Math.min(6, Math.max(2, lines)) : 1)
   let nameBoxText = $state('')
+  /** True while the Name Box has focus, which is when it shows a draft. */
+  let nameBoxTyping = $state(false)
 
   // Follow the active cell while the user is not mid-edit. Clobbering the
   // draft on every selection change would throw away half-typed formulas.
@@ -267,11 +269,21 @@
         type="text"
         aria-label={t('nameBox')}
         placeholder={label ?? address}
-        value={nameBoxText}
+        value={nameBoxTyping ? nameBoxText : (label ?? address)}
         {disabled}
         oninput={(e) => (nameBoxText = e.currentTarget.value)}
         onkeydown={onNameBoxKey}
-        onblur={() => (nameBoxText = '')}
+        onfocus={(e) => {
+          // The address is the field's VALUE, not a placeholder: a placeholder
+          // is a hint, so a screen reader on the Name Box would say "blank"
+          // where Excel says B3. It is selected on focus, so typing over it
+          // still replaces it in one go.
+          nameBoxTyping = true
+          nameBoxText = label ?? address
+          const el = e.currentTarget
+          queueMicrotask(() => el.select())
+        }}
+        onblur={() => { nameBoxTyping = false; nameBoxText = '' }}
       />
       <span class="caret" class:idle={names.length === 0} aria-hidden="true">
         <svg viewBox="0 0 10 10" width="10" height="10"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
