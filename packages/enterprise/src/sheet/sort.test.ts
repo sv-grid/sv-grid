@@ -55,3 +55,45 @@ describe('guessHeaderRow', () => {
     expect(guessHeaderRow(at, 5, 0)).toBe(false)
   })
 })
+
+describe('sorting on a colour', () => {
+  // Four rows, two of them filled yellow, one with red text.
+  const fills: Record<number, string | undefined> = { 0: '#ffff00', 2: '#ffff00' }
+  const fonts: Record<number, string | undefined> = { 1: '#ff0000' }
+  const colourAt = (row: number, _col: number, on: 'fill' | 'color') =>
+    (on === 'fill' ? fills[row] : fonts[row]) ?? null
+  const rows = [0, 1, 2, 3]
+  const valueAt = () => ''
+
+  it('lifts the chosen fill to the top and leaves the rest as they were', () => {
+    expect(sortOrder(rows, [{ col: 0, direction: 'asc', on: 'fill', colour: '#FFFF00' }], valueAt, colourAt))
+      .toEqual([0, 2, 1, 3])
+  })
+
+  it('sinks it instead when the key runs the other way', () => {
+    expect(sortOrder(rows, [{ col: 0, direction: 'desc', on: 'fill', colour: '#ffff00' }], valueAt, colourAt))
+      .toEqual([1, 3, 0, 2])
+  })
+
+  it('reads the font colour when that is what the key is on', () => {
+    expect(sortOrder(rows, [{ col: 0, direction: 'asc', on: 'color', colour: '#ff0000' }], valueAt, colourAt))
+      .toEqual([1, 0, 2, 3])
+  })
+
+  it('does nothing without a colour, or without a reader', () => {
+    expect(sortOrder(rows, [{ col: 0, direction: 'asc', on: 'fill' }], valueAt, colourAt)).toEqual(rows)
+    expect(sortOrder(rows, [{ col: 0, direction: 'asc', on: 'fill', colour: '#ffff00' }], valueAt)).toEqual(rows)
+  })
+
+  it('breaks a colour tie with the next key', () => {
+    const text = ['pear', 'apple', 'fig', 'date']
+    const order = sortOrder(
+      rows,
+      [{ col: 0, direction: 'asc', on: 'fill', colour: '#ffff00' }, { col: 1, direction: 'asc' }],
+      (row, col) => (col === 1 ? text[row]! : ''),
+      colourAt,
+    )
+    // The two yellow rows first, alphabetically, then the rest alphabetically.
+    expect(order).toEqual([2, 0, 1, 3])
+  })
+})

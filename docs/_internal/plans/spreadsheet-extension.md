@@ -63,6 +63,8 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- The two leftovers noted inside shipped rows: Sort On (cell colour and
+  font colour) in the Sort dialog and the sort engine, and NUMBERVALUE.
 - Objects in the .xlsx: `sheet/xlsx-drawing.ts` (the drawing part, a
   picture in `xl/media`, a chart part carrying its references rather than
   cached numbers, and the reader that gives both back, two-cell anchors
@@ -229,7 +231,7 @@ weeks, L a quarter-scale piece of work.
 | --- | --- | --- |
 | ~~Financial functions (PMT, PV, FV, NPV, IRR, RATE, NPER)~~ | shipped, with IPMT, PPMT and SLN | done |
 | ~~Math and statistics (SUMPRODUCT, PRODUCT, CEILING, FLOOR, TRUNC, LOG, EXP, PI, RAND, RANDBETWEEN, LARGE, SMALL, PERCENTILE, QUARTILE, VAR, MODE, AVERAGEIFS, MAXIFS, MINIFS, CORREL, FORECAST)~~ | shipped | done |
-| ~~Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT)~~ | shipped; TEXTSPLIT came with spill, NUMBERVALUE not done | done |
+| ~~Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT)~~ | shipped, with TEXTSPLIT from the spill work and NUMBERVALUE | done |
 | ~~Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME)~~ | shipped, with DATEVALUE, TIMEVALUE, DAYS360, YEARFRAC | done |
 | ~~Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE)~~ | shipped; INDIRECT and OFFSET are volatile, recomputed on every write | done |
 | ~~Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`)~~ | shipped: `evaluateSpill`, spill ranges in the workbook, array arithmetic with broadcasting, TRANSPOSE and TEXTSPLIT too | done |
@@ -246,7 +248,7 @@ weeks, L a quarter-scale piece of work.
 | ~~AutoFilter: Date Filters, Filter by Color, custom Top 10~~ | shipped | done |
 | ~~Validation: Input Message, Circle Invalid Data~~ | shipped | done |
 | ~~Format Cells: Accounting, Special~~ | shipped | done |
-| ~~Custom Sort dialog (several keys, header row)~~ | shipped; by colour not done | done |
+| ~~Custom Sort dialog (several keys, header row)~~ | shipped, with Sort On: cell colour and font colour | done |
 | ~~Comments as threads (author, time, replies, resolve)~~ | shipped: the thread card, `commentAuthor`, and Excel's threaded parts in the xlsx | done |
 | ~~Protection: allowed ranges and the allow list~~ | shipped: the Protect Sheet dialog, Allow Edit Ranges, `sheetProtection` in the xlsx. A password is still not one: a lock in the browser is not a secret | done |
 | ~~Sheet tabs: hide / unhide, duplicate, delete with confirm~~ | shipped; move between workbooks not done | done |

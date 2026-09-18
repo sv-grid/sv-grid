@@ -118,6 +118,36 @@ export const TEXT_DATE_FUNCTIONS: Record<string, SheetFunction> = {
       return err('#VALUE!')
     }
   },
+  /**
+   * NUMBERVALUE(text, [decimal], [group]): VALUE for a number written the
+   * way another country writes one. The separators are given rather than
+   * guessed, which is the whole point of it: "1.234,56" is a thousand two
+   * hundred in Germany and one point two in Britain, and only the caller
+   * knows which.
+   */
+  NUMBERVALUE: (a) => {
+    const v = first(a)
+    if (typeof v === 'number') return v
+    if (typeof v === 'boolean') return err('#VALUE!')
+    const decimal = (toText(nth(a, 1)) || '.').trim().slice(0, 1) || '.'
+    const group = (toText(nth(a, 2)) || ',').trim().slice(0, 1)
+    if (decimal === group) return err('#VALUE!')
+    let text = toText(v).trim()
+    if (text === '') return 0
+    // Trailing percent signs each divide by a hundred, as Excel's do.
+    let percents = 0
+    while (text.endsWith('%')) { percents += 1; text = text.slice(0, -1).trim() }
+    // The group separator is dropped and the decimal one becomes a point;
+    // spaces are dropped too, since a space is a group separator in half of
+    // Europe whatever was asked for.
+    const stripped = text
+      .split('').filter((ch) => ch !== group && !/\s/.test(ch)).join('')
+      .replace(decimal, '.')
+    if (stripped === '' || /[^0-9.+-]/.test(stripped)) return err('#VALUE!')
+    const n = Number(stripped)
+    if (!Number.isFinite(n)) return err('#VALUE!')
+    return n / 100 ** percents
+  },
   CHAR: (a) => {
     const n = Math.trunc(num(a, 0))
     if (n < 1 || n > 255) return err('#VALUE!')

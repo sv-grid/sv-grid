@@ -384,3 +384,28 @@ describe('reference and information', () => {
     expect(run('=ISERROR()')).toEqual({ error: '#VALUE!' })
   })
 })
+
+describe('NUMBERVALUE', () => {
+  it('reads a number written the way another country writes one', () => {
+    expect(run('=NUMBERVALUE("1.234,56", ",", ".")')).toBe(1234.56)
+    expect(run('=NUMBERVALUE("2 500,75", ",", " ")')).toBe(2500.75)
+    expect(run('=NUMBERVALUE("1,234.56")')).toBe(1234.56)
+    expect(run('=NUMBERVALUE("-42")')).toBe(-42)
+  })
+
+  it('divides by a hundred for each trailing percent sign', () => {
+    expect(run('=NUMBERVALUE("9%")')).toBe(0.09)
+    expect(run('=NUMBERVALUE("9%%")')).toBeCloseTo(0.0009, 10)
+  })
+
+  it('is zero for empty text and an error for what is not a number', () => {
+    expect(run('=NUMBERVALUE("")')).toBe(0)
+    expect(run('=NUMBERVALUE("twelve")')).toEqual({ error: '#VALUE!' })
+    // The same separator twice cannot be read either way.
+    expect(run('=NUMBERVALUE("1.2", ".", ".")')).toEqual({ error: '#VALUE!' })
+  })
+
+  it('passes a number straight through', () => {
+    expect(run('=NUMBERVALUE(1234.5)')).toBe(1234.5)
+  })
+})
