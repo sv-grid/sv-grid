@@ -18,7 +18,7 @@
     },
     {
       "question": "Do charts ride in the .xlsx?",
-      "answer": "No. Save As writes the cells, the formats and the rules; a chart or a picture is left behind, in both directions. The document (getState) is what carries them."
+      "answer": "Yes, both ways. A chart goes out as a chart part of its own, carrying the references its series read rather than a copy of the numbers, so Excel redraws it from the cells beside it; a picture goes out as bytes in xl/media. Both are anchored by a drawing part, and a file opened here gives them back. The one exception is a picture whose source is a URL rather than a data URL, whose bytes are not in the document to write."
     }
   ]
 }

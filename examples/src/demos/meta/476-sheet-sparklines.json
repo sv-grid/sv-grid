@@ -18,7 +18,7 @@
     },
     {
       "question": "Do sparklines ride in the .xlsx?",
-      "answer": "No. Save As writes the cells, the formats and the rules; sparklines, charts and pictures are left behind, in both directions. The document, getState(), is what carries them."
+      "answer": "Yes, both ways. They go into the worksheet's extension list, which is where Excel keeps them: one group per definition, one entry per cell, with the colours and the shared scale. What they still do not reach is the printed page, which is built from what each cell says."
     }
   ]
 }
