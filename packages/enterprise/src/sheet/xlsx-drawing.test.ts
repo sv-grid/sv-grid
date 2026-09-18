@@ -133,6 +133,20 @@ describe('objects in the package', () => {
     })
   })
 
+  it('writes a trendline as the element Excel names, and reads it back', () => {
+    const linear = documentToXlsxParts(sheetWith([chart({ trend: 'linear' })]))
+    expect(linear['xl/charts/chart1.xml']).toContain('<c:trendline><c:trendlineType val="linear"/></c:trendline>')
+    expect(documentFromXlsxParts(linear).sheets.Sales!.objects![0]).toMatchObject({ trend: 'linear' })
+
+    const moving = documentToXlsxParts(sheetWith([chart({ trend: 'sma3' })]))
+    expect(moving['xl/charts/chart1.xml']).toContain('<c:trendlineType val="movingAvg"/><c:period val="3"/>')
+    expect(documentFromXlsxParts(moving).sheets.Sales!.objects![0]).toMatchObject({ trend: 'sma3' })
+
+    const plain = documentToXlsxParts(sheetWith([chart()]))
+    expect(plain['xl/charts/chart1.xml']).not.toContain('trendline')
+    expect(documentFromXlsxParts(plain).sheets.Sales!.objects![0]).not.toHaveProperty('trend')
+  })
+
   it('writes each chart kind as the element Excel names it', () => {
     for (const [type, tag] of [['line', 'lineChart'], ['area', 'areaChart'], ['pie', 'pieChart'], ['scatter', 'scatterChart']] as const) {
       const parts = documentToXlsxParts(sheetWith([chart({ type })]))

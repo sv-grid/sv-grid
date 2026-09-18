@@ -24,6 +24,7 @@ import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
 import SvSheetEditRanges from './SvSheetEditRanges.svelte'
 import SvSheetPageSetup from './SvSheetPageSetup.svelte'
 import SvSheetTable from './SvSheetTable.svelte'
+import SvSheetChartSetup from './SvSheetChartSetup.svelte'
 import SvSheetEvaluate from './SvSheetEvaluate.svelte'
 import SvSheetErrors from './SvSheetErrors.svelte'
 import { defaultPageSetup } from './sheet/page-setup'
@@ -908,5 +909,54 @@ describe('SvSheetTable (DOM)', () => {
     click((qa('.sv-modal [role="radio"]') as HTMLButtonElement[])[0])
     click(button('OK'))
     expect(onApply.mock.calls[0]![0].style).toBe('None')
+  })
+})
+
+describe('SvSheetChartSetup (DOM)', () => {
+  const chart = {
+    id: 'c1',
+    kind: 'chart' as const,
+    anchor: { row: 5, col: 0, dx: 0, dy: 0, width: 400, height: 240 },
+    range: [0, 0, 3, 2] as unknown as [number, number, number, number],
+    type: 'bar' as const,
+    headers: true,
+    series: 'columns' as const,
+  }
+
+  it('offers a trendline and a secondary axis, and hands both back', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetChartSetup, {
+      target: host!,
+      props: { open: true, chart, seriesLabels: ['Revenue', 'Margin'], onApply, onDelete: () => {} },
+    })
+    flushSync()
+    const select = (label: string) =>
+      qa('.sv-modal label').find((l) => l.textContent?.trim().startsWith(label))?.querySelector('select') as HTMLSelectElement
+    const trend = select('Trendline:')
+    expect([...trend.options].map((o) => o.textContent)).toEqual(['None', 'Linear', 'Moving average (3)'])
+    const axis = select('Secondary axis:')
+    expect([...axis.options].map((o) => o.textContent)).toEqual(['None', 'Revenue', 'Margin'])
+
+    trend.value = 'sma3'
+    trend.dispatchEvent(new Event('change', { bubbles: true }))
+    axis.value = 'Margin'
+    axis.dispatchEvent(new Event('change', { bubbles: true }))
+    flushSync()
+    click(button('OK'))
+    expect(onApply.mock.calls[0]![0]).toMatchObject({ trend: 'sma3', secondary: 'Margin' })
+  })
+
+  it('offers neither on a pie, where there is one axis and nothing to trend', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetChartSetup, {
+      target: host!,
+      props: { open: true, chart: { ...chart, type: 'pie' as const, trend: 'linear' as const, secondary: 'Margin' }, seriesLabels: ['Revenue', 'Margin'], onApply, onDelete: () => {} },
+    })
+    flushSync()
+    expect(q('.sv-modal')!.textContent).not.toContain('Trendline:')
+    click(button('OK'))
+    // And the settings that cannot apply are dropped rather than kept.
+    expect(onApply.mock.calls[0]![0]).not.toHaveProperty('trend')
+    expect(onApply.mock.calls[0]![0]).not.toHaveProperty('secondary')
   })
 })

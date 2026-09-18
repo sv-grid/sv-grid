@@ -5116,6 +5116,7 @@
     <SvSheetChartSetup
       open={true}
       chart={chartSetup}
+      seriesLabels={specOf(chartSetup).series.map((s) => s.label)}
       onApply={(next) => replaceObject(next)}
       onDelete={() => { const id = chartSetup?.id; chartSetup = null; if (id) removeObject(id) }}
       onClose={() => { chartSetup = null; afterDialog() }}

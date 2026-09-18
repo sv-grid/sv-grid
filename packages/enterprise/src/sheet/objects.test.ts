@@ -119,3 +119,36 @@ describe('objectAt', () => {
     expect(objectAt([a, b], { x: 300, y: 300 }, boxOf)).toBeNull()
   })
 })
+
+describe('a chart with a trendline and a second axis', () => {
+  const grid = [
+    ['Region', 'Revenue', 'Margin'],
+    ['North', 48000, 0.21],
+    ['South', 39000, 0.18],
+    ['EMEA', 71000, 0.24],
+  ]
+  const valueAt = (r: number, c: number) => grid[r]?.[c] ?? ''
+  const textAt = (r: number, c: number) => String(grid[r]?.[c] ?? '')
+  const chart = (over: Partial<SheetChartObject> = {}): SheetChartObject => ({
+    id: 'c', kind: 'chart',
+    anchor: { row: 5, col: 0, dx: 0, dy: 0, width: 400, height: 240 },
+    range: [0, 0, 3, 2] as never,
+    type: 'bar', headers: true, series: 'columns',
+    ...over,
+  })
+
+  it('puts the overlay on every series', () => {
+    const linear = chartSpecOf(chart({ trend: 'linear' }), valueAt, textAt)
+    expect(linear.series.map((s) => s.overlay)).toEqual(['linear', 'linear'])
+    const moving = chartSpecOf(chart({ trend: 'sma3' }), valueAt, textAt)
+    expect(moving.series.map((s) => s.overlay)).toEqual(['sma:3', 'sma:3'])
+    expect(chartSpecOf(chart(), valueAt, textAt).series.every((s) => s.overlay === undefined)).toBe(true)
+  })
+
+  it('puts one named series on the right axis, and ignores a name that is not there', () => {
+    const spec = chartSpecOf(chart({ secondary: 'Margin' }), valueAt, textAt)
+    expect(spec.series.map((s) => [s.label, s.axis])).toEqual([['Revenue', undefined], ['Margin', 'right']])
+    const missing = chartSpecOf(chart({ secondary: 'Nothing' }), valueAt, textAt)
+    expect(missing.series.every((s) => s.axis === undefined)).toBe(true)
+  })
+})
