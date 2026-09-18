@@ -23,6 +23,7 @@ per item:
   Duplicate and a confirmed Delete.
 - Phase B item 2: ROW, COLUMN, ADDRESS, OFFSET and INDIRECT, with the
   volatile set in the workbook.
+- Phase C item 5: AutoFilter Date Filters, Filter by Color and Top 10.
 - Phase A items 1 to 3: `documentToXlsx` / `documentFromXlsx` with a
   round-trip test, and the File tab (New, Open, Save As, Export CSV, with
   Ctrl+O and Ctrl+S). Print and Page Layout (item 4) are not done.
@@ -104,7 +105,7 @@ weeks, L a quarter-scale piece of work.
 | --- | --- | --- |
 | Formula auditing: Trace Precedents / Dependents, Evaluate Formula, Error Checking | the graph exists (`deps.ts`); the Auditing group holds only Show Formulas | M |
 | Conditional formatting: formula rule, negative axis and second colour on data bars | presets only; one bar colour | M |
-| AutoFilter: Date Filters, Filter by Color, custom Top 10 | text and number filters, values list | M |
+| ~~AutoFilter: Date Filters, Filter by Color, custom Top 10~~ | shipped | done |
 | ~~Validation: Input Message, Circle Invalid Data~~ | shipped | done |
 | ~~Format Cells: Accounting, Special~~ | shipped | done |
 | ~~Custom Sort dialog (several keys, header row)~~ | shipped; by colour not done | done |

@@ -572,7 +572,13 @@ Excel's Filter: Ctrl+Shift+L, Home > Editing > Filter or Data > Filter puts
 an arrow on every header cell of the current region (the block around the
 active cell, its first row the headers; a selected range is the region
 instead). An arrow drops Excel's menu: Sort A to Z and Z to A (Smallest to
-Largest on a column of numbers), Clear Filter From the column, Text
+Largest on a column of numbers), Clear Filter From the column, Filter by
+Color when the column's cells carry more than one fill (its own or a
+conditional format's, No Fill included), Date Filters on a column of
+dates (Today, This Week, Last Month, This Quarter, Year to Date and the
+rest, or Equals, Before, After and Between with a typed date; weeks run
+Sunday to Saturday), Top 10 on a column of numbers (top or bottom, so
+many items or so many percent, counted over the whole column), Text
 Filters or Number Filters (equals, does not equal, begins with, contains,
 greater than, between and the rest, two of them joined with And or Or), a
 search box, (Select All) and the column's values with their counts, the
@@ -589,8 +595,12 @@ Reapply would; a sort from the menu keeps the header row where it is.
 Conditions run through the grid's own Excel-filter compiler
 (`@svgrid/grid/filtering`), so the operators are the ones the grid's
 filter row has. The filter is per sheet, moves with an insert or delete,
-rides in `getState()` as `autoFilter` (`{ range, filters }`) and reports
+rides in `getState()` as `autoFilter` (`{ range, filters }`, a filter
+being `values`, `condition`, `date`, `color` or `top`) and reports
 `{ kind: 'filter' }` on `onChange`. Raised as `toggle-filter`.
+`hiddenRowsFor` takes a `fillAt` reader for the colour filters and a
+`today` for the date periods; `datePeriodBounds` is the calendar on its
+own.
 
 ### Merged cells
 
@@ -775,9 +785,8 @@ button that does nothing.
   styles, one data bar colour (and no negative axis: a range with
   negatives runs from its minimum), one icon set per flavour and no
   formula rule; the grid's own value-driven rules are a separate feature.
-- **AutoFilter** has no Date Filters, no Filter by Color and no custom
-  Top 10; the values list is the whole column, unvirtualised, which is
-  what a sheet's region holds.
+- **AutoFilter**'s values list is the whole column, unvirtualised, which
+  is what a sheet's region holds.
 
 ## More examples
 

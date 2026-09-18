@@ -51,7 +51,8 @@ export {
 } from './merges'
 export {
   distinctValues, hiddenRowsFor, passesFilter, isFiltering, withColumnFilter, valuesFilter, shiftAutoFilter, describeFilter,
-  type AutoFilterState, type ColumnFilter, type FilterCondition, type FilterValue,
+  datePeriodBounds, distinctFills, isDateColumn,
+  type AutoFilterState, type ColumnFilter, type FilterCondition, type FilterValue, type DatePeriod, type FilterContext,
 } from './auto-filter'
 
 export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sort'

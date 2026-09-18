@@ -83,3 +83,56 @@ describe('SvSheetFilterMenu (DOM)', () => {
     expect(onApply).toHaveBeenCalledWith(null)
   })
 })
+
+describe('SvSheetFilterMenu: dates, colours and top 10 (DOM)', () => {
+  const dateValues = [{ text: '2026-09-18', count: 1, numeric: null }, { text: '2026-08-01', count: 1, numeric: null }]
+  const numbers = [{ text: '3', count: 1, numeric: 3 }, { text: '9', count: 1, numeric: 9 }]
+
+  it('Date Filters on a date column: a period, or a typed bound', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetFilterMenu, { target: host!, props: { header: 'When', values: dateValues, filter: null, numeric: false, dates: true, onSort: vi.fn(), onApply, onCancel: vi.fn() } })
+    flushSync()
+    expect(qa('summary').map((s) => s.textContent)).toEqual(['Date Filters', 'Text Filters'])
+    const period = q<HTMLSelectElement>('select[aria-label="Date period"]')!
+    period.value = 'lastMonth'; period.dispatchEvent(new Event('change', { bubbles: true })); flushSync()
+    click(button('OK'))
+    expect(onApply).toHaveBeenCalledWith({ kind: 'date', period: 'lastMonth' })
+    period.value = 'between'; period.dispatchEvent(new Event('change', { bubbles: true })); flushSync()
+    expect(button('OK').disabled).toBe(true)
+    const d1 = q<HTMLInputElement>('input[aria-label="Date"]')!
+    d1.value = '2026-09-01'; d1.dispatchEvent(new Event('input', { bubbles: true })); flushSync()
+    const d2 = q<HTMLInputElement>('input[aria-label="Second date"]')!
+    d2.value = '2026-09-30'; d2.dispatchEvent(new Event('input', { bubbles: true })); flushSync()
+    click(button('OK'))
+    expect(onApply).toHaveBeenLastCalledWith({ kind: 'date', period: 'between', value: '2026-09-01', valueTo: '2026-09-30' })
+  })
+
+  it('Top 10 on a number column, and it opens on the filter it has', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetFilterMenu, { target: host!, props: { header: 'Amount', values: numbers, filter: { kind: 'top', top: false, count: 3, percent: true }, numeric: true, onSort: vi.fn(), onApply, onCancel: vi.fn() } })
+    flushSync()
+    expect(qa('summary').map((s) => s.textContent)).toEqual(['Number Filters', 'Top 10'])
+    expect(q<HTMLSelectElement>('select[aria-label="Top or bottom"]')!.value).toBe('bottom')
+    expect(q<HTMLInputElement>('input[aria-label="How many"]')!.value).toBe('3')
+    expect(q<HTMLSelectElement>('select[aria-label="Items or percent"]')!.value).toBe('percent')
+    const count = q<HTMLInputElement>('input[aria-label="How many"]')!
+    count.value = '5'; count.dispatchEvent(new Event('input', { bubbles: true })); flushSync()
+    click(button('OK'))
+    expect(onApply).toHaveBeenCalledWith({ kind: 'top', top: false, count: 5, percent: true })
+  })
+
+  it('Filter by Color lists the fills once there are two, and a swatch applies at once', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetFilterMenu, { target: host!, props: { header: 'Status', values, filter: null, numeric: false, fills: ['#ffff00', null], onSort: vi.fn(), onApply, onCancel: vi.fn() } })
+    flushSync()
+    expect(qa('.swatch').map((b) => b.getAttribute('aria-label'))).toEqual(['Filter by #ffff00', 'Filter by no fill'])
+    click(qa('.swatch')[1])
+    expect(onApply).toHaveBeenCalledWith({ kind: 'color', fill: null })
+  })
+
+  it('offers no colour entry with one fill, and no date entry on text', () => {
+    comp = mount(SvSheetFilterMenu, { target: host!, props: { header: 'Fruit', values, filter: null, numeric: false, fills: [null], onSort: vi.fn(), onApply: vi.fn(), onCancel: vi.fn() } })
+    flushSync()
+    expect(qa('summary').map((s) => s.textContent)).toEqual(['Text Filters'])
+  })
+})
