@@ -36,7 +36,7 @@
 </script>
 
 {#snippet Streak(p: { v: number })}
-  <span class="streak {p.v >= 7 ? 'hot' : ''}">{p.v > 0 ? `🔥 ${p.v}` : '—'}</span>
+  <span class="streak {p.v >= 7 ? 'hot' : ''}">{p.v > 0 ? `🔥 ${p.v}` : '-'}</span>
 {/snippet}
 
 {#snippet Progress(p: { row: Habit })}

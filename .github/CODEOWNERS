@@ -1,0 +1,4 @@
+# Every pull request needs a maintainer's review before it can merge. Turn on
+# "Require review from Code Owners" in branch protection for main to make this
+# binding; the community demo guard workflow limits what outside PRs may touch.
+* @bmarkov

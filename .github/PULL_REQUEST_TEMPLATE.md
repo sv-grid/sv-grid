@@ -1,9 +1,25 @@
 <!--
-Pull requests are accepted against the MIT packages only: packages/grid,
-packages/grid-wc, packages/svgrid-ui, packages/create-sv-grid,
-packages/create-studio. Bug reports against the commercial packages are
-welcome, PRs against them are not.
+Contributing from outside the team? Pull requests are accepted for community
+demos only (examples/src/demos/community/). Fill in the "Community demo"
+section and delete the rest. For anything else, open an issue instead:
+the maintainers write the package code. See CONTRIBUTING.md.
 -->
+
+## Community demo
+
+<!-- Delete this section if you are a maintainer changing something else. -->
+
+- Demo file: `examples/src/demos/community/<slug>.svelte`
+- What it shows:
+
+- [ ] Copied from `example-status-board.svelte` and filled in the header (title, author, github, tags)
+- [ ] `discussion: 0` left as is
+- [ ] One file, inline data, imports only from `@svgrid/grid` (or `@svgrid/enterprise` for a Pro feature)
+- [ ] Runs in the [playground](https://svgrid.com/demos/) without errors
+
+---
+
+<!-- Maintainers: the sections below. -->
 
 ## What this changes
 
