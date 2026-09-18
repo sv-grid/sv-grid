@@ -20,7 +20,9 @@
    * The File tab is the point: Save As downloads the whole model as an
    * .xlsx that Excel opens with the formulas, the formats and the rule in
    * place; Open takes one back, or any .xlsx of your own; Export CSV gives
-   * the sheet as its cells show. Ctrl+O and Ctrl+S are the same actions.
+   * the sheet as its cells show; Print (Ctrl+P) hands the sheet to the
+   * browser's print dialog as the Page Layout tab says. Ctrl+O and Ctrl+S
+   * are the same actions.
    *
    * Try: change the rate in B3 and watch the payment. Select F3 to see the
    * input message. Data > Sort on the schedule with two levels. Save As,

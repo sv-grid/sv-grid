@@ -48,6 +48,7 @@ export type RibbonIconName =
   | 'chevron-down' | 'format-cells'
   | 'format-painter'
   | 'protect' | 'unprotect' | 'lock' | 'edit-ranges'
+  | 'print' | 'page-setup' | 'margins' | 'orientation' | 'paper' | 'print-area' | 'print-titles'
   | 'comment' | 'comment-delete' | 'comment-prev' | 'comment-next' | 'comments-all'
   | 'validation'
   | 'cf' | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
@@ -318,6 +319,39 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'file-csv': [
     ...SHEET,
     { d: 'M6 8.5h1M9 8.5h1M6 11h1M9 11h1', width: 1.7 },
+  ],
+  // A printer: the tray, the page going in, the page coming out.
+  print: [
+    { d: 'M4.5 6V2.5h7V6' },
+    { d: 'M2.5 6h11v5h-2.5v3h-6v-3H2.5z' },
+    { d: 'M5 11h6' },
+  ],
+  // Page Layout: a page with its margins marked, and the same page in
+  // each of the other guises.
+  'page-setup': [
+    { d: 'M3.5 1.5h9v13h-9z' },
+    { d: 'M5.5 3.5h5v9h-5z', width: 1 },
+  ],
+  margins: [
+    { d: 'M3.5 1.5h9v13h-9z' },
+    { d: 'M5.5 1.5v13M10.5 1.5v13M3.5 3.5h9M3.5 12.5h9', width: 1 },
+  ],
+  orientation: [
+    { d: 'M2 4.5h7v9H2z' },
+    { d: 'M9 2.5h5v5H9z' },
+  ],
+  paper: [
+    { d: 'M3.5 1.5h9v13h-9z' },
+    { d: 'M5.5 5h5M5.5 8h5M5.5 11h3', width: 1.3 },
+  ],
+  'print-area': [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M5 5h6v6H5z', fill: true },
+  ],
+  'print-titles': [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M2.5 5.5h11', width: 2 },
+    { d: 'M2.5 8.5h11M2.5 11.5h11', width: 1 },
   ],
 
   'name-manager': [

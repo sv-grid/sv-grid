@@ -37,6 +37,7 @@ function fullDocument() {
     r3: { D: { text: 'Sum of the totals', author: 'Ana', at: '2026-03-04T10:00:00.000Z', resolved: true, replies: [{ text: 'Checked', author: 'Ben', at: '2026-03-05T09:30:00.000Z' }, { text: 'Thanks', at: '2026-03-05T09:31:00.000Z' }] } },
   }
   orders.protected = true
+  orders.pageSetup = { orientation: 'landscape', paper: 'Letter', margins: { top: 1, bottom: 1, left: 1, right: 1, header: 0.5, footer: 0.5 }, printArea: [[0, 0, 3, 3], [4, 0, 4, 3]], printTitleRows: [0, 0], gridlines: true, headings: false, scale: 85 }
   orders.protection = { allow: { formatCells: true, sort: true }, ranges: [{ id: 'er1', title: 'Quantities', rects: [[1, 1, 3, 1]] }, { id: 'er2', title: 'Two blocks', rects: [[1, 0, 1, 0], [3, 0, 3, 0]] }] }
   orders.merges = [[4, 0, 4, 3]]
   orders.autoFilter = { range: [0, 0, 2, 4], filters: {} }
@@ -82,6 +83,9 @@ describe('documentToXlsxParts', () => {
     expect(sheet).toContain('<sheetProtection sheet="1" objects="1" scenarios="1" formatCells="0" sort="0"/>')
     expect(sheet).toContain('<protectedRanges><protectedRange sqref="B2:B4" name="Quantities"/><protectedRange sqref="A2 A4" name="Two blocks"/></protectedRanges>')
     expect(sheet).toContain('<autoFilter ref="A1:E3"/>')
+    expect(sheet).toContain('<printOptions gridLines="1"/><pageMargins left="1" right="1" top="1" bottom="1" header="0.5" footer="0.5"/><pageSetup paperSize="1" scale="85" orientation="landscape"/>')
+    expect(parts['xl/worksheets/sheet2.xml']).toContain('<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait"/>')
+    expect(parts['xl/workbook.xml']).toContain('<definedName name="_xlnm.Print_Area" localSheetId="0">Orders!$A$1:$D$4,Orders!$A$5:$D$5</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Orders!$1:$1</definedName>')
     expect(sheet).toContain('<col min="5" max="5" width="13" customWidth="1" hidden="1"/>')
     expect(sheet).toContain('<row r="3" hidden="1">')
     expect(sheet).toContain('<row r="1" ht="24" customHeight="1">')
@@ -150,6 +154,8 @@ describe('the round trip', () => {
     expect(o.notes).toEqual(before.sheets.Orders.comments)
     expect(o.protected).toBe(true)
     expect(o.protection.allow).toEqual({ formatCells: true, sort: true })
+    expect(o.pageSetup).toEqual(before.sheets.Orders.pageSetup)
+    expect(again.get('Price list').pageSetup.paper).toBe('A4')
     expect(o.protection.ranges.map(({ id: _id, ...rest }) => rest)).toEqual([{ title: 'Quantities', rects: [[1, 1, 3, 1]] }, { title: 'Two blocks', rects: [[1, 0, 1, 0], [3, 0, 3, 0]] }])
     expect(o.merges).toEqual([[4, 0, 4, 3]])
     expect(o.autoFilter).toEqual({ range: [0, 0, 2, 4], filters: {} })
@@ -249,6 +255,19 @@ describe('reading what Excel writes', () => {
       ] } },
       r2: { C: 'a note' },
     })
+  })
+
+  it('Excel\'s page setup: margins, paper, orientation, scale, the print options and the print names', () => {
+    const base = wrap(
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/><printOptions headings="1"/><pageMargins left="0.25" right="0.25" top="0.75" bottom="0.75" header="0.3" footer="0.3"/><pageSetup paperSize="8" scale="70" orientation="landscape" r:id="rId9" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/></worksheet>',
+    )
+    base['xl/workbook.xml'] = base['xl/workbook.xml']!.replace('<definedNames>', '<definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">Data!$B$2:$D$9</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Data!$1:$2</definedName>')
+    const state = documentFromXlsxParts(base)
+    expect(state.sheets.Data!.pageSetup).toEqual({
+      orientation: 'landscape', paper: 'A3', margins: { left: 0.25, right: 0.25, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 },
+      printArea: [[1, 1, 8, 3]], printTitleRows: [0, 1], gridlines: false, headings: true, scale: 70,
+    })
+    expect(state.workbook.names).toEqual({ Rate: 'Data!$B$1' })
   })
 
   it('refuses a package with no workbook', () => {

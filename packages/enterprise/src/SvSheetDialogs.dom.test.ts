@@ -22,6 +22,8 @@ import SvSheetValidationAlert from './SvSheetValidationAlert.svelte'
 import SvSheetConditionalFormat from './SvSheetConditionalFormat.svelte'
 import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
 import SvSheetEditRanges from './SvSheetEditRanges.svelte'
+import SvSheetPageSetup from './SvSheetPageSetup.svelte'
+import { defaultPageSetup } from './sheet/page-setup'
 import { createWorkbook } from './sheet/workbook'
 import { setFindTarget } from './sheet/find-replace'
 import { functionCatalog } from './sheet/function-catalog'
@@ -713,5 +715,37 @@ describe('SvSheetEditRanges (DOM)', () => {
     click(qa('.sv-modal button').find((b) => b.textContent === 'Protect Sheet...'))
     expect(onApply).toHaveBeenCalledWith([])
     expect(onProtect).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('SvSheetPageSetup (DOM)', () => {
+  it('opens on the setup, reads every field back, and refuses a bad area or row range', () => {
+    const onApply = vi.fn(); const onPrint = vi.fn()
+    const setup = { ...defaultPageSetup(), orientation: 'landscape' as const, printArea: [[1, 1, 5, 3]] as [number, number, number, number][], printTitleRows: [0, 1] as [number, number], scale: 90 }
+    comp = mount(SvSheetPageSetup, { target: host!, props: { open: true, setup, onApply, onPrint } })
+    flushSync()
+    const selects = qa('.sv-modal select') as HTMLSelectElement[]
+    expect(selects.map((s) => s.value)).toEqual(['landscape', 'A4', 'normal'])
+    const inputs = qa('.sv-modal input') as HTMLInputElement[]
+    expect(inputs.map((i) => (i.type === 'checkbox' ? String(i.checked) : i.value))).toEqual(['90', 'B2:D6', '1:2', 'false', 'false'])
+    typeInto(inputs[1]!, 'nope')
+    click(qa('.sv-modal button').find((b) => b.textContent === 'OK'))
+    expect(q('.sv-modal [role="alert"]')?.textContent).toBe('"nope" is not a cell or range')
+    typeInto(inputs[1]!, '')
+    typeInto(inputs[2]!, 'x')
+    click(qa('.sv-modal button').find((b) => b.textContent === 'OK'))
+    expect(q('.sv-modal [role="alert"]')?.textContent).toBe('"x" is not a row range like 1:2')
+    typeInto(inputs[2]!, '3')
+    typeInto(inputs[0]!, '75')
+    selects[2]!.value = 'wide'
+    selects[2]!.dispatchEvent(new Event('change', { bubbles: true }))
+    click(inputs[3])
+    click(qa('.sv-modal button').find((b) => b.textContent === 'Print...'))
+    expect(onApply).toHaveBeenCalledTimes(1)
+    expect(onApply.mock.calls[0]![0]).toEqual({
+      ...setup, printArea: null, printTitleRows: [2, 2], scale: 75, gridlines: true,
+      margins: { top: 1, bottom: 1, left: 1, right: 1, header: 0.5, footer: 0.5 },
+    })
+    expect(onPrint).toHaveBeenCalledTimes(1)
   })
 })

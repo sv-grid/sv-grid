@@ -158,6 +158,9 @@ export type SheetTextMessages = {
   /** "{count} cells break a validation rule." */
   invalidCellsFound: string
   formatPainterHint: string
+  printAreaSet: string
+  printAreaCleared: string
+  couldNotPrint: string
 }
 
 /**
@@ -567,6 +570,27 @@ export const defaultDialogMessages = {
   'editRanges.invalidRef': '"{text}" is not a cell or range',
   'editRanges.new': 'New',
   'editRanges.protectSheet': 'Protect Sheet...',
+  // Page Setup
+  'pageSetup.title': 'Page Setup',
+  'pageSetup.orientation': 'Orientation:',
+  'pageSetup.portrait': 'Portrait',
+  'pageSetup.landscape': 'Landscape',
+  'pageSetup.paper': 'Paper size:',
+  'pageSetup.margins': 'Margins:',
+  'pageSetup.margins.normal': 'Normal',
+  'pageSetup.margins.narrow': 'Narrow',
+  'pageSetup.margins.wide': 'Wide',
+  'pageSetup.margins.custom': 'Custom',
+  'pageSetup.scale': 'Scale (%):',
+  'pageSetup.printArea': 'Print area:',
+  'pageSetup.printAreaPlaceholder': 'Whole sheet, or B2:F20',
+  'pageSetup.titleRows': 'Rows to repeat at top:',
+  'pageSetup.titleRowsPlaceholder': 'None, or 1:2',
+  'pageSetup.gridlines': 'Print gridlines',
+  'pageSetup.headings': 'Print row and column headings',
+  'pageSetup.invalidArea': '"{text}" is not a cell or range',
+  'pageSetup.invalidRows': '"{text}" is not a row range like 1:2',
+  'pageSetup.print': 'Print...',
   // Goal Seek
   'goalSeek.title': 'Goal Seek',
   'goalSeek.statusTitle': 'Goal Seek Status',
@@ -740,6 +764,9 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   invalidCellFound: '{count} cell breaks a validation rule.',
   invalidCellsFound: '{count} cells break a validation rule.',
   formatPainterHint: 'Select where to paste the format, or press Esc',
+  printAreaSet: 'Print area set to {range}.',
+  printAreaCleared: 'Print area cleared.',
+  couldNotPrint: 'Could not open the print window; the browser blocked the popup.',
 }
 
 /** The full English map: the typed strings plus the ribbon's. */

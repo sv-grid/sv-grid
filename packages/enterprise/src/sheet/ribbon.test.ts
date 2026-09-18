@@ -65,13 +65,25 @@ beforeEach(() => {
 })
 
 describe('the model is well-formed', () => {
-  it('ships the seven tabs that have something behind them', () => {
-    expect(RIBBON_TABS.map((t) => t.id)).toEqual(['file', 'home', 'insert', 'formulas', 'data', 'review', 'view'])
+  it('ships the eight tabs that have something behind them', () => {
+    expect(RIBBON_TABS.map((t) => t.id)).toEqual(['file', 'home', 'insert', 'page-layout', 'formulas', 'data', 'review', 'view'])
   })
 
-  it('File raises New, Open, Save As and Export CSV for the shell', () => {
+  it('File raises New, Open, Save As, Export CSV and Print for the shell', () => {
     const file = RIBBON_TABS.find((t) => t.id === 'file')!
-    expect(file.groups.flatMap((g) => g.items.map((i) => i.emits))).toEqual(['file-new', 'file-open', 'file-save-xlsx', 'file-export-csv'])
+    expect(file.groups.flatMap((g) => g.items.map((i) => i.emits))).toEqual(['file-new', 'file-open', 'file-save-xlsx', 'file-export-csv', 'file-print'])
+  })
+
+  it('Page Layout raises the setup as dropdown entries, Print Titles, the launcher and two toggles', () => {
+    const tab = RIBBON_TABS.find((t) => t.id === 'page-layout')!
+    expect(tab.groups.map((g) => [g.id, g.launcher])).toEqual([['page-setup', 'page-setup'], ['sheet-options', undefined]])
+    const setup = tab.groups[0]!.items
+    expect(setup.map((i) => [i.id, i.kind])).toEqual([['margins', 'dropdown'], ['orientation', 'dropdown'], ['paper', 'dropdown'], ['print-area', 'dropdown'], ['print-titles', 'button']])
+    expect(setup.flatMap((i) => (i.options ?? []).map((o) => o.emits))).toEqual([
+      'margins-normal', 'margins-narrow', 'margins-wide', 'page-portrait', 'page-landscape',
+      'paper-letter', 'paper-legal', 'paper-tabloid', 'paper-a3', 'paper-a4', 'paper-a5', 'print-area-set', 'print-area-clear',
+    ])
+    expect(tab.groups[1]!.items.map((i) => [i.kind, i.emits])).toEqual([['toggle', 'print-gridlines'], ['toggle', 'print-headings']])
   })
 
   it('View > Show carries Excel\'s three toggles, raised for the shell', () => {

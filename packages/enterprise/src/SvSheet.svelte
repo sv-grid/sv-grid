@@ -83,6 +83,9 @@
   import { isLocked, cellLocked, rectsHaveLocked, rectsMixLocked, rangeText, type ProtectionAllow, type ProtectionPermission, type EditRange } from './sheet/protection'
   import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
   import SvSheetEditRanges from './SvSheetEditRanges.svelte'
+  import SvSheetPageSetup from './SvSheetPageSetup.svelte'
+  import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
+  import { sheetPrintHtml } from './sheet/print'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
   import { provideSheetText, useSheetText } from './sheet-text'
   import { commentAt, withComment, withThread, threadAt, threadText, notesOf, nextComment, listComments, type CommentsMap, type CommentThread } from './sheet/comments'
@@ -343,6 +346,48 @@
       rows.push(line)
     }
     return csvText(rows)
+  }
+
+  /**
+   * The active sheet as the HTML document File > Print opens: the print
+   * area or the used range, cells as they show with their formats, the
+   * page setup in `@page`. For an app that prints its own way.
+   */
+  export function printHtml(): string {
+    const name = wb.active
+    const state = doc.get(name)
+    return sheetPrintHtml({
+      name,
+      rowCount: wb.rowCount(name),
+      colCount: wb.colCount(name),
+      cellAt: (r, c) => {
+        const value = wb.getValue(name, r, c)
+        const shown = wb.getRaw(name, r, c) === '' ? { text: '' } : display(r, c)
+        const entry = storeFor().get(`r${r}`, colToLetters(c))
+        const cf = cfAt(r, c, value)?.style
+        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}) }
+      },
+      widths: api ? api.getColumnWidths() : state.widths,
+      defaultWidth: columnWidth,
+      heights: state.heights,
+      defaultHeight: rowHeight,
+      hidden: state.hidden,
+      merges: state.merges,
+      setup: state.pageSetup,
+    })
+  }
+
+  /** File > Print: the sheet in a new window, handed to the browser's print dialog. */
+  export function print(): void {
+    const html = printHtml()
+    const w = typeof window === 'undefined' ? null : window.open('', '_blank', 'width=900,height=700')
+    if (!w) { say(t('couldNotPrint')); return }
+    w.document.open()
+    w.document.write(html)
+    w.document.close()
+    w.focus()
+    w.addEventListener('load', () => setTimeout(() => w.print(), 50))
+    setTimeout(() => { try { w.print() } catch { /* the load listener prints */ } }, 300)
   }
 
   /** Start over with one empty sheet, as File > New does after its question. */
@@ -1296,6 +1341,30 @@
 
   let protectSheetOpen = $state(false)
   let editRangesOpen = $state(false)
+
+  // --- Page Layout and Print ---------------------------------------------------
+  /**
+   * Excel's Page Setup lives in the document per sheet; the Page Layout tab
+   * and the dialog change it, one undo each, and File > Print reads it.
+   * The page is the browser's own print engine over one HTML document the
+   * pure `sheetPrintHtml` builds from what every cell shows.
+   */
+  const pageSetupNow = () => doc.get(wb.active).pageSetup
+  const pageSetupState = $derived.by(() => { void version; return pageSetupNow() })
+  let pageSetupOpen = $state(false)
+  function setPageSetup(next: PageSetup) {
+    const sheet = wb.active
+    const before = copyPageSetup(doc.get(sheet).pageSetup)
+    const after = copyPageSetup(next)
+    const put = (value: PageSetup) => {
+      doc.get(sheet).pageSetup = copyPageSetup(value)
+      bump()
+      changed({ kind: 'page-setup' })
+    }
+    put(after)
+    cmdOf()?.recordUndo(() => put(before), () => put(after))
+  }
+  const PAPER_ACTIONS: Record<string, PaperSize> = { 'paper-a4': 'A4', 'paper-a3': 'A3', 'paper-a5': 'A5', 'paper-letter': 'Letter', 'paper-legal': 'Legal', 'paper-tabloid': 'Tabloid' }
   /** The selection as A1 text, what a new edit range opens on. */
   const selectionText = $derived.by(() => { void selection; void active; return rangeText(selectedRects().map(normalRect)) })
 
@@ -2203,6 +2272,51 @@
         }
         return
       }
+      case 'file-print':
+        if (onAction?.(action, context) === true) return
+        print()
+        return
+      case 'page-portrait':
+      case 'page-landscape':
+        if (onAction?.(action, context) === true) return
+        setPageSetup({ ...pageSetupNow(), orientation: action === 'page-portrait' ? 'portrait' : 'landscape' })
+        focusSheet(context)
+        return
+      case 'paper-a4': case 'paper-a3': case 'paper-a5': case 'paper-letter': case 'paper-legal': case 'paper-tabloid':
+        if (onAction?.(action, context) === true) return
+        setPageSetup({ ...pageSetupNow(), paper: PAPER_ACTIONS[action]! })
+        focusSheet(context)
+        return
+      case 'margins-normal': case 'margins-narrow': case 'margins-wide':
+        if (onAction?.(action, context) === true) return
+        setPageSetup({ ...pageSetupNow(), margins: { ...MARGIN_PRESETS[action.slice('margins-'.length) as keyof typeof MARGIN_PRESETS] } })
+        focusSheet(context)
+        return
+      case 'print-area-set': {
+        if (onAction?.(action, context) === true) return
+        const rects = selectedRects(context).map(normalRect)
+        setPageSetup({ ...pageSetupNow(), printArea: rects })
+        say(t('printAreaSet', { range: rangeText(rects) }))
+        focusSheet(context)
+        return
+      }
+      case 'print-area-clear':
+        if (onAction?.(action, context) === true) return
+        setPageSetup({ ...pageSetupNow(), printArea: null })
+        say(t('printAreaCleared'))
+        focusSheet(context)
+        return
+      case 'print-gridlines':
+      case 'print-headings':
+        if (onAction?.(action, context) === true) return
+        setPageSetup(action === 'print-gridlines' ? { ...pageSetupNow(), gridlines: !pageSetupNow().gridlines } : { ...pageSetupNow(), headings: !pageSetupNow().headings })
+        focusSheet(context)
+        return
+      case 'print-titles':
+      case 'page-setup':
+        if (onAction?.(action, context) === true) return
+        pageSetupOpen = true
+        return
       case 'trace-precedents': trace('precedents'); return
       case 'trace-dependents': trace('dependents'); return
       case 'remove-arrows': removeArrows(); return
@@ -2366,6 +2480,14 @@
     if (gridlinesOn) on.push('toggle-gridlines')
     if (formulaBarOn) on.push('toggle-formula-bar')
     if (headingsOn) on.push('toggle-headings')
+    // Page Layout: the orientation, paper and margins in force, and what prints.
+    const ps = pageSetupNow()
+    on.push(ps.orientation === 'landscape' ? 'page-landscape' : 'page-portrait')
+    on.push(`paper-${ps.paper.toLowerCase()}` as RibbonActionId)
+    const preset = marginPresetOf(ps.margins)
+    if (preset) on.push(`margins-${preset}` as RibbonActionId)
+    if (ps.gridlines) on.push('print-gridlines')
+    if (ps.headings) on.push('print-headings')
     // Merge & Center lights while the active cell is merged, as in Excel.
     if (sheetMergeAt(mergesNow(), active.rowIndex, active.colIndex)) on.push('merge-center')
     return on
@@ -3793,6 +3915,7 @@
   <SvSheetInsertFunction bind:open={insertFunctionOpen} onPick={insertFunction} />
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
+  <SvSheetPageSetup bind:open={pageSetupOpen} setup={pageSetupState} onApply={(next) => setPageSetup(next)} onPrint={() => { afterDialog(); print() }} onClose={() => afterDialog()} />
   <SvSheetEditRanges
     bind:open={editRangesOpen}
     ranges={protectionState.ranges}

@@ -32,6 +32,7 @@ import { translateFormula } from './refs'
 import { isError, type CellValue } from './ast'
 import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
+import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -94,6 +95,9 @@ function isDateFormat(fmt: string | undefined): boolean {
   const bare = fmt.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '')
   return /[ymd]/i.test(bare) && !/[#0?]/.test(bare) && !/^General$/i.test(fmt)
 }
+
+/** `$A$1:$D$10`, the way a print name spells a rectangle. */
+const absRef = ([r1, c1, r2, c2]: Rect): string => `$${colToLetters(c1)}$${r1 + 1}:$${colToLetters(c2)}$${r2 + 1}`
 
 const rectRef = ([r1, c1, r2, c2]: Rect): string =>
   r1 === r2 && c1 === c2 ? `${colToLetters(c1)}${r1 + 1}` : `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${r2 + 1}`
@@ -364,6 +368,8 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
   // The people a thread names, one part for the workbook; an entry
   // without an author is a person with no name.
   const persons: string[] = []
+  /** Excel's own names for the print area and the title rows, one per sheet that has them. */
+  const printNames: string[] = []
   const personId = (name: string) => { let i = persons.indexOf(name); if (i < 0) { i = persons.length; persons.push(name) } return guid(0, i + 1) }
 
   const sheetEntries = wb.sheets.map((name, index) => {
@@ -504,12 +510,22 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       overrides.push(`<Override PartName="/xl/comments${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>`)
     }
 
+    // Page Layout: what prints and how. `printOptions` only when something is on.
+    const ps = state.pageSetup
+    const printOptions = ps.gridlines || ps.headings ? `<printOptions${ps.gridlines ? ' gridLines="1"' : ''}${ps.headings ? ' headings="1"' : ''}/>` : ''
+    const m = ps.margins
+    const pageMargins = `<pageMargins left="${m.left}" right="${m.right}" top="${m.top}" bottom="${m.bottom}" header="${m.header}" footer="${m.footer}"/>`
+    const pageSetup = `<pageSetup paperSize="${PAPER_SIZES[ps.paper]?.code ?? 9}"${ps.scale !== 100 ? ` scale="${ps.scale}"` : ''} orientation="${ps.orientation}"/>`
+    const quoted = /^[A-Za-z_][A-Za-z0-9_.]*$/.test(name) ? name : `'${name.replace(/'/g, "''")}'`
+    if (ps.printArea?.length) printNames.push(`<definedName name="_xlnm.Print_Area" localSheetId="${index}">${esc(ps.printArea.map((r) => `${quoted}!${absRef(r)}`).join(','))}</definedName>`)
+    if (ps.printTitleRows) printNames.push(`<definedName name="_xlnm.Print_Titles" localSheetId="${index}">${esc(`${quoted}!$${ps.printTitleRows[0] + 1}:$${ps.printTitleRows[1] + 1}`)}</definedName>`)
+
     parts[`xl/worksheets/sheet${n}.xml`] = XML_HEAD
       + `<worksheet xmlns="${NS_MAIN}" xmlns:r="${NS_REL}">`
       + `<sheetViews>${sheetView}</sheetViews><sheetFormatPr defaultRowHeight="15"/>`
       + (colXml.length ? `<cols>${colXml.join('')}</cols>` : '')
       + `<sheetData>${rowXml.join('')}</sheetData>`
-      + protection + editRanges + autoFilter + merges + cf + dv + legacyDrawing
+      + protection + editRanges + autoFilter + merges + cf + dv + printOptions + pageMargins + pageSetup + legacyDrawing
       + '</worksheet>'
     overrides.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
     return { name, n, hidden: state.sheetHidden }
@@ -521,7 +537,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     + `<workbook xmlns="${NS_MAIN}" xmlns:r="${NS_REL}">`
     + `<bookViews><workbookView activeTab="${activeTab}"/></bookViews>`
     + `<sheets>${sheetEntries.map((s) => `<sheet name="${esc(s.name)}" sheetId="${s.n}"${s.hidden ? ' state="hidden"' : ''} r:id="rId${s.n}"/>`).join('')}</sheets>`
-    + (names.length ? `<definedNames>${names.map((d) => `<definedName name="${esc(d.name)}">${esc(d.refersTo.replace(/^=/, ''))}</definedName>`).join('')}</definedNames>` : '')
+    + (names.length || printNames.length ? `<definedNames>${names.map((d) => `<definedName name="${esc(d.name)}">${esc(d.refersTo.replace(/^=/, ''))}</definedName>`).join('')}${printNames.join('')}</definedNames>` : '')
     + '</workbook>'
   parts['xl/_rels/workbook.xml.rels'] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">`
     + sheetEntries.map((s) => `<Relationship Id="rId${s.n}" Type="${REL_WORKSHEET}" Target="worksheets/sheet${s.n}.xml"/>`).join('')
@@ -861,6 +877,27 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 
       const pane = kid(kid(kid(root, 'sheetViews'), 'sheetView'), 'pane')
       if (pane && attr(pane, 'state') === 'frozen') entry.freeze = { rows: num(pane, 'ySplit') ?? 0, cols: num(pane, 'xSplit') ?? 0 }
+      const printOptions = kid(root, 'printOptions')
+      const pageMargins = kid(root, 'pageMargins')
+      const pageSetupEl = kid(root, 'pageSetup')
+      if (printOptions || pageMargins || pageSetupEl) {
+        const ps: PageSetup = defaultPageSetup()
+        if (flag(printOptions, 'gridLines')) ps.gridlines = true
+        if (flag(printOptions, 'headings')) ps.headings = true
+        if (pageMargins) {
+          for (const side of ['left', 'right', 'top', 'bottom', 'header', 'footer'] as const) {
+            const v = num(pageMargins, side)
+            if (v !== null) ps.margins[side] = v
+          }
+        }
+        if (attr(pageSetupEl, 'orientation') === 'landscape') ps.orientation = 'landscape'
+        const code = num(pageSetupEl, 'paperSize')
+        const paper = (Object.keys(PAPER_SIZES) as PaperSize[]).find((p) => PAPER_SIZES[p].code === code)
+        if (paper) ps.paper = paper
+        const scale = num(pageSetupEl, 'scale')
+        if (scale !== null && scale > 0) ps.scale = scale
+        entry.pageSetup = ps
+      }
       const sheetProtection = kid(root, 'sheetProtection')
       if (sheetProtection && flag(sheetProtection, 'sheet')) {
         entry.protected = true
@@ -1002,9 +1039,25 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
   for (const dn of kids(kid(wbRoot, 'definedNames'), 'definedName')) {
     const name = attr(dn, 'name')
     const refersTo = dn.textContent?.trim()
-    // Print areas and filter databases are Excel's own; a name that starts
-    // with an underscore is left where it was.
-    if (name && refersTo && !name.startsWith('_xlnm.')) names[name] = refersTo
+    if (!name || !refersTo) continue
+    // Excel's own names: the print area and the title rows go to their
+    // sheet's page setup; the rest of the underscored ones stay where they were.
+    if (name === '_xlnm.Print_Area' || name === '_xlnm.Print_Titles') {
+      const sheetName = sheets[num(dn, 'localSheetId') ?? -1]?.name
+      const entry = sheetName ? entries[sheetName] : undefined
+      if (!entry) continue
+      entry.pageSetup ??= defaultPageSetup()
+      const areas = refersTo.split(',').map((piece) => piece.slice(piece.lastIndexOf('!') + 1).replace(/\$/g, ''))
+      if (name === '_xlnm.Print_Area') {
+        const rects = areas.map(refRect).filter((r): r is Rect => r !== null)
+        if (rects.length) entry.pageSetup.printArea = rects
+      } else {
+        const rows = /^(\d+):(\d+)$/.exec(areas[0] ?? '')
+        if (rows) entry.pageSetup.printTitleRows = [Number(rows[1]) - 1, Number(rows[2]) - 1]
+      }
+      continue
+    }
+    if (!name.startsWith('_xlnm.')) names[name] = refersTo
   }
   const activeTab = num(kid(kid(wbRoot, 'bookViews'), 'workbookView'), 'activeTab') ?? 0
   const active = sheets[activeTab]?.name ?? sheets[0]?.name ?? 'Sheet1'

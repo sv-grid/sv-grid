@@ -148,7 +148,7 @@ export function setFindReplaceHandler(fn: ((cmd: GridCommandContext) => void) | 
  * nothing is behind the action and the key falls through.
  */
 export type RibbonKeyAction =
-  | 'file-open' | 'file-save-xlsx'
+  | 'file-open' | 'file-save-xlsx' | 'file-print'
   | 'recalculate' | 'toggle-formulas' | 'toggle-filter'
   | 'insert-function' | 'name-manager' | 'insert-table'
   | 'hide-rows' | 'hide-columns' | 'unhide-rows' | 'unhide-columns'
@@ -637,6 +637,7 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   // replace, as in Excel; with no shell to answer them they fall through.
   { key: 'o', mod: true, run: raise('file-open'), label: 'Open' },
   { key: 's', mod: true, run: raise('file-save-xlsx'), label: 'Save As' },
+  { key: 'p', mod: true, run: raise('file-print'), label: 'Print' },
 
   // Structure. Like the format bindings, these decline when nothing is
   // attached. Excel opens a dialog for an ambiguous selection; deciding what

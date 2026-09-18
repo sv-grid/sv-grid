@@ -133,6 +133,7 @@ so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
 | Shift + F11 | New sheet. |
 | Ctrl/Cmd + O | Open an .xlsx (the shell's File > Open). |
 | Ctrl/Cmd + S | Save As .xlsx (File > Save As). |
+| Ctrl/Cmd + P | Print the active sheet as its Page Layout says (File > Print). |
 
 ## What Ctrl+Arrow actually does
 
