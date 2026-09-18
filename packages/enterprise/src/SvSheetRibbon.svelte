@@ -682,7 +682,7 @@
   <div class="band" class:away={collapsed && !peek} class:peek={collapsed && peek} bind:clientWidth={bandWidth}>
     {#each current?.groups ?? [] as group (group.id)}
       {#if collapsedGroups.has(group.id)}
-        <section class="group folded" aria-label={groupLabel(group)}>
+        <section class="group folded" role="group" aria-label={groupLabel(group)}>
           <SvPopover bind:open={groupOpen[group.id]} placement="bottom-start" arrow={false} offset={4} ariaLabel={groupLabel(group)}>
             {#snippet anchor()}
               <button type="button" class="btn large" aria-haspopup="true" aria-expanded={groupOpen[group.id] ?? false} title={groupLabel(group)}>
@@ -697,7 +697,10 @@
           </SvPopover>
         </section>
       {:else}
-        <section class="group" class:compact={fit.compact.has(group.id)} aria-label={groupLabel(group)}>
+        <!-- A group of the toolbar, not a landmark: a named <section> is a
+             region, and a ribbon of twelve regions (or two ribbons on one
+             page) buries whatever landmarks the page really has. -->
+        <section class="group" class:compact={fit.compact.has(group.id)} role="group" aria-label={groupLabel(group)}>
           {@render body(group, true)}
           <div class="label-row">
             <span class="group-label">{groupLabel(group)}</span>

@@ -66,6 +66,67 @@ export function findTableStyle(id: string | undefined): TableStyle | undefined {
   return TABLE_STYLES.find((s) => s.id.toLowerCase() === id.toLowerCase())
 }
 
+/** A hex colour as its three channels, 0 to 255. */
+function channels(hex: string): [number, number, number] {
+  const value = hex.trim().replace('#', '')
+  const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value
+  const n = Number.parseInt(full.slice(0, 6), 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+
+/** Relative luminance, the way WCAG defines it. */
+function luminance(hex: string): number {
+  const [r, g, b] = channels(hex).map((c) => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  }) as [number, number, number]
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contrast(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p) as [number, number]
+  return (x + 0.05) / (y + 0.05)
+}
+
+/**
+ * Black or white over a fill, whichever can be read.
+ *
+ * Excel paints a header's text white whatever the fill, which on its gold
+ * and sky accents is about 2:1: legible to some people, not to others, and
+ * flagged by every checker. Picking the readable one keeps Excel's colours
+ * and drops the part of Excel's behaviour that fails.
+ */
+export function readableOn(fill: string): string {
+  const dark = '#0f172a'
+  const light = '#ffffff'
+  return contrast(fill, light) >= contrast(fill, dark) ? light : dark
+}
+
+/**
+ * The fill a filled header takes: the accent, darkened only when neither
+ * black nor white can be read on it.
+ *
+ * Mid grey is the one accent where that happens: white is 4.0 against it
+ * and near-black 4.3, so both sit under the 4.5 a checker asks for. A few
+ * steps darker keeps it recognisably the same grey and lets the white text
+ * clear it, which is a smaller lie than a header nobody can read.
+ */
+export function headerFill(accent: string): string {
+  const best = Math.max(contrast(accent, '#ffffff'), contrast(accent, '#0f172a'))
+  if (best >= 4.5) return accent
+  for (let percent = 92; percent >= 60; percent -= 8) {
+    const darker = mixWithBlack(accent, percent)
+    if (contrast(darker, '#ffffff') >= 4.5) return darker
+  }
+  return mixWithBlack(accent, 60)
+}
+
+/** The colour a mix of an accent with black comes out as, for the dark tone. */
+function mixWithBlack(hex: string, percent: number): string {
+  const mixed = channels(hex).map((c) => Math.round((c * percent) / 100))
+  return `#${mixed.map((c) => c.toString(16).padStart(2, '0')).join('')}`
+}
+
 export type TableStyleColours = {
   /** The header row's fill, and the colour its text needs to stay readable. */
   header: string
@@ -101,15 +162,18 @@ export function tableStyleColours(style: TableStyle | string | undefined): Table
   if (found.tone === 'dark') {
     return {
       header: `color-mix(in srgb, ${accent} 65%, #000)`,
-      headerText: '#ffffff',
+      headerText: readableOn(mixWithBlack(accent, 65)),
       band: mix(22),
       totals: mix(30),
       border: mix(70),
     }
   }
+  const fill = headerFill(accent)
   return {
-    header: accent,
-    headerText: '#ffffff',
+    header: fill,
+    // White where white can be read, near-black where it cannot: Excel's
+    // gold and sky headers are about 2:1 against white.
+    headerText: readableOn(fill),
     band: mix(13),
     totals: mix(20),
     border: mix(55),

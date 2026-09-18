@@ -3,6 +3,7 @@ import {
   createTableRegistry, isValidTableName, resolveTableRange, columnIndexOf,
   rowCountOf, shiftTable, shiftTables, type TableRegion,
 } from './tables'
+import { createWorkbook } from './workbook'
 import { parseFormula } from './parse'
 import { evaluate, type EvalContext } from './evaluate'
 import { withCustomFunctions } from './functions'
@@ -345,5 +346,44 @@ describe('shiftTable', () => {
   it('a totals row rides below the data', () => {
     const t = table({ hasTotals: true })
     expect(shiftTable(t, 'S', { kind: 'insertRows', at: 0, count: 1 })).toMatchObject({ headerRow: 3, lastRow: 10, hasTotals: true })
+  })
+})
+
+describe('a table when its sheet changes name or goes', () => {
+  it('follows a rename, so a structured reference keeps resolving', () => {
+    const wb = createWorkbook([{ name: 'Old', cells: [['Qty'], ['2'], ['3']] }])
+    wb.tables.define({ name: 'T', sheet: 'Old', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 2, hasTotals: false })
+    wb.addSheet('Report')
+    wb.setRaw('Report', 0, 0, '=SUM(T[Qty])')
+    expect(wb.getValue('Report', 0, 0)).toBe(5)
+    wb.renameSheet('Old', 'New')
+    expect(wb.tables.get('T')!.sheet).toBe('New')
+    expect(wb.getValue('Report', 0, 0)).toBe(5)
+  })
+
+  it('is duplicated onto a copied sheet, under a name of its own', () => {
+    const wb = createWorkbook([{ name: 'Orders', cells: [
+      ['Qty', 'Price', 'Total'], ['2', '10', '=[@Qty]*[@Price]'], ['3', '20', '=[@Qty]*[@Price]'],
+    ] }])
+    wb.tables.define({ name: 'T', sheet: 'Orders', headerRow: 0, firstCol: 0, lastCol: 2, lastRow: 2, hasTotals: false })
+    const copy = wb.copySheet('Orders')!
+    // Without a table of its own the copied [@Qty] formulas read #REF!.
+    expect(wb.getValue(copy, 1, 2)).toBe(20)
+    expect(wb.tables.list()).toHaveLength(2)
+    const made = wb.tables.list().find((t) => t.sheet === copy)!
+    expect(made.name).not.toBe('T')
+    // And the name is one Excel would accept: `T2` reads as a cell.
+    expect(isValidTableName(made.name)).toBe(true)
+  })
+
+  it('goes when its sheet is deleted', () => {
+    const wb = createWorkbook([
+      { name: 'Data', cells: [['Qty'], ['2']] },
+      { name: 'Report', cells: [['']] },
+    ])
+    wb.tables.define({ name: 'T', sheet: 'Data', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 1, hasTotals: false })
+    expect(wb.tables.list()).toHaveLength(1)
+    wb.removeSheet('Data')
+    expect(wb.tables.list()).toEqual([])
   })
 })
