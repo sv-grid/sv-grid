@@ -47,6 +47,8 @@
   import SvSheetGoalSeek from './SvSheetGoalSeek.svelte'
   import SvSheetTextToColumns from './SvSheetTextToColumns.svelte'
   import SvSheetRemoveDuplicates from './SvSheetRemoveDuplicates.svelte'
+  import SvSheetSort from './SvSheetSort.svelte'
+  import { sortOrder, guessHeaderRow, type SortKey } from './sheet/sort'
   import { currentRegion, isBlankValue } from './sheet/navigate'
   import { freezeAtActiveCell, freezeTopRow, freezeFirstColumn, applyFreeze, type FreezeState } from './sheet/freeze'
   import { gridOf } from './sheet/shortcuts'
@@ -1765,45 +1767,53 @@
    * move together, as one undo. Formulas are moved as they are, which is
    * what Excel does too.
    */
-  function sortRegion(direction: 'asc' | 'desc', over?: { rect: Rect; keyCol: number }) {
+  /**
+   * The block a sort works on: the selection when it is a range, else the
+   * current region around the active cell, clipped to the used sheet.
+   */
+  function sortBlock(over?: { rect: Rect }): { top: number; left: number; bottom: number; right: number } | null {
     const cmd = cmdOf()
-    const target = getFormatTarget()
-    if (!cmd || !cmd.activeCell || !target) return
+    if (!cmd || !cmd.activeCell) return null
     const last = selection[selection.length - 1]
     const isRange = last && (last[0] !== last[2] || last[1] !== last[3])
     const rect = over ? over.rect : isRange ? last : currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
-    const r1 = rect[0]
-    const c1 = rect[1]
-    const r2 = Math.min(rect[2], Math.max(wb.rowCount(wb.active) - 1, r1))
-    const c2 = Math.min(rect[3], Math.max(wb.colCount(wb.active) - 1, c1))
+    const top = rect[0]
+    const left = rect[1]
+    const bottom = Math.min(rect[2], Math.max(wb.rowCount(wb.active) - 1, top))
+    const right = Math.min(rect[3], Math.max(wb.colCount(wb.active) - 1, left))
+    return { top, left, bottom, right }
+  }
+
+  /** Sort A to Z / Z to A on the active cell's column, or a filter's. */
+  function sortRegion(direction: 'asc' | 'desc', over?: { rect: Rect; keyCol: number }) {
+    const block = sortBlock(over)
+    if (!block) return
+    const keyCol = Math.min(Math.max(over?.keyCol ?? active.colIndex, block.left), block.right)
+    // An AutoFilter's region has its header in row 1 by definition.
+    const headerRow = over ? true : guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol)
+    sortBy(block, [{ col: keyCol, direction }], headerRow)
+  }
+
+  /** Sort the block by the keys in order, one undo; the Sort dialog's OK. */
+  function sortBy(block: { top: number; left: number; bottom: number; right: number }, keys: ReadonlyArray<SortKey>, headerRow: boolean) {
+    const cmd = cmdOf()
+    const target = getFormatTarget()
+    if (!cmd || !cmd.activeCell || !target || !keys.length) return
+    const r1 = block.top
+    const c1 = block.left
+    const r2 = block.bottom
+    const c2 = block.right
     if (r2 <= r1) return
     if (protectedNow()) { refuse(); return }
     if (sortBlockedByMerges(mergesNow(), [r1, c1, r2, c2])) {
       say('To do this, all the merged cells need to be the same size.')
       return
     }
-    const keyCol = Math.min(Math.max(over?.keyCol ?? active.colIndex, c1), c2)
     const valueAt = (r: number, c: number) => wb.getValue(wb.active, r, c)
-    const isText = (v: unknown) => typeof v === 'string' && v !== ''
-    // An AutoFilter's region has its header in row 1 by definition.
-    const headerRow = over ? true : isText(valueAt(r1, keyCol)) && !isText(valueAt(r1 + 1, keyCol)) && !isBlankValue(valueAt(r1 + 1, keyCol))
     const start = headerRow ? r1 + 1 : r1
     if (r2 <= start) return
     const rows = Array.from({ length: r2 - start + 1 }, (_, i) => start + i)
-    const rank = (v: unknown): [number, number | string] => {
-      if (isBlankValue(v)) return [3, '']
-      if (typeof v === 'number') return [0, v]
-      if (typeof v === 'boolean') return [2, v ? 1 : 0]
-      if (isError(v as CellValue)) return [2, 0]
-      return [1, String(v).toLowerCase()]
-    }
-    const order = rows.slice().sort((a, b) => {
-      const [ka, va] = rank(valueAt(a, keyCol))
-      const [kb, vb] = rank(valueAt(b, keyCol))
-      if (ka !== kb) return ka === 3 ? 1 : kb === 3 ? -1 : direction === 'asc' ? ka - kb : kb - ka
-      const cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb))
-      return direction === 'asc' ? cmp : -cmp
-    })
+    const order = sortOrder(rows, keys, valueAt)
     if (order.every((r, i) => r === rows[i])) return
     const store = target.store
     const before = rows.map((r) => ({
@@ -1863,6 +1873,8 @@
   let goalSeekOpen = $state(false)
   let textToColumnsOpen = $state(false)
   let removeDuplicatesOpen = $state(false)
+  /** The Sort dialog, with the block it opens over. */
+  let sortDialog = $state<{ block: { top: number; left: number; bottom: number; right: number }; headerGuess: boolean } | null>(null)
 
   function delegate(action: RibbonActionId, context: GridCommandContext) {
     if (onAction?.(action, context) === true) return
@@ -1875,6 +1887,13 @@
       case 'goal-seek': goalSeekOpen = true; return
       case 'text-to-columns': textToColumnsOpen = true; return
       case 'remove-duplicates': removeDuplicatesOpen = true; return
+      case 'sort-custom': {
+        const block = sortBlock()
+        if (!block || block.bottom <= block.top) { say('Select a block with more than one row to sort.'); return }
+        const keyCol = Math.min(Math.max(active.colIndex, block.left), block.right)
+        sortDialog = { block, headerGuess: guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol) }
+        return
+      }
       case 'data-validation': dataValidationOpen = true; return
       case 'circle-invalid': {
         circlesOn = wb.active
@@ -3428,6 +3447,17 @@
   <SvSheetGoalSeek bind:open={goalSeekOpen} workbook={wb} cmd={cmdOf} onClose={() => afterDialog()} />
   <SvSheetTextToColumns bind:open={textToColumnsOpen} workbook={wb} cmd={cmdOf} onDone={say} onClose={() => afterDialog()} />
   <SvSheetRemoveDuplicates bind:open={removeDuplicatesOpen} workbook={wb} cmd={cmdOf} onDone={say} onClose={() => afterDialog()} />
+  {#if sortDialog}
+    <SvSheetSort
+      open={true}
+      workbook={wb}
+      block={sortDialog.block}
+      headerGuess={sortDialog.headerGuess}
+      activeCol={active.colIndex}
+      onApply={(keys, hasHeaders) => { const d = sortDialog; if (d) sortBy(d.block, keys, hasHeaders) }}
+      onClose={() => { sortDialog = null; afterDialog() }}
+    />
+  {/if}
   {#if cfDialog}
     <SvSheetConditionalFormat
       open={true}

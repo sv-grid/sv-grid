@@ -294,7 +294,7 @@ otherwise the shell's own dialog opens:
 
 The shell answers everything on the ribbon itself: `recalculate`,
 `toggle-formulas` (Excel's `Ctrl+` `` ` ``), `toggle-filter`, `sort-asc` /
-`sort-desc`, and the dialogs listed below. Two buttons have nothing behind
+`sort-desc` / `sort-custom`, and the dialogs listed below. Two buttons have nothing behind
 them in the library, Insert > Table and Insert > Chart, and are left off the
 ribbon unless `extras={['insert-table', 'insert-chart']}` says the
 application answers them.
@@ -514,6 +514,7 @@ the cell menu is a button that does nothing:
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
+| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it) and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
