@@ -12,6 +12,9 @@
    *                keystroke on an Amount does nothing and the status bar
    *                says why. Review > Unprotect Sheet opens everything;
    *                Format Cells > Protection shows which cells were unlocked.
+   *                The Protect Sheet list leaves Format rows and Sort open,
+   *                and Allow Edit Ranges names the Notes column, which takes
+   *                an edit although its cells are locked.
    *   Comments     three reviewer comments sit on the cells they are about,
    *                the red corner Excel draws. Two are threads with a reply,
    *                one of them resolved; the third is a plain note. Hover for
@@ -48,7 +51,7 @@
   const STATUSES = ['Submitted', 'Approved', 'Rejected', 'On hold']
 
   const claims = [
-    ['Claim', 'Employee', 'Category', 'Amount', 'Receipt', 'Status', 'Paid'],
+    ['Claim', 'Employee', 'Category', 'Amount', 'Receipt', 'Status', 'Paid', 'Notes'],
     ...CLAIMS.map(([id, who, cat, amount, receipt, status], i) => [
       id, who, cat, String(amount), receipt, status, `=IF(F${i + 2}="Approved",D${i + 2},0)`,
     ]),
@@ -94,6 +97,13 @@
   ]
   sheet.freeze = { rows: 1, cols: 0 }
   sheet.protected = true
+  // Excel's Protect Sheet list and Allow Edit Ranges: the reviewer may
+  // still size and hide rows and sort the claims, and the Notes column
+  // takes an edit although its cells are locked.
+  sheet.protection = {
+    allow: { formatRows: true, sort: true },
+    ranges: [{ id: 'notes', title: 'Reviewer notes', rects: [[1, 7, LAST - 1, 7]] }],
+  }
 
   // Fills are literal colours, as in Excel, each with its own text colour so
   // the sheet reads the same on a dark theme.

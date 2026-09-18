@@ -20,6 +20,8 @@ import SvSheetComment from './SvSheetComment.svelte'
 import SvSheetDataValidation from './SvSheetDataValidation.svelte'
 import SvSheetValidationAlert from './SvSheetValidationAlert.svelte'
 import SvSheetConditionalFormat from './SvSheetConditionalFormat.svelte'
+import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
+import SvSheetEditRanges from './SvSheetEditRanges.svelte'
 import { createWorkbook } from './sheet/workbook'
 import { setFindTarget } from './sheet/find-replace'
 import { functionCatalog } from './sheet/function-catalog'
@@ -646,12 +648,70 @@ describe('SvSheetComment (DOM)', () => {
     click(btn('Save'))
     expect(onSave).toHaveBeenCalledWith('Root, corrected')
 
-    comp && unmount(comp)
+    if (comp) unmount(comp)
     comp = mount(SvSheetComment, { target: host!, props: { thread: { ...thread, resolved: true }, text: 'Root', address: 'A1', onDraft: () => {}, onSave, onDelete: () => {}, onUpdate } })
     flushSync()
     expect(host!.querySelector('.badge')?.textContent).toBe('Resolved')
     expect(host!.querySelector('textarea')).toBeNull()
     click(btn('Reopen'))
     expect(onUpdate).toHaveBeenLastCalledWith(thread)
+  })
+})
+
+describe('SvSheetProtectSheet (DOM)', () => {
+  it('opens on the sheet\'s list and hands back what is ticked', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetProtectSheet, { target: host!, props: { open: true, allow: { sort: true }, onApply } })
+    flushSync()
+    const boxes = qa('.sv-modal input[type="checkbox"]') as HTMLInputElement[]
+    expect(boxes).toHaveLength(9)
+    expect(boxes.map((b) => b.checked)).toEqual([false, false, false, false, false, false, false, true, false])
+    expect(qa('.sv-modal label').map((l) => l.textContent?.trim())).toEqual([
+      'Format cells', 'Format columns', 'Format rows', 'Insert columns', 'Insert rows', 'Delete columns', 'Delete rows', 'Sort', 'Use AutoFilter',
+    ])
+    click(boxes[0])
+    click(boxes[7])
+    click(qa('.sv-modal button').find((b) => b.textContent === 'OK'))
+    expect(onApply).toHaveBeenCalledWith({ formatCells: true })
+  })
+})
+
+describe('SvSheetEditRanges (DOM)', () => {
+  it('lists the ranges, adds one over the selection, modifies and deletes, and OK hands the list back', () => {
+    const onApply = vi.fn()
+    const ranges = [{ id: 'a', title: 'Inputs', rects: [[1, 1, 3, 1]] as [number, number, number, number][] }]
+    comp = mount(SvSheetEditRanges, { target: host!, props: { open: true, ranges, selection: 'D2:D5', onApply, onProtect: () => {} } })
+    flushSync()
+    const rowsText = () => qa('.sv-modal tbody tr').map((r) => r.textContent?.replace(/\s+/g, ' ').trim())
+    expect(rowsText()[0]).toContain('Inputs')
+    expect(rowsText()[0]).toContain('B2:B4')
+    expect(q<HTMLInputElement>('.sv-modal input[placeholder="Range1"]')!.value).toBe('Range2')
+    expect(q<HTMLInputElement>('.sv-modal input[placeholder*="B2:B10"]')!.value).toBe('D2:D5')
+    q<HTMLFormElement>('.sv-modal form')!.requestSubmit()
+    flushSync()
+    expect(rowsText()[1]).toContain('Range2')
+    expect(rowsText()[1]).toContain('D2:D5')
+    click(qa('.sv-modal button').find((b) => b.textContent === 'Modify'))
+    typeInto(q<HTMLInputElement>('.sv-modal tbody input[aria-label="Refers to cells"]')!, 'B2, C4:C6')
+    click(qa('.sv-modal tbody button').find((b) => b.textContent === 'Save'))
+    expect(rowsText()[0]).toContain('B2, C4:C6')
+    click(qa('.sv-modal button').find((b) => b.textContent === 'OK'))
+    expect(onApply).toHaveBeenCalledTimes(1)
+    const out = onApply.mock.calls[0]![0]
+    expect(out.map((r: { title: string; rects: unknown }) => [r.title, r.rects])).toEqual([['Inputs', [[1, 1, 1, 1], [3, 2, 5, 2]]], ['Range2', [[1, 3, 4, 3]]]])
+    expect(ranges[0]!.rects).toEqual([[1, 1, 3, 1]])
+  })
+
+  it('refuses a text that is not a range and says why; Protect Sheet... applies and hands over', () => {
+    const onApply = vi.fn(); const onProtect = vi.fn()
+    comp = mount(SvSheetEditRanges, { target: host!, props: { open: true, ranges: [], selection: 'A1', onApply, onProtect } })
+    flushSync()
+    typeInto(q<HTMLInputElement>('.sv-modal input[placeholder*="B2:B10"]')!, 'nope')
+    q<HTMLFormElement>('.sv-modal form')!.requestSubmit()
+    flushSync()
+    expect(q('.sv-modal [role="alert"]')?.textContent).toBe('"nope" is not a cell or range')
+    click(qa('.sv-modal button').find((b) => b.textContent === 'Protect Sheet...'))
+    expect(onApply).toHaveBeenCalledWith([])
+    expect(onProtect).toHaveBeenCalledTimes(1)
   })
 })

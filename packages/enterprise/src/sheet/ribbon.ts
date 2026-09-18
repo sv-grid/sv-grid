@@ -180,6 +180,7 @@ export type RibbonActionId =
   | 'format-painter'
   | 'protect-sheet'
   | 'unprotect-sheet'
+  | 'allow-edit-ranges'
   | 'toggle-lock'
   | 'new-comment'
   | 'edit-comment'
@@ -981,8 +982,10 @@ function toggleWrap(cmd: GridCommandContext): boolean {
  * the sheet's notes: New Comment opens the editor on the active cell (and
  * edits the one there), Delete, Previous and Next walk them, Show All
  * Comments lists them. Protect Sheet and Unprotect Sheet are one slot, the
- * shell leaving off whichever does not apply. There is no password, as the
- * sheet documents.
+ * shell leaving off whichever does not apply; Protect Sheet opens Excel's
+ * dialog with its "allow all users to" list, and Allow Edit Ranges names
+ * the blocks that stay editable. There is no password, as the sheet
+ * documents.
  */
 const REVIEW: RibbonTab = {
   id: 'review',
@@ -1012,6 +1015,10 @@ const REVIEW: RibbonTab = {
         {
           id: 'unprotect-sheet', label: 'Unprotect Sheet', title: 'Unprotect Sheet',
           icon: 'unprotect', kind: 'button', size: 'large', emits: 'unprotect-sheet',
+        },
+        {
+          id: 'allow-edit-ranges', label: 'Allow Edit Ranges', title: 'Allow Users to Edit Ranges: blocks that take an edit while the sheet is protected',
+          icon: 'edit-ranges', kind: 'button', size: 'large', emits: 'allow-edit-ranges',
         },
       ],
     },
