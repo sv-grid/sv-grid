@@ -10,7 +10,7 @@
  * ts / tsx / svelte fences, and that page is deliberately written in plain JS
  * because its readers have no TypeScript-Svelte toolchain.
  *
- * The main entry (installEnterprise / board / scheduler) is deliberately NOT
+ * The main entry (installEnterprise / board / scheduler / gantt) is deliberately NOT
  * covered here: it imports .svelte components, so it needs a Svelte-aware
  * bundler, which is exactly what the page says. Testing it would need this
  * suite to compile Svelte, which the published-artifact setup does not.
