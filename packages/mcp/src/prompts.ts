@@ -26,6 +26,15 @@ export const PROMPTS: Prompt[] = [
     ],
   },
   {
+    name: 'build_sheet',
+    title: 'Build a spreadsheet',
+    description:
+      'Scaffold an Excel-style spreadsheet on the SvSheet shell (@svgrid/enterprise) for a described workbook: sheets, formulas, formats, rules, protection.',
+    arguments: [
+      { name: 'description', description: 'The sheets, the cells and formulas, and what the user may do, in plain language.', required: true },
+    ],
+  },
+  {
     name: 'explain_api',
     title: 'Explain a SvGrid API',
     description: 'Explain a prop, column option or method using the shipped docs rather than recall.',
@@ -61,6 +70,30 @@ export function getPrompt(name: string, args: Record<string, unknown>) {
           'BEFORE showing me the code.\n' +
           '5. Call `svgrid_preview` with the same columns and a few rows, so I can see ' +
           'and touch the grid rather than just read it.',
+      ),
+    }
+  }
+
+  if (name === 'build_sheet') {
+    return {
+      description: 'Build a verified spreadsheet on SvSheet',
+      ...messages(
+        `Build a spreadsheet on the SvSheet shell for: ${arg('description')}\n\n` +
+          'SvSheet is in `@svgrid/enterprise`, a component that owns a workbook and a document; ' +
+          'confirm the package is installed before importing it. Work in this order:\n' +
+          '1. Call `svgrid_search` for "spreadsheet shell" and for each part this needs ' +
+          '(formulas, data validation, conditional formatting, comments, protection, xlsx). ' +
+          'Do not rely on memory of the API.\n' +
+          '2. Call `svgrid_get` on the closest spreadsheet demo (ids 452 to 466 and 474) and follow ' +
+          'its structure: `createWorkbook` for the cells as raw text with formulas as `=...` strings, ' +
+          '`createSheetDocument` for everything that is not a cell, `<SvSheet document={doc}>`.\n' +
+          '3. Write the component. Rectangles are `[minRow, minCol, maxRow, maxCol]`, 0-based; ' +
+          'a write from outside goes through `cmd.setCellValue` in `onAction` or is followed by ' +
+          '`refresh()`; addresses in `formats` for another sheet are qualified (`Orders!F2`).\n' +
+          '4. Call `svgrid_check_code` on what you wrote and use the `fixed` source it returns, ' +
+          'repeating until it is clean, BEFORE showing me the code.\n' +
+          '5. Say which formulas the engine evaluates and which it does not (there is no spill), ' +
+          'from the search results rather than from memory.',
       ),
     }
   }

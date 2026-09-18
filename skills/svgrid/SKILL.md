@@ -1,6 +1,6 @@
 ---
 name: svgrid
-description: Writes, fixes, and reviews SvGrid data-grid code in Svelte 5 projects - columns, features, inline editing, filtering, theming with --sg-* tokens, server-side data, the built-in AI helpers, and the enterprise add-on (export/import/pivot). Provides project context, the ColumnDef and <SvGrid> API surface, and correct-vs-incorrect patterns. Applies when working with @svgrid/grid, @svgrid/enterprise, <SvGrid>, ColumnDef, SvGridApi, or any project that imports from @svgrid/*.
+description: Writes, fixes, and reviews SvGrid data-grid code in Svelte 5 projects - columns, features, inline editing, filtering, theming with --sg-* tokens, server-side data, the built-in AI helpers, and the enterprise add-on (export/import/pivot, the <SvSheet> spreadsheet shell). Provides project context, the ColumnDef and <SvGrid> API surface, and correct-vs-incorrect patterns. Applies when working with @svgrid/grid, @svgrid/enterprise, <SvGrid>, <SvSheet>, ColumnDef, SvGridApi, or any project that imports from @svgrid/*.
 user-invocable: false
 allowed-tools: Bash(npm create @svgrid@latest *), Bash(pnpm create @svgrid *), Bash(yarn create @svgrid *), Bash(npx @svgrid/mcp *), Bash(pnpm dlx @svgrid/mcp *)
 ---
@@ -105,6 +105,17 @@ code pairs.
 - **Dark mode** = redeclare the same `--sg-*` tokens under the app's dark
   selector. The grid reads tokens at paint time; no JS listener needed.
 
+### The spreadsheet shell → [sheet.md](./rules/sheet.md)
+
+- **`<SvSheet>` is a component in `@svgrid/enterprise`**, not a mode of
+  `<SvGrid>`: it owns a document. Anything beyond plain cells (formats,
+  rules, comments, protection) goes on a `SheetDocument` passed as
+  `document`, read once at mount.
+- **Writes from outside go through `cmd.setCellValue` in `onAction`**, or
+  are followed by `sheet.refresh()`; several cells go in one `cmd.batch`.
+- **Qualify addresses in `formats`** to reach another sheet
+  (`'Orders!F2'`); `onAction` returning `true` takes an action over.
+
 ## Grounding: look it up, don't guess
 
 SvGrid ships machine-readable grounding so you never invent an API. When a
@@ -133,7 +144,8 @@ looks right and code that is right.
 - **`@svgrid/grid`** (MIT) - the grid, all features, theming, server data,
   headless engine. Everything in the rules files is here unless marked.
 - **`@svgrid/enterprise`** (commercial) - `installEnterprise(api)` adds
-  export, import, pivot, and the Kanban board + scheduler renderers. Runs
+  export, import, pivot, the Kanban board + scheduler renderers, and the
+  `<SvSheet>` spreadsheet shell with its formula engine. Runs
   unlicensed with a watermark, so it is safe to scaffold - but only use it
   when the package is actually a dependency.
 - **AI helpers are FREE and live in `@svgrid/grid`** - `setAIProvider`,

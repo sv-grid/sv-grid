@@ -221,6 +221,7 @@ views, not generic widgets:
 | **Board** | A kanban board of the entity's rows, one lane per value of a group-by field, with drag between lanes. | Group-by, card title / subtitle / badge fields, open-screen drill. |
 | **Calendar** | A month event-calendar: each row with a date lands on its day, labelled and optionally color-coded. | Date field, title field, color field, open-screen drill. |
 | **Detail** | A full record "detail page": header, metric row, field sections, and related-record tabs - the 360 view a row action or drill-through opens. | Title / subtitle / status / metric fields, sections, related child entities. |
+| **Spreadsheet** | The entity's rows on the Excel-style sheet (`SvSheet`): a header row, a row per record, and a SUM row under every numeric column, so the reader can add formulas, filter, format and save an xlsx. | Which fields, totals on / off. |
 | **Form** | A standalone create / edit form for the entity. | Presentation (drawer / modal / inline). |
 | **Filter panel** | A faceted sidebar that **filters the screen's grid** - enum / boolean facets pick a value, text facets search. | Title + which fields become facets. |
 | **Record panel** | Shows the row **selected in the grid** - a read-only field list, or an inline edit form. | Editable on / off, and (read-only) which fields to show. |

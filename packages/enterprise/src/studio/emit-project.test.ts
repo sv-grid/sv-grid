@@ -602,6 +602,18 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain('async function loadAll()')
   })
 
+  it('Sheet block: emits SvSheet over the rows once they are loaded, with a totals row and every field', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'sheet')
+    const page = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    expect(page).toMatch(/import \{[^}]*SvSheet, sheetCellsFromRows[^}]*\} from '@svgrid\/enterprise'/)
+    expect(page).toContain('{#if allRowsReady}<SvSheet data={[{ name: "Customer", cells: sheetCellsFromRows(allRows, [')
+    expect(page).toContain('"field":"id"')
+    expect(page).toContain('{ totals: true }) }]} height={480} />{/if}')
+    expect(page).toContain('async function loadAll()')
+  })
+
   it('Gauge block: emits SvGauge bound to a reduced measure over allRows', () => {
     let p = createProject([customers])
     const sid = p.screens[0]!.id
@@ -697,7 +709,7 @@ describe('emitStudioProject (per-block screens)', () => {
     // Cover a screen with every block kind, with master-detail fully configured.
     let p = createProject([customers, orders])
     const sid = p.screens[0]!.id
-    for (const k of ['chart', 'dashboard', 'kpi', 'gauge', 'tree', 'tabs', 'master-detail', 'lookup', 'pivot', 'filter', 'record'] as const) p = addBlock(p, sid, k)
+    for (const k of ['chart', 'dashboard', 'kpi', 'gauge', 'tree', 'tabs', 'master-detail', 'lookup', 'pivot', 'filter', 'record', 'sheet'] as const) p = addBlock(p, sid, k)
     const mdId = p.screens.find((s) => s.id === sid)!.blocks.find((b) => b.config.kind === 'master-detail')!.id
     p = updateBlock(p, sid, mdId, { config: { childEntity: 'orders', foreignKey: 'customer_id' } as Partial<MasterDetailConfig> })
     for (const f of emitStudioProject(p).filter((f) => f.path.endsWith('.svelte'))) {

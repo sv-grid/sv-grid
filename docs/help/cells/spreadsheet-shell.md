@@ -386,8 +386,9 @@ either way.
 Everything the user does lands in the sheet's document: the workbook (raw
 text, formulas as typed, names, the active sheet), and per sheet the
 formats (locked flags included), column widths, row heights, hidden lines,
-frozen panes, comments, the protection flag, the validation rules and the
-conditional formatting rules. `getState()` returns it as plain JSON and
+frozen panes, comments, the protection flag with its allow list and edit
+ranges, the validation rules and the conditional formatting rules.
+`getState()` returns it as plain JSON and
 `setState()` puts it back into the same workbook object, so an autosave
 is an `onChange` handler and a reload is one call after mount:
 
@@ -441,8 +442,9 @@ and `CfRule`):
       rowHeights: [[4, 44]],
       hidden: { rows: [7], cols: [] },
       freeze: { rows: 1, cols: 0 },
-      comments: { r1: { B: 'Check with finance' } },
+      comments: { r1: { B: 'Check with finance' }, r4: { D: { text: 'Over budget?', author: 'Ana', at: '2026-03-04T10:00:00.000Z', replies: [{ text: 'By 3%', author: 'Ben', at: '2026-03-04T11:00:00.000Z' }] } } },
       protected: false,
+      protection: { allow: { formatRows: true }, ranges: [{ id, title: 'Inputs', rects: [[1, 1, 9, 1]] }] },
       merges: [],
       validation: [{ id, rects, allow: 'whole', operator: 'between', value1: '1', value2: '10', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' } }],
       conditionalFormats: [{ id, rects, kind: 'cellIs', operator: 'greater', value1: '50000', style: { fill: '#FFC7CE', color: '#9C0006' } }],
@@ -468,6 +470,27 @@ owns a document (formulas, address-keyed formats, comments, rules) and uses
 the grid as its rendering primitive, which is why it is a component that
 composes `<SvGrid>` rather than a prop on it. `installEnterprise()` enables
 it along with everything else; there is nothing extra to register.
+
+## Rows into a sheet
+
+`sheetCellsFromRows(rows, fields, { totals })` turns an array of records
+into the cells `data` or `createWorkbook` take: a header row of labels, a
+row per record with each value as the text the engine reads (a number as
+its digits, a boolean as `TRUE` or `FALSE`, a `Date` as `yyyy-mm-dd`,
+nothing for null), and with `totals` a last row with `=SUM(...)` under
+every column that held a number. It is how a grid's rows, or an API's,
+become a sheet the user can add formulas to; Studio's Spreadsheet block
+is this over the screen's dataset.
+
+```svelte
+<script lang="ts">
+  import { SvSheet, sheetCellsFromRows } from '@svgrid/enterprise'
+
+  const cells = sheetCellsFromRows(orders, [{ field: 'item', label: 'Item' }, 'qty', { field: 'price', label: 'Price' }], { totals: true })
+</script>
+
+<SvSheet data={[{ name: 'Orders', cells }]} />
+```
 
 ## Writing to the workbook from outside
 

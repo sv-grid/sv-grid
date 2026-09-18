@@ -467,6 +467,17 @@ ${panels}
       <SvBoard schema={${schemaVar}} rows={allRows} loading={!allRowsReady} groupBy=${JSON.stringify(cfg.groupBy)} titleField=${JSON.stringify(asText(cfg.titleField))}${badge}${sub}${onOpen} height={${h}} onMove={(id, value) => { allRows = allRows.map((r) => String((r as Record<string, unknown>)[idField]) === String(id) ? ({ ...r, ['${cfg.groupBy}']: value }) : r) }} />
     </div>`
     }
+    case 'sheet': {
+      const h = block.height ?? 480
+      // The shell reads `data` once at mount, so it mounts once the rows are in.
+      const chosen = cfg.fields?.length ? cfg.fields : entity.fields.map((f) => f.field)
+      const specs = chosen.map((field) => ({ field, label: entity.fields.find((f) => f.field === field)?.label ?? field }))
+      // Excel's sheet-name rules: none of []:*?/\ and at most 31 characters.
+      const sheetName = (entity.label ?? entity.name).replace(/[[\]:*?/\\]/g, ' ').trim().slice(0, 31) || 'Sheet1'
+      return `    <div ${wrapperStyle(block, `min-height: ${h}px`)}${cls}>
+      {#if allRowsReady}<SvSheet data={[{ name: ${JSON.stringify(sheetName)}, cells: sheetCellsFromRows(${rowsExpr}, ${JSON.stringify(specs)}, { totals: ${cfg.totals ? 'true' : 'false'} }) }]} height={${h}} />{/if}
+    </div>`
+    }
     case 'calendar': {
       const h = block.height ?? 560
       // Compute against the RAW entity (ctx.rawEntity): the prepared `entity` already
@@ -1939,7 +1950,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   const exportApiVars = blocks.filter((b) => b.config.kind === 'grid' && gridHasExport(b.config) && !(codeGrid && b.id === codeGridBlockId)).map((b) => `gridApi_${b.id.replace(/-/g, '_')}`)
   const needsGridApiType = codeGrid || exportApiVars.length > 0
   // The pivot reads the whole table (like charts / dashboards).
-  const needsAllRows = hasAgg || hasMD || hasPivot || hasBoundComponent || hasGroupedGrid || hasTreeGrid || hasSchedulerGrid || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail')
+  const needsAllRows = hasAgg || hasMD || hasPivot || hasBoundComponent || hasGroupedGrid || hasTreeGrid || hasSchedulerGrid || has(allBlocks, 'board') || has(allBlocks, 'calendar') || has(allBlocks, 'detail') || has(allBlocks, 'sheet')
 
   // --- imports ---
   const gridSpecs: string[] = []
@@ -1970,6 +1981,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   // The calendar block now renders via the scheduler grid view (needs schemaToColumns for its columns).
   if (has(allBlocks, 'calendar')) entImports.push('schemaToColumns')
   if (has(allBlocks, 'detail')) entImports.push('SvRecordDetail')
+  if (has(allBlocks, 'sheet')) entImports.push('SvSheet', 'sheetCellsFromRows')
   if (has(allBlocks, 'kpi') || has(allBlocks, 'gauge') || hasAggregateBinding) entImports.push('reduceValue')
   const kpiCfgs = allBlocks.filter((b) => b.config.kind === 'kpi').map((b) => b.config as KpiConfig)
   if (kpiCfgs.some((c) => c.format && c.format !== 'auto')) entImports.push('formatKpiValue')
