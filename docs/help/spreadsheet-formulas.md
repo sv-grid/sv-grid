@@ -74,17 +74,34 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 
 | Group | Functions |
 | ----- | --------- |
-| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` |
-| Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `RANK` |
-| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` |
+| Financial | `PMT` `IPMT` `PPMT` `PV` `FV` `NPER` `RATE` `NPV` `IRR` `SLN` |
+| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` |
+| Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
+| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
-| Information | `ISNUMBER` `ISTEXT` `ISLOGICAL` `ISBLANK` |
-| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `TRIM` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `FIND` `SEARCH` `TEXT` |
-| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `DAYS` `DATEDIF` |
-| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` |
+| Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` |
+| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
+| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` |
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
+`ISERROR`, `ISERR` and `ISNA` see the error the same way, so
+`=IF(ISERROR(A1/B1), "n/a", A1/B1)` works.
+
+An argument left out between commas reads as a blank, so `=PMT(A1, A2, A3, , 1)`
+takes the default future value the way it does in Excel; a trailing comma
+is the same.
+
+The financial functions keep Excel's sign convention: money paid out is
+negative, money received positive. `=PMT(5%/12, 360, 200000)` is a
+negative payment on a positive loan, and `=FV(6%/12, 120, -100)` a
+positive balance from negative deposits. `RATE` and `IRR` are solved
+numerically and return `#NUM!` when no rate fits.
+
+Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
+`DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
+`TIMEVALUE` give a fraction of a day that the `h:mm` formats show.
 
 `%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is

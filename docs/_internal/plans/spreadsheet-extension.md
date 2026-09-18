@@ -5,7 +5,32 @@ Internal planning note. `docs/_internal/` is skipped by
 the site. Ship a feature, then move its sentence into the public docs.
 
 Written 2026-09-18 against the `main` head after the "Spreadsheet mode"
-commit (`43c01c2`).
+commit (`43c01c2`). Accepted the same day.
+
+## Status
+
+The first milestone (section 5) shipped on the plan's branch, one commit
+per item:
+
+- Phase B item 1: the function packs (financial, math and statistics, text
+  and date, CHOOSE / ROWS / COLUMNS, the ISERROR family), on by default
+  rather than behind `withCustomFunctions`, since a sheet user expects PMT
+  to work without registering anything. The parser reads an omitted
+  argument as a blank.
+- Phase C items 1 to 4: Input Message and Circle Invalid Data; Format
+  Cells Accounting and Special (the compiler learned padding tokens,
+  conditions and integer masks); the Sort dialog; tab Hide, Unhide,
+  Duplicate and a confirmed Delete.
+- Phase A items 1 to 3: `documentToXlsx` / `documentFromXlsx` with a
+  round-trip test, and the File tab (New, Open, Save As, Export CSV, with
+  Ctrl+O and Ctrl+S). Print and Page Layout (item 4) are not done.
+
+Deviations from the plan: Data Validation is a plain dropdown, not a split
+button, because the ribbon model forbids a dropdown that emits its own
+face; the xlsx reader uses DOMParser (present in browsers and jsdom) and
+throws a clear error where it is absent. Tables, charts and images do not
+ride in the file. Demo 474 shows the milestone; its entry in the website's
+demo registry (a private submodule not checked out here) is still to add.
 
 ## 1. Where the spreadsheet stands
 
@@ -51,9 +76,9 @@ weeks, L a quarter-scale piece of work.
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| Open an xlsx as a whole document | first sheet, values only, no formulas, formats, merges, names | L |
-| Save the document as xlsx | none from the shell; grid export writes rows | L |
-| CSV / TSV in and out of the active sheet | grid import and export exist, not wired to the ribbon | S |
+| ~~Open an xlsx as a whole document~~ | shipped: `documentFromXlsx`, File > Open | done |
+| ~~Save the document as xlsx~~ | shipped: `documentToXlsx`, File > Save As | done |
+| ~~CSV out of the active sheet~~ | shipped: File > Export CSV; CSV in is still the grid's importer | done |
 | Print and Page Layout | `export-print.ts` prints grid rows; no Page Layout tab, no page setup, no print area | M |
 | Persistence hooks (autosave to a server) | `onChange` + `getState()`; demo 465 does localStorage | S (docs and a recipe) |
 
@@ -61,10 +86,10 @@ weeks, L a quarter-scale piece of work.
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| Financial functions (PMT, PV, FV, NPV, IRR, RATE, NPER) | none; demo 211 uses HyperFormula for PMT | S |
-| Math and statistics (SUMPRODUCT, PRODUCT, CEILING, FLOOR, TRUNC, LOG, EXP, PI, RAND, RANDBETWEEN, LARGE, SMALL, PERCENTILE, QUARTILE, VAR, MODE, AVERAGEIFS, MAXIFS, MINIFS, CORREL, FORECAST) | none | M |
-| Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT, TEXTSPLIT, NUMBERVALUE) | none | S |
-| Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME) | none | S |
+| ~~Financial functions (PMT, PV, FV, NPV, IRR, RATE, NPER)~~ | shipped, with IPMT, PPMT and SLN | done |
+| ~~Math and statistics (SUMPRODUCT, PRODUCT, CEILING, FLOOR, TRUNC, LOG, EXP, PI, RAND, RANDBETWEEN, LARGE, SMALL, PERCENTILE, QUARTILE, VAR, MODE, AVERAGEIFS, MAXIFS, MINIFS, CORREL, FORECAST)~~ | shipped | done |
+| ~~Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT)~~ | shipped; TEXTSPLIT waits on spill, NUMBERVALUE not done | done |
+| ~~Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME)~~ | shipped, with DATEVALUE, TIMEVALUE, DAYS360, YEARFRAC | done |
 | Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE) | none; INDIRECT and OFFSET need the dependency graph to learn dynamic precedents | M |
 | Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`) | the evaluator returns one value per cell; no spill ranges in the workbook | L |
 | LET / LAMBDA | none | M, after spill |
@@ -78,12 +103,12 @@ weeks, L a quarter-scale piece of work.
 | Formula auditing: Trace Precedents / Dependents, Evaluate Formula, Error Checking | the graph exists (`deps.ts`); the Auditing group holds only Show Formulas | M |
 | Conditional formatting: formula rule, negative axis and second colour on data bars | presets only; one bar colour | M |
 | AutoFilter: Date Filters, Filter by Color, custom Top 10 | text and number filters, values list | M |
-| Validation: Input Message, Circle Invalid Data | typing and paste checked; no message, no circles | S |
-| Format Cells: Accounting, Special | not offered | S |
-| Custom Sort dialog (several keys, by colour, header row) | sort ascending and descending on the ribbon | S |
+| ~~Validation: Input Message, Circle Invalid Data~~ | shipped | done |
+| ~~Format Cells: Accounting, Special~~ | shipped | done |
+| ~~Custom Sort dialog (several keys, header row)~~ | shipped; by colour not done | done |
 | Comments as threads (author, time, replies, resolve) | one note per cell | M |
 | Protection: password, allowed ranges, per-user | lock flag only | M |
-| Sheet tabs: hide / unhide, duplicate, delete with confirm, move between workbooks | switch, rename, reorder, add, tab colour; a `hide` mention needs an audit | S |
+| ~~Sheet tabs: hide / unhide, duplicate, delete with confirm~~ | shipped; move between workbooks not done | done |
 | Styles gallery and Format as Table | `styles` ribbon id exists; verify what it does | S |
 
 ### Objects on the sheet
