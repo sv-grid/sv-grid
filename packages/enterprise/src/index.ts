@@ -186,6 +186,11 @@ export {
 } from './sheet/page-setup'
 export { sheetPrintHtml, printAreas, type SheetPrintInput, type SheetPrintCell } from './sheet/print'
 export { sheetCellsFromRows, cellTextOf, type SheetField, type SheetFromRowsOptions } from './sheet/from-rows'
+export { builtinEngine, type SheetEngine, type SheetEngineHost, type SheetEngineCell, type SheetEngineResult } from './sheet/engine'
+export {
+  createHyperFormulaEngine, fromHyperFormula,
+  type HyperFormulaLike, type HyperFormulaEngineOptions,
+} from './sheet/hyperformula-engine'
 export { functionCatalog, FUNCTION_GROUPS, type FunctionInfo, type FunctionGroup } from './sheet/function-catalog'
 export { parseEntry, completeEntry, type ParsedEntry } from './sheet/entry'
 export { cycleReference, type TextEdit } from './sheet/edit-keys'

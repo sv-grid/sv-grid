@@ -29,7 +29,7 @@ per item:
 - Phase C item 7: Trace Precedents, Trace Dependents and Remove Arrows.
 - Phase A items 1 to 3: `documentToXlsx` / `documentFromXlsx` with a
   round-trip test, and the File tab (New, Open, Save As, Export CSV, with
-  Ctrl+O and Ctrl+S). Print and Page Layout (item 4) are not done.
+  Ctrl+O and Ctrl+S).
 - Phase C item 8, threads: `CommentThread` (author, time, replies,
   resolved) beside the plain note in the same map, the thread card in the
   comment box, `commentAuthor` on the shell, and Excel's threaded comment
@@ -38,6 +38,9 @@ per item:
   list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
   beside the flag, and `sheetProtection` attributes and `protectedRanges`
   in the xlsx both ways. Phase C is complete.
+- Phase B item 4: the `SheetEngine` seam on `createWorkbook`, the
+  built-in engine as the default, and `createHyperFormulaEngine` mirroring
+  the cells into a HyperFormula instance.
 - Phase E item 3: `<sv-sheet>` under `@svgrid/enterprise/wc`, its surface
   generated from the shell's Props (element props, types, React and Vue
   wrappers, docs tables, a `--check` the tests run), built by
@@ -87,7 +90,8 @@ Measured while writing this note:
 | Sheet test files (`sheet/*.test.ts`, `SvSheet*`, `SvFormulaBar*`) | 42 | `ls` |
 | Pending `.changeset` files about the sheet | many | `ls .changeset` - unreleased; the release that carries them has not been cut |
 
-Two facts shape the plan:
+Two facts shaped the plan as it was written. Both have since been fixed;
+the Status section above says by what.
 
 - **The shell cannot use HyperFormula.** `Workbook` evaluates through its
   own `evaluate`; `SvSheet.svelte` and `sheet/workbook.ts` do not mention
@@ -128,8 +132,8 @@ weeks, L a quarter-scale piece of work.
 | ~~Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME)~~ | shipped, with DATEVALUE, TIMEVALUE, DAYS360, YEARFRAC | done |
 | ~~Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE)~~ | shipped; INDIRECT and OFFSET are volatile, recomputed on every write | done |
 | ~~Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`)~~ | shipped: `evaluateSpill`, spill ranges in the workbook, array arithmetic with broadcasting, TRANSPOSE and TEXTSPLIT too | done |
-| LET / LAMBDA | none | M, after spill |
-| A pluggable engine (HyperFormula behind the shell) | `withCustomFunctions` is the only seam | M |
+| LET / LAMBDA | none | M |
+| ~~A pluggable engine (HyperFormula behind the shell)~~ | shipped: an `engine` option on `createWorkbook`, with `createHyperFormulaEngine` | done |
 | Iterative calculation (circular references with a cap) | cycles are `#CYCLE!` | S |
 
 ### Ribbon parity
@@ -228,11 +232,15 @@ The single most-asked question a spreadsheet gets is "can I open my file".
    item; do it after the packs so FILTER, UNIQUE, SORT and SEQUENCE land on
    a working spill.~~ Shipped: `evaluateSpill` beside `evaluate` rather
    than a matrix from it, so every existing caller keeps its value.
-4. **Pluggable engine**: an `engine` option on `createWorkbook` with the
+4. ~~**Pluggable engine**: an `engine` option on `createWorkbook` with the
    built-in evaluator as default and a HyperFormula implementation moved
    from `packages/grid/src/hyperformula-adapter.ts`'s contract. Keeps the
    promise in `spreadsheet-formulas.md` ("the HyperFormula adapter is still
-   there") true for the shell, not only for a bare grid.
+   there") true for the shell, not only for a bare grid.~~ Shipped, with a
+   narrower seam than planned: an engine answers a formula's value and the
+   grid it spills, and the workbook keeps the graph, the cache, the cycles
+   and the spill ranges, since those are read off the reference grammar
+   rather than the engine. Phase B is complete.
 
 ### Phase C. Ribbon parity (M)
 
