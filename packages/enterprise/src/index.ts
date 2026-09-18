@@ -202,6 +202,10 @@ export {
   type SheetPivot, type SheetPivotValue, type SheetPivotAgg,
 } from './sheet/pivot-range'
 export {
+  createDeltaStream, applySheetDelta, partsOfReasons,
+  type SheetDelta, type SheetDeltaStream, type SheetDeltaOptions, type SheetCellWrite,
+} from './sheet/delta'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './sheet/hyperformula-engine'

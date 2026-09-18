@@ -32,6 +32,14 @@ export type WorkbookOptions = {
   /** Fires after a recalculation, with the cells whose value changed. */
   onRecalc?(changed: ReadonlyArray<{ sheet: string; row: number; col: number; value: CellValue }>): void
   /**
+   * Fires for every RAW WRITE, with the text as typed rather than the value
+   * it computes: one call per `setRaw` that changed something, and one per
+   * cell a structural edit rewrote. This is the seam a delta stream reads
+   * (`sheet/delta.ts`), since a collaborator has to receive `=SUM(A1:A9)`
+   * rather than 42.
+   */
+  onWrite?(change: { sheet: string; row: number; col: number; text: string }): void
+  /**
    * What works a formula out. The built-in parser and evaluator by
    * default; `createHyperFormulaEngine` puts Excel's full library there
    * instead. The workbook keeps the dependency graph, the cache, the
@@ -101,6 +109,12 @@ export type Workbook = {
    */
   dependents(sheet: string, row: number, col: number): Array<{ sheet: string; row: number; col: number }>
 
+  /**
+   * Hear about every raw write, with the text as typed. Returns the
+   * unsubscribe. The delta stream reads this; a mirror of the cells in
+   * another store can too.
+   */
+  subscribeWrites(listener: (change: { sheet: string; row: number; col: number; text: string }) => void): () => void
   /** Recompute everything. Rarely needed; `setRaw` keeps itself current. */
   recalculate(): void
   /**
@@ -512,6 +526,13 @@ export function createWorkbook(
     return touched
   }
 
+  /** Every listener on raw writes, plus the option that is one of them. */
+  const writeListeners = new Set<(change: { sheet: string; row: number; col: number; text: string }) => void>()
+  function emitWrite(change: { sheet: string; row: number; col: number; text: string }): void {
+    options.onWrite?.(change)
+    for (const listener of writeListeners) listener(change)
+  }
+
   function reportRecalc(keys: ReadonlyArray<CellKey>): void {
     const cb = options.onRecalc
     if (!cb || keys.length === 0) return
@@ -643,6 +664,7 @@ export function createWorkbook(
       if (line[col] === text) return
       line[col] = text
       engine.write?.(sheet, row, col, text)
+      emitWrite({ sheet: order.find((n) => n.toLowerCase() === sheet.toLowerCase()) ?? sheet, row, col, text })
 
       const key = cellKey(sheet, row, col)
       const keys: CellKey[] = [key]
@@ -778,6 +800,11 @@ export function createWorkbook(
         const at = parseCellKey(key)
         return { sheet: at.sheet ?? name, row: at.row, col: at.col }
       })
+    },
+
+    subscribeWrites(listener) {
+      writeListeners.add(listener)
+      return () => { writeListeners.delete(listener) }
     },
 
     recalculate() {
