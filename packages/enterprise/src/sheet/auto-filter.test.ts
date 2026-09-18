@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   distinctValues, hiddenRowsFor, passesFilter, withColumnFilter, valuesFilter, shiftAutoFilter, isFiltering, describeFilter,
+  datePeriodBounds, distinctFills, isDateColumn,
   type AutoFilterState,
 } from './auto-filter'
 import { createWorkbook } from './workbook'
@@ -99,5 +100,89 @@ describe('the state', () => {
     expect(describeFilter({ kind: 'values', excluded: ['a', 'b'] })).toBe('2 values hidden')
     expect(describeFilter({ kind: 'condition', first: { op: 'greaterThan', value: '5' } })).toBe('is greater than 5')
     expect(describeFilter({ kind: 'condition', first: { op: 'between', value: '1', valueTo: '9' }, join: 'or', second: { op: 'isBlank' } })).toBe('is between 1 and 9 or is blank')
+  })
+})
+
+describe('date, colour and top filters', () => {
+  const dates = createWorkbook([{ name: 'D', cells: [
+    ['When', 'Amount'],
+    ['2026-09-18', '10'],
+    ['2026-09-17', '40'],
+    ['2026-09-14', '30'],
+    ['2026-08-31', '20'],
+    ['2026-07-01', '50'],
+    ['2025-12-31', '5'],
+    ['soon', ''],
+  ] }])
+  const dv = (r: number, c: number) => dates.getValue('D', r, c)
+  const dd = (r: number, c: number) => { const v = dv(r, c); return typeof v === 'object' && v !== null ? v.error : String(v) }
+  const region: AutoFilterState = { range: [0, 0, 7, 1], filters: {} }
+  // A Friday, so this week runs Sunday the 13th to Saturday the 19th.
+  const today = new Date('2026-09-18T15:00:00Z')
+
+  it('the periods count from today, weeks from Sunday, quarters from the calendar', () => {
+    const at = (period: Parameters<typeof datePeriodBounds>[0]['period']) => datePeriodBounds({ kind: 'date', period }, today)!.map((ms) => new Date(ms).toISOString().slice(0, 10))
+    expect(at('today')).toEqual(['2026-09-18', '2026-09-18'])
+    expect(at('yesterday')).toEqual(['2026-09-17', '2026-09-17'])
+    expect(at('thisWeek')).toEqual(['2026-09-13', '2026-09-19'])
+    expect(at('lastWeek')).toEqual(['2026-09-06', '2026-09-12'])
+    expect(at('nextWeek')).toEqual(['2026-09-20', '2026-09-26'])
+    expect(at('thisMonth')).toEqual(['2026-09-01', '2026-09-30'])
+    expect(at('lastMonth')).toEqual(['2026-08-01', '2026-08-31'])
+    expect(at('nextMonth')).toEqual(['2026-10-01', '2026-10-31'])
+    expect(at('thisQuarter')).toEqual(['2026-07-01', '2026-09-30'])
+    expect(at('lastQuarter')).toEqual(['2026-04-01', '2026-06-30'])
+    expect(at('nextQuarter')).toEqual(['2026-10-01', '2026-12-31'])
+    expect(at('lastYear')).toEqual(['2025-01-01', '2025-12-31'])
+    expect(at('yearToDate')).toEqual(['2026-01-01', '2026-09-18'])
+    expect(datePeriodBounds({ kind: 'date', period: 'lastQuarter' }, new Date('2026-02-10T00:00:00Z'))![0]).toBe(Date.UTC(2025, 9, 1))
+    expect(datePeriodBounds({ kind: 'date', period: 'between', value: '2026-09-01' }, today)).toBeNull()
+  })
+
+  it('a date filter keeps the rows in the period and folds text and blanks', () => {
+    const hidden = (filter: Parameters<typeof withColumnFilter>[2]) => [...hiddenRowsFor(withColumnFilter(region, 0, filter), dv, dd, { today })]
+    expect(hidden({ kind: 'date', period: 'thisWeek' })).toEqual([4, 5, 6, 7])
+    expect(hidden({ kind: 'date', period: 'thisMonth' })).toEqual([4, 5, 6, 7])
+    expect(hidden({ kind: 'date', period: 'thisQuarter' })).toEqual([6, 7])
+    expect(hidden({ kind: 'date', period: 'before', value: '2026-09-01' })).toEqual([1, 2, 3, 7])
+    expect(hidden({ kind: 'date', period: 'after', value: '2026-09-14' })).toEqual([3, 4, 5, 6, 7])
+    expect(hidden({ kind: 'date', period: 'between', value: '2026-09-14', valueTo: '2026-09-17' })).toEqual([1, 4, 5, 6, 7])
+    expect(hidden({ kind: 'date', period: 'equals', value: '2026-07-01' })).toEqual([1, 2, 3, 4, 6, 7])
+    // A typed period with nothing typed hides nothing.
+    expect(hidden({ kind: 'date', period: 'before' })).toEqual([])
+  })
+
+  it('top 10 counts over the whole column, by items or by percent, either end', () => {
+    const hidden = (filter: Parameters<typeof withColumnFilter>[2]) => [...hiddenRowsFor(withColumnFilter(region, 1, filter), dv, dd)]
+    expect(hidden({ kind: 'top', top: true, count: 2 })).toEqual([1, 3, 4, 6, 7])
+    expect(hidden({ kind: 'top', top: false, count: 2 })).toEqual([2, 3, 4, 5, 7])
+    // Six numbers: 50 percent keeps three.
+    expect(hidden({ kind: 'top', top: true, count: 50, percent: true })).toEqual([1, 4, 6, 7])
+    expect(hidden({ kind: 'top', top: true, count: 100 })).toEqual([7])
+    expect(passesFilter({ kind: 'top', top: true, count: 1 }, 5, '5')).toBe(true)
+  })
+
+  it('filter by colour reads the fills, and lists them each once', () => {
+    const fillAt = (r: number, c: number): string | null => (c === 1 && r % 2 === 0 ? (r === 2 ? '#FFFF00' : '#ffff00') : r === 3 ? '#ff0000' : null)
+    expect(distinctFills(region, 1, fillAt)).toEqual([null, '#ffff00', '#ff0000'])
+    const yellow = withColumnFilter(region, 1, { kind: 'color', fill: '#FFFF00' })
+    expect([...hiddenRowsFor(yellow, dv, dd, { fillAt })]).toEqual([1, 3, 5, 7])
+    const none = withColumnFilter(region, 1, { kind: 'color', fill: null })
+    expect([...hiddenRowsFor(none, dv, dd, { fillAt })]).toEqual([2, 3, 4, 6])
+    // Without a fill reader every cell counts as unfilled.
+    expect([...hiddenRowsFor(yellow, dv, dd)]).toEqual([1, 2, 3, 4, 5, 6, 7])
+  })
+
+  it('a column of dates reads as one; a mixed column does not', () => {
+    expect(isDateColumn(distinctValues({ range: [0, 0, 6, 1], filters: {} }, 0, dv, dd))).toBe(true)
+    expect(isDateColumn(distinctValues(region, 0, dv, dd))).toBe(false)
+    expect(isDateColumn(distinctValues(region, 1, dv, dd))).toBe(false)
+  })
+
+  it('describes the new kinds', () => {
+    expect(describeFilter({ kind: 'date', period: 'thisWeek' })).toBe('this week')
+    expect(describeFilter({ kind: 'date', period: 'between', value: '2026-01-01', valueTo: '2026-01-31' })).toBe('is between 2026-01-01 and 2026-01-31')
+    expect(describeFilter({ kind: 'color', fill: null })).toBe('no fill')
+    expect(describeFilter({ kind: 'top', top: false, count: 5, percent: true })).toBe('bottom 5 percent')
   })
 })

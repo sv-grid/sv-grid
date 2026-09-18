@@ -99,6 +99,7 @@
   } from './sheet/merges'
   import {
     distinctValues, hiddenRowsFor, withColumnFilter, isFiltering, type AutoFilterState, type ColumnFilter,
+   isDateColumn, distinctFills,
   } from './sheet/auto-filter'
   import SvSheetFilterMenu from './SvSheetFilterMenu.svelte'
   import {
@@ -581,7 +582,7 @@
   type CellPopover =
     | { kind: 'comment'; r: number; c: number; draft: string; initial: string }
     | { kind: 'list'; r: number; c: number; choices: string[] }
-    | { kind: 'filter'; r: number; c: number; values: ReturnType<typeof distinctValues>; numeric: boolean; header: string; filter: ColumnFilter | null }
+    | { kind: 'filter'; r: number; c: number; values: ReturnType<typeof distinctValues>; numeric: boolean; dates: boolean; fills: Array<string | null>; header: string; filter: ColumnFilter | null }
   let cellPopover = $state<CellPopover | null>(null)
   /** Where the editor points: the cell's box relative to the grid host. */
   let anchorRect = $state<{ left: number; top: number; width: number; height: number } | null>(null)
@@ -870,6 +871,12 @@
   const activeFilter = $derived.by(() => { void version; return autoFilterNow() })
   const displayOnActive = (r: number, c: number) => display(r, c).text
   const valueOnActive = (r: number, c: number) => wb.getValue(wb.active, r, c)
+  /** The fill a cell shows: a conditional format's over its own, or none. */
+  const fillOnActive = (r: number, c: number): string | null => {
+    const value = wb.getValue(wb.active, r, c)
+    return cfAt(r, c, value)?.style?.fill ?? storeFor().get(`r${r}`, colToLetters(c))?.fill ?? null
+  }
+  const filterCtx = () => ({ fillAt: fillOnActive })
 
   /** What a cell of any sheet shows, for the filter over a sheet not on screen. */
   function displayOn(name: string, r: number, c: number): string {
@@ -899,7 +906,7 @@
     const before = doc.get(sheet).autoFilter
     const put = (state: AutoFilterState | null) => {
       doc.get(sheet).autoFilter = state
-      settleFilterRows(hiddenRowsFor(state, valueOnActive, displayOnActive))
+      settleFilterRows(hiddenRowsFor(state, valueOnActive, displayOnActive, filterCtx()))
       bump()
       changed({ kind: 'filter' })
     }
@@ -927,11 +934,13 @@
   /** The menu for a column: its values, its filter, its kind. */
   function filterMenuFor(col: number) {
     const af = autoFilterNow()!
-    const others = hiddenRowsFor(withColumnFilter(af, col, null), valueOnActive, displayOnActive)
+    const others = hiddenRowsFor(withColumnFilter(af, col, null), valueOnActive, displayOnActive, filterCtx())
     const values = distinctValues(af, col, valueOnActive, displayOnActive, (r) => !others.has(r))
     const numeric = values.some((v) => v.numeric !== null) && values.every((v) => v.numeric !== null || v.text === '')
+    const dates = isDateColumn(values)
+    const fills = distinctFills(af, col, fillOnActive)
     const header = display(af.range[0], col).text || colToLetters(col)
-    return { values, numeric, header, filter: af.filters[col] ?? null }
+    return { values, numeric, dates, fills, header, filter: af.filters[col] ?? null }
   }
 
   function openFilterMenu(col: number) {
@@ -947,7 +956,7 @@
   function refreshAutoFilter() {
     const state = doc.get(wb.active)
     if (!state.autoFilter || !api) return
-    const next = hiddenRowsFor(state.autoFilter, valueOnActive, displayOnActive)
+    const next = hiddenRowsFor(state.autoFilter, valueOnActive, displayOnActive, filterCtx())
     if (next.size === state.filterHidden.size && [...next].every((r) => state.filterHidden.has(r))) return
     settleFilterRows(next)
   }
@@ -3466,6 +3475,8 @@
             values={cellPopover.values}
             filter={cellPopover.filter}
             numeric={cellPopover.numeric}
+            dates={cellPopover.dates}
+            fills={cellPopover.fills}
             onSort={(direction) => { const pop = cellPopover; closeCellPopover(); if (pop) { const af = autoFilterNow(); if (af) sortRegion(direction, { rect: af.range, keyCol: pop.c }) } }}
             onApply={(filter) => { const pop = cellPopover; closeCellPopover(); const af = autoFilterNow(); if (pop && af) applyAutoFilter(withColumnFilter(af, pop.c, filter), cmdOf()) }}
             onCancel={() => closeCellPopover()}
