@@ -17,6 +17,10 @@ import type { Rect } from './format-store'
 import type { StructuralEdit } from './refs'
 import { shiftRect, rectContains } from './rects'
 import type { CellValue } from './ast'
+// The geometry only, through the grid's own subpath: this module is read by
+// the xlsx writer and by tests that run without a DOM, and the package root
+// would drag every component in with it.
+import { buildSparkline } from '@svgrid/grid/sparkline'
 
 /** The three Excel offers: Line, Column and Win/Loss. */
 export const SPARKLINE_TYPES = ['line', 'column', 'winloss'] as const
@@ -124,6 +128,57 @@ export function sparklineSeries(
  * whole list, because Excel stores a sparkline group as one entry per cell
  * with its own reference.
  */
+/**
+ * A sparkline as standalone SVG markup, for a page the component cannot
+ * draw on: the printed sheet.
+ *
+ * The geometry is the grid's own `buildSparkline`, so the printed line is
+ * the line on screen rather than a second drawing that can disagree with
+ * it. The markup carries its colours inline, since the print document has
+ * no stylesheet of ours.
+ */
+export function sparklineSvg(
+  values: ReadonlyArray<number>,
+  options: {
+    type?: SheetSparklineType
+    width: number
+    height: number
+    color?: string
+    negativeColor?: string
+    min?: number
+    max?: number
+    markers?: boolean
+  },
+): string {
+  const geo = buildSparkline([...values], {
+    type: options.type === 'column' ? 'bar' : options.type === 'winloss' ? 'winloss' : 'line',
+    width: options.width,
+    height: options.height,
+    ...(options.color ? { color: options.color } : {}),
+    ...(options.negativeColor ? { negativeColor: options.negativeColor } : {}),
+    ...(options.min !== undefined ? { min: options.min } : {}),
+    ...(options.max !== undefined ? { max: options.max } : {}),
+    lastPoint: Boolean(options.markers),
+  })
+  if (!geo) return ''
+  const parts: string[] = []
+  if (geo.bars.length) {
+    for (const bar of geo.bars) {
+      const fill = bar.negative ? geo.negativeColor : geo.color
+      parts.push(`<rect x="${round(bar.x)}" y="${round(bar.y)}" width="${round(bar.w)}" height="${round(bar.h)}" fill="${fill}"/>`)
+    }
+  }
+  if (geo.linePath) {
+    parts.push(`<path d="${geo.linePath}" fill="none" stroke="${geo.color}" stroke-width="${geo.lineWidth}" stroke-linejoin="round" stroke-linecap="round"/>`)
+  }
+  if (geo.lastPoint && options.markers) {
+    parts.push(`<circle cx="${round(geo.lastPoint.x)}" cy="${round(geo.lastPoint.y)}" r="${geo.lineWidth + 0.5}" fill="${geo.color}"/>`)
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${geo.width}" height="${geo.height}" viewBox="0 0 ${geo.width} ${geo.height}" role="img" aria-hidden="true">${parts.join('')}</svg>`
+}
+
+const round = (n: number): number => Math.round(n * 100) / 100
+
 export function sparklineLines(group: SparklineGroup): Array<{ row: number; col: number; data: Rect }> {
   const [lr1, lc1, lr2, lc2] = group.location
   const [dr1, dc1, dr2, dc2] = group.data

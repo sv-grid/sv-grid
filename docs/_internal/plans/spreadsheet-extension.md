@@ -69,6 +69,10 @@ Shipped on the plan's branch, one commit per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Sparklines and objects on the printed page: `sparklineSvg` over the
+  grid's own geometry, a chart drawn offscreen to SVG at its own size, both
+  placed against their anchor cell by `sheetPrintHtml`, and the default
+  print area grown to hold a chart anchored below the numbers.
 - The two leftovers noted inside shipped rows: Sort On (cell colour and
   font colour) in the Sort dialog and the sort engine, and NUMBERVALUE.
 - Objects in the .xlsx: `sheet/xlsx-drawing.ts` (the drawing part, a
@@ -265,7 +269,7 @@ weeks, L a quarter-scale piece of work.
 | Gap | Today | Effort |
 | --- | --- | --- |
 | ~~Charts anchored to cells, fed by a range~~ | shipped: the object layer, Insert > Chart, the Chart dialog, and the chart part in the .xlsx both ways | done |
-| ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`, and in the .xlsx both ways; still not on the printed page | done |
+| ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`, in the .xlsx both ways, and on the printed page | done |
 | ~~Hyperlinks (HYPERLINK function and Insert > Link)~~ | shipped: links per sheet, Insert > Link and Ctrl+K, the function, internal targets, and the xlsx both ways | done |
 | ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL, and in the .xlsx both ways. In a cell is still not done, and a picture that is a URL rather than a data URL is left out of the file | done |
 | ~~PivotTable from a range~~ | shipped: `SheetPivot` in the document, Insert > PivotTable and Refresh, the result written as cells | done |

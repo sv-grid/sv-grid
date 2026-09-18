@@ -94,6 +94,11 @@
       "svelte": "./dist/filtering/excel-filters.js",
       "import": "./dist/filtering/excel-filters.js"
     },
+    "./sparkline": {
+      "types": "./dist/sparkline.d.ts",
+      "svelte": "./dist/sparkline.js",
+      "import": "./dist/sparkline.js"
+    },
     "./shortcuts": {
       "types": "./dist/shortcut-registry.d.ts",
       "svelte": "./dist/shortcut-registry.js",

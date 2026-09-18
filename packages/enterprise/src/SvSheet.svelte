@@ -33,7 +33,7 @@
     type ContextMenuItem,
     type ContextMenuIcon,
   } from '@svgrid/grid'
-  import { tick, untrack } from 'svelte'
+  import { tick, untrack, mount, unmount, flushSync } from 'svelte'
   import type { GridCommandContext } from '@svgrid/grid/shortcuts'
   import SvSheetRibbon from './SvSheetRibbon.svelte'
   import SvFormulaBar from './SvFormulaBar.svelte'
@@ -98,6 +98,7 @@
   } from './sheet/objects'
   import {
     sparklinesFromRange, sparklineAt, sparklineSeries, sparklineScale, clearSparklines, copySparkline,
+    sparklineSvg,
     type SparklineGroup, type SheetSparklineType,
   } from './sheet/sparklines'
   import {
@@ -110,7 +111,7 @@
   import { isValidTableName, type TableRegion } from './sheet/tables'
   import { tableStyleColours, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
   import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, type SheetPresence } from './sheet/presence'
-  import { SvChart, SvSparkline } from '@svgrid/grid'
+  import { SvChart, SvSparkline, chartToSvgString } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
@@ -408,6 +409,57 @@
    * area or the used range, cells as they show with their formats, the
    * page setup in `@page`. For an app that prints its own way.
    */
+  /**
+   * A chart as SVG for the printed page.
+   *
+   * Drawn into an offscreen copy at the object's own size rather than read
+   * off the one on screen: a chart anchored below the scrolled window has
+   * no rendered SVG to read, and a printed page that quietly drops the
+   * chart you scrolled past is worse than one that takes a moment longer.
+   */
+  function chartSvgFor(object: SheetChartObject): string | null {
+    if (typeof document === 'undefined') return null
+    const host = document.createElement('div')
+    host.setAttribute('aria-hidden', 'true')
+    host.style.cssText = `position:fixed;left:-10000px;top:0;width:${object.anchor.width}px;height:${object.anchor.height}px`
+    document.body.appendChild(host)
+    let drawn: string | null = null
+    let chart: ReturnType<typeof mount> | null = null
+    try {
+      const spec = specOf(object)
+      chart = mount(SvChart, {
+        target: host,
+        props: { spec, width: object.anchor.width, height: object.anchor.height, legend: spec.series.length > 1, interactive: false },
+      })
+      flushSync()
+      drawn = chartToSvgString(host)
+    } catch {
+      // A chart that cannot be drawn (no DOM, a spec the renderer refuses)
+      // is left off the page rather than taking the print down with it.
+      drawn = null
+    } finally {
+      if (chart) unmount(chart)
+      host.remove()
+    }
+    return drawn
+  }
+
+  /** The objects of a sheet as markup the print builder can place. */
+  function printObjects(name: string): Array<{ row: number; col: number; dx: number; dy: number; width: number; height: number; html: string }> {
+    const out: Array<{ row: number; col: number; dx: number; dy: number; width: number; height: number; html: string }> = []
+    for (const object of doc.get(name).objects ?? []) {
+      const html = object.kind === 'chart'
+        ? chartSvgFor(object)
+        : `<img src="${escapeHtml(object.src)}" alt="${escapeHtml(object.alt ?? '')}">`
+      if (!html) continue
+      out.push({ row: object.anchor.row, col: object.anchor.col, dx: object.anchor.dx, dy: object.anchor.dy, width: object.anchor.width, height: object.anchor.height, html })
+    }
+    return out
+  }
+
+  const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
+  const escapeHtml = (text: string): string => text.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!)
+
   export function printHtml(): string {
     const name = wb.active
     const state = doc.get(name)
@@ -420,7 +472,23 @@
         const shown = wb.getRaw(name, r, c) === '' ? { text: '' } : display(r, c)
         const entry = storeFor().get(`r${r}`, colToLetters(c))
         const cf = cfAt(r, c, value)?.style
-        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}) }
+        // The sparkline the cell draws, at the size the printed cell will
+        // be rather than the one on screen, since a print column is the
+        // width the setup gives it.
+        const spark = sparkAt(r, c)
+        const sparkline = spark
+          ? sparklineSvg(spark.values, {
+            type: spark.group.type,
+            width: Math.max(16, (state.widths[colToLetters(c)] ?? columnWidth) - 8),
+            height: Math.max(10, (state.heights.get(r) ?? rowHeight) - 8),
+            color: spark.group.color,
+            negativeColor: spark.group.negativeColor,
+            min: spark.min,
+            max: spark.max,
+            markers: spark.group.markers,
+          })
+          : ''
+        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}), ...(sparkline ? { sparkline } : {}) }
       },
       widths: api ? api.getColumnWidths() : state.widths,
       defaultWidth: columnWidth,
@@ -429,6 +497,7 @@
       hidden: state.hidden,
       merges: state.merges,
       setup: state.pageSetup,
+      objects: printObjects(name),
     })
   }
 

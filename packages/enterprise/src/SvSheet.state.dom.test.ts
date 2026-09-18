@@ -792,3 +792,40 @@ describe('SvSheet presence', () => {
     expect(sheet).toBeTruthy()
   })
 })
+
+describe('SvSheet printing what floats over the cells', () => {
+  it('draws the sparklines and hangs the pictures on the printed page', async () => {
+    const doc = createSheetDocument({
+      sheets: [{ name: 'Sheet1', cells: [['Region', '3', '5', '4'], ['North', '1', '9', '2']] }],
+    })
+    doc.get('Sheet1').sparklines = [{
+      id: 's1',
+      location: [0, 0, 1, 0] as never,
+      data: [0, 1, 1, 3] as never,
+      type: 'line',
+      color: '#2563eb',
+      markers: true,
+    }]
+    doc.get('Sheet1').objects = [{
+      id: 'i1',
+      kind: 'image',
+      anchor: { row: 1, col: 1, dx: 6, dy: 3, width: 120, height: 80 },
+      src: 'data:image/png;base64,AAAA',
+      alt: 'A "logo" & mark',
+    }]
+    const { sheet } = await mountSheet({ document: doc })
+    flushSync()
+    await tick()
+    const html = sheet.printHtml()
+
+    // The sparkline is drawn into the cell it belongs to, behind the text.
+    expect(html).toContain('<span class="sp"><svg')
+    expect(html).toContain('stroke="#2563eb"')
+    expect(html).toContain('td .sp { position: absolute;')
+    // The picture hangs from its anchor cell at its own offset and size.
+    expect(html).toContain('<span class="ob" style="inset-inline-start:6px;top:3px;width:120px;height:80px">')
+    expect(html).toContain('<img src="data:image/png;base64,AAAA"')
+    // And its alt text is escaped rather than closing the attribute.
+    expect(html).toContain('alt="A &quot;logo&quot; &amp; mark"')
+  })
+})

@@ -19,6 +19,12 @@ import { marginsCss, PAPER_SIZES, type PageSetup } from './page-setup'
 export type SheetPrintCell = {
   /** What the cell shows. */
   text: string
+  /**
+   * The sparkline drawn in this cell, as SVG markup ready to place. Placed
+   * behind the text, as it is on screen, so a label typed over one still
+   * reads on the page.
+   */
+  sparkline?: string
   /** An error's colour, as the sheet paints it. */
   color?: string
   /** Numbers right, text left, unless the format says. */
@@ -41,6 +47,30 @@ export type SheetPrintInput = {
   hidden: { rows: ReadonlySet<number>; cols: ReadonlySet<number> }
   merges: ReadonlyArray<Rect>
   setup: PageSetup
+  /**
+   * The charts and pictures over the cells, each as markup ready to place:
+   * an `<img>`, or a chart already drawn to `<svg>`.
+   *
+   * An object is placed against its ANCHOR CELL with the offset and size it
+   * has on the sheet, so the printed page puts it where the sheet does
+   * without the print builder knowing anything about layout. One anchored
+   * outside the printed area, or to a hidden line, is left out: there is no
+   * cell on the page to hang it from.
+   */
+  objects?: ReadonlyArray<SheetPrintObject>
+}
+
+export type SheetPrintObject = {
+  /** The cell it hangs from. */
+  row: number
+  col: number
+  /** Its offset inside that cell, and its size, in pixels. */
+  dx: number
+  dy: number
+  width: number
+  height: number
+  /** The markup, placed as it stands. The caller has escaped it. */
+  html: string
 }
 
 const HTML_ESCAPE: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
@@ -52,9 +82,49 @@ export function printAreas(input: Pick<SheetPrintInput, 'rowCount' | 'colCount' 
   return [[0, 0, Math.max(0, input.rowCount - 1), Math.max(0, input.colCount - 1)]]
 }
 
+/**
+ * The used range grown to hold what floats over it.
+ *
+ * A chart is almost always anchored BELOW the numbers it reads, which is
+ * past the last row with anything typed in it. Printing the used range and
+ * nothing else would drop it, so the default area grows to cover each
+ * object's cells, walking the widths and heights out from its anchor until
+ * the object is covered. An explicit print area is left exactly as it is:
+ * someone who named a block meant that block.
+ */
+export function areasWithObjects(input: SheetPrintInput): Rect[] {
+  const areas = printAreas(input)
+  if (input.setup.printArea?.length || !input.objects?.length) return areas
+  const area = areas[0]!
+  let [r1, c1, r2, c2] = area
+  for (const object of input.objects) {
+    let row = object.row
+    for (let covered = -object.dy; covered < object.height; row += 1) {
+      covered += input.heights.get(row) ?? input.defaultHeight
+    }
+    let col = object.col
+    for (let covered = -object.dx; covered < object.width; col += 1) {
+      covered += input.widths[colToLetters(col)] ?? input.defaultWidth
+    }
+    r1 = Math.min(r1, object.row)
+    c1 = Math.min(c1, object.col)
+    r2 = Math.max(r2, row - 1)
+    c2 = Math.max(c2, col - 1)
+  }
+  return [[r1, c1, r2, c2]]
+}
+
 /** One printable HTML document for the sheet. */
 export function sheetPrintHtml(input: SheetPrintInput): string {
   const { setup } = input
+  /** The objects hanging from each cell, so a cell is one lookup. */
+  const byAnchor = new Map<string, SheetPrintObject[]>()
+  for (const object of input.objects ?? []) {
+    const key = `${object.row},${object.col}`
+    const list = byAnchor.get(key)
+    if (list) list.push(object)
+    else byAnchor.set(key, [object])
+  }
   const visibleRows = (r1: number, r2: number) => { const out: number[] = []; for (let r = r1; r <= r2; r += 1) if (!input.hidden.rows.has(r)) out.push(r); return out }
   const visibleCols = (c1: number, c2: number) => { const out: number[] = []; for (let c = c1; c <= c2; c += 1) if (!input.hidden.cols.has(c)) out.push(c); return out }
 
@@ -77,7 +147,20 @@ export function sheetPrintHtml(input: SheetPrintInput): string {
     if (cell.cf) styles.push(entryToStyle(cell.cf))
     if (cell.color) styles.push(`color:${cell.color}`)
     const style = styles.length ? ` style="${esc(styles.filter(Boolean).join(';'))}"` : ''
-    return `<${tag}${span}${style}>${esc(cell.text)}</${tag}>`
+    // A sparkline goes behind the text; an object hangs from the cell and is
+    // allowed to overflow it, which is what makes a chart bigger than one
+    // cell print as a chart rather than as a sliver.
+    const spark = cell.sparkline ? `<span class="sp">${cell.sparkline}</span>` : ''
+    const objects = (byAnchor.get(`${r},${c}`) ?? [])
+      .map((o) => `<span class="ob" style="inset-inline-start:${o.dx}px;top:${o.dy}px;width:${o.width}px;height:${o.height}px">${o.html}</span>`)
+      .join('')
+    const classes = [spark ? 'sp-cell' : '', objects ? 'ob-cell' : ''].filter(Boolean).join(' ')
+    const cls = classes ? ` class="${classes}"` : ''
+    // A cell past the written area has nothing to say, and a caller reading
+    // one is not a reason to throw during a print.
+    const text = esc(cell.text ?? '')
+    const body = spark || objects ? `${spark}${objects}<span class="tx">${text}</span>` : text
+    return `<${tag}${span}${cls}${style}>${body}</${tag}>`
   }
 
   const rowHtml = (r: number, cols: number[], area: Rect, head = false): string => {
@@ -86,7 +169,7 @@ export function sheetPrintHtml(input: SheetPrintInput): string {
     return `<tr style="height:${h}px">${heading}${cols.map((c) => cellHtml(r, c, area, head ? 'th' : 'td')).join('')}</tr>`
   }
 
-  const tables = printAreas(input).map((area) => {
+  const tables = areasWithObjects(input).map((area) => {
     const cols = visibleCols(area[1], area[3])
     const rows = visibleRows(area[0], area[2])
     const colgroup = `<colgroup>${setup.headings ? '<col style="width:40px">' : ''}${cols.map((c) => `<col style="width:${input.widths[colToLetters(c)] ?? input.defaultWidth}px">`).join('')}</colgroup>`
@@ -116,6 +199,13 @@ export function sheetPrintHtml(input: SheetPrintInput): string {
   ${grid}
   td, th { padding: 1px 4px; overflow: hidden; white-space: nowrap; text-overflow: clip; text-align: left; font-weight: 400; vertical-align: bottom; }
   th.rh, tr.ch th { background: #f2f2f2; color: #444; text-align: center; font-size: 9pt; border: 1px solid #c8c8c8; }
+  td.sp-cell, td.ob-cell { position: relative; }
+  td.ob-cell { overflow: visible; }
+  td .sp { position: absolute; inset: 1px 4px; display: block; }
+  td .sp svg { width: 100%; height: 100%; }
+  td .ob { position: absolute; display: block; overflow: hidden; }
+  td .ob img, td .ob svg { width: 100%; height: 100%; object-fit: contain; }
+  td .tx { position: relative; }
 </style></head>
 <body>
   ${tables.join('\n  ')}
