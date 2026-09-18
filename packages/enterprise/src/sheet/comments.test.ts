@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { commentAt, withComment, listComments, nextComment } from './comments'
+import { commentAt, withComment, listComments, nextComment, threadOf, threadAt, withThread, isThreaded, notesOf } from './comments'
+import { remapNotes } from './rects'
 
 describe('withComment / commentAt', () => {
   it('writes and reads a comment by position, in the grid\'s notes shape', () => {
@@ -65,5 +66,49 @@ describe('nextComment', () => {
 
   it('on a cell that is the only comment, lands on it again', () => {
     expect(nextComment({ r2: { A: 'x' } }, { row: 2, col: 0 }, 1)).toEqual({ row: 2, col: 0 })
+  })
+})
+
+describe('threads', () => {
+  const thread = { text: 'Is this right?', author: 'Ana', at: '2026-03-04T10:00:00.000Z', replies: [{ text: 'Yes', author: 'Ben', at: '2026-03-04T11:00:00.000Z' }] }
+
+  it('threadOf reads a note and a thread alike, and blank as none', () => {
+    expect(threadOf('note')).toEqual({ text: 'note' })
+    expect(threadOf('  ')).toBeUndefined()
+    expect(threadOf({ text: '' })).toBeUndefined()
+    expect(threadOf({ text: '', replies: [{ text: 'r' }] })).toEqual({ text: '', replies: [{ text: 'r' }] })
+    expect(threadOf(thread)).toBe(thread)
+  })
+
+  it('withThread stores a bare text as a note and anything more as a thread', () => {
+    const notes = withThread({}, 1, 1, { text: 'plain' })
+    expect(notes).toEqual({ r1: { B: 'plain' } })
+    const threads = withThread(notes, 1, 2, thread)
+    expect(threads.r1!.C).toBe(thread)
+    expect(threadAt(threads, 1, 2)).toBe(thread)
+    expect(commentAt(threads, 1, 2)).toBe('Is this right?')
+    expect(isThreaded({ text: 'x' })).toBe(false)
+    expect(isThreaded({ text: 'x', resolved: true })).toBe(true)
+    expect(withThread(threads, 1, 2, null)).toEqual({ r1: { B: 'plain' } })
+    expect(withThread(threads, 1, 2, { text: '  ' })).toEqual({ r1: { B: 'plain' } })
+  })
+
+  it('withComment on a thread changes its first text and keeps the rest', () => {
+    const threads = withThread({}, 0, 0, thread)
+    const edited = withComment(threads, 0, 0, 'Corrected')
+    expect(threadAt(edited, 0, 0)).toEqual({ ...thread, text: 'Corrected' })
+    expect(withComment(threads, 0, 0, '')).toEqual({})
+  })
+
+  it('notesOf projects each thread as the text a tooltip shows', () => {
+    const map = withThread(withThread({}, 0, 0, thread), 2, 0, { text: 'note' })
+    expect(notesOf(map)).toEqual({ r0: { A: 'Ana:\nIs this right?\n\nBen:\nYes' }, r2: { A: 'note' } })
+  })
+
+  it('listComments carries the thread, and a structural edit moves it whole', () => {
+    const map = withThread({}, 3, 1, thread)
+    expect(listComments(map)).toEqual([{ row: 3, col: 1, text: 'Is this right?', thread }])
+    const moved = remapNotes(map, 'rows', (i) => (i >= 1 ? i + 2 : i))
+    expect(moved).toEqual({ r5: { B: thread } })
   })
 })

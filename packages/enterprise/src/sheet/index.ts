@@ -32,7 +32,10 @@ export {
 } from './document'
 export { shiftRect, shiftRects, subtractRect, rectContains, rectsIntersect, remapNotes, lineShift, type NotesMap } from './rects'
 export { isLocked, rectsHaveLocked, rectsMixLocked, PROTECTED_MESSAGE } from './protection'
-export { commentAt, withComment, listComments, nextComment } from './comments'
+export {
+  commentAt, withComment, withThread, threadAt, threadOf, threadText, notesOf, isThreaded, listComments, nextComment,
+  type CommentEntry, type CommentThread, type CommentValue, type CommentsMap,
+} from './comments'
 export {
   ruleAt, rulesIn, checkEntry, listChoices, shiftValidation, removeValidation, describeRule, dateValue, validationId,
   DEFAULT_ALERT_MESSAGE, OPERATOR_LABELS,

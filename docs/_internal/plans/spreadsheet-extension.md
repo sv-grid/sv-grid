@@ -30,6 +30,10 @@ per item:
 - Phase A items 1 to 3: `documentToXlsx` / `documentFromXlsx` with a
   round-trip test, and the File tab (New, Open, Save As, Export CSV, with
   Ctrl+O and Ctrl+S). Print and Page Layout (item 4) are not done.
+- Phase C item 8, threads: `CommentThread` (author, time, replies,
+  resolved) beside the plain note in the same map, the thread card in the
+  comment box, `commentAuthor` on the shell, and Excel's threaded comment
+  parts in the xlsx writer and reader.
 - Phase E item 1: `SheetMessages`, `SheetLocalization` and the
   `localization` prop, threaded through Svelte context to the ribbon,
   the formula bar, the tab strip, every dialog and the status bar; the
@@ -218,7 +222,7 @@ line from "What it does not do":
    negative axis (M).
 7. Formula auditing arrows from `deps.ts` drawn on the grid's overlay
    layer, the same layer `spreadsheetLayout` uses for borders (M).
-8. Comment threads and protection with allowed ranges (M each). Threads
+8. ~~Comment threads~~ (shipped) and protection with allowed ranges (M each). Threads
    change the `comments` shape in `SheetState`; keep reading the old shape.
 
 ### Phase D. Objects (L)

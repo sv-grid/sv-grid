@@ -99,7 +99,10 @@ export {
 } from './sheet/document'
 export { shiftRect, shiftRects, subtractRect, rectContains, rectsIntersect, remapNotes, lineShift, type NotesMap } from './sheet/rects'
 export { isLocked, rectsHaveLocked, rectsMixLocked, PROTECTED_MESSAGE } from './sheet/protection'
-export { commentAt, withComment, listComments, nextComment } from './sheet/comments'
+export {
+  commentAt, withComment, withThread, threadAt, threadOf, threadText, notesOf, isThreaded, listComments, nextComment,
+  type CommentEntry, type CommentThread, type CommentValue, type CommentsMap,
+} from './sheet/comments'
 export {
   ruleAt, rulesIn, checkEntry, listChoices, shiftValidation, removeValidation, describeRule, dateValue, validationId,
   DEFAULT_ALERT_MESSAGE, OPERATOR_LABELS,

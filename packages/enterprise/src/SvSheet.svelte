@@ -83,7 +83,8 @@
   import { isLocked, rectsHaveLocked, rectsMixLocked } from './sheet/protection'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
   import { provideSheetText, useSheetText } from './sheet-text'
-  import { commentAt, withComment, nextComment, listComments, type NotesMap } from './sheet/comments'
+  import { commentAt, withComment, withThread, threadAt, threadText, notesOf, nextComment, listComments, type CommentsMap, type CommentThread } from './sheet/comments'
+  import type { NotesMap } from './sheet/rects'
   import SvSheetComment from './SvSheetComment.svelte'
   import SvSheetListPicker from './SvSheetListPicker.svelte'
   import SvSheetDataValidation from './SvSheetDataValidation.svelte'
@@ -185,6 +186,12 @@
      * matching. Unset keys stay English, so a partial map is fine.
      */
     localization?: SheetLocalization
+    /**
+     * Who signs a comment: the name a new comment and a reply carry, the
+     * way Excel signs a threaded comment with the signed-in user. Unset,
+     * a new comment is a plain note and a reply carries its time alone.
+     */
+    commentAuthor?: string
     /** Hide any part of the chrome. */
     showRibbon?: boolean
     showFormulaBar?: boolean
@@ -238,6 +245,7 @@
     formats,
     extras = [],
     localization,
+    commentAuthor,
     showRibbon = true,
     showFormulaBar = true,
     showTabs = true,
@@ -659,15 +667,21 @@
    * The editor is Excel's note box: it opens beside the cell, and whatever
    * closes it keeps the text (Escape and a click elsewhere included).
    */
-  const notesNow = (): NotesMap => doc.get(wb.active).notes
+  const notesNow = (): CommentsMap => doc.get(wb.active).notes
   // The document keys a row `r4` as the format store does; the grid keys it
   // by its index under the default getRowId, so the map it is handed is
   // re-keyed, and fresh, on every repaint.
   const activeNotes = $derived.by<NotesMap>(() => {
     void version
     const out: NotesMap = {}
-    for (const [rowId, line] of Object.entries(notesNow())) out[rowId.slice(1)] = line
+    for (const [rowId, line] of Object.entries(notesOf(notesNow()))) out[rowId.slice(1)] = line
     return out
+  })
+  /** The thread the open comment box shows, re-read after every change. */
+  const popoverThread = $derived.by<CommentThread | null>(() => {
+    void version
+    const pop = cellPopover
+    return pop?.kind === 'comment' ? threadAt(notesNow(), pop.r, pop.c) ?? null : null
   })
   /**
    * The one thing anchored to a cell at a time: the comment editor, with
@@ -684,18 +698,34 @@
   let showComments = $state(false)
   const allComments = $derived.by(() => { void version; return listComments(notesNow()) })
 
-  /** Write, replace or (with blank text) remove the comment on (r, c), one undo. */
-  function setComment(r: number, c: number, text: string) {
+  /** Put `after` in place of the active sheet's comments, one undo. */
+  function putComments(after: CommentsMap) {
     const sheet = wb.active
     const before = doc.get(sheet).notes
-    const after = withComment(before, r, c, text)
-    const put = (notes: NotesMap) => {
+    const put = (notes: CommentsMap) => {
       doc.get(sheet).notes = notes
       bump()
       changed({ kind: 'comments' })
     }
     put(after)
     cmdOf()?.recordUndo(() => put(before), () => put(after))
+  }
+
+  /**
+   * Write, replace or (with blank text) remove the comment's first text on
+   * (r, c), one undo. A new comment is signed with `commentAuthor` and the
+   * time when there is an author to sign it, a note otherwise; an existing
+   * thread keeps its author, replies and state.
+   */
+  function setComment(r: number, c: number, text: string) {
+    const before = notesNow()
+    const fresh = text.trim() && commentAuthor && !threadAt(before, r, c)
+    putComments(fresh ? withThread(before, r, c, { text, author: commentAuthor, at: new Date().toISOString() }) : withComment(before, r, c, text))
+  }
+
+  /** A reply, an edited reply, or Resolve / Reopen: the thread as the box says it should be. */
+  function setThread(r: number, c: number, thread: CommentThread | null) {
+    putComments(withThread(notesNow(), r, c, thread))
   }
 
   /** Open the note box on (r, c), moving the cursor there first. */
@@ -1779,7 +1809,7 @@
       // A covered cell of a merge is not a cell to write into either.
       editable: (ctx: { row: { original: SheetRow } }) => !locked(ctx.row.original.index, c) && !covered(ctx.row.original.index, c),
       // Hovering a commented cell shows the comment, as Excel does.
-      tooltip: (ctx: { row: { original: SheetRow } }) => commentAt(notesNow(), ctx.row.original.index, c) ?? null,
+      tooltip: (ctx: { row: { original: SheetRow } }) => { const thread = threadAt(notesNow(), ctx.row.original.index, c); return thread ? threadText(thread) : null },
       // A typed entry is checked against the cell's validation rule before
       // it lands; handing the old value back is how the grid writes nothing.
       valueParser: (params: { newValue: unknown; oldValue: unknown; rawInput: string; data: SheetRow }) =>
@@ -3511,7 +3541,8 @@
         {#each allComments as entry (`${entry.row}:${entry.col}`)}
           <button type="button" class="entry" onclick={() => openCommentEditor(entry.row, entry.col)}>
             <span class="addr">{colToLetters(entry.col)}{entry.row + 1}</span>
-            <span class="text">{entry.text}</span>
+            {#if entry.thread.author}<span class="author">{entry.thread.author}:</span>{/if}
+            <span class="text" class:resolved={entry.thread.resolved}>{entry.text}</span>
           </button>
         {/each}
       {/if}
@@ -3579,11 +3610,15 @@
         {#snippet anchor()}<span class="box" style:width="{anchorRect!.width}px" style:height="{anchorRect!.height}px"></span>{/snippet}
         {#if cellPopover.kind === 'comment'}
           <SvSheetComment
+            thread={popoverThread}
             text={cellPopover.initial}
             address={`${colToLetters(cellPopover.c)}${cellPopover.r + 1}`}
+            author={commentAuthor}
+            locale={localization?.locale}
             onDraft={(text) => { if (cellPopover?.kind === 'comment') cellPopover.draft = text }}
             onSave={(text) => { if (cellPopover?.kind === 'comment') cellPopover.draft = text; closeCellPopover() }}
-            onDelete={() => { const pop = cellPopover; closeCellPopover(false); if (pop) setComment(pop.r, pop.c, '') }}
+            onDelete={() => { const pop = cellPopover; closeCellPopover(false); if (pop) setThread(pop.r, pop.c, null) }}
+            onUpdate={(thread) => { const pop = cellPopover; if (pop?.kind === 'comment') setThread(pop.r, pop.c, thread) }}
           />
         {:else if cellPopover.kind === 'list'}
           <SvSheetListPicker
@@ -4118,6 +4153,8 @@
   }
   .sheet-comments .entry:hover { background: var(--sg-row-hover-bg, #f0f0f0); }
   .sheet-comments .addr { font-weight: 600; color: var(--sg-muted, #616161); }
+  .sheet-comments .author { font-weight: 600; }
+  .sheet-comments .text.resolved { text-decoration: line-through; color: var(--sg-muted, #616161); }
   .sheet-comments .text {
     overflow: hidden;
     white-space: nowrap;

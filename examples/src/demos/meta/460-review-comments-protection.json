@@ -1,10 +1,11 @@
 {
-  "description": "An expense review sheet on the Svelte 5 spreadsheet shell, opened protected: every cell is locked except the reviewer's Receipt and Status columns, so typing over an amount is refused with a message while a status picked from the in-cell list goes through and moves the SUMIF totals. Three reviewer notes sit on the cells they concern as Excel's red corner: hover for the text, Shift+F2 to edit, Review > Next to walk them, Show All Comments to list them. Protection, the unlocked cells, the notes and the rules are part of the document and come back from getState(). Enterprise, in @svgrid/enterprise.",
+  "description": "An expense review sheet on the Svelte 5 spreadsheet shell, opened protected: every cell is locked except the reviewer's Receipt and Status columns, so typing over an amount is refused with a message while a status picked from the in-cell list goes through and moves the SUMIF totals. Three reviewer comments sit on the cells they concern as Excel's red corner, two of them threads with a signed reply and one resolved: hover for the text, Shift+F2 to open the box, Reply to answer, Review > Next to walk them, Show All Comments to list them. Protection, the unlocked cells, the notes and the rules are part of the document and come back from getState(). Enterprise, in @svgrid/enterprise.",
   "keywords": [
     "svelte spreadsheet cell comments",
     "svelte protect sheet locked cells",
     "svelte grid review notes",
     "svelte excel comments",
+    "svelte threaded comments spreadsheet",
     "svelte spreadsheet read only cells"
   ],
   "faq": [
@@ -14,7 +15,7 @@
     },
     {
       "question": "Where do the comments live?",
-      "answer": "In the document, per sheet, keyed by cell: getState().sheets.Claims.comments. They move with an insert or delete, and a saved document comes back with them."
+      "answer": "In the document, per sheet, keyed by cell: getState().sheets.Claims.comments. A note is its text; a thread is an object with the text, author, time, replies and resolved flag. They move with an insert or delete, a saved document comes back with them, and Save As writes a thread as Excel's threaded comment."
     },
     {
       "question": "Can a comment be edited from the keyboard?",

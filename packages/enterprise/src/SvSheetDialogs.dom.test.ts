@@ -582,10 +582,10 @@ describe('SvSheetComment (DOM)', () => {
 
   it('opens on the comment, reports every keystroke, and saves on Save', () => {
     const onDraft = vi.fn(); const onSave = vi.fn(); const onDelete = vi.fn()
-    comp = mount(SvSheetComment, { target: host!, props: { text: 'Check this', address: 'B2', onDraft, onSave, onDelete } })
+    comp = mount(SvSheetComment, { target: host!, props: { thread: null, text: 'Check this', address: 'B2', onDraft, onSave, onDelete, onUpdate: () => {} } })
     flushSync()
     expect(box().value).toBe('Check this')
-    expect(host!.querySelector('.head')?.textContent).toBe('B2')
+    expect(host!.querySelector('.head')?.textContent?.trim()).toBe('B2')
     typeInto(box() as unknown as HTMLInputElement, 'Check this again')
     expect(onDraft).toHaveBeenLastCalledWith('Check this again')
     click(btn('Save'))
@@ -594,7 +594,7 @@ describe('SvSheetComment (DOM)', () => {
 
   it('Ctrl+Enter saves; Delete shows only when there is a comment', () => {
     const onSave = vi.fn(); const onDelete = vi.fn()
-    comp = mount(SvSheetComment, { target: host!, props: { text: '', address: 'A1', onDraft: () => {}, onSave, onDelete } })
+    comp = mount(SvSheetComment, { target: host!, props: { thread: null, text: '', address: 'A1', onDraft: () => {}, onSave, onDelete, onUpdate: () => {} } })
     flushSync()
     expect(btn('Delete')).toBeUndefined()
     typeInto(box() as unknown as HTMLInputElement, 'new')
@@ -605,9 +605,53 @@ describe('SvSheetComment (DOM)', () => {
 
   it('Delete reports a delete', () => {
     const onDelete = vi.fn()
-    comp = mount(SvSheetComment, { target: host!, props: { text: 'x', address: 'A1', onDraft: () => {}, onSave: () => {}, onDelete } })
+    comp = mount(SvSheetComment, { target: host!, props: { thread: null, text: 'x', address: 'A1', onDraft: () => {}, onSave: () => {}, onDelete, onUpdate: () => {} } })
     flushSync()
     click(btn('Delete'))
     expect(onDelete).toHaveBeenCalledTimes(1)
+  })
+
+  it('a thread shows its entries and posts a signed, timed reply', () => {
+    const onUpdate = vi.fn()
+    const thread = { text: 'Is this right?', author: 'Ana', at: '2026-03-04T10:00:00.000Z', replies: [{ text: 'Yes', author: 'Ben', at: '2026-03-04T11:00:00.000Z' }] }
+    comp = mount(SvSheetComment, { target: host!, props: { thread, text: 'Is this right?', address: 'B2', author: 'Cy', onDraft: () => {}, onSave: () => {}, onDelete: () => {}, onUpdate } })
+    flushSync()
+    expect([...host!.querySelectorAll('.author')].map((e) => e.textContent)).toEqual(['Ana', 'Ben'])
+    expect([...host!.querySelectorAll('.entry .text')].map((e) => e.textContent)).toEqual(['Is this right?', 'Yes'])
+    expect(btn('Reply')?.disabled).toBe(true)
+    typeInto(box() as unknown as HTMLInputElement, 'Agreed')
+    expect(btn('Reply')?.disabled).toBe(false)
+    box().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }))
+    flushSync()
+    expect(onUpdate).toHaveBeenCalledTimes(1)
+    const next = onUpdate.mock.calls[0]![0]
+    expect(next.replies).toHaveLength(2)
+    expect(next.replies[1]).toMatchObject({ text: 'Agreed', author: 'Cy' })
+    expect(Number.isFinite(Date.parse(next.replies[1].at))).toBe(true)
+  })
+
+  it('Resolve marks the thread done and hides the reply box; Edit opens the first text; a reply can go', () => {
+    const onUpdate = vi.fn(); const onSave = vi.fn()
+    const thread = { text: 'Root', replies: [{ text: 'One' }, { text: 'Two' }] }
+    comp = mount(SvSheetComment, { target: host!, props: { thread, text: 'Root', address: 'A1', onDraft: () => {}, onSave, onDelete: () => {}, onUpdate } })
+    flushSync()
+    click(btn('Resolve thread'))
+    expect(onUpdate).toHaveBeenLastCalledWith({ ...thread, resolved: true })
+    click([...host!.querySelectorAll('.entry.reply button')].find((b) => b.textContent?.trim() === 'Delete'))
+    expect(onUpdate).toHaveBeenLastCalledWith({ text: 'Root', replies: [{ text: 'Two' }] })
+    click([...host!.querySelectorAll('.entry.root button')].find((b) => b.textContent?.trim() === 'Edit'))
+    flushSync()
+    expect(box().value).toBe('Root')
+    typeInto(box() as unknown as HTMLInputElement, 'Root, corrected')
+    click(btn('Save'))
+    expect(onSave).toHaveBeenCalledWith('Root, corrected')
+
+    comp && unmount(comp)
+    comp = mount(SvSheetComment, { target: host!, props: { thread: { ...thread, resolved: true }, text: 'Root', address: 'A1', onDraft: () => {}, onSave, onDelete: () => {}, onUpdate } })
+    flushSync()
+    expect(host!.querySelector('.badge')?.textContent).toBe('Resolved')
+    expect(host!.querySelector('textarea')).toBeNull()
+    click(btn('Reopen'))
+    expect(onUpdate).toHaveBeenLastCalledWith(thread)
   })
 })

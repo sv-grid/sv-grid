@@ -96,12 +96,12 @@ export type NotesMap = Record<string, Record<string, string>>
  * is after the edit, or null when the edit deleted it, which drops its
  * notes with it.
  */
-export function remapNotes(
-  notes: NotesMap,
+export function remapNotes<T = string>(
+  notes: Record<string, Record<string, T>>,
   axis: 'rows' | 'cols',
   shift: (index: number) => number | null,
-): NotesMap {
-  const out: NotesMap = {}
+): Record<string, Record<string, T>> {
+  const out: Record<string, Record<string, T>> = {}
   for (const [rowId, line] of Object.entries(notes)) {
     if (axis === 'rows') {
       const index = Number(rowId.slice(1))
@@ -110,7 +110,7 @@ export function remapNotes(
       out[`r${next}`] = { ...line }
       continue
     }
-    const moved: Record<string, string> = {}
+    const moved: Record<string, T> = {}
     for (const [columnId, text] of Object.entries(line)) {
       const index = lettersToCol(columnId)
       const next = index < 0 ? index : shift(index)
