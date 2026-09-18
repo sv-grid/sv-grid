@@ -1,0 +1,24 @@
+{
+  "description": "Project planning on the Svelte 5 data grid's Gantt view: the critical path, baselines and scheduling constraints. The chain of tasks with no slack is ringed in red along with the arrows between them, and a Slack column says how many days of room each of the others has. Baseline dates draw as a ghost bar under each task, turning red where the plan has drifted late. Two tasks carry constraints, so a cascade stops at a contractual finish date rather than running past it and the blocked link stays drawn as unsatisfied.",
+  "keywords": [
+    "svelte critical path gantt",
+    "svelte 5 project baselines",
+    "svelte gantt slack float",
+    "svelte scheduling constraints",
+    "svelte cpm project planner"
+  ],
+  "faq": [
+    {
+      "question": "What makes a task critical?",
+      "answer": "It has no slack: a forward pass gives every task its earliest start and a backward pass its latest, and where those are the same the task cannot slip a day without moving the project finish. A task in no dependency at all is never marked critical, because it is not on any path."
+    },
+    {
+      "question": "What does the ghost bar under a task mean?",
+      "answer": "The baseline, the dates originally agreed. It turns red when the current plan finishes later than the baseline did, and the tooltip says by how many days."
+    },
+    {
+      "question": "What happens when a constraint and a dependency disagree?",
+      "answer": "The cascade stops at the constraint rather than overrunning it, and the link is left drawn as unsatisfied. There is no schedule that satisfies both, so showing the conflict is more useful than silently breaking one of them."
+    }
+  ]
+}

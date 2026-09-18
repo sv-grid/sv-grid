@@ -650,3 +650,137 @@ function weekLabel(weekStart: Date): string {
   }
   return `${a} ${MO[weekStart.getMonth()]} - ${b} ${MO[last.getMonth()]}`
 }
+
+// --- the horizontal scale ---------------------------------------------------
+
+/**
+ * One run of the axis at a single density: either drawn at the chart's normal
+ * rate, or folded down to a fixed-width gap.
+ */
+export type GanttSegment = {
+  start: Date
+  /** Exclusive, like every end in this file. */
+  end: Date
+  /** Left edge of this run, in px from the chart's left. */
+  x: number
+  /** How wide the run is drawn. */
+  px: number
+  collapsed: boolean
+}
+
+/**
+ * The chart's date <-> pixel mapping, and the one place either direction is
+ * computed. Uniform by default; piecewise once whole days are folded out.
+ */
+export type GanttScale = {
+  totalPx: number
+  segments: GanttSegment[]
+  /** A date's x offset (px) in the chart body. */
+  xOf: (d: Date) => number
+  /** The inverse: which date an x offset lands on. */
+  dateAt: (x: number) => Date
+}
+
+/**
+ * Build the scale over `[start, end)`.
+ *
+ * With no `collapsed` predicate this is the plain linear mapping - one segment,
+ * `totalPx` exactly as asked - which is what every chart without the Pro axis
+ * uses. Pass one and each run of days it answers true for folds to `gapPx`
+ * instead of its real width, so a year of weekends stops eating two sevenths of
+ * the chart. Within a gap the mapping stays proportional, so a task that does
+ * run over a folded weekend still draws across it rather than collapsing to a
+ * line.
+ *
+ * `gapPx` of 0 removes the folded days outright: Friday's finish and Monday's
+ * start land on the same pixel.
+ */
+export function ganttScale(
+  start: Date,
+  end: Date,
+  totalPx: number,
+  opts: { collapsed?: ((day: Date) => boolean) | null; gapPx?: number } = {},
+): GanttScale {
+  const startMs = start.getTime()
+  const totalMs = Math.max(1, end.getTime() - startMs)
+  const pxPerMs = totalPx / totalMs
+  const collapsedDay = opts.collapsed
+
+  let segments: GanttSegment[]
+  let widthPx = totalPx
+  if (!collapsedDay) {
+    segments = [{ start, end, x: 0, px: totalPx, collapsed: false }]
+  } else {
+    const gapPx = Math.max(0, opts.gapPx ?? 12)
+    segments = []
+    let x = 0
+    let runStart = start
+    let runCollapsed = collapsedDay(startOfDay(start))
+    const push = (from: Date, to: Date, isCollapsed: boolean) => {
+      if (to.getTime() <= from.getTime()) return
+      const px = isCollapsed ? gapPx : (to.getTime() - from.getTime()) * pxPerMs
+      segments.push({ start: from, end: to, x, px, collapsed: isCollapsed })
+      x += px
+    }
+    // Walk whole days: the fold is a calendar decision, so a partial first or
+    // last day belongs to whatever its own day is.
+    let day = addDays(startOfDay(start), 1)
+    while (day.getTime() < end.getTime()) {
+      const isCollapsed = collapsedDay(day)
+      if (isCollapsed !== runCollapsed) {
+        push(runStart, day, runCollapsed)
+        runStart = day
+        runCollapsed = isCollapsed
+      }
+      day = addDays(day, 1)
+    }
+    push(runStart, end, runCollapsed)
+    if (segments.length === 0) segments = [{ start, end, x: 0, px: totalPx, collapsed: false }]
+    const tail = segments[segments.length - 1]!
+    widthPx = tail.x + tail.px
+  }
+
+  /** The segment `ms` falls in, by binary search; the ends clamp. */
+  const segmentAt = (ms: number): GanttSegment => {
+    let lo = 0
+    let hi = segments.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1
+      if (segments[mid]!.start.getTime() <= ms) lo = mid
+      else hi = mid - 1
+    }
+    return segments[lo]!
+  }
+
+  const xOf = (d: Date): number => {
+    const ms = d.getTime()
+    if (ms <= startMs) return (ms - startMs) * pxPerMs
+    const last = segments[segments.length - 1]!
+    if (ms >= last.end.getTime()) {
+      return last.x + last.px + (ms - last.end.getTime()) * pxPerMs
+    }
+    const seg = segmentAt(ms)
+    const span = Math.max(1, seg.end.getTime() - seg.start.getTime())
+    return seg.x + ((ms - seg.start.getTime()) / span) * seg.px
+  }
+
+  const dateAt = (x: number): Date => {
+    if (x <= 0) return new Date(startMs + x / pxPerMs)
+    const last = segments[segments.length - 1]!
+    const endPx = last.x + last.px
+    if (x >= endPx) return new Date(last.end.getTime() + (x - endPx) / pxPerMs)
+    let lo = 0
+    let hi = segments.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1
+      if (segments[mid]!.x <= x) lo = mid
+      else hi = mid - 1
+    }
+    const seg = segments[lo]!
+    const span = seg.end.getTime() - seg.start.getTime()
+    if (seg.px <= 0) return new Date(seg.start.getTime())
+    return new Date(seg.start.getTime() + ((x - seg.x) / seg.px) * span)
+  }
+
+  return { totalPx: widthPx, segments, xOf, dateAt }
+}

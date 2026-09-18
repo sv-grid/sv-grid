@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addWorkingDays,
   ganttAxis,
+  ganttScale,
   ganttTickWidth,
   ganttTree,
   isWorkingDay,
@@ -540,5 +541,112 @@ describe('the model together', () => {
     const shut = ganttTree(tasks, new Set(['p']))
     expect(open[0]!.summary).toEqual(shut[0]!.summary)
     expect(shut).toHaveLength(1)
+  })
+})
+
+describe('ganttScale - the plain mapping', () => {
+  const from = new Date(2026, 8, 14)
+  const to = new Date(2026, 8, 21)
+
+  it('spreads the window evenly across the width it is given', () => {
+    const s = ganttScale(from, to, 700)
+    expect(s.totalPx).toBe(700)
+    expect(s.xOf(from)).toBe(0)
+    expect(s.xOf(new Date(2026, 8, 17))).toBe(300)
+    expect(s.xOf(to)).toBe(700)
+  })
+
+  it('round-trips a date through x and back', () => {
+    const s = ganttScale(from, to, 700)
+    const d = new Date(2026, 8, 18, 12)
+    expect(s.dateAt(s.xOf(d)).getTime()).toBe(d.getTime())
+  })
+
+  it('keeps going past either edge, so a drag off the chart still reads', () => {
+    const s = ganttScale(from, to, 700)
+    expect(s.xOf(new Date(2026, 8, 13))).toBe(-100)
+    expect(s.dateAt(-100).getTime()).toBe(new Date(2026, 8, 13).getTime())
+    expect(s.dateAt(800).getTime()).toBe(new Date(2026, 8, 22).getTime())
+  })
+})
+
+describe('ganttScale - folding days out', () => {
+  // Mon 14 Sep 2026 through Sun 27 Sep: two whole weeks, 100px a day.
+  const from = new Date(2026, 8, 14)
+  const to = new Date(2026, 8, 28)
+  const weekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6
+  const scale = (gapPx?: number) =>
+    ganttScale(from, to, 1400, { collapsed: weekend, gapPx })
+
+  it('narrows the chart by what it folded', () => {
+    // 10 working days at 100px + 2 weekend gaps at 12px.
+    expect(scale().totalPx).toBe(10 * 100 + 2 * 12)
+  })
+
+  it('leaves the working days at their full width', () => {
+    const s = scale()
+    expect(s.xOf(new Date(2026, 8, 15))).toBe(100)
+    expect(s.xOf(new Date(2026, 8, 19))).toBe(500)
+  })
+
+  it('puts Monday right after the folded weekend', () => {
+    const s = scale()
+    // Fri finishes at 500, the weekend takes 12, so Mon starts at 512.
+    expect(s.xOf(new Date(2026, 8, 21))).toBe(512)
+  })
+
+  it('still draws a task that runs over the weekend, rather than hiding it', () => {
+    const s = scale()
+    const sat = s.xOf(new Date(2026, 8, 19))
+    const sun = s.xOf(new Date(2026, 8, 20))
+    expect(sun).toBeGreaterThan(sat)
+    expect(sun - sat).toBe(6)
+  })
+
+  it('removes the folded days outright at a gap of 0', () => {
+    const s = scale(0)
+    expect(s.totalPx).toBe(1000)
+    // Friday's finish and Monday's start land on the same pixel.
+    expect(s.xOf(new Date(2026, 8, 19))).toBe(500)
+    expect(s.xOf(new Date(2026, 8, 21))).toBe(500)
+  })
+
+  it('round-trips a working-day date', () => {
+    const s = scale()
+    const d = new Date(2026, 8, 22, 9)
+    expect(s.dateAt(s.xOf(d)).getTime()).toBe(d.getTime())
+  })
+
+  it('reads an x inside a gap as a date inside the folded run', () => {
+    const s = scale()
+    const d = s.dateAt(506)
+    expect(d.getTime()).toBeGreaterThanOrEqual(new Date(2026, 8, 19).getTime())
+    expect(d.getTime()).toBeLessThan(new Date(2026, 8, 21).getTime())
+  })
+
+  it('folds a run that opens the window', () => {
+    // Starting on the Saturday: the first segment is the fold itself.
+    const s = ganttScale(new Date(2026, 8, 19), to, 900, { collapsed: weekend })
+    expect(s.segments[0]!.collapsed).toBe(true)
+    expect(s.xOf(new Date(2026, 8, 21))).toBe(12)
+  })
+
+  it('folds a run that closes it', () => {
+    const s = ganttScale(from, new Date(2026, 8, 21), 700, { collapsed: weekend })
+    const last = s.segments[s.segments.length - 1]!
+    expect(last.collapsed).toBe(true)
+    expect(s.totalPx).toBe(500 + 12)
+  })
+
+  it('leaves a window with nothing to fold exactly as it was', () => {
+    const s = ganttScale(from, new Date(2026, 8, 19), 500, { collapsed: weekend })
+    expect(s.segments).toHaveLength(1)
+    expect(s.totalPx).toBe(500)
+  })
+
+  it('survives a window that is entirely folded', () => {
+    const s = ganttScale(new Date(2026, 8, 19), new Date(2026, 8, 21), 200, { collapsed: weekend })
+    expect(s.totalPx).toBe(12)
+    expect(s.dateAt(6).getTime()).toBe(new Date(2026, 8, 20).getTime())
   })
 })

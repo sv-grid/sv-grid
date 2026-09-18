@@ -38,3 +38,26 @@ skipping non-working days; a link that would close a cycle is refused rather
 than added. `history` adds undo and redo, which re-fire the callbacks with the
 reversed values so your data follows. Nothing here mutates a row: the view
 moves its own overlay and reports what it wants.
+
+Enterprise adds a planning layer on top. `criticalPath` runs a forward and a
+backward pass over the links and rings the chain with no slack, arrows
+included; a `__slack` table column reads each other task's room off the same
+pass. A task in no dependency is never marked critical, and cyclic links are
+ignored rather than flagged. `baselineStartField` / `baselineEndField` draw
+the originally agreed dates as a ghost bar that reddens where the plan has
+drifted late. `constraintField` pins a task (`SNET`, `FNLT`, `MSO` and the
+rest), and the cascade stops at the constraint instead of overrunning it,
+leaving the link drawn as unsatisfied - a constraint and a dependency that
+disagree have no schedule satisfying both.
+
+`resourceField` plus `resourceHistogram` sums the plan into a load strip
+under the chart: one row per resource, one bar per axis column, counting the
+tasks that touch it, red past that resource's capacity. Only leaves count, so
+a phase does not book its owner twice. `collapseWeekends` folds whole
+non-working days out of the axis and leaves a hatched marker where each run
+was, so a quarter fits in the width a month used to take; working days keep
+their real size and a task that runs over a folded weekend still draws across
+it.
+
+The models behind all of it are exported and pure: `criticalPath`,
+`slackDays`, `resourceLoad`, `overallocations` and `ganttScale`.

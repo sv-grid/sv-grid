@@ -1,0 +1,24 @@
+{
+  "description": "Resource load and a folded timeline on the Svelte 5 data grid's Gantt view. A resource field says who is on each task and the histogram under the chart sums them per column, one row per crew, turning red where a crew is booked past its capacity - so a double-booked specialist is visible without reading a date. Capacity is per resource, so a two-van crew takes two jobs at once while one person does not. Folding weekends out of the axis leaves a hatched gap where each one was and fits a quarter in the width a month used to take, with working days keeping their real size.",
+  "keywords": [
+    "svelte gantt resource histogram",
+    "svelte 5 resource overallocation",
+    "svelte gantt capacity planning",
+    "svelte gantt collapse weekends",
+    "svelte crew scheduling chart"
+  ],
+  "faq": [
+    {
+      "question": "What does a bar in the load strip count?",
+      "answer": "How many of that resource's tasks overlap the column. On a day or week axis that is concurrency: three bars over Tuesday reads 3. Only leaves are counted, so a phase does not book its owner twice for its children's work."
+    },
+    {
+      "question": "How is a resource's capacity set?",
+      "answer": "Name a field on each resource with the histogram's capacityField and give it a number; anything above it is drawn red. Without one every resource takes one task at a time."
+    },
+    {
+      "question": "What does folding weekends out actually change?",
+      "answer": "Only the axis. Each run of non-working days shrinks to a narrow hatched marker instead of two empty columns, while working days keep their normal width, so a long plan fits on screen. A task that does run over a folded weekend still draws across it."
+    }
+  ]
+}

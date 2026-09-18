@@ -138,6 +138,10 @@ export function requiredStart(
   return new Date(t)
 }
 
+/** A hard limit on where one event may be scheduled, from a planning
+ *  constraint (`SNET`, `FNLT` and the rest). Both ends are optional. */
+export type CascadeBound = { minStart?: Date; maxEnd?: Date }
+
 /** Options for {@link cascade}. */
 export type CascadeOptions = {
   /**
@@ -146,6 +150,15 @@ export type CascadeOptions = {
    * shifts / business hours; omit for calendar-time scheduling).
    */
   snapForward?: (start: Date) => Date
+  /**
+   * Per-key limits the cascade may not push past. A `minStart` raises the floor
+   * (the event cannot begin before it); a `maxEnd` caps the ceiling, and a
+   * cascade that would need to go further stops AT the cap rather than moving
+   * past it. The link is then left unsatisfied, which {@link violations}
+   * reports - the honest outcome, because a constraint and a link that
+   * disagree have no schedule that satisfies both.
+   */
+  bounds?: ReadonlyMap<string, CascadeBound>
 }
 
 /**
@@ -184,10 +197,23 @@ export function cascade(
       const req = requiredStart(pred, dep, durationMs).getTime()
       if (req > minStartMs) minStartMs = req
     }
+    // A floor constraint applies whether or not a link moved the event.
+    const bound = opts.bounds?.get(key)
+    if (bound?.minStart && bound.minStart.getTime() > minStartMs) {
+      minStartMs = bound.minStart.getTime()
+    }
     if (minStartMs <= self.start.getTime()) continue // already legal - never pull earlier
 
     let newStart = new Date(minStartMs)
     if (opts.snapForward) newStart = opts.snapForward(newStart)
+    // A ceiling stops the cascade at the cap instead of pushing past it. The
+    // link stays unsatisfied and `violations` says so, rather than the
+    // constraint being silently overrun.
+    if (bound?.maxEnd) {
+      const latestStart = bound.maxEnd.getTime() - durationMs
+      if (newStart.getTime() > latestStart) newStart = new Date(latestStart)
+    }
+    if (newStart.getTime() <= self.start.getTime()) continue
     const newEnd = new Date(newStart.getTime() + durationMs)
     const next = { start: newStart, end: newEnd }
     cur.set(key, next)

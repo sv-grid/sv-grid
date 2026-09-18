@@ -39,11 +39,14 @@
     cascade,
     hasCycle,
     violations,
+    type CascadeBound,
     type SchedulerDependency,
   } from "../scheduler-dependencies";
+  import { criticalPath, slackDays } from "./gantt-critical-path";
   import { dependencyArrows, type BarRect } from "./timeline-arrows";
   import {
     ganttAxis,
+    ganttScale,
     ganttTickWidth,
     ganttTree,
     isWorkingDay,
@@ -61,6 +64,11 @@
     type GanttTaskSpec,
     type ResolvedTask,
   } from "./gantt-model";
+  import {
+    overallocations,
+    resourceLoad,
+    type ResourceAssignment,
+  } from "./gantt-resources";
   import type { GanttProConfig } from "./gantt-config";
 
   let {
@@ -223,13 +231,29 @@
   const axis = $derived(
     ganttAxis(range.start, range.end, zoom, { weekStartsOn, today: showTodayLine ? today : null }),
   );
-  const axisPx = $derived(
+  const fullPx = $derived(
     Math.max(240, Math.round(axis.ticks.length * ganttTickWidth[zoom])),
   );
+  /** Fold whole non-working days out of the axis (Pro). Only a day-granular
+   *  zoom has weekend columns to fold, so coarser presets ignore it rather
+   *  than silently shrinking a week tick by part of itself. */
+  const collapseOff = $derived(
+    pcfg.collapseWeekends === true && (zoom === "day" || zoom === "week"),
+  );
+  /** The chart's date <-> pixel mapping, and the only thing that owns it. */
+  const scale = $derived(
+    ganttScale(axis.start, axis.end, fullPx, {
+      collapsed: collapseOff ? (d: Date) => !isWorkingDay(d, cal) : null,
+      gapPx: pcfg.collapsedGapPx ?? 12,
+    }),
+  );
+  const axisPx = $derived(scale.totalPx);
   /** Date -> x offset (px) in the chart body. Every bar, gridline, band, arrow
    *  anchor and the today line goes through this; nothing else maps a date. */
-  const xOf = $derived(
-    (d: Date) => ((d.getTime() - axis.start.getTime()) / axis.totalMs) * axisPx,
+  const xOf = $derived((d: Date) => scale.xOf(d));
+  /** A header cell's px span, from the percentages the axis reports. */
+  const pctDate = $derived(
+    (pct: number) => new Date(axis.start.getTime() + (pct / 100) * axis.totalMs),
   );
   const bodyH = $derived(Math.max(rowH, nodes.length * rowH));
 
@@ -237,12 +261,21 @@
   // whole days; a tick coarser than a day (week / month) is never wholly
   // non-working, so the shading is simply skipped there rather than lying.
   const shadeBands = $derived.by(() => {
-    if (!showNonWorking || (zoom !== "day" && zoom !== "week")) return [];
-    const out: Array<{ left: number; width: number }> = [];
+    if (zoom !== "day" && zoom !== "week") return [];
+    // Folded away, a run of non-working days is drawn as ONE narrow gap
+    // marker rather than a wide shaded column - that is the whole point of
+    // folding it, and a per-day band would just stripe the marker.
+    if (collapseOff) {
+      return scale.segments
+        .filter((sg) => sg.collapsed && sg.px > 0)
+        .map((sg) => ({ left: sg.x, width: sg.px, gap: true }));
+    }
+    if (!showNonWorking) return [];
+    const out: Array<{ left: number; width: number; gap: boolean }> = [];
     for (const t of axis.ticks) {
       if (isWorkingDay(t.start, cal)) continue;
       const left = xOf(t.start);
-      out.push({ left, width: Math.max(1, xOf(t.end) - left) });
+      out.push({ left, width: Math.max(1, xOf(t.end) - left), gap: false });
     }
     return out;
   });
@@ -367,6 +400,182 @@
     }));
     return dependencyArrows(barRects, resolved, depBad, rowH);
   });
+
+  // --- Gantt Pro: critical path, baselines, constraints ----------------------
+  // Read through `pcfg` (the untyped Pro cast) so the free grid's GanttConfig
+  // stays unchanged. Each is inert unless its field is configured.
+
+  /**
+   * The span every row DRAWS, keyed for the planning passes. A parent carries
+   * its rollup, so a link naming a phase means "after the whole phase" without
+   * the critical path needing a special case for it.
+   */
+  const drawnTimes = $derived(
+    new Map(nodes.map((n) => [n.task.key, (({ start, end }) => ({ start, end }))(drawnSpan(n))])),
+  );
+
+  const criticalOn = $derived(pcfg.criticalPath === true && hasDeps);
+  const cpm = $derived(criticalOn ? criticalPath(drawnTimes, depList) : null);
+  const criticalKeys = $derived(cpm?.critical ?? new Set<string>());
+  /** An arrow is critical when both of its ends are. */
+  const criticalArrows = $derived.by(() => {
+    if (!cpm) return new Set<string>();
+    const out = new Set<string>();
+    for (const d of depList) {
+      if (criticalKeys.has(d.from) && criticalKeys.has(d.to)) out.add(d.id);
+    }
+    return out;
+  });
+  $effect(() => {
+    if (!cpm) return;
+    pcfg.onCriticalPathChange?.([...cpm.critical]);
+  });
+
+  // --- baselines -------------------------------------------------------------
+  const baselineOn = $derived(!!pcfg.baselineStartField && !!pcfg.baselineEndField);
+  type Baseline = { left: number; width: number; varianceDays: number };
+  /** The originally agreed span for a row, as a ghost bar under its task. */
+  function baselineFor(n: GanttNode<TData>): Baseline | null {
+    if (!baselineOn) return null;
+    const bs = parseDay(fieldValue(n.task.row, pcfg.baselineStartField as string) as never);
+    const beRaw = fieldValue(n.task.row, pcfg.baselineEndField as string);
+    const be = parseDay(beRaw as never);
+    if (!bs || !be) return null;
+    // Same inclusive-date-only rule the task spans use.
+    const end =
+      typeof beRaw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(beRaw)
+        ? addDays(startOfDay(be), 1)
+        : be;
+    const left = xOf(bs);
+    const span = drawnSpan(n);
+    return {
+      left,
+      width: Math.max(2, xOf(end) - left),
+      // Positive means late against the baseline, which is the direction that
+      // matters; the tooltip says which way.
+      varianceDays: Math.round((span.end.getTime() - end.getTime()) / MS_DAY),
+    };
+  }
+
+  // --- constraints -----------------------------------------------------------
+  const constraintOn = $derived(!!pcfg.constraintField && !!pcfg.constraintDateField);
+  type Constraint = { kind: string; date: Date };
+  function constraintOf(row: TData): Constraint | null {
+    if (!constraintOn) return null;
+    const kind = String(fieldValue(row, pcfg.constraintField as string) ?? "").toUpperCase();
+    if (!kind || kind === "ASAP") return null;
+    const date = parseDay(fieldValue(row, pcfg.constraintDateField as string) as never);
+    return date ? { kind, date: startOfDay(date) } : null;
+  }
+  /**
+   * The floor / ceiling each constraint puts on the cascade. `MSO` and `SNET`
+   * raise the floor; `MFO` and `FNLT` cap the finish; `SNLT` caps the start,
+   * which is the finish minus the duration.
+   */
+  const cascadeBounds = $derived.by<Map<string, CascadeBound> | undefined>(() => {
+    if (!constraintOn) return undefined;
+    const out = new Map<string, CascadeBound>();
+    for (const t of tasks) {
+      const c = constraintOf(t.row);
+      if (!c) continue;
+      const dur = t.end.getTime() - t.start.getTime();
+      switch (c.kind) {
+        case "MSO":
+        case "SNET":
+          out.set(t.key, { minStart: c.date });
+          break;
+        case "MFO":
+        case "FNLT":
+          out.set(t.key, { maxEnd: c.date });
+          break;
+        case "SNLT":
+          out.set(t.key, { maxEnd: new Date(c.date.getTime() + dur) });
+          break;
+        default:
+          break; // FNET / ALAP: nothing the forward cascade can enforce.
+      }
+    }
+    return out.size ? out : undefined;
+  });
+  /** Rows whose constraint their current dates already break. */
+  const constraintBroken = $derived.by(() => {
+    const out = new Set<string>();
+    if (!constraintOn) return out;
+    for (const t of tasks) {
+      const c = constraintOf(t.row);
+      if (!c) continue;
+      const late = t.end.getTime() > c.date.getTime();
+      const early = t.start.getTime() < c.date.getTime();
+      if (
+        ((c.kind === "MFO" || c.kind === "FNLT") && late) ||
+        (c.kind === "SNLT" && t.start.getTime() > c.date.getTime()) ||
+        ((c.kind === "MSO" || c.kind === "SNET") && early) ||
+        (c.kind === "FNET" && t.end.getTime() < c.date.getTime())
+      ) out.add(t.key);
+    }
+    return out;
+  });
+  const CONSTRAINT_GLYPH: Record<string, string> = {
+    MSO: "\u25C6", MFO: "\u25C6",
+    SNET: "\u25B8", FNET: "\u25B8",
+    SNLT: "\u25C2", FNLT: "\u25C2",
+    ALAP: "\u25C2",
+  };
+
+  // --- resource load (Pro) ---------------------------------------------------
+  // Who is booked on what, summed per axis column. Leaves only: a phase is its
+  // children, so counting it too would book its owner twice for the same work.
+  const resourceField = $derived(pcfg.resourceField ?? null);
+  const histoCfg = $derived(
+    pcfg.resourceHistogram === true ? {} : (pcfg.resourceHistogram || null),
+  );
+  const histoOn = $derived(histoCfg != null && resourceField != null);
+  function resourceOf(row: TData): string | null {
+    if (!resourceField) return null;
+    const v = (row as Record<string, unknown>)[resourceField];
+    return v == null || v === "" ? null : String(v);
+  }
+  const assignments = $derived.by<ResourceAssignment[]>(() => {
+    if (!histoOn) return [];
+    const out: ResourceAssignment[] = [];
+    for (const n of nodes) {
+      if (n.hasChildren) continue;
+      const r = resourceOf(n.task.row);
+      if (!r) continue;
+      const span = drawnSpan(n);
+      out.push({ key: n.task.key, resource: r, start: span.start, end: span.end });
+    }
+    return out;
+  });
+  const loadRows = $derived.by(() => {
+    if (!histoOn) return [];
+    const capField = histoCfg?.capacityField ?? null;
+    const capOf = (id: string): number => {
+      if (!capField) return 1;
+      const r = pcfg.resources?.find((x) => String(x.id) === id) as
+        | Record<string, unknown>
+        | undefined;
+      const v = r?.[capField];
+      return typeof v === "number" && v > 0 ? v : 1;
+    };
+    return resourceLoad(
+      assignments,
+      axis.ticks.map((t) => ({ start: t.start, end: t.end })),
+      { resources: pcfg.resources ?? null, capacityOf: capOf },
+    );
+  });
+  const overloaded = $derived(new Set(overallocations(loadRows)));
+  /** Height of one resource's strip, from the total the config asks for. */
+  const histoRowH = $derived(
+    Math.max(16, Math.round((histoCfg?.height ?? 88) / Math.max(1, loadRows.length))),
+  );
+  /** Column geometry, shared by every strip: one cell per axis tick. */
+  const histoCols = $derived(
+    axis.ticks.map((t) => {
+      const left = xOf(t.start);
+      return { left, width: Math.max(1, xOf(t.end) - left) };
+    }),
+  );
 
   // --- editing --------------------------------------------------------------
   // One drag state for every gesture: moving a bar, dragging either edge,
@@ -664,6 +873,7 @@
     for (const t of tasks) times.set(t.key, { start: t.start, end: t.end });
     const shifts = cascade(times, depList, {
       snapForward: respectWorking ? (d) => snapToWorkingDay(d, 1, cal) : undefined,
+      bounds: cascadeBounds,
     });
     if (!shifts.size) return [];
     const out: Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }> = [];
@@ -895,7 +1105,7 @@
     id: string;
     label: string;
     width: number;
-    kind: "field" | "duration" | "progress";
+    kind: "field" | "duration" | "progress" | "slack";
     field?: string;
     numeric?: boolean;
   };
@@ -903,6 +1113,7 @@
   const BUILT_IN: Record<string, TableCol> = {
     __duration: { id: "__duration", label: "Days", width: 70, kind: "duration", numeric: true },
     __progress: { id: "__progress", label: "Progress", width: 110, kind: "progress" },
+    __slack: { id: "__slack", label: "Slack", width: 70, kind: "slack", numeric: true },
   };
   function colId(c: ColumnDef<TFeatures, TData>): string {
     return c.id ?? (c.field as string) ?? "";
@@ -963,6 +1174,11 @@
       // otherwise every phase reports zero days.
       const span = drawnSpan(n);
       return String(workingDays(span.start, span.end, cal));
+    }
+    if (col.kind === "slack") {
+      // Only meaningful with the critical path on; blank rather than a
+      // confident zero when it is off.
+      return cpm ? String(slackDays(cpm, n.task.key)) : "";
     }
     if (col.kind === "field" && col.field) return fmt(fieldValue(n.task.row, col.field));
     return "";
@@ -1043,7 +1259,7 @@
     if (!scrollEl) return null;
     const rect = scrollEl.getBoundingClientRect();
     const x = clientX - rect.left + scrollEl.scrollLeft - (showTable ? tableW : 0);
-    return new Date(axis.start.getTime() + (x / axisPx) * axis.totalMs);
+    return scale.dateAt(x);
   }
 
   /** Centre the chart on today (or the first task) when it first has a width. */
@@ -1421,7 +1637,7 @@
             {#each axis.majors as m (m.leftPct)}
               <div
                 class="sv-gantt-major"
-                style={`left:${m.leftPct}%; width:${m.widthPct}%`}
+                style={`left:${xOf(pctDate(m.leftPct))}px; width:${xOf(pctDate(m.leftPct + m.widthPct)) - xOf(pctDate(m.leftPct))}px`}
               ><span>{m.label}</span></div>
             {/each}
           </div>
@@ -1430,7 +1646,8 @@
               <div
                 class="sv-gantt-tick"
                 class:sv-gantt-tick-today={t.today}
-                style={`left:${t.leftPct}%; width:${t.widthPct}%`}
+                class:sv-gantt-tick-folded={collapseOff && !isWorkingDay(t.start, cal)}
+                style={`left:${xOf(t.start)}px; width:${Math.max(1, xOf(t.end) - xOf(t.start))}px`}
               ><span>{t.label}</span></div>
             {/each}
           </div>
@@ -1445,6 +1662,7 @@
           {#each shadeBands as band, i (i)}
             <div
               class="sv-gantt-shade"
+              class:sv-gantt-gap={band.gap}
               style={`left:${band.left}px; width:${band.width}px`}
               aria-hidden="true"
             ></div>
@@ -1452,7 +1670,7 @@
           {#each axis.ticks as t (t.start.getTime())}
             <div
               class="sv-gantt-gridline"
-              style={`left:${t.leftPct}%`}
+              style={`left:${xOf(t.start)}px`}
               aria-hidden="true"
             ></div>
           {/each}
@@ -1466,10 +1684,16 @@
               aria-hidden="true"
             >
               {#each arrows as a (a.id)}
-                <path class="sv-gantt-dep-line" class:sv-gantt-dep-bad={a.bad} d={a.d} />
+                <path
+                  class="sv-gantt-dep-line"
+                  class:sv-gantt-dep-bad={a.bad}
+                  class:sv-gantt-dep-critical={criticalArrows.has(a.id)}
+                  d={a.d}
+                />
                 <path
                   class="sv-gantt-dep-arrow"
                   class:sv-gantt-dep-bad={a.bad}
+                  class:sv-gantt-dep-critical={criticalArrows.has(a.id)}
                   d={`M${a.hx},${a.hy} l-6,-3.5 l0,7 z`}
                 />
               {/each}
@@ -1478,10 +1702,25 @@
 
           {#each visibleBars as b (b.key)}
             <div class="sv-gantt-row" style={`top:${b.index * rowH}px`}>
+              {#if baselineOn}
+                {@const bl = baselineFor(b.node)}
+                {#if bl}
+                  <span
+                    class="sv-gantt-baseline"
+                    class:sv-gantt-baseline-late={bl.varianceDays > 0}
+                    style={`left:${bl.left}px; width:${bl.width}px`}
+                    title={bl.varianceDays === 0
+                      ? "On the baseline"
+                      : `${Math.abs(bl.varianceDays)} day${Math.abs(bl.varianceDays) === 1 ? "" : "s"} ${bl.varianceDays > 0 ? "later than" : "ahead of"} baseline`}
+                  ></span>
+                {/if}
+              {/if}
               <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
               <div
                 class="sv-gantt-bar sv-gantt-bar-{b.kind}"
                 class:sv-gantt-bar-done={b.progress >= 100}
+                class:sv-gantt-critical={criticalKeys.has(b.key)}
+                class:sv-gantt-constrained={constraintBroken.has(b.key)}
                 class:sv-gantt-refused={refused.has(b.key)}
                 class:sv-gantt-dragging={drag?.key === b.key && drag?.moved}
                 class:sv-gantt-link-target={drag?.mode === "link" && drag?.targetKey === b.key}
@@ -1551,6 +1790,18 @@
                   onpointerdown={(e) => beginDrag(e, b, "link", "end")}
                 ></span>
               {/if}
+              {#if constraintOn}
+                {@const c = constraintOf(b.row)}
+                {#if c}
+                  <span
+                    class="sv-gantt-constraint"
+                    class:sv-gantt-constraint-broken={constraintBroken.has(b.key)}
+                    style={`left:${b.left - 14}px`}
+                    title={`${c.kind} ${fmtDay(c.date)}`}
+                    aria-hidden="true"
+                  >{CONSTRAINT_GLYPH[c.kind] ?? "\u25C6"}</span>
+                {/if}
+              {/if}
               {#if !gantt.task && labelOutside(b)}
                 <span
                   class="sv-gantt-label"
@@ -1579,6 +1830,37 @@
             <div class="sv-gantt-today" style={`left:${todayX}px`} aria-hidden="true"></div>
           {/if}
         </div>
+
+        {#if histoOn && loadRows.length}
+          <!-- Resource load. Sticks to the bottom of the scroller so it stays
+               in view down a long plan, and shares the chart's x scale so a
+               spike sits under the week that caused it. -->
+          <div class="sv-gantt-histo" style={`width:${axisPx}px`}>
+            {#each loadRows as r (r.id)}
+              {@const top = Math.max(r.peak, r.capacity)}
+              <div
+                class="sv-gantt-histo-row"
+                class:sv-gantt-histo-over={overloaded.has(r.id)}
+                style={`height:${histoRowH}px`}
+              >
+                <span class="sv-gantt-histo-label">
+                  {r.label}
+                  <small>peak {r.peak} / {r.capacity}</small>
+                </span>
+                {#each r.cells as c, i (i)}
+                  {#if c.load > 0}
+                    <div
+                      class="sv-gantt-histo-cell"
+                      class:sv-gantt-histo-cell-over={c.over}
+                      style={`left:${histoCols[i]?.left ?? 0}px; width:${histoCols[i]?.width ?? 0}px; height:${Math.round((c.load / top) * (histoRowH - 4))}px`}
+                      title={`${r.label}: ${c.load} of ${r.capacity}`}
+                    ></div>
+                  {/if}
+                {/each}
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
   </div>
@@ -1647,6 +1929,25 @@
         <div class="sv-gantt-tooltip-meta">
           {workingDays(tipBar.start, tipBar.end, cal)} working days, {Math.round(tipBar.progress)}%
         </div>
+      {/if}
+      {#if resourceField && resourceOf(tipBar.row)}
+        <div class="sv-gantt-tooltip-meta">{resourceOf(tipBar.row)}</div>
+      {/if}
+      {#if cpm}
+        <div class="sv-gantt-tooltip-meta">
+          {criticalKeys.has(tipBar.key)
+            ? "On the critical path"
+            : `${slackDays(cpm, tipBar.key)} days of slack`}
+        </div>
+      {/if}
+      {#if baselineOn}
+        {@const bl = baselineFor(tipBar.node)}
+        {#if bl && bl.varianceDays !== 0}
+          <div class="sv-gantt-tooltip-meta">
+            {Math.abs(bl.varianceDays)} day{Math.abs(bl.varianceDays) === 1 ? "" : "s"}
+            {bl.varianceDays > 0 ? "later than" : "ahead of"} baseline
+          </div>
+        {/if}
       {/if}
     {/if}
   </div>
@@ -1851,14 +2152,71 @@
   }
   .sv-gantt-tick { font-size: 0.7rem; color: var(--sg-muted, #6b7280); }
   .sv-gantt-tick-today { color: var(--sg-accent, #4f46e5); font-weight: 700; }
+  /* A folded day keeps its column so the header still tiles the chart, but it
+     is only a few pixels wide - a squeezed date would read as noise. */
+  .sv-gantt-tick-folded > span { display: none; }
 
   .sv-gantt-body { position: relative; }
+
+  /* --- resource load strip (Pro) --- */
+  .sv-gantt-histo {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    background: var(--sg-bg, #fff);
+    border-top: 1px solid var(--sg-border, #e5e7eb);
+  }
+  .sv-gantt-histo-row {
+    position: relative;
+    border-bottom: 1px solid color-mix(in srgb, var(--sg-border, #e5e7eb) 45%, transparent);
+  }
+  .sv-gantt-histo-row:last-child { border-bottom: 0; }
+  /* The label rides the left edge, the way the month caption does, so it is
+     readable wherever the chart is scrolled to. */
+  .sv-gantt-histo-label {
+    position: sticky;
+    left: calc(var(--gantt-table-w, 0px) + 8px);
+    z-index: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 1px 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--sg-fg, #374151);
+    background: color-mix(in srgb, var(--sg-bg, #fff) 82%, transparent);
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .sv-gantt-histo-label small { font-weight: 400; color: var(--sg-muted, #6b7280); }
+  .sv-gantt-histo-over .sv-gantt-histo-label { color: #b91c1c; }
+  /* Deliberately NOT the theme accent: red has to be the only red in the
+     strip, or an over-allocation stops standing out on a warm theme. */
+  .sv-gantt-histo-cell {
+    position: absolute;
+    bottom: 0;
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 26%, transparent);
+    border-radius: 2px 2px 0 0;
+  }
+  .sv-gantt-histo-cell-over {
+    background: color-mix(in srgb, #dc2626 70%, transparent);
+  }
   .sv-gantt-shade {
     position: absolute;
     top: 0;
     bottom: 0;
     background: color-mix(in srgb, var(--sg-fg, #1f2937) 4%, transparent);
     pointer-events: none;
+  }
+  /* The marker left where a weekend was folded out: a hatch, so the break in
+     the timeline is visible rather than a silently missing two days. */
+  .sv-gantt-gap {
+    background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--sg-fg, #1f2937) 9%, transparent) 0 2px,
+      transparent 2px 5px
+    );
   }
   .sv-gantt-gridline {
     position: absolute;
@@ -2059,6 +2417,54 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .sv-gantt-refused { animation: none; }
+  }
+
+  /* ---- Gantt Pro: critical path, baselines, constraints ---- */
+  /* Critical bars keep their own colour and gain a ring, so the plan does not
+     lose its phase colouring the moment the path is turned on. */
+  .sv-gantt-bar.sv-gantt-critical {
+    box-shadow: 0 0 0 2px var(--sv-gantt-critical, #dc2626);
+  }
+  .sv-gantt-bar-summary.sv-gantt-critical { box-shadow: 0 0 0 1.5px var(--sv-gantt-critical, #dc2626); }
+  .sv-gantt-dep-line.sv-gantt-dep-critical,
+  .sv-gantt-dep-arrow.sv-gantt-dep-critical {
+    stroke: var(--sv-gantt-critical, #dc2626);
+    fill: var(--sv-gantt-critical, #dc2626);
+  }
+  .sv-gantt-dep-line.sv-gantt-dep-critical { stroke-width: 2; }
+
+  /* The baseline: a thin ghost under the bar, so drift reads as the gap
+     between the two rather than as a second bar competing with it. */
+  .sv-gantt-baseline {
+    position: absolute;
+    top: calc((var(--gantt-row-h) - var(--gantt-bar-h)) / 2 + var(--gantt-bar-h) - 1px);
+    height: 5px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--sg-fg, #1f2937) 28%, transparent);
+    pointer-events: none;
+  }
+  .sv-gantt-baseline.sv-gantt-baseline-late {
+    background: color-mix(in srgb, var(--sv-gantt-dep-bad, #dc2626) 45%, transparent);
+  }
+
+  /* A constraint marker sits just before the bar it pins. */
+  .sv-gantt-constraint {
+    position: absolute;
+    top: 0;
+    height: var(--gantt-row-h);
+    display: flex;
+    align-items: center;
+    font-size: 0.68rem;
+    line-height: 1;
+    color: var(--sg-muted, #6b7280);
+    pointer-events: none;
+  }
+  .sv-gantt-constraint-broken { color: var(--sv-gantt-dep-bad, #dc2626); font-weight: 700; }
+  /* A bar whose own dates break its constraint. The cascade stops at the cap
+     rather than overrunning it, so this is a state to read, not an error. */
+  .sv-gantt-bar.sv-gantt-constrained {
+    outline: 1.5px dashed var(--sv-gantt-dep-bad, #dc2626);
+    outline-offset: 1px;
   }
 
   /* ---- context menu + drawer ---- */
