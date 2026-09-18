@@ -465,4 +465,46 @@ describe('SvSheet marching ants', () => {
     flushSync()
     expect(cellText(2, 0)).toBe('7')
   })
+
+  it('Insert > Chart charts the selection, the object rides the state and a structural edit, and Delete removes it', async () => {
+    const { api, doc, sheet } = await mountSheet({
+      data: [{ name: 'S', cells: [['Month', 'Online'], ['Jan', '120'], ['Feb', '150'], ['Mar', '170']] }],
+      rows: 10, columns: 4,
+    })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    cmd.extendSelection(3, 1)
+    flushSync()
+    sheet.act('insert-chart')
+    flushSync()
+    await tick()
+    const s = doc.get('S')
+    expect(s.objects).toHaveLength(1)
+    const chart = s.objects[0]!
+    expect(chart).toMatchObject({ kind: 'chart', type: 'bar', headers: true, series: 'columns', range: [0, 0, 3, 1] })
+    expect(chart.anchor).toMatchObject({ row: 4, col: 0 })
+    // It carries into the saved state, and comes back from it.
+    const state = JSON.parse(JSON.stringify(sheet.getState()))
+    expect(state.sheets.S.objects[0].id).toBe(chart.id)
+    // An insert above moves the anchor and the range with the cells.
+    doc.shift('S', { kind: 'insertRows', at: 0, count: 2 })
+    expect(s.objects[0]!.anchor.row).toBe(6)
+    expect((s.objects[0] as unknown as { range: number[] }).range).toEqual([2, 0, 5, 1])
+    sheet.setState(state)
+    flushSync()
+    await tick()
+    expect(doc.get('S').objects[0]!.anchor.row).toBe(4)
+
+    // Chart Setup opens on the selected chart, and Delete takes it away.
+    sheet.act('chart-setup')
+    flushSync()
+    expect(document.querySelector('.sv-modal')?.textContent).toContain('Series in:')
+    ;[...document.querySelectorAll('.sv-modal button')].find((b) => b.textContent === 'Cancel')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    sheet.act('delete-object')
+    flushSync()
+    await tick()
+    expect(doc.get('S').objects).toEqual([])
+  })
 })

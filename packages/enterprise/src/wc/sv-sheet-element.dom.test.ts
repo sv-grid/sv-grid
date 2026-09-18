@@ -26,9 +26,12 @@ type Sheet = HTMLElement & {
   toCsv(): string
 }
 
+// Importing the element compiles the whole shell, the grid and the chart
+// on demand, which is well past the default hook timeout when the rest of
+// the suite is transforming at the same time.
 beforeAll(async () => {
   await import('./sv-sheet-element.svelte')
-})
+}, 120_000)
 
 let el: Sheet | null = null
 afterEach(() => { el?.remove(); el = null })

@@ -49,6 +49,7 @@ export type RibbonIconName =
   | 'format-painter'
   | 'protect' | 'unprotect' | 'lock' | 'edit-ranges'
   | 'print' | 'page-setup' | 'margins' | 'orientation' | 'paper' | 'print-area' | 'print-titles'
+  | 'picture' | 'chart-setup'
   | 'comment' | 'comment-delete' | 'comment-prev' | 'comment-next' | 'comments-all'
   | 'validation'
   | 'cf' | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
@@ -319,6 +320,18 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'file-csv': [
     ...SHEET,
     { d: 'M6 8.5h1M9 8.5h1M6 11h1M9 11h1', width: 1.7 },
+  ],
+  // A framed picture with a hill and a sun in it, the way every icon set draws one.
+  picture: [
+    { d: 'M2.5 3.5h11v9h-11z' },
+    { d: 'M2.5 10.5l3.5-3.5 2.5 2.5 2-2 3 3' },
+    { d: 'M10.5 6a.9.9 0 1 0 .01 0z', fill: true },
+  ],
+  // The chart's bars with a cog beside them: its settings.
+  'chart-setup': [
+    { d: 'M2.5 13.5h7M3.5 13.5v-4M6 13.5v-7' },
+    { d: 'M11.5 5.5a2 2 0 1 0 .01 0z' },
+    { d: 'M11.5 2.5v1.2M11.5 7.3v1.2M14.5 5.5h-1.2M9.7 5.5H8.5', width: 1.2 },
   ],
   // A printer: the tray, the page going in, the page coming out.
   print: [

@@ -18931,10 +18931,9 @@ otherwise the shell's own dialog opens:
 
 The shell answers everything on the ribbon itself: `recalculate`,
 `toggle-formulas` (Excel's `Ctrl+` `` ` ``), `toggle-filter`, `sort-asc` /
-`sort-desc` / `sort-custom`, and the dialogs listed below. Two buttons have nothing behind
-them in the library, Insert > Table and Insert > Chart, and are left off the
-ribbon unless `extras={['insert-table', 'insert-chart']}` says the
-application answers them.
+`sort-desc` / `sort-custom`, and the dialogs listed below. One button has
+nothing behind it in the library, Insert > Table, and is left off the
+ribbon unless `extras={['insert-table']}` says the application answers it.
 
 ## Props
 
@@ -18952,11 +18951,11 @@ application answers them.
 | `formats` | | Cell formats keyed by address: `{ B2: { bold: true } }` for the sheet active at mount, `{ 'Orders!F2': ... }` for another sheet. |
 | `showRibbon` / `showFormulaBar` / `showTabs` / `showStatusBar` | `true` | Hide any part of the chrome. |
 | `onAction` | | Every ribbon action, first; return `true` to take one over. |
-| `extras` | `[]` | Which of Insert > Table and Insert > Chart to show, because the application answers them. |
+| `extras` | `[]` | Whether to show Insert > Table, because the application answers it. |
 | `commentAuthor` | | Who signs a new comment and a reply, with the time; unset, a new comment is a plain note. |
 | `localization` | | `{ locale, text }`: the language of the chrome. `text` overrides any of the shell's strings (see [Localisation](#localisation)); `locale` formats the status bar's numbers and reaches the grid underneath. |
 | `onReady` | | The `SvGridApi` and the document, once the grid has mounted. |
-| `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `page-setup`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
+| `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `page-setup`, `objects`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
 
 `formats` matters more than it looks: without it a sheet can only be
 formatted by hand after it loads, which makes it impossible to ship a
@@ -19046,8 +19045,8 @@ Everything the user does lands in the sheet's document: the workbook (raw
 text, formulas as typed, names, the active sheet), and per sheet the
 formats (locked flags included), column widths, row heights, hidden lines,
 frozen panes, comments, the protection flag with its allow list and edit
-ranges, the page setup, the validation rules and the conditional
-formatting rules.
+ranges, the page setup, the charts and pictures on the sheet, the
+validation rules and the conditional formatting rules.
 `getState()` returns it as plain JSON and
 `setState()` puts it back into the same workbook object, so an autosave
 is an `onChange` handler and a reload is one call after mount:
@@ -19106,6 +19105,7 @@ and `CfRule`):
       protected: false,
       protection: { allow: { formatRows: true }, ranges: [{ id, title: 'Inputs', rects: [[1, 1, 9, 1]] }] },
       pageSetup: { orientation: 'landscape', paper: 'A4', margins: { top: 0.75, bottom: 0.75, left: 0.7, right: 0.7, header: 0.3, footer: 0.3 }, printArea: null, printTitleRows: [0, 0], gridlines: false, headings: false, scale: 100 },
+      objects: [{ id, kind: 'chart', anchor: { row: 12, col: 1, dx: 8, dy: 8, width: 420, height: 260 }, range: [0, 0, 11, 2], type: 'bar', headers: true, series: 'columns' }],
       merges: [],
       validation: [{ id, rects, allow: 'whole', operator: 'between', value1: '1', value2: '10', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' } }],
       conditionalFormats: [{ id, rects, kind: 'cellIs', operator: 'greater', value1: '50000', style: { fill: '#FFC7CE', color: '#9C0006' } }],
@@ -19247,6 +19247,7 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
+| Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking; Delete removes the chart. |
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
 | Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
 | Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
@@ -19419,6 +19420,33 @@ from `@svgrid/enterprise/sheet` for a shell of your own, with
 source in the sheet without storing it. Raised as `data-validation` and
 `open-list`.
 
+### Objects: charts and pictures
+
+Insert > Chart charts the selected block: the first row and column are
+read as the labels when they look like labels, each column of the block
+is a series, and the chart is anchored just under the block. It reads the
+**range**, not a copy of the numbers, so editing a cell redraws it.
+Insert > Picture puts an image on the sheet from a file, carried in the
+document as a data URL.
+
+An object floats over the cells rather than living in them: drag it to
+move, drag its corner to resize, press Delete to remove it, and
+double-click a chart (or Insert > Setup) to open the Chart dialog. Each
+change is one undo. It hangs from a cell and an offset inside it, the way
+Excel's does, so inserting a row above moves it, deleting that row takes
+it with it, and resizing a column under it moves it without reshaping it.
+
+Objects are per sheet, ride in `getState()` as `objects` and report
+`{ kind: 'objects' }` on `onChange`. The chart's own drawing is the free
+`<SvChart>` from `@svgrid/grid`, so its types, palette and tooltips are
+the grid's. Raised as `insert-chart`, `insert-picture`, `chart-setup`
+and `delete-object`, so an application can put its own chart builder in
+their place.
+
+Objects do not ride in the .xlsx, in either direction: Save As writes the
+cells, the formats and the rules, and a chart or a picture in a file that
+is opened is left behind.
+
 ### Comments
 
 Excel's notes and its threaded comments: a text on a cell, marked by a red
@@ -19575,6 +19603,9 @@ button that does nothing.
 - **Tabs:** no track-changes on Review; Page Layout has no themes, no
   page breaks and no header or footer text, and Print has no preview of
   its own beyond the browser's.
+- **Objects** are charts and pictures, and they stay in the document: a
+  chart has no trend lines or secondary axis of its own beyond what the
+  Chart dialog sets, and neither kind rides in the .xlsx.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they

@@ -84,6 +84,12 @@
   import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
   import SvSheetEditRanges from './SvSheetEditRanges.svelte'
   import SvSheetPageSetup from './SvSheetPageSetup.svelte'
+  import SvSheetChartSetup from './SvSheetChartSetup.svelte'
+  import {
+    chartSpecOf, chartFromRange, copyObject, objectId,
+    type SheetObject, type SheetChartObject, type ObjectAnchor,
+  } from './sheet/objects'
+  import { SvChart } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
@@ -1342,6 +1348,174 @@
   let protectSheetOpen = $state(false)
   let editRangesOpen = $state(false)
 
+  // --- objects: charts and pictures over the cells ------------------------
+  /**
+   * Excel's floating objects. The document keeps them per sheet, anchored
+   * to a cell and an offset inside it with a size in pixels, so a chart
+   * moves when a row is inserted above it and keeps its shape when a
+   * column under it is resized. They are drawn in a layer over the grid,
+   * measured from the anchor cell the way the auditing arrows are, and
+   * measured again on every scroll and repaint.
+   */
+  const objectsNow = (): SheetObject[] => doc.get(wb.active).objects
+  const activeObjects = $derived.by(() => { void version; return objectsNow() })
+  let selectedObject = $state<string | null>(null)
+  let chartSetup = $state<SheetChartObject | null>(null)
+  /** Where each object sits in the layer right now, by id. */
+  let objectBoxes = $state<Record<string, { left: number; top: number; width: number; height: number }>>({})
+  let dragging: { id: string; kind: 'move' | 'resize'; x: number; y: number; anchor: ObjectAnchor } | null = null
+  let imageInput = $state<HTMLInputElement | null>(null)
+
+  /** Replace the active sheet's objects, one undo. */
+  function putObjects(next: SheetObject[]) {
+    const sheet = wb.active
+    const before = doc.get(sheet).objects
+    const put = (value: SheetObject[]) => {
+      doc.get(sheet).objects = value
+      bump()
+      changed({ kind: 'objects' })
+    }
+    put(next)
+    cmdOf()?.recordUndo(() => put(before), () => put(next))
+  }
+
+  const addObject = (object: SheetObject) => { putObjects([...objectsNow(), object]); selectedObject = object.id }
+  const replaceObject = (object: SheetObject) => putObjects(objectsNow().map((o) => (o.id === object.id ? object : o)))
+  function removeObject(id: string) {
+    if (!objectsNow().some((o) => o.id === id)) return
+    putObjects(objectsNow().filter((o) => o.id !== id))
+    if (selectedObject === id) selectedObject = null
+  }
+
+  /** The spec a chart object draws right now: its range, read live. */
+  function specOf(object: SheetChartObject) {
+    void version
+    return chartSpecOf(object, (r, c) => wb.getValue(wb.active, r, c), (r, c) => display(r, c).text)
+  }
+
+  /** Where every object sits, from its anchor cell's box; off-screen ones are left out. */
+  function measureObjects() {
+    const host = gridHost
+    const objects = objectsNow()
+    if (!host || !objects.length) { objectBoxes = {}; return }
+    const b = host.getBoundingClientRect()
+    const next: Record<string, { left: number; top: number; width: number; height: number }> = {}
+    for (const object of objects) {
+      const td = host.querySelector<HTMLElement>(`td[data-svgrid-row="${object.anchor.row}"][data-svgrid-col="${object.anchor.col}"]`)
+      if (!td) continue
+      const a = td.getBoundingClientRect()
+      next[object.id] = {
+        left: a.left - b.left + object.anchor.dx,
+        top: a.top - b.top + object.anchor.dy,
+        width: object.anchor.width,
+        height: object.anchor.height,
+      }
+    }
+    objectBoxes = next
+  }
+  $effect(() => {
+    void version
+    void activeObjects
+    if (!activeObjects.length) { objectBoxes = {}; return }
+    void tick().then(() => requestAnimationFrame(measureObjects))
+  })
+
+  /** Drag to move, or drag the corner to resize; both land as one undo on release. */
+  function onObjectPointerDown(event: PointerEvent, object: SheetObject, kind: 'move' | 'resize') {
+    if (event.button !== 0) return
+    if (protectedNow()) { refuse(); return }
+    event.preventDefault()
+    event.stopPropagation()
+    selectedObject = object.id
+    dragging = { id: object.id, kind, x: event.clientX, y: event.clientY, anchor: { ...object.anchor } }
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  }
+  function onObjectPointerMove(event: PointerEvent) {
+    const drag = dragging
+    if (!drag) return
+    const dx = event.clientX - drag.x
+    const dy = event.clientY - drag.y
+    const object = objectsNow().find((o) => o.id === drag.id)
+    if (!object) return
+    // Moved live in the layer only; the document hears about it on release.
+    const box = objectBoxes[drag.id]
+    if (!box) return
+    objectBoxes = {
+      ...objectBoxes,
+      [drag.id]: drag.kind === 'move'
+        ? { ...box, left: box.left + (event.movementX || 0), top: box.top + (event.movementY || 0) }
+        : { ...box, width: Math.max(80, drag.anchor.width + dx), height: Math.max(60, drag.anchor.height + dy) },
+    }
+  }
+  function onObjectPointerUp(event: PointerEvent) {
+    const drag = dragging
+    dragging = null
+    if (!drag) return
+    const object = objectsNow().find((o) => o.id === drag.id)
+    const box = objectBoxes[drag.id]
+    if (!object || !box) return
+    if (drag.kind === 'resize') {
+      replaceObject({ ...copyObject(object), anchor: { ...object.anchor, width: Math.round(box.width), height: Math.round(box.height) } })
+      return
+    }
+    // Moved: the cell now under the object's corner becomes its anchor, and
+    // what is left over is the offset, so it hangs from the right row.
+    const host = gridHost
+    if (!host) return
+    const b = host.getBoundingClientRect()
+    const under = host.ownerDocument.elementsFromPoint(b.left + box.left + 1, b.top + box.top + 1)
+      .find((el) => el instanceof HTMLElement && el.matches('td[data-svgrid-row]')) as HTMLElement | undefined
+    const anchor = { ...object.anchor }
+    if (under) {
+      const a = under.getBoundingClientRect()
+      anchor.row = Number(under.dataset.svgridRow)
+      anchor.col = Number(under.dataset.svgridCol)
+      anchor.dx = Math.round(b.left + box.left - a.left)
+      anchor.dy = Math.round(b.top + box.top - a.top)
+    } else {
+      anchor.dx = Math.round(anchor.dx + (box.left - (objectBoxes[drag.id]?.left ?? box.left)))
+    }
+    replaceObject({ ...copyObject(object), anchor })
+  }
+
+  /** Insert > Chart: a chart of the selected block, anchored under it. */
+  function insertChart(cmd: GridCommandContext) {
+    if (protectedNow()) { refuse(); return }
+    const rects = selectedRects(cmd).map(normalRect)
+    const rect = rects[rects.length - 1]
+    if (!rect || (rect[0] === rect[2] && rect[1] === rect[3])) { say(t('selectBlockToChart')); return }
+    addObject(chartFromRange(rect, (r, c) => wb.getValue(wb.active, r, c)))
+  }
+
+  /** Insert > Picture: the file as a data URL, anchored on the active cell. */
+  async function insertPicture(file: Blob & { name?: string }) {
+    if (protectedNow()) { refuse(); return }
+    const src = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result ?? ''))
+      reader.onerror = () => reject(reader.error ?? new Error('read failed'))
+      reader.readAsDataURL(file)
+    })
+    addObject({
+      id: objectId(),
+      kind: 'image',
+      anchor: { row: active.rowIndex, col: active.colIndex, dx: 8, dy: 8, width: 240, height: 180 },
+      src,
+      alt: file.name ?? '',
+    })
+  }
+  async function pickedPicture(event: Event) {
+    const input = event.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    try {
+      await insertPicture(file)
+    } catch {
+      say(t('couldNotReadPicture'))
+    }
+  }
+
   // --- Page Layout and Print ---------------------------------------------------
   /**
    * Excel's Page Setup lives in the document per sheet; the Page Layout tab
@@ -2114,7 +2288,8 @@
 
   /** The ribbon leaves off what nobody answers. */
   const without = $derived.by<RibbonActionId[]>(() => {
-    const all: Array<'insert-table' | 'insert-chart'> = ['insert-table', 'insert-chart']
+    // Insert > Table is the one the library still has nothing behind.
+    const all: Array<'insert-table'> = ['insert-table']
     const out: RibbonActionId[] = all.filter((a) => !extras.includes(a))
     // Protect Sheet and Unprotect Sheet share one slot on the Review tab.
     out.push(isProtected ? 'protect-sheet' : 'unprotect-sheet')
@@ -2317,6 +2492,27 @@
         if (onAction?.(action, context) === true) return
         pageSetupOpen = true
         return
+      case 'insert-chart':
+        if (onAction?.(action, context) === true) return
+        insertChart(context)
+        return
+      case 'insert-picture':
+        if (onAction?.(action, context) === true) return
+        if (protectedNow()) { refuse(); return }
+        imageInput?.click()
+        return
+      case 'chart-setup': {
+        if (onAction?.(action, context) === true) return
+        const object = objectsNow().find((o) => o.id === selectedObject)
+        if (object?.kind === 'chart') chartSetup = object
+        else say(t('selectChartFirst'))
+        return
+      }
+      case 'delete-object': {
+        if (onAction?.(action, context) === true) return
+        if (selectedObject) removeObject(selectedObject)
+        return
+      }
       case 'trace-precedents': trace('precedents'); return
       case 'trace-dependents': trace('dependents'); return
       case 'remove-arrows': removeArrows(); return
@@ -2558,6 +2754,19 @@
   }
   function onSheetKeyDownCapture(event: KeyboardEvent) {
     acceptSuggestion(event)
+    // A selected object takes Delete and Escape before the cells do, the
+    // way Excel's does: the cells under a chart are not what Delete means
+    // while the chart is picked.
+    if (selectedObject && !editorOf(event.target)) {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault()
+        event.stopPropagation()
+        if (protectedNow()) { refuse(); return }
+        removeObject(selectedObject)
+        return
+      }
+      if (event.key === 'Escape') selectedObject = null
+    }
     if (protectedNow() && !editorOf(event.target) && wouldEdit(event) && locked(active.rowIndex, active.colIndex)) refuse()
     if (event.key === 'Escape' && marquee && !editorOf(event.target)) marquee = null
     // Excel's Enter while the ants are up: paste the block once, here, and
@@ -3258,6 +3467,9 @@
   function onSheetPointerDown(event: PointerEvent) {
     if (event.button !== 0) return
     const target = event.target as HTMLElement | null
+    // A press on the cells puts an object down; the object's own handler
+    // stops the event before this sees it.
+    if (selectedObject && !target?.closest('.sheet-object')) selectedObject = null
     const handle = target?.closest<HTMLElement>('.sv-grid-resize-handle, .sv-grid-row-resize-handle')
     if (handle) { startResizeTip(handle, event); return }
     if (target?.closest('.sv-grid-fill-handle')) {
@@ -3757,7 +3969,7 @@
     onkeydowncapture={onSheetKeyDownCapture}
     onpointerupcapture={onSheetPointerUp}
     class:painting={painter !== null}
-    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage(); if (traces.length) measureTraces() }}
+    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage(); if (traces.length) measureTraces(); if (activeObjects.length) measureObjects() }}
   >
   {#if resizeGuide}
     <div class="sheet-resize-guide" class:col={resizeGuide.axis === 'col'} class:row={resizeGuide.axis === 'row'} aria-hidden="true" style:left={resizeGuide.axis === 'col' ? `${resizeGuide.at}px` : '0'} style:top={resizeGuide.axis === 'row' ? `${resizeGuide.at}px` : '0'}></div>
@@ -3780,6 +3992,52 @@
         <line class="sheet-trace-arrow" x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#1d4ed8" stroke-width="1.5" marker-end="url(#sheet-trace-head)" />
       {/each}
     </svg>
+  {/if}
+  {#if activeObjects.length}
+    <!-- Excel's floating objects: each anchored to a cell, drawn over the
+         rendered ones, moved by a drag and resized by the corner. -->
+    <div class="sheet-object-layer">
+      {#each activeObjects as object (object.id)}
+        {@const box = objectBoxes[object.id]}
+        {#if box}
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div
+            class="sheet-object"
+            class:selected={selectedObject === object.id}
+            role="figure"
+            aria-label={object.kind === 'chart' ? t('chartObject') : object.alt || t('pictureObject')}
+            style:left="{box.left}px"
+            style:top="{box.top}px"
+            style:width="{box.width}px"
+            style:height="{box.height}px"
+            onpointerdown={(event) => onObjectPointerDown(event, object, 'move')}
+            onpointermove={onObjectPointerMove}
+            onpointerup={onObjectPointerUp}
+            ondblclick={() => { if (object.kind === 'chart') chartSetup = object }}
+          >
+            {#if object.kind === 'chart'}
+              {@const spec = specOf(object)}
+              <div class="sheet-object-inner">
+                {#if object.title}<div class="sheet-object-title">{object.title}</div>{/if}
+                <SvChart spec={spec} legend={spec.series.length > 1} interactive={false} autosize />
+              </div>
+            {:else}
+              <img class="sheet-object-image" src={object.src} alt={object.alt ?? ''} draggable="false" />
+            {/if}
+            {#if selectedObject === object.id}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <span
+                class="sheet-object-grip"
+                aria-hidden="true"
+                onpointerdown={(event) => onObjectPointerDown(event, object, 'resize')}
+                onpointermove={onObjectPointerMove}
+                onpointerup={onObjectPointerUp}
+              ></span>
+            {/if}
+          </div>
+        {/if}
+      {/each}
+    </div>
   {/if}
   {#if inputMessage && messageRect}
     <!-- Excel's Input Message: a small box under the selected cell, the
@@ -3941,6 +4199,16 @@
   <SvSheetInsertFunction bind:open={insertFunctionOpen} onPick={insertFunction} />
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
+  <input class="sheet-file-input" type="file" accept="image/*" bind:this={imageInput} onchange={pickedPicture} aria-hidden="true" tabindex="-1" />
+  {#if chartSetup}
+    <SvSheetChartSetup
+      open={true}
+      chart={chartSetup}
+      onApply={(next) => replaceObject(next)}
+      onDelete={() => { const id = chartSetup?.id; chartSetup = null; if (id) removeObject(id) }}
+      onClose={() => { chartSetup = null; afterDialog() }}
+    />
+  {/if}
   <SvSheetPageSetup bind:open={pageSetupOpen} setup={pageSetupState} onApply={(next) => setPageSetup(next)} onPrint={() => { afterDialog(); print() }} onClose={() => afterDialog()} />
   <SvSheetEditRanges
     bind:open={editRangesOpen}
@@ -4193,6 +4461,62 @@
   }
   .sheet-cell-anchor .box { display: inline-block; }
   .sheet-file-input { display: none; }
+  /* The object layer: charts and pictures over the cells. The layer itself
+     lets the pointer through, each object catches it. */
+  .sheet-object-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    pointer-events: none;
+  }
+  .sheet-object {
+    position: absolute;
+    pointer-events: auto;
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #d1d1d1);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+    box-sizing: border-box;
+    overflow: hidden;
+    cursor: move;
+    touch-action: none;
+  }
+  .sheet-object.selected {
+    border-color: var(--sg-accent, #107c41);
+    box-shadow: 0 0 0 1px var(--sg-accent, #107c41), 0 2px 8px rgb(0 0 0 / 16%);
+  }
+  .sheet-object-inner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+  .sheet-object-title {
+    padding: 0 4px 2px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--sg-fg, #242424);
+  }
+  .sheet-object-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+  }
+  .sheet-object-grip {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 12px;
+    height: 12px;
+    background: var(--sg-accent, #107c41);
+    border: 1px solid var(--sg-bg, #fff);
+    cursor: nwse-resize;
+    touch-action: none;
+  }
   .sheet-trace-layer {
     position: absolute;
     inset: 0;

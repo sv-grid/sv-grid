@@ -73,6 +73,10 @@ export { sheetPrintHtml, printAreas, type SheetPrintInput, type SheetPrintCell }
 export { sheetCellsFromRows, cellTextOf, type SheetField, type SheetFromRowsOptions } from './from-rows'
 export { builtinEngine, type SheetEngine, type SheetEngineHost, type SheetEngineCell, type SheetEngineResult } from './engine'
 export {
+  chartSpecOf, chartFromRange, shiftObject, shiftObjects, objectAt, copyObject, objectId, SHEET_CHART_TYPES,
+  type SheetObject, type SheetChartObject, type SheetImageObject, type ObjectAnchor, type SheetChartType,
+} from './objects'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './hyperformula-engine'

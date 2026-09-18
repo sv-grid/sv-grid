@@ -1,0 +1,24 @@
+{
+  "description": "Charts anchored over the cells of a Svelte 5 spreadsheet, the way Excel anchors one: each reads a range rather than a copy of the numbers, so typing into a cell redraws it. Insert > Chart charts the selected block and reads its first row and column as the labels; Insert > Picture puts an image on the sheet; a double-click opens the Chart dialog for the type, the title, series in columns or rows and stacking. Drag an object to move it, its corner to resize, Delete to remove; it hangs from a cell, so inserting a row above moves it. The charts are part of the document and ride through getState(). Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet chart",
+    "svelte sheet insert chart",
+    "svelte excel chart range",
+    "svelte spreadsheet floating objects",
+    "svelte sheet picture"
+  ],
+  "faq": [
+    {
+      "question": "Does the chart update when a cell changes?",
+      "answer": "Yes. A chart object holds the range it reads, not a copy of the values, so every edit inside that range redraws it, the same way an Excel chart bound to a table does."
+    },
+    {
+      "question": "Where do the charts live?",
+      "answer": "In the document, per sheet: getState().sheets.Sales.objects. Each carries its anchor cell, an offset inside it, a size in pixels, the range it reads and how to read it. They move with an insert or delete and come back from a saved document."
+    },
+    {
+      "question": "Do charts ride in the .xlsx?",
+      "answer": "No. Save As writes the cells, the formats and the rules; a chart or a picture is left behind, in both directions. The document (getState) is what carries them."
+    }
+  ]
+}
