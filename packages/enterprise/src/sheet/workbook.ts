@@ -45,6 +45,14 @@ export type Workbook = {
   removeSheet(name: string): boolean
   renameSheet(from: string, to: string): boolean
   moveSheet(name: string, to: number): boolean
+  /**
+   * Copy a sheet's cells into a new sheet placed right after it, named
+   * `to` or Excel's "Name (2)", and make it active. The new sheet's
+   * formulas read their own sheet where the old ones read theirs, because
+   * an unqualified reference is relative to the sheet it sits on. Returns
+   * the new name, or null when `from` is unknown or `to` is taken.
+   */
+  copySheet(from: string, to?: string): string | null
 
   /** The raw text of a cell: the formula as typed, or the literal. */
   getRaw(sheet: string, row: number, col: number): string
@@ -334,6 +342,30 @@ export function createWorkbook(
       const [moved] = order.splice(index, 1)
       order.splice(Math.max(0, Math.min(to, order.length)), 0, moved!)
       return true
+    },
+
+    copySheet(from, to) {
+      const index = order.findIndex((n) => n.toLowerCase() === from.toLowerCase())
+      const source = sheetCells(from)
+      if (index < 0 || !source) return null
+      let name = to
+      if (name === undefined) {
+        const base = order[index]!
+        for (let i = 2; ; i += 1) {
+          const candidate = `${base} (${i})`
+          if (!sheetCells(candidate) && isValidSheetName(candidate)) { name = candidate; break }
+          if (i > 1000) return null
+        }
+      }
+      if (!isValidSheetName(name!) || sheetCells(name!)) return null
+      byName.set(name!.toLowerCase(), source.map((line) => [...line]))
+      order.splice(index + 1, 0, name!)
+      active = name!
+      // Nothing cached read the new sheet yet, but a formula elsewhere
+      // that reads a whole column of it by name cannot exist either, so
+      // only the graph needs the new cells' precedents, which compute
+      // records on first read.
+      return name!
     },
 
     getRaw(sheet, row, col) {

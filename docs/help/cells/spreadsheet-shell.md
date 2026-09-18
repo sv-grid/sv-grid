@@ -26,7 +26,7 @@ empty single-sheet workbook, which is what "open a spreadsheet" means.
 | Ribbon: Home, Insert, Formulas, Data, Review, View | `SvSheetRibbon` |
 | Name Box and fx bar, showing the RAW text of the active cell | `SvFormulaBar` |
 | A..Z headers over the built-in 1..N row gutter | `SvGrid` |
-| Sheet tabs: switch, rename, reorder, add | `SvSheetTabs` |
+| Sheet tabs: switch, rename, reorder, add, duplicate, hide and unhide | `SvSheetTabs` |
 | Sum / Average / Count of the selection | the shell |
 | Every Excel shortcut | `enableSheet()` |
 
@@ -122,8 +122,12 @@ the wiring BETWEEN the parts, done once:
   marked with a line in the accent, the Select All corner sits top-left,
   and the status bar reads Ready on the left and Average / Count / Sum on
   the right.
-- Sheet tabs delete, insert, rename and move from a right-click menu, as in
-  Excel; nothing on the tab face can remove a sheet.
+- Sheet tabs delete, insert, rename, move, duplicate, hide and unhide from
+  a right-click menu, as in Excel; nothing on the tab face can remove a
+  sheet, and deleting one that holds data asks first. A hidden sheet keeps
+  its cells and every reference to it, Ctrl+PageUp and PageDown step over
+  it, and the flag rides in the document. Duplicate copies the cells and
+  everything the document keeps beside them.
 - Click a column letter to select the column, a row number to select the
   row, the corner to select the sheet; Shift+click extends. Drag the edge of
   a row number to resize the row, as with a column letter.

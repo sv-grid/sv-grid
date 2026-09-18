@@ -6,6 +6,7 @@
    * and calls back, so the keyboard shortcuts and the tabs cannot disagree
    * about which sheet is active.
    */
+  import { SvModal } from '@svgrid/grid'
   import type { Workbook } from './sheet/workbook'
   import { isValidSheetName } from './sheet/workbook'
 
@@ -21,6 +22,16 @@
      */
     onRename?: (from: string, to: string) => void
     onRemove?: (name: string) => void
+    /**
+     * The sheets that are hidden: their tabs are not drawn and the menu
+     * offers Unhide for each. The consumer keeps the list (the shell keeps
+     * it in the document) and answers `onHide` / `onUnhide`.
+     */
+    hidden?: ReadonlyArray<string>
+    onHide?: (name: string) => void
+    onUnhide?: (name: string) => void
+    /** Excel's Move or Copy > Create a copy. Without it the entry is not offered. */
+    onDuplicate?: (name: string) => void
     /** Off hides the add button and the context actions. */
     editable?: boolean
     /**
@@ -35,7 +46,7 @@
     version?: number
   }
 
-  let { workbook, onChange, onRename, onRemove, editable = true, version = 0 }: Props = $props()
+  let { workbook, onChange, onRename, onRemove, hidden = [], onHide, onUnhide, onDuplicate, editable = true, version = 0 }: Props = $props()
 
   let renaming = $state<string | null>(null)
   let draft = $state('')
@@ -46,10 +57,17 @@
   // keeps one of its own and reads both.
   let localVersion = $state(0)
 
+  const isHidden = (name: string) => hidden.some((h) => h.toLowerCase() === name.toLowerCase())
+  /** The tabs drawn: the workbook's sheets less the hidden ones. */
   const sheets = $derived.by(() => {
     void version
     void localVersion
-    return workbook.sheets
+    return workbook.sheets.filter((name) => !isHidden(name))
+  })
+  const hiddenSheets = $derived.by(() => {
+    void version
+    void localVersion
+    return workbook.sheets.filter((name) => isHidden(name))
   })
   const activeSheet = $derived.by(() => {
     void version
@@ -98,11 +116,47 @@
     changed()
   }
 
+  /** Delete, once confirmed when the sheet holds anything, as Excel asks. */
+  let confirmDelete = $state<string | null>(null)
+
+  function hasContent(name: string): boolean {
+    for (let r = 0; r < workbook.rowCount(name); r += 1) {
+      for (let c = 0; c < workbook.colCount(name); c += 1) {
+        if (workbook.getRaw(name, r, c).trim() !== '') return true
+      }
+    }
+    return false
+  }
+
+  function askRemove(name: string) {
+    if (workbook.sheets.length < 2) return
+    if (hasContent(name)) confirmDelete = name
+    else remove(name)
+  }
+
   function remove(name: string) {
+    confirmDelete = null
     // The workbook refuses to remove the last sheet; reflect that rather than
     // showing a button that does nothing.
     if (!workbook.removeSheet(name)) return
     onRemove?.(name)
+    changed()
+  }
+
+  function hide(name: string) {
+    // Excel refuses to hide the last visible sheet.
+    if (sheets.length < 2) return
+    onHide?.(name)
+    changed()
+  }
+
+  function unhide(name: string) {
+    onUnhide?.(name)
+    changed()
+  }
+
+  function duplicate(name: string) {
+    onDuplicate?.(name)
     changed()
   }
 
@@ -285,13 +339,39 @@
   -->
   <div class="sheet-menu" role="menu" aria-label={`${menu.name} sheet`} style:left={`${menu.x}px`} style:top={`${menu.y}px`} use:keepMenuInView={menu}>
     <button type="button" role="menuitem" onclick={() => { insertBefore(menu!.name); menu = null }}>Insert...</button>
-    <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { remove(menu!.name); menu = null }}>Delete</button>
+    <button type="button" role="menuitem" disabled={workbook.sheets.length < 2} onclick={() => { askRemove(menu!.name); menu = null }}>Delete</button>
     <button type="button" role="menuitem" onclick={() => { startRename(menu!.name); menu = null }}>Rename</button>
+    {#if onDuplicate}
+      <button type="button" role="menuitem" onclick={() => { duplicate(menu!.name); menu = null }}>Duplicate</button>
+    {/if}
     <div class="sep" role="separator"></div>
     <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === 0} onclick={() => { moveBy(menu!.name, -1); menu = null }}>Move Left</button>
     <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === sheets.length - 1} onclick={() => { moveBy(menu!.name, 1); menu = null }}>Move Right</button>
+    {#if onHide}
+      <div class="sep" role="separator"></div>
+      <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { hide(menu!.name); menu = null }}>Hide</button>
+      {#if hiddenSheets.length}
+        <!-- Excel's Unhide opens a list; here each hidden sheet is an entry. -->
+        <div class="heading" role="presentation">Unhide</div>
+        {#each hiddenSheets as name (name)}
+          <button type="button" role="menuitem" class="indent" onclick={() => { unhide(name); menu = null }}>{name}</button>
+        {/each}
+      {/if}
+    {/if}
   </div>
 {/if}
+
+<SvModal open={confirmDelete !== null} title="Delete sheet" size="sm" onClose={() => (confirmDelete = null)}>
+  <div class="sv-sheet-dialog">
+    <p class="note">This sheet holds data. Deleting it cannot be undone. Delete "{confirmDelete}"?</p>
+  </div>
+  {#snippet footer()}
+    <div class="sv-sheet-dialog-buttons">
+      <button type="button" class="btn primary" onclick={() => { if (confirmDelete) remove(confirmDelete) }}>Delete</button>
+      <button type="button" class="btn" onclick={() => (confirmDelete = null)}>Cancel</button>
+    </div>
+  {/snippet}
+</SvModal>
 
 <style>
   .sv-sheet-tabs {
@@ -438,4 +518,7 @@
   .sheet-menu button:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f0f0f0); }
   .sheet-menu button:disabled { opacity: 0.4; cursor: default; }
   .sheet-menu .sep { height: 1px; margin: 4px 6px; background: var(--sg-border, #e0e0e0); }
+  .sheet-menu .heading { padding: 4px 10px 2px; color: var(--sg-muted, #616161); font-size: 11px; }
+  .sheet-menu button.indent { padding-left: 22px; }
+  .note { margin: 0; }
 </style>

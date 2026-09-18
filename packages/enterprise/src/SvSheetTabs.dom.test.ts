@@ -108,6 +108,54 @@ describe('SvSheetTabs (DOM)', () => {
     expect(el.querySelector('.rename')).not.toBeNull()
   })
 
+  it('asks before deleting a sheet that holds data, and deletes an empty one at once', () => {
+    const workbook = createWorkbook([{ name: 'Data', cells: [['x']] }, { name: 'Empty', cells: [] }, { name: 'Other', cells: [] }])
+    const el = render({ workbook })
+    menuItem(openMenu(el, 'Empty'), 'Delete').click()
+    flushSync()
+    expect(workbook.sheets).toEqual(['Data', 'Other'])
+    menuItem(openMenu(el, 'Data'), 'Delete').click()
+    flushSync()
+    expect(workbook.sheets).toEqual(['Data', 'Other'])
+    const confirm = [...document.querySelectorAll<HTMLButtonElement>('.sv-modal button')].find((b) => b.textContent?.trim() === 'Delete')!
+    confirm.click()
+    flushSync()
+    expect(workbook.sheets).toEqual(['Other'])
+  })
+
+  it('hides a tab, lists it under Unhide, and never hides the last one showing', () => {
+    const workbook = threeSheets()
+    const onHide = vi.fn()
+    const onUnhide = vi.fn()
+    const box = reactiveProps({ workbook, hidden: [] as string[], onHide, onUnhide })
+    const el = render(box.props)
+    expect(menuItem(openMenu(el, 'Budget'), 'Hide').disabled).toBe(false)
+    menuItem(openMenu(el, 'Orders'), 'Hide').click()
+    flushSync()
+    expect(onHide).toHaveBeenCalledWith('Orders')
+    box.set({ hidden: ['Orders'] })
+    flushSync()
+    expect(tabNames(el)).toEqual(['Budget', 'Summary'])
+    const menu = openMenu(el, 'Budget')
+    expect(menu.textContent).toContain('Unhide')
+    menuItem(menu, 'Orders').click()
+    flushSync()
+    expect(onUnhide).toHaveBeenCalledWith('Orders')
+    box.set({ hidden: ['Orders', 'Summary'] })
+    flushSync()
+    expect(menuItem(openMenu(el, 'Budget'), 'Hide').disabled).toBe(true)
+  })
+
+  it('offers Duplicate only when the consumer answers it', () => {
+    const workbook = threeSheets()
+    expect(menuItem(openMenu(render({ workbook }), 'Budget'), 'Duplicate')).toBeUndefined()
+    if (comp) { unmount(comp); comp = null }
+    if (host) { host.remove(); host = null }
+    const onDuplicate = vi.fn()
+    menuItem(openMenu(render({ workbook, onDuplicate }), 'Budget'), 'Duplicate').click()
+    expect(onDuplicate).toHaveBeenCalledWith('Budget')
+  })
+
   it('greys Delete out when one sheet is left', () => {
     // The workbook refuses to remove it, so an enabled item that does
     // nothing would be worse than a disabled one.

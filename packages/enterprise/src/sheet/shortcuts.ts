@@ -88,10 +88,13 @@ export function getFormatTarget(): SheetFormatTarget | null {
  */
 let workbook: Workbook | null = null
 let onWorkbookChange: (() => void) | null = null
+/** Which sheets are hidden, so Ctrl+PageUp and PageDown step over them. */
+let sheetHidden: ((name: string) => boolean) | null = null
 
-export function setWorkbook(next: Workbook | null, onChange?: () => void): void {
+export function setWorkbook(next: Workbook | null, onChange?: () => void, isHidden?: (name: string) => boolean): void {
   workbook = next
   onWorkbookChange = onChange ?? null
+  sheetHidden = isHidden ?? null
 }
 
 export function getWorkbook(): Workbook | null {
@@ -107,7 +110,9 @@ export function switchSheet(delta: number): boolean {
   const sheets = wb.sheets
   const at = sheets.indexOf(wb.active)
   if (at < 0) return false
-  const next = at + delta
+  // The next sheet that shows; a hidden one is stepped over, as in Excel.
+  let next = at + delta
+  while (next >= 0 && next < sheets.length && sheetHidden?.(sheets[next]!)) next += delta
   if (next < 0 || next >= sheets.length) return false
   wb.setActive(sheets[next]!)
   onWorkbookChange?.()

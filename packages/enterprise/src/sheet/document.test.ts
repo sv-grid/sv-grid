@@ -144,3 +144,45 @@ describe('createSheetDocument', () => {
     expect(listener.mock.calls[0]![0]).toEqual([{ kind: 'restore' }])
   })
 })
+
+describe('hidden and duplicated sheets', () => {
+  it('a hidden flag rides through getState and setState, and an old state reads as shown', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'A', cells: [] }, { name: 'B', cells: [] }] })
+    doc.get('B').sheetHidden = true
+    const saved = JSON.parse(JSON.stringify(doc.getState()))
+    expect(saved.sheets.B.sheetHidden).toBe(true)
+    expect(createSheetDocument({ state: saved }).get('B').sheetHidden).toBe(true)
+    delete saved.sheets.B.sheetHidden
+    expect(createSheetDocument({ state: saved }).get('B').sheetHidden).toBe(false)
+  })
+
+  it('duplicate copies the cells and everything beside them, sharing nothing', async () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'Orders', cells: [['1', '=A1*2']] }] })
+    const orders = doc.get('Orders')
+    orders.formats.set([[0, 1, 0, 1]], { bold: true }, lookup)
+    orders.widths.B = 180
+    orders.freeze = { rows: 1, cols: 0 }
+    orders.notes = { r0: { A: 'first' } }
+    orders.merges = [[3, 0, 3, 2]]
+    orders.sheetHidden = true
+    const heard: string[] = []
+    doc.subscribe((reasons) => heard.push(...reasons.map((r) => r.kind)))
+    expect(doc.duplicate('Orders')).toBe('Orders (2)')
+    await Promise.resolve()
+    expect(heard).toEqual(['sheets'])
+    const copy = doc.get('Orders (2)')
+    expect(doc.workbook.getValue('Orders (2)', 0, 1)).toBe(2)
+    expect(copy.formats.get('r0', 'B')).toEqual({ bold: true })
+    expect(copy.widths).toEqual({ B: 180 })
+    expect(copy.freeze).toEqual({ rows: 1, cols: 0 })
+    expect(copy.notes).toEqual({ r0: { A: 'first' } })
+    expect(copy.merges).toEqual([[3, 0, 3, 2]])
+    // A copy is always shown, and edits to it leave the source alone.
+    expect(copy.sheetHidden).toBe(false)
+    copy.widths.B = 50
+    copy.merges.push([5, 0, 5, 1])
+    expect(orders.widths.B).toBe(180)
+    expect(orders.merges).toHaveLength(1)
+    expect(doc.duplicate('Nope')).toBeNull()
+  })
+})

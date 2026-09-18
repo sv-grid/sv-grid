@@ -305,6 +305,42 @@
     version += 1
   }
 
+  // --- hidden and copied sheets -------------------------------------------
+  /** The sheets whose tabs are not drawn; the document keeps the flag. */
+  const hiddenSheets = $derived.by(() => {
+    void version
+    return wb.sheets.filter((name) => doc.get(name).sheetHidden)
+  })
+  /** Excel's Hide Sheet: the tab goes, and the cursor moves to the nearest
+   *  sheet that shows when it was the active one. Refused on the last one. */
+  function hideSheet(name: string) {
+    const visible = wb.sheets.filter((n) => !doc.get(n).sheetHidden)
+    if (visible.length < 2 || !wb.sheets.some((n) => n.toLowerCase() === name.toLowerCase())) return
+    doc.get(name).sheetHidden = true
+    if (wb.active.toLowerCase() === name.toLowerCase()) {
+      const at = visible.findIndex((n) => n.toLowerCase() === name.toLowerCase())
+      const next = visible[at + 1] ?? visible[at - 1]
+      if (next) { wb.setActive(next); active = { rowIndex: 0, colIndex: 0 } }
+    }
+    changed({ kind: 'sheets' })
+    bump()
+  }
+  function unhideSheet(name: string) {
+    if (!wb.sheets.some((n) => n.toLowerCase() === name.toLowerCase())) return
+    doc.get(name).sheetHidden = false
+    wb.setActive(name)
+    active = { rowIndex: 0, colIndex: 0 }
+    changed({ kind: 'sheets' })
+    bump()
+  }
+  /** The tab menu's Duplicate: cells, formats, sizes, rules and the rest. */
+  function duplicateSheet(name: string) {
+    const made = doc.duplicate(name)
+    if (made === null) { say(`Could not copy ${name}.`); return }
+    active = { rowIndex: 0, colIndex: 0 }
+    bump()
+  }
+
   /**
    * Tell the shell the workbook changed underneath it.
    *
@@ -1245,7 +1281,7 @@
       // rather than pointing at a cell that may not exist on the new sheet.
       active = { rowIndex: 0, colIndex: 0 }
       bump()
-    })
+    }, (name) => doc.get(name).sheetHidden)
     registerSheetTargets()
     setFindTarget({
       getRaw: (r, c) => wb.getRaw(wb.active, r, c),
@@ -3419,6 +3455,10 @@
         registerSheetTargets()
       }}
       onRemove={(name) => doc.remove(name)}
+      hidden={hiddenSheets}
+      onHide={hideSheet}
+      onUnhide={unhideSheet}
+      onDuplicate={duplicateSheet}
     />
   {/if}
 
