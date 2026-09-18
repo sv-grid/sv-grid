@@ -140,6 +140,10 @@ export type RibbonItem = {
 
 /** Actions the ribbon delegates to the host rather than running itself. */
 export type RibbonActionId =
+  | 'file-new'
+  | 'file-open'
+  | 'file-save-xlsx'
+  | 'file-export-csv'
   | 'paste-special'
   | 'format-cells'
   | 'find-replace'
@@ -457,6 +461,45 @@ const BORDER_OPTIONS: ReadonlyArray<{ value: BorderPreset; label: string; icon: 
 // ---------------------------------------------------------------------------
 
 const small = (row: 1 | 2 | 3, item: Omit<RibbonItem, 'row'>): RibbonItem => ({ ...item, row })
+
+/**
+ * Excel's File tab, the part of it a document in a page can do: New, Open
+ * an .xlsx from disk, Save as .xlsx, and the active sheet as CSV. Every
+ * entry is raised for the shell, and through it for the host, so an app
+ * that keeps its workbooks on a server takes Open and Save over with
+ * `onAction` and the buttons still read as Excel's.
+ */
+const FILE: RibbonTab = {
+  id: 'file',
+  label: 'File',
+  groups: [
+    {
+      id: 'file-new',
+      icon: 'file-new',
+      label: 'New',
+      items: [
+        { id: 'file-new', label: 'New', title: 'New: start an empty workbook', icon: 'file-new', kind: 'button', size: 'large', emits: 'file-new' },
+      ],
+    },
+    {
+      id: 'file-open',
+      icon: 'file-open',
+      label: 'Open',
+      items: [
+        { id: 'file-open', label: 'Open', title: 'Open an .xlsx file', keys: 'Ctrl+O', icon: 'file-open', kind: 'button', size: 'large', emits: 'file-open' },
+      ],
+    },
+    {
+      id: 'file-save',
+      icon: 'file-save',
+      label: 'Save',
+      items: [
+        { id: 'file-save-xlsx', label: 'Save As', title: 'Save the workbook as an .xlsx file', keys: 'Ctrl+S', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-xlsx' },
+        { id: 'file-export-csv', label: 'Export CSV', title: 'Export the active sheet as CSV', icon: 'file-csv', kind: 'button', size: 'large', emits: 'file-export-csv' },
+      ],
+    },
+  ],
+}
 
 const HOME: RibbonTab = {
   id: 'home',
@@ -1007,7 +1050,7 @@ const VIEW: RibbonTab = {
   ],
 }
 
-export const RIBBON_TABS: ReadonlyArray<RibbonTab> = [HOME, INSERT, FORMULAS, DATA, REVIEW, VIEW]
+export const RIBBON_TABS: ReadonlyArray<RibbonTab> = [FILE, HOME, INSERT, FORMULAS, DATA, REVIEW, VIEW]
 
 /** Every item across every tab, for tests and for a command palette. */
 export function ribbonItems(): ReadonlyArray<RibbonItem> {

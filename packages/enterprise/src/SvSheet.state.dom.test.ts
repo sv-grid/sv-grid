@@ -202,6 +202,28 @@ describe('SvSheet document state', () => {
 })
 
 
+describe('SvSheet files', () => {
+  it('saves the document as xlsx, opens it back, exports the active sheet as CSV, and starts over', async () => {
+    const { sheet, doc } = await mountSheet({ data: [{ name: 'Budget', cells: [['Line', 'Jan'], ['Rent', '2400'], ['Total', '=B2*2']] }] })
+    doc.get('Budget').formats.set([[0, 0, 0, 1]], { bold: true }, { rowIdAt: (i) => `r${i}`, columnIdAt: (i) => String.fromCharCode(65 + i) })
+    expect(sheet.toCsv()).toBe('Line,Jan\r\nRent,2400\r\nTotal,4800')
+    const blob = await sheet.toXlsx()
+    expect(blob.size).toBeGreaterThan(0)
+
+    sheet.newWorkbook()
+    flushSync()
+    expect(doc.workbook.sheets).toEqual(['Sheet1'])
+    expect(doc.workbook.getRaw('Sheet1', 1, 1)).toBe('')
+
+    await sheet.open(blob)
+    flushSync()
+    expect(doc.workbook.sheets).toEqual(['Budget'])
+    expect(doc.workbook.getRaw('Budget', 2, 1)).toBe('=B2*2')
+    expect(doc.workbook.getValue('Budget', 2, 1)).toBe(4800)
+    expect(doc.get('Budget').formats.get('r0', 'B')).toEqual({ bold: true })
+  })
+})
+
 describe('SvSheet data validation chrome', () => {
   it('shows a rule\'s input message under the selected cell, and circles the cells that break rules', async () => {
     const doc = createSheetDocument({ sheets: [{ name: 'Sheet1', cells: [['7', 'x'], ['abc', '']] }] })

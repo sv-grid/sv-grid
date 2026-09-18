@@ -40,6 +40,7 @@ export type RibbonIconName =
   | 'autosum' | 'fill-down' | 'fill-right' | 'clear' | 'find' | 'filter'
   | 'sort-asc' | 'sort-desc' | 'sort'
   | 'chart' | 'table' | 'function' | 'new-sheet'
+  | 'file-new' | 'file-open' | 'file-save' | 'file-csv'
   | 'name-manager' | 'show-formulas' | 'calculate' | 'goal-seek'
   | 'text-to-columns' | 'remove-duplicates'
   | 'chevron-down' | 'format-cells'
@@ -279,6 +280,23 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'new-sheet': [
     ...SHEET,
     { d: 'M8.2 6.5v5M5.7 9h5', width: 1.7 },
+  ],
+  // The File tab: a blank page, an opening folder, a floppy, a page of
+  // commas.
+  'file-new': [
+    ...SHEET,
+  ],
+  'file-open': [
+    { d: 'M1.5 4.5v9h11l2-6H4l-2 6' },
+    { d: 'M1.5 4.5v-2h4l1.5 1.5h5.5v2.5' },
+  ],
+  'file-save': [
+    { d: 'M2.5 2.5h9l2 2v9h-11z' },
+    { d: 'M5 2.5v3.5h5V2.5M4.5 13.5V9h7v4.5' },
+  ],
+  'file-csv': [
+    ...SHEET,
+    { d: 'M6 8.5h1M9 8.5h1M6 11h1M9 11h1', width: 1.7 },
   ],
 
   'name-manager': [

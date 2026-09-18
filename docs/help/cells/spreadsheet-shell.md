@@ -23,7 +23,7 @@ empty single-sheet workbook, which is what "open a spreadsheet" means.
 
 | Part | Comes from |
 | --- | --- |
-| Ribbon: Home, Insert, Formulas, Data, Review, View | `SvSheetRibbon` |
+| Ribbon: File, Home, Insert, Formulas, Data, Review, View | `SvSheetRibbon` |
 | Name Box and fx bar, showing the RAW text of the active cell | `SvFormulaBar` |
 | A..Z headers over the built-in 1..N row gutter | `SvGrid` |
 | Sheet tabs: switch, rename, reorder, add, duplicate, hide and unhide | `SvSheetTabs` |
@@ -345,6 +345,39 @@ or `'Price list'!C2` when the name has a space:
 ```
 
 <div data-docs-demo="456-sales-report-workbook" data-height="600"></div>
+
+## Files
+
+The File tab is the part of Excel's a document in a page can do: New,
+Open, Save As and Export CSV. Open takes an .xlsx from disk and replaces
+the document with everything the file holds that the document keeps
+(cells with their formulas, formats, widths and heights, hidden lines and
+sheets, frozen panes, merges, the filter region, validation, conditional
+formatting, protection, comments, names, the active sheet); Save As
+downloads the document as an .xlsx that Excel and Google Sheets open with
+the same parts; Export CSV downloads the active sheet as its cells show;
+New starts over with one empty sheet, asking first when the sheets hold
+anything. `documentToXlsx` and `documentFromXlsx` are the two halves, in
+`@svgrid/enterprise/sheet`, and need the `jszip` peer.
+
+An app that keeps its workbooks somewhere other than the user's disk takes
+the actions over through `onAction` (`file-open`, `file-save-xlsx`,
+`file-new`, `file-export-csv`) and calls the component's own methods:
+`open(file)` replaces the document with an .xlsx Blob, `toXlsx()` returns
+the document as a Blob, `toCsv()` the active sheet as text, and
+`newWorkbook()` empties it.
+
+```svelte
+<SvSheet bind:this={sheet} onAction={(action) => {
+  if (action === 'file-save-xlsx') { sheet.toXlsx().then((blob) => upload(blob)); return true }
+  if (action === 'file-open') { pickFromServer().then((blob) => sheet.open(blob)); return true }
+}} />
+```
+
+Dates are `yyyy-mm-dd` text in the sheet and serial numbers in the file:
+a text date goes out as a serial under a date format, and a serial under a
+date format comes back as text. Tables, charts and images are not carried
+either way.
 
 ## Saving and restoring
 
@@ -730,7 +763,8 @@ are the parts it leaves out, on purpose, so nothing on the ribbon is a
 button that does nothing.
 
 - **Tabs:** no Page Layout (print setup has nothing behind it in the
-  grid), no track-changes on Review.
+  grid), no track-changes on Review; File has New, Open, Save As and
+  Export CSV, not Print.
 - **Comments** are notes, not threads: one text per cell, no replies, no
   author, no timestamp.
 - **Protection** takes no password and has no "allow users to" list: it

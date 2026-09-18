@@ -56,6 +56,7 @@ export {
 
 export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sort'
 export { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './xlsx-document'
+export { csvText } from './csv'
 export { default as SvSheetSort } from '../SvSheetSort.svelte'
 
 export {

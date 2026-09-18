@@ -48,6 +48,9 @@
   import SvSheetTextToColumns from './SvSheetTextToColumns.svelte'
   import SvSheetRemoveDuplicates from './SvSheetRemoveDuplicates.svelte'
   import SvSheetSort from './SvSheetSort.svelte'
+  import { downloadBlobFile } from '@svgrid/grid'
+  import { documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
+  import { csvText } from './sheet/csv'
   import { sortOrder, guessHeaderRow, type SortKey } from './sheet/sort'
   import { currentRegion, isBlankValue } from './sheet/navigate'
   import { freezeAtActiveCell, freezeTopRow, freezeFirstColumn, applyFreeze, type FreezeState } from './sheet/freeze'
@@ -278,6 +281,80 @@
     api?.clearHistory()
     active = { rowIndex: 0, colIndex: 0 }
     bump()
+  }
+
+  // --- files ------------------------------------------------------------------
+  /** The name the last Open or Save used, for the next Save. */
+  let fileName = $state('Workbook')
+
+  /**
+   * Replace the document with the workbook in an .xlsx file: what File >
+   * Open does once a file is picked. Resolves when the sheet shows it;
+   * rejects with the reader's message when the file is not one.
+   */
+  export async function open(file: Blob & { name?: string }): Promise<void> {
+    const state = await documentFromXlsx(file)
+    setState(state)
+    if (file.name) fileName = file.name.replace(/\.xlsx$/i, '')
+  }
+
+  /** The document as an .xlsx Blob: what File > Save As downloads. */
+  export function toXlsx(): Promise<Blob> {
+    stashLive(wb.active)
+    return documentToXlsx(doc)
+  }
+
+  /** The active sheet as CSV text, cells as they show. */
+  export function toCsv(): string {
+    const rows: string[][] = []
+    const lastRow = wb.rowCount(wb.active)
+    const lastCol = wb.colCount(wb.active)
+    for (let r = 0; r < lastRow; r += 1) {
+      const line: string[] = []
+      for (let c = 0; c < lastCol; c += 1) line.push(wb.getRaw(wb.active, r, c) === '' ? '' : display(r, c).text)
+      rows.push(line)
+    }
+    return csvText(rows)
+  }
+
+  /** Start over with one empty sheet, as File > New does after its question. */
+  export function newWorkbook(): void {
+    setState({ version: 1, workbook: { sheets: [{ name: 'Sheet1', cells: [] }], active: 'Sheet1', names: {} }, sheets: {} })
+    fileName = 'Workbook'
+  }
+
+  let newConfirm = $state(false)
+  let fileInput = $state<HTMLInputElement | null>(null)
+
+  /** Whether any sheet holds anything, so New can ask before it throws it away. */
+  function documentHasContent(): boolean {
+    for (const name of wb.sheets) {
+      for (let r = 0; r < wb.rowCount(name); r += 1) {
+        for (let c = 0; c < wb.colCount(name); c += 1) if (wb.getRaw(name, r, c).trim() !== '') return true
+      }
+    }
+    return false
+  }
+
+  async function openPicked(event: Event) {
+    const input = event.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file) return
+    try {
+      await open(file)
+      say(`Opened ${file.name}.`)
+    } catch (e) {
+      say(e instanceof Error ? e.message : `Could not open ${file.name}.`)
+    }
+  }
+
+  async function saveXlsx() {
+    try {
+      downloadBlobFile(await toXlsx(), `${fileName}.xlsx`)
+    } catch (e) {
+      say(e instanceof Error ? e.message : 'Could not save the workbook.')
+    }
   }
 
   /**
@@ -1931,6 +2008,20 @@
         return
       }
       case 'data-validation': dataValidationOpen = true; return
+      case 'file-new':
+        if (documentHasContent()) newConfirm = true
+        else newWorkbook()
+        return
+      case 'file-open': fileInput?.click(); return
+      case 'file-save-xlsx': void saveXlsx(); return
+      case 'file-export-csv': {
+        try {
+          downloadBlobFile(new Blob([toCsv()], { type: 'text/csv;charset=utf-8' }), `${wb.active}.csv`)
+        } catch (e) {
+          say(e instanceof Error ? e.message : 'Could not export the sheet.')
+        }
+        return
+      }
       case 'circle-invalid': {
         circlesOn = wb.active
         bump()
@@ -3539,6 +3630,18 @@
     onAccept={acceptEntry}
     onCancel={() => { pendingAlert = null; const c = cmdOf(); if (c) focusSheet(c) }}
   />
+  <input class="sheet-file-input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
+  <SvModal open={newConfirm} title="New workbook" size="sm" onClose={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>
+    <div class="sv-sheet-dialog">
+      <p class="note">Start a new workbook? What is on these sheets goes away unless it was saved.</p>
+    </div>
+    {#snippet footer()}
+      <div class="sv-sheet-dialog-buttons">
+        <button type="button" class="btn primary" onclick={() => { newConfirm = false; newWorkbook(); const c = cmdOf(); if (c) focusSheet(c) }}>New workbook</button>
+        <button type="button" class="btn" onclick={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>Cancel</button>
+      </div>
+    {/snippet}
+  </SvModal>
   <SvModal open={mergeConfirm !== null} title="Merge cells" size="sm" onClose={() => { mergeConfirm = null; const c = cmdOf(); if (c) focusSheet(c) }}>
     <div class="sv-sheet-dialog">
       <p class="note">Merging cells only keeps the upper-left cell value and discards the other values.</p>
@@ -3713,6 +3816,7 @@
     pointer-events: none;
   }
   .sheet-cell-anchor .box { display: inline-block; }
+  .sheet-file-input { display: none; }
   /* Circle Invalid Data: a red oval on the cell's box, over its content. */
   .sheet-invalid-circle {
     position: absolute;
