@@ -505,7 +505,7 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
-| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
+| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
@@ -721,8 +721,6 @@ button that does nothing.
   styles, one data bar colour (and no negative axis: a range with
   negatives runs from its minimum), one icon set per flavour and no
   formula rule; the grid's own value-driven rules are a separate feature.
-- **Format Cells** has no Number > Special or Accounting, since nothing in
-  the sheet reads them.
 - **AutoFilter** has no Date Filters, no Filter by Color and no custom
   Top 10; the values list is the whole column, unvirtualised, which is
   what a sheet's region holds.

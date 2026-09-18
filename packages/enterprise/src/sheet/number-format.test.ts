@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  compileNumberFormat, formatWithPattern, FORMAT_PRESETS, formatCategory,
+  compileNumberFormat, formatWithPattern, FORMAT_PRESETS, SPECIAL_FORMATS, formatCategory,
+  accountingPattern, accountingParts,
 } from './number-format'
 
 const f = (value: unknown, pattern: string) => formatWithPattern(value, pattern)
@@ -18,6 +19,59 @@ describe('formatCategory', () => {
     expect(formatCategory('0.000')).toEqual({ category: 'number', decimals: 3, thousands: false })
     expect(formatCategory(undefined).category).toBe('general')
     expect(formatCategory('[Red]0.0;[Blue]-0.0').category).toBe('custom')
+    expect(formatCategory(accountingPattern('', 0))).toEqual({ category: 'accounting', decimals: 0, thousands: true })
+    for (const { pattern } of Object.values(SPECIAL_FORMATS)) expect(formatCategory(pattern).category).toBe('special')
+  })
+})
+
+describe('Accounting', () => {
+  it('lines the symbol up on the left and the number on the right, one space between', () => {
+    expect(f(1234.5, FORMAT_PRESETS.accounting)).toBe(' $ 1,234.50 ')
+    expect(f(-1234.5, FORMAT_PRESETS.accounting)).toBe(' $ (1,234.50)')
+    expect(f(0, FORMAT_PRESETS.accounting)).toBe(' $ -   ')
+    expect(f('n/a', FORMAT_PRESETS.accounting)).toBe(' n/a ')
+  })
+
+  it('spells the pattern for a symbol and a number of decimals, and reads it back', () => {
+    expect(accountingPattern('$', 2)).toBe(FORMAT_PRESETS.accounting)
+    expect(accountingPattern('', 0)).toBe('_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)')
+    expect(accountingPattern('\u20ac', 1)).toBe('_("\u20ac"* #,##0.0_);_("\u20ac"* (#,##0.0);_("\u20ac"* "-"?_);_(@_)')
+    expect(f(99, accountingPattern('\u20ac', 1))).toBe(' \u20ac 99.0 ')
+    expect(f(-7, accountingPattern('', 0))).toBe('  (7)')
+    expect(accountingParts(FORMAT_PRESETS.accounting)).toEqual({ symbol: '$', decimals: 2 })
+    expect(accountingParts(accountingPattern('', 3))).toEqual({ symbol: '', decimals: 3 })
+    expect(accountingParts(accountingPattern('\u00a3', 0))).toEqual({ symbol: '\u00a3', decimals: 0 })
+    expect(accountingParts(FORMAT_PRESETS.currency)).toBeNull()
+    expect(accountingParts(undefined)).toBeNull()
+  })
+})
+
+describe('Special', () => {
+  it('lays the digits into the mask from the right', () => {
+    expect(f(1234, SPECIAL_FORMATS.zip.pattern)).toBe('01234')
+    expect(f(94105, SPECIAL_FORMATS.zip.pattern)).toBe('94105')
+    expect(f(941051234, SPECIAL_FORMATS.zip4.pattern)).toBe('94105-1234')
+    expect(f(123456789, SPECIAL_FORMATS.ssn.pattern)).toBe('123-45-6789')
+    expect(f(5551234, SPECIAL_FORMATS.phone.pattern)).toBe('555-1234')
+    expect(f(5551234567, SPECIAL_FORMATS.phone.pattern)).toBe('(555) 123-4567')
+    // Digits beyond the mask go in front; a short number leaves its literals.
+    expect(f(15551234567, SPECIAL_FORMATS.phone.pattern)).toBe('(1555) 123-4567')
+    expect(f(1234, '###-####')).toBe('-1234')
+  })
+
+  it('a condition picks its section, and the fallback takes the rest', () => {
+    expect(f(50, '[<100]"small";"big"')).toBe('small')
+    expect(f(100, '[<100]"small";"big"')).toBe('big')
+    expect(f(-5, '[>=0]0;[Red]-0.0')).toBe('-5.0')
+    expect(compileNumberFormat('[>=0]0;[Red]-0.0').format(-5).color).toBe('#ff0000')
+    expect(f(7, '[=7]"seven";0')).toBe('seven')
+  })
+
+  it('reads _x and *x as one space', () => {
+    expect(f(5, '_(0_)')).toBe(' 5 ')
+    expect(f(5, '* 0')).toBe(' 5')
+    expect(f(1.5, '0.0_);(0.0)')).toBe('1.5 ')
+    expect(f(-1.5, '0.0_);(0.0)')).toBe('(1.5)')
   })
 })
 

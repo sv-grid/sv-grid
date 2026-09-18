@@ -35,7 +35,7 @@ export { FONT_SIZES, applyBorders, type BorderPreset } from './shortcuts'
 import { insertRows, deleteRows, getStructureTarget } from './structure'
 import { fillDown, fillRight, targetRect } from './commands'
 import type { Rect } from './navigate'
-import { FORMAT_PRESETS, formatCategory, type FormatPresetName } from './number-format'
+import { FORMAT_PRESETS, formatCategory, accountingParts, accountingPattern, type FormatPresetName } from './number-format'
 import type { CellFormatEntry } from './format-store'
 import type { RibbonIconName } from './ribbon-icons'
 import { ALL_COLOURS } from './palette'
@@ -364,9 +364,17 @@ export function withDecimals(pattern: string, delta: number): string | null {
   // first half would leave a sheet where -1234.5 printed to a different
   // precision than 1234.5. Excel moves both, so this does too.
   //
+  // An accounting pattern is rebuilt from its parts rather than edited:
+  // its zero section carries a `"-"??` whose question marks count the
+  // decimals too.
+  const accounting = accountingParts(pattern)
+  if (accounting) {
+    const next = accounting.decimals + delta
+    return next < 0 || next > 30 ? null : accountingPattern(accounting.symbol, next)
+  }
   // A quoted literal can contain a semicolon, which would make splitting on
   // ';' cut a section in half, so a pattern with quotes declines instead of
-  // being mangled. Nothing in FORMAT_PRESETS has one.
+  // being mangled. Nothing else in FORMAT_PRESETS has one.
   if (pattern.includes('"')) return null
   const sections = pattern.split(';')
   const moved: string[] = []
@@ -421,6 +429,7 @@ const NUMBER_FORMATS: ReadonlyArray<{ value: FormatPresetName; label: string }> 
   { value: 'general', label: 'General' },
   { value: 'number', label: 'Number' },
   { value: 'currency', label: 'Currency' },
+  { value: 'accounting', label: 'Accounting' },
   { value: 'percent', label: 'Percentage' },
   { value: 'date', label: 'Date' },
   { value: 'time', label: 'Time' },
@@ -600,12 +609,13 @@ const HOME: RibbonTab = {
           current: (cmd) => {
             const fmt = activeEntry(cmd)?.numFmt
             const { category } = formatCategory(fmt)
-            return category === 'custom' ? fmt ?? 'general' : category
+            return category === 'custom' || category === 'special' ? fmt ?? 'general' : category
           },
           run: (cmd, value) =>
             applyFormat(cmd, { numFmt: FORMAT_PRESETS[value as FormatPresetName] }),
         }),
-        small(2, presetItem('fmt-currency', '$', 'Accounting Number Format', 'currency', 'Ctrl+Shift+4')),
+        // Excel's $ button applies Accounting; Ctrl+Shift+4 is Currency.
+        small(2, presetItem('fmt-currency', '$', 'Accounting Number Format', 'accounting')),
         small(2, presetItem('fmt-percent', '%', 'Percent Style', 'percent', 'Ctrl+Shift+5')),
         small(2, presetItem('fmt-number', ',', 'Comma Style', 'number', 'Ctrl+Shift+1')),
         small(2, {

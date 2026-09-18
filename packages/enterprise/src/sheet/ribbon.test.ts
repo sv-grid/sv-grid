@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RIBBON_TABS, ribbonItems, withDecimals } from './ribbon'
-import { setFormatTarget, setWorkbook } from './shortcuts'
+import { setFormatTarget, setWorkbook, applyFormat } from './shortcuts'
 import { setStructureTarget } from './structure'
 import { createFormatStore } from './format-store'
 import { createWorkbook } from './workbook'
@@ -363,7 +363,18 @@ describe('increase / decrease decimal', () => {
     const { store } = attachStore()
     const cmd = makeCmd()
     item('fmt-currency').run!(cmd)
-    expect(store.get('r0', 'a')?.numFmt).toBe(FORMAT_PRESETS.currency)
+    expect(store.get('r0', 'a')?.numFmt).toBe(FORMAT_PRESETS.accounting)
+    expect(item('dec-more').run!(cmd)).toBe(true)
+    expect(store.get('r0', 'a')?.numFmt).toBe('_($* #,##0.000_);_($* (#,##0.000);_($* "-"???_);_(@_)')
+    expect(item('dec-less').run!(cmd)).toBe(true)
+    expect(item('dec-less').run!(cmd)).toBe(true)
+    expect(store.get('r0', 'a')?.numFmt).toBe('_($* #,##0.0_);_($* (#,##0.0);_($* "-"?_);_(@_)')
+  })
+
+  it('moves the decimals of a currency pattern through both sections', () => {
+    const { store } = attachStore()
+    const cmd = makeCmd()
+    applyFormat(cmd, { numFmt: FORMAT_PRESETS.currency })
     expect(item('dec-more').run!(cmd)).toBe(true)
     expect(store.get('r0', 'a')?.numFmt).toBe('$#,##0.000;($#,##0.000)')
     expect(item('dec-less').run!(cmd)).toBe(true)

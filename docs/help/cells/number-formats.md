@@ -97,8 +97,34 @@ compileNumberFormat('0.00;[Red](0.00)').format(-5)
 Text in quotes, or after a backslash, is emitted as-is. `@` in the fourth
 section is the text placeholder.
 
-Conditions like `[<100]` are **not** supported; they are dropped rather than
-printed.
+`_x` (leave the width of `x`) and `*x` (fill the cell with `x`) both render
+as one space: text has no cell width to leave or fill. That is enough for
+Excel's accounting patterns to read as `$ 1,234.50` with the symbol on the
+left and the number on the right.
+
+A condition in brackets picks a section by value: the first section whose
+condition the value passes is used, and a section without one is the
+fallback. `[<=9999999]###-####;(###) ###-####` is Excel's phone number.
+
+```ts
+formatWithPattern(50, '[<100]"small";"big"')    // 'small'
+formatWithPattern(5551234567, '[<=9999999]###-####;(###) ###-####')
+// '(555) 123-4567'
+```
+
+### Masks
+
+Literal text between integer placeholders turns the integer side into a
+mask that the digits are laid into from the right. Excel's Special formats
+are all masks:
+
+```ts
+formatWithPattern(123456789, '000-00-0000')   // '123-45-6789'
+formatWithPattern(1234, '00000')              // '01234'
+formatWithPattern(1234, '###-####')           // '-1234'   as Excel gives
+```
+
+`SPECIAL_FORMATS` holds the four: `zip`, `zip4`, `phone` and `ssn`.
 
 ### Dates
 
@@ -123,7 +149,19 @@ break real dates.
 ### Presets
 
 `FORMAT_PRESETS` holds what `Ctrl+Shift+1` through `6` apply: `number`, `time`,
-`date`, `currency`, `percent`, `scientific`, plus `general`.
+`date`, `currency`, `percent`, `scientific`, plus `general` and `accounting`,
+which the ribbon's `$` button applies, as Excel's does.
+
+`accountingPattern(symbol, decimals)` spells an accounting pattern for any
+symbol (an empty one is Excel's "None"), and `accountingParts` reads one
+back, which is how Increase Decimal works on an accounting cell:
+
+```ts
+accountingPattern('$', 2)
+// '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'
+formatWithPattern(1234.5, accountingPattern('$', 2))   // ' $ 1,234.50 '
+formatWithPattern(-1234.5, accountingPattern('$', 2))  // ' $ (1,234.50)'
+```
 
 ## The per-cell store
 
