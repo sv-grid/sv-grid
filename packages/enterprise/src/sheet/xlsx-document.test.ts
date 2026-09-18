@@ -297,3 +297,37 @@ describe('reading what Excel writes', () => {
     expect(() => documentFromXlsxParts({})).toThrow(/workbook\.xml/)
   })
 })
+
+describe('hyperlinks', () => {
+  it('an external link becomes a relationship and an internal one a location, both ways', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'Home', cells: [['Our site', 'The detail'], ['', '']] }, { name: 'Detail', cells: [['x']] }] })
+    doc.get('Home').links = {
+      r0: {
+        A: { target: 'https://svgrid.com/pricing', tip: 'What it costs' },
+        B: { target: 'Detail!A1' },
+      },
+    }
+    const parts = documentToXlsxParts(doc)
+    const sheet = parts['xl/worksheets/sheet1.xml']!
+    expect(sheet).toContain('<hyperlinks>')
+    expect(sheet).toContain('<hyperlink ref="A1" r:id="rId4" tooltip="What it costs"/>')
+    expect(sheet).toContain('<hyperlink ref="B1" location="Detail!A1"/>')
+    const rels = parts['xl/worksheets/_rels/sheet1.xml.rels']!
+    expect(rels).toContain('Target="https://svgrid.com/pricing" TargetMode="External"')
+
+    const back = documentFromXlsxParts(parts)
+    expect(back.sheets.Home!.links).toEqual({
+      r0: {
+        A: { target: 'https://svgrid.com/pricing', tip: 'What it costs' },
+        B: { target: 'Detail!A1' },
+      },
+    })
+  })
+
+  it('a sheet with no links writes no hyperlinks element and no rels part', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1']] }] })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/worksheets/sheet1.xml']).not.toContain('<hyperlinks>')
+    expect(parts['xl/worksheets/_rels/sheet1.xml.rels']).toBeUndefined()
+  })
+})

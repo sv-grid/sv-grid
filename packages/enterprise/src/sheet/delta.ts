@@ -51,6 +51,7 @@ const PARTS: Partial<Record<SheetChangeReason['kind'], Array<keyof SheetStateEnt
   objects: ['objects'],
   sparklines: ['sparklines'],
   pivots: ['pivots'],
+  links: ['links'],
   merges: ['merges'],
   filter: ['autoFilter'],
 }

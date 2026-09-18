@@ -164,6 +164,15 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   UPPER: (a) => toText(first(a)).toUpperCase(),
   LOWER: (a) => toText(first(a)).toLowerCase(),
   TRIM: (a) => toText(first(a)).trim().replace(/\s+/g, ' '),
+  // Excel's HYPERLINK shows the friendly name and follows the link. The
+  // shell reads the link off the cell (`sheet/links.ts`), which is where a
+  // link put there by Insert > Link lives too, so a cell is clickable
+  // whichever way its link arrived; the value here is only what it shows.
+  HYPERLINK: (a) => {
+    const target = toText(first(a))
+    const friendly = a.args.length > 1 ? nth(a, 1) : undefined
+    return friendly === undefined || friendly === '' ? target : friendly
+  },
   CONCAT: (a) => a.flat.map((v) => toText(v)).join(''),
   CONCATENATE: (a) => a.flat.map((v) => toText(v)).join(''),
   TEXTJOIN: (a) => {

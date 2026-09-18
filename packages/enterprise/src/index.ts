@@ -206,6 +206,10 @@ export {
   type SheetDelta, type SheetDeltaStream, type SheetDeltaOptions, type SheetCellWrite,
 } from './sheet/delta'
 export {
+  linkAt, setLink, removeLink, listLinks, shiftLinks, copyLinks, parseLinkTarget, linkTitle,
+  type SheetLink, type LinksMap, type LinkTarget,
+} from './sheet/links'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './sheet/hyperformula-engine'

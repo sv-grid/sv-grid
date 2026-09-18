@@ -28,6 +28,7 @@ import { copyPageSetup, defaultPageSetup, shiftPageSetup, type PageSetup } from 
 import { copyObject, shiftObjects, type SheetObject } from './objects'
 import { copySparkline, shiftSparklines, type SparklineGroup } from './sparklines'
 import { copyPivot, shiftPivots, type SheetPivot } from './pivot-range'
+import { copyLinks, shiftLinks, type LinksMap } from './links'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
@@ -49,6 +50,7 @@ export type SheetChangeReason =
   | { kind: 'objects' }
   | { kind: 'sparklines' }
   | { kind: 'pivots' }
+  | { kind: 'links' }
   | { kind: 'merges' }
   | { kind: 'filter' }
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }
@@ -74,6 +76,8 @@ export type PerSheetState = {
   objects: SheetObject[]
   sparklines: SparklineGroup[]
   pivots: SheetPivot[]
+  /** Hyperlinks by cell, keyed like the comments: `r4` -> `B` -> the link. */
+  links: LinksMap
   /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
   sheetHidden: boolean
   merges: Rect[]
@@ -107,6 +111,8 @@ export type SheetStateEntry = {
   sparklines?: SparklineGroup[]
   /** Absent in documents saved before pivots existed. */
   pivots?: SheetPivot[]
+  /** Absent in documents saved before hyperlinks existed. */
+  links?: LinksMap
   /** Absent in documents saved before hidden sheets existed. */
   sheetHidden?: boolean
   merges: Array<[number, number, number, number]>
@@ -192,6 +198,7 @@ function reasonsForEntry(entry: Partial<SheetStateEntry>): SheetChangeReason[] {
   if (entry.objects !== undefined) out.push({ kind: 'objects' })
   if (entry.sparklines !== undefined) out.push({ kind: 'sparklines' })
   if (entry.pivots !== undefined) out.push({ kind: 'pivots' })
+  if (entry.links !== undefined) out.push({ kind: 'links' })
   if (entry.merges !== undefined) out.push({ kind: 'merges' })
   if (entry.validation !== undefined) out.push({ kind: 'validation' })
   if (entry.conditionalFormats !== undefined) out.push({ kind: 'conditional-formats' })
@@ -214,6 +221,7 @@ function emptySheetState(): PerSheetState {
     objects: [],
     sparklines: [],
     pivots: [],
+    links: {},
     sheetHidden: false,
     merges: [],
     validation: [],
@@ -285,6 +293,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       objects: state.objects.map(copyObject),
       sparklines: state.sparklines.map(copySparkline),
       pivots: state.pivots.map(copyPivot),
+      links: copyLinks(state.links),
       sheetHidden: state.sheetHidden,
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
       validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
@@ -312,6 +321,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     if (entry.objects !== undefined) state.objects = entry.objects.map(copyObject)
     if (entry.sparklines !== undefined) state.sparklines = entry.sparklines.map(copySparkline)
     if (entry.pivots !== undefined) state.pivots = entry.pivots.map(copyPivot)
+    if (entry.links !== undefined) state.links = copyLinks(entry.links)
     if (entry.sheetHidden !== undefined) state.sheetHidden = entry.sheetHidden
     if (entry.merges !== undefined) state.merges = entry.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     if (entry.validation !== undefined) {
@@ -347,6 +357,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.objects = (entry.objects ?? []).map(copyObject)
     state.sparklines = (entry.sparklines ?? []).map(copySparkline)
     state.pivots = (entry.pivots ?? []).map(copyPivot)
+    state.links = copyLinks(entry.links ?? {})
     state.sheetHidden = entry.sheetHidden ?? false
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     state.validation = (entry.validation ?? []).map((rule) => ({
@@ -443,6 +454,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       state.objects = shiftObjects(state.objects, edit)
       state.sparklines = shiftSparklines(state.sparklines, edit)
       state.pivots = shiftPivots(state.pivots, edit)
+      state.links = shiftLinks(state.links, edit)
       state.protection = {
         allow: state.protection.allow,
         ranges: state.protection.ranges

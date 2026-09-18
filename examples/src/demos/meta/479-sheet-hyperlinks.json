@@ -1,0 +1,24 @@
+{
+  "description": "Excel's two ways of putting a link in a Svelte 5 spreadsheet cell. Insert > Link, or Ctrl+K, puts a link ON the cell: the cell keeps whatever it says and the link is kept beside it, so editing the text keeps the link and clearing the cell takes it away. The HYPERLINK function puts one in a formula, showing a friendly name. A target that reads like an address moves the selection instead of leaving the page, so a cell can link to another sheet; anything with a scheme opens in a new tab. A single click follows, a drag selects. Links ride in getState(), move with an insert or a delete, and go into the .xlsx both ways. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet hyperlink",
+    "svelte sheet insert link",
+    "svelte excel HYPERLINK function",
+    "svelte spreadsheet link to sheet",
+    "svelte sheet clickable cell"
+  ],
+  "faq": [
+    {
+      "question": "Is the link on the text or on the cell?",
+      "answer": "On the cell, the way Excel keeps one. The cell holds whatever was typed and the link sits beside it, so editing the text keeps the link, a format change keeps it, saving keeps it, and clearing the cell takes it away. The HYPERLINK function is the other way, a link that lives in the formula."
+    },
+    {
+      "question": "Can a link go to another sheet?",
+      "answer": "Yes. A target that reads like an address, Sheet2!B4 or B4 or a defined name, moves the selection there instead of leaving the page, switching sheets if it has to. Anything with a scheme, or a bare www., opens in a new tab."
+    },
+    {
+      "question": "Do links survive a save?",
+      "answer": "Yes, in both directions. An external link is written as a relationship with TargetMode External, which is what Excel writes, and an internal one as a location on the hyperlink element; a file opened back carries both, tooltips included."
+    }
+  ]
+}

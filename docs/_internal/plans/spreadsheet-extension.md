@@ -63,6 +63,10 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Hyperlinks (the last of the small gaps in section 2): `sheet/links.ts`
+  with the links per sheet, Insert > Link and Ctrl+K, Insert > Remove, the
+  `HYPERLINK` function and a clickable cell for it, internal targets that
+  move the selection, and the links in the .xlsx both ways.
 - Phase F item 3: collaboration. `sheet/delta.ts` with `createDeltaStream`,
   `applySheetDelta` and four delta kinds (cells as raw text, a structural
   edit, one part of one sheet's state, the whole document for sheets and a
@@ -198,8 +202,8 @@ weeks, L a quarter-scale piece of work.
 | ~~Validation: Input Message, Circle Invalid Data~~ | shipped | done |
 | ~~Format Cells: Accounting, Special~~ | shipped | done |
 | ~~Custom Sort dialog (several keys, header row)~~ | shipped; by colour not done | done |
-| Comments as threads (author, time, replies, resolve) | one note per cell | M |
-| Protection: password, allowed ranges, per-user | lock flag only | M |
+| ~~Comments as threads (author, time, replies, resolve)~~ | shipped: the thread card, `commentAuthor`, and Excel's threaded parts in the xlsx | done |
+| ~~Protection: allowed ranges and the allow list~~ | shipped: the Protect Sheet dialog, Allow Edit Ranges, `sheetProtection` in the xlsx. A password is still not one: a lock in the browser is not a secret | done |
 | ~~Sheet tabs: hide / unhide, duplicate, delete with confirm~~ | shipped; move between workbooks not done | done |
 | Styles gallery and Format as Table | `styles` ribbon id exists; verify what it does | S |
 
@@ -209,7 +213,7 @@ weeks, L a quarter-scale piece of work.
 | --- | --- | --- |
 | ~~Charts anchored to cells, fed by a range~~ | shipped: the object layer, Insert > Chart, the Chart dialog; not in the .xlsx | done |
 | ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`; not in the .xlsx and not on the printed page | done |
-| Hyperlinks (HYPERLINK function and Insert > Link) | none | S |
+| ~~Hyperlinks (HYPERLINK function and Insert > Link)~~ | shipped: links per sheet, Insert > Link and Ctrl+K, the function, internal targets, and the xlsx both ways | done |
 | ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL; not in the .xlsx. In a cell is still not done | done |
 | ~~PivotTable from a range~~ | shipped: `SheetPivot` in the document, Insert > PivotTable and Refresh, the result written as cells | done |
 

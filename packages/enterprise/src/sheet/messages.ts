@@ -166,6 +166,9 @@ export type SheetTextMessages = {
   sparklineObject: string
   selectBlockToPivot: string
   noPivotHere: string
+  linkRemoved: string
+  noLinkHere: string
+  cannotOpenLink: string
   pivotRefreshed: string
   pivotWritten: string
   selectRangeForSparklines: string
@@ -600,6 +603,17 @@ export const defaultDialogMessages = {
   'chartSetup.headers': 'First row and column are labels',
   'chartSetup.stacked': 'Stack the series',
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
+  // Insert Link
+  'link.title': 'Link',
+  'link.address': 'Address:',
+  'link.addressPlaceholder': 'https://example.com, or Sheet2!B4',
+  'link.text': 'Text to display:',
+  'link.textPlaceholder': 'The cell as it stands',
+  'link.tip': 'ScreenTip:',
+  'link.tipPlaceholder': 'None, so hovering shows the address',
+  'link.hint': 'A link on a cell, not on its text: editing the cell keeps it, clearing the cell takes it away. An address on this workbook moves the selection instead of leaving the page.',
+  'link.remove': 'Remove Link',
+  'link.badAddress': 'Type an address: a URL, or a cell like Sheet2!B4.',
   // Create PivotTable
   'pivot.title': 'PivotTable',
   'pivot.source': 'Source block:',
@@ -843,6 +857,9 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   sparklineObject: '{type} sparkline',
   selectBlockToPivot: 'Select the block to summarise, its header row included.',
   noPivotHere: 'No PivotTable here. Select a cell inside one.',
+  linkRemoved: 'Link removed.',
+  noLinkHere: 'No link in the selection.',
+  cannotOpenLink: 'That link goes nowhere on this workbook.',
   pivotRefreshed: 'PivotTable refreshed.',
   pivotWritten: 'PivotTable written to {range}.',
   selectRangeForSparklines: 'Select the numbers the sparklines read.',

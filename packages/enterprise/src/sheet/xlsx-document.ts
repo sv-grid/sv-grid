@@ -31,6 +31,7 @@ import { colToLetters, lettersToCol, parseA1 } from './address'
 import { translateFormula } from './refs'
 import { isError, type CellValue } from './ast'
 import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
+import { listLinks, parseLinkTarget } from './links'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
 import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
 
@@ -55,6 +56,7 @@ const NS_THREADS = 'http://schemas.microsoft.com/office/spreadsheetml/2018/threa
 const REL_THREADS = 'http://schemas.microsoft.com/office/2017/10/relationships/threadedComment'
 const REL_PERSONS = 'http://schemas.microsoft.com/office/2017/10/relationships/person'
 const REL_METADATA = `${NS_REL}/sheetMetadata`
+const REL_HYPERLINK = `${NS_REL}/hyperlink`
 /** What Excel puts in the legacy note of a threaded comment, for readers that predate threads. */
 const THREAD_LEGACY_HEAD = '[Threaded comment]\n\nYour version of Excel allows you to read this threaded comment; however, any edits to it will get removed if the file is opened in a newer version of Excel. Learn more: https://go.microsoft.com/fwlink/?linkid=870924\n\n'
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
@@ -498,6 +500,8 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     // writes for readers that predate threads.
     const comments = listComments(state.notes)
     let legacyDrawing = ''
+    /** The sheet's relationships, from the comment parts and the links. */
+    let sheetRels = ''
     if (comments.length) {
       hasVml = true
       const authors: string[] = ['']
@@ -530,9 +534,37 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         rels += `<Relationship Id="rId3" Type="${REL_THREADS}" Target="../threadedComments/threadedComment${n}.xml"/>`
         overrides.push(`<Override PartName="/xl/threadedComments/threadedComment${n}.xml" ContentType="application/vnd.ms-excel.threadedcomments+xml"/>`)
       }
-      parts[`xl/worksheets/_rels/sheet${n}.xml.rels`] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">${rels}</Relationships>`
+      sheetRels = rels
       legacyDrawing = '<legacyDrawing r:id="rId1"/>'
       overrides.push(`<Override PartName="/xl/comments${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml"/>`)
+    }
+
+    // Hyperlinks. An external one is a relationship with `TargetMode`
+    // External, the way Excel writes it, so the URL lives in the rels part
+    // and the cell carries only its id; an address on this workbook is a
+    // `location` on the element itself and needs no relationship. The ids
+    // start at 4 because the comment parts above take 1 to 3 when they are
+    // there.
+    const links = listLinks(state.links)
+    let hyperlinks = ''
+    if (links.length) {
+      const refs: string[] = []
+      links.forEach(({ row, col, link }, i) => {
+        const ref = `${colToLetters(col)}${row + 1}`
+        const tip = link.tip ? ` tooltip="${esc(link.tip)}"` : ''
+        const target = parseLinkTarget(link.target)
+        if (target?.kind === 'external') {
+          const id = `rId${4 + i}`
+          sheetRels += `<Relationship Id="${id}" Type="${REL_HYPERLINK}" Target="${esc(target.href)}" TargetMode="External"/>`
+          refs.push(`<hyperlink ref="${ref}" r:id="${id}"${tip}/>`)
+        } else {
+          refs.push(`<hyperlink ref="${ref}" location="${esc(link.target)}"${tip}/>`)
+        }
+      })
+      hyperlinks = `<hyperlinks>${refs.join('')}</hyperlinks>`
+    }
+    if (sheetRels) {
+      parts[`xl/worksheets/_rels/sheet${n}.xml.rels`] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">${sheetRels}</Relationships>`
     }
 
     // Page Layout: what prints and how. `printOptions` only when something is on.
@@ -550,7 +582,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       + `<sheetViews>${sheetView}</sheetViews><sheetFormatPr defaultRowHeight="15"/>`
       + (colXml.length ? `<cols>${colXml.join('')}</cols>` : '')
       + `<sheetData>${rowXml.join('')}</sheetData>`
-      + protection + editRanges + autoFilter + merges + cf + dv + printOptions + pageMargins + pageSetup + legacyDrawing
+      + protection + editRanges + autoFilter + merges + cf + dv + hyperlinks + printOptions + pageMargins + pageSetup + legacyDrawing
       + '</worksheet>'
     overrides.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
     return { name, n, hidden: state.sheetHidden }
@@ -645,6 +677,20 @@ function textOf(el: Element | null): string {
   }
   walk(el)
   return out
+}
+
+/**
+ * A relationship's target EXACTLY as written, for an external hyperlink:
+ * `readRels` resolves a target against the part that holds it, which is
+ * right for a part inside the package and wrong for `https://…`.
+ */
+function rawRelTarget(parts: Record<string, string>, relsPath: string, id: string): string | null {
+  const xml = parts[relsPath]
+  if (!xml) return null
+  for (const rel of kids(parseXml(xml, relsPath).documentElement, 'Relationship')) {
+    if (rel.getAttribute('Id') === id) return rel.getAttribute('Target')
+  }
+  return null
 }
 
 /** Resolve a relationship target against the part that holds the rels. */
@@ -1039,6 +1085,20 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
       // over the legacy note that stands in for it.
       const relsPath = path.replace(/worksheets\/([^/]+)$/, 'worksheets/_rels/$1.rels')
       const rels = readRels(parts, relsPath, path)
+
+      // Hyperlinks: an external one points at a relationship whose target is
+      // the URL, an internal one carries its address as `location`.
+      for (const link of kids(kid(root, 'hyperlinks'), 'hyperlink')) {
+        const at = parseA1(attr(link, 'ref')?.split(':')[0] ?? '')
+        if (!at || at.row === null) continue
+        const id = link.getAttribute('r:id') ?? link.getAttributeNS(NS_REL, 'id')
+        const target = id ? rawRelTarget(parts, relsPath, id) : attr(link, 'location')
+        if (!target) continue
+        const tip = attr(link, 'tooltip')
+        entry.links ??= {}
+        const rowId = `r${at.row}`
+        entry.links[rowId] = { ...(entry.links[rowId] ?? {}), [colToLetters(at.col)]: { target, ...(tip ? { tip } : {}) } }
+      }
       const threadsPath = [...rels.values()].find((r) => r.type === REL_THREADS)?.target
       const threadsXml = threadsPath ? parts[threadsPath] : undefined
       const threaded = new Set<string>()
