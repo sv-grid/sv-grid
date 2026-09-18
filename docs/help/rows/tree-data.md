@@ -143,10 +143,10 @@ stay aligned with their expandable siblings.
 
 ## Server-side trees
 
-For hierarchies too large to send at once, load children on demand with
-`serverGroup` and `ServerDataSource` instead - see
-[Server-side data](../server-side-data.md). The two share the same treegrid
-keyboard and ARIA contract.
+For hierarchies too large to send at once, load children on demand with the
+Enterprise `createServerRowModel` (`treeData: true`) over a `ServerDataSource`
+instead - see [Server tree data](../server/server-tree-data.md). The two share
+the same treegrid keyboard and ARIA contract.
 
 ## More examples
 

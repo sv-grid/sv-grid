@@ -6598,6 +6598,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "data",
         "label": "Data",
         "type": "json",
+        "description": "The rows to render. Optional only because `rowModel` can supply them instead; a grid with neither renders empty. When both are present `data` wins.",
         "group": "common"
       },
       {
@@ -7260,6 +7261,34 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "rowPlaceholder",
+        "label": "Row Placeholder",
+        "type": "json",
+        "description": "Marks a row as one whose data has not arrived: `\"loading\"` draws a shimmer in every cell, `\"failed\"` draws a full-width \"could not load\" row with a Retry button, and `null` (the default for every row) renders normally. Placeholder rows are inert - not selectable, not editable, and skipped by cell navigation - because there is nothing there to act on yet. `createServerDataSource` in `infinite` mode fills the gaps with rows this recognises, so the usual wiring is `rowPlaceholder={rowPlaceholderState}` (or nothing at all, via `rowModel`).",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "rowModel",
+        "label": "Row Model",
+        "type": "json",
+        "description": "Drive the grid from a row model instead of wiring a dozen props. `createServerDataSource` returns one, and so does the Enterprise server-side row model, so server-backed grids become: ```svelte <SvGrid rowModel={ctl} {columns} /> ``` The model supplies `data`, `loading`, `getRowId`, the external sort and filter wiring, the visible range, placeholder rows, group accessors, selection and paging - each one only if it implements that part. A prop written explicitly on the grid always wins, so you can adopt it and still override one piece.",
+        "group": "common"
+      },
+      {
+        "key": "pivotResultColumns",
+        "label": "Pivot Result Columns",
+        "type": "json",
+        "description": "Columns that REPLACE `columns` while set. The server-side row model supplies them in pivot mode - one column per pivoted value, grouped under a header per pivot key - and clears them when pivot mode ends, so `columns` stays the app's own list. Rarely set by hand.",
+        "group": "common"
+      },
+      {
+        "key": "rowSelectionModel",
+        "label": "Row Selection Model",
+        "type": "json",
+        "group": "common"
+      },
+      {
         "key": "isDetailRow",
         "label": "Is Detail Row",
         "type": "json",
@@ -7271,7 +7300,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "serverGroup",
         "label": "Server Group",
         "type": "json",
-        "description": "Server-side group / tree keyboard + accessibility, built into the grid. When set, the grid uses the treegrid role and marks matching rows with `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse the focused group row (no app-level key handling). Pair with `serverGroupRows` + `SvGroupCell` for the visual expander. Every accessor receives the row data.",
+        "description": "Server-side group / tree keyboard + accessibility, built into the grid. When set, the grid uses the treegrid role and marks matching rows with `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse the focused group row (no app-level key handling). Pair with `serverGroupRows` + `SvGroupCell` from `@svgrid/enterprise` for the visual expander, or drive it from your own tree state. Every accessor receives the row data.",
         "group": "common"
       },
       {
@@ -7480,6 +7509,18 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Scroll Bottom Reached",
         "prop": "onScrollBottomReached",
         "description": "Fires once each time the body is scrolled to (within ~32px of) the bottom. Re-arms after the user scrolls back up. The canonical hook for infinite / lazy loading - append more rows to `data` when it fires."
+      },
+      {
+        "key": "visibleRangeChange",
+        "label": "Visible Range Change",
+        "prop": "onVisibleRangeChange",
+        "description": "Fires when the range of rows on screen changes, with the first and last row INDEX (not pixels). Coalesced to one call per frame, so it is cheap to wire to something that fetches. This is the hook a block-loading data source needs and `onScrollBottomReached` cannot give it: \"the user is looking at rows 4,000-4,020\" answers which block to fetch and which to keep, while \"they hit the bottom\" only ever means \"append more\". Both are free; use this one with `createServerDataSource({ mode: 'infinite' })`, or let `rowModel` wire it for you. Reports `0, data.length - 1` when virtualization is off, since every row really is rendered."
+      },
+      {
+        "key": "retryRow",
+        "label": "Retry Row",
+        "prop": "onRetryRow",
+        "description": "Called by the Retry button on a `\"failed\"` placeholder row."
       },
       {
         "key": "columnOrderChange",

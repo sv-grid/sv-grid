@@ -135,10 +135,30 @@ const dist = join(here, '..', 'dist')
  * from the spec, rounded legend steps, gauge units and the range-area band:
  * the same 1.6 KB the grid's chart surface grew by (measure-size.mjs has
  * the list). No surface entry changed. The grid elements did not move.
+ *
+ * 99.5 -> 105.7 and 100.1 -> 106.2 for the grid elements with the spreadsheet
+ * shell program and the charts commit before it. Measured 105.4 / 105.9: the
+ * grid's base went 86.4 -> 91.5 (packages/grid/scripts/measure-size.mjs has
+ * the per-feature breakdown: merged cells, HTML copy and paste, the keyboard
+ * command seam, frozen rows and hidden lines with resize undo, Excel's entry
+ * keys, fill by date and trend, menu icons), reaching the elements at 1:1,
+ * plus the surface entries for the new props and events (98 -> 104
+ * properties, 20 -> 23 events). Nothing sheet-specific is in it: the
+ * spreadsheet itself is @svgrid/enterprise.
+ *
+ * 105.7 -> 107.5 and 106.2 -> 108.0 for the server-side row model program
+ * (2026-09-17). Measured 107.2 / 107.7: the grid's base went 91.6 -> 93.0
+ * (measure-size.mjs: the block cache, infinite mode on the flat controller,
+ * the rowModel / placeholder / selection-model / visible-range seams, the
+ * group-row editing guard), reaching the elements at 1:1, plus the surface
+ * entries for the new props and events (104 -> 108 properties, 23 -> 25
+ * events: rowModel, rowPlaceholder, rowSelectionModel, pivotResultColumns,
+ * onVisibleRangeChange, onRetryRow). The Enterprise row model itself is
+ * not in it.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 99.5 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 100.1 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.5 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 108.0 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

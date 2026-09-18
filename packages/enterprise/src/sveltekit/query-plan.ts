@@ -51,8 +51,39 @@ export type QueryPlan = {
    * grouping existed) stays valid; `planQuery` always sets it.
    */
   groupBy?: string | null
-  /** Aggregates to compute alongside `groupBy`. Empty/absent for a leaf query. */
+  /**
+   * Aggregates to compute alongside `groupBy`. Empty for a leaf query,
+   * unless `grandTotal` is set - then they are what the total is made of.
+   */
   aggregations?: PlanAggregate[]
+  /**
+   * On a grouped query, also count what the NEXT level holds per group -
+   * the distinct keys of `childGroupBy`, or the raw rows when this is the
+   * innermost group level. Lands on each group row as `childCount`, which
+   * the grid shows beside the key and uses to size the group before it
+   * opens. Always set on a grouped plan from `planQuery`.
+   */
+  childGroupBy?: string | null
+  /**
+   * How many entries at the END of `where` are the group path (`groupKeys`
+   * turned into equality predicates) rather than filters the user set.
+   * The grand total aggregates over the filters alone, so it drops these.
+   */
+  pathPredicates?: number
+  /**
+   * Server-side pivot, on a grouped plan: the columns whose distinct values
+   * become fields. Each group row then carries, for every (pivot key path x
+   * aggregation), a field named `<key>[_<key>]_<col>` - `2024_amount` - and
+   * the response lists them in `pivotResultFields`. Absent when not
+   * pivoting. The separator is `_`, matching the row model's default.
+   */
+  pivotBy?: string[]
+  /**
+   * The grid wants a grand-total row and does not have one cached. Compute
+   * the aggregates over the whole filtered set (the request's filters,
+   * without the group path) and answer with `ServerResult.grandTotal`.
+   */
+  grandTotal?: boolean
   /**
    * The advanced-filter expression, present ONLY when every column it
    * references is on the schema.
@@ -167,17 +198,26 @@ export function planQuery<TData extends RowData>(
   // Above the innermost level the grid wants GROUP rows; at or below it, leaves.
   const groupBy = groupKeys.length < groupCols.length ? (groupCols[groupKeys.length] ?? null) : null
 
-  const aggregations: PlanAggregate[] = groupBy
-    ? (request.aggregations ?? [])
-        .filter((a) => fields.has(a.col))
-        .map((a) => ({ field: a.col, fn: a.fn }))
-    : []
+  // Aggregates ride along on a grouped plan, and on a leaf plan ONLY when a
+  // grand total was asked for - the leaf query itself never uses them, but
+  // the total statement does.
+  const aggregations: PlanAggregate[] =
+    groupBy || request.needsGrandTotal
+      ? (request.aggregations ?? [])
+          .filter((a) => fields.has(a.col))
+          .map((a) => ({ field: a.col, fn: a.fn }))
+      : []
 
   // ---- Advanced filter ---------------------------------------------------
   // Same whitelist, stricter consequence: if ANY referenced column is off the
   // schema the whole expression is dropped. Keeping the understood parts would
   // silently widen the result set.
   const expression = admitExpression(request.filterModel?.expression, fields)
+
+  // What the level below this one groups by, so a group row can say how
+  // many children it has. Null at the innermost group level (children are
+  // leaves) and on a leaf query.
+  const childGroupBy = groupBy ? (groupCols[groupKeys.length + 1] ?? null) : null
 
   return {
     where,
@@ -187,6 +227,12 @@ export function planQuery<TData extends RowData>(
     offset: request.startRow,
     groupBy,
     aggregations,
+    ...(groupBy ? { childGroupBy } : {}),
+    ...(groupBy && request.pivotMode && request.pivotBy?.length
+      ? { pivotBy: request.pivotBy.filter((f) => fields.has(f)) }
+      : {}),
+    pathPredicates: Math.min(groupKeys.length, groupCols.length),
+    ...(request.needsGrandTotal ? { grandTotal: true } : {}),
     ...(expression ? { expression } : {}),
   }
 }

@@ -27,7 +27,13 @@
   }
 
   const target = $derived(ctrl.selectionBarTarget as Target)
-  const count = $derived(target.ids.length)
+  // The count the controller resolved: a selection model that stores the
+  // rule knows about rows the grid never loaded, so "1,000,000 selected"
+  // is honest even with twenty rows on screen.
+  const count = $derived((ctrl.selectionBarCount as number | undefined) ?? target.ids.length)
+  // Grouped the way the grid's own numbers are: 1,000,000, not 1000000.
+  const locale = $derived(ctrl.props?.localization?.locale as string | string[] | undefined)
+  const countText = $derived(count.toLocaleString(locale))
   const messages = $derived(ctrl.messages)
   const position = $derived(ctrl.selectionBarPosition as 'top' | 'bottom')
   const maxVisible = $derived(ctrl.selectionBarMaxVisible as number)
@@ -85,7 +91,7 @@
   let overflowOpen = $state(false)
   let barEl = $state<HTMLElement | null>(null)
 
-  const fill = (template: string, n: number) => template.replace(/\{count\}/g, String(n))
+  const fill = (template: string, n: number) => template.replace(/\{count\}/g, n.toLocaleString(locale))
   const clearSelection = () => ctrl.grid.setRowSelection(() => ({}))
 
   function run(a: Action) {
@@ -143,7 +149,7 @@
   onkeydown={onKeydown}
 >
   <span class="sv-selbar-count" aria-live="polite">
-    <span class="sv-selbar-chip">{count}</span>
+    <span class="sv-selbar-chip">{countText}</span>
     <span class="sv-selbar-count-label">{messages.selectionBarCount}</span>
   </span>
 

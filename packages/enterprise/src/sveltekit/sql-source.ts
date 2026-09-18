@@ -100,14 +100,47 @@ export function createSqlDataSource<TData extends RowData>(
       const plan = planQuery(schema, request)
       const sql = planToSql(plan, planDialect)
       const t = qtable
-      const rowsSql = squish(
-        `SELECT ${projection} FROM ${t} ${sql.whereText} ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
-      )
-      const countSql = squish(`SELECT COUNT(*) AS count FROM ${t} ${sql.whereText}`)
+      // A grouped level selects the group column + aggregates and groups by
+      // it; a leaf level selects the projection. `countText` already knows
+      // that a grouped total is the number of DISTINCT keys, not of rows.
+      // Pivot: the distinct key paths first, then one conditional aggregate
+      // per (path x aggregation) in the grouped SELECT.
+      let select = sql.select
+      let grandTotalSelect = sql.grandTotalSelect
+      let pivotResultFields: string[] | undefined
+      if (plan.groupBy && plan.pivotBy?.length) {
+        const keyRows = await execute(
+          squish(`SELECT ${sql.pivotKeysSelect} FROM ${t} ${sql.whereText}`),
+          sql.params,
+        )
+        const pivot = sql.pivotSelect(keyRows)
+        select = pivot.select
+        if (plan.grandTotal) grandTotalSelect = pivot.grandTotalSelect
+        pivotResultFields = pivot.fields
+      }
+      const rowsSql = plan.groupBy
+        ? squish(
+            `SELECT ${select} FROM ${t} ${sql.whereText} ${sql.groupByText} ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
+          )
+        : squish(
+            `SELECT ${projection} FROM ${t} ${sql.whereText} ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
+          )
+      const countSql = squish(`SELECT ${sql.countText} AS count FROM ${t} ${sql.whereText}`)
       const rows = await execute(rowsSql, sql.params)
       const countRows = await execute(countSql, sql.params)
       const rowCount = Number(countRows[0]?.count ?? rows.length)
-      return { rows: rows as ReadonlyArray<TData>, rowCount }
+      const result: ServerResult<TData> = { rows: rows as ReadonlyArray<TData>, rowCount }
+      if (pivotResultFields) result.pivotResultFields = pivotResultFields
+      // The grand total is its own statement, over the filters without the
+      // group path - planToSql hands back exactly those pieces.
+      if (plan.grandTotal && grandTotalSelect) {
+        const totalRows = await execute(
+          squish(`SELECT ${grandTotalSelect} FROM ${t} ${sql.grandTotalWhereText}`),
+          sql.grandTotalParams,
+        )
+        result.grandTotal = (totalRows[0] ?? null) as TData | null
+      }
+      return result
     },
 
     async createRow(input: Partial<TData>): Promise<TData> {

@@ -8,7 +8,7 @@ filters, editing, grouping - when you outgrow the basics.
 > Estimated effort: **30 min - 1 hour** per table.
 
 <!-- facts:start gridjs -->
-> **Facts, checked 12 Sep 2026.** `gridjs` 6.2.0, MIT, last published 3 Mar 2024, 161,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `gridjs` 6.2.0 17.8 KB JS + 2.4 KB CSS (measured 12 Sep 2026). Grid.js pricing, as its site states it: Grid.js is MIT, free and open source; no licence is sold (https://gridjs.io/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/).
+> **Facts, checked 12 Sep 2026.** `gridjs` 6.2.0, MIT, last published 3 Mar 2024, 161,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `gridjs` 6.2.0 17.8 KB JS + 2.4 KB CSS (measured 12 Sep 2026). Grid.js pricing, as its site states it: Grid.js is MIT, free and open source; no licence is sold (https://gridjs.io/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet

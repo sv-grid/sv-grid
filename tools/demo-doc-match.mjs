@@ -35,6 +35,7 @@ const CATEGORY_HINTS = {
   Spreadsheet: ['help/spreadsheet', 'recipes/'],
   Blocks: ['help/ui-components/', 'help/blocks'],
   'Server-Side Data': ['help/server/'],
+  'Server-Side Row Model': ['help/server/'],
   'Industry Templates': ['recipes/'],
   Alerts: ['help/alerts'],
   'Rows & Cells': ['help/rows/', 'help/cells/'],

@@ -116,7 +116,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (30)
+### Properties only (34)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -146,6 +146,10 @@ only be assigned in script: `el.columns = [...]`.
 | `rowClass` | `(ctx: { row: TData; rowIndex: number; }) => string \| ReadonlyArray<string> \| Record<str...` |
 | `notes` | `Record<string, Record<string, string>>` |
 | `conditionalFormats` | `ReadonlyArray<ConditionalFormat<TData>>` |
+| `rowPlaceholder` | `(row: TData, rowIndex: number) => "loading" \| "failed" \| null` |
+| `rowModel` | `GridRowModel<TData>` |
+| `pivotResultColumns` | `Array<ColumnDef<TFeatures, TData>> \| null` |
+| `rowSelectionModel` | `{ ... }` |
 | `isDetailRow` | `(row: TData, rowIndex: number) => boolean` |
 | `serverGroup` | `{ ... }` |
 | `serverFilterValues` | `(columnId: string) => Promise<string[]>` |
@@ -154,7 +158,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (22)
+### Events (24)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -181,6 +185,8 @@ an object keyed by its parameter names.
 | `celldoubleclick` | `onCellDoubleClick` | `event` |
 | `rowdoubleclick` | `onRowDoubleClick` | `event` |
 | `scrollbottomreached` | `onScrollBottomReached` | `event` |
+| `visiblerangechange` | `onVisibleRangeChange` | `range` |
+| `retryrow` | `onRetryRow` | `{ row, rowIndex }` |
 | `columnorderchange` | `onColumnOrderChange` | `order` |
 | `rowdragend` | `onRowDragEnd` | `event` |
 

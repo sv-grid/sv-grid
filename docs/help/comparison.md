@@ -21,7 +21,7 @@ per-competitor pages under [/compare/](https://svgrid.com/compare/) list
 the sources for every feature claim.
 
 <!-- facts:start ag-grid,tanstack-table -->
-> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/), [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/), [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
 <!-- facts:end -->
 
 ## TL;DR
@@ -55,17 +55,21 @@ they were read and the method behind the sizes.
   TanStack Table both qualify. AG Grid renders client-side.
 - You want the features AG Grid sells as Enterprise - the set filter,
   range selection, master/detail, tree data, grouping with aggregation,
-  the server-side row model, integrated charts - **in the MIT core**.
+  integrated charts, flat server-side infinite scroll - **in the MIT
+  core**. (Server-side grouping, tree, pivot and transactions are
+  Enterprise in both.)
 
 ## When AG Grid is the right choice
 
 - You're on **React, Angular, or Vue**, not Svelte. SvGrid is
   Svelte-only, and ag-grid.com points Svelte users to community-built
   integrations rather than an official package.
-- You need **server-side pivoting**, or a push-based **viewport row model**
-  for a real-time trading blotter. SvGrid ships pivot, charts and a
-  server-side row model (sort / filter / group / infinite), but not those
-  two.
+- You need a push-based **viewport row model** for a real-time trading
+  blotter, where the server streams the visible window over a socket.
+  SvGrid's server-side row model covers sort, filter, grouping, tree,
+  pivot, transactions and select-all across unloaded rows, and its
+  real-time page merges deltas into loaded rows, but it does not have the
+  viewport model.
 - You need **pluggable custom filter components or custom tool panels**.
   SvGrid's tool panel is a fixed Columns + Filters pair.
 - You need **AG Charts** for maps, network graphs, 3D or a canvas renderer.
@@ -117,7 +121,9 @@ TanStack sources on [SvGrid vs TanStack Table](https://svgrid.com/compare/tansta
 | Context menu                    | Yes              | Yes               | No (Enterprise)   | Yes                | No             |
 | Fit-to-width with shrink        | Yes              | Yes               | Partial           | Yes                | No             |
 | WAI-ARIA grid pattern           | Yes              | Yes               | Yes               | Yes                | No (your markup) |
-| Server-side row model           | Yes (built in)   | Yes (built in)    | No (Enterprise)   | Yes (built in)     | Partial (manual flags) |
+| Server-side data, flat (sort / filter / paging / infinite scroll) | Yes (built in) | Yes (built in) | Yes (infinite row model) | Yes (built in) | Partial (manual flags) |
+| Server-side row model (lazy grouping, tree, pivot, transactions, select-all across unloaded rows) | No (Enterprise) | Yes (built in) | No (Enterprise) | Yes (built in) | No |
+| Global search over server-side data | Yes (`filterModel.global`) | Yes | No (the quick filter is client-side only) | No | n/a |
 | CSP-clean (no eval, no inline)  | Yes              | Yes               | Yes               | Yes                | n/a            |
 | Meaningful SSR markup           | Yes              | Yes               | No                | No                 | depends on your markup |
 | CSV / TSV / JSON export         | Yes              | Yes               | Yes (CSV)         | Yes                | No             |

@@ -196,3 +196,67 @@ describe('createSqlDataSource honors dbColumn (renamed columns)', () => {
     expect(calls[0]!.sql).toContain('GROUP BY "starts_at"')
   })
 })
+
+describe('createSqlDataSource server grouping', () => {
+  it('runs the grouped SELECT + GROUP BY, and counts DISTINCT keys', async () => {
+    const { execute, calls } = recorder([
+      [{ name: 'Ann', age: 61, childCount: 2 }],
+      [{ count: 3 }],
+    ])
+    const src = createSqlDataSource({ schema, table: 'customers', execute })
+    const res = await src.getRows(
+      req({ groupBy: ['name'], groupKeys: [], aggregations: [{ col: 'age', fn: 'sum' }] }),
+    )
+
+    // Group rows come back as-is: the key, the aliased aggregate, the count.
+    expect(res.rows).toEqual([{ name: 'Ann', age: 61, childCount: 2 }])
+    // Three distinct names, not however many customer rows there are.
+    expect(res.rowCount).toBe(3)
+
+    expect(calls[0]!.sql).toBe(
+      'SELECT "name", SUM("age") AS "age", COUNT(*) AS "childCount" FROM "customers" GROUP BY "name" ORDER BY "name" ASC LIMIT 50 OFFSET 0',
+    )
+    expect(calls[1]!.sql).toBe('SELECT COUNT(DISTINCT "name") AS count FROM "customers"')
+  })
+
+  it('descends into a group with the path as a bound predicate', async () => {
+    const { execute, calls } = recorder([[{ id: '1', name: 'Ann', age: 30 }], [{ count: 1 }]])
+    const src = createSqlDataSource({ schema, table: 'customers', execute })
+    await src.getRows(req({ groupBy: ['name'], groupKeys: ['Ann'] }))
+
+    // The innermost level is leaves: the projection, scoped by the path.
+    expect(calls[0]!.sql).toBe('SELECT * FROM "customers" WHERE "name" = ? LIMIT 50 OFFSET 0')
+    expect(calls[0]!.params).toEqual(['Ann'])
+  })
+
+  it('runs the grand-total statement when the grid asks for one', async () => {
+    const { execute, calls } = recorder([
+      [{ name: 'Ann', age: 30, childCount: 1 }],
+      [{ count: 1 }],
+      [{ age: 91 }],
+    ])
+    const src = createSqlDataSource({ schema, table: 'customers', execute })
+    const res = await src.getRows(
+      req({
+        groupBy: ['name'],
+        groupKeys: [],
+        aggregations: [{ col: 'age', fn: 'sum' }],
+        needsGrandTotal: true,
+        filterModel: { columns: { age: { operator: 'greaterThan', value: '20' } } },
+      }),
+    )
+
+    expect(res.grandTotal).toEqual({ age: 91 })
+    // Its own statement, with the filter and without a GROUP BY.
+    expect(calls[2]!.sql).toBe('SELECT SUM("age") AS "age" FROM "customers" WHERE "age" > ?')
+    expect(calls[2]!.params).toEqual([20])
+  })
+
+  it('does not run a third statement when no total was asked for', async () => {
+    const { execute, calls } = recorder([[], [{ count: 0 }]])
+    const src = createSqlDataSource({ schema, table: 'customers', execute })
+    const res = await src.getRows(req({ groupBy: ['name'], groupKeys: [] }))
+    expect(calls).toHaveLength(2)
+    expect('grandTotal' in res).toBe(false)
+  })
+})

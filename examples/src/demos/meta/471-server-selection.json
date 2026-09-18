@@ -1,0 +1,24 @@
+{
+  "description": "Select-all across unloaded rows in a Svelte 5 data grid over server-side data. The header checkbox selects every row the current filter matches, loaded or not, and the selection becomes a rule rather than a list: all except these ids, or per group under grouping with groupSelects descendants. The panel shows the rule as getSelectionState reports it, Save and Restore round-trip it through setSelectionState, and a bulk action sends the rule to the server as one updateWhere call that answers with the number of rows it changed. The selection bar's count is the server's number, not the ticks on screen.",
+  "keywords": [
+    "svelte grid select all server side",
+    "svelte grid selection across unloaded rows",
+    "svelte 5 grid bulk update by rule",
+    "svelte grid select all except",
+    "svelte grid selection state save restore"
+  ],
+  "faq": [
+    {
+      "question": "How can the grid select rows it has never loaded?",
+      "answer": "It does not keep a list. The selection is a rule: selectAll plus the ids toggled the other way. A row is selected when the rule says so, the count comes from the server's row count minus the exceptions, and a bulk edit sends the rule and the filter to updateWhere so the backend applies the change to exactly that set."
+    },
+    {
+      "question": "What changes under grouping?",
+      "answer": "The rule nests per group: ticking a plan selects its subscribers, loaded or not, and unticking one of them records an exception on that plan. getSelectionState returns the nested shape and updateWhere receives it with the group columns, so the server can walk it."
+    },
+    {
+      "question": "Does a filter change what select-all means?",
+      "answer": "Yes. The rule is evaluated against the filtered set: with a status filter open, select-all selects the matching rows only, the count reflects the filtered row count, and the bulk edit carries the filter model along with the rule."
+    }
+  ]
+}

@@ -193,6 +193,14 @@ export interface SvGridElement extends HTMLElement {
   /** attribute `conditional-stat-scope` */
   conditionalStatScope: "filtered" | "visible" | "all"
   /** property only - an attribute cannot hold this */
+  rowPlaceholder: unknown
+  /** property only - an attribute cannot hold this */
+  rowModel: unknown
+  /** property only - an attribute cannot hold this */
+  pivotResultColumns: readonly unknown[]
+  /** property only - an attribute cannot hold this */
+  rowSelectionModel: unknown
+  /** property only - an attribute cannot hold this */
   isDetailRow: unknown
   /** property only - an attribute cannot hold this */
   serverGroup: unknown
@@ -252,6 +260,8 @@ declare global {
     celldoubleclick: CustomEvent<unknown>
     rowdoubleclick: CustomEvent<unknown>
     scrollbottomreached: CustomEvent<unknown>
+    visiblerangechange: CustomEvent<unknown>
+    retryrow: CustomEvent<unknown>
     columnorderchange: CustomEvent<unknown>
     rowdragend: CustomEvent<unknown>
     selectionchange: CustomEvent<unknown>

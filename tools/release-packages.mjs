@@ -311,10 +311,11 @@ function main() {
       reason = own ? `changed since ${last.tag}` : `bundles ${cascade.join(' + ')}, which changed`
     }
 
-    // Bump from whichever is higher: the last released tag or the working version
-    // (guards against a manual bump that already moved package.json forward).
-    const base = last && cmpVer(current, last.ver) <= 0 ? last.ver : current
-    const next = bumpPatch(base)
+    // A working version already ahead of the last tag is a deliberate bump -
+    // a major set by hand with its changeset - and publishes as it stands; a
+    // version at or behind the tag gets the next patch.
+    const ahead = !!last && cmpVer(current, last.ver) > 0
+    const next = ahead ? current : bumpPatch(last ? last.ver : current)
     const nextStr = fmtVer(next)
 
     if (!CHECK_ONLY) {

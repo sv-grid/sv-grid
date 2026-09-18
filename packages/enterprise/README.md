@@ -24,6 +24,7 @@
 
 ## What it adds
 
+- **Server-Side Row Model** - `createServerRowModel` over the free datasource contract: lazy grouping and tree data one level at a time with a block cache per level, aggregates, child counts and grand totals, server-side pivot with the designer in server mode, transactions on loaded rows, paging over the tree, and a selection kept as a rule so select-all reaches rows the grid never loaded, with a bulk edit by rule. Flat paging and infinite scroll stay free in `@svgrid/grid`.
 - **Data export** - Excel (`.xlsx`), PDF, styled HTML and XML, with theme-matched styling, headers/footers, and image support. CSV, TSV and JSON export (and copy-to-clipboard) are free in `@svgrid/grid`; Enterprise adds the paid formats and a single `exportGrid()` entry point over all of them.
 - **Data import** - read Excel / CSV / TSV / JSON into typed rows with column auto-mapping, type inference, and per-row validation, plus a ready-made `SvImportDialog`.
 - **Paginated print** - opens a clean, paginated, printable view of the grid with title and page breaks.

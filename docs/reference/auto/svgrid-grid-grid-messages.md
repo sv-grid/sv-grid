@@ -99,6 +99,9 @@ export type GridChromeMessages = {
   bulkEditCancel: string
   bulkEditNoFields: string
   chartRange: string
+  // Rows whose data has not arrived (server-side / infinite loading)
+  rowLoadFailed: string
+  rowLoadRetry: string
   // Upsell notes (enterprise views not installed)
   pivotUpsellTitle: string
   pivotUpsellBody: string
@@ -183,6 +186,8 @@ export const defaultGridMessages: GridChromeMessages = {
   opBefore: 'Before',
   opAfter: 'After',
   chartRange: 'Chart selected range',
+  rowLoadFailed: 'Could not load these rows.',
+  rowLoadRetry: 'Retry',
   pivotUpsellTitle: 'Pivot mode',
   pivotUpsellBody: 'Pivot mode is an Enterprise feature. Install @svgrid/enterprise and call enablePivot() to use it.',
   upsellLicense:

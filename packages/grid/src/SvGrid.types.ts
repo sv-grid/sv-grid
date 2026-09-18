@@ -1,6 +1,7 @@
 // Type definitions extracted from SvGrid.svelte. These are compile-time
 // only - moving them out keeps the component's <script> focused on logic.
 import type { Snippet } from "svelte";
+import type { GridRowModel } from "./row-model";
 import type {
   CellEditorType,
   ColumnDef,
@@ -1113,7 +1114,13 @@ export type SchedulerConfig<
 };
 
 export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
-  data: ReadonlyArray<TData>;
+  /**
+   * The rows to render.
+   *
+   * Optional only because `rowModel` can supply them instead; a grid with
+   * neither renders empty. When both are present `data` wins.
+   */
+  data?: ReadonlyArray<TData>;
   columns: Array<ColumnDef<TFeatures, TData>>;
   /**
    * Kanban board mode. When set, the grid renders its rows as cards in
@@ -2100,6 +2107,99 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     clientHeight: number;
   }) => void;
   /**
+   * Fires when the range of rows on screen changes, with the first and last
+   * row INDEX (not pixels). Coalesced to one call per frame, so it is cheap
+   * to wire to something that fetches.
+   *
+   * This is the hook a block-loading data source needs and
+   * `onScrollBottomReached` cannot give it: "the user is looking at rows
+   * 4,000-4,020" answers which block to fetch and which to keep, while
+   * "they hit the bottom" only ever means "append more". Both are free; use
+   * this one with `createServerDataSource({ mode: 'infinite' })`, or let
+   * `rowModel` wire it for you.
+   *
+   * Reports `0, data.length - 1` when virtualization is off, since every row
+   * really is rendered.
+   */
+  onVisibleRangeChange?: (range: {
+    startIndex: number;
+    endIndex: number;
+  }) => void;
+  /**
+   * Marks a row as one whose data has not arrived: `"loading"` draws a
+   * shimmer in every cell, `"failed"` draws a full-width "could not load"
+   * row with a Retry button, and `null` (the default for every row) renders
+   * normally.
+   *
+   * Placeholder rows are inert - not selectable, not editable, and skipped
+   * by cell navigation - because there is nothing there to act on yet.
+   *
+   * `createServerDataSource` in `infinite` mode fills the gaps with rows this
+   * recognises, so the usual wiring is `rowPlaceholder={rowPlaceholderState}`
+   * (or nothing at all, via `rowModel`).
+   */
+  rowPlaceholder?: (row: TData, rowIndex: number) => "loading" | "failed" | null;
+  /** Called by the Retry button on a `"failed"` placeholder row. */
+  onRetryRow?: (row: TData, rowIndex: number) => void;
+  /**
+   * Hand selection over to an external model.
+   *
+   * The grid normally tracks selection as a record of the row ids it has
+   * seen, which is right until the rows it has seen are a window onto a
+   * million on a server: "select all" then means 20 ticked checkboxes rather
+   * than a million, and the header checkbox cannot honestly say `all`. A
+   * model that stores the RULE ("everything except these three") can answer
+   * both, so when this is set the header checkbox, the row checkboxes and
+   * `api.selectAllRows()` all route through it instead.
+   *
+   * `@svgrid/enterprise` ships one for the server-side row model; this is the
+   * seam it plugs into.
+   */
+  /**
+   * Drive the grid from a row model instead of wiring a dozen props.
+   *
+   * `createServerDataSource` returns one, and so does the Enterprise
+   * server-side row model, so server-backed grids become:
+   *
+   * ```svelte
+   * <SvGrid rowModel={ctl} {columns} />
+   * ```
+   *
+   * The model supplies `data`, `loading`, `getRowId`, the external sort
+   * and filter wiring, the visible range, placeholder rows, group
+   * accessors, selection and paging - each one only if it implements that
+   * part. A prop written explicitly on the grid always wins, so you can
+   * adopt it and still override one piece.
+   */
+  rowModel?: GridRowModel<TData>;
+  /**
+   * Columns that REPLACE `columns` while set. The server-side row model
+   * supplies them in pivot mode - one column per pivoted value, grouped
+   * under a header per pivot key - and clears them when pivot mode ends,
+   * so `columns` stays the app's own list. Rarely set by hand.
+   */
+  pivotResultColumns?: Array<ColumnDef<TFeatures, TData>> | null;
+  rowSelectionModel?: {
+    isSelected: (rowId: string, row: TData) => boolean;
+    /** Whether the header checkbox shows empty, indeterminate, or ticked. */
+    headerState: () => "none" | "some" | "all";
+    toggle: (rowId: string, row: TData, next: boolean) => void;
+    /** The header checkbox: select or clear everything, loaded or not. */
+    toggleAll: (next: boolean) => void;
+    /**
+     * How many rows the rule selects, counting the ones the grid never
+     * loaded; `null` when it cannot say. The selection bar shows this
+     * instead of counting ticked rows on screen.
+     */
+    selectedCount?: () => number | null;
+    /**
+     * Apply one patch to every selected row, loaded or not. When present,
+     * the bulk-edit drawer sends its edits here instead of writing the
+     * loaded cells. Resolves with how many rows changed.
+     */
+    bulkUpdate?: (patch: Record<string, unknown>) => Promise<number>;
+  };
+  /**
    * Marks a row as an expandable "detail row". When this returns true the
    * grid renders that row as a SINGLE full-width cell (colspan across every
    * column) using `renderDetailRow`, instead of the normal per-column cells
@@ -2119,8 +2219,10 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * Server-side group / tree keyboard + accessibility, built into the grid. When
    * set, the grid uses the treegrid role and marks matching rows with
    * `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse
-   * the focused group row (no app-level key handling). Pair with `serverGroupRows`
-   * + `SvGroupCell` for the visual expander. Every accessor receives the row data.
+   * the focused group row (no app-level key handling). Pair with
+   * `serverGroupRows` + `SvGroupCell` from `@svgrid/enterprise` for the visual
+   * expander, or drive it from your own tree state. Every accessor receives the
+   * row data.
    */
   serverGroup?: {
     /** Whether a row is an expandable group / branch. */

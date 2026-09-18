@@ -16,7 +16,7 @@ also exposes a headless engine and an MCP server).
 > current SVAR docs and map them onto the SvGrid equivalents below.
 
 <!-- facts:start svar-svelte-datagrid -->
-> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
+> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -145,7 +145,7 @@ The two features most SVAR teams port for:
 - **The React and Vue versions** of the same grid. SvGrid is Svelte-only.
 - **A smaller bundle.** The facts box at the top of the page has both
   packages measured the same way; the difference is the grouping,
-  master/detail, range editing, charts and server-side row model SvGrid
+  master/detail, range editing, charts and server-side data (flat paging and infinite scroll free; grouping, tree, pivot and transactions on the server are Enterprise) SvGrid
   carries, and features you never import load as separate chunks.
 - **The SVAR suite around the grid.** Gantt, Calendar, Kanban and File
   Manager share SVAR's core; SvGrid's Kanban and scheduler are views of the

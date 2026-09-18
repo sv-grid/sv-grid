@@ -54,6 +54,7 @@ const SECTION = {
   'Data Export & Import': [/^docs\/help\/(export|import)/, /^docs\/recipes\//],
   Spreadsheet: [/^docs\/help\/spreadsheet/, /^docs\/recipes\//],
   'Server-Side Data': [/^docs\/help\/(server|headless)\//, /^docs\/help\/server-side-data/],
+  'Server-Side Row Model': [/^docs\/help\/server\//, /^docs\/help\/pivot/],
   'Filtering & Search': [/^docs\/help\/filtering\//],
   'Sorting & Grouping': [/^docs\/help\/(grouping|rows\/row-sorting)/],
   Columns: [/^docs\/help\/columns\//],

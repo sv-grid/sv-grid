@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-16T00:05:01.739Z",
+  "generatedAt": "2026-09-17T23:42:18.762Z",
   "counts": {
-    "pages": 379,
-    "enterprise": 55,
-    "withDemo": 264
+    "pages": 383,
+    "enterprise": 60,
+    "withDemo": 268
   },
   "pillars": [
     {
@@ -292,9 +292,13 @@
         "help/server/server-editing.md",
         "help/server/server-filtering.md",
         "help/server/server-grouping.md",
+        "help/server/server-infinite-scroll.md",
         "help/server/server-paging.md",
+        "help/server/server-pivot.md",
         "help/server/server-row-model.md",
+        "help/server/server-selection.md",
         "help/server/server-sorting.md",
+        "help/server/server-transactions.md",
         "help/server/server-tree-data.md"
       ]
     },
@@ -1695,8 +1699,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3494,
-      "lastUpdated": "2026-09-12",
+      "words": 3687,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -2413,8 +2417,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3738,
-      "lastUpdated": "2026-09-12",
+      "words": 3832,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -2958,8 +2962,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1219,
-      "lastUpdated": "2026-09-08",
+      "words": 1221,
+      "lastUpdated": "2026-09-16",
       "demoIds": [
         "431-custom-icons"
       ]
@@ -3011,8 +3015,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2710,
-      "lastUpdated": "2026-09-12",
+      "words": 3149,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -3026,7 +3030,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 830,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3038,7 +3042,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1307,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3050,7 +3054,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 755,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3061,8 +3065,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2109,
-      "lastUpdated": "2026-09-15",
+      "words": 2117,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -3077,7 +3081,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3089,7 +3093,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 864,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3100,10 +3104,11 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1579,
-      "lastUpdated": "2026-09-12",
+      "words": 1625,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
-        "148-server-row-model"
+        "148-server-row-model",
+        "467-server-row-model-1m"
       ]
     },
     {
@@ -3115,7 +3120,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 932,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3127,7 +3132,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 809,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3139,7 +3144,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1783,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3151,7 +3156,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1081,
-      "lastUpdated": "2026-09-13",
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -3164,8 +3169,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1608,
-      "lastUpdated": "2026-09-12",
+      "words": 1623,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -3180,7 +3185,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1842,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3194,7 +3199,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 834,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3206,7 +3211,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 825,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3217,9 +3222,10 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1540,
-      "lastUpdated": "2026-09-12",
+      "words": 1603,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
+        "148-server-row-model",
         "186-headless-table"
       ]
     },
@@ -3232,7 +3238,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1046,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3244,7 +3250,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 980,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3255,8 +3261,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2439,
-      "lastUpdated": "2026-09-14",
+      "words": 2509,
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -3499,8 +3505,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 504,
-      "lastUpdated": "2026-09-03",
+      "words": 528,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "02-sort-filter-paginate"
       ]
@@ -3582,8 +3588,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1524,
-      "lastUpdated": "2026-09-05",
+      "words": 1610,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "430-selection-bar"
       ]
@@ -3625,8 +3631,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 960,
-      "lastUpdated": "2026-09-13",
+      "words": 966,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "426-tree-data",
         "29-wbs-project-tree",
@@ -3707,8 +3713,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1683,
-      "lastUpdated": "2026-09-03",
+      "words": 1808,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "33-server-infinite",
         "79-loading-from-rest",
@@ -3727,8 +3733,8 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1339,
-      "lastUpdated": "2026-09-03",
+      "words": 1371,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "115-optimistic-updates",
         "33-server-infinite",
@@ -3753,16 +3759,35 @@
     {
       "path": "help/server/server-grouping.md",
       "url": "/docs/help/server/server-grouping/",
-      "title": "Server grouping",
+      "title": "Server grouping - Enterprise",
       "summary": "Grouping a hundred thousand rows in the browser means shipping all hundred thousand rows first. Server grouping flips that: the backend runs the GROUP BY, and the grid receives **one pre-aggregated row per group** - a key plus its subtotals. Expanding a group then lazily drills into the next level (or the raw rows) for **that group only**, so the network never carries the full table.",
       "section": "help/server",
       "pillar": "grid",
-      "tier": "community",
-      "words": 1804,
-      "lastUpdated": "2026-09-03",
+      "tier": "enterprise",
+      "words": 2801,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "344-server-grouping-model",
+        "467-server-row-model-1m",
+        "473-server-grouping-rules",
+        "472-server-sql-planner",
         "114-server-grouping"
+      ]
+    },
+    {
+      "path": "help/server/server-infinite-scroll.md",
+      "url": "/docs/help/server/server-infinite-scroll/",
+      "title": "Server-side infinite scroll",
+      "summary": "One long list, a million rows on the server, and a scrollbar that covers all of them: the grid asks for the block under the viewport, shows placeholder rows for what has not arrived, and forgets blocks it scrolled far past. createServerDataSource does this in infinite mode over the same getRows contract as page mode, and the grid wires itself to it through one prop.",
+      "section": "help/server",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 996,
+      "lastUpdated": "2026-09-17",
+      "demoIds": [
+        "148-server-row-model",
+        "33-server-infinite",
+        "118-live-dashboard"
       ]
     },
     {
@@ -3773,10 +3798,26 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1758,
-      "lastUpdated": "2026-09-03",
+      "words": 1898,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "148-server-row-model"
+      ]
+    },
+    {
+      "path": "help/server/server-pivot.md",
+      "url": "/docs/help/server/server-pivot/",
+      "title": "Server pivot - Enterprise",
+      "summary": "A pivot over a million rows cannot happen in the browser. The server-side row model sends the pivot to the backend and builds its columns from the answer: with pivotMode on, each request carries pivotBy, every group row comes back with one value per (pivot key x aggregation), and the response lists those fields. The grid shows them in place of columns for as long as pivot mode lasts.",
+      "section": "help/server",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "words": 1021,
+      "lastUpdated": "2026-09-17",
+      "demoIds": [
+        "468-server-pivot",
+        "467-server-row-model-1m",
+        "360-pivot-mode-grid"
       ]
     },
     {
@@ -3787,15 +3828,33 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1506,
-      "lastUpdated": "2026-09-03",
+      "words": 1814,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "148-server-row-model",
+        "467-server-row-model-1m",
         "344-server-grouping-model",
         "33-server-infinite",
         "114-server-grouping",
         "09-server-side",
         "19-ssr"
+      ]
+    },
+    {
+      "path": "help/server/server-selection.md",
+      "url": "/docs/help/server/server-selection/",
+      "title": "Server selection - Enterprise",
+      "summary": "A grid that keeps a list of selected ids is right until the rows it has seen are a window onto a million on a server. Then \"select all\" has to mean a million, the header checkbox has to say so, and a bulk edit has to reach rows that never came down the wire. None of that fits a list of ids. It fits a **rule** - \"everything, except these\" - which is what the server-side row model keeps when you turn selection on. The demo shows the rule as getSelectionState() reports it, flat and per group, with a bulk edit the server applies by rule.",
+      "section": "help/server",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "words": 776,
+      "lastUpdated": "2026-09-17",
+      "demoIds": [
+        "471-server-selection",
+        "467-server-row-model-1m",
+        "430-selection-bar",
+        "117-bulk-operations"
       ]
     },
     {
@@ -3806,24 +3865,42 @@
       "section": "help/server",
       "pillar": "grid",
       "tier": "community",
-      "words": 1486,
-      "lastUpdated": "2026-09-03",
+      "words": 1554,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "148-server-row-model",
         "344-server-grouping-model"
       ]
     },
     {
+      "path": "help/server/server-transactions.md",
+      "url": "/docs/help/server/server-transactions/",
+      "title": "Server transactions - Enterprise",
+      "summary": "A row was added on the server and the grid should show it now, not after a refetch. A socket said a price moved. A row was deleted and its group should lose it. Transactions apply those changes to the rows the server-side row model already holds, in place, with no request: the block cache of the level named by route is patched, the row count follows, and the display list is rebuilt. A refresh is still the way to bring in what the server knows and the grid does not; a transaction is for what the app already knows. The demo below is a feed of changes the server already made: price ticks patch loaded rows in place, new and shipped orders arrive as batched transactions at their warehouse, and the log shows the status of each.",
+      "section": "help/server",
+      "pillar": "grid",
+      "tier": "enterprise",
+      "words": 843,
+      "lastUpdated": "2026-09-17",
+      "demoIds": [
+        "470-server-transactions",
+        "467-server-row-model-1m",
+        "115-optimistic-updates",
+        "116-websocket-live-updates"
+      ]
+    },
+    {
       "path": "help/server/server-tree-data.md",
       "url": "/docs/help/server/server-tree-data/",
-      "title": "Server tree data (load on demand)",
+      "title": "Server tree data (load on demand) - Enterprise",
       "summary": "When a hierarchy is too large to ship up front - a file system, an org chart with tens of thousands of people, a geographic drill-down - you do not want to fetch every node before the grid renders. The answer is to **seed only the roots**, then fetch each node's children the first time the user expands it.",
       "section": "help/server",
       "pillar": "grid",
-      "tier": "community",
-      "words": 1779,
-      "lastUpdated": "2026-09-03",
+      "tier": "enterprise",
+      "words": 1904,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
+        "469-server-tree-data",
         "31-lazy-tree-load",
         "344-server-grouping-model"
       ]
@@ -5454,7 +5531,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 725,
-      "lastUpdated": "2026-09-16",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -5495,7 +5572,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 788,
-      "lastUpdated": "2026-09-16",
+      "lastUpdated": "2026-09-17",
       "demoIds": []
     },
     {
@@ -5535,13 +5612,13 @@
       "path": "help/web-components/react.md",
       "url": "/docs/help/web-components/react/",
       "title": "SvGrid in React",
-      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 104 properties and 23 events are typed props, and it works the same on React 17, 18 and 19.",
+      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 108 properties and 25 events are typed props, and it works the same on React 17, 18 and 19.",
       "section": "help/web-components",
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
       "words": 2547,
-      "lastUpdated": "2026-09-16",
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -5556,7 +5633,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 631,
-      "lastUpdated": "2026-09-16",
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "10-custom-cells-and-themes",
         "04-selection-copy-paste"
@@ -5572,7 +5649,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 838,
-      "lastUpdated": "2026-09-15",
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "435-chart-type-gallery",
         "436-chart-sync-zoom",
@@ -5588,8 +5665,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1449,
-      "lastUpdated": "2026-09-15",
+      "words": 1500,
+      "lastUpdated": "2026-09-17",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"

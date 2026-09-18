@@ -26,8 +26,10 @@
 import type {
   RowData,
   ServerDataSource,
+  ServerFilterModel,
   ServerRequest,
   ServerResult,
+  ServerSelectionRule,
 } from '@svgrid/grid'
 import type { EntitySchema } from '../schema'
 import { validateAll } from '../edit-panel'
@@ -39,6 +41,14 @@ export type KitMessage<TData> =
   | { kind: 'mutate'; op: 'create'; input: Partial<TData> }
   | { kind: 'mutate'; op: 'update'; id: string; patch: Partial<TData> }
   | { kind: 'mutate'; op: 'delete'; id: string }
+  /** A bulk edit by rule: every row the filter and the selection name. */
+  | {
+      kind: 'mutate'
+      op: 'updateWhere'
+      filterModel: ServerFilterModel
+      patch: Partial<TData>
+      selection: ServerSelectionRule
+    }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
 
@@ -63,7 +73,7 @@ export type KitDataSourceOptions = {
 
 export function createKitDataSource<TData extends RowData>(
   options: KitDataSourceOptions,
-): WritableDataSource<TData> {
+): WritableDataSource<TData> & Required<Pick<ServerDataSource<TData>, 'updateWhere'>> {
   const doFetch: FetchLike = options.fetch ?? ((i, init) => fetch(i, init))
 
   async function post<T>(body: KitMessage<TData>): Promise<T> {
@@ -84,6 +94,8 @@ export function createKitDataSource<TData extends RowData>(
     createRow: (input) => post<TData>({ kind: 'mutate', op: 'create', input }),
     updateRow: (id, patch) => post<TData>({ kind: 'mutate', op: 'update', id, patch }),
     deleteRow: (id) => post<void>({ kind: 'mutate', op: 'delete', id }).then(() => undefined),
+    updateWhere: (filterModel, patch, selection) =>
+      post<{ count: number }>({ kind: 'mutate', op: 'updateWhere', filterModel, patch, selection }).then((r) => r.count),
   }
 }
 
@@ -203,7 +215,7 @@ export type KitHandlers = {
 }
 
 const actionOf = <TData extends RowData>(msg: KitMessage<TData>): KitAction =>
-  msg.kind === 'query' ? 'read' : msg.op
+  msg.kind === 'query' ? 'read' : msg.op === 'updateWhere' ? 'update' : msg.op
 
 export function createKitHandlers<TData extends RowData>(
   options: KitHandlerOptions<TData>,
@@ -240,17 +252,17 @@ export function createKitHandlers<TData extends RowData>(
     }
 
     // Validate create / update payloads BEFORE the source. 422 on field errors.
-    if (validate && msg.kind === 'mutate' && (msg.op === 'create' || msg.op === 'update')) {
+    if (validate && msg.kind === 'mutate' && msg.op !== 'delete') {
       const values = (msg.op === 'create' ? msg.input : msg.patch) as Partial<TData>
       let errors: KitFieldErrors | null | undefined
       if (validate === true) {
         const all = await validateAll(options.schema, values as Record<string, unknown>)
         // On update, only the supplied fields are validated (a patch omits the rest).
-        errors = msg.op === 'update'
+        errors = msg.op !== 'create'
           ? Object.fromEntries(Object.keys(values).filter((k) => all[k]).map((k) => [k, all[k]!]))
           : all
       } else {
-        errors = await validate({ action: msg.op, values, event: { request, locals: event?.locals } })
+        errors = await validate({ action: msg.op === 'create' ? 'create' : 'update', values, event: { request, locals: event?.locals } })
       }
       if (errors && Object.keys(errors).length) {
         return jsonResponse({ error: 'validation failed', fieldErrors: errors }, 422)
@@ -347,6 +359,26 @@ export function createKitHandlers<TData extends RowData>(
           if (hooks?.afterUpdate) await hooks.afterUpdate({ id: msg.id, row, event: evt })
           await fireAudit({ action: 'update', id: msg.id, values: patch, result: row, event: evt })
           return jsonResponse(row)
+        }
+        if (msg.op === 'updateWhere') {
+          if (!source.updateWhere) return jsonResponse({ error: 'updateWhere not supported' }, 405)
+          // The scope narrows the rule the same way it narrows a query, and
+          // the patch cannot move rows out of it.
+          let filterModel = msg.filterModel
+          let patch = msg.patch
+          if (activeScope) {
+            filterModel = {
+              ...filterModel,
+              columns: {
+                ...(filterModel.columns ?? {}),
+                [activeScope.field]: { operator: 'equals' as const, value: String(activeScope.value) },
+              },
+            }
+            patch = { ...patch, [activeScope.field]: activeScope.value } as Partial<TData>
+          }
+          const count = await source.updateWhere(filterModel, patch, msg.selection)
+          await fireAudit({ action: 'update', id: null, values: patch, event: evt })
+          return jsonResponse({ count })
         }
         if (msg.op === 'delete') {
           if (!source.deleteRow) return jsonResponse({ error: 'delete not supported' }, 405)

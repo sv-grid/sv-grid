@@ -26,6 +26,7 @@
     tableFeatures,
     rowSortingFeature,
     columnFilteringFeature,
+    renderComponent,
     renderSnippet,
     portalToBody,
     popIn,
@@ -35,7 +36,10 @@
     type ColumnDef,
     type ChartType,
     type MenuItem,
+    type ServerAggregation,
   } from '@svgrid/grid'
+  import SvGroupCell from './server/SvGroupCell.svelte'
+  import { serverGroupText, type ServerRowModel, type ServerRowModelGridRow } from './server/server-row-model'
   import { createPivotModel, filterCollapsedPivotRows, type PivotRow, type PivotAggregatorId } from './pivot'
   import { pivotToChartSpec } from './pivot-chart'
   import {
@@ -44,8 +48,8 @@
   } from './pivot-designer'
 
   type Props = {
-    /** Flat input rows. */
-    data: T[]
+    /** Flat input rows. Not read in server mode. */
+    data?: T[]
     /** All fields the user can pick from the rail. */
     fields: PivotField<T>[]
     /** The current pivot layout. Bindable so the consumer can persist it. */
@@ -87,7 +91,8 @@
       layout: PivotLayout,
     ) => ColumnDef<typeof features, PivotRow>[]
     /** Click handler forwarded to the embedded SvGrid - typically used
-     *  to drive a drill-through side panel. */
+     *  to drive a drill-through side panel. In server mode `row` is the
+     *  model's grid row (its `__group` says which group or leaf it is). */
     onCellClick?: (ctx: { columnId: string; row: PivotRow; value: unknown }) => void
     /** Offer a Table <-> Chart view toggle (same layout as a live chart). Default true. */
     chartable?: boolean
@@ -149,9 +154,29 @@
      * narrow the source rows (they drive `layout.filters`). Default false.
      */
     toolTabs?: boolean
+
+    // ---- Server mode ----------------------------------------------------
+    /**
+     * A `createServerRowModel` controller. The designer then drives it
+     * instead of pivoting in the browser - Rows become `groupBy`, Columns
+     * `pivotBy`, Values `aggregations` - and the embedded grid mounts it
+     * through `rowModel`, showing the columns the backend's
+     * `pivotResultFields` describe. `data` is not read. The Filters well,
+     * the subtotal switches and the chart view are off: filters belong to
+     * the grid's own filter UI, footers and totals to the model's options.
+     */
+    server?: ServerRowModel<T>
+    /** The group column the designer adds in server mode. */
+    groupColumn?: { header?: string; width?: number; leafField?: string }
+    /**
+     * `'immediate'` (default) sends every drag to `onLayoutChange` and the
+     * server. `'deferred'` collects edits and shows Apply / Cancel, so one
+     * slice-and-dice session is one request.
+     */
+    applyMode?: 'immediate' | 'deferred'
   }
   let {
-    data,
+    data = [],
     fields,
     layout = $bindable<PivotLayout>(defaultLayoutFor([])),
     onLayoutChange,
@@ -181,7 +206,26 @@
     hiddenFields = $bindable<string[]>([]),
     onHiddenFieldsChange,
     toolTabs = false,
+    server,
+    groupColumn,
+    applyMode = 'immediate',
   }: Props = $props()
+
+  // ---- Deferred apply -------------------------------------------------
+  // `layout` is what the wells show; `committed` is what the pivot (or the
+  // server) runs. They differ only in deferred mode, between an edit and
+  // Apply.
+  let committed = $state<PivotLayout>(layout)
+  const deferred = $derived(applyMode === 'deferred')
+  const applied = $derived(deferred ? committed : layout)
+  const dirty = $derived(deferred && JSON.stringify(layout) !== JSON.stringify(committed))
+  function applyLayout() {
+    committed = layout
+    onLayoutChange?.(layout)
+  }
+  function cancelLayout() {
+    layout = committed
+  }
 
   // ---- Columns / Filters tab rail ----------------------------------
   let activeTab = $state<'columns' | 'filters'>('columns')
@@ -224,7 +268,7 @@
     return () => window.removeEventListener('mousedown', on)
   })
 
-  const showPivotToggle = $derived(!!flatColumns)
+  const showPivotToggle = $derived(!!flatColumns || !!server)
   function setPivotMode(on: boolean) {
     pivotMode = on
     onPivotModeChange?.(on)
@@ -236,10 +280,12 @@
   $effect.pre(() => {
     if (!layout || (!layout.rows.length && !layout.cols.length && !layout.values.length && !layout.filters.length)) {
       layout = defaultLayoutFor(fields)
+      committed = layout
     }
   })
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
+  const filtersWell = $derived(showFiltersWell && !server)
   const uid = `pvd-${Math.random().toString(36).slice(2, 8)}`
 
   // Lookup helpers -----------------------------------------------------
@@ -331,6 +377,7 @@
   // ---- Mutation helpers ---------------------------------------------
   function emit(next: PivotLayout) {
     layout = next
+    if (deferred) return
     onLayoutChange?.(next)
   }
   function defaultWellFor(field: PivotField<T>): Well {
@@ -484,9 +531,9 @@
   // The pivot model itself has no filtering, but the well clearly should:
   // a Filters chip with `allowed` restricts which rows reach the model.
   const filteredData = $derived.by(() => {
-    if (!layout.filters.length) return data
+    if (!applied.filters.length) return data
     return data.filter((row) => {
-      for (const f of layout.filters) {
+      for (const f of applied.filters) {
         if (f.allowed == null) continue
         const v = row[f.field]
         if (!f.allowed.includes(String(v))) return false
@@ -499,24 +546,91 @@
   // Whenever the layout or data changes, re-run the pivot. Empty layouts
   // are tolerated: the grid will show a friendly empty state.
   const pivot = $derived.by(() => {
-    if (!layout.values.length && !layout.rows.length && !layout.cols.length) return null
-    if (!layout.values.length) return null
+    if (server) return null
+    if (!applied.values.length && !applied.rows.length && !applied.cols.length) return null
+    if (!applied.values.length) return null
     return createPivotModel(filteredData, {
-      rows: layout.rows as Array<keyof T & string>,
-      cols: layout.cols as Array<keyof T & string>,
-      values: layout.values.map((v) => ({
+      rows: applied.rows as Array<keyof T & string>,
+      cols: applied.cols as Array<keyof T & string>,
+      values: applied.values.map((v) => ({
         field: v.field as keyof T & string,
         agg: v.agg,
         label: v.label,
         format: v.format,
       })),
-      grandTotalRow: !layout.hideGrandTotals,
-      grandTotalCol: !layout.hideGrandTotals,
-      rowSubtotals: !layout.hideSubtotals,
+      grandTotalRow: !applied.hideGrandTotals,
+      grandTotalCol: !applied.hideGrandTotals,
+      rowSubtotals: !applied.hideSubtotals,
     })
   })
   $effect(() => {
     if (pivot) onPivot?.(pivot.rows, pivot.columns)
+  })
+
+  // ---- Server mode ----------------------------------------------------
+  // The applied layout drives the model in one call, so a designer edit is
+  // one reload. Aggregators the contract has no word for are left out.
+  const SERVER_FN: Partial<Record<PivotAggregatorId, ServerAggregation['fn']>> = {
+    sum: 'sum',
+    avg: 'avg',
+    min: 'min',
+    max: 'max',
+    count: 'count',
+  }
+  $effect(() => {
+    if (!server) return
+    const l = applied
+    server.setLayout({
+      groupBy: [...l.rows],
+      pivotBy: [...l.cols],
+      pivotMode: pivotMode && l.cols.length > 0,
+      aggregations: l.values.flatMap((v) => {
+        const fn = SERVER_FN[v.agg]
+        return fn ? [{ col: v.field, fn }] : []
+      }),
+    })
+  })
+  // The model is plain; a version bump re-reads its pivot columns.
+  let serverVersion = $state(0)
+  $effect(() => {
+    if (!server) return
+    return server.subscribe(() => {
+      serverVersion += 1
+    })
+  })
+  type ServerCol = ColumnDef<typeof features, ServerRowModelGridRow<T>>
+  const serverGroupColumn = $derived.by((): ServerCol | null => {
+    if (!server) return null
+    const model = server
+    return {
+      id: 'sv-group',
+      header: groupColumn?.header ?? 'Group',
+      width: groupColumn?.width ?? 260,
+      sortable: false,
+      filterable: false,
+      fieldFn: (row) => serverGroupText(row, groupColumn?.leafField as (keyof T & string) | undefined),
+      cell: (ctx) =>
+        renderComponent(SvGroupCell, {
+          row: ctx.row.original,
+          onToggle: () => model.group?.onToggle(ctx.row.original),
+          leafField: groupColumn?.leafField,
+        }),
+    } as ServerCol
+  })
+  // Pivot off: the group column (when grouping) and the app's own columns.
+  const serverColumns = $derived.by((): ServerCol[] => {
+    const own = (flatColumns ?? []) as unknown as ServerCol[]
+    return applied.rows.length && serverGroupColumn ? [serverGroupColumn, ...own] : own
+  })
+  // Pivot on: the group column, then the columns the model built from the
+  // backend's `pivotResultFields`. Undefined before the first pivoted
+  // response, so the grid keeps `serverColumns` until then.
+  const serverPivotColumns = $derived.by((): ServerCol[] | undefined => {
+    void serverVersion
+    if (!server) return undefined
+    const cols = server.pivotResultColumns as ServerCol[] | null
+    if (!cols) return undefined
+    return serverGroupColumn ? [serverGroupColumn, ...cols] : cols
   })
 
   // ---- Table <-> Chart view (the same layout as a live pivot chart) ----
@@ -832,13 +946,21 @@
           {/if}
         </div>
       {/if}
-      <label class="pvd-toggle">
-        <input type="checkbox" checked={!layout.hideSubtotals} onchange={toggleHideSubtotals} /> Subtotals
-      </label>
-      <label class="pvd-toggle">
-        <input type="checkbox" checked={!layout.hideGrandTotals} onchange={toggleHideGrandTotals} /> Grand totals
-      </label>
-      {#if chartable}
+      {#if !server}
+        <label class="pvd-toggle">
+          <input type="checkbox" checked={!layout.hideSubtotals} onchange={toggleHideSubtotals} /> Subtotals
+        </label>
+        <label class="pvd-toggle">
+          <input type="checkbox" checked={!layout.hideGrandTotals} onchange={toggleHideGrandTotals} /> Grand totals
+        </label>
+      {/if}
+      {#if deferred}
+        <div class="pvd-apply" role="group" aria-label="Apply layout">
+          <button type="button" class="pvd-btn pvd-btn-primary" disabled={!dirty} onclick={applyLayout}>Apply</button>
+          <button type="button" class="pvd-btn" disabled={!dirty} onclick={cancelLayout}>Cancel</button>
+        </div>
+      {/if}
+      {#if chartable && !server}
         <div class="pvd-viewswitch" role="group" aria-label="View">
           <button type="button" class="pvd-view-btn" class:is-active={view === 'table'} onclick={() => (view = 'table')}>{@render ic('table')} Table</button>
           <button type="button" class="pvd-view-btn" class:is-active={view === 'chart'} onclick={() => (view = 'chart')}>{@render ic('chart')} Chart</button>
@@ -903,7 +1025,7 @@
       {/if}
       <div class="pvd-main">
         {#if showPivotToggle}<div class="pvd-topbar">{@render pivotToggle()}</div>{/if}
-        <div class="pvd-wells" class:two={!showFiltersWell}>{@render wellsBlock()}</div>
+        <div class="pvd-wells" class:two={!filtersWell}>{@render wellsBlock()}</div>
         {@render gridBlock()}
       </div>
     {/if}
@@ -1097,8 +1219,8 @@
 
 {#snippet wellsBlock()}
   <!-- Filters -->
-  {#if showFiltersWell}
-    <div class="pvd-well"
+  {#if filtersWell}
+    <div class="pvd-well" data-well="filters"
       class:drag-over={dragOver === 'filters'}
       ondragover={(e) => onDragOver(e, 'filters')}
       ondragleave={onDragLeave}
@@ -1145,7 +1267,7 @@
   {/if}
 
   <!-- Columns -->
-  <div class="pvd-well"
+  <div class="pvd-well" data-well="cols"
     class:drag-over={dragOver === 'cols'}
     ondragover={(e) => onDragOver(e, 'cols')}
     ondragleave={onDragLeave}
@@ -1166,7 +1288,7 @@
   </div>
 
   <!-- Rows -->
-  <div class="pvd-well"
+  <div class="pvd-well" data-well="rows"
     class:drag-over={dragOver === 'rows'}
     ondragover={(e) => onDragOver(e, 'rows')}
     ondragleave={onDragLeave}
@@ -1187,7 +1309,7 @@
   </div>
 
   <!-- Values -->
-  <div class="pvd-well"
+  <div class="pvd-well" data-well="values"
     class:drag-over={dragOver === 'values'}
     ondragover={(e) => onDragOver(e, 'values')}
     ondragleave={onDragLeave}
@@ -1230,7 +1352,7 @@
 {#snippet columnsPanel()}
   {#if showPivotToggle}{@render pivotToggle()}{/if}
   {#if showFieldList}<div class="pvd-panel-rail">{@render railBlock()}</div>{/if}
-  <div class="pvd-wells pvd-wells--vertical" class:two={!showFiltersWell}>{@render wellsBlock()}</div>
+  <div class="pvd-wells pvd-wells--vertical" class:two={!filtersWell}>{@render wellsBlock()}</div>
 {/snippet}
 
 <!-- The Filters tab body: AG-style set filters. Each active column filter is a
@@ -1297,7 +1419,24 @@
 {#snippet gridBlock()}
   {#if embedGrid}
     <div class="pvd-grid" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`} oncontextmenu={(e) => openCtx(e, gridMenu())}>
-      {#if showPivotToggle && !pivotMode}
+      {#if server}
+        <SvGrid
+          rowModel={server}
+          columns={serverColumns}
+          pivotResultColumns={pivotMode ? serverPivotColumns : undefined}
+          features={features}
+          sortable
+          selectionMode="none"
+          rowHeight={32}
+          containerHeight="100%"
+          fitColumns={gridFitColumns}
+          columnVirtualization={columnVirtualization}
+          enableRowSummaries={false}
+          onCellClick={onCellClick
+            ? (e) => onCellClick({ columnId: e.columnId, row: e.row as unknown as PivotRow, value: e.value })
+            : undefined}
+        />
+      {:else if showPivotToggle && !pivotMode}
         <SvGrid
           data={filteredData}
           columns={visibleFlatColumns!}
@@ -1426,6 +1565,8 @@
     border-color: var(--sg-accent, #2563eb);
   }
   .pvd-btn-primary:hover { opacity: 0.9; }
+  .pvd-btn:disabled { opacity: 0.5; cursor: default; }
+  .pvd-apply { display: inline-flex; gap: 6px; }
   .pvd-toggle {
     display: inline-flex;
     align-items: center;

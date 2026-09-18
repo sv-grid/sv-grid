@@ -134,6 +134,9 @@ export function installEnterprise<
   // grid interprets a key itself only when nothing claims it, so a free grid
   // is unaffected.
   enableSheet()
+  // Raise the soft gate for the server-side row model. No registry to fill -
+  // the model hands the grid ordinary rows - so this only nudges when unlicensed.
+  enableServerRowModel()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

@@ -237,14 +237,26 @@
       }
     },
     {
-      "feature": "Server-side data",
+      "feature": "Server-side data, flat (sort, filter, paging, infinite scroll)",
       "svgrid": {
         "status": "yes",
-        "note": "server-side row model, cursor, GraphQL, websocket"
+        "note": "createServerDataSource: page or infinite block scroll, cursor, GraphQL, websocket"
       },
       "competitor": {
         "status": "partial",
         "note": "RestDataProvider and dynamic loading while scrolling",
+        "source": "svar-overview"
+      }
+    },
+    {
+      "feature": "Server-side row model (lazy grouping, tree, pivot, transactions, select-all across unloaded rows)",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list",
         "source": "svar-overview"
       }
     },

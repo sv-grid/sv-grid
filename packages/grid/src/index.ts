@@ -754,9 +754,11 @@ export {
 export {
   createServerDataSource,
   type ServerDataSource,
+  type ServerSelectionRule,
   type ServerRequest,
   type ServerResult,
   type ServerController,
+  type ServerControllerOptions,
   type ServerState,
   type ServerSortModel,
   type ServerFilterModel,
@@ -766,19 +768,26 @@ export {
   type ServerMoreRow,
   type ServerFooterRow,
   type ServerSkeletonRow,
+  type ServerGrandTotalRow,
+  type ServerPlaceholderRow,
   type ServerDisplayRow,
 } from './server-data-source'
 export {
-  createServerGroupModel,
-  serverGroupRows,
-  serverGroupNav,
-  type ServerGroupController,
-  type ServerGroupControllerOptions,
-  type ServerGroupState,
-  type ServerGroupGridRow,
-} from './server-group-model'
-export { default as SvGroupCell } from './SvGroupCell.svelte'
-export { default as SvRowGroupPanel } from './SvRowGroupPanel.svelte'
+  createBlockCache,
+  createRowPlaceholder,
+  rowPlaceholderState,
+  type BlockCache,
+  type BlockCacheOptions,
+  type BlockCacheState,
+  type BlockFetchResult,
+  type BlockState,
+} from './server-block-cache'
+export {
+  toServerFilterColumns,
+  type GridRowModel,
+  type GridFilterState,
+  type GridRowModelSort,
+} from './row-model'
 export {
   createNamedViews,
   memoryViews,

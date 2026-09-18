@@ -1,4 +1,4 @@
-# Server grouping
+# Server grouping - Enterprise
 
 Grouping a hundred thousand rows in the browser means shipping all hundred
 thousand rows first. Server grouping flips that: the backend runs the
@@ -10,9 +10,9 @@ table.
 This is **first-class in SvGrid**: grouping flows through the **same
 `ServerDataSource.getRows` contract** as paging, sorting, and filtering.
 The request carries `groupBy` (the columns grouped on) and `groupKeys` (the path
-of the group being expanded); `createServerGroupModel` owns the group tree -
-lazy fetch per level, caching, race-safety, expand/collapse - and hands you a
-flat list of display rows to render.
+of the group being expanded); `createServerRowModel` owns the group tree -
+a block cache per level, lazy fetch on expand, race-safety, refresh and retry
+per route - and the grid mounts it through one `rowModel` prop.
 
 <img src="/docs-media/server-grouping.svg" alt="Server grouping flow: the backend runs GROUP BY and returns one pre-aggregated row per group instead of the raw table; the grid renders those group rows; expanding one group drills into the next level for that group only." width="100%" />
 
@@ -23,13 +23,17 @@ flat list of display rows to render.
 One `getRows`. When `groupKeys.length < groupBy.length` the server returns
 **group rows** (one per distinct key at that level, carrying the group key and
 its aggregates); when they are equal it returns the **leaf rows** under that
-path.
+path. Every request carries `startRow` / `endRow` as well: a level loads one
+block at a time, group rows and leaves alike.
 
-The examples on this page import from `@svgrid/grid`:
+The row model and its chrome ship in `@svgrid/enterprise`; the datasource
+contract they run on, and the grid itself, are free in `@svgrid/grid`. The
+examples on this page import from both:
 
 ```svelte {preamble}
 <script lang="ts">
-  import { SvGrid, SvRowGroupPanel } from '@svgrid/grid'
+  import { SvGrid } from '@svgrid/grid'
+  import { SvRowGroupPanel } from '@svgrid/enterprise'
 </script>
 ```
 
@@ -39,15 +43,21 @@ async function getRows(req) {
   if (level < req.groupBy.length) {
     // GROUP row level: GROUP BY the column at this level, within groupKeys.
     const col = req.groupBy[level]                       // e.g. 'country', then 'city'
-    // SELECT country AS key, SUM(amount) amount, COUNT(*) n
+    // SELECT country, SUM(amount) AS amount, COUNT(*) AS childCount
     //   FROM sales WHERE <groupKeys path> GROUP BY country
-    return { rows: groupRows, rowCount: groupRows.length }
+    //   ORDER BY country LIMIT <endRow - startRow> OFFSET <startRow>
+    return { rows: groupRows, rowCount: distinctGroups }
   }
   // LEAF level: the raw rows under the fully-specified path.
-  // SELECT * FROM sales WHERE country = $1 AND city = $2 LIMIT ...
+  // SELECT * FROM sales WHERE country = $1 AND city = $2 LIMIT ... OFFSET ...
   return { rows: leafRows, rowCount: total }
 }
 ```
+
+A group row is a plain object: the group column's value under that column's
+field, each aggregate under its column (`amount: 12345` for `sum(amount)`),
+and optionally `childCount`, the number of rows the next level holds. The
+model reads them straight off the row.
 
 ## You probably do not have to write that
 
@@ -74,7 +84,7 @@ const rows = await db.query(
 )
 ```
 
-Three details the plan handles that are easy to get wrong by hand:
+Four details the plan handles that are easy to get wrong by hand:
 
 - **The path becomes ordinary predicates.** `groupKeys` arrives as equality
   filters in `plan.where`, so your backend only ever handles "filter, then
@@ -83,7 +93,10 @@ Three details the plan handles that are easy to get wrong by hand:
   `COUNT(DISTINCT col)` when grouping and `COUNT(*)` when not, because the grid
   sizes its scrollbar from the number of *groups* at a group level.
 - **Aggregates are aliased back to their source column.** `SUM("amount") AS
-  "amount"`, because that is the key the grid reads from the group row.
+  "amount"`, because that is the key the grid reads from the group row. The
+  grouped SELECT also carries `COUNT(*) AS "childCount"`.
+- **Groups have an order.** A grouped level orders by the key unless the
+  request sorts by the key or an aggregate, so paging over groups is stable.
 
 Only fields declared on the `EntitySchema` reach the plan, so a client cannot
 group by or aggregate an identifier you did not declare.
@@ -92,125 +105,202 @@ For REST, `createRestDataSource` sends `?groupBy=region&aggregate=sum:amount`
 plus the path as ordinary filter params. For Postgres via PostgREST,
 `createSupabaseDataSource` uses aggregate selects (requires PostgREST 12+ with
 aggregates enabled). `createInMemoryDataSource` implements the whole contract
-in memory and is the reference to test your own backend against.
+in memory and is the reference to test your own backend against; its request
+matrix is a test every shipped backend runs.
 
-Each group row is a plain object carrying the group column's value (under that
-column's field) and the aggregate values (under each aggregation column) - the
-controller reads them straight off the row.
-
-![The display-row pipeline: getRows with groupBy and groupKeys feeds the controller's cached group tree, flatten produces one displayRows list, and each row is one of five kinds - group, leaf, Load more, Total, or skeleton - that SvGroupCell renders.](/docs-media/server-group-pipeline.svg)
+![The display-row pipeline: getRows with groupBy and groupKeys feeds the model's cached group tree, flatten produces one displayRows list, and each row is one of five kinds - group, leaf, Load more, Total, or skeleton - that SvGroupCell renders.](/docs-media/server-group-pipeline.svg)
 
 ## Wiring the model
 
 ```ts
-import { createServerGroupModel, type ServerGroupState } from '@svgrid/grid'
+import { createServerRowModel, type ServerRowModelState } from '@svgrid/enterprise'
 
-let view = $state<ServerGroupState<Sale>>()
-const ctl = createServerGroupModel<Sale>(source, {
+let view = $state<ServerRowModelState<Sale>>()
+const ctl = createServerRowModel<Sale>(source, {
   groupBy: ['country', 'city'],                 // group two levels deep
   aggregations: [{ col: 'amount', fn: 'sum' }], // roll up per group
+  childCount: (row) => row.childCount,          // the badge beside the key
   onChange: (s) => (view = s),
 })
 ctl.refresh() // load the top level
 ```
 
 `view.displayRows` is the flattened tree: top-level groups, with each expanded
-group's children spliced in beneath it. Every group row carries `level` (for
-indentation), `expanded`, `loading`, `key`, and `aggregates`.
+group's children spliced in beneath it, and placeholder rows where a block is
+still in flight. Every group row carries `level` (for indentation),
+`expanded`, `loading`, `key`, `childCount` and `aggregates`.
 
 ## Rendering the display rows
 
-Three built-ins do the work, so you write **no cell markup**. `serverGroupRows`
-maps the display rows to grid rows (spreading each row's data, so a value column
-shows the subtotal on a group row and the cell value on a leaf); the shipped
-`SvGroupCell` draws the expander + indentation; and `serverGroupNav(ctl)` is one
-handler that drives both the cell clicks and the grid's keyboard:
+Hand the model to the grid and add one column for the group cell. The model
+supplies the rows, the loading flag, the sort and filter hooks, the visible
+range (so each level fetches the blocks on screen), the treegrid keyboard and
+the placeholder rows; the shipped `SvGroupCell` draws the expander,
+indentation, the child count, and a spinner in the expander while the
+level's block is in flight:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, serverGroupRows, serverGroupNav, SvGroupCell, renderComponent } from '@svgrid/grid'
+  import { SvGrid, renderComponent } from '@svgrid/grid'
+  import { SvGroupCell, serverGroupText } from '@svgrid/enterprise'
 
-  const nav = serverGroupNav(ctl)
-  const rows = $derived(serverGroupRows(view))
   const columns = [
-    { field: 'country', header: 'Group', width: 280,
+    { id: 'group', header: 'Group', width: 280, sortable: false, filterable: false,
+      fieldFn: (row) => serverGroupText(row, 'name'),
       cell: (ctx) => renderComponent(SvGroupCell, {
-        row: ctx.row.original, onToggle: nav.onToggle, leafField: 'name',
+        row: ctx.row.original, onToggle: () => ctl.group.onToggle(ctx.row.original), leafField: 'name',
       }) },
     { field: 'amount', header: 'Amount', align: 'right',
       format: { type: 'number', options: { style: 'currency', currency: 'USD' } } },
   ]
 </script>
 
-<SvGrid data={rows} {columns} serverGroup={nav} />
+<SvGrid rowModel={ctl} {columns} />
 ```
 
-`SvGroupCell` renders the group key with an expander (indented by depth) for group
-rows and the `leafField` value for leaves. Want full control? Every grid row
-carries a `__group` marker (the `ServerDisplayRow`), so you can skip `SvGroupCell`
+A value column shows the subtotal on a group row and the cell value on a leaf,
+because each grid row spreads its data. The `fieldFn` is the text behind the
+cell: a group's key, `Total`, `Grand total`, a leaf's `leafField`. Copy,
+export and the clipboard read it, and so does a grand total pinned with
+`grandTotalRow: 'pinnedBottom'`, which the grid formats from the accessor
+rather than through the cell renderer. Want full control? Every grid row
+carries a `__group` marker (the display row), so you can skip `SvGroupCell`
 and render your own cell from it.
 
 ## Keyboard and accessibility
 
-`serverGroup={nav}` makes the grid handle tree navigation itself - built in, no
-app key handling:
+The model's `group` accessor set (`rowModel` wires it as `serverGroup`) makes
+the grid handle tree navigation itself - no app key handling:
 
 - **ArrowRight** expands the focused group row; **ArrowLeft** collapses it.
 - The grid takes the `treegrid` role and sets `aria-level` + `aria-expanded` on
   each row, so screen readers announce the depth and expanded state.
+- Group rows do not take edits, whatever the column says; a leaf does.
 
 It works for [tree mode](./server-tree-data.md) the same way.
 
-## Load more within a group
+## Blocks, per level
 
-By default the controller fetches up to `pageSize` (200) children per group in one
-call. When a group has more, `serverGroupRows` emits a **load more** row at the
-end of its loaded children, which `SvGroupCell` renders as a "Load N more" button;
-clicking it (or calling `ctl.loadMoreChildren(path)`) appends the next block. Set
-`pageSize` to control the block size:
+Every level - the root and each expanded group - is its own block cache. The
+grid reports what is on screen and the model asks each level for the blocks
+under the viewport, `blockSize` rows at a time, keeps at most
+`maxBlocksInCache` loaded blocks per level, runs at most
+`maxConcurrentRequests` requests across all levels, and waits
+`blockLoadDebounceMs` for a scroll to settle. A level shows `skeletonRows`
+placeholders before its first block lands, so an expand never opens onto
+nothing.
+
+`levelParams(level, route)` tunes one level: a different `blockSize` or
+`maxBlocksInCache`, `infinite: false` to load a level completely as soon as it
+opens (which also allows sorting it in the browser, see `clientSideSort`), or
+`loadMore: true` to load one block per click behind a "Load N more" row, or
+`initialRowCount` to claim a level's size before its first block lands - at
+the root of flat data that makes `api.scrollToRow(900000)` work before
+anything has loaded, with placeholders under the viewport and the block
+beneath them the one that loads:
 
 ```ts
-createServerGroupModel(source, { groupBy: ['country'], pageSize: 50, onChange })
+createServerRowModel(source, {
+  groupBy: ['region', 'country'],
+  blockSize: 100,
+  levelParams: (level) => (level === 2 ? { loadMore: true, blockSize: 50 } : {}),
+})
 ```
 
-While a group's first block is loading, `serverGroupRows` emits placeholder
-**skeleton** rows (count via `skeletonRows`, default 3) that `SvGroupCell`
-renders as a shimmer, so an expand never shows an empty gap.
+## Refresh, purge, retry
 
-## Subtotal footers
+| Method | Does |
+| ------ | ---- |
+| `refresh({ route, purge })` | Re-fetch a level in place (`route: []` is the root), keeping what is open; `purge: true` drops that subtree's cache first. |
+| `retryLoads()` | Re-fetch every failed block. The grid draws a failed block as a tinted band with one full-width message and a Retry button. |
+| `expandAll({ includeUnloaded })` / `collapseAll()` | Open every loaded group, and with `includeUnloaded` every group that arrives later, until the next collapse. |
+| `isGroupOpenByDefault(route, row)` | Open a group as soon as it arrives. |
+| `getLevelState(route)` / `getCacheState()` | Where each level stands: loaded blocks, failed blocks, row count. `debug: true` logs block lifecycle. |
+| `onStoreRefreshed`, `onGroupOpened`, `onLoadError` | Events for the app's own chrome. |
+
+## What re-requests, and what does not
+
+Changing a **group column** (add, remove, reorder) or an **aggregated column**
+reloads the tree: the rows are different rows. Sorting follows the same logic
+per level: a sort on a plain column re-fetches the leaf levels only, a sort on
+a group column re-fetches that column's level (the children of a group keep
+their own order), a sort on an aggregated column re-fetches everything.
+`sortAllLevels: true` makes every sort a full
+reload; `clientSideSort: true` sorts a fully loaded level in the browser with
+no request at all.
+
+A **filter** purges everything by default, as a filtered group may have
+different children and different totals. `onlyRefreshFilteredGroups: true`
+re-fetches only the levels whose column changed, and accepts stale counts on
+the others as the trade.
+
+## Subtotal footers and the grand total
 
 Turn on `groupFooters` and each expanded group gets a **Total** row after its
-children, carrying the group's aggregates again so the value columns show the
-subtotal under the detail:
+children, carrying the group's aggregates again. `grandTotalRow` asks the
+server for a total across the whole (filtered) result on the first root
+request - `ServerRequest.needsGrandTotal` in, `ServerResult.grandTotal` out -
+and shows it at the `'top'` or `'bottom'` of the list, or pinned with
+`'pinnedTop'` / `'pinnedBottom'`. The row has the fixed id `sv-grand-total`
+and each footer `sv-group-total:<route>`, so [transactions](./server-transactions.md)
+can address them.
 
 ```ts
-createServerGroupModel(source, { groupBy: ['region', 'country'], aggregations, groupFooters: true, onChange })
+createServerRowModel(source, { groupBy: ['region', 'country'], aggregations, groupFooters: true, grandTotalRow: 'pinnedBottom' })
+```
+
+## Paging the tree
+
+`pagination` pages the top level instead of scrolling it: a page is
+`pageSize` top-level rows, each shown with whatever is open beneath it, or
+with `paginateChildRows` a page of the flattened tree, children counted.
+Blocks stay independent of pages. The grid's footer pager drives it through
+`rowModel` (`pageable` on the grid); `pageSizes` fills the page-size selector
+and `autoPageSize` fits the page to the grid's height.
+
+```ts
+createServerRowModel(source, {
+  groupBy: ['region', 'country'],
+  pagination: { pageSize: 25, pageSizes: [10, 25, 50], paginateChildRows: true },
+})
 ```
 
 ## A row-group panel (drag to group)
 
 `SvRowGroupPanel` is a "group by" bar: it shows the current group columns as
 chips you can remove or drag to reorder, plus a menu to add one, and it accepts a
-column drop (`text/sv-column`). Wire its `onChange` to `setGroupBy`:
+column drop (`text/sv-column`). Wire its `onChange` to `setGroupBy`. With
+`applyMode="deferred"` it collects edits behind Apply / Cancel, so one
+session of changes is one reload rather than one per chip:
 
 ```svelte
 <script lang="ts">
-  import { SvRowGroupPanel } from '@svgrid/grid'
+  import { SvRowGroupPanel } from '@svgrid/enterprise'
   const groupCols = [{ id: 'region', label: 'Region' }, { id: 'country', label: 'Country' }]
 </script>
 
-<SvRowGroupPanel columns={groupCols} groupBy={view.groupBy} onChange={(g) => ctl.setGroupBy(g)} />
+<SvRowGroupPanel columns={groupCols} groupBy={view.groupBy} onChange={(g) => ctl.setGroupBy(g)} applyMode="deferred" />
 ```
+
+`setLayout({ groupBy, aggregations, pivotBy, pivotMode })` changes several of
+those at once with a single reload; it is what the pivot designer sends.
 
 ## Multi-level grouping is automatic
 
-Set `groupBy: ['region', 'industry', 'quarter']` and the controller fetches each
+Set `groupBy: ['region', 'industry', 'quarter']` and the model fetches each
 level on demand: the top level returns regions, expanding a region fetches its
 industries, expanding an industry fetches its quarters, and expanding a quarter
 returns the raw rows. You never configure the levels - each expand is just
-another `getRows` with a longer `groupKeys`. Change the grouping at runtime with
-`ctl.setGroupBy([...])`; sorting and filtering re-fetch the visible tree via
-`ctl.setSort` / `ctl.setFilter`.
+another `getRows` with a longer `groupKeys`. `ServerRequest.parentRow` carries
+the row being expanded, for a backend keyed off it, and `context` on the model
+rides along on every request.
+
+## Delivering rows without a request
+
+`applyRowData({ route, rows, rowCount, startRow })` fills a level's store
+directly, bypassing the datasource: a tree payload that ships children with
+their parent, or a socket that pushes a whole level. The blocks it fills are
+loaded blocks like any other.
 
 ## The win
 
@@ -218,16 +308,31 @@ For a 100,000-row sales table grouped by three dimensions, the top level returns
 a handful of group rows instead of 100,000 raw rows. The client groups nothing
 and holds almost nothing. Grouping 100k rows in JS runs in hundreds of
 milliseconds; asking the server for the pre-grouped result returns a few rows in
-tens of milliseconds, and the payload shrinks by orders of magnitude.
+tens of milliseconds, and the payload shrinks by orders of magnitude. The
+flagship demo runs the whole model over one million rows:
 
-## Without the controller (manual pattern)
+<div data-docs-demo="467-server-row-model-1m" data-height="640"></div>
+
+The options on this page, each with the request log to show what it
+costs - grand total positions, subtotal footers, open-by-default levels,
+expand-all over unloaded groups, refresh against purge, and the sort and
+filter rules:
+
+<div data-docs-demo="473-server-grouping-rules" data-height="620"></div>
+
+And the SQL a backend runs for each of these requests, per dialect, from
+`planQuery` and `planToSql`:
+
+<div data-docs-demo="472-server-sql-planner" data-height="600"></div>
+
+## Without the model (manual pattern)
 
 If your backend or UI needs something bespoke, you can still assemble grouping by
 hand: fetch pre-grouped rows, render them as ordinary rows, and expand each into
 a second `<SvGrid data={detailRows}>` or an [expandable detail row](../rows/master-detail.md)
 (`isDetailRow` + `renderDetailRow`), keeping the expanded group id and its lazily
 fetched detail rows in your own state. The [tree toggle pattern](../rows/tree-rows.md)
-is a third option for a single flat, indented list. `createServerGroupModel` is
+is a third option for a single flat, indented list. `createServerRowModel` is
 the batteries-included version of exactly this.
 
 <div data-docs-demo="114-server-grouping" data-height="480"></div>
@@ -288,8 +393,19 @@ grid does not need to know a group was computed elsewhere.
 />
 ```
 
+## The previous model
+
+`createServerGroupModel`, `serverGroupRows` and `serverGroupNav` - the
+block-append model with a "Load N more" button - still ship, unchanged, and
+are deprecated in favour of `createServerRowModel`. The new model does
+everything the old one did; `levelParams: { loadMore: true }` is the
+"Load N more" behaviour where you want to keep it.
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the datasource contract that grouping, paging, sort, and filter all share.
 - [Server tree data](./server-tree-data.md) - load-on-demand hierarchies (self-referential trees).
+- [Server pivot](./server-pivot.md) - pivot on the server, with the designer driving the model.
+- [Server transactions](./server-transactions.md) - add, update and remove rows in a loaded level without a request.
+- [Server selection](./server-selection.md) - select-all as a rule across rows the grid never loaded.
 - [Tree data](../rows/tree-rows.md) - the client-side flat-list + toggle pattern.

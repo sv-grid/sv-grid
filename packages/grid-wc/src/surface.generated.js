@@ -552,6 +552,30 @@ export const ELEMENT_PROPS = [
     "ts": "\"filtered\" | \"visible\" | \"all\""
   },
   {
+    "name": "rowPlaceholder",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(row: TData, rowIndex: number) => \"loading\" | \"failed\" | null"
+  },
+  {
+    "name": "rowModel",
+    "type": "Object",
+    "attribute": null,
+    "ts": "GridRowModel<TData>"
+  },
+  {
+    "name": "pivotResultColumns",
+    "type": "Array",
+    "attribute": null,
+    "ts": "Array<ColumnDef<TFeatures, TData>> | null"
+  },
+  {
+    "name": "rowSelectionModel",
+    "type": "Object",
+    "attribute": null,
+    "ts": "{ isSelected: (rowId: string, row: TData) => boolean; headerState: () => \"none\" | \"some\" | \"all\"; toggle: (rowId: string, row: TData, next: boolean) => void; toggleAll: (next: boolean) => void; selectedCount?: () => number | null; bulkUpdate?: (patch: Record<string, unknown>) => Promise<number>; }"
+  },
+  {
     "name": "isDetailRow",
     "type": "Object",
     "attribute": null,
@@ -798,6 +822,23 @@ export const ELEMENT_EVENTS = [
       "event"
     ],
     "detail": "{ scrollTop: number; scrollHeight: number; clientHeight: number; }"
+  },
+  {
+    "callback": "onVisibleRangeChange",
+    "event": "visiblerangechange",
+    "params": [
+      "range"
+    ],
+    "detail": "{ startIndex: number; endIndex: number; }"
+  },
+  {
+    "callback": "onRetryRow",
+    "event": "retryrow",
+    "params": [
+      "row",
+      "rowIndex"
+    ],
+    "detail": "{ row: Record<string, unknown>; rowIndex: number }"
   },
   {
     "callback": "onColumnOrderChange",

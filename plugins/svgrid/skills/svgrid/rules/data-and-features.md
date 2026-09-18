@@ -94,23 +94,51 @@ import { createServerDataSource, type ServerDataSource } from '@svgrid/grid'
 
 const source: ServerDataSource<Row> = {
   async getRows(req) {
-    // req carries paging + sortModel + filterModel
+    // req carries startRow / endRow + sortModel + filterModel
     const res = await fetch('/api/rows?' + new URLSearchParams({
-      page: String(req.page),
-      pageSize: String(req.pageSize),
+      start: String(req.startRow),
+      end: String(req.endRow),
       sort: JSON.stringify(req.sortModel),
       filter: JSON.stringify(req.filterModel),
     }))
     const { rows, total } = await res.json()
-    return { rows, total }
+    return { rows, rowCount: total } // rowCount = total AFTER filtering
   },
 }
+
+const ctl = createServerDataSource(source, { pageSize: 50 })          // pages, or
+const ctl = createServerDataSource(source, { mode: 'infinite' })     // one block-cached list
 ```
 
-Wire it via `createServerDataSource(source)` and pass to `<SvGrid>`; keep
-`pageable` on so the footer shows. The exact request/response shape is in
-the docs - fetch `llms-full.txt` or use the MCP server for the current
-contract.
+```svelte
+<SvGrid rowModel={ctl} {columns} sortable filterable pageable />
+```
+
+`rowModel={ctl}` wires the rows, the loading flag, external sort and
+filter, the pager (page mode) or the visible range and placeholder rows
+(infinite mode). Never also pass `data`: a prop written on the grid beats
+the model. The exact request/response shape is in the docs - fetch
+`llms-full.txt` or use the MCP server for the current contract.
+
+**Server-side grouping, tree data, pivot, transactions and select-all
+across unloaded rows are Enterprise**: `createServerRowModel` from
+`@svgrid/enterprise`, same contract, same `rowModel` prop, with
+`groupBy`, `groupKeys`, `aggregations` and `pivotBy` filled into the
+request. Not `createServerGroupModel` (deprecated) and not a hand-rolled
+tree over `data`.
+
+```svelte
+<script lang="ts">
+  import { createServerRowModel, SvGroupCell } from '@svgrid/enterprise'
+  const ctl = createServerRowModel(source, { groupBy: ['region', 'country'], aggregations: [{ col: 'amount', fn: 'sum' }] })
+  ctl.refresh()
+  const columns = [
+    { id: 'group', header: 'Group', cell: (ctx) => renderComponent(SvGroupCell, { row: ctx.row.original, onToggle: () => ctl.group.onToggle(ctx.row.original) }) },
+    { field: 'amount', header: 'Amount' },
+  ]
+</script>
+<SvGrid rowModel={ctl} {columns} />
+```
 
 ## Enterprise data helpers (only if installed)
 

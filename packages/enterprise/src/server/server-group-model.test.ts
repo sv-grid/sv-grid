@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createServerGroupModel } from './server-group-model'
-import type { ServerDataSource, ServerDisplayRow, ServerGroupRow } from './server-data-source'
+import type { ServerDataSource, ServerDisplayRow, ServerGroupRow } from '@svgrid/grid'
 
 type Row = { country: string; city: string; amount: number }
 

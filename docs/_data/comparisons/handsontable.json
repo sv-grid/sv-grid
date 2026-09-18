@@ -41,7 +41,7 @@
     "MIT core: no commercial licence, no licence key and no watermark in production.",
     "Svelte 5 native, with snippets for cells and runes for state, rather than a JavaScript core behind a framework wrapper.",
     "A headless engine under the component, so the same row models drive a plain table or a custom layout.",
-    "Row grouping with aggregation, master/detail, a server-side row model and integrated charts in the same MIT package.",
+    "Row grouping with aggregation, master/detail, flat server-side data and integrated charts in the same MIT package; grouping, tree, pivot and transactions on the server are in @svgrid/enterprise.",
     "In-grid AI helpers (natural-language filter, smart fill, summarise) free in @svgrid/grid, and @svgrid/mcp for assistants that write code against it."
   ],
   "competitorAdvantages": [
@@ -252,10 +252,22 @@
       }
     },
     {
-      "feature": "Server-side row model",
+      "feature": "Server-side data, flat (sort, filter, paging, infinite scroll)",
       "svgrid": {
         "status": "yes",
         "note": "MIT core"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not in the feature list; data is loaded by the app",
+        "source": "hot-home"
+      }
+    },
+    {
+      "feature": "Server-side row model (lazy grouping, tree, pivot, transactions, select-all across unloaded rows)",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
       },
       "competitor": {
         "status": "no",
@@ -346,7 +358,7 @@
     "You want a spreadsheet-like grid under MIT, with no licence key.",
     "You are on Svelte 5 and want a native component, not a wrapped JavaScript core.",
     "The built-in formula functions cover your sheet, or you are happy to add HyperFormula yourself for the rest.",
-    "You also need grid features a spreadsheet does not have: grouping with aggregation, master/detail, a server-side row model, charts."
+    "You also need grid features a spreadsheet does not have: grouping with aggregation, master/detail, server-side data, charts."
   ],
   "whenToChooseCompetitor": [
     "You depend on HyperFormula's full function library, cross-sheet references or named expressions as a supported feature.",

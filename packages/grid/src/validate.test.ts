@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { validateGridConfig } from './validate'
+import { createRowPlaceholder } from './server-block-cache'
 
 type Row = { name: string; amount: number }
 const data: Row[] = [
@@ -46,6 +47,15 @@ describe('unknown field', () => {
 
   it('ignores an id-only column, like an actions column', () => {
     expect(run({ columns: [{ id: 'actions', header: '' }] })).toEqual([])
+  })
+
+  it('looks past placeholder rows, which a row model shows before its data lands', () => {
+    const loading = [createRowPlaceholder('loading', { index: 0 }), createRowPlaceholder('loading', { index: 1 })]
+    // Only placeholders: nothing to judge the columns by, so no warning.
+    expect(run({ data: loading })).toEqual([])
+    // Placeholders ahead of real rows: the real rows are the sample.
+    expect(run({ data: [...loading, ...data] })).toEqual([])
+    expect(run({ data: [...loading, ...data], columns: [{ field: 'naem' }] })).toHaveLength(1)
   })
 
   it('looks through group columns', () => {

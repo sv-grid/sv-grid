@@ -39,6 +39,9 @@ function makeCtx(overrides: any = {}) {
     allRows: [],
     allColumns: [],
     headerSelectionState: 'none',
+    // The real controller always supplies this; a fake that omits it would
+    // make every select-all path throw rather than assert.
+    placeholderStateOf: () => null,
     userHasActivatedCell: false,
     enableCellSelectionEffective: true,
     selectionRange: { anchor: null, focus: null },

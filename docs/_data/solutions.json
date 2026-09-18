@@ -769,7 +769,7 @@
       "tier": "community",
       "intro": [
         "When the dataset is too large to send, the grid stops owning the rows and starts asking for them. You implement one getRows function that receives the current sort, filters and row range and returns the rows plus a total count; the grid handles caching, request cancellation, race safety and the loading state.",
-        "The same contract covers offset paging, keyset or cursor paging, infinite scroll and server-side grouping, so moving from one to another is a change of options rather than a rewrite."
+        "The same contract covers offset paging, keyset or cursor paging and infinite scroll, so moving from one to another is a change of options rather than a rewrite. Lazy grouping per level, tree data, pivot, transactions and select-all across rows the grid never loaded run on the same contract through the Enterprise server-side row model."
       ],
       "install": "npm i @svgrid/grid",
       "snippet": {
@@ -783,11 +783,14 @@
         "33-server-infinite",
         "113-cursor-pagination",
         "344-server-grouping-model",
+        "467-server-row-model-1m",
         "79-loading-from-rest"
       ],
       "docs": [
         "help/server-side-data",
         "help/server/server-row-model",
+        "help/server/server-infinite-scroll",
+        "help/server/server-grouping",
         "help/headless/server-side"
       ],
       "posts": [

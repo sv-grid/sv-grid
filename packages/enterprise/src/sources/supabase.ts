@@ -34,6 +34,15 @@ export type SupabaseDataSourceConfig<TData extends RowData> = {
    * schema's text + enum fields.
    */
   searchColumns?: string[]
+  /**
+   * Server-side pivot. PostgREST has no way to turn values into columns, so
+   * a pivoted request (`pivotMode` with `pivotBy`) goes to this function
+   * instead - typically an RPC (`client.rpc(...)`) that returns the group
+   * rows with one field per (pivot key x aggregation) and lists them in
+   * `pivotResultFields`; the SQL source documents the shape. Without it a
+   * pivoted request is answered as plain grouping, with a warning once.
+   */
+  pivot?: (request: ServerRequest) => Promise<ServerResult<TData>>
 }
 
 const sanitize = (term: string) => term.replace(/[%,()]/g, '')
@@ -48,8 +57,22 @@ export function createSupabaseDataSource<TData extends RowData>(
     config.searchColumns ??
     schema.fields.filter((f) => f.type === 'text' || f.type === 'enum').map((f) => String(f.field))
 
+  let warnedPivot = false
+
   return {
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
+      // ---- Server-side pivot ----------------------------------------------
+      // Only a grouped level pivots; the leaves under a path do not.
+      const grouped = (request.groupKeys?.length ?? 0) < (request.groupBy?.length ?? 0)
+      if (grouped && request.pivotMode && request.pivotBy?.length) {
+        if (config.pivot) return config.pivot(request)
+        if (!warnedPivot) {
+          warnedPivot = true
+          console.warn(
+            '[svgrid] createSupabaseDataSource: a pivoted request needs the `pivot` option (an RPC that pivots); answering it as plain grouping.',
+          )
+        }
+      }
       // ---- Server-side grouping -------------------------------------------
       // The grid asks one level at a time. The already-chosen path becomes
       // ordinary `.eq()` filters below; at this level we ask PostgREST for the
@@ -68,39 +91,51 @@ export function createSupabaseDataSource<TData extends RowData>(
       const groupField =
         groupKeys.length < groupCols.length ? groupCols[groupKeys.length] : undefined
 
+      const aggregateSelects = (request.aggregations ?? []).map((a) =>
+        a.fn === 'count' ? `${a.col}:count()` : `${a.col}:${a.col}.${a.fn}()`,
+      )
+      // The innermost group level can say how many rows each group holds
+      // (a plain count). Higher levels would need COUNT(DISTINCT next),
+      // which PostgREST does not expose, so those group rows carry no
+      // childCount and the grid shows no badge for them.
+      const innermost = groupField != null && groupKeys.length === groupCols.length - 1
       const selectExpr = groupField
-        ? [
-            groupField,
-            ...(request.aggregations ?? []).map((a) =>
-              a.fn === 'count' ? `${a.col}:count()` : `${a.col}:${a.col}.${a.fn}()`,
-            ),
-          ].join(',')
+        ? [groupField, ...aggregateSelects, ...(innermost ? ['childCount:count()'] : [])].join(',')
         : '*'
 
       let q = client.from(table).select(selectExpr, { count: 'exact' })
+
+      // The filters are applied to two queries when a grand total was asked
+      // for: the level itself (below, with the group path) and the total
+      // (the filters alone). Build them once.
+      const applyFilters = (query: any): any => {
+        let out = query
+        const { predicates, search } = normalizeFilters(request.filterModel)
+        for (const p of predicates) {
+          switch (p.op) {
+            case 'in': out = out.in(p.column, p.values); break
+            case 'contains': out = out.ilike(p.column, `%${p.value}%`); break
+            case 'startsWith': out = out.ilike(p.column, `${p.value}%`); break
+            case 'eq': out = out.eq(p.column, p.value); break
+            case 'gt': out = out.gt(p.column, p.value); break
+            case 'lt': out = out.lt(p.column, p.value); break
+            case 'between': out = out.gte(p.column, p.value).lte(p.column, p.valueTo); break
+            case 'isNull': out = out.is(p.column, null); break
+          }
+        }
+        if (search && searchColumns.length) {
+          const term = sanitize(search)
+          out = out.or(searchColumns.map((c) => `${c}.ilike.%${term}%`).join(','))
+        }
+        return out
+      }
 
       // The path constrains the rows before grouping.
       for (let i = 0; i < groupKeys.length && i < groupCols.length; i += 1) {
         q = q.eq(groupCols[i]!, groupKeys[i])
       }
 
-      const { predicates, search } = normalizeFilters(request.filterModel)
-      for (const p of predicates) {
-        switch (p.op) {
-          case 'in': q = q.in(p.column, p.values); break
-          case 'contains': q = q.ilike(p.column, `%${p.value}%`); break
-          case 'startsWith': q = q.ilike(p.column, `${p.value}%`); break
-          case 'eq': q = q.eq(p.column, p.value); break
-          case 'gt': q = q.gt(p.column, p.value); break
-          case 'lt': q = q.lt(p.column, p.value); break
-          case 'between': q = q.gte(p.column, p.value).lte(p.column, p.valueTo); break
-          case 'isNull': q = q.is(p.column, null); break
-        }
-      }
-      if (search && searchColumns.length) {
-        const term = sanitize(search)
-        q = q.or(searchColumns.map((c) => `${c}.ilike.%${term}%`).join(','))
-      }
+      q = applyFilters(q)
 
       // When grouping, only columns the grouped select actually produces can be
       // ordered on - PostgREST rejects an ORDER BY over a column that is
@@ -123,7 +158,17 @@ export function createSupabaseDataSource<TData extends RowData>(
 
       const { data, count, error } = await q.range(request.startRow, request.endRow - 1)
       if (error) throw new Error(error.message)
-      return { rows: (data ?? []) as ReadonlyArray<TData>, rowCount: count ?? 0 }
+      const result: ServerResult<TData> = { rows: (data ?? []) as ReadonlyArray<TData>, rowCount: count ?? 0 }
+
+      // The grand total: one aggregate-only select over the filtered set,
+      // with no group column (so PostgREST returns a single row) and no path.
+      if (request.needsGrandTotal && aggregateSelects.length) {
+        const total = applyFilters(client.from(table).select(aggregateSelects.join(',')))
+        const { data: totalRows, error: totalError } = await total
+        if (totalError) throw new Error(totalError.message)
+        result.grandTotal = ((totalRows as unknown[])?.[0] ?? null) as TData | null
+      }
+      return result
     },
 
     async createRow(input: Partial<TData>): Promise<TData> {

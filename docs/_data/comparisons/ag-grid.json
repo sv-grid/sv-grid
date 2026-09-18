@@ -41,14 +41,14 @@
   "svgridAdvantages": [
     "Svelte 5 native: runes for state, snippets for cells, no wrapper layer and no DOM imperatives.",
     "A smaller bundle on a Svelte page; the At a glance table above carries both measured numbers and the method.",
-    "Set-style Excel filters, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, the server-side row model, integrated charts, the column tool panel and the context menu are in the MIT core. AG Grid lists each of these under Enterprise.",
+    "Set-style Excel filters, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, integrated charts, the column tool panel and the context menu are in the MIT core. AG Grid lists each of these under Enterprise. Flat server-side data (paging, infinite block scroll) is free in both; the server-side row model with lazy grouping, tree, pivot, transactions and selection across unloaded rows is a paid module in both.",
     "In-grid AI helpers (natural-language filter, smart fill, summarise, classify, anomalies) ship free in @svgrid/grid with your own model provider.",
     "@svgrid/mcp validates props and imports against the real API surface and scaffolds a project, on top of docs and examples.",
     "@svgrid/enterprise costs $599 per developer per year for one application; AG Grid Enterprise's per-developer price is in the pricing line above."
   ],
   "competitorAdvantages": [
     "A longer production record across very large enterprise deployments, and the largest body of third-party examples and answers of any grid.",
-    "The viewport row model and server-side pivoting, which SvGrid's server-side row model does not cover.",
+    "The viewport row model, where the server pushes the visible window over a socket; SvGrid has no equivalent.",
     "AG Charts, a separately licensed charting product with far more chart types than SvGridChart.",
     "One grid API across React, Angular and Vue teams.",
     "Enterprise support through Zendesk with one year of updates on the licence."
@@ -178,15 +178,51 @@
       }
     },
     {
-      "feature": "Server-side row model",
+      "feature": "Server-side data, flat (sort, filter, paging, infinite scroll)",
       "svgrid": {
         "status": "yes",
-        "note": "MIT core: sort, filter, group, infinite scroll"
+        "note": "MIT core: createServerDataSource, page or infinite block scroll"
+      },
+      "competitor": {
+        "status": "yes",
+        "note": "Infinite Row Model, Community",
+        "source": "ag-row-models"
+      }
+    },
+    {
+      "feature": "Server-side row model (lazy grouping, tree, pivot, transactions, select-all across unloaded rows)",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise: createServerRowModel"
       },
       "competitor": {
         "status": "paid",
-        "note": "Enterprise",
+        "note": "Server-Side Row Model, Enterprise",
         "source": "ag-community-vs-enterprise"
+      }
+    },
+    {
+      "feature": "Global search over server-side data",
+      "svgrid": {
+        "status": "yes",
+        "note": "filterModel.global goes to the server"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "the Quick Filter is not supported by the Infinite or Server-Side row models",
+        "source": "ag-row-models"
+      }
+    },
+    {
+      "feature": "Viewport row model (server pushes the visible window)",
+      "svgrid": {
+        "status": "no",
+        "note": "not built; real-time deltas merge into loaded rows instead"
+      },
+      "competitor": {
+        "status": "paid",
+        "note": "Viewport Row Model, Enterprise",
+        "source": "ag-row-models"
       }
     },
     {
@@ -288,7 +324,7 @@
   ],
   "whenToChooseSvGrid": [
     "You are on Svelte 5 and want a grid shaped by Svelte idioms rather than a wrapper around a JavaScript build.",
-    "You want the set filter, master/detail, tree data, range selection, grouping and the server-side row model without an Enterprise licence.",
+    "You want the set filter, master/detail, tree data, range selection, grouping and flat server-side infinite scroll without an Enterprise licence.",
     "You want a paid support tier priced per developer per year at $599.",
     "You want an assistant that can check the code it writes against the real API, not only read the docs."
   ],
@@ -303,7 +339,7 @@
     "effort": "1-3 hours per grid",
     "youLose": [
       "AG Charts as a separately licensed charting product with far more chart types than SvGridChart.",
-      "The viewport row model and server-side pivoting; SvGrid's server-side row model covers sort, filter, group and infinite scroll.",
+      "The viewport row model; SvGrid's server-side row model covers sort, filter, grouping, tree, pivot, transactions and select-all across unloaded rows, but the server cannot push the visible window.",
       "One grid API across React, Angular and Vue teams.",
       "The largest body of third-party examples, Stack Overflow answers and contractors of any grid."
     ]
@@ -333,7 +369,7 @@
     "handsontable",
     "tanstack-table"
   ],
-  "bottomLine": "AG Grid is the safer pick for a multi-framework organisation, or when you need its deepest Enterprise modules, AG Charts or the viewport row model. For a Svelte-first team, SvGrid covers the Enterprise surface most teams actually buy AG Grid for, in the MIT core: master/detail, tree data, range selection, grouping, the server-side row model and integrated charts, with pivot tables and Excel, PDF and print output in the @svgrid/enterprise pack. The bundle and benchmark numbers on this page are measured on the dates shown, so read them rather than either vendor's adjectives.",
+  "bottomLine": "AG Grid is the safer pick for a multi-framework organisation, or when you need its deepest Enterprise modules, AG Charts or the viewport row model. For a Svelte-first team, SvGrid covers the Enterprise surface most teams actually buy AG Grid for, in the MIT core: master/detail, tree data, range selection, grouping, flat server-side infinite scroll and integrated charts, with pivot tables, the server-side row model and Excel, PDF and print output in the @svgrid/enterprise pack. The bundle and benchmark numbers on this page are measured on the dates shown, so read them rather than either vendor's adjectives.",
   "faq": [
     {
       "question": "Does AG Grid support Svelte?",
@@ -341,11 +377,11 @@
     },
     {
       "question": "Which AG Grid Enterprise features does SvGrid include in its MIT core?",
-      "answer": "The set-style Excel filter, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, the server-side row model, integrated charts, the column tool panel and the context menu. AG Grid's own pages list each of these under Enterprise. Pivot tables and Excel, PDF and print output are in @svgrid/enterprise, as they are in AG Grid Enterprise."
+      "answer": "The set-style Excel filter, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, integrated charts, the column tool panel and the context menu. AG Grid's own pages list each of these under Enterprise. Pivot tables, the server-side row model (grouping, tree, pivot, transactions, selection) and Excel, PDF and print output are in @svgrid/enterprise, as they are in AG Grid Enterprise; flat server-side infinite scroll is free in both."
     },
     {
       "question": "What does SvGrid not have that AG Grid Enterprise has?",
-      "answer": "The viewport row model, server-side pivoting, AG Charts as a full charting product, and the breadth of niche Enterprise modules that come from a decade of enterprise customers. SvGrid's server-side row model handles sort, filter, group and infinite scroll; if your requirements are the two row models above, AG Grid Enterprise is the better fit."
+      "answer": "The viewport row model, AG Charts as a full charting product, and the breadth of niche Enterprise modules that come from a decade of enterprise customers. SvGrid's server-side row model handles sort, filter, grouping, tree, pivot, transactions and selection across unloaded rows; if your requirement is the viewport model, AG Grid Enterprise is the better fit."
     },
     {
       "question": "Does AG Grid have an MCP server too?",
@@ -402,6 +438,12 @@
       "url": "https://www.ag-grid.com/",
       "evidences": "Names React, Angular, Vue and JavaScript; says Svelte, Solid and Python users can use community-built integrations; the 36.1.0 release notes list an AI Coding Skill",
       "verified": "2026-09-12"
+    },
+    {
+      "id": "ag-row-models",
+      "url": "https://www.ag-grid.com/javascript-data-grid/row-models/",
+      "evidences": "The row-models feature table lists the Infinite Row Model as Community and the Server-Side and Viewport row models as Enterprise; the Quick Filter row is marked unsupported for the Infinite, Server-Side and Viewport models",
+      "verified": "2026-09-15"
     }
   ]
 }

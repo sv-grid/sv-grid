@@ -207,15 +207,15 @@ filtered column and continues with the sort columns serves both at once.
 
 ## More examples
 
-### Server-Side Row Model (SSRM)
+### Server-Side Row Model: paged and infinite
 
-One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page.
+The free half of the row model: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Paged, the grid holds one 50-row page; infinite, a block cache under the scrollbar with placeholders, retry and an LRU. Here a 100,000-row in-memory server behind 250ms latency. Grouping, tree, pivot and transactions on top of the same contract are the Enterprise row model (demo 467).
 
 <div data-docs-demo="148-server-row-model" data-height="560"></div>
 
-### Server grouping (first-class)
+### Server grouping (row model)
 
-First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.
+Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.
 
 <div data-docs-demo="344-server-grouping-model" data-height="560"></div>
 

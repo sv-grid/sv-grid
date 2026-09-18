@@ -11,7 +11,7 @@ this is a half-day port; the vocabulary below covers the v8 names too.
 > hours** for editing-heavy grids.
 
 <!-- facts:start tanstack-table -->
-> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
 <!-- facts:end -->
 
 > **On v9?** SvGrid exports the same feature vocabulary, so most of this
@@ -181,6 +181,15 @@ accepts a regular component if you prefer SFCs.
 +   onFiltersChange={(f)       => refetch({ filters: f.columns })}
 + />
 ```
+
+Or hand the fetching to a controller and pass it as one prop:
+`createServerDataSource(source, { mode: 'infinite' })` owns the blocks,
+the sort and filter round trips and the placeholder rows, and the
+manual-flag wiring above disappears. TanStack Table has no server row
+model; per-group fetching is yours to write, where the Enterprise
+`createServerRowModel` does it over the same contract.
+
+<div data-docs-demo="148-server-row-model" data-height="480"></div>
 
 ## What you get for free vs TanStack Table
 

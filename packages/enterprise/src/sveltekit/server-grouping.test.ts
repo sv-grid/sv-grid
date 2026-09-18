@@ -92,7 +92,9 @@ describe('planToSql grouping', () => {
     )
     const sql = planToSql(plan)
     // Aliased back to the SOURCE column - that is where the grid reads it.
-    expect(sql.select).toBe('"region", SUM("amount") AS "amount"')
+    // ...and every grouped select ends with the child count, which is the
+    // number of rows under the group at the innermost level.
+    expect(sql.select).toBe('"region", SUM("amount") AS "amount", COUNT(*) AS "childCount"')
     expect(sql.groupByText).toBe('GROUP BY "region"')
   })
 
@@ -108,7 +110,7 @@ describe('planToSql grouping', () => {
       schema,
       req({ groupBy: ['region'], groupKeys: [], aggregations: [{ col: 'amount', fn: 'count' }] }),
     )
-    expect(planToSql(plan).select).toBe('"region", COUNT(*) AS "amount"')
+    expect(planToSql(plan).select).toBe('"region", COUNT(*) AS "amount", COUNT(*) AS "childCount"')
   })
 
   it('binds the group path as a parameter rather than inlining it', () => {
@@ -118,6 +120,32 @@ describe('planToSql grouping', () => {
     expect(sql.where).not.toContain('1=1')
   })
 
+  it('orders groups by the key when the request does not sort a produced column', () => {
+    const plan = planQuery(
+      schema,
+      req({ groupBy: ['region'], groupKeys: [], aggregations: [{ col: 'amount', fn: 'sum' }] }),
+    )
+    // No sort at all: the key, so LIMIT / OFFSET over groups is stable.
+    expect(planToSql(plan).orderByText).toBe('ORDER BY "region" ASC')
+    // A leaf column is not in the grouped SELECT; ordering by it would be a
+    // SQL error, so it falls back to the key too.
+    const byLeaf = planQuery(
+      schema,
+      req({ groupBy: ['region'], groupKeys: [], sortModel: [{ id: 'rep', desc: true }] }),
+    )
+    expect(planToSql(byLeaf).orderByText).toBe('ORDER BY "region" ASC')
+    // The key or an aggregate: honoured.
+    const byAgg = planQuery(
+      schema,
+      req({
+        groupBy: ['region'],
+        groupKeys: [],
+        aggregations: [{ col: 'amount', fn: 'sum' }],
+        sortModel: [{ id: 'amount', desc: true }],
+      }),
+    )
+    expect(planToSql(byAgg).orderByText).toBe('ORDER BY "amount" DESC')
+  })
   it('emits no select or group by for a flat query', () => {
     const sql = planToSql(planQuery(schema, req()))
     expect(sql.select).toBe('')
@@ -139,9 +167,11 @@ describe('in-memory source executes the grouped plan', () => {
         ],
       }),
     )
+    // `childCount` is what opening the group shows: with one group level,
+    // the rows themselves.
     expect(res.rows).toEqual([
-      { region: 'APAC', amount: 900, id: 2 },
-      { region: 'EMEA', amount: 600, id: 3 },
+      { region: 'APAC', amount: 900, id: 2, childCount: 2 },
+      { region: 'EMEA', amount: 600, id: 3, childCount: 3 },
     ])
     // Distinct groups, not the 5 underlying rows.
     expect(res.rowCount).toBe(2)
@@ -156,8 +186,8 @@ describe('in-memory source executes the grouped plan', () => {
       }),
     )
     expect(res.rows).toEqual([
-      { rep: 'ada', amount: 300 },
-      { rep: 'brian', amount: 300 },
+      { rep: 'ada', amount: 300, childCount: 2 },
+      { rep: 'brian', amount: 300, childCount: 1 },
     ])
     expect(res.rowCount).toBe(2)
   })
@@ -179,8 +209,8 @@ describe('in-memory source executes the grouped plan', () => {
     )
     // Only amounts over 250 count: EMEA keeps 300, APAC keeps 400+500.
     expect(res.rows).toEqual([
-      { region: 'APAC', amount: 900 },
-      { region: 'EMEA', amount: 300 },
+      { region: 'APAC', amount: 900, childCount: 2 },
+      { region: 'EMEA', amount: 300, childCount: 1 },
     ])
   })
 
@@ -195,7 +225,7 @@ describe('in-memory source executes the grouped plan', () => {
     const res = await source.getRows(
       req({ groupBy: ['region'], groupKeys: [], startRow: 1, pageSize: 1 }),
     )
-    expect(res.rows).toEqual([{ region: 'EMEA' }])
+    expect(res.rows).toEqual([{ region: 'EMEA', childCount: 3 }])
     expect(res.rowCount).toBe(2)
   })
 })
@@ -286,9 +316,67 @@ describe('advanced filter over the server contract', () => {
     )
     // Only amounts over 250 survive: EMEA keeps 300, APAC keeps 400+500.
     expect(res.rows).toEqual([
-      { region: 'APAC', amount: 900 },
-      { region: 'EMEA', amount: 300 },
+      { region: 'APAC', amount: 900, childCount: 2 },
+      { region: 'EMEA', amount: 300, childCount: 1 },
     ])
     expect(res.appliedExpression).toBe(true)
+  })
+})
+
+describe('child counts and the grand total', () => {
+  const source = createInMemoryDataSource(rows, schema)
+
+  it('counts the next level, not the leaves, when there is a level below', async () => {
+    const res = await source.getRows(req({ groupBy: ['region', 'rep'], groupKeys: [] }))
+    // EMEA has 3 rows but 2 reps; opening it shows 2 rows, so 2 it is.
+    expect(res.rows).toEqual([
+      { region: 'APAC', childCount: 1 },
+      { region: 'EMEA', childCount: 2 },
+    ])
+  })
+
+  it('emits COUNT(DISTINCT next) for the child count above the innermost level', () => {
+    const sql = planToSql(planQuery(schema, req({ groupBy: ['region', 'rep'], groupKeys: [] })))
+    expect(sql.select).toBe('"region", COUNT(DISTINCT "rep") AS "childCount"')
+  })
+
+  it('answers needsGrandTotal with the aggregates over the whole filtered set', async () => {
+    const res = await source.getRows(
+      req({
+        groupBy: ['region'],
+        groupKeys: ['EMEA'],
+        aggregations: [{ col: 'amount', fn: 'sum' }],
+        needsGrandTotal: true,
+        filterModel: { columns: { amount: { operator: 'greaterThan', value: '150' } } },
+      }),
+    )
+    // The path (EMEA) scopes the rows; the total ignores it and keeps the
+    // filter: 200 + 300 + 400 + 500.
+    expect(res.grandTotal).toEqual({ amount: 1400 })
+  })
+
+  it('leaves the total out when nobody asked', async () => {
+    const res = await source.getRows(req({ groupBy: ['region'], groupKeys: [] }))
+    expect('grandTotal' in res).toBe(false)
+  })
+
+  it('plans the grand-total statement without the group path', () => {
+    const plan = planQuery(
+      schema,
+      req({
+        groupBy: ['region', 'rep'],
+        groupKeys: ['EMEA'],
+        aggregations: [{ col: 'amount', fn: 'sum' }],
+        needsGrandTotal: true,
+        filterModel: { columns: { amount: { operator: 'greaterThan', value: '150' } } },
+      }),
+    )
+    expect(plan.pathPredicates).toBe(1)
+    const sql = planToSql(plan, { placeholders: '$' })
+    expect(sql.grandTotalSelect).toBe('SUM("amount") AS "amount"')
+    // The filter stays, the EMEA path does not, and the params restart at $1.
+    expect(sql.grandTotalWhereText).toBe('WHERE "amount" > $1')
+    expect(sql.grandTotalParams).toEqual([150])
+    expect(sql.whereText).toBe('WHERE "amount" > $1 AND "region" = $2')
   })
 })

@@ -20,6 +20,7 @@
  *     changes, and must not scale with row count.
  */
 import type { ColumnDef, RowData, TableFeatures } from './core'
+import { rowPlaceholderState } from './server-block-cache'
 
 /** How many rows to sample when deciding whether a `field` exists. */
 const FIELD_SAMPLE_ROWS = 10
@@ -37,6 +38,8 @@ export type ValidateInput<TFeatures extends TableFeatures, TData extends RowData
   pageSize?: number
   groupBy?: ReadonlyArray<string>
   treeData?: { parentField?: string; idField?: string; column?: string }
+  /** Server-side grouping: group rows carry their key and aggregates, not the leaf fields. */
+  serverGroup?: unknown
   initialColumnPinning?: { left?: ReadonlyArray<string>; right?: ReadonlyArray<string> }
   columnVirtualization?: boolean
   externalPagination?: boolean
@@ -69,9 +72,13 @@ export function validateGridConfig<
   // ---- 1. A `field` that does not exist on the data -------------------------
   // The single most expensive silent failure: the column renders, and every
   // cell in it is blank. Sampled across several rows so genuinely sparse data
-  // (a key absent from row 0 but present later) does not trip it.
-  const sample = (input.data ?? []).slice(0, FIELD_SAMPLE_ROWS)
-  if (sample.length) {
+  // (a key absent from row 0 but present later) does not trip it. A row
+  // model shows placeholder rows before its first block lands; those carry
+  // no data keys at all and say nothing about the columns.
+  const sample = (input.data ?? []).filter((row) => !rowPlaceholderState(row)).slice(0, FIELD_SAMPLE_ROWS)
+  // Under server-side grouping the first rows are group rows, which carry
+  // a key and aggregates and none of the leaf fields; nothing to judge by.
+  if (sample.length && !input.serverGroup) {
     const known = new Set<string>()
     for (const row of sample) {
       if (row && typeof row === 'object') for (const k of Object.keys(row)) known.add(k)

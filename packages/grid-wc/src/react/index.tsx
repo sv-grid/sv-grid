@@ -189,6 +189,14 @@ export interface SvGridProps {
   conditionalFormats?: readonly unknown[]
   /** `conditional-stat-scope` - "filtered" | "visible" | "all" */
   conditionalStatScope?: "filtered" | "visible" | "all"
+  /** `property only` - (row: TData, rowIndex: number) => "loading" | "failed" | null */
+  rowPlaceholder?: unknown
+  /** `property only` - GridRowModel<TData> */
+  rowModel?: unknown
+  /** `property only` - Array<ColumnDef<TFeatures, TData>> | null */
+  pivotResultColumns?: readonly unknown[]
+  /** `property only` - { isSelected: (rowId: string, row: TData) => boolean; headerState: () => "none" | "some" | */
+  rowSelectionModel?: unknown
   /** `property only` - (row: TData, rowIndex: number) => boolean */
   isDetailRow?: unknown
   /** `property only` - { isGroup: (row: TData) => boolean; level: (row: TData) => number; expanded?: (row: TData) */
@@ -258,6 +266,10 @@ export interface SvGridProps {
   onRowDoubleClick?: (detail: { rowIndex: number; columnId: string; row: Record<string, unknown>; }) => void
   /** `scrollbottomreached` */
   onScrollBottomReached?: (detail: { scrollTop: number; scrollHeight: number; clientHeight: number; }) => void
+  /** `visiblerangechange` */
+  onVisibleRangeChange?: (detail: { startIndex: number; endIndex: number; }) => void
+  /** `retryrow` */
+  onRetryRow?: (detail: { row: Record<string, unknown>; rowIndex: number }) => void
   /** `columnorderchange` */
   onColumnOrderChange?: (detail: ReadonlyArray<string>) => void
   /** `rowdragend` */
@@ -280,9 +292,9 @@ export interface SvGridHandle {
   api: unknown
 }
 
-const PROP_NAMES = ["data","columns","board","scheduler","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","isDetailRow","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"] as const
+const PROP_NAMES = ["data","columns","board","scheduler","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"] as const
 
-const EVENTS: Array<[handler: string, event: string]> = [["onPivotModeChange","pivotmodechange"],["onExpandedChange","expandedchange"],["onPaginationChange","paginationchange"],["onColumnResize","columnresize"],["onRowResize","rowresize"],["onPasteClipboard","pasteclipboard"],["onApiReady","apiready"],["onRowSelectionChange","rowselectionchange"],["onCellSelectionChange","cellselectionchange"],["onSortingChange","sortingchange"],["onAdvancedFilterChange","advancedfilterchange"],["onFiltersChange","filterschange"],["onNoteChange","notechange"],["onCellValueChange","cellvaluechange"],["onActiveCellChange","activecellchange"],["onCellClick","cellclick"],["onRowClick","rowclick"],["onCellDoubleClick","celldoubleclick"],["onRowDoubleClick","rowdoubleclick"],["onScrollBottomReached","scrollbottomreached"],["onColumnOrderChange","columnorderchange"],["onRowDragEnd","rowdragend"],["onSelectionchange","selectionchange"]]
+const EVENTS: Array<[handler: string, event: string]> = [["onPivotModeChange","pivotmodechange"],["onExpandedChange","expandedchange"],["onPaginationChange","paginationchange"],["onColumnResize","columnresize"],["onRowResize","rowresize"],["onPasteClipboard","pasteclipboard"],["onApiReady","apiready"],["onRowSelectionChange","rowselectionchange"],["onCellSelectionChange","cellselectionchange"],["onSortingChange","sortingchange"],["onAdvancedFilterChange","advancedfilterchange"],["onFiltersChange","filterschange"],["onNoteChange","notechange"],["onCellValueChange","cellvaluechange"],["onActiveCellChange","activecellchange"],["onCellClick","cellclick"],["onRowClick","rowclick"],["onCellDoubleClick","celldoubleclick"],["onRowDoubleClick","rowdoubleclick"],["onScrollBottomReached","scrollbottomreached"],["onVisibleRangeChange","visiblerangechange"],["onRetryRow","retryrow"],["onColumnOrderChange","columnorderchange"],["onRowDragEnd","rowdragend"],["onSelectionchange","selectionchange"]]
 
 /**
  * SvGrid as a React component.

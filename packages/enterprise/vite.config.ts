@@ -31,6 +31,11 @@ export default defineConfig({
           include: ['src/**/*.dom.test.ts'],
           environment: 'jsdom',
           globals: true,
+          // jsdom's gaps (ResizeObserver, IntersectionObserver, scrollIntoView,
+          // the animations API) - the same stubs the grid's own suite mounts
+          // with, so a test here can mount <SvGrid> too. Tests that stubbed
+          // one inline before this keep working: every stub is guarded.
+          setupFiles: ['../grid/src/test-setup.ts'],
         },
       },
     ],

@@ -7,7 +7,7 @@ React/Angular-first API and Svelte 5 runes is brittle, the bundle is
 heavy, and the Enterprise pricing only makes sense at scale.
 
 <!-- facts:start ag-grid -->
-> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
 <!-- facts:end -->
 
 This page is a 30-minute migration recipe from AG Grid to SvGrid. It
@@ -25,7 +25,8 @@ We tell you when **not** to switch at the bottom.
 | **Row grouping + aggregation** | No (Enterprise) | Yes | Yes (free) | (in Community) |
 | **Master/detail, tree, range select** | No (Enterprise) | Yes | Yes (free) | (in Community) |
 | **Set filter / Excel-style filter menu** | No (Enterprise) | Yes | Yes (free) | (in Community) |
-| **Server-side row model** | No (Enterprise) | Yes | Yes (free) | (in Community) |
+| **Server-side data, flat (infinite row model)** | Yes | Yes | Yes (free) | (in Community) |
+| **Server-side row model (grouping, tree, pivot, transactions, selection)** | No (Enterprise) | Yes | No | Yes |
 | **Integrated charts** | No (Enterprise) | Yes, AG Charts | Yes (free) | (in Community) |
 | **CSV export** | Yes (API) | Yes | Yes, with TSV and JSON | (in Community) |
 | **Excel export** | No | Yes | No | Yes |
@@ -35,8 +36,8 @@ We tell you when **not** to switch at the bottom.
 | **In-grid AI helpers** | No | No | Yes (bring your own model) | (in Community) |
 
 **SvGrid Community gives you most of what AG Grid sells as Enterprise for
-free**, and `@svgrid/enterprise` adds Excel, PDF and print output, import
-and pivot tables per developer per year. Compare what each paid tier adds
+free**, and `@svgrid/enterprise` adds Excel, PDF and print output, import,
+pivot tables and the server-side row model per developer per year. Compare what each paid tier adds
 before comparing prices; both are in the facts box. The trade-offs are
 Svelte-only and a much smaller ecosystem. Every AG Grid cell above follows
 ag-grid.com's own pages; the dated list is on the
@@ -309,10 +310,63 @@ AG Grid Enterprise feature; **free in SvGrid Community**. See
 
 ### Server-side data
 
-AG Grid uses an `IServerSideDatasource` interface. SvGrid uses
-`externalSort` + `externalFilter` props - your code keeps full control
-over the query, and the grid records UI state but doesn't re-order rows
-locally. See [demo 09](https://svgrid.com/demos/09-server-side/).
+AG Grid's Infinite Row Model (Community) and Server-Side Row Model
+(Enterprise) both take an `IServerSideDatasource` with a `getRows(params)`
+that answers through `params.success({ rowData, rowCount })`. SvGrid has one
+`ServerDataSource` whose `getRows(request)` returns `{ rows, rowCount }`,
+and two controllers over it: `createServerDataSource` (free: paging or
+infinite block scroll, sort, filter, CRUD) and `createServerRowModel`
+(Enterprise: lazy grouping, tree, pivot, transactions, selection). Both
+mount through one prop, `<SvGrid rowModel={ctl} />`.
+
+An existing datasource written for AG Grid keeps working behind one call:
+
+```ts
+import { adaptCallbackDatasource, createServerRowModel } from '@svgrid/enterprise'
+
+const ctl = createServerRowModel(adaptCallbackDatasource(myServerSideDatasource), {
+  groupBy: ['country'],
+  aggregations: [{ col: 'amount', fn: 'sum' }],
+})
+```
+
+`adaptCallbackDatasource` maps the request both ways (`rowGroupCols` ->
+`groupBy`, `valueCols` -> `aggregations`, `pivotCols` -> `pivotBy`, the
+sort and filter models, `context`, `parentNode`) and turns `success` /
+`fail` into a resolved or rejected promise. Option by option:
+
+| AG Grid | SvGrid |
+| --- | --- |
+| `rowModelType: 'infinite'` + `datasource` | `createServerDataSource(source, { mode: 'infinite' })` + `rowModel={ctl}` |
+| `rowModelType: 'serverSide'` + `serverSideDatasource` | `createServerRowModel(source, options)` + `rowModel={ctl}` |
+| `getRows(params)` + `params.success({ rowData, rowCount })` / `params.fail()` | `getRows(request)` returning `{ rows, rowCount }` / throwing |
+| `cacheBlockSize`, `maxBlocksInCache`, `maxConcurrentDatasourceRequests`, `blockLoadDebounceMillis` | `blockSize`, `maxBlocksInCache`, `maxConcurrentRequests`, `blockLoadDebounceMs` |
+| `infiniteInitialRowCount` / `serverSideInitialRowCount` | `initialRowCount` |
+| `rowCount: -1` (unknown) | `rowCount: -1` |
+| `refreshInfiniteCache()` / `purgeInfiniteCache()` | `ctl.refresh()` / `ctl.purge()` |
+| `request.rowGroupCols`, `groupKeys`, `valueCols`, `pivotCols`, `pivotMode` | `request.groupBy`, `groupKeys`, `aggregations`, `pivotBy`, `pivotMode` |
+| `getChildCount(data)` | `childCount: (row) => row.childCount` |
+| `isServerSideGroupOpenByDefault` | `isGroupOpenByDefault(route, row)` |
+| `getServerSideGroupLevelParams` | `levelParams(level, route)` |
+| `isServerSideGroup` / `getServerSideGroupKey` (tree) | `treeData: true` + `hasChildren` / `getRowId` |
+| `grandTotalRow` / `groupTotalRow` | `grandTotalRow` / `groupFooters` |
+| `refreshServerSide({ route, purge })` / `retryServerSideLoads()` | `ctl.refresh({ route, purge })` / `ctl.retryLoads()` |
+| `applyServerSideTransaction` / `applyServerSideTransactionAsync` / `flushServerSideAsyncTransactions` | `ctl.applyTransaction` / `applyTransactionAsync` / `flushAsyncTransactions` |
+| `applyServerSideRowData` | `ctl.applyRowData` |
+| `serverSideSortAllLevels`, `serverSideEnableClientSideSort`, `serverSideOnlyRefreshFilteredGroups` | `sortAllLevels`, `clientSideSort`, `onlyRefreshFilteredGroups` |
+| `getServerSideSelectionState` / `setServerSideSelectionState` | `ctl.getSelectionState()` / `setSelectionState()` |
+| `groupSelects: 'descendants'` | `selection: { groupSelects: 'descendants' }` |
+| `pivotResultFields` in `success`, `setPivotResultColumns`, `processPivotResultColDef` | `pivotResultFields` / `pivotResultColumns` in the result, `pivotResultColumn(field, def)` |
+| `pagination` + `paginateChildRows` | `pagination: { pageSize, paginateChildRows }` |
+| `getCacheBlockState()` / `getServerSideGroupLevelState()` | `ctl.getCacheState()` / `ctl.levelStates()` |
+| `serverSideDatasource.destroy()` | `source.destroy()` |
+
+Two differences worth knowing before you start: SvGrid sends the global
+search box to the server as `filterModel.global` (AG Grid's quick filter is
+client-side only and unsupported under its infinite and server-side models),
+and SvGrid has no viewport row model. See
+[Server grouping](./server/server-grouping.md) and
+[demo 467](https://svgrid.com/demos/467-server-row-model-1m/).
 
 ### Excel / PDF export
 
@@ -367,7 +421,7 @@ is similar but not identical - see [Set filter](./filtering/set-filter.md).
 Be honest. Stay on AG Grid if you:
 
 - **Use multiple frameworks** - AG Grid has React, Angular, Vue, Solid, Qwik, vanilla adapters. SvGrid is Svelte-only.
-- **Need server-side pivoting or a push-based viewport row model** - SvGrid ships pivot, integrated charts and a server-side row model (sort / filter / group / infinite), but not those two.
+- **Need a push-based viewport row model** - SvGrid's server-side row model covers grouping, tree, pivot, transactions and select-all across unloaded rows, and its real-time page merges deltas into loaded rows, but the server cannot push the visible window over a socket the way the viewport model does.
 - **Need pluggable custom filter components or custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair.
 - **Are mid-project and shipping in <2 weeks** - the migration is a few hours per grid, but only do it when you have buffer.
 - **Have a Svelte 4 codebase you can't upgrade** - SvGrid requires Svelte 5 runes. (Consider [htmlelements.com](https://www.htmlelements.com) for vanilla / multi-framework.)

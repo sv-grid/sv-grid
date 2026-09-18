@@ -1,0 +1,29 @@
+{
+  "description": "The Svelte 5 data grid over one million server-side rows through a single rowModel prop. The columnar warehouse behind it answers every request the server-side row model sends: sort, filter, global search and the advanced-filter expression, grouping one level at a time with aggregates and child counts, infinite scroll or pages, inline edits applied back as transactions with the parent subtotal refreshed, add and delete, select-all across rows the grid never loaded with a bulk edit sent as a rule, failed blocks with a Retry row, and a grand total pinned at the bottom. A request log shows each call, its range, its latency and whether the server had the sort and filter cached.",
+  "keywords": [
+    "svelte server side row model",
+    "svelte data grid million rows server",
+    "svelte grid server side grouping infinite scroll",
+    "svelte grid server side pagination",
+    "svelte grid server side editing transactions",
+    "svelte grid select all server side"
+  ],
+  "faq": [
+    {
+      "question": "Does the grid ever hold the million rows?",
+      "answer": "No. The grid holds the blocks it has scrolled into, at most 24 of 100 rows per level here, plus placeholder rows for the rest. Everything else is a request: the warehouse keeps the data as typed arrays, about 22 MB, and materialises only the rows it returns."
+    },
+    {
+      "question": "What happens when a cell is edited?",
+      "answer": "The edit goes to the server as updateRow; the model applies the saved row back as a transaction without refetching the block, the cell flashes, and the demo calls refresh({ route }) on the parent level so the group subtotal and the grand total follow."
+    },
+    {
+      "question": "How can select-all cover rows that were never loaded?",
+      "answer": "The selection is kept as a rule, everything except these, rather than a list of ids. The header checkbox reports all, the footer counts a million, and the bulk-edit drawer sends the rule to the server's updateWhere, which resolves it against the same filter."
+    },
+    {
+      "question": "Why does a sort sometimes take a second?",
+      "answer": "The warehouse is a real server in miniature: a sort on a new column is a pass over a million rows, cached afterwards, so the log shows one slow request and then a few milliseconds per block. Slow network and Simulate failures switches add latency and a 30 percent failure rate to show the retry path."
+    }
+  ]
+}

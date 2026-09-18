@@ -11,7 +11,7 @@ the Formulas section below).
 > HyperFormula features sv-grid doesn't ship.
 
 <!-- facts:start handsontable -->
-> **Facts, checked 12 Sep 2026.** `handsontable` 18.1.0, Commercial (see licence file), last published 1 Sep 2026, 1,190,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026). Handsontable pricing, as its site states it: Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms (https://handsontable.com/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/).
+> **Facts, checked 12 Sep 2026.** `handsontable` 18.1.0, Commercial (see licence file), last published 1 Sep 2026, 1,190,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). Handsontable pricing, as its site states it: Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms (https://handsontable.com/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/).
 <!-- facts:end -->
 
 ## Imports
@@ -229,7 +229,7 @@ around.
 - **Modern Svelte 5 ergonomics.** `$state` arrays beat
   `loadData(...)`.
 - **Grid features a spreadsheet does not have.** Row grouping with
-  aggregation, master/detail, a server-side row model and integrated
+  aggregation, master/detail, server-side data (grouping, tree, pivot and transactions on the server are Enterprise) and integrated
   charts in the same package.
 - **CSP-clean.** Handsontable's HyperFormula path needs CSP `eval`
   exceptions in some configurations.

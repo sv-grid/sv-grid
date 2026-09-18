@@ -306,6 +306,74 @@ const BUDGET_KB = {
   // pays for the wiring and not the logic; a grid that never charts still
   // loads none of the engine.
   'full render component (SvGrid)': 86.4,
+  // 86.4 -> 91.8 for the spreadsheet shell's grid-side primitives, plus the
+  // main-branch charts commit that preceded them. Measured 91.5. This is the
+  // largest single step this file records, so the breakdown is by feature,
+  // from `scripts/attribute-size.mjs` run against a worktree at the last
+  // commit before the program (b337027) and against HEAD; the per-file
+  // numbers are estimates from the source map (they over-count shared
+  // compression by about a third), the 4.0 KB total is real:
+  //
+  //   - 1.1 KB before the program: main's "Keyboard navigation Performance
+  //     and Charts" commit landed at 87.5 against this 86.4 budget, so the
+  //     check was already red when the branch merged (the chart value
+  //     settings pass-through and the tab-run origin, both controller).
+  //   - merged cells (~1.1): merges.ts (index, covered/origin lookups,
+  //     range expansion, step-past), the merge windows and the origin /
+  //     continuation / skip decision in the body row, selection snapping to
+  //     the origin, api.getMergedCells. Render-path, so base.
+  //   - HTML clipboard (~1.0): copy writes text/html beside the text through
+  //     a one-shot copy listener with the ClipboardItem fallback
+  //     (clipboardHtml), and Ctrl+V hands the native paste event's HTML to
+  //     onPasteClipboard with the 80 ms async fallback. The copy path has
+  //     to be synchronous inside the gesture, so it cannot be lazy.
+  //   - the keyboard command seam (~0.7): command-context.ts and history.ts,
+  //     acknowledged at 85.3 above on the branch but never carried into
+  //     main's copy of this budget.
+  //   - frozen rows, collapsed rows and columns, resize undo (~0.9): the
+  //     frozen band's height and offsets, the collapsed sets the
+  //     virtualizer and navigation read, and the size changes recorded in
+  //     history. Controller and build-api.
+  //   - Excel's entry keys and hidden-line navigation (~0.7): Enter and Tab
+  //     inside a range with the tab origin, arrows stepping past collapsed
+  //     lines. keyboard.ts and keyboard-handlers.ts.
+  //   - fill by date and by linear trend (~0.2), canEdit on the command
+  //     context, context-menu icons and built-in overrides (~0.1).
+  //
+  // None of it is sheet logic: formulas, formats, validation, conditional
+  // formats, comments, protection, AutoFilter, the merge commands and the
+  // ribbon are all in @svgrid/enterprise. What landed here is what a plain
+  // data grid can use on its own (mergedCells, frozenRows, hidden lines,
+  // Excel entry keys, HTML copy and paste), which was the program's rule for
+  // what goes in the free grid. A shrink pass found nothing worth its
+  // complexity: every piece is on a synchronous render, keydown or copy
+  // path, and a lazy boundary there would paint merges a frame late or lose
+  // the copy gesture. The two-edit cost the grid-wc note describes applies:
+  // the elements moved by the same amount.
+  //
+  // 91.8 -> 93.3 for the server-side row model program (2026-09-17).
+  // Measured 93.0. The server grouping model and its two components LEFT
+  // the free grid for @svgrid/enterprise; what came in is the free half of
+  // the line - AG Grid Community's infinite row model, matched one for one -
+  // and the four seams the Enterprise model plugs into:
+  //
+  //   - server-block-cache.ts (~0.9): blocks keyed by index, LRU eviction,
+  //     in-flight dedupe, abort, a concurrency queue, debounce, retry,
+  //     unknown row count, patch / insert / remove for transactions.
+  //   - createServerDataSource's infinite mode (~0.3): the cache wired to
+  //     the flat controller, writes routed through it.
+  //   - the seams (~0.6): the rowModel prop and its proxy fallback (data,
+  //     loading, sort, filter, viewport, placeholders, group accessors,
+  //     selection, filter values, paging, pinned rows, pivot columns), the
+  //     visible-range effect, placeholder rows with the skeleton and the
+  //     failed row's Retry, the rowSelectionModel routing in selection.ts
+  //     and build-api, autoPageSize measurement, the group-row editing guard.
+  //
+  // Measured at the start of the program (main at the moved-out state) it
+  // was 91.6; the block cache and the seams are on the render and scroll
+  // path, so none of it can be lazy. The row model itself, transactions,
+  // selection rules and pivot are Enterprise and add nothing here.
+  'full render component (SvGrid)': 93.3,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for

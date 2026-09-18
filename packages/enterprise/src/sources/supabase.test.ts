@@ -108,3 +108,90 @@ describe('createSupabaseDataSource writes', () => {
     expect(has(calls, 'eq')[0]![1]).toEqual(['id', '7'])
   })
 })
+
+describe('createSupabaseDataSource child counts and the grand total', () => {
+  it('adds count() as childCount at the innermost group level only', async () => {
+    const { client, calls } = makeClient({ data: [], count: 0, error: null })
+    const src = createSupabaseDataSource({ client, table: 'customers', schema })
+
+    // Two levels, asking for the top one: PostgREST cannot COUNT(DISTINCT), so
+    // no badge here.
+    await src.getRows(req({ groupBy: ['tier', 'name'], groupKeys: [], aggregations: [{ col: 'mrr', fn: 'sum' }] }))
+    expect(has(calls, 'select')[0]![1]![0]).toBe('tier,mrr:mrr.sum()')
+
+    // The innermost level: a plain count of the rows in each group.
+    await src.getRows(req({ groupBy: ['tier', 'name'], groupKeys: ['pro'], aggregations: [{ col: 'mrr', fn: 'sum' }] }))
+    expect(has(calls, 'select')[1]![1]![0]).toBe('name,mrr:mrr.sum(),childCount:count()')
+  })
+
+  it('runs a second aggregate-only select for the grand total, filters kept, path dropped', async () => {
+    const { client, calls } = makeClient({ data: [{ mrr: 900 }], count: 1, error: null })
+    const src = createSupabaseDataSource({ client, table: 'customers', schema })
+    const out = await src.getRows(
+      req({
+        groupBy: ['tier'],
+        groupKeys: ['pro'],
+        aggregations: [{ col: 'mrr', fn: 'sum' }],
+        needsGrandTotal: true,
+        filterModel: { columns: { mrr: { operator: 'greaterThan', value: '10' } } },
+      }),
+    )
+    const selects = has(calls, 'select')
+    expect(selects).toHaveLength(2)
+    expect(selects[1]![1]).toEqual(['mrr:mrr.sum()'])
+    // Both queries filter on mrr; only the first carries the tier path.
+    expect(has(calls, 'gt').map((c) => c[1])).toEqual([['mrr', '10'], ['mrr', '10']])
+    expect(has(calls, 'eq').map((c) => c[1])).toEqual([['tier', 'pro']])
+    expect(out.grandTotal).toEqual({ mrr: 900 })
+  })
+})
+
+describe('createSupabaseDataSource pivot', () => {
+  const pivoted = req({
+    groupBy: ['tier'],
+    groupKeys: [],
+    aggregations: [{ col: 'mrr', fn: 'sum' }],
+    pivotBy: ['name'],
+    pivotMode: true,
+  })
+
+  it('hands a pivoted request to the pivot option, which stands in for an RPC', async () => {
+    const { client, calls } = makeClient({ data: [], count: 0, error: null })
+    const seen: ServerRequest[] = []
+    const src = createSupabaseDataSource({
+      client,
+      table: 'customers',
+      schema,
+      pivot: async (request) => {
+        seen.push(request)
+        return { rows: [{ tier: 'pro', Ada_mrr: 1 } as never], rowCount: 1, pivotResultFields: ['Ada_mrr'] }
+      },
+    })
+    const out = await src.getRows(pivoted)
+    expect(seen).toHaveLength(1)
+    expect(out.pivotResultFields).toEqual(['Ada_mrr'])
+    // Nothing went to the table.
+    expect(has(calls, 'from')).toHaveLength(0)
+    // The leaves under a path are not pivoted: they go the ordinary way.
+    await src.getRows(req({ ...pivoted, groupKeys: ['pro'] }))
+    expect(seen).toHaveLength(1)
+    expect(has(calls, 'from')).toHaveLength(1)
+  })
+
+  it('falls back to plain grouping, warning once, without the option', async () => {
+    const { client, calls } = makeClient({ data: [], count: 0, error: null })
+    const src = createSupabaseDataSource({ client, table: 'customers', schema })
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (m: string) => warnings.push(String(m))
+    try {
+      await src.getRows(pivoted)
+      await src.getRows(pivoted)
+    } finally {
+      console.warn = original
+    }
+    expect(has(calls, 'select')[0]![1]![0]).toBe('tier,mrr:mrr.sum(),childCount:count()')
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain('pivot')
+  })
+})

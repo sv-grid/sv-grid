@@ -10,7 +10,7 @@ are paid in MUI X and free here. The port is mostly mechanical.
 > you've leant on `apiRef.current.*` calls.
 
 <!-- facts:start mui-x-datagrid -->
-> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.3 84.5 KB JS + 9.5 KB CSS (measured 12 Sep 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
+> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
 <!-- facts:end -->
 
 ## Package map
@@ -168,11 +168,18 @@ For full-row editing (one Save button per row), see
 ## Server-side data
 
 MUI X's `pagination + serverSideMode + filterMode='server'` maps to
-sv-grid's `externalSort + externalFilter`, or to the server-side row
-model when the server also groups and pages; the demo below runs that
-model against a fake API with sort, filter and infinite scroll:
+sv-grid's `externalSort + externalFilter`, or to `createServerDataSource` (free:
+paging or infinite scroll, sort, filter) when the server pages, and to the
+Enterprise `createServerRowModel` when it also groups; the demo below runs
+the free controller against a fake API with sort, filter and infinite scroll:
 
 <div data-docs-demo="148-server-row-model" data-height="520"></div>
+
+MUI X's server-side row grouping and aggregation (Premium) map to the
+Enterprise row model, which loads each group level on expand and pages,
+edits and selects across rows the grid never fetched:
+
+<div data-docs-demo="467-server-row-model-1m" data-height="600"></div>
 
 ```svelte
 <SvGrid

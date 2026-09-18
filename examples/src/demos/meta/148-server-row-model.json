@@ -1,24 +1,28 @@
 {
-  "description": "The server-side row model of the Svelte 5 data grid: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort, filter and page lifecycle, races stale responses away and pushes { rows, total, loading } back. The demo's server is a 100,000-row in-memory table behind 250 ms latency; the grid holds only the current 50-row page, shows loadingOverlay while a request is in flight and takes its filter value lists from serverFilterValues.",
+  "description": "The free half of the server-side row model in a Svelte 5 data grid: implement one async getRows({ startRow, endRow, sortModel, filterModel }) that returns { rows, rowCount }, and createServerDataSource owns the sort, filter and page lifecycle and ignores responses that arrive after a newer request. Paged, the grid holds one 50-row page and shows loadingOverlay while a request is in flight; in infinite mode the same source feeds a block cache under the scrollbar with placeholder rows, retry and an LRU that evicts blocks behind you. The server is a 100,000-row in-memory table behind 250 ms latency, and the filter checklists take their values from serverFilterValues.",
   "keywords": [
     "svelte server side row model",
     "svelte grid datasource getRows",
     "svelte 5 createServerDataSource",
-    "svelte grid remote data contract",
+    "svelte grid infinite scroll block cache",
     "svelte data grid loading overlay"
   ],
   "faq": [
     {
       "question": "What does my getRows have to return?",
-      "answer": "A promise of { rows, total } for the requested range, after applying the sortModel and filterModel it receives. The data source calls it whenever sort, filter or page changes and ignores any response that arrives after a newer request."
+      "answer": "A promise of { rows, rowCount } for the requested range, after applying the sortModel and filterModel it receives. The data source calls it whenever sort, filter, page or the visible block changes and ignores any response that arrives after a newer request."
     },
     {
       "question": "How does the grid connect to the data source?",
-      "answer": "Pass s.rows as data and s.loading to loading, set externalSort and externalFilter, and forward onSortingChange and onFiltersChange to the controller's setSort and setFilter. The controller re-queries and updates the reactive state."
+      "answer": "Either hand the controller to the grid as rowModel={ctl}, which wires data, loading, external sort and filter, pagination and placeholders in one prop, or spell those props out yourself: s.rows as data, s.loading to loading, externalSort and externalFilter set, and onSortingChange / onFiltersChange forwarded to setSort and setFilter."
+    },
+    {
+      "question": "What is the difference between paged and infinite mode?",
+      "answer": "Paged keeps one page in memory and re-queries on page change. Infinite sizes the scrollbar to rowCount, fetches blocks as they scroll into view, renders placeholder rows for blocks still in flight, retries failed blocks and evicts blocks past maxBlocksInCache. Grouping, tree, pivot and transactions on the same contract are the Enterprise row model."
     },
     {
       "question": "Where do the filter checklists get their values?",
-      "answer": "From serverFilterValues, a map of column id to distinct values you fetch once from the server, since the grid never sees the full dataset."
+      "answer": "From serverFilterValues, a function that resolves the distinct values of a column from the server when its filter menu opens, since the grid never sees the full dataset."
     }
   ]
 }

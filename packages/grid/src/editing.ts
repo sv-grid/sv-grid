@@ -47,6 +47,14 @@ export function createEditing<
   function isCellEditable(column: Column<TData>, row?: Row<TData>): boolean {
     const editable = column.columnDef.editable;
     if (editable === false) return false;
+    if (row) {
+      // A server-side group row is a key with aggregates under the leaf
+      // columns, and a placeholder row has no data yet: neither takes an
+      // edit, whatever the column says.
+      const serverGroup = ctx.props.serverGroup;
+      if (serverGroup && row.original !== undefined && serverGroup.isGroup(row.original)) return false;
+      if (ctx.placeholderStateOf?.(row)) return false;
+    }
     if (typeof editable !== "function") return true;
     if (!row) return true;
     const cellCtx: CellContext<TData> = {

@@ -10,10 +10,12 @@ lifecycle (paging, sort, filter, race-safety, writes).
 
 <div data-docs-demo="148-server-row-model" data-height="480"></div>
 
-> **Scope.** This is a **page-based** server model: one page is in memory at a
-> time and each fetch loads exactly that page. It is not infinite block-scroll
-> with a background block cache, and it does not lazily load group children on
-> the server. For those, see [what this does not do](#what-this-does-not-do).
+> **Scope.** `createServerDataSource` is the free, flat row model: one page at
+> a time in `page` mode, or one long block-cached list in
+> [`infinite` mode](./server-infinite-scroll.md). Grouping, tree data, pivot,
+> transactions and selection across unloaded rows are the Enterprise
+> [Server-Side Row Model](./server-grouping.md), built on the same contract.
+> See [what this does not do](#what-this-does-not-do).
 
 ## Quick start
 
@@ -123,9 +125,17 @@ complete, runnable server (route + query builder), follow the
 
 ## Wiring to the grid
 
-Run the grid in **controlled** mode - it records the sort/filter UI state but
-does not reorder or slice the data itself (the server already did) - and render
-it from the controller's current page:
+The controller is a **row model**: hand it to the grid and every seam is
+wired - the rows, the loading flag, external sort and filter, the pager in
+page mode, the visible range and the placeholder rows in infinite mode:
+
+```svelte
+<SvGrid rowModel={ctl} {columns} {features} sortable filterable pageable />
+```
+
+A prop written on the grid beats what the model supplies, so you can adopt
+the model and still override one piece. The long form spells out the same
+seams by hand, which is also how a model of your own plugs in:
 
 ```svelte
 <SvGrid
@@ -134,15 +144,23 @@ it from the controller's current page:
   sortable filterable
   externalSort externalFilter
   loading={view.loading}
-  pageable={false}
+  externalPagination rowCount={view.total} pageIndex={view.pageIndex} pageSize={view.pageSize}
   onSortingChange={(sorting) => ctl.setSort(sorting)}
-  onFiltersChange={(f) => ctl.setFilter({ global: f.global, columns: toColumnModel(f.columns) })}
+  onFiltersChange={(f) => ctl.setFilter(f)}
+  onPaginationChange={(p) => (p.pageSize !== view.pageSize ? ctl.setPageSize(p.pageSize) : ctl.setPage(p.pageIndex))}
 />
-<!-- your pager drives ctl.setPage(i) from view.pageIndex / view.pageCount -->
 ```
 
 `externalSort` / `externalFilter` tell the grid to emit intent instead of acting
-locally; `pageable={false}` hands paging to your pager + the controller.
+locally; `externalPagination` hands the pager the server's count.
+
+## Infinite mode
+
+Pass `mode: 'infinite'` and there are no pages: `state.rows` spans the whole
+result, placeholder rows stand in for blocks nobody has scrolled to, and
+blocks of `blockSize` rows load as the viewport reaches them, with an LRU
+cap, a concurrency cap, retry for failed blocks and an unknown-count mode.
+[Server-side infinite scroll](./server-infinite-scroll.md) covers it.
 
 ## The controller
 
@@ -233,22 +251,41 @@ clears `loading`, so an unmounting component can't leave a stuck spinner.
 
 Being honest about the edges so you pick the right tool:
 
-- **This controller is page-based, not infinite-scroll.** `createServerDataSource`
-  keeps one page resident and navigates with a pager (or a "Load more" that calls
-  `setPage`). If you instead want the grid to render placeholder rows and stream
-  chunks as the user scrolls, use the separate
-  [sparse infinite-scroll pattern](../server-side-data.md#option-3-sparse-infinite-scroll)
-  (demo 33) - a different mechanism from this controller.
-- **No lazy server-side group expansion.** Grouping runs on the rows you return,
-  not by fetching a group's children on expand. Group on the server and return
-  pre-grouped rows if you need server-driven grouping.
+- **Flat rows only.** `createServerDataSource` sends `groupBy: []`. Lazy
+  grouping per level, tree data and pivot are `createServerRowModel` in
+  `@svgrid/enterprise` - the same `getRows`, with `groupBy`, `groupKeys`,
+  `aggregations` and `pivotBy` filled in. See [Server grouping](./server-grouping.md).
+- **A selection is the loaded rows.** Select-all over rows the grid never
+  fetched, and a bulk edit sent as a rule, are the Enterprise model's
+  [selection](./server-selection.md).
+- **Writes refetch.** A write re-reads the page (or the held blocks); rows are
+  not spliced in by hand. Route-addressed [transactions](./server-transactions.md)
+  are Enterprise.
 - **Writes are non-optimistic unless you opt in** (above).
+
+## Enterprise: the Server-Side Row Model
+
+`createServerRowModel` from `@svgrid/enterprise` is the same contract with
+the rest of the request filled in, and the same one-prop wiring:
+
+| Page | What it adds |
+| ---- | ------------ |
+| [Server grouping](./server-grouping.md) | lazy grouping per level, a block cache per level, aggregates, child counts, grand totals, footers, refresh and retry per route, paging over the tree |
+| [Server tree data](./server-tree-data.md) | self-referential trees loaded on expand |
+| [Server pivot](./server-pivot.md) | pivot on the server, columns built from `pivotResultFields`, the pivot designer in server mode |
+| [Server transactions](./server-transactions.md) | add, update and remove rows in a loaded level without a request, sync or batched |
+| [Server selection](./server-selection.md) | select-all as a rule across unloaded rows, a bulk edit by rule |
+
+The flagship demo runs all of it over one million rows through one
+`rowModel` prop:
+
+<div data-docs-demo="467-server-row-model-1m" data-height="640"></div>
 
 ## More examples
 
-### Server grouping (first-class)
+### Server grouping (row model)
 
-First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.
+Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.
 
 <div data-docs-demo="344-server-grouping-model" data-height="560"></div>
 
@@ -278,6 +315,7 @@ SvelteKit-style SSR with a sandboxed pre-hydration snapshot.
 
 ## See also
 
+- [Server-side infinite scroll](./server-infinite-scroll.md) - `mode: 'infinite'`: blocks, placeholders, retry, unknown counts.
 - [Tutorial: a Postgres CRUD grid](../../enterprise/studio/postgres-grid.md) - a complete server route + query builder.
 - [Tutorial: a REST CRUD grid](../../enterprise/studio/rest-grid.md) - the same contract over an existing JSON API.
 - [Data binding](../../enterprise/studio/data-binding.md) - the ServerDataSource contract across every backend.
