@@ -400,8 +400,9 @@ to the browser's own print engine, so fonts, CJK and RTL come out right
 and nothing is bundled: the print area or the used range, column widths
 and row heights as the sheet shows them, hidden lines left out, merges as
 spans, every cell as it shows with its format and its conditional style,
-the title rows repeated on each page, gridlines and headings when asked,
-and the orientation, paper and margins in `@page`. "Save as PDF" in that
+the title rows repeated on each page, the sparklines drawn in their cells
+and the charts and pictures hung from theirs, gridlines and headings when
+asked, and the orientation, paper and margins in `@page`. "Save as PDF" in that
 dialog is the PDF. The setup rides in `getState()` as `pageSetup` and in
 the xlsx as `pageSetup`, `pageMargins`, `printOptions` and Excel's own
 `Print_Area` and `Print_Titles` names, both ways.
@@ -902,6 +903,12 @@ the grid's. Raised as `insert-chart`, `insert-picture`, `chart-setup`
 and `delete-object`, so an application can put its own chart builder in
 their place.
 
+Objects print with the sheet. File > Print hangs each one from its anchor
+cell with the offset and size it has on the page, and the default print
+area grows down and across to hold a chart anchored below the numbers,
+which is where a chart usually is. A named print area is honoured exactly
+as it stands, so an object outside it is left out.
+
 Objects ride in the .xlsx both ways, as Excel's own drawing part. A
 picture's bytes go into `xl/media` and a chart becomes a chart part of its
 own, both anchored to their cell; a file being opened gives its pictures
@@ -1023,8 +1030,8 @@ A sparkline is behind whatever the cell shows, so a label typed over one
 still reads, and the pointer goes through it: the cell is selected,
 dragged and edited as a cell. Sparklines ride in the .xlsx as Excel's own
 sparkline groups, both ways, in the worksheet's extension list where Excel
-keeps them; File > Print still leaves them out, since the printed page is
-built from what each cell says.
+keeps them, and they are drawn on the printed page too, in the cells they
+belong to.
 
 ```svelte
 <script>
@@ -1339,8 +1346,8 @@ button that does nothing.
   the .xlsx, since its bytes are not in the document to write.
 - **Sparklines** are the three Excel draws: no axis options beyond one
   scale for the group, and no high and low point marks beyond the last one.
-  They ride in the .xlsx as Excel's sparkline groups, both ways, but they
-  do not reach the printed page, which is built from what each cell says.
+  They ride in the .xlsx as Excel's sparkline groups, both ways, and they
+  print with the sheet.
 - **A PivotTable** is a definition plus the cells it writes, not a live
   object: no drag-and-drop field list, no slicers, no drill-down on a
   double-click, and no report filter. Refresh is what brings it up to
