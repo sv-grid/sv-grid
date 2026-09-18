@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-17T23:42:18.762Z",
+  "generatedAt": "2026-09-18T11:26:57.957Z",
   "counts": {
-    "pages": 383,
+    "pages": 384,
     "enterprise": 60,
-    "withDemo": 268
+    "withDemo": 269
   },
   "pillars": [
     {
@@ -210,6 +210,7 @@
       "pages": [
         "help/rows/accessing-rows.md",
         "help/rows/full-width-rows.md",
+        "help/rows/gantt.md",
         "help/rows/kanban-board.md",
         "help/rows/master-detail.md",
         "help/rows/row-data.md",
@@ -3353,8 +3354,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1525,
-      "lastUpdated": "2026-08-24",
+      "words": 1558,
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "02-sort-filter-paginate",
         "04-selection-copy-paste",
@@ -3408,6 +3409,20 @@
       "lastUpdated": "2026-09-03",
       "demoIds": [
         "08-tree-and-master-detail"
+      ]
+    },
+    {
+      "path": "help/rows/gantt.md",
+      "url": "/docs/help/rows/gantt/",
+      "title": "Gantt chart mode",
+      "summary": "Set one gantt prop and the grid renders its rows as a **task table beside a time chart**: one bar per row, placed by its start and finish, nested into a work-breakdown tree, with arrows between linked tasks. It is the same <SvGrid>, the same data and columns - only the presentation changes.",
+      "section": "help/rows",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 2121,
+      "lastUpdated": "2026-09-18",
+      "demoIds": [
+        "474-gantt-intro"
       ]
     },
     {
@@ -3560,8 +3575,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 7513,
-      "lastUpdated": "2026-09-03",
+      "words": 7520,
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -5531,7 +5546,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 725,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-18",
       "demoIds": []
     },
     {
@@ -5572,7 +5587,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 788,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-18",
       "demoIds": []
     },
     {
@@ -5612,13 +5627,13 @@
       "path": "help/web-components/react.md",
       "url": "/docs/help/web-components/react/",
       "title": "SvGrid in React",
-      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 108 properties and 25 events are typed props, and it works the same on React 17, 18 and 19.",
+      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 109 properties and 25 events are typed props, and it works the same on React 17, 18 and 19.",
       "section": "help/web-components",
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
       "words": 2547,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -5633,7 +5648,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 631,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "10-custom-cells-and-themes",
         "04-selection-copy-paste"
@@ -5665,8 +5680,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1500,
-      "lastUpdated": "2026-09-17",
+      "words": 1506,
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"

@@ -205,7 +205,7 @@ Guides: [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-
 | You want to | Install | License |
 |---|---|---|
 | A data grid in a Svelte 5 / SvelteKit app | `@svgrid/grid` | MIT |
-| Excel / PDF export, import, pivot tables, print, advanced filter builder, alert rules, Kanban + scheduler renderers, server-side row model | `+ @svgrid/enterprise` | Commercial |
+| Excel / PDF export, import, pivot tables, print, advanced filter builder, alert rules, Kanban + scheduler + Gantt renderers, server-side row model | `+ @svgrid/enterprise` | Commercial |
 | The grid in React, Vue, Angular, or plain HTML | `@svgrid/grid-wc` | MIT |
 | Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | MIT |
 | To copy one UI component into your app, shadcn-style | `npx @svgrid/ui add <name>` | MIT |

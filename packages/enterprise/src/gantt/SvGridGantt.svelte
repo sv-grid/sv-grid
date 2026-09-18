@@ -381,7 +381,18 @@
     }
     return out;
   });
-  const tableColsWidth = $derived(tableCols.reduce((n, c) => n + c.width, 0));
+  const tableColsWidth = $derived(tableCols.reduce((n, c) => n + c.width, 0))
+  /**
+   * The first column FLEXES and the rest keep their width, so the columns
+   * always add up to the pane exactly. A `tableWidth` narrower than the columns
+   * would otherwise spill them over the chart, and one wider would leave a gap
+   * at the end of every row.
+   */
+  function colStyle(col: TableCol, i: number): string {
+    return i === 0
+      ? `flex:1 1 ${col.width}px; min-width:0`
+      : `flex:none; width:${col.width}px`
+  };
   let tableW = $state(0);
   let tableWSeeded = false;
   $effect(() => {
@@ -400,7 +411,12 @@
     return String(value);
   }
   function cellText(col: TableCol, n: GanttNode<TData>): string {
-    if (col.kind === "duration") return String(workingDays(n.task.start, n.task.end, cal));
+    if (col.kind === "duration") {
+      // A parent carries no dates of its own, so read the span it DRAWS -
+      // otherwise every phase reports zero days.
+      const span = drawnSpan(n);
+      return String(workingDays(span.start, span.end, cal));
+    }
     if (col.kind === "field" && col.field) return fmt(fieldValue(n.task.row, col.field));
     return "";
   }
@@ -494,6 +510,14 @@
     el.scrollLeft = Math.max(0, target + (showTable ? tableW : 0) - half);
   });
 
+  /** The window the chart spans, as its first and last header groups. */
+  const rangeLabel = $derived.by(() => {
+    const first = axis.majors[0]?.label
+    const last = axis.majors[axis.majors.length - 1]?.label
+    if (!first) return ""
+    return !last || last === first ? first : `${first} - ${last}`
+  })
+
   // --- tooltip --------------------------------------------------------------
   const tooltipCfg = $derived(gantt.tooltip);
   const hasTooltip = $derived(!!tooltipCfg);
@@ -550,7 +574,7 @@
 
 <div class="sv-gantt" style={`--gantt-row-h:${rowH}px; --gantt-bar-h:${barH}px; --gantt-table-w:${tableW}px`}>
   <div class="sv-gantt-toolbar">
-    <span class="sv-gantt-title">{axis.majors[0]?.label ?? ""}</span>
+    <span class="sv-gantt-title">{rangeLabel}</span>
     <div class="sv-gantt-tools">
       {#if anyCollapsible}
         <button
@@ -595,11 +619,11 @@
       {#if showTable}
         <div class="sv-gantt-table" style={`width:${tableW}px`}>
           <div class="sv-gantt-table-head">
-            {#each tableCols as col (col.id)}
+            {#each tableCols as col, ci (col.id)}
               <div
                 class="sv-gantt-th"
                 class:sv-gantt-num={col.numeric}
-                style={`width:${col.width}px`}
+                style={colStyle(col, ci)}
               >{col.label}</div>
             {/each}
           </div>
@@ -614,7 +638,7 @@
                   <div
                     class="sv-gantt-td"
                     class:sv-gantt-num={col.numeric}
-                    style={`width:${col.width}px${ci === 0 ? `; padding-left:${8 + node.depth * 14}px` : ""}`}
+                    style={`${colStyle(col, ci)}${ci === 0 ? `; padding-left:${8 + node.depth * 14}px` : ""}`}
                   >
                     {#if ci === 0 && node.hasChildren}
                       <button
@@ -662,7 +686,7 @@
               <div
                 class="sv-gantt-major"
                 style={`left:${m.leftPct}%; width:${m.widthPct}%`}
-              >{m.label}</div>
+              ><span>{m.label}</span></div>
             {/each}
           </div>
           <div class="sv-gantt-ticks">
@@ -838,10 +862,15 @@
   .sv-gantt-table {
     position: sticky;
     left: 0;
-    z-index: 3;
+    /* Above everything the chart draws: the body scrolls horizontally UNDER
+       this pane, so bars, arrows and the today line must pass beneath it. */
+    z-index: 6;
     flex: none;
     background: var(--sg-bg, #fff);
     border-right: 1px solid var(--sg-border, #e5e7eb);
+    /* The pane is a fixed width the splitter owns; anything a column cannot
+       fit into it is clipped rather than drawn over the chart. */
+    overflow: hidden;
   }
   .sv-gantt-table-head,
   .sv-gantt-tr { display: flex; align-items: stretch; }
@@ -925,7 +954,7 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    right: -3px;
+    right: 0;
     width: 6px;
     cursor: col-resize;
     z-index: 4;
@@ -939,7 +968,8 @@
   .sv-gantt-axis {
     position: sticky;
     top: 0;
-    z-index: 2;
+    /* Above the bars and arrows that scroll under it, below the task pane. */
+    z-index: 5;
     height: 48px;
     background: var(--sg-bg, #fff);
     border-bottom: 1px solid var(--sg-border, #e5e7eb);
@@ -959,7 +989,17 @@
     white-space: nowrap;
     border-left: 1px solid color-mix(in srgb, var(--sg-border, #e5e7eb) 60%, transparent);
   }
-  .sv-gantt-major { font-size: 0.74rem; font-weight: 600; }
+  .sv-gantt-major { font-size: 0.74rem; font-weight: 600; justify-content: flex-start; }
+  /* A month cell is far wider than the viewport, so a centred label sits
+     off-screen the moment you scroll into the middle of it - the header then
+     reads "r 2026". The label sticks just right of the task pane instead, so
+     you can always see which month you are looking at. */
+  .sv-gantt-major > span {
+    position: sticky;
+    left: calc(var(--gantt-table-w, 0px) + 10px);
+    padding-right: 10px;
+    white-space: nowrap;
+  }
   .sv-gantt-tick { font-size: 0.7rem; color: var(--sg-muted, #6b7280); }
   .sv-gantt-tick-today { color: var(--sg-accent, #4f46e5); font-weight: 700; }
 

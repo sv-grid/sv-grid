@@ -433,6 +433,35 @@ describe('SvGridGantt - the task table', () => {
     destroy()
   })
 
+  it("reports a PARENT's rolled-up span in the duration column", () => {
+    // A phase row carries no dates of its own, so reading its raw task made
+    // every phase report 0 days - visible only once the column was on screen.
+    const { target, destroy } = mountGantt({ tableColumns: ['__duration'] })
+    // Discovery spans the 7th to the 11th inclusive: five weekdays. Read the
+    // text span, not the cell - the cell also holds the collapse chevron.
+    expect(
+      tableRows(target)[0]!.querySelector('.sv-gantt-cell-text')!.textContent?.trim(),
+    ).toBe('5')
+    destroy()
+  })
+
+  it('fits its columns to the pane instead of spilling them over the chart', () => {
+    // Columns summing past `tableWidth` used to overflow and draw across the
+    // chart. The first column flexes, so the row always adds up to the pane.
+    const { target, destroy } = mountGantt({
+      tableColumns: ['name', 'owner'],   // 180 + 100 = 280
+      tableWidth: 200,
+    })
+    const cells = tableRows(target)[0]!.querySelectorAll<HTMLElement>('.sv-gantt-td')
+    // The first absorbs the shrink; the rest keep the width they asked for.
+    expect(cells[0]!.style.flex).toBe('1 1 180px')
+    expect(cells[0]!.style.minWidth).toBe('0px')
+    expect(cells[1]!.style.width).toBe('100px')
+    // jsdom normalises `flex: none` to its longhand.
+    expect(cells[1]!.style.flex).toBe('0 0 auto')
+    destroy()
+  })
+
   it('counts WORKING days in the duration column', () => {
     const { target, destroy } = mountGantt({ tableColumns: ['__duration'] })
     // Implementation runs the 14th to the 18th inclusive: five weekdays.

@@ -1,0 +1,24 @@
+{
+  "description": "A project plan in the Svelte 5 data grid as a Gantt chart: one gantt prop turns the rows into a task table beside a time chart, with one bar per row placed by start and finish. Phases nest their tasks through parentField and draw a rolled-up summary bar whose percent is weighted by duration rather than task count. Finish-to-start links render as arrows and turn red when a successor sits too early, collapsing a phase keeps its summary span and re-points arrows at it, and a Gantt or Table toggle shows the same grid rows either way.",
+  "keywords": [
+    "svelte gantt chart",
+    "svelte 5 project plan grid",
+    "svelte gantt dependencies",
+    "svelte work breakdown structure",
+    "svelte gantt summary bars"
+  ],
+  "faq": [
+    {
+      "question": "How does a phase get its dates?",
+      "answer": "It does not carry any. A row with children draws a summary bar rolled up from every descendant, so the span is the earliest start to the latest finish and there is nothing to keep in sync by hand."
+    },
+    {
+      "question": "Why is a phase not the average of its tasks?",
+      "answer": "Summary progress is weighted by duration, so a two-day task at 100 percent beside a six-day task at 0 percent reads as 25 percent done rather than 50. Weighting by task count would report progress the plan has not made."
+    },
+    {
+      "question": "What happens to an arrow when its task is collapsed?",
+      "answer": "It re-points at the visible ancestor, so a link into a collapsed phase draws to that phase's summary bar instead of disappearing."
+    }
+  ]
+}
