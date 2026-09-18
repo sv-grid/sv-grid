@@ -81,7 +81,8 @@
     onAction,
     activeActions = [],
     tabs = RIBBON_TABS,
-    tab = $bindable(tabs[0]?.id ?? 'home'),
+    // Excel opens on Home, not on File, whatever tab comes first.
+    tab = $bindable(tabs.some((t) => t.id === 'home') ? 'home' : tabs[0]?.id ?? 'home'),
     without = [],
     collapsed = $bindable(false),
   }: Props = $props()

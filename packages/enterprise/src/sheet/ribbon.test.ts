@@ -65,8 +65,13 @@ beforeEach(() => {
 })
 
 describe('the model is well-formed', () => {
-  it('ships the six tabs that have something behind them', () => {
-    expect(RIBBON_TABS.map((t) => t.id)).toEqual(['home', 'insert', 'formulas', 'data', 'review', 'view'])
+  it('ships the seven tabs that have something behind them', () => {
+    expect(RIBBON_TABS.map((t) => t.id)).toEqual(['file', 'home', 'insert', 'formulas', 'data', 'review', 'view'])
+  })
+
+  it('File raises New, Open, Save As and Export CSV for the shell', () => {
+    const file = RIBBON_TABS.find((t) => t.id === 'file')!
+    expect(file.groups.flatMap((g) => g.items.map((i) => i.emits))).toEqual(['file-new', 'file-open', 'file-save-xlsx', 'file-export-csv'])
   })
 
   it('View > Show carries Excel\'s three toggles, raised for the shell', () => {
@@ -85,12 +90,12 @@ describe('the model is well-formed', () => {
     const freeze = view.groups.find((g) => g.id === 'window')!.items[0]!
     expect(freeze).toMatchObject({ id: 'freeze', kind: 'dropdown', size: 'large' })
     expect(freeze.options!.map((o) => o.emits)).toEqual(['freeze-panes', 'freeze-top-row', 'freeze-first-column', 'unfreeze-panes'])
-    const cells = RIBBON_TABS[0]!.groups.find((g) => g.id === 'cells')!
+    const cells = RIBBON_TABS.find((t) => t.id === 'home')!.groups.find((g) => g.id === 'cells')!
     expect(cells.items.map((i) => i.id)).toEqual(['insert', 'delete', 'format'])
   })
 
   it('Home > Styles is the Conditional Formatting dropdown, every entry raised', () => {
-    const styles = RIBBON_TABS[0]!.groups.find((g) => g.id === 'styles')!
+    const styles = RIBBON_TABS.find((t) => t.id === 'home')!.groups.find((g) => g.id === 'styles')!
     const cf = styles.items[0]!
     expect(cf).toMatchObject({ id: 'conditional-formatting', kind: 'dropdown', size: 'large' })
     const raised = cf.options!.filter((o) => !o.heading).map((o) => o.emits)

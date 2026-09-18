@@ -172,6 +172,7 @@ export { default as SvSheetRemoveDuplicates } from './SvSheetRemoveDuplicates.sv
 export { default as SvSheetSort } from './SvSheetSort.svelte'
 export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sheet/sort'
 export { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
+export { csvText } from './sheet/csv'
 export { functionCatalog, FUNCTION_GROUPS, type FunctionInfo, type FunctionGroup } from './sheet/function-catalog'
 export { parseEntry, completeEntry, type ParsedEntry } from './sheet/entry'
 export { cycleReference, type TextEdit } from './sheet/edit-keys'
