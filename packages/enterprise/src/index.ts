@@ -192,6 +192,11 @@ export {
   type SheetObject, type SheetChartObject, type SheetImageObject, type ObjectAnchor, type SheetChartType,
 } from './sheet/objects'
 export {
+  sparklineSeries, sparklineAt, sparklineScale, sparklinesFromRange, clearSparklines,
+  shiftSparkline, shiftSparklines, copySparkline, sparklineId, isColumnLocation, SPARKLINE_TYPES,
+  type SparklineGroup, type SheetSparklineType,
+} from './sheet/sparklines'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './sheet/hyperformula-engine'

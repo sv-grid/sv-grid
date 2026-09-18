@@ -77,6 +77,11 @@ export {
   type SheetObject, type SheetChartObject, type SheetImageObject, type ObjectAnchor, type SheetChartType,
 } from './objects'
 export {
+  sparklineSeries, sparklineAt, sparklineScale, sparklinesFromRange, clearSparklines,
+  shiftSparkline, shiftSparklines, copySparkline, sparklineId, isColumnLocation, SPARKLINE_TYPES,
+  type SparklineGroup, type SheetSparklineType,
+} from './sparklines'
+export {
   createHyperFormulaEngine, fromHyperFormula,
   type HyperFormulaLike, type HyperFormulaEngineOptions,
 } from './hyperformula-engine'

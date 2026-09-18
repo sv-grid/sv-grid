@@ -163,6 +163,10 @@ export type SheetTextMessages = {
   couldNotReadPicture: string
   chartObject: string
   pictureObject: string
+  sparklineObject: string
+  selectRangeForSparklines: string
+  sparklinesCleared: string
+  noSparklinesHere: string
   printAreaSet: string
   printAreaCleared: string
   couldNotPrint: string
@@ -592,6 +596,23 @@ export const defaultDialogMessages = {
   'chartSetup.headers': 'First row and column are labels',
   'chartSetup.stacked': 'Stack the series',
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
+  // Create Sparklines
+  'sparklines.title': 'Create Sparklines',
+  'sparklines.type': 'Type:',
+  'sparklines.type.line': 'Line',
+  'sparklines.type.column': 'Column',
+  'sparklines.type.winloss': 'Win/Loss',
+  'sparklines.data': 'Data range:',
+  'sparklines.dataPlaceholder': 'B2:E5',
+  'sparklines.location': 'Location range:',
+  'sparklines.locationPlaceholder': 'F2:F5',
+  'sparklines.colour': 'Colour:',
+  'sparklines.negativeColour': 'Negative:',
+  'sparklines.sameScale': 'One value scale for the whole group',
+  'sparklines.markers': 'Mark the last point',
+  'sparklines.hint': 'One sparkline per row of the data, drawn in the cells of the location. They read the range, so editing a number redraws them.',
+  'sparklines.badRange': 'That is not a range on this sheet.',
+  'sparklines.mismatch': 'The location needs one cell per line of the data.',
   // Page Setup
   'pageSetup.title': 'Page Setup',
   'pageSetup.orientation': 'Orientation:',
@@ -791,6 +812,10 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   couldNotReadPicture: 'Could not read the picture.',
   chartObject: 'Chart',
   pictureObject: 'Picture',
+  sparklineObject: '{type} sparkline',
+  selectRangeForSparklines: 'Select the numbers the sparklines read.',
+  sparklinesCleared: 'Sparklines cleared.',
+  noSparklinesHere: 'No sparklines in the selection.',
   printAreaSet: 'Print area set to {range}.',
   printAreaCleared: 'Print area cleared.',
   couldNotPrint: 'Could not open the print window; the browser blocked the popup.',
