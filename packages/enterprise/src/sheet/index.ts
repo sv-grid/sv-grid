@@ -31,7 +31,11 @@ export {
   type SheetDocument, type SheetDocumentInit, type SheetState, type SheetStateEntry, type PerSheetState, type SheetChangeReason,
 } from './document'
 export { shiftRect, shiftRects, subtractRect, rectContains, rectsIntersect, remapNotes, lineShift, type NotesMap } from './rects'
-export { isLocked, rectsHaveLocked, rectsMixLocked, PROTECTED_MESSAGE } from './protection'
+export {
+  isLocked, cellLocked, inEditRange, rectsHaveLocked, rectsMixLocked, PROTECTED_MESSAGE, PROTECTION_PERMISSIONS,
+  defaultProtection, copyProtection, newEditRangeId, parseRangeText, rangeText,
+  type ProtectionAllow, type ProtectionPermission, type EditRange, type SheetProtection,
+} from './protection'
 export {
   commentAt, withComment, withThread, threadAt, threadOf, threadText, notesOf, isThreaded, listComments, nextComment,
   type CommentEntry, type CommentThread, type CommentValue, type CommentsMap,

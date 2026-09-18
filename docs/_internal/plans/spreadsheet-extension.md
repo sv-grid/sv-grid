@@ -34,6 +34,10 @@ per item:
   resolved) beside the plain note in the same map, the thread card in the
   comment box, `commentAuthor` on the shell, and Excel's threaded comment
   parts in the xlsx writer and reader.
+- Phase C item 8, protection: the Protect Sheet dialog with Excel's allow
+  list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
+  beside the flag, and `sheetProtection` attributes and `protectedRanges`
+  in the xlsx both ways. Phase C is complete.
 - Phase E item 1: `SheetMessages`, `SheetLocalization` and the
   `localization` prop, threaded through Svelte context to the ribbon,
   the formula bar, the tab strip, every dialog and the status bar; the
@@ -222,8 +226,8 @@ line from "What it does not do":
    negative axis (M).
 7. Formula auditing arrows from `deps.ts` drawn on the grid's overlay
    layer, the same layer `spreadsheetLayout` uses for borders (M).
-8. ~~Comment threads~~ (shipped) and protection with allowed ranges (M each). Threads
-   change the `comments` shape in `SheetState`; keep reading the old shape.
+8. ~~Comment threads and protection with allowed ranges (M each). Threads
+   change the `comments` shape in `SheetState`; keep reading the old shape.~~ Shipped.
 
 ### Phase D. Objects (L)
 

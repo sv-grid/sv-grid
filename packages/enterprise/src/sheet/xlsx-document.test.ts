@@ -37,6 +37,7 @@ function fullDocument() {
     r3: { D: { text: 'Sum of the totals', author: 'Ana', at: '2026-03-04T10:00:00.000Z', resolved: true, replies: [{ text: 'Checked', author: 'Ben', at: '2026-03-05T09:30:00.000Z' }, { text: 'Thanks', at: '2026-03-05T09:31:00.000Z' }] } },
   }
   orders.protected = true
+  orders.protection = { allow: { formatCells: true, sort: true }, ranges: [{ id: 'er1', title: 'Quantities', rects: [[1, 1, 3, 1]] }, { id: 'er2', title: 'Two blocks', rects: [[1, 0, 1, 0], [3, 0, 3, 0]] }] }
   orders.merges = [[4, 0, 4, 3]]
   orders.autoFilter = { range: [0, 0, 2, 4], filters: {} }
   orders.validation = [
@@ -78,7 +79,8 @@ describe('documentToXlsxParts', () => {
     expect(sheet).toContain('<c r="E2" s="3"><v>46085</v></c>')
     expect(sheet).toContain('<mergeCell ref="A5:D5"/>')
     expect(sheet).toContain('<pane xSplit="1" ySplit="1" topLeftCell="B2" activePane="bottomRight" state="frozen"/>')
-    expect(sheet).toContain('<sheetProtection sheet="1"')
+    expect(sheet).toContain('<sheetProtection sheet="1" objects="1" scenarios="1" formatCells="0" sort="0"/>')
+    expect(sheet).toContain('<protectedRanges><protectedRange sqref="B2:B4" name="Quantities"/><protectedRange sqref="A2 A4" name="Two blocks"/></protectedRanges>')
     expect(sheet).toContain('<autoFilter ref="A1:E3"/>')
     expect(sheet).toContain('<col min="5" max="5" width="13" customWidth="1" hidden="1"/>')
     expect(sheet).toContain('<row r="3" hidden="1">')
@@ -147,6 +149,8 @@ describe('the round trip', () => {
     expect(o.freeze).toEqual({ rows: 1, cols: 1 })
     expect(o.notes).toEqual(before.sheets.Orders.comments)
     expect(o.protected).toBe(true)
+    expect(o.protection.allow).toEqual({ formatCells: true, sort: true })
+    expect(o.protection.ranges.map(({ id: _id, ...rest }) => rest)).toEqual([{ title: 'Quantities', rects: [[1, 1, 3, 1]] }, { title: 'Two blocks', rects: [[1, 0, 1, 0], [3, 0, 3, 0]] }])
     expect(o.merges).toEqual([[4, 0, 4, 3]])
     expect(o.autoFilter).toEqual({ range: [0, 0, 2, 4], filters: {} })
     expect(again.get('Price list').sheetHidden).toBe(true)
@@ -204,6 +208,7 @@ describe('reading what Excel writes', () => {
       + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
       + '<cols><col min="1" max="1" width="20" customWidth="1"/><col min="2" max="16384" width="8.43"/></cols>'
       + '<sheetData><row r="1" ht="30" customHeight="1"><c r="A1" t="inlineStr"><is><t>x</t></is></c></row><row r="2" hidden="1"/></sheetData>'
+      + '<sheetProtection algorithmName="SHA-512" hashValue="x" sheet="1" objects="1" scenarios="1" insertRows="0" autoFilter="0"/><protectedRanges><protectedRange sqref="B2:C3 E1" name="Inputs"/></protectedRanges>'
       + '<conditionalFormatting sqref="A1:A9"><cfRule type="aboveAverage" dxfId="0" priority="1" aboveAverage="0"/></conditionalFormatting>'
       + '<dataValidations count="1"><dataValidation type="list" allowBlank="1" showDropDown="1" sqref="A2:A9"><formula1>"a,b"</formula1></dataValidation></dataValidations>'
       + '<legacyDrawing r:id="rId1"/></worksheet>',
@@ -220,6 +225,8 @@ describe('reading what Excel writes', () => {
     expect(s.conditionalFormats).toEqual([{ id: expect.any(String), rects: [[0, 0, 8, 0]], kind: 'average', above: false, style: { color: '#9c0006', fill: '#ffc7ce' } }])
     expect(s.validation[0]).toMatchObject({ allow: 'list', value1: 'a,b', inCellDropdown: false, ignoreBlank: true })
     expect(s.comments).toEqual({ r0: { A: 'Bo:\nlook here' } })
+    expect(s.protected).toBe(true)
+    expect(s.protection).toEqual({ allow: { insertRows: true, autoFilter: true }, ranges: [{ id: expect.any(String), title: 'Inputs', rects: [[1, 1, 2, 2], [0, 4, 0, 4]] }] })
   })
 
   it('a threaded comment Excel wrote: persons, replies in order, done, and the legacy note ignored', () => {

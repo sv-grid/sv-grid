@@ -47,7 +47,7 @@ export type RibbonIconName =
   | 'text-to-columns' | 'remove-duplicates'
   | 'chevron-down' | 'format-cells'
   | 'format-painter'
-  | 'protect' | 'unprotect' | 'lock'
+  | 'protect' | 'unprotect' | 'lock' | 'edit-ranges'
   | 'comment' | 'comment-delete' | 'comment-prev' | 'comment-next' | 'comments-all'
   | 'validation'
   | 'cf' | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
@@ -379,6 +379,13 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
     { d: 'M2.5 5.5h7M5.5 2.5v11' },
     { d: 'M9 10h5v4H9z' },
     { d: 'M10 10V8.8a1.5 1.5 0 0 1 3 0' },
+  ],
+  // A sheet with a block picked out and a pencil over it: the ranges that take an edit.
+  'edit-ranges': [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M2.5 6h11M6 2.5v11' },
+    { d: 'M7.5 7.5h4.5v4.5H7.5z', fill: true },
+    { d: 'M10.5 13.5l3-3 1 1-3 3h-1z' },
   ],
 
   // A speech bubble, and the same bubble with a mark inside or beside it.

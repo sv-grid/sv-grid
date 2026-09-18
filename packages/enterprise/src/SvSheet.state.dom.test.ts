@@ -368,4 +368,45 @@ describe('SvSheet marching ants', () => {
     flushSync()
     expect(outline()).toEqual([])
   })
+
+  it('an allow list opens what it names and an edit range takes an edit on a protected sheet; both ride the state and the dialogs open', async () => {
+    const { api, doc, sheet } = await mountSheet({ rows: 6, columns: 4 })
+    const s = doc.get('Sheet1')
+    s.protected = true
+    s.protection = { allow: { formatRows: true }, ranges: [{ id: 'r1', title: 'Inputs', rects: [[1, 1, 2, 1]] }] }
+    sheet.refresh()
+    flushSync()
+    const cmd = api.getCommandContext()
+    expect(cmd.canEdit!(1, 1)).toBe(true)
+    expect(cmd.canEdit!(2, 1)).toBe(true)
+    expect(cmd.canEdit!(0, 0)).toBe(false)
+    expect(cmd.canEdit!(3, 1)).toBe(false)
+
+    // The state carries the list and the ranges, and an insert moves a range.
+    const state = JSON.parse(JSON.stringify(sheet.getState()))
+    expect(state.sheets.Sheet1.protection).toEqual({ allow: { formatRows: true }, ranges: [{ id: 'r1', title: 'Inputs', rects: [[1, 1, 2, 1]] }] })
+    doc.shift('Sheet1', { kind: 'insertRows', at: 0, count: 2 })
+    expect(s.protection.ranges[0]!.rects).toEqual([[3, 1, 4, 1]])
+    s.protection = { allow: {}, ranges: [] }
+    sheet.setState(state)
+    flushSync()
+    await tick()
+    expect(doc.get('Sheet1').protection).toEqual(state.sheets.Sheet1.protection)
+
+    // Protect Sheet opens its dialog rather than protecting outright; Allow Edit Ranges opens its own.
+    s.protected = false
+    sheet.refresh()
+    sheet.act('protect-sheet')
+    flushSync()
+    expect(document.querySelector('.sv-modal')?.textContent).toContain('Allow all users of this worksheet to:')
+    expect(s.protected).toBe(false)
+    ;[...document.querySelectorAll('.sv-modal button')].find((b) => b.textContent === 'OK')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    expect(s.protected).toBe(true)
+    // The dialog opened on the sheet's own list, so OK kept it.
+    expect(s.protection.allow).toEqual({ formatRows: true })
+    sheet.act('allow-edit-ranges')
+    flushSync()
+    expect(document.querySelector('.sv-modal')?.textContent).toContain('Ranges unlocked when the sheet is protected:')
+  })
 })

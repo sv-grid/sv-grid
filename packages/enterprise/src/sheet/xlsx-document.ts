@@ -31,6 +31,7 @@ import { colToLetters, lettersToCol, parseA1 } from './address'
 import { translateFormula } from './refs'
 import { isError, type CellValue } from './ast'
 import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
+import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -426,7 +427,14 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         + `<selection pane="${pane}" activeCell="${topLeft}" sqref="${topLeft}"/></sheetView>`
     }
 
-    const protection = state.protected ? '<sheetProtection sheet="1" objects="1" scenarios="1"/>' : ''
+    // The allow list is spelled the file's way round: an attribute is
+    // "locked", so an allowed kind is written as 0 and the rest left to
+    // their default of 1.
+    const allowed = PROTECTION_PERMISSIONS.filter((key) => state.protection.allow[key]).map((key) => ` ${key}="0"`).join('')
+    const protection = state.protected ? `<sheetProtection sheet="1" objects="1" scenarios="1"${allowed}/>` : ''
+    const editRanges = state.protection.ranges.length
+      ? `<protectedRanges>${state.protection.ranges.map((range) => `<protectedRange sqref="${range.rects.map(rectRef).join(' ')}" name="${esc(range.title)}"/>`).join('')}</protectedRanges>`
+      : ''
     const autoFilter = state.autoFilter ? `<autoFilter ref="${rectRef(state.autoFilter.range)}"/>` : ''
     const merges = state.merges.length
       ? `<mergeCells count="${state.merges.length}">${state.merges.map((m) => `<mergeCell ref="${rectRef(m)}"/>`).join('')}</mergeCells>`
@@ -501,7 +509,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       + `<sheetViews>${sheetView}</sheetViews><sheetFormatPr defaultRowHeight="15"/>`
       + (colXml.length ? `<cols>${colXml.join('')}</cols>` : '')
       + `<sheetData>${rowXml.join('')}</sheetData>`
-      + protection + autoFilter + merges + cf + dv + legacyDrawing
+      + protection + editRanges + autoFilter + merges + cf + dv + legacyDrawing
       + '</worksheet>'
     overrides.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
     return { name, n, hidden: state.sheetHidden }
@@ -853,7 +861,22 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 
       const pane = kid(kid(kid(root, 'sheetViews'), 'sheetView'), 'pane')
       if (pane && attr(pane, 'state') === 'frozen') entry.freeze = { rows: num(pane, 'ySplit') ?? 0, cols: num(pane, 'xSplit') ?? 0 }
-      if (kid(root, 'sheetProtection') && flag(kid(root, 'sheetProtection'), 'sheet')) entry.protected = true
+      const sheetProtection = kid(root, 'sheetProtection')
+      if (sheetProtection && flag(sheetProtection, 'sheet')) {
+        entry.protected = true
+        const allow: Partial<Record<ProtectionPermission, boolean>> = {}
+        for (const key of PROTECTION_PERMISSIONS) {
+          const v = attr(sheetProtection, key)
+          if (v === '0' || v === 'false') allow[key] = true
+        }
+        entry.protection = { allow, ranges: [] }
+      }
+      for (const range of kids(kid(root, 'protectedRanges'), 'protectedRange')) {
+        const rects = (attr(range, 'sqref') ?? '').split(/\s+/).map(refRect).filter((r): r is Rect => r !== null)
+        if (!rects.length) continue
+        entry.protection ??= { allow: {}, ranges: [] }
+        entry.protection.ranges.push({ id: newEditRangeId(), title: attr(range, 'name') ?? `Range${entry.protection.ranges.length + 1}`, rects })
+      }
       const af = attr(kid(root, 'autoFilter'), 'ref')
       const afRect = af ? refRect(af) : null
       if (afRect) entry.autoFilter = { range: afRect, filters: {} }

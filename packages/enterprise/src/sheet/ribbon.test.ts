@@ -115,7 +115,7 @@ describe('the model is well-formed', () => {
       ['new-comment', 'new-comment'], ['delete-comment', 'delete-comment'],
       ['prev-comment', 'prev-comment'], ['next-comment', 'next-comment'],
       ['toggle-comments', 'toggle-comments'],
-      ['protect-sheet', 'protect-sheet'], ['unprotect-sheet', 'unprotect-sheet'],
+      ['protect-sheet', 'protect-sheet'], ['unprotect-sheet', 'unprotect-sheet'], ['allow-edit-ranges', 'allow-edit-ranges'],
     ])
   })
 

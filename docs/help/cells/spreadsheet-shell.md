@@ -563,6 +563,8 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
+| Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
+| Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
 | Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
@@ -776,15 +778,40 @@ away. The refusal is a sentence in the status bar, Excel's own: "The cell
 you're trying to change is on a protected sheet. To make a change,
 unprotect the sheet." Unlocked cells take every edit as before.
 
-Protect Sheet and Unprotect Sheet share one slot on the Review tab
-(`protect-sheet`, `unprotect-sheet`); each is one undo, so Ctrl+Z after
-Unprotect protects again. The flag is per sheet and rides in
-`getState()` as `protected`, the unlocked cells as `locked: false` in
-their format entries; `onChange` reports `{ kind: 'protection' }`. A
-command written against the grid asks `cmd.canEdit(r, c)` before it writes
-and gets the same answer the editor does.
+Protect Sheet opens Excel's dialog with its "allow all users of this
+worksheet to" list: format cells, format columns, format rows, insert
+columns, insert rows, delete columns, delete rows, sort, use AutoFilter.
+What is ticked stays open once the sheet is protected: with Format cells
+the Font, Alignment and Number buttons, Format Cells, merges and Lock
+Cell work on every cell; with Format rows or columns Row Height, Column
+Width, AutoFit, Hide and Unhide and the resize handles come back for that
+axis; the insert and delete entries open Home > Cells > Insert and Delete
+for their axis; Sort allows a sort of a block that holds no locked cell,
+as Excel's does (a block with one is refused whatever the tick); Use
+AutoFilter allows the arrows on and off and their menus. The list is per
+sheet and kept, so Unprotect and Protect again open on the same ticks.
 
-There is no password and no "allow users to" list: the protection is
+Review > Allow Edit Ranges is Excel's Allow Users to Edit Ranges: a list
+of titled blocks (`B2:B10`, or several areas with commas) that take an
+edit on a protected sheet whether their cells are locked or not. New adds
+one over the selection, Modify edits it in place, Delete removes it, and
+Protect Sheet... goes straight to that dialog. A range moves with an
+insert or delete and goes with the rows it spans.
+
+Protect Sheet and Unprotect Sheet share one slot on the Review tab
+(`protect-sheet`, `unprotect-sheet`, and `allow-edit-ranges`); each is
+one undo, so Ctrl+Z after Unprotect protects again, and after Protect
+puts the old allow list back. The flag is per sheet and rides in
+`getState()` as `protected`, the list and the ranges as
+`protection: { allow, ranges }` beside it (absent in an older document,
+which reads as nothing allowed and no ranges), the unlocked cells as
+`locked: false` in their format entries; `onChange` reports
+`{ kind: 'protection' }`. Save As writes the flag, the list and the
+ranges as the file's `sheetProtection` and `protectedRanges`, and Open
+reads Excel's. A command written against the grid asks `cmd.canEdit(r, c)`
+before it writes and gets the same answer the editor does.
+
+There is no password, on the sheet or on a range: the protection is
 against mistakes, not against the person at the keyboard, who can unprotect
 with one click.
 
@@ -863,7 +890,7 @@ button that does nothing.
 - **Tabs:** no Page Layout (print setup has nothing behind it in the
   grid), no track-changes on Review; File has New, Open, Save As and
   Export CSV, not Print.
-- **Protection** takes no password and has no "allow users to" list: it
+- **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
   land until Circle Invalid Data is asked for.

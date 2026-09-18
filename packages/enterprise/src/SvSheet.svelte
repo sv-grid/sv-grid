@@ -80,7 +80,9 @@
   import { balanceParens } from './sheet/autocomplete'
   import { parseEntry, completeEntry } from './sheet/entry'
   import { isError, type CellValue } from './sheet/ast'
-  import { isLocked, rectsHaveLocked, rectsMixLocked } from './sheet/protection'
+  import { isLocked, cellLocked, rectsHaveLocked, rectsMixLocked, rangeText, type ProtectionAllow, type ProtectionPermission, type EditRange } from './sheet/protection'
+  import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
+  import SvSheetEditRanges from './SvSheetEditRanges.svelte'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
   import { provideSheetText, useSheetText } from './sheet-text'
   import { commentAt, withComment, withThread, threadAt, threadText, notesOf, nextComment, listComments, type CommentsMap, type CommentThread } from './sheet/comments'
@@ -646,9 +648,17 @@
    */
   const protectedNow = () => doc.get(wb.active).protected
   const isProtected = $derived.by(() => { void version; return protectedNow() })
+  const protectionNow = () => doc.get(wb.active).protection
+  /** Whether a kind of change is open: the sheet is unprotected, or its allow list says so. */
+  const allowNow = (key: ProtectionPermission): boolean => !protectedNow() || Boolean(protectionNow().allow[key])
+  /** The permission an axis's sizes, hidden lines and AutoFit fall under. */
+  const lineKey = (axis: 'rows' | 'cols'): ProtectionPermission => (axis === 'rows' ? 'formatRows' : 'formatColumns')
+  const protectionState = $derived.by(() => { void version; return protectionNow() })
+  const canResizeRows = $derived.by(() => { void version; return allowNow('formatRows') })
+  const canResizeCols = $derived.by(() => { void version; return allowNow('formatColumns') })
   /** Whether (r, c) may not change right now. */
   function locked(r: number, c: number): boolean {
-    return protectedNow() && isLocked(storeFor().get(`r${r}`, colToLetters(c)))
+    return protectedNow() && cellLocked(storeFor().get(`r${r}`, colToLetters(c)), protectionNow().ranges, r, c)
   }
   function refuse() { say(t('protectedCell')) }
   /** The selection, or the active cell, as rectangles. */
@@ -940,7 +950,7 @@
   /** Merge & Center / Merge Across / Merge Cells over the selection. */
   function runMerge(kind: MergeKind, cmd: GridCommandContext) {
     const rects = selectedRects(cmd).map(normalRect)
-    if (protectedNow() && rectsHaveLocked(storeFor(), lookup, rects)) { refuse(); return }
+    if (!allowNow('formatCells') && rectsHaveLocked(storeFor(), lookup, rects, protectionNow().ranges)) { refuse(); return }
     // Excel's Merge & Center on a merged selection unmerges it.
     if (kind === 'center' && rects.length === 1 && mergesIn(mergesNow(), rects).some((m) => m.join() === rects[0]!.join())) {
       runUnmerge(cmd)
@@ -1040,6 +1050,7 @@
 
   /** Data > Filter / Ctrl+Shift+L: arrows on the current region, or off again. */
   function toggleAutoFilter(cmd: GridCommandContext) {
+    if (!allowNow('autoFilter')) { refuse(); return }
     if (autoFilterNow()) { applyAutoFilter(null, cmd); return }
     const region = currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
     const last = selection[selection.length - 1]
@@ -1071,6 +1082,7 @@
     const af = autoFilterNow()
     const cmd = cmdOf()
     if (!af || !cmd) return
+    if (!allowNow('autoFilter')) { refuse(); return }
     if (cellPopover) closeCellPopover()
     cellPopover = { kind: 'filter', r: af.range[0], c: col, ...filterMenuFor(col) }
     void tick().then(() => requestAnimationFrame(measureAnchor))
@@ -1244,20 +1256,48 @@
     focusSheet(cmd)
   }
 
-  /** Protect or unprotect the active sheet, as one undo step. */
-  function setProtected(on: boolean, cmd: GridCommandContext) {
+  /**
+   * Protect or unprotect the active sheet, as one undo step; protecting
+   * takes the dialog's allow list with it, so Ctrl+Z after Protect puts
+   * the old list back too.
+   */
+  function setProtected(on: boolean, cmd: GridCommandContext | null, allow?: ProtectionAllow) {
     const sheet = wb.active
-    const before = doc.get(sheet).protected
-    if (before === on) return
-    const put = (value: boolean) => {
-      doc.get(sheet).protected = value
+    const state = doc.get(sheet)
+    const before = { on: state.protected, allow: { ...state.protection.allow } }
+    const after = { on, allow: allow ? { ...allow } : before.allow }
+    if (before.on === on && !allow) return
+    const put = (value: { on: boolean; allow: ProtectionAllow }) => {
+      const target = doc.get(sheet)
+      target.protected = value.on
+      target.protection = { allow: { ...value.allow }, ranges: target.protection.ranges }
       bump()
       changed({ kind: 'protection' })
     }
-    put(on)
-    cmd.recordUndo(() => put(before), () => put(on))
+    put(after)
+    cmd?.recordUndo(() => put(before), () => put(after))
     say(t(on ? 'sheetProtected' : 'sheetUnprotected'))
   }
+
+  /** Allow Users to Edit Ranges: the list as the dialog left it, one undo. */
+  function setEditRanges(ranges: EditRange[]) {
+    const sheet = wb.active
+    const state = doc.get(sheet)
+    const before = state.protection.ranges
+    const put = (value: EditRange[]) => {
+      const target = doc.get(sheet)
+      target.protection = { allow: target.protection.allow, ranges: value }
+      bump()
+      changed({ kind: 'protection' })
+    }
+    put(ranges)
+    cmdOf()?.recordUndo(() => put(before), () => put(ranges))
+  }
+
+  let protectSheetOpen = $state(false)
+  let editRangesOpen = $state(false)
+  /** The selection as A1 text, what a new edit range opens on. */
+  const selectionText = $derived.by(() => { void selection; void active; return rangeText(selectedRects().map(normalRect)) })
 
   // --- the seams the keyboard layer and the ribbon both act through --------
   /**
@@ -1370,7 +1410,7 @@
    */
   function hideLines(axis: 'rows' | 'cols', hide: boolean, cmd: GridCommandContext) {
     if (!api) return
-    if (protectedNow()) { refuse(); return }
+    if (!allowNow(lineKey(axis))) { refuse(); return }
     const count = axis === 'rows' ? rowCount : colCount
     const isHidden = (i: number) => axis === 'rows' ? api!.isRowCollapsed(i) : api!.isColumnCollapsed(colToLetters(i))
     const setHidden = (i: number, on: boolean) =>
@@ -1437,12 +1477,12 @@
       onChange: () => { bump(); fitWrappedRows(); changed({ kind: 'formats' }) },
       // Formats hold on a protected sheet where the selection has a locked
       // cell: Excel's Format Cells greys out there.
-      guard: (rects) => !protectedNow() || !rectsHaveLocked(store, lookup, rects),
+      guard: (rects) => allowNow('formatCells') || !rectsHaveLocked(store, lookup, rects, protectionNow().ranges),
       refused: refuse,
     })
     setStructureTarget({
-      // No insert or delete on a protected sheet, as in Excel.
-      canApply: () => !protectedNow(),
+      // No insert or delete on a protected sheet unless its allow list says so, as in Excel.
+      canApply: (edit) => allowNow(edit.kind === 'insertRows' ? 'insertRows' : edit.kind === 'insertCols' ? 'insertColumns' : edit.kind === 'deleteRows' ? 'deleteRows' : 'deleteColumns'),
       refused: refuse,
       getRaw: (r, c) => wb.getRaw(wb.active, r, c),
       setRaw: (r, c, text) => wb.setRaw(wb.active, r, c, text),
@@ -1892,10 +1932,17 @@
         openSizeDialog(action === 'row-height' ? 'rows' : 'cols')
         return
       case 'protect-sheet':
+        if (onAction?.(action, context) === true) return
+        protectSheetOpen = true
+        return
       case 'unprotect-sheet':
         if (onAction?.(action, context) === true) return
-        setProtected(action === 'protect-sheet', context)
+        setProtected(false, context)
         focusSheet(context)
+        return
+      case 'allow-edit-ranges':
+        if (onAction?.(action, context) === true) return
+        editRangesOpen = true
         return
       case 'new-comment':
       case 'edit-comment':
@@ -2051,7 +2098,7 @@
     const r2 = block.bottom
     const c2 = block.right
     if (r2 <= r1) return
-    if (protectedNow()) { refuse(); return }
+    if (!allowNow('sort') || (protectedNow() && rectsHaveLocked(storeFor(), lookup, [[r1, c1, r2, c2]], protectionNow().ranges))) { refuse(); return }
     if (sortBlockedByMerges(mergesNow(), [r1, c1, r2, c2])) {
       say(t('mergeSameSize'))
       return
@@ -2689,7 +2736,7 @@
         const rects = c.ranges.length
           ? c.ranges
           : c.activeCell ? [[c.activeCell.rowIndex, c.activeCell.colIndex, c.activeCell.rowIndex, c.activeCell.colIndex] as const] : []
-        if (protectedNow() && rectsHaveLocked(storeFor(), lookup, rects)) { refuse(); return }
+        if (protectedNow() && rectsHaveLocked(storeFor(), lookup, rects, protectionNow().ranges)) { refuse(); return }
         c.batch(() => {
           for (const [r1, c1, r2, c2] of rects) {
             for (let r = r1; r <= r2; r += 1) for (let col = c1; col <= c2; col += 1) c.setCellValue(r, col, '')
@@ -2739,7 +2786,7 @@
    */
   function autofitLines(axis: 'rows' | 'cols', cmd: GridCommandContext) {
     if (!api) return
-    if (protectedNow()) { refuse(); return }
+    if (!allowNow(lineKey(axis))) { refuse(); return }
     const targets = lineTargets(axis)
     if (axis === 'cols') {
       const widths = () => targets.map((c) => [c, api!.getColumnWidths()[colToLetters(c)] ?? columnWidth] as const)
@@ -2771,14 +2818,14 @@
       ? (api.getColumnWidths()[colToLetters(first)] ?? columnWidths?.[colToLetters(first)] ?? columnWidth)
       : api.getRowHeight(first)
   })
-  /** Column Width... / Row Height...: not on a protected sheet. */
+  /** Column Width... / Row Height...: not on a protected sheet unless its allow list says so. */
   function openSizeDialog(kind: 'cols' | 'rows') {
-    if (protectedNow()) { refuse(); return }
+    if (!allowNow(lineKey(kind))) { refuse(); return }
     sizeDialog = kind
   }
   function applySize(px: number) {
     if (!api) return
-    if (protectedNow()) { refuse(); return }
+    if (!allowNow(lineKey(sizeDialog ?? 'rows'))) { refuse(); return }
     const kind = sizeDialog
     const targets = sizeTargets()
     const read = () => targets.map((i) => [i, kind === 'cols' ? api!.getColumnWidths()[colToLetters(i)] ?? columnWidth : api!.getRowHeight(i)] as const)
@@ -3653,8 +3700,8 @@
     rowNumberWidth={40}
     {rowHeight}
     icons={{ 'row-number': corner }}
-    columnResize={!isProtected}
-    rowResize={!isProtected}
+    columnResize={canResizeCols}
+    rowResize={canResizeRows}
     {contextMenu}
     localization={gridLocalization}
     notes={activeNotes}
@@ -3745,6 +3792,15 @@
   <SvSheetFormatCells bind:open={formatCellsOpen} entry={activeEntry} sample={activeValue} mixedLocked={mixedLocked} onApply={applyFormatCells} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetInsertFunction bind:open={insertFunctionOpen} onPick={insertFunction} />
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
+  <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
+  <SvSheetEditRanges
+    bind:open={editRangesOpen}
+    ranges={protectionState.ranges}
+    selection={selectionText}
+    onApply={(ranges) => setEditRanges(ranges)}
+    onProtect={() => { protectSheetOpen = true }}
+    onClose={() => afterDialog()}
+  />
   <SvSheetGoalSeek bind:open={goalSeekOpen} workbook={wb} cmd={cmdOf} onClose={() => afterDialog()} />
   <SvSheetTextToColumns bind:open={textToColumnsOpen} workbook={wb} cmd={cmdOf} onDone={say} onClose={() => afterDialog()} />
   <SvSheetRemoveDuplicates bind:open={removeDuplicatesOpen} workbook={wb} cmd={cmdOf} onDone={say} onClose={() => afterDialog()} />
