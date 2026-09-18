@@ -28,3 +28,13 @@ grid with a `gantt` prop shows the same upgrade note the other Pro views do.
 Dates are local calendar days and `end` is exclusive, except that a date-only
 string is inclusive of its day: `{ start: '2026-09-14', end: '2026-09-16' }`
 is the three-day task a person typing those dates means.
+
+With `editable`, drag a bar to move it, drag an edge to resize, drag the
+diamond on the fill to set percent, and drag a bar's end handle onto another
+bar to draw a dependency (the edges pick FS / SS / FF / SF). Dragging a phase
+moves its whole subtree and reports the batch in one `onTaskMove`. Moving a
+predecessor slides its successors forward far enough to keep every link legal,
+skipping non-working days; a link that would close a cycle is refused rather
+than added. `history` adds undo and redo, which re-fire the callbacks with the
+reversed values so your data follows. Nothing here mutates a row: the view
+moves its own overlay and reports what it wants.

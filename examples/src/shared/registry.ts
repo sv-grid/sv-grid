@@ -100,6 +100,7 @@ import SchedulerMultiCalendar397 from '../demos/397-scheduler-multi-calendar.sve
 import SchedulerFindATime398 from '../demos/398-scheduler-find-a-time.svelte'
 import SchedulerClinicConsole399 from '../demos/399-scheduler-clinic-console.svelte'
 import GanttIntro474 from '../demos/474-gantt-intro.svelte'
+import GanttEditing475 from '../demos/475-gantt-editing.svelte'
 import AlertRulesEngine399 from '../demos/399-alert-rules-engine.svelte'
 import AlertStylingRules400 from '../demos/400-alert-styling-rules.svelte'
 import AlertAggregateKpi401 from '../demos/401-alert-aggregate-kpi.svelte'
@@ -741,6 +742,7 @@ export const demos: Demo[] = [
 
   // ----- Gantt (Enterprise: the renderer behind the grid's `gantt` prop)
   demo('474-gantt-intro', 'Project plan', 'A 14-week release as a Gantt: phases nest their tasks and draw a rolled-up summary bar, finish-to-start links draw as arrows, and a violated one turns red. Collapse a phase and its summary keeps the span. Toggle to the Table - same grid rows, just a view.', 'Gantt', GanttIntro474, { pro: true }),
+  demo('475-gantt-editing', 'Plan editing', 'The same plan with editing on: drag a bar or its edges, drag the diamond to set percent, drag a dot onto another bar to draw a link. A phase moves its whole subtree in one callback, successors slide forward over weekends, a cycle is refused, and Ctrl+Z replays it backwards. A log panel lists every write-back the view asks for.', 'Gantt', GanttEditing475, { pro: true }),
   demo('399-alert-rules-engine', 'Alert Rules engine', 'A live trading desk where end users define alert rules at runtime - no code - that watch the data and react: raise a toast, tint the row, flash the cell, or log it. A visual condition builder (or free-text expression) reuses the grid own filter operators; rules persist to localStorage and export as shareable JSON. The bell opens the fired-alert log. Engine: @svgrid/enterprise.', 'Alerts', AlertRulesEngine399, { pro: true }),
   demo('400-alert-styling-rules', 'Styling rules', 'Alert rules are not just notifications: a highlight or badge action becomes live conditional formatting, painted through the grid own format pipeline. A server fleet lights up by rule - hot CPU turns amber, near-full disks turn red via a cross-column rule (used / total > 0.9). Randomise the load and the colours follow. Add your own styling rule in the visual builder.', 'Alerts', AlertStylingRules400, { pro: true }),
   demo('401-alert-aggregate-kpi', 'KPI & aggregate alerts', 'Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language SUM / AVG / COUNT reducers.', 'Alerts', AlertAggregateKpi401, { pro: true }),

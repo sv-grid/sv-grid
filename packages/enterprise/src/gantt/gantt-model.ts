@@ -39,12 +39,12 @@ import type {
 const MS_DAY = 86_400_000
 
 /** A new Date at local midnight of the same calendar day. */
-function startOfDay(d: Date): Date {
+export function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
 /** `n` days after `d` (negative to go back), preserving the time of day. */
-function addDays(d: Date, n: number): Date {
+export function addDays(d: Date, n: number): Date {
   const out = new Date(d.getTime())
   out.setDate(out.getDate() + n)
   return out

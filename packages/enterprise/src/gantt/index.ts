@@ -26,6 +26,8 @@ export {
   ganttTickWidth,
   // working-time arithmetic
   makeCalendar,
+  startOfDay,
+  addDays,
   isWorkingDay,
   workingDays,
   addWorkingDays,

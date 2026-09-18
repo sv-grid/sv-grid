@@ -23,8 +23,24 @@
     RowData,
     TableFeatures,
   } from "@svgrid/grid";
-  import { portalToBody } from "@svgrid/grid";
-  import { violations, type SchedulerDependency } from "../scheduler-dependencies";
+  import {
+    portalToBody,
+    popIn,
+    createDismissableLayer,
+    onScrollOutside,
+    SvDrawer,
+    SvForm,
+    SvMenuList,
+    type FormField,
+    type FormFieldType,
+    type MenuItem,
+  } from "@svgrid/grid";
+  import {
+    cascade,
+    hasCycle,
+    violations,
+    type SchedulerDependency,
+  } from "../scheduler-dependencies";
   import { dependencyArrows, type BarRect } from "./timeline-arrows";
   import {
     ganttAxis,
@@ -34,7 +50,11 @@
     makeCalendar,
     nodeIndex,
     projectRange,
+    parseDay,
     resolveTasks,
+    snapToWorkingDay,
+    startOfDay,
+    addDays,
     visibleAnchor,
     workingDays,
     type GanttNode,
@@ -56,6 +76,8 @@
   } = $props();
 
   const MS_DAY = 86_400_000;
+  /** Height of the two-row axis header, shared with the CSS. */
+  const axisHeadH = 48;
   const ZOOMS = ["day", "week", "month", "quarter", "year"] as const;
   type Zoom = (typeof ZOOMS)[number];
 
@@ -78,6 +100,9 @@
   const labelPosition = $derived(gantt.labelPosition ?? "inside");
   const showNonWorking = $derived(gantt.showNonWorking !== false);
   const showTodayLine = $derived(gantt.todayLine !== false);
+  const editable = $derived(gantt.editable === true);
+  const respectWorking = $derived(gantt.respectWorkingTime !== false);
+  const historyEnabled = $derived(gantt.history === true);
 
   // The clock, read once a minute rather than per render, so the today line
   // and the "today" tick stay right through a long session without making
@@ -343,6 +368,528 @@
     return dependencyArrows(barRects, resolved, depBad, rowH);
   });
 
+  // --- editing --------------------------------------------------------------
+  // One drag state for every gesture: moving a bar, dragging either edge,
+  // sliding the progress grip, and drawing a link. They share a threshold, a
+  // commit and a history entry, so a fix to any of that lands in all of them.
+  // Mirrors SvGridScheduler's timeline drag, which is the same shape.
+  type DragMode = "move" | "resize-start" | "resize-end" | "progress" | "link";
+  type BarDrag = {
+    key: string;
+    bar: Bar;
+    mode: DragMode;
+    startX: number;
+    startY: number;
+    moved: boolean;
+    /** Where in the bar the pointer grabbed it, in ms. */
+    grabOffsetMs: number;
+    durationMs: number;
+    origStart: Date;
+    origEnd: Date;
+    origProgress: number;
+    /** For a parent: every descendant's original span, shifted with it. */
+    subtree: Array<{ key: string; start: Date; end: Date }>;
+    /** `link` mode only. */
+    fromEdge: "start" | "end";
+    pointer: { x: number; y: number };
+    targetKey?: string;
+    targetEdge?: "start" | "end";
+  };
+  let drag = $state<BarDrag | null>(null);
+  /** Set on release so the click that ends a drag does not also open the drawer. */
+  let suppressClick = false;
+  /** Keys flashed red because an edit was refused (a cycle, a duplicate link). */
+  let refused = $state<Set<string>>(new Set());
+  let refusedTimer: ReturnType<typeof setTimeout> | undefined;
+  function refuse(keys: string[]) {
+    clearTimeout(refusedTimer);
+    refused = new Set(keys);
+    refusedTimer = setTimeout(() => (refused = new Set()), 320);
+  }
+
+  const DRAG_THRESHOLD = 3;
+
+  /** key -> its descendants, so moving a phase moves everything under it. */
+  const descendantsOf = $derived.by(() => {
+    const kids = new Map<string, string[]>();
+    for (const t of tasks) {
+      if (t.parentKey == null) continue;
+      (kids.get(t.parentKey) ?? kids.set(t.parentKey, []).get(t.parentKey)!).push(t.key);
+    }
+    const out = new Map<string, string[]>();
+    const walk = (k: string): string[] => {
+      const hit = out.get(k);
+      if (hit) return hit;
+      const acc: string[] = [];
+      out.set(k, acc); // guard a cycle: the partial list is already in place
+      for (const c of kids.get(k) ?? []) {
+        acc.push(c, ...walk(c));
+      }
+      return acc;
+    };
+    for (const t of tasks) walk(t.key);
+    return out;
+  });
+  const taskByKey = $derived(new Map(tasks.map((t) => [t.key, t])));
+
+  /** The day a drag snaps to. Ends land on the NEXT midnight, so a bar covers
+   *  whole days either way. */
+  const snapStart = (d: Date) => startOfDay(d);
+  const snapEnd = (d: Date) => {
+    const floor = startOfDay(d);
+    return floor.getTime() === d.getTime() ? floor : addDays(floor, 1);
+  };
+  /** Clamp a span to `minDate` / `maxDate` without changing its length. */
+  function clampSpan(start: Date, end: Date): { start: Date; end: Date } {
+    const min = gantt.minDate ? startOfDay(new Date(gantt.minDate as never)) : null;
+    const max = gantt.maxDate ? startOfDay(new Date(gantt.maxDate as never)) : null;
+    const len = end.getTime() - start.getTime();
+    let s = start;
+    if (min && s.getTime() < min.getTime()) s = min;
+    if (max && s.getTime() + len > max.getTime()) {
+      s = new Date(Math.max(min?.getTime() ?? -Infinity, max.getTime() - len));
+    }
+    return { start: s, end: new Date(s.getTime() + len) };
+  }
+
+  function beginDrag(e: PointerEvent, bar: Bar, mode: DragMode, fromEdge: "start" | "end" = "end") {
+    if (e.button !== 0 || !editable) return;
+    // A summary bar is a rollup: it moves its subtree, but it has no edges of
+    // its own to resize and no progress of its own to set.
+    if (bar.kind === "summary" && mode !== "move" && mode !== "link") return;
+    if (bar.kind === "milestone" && (mode === "resize-start" || mode === "resize-end" || mode === "progress")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    suppressClick = false;
+    const sub =
+      mode === "move"
+        ? (descendantsOf.get(bar.key) ?? []).flatMap((k) => {
+            const t = taskByKey.get(k);
+            return t ? [{ key: k, start: t.start, end: t.end }] : [];
+          })
+        : [];
+    drag = {
+      key: bar.key,
+      bar,
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      grabOffsetMs: Math.max(0, (dateAtClientX(e.clientX)?.getTime() ?? bar.start.getTime()) - bar.start.getTime()),
+      durationMs: bar.end.getTime() - bar.start.getTime(),
+      origStart: bar.start,
+      origEnd: bar.end,
+      origProgress: bar.progress,
+      subtree: sub,
+      fromEdge,
+      pointer: { x: e.clientX, y: e.clientY },
+    };
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", onDragEnd, { once: true });
+  }
+
+  function onDragMove(e: PointerEvent) {
+    const d = drag;
+    if (!d) return;
+    if (!d.moved) {
+      if (
+        Math.abs(e.clientX - d.startX) < DRAG_THRESHOLD &&
+        Math.abs(e.clientY - d.startY) < DRAG_THRESHOLD
+      ) return;
+      d.moved = true;
+    }
+    d.pointer = { x: e.clientX, y: e.clientY };
+
+    if (d.mode === "link") {
+      const hit = barAtPoint(e.clientX, e.clientY);
+      d.targetKey = hit?.key;
+      d.targetEdge = hit?.edge;
+      return;
+    }
+
+    const at = dateAtClientX(e.clientX);
+    if (!at) return;
+
+    if (d.mode === "progress") {
+      const el = barEl(d.key);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const frac = r.width > 0 ? (e.clientX - r.left) / r.width : 0;
+      // 5% steps: fine enough to mean something, coarse enough to hit.
+      d.origProgress = d.origProgress; // keep the undo value
+      progressOf[d.key] = Math.max(0, Math.min(100, Math.round((frac * 100) / 5) * 5));
+      return;
+    }
+
+    if (d.mode === "move") {
+      let ns = snapStart(new Date(at.getTime() - d.grabOffsetMs));
+      if (respectWorking) ns = snapToWorkingDay(ns, 1, cal);
+      const span = clampSpan(ns, new Date(ns.getTime() + d.durationMs));
+      applyMove(d, span.start.getTime() - d.origStart.getTime());
+      return;
+    }
+
+    if (d.mode === "resize-end") {
+      const ne = snapEnd(at);
+      // Never shorter than a day - a zero-width bar cannot be grabbed again.
+      endOf[d.key] = new Date(Math.max(ne.getTime(), d.origStart.getTime() + MS_DAY));
+      startOf[d.key] = d.origStart;
+    } else {
+      const ns = snapStart(at);
+      startOf[d.key] = new Date(Math.min(ns.getTime(), d.origEnd.getTime() - MS_DAY));
+      endOf[d.key] = d.origEnd;
+    }
+  }
+
+  /** Write a move of `deltaMs` into the overlay, for the bar AND its subtree. */
+  function applyMove(d: BarDrag, deltaMs: number) {
+    startOf[d.key] = new Date(d.origStart.getTime() + deltaMs);
+    endOf[d.key] = new Date(d.origEnd.getTime() + deltaMs);
+    for (const k of d.subtree) {
+      startOf[k.key] = new Date(k.start.getTime() + deltaMs);
+      endOf[k.key] = new Date(k.end.getTime() + deltaMs);
+    }
+  }
+
+  function onDragEnd() {
+    window.removeEventListener("pointermove", onDragMove);
+    const d = drag;
+    drag = null;
+    if (!d) return;
+    if (!d.moved) {
+      // A click, not a drag: leave the overlay alone so nothing moved.
+      if (d.mode === "progress") delete progressOf[d.key];
+      return;
+    }
+    suppressClick = true;
+
+    if (d.mode === "link") {
+      commitLink(d);
+      return;
+    }
+    if (d.mode === "progress") {
+      const next = progressOf[d.key] ?? d.origProgress;
+      gantt.onProgressChange?.({ row: d.bar.row, progress: next });
+      pushHistory({ kind: "progress", key: d.key, row: d.bar.row, before: { progress: d.origProgress }, after: { progress: next } });
+      return;
+    }
+
+    const ns = startOf[d.key] ?? d.origStart;
+    const ne = endOf[d.key] ?? d.origEnd;
+    const subtreeAfter = d.subtree.map((k) => ({
+      key: k.key,
+      start: startOf[k.key] ?? k.start,
+      end: endOf[k.key] ?? k.end,
+    }));
+
+    if (d.mode === "move") {
+      gantt.onTaskMove?.({
+        row: d.bar.row,
+        start: ns,
+        end: ne,
+        subtree: subtreeAfter.length
+          ? subtreeAfter.flatMap((k) => {
+              const t = taskByKey.get(k.key);
+              return t ? [{ row: t.row, start: k.start, end: k.end }] : [];
+            })
+          : undefined,
+      });
+    } else {
+      gantt.onTaskResize?.({
+        row: d.bar.row,
+        start: ns,
+        end: ne,
+        edge: d.mode === "resize-start" ? "start" : "end",
+      });
+    }
+
+    const moves = cascadeFrom(d.key);
+    pushHistory({
+      kind: d.mode === "move" ? "move" : "resize",
+      key: d.key,
+      row: d.bar.row,
+      edge: d.mode === "resize-start" ? "start" : d.mode === "resize-end" ? "end" : undefined,
+      before: { start: d.origStart, end: d.origEnd, subtree: d.subtree },
+      after: { start: ns, end: ne, subtree: subtreeAfter },
+      cascaded: moves,
+    });
+  }
+
+  /** Cancel an active drag, restoring whatever it had written. */
+  function cancelDrag() {
+    const d = drag;
+    if (!d) return;
+    window.removeEventListener("pointermove", onDragMove);
+    drag = null;
+    if (d.mode === "progress") {
+      if (d.origProgress != null) progressOf[d.key] = d.origProgress;
+      return;
+    }
+    startOf[d.key] = d.origStart;
+    endOf[d.key] = d.origEnd;
+    for (const k of d.subtree) {
+      startOf[k.key] = k.start;
+      endOf[k.key] = k.end;
+    }
+  }
+
+  /** The bar element for a key, for geometry the derived state does not carry.
+   *  Scans rather than building a selector: a row id is the consumer's, and may
+   *  hold quotes, spaces or anything else a selector would choke on. */
+  function barEl(k: string): HTMLElement | null {
+    if (!rootEl) return null;
+    for (const el of rootEl.querySelectorAll<HTMLElement>(".sv-gantt-bar")) {
+      if (el.dataset.key === k) return el;
+    }
+    return null;
+  }
+  /** Which bar (and which half of it) is under the pointer, for link drawing. */
+  function barAtPoint(x: number, y: number): { key: string; edge: "start" | "end" } | undefined {
+    const el = document.elementFromPoint(x, y)?.closest?.(".sv-gantt-bar") as HTMLElement | null;
+    const k = el?.dataset.key;
+    if (!k) return undefined;
+    const r = el!.getBoundingClientRect();
+    return { key: k, edge: x < r.left + r.width / 2 ? "start" : "end" };
+  }
+
+  // --- auto-reschedule -------------------------------------------------------
+  const autoReschedule = $derived(gantt.autoReschedule ?? hasDeps);
+  /**
+   * Push successors forward so every link stays legal, writing the shifts into
+   * the overlay and reporting them. Returns what moved, for the undo entry.
+   */
+  function cascadeFrom(_key: string): Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }> {
+    if (!autoReschedule || !hasDeps) return [];
+    const times = new Map<string, { start: Date; end: Date }>();
+    for (const t of tasks) times.set(t.key, { start: t.start, end: t.end });
+    const shifts = cascade(times, depList, {
+      snapForward: respectWorking ? (d) => snapToWorkingDay(d, 1, cal) : undefined,
+    });
+    if (!shifts.size) return [];
+    const out: Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }> = [];
+    for (const [k, t] of shifts) {
+      const was = times.get(k);
+      startOf[k] = t.start;
+      endOf[k] = t.end;
+      if (was) out.push({ key: k, start: t.start, end: t.end, before: was });
+    }
+    gantt.onDependenciesChange?.(out.map((m) => ({ id: m.key, start: m.start, end: m.end })));
+    return out;
+  }
+
+  // --- drawing a link --------------------------------------------------------
+  function commitLink(d: BarDrag) {
+    const to = d.targetKey;
+    if (!to || to === d.key) return;
+    const type =
+      d.fromEdge === "end"
+        ? d.targetEdge === "end" ? "FF" : "FS"
+        : d.targetEdge === "end" ? "SF" : "SS";
+    // A duplicate says nothing new; a cycle has no legal schedule at all, and
+    // the cascade would have to ignore it anyway. Both flash rather than throw.
+    const already = depList.some((x) => x.from === d.key && x.to === to);
+    const candidate = { id: `dep-${d.key}-${to}`, from: d.key, to, type } as SchedulerDependency;
+    if (already || hasCycle([...depList, candidate])) {
+      refuse([d.key, to]);
+      return;
+    }
+    gantt.onDependencyAdd?.({
+      id: `dep-${d.key}-${to}-${Date.now()}`,
+      from: d.key,
+      to,
+      type,
+    });
+  }
+
+  // --- undo / redo -----------------------------------------------------------
+  type SpanState = { start?: Date; end?: Date; progress?: number; subtree?: Array<{ key: string; start: Date; end: Date }> };
+  type HistCmd = {
+    kind: "move" | "resize" | "progress";
+    key: string;
+    row: TData;
+    edge?: "start" | "end";
+    before: SpanState;
+    after: SpanState;
+    cascaded?: Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }>;
+  };
+  let undoStack: HistCmd[] = [];
+  let redoStack: HistCmd[] = [];
+  function pushHistory(cmd: HistCmd) {
+    if (!historyEnabled) return;
+    undoStack.push(cmd);
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack = [];
+  }
+  /** Apply one side of a command, re-firing the callbacks so the data follows. */
+  function applyState(cmd: HistCmd, s: SpanState, cascadeSide: "before" | "after") {
+    if (cmd.kind === "progress") {
+      if (s.progress != null) progressOf[cmd.key] = s.progress;
+      gantt.onProgressChange?.({ row: cmd.row, progress: s.progress ?? 0 });
+      return;
+    }
+    if (s.start) startOf[cmd.key] = s.start;
+    if (s.end) endOf[cmd.key] = s.end;
+    for (const k of s.subtree ?? []) {
+      startOf[k.key] = k.start;
+      endOf[k.key] = k.end;
+    }
+    // The cascade travelled with the edit, so it has to travel back with it.
+    const moves: Array<{ id: string; start: Date; end: Date }> = [];
+    for (const m of cmd.cascaded ?? []) {
+      const t = cascadeSide === "after" ? { start: m.start, end: m.end } : m.before;
+      startOf[m.key] = t.start;
+      endOf[m.key] = t.end;
+      moves.push({ id: m.key, start: t.start, end: t.end });
+    }
+    if (cmd.kind === "move") {
+      gantt.onTaskMove?.({
+        row: cmd.row,
+        start: s.start!,
+        end: s.end!,
+        subtree: s.subtree?.flatMap((k) => {
+          const t = taskByKey.get(k.key);
+          return t ? [{ row: t.row, start: k.start, end: k.end }] : [];
+        }),
+      });
+    } else {
+      gantt.onTaskResize?.({ row: cmd.row, start: s.start!, end: s.end!, edge: cmd.edge ?? "end" });
+    }
+    if (moves.length) gantt.onDependenciesChange?.(moves);
+  }
+  function undo() {
+    const cmd = undoStack.pop();
+    if (!cmd) return;
+    applyState(cmd, cmd.before, "before");
+    redoStack.push(cmd);
+  }
+  function redo() {
+    const cmd = redoStack.pop();
+    if (!cmd) return;
+    applyState(cmd, cmd.after, "after");
+    undoStack.push(cmd);
+  }
+  $effect(() => {
+    if (!historyEnabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      // Read the FOCUS rather than the event target: a key dispatched on the
+      // window has a target that is not a Node, and `contains` throws on one.
+      const active = document.activeElement as HTMLElement | null;
+      // Never steal the shortcut from a field the user is typing in.
+      if (
+        active &&
+        (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)
+      ) return;
+      // Only ours when the focus is inside this Gantt, or nowhere in particular.
+      const mine = !active || active === document.body || !!rootEl?.contains(active);
+      if (!mine) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((k === "z" && e.shiftKey) || k === "y") {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // --- keyboard on a focused bar ---------------------------------------------
+  function onBarKey(e: KeyboardEvent, bar: Bar) {
+    if (e.key === "Escape" && drag) {
+      e.preventDefault();
+      cancelDrag();
+      return;
+    }
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openDrawer(bar);
+      return;
+    }
+    if (!editable) return;
+    if (e.key === "Delete" || e.key === "Backspace") {
+      if (!gantt.onTaskDelete) return;
+      e.preventDefault();
+      gantt.onTaskDelete(bar.row);
+      return;
+    }
+    if (e.key === "+" || e.key === "-") {
+      if (bar.kind !== "task") return;
+      e.preventDefault();
+      const next = Math.max(0, Math.min(100, Math.round(bar.progress) + (e.key === "+" ? 5 : -5)));
+      progressOf[bar.key] = next;
+      gantt.onProgressChange?.({ row: bar.row, progress: next });
+      pushHistory({ kind: "progress", key: bar.key, row: bar.row, before: { progress: bar.progress }, after: { progress: next } });
+      return;
+    }
+    const dir = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+    if (!dir) return;
+    e.preventDefault();
+    const days = (e.shiftKey ? 7 : 1) * dir;
+    const sub = (descendantsOf.get(bar.key) ?? []).flatMap((k) => {
+      const t = taskByKey.get(k);
+      return t ? [{ key: k, start: t.start, end: t.end }] : [];
+    });
+    if (e.altKey) {
+      // Alt: stretch the finish instead of moving the whole bar.
+      if (bar.kind !== "task") return;
+      const ne = new Date(Math.max(addDays(bar.end, days).getTime(), bar.start.getTime() + MS_DAY));
+      startOf[bar.key] = bar.start;
+      endOf[bar.key] = ne;
+      gantt.onTaskResize?.({ row: bar.row, start: bar.start, end: ne, edge: "end" });
+      const moves = cascadeFrom(bar.key);
+      pushHistory({ kind: "resize", key: bar.key, row: bar.row, edge: "end", before: { start: bar.start, end: bar.end }, after: { start: bar.start, end: ne }, cascaded: moves });
+      return;
+    }
+    const span = clampSpan(addDays(bar.start, days), addDays(bar.end, days));
+    const delta = span.start.getTime() - bar.start.getTime();
+    const fake: BarDrag = {
+      key: bar.key, bar, mode: "move", startX: 0, startY: 0, moved: true,
+      grabOffsetMs: 0, durationMs: bar.end.getTime() - bar.start.getTime(),
+      origStart: bar.start, origEnd: bar.end, origProgress: bar.progress,
+      subtree: sub, fromEdge: "end", pointer: { x: 0, y: 0 },
+    };
+    applyMove(fake, delta);
+    gantt.onTaskMove?.({
+      row: bar.row,
+      start: span.start,
+      end: span.end,
+      subtree: sub.length
+        ? sub.flatMap((k) => {
+            const t = taskByKey.get(k.key);
+            return t ? [{ row: t.row, start: new Date(k.start.getTime() + delta), end: new Date(k.end.getTime() + delta) }] : [];
+          })
+        : undefined,
+    });
+    const moves = cascadeFrom(bar.key);
+    pushHistory({
+      kind: "move", key: bar.key, row: bar.row,
+      before: { start: bar.start, end: bar.end, subtree: sub },
+      after: {
+        start: span.start, end: span.end,
+        subtree: sub.map((k) => ({ key: k.key, start: new Date(k.start.getTime() + delta), end: new Date(k.end.getTime() + delta) })),
+      },
+      cascaded: moves,
+    });
+  }
+
+  /** Double-clicking empty chart space creates a task on that day. */
+  function onBodyDblClick(e: MouseEvent) {
+    if (!editable || !gantt.onTaskAdd) return;
+    if ((e.target as HTMLElement).closest(".sv-gantt-bar")) return;
+    const at = dateAtClientX(e.clientX);
+    if (!at) return;
+    let start = startOfDay(at);
+    if (respectWorking) start = snapToWorkingDay(start, 1, cal);
+    // Under the pointer's row, so the new task lands in that phase.
+    const body = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const i = Math.floor((e.clientY - body.top) / rowH);
+    const parent = nodes[i]?.task.parentKey ?? undefined;
+    gantt.onTaskAdd(start, addDays(start, 1), parent ?? undefined);
+  }
+
   // --- the task table -------------------------------------------------------
   type TableCol = {
     id: string;
@@ -444,6 +991,7 @@
   // absolutely positioned by index, so nothing else in the layout changes.
   const WINDOW_FROM = 300;
   const OVERSCAN = 20;
+  let rootEl = $state<HTMLElement | null>(null);
   let scrollEl = $state<HTMLElement | null>(null);
   let scrollTop = $state(0);
   let viewportH = $state(0);
@@ -541,6 +1089,189 @@
   }
   $effect(() => () => clearTimeout(tipTimer));
 
+  // --- the detail drawer ------------------------------------------------------
+  // Built from the grid's own columns, like the scheduler's: the header becomes
+  // the label and `editorType` the control, so a column set already describes
+  // its edit form. Start / Finish / Progress are pinned first because they are
+  // what a plan is about.
+  const drawerCfg = $derived(
+    typeof gantt.drawer === "object" ? gantt.drawer : undefined,
+  );
+  const hasDrawer = $derived(!!gantt.drawer);
+  let drawerOpen = $state(false);
+  let drawerBar = $state<Bar | null>(null);
+  let drawerValues = $state<Record<string, unknown>>({});
+
+  type DrawerCol = ColumnDef<TFeatures, TData> & { field: string };
+  const drawerFieldCols = $derived.by<DrawerCol[]>(() => {
+    const wanted = drawerCfg?.fields as ReadonlyArray<string> | undefined;
+    const base = wanted?.length
+      ? wanted
+          .map((f) => fieldColumns.find((c) => c.field === f))
+          .filter((c): c is DrawerCol => !!c)
+      : (fieldColumns as DrawerCol[]);
+    // The pinned date + progress rows already cover these.
+    const pinned = new Set(
+      [gantt.startField, gantt.endField, gantt.progressField].filter(Boolean) as string[],
+    );
+    return base.filter((c) => !pinned.has(c.field));
+  });
+
+  function formType(t: string | undefined): FormFieldType {
+    switch (t) {
+      case "number": return "number";
+      case "checkbox": return "checkbox";
+      case "date":
+      case "date-native":
+      case "datetime":
+      case "datetime-native": return "date";
+      case "textarea": return "textarea";
+      case "color": return "color";
+      case "list":
+      case "select": return "select";
+      default: return "text";
+    }
+  }
+  function drawerOptions(col: DrawerCol, row: TData) {
+    const raw =
+      typeof col.editorOptions === "function" ? col.editorOptions(row) : col.editorOptions;
+    if (!raw || !Array.isArray(raw)) return undefined;
+    const opts: ReadonlyArray<string | number | { value: string | number; label?: string }> = raw;
+    return opts.map((o) =>
+      typeof o === "object"
+        ? { value: o.value, label: String(o.label ?? o.value) }
+        : { value: o, label: String(o) },
+    );
+  }
+
+  const drawerFields = $derived.by<FormField[]>(() => {
+    const bar = drawerBar;
+    if (!bar) return [];
+    const out: FormField[] = [
+      { name: "__start", label: "Start", type: "date" },
+      { name: "__end", label: "Finish", type: "date" },
+    ];
+    if (gantt.progressField) out.push({ name: "__progress", label: "Progress %", type: "number" });
+    for (const col of drawerFieldCols) {
+      out.push({
+        name: col.field,
+        label: typeof col.header === "string" ? col.header : col.field,
+        type: formType(col.editorType as string | undefined),
+        options: drawerOptions(col, bar.row),
+      } satisfies FormField);
+    }
+    return out;
+  });
+  const drawerTitle = $derived(drawerBar?.title || "Task");
+
+  /** `yyyy-mm-dd` for a date input, in LOCAL time (never toISOString, which
+   *  shifts the day for anyone east or west of UTC). */
+  function dayInput(d: Date): string {
+    const p2 = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  }
+
+  function openDrawer(bar: Bar) {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    if (!hasDrawer) return;
+    const next: Record<string, unknown> = {
+      __start: dayInput(bar.start),
+      // The form shows the INCLUSIVE finish, which is the date on the plan.
+      __end: dayInput(lastDay(bar)),
+      __progress: Math.round(bar.progress),
+    };
+    for (const col of drawerFieldCols) next[col.field] = fieldValue(bar.row, col.field);
+    drawerValues = next;
+    drawerBar = bar;
+    drawerOpen = true;
+  }
+
+  function saveDrawer(values: Record<string, unknown>) {
+    const bar = drawerBar;
+    if (!bar) return;
+    drawerOpen = false;
+    const patch: Record<string, unknown> = {};
+    for (const col of drawerFieldCols) {
+      if (values[col.field] !== undefined) patch[col.field] = values[col.field];
+    }
+
+    const ns = parseDay(values.__start as never) ?? bar.start;
+    const inclusiveEnd = parseDay(values.__end as never);
+    // Back from the inclusive finish the form shows to the exclusive end the
+    // model uses.
+    const ne = inclusiveEnd ? addDays(startOfDay(inclusiveEnd), 1) : bar.end;
+    const movedDates =
+      ns.getTime() !== bar.start.getTime() || ne.getTime() !== bar.end.getTime();
+
+    if (movedDates && ne.getTime() > ns.getTime()) {
+      startOf[bar.key] = ns;
+      endOf[bar.key] = ne;
+      if (gantt.startField) patch[gantt.startField] = ns;
+      if (gantt.endField) patch[gantt.endField] = ne;
+    }
+    if (gantt.progressField && values.__progress != null) {
+      const pc = Math.max(0, Math.min(100, Number(values.__progress) || 0));
+      progressOf[bar.key] = pc;
+      patch[gantt.progressField] = pc;
+    }
+    edits[bar.key] = { ...(edits[bar.key] ?? {}), ...patch };
+    gantt.onTaskCommit?.({ row: bar.row, values: patch as Partial<TData> });
+    if (movedDates) cascadeFrom(bar.key);
+  }
+
+  function deleteFromDrawer() {
+    const bar = drawerBar;
+    if (!bar) return;
+    drawerOpen = false;
+    gantt.onTaskDelete?.(bar.row);
+  }
+
+  // --- context menu (the board's dismissable-layer pattern) -------------------
+  let menuOpen = $state(false);
+  let menuItems = $state<MenuItem[]>([]);
+  let menuPos = $state({ x: 0, y: 0 });
+  let menuPanel = $state<HTMLElement | null>(null);
+  function openMenu(e: MouseEvent, bar: Bar) {
+    const items: MenuItem[] = [];
+    if (hasDrawer) items.push({ label: "Edit", onSelect: () => openDrawer(bar) });
+    if (editable && gantt.onTaskAdd) {
+      items.push({
+        label: "Add subtask",
+        onSelect: () => gantt.onTaskAdd?.(bar.start, addDays(bar.start, 1), bar.key),
+      });
+    }
+    if (editable && gantt.onTaskDelete) {
+      items.push({ label: "Delete", onSelect: () => gantt.onTaskDelete?.(bar.row) });
+    }
+    const custom = gantt.taskMenu?.(bar.row);
+    if (custom?.length) items.push(...custom);
+    if (!items.length) return;
+    e.preventDefault();
+    menuItems = items;
+    menuPos = { x: e.clientX, y: e.clientY };
+    menuOpen = true;
+  }
+  $effect(() => {
+    if (!menuOpen) return;
+    const layer = createDismissableLayer({
+      element: () => menuPanel,
+      onDismiss: () => (menuOpen = false),
+    });
+    layer.activate();
+    // A menu pinned to a point has to go when the ground moves under it.
+    const offScroll = onScrollOutside(
+      () => menuPanel,
+      () => (menuOpen = false),
+    );
+    return () => {
+      layer.release();
+      offScroll();
+    };
+  });
+
   // --- labels ---------------------------------------------------------------
   const fmtDay = (d: Date) =>
     d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -572,7 +1303,12 @@
   }
 </script>
 
-<div class="sv-gantt" style={`--gantt-row-h:${rowH}px; --gantt-bar-h:${barH}px; --gantt-table-w:${tableW}px`}>
+<div
+  class="sv-gantt"
+  class:sv-gantt-editable={editable}
+  bind:this={rootEl}
+  style={`--gantt-row-h:${rowH}px; --gantt-bar-h:${barH}px; --gantt-table-w:${tableW}px`}
+>
   <div class="sv-gantt-toolbar">
     <span class="sv-gantt-title">{rangeLabel}</span>
     <div class="sv-gantt-tools">
@@ -700,7 +1436,12 @@
           </div>
         </div>
 
-        <div class="sv-gantt-body" style={`width:${axisPx}px; height:${bodyH}px`}>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="sv-gantt-body"
+          style={`width:${axisPx}px; height:${bodyH}px`}
+          ondblclick={onBodyDblClick}
+        >
           {#each shadeBands as band, i (i)}
             <div
               class="sv-gantt-shade"
@@ -741,6 +1482,9 @@
               <div
                 class="sv-gantt-bar sv-gantt-bar-{b.kind}"
                 class:sv-gantt-bar-done={b.progress >= 100}
+                class:sv-gantt-refused={refused.has(b.key)}
+                class:sv-gantt-dragging={drag?.key === b.key && drag?.moved}
+                class:sv-gantt-link-target={drag?.mode === "link" && drag?.targetKey === b.key}
                 data-key={b.key}
                 style={`left:${b.left}px; ${b.kind === "milestone" ? "" : `width:${b.width}px;`}${b.color ? ` --sv-gantt-accent:${b.color};` : ""}`}
                 role="row"
@@ -748,6 +1492,10 @@
                 aria-label={barAria(b)}
                 onmouseenter={(e) => onBarEnter(e, b)}
                 onmouseleave={onBarLeave}
+                onpointerdown={(e) => beginDrag(e, b, "move")}
+                onclick={() => openDrawer(b)}
+                oncontextmenu={(e) => openMenu(e, b)}
+                onkeydown={(e) => onBarKey(e, b)}
               >
                 {#if b.kind !== "milestone"}
                   <span
@@ -761,7 +1509,48 @@
                 {:else if labelInside(b)}
                   <span class="sv-gantt-bar-label">{b.title}</span>
                 {/if}
+                {#if editable}
+                  {#if b.kind === "task"}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <span
+                      class="sv-gantt-grip sv-gantt-grip-l"
+                      onpointerdown={(e) => beginDrag(e, b, "resize-start")}
+                    ></span>
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <span
+                      class="sv-gantt-grip sv-gantt-grip-r"
+                      onpointerdown={(e) => beginDrag(e, b, "resize-end")}
+                    ></span>
+                    <!-- The progress handle rides the fill's leading edge. -->
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <span
+                      class="sv-gantt-grip-p"
+                      style={`left:${Math.max(0, Math.min(100, b.progress))}%`}
+                      title="Drag to set progress"
+                      onpointerdown={(e) => beginDrag(e, b, "progress")}
+                    ></span>
+                  {/if}
+                {/if}
               </div>
+              {#if editable}
+                <!-- The link handles sit OUTSIDE the bar, so they cannot live
+                     inside it: the bar clips its children to ellipsis its
+                     label, which would clip these away entirely. -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span
+                  class="sv-gantt-link-dot"
+                  style={`left:${b.left - (b.kind === "milestone" ? barH / 2 : 0) - 13}px`}
+                  title="Drag to link from the start"
+                  onpointerdown={(e) => beginDrag(e, b, "link", "start")}
+                ></span>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span
+                  class="sv-gantt-link-dot"
+                  style={`left:${b.left + (b.kind === "milestone" ? barH / 2 : b.width) + 3}px`}
+                  title="Drag to link from the finish"
+                  onpointerdown={(e) => beginDrag(e, b, "link", "end")}
+                ></span>
+              {/if}
               {#if !gantt.task && labelOutside(b)}
                 <span
                   class="sv-gantt-label"
@@ -771,6 +1560,21 @@
             </div>
           {/each}
 
+          {#if drag?.mode === "link" && drag.moved}
+            {@const from = barRects.get(drag.key)}
+            {#if from}
+              {@const ox = scrollEl?.getBoundingClientRect().left ?? 0}
+              {@const oy = scrollEl?.getBoundingClientRect().top ?? 0}
+              <svg class="sv-gantt-linking" width={axisPx} height={bodyH} aria-hidden="true">
+                <path
+                  d={`M${drag.fromEdge === "end" ? from.right : from.left},${from.midY} L${
+                    drag.pointer.x - ox + (scrollEl?.scrollLeft ?? 0) - (showTable ? tableW : 0)
+                  },${drag.pointer.y - oy + (scrollEl?.scrollTop ?? 0) - axisHeadH}`}
+                />
+              </svg>
+            {/if}
+          {/if}
+
           {#if todayX != null}
             <div class="sv-gantt-today" style={`left:${todayX}px`} aria-hidden="true"></div>
           {/if}
@@ -779,6 +1583,51 @@
     </div>
   </div>
 </div>
+
+{#if menuOpen}
+  <div
+    bind:this={menuPanel}
+    class="sv-gantt-menu"
+    use:portalToBody
+    use:popIn={{}}
+    style:position="fixed"
+    style:top={`${menuPos.y}px`}
+    style:left={`${menuPos.x}px`}
+    aria-label="Task actions"
+  >
+    <SvMenuList
+      items={menuItems}
+      onclose={() => (menuOpen = false)}
+      onselect={() => (menuOpen = false)}
+    />
+  </div>
+{/if}
+
+{#if hasDrawer}
+  <SvDrawer
+    bind:open={drawerOpen}
+    title={drawerTitle}
+    side={drawerCfg?.side ?? "right"}
+    size={drawerCfg?.size ?? "360px"}
+    onClosed={() => (drawerBar = null)}
+  >
+    <SvForm
+      fields={drawerFields}
+      values={drawerValues}
+      columns={drawerCfg?.columns ?? 1}
+      submitLabel={drawerCfg?.submitLabel ?? "Save"}
+      cancelLabel="Cancel"
+      onSubmit={saveDrawer}
+      onCancel={() => (drawerOpen = false)}
+      onChange={(v) => (drawerValues = v)}
+    />
+    {#if gantt.onTaskDelete}
+      <button type="button" class="sv-gantt-delete" onclick={deleteFromDrawer}>
+        Delete task
+      </button>
+    {/if}
+  </SvDrawer>
+{/if}
 
 {#if tipBar}
   <div
@@ -1102,6 +1951,132 @@
     border-radius: 2px;
     transform: translateX(-50%) rotate(45deg);
     background: var(--sv-gantt-accent, var(--sg-accent, #4f46e5));
+  }
+
+
+  /* ---- editing: grips, link handles, refusal ---- */
+  .sv-gantt-editable .sv-gantt-bar-task,
+  .sv-gantt-editable .sv-gantt-bar-summary,
+  .sv-gantt-editable .sv-gantt-bar-milestone { cursor: grab; }
+  .sv-gantt-bar.sv-gantt-dragging { cursor: grabbing; opacity: 0.85; }
+
+  /* Edge grips. Revealed on hover so a read-only glance stays clean, and wide
+     enough (7px) to hit without zooming in. */
+  .sv-gantt-grip {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 7px;
+    cursor: ew-resize;
+    opacity: 0;
+    z-index: 2;
+  }
+  .sv-gantt-grip-l { left: 0; }
+  .sv-gantt-grip-r { right: 0; }
+  .sv-gantt-bar:hover .sv-gantt-grip,
+  .sv-gantt-bar:focus-visible .sv-gantt-grip { opacity: 1; }
+  .sv-gantt-grip::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    border-radius: 1px;
+    background: color-mix(in srgb, #fff 75%, transparent);
+  }
+
+  /* The progress handle rides the leading edge of the fill. */
+  .sv-gantt-grip-p {
+    position: absolute;
+    top: 50%;
+    width: 11px;
+    height: 11px;
+    margin-left: -5.5px;
+    transform: translateY(-50%) rotate(45deg);
+    background: var(--sg-bg, #fff);
+    border: 1.5px solid color-mix(in srgb, #000 35%, transparent);
+    border-radius: 2px;
+    cursor: ew-resize;
+    opacity: 0;
+    z-index: 3;
+  }
+  .sv-gantt-bar:hover .sv-gantt-grip-p,
+  .sv-gantt-bar:focus-visible .sv-gantt-grip-p { opacity: 1; }
+
+  /* Link handles sit just OUTSIDE each end, so grabbing one is never mistaken
+     for grabbing the bar. */
+  .sv-gantt-link-dot {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: var(--sg-bg, #fff);
+    border: 2px solid var(--sg-accent, #4f46e5);
+    cursor: crosshair;
+    opacity: 0;
+    z-index: 4;
+  }
+  /* Revealed by hovering the ROW, since the handles are its children rather
+     than the bar's - see the note in the markup. */
+  .sv-gantt-row:hover .sv-gantt-link-dot,
+  .sv-gantt-row:focus-within .sv-gantt-link-dot { opacity: 1; }
+  .sv-gantt-bar.sv-gantt-link-target {
+    outline: 2px solid var(--sv-gantt-accent, var(--sg-accent, #4f46e5));
+    outline-offset: 2px;
+  }
+
+  /* The rubber band while a link is being drawn. */
+  .sv-gantt-linking {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 4;
+  }
+  .sv-gantt-linking path {
+    fill: none;
+    stroke: var(--sv-gantt-accent, var(--sg-accent, #4f46e5));
+    stroke-width: 2;
+    stroke-dasharray: 4 3;
+  }
+
+  /* A refused edit (a cycle, or a link that already exists) flashes rather
+     than throwing: the gesture was understood, the result is not legal. */
+  .sv-gantt-refused {
+    animation: sv-gantt-refuse 0.32s ease;
+    outline: 2px solid var(--sv-gantt-dep-bad, #dc2626);
+    outline-offset: 2px;
+  }
+  @keyframes sv-gantt-refuse {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sv-gantt-refused { animation: none; }
+  }
+
+  /* ---- context menu + drawer ---- */
+  .sv-gantt-menu { z-index: 2147483001; }
+  .sv-gantt-delete {
+    margin-top: 12px;
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid color-mix(in srgb, var(--sv-gantt-dep-bad, #dc2626) 45%, transparent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--sv-gantt-dep-bad, #dc2626);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .sv-gantt-delete:hover {
+    background: color-mix(in srgb, var(--sv-gantt-dep-bad, #dc2626) 10%, transparent);
   }
 
   /* ---- dependency arrows (shared geometry with the scheduler timeline) ---- */

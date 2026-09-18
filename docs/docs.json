@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-18T11:26:57.957Z",
+  "generatedAt": "2026-09-18T12:59:35.711Z",
   "counts": {
     "pages": 384,
     "enterprise": 60,
@@ -3419,10 +3419,11 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 2121,
+      "words": 2781,
       "lastUpdated": "2026-09-18",
       "demoIds": [
-        "474-gantt-intro"
+        "474-gantt-intro",
+        "475-gantt-editing"
       ]
     },
     {
