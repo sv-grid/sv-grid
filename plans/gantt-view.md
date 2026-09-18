@@ -1,145 +1,126 @@
 # Gantt view: implementation plan
 
-A Gantt view for SvGrid that lives entirely in `@svgrid/enterprise`, built the
-way the Scheduler is built: a pure, unit-tested model file, a renderer
-component that reads rows and writes back only through callbacks, a Pro
-config superset, and a soft gate. The free grid is not changed.
+A Gantt view of the grid, built the way the Scheduler is built: the `gantt`
+prop and its config types ship in `@svgrid/grid`, the renderer, the model
+and every helper ship in `@svgrid/enterprise` and plug in through a registry
+seam, and the view reads the grid's filtered + sorted rows and writes back
+only through callbacks.
 
 Nothing here is implemented yet. Line numbers refer to commit `198c2f0`.
 
 Contents
 
-1. Where the Gantt lives and how it attaches to the grid
+1. Where the pieces live
 2. What "similar to the Scheduler" means in this codebase
 3. A decision to make first
 4. Reuse map
-5. Phase 1: `SvGantt`, read-only
-6. Phase 2: editing
-7. Phase 3: planning features (`GanttProConfig`)
-8. Demos, docs and the sweep
-9. PR slicing, order and acceptance criteria
-10. Open questions and risks
+5. Phase 0: the free half in `@svgrid/grid`
+6. Phase 1: the Pro renderer, read-only
+7. Phase 2: editing
+8. Phase 3: planning features (`GanttProConfig`)
+9. Demos, docs and the sweep
+10. PR slicing, order and acceptance criteria
+11. Open questions and risks
 
-## 1. Where the Gantt lives and how it attaches to the grid
+## 1. Where the pieces live
 
-Everything goes under `packages/enterprise/src/gantt/`:
+The free grid carries only what `<SvGrid gantt={...}>` needs to compile,
+mount the renderer and show the upsell note. Everything with behaviour is in
+enterprise. This is the Scheduler split with one difference: the Scheduler's
+pure model (`scheduler-model.ts`) is in the free grid and exported for
+consumers; the Gantt's model lives in enterprise, because only the renderer
+consumes it and the free footprint should stay at types plus a seam.
 
 ```
+packages/grid/src/
+  SvGrid.types.ts          + GanttConfig, GanttZoom, GanttDependency, the event types, Props.gantt   (types only)
+  gantt-view.svelte.ts     the registry seam: registerGanttView / getGanttView / hasGanttView  (30 lines)
+  SvGrid.svelte            + the {:else if ganttConfig} branch: search box, renderer mount, upsell (45 lines)
+  grid-messages.ts         + ganttUpsellTitle, ganttUpsellBody, ganttSearchPlaceholder
+  index.ts                 + the type and seam exports
+  svgrid.gantt-seam.test.ts
+  svgrid.upsell-license.test.ts   + the fifth gate
+
 packages/enterprise/src/gantt/
   index.ts                 the subpath entry (`@svgrid/enterprise/gantt`), re-exported from the main index
-  gantt-config.ts          GanttConfig, GanttProConfig, event types, GanttDependency
+  gantt-config.ts          GanttProConfig (the Pro superset, read through a cast)
   gantt-model.ts           resolveTasks, ganttTree, projectRange, ganttAxis, working-day math
   gantt-model.test.ts
   gantt-critical-path.ts   Phase 3
   gantt-critical-path.test.ts
   timeline-arrows.ts       shared with SvGridScheduler (extracted from it)
   timeline-arrows.test.ts
-  gantt.ts                 enableGantt(): the soft-gate latch, called by installEnterprise
-  SvGantt.svelte           the component
+  gantt.ts                 enableGanttView(): registers the renderer, raises the soft gate
+  SvGridGantt.svelte       the renderer
   gantt.dom.test.ts
 ```
 
-`SvGantt` is a standalone component, like `SvSheet`, not a `<SvGrid>` prop.
-It composes a real `<SvGrid>` for the task table on the left and draws the
-chart on the right:
+`packages/enterprise/package.json` gains a `./gantt` subpath beside
+`./sheet` (lines 45-49); the main `index.ts` re-exports the same names
+beside the Scheduler Pro block (line 281). `install.ts` calls
+`enableGanttView()` after `enableBoardView()`.
+
+Consumer code:
 
 ```svelte
 <script lang="ts">
-  import { SvGantt } from '@svgrid/enterprise'
-  const gantt = { startField: 'start', endField: 'end', parentField: 'parentId', progressField: 'progress' }
+  import { SvGrid } from '@svgrid/grid'
+  import { setLicenseKey, enableGanttView } from '@svgrid/enterprise'
+  setLicenseKey('YOUR-KEY')     // omit to run soft-gated with a watermark
+  enableGanttView()
 </script>
 
-<SvGantt data={tasks} {columns} {gantt} getRowId={(r) => r.id} containerHeight={560} />
+<SvGrid data={tasks} {columns} getRowId={(r) => r.id}
+  gantt={{ startField: 'start', endField: 'end', parentField: 'parentId', progressField: 'progress', editable: true }} />
 ```
 
-Why composition rather than a `gantt` prop on the free grid:
+Why the prop rather than a standalone component:
 
-- The whole feature stays in the commercial package. No type, seam, upsell
-  branch or message lands in `@svgrid/grid`, so the grid's base bundle and
-  the `grid-wc` entry budgets (which have 0.3 KiB of headroom, see
-  `packages/grid-wc/scripts/check-size.mjs` line 34) do not move.
-- The task table is the real grid: sorting, filtering, the search box,
-  column resize, inline editing, `treeData` chevrons and keyboard, row
-  virtualization, themes. The Scheduler's resource gutter had to reimplement
-  a table; this design does not. `SvSheet` (line 3254) already drives an
-  inner grid through `onApiReady`, so the pattern exists in the package.
-- The grid's `treeData` prop supplies the work-breakdown tree (expand,
-  collapse, indent, `expanded` / `onExpandedChange`), and
-  `api.getDisplayedRows()` gives the rows in display order after filter,
-  sort and expansion. The Gantt draws one chart row per displayed row.
+- One consistent API beside `board` and `scheduler`; a Table / Gantt toggle
+  is toggling the prop.
+- `packages/grid-wc/scripts/generate-surface.mjs` reads the grid's `Props`,
+  so `<sv-grid>` in React, Vue and Angular gets `gantt` on regen, and
+  Studio's emitter already has the shape of a view prop.
+- The upsell note for unlicensed grids and the `installEnterprise` wiring
+  come from the existing seam code.
+- The view receives the outer grid's filtered and sorted rows
+  (`boardData`, `SvGrid.svelte` line 192), so search and column filters
+  flow through with no scroll mirroring between two grids.
 
-The alternative of one grid with a wide "chart column" (demo 45's pattern,
-with the axis in a snippet header) was rejected: dependency arrows and the
-today line must span rows, which means an overlay fighting the grid's
-virtualizer and pinning internals, and the header axis would have to live
-inside a column header. The composed design keeps the chart DOM entirely
-under `SvGantt`'s control, as the Scheduler's timeline is.
-
-How the two panes stay in step:
-
-- Rows: `SvGantt` passes `data`, `columns`, `getRowId`, `treeData`,
-  `rowHeight` (fixed) and `containerHeight` to the inner grid, captures `api`
-  from `onApiReady`, and refreshes `displayed = api.getDisplayedRows()` on
-  `onSortingChange`, `onFiltersChange`, `onExpandedChange`, and whenever
-  `data` changes. Chart row `i` is displayed row `i`, at `top = i * rowHeight`.
-- Vertical scroll: the grid scrolls inside `.sv-grid-container` (SvGrid
-  line 1998, `ctrl.scrollContainer`). `SvGantt` finds that element under
-  its own root once the api is ready, listens to its `scroll` event, and
-  sets the chart pane's `scrollTop` to match; a wheel or drag over the
-  chart sets the grid container's `scrollTop` the other way, with a
-  reentrancy flag. A follow-up may add `api.getScrollElement()` to the grid
-  so the class name is not load-bearing; Phase 1 uses the query.
-- Virtualization: the grid windows its own rows. The chart pane renders
-  bars for displayed rows within `scrollTop - 20 * rowHeight` to
-  `scrollTop + height + 20 * rowHeight`, absolutely positioned by index, so a
-  2,000-task plan costs what a 60-row plan costs. The arrow overlay spans
-  every row (paths are cheap) and is computed from all displayed rows.
-- Horizontal scroll belongs to the chart pane alone. The task table keeps
-  its own horizontal scrollbar for wide column sets.
-- The splitter between the panes resizes the table's width
-  (`tableWidth`); the inner grid gets `containerHeight="100%"` inside a
-  fixed-width flex item.
-
-Soft gate: `gantt.ts` exports `enableGantt()` with the `enableServerRowModel`
-shape (`packages/enterprise/src/server/enable.ts`): a latch that raises
-`emitUnlicensedNudge()` once when no key is set. `installEnterprise` calls
-it beside `enableBoardView()`, and `SvGantt` calls it on first mount, so an
-app that only imports the component is still gated.
-
-Package wiring: `packages/enterprise/package.json` gains a `./gantt` subpath
-beside `./sheet` (lines 45-49) for apps that want the Gantt without the main
-entry; the main `index.ts` re-exports the same names beside the Scheduler
-Pro block (line 281). `scripts/build-cdn.mjs` bundles the main entry only,
-which already includes it.
+The cost is a free footprint of types plus roughly 100 lines and 0.3 to
+0.5 KB gzipped on the base bundle, and a task pane the renderer draws
+itself (section 6.4).
 
 ## 2. What "similar to the Scheduler" means in this codebase
 
 | Scheduler today | File | Gantt equivalent |
 | --- | --- | --- |
-| `SchedulerConfig` and event types | `packages/grid/src/SvGrid.types.ts` lines 832-1110 | `GanttConfig` and event types in `gantt/gantt-config.ts` |
-| Pure model: `resolveEvents`, `timelineAxis`, `timelineGeom`, `timelineRows`, unit-tested | `packages/grid/src/scheduler-model.ts` | `gantt/gantt-model.ts`: `resolveTasks`, `ganttTree`, `projectRange`, `ganttAxis`, `workingDays` |
-| Pro renderer registered by `enableSchedulerView()` (soft-gated, idempotent, called by `installEnterprise`) | `SvGridScheduler.svelte`, `scheduler.ts`, `install.ts` | `SvGantt.svelte`, `gantt.ts` with `enableGantt()`, one line in `install.ts` |
-| Pro superset config read through a cast (`pcfg`, renderer line 306) | `scheduler-config.ts` | `GanttProConfig` in `gantt-config.ts`, read the same way |
+| `scheduler` prop + `SchedulerConfig` and event types (free) | `packages/grid/src/SvGrid.types.ts` lines 832-1110 | `gantt` prop + `GanttConfig` and event types |
+| Registry seam: `registerSchedulerView` / `getSchedulerView` / `hasSchedulerView` | `packages/grid/src/scheduler-view.svelte.ts` | `gantt-view.svelte.ts` with `registerGanttView` / `getGanttView` / `hasGanttView` |
+| `{:else if schedulerConfig}` branch: search box, mount the registered renderer, else an upsell note with the shared `enterpriseLicenseNote` snippet | `packages/grid/src/SvGrid.svelte` lines 1013-1060 | `{:else if ganttConfig}` branch between the scheduler and chart branches |
+| Pure model: `resolveEvents`, `timelineAxis`, `timelineGeom`, `timelineRows`, unit-tested | `packages/grid/src/scheduler-model.ts` | `gantt/gantt-model.ts` in enterprise: `resolveTasks`, `ganttTree`, `projectRange`, `ganttAxis`, `workingDays` |
+| Pro renderer + `enableSchedulerView()` (soft-gated, idempotent, called by `installEnterprise`) | `SvGridScheduler.svelte`, `scheduler.ts`, `install.ts` | `gantt/SvGridGantt.svelte`, `gantt/gantt.ts` with `enableGanttView()`, one line in `install.ts` |
+| Pro superset config read through a cast (`pcfg`, renderer line 306) | `scheduler-config.ts` | `gantt/gantt-config.ts` with `GanttProConfig` |
 | Move / resize overlay keyed by row key, so consumers write no move code (renderer lines 211-216) | `SvGridScheduler.svelte` | the same `$state` records: `startOf`, `endOf`, `progressOf`, `edits` |
 | Undo / redo command stack, 100 deep, `Ctrl+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` (renderer lines 1181-1225) | `SvGridScheduler.svelte` | copied with a `progress` command kind added |
 | Drawer built from the grid's columns: `drawerFields` maps `col.header` and `col.editorType` to `FormField` (renderer line 2344) | `SvGridScheduler.svelte` | same builder, Start / End / Progress pinned first |
 | Timeline drag: `startTlDrag` / `onTlDragMove` / `onTlDragEnd` with a 3px threshold, preview state, snap, commit, cascade, history push (renderer lines 3008-3121) | `SvGridScheduler.svelte` | `startBarDrag` / `onBarDragMove` / `onBarDragEnd`, one code path for move, resize, progress and link |
-| Search, filters and sort flow through because the view reads the grid's displayed rows | `SvGrid.svelte` line 192 (`boardData`) | `api.getDisplayedRows()` from the inner grid |
 
-What the Gantt does not copy: the Scheduler's rows are resources and its
-columns are time. A Gantt's rows are the tasks themselves in grid order,
-nested by a parent field, with a task table on the left. So it is a sibling
-component that reuses the Scheduler's timeline math and Pro helpers, not a
-ninth `SchedulerView`.
+What the Gantt does NOT copy: the Scheduler's rows are resources and its
+columns are time. A Gantt's rows are the grid's rows themselves (tasks, one
+per row, in grid order, nested by a parent field) and its left pane is a task
+table. That is a different layout, so the Gantt is a sibling view (`gantt`
+prop), not a ninth `SchedulerView`. It reuses the Scheduler's timeline math
+and Pro helpers rather than its component.
 
 ## 3. A decision to make first
 
 `docs/help/rows/scheduler.md` line 682 says, in a call-out: "Scheduler, not a
 Gantt ... there is no critical path, percent-done, baselines, or
 work-breakdown structure, and none are planned." Demo 389's meta FAQ says the
-same. Shipping a Gantt reverses that statement. The plan assumes the reversal
-is intended and includes rewording that call-out to point at the new page.
-Confirm before Phase 1 starts.
+same. Shipping a Gantt view reverses that statement. The plan below assumes
+the reversal is intended and includes rewording that call-out to point at the
+new page. Confirm before Phase 1 starts.
 
 ## 4. Reuse map
 
@@ -148,11 +129,10 @@ Consumed without change:
 - `@svgrid/grid` exports: `timelineGeom` and the `TimelineAxis` /
   `TimelineTick` / `TimelineMajor` types from `scheduler-model.ts`;
   `toDate`, `startOfDay`, `addDays`, `isSameDay` from date-core;
-  `SvGrid`, `SvDrawer`, `SvForm`, `SvMenuList`, `SvDateTimePicker`,
-  `SvNumberInput`, `SvButton`, `portalToBody`, `createDismissableLayer`,
-  `onScrollOutside`, `popIn`, `renderSnippet`. `groupMajors` in
-  `scheduler-model.ts` is module-private today; export it (a one-line grid
-  change, the only one, and optional: the Gantt can carry its own copy).
+  `SvDrawer`, `SvForm`, `SvMenuList`, `SvDateTimePicker`, `SvNumberInput`,
+  `SvButton`, `portalToBody`, `createDismissableLayer`, `onScrollOutside`,
+  `popIn`, `renderSnippet`. `groupMajors` in `scheduler-model.ts` is
+  module-private today; export it in Phase 0 (one line).
 - `packages/enterprise/src/scheduler-dependencies.ts`: `buildDependencyGraph`,
   `topoOrder`, `hasCycle`, `requiredStart`, `cascade`, `violations`. They
   take `{ id, from, to, type?, lag? }` and a `Map<key, {start, end}>`, which
@@ -187,92 +167,272 @@ export function dependencyArrows(
 The Scheduler switches to it in the same PR (passing `tlLaneH` as `loopDy`),
 covered by `tests/e2e/scheduler-timeline.spec.ts` and a new unit test.
 
-## 5. Phase 1: `SvGantt`, read-only
+## 5. Phase 0: the free half in `@svgrid/grid`
 
-### 5.1 Config (`gantt/gantt-config.ts`)
+Mergeable on its own. A grid with `gantt` set shows the upsell note, exactly
+like `scheduler` does without enterprise.
 
-Every field carries a doc comment in the style of `SchedulerConfig`.
+### 5.1 Types (`SvGrid.types.ts`)
+
+Placed after `SchedulerConfig`, before `Props`. Every field carries a doc
+comment in the style of `SchedulerConfig`; the sketch below lists the surface.
 
 ```ts
-import type { RowData, TableFeatures, ColumnDef, MenuItem, SchedulerDrawerConfig, SchedulerResource } from '@svgrid/grid'
-import type { Snippet } from 'svelte'
-import type { DependencyType } from '../scheduler-dependencies'
-import type { ZoomLevel } from '../scheduler-axis'
-
 /** Axis presets: which unit is a tick and which is the grouping row above it. */
 export type GanttZoom = 'day' | 'week' | 'month' | 'quarter' | 'year'
+export type GanttDependencyType = 'FS' | 'SS' | 'FF' | 'SF'
 
-/** Same shape as SchedulerDependency; `lag` is in DAYS here (negative = a lead). */
-export type GanttDependency = { id: string; from: string; to: string; type?: DependencyType; lag?: number }
+/** Same shape as enterprise's SchedulerDependency, declared here so the free
+ *  config can name it. `lag` is in DAYS for the Gantt (negative = a lead). */
+export type GanttDependency = {
+  id: string
+  from: string
+  to: string
+  type?: GanttDependencyType
+  lag?: number
+}
 
 export type GanttTaskMoveEvent<TData extends RowData = RowData> = {
-  row: TData; start: Date; end: Date
-  /** The moved parent's descendants, shifted by the same delta (not cascaded successors). */
+  row: TData
+  start: Date
+  end: Date
+  /** Rows shifted with this one: the moved parent's subtree (not cascaded successors). */
   subtree?: Array<{ row: TData; start: Date; end: Date }>
 }
-export type GanttTaskResizeEvent<TData extends RowData = RowData> = { row: TData; start: Date; end: Date; edge: 'start' | 'end' }
-export type GanttProgressChangeEvent<TData extends RowData = RowData> = { row: TData; progress: number }
-export type GanttTaskCommitEvent<TData extends RowData = RowData> = { row: TData; values: Partial<TData> }
+export type GanttTaskResizeEvent<TData extends RowData = RowData> = {
+  row: TData
+  start: Date
+  end: Date
+  edge: 'start' | 'end'
+}
+export type GanttProgressChangeEvent<TData extends RowData = RowData> = {
+  row: TData
+  /** 0..100, in whole percent. */
+  progress: number
+}
+export type GanttTaskCommitEvent<TData extends RowData = RowData> = {
+  row: TData
+  values: Partial<TData>
+}
+/** The drawer takes the scheduler's config shape (field list, title, width). */
 export type GanttDrawerConfig<TData extends RowData = RowData> = SchedulerDrawerConfig<TData>
 
-export type GanttConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
+export type GanttConfig<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = {
   // --- fields --------------------------------------------------------------
-  startField: keyof TData & string                 // required; Date | epoch-ms | ISO string
-  endField?: keyof TData & string                  // exclusive; a date-only string is inclusive of that day
-  durationField?: keyof TData & string             // working days, used when endField is absent
-  titleField?: keyof TData & string                // default: first column's field
-  progressField?: keyof TData & string             // 0..100
-  parentField?: keyof TData & string               // WBS nesting; also fed to the inner grid's treeData
-  milestoneField?: keyof TData & string            // boolean; end == start is a milestone regardless
+  /** Field holding each task's start (`Date` | epoch-ms | ISO string). Required. */
+  startField: keyof TData & string
+  /** Field holding the end (exclusive; a date-only string is inclusive of that day). */
+  endField?: keyof TData & string
+  /** Working-day length, used when `endField` is absent. `1` = one working day. */
+  durationField?: keyof TData & string
+  /** Task label. Defaults to the first column's field. */
+  titleField?: keyof TData & string
+  /** 0..100 percent complete. Drives the inner fill and the summary rollup. */
+  progressField?: keyof TData & string
+  /** Field holding the parent task's id. Roots hold null / undefined. Turns the
+   *  flat rows into a work-breakdown tree; parents draw summary bars. */
+  parentField?: keyof TData & string
+  /** Boolean field marking a milestone. A task whose end equals its start is a
+   *  milestone regardless. */
+  milestoneField?: keyof TData & string
+  /** Per-task accent color (any CSS color). Else `color`, else the accent token. */
   colorField?: keyof TData & string
   color?: string
 
   // --- dependencies ---------------------------------------------------------
+  /** Predecessor -> successor links. `from` / `to` are row ids (`getRowId`). */
   dependencies?: ReadonlyArray<GanttDependency>
-  dependencyField?: keyof TData & string           // per-row GanttDependency[] or successor ids
-  autoReschedule?: boolean                         // default true when any link exists
-  respectWorkingTime?: boolean                     // cascaded starts land on working days; default true
+  /** Per-row field holding this row's links (`GanttDependency[]` or successor ids). */
+  dependencyField?: keyof TData & string
+  /** Push successors forward after a move / resize. Default true when any link exists. */
+  autoReschedule?: boolean
+  /** Cascaded starts land on working days (`nonWorkingDays` / `holidays`). Default true. */
+  respectWorkingTime?: boolean
   onDependenciesChange?: (moves: Array<{ id: string; start: Date; end: Date }>) => void
   onDependencyAdd?: (dep: GanttDependency) => void
   onDependencyRemove?: (id: string) => void
 
   // --- axis -----------------------------------------------------------------
-  zoom?: GanttZoom                                 // default 'week' (day ticks under month majors)
-  zoomLevels?: ReadonlyArray<GanttZoom>            // stepper presets; one entry hides the stepper
+  /** Initial preset. Default `'week'` (day ticks under month majors). */
+  zoom?: GanttZoom
+  /** Presets the toolbar stepper offers. Default all five. One entry hides the stepper. */
+  zoomLevels?: ReadonlyArray<GanttZoom>
   onZoomChange?: (zoom: GanttZoom) => void
   weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6
-  nonWorkingDays?: ReadonlyArray<number>           // default [0, 6]
+  /** Weekday numbers treated as non-working. Default `[0, 6]`. */
+  nonWorkingDays?: ReadonlyArray<number>
+  /** Dates treated as non-working (shaded, skipped by working-day math). */
   holidays?: ReadonlyArray<Date | number | string>
-  showNonWorking?: boolean                         // shade; default true
-  todayLine?: boolean                              // default true
+  /** Shade non-working days. Default true. */
+  showNonWorking?: boolean
+  /** The dashed today line. Default true. */
+  todayLine?: boolean
+  /** Clamp the axis window and every drag. */
   minDate?: Date | number | string
   maxDate?: Date | number | string
-  rangePaddingDays?: number                        // default 7
+  /** Calendar days of slack around the first start and last end. Default 7. */
+  rangePaddingDays?: number
 
   // --- layout ---------------------------------------------------------------
-  tableWidth?: number                              // px, default 360; the splitter resizes it
-  rowHeight?: number                               // px, default 32; passed to the inner grid
-  summaryBars?: boolean                            // parents draw a rolled-up bar; default true
-  labelPosition?: 'inside' | 'right' | 'none'      // default 'inside', falls back to 'right' when narrow
-  showTable?: boolean                              // default true; false hides the table pane (chart only)
+  /** Column ids shown in the task table. Default: every leaf column. Two
+   *  built-ins need no column definition: `__duration` and `__progress`. */
+  tableColumns?: ReadonlyArray<string>
+  /** Initial task-table width in px. Default 360. A splitter resizes it. */
+  tableWidth?: number
+  /** Row height in px. Default 32. */
+  rowHeight?: number
+  /** Parents draw a rolled-up summary bar. Default true. */
+  summaryBars?: boolean
+  /** Where the bar label sits. Default `'inside'`, falling back to `'right'`
+   *  when the bar is narrower than the label. */
+  labelPosition?: 'inside' | 'right' | 'none'
+
+  // --- WBS collapse (uncontrolled by default) ---------------------------------
+  collapsed?: ReadonlyArray<string>
+  onCollapseChange?: (collapsed: string[]) => void
 
   // --- editing ----------------------------------------------------------------
-  editable?: boolean                               // drag-to-move, edge resize, progress grip, link drawing
+  /** Enable drag-to-move, edge resize, the progress grip and link drawing. */
+  editable?: boolean
+  /** Undo / redo with Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z (or Ctrl+Y). */
   history?: boolean
   onTaskMove?: (e: GanttTaskMoveEvent<TData>) => void
   onTaskResize?: (e: GanttTaskResizeEvent<TData>) => void
   onProgressChange?: (e: GanttProgressChangeEvent<TData>) => void
+  /** Double-click empty chart space: create a task on that day under that row's parent. */
   onTaskAdd?: (start: Date, end: Date, parentId?: string) => void
   onTaskDelete?: (row: TData) => void
 
   // --- chrome -----------------------------------------------------------------
+  /** Custom bar body. Receives the row. */
   task?: Snippet<[TData]>
   tooltip?: boolean | Snippet<[TData]>
   tooltipDelay?: number
   drawer?: boolean | GanttDrawerConfig<TData>
   onTaskCommit?: (e: GanttTaskCommitEvent<TData>) => void
   taskMenu?: (row: TData) => MenuItem[] | undefined
+  searchable?: boolean
+  searchPlaceholder?: string
 }
+```
+
+Add to `Props`, right after `scheduler` (line 1136):
+
+```ts
+/**
+ * Gantt mode. When set, the grid renders its rows as a task table beside a
+ * time chart (bars by start / end, a work-breakdown tree by `parentField`,
+ * dependency arrows). A view of the grid like the scheduler and board; the
+ * renderer ships in `@svgrid/enterprise` (`enableGanttView()`).
+ */
+gantt?: GanttConfig<TFeatures, TData>
+```
+
+Export the types from `packages/grid/src/index.ts` in a block after the
+scheduler exports (line 123), with the same comment style, plus
+`groupMajors` from the scheduler-model block.
+
+Decisions baked into that shape:
+
+- The WBS comes from `parentField` in the config, not from the grid's
+  `treeData` prop. With `treeData` on, collapsed children never reach the
+  view (`allRowsBeforePagination`, controller line 1638, is the expanded row
+  model), so a collapsed phase would lose its tasks. The Gantt owns its tree
+  and its collapse state; parents need a rolled-up summary bar anyway. Docs
+  say: set `gantt.parentField`, leave `treeData` off. `SvGrid.svelte` warns
+  once in dev when both are set.
+- Dates are local calendar days, `end` exclusive. A task on Sep 14 with a
+  one-day duration has `start = Sep 14 00:00`, `end = Sep 15 00:00`. A
+  date-only string like `2026-09-14` for `endField` is read as the END of
+  that day (the inclusive convention every planning tool uses), so
+  `{ start: '2026-09-14', end: '2026-09-16' }` draws a three-day bar. A
+  timestamp with a time part is used as-is. `resolveTasks` documents this
+  and tests pin it.
+- No `timeZone` in Phase 1. Day-granularity planning does not need the
+  Scheduler's pseudo-local machinery. Hour-level zoom comes from the Pro
+  axis in Phase 3.
+- `GanttDependency` is declared in the free grid because the free config
+  must name it. `SchedulerDependency` stays where it is; the helpers are
+  structural.
+- Row order among siblings is the grid's order. Sorting the grid by start
+  reorders tasks within each phase; the phase stays the parent. Filtering
+  out a parent keeps its children as roots, the same rule `treeData` uses
+  for missing parents.
+
+### 5.2 Seam (`gantt-view.svelte.ts`)
+
+Copy `board-view.svelte.ts` verbatim with the names changed. Thirty lines.
+Export `registerGanttView`, `getGanttView`, `hasGanttView`.
+
+### 5.3 `SvGrid.svelte`
+
+- `import { getGanttView } from "./gantt-view.svelte"` beside line 56.
+- `const ganttConfig = $derived(opt.gantt)` beside `schedulerConfig` (line 80).
+- A `{:else if ganttConfig}` branch after the scheduler branch (line 1060)
+  and before the chart branch, mirroring lines 1013-1060 exactly:
+  - root: `class="sv-grid-root sv-grid-gantt-root"`, the same
+    `containerHeight` style and `sv-grid-root-fill` class.
+  - search: the `sv-grid-board-search` label bound to `ctrl.globalFilter`,
+    placeholder `ganttConfig.searchPlaceholder ?? messages.ganttSearchPlaceholder`,
+    `aria-label="Search tasks"`.
+  - renderer: `<GanttView data={boardData} columns={opt.columns} gantt={ganttConfig} getRowId={opt.getRowId} />`.
+  - upsell: `<div class="sv-grid-scheduler-upsell sv-grid-gantt-upsell" role="note">`
+    with `<strong>{messages.ganttUpsellTitle}</strong><p>{messages.ganttUpsellBody}</p>`
+    and `{@render enterpriseLicenseNote()}`.
+- Strings in `grid-messages.ts` beside the pivot keys (lines 113-114 and
+  193-194): `ganttUpsellTitle: 'Gantt view'`,
+  `ganttUpsellBody: 'The Gantt view is an Enterprise feature. Install @svgrid/enterprise and call enableGanttView() to render it.'`,
+  `ganttSearchPlaceholder: 'Search tasks...'`.
+- Branch precedence stays board, scheduler, gantt, chart, pivot, table. Two
+  view props set at once is a consumer error; the first wins, as today.
+
+### 5.4 Tests
+
+`packages/grid/src/svgrid.gantt-seam.test.ts`, mirroring
+`svgrid.selection-bar-seam.test.ts`: `hasGanttView()` is false and
+`.sv-grid-gantt-upsell` renders with the licensing line; the search box
+binds to the global filter (type `Ada`, the stub renderer receives one row);
+after `registerGanttView` with a stub component the stub receives `data`,
+`columns`, `gantt`, `getRowId`; `localeText` overrides `ganttUpsellTitle`.
+
+`svgrid.upsell-license.test.ts`: add the fifth gate. Its header comment
+already anticipates this.
+
+### 5.5 Budgets and generated surfaces
+
+- The seam file, the `SvGrid.svelte` branch and the three messages sit on
+  the base bundle path. Expect roughly 0.3 to 0.5 KB gzipped. Run
+  `pnpm size`, then acknowledge the measurement in
+  `packages/grid/scripts/measure-size.mjs` (`BUDGET_KB`, line 52) and in
+  `packages/grid-wc/scripts/check-size.mjs` (0.3 KiB of headroom today),
+  both with the dated note those files use. Do not type a number without
+  running the tool.
+- `packages/grid-wc`: run `node scripts/generate-surface.mjs` so `gantt`
+  appears in `surface.generated.js` and `types/elements.d.ts`; the parity
+  test fails otherwise. No hand edits. The comments that list "board,
+  scheduler" (generate-surface line 8, check-size line 30) gain "gantt".
+- Changeset: `@svgrid/grid: minor`.
+
+## 6. Phase 1: the Pro renderer, read-only
+
+`packages/enterprise/src/gantt/`: `SvGridGantt.svelte`, `gantt.ts`,
+`gantt-config.ts`, `gantt-model.ts`, `timeline-arrows.ts`, `index.ts`.
+
+### 6.1 `gantt.ts` and the gate
+
+`enableGanttView()` copies `scheduler.ts` (37 lines): an `enabled` latch,
+`registerGanttView(SvGridGantt as never)`, `emitUnlicensedNudge()` when no
+key is set. Idempotent. `installEnterprise` calls it; a consumer that only
+uses the Gantt calls it once at app start.
+
+### 6.2 `gantt-config.ts`
+
+```ts
+import type { GanttConfig, GanttZoom, RowData, TableFeatures, SchedulerResource } from '@svgrid/grid'
+import type { ZoomLevel } from '../scheduler-axis'
 
 /** Phase 3. Structurally assignable to `gantt`; read through a cast like the scheduler's pcfg. */
 export type GanttProConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> =
@@ -293,43 +453,11 @@ export type GanttProConfig<TFeatures extends TableFeatures = TableFeatures, TDat
   }
 ```
 
-`SvGantt`'s own props, separate from the config object:
-
-```ts
-let {
-  data, columns, gantt, getRowId,
-  features,                    // grid features for the table (sorting, filtering, editing ...)
-  containerHeight = 520,       // number | string, like SvGrid
-  searchable = true,           // the grid's global filter box above the table
-  expanded, onExpandedChange,  // forwarded to the inner grid (controlled WBS state)
-  onApiReady,                  // the inner grid's api, for consumers who want it
-  ...gridProps                 // any other SvGrid prop is passed through (editable, rowClass, localization ...)
-}: SvGanttProps<TFeatures, TData> = $props()
-```
-
-Conventions the config commits to:
-
-- Dates are local calendar days, `end` exclusive. A task on Sep 14 with a
-  one-day duration has `start = Sep 14 00:00`, `end = Sep 15 00:00`. A
-  date-only `endField` string like `2026-09-14` is read as the end OF that
-  day, the inclusive convention every planning tool uses, so
-  `{ start: '2026-09-14', end: '2026-09-16' }` draws three days. A timestamp
-  with a time part is used as-is. `resolveTasks` documents this and tests
-  pin it.
-- The WBS comes from `parentField`. `SvGantt` forwards it to the inner grid
-  as `treeData={{ parentField, column: titleColumnId }}`, so the table gets
-  chevrons and indentation from the grid, while the model builds its own
-  tree from ALL rows (`data`, not the displayed subset) for summary rollups
-  and dependency anchoring into collapsed subtrees.
-- No `timeZone` in Phase 1. Hour-level zoom comes from the Pro axis in Phase 3.
-- Row order among siblings is the inner grid's order. Sorting the table by
-  start reorders tasks within each phase; filtering out a parent keeps its
-  children as roots, the rule the grid's `treeData` already applies.
-
-### 5.2 Model (`gantt/gantt-model.ts`)
+### 6.3 Model (`gantt-model.ts`)
 
 Pure, no Svelte, no `new Date()` without an argument, the same rules as
-`scheduler-model.ts`.
+`scheduler-model.ts`. Exported from `gantt/index.ts` and the main index so
+a consumer can use `workingDays` for a Duration column.
 
 ```ts
 export type GanttTaskSpec<TData> = {
@@ -350,9 +478,10 @@ export type ResolvedTask<TData = unknown> = {
   progress: number; milestone: boolean; parentKey: string | null; color?: string
 }
 
-/** Rows without a readable start are skipped. End wins over duration; duration
- *  counts working days from start; neither gives a milestone (end = start).
- *  Date-only end strings are inclusive. Progress is clamped; NaN reads as 0. */
+/** Rows without a readable start are skipped (a backlog row is not a bar).
+ *  End wins over duration; duration counts working days from start; neither
+ *  gives a milestone (end = start). Date-only end strings are inclusive.
+ *  Progress is clamped; NaN reads as 0. */
 export function resolveTasks<TData>(rows, spec, cal): ResolvedTask<TData>[]
 
 export type GanttNode<TData = unknown> = {
@@ -367,6 +496,8 @@ export type GanttNode<TData = unknown> = {
 export function ganttTree<TData>(tasks, collapsed: ReadonlySet<string>): GanttNode<TData>[]
 /** key -> visible ancestor key, for anchoring arrows into collapsed subtrees. */
 export function visibleAnchor<TData>(nodes, allTasks): Map<string, string>
+/** The visible flat index of every node: key -> row index. */
+export function nodeIndex<TData>(nodes): Map<string, number>
 
 /** [min start - padding, max end + padding], clamped to min/max; empty input
  *  centres on the injected today. */
@@ -392,182 +523,241 @@ export function addWorkingDays(start: Date, days: number, cal): Date
 export function snapToWorkingDay(d: Date, dir: 1 | -1, cal): Date    // 4000-step guard like buildAxis
 ```
 
-### 5.3 The component, top to bottom
+### 6.4 The renderer: props, config defaults, overlay, derived chain
 
-State and derived chain:
+Props are identical to the Scheduler's: `data`, `columns`, `gantt`,
+`getRowId`. Generic over `TFeatures, TData`. The Pro fields are read through
+`const pcfg = $derived(gantt as unknown as GanttProConfig<TFeatures, TData>)`.
 
 ```ts
-let api = $state<SvGridApi<TFeatures, TData> | null>(null)
-let displayed = $state<ReadonlyArray<TData>>([])            // api.getDisplayedRows() snapshot
-let scrollTop = $state(0)                                    // mirrored from the grid container
-let tableW = $state(gantt.tableWidth ?? 360)                 // svelte-ignore state_referenced_locally
-let zoomOverride = $state<GanttZoom | null>(null)
-let collapsedLocal = $state(new Set<string>())               // from onExpandedChange when uncontrolled
-
-// overlay, never mutates the consumer's rows (scheduler lines 211-216)
-let startOf = $state<Record<string, Date>>({})
-let endOf = $state<Record<string, Date>>({})
-let progressOf = $state<Record<string, number>>({})
-let edits = $state<Record<string, Record<string, unknown>>>({})
-
-const rowH   = $derived(gantt.rowHeight ?? 32)
-const barH   = $derived(rowH - 10)
-const cal    = $derived(makeCalendar(gantt.nonWorkingDays ?? [0, 6], gantt.holidays))
-const zoom   = $derived(zoomOverride ?? gantt.zoom ?? 'week')
-const spec   = $derived.by<GanttTaskSpec<TData>>(() => ({ getKey: key, getStart: r => startOf[key(r)] ?? fieldValue(r, gantt.startField), /* ... */ }))
-const tasks  = $derived(resolveTasks(data, spec, cal))                   // ALL rows: rollups need collapsed children
-const byKey  = $derived(new Map(tasks.map(t => [t.key, t])))
-const collapsed = $derived(expanded ? keysCollapsedIn(expanded) : collapsedLocal)
-const tree   = $derived(ganttTree(tasks, collapsed))                     // for summaries + anchors
-const nodeOf = $derived(new Map(tree.map(n => [n.task.key, n])))
-const rows   = $derived(displayed.map(r => nodeOf.get(key(r))).filter(Boolean))   // chart rows = grid rows, in grid order
-const range  = $derived(projectRange(tasks, { paddingDays: gantt.rangePaddingDays ?? 7, today, minDate, maxDate }))
+const rowH         = $derived(gantt.rowHeight ?? 32)
+const barH         = $derived(rowH - 10)
+const zoomLadder   = $derived(gantt.zoomLevels ?? ['day', 'week', 'month', 'quarter', 'year'])
+let   zoomOverride = $state<GanttZoom | null>(null)
+const zoom         = $derived(zoomOverride ?? gantt.zoom ?? 'week')
+const cal          = $derived(makeCalendar(gantt.nonWorkingDays ?? [0, 6], gantt.holidays))
+const editable     = $derived(gantt.editable === true)
+const autoResched  = $derived(gantt.autoReschedule ?? depList.length > 0)
+let   tableW       = $state(gantt.tableWidth ?? 360)   // svelte-ignore state_referenced_locally
 ```
 
-`key(row)` is `getRowId(row, index)` when given, else a `WeakMap` synthetic
-id pinned to the row object (the Scheduler's rule), and the same `getRowId`
-goes to the inner grid so `treeData` ids and Gantt keys agree.
+The same three pieces the Scheduler has at lines 195-260:
 
-Axis and the one `xOf` function:
+- `key(row)`: `getRowId(row, index)` when given, else a `WeakMap` synthetic
+  id pinned to the row object, so the overlay survives re-sorts and data
+  replacement.
+- Overlay: `startOf`, `endOf`, `progressOf` as `$state<Record<string, ...>>`
+  plus `edits` for drawer saves. `fieldValue(row, field)` reads `edits` first.
+- `spec`: `getStart: r => startOf[key(r)] ?? fieldValue(r, gantt.startField)`,
+  and so on for end, duration, progress, parent, milestone, colour. Title
+  falls back to the first `field` column like the Scheduler's `titleField`.
+
+```ts
+const tasks     = $derived(resolveTasks(data, spec, cal))
+const taskByKey = $derived(new Map(tasks.map(t => [t.key, t])))
+let   collapsedLocal = $state(new Set<string>())
+const collapsed = $derived(gantt.collapsed ? new Set(gantt.collapsed) : collapsedLocal)
+const nodes     = $derived(ganttTree(tasks, collapsed))
+const rowIndex  = $derived(nodeIndex(nodes))
+const range     = $derived(projectRange(tasks, { paddingDays: gantt.rangePaddingDays ?? 7, today, minDate, maxDate }))
+```
+
+`data` is the outer grid's filtered + sorted rows, so search and column
+filters have already been applied. A filtered-out parent's children become
+roots (section 5.1).
+
+### 6.5 Axis and the one `xOf` function
+
+Two axis modes, chosen once:
 
 - Free axis (default): `axis = ganttAxis(range.start, range.end, zoom, ...)`,
   `axisPx = axis.ticks.length * ganttTickWidth[zoom]`,
-  `xOf(d) = (d - axis.start) / axis.totalMs * axisPx`, `dateAtX` the inverse.
-- Pro axis (Phase 3): `buildAxis` / `timeToX` / `xToTime`, ticks per
-  `ZoomLevel.tickMinutes` like the Scheduler's `proAxisData` (line 365).
+  `xOf(d) = (d - axis.start) / axis.totalMs * axisPx`. `dateAtX(x)` is the
+  inverse.
+- Pro axis (Phase 3, when `pcfg.zoom` is a number or `ZoomLevel`, or
+  `collapseWeekends` is set):
+  `axis = buildAxis(range.start, range.end, { pxPerMinute, nonWorkingDays, collapseWeekends, collapsedGapPx })`,
+  `xOf = d => timeToX(d, axis)`, `dateAtX = x => xToTime(x, axis)`, and the
+  header ticks are generated per `ZoomLevel.tickMinutes` like the
+  Scheduler's `proAxisData` (renderer line 365).
 
 Every bar, gridline, shading band, arrow anchor, drop preview and the today
 line goes through `xOf`. Nothing else computes a pixel from a date.
 
-DOM:
+### 6.6 DOM layout
 
 ```
-.sv-gantt                                  flex column; height: containerHeight
-  .sv-gantt-toolbar                        search (grid global filter), zoom stepper, Today, Expand / Collapse all
-  .sv-gantt-panes                          flex row; flex: 1; min-height: 0
-    .sv-gantt-table  (width: tableW)       <SvGrid ... containerHeight="100%" rowHeight={rowH} treeData virtualization />
-    .sv-gantt-splitter                     5px; cursor: col-resize
-    .sv-gantt-chart                        flex: 1; overflow: auto (both axes); scrollTop mirrored
-      .sv-gantt-axis                       sticky top; height = grid header height; majors row over ticks row
-      .sv-gantt-body                       position: relative; width: axisPx; height: rows.length * rowH
-        .sv-gantt-shade   x bands          non-working columns
-        .sv-gantt-gridline x ticks
-        .sv-gantt-row  x windowed rows     absolute; top: i * rowH
-          .sv-gantt-bar | .sv-gantt-summary | .sv-gantt-milestone
-            .sv-gantt-progress             inner fill
-            .sv-gantt-grip-l / -r          (Phase 2)
-            .sv-gantt-grip-p               (Phase 2)
-            .sv-gantt-link-dot             (Phase 2)
-          .sv-gantt-label                  when the label sits to the right
-        svg.sv-gantt-deps                  arrow overlay; pointer-events: none; z-index 3
-        .sv-gantt-today                    dashed line at xOf(today)
+.sv-gantt                              display: flex; flex-direction: column; height: 100%
+  .sv-gantt-toolbar                    zoom stepper (SvButton group), Today, Expand / Collapse all
+  .sv-gantt-scroll                     overflow-y: auto; the ONE vertical scroller
+    .sv-gantt-panes                    display: flex; min-height: 100%
+      .sv-gantt-table                  width: var(--gantt-table-w); flex: none
+        .sv-gantt-table-head           position: sticky; top: 0; height = axis head height (48px)
+          .sv-gantt-th  x cols
+        .sv-gantt-table-row  x N       height: var(--gantt-row-h)
+          .sv-gantt-td  x cols         first cell: indent + chevron + title
+      .sv-gantt-splitter               width: 5px; cursor: col-resize
+      .sv-gantt-chart                  flex: 1; overflow-x: auto; overflow-y: hidden
+        .sv-gantt-axis                 position: sticky; top: 0; width: axisPx
+          .sv-gantt-majors / .sv-gantt-ticks
+        .sv-gantt-body                 position: relative; width: axisPx; height: N * rowH
+          .sv-gantt-shade   x bands    non-working columns, absolute, full height
+          .sv-gantt-gridline x ticks   1px, full height
+          .sv-gantt-row  x N           absolute; top: i * rowH; full width
+            .sv-gantt-bar | .sv-gantt-summary | .sv-gantt-milestone
+              .sv-gantt-progress       inner fill
+              .sv-gantt-grip-l / -r    resize grips (Phase 2)
+              .sv-gantt-grip-p         progress grip (Phase 2)
+              .sv-gantt-link-dot       connector handles (Phase 2)
+            .sv-gantt-label            when labelPosition resolves to right
+          svg.sv-gantt-deps            arrow overlay, pointer-events: none, z-index 3
+          .sv-gantt-today              dashed line at xOf(today)
 ```
 
-The axis head is exactly as tall as the grid's header (`headerHeight` is
-passed to the grid and used for the axis), so row zero lines up on both
-sides. Hovering a chart row sets `hoverKey`; the grid gets
-`rowClass={({ row }) => key(row) === hoverKey ? 'sv-gantt-hover' : undefined}`
-and the reverse hover comes from the grid's row `mouseenter` through a
-delegated listener on the table pane.
+One vertical scroller wraps both panes so rows never drift apart; only the
+chart pane scrolls horizontally. Both heads are sticky at the same height.
+Hovering a table row highlights its chart row and the reverse, through a
+shared `hoverKey` state and a class. Every colour comes from `--sg-*`
+tokens; the class prefix is `sv-gantt-`.
 
-Bars:
+The task table is the renderer's own light table, the Scheduler's resource
+gutter widened to several columns. Cells use each column's `header` (string
+form; a snippet header falls back to the field name like the Scheduler's
+`headerLabel`), `width`, and value formatting: a `Date` through
+`toLocaleDateString`, numbers as-is, the board's `fmt` rule (SvGridBoard
+line 63). A column `cell` function renders through `renderSnippet` with a
+minimal `CellContext` (row, value); string templates render as text. Tree
+rows indent the title cell by `depth * 14px` and get a chevron button
+(`aria-expanded`). Two built-in columns need no definition: `__duration`
+(working days from the resolved task) and `__progress` (a small bar).
 
-- Task: `left: xOf(start)`, `width: max(2, xOf(end) - xOf(start))`, centred
-  vertically, accent from `color` via `--sv-gantt-accent`, inner
-  `.sv-gantt-progress` at `width: progress%`. Label inside when the bar is
-  wider than the label plus 12px, else `.sv-gantt-label` to the right.
-- Summary (parent): 8px tall, 6px down-facing end caps as `::before` /
-  `::after`, progress as a darker fill, no grips, label always right.
-- Milestone: a 14px square rotated 45 degrees at `xOf(start)`.
-- Every bar: `tabindex="0"`, `role="row"` inside the chart's `role="grid"`,
-  `aria-label="Title, 14 Sep to 20 Sep, 40%"`, `data-key`.
+What the light table does not do: inline editing, column resize, per-column
+sort or filter menus. Sorting and filtering happen on the outer grid's
+columns (its menus are hidden in Gantt mode as they are in board mode, so a
+consumer offers a Table toggle for that, the pattern demo 389 uses).
+Embedding a real inner `<SvGrid>` for the pane is listed under open
+questions; nothing in the seam prevents it later.
 
-Arrows:
+### 6.7 Bars
+
+- Normal task: `left: xOf(start)`, `width: max(2, xOf(end) - xOf(start))`,
+  `top: (rowH - barH) / 2`, rounded, background from `color` through
+  `--sv-gantt-accent` (the Scheduler's `--sv-sched-accent` pattern). Inner
+  `.sv-gantt-progress` with `width: progress%` and a darker mix of the
+  accent. Label inside when `width >= labelWidth + 12`, else
+  `.sv-gantt-label` to the right (`labelPosition: 'right'` forces it;
+  `'none'` hides it).
+- Summary (parent): height 8px, centred, with 6px down-facing end caps
+  drawn as `::before` / `::after` triangles; progress as a darker inner
+  fill; no grips; label always to the right.
+- Milestone: a 14px square rotated 45 degrees at `xOf(start)`, label to
+  the right.
+- Every bar: `tabindex="0"`, `role="row"` inside the chart `role="grid"`
+  region, `aria-label="Title, 14 Sep to 20 Sep, 40%"`, `data-key`.
+- Clipping: a bar that starts before `range.start` (only possible with
+  `minDate`) gets `sv-gantt-bar-clip-l`, the Scheduler's `continuesLeft`.
+
+### 6.8 Arrows
 
 ```ts
 const depList  = $derived(mergeDeps(gantt.dependencies, gantt.dependencyField, data))   // lag days -> minutes
 const depTimes = $derived(new Map(tasks.map(t => [t.key, { start: t.start, end: t.end }])))
 const depBad   = $derived(new Set(violations(depTimes, depList).map(d => d.id)))
-const anchor   = $derived(visibleAnchor(rows, tasks))                 // collapsed child -> its visible parent
+const anchor   = $derived(visibleAnchor(nodes, tasks))                // collapsed child -> visible parent
 const barRects = $derived.by(() => {
   const m = new Map<string, BarRect>()
-  rows.forEach((n, i) => { const t = n.summary ?? n.task; m.set(n.task.key, { left: xOf(t.start), right: xOf(t.end), midY: i * rowH + rowH / 2 }) })
+  nodes.forEach((n, i) => { const t = n.summary ?? n.task; m.set(n.task.key, { left: xOf(t.start), right: xOf(t.end), midY: i * rowH + rowH / 2 }) })
   return m
 })
 const arrows   = $derived(dependencyArrows(barRects, depList.map(d => ({ ...d, from: anchor.get(d.from) ?? d.from, to: anchor.get(d.to) ?? d.to })), depBad, rowH))
 ```
 
-A link to a filtered-out row is skipped, as the Scheduler does.
+A link whose endpoint is inside a collapsed subtree draws to the collapsed
+parent's summary bar. A link to a filtered-out row is skipped, as the
+Scheduler does.
 
-Everything else in Phase 1:
+### 6.9 Everything else in Phase 1
 
-- Today line at `xOf(today)`; `today` refreshed every 60s like demo 45.
-- Non-working shading: one band per non-working day under the free axis;
-  under the Pro axis the `break` / `collapsed` segments are the bands.
+- Today line at `xOf(today)`, `today` refreshed every 60s like demo 45.
+- Non-working shading: one band per non-working day in `range` under the
+  free axis; under the Pro axis the `break` / `collapsed` segments are the
+  bands.
 - Tooltip: the Scheduler's `tooltipCfg` / delay / `sv-sched-tooltip` block
-  (lines 1232-1250, 3886-3900): title, start to end, N working days, N%,
-  parent title.
-- Collapse: the grid's chevrons. `onExpandedChange` updates `collapsedLocal`
-  (or is forwarded when controlled). Toolbar Expand all / Collapse all call
-  `api.expandAllGroups()` / `collapseAllGroups()`.
-- Zoom stepper over `zoomLevels`, `Ctrl+wheel` over the chart; zooming keeps
-  the date under the pointer fixed (record `dateAtX(pointer)`, re-scroll so
-  `xOf(that date)` lands on the same client x).
+  (renderer lines 1232-1250 and 3886-3900) with title, start to end, N
+  working days, N%, and the parent's title.
+- Collapse: chevron click toggles `collapsedLocal` or calls
+  `onCollapseChange`; the toolbar's Expand all / Collapse all does the set.
+- Zoom stepper: `SvButton` minus / plus over `zoomLadder`, fires
+  `onZoomChange`; `Ctrl+wheel` over the chart steps it too. Zooming keeps
+  the date under the pointer fixed: record `dateAtX(pointer)` before,
+  scroll so `xOf(that date)` lands on the same client x after.
 - Scroll today into view on mount (centre it; fall back to the first task).
-- Search: the toolbar box is the inner grid's global filter (`showGlobalFilter`
-  on the grid, or a `bind` through `api.setGlobalFilter`), so the table and
-  chart filter together.
+- Search flows through `SvGrid`'s global filter untouched.
+- Row windowing when `nodes.length` is above 300: only rows intersecting
+  the scroller's viewport plus 20 on each side render; rows are absolutely
+  positioned by index so nothing else changes. The arrow overlay still
+  spans every row; `barRects` is computed for all nodes.
 
-### 5.4 Tests
+### 6.10 Tests
 
 `gantt/gantt-model.test.ts`, one `describe` per function:
 
-- `resolveTasks`: end wins over duration; duration 3 across a weekend ends
-  on the following Wednesday; date-only end inclusive; timestamp end exact;
-  no end and no duration gives a milestone; missing start skips; progress
-  clamps and `NaN` reads 0; `milestoneField` forces a milestone.
-- `ganttTree`: two roots with nested children; orphan promoted; parent cycle
-  broken; collapse hides descendants but the summary spans them; weighted
-  progress (leaves of 2 and 6 days at 100% and 0% give 25%); milestones
-  weigh zero; `visibleAnchor` maps a hidden grandchild to its visible ancestor.
-- `projectRange`: padding; clamps; empty input.
-- `ganttAxis`: for every preset, ticks tile the range (widths sum to 100
-  within 1e-6, no gaps); majors group correctly; a Wednesday start under
-  `weekStartsOn: 1` gives a short first week; the today flag lands once.
-- Working days: 5 in a week; a holiday removes one; `addWorkingDays(Fri, 1)`
-  is Monday; snapping both directions; an all-off calendar returns the input.
+- `resolveTasks`: end wins over duration; duration of 3 across a weekend
+  ends on the following Wednesday; a date-only end string is inclusive; a
+  timestamp end is exact; no end and no duration gives a milestone; a
+  missing start skips the row; progress clamps to 0..100 and `NaN` becomes
+  0; `milestoneField` true forces a milestone even with a span.
+- `ganttTree`: order with two roots and nested children; orphan promoted;
+  parent cycle broken; collapse hides descendants but the summary still
+  spans them; summary progress weighted by leaf durations (two leaves of 2
+  and 6 days at 100% and 0% give 25%); milestones weigh zero; a parent of
+  only milestones averages plainly; `nodeIndex` matches list positions;
+  `visibleAnchor` maps a hidden grandchild to its visible ancestor.
+- `projectRange`: padding on both sides; `minDate` / `maxDate` clamp; empty
+  input centres on the injected today.
+- `ganttAxis`: for every preset, ticks tile the range with no gap and no
+  overlap (sum of widths is 100 within 1e-6); majors group the right
+  ticks; a range starting on a Wednesday under `weekStartsOn: 1` produces a
+  short first week tick; the today flag lands on exactly one tick.
+- Working days: `workingDays` over a week with `[0, 6]` is 5; a holiday
+  removes one; `addWorkingDays(Fri, 1)` is Monday; `snapToWorkingDay` in
+  both directions; an all-off calendar returns the input rather than
+  looping.
 
-`gantt/gantt.dom.test.ts` in the enterprise `dom` project (jsdom, the
-grid's `test-setup.ts` stubs), modelled on `board.dom.test.ts` and
-`SvSheet.state.dom.test.ts` since it mounts an inner grid. Fixture: three
-phases, eight tasks, two milestones, four links, one violating.
+`gantt/gantt.dom.test.ts` in the enterprise `dom` project, modelled on
+`board.dom.test.ts` (call `enableGanttView()`, mount `SvGridGantt`
+directly, `flushSync`). Fixture: three phases, eight tasks, two milestones,
+four links, one violating.
 
-- one chart row per displayed grid row, in the grid's order; a sort on the
-  inner grid (`api.setSorting`) reorders the chart rows to match.
-- a leaf bar's `style.left` / `style.width` match `xOf`; a milestone renders
-  at `xOf(start)`; the phase row draws a summary spanning its children with
-  the weighted fill.
-- arrow count equals link count; the violating one carries `sv-gantt-dep-bad`.
-- `api.setRowExpanded(phaseId, false)` removes the descendants' chart rows
-  and re-anchors the arrow into the subtree on the parent's summary bar.
-- typing in the toolbar search filters both panes.
-- `expanded` / `onExpandedChange` round-trip when controlled.
-- setting the grid container's `scrollTop` moves the chart pane's.
+- renders one table row and one chart row per visible node in tree order;
+  indent equals depth times 14px.
+- a leaf bar's `style.left` and `style.width` match `xOf` for its dates; a
+  milestone renders `.sv-gantt-milestone` at `xOf(start)`.
+- the phase row draws `.sv-gantt-summary` spanning its children; its
+  progress fill equals the weighted rollup.
+- `.sv-gantt-deps path.sv-gantt-dep-line` count equals the link count; the
+  violating one carries `sv-gantt-dep-bad`.
+- clicking a chevron removes the descendants and adds `sv-gantt-collapsed`
+  to the parent; an arrow into the collapsed subtree re-anchors on the
+  parent.
+- `tableColumns: ['title', '__duration']` renders two header cells and the
+  duration column shows working days.
+- mounted through `<SvGrid gantt=...>`: typing in the search box filters
+  the rows (mirrors the board test that mounts `SvGrid`).
+- `timeline-arrows.test.ts`: `elbowPath` for a forward link is four points;
+  a backward link loops with six points; `dependencyArrows` picks the FS /
+  SS / FF / SF anchors from the right edges.
 
-`gantt/timeline-arrows.test.ts`: forward `elbowPath` is four points; a
-backward link loops with six; `dependencyArrows` picks FS / SS / FF / SF
-anchors from the right edges.
+### 6.11 Changeset and docs
 
-### 5.5 Docs, demo, changeset
+`@svgrid/enterprise: minor`. The docs page and the first demo land in this
+phase (section 9) so the page and the view ship together.
 
-The docs page, demo 474 and the scheduler call-out land in this phase
-(section 8). Changeset: `@svgrid/enterprise: minor`; `@svgrid/grid: patch`
-only if `groupMajors` is exported.
+## 7. Phase 2: editing
 
-## 6. Phase 2: editing
-
-All in `SvGantt.svelte`, following the Scheduler's timeline handlers
-(lines 3008-3121) with one `BarDrag` state for every mode.
+All in `SvGridGantt.svelte`, following the Scheduler's timeline handlers
+(renderer lines 3008-3121) one for one, with one `BarDrag` state for the
+five modes.
 
 ```ts
 type DragMode = 'move' | 'resize-start' | 'resize-end' | 'progress' | 'link'
@@ -582,140 +772,162 @@ type BarDrag = {
 let drag = $state<BarDrag | null>(null)
 ```
 
-- Threshold: 3px before `moved` flips, so a click still opens the drawer
-  and never fires a zero move.
-- Snap: `startOfDay(d)` for move and resize-start, `addDays(startOfDay(d), 1)`
-  for resize-end; under the Pro hour-level axis the tick, the Scheduler's
-  `fine` rule (line 3047). With `respectWorkingTime` a move landing on a
+- Threshold: 3px (`DRAG_THRESHOLD`) before `moved` flips, so a click still
+  opens the drawer and never fires a zero move.
+- Snap: `snapDay(d) = startOfDay(d)` for move and resize-start,
+  `addDays(startOfDay(d), 1)` for resize-end; under the Pro hour-level axis
+  the snap is the tick, exactly the Scheduler's `fine` rule (line 3047).
+  With `respectWorkingTime` (default true) a move that lands on a
   non-working day slides to the next working day; a resize keeps calendar
   days (a task can span a weekend).
-- Move: `previewStart = snap(dateAtX(clientX) - grabOffsetMs)`,
+- Move: `previewStart = snapDay(dateAtX(clientX) - grabOffsetMs)`,
   `previewEnd = previewStart + durationMs`, clamped to `[minDate, maxDate]`.
-  A parent moves its whole subtree by the same delta; the commit fires one
-  `onTaskMove` with `subtree` filled so the consumer writes the batch.
-- Resize: minimum one day (or one tick); milestones do not resize.
-- Progress: `round((clientX - barLeft) / barWidth * 20) * 5`, clamped;
-  `onProgressChange`. Leaves only; a parent's progress is the rollup.
-- Link: `.sv-gantt-link-dot` on each bar edge starts a `link` drag; a
-  temporary path follows the pointer; hovering another bar sets the target
-  and the edge (left half start, right half end). On release: end to start
-  is `FS`, start to start `SS`, end to end `FF`, start to end `SF`. Refused
-  (300ms `sv-gantt-refused` flash on both bars, the Scheduler's
-  `bookingBlocked` treatment) when `hasCycle([...deps, candidate])` or the
-  pair is already linked. Otherwise
+  A parent moves its whole subtree by the same delta; the preview shows
+  every bar shifted; the commit fires one `onTaskMove` with `subtree`
+  filled, so the consumer writes the batch.
+- Resize: `min length` is one day (or one tick); a milestone cannot resize.
+- Progress: `previewProgress = clamp(round((clientX - barLeft) / barWidth * 20) * 5, 0, 100)`,
+  fires `onProgressChange`. Only leaves have the grip; a parent's progress
+  is the rollup.
+- Link: the `.sv-gantt-link-dot` on each bar edge starts a `link` drag.
+  While dragging, a temporary path follows the pointer; hovering another
+  bar sets `linkTargetKey` and the edge (left half = start, right half =
+  end). On release the type is `FS` for end to start, `SS` start to start,
+  `FF` end to end, `SF` start to end. The new link is refused (a 300ms
+  `sv-gantt-refused` flash on both bars, the Scheduler's `bookingBlocked`
+  treatment) when `hasCycle([...deps, candidate])` or the pair is already
+  linked. Otherwise
   `onDependencyAdd({ id: `dep-${from}-${to}-${Date.now()}`, from, to, type })`.
-  Right-click on an arrow opens `SvMenuList` with Remove.
+  Right-click on an arrow opens `SvMenuList` with Remove, calling
+  `onDependencyRemove(id)`.
 - Commit (`onBarDragEnd`): write the overlay, emit the callback, then
   `cascadeDeps(key, start, end)` (the Scheduler's routine at line 599 with
-  `snapForward = d => snapToWorkingDay(d, 1, cal)`), then `pushHistory`.
+  `snapForward = d => snapToWorkingDay(d, 1, cal)` when
+  `respectWorkingTime`), then `pushHistory`.
 - History: the Scheduler's stack with `kind: 'move' | 'resize' | 'progress'`
   and `subtree` deltas recorded so undoing a parent move restores its
-  children. Undo re-emits the callbacks with the reversed values; cascaded
-  shifts are part of the same command.
-- Double-click empty chart space: `onTaskAdd(day, day + 1, parentKeyOf(rowUnderPointer))`.
+  children. Undo re-emits the callbacks with the reversed values, so the
+  consumer's data follows; cascaded shifts are recorded in the same command.
+- Double-click empty chart space:
+  `onTaskAdd(day, day + 1, parentKeyOf(rowUnderPointer))`.
 - Keyboard on a focused bar (Scheduler `onEventKey`, line 1958):
-  `ArrowLeft` / `ArrowRight` move by a day, `Shift` by seven, `Alt` resizes
-  the end; `+` / `-` change progress by 5; `Enter` opens the drawer;
-  `Delete` fires `onTaskDelete`; `Escape` cancels a drag. `Ctrl+Z` /
-  `Ctrl+Shift+Z` / `Ctrl+Y` when `history` is on, ignored while the inner
-  grid is editing a cell (the Scheduler's input-target check, line 1218).
+  `ArrowLeft` / `ArrowRight` move by a day, with `Shift` by seven, with
+  `Alt` resize the end; `+` / `-` change progress by 5; `Enter` opens the
+  drawer; `Delete` fires `onTaskDelete`; `Escape` cancels an active drag
+  and restores the preview. `Ctrl+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` when
+  `history` is on, ignored while an input has focus (the Scheduler's
+  target check, line 1218).
 - Drawer: `drawer: true | GanttDrawerConfig` reuses the Scheduler's
   `SvDrawer` + `SvForm` block and `drawerFields` builder. Start, End (or
-  Duration) and Progress are pinned first; the rest come from the columns.
-  Save writes `edits[key]`, fires `onTaskCommit`, and runs the cascade when
-  dates changed. The inner grid's inline editing is the other edit path; a
-  consumer that sets `editable` on the grid writes rows directly and the
-  chart follows through `data`.
+  Duration) and Progress are pinned first with date / number types; the
+  rest come from `drawerFieldCols`. Save writes `edits[key]`, fires
+  `onTaskCommit`, and when start / end changed also runs the cascade.
 - Context menu: Edit (with drawer), Add subtask (with `onTaskAdd`), Delete
   (with `onTaskDelete`), then `taskMenu(row)` items, through `SvMenuList`
   with the board's dismissable-layer pattern.
 
-Tests: extend `gantt.dom.test.ts` with pointer sequences (`pointerdown`,
-`pointermove` on `window`, `pointerup`):
+### 7.1 Tests
 
-- a 3-tick drag fires `onTaskMove` with start + 3 days, same duration; the
-  source row is unchanged; the bar moved.
+Extend `gantt.dom.test.ts` with pointer sequences (`pointerdown`,
+`pointermove` on `window`, `pointerup`), the same helper the board test
+uses:
+
+- a 3-tick drag on a leaf fires `onTaskMove` with start + 3 days and the
+  same duration; the source row is unchanged; the bar's `style.left` moved.
 - a 1px drag fires nothing and a click opens the drawer.
-- right grip fires `onTaskResize` with `edge: 'end'`; left with `'start'`;
-  a milestone has no grips.
-- a drop on Saturday with `respectWorkingTime` starts on Monday.
+- dragging the right grip fires `onTaskResize` with `edge: 'end'`; the
+  left grip with `edge: 'start'`; a milestone has no grips.
+- a drag landing on Saturday with `respectWorkingTime` starts on Monday.
 - moving a parent fires one `onTaskMove` whose `subtree` lists every
-  descendant shifted by the delta.
+  descendant shifted by the same delta.
 - with links, moving a predecessor fires `onDependenciesChange` with the
-  cascaded successors; `autoReschedule: false` does not.
-- the progress grip at the midpoint fires `onProgressChange` with 50.
-- link drawing A end to B start fires `FS`; to B end fires `FF`; a cycle
-  fires nothing and both bars get `sv-gantt-refused`.
+  cascaded successors and their bars moved; `autoReschedule: false` does
+  not.
+- the progress grip at the bar's midpoint fires `onProgressChange` with 50.
+- link drawing from A's end onto B's start fires `onDependencyAdd` with
+  `FS`; onto B's end with `FF`; a link that would close a cycle fires
+  nothing and both bars get `sv-gantt-refused`.
 - `Ctrl+Z` after a move re-fires `onTaskMove` with the original dates.
-- `ArrowRight` on a focused bar moves it one day.
+- `ArrowRight` on a focused bar moves it by one day.
 - drawer save with a new end fires `onTaskCommit` and the cascade.
 
-`tests/e2e/gantt.spec.ts` (website checkout only, like the scheduler
+`tests/e2e/gantt.spec.ts` (needs the website checkout, like the scheduler
 specs): drag a bar and read its tooltip dates; resize; draw a link and
-count arrows; zoom in twice and check the tick width; collapse a phase from
-the table chevron and count chart rows; sort the table by a column and
-check the first bar's key.
+count arrows; zoom in twice and check the tick width; collapse a phase;
+toggle to the Table and back and check the first bar's key.
 
-## 7. Phase 3: planning features (`GanttProConfig`)
+## 8. Phase 3: planning features (`GanttProConfig`)
 
-### 7.1 Critical path (`gantt/gantt-critical-path.ts`, pure)
+### 8.1 Critical path (`gantt/gantt-critical-path.ts`, pure)
 
 ```ts
 export type CpmResult = {
-  critical: Set<string>; slackMs: Map<string, number>
-  earliest: Map<string, EventTimes>; latest: Map<string, EventTimes>; finish: Date
+  critical: Set<string>
+  slackMs: Map<string, number>
+  earliest: Map<string, EventTimes>
+  latest: Map<string, EventTimes>
+  finish: Date
 }
-export function criticalPath(times: ReadonlyMap<string, EventTimes>, deps: ReadonlyArray<SchedulerDependency>): CpmResult
+export function criticalPath(
+  times: ReadonlyMap<string, EventTimes>,
+  deps: ReadonlyArray<SchedulerDependency>,
+  opts?: { keys?: Iterable<string> },
+): CpmResult
 export function slackDays(result: CpmResult, key: string, cal: WorkingCalendar): number
 ```
 
 Forward pass in `topoOrder`: `ES = max(own start, requiredStart over
-predecessors)`, `EF = ES + duration`; finish = max EF. Backward pass in
-reverse: `LF = min(finish, the latest finish each successor link allows)`,
-`LS = LF - duration`. `slack = LS - ES`; critical below one minute. Unlinked
-tasks keep their own dates with `slack = finish - own end`, so an unlinked
-late task is not "critical". Cyclic links are ignored, as in `cascade`.
-Parents are excluded; a link naming a parent resolves to its last-finishing
-leaf for FS / FF and first-starting leaf for SS / SF.
+predecessors)`, `EF = ES + duration`. Project finish = max EF. Backward
+pass in reverse order: `LF = min(finish, over successors of the latest
+start that link allows)`, `LS = LF - duration`. `slack = LS - ES`; critical
+when slack is below one minute. Tasks outside every link keep their own
+dates and a slack of `finish - own end`, so an unlinked late task is not
+"critical". Cyclic links are ignored, as in `cascade`. Parents are excluded
+from the pass (their bars are rollups); a link that names a parent is
+treated as a link to its last-finishing leaf for FS / FF and first-starting
+leaf for SS / SF.
 
-The renderer adds `sv-gantt-critical` to critical bars and arrows, and the
-demo adds a Slack column to the table through `slackDays`. Tests: a chain
-of three; a diamond where the longer branch is critical; a lag that flips
-the branch; an isolated task; an SS link; a cycle ignored.
+The renderer adds `sv-gantt-critical` to critical bars and their arrows;
+the demo adds a Slack column to the table through `slackDays`. Tests: a
+chain of three; a diamond where the longer branch is critical; a lag that
+flips which branch is critical; an isolated task; an SS link; a cycle
+ignored.
 
-### 7.2 Baselines
+### 8.2 Baselines
 
-`baselineStartField` / `baselineEndField` draw a 6px grey `.sv-gantt-baseline`
-under the bar; the tooltip shows the variance in working days.
+`baselineStartField` / `baselineEndField` draw a 6px grey bar under the
+task bar (`.sv-gantt-baseline`) and the tooltip shows the variance in
+working days. A missing baseline draws nothing.
 
-### 7.3 Constraints
+### 8.3 Constraints
 
-`constraintField` + `constraintDateField` per row. `cascade` in
+`constraintField` and `constraintDateField` per row. `cascade` in
 `scheduler-dependencies.ts` gains an optional
 `bounds?: ReadonlyMap<string, { minStart?: Date; maxEnd?: Date }>` argument
 (backwards compatible; every scheduler test unchanged). `SNET` and `MSO`
 raise the floor, `FNLT` and `MFO` set a ceiling, `ALAP` schedules against
-the latest-start pass. A cascade that would break a ceiling stops there and
-the bar paints `sv-gantt-constrained`; a glyph before the label shows the
-constraint kind.
+the latest-start pass. A cascade that would break a ceiling stops at it and
+the bar paints `sv-gantt-constrained` (the violation colour). A small glyph
+before the label shows the constraint kind.
 
-### 7.4 Pro axis and hours
+### 8.4 Pro axis and hours
 
 `zoom` as a number or `ZoomLevel` switches to `buildAxis` / `timeToX` with
-`pxPerMinute` from `resolveZoom`, which brings hour ticks for short projects
-and `collapseWeekends`. `zoomLevels` may then be the Scheduler's
-`zoomPresets`. Stepper and wheel work the same.
+`pxPerMinute` from `resolveZoom`, which brings hour-level ticks for short
+projects and `collapseWeekends`. `zoomLevels` may then be the Scheduler's
+`zoomPresets` ladder. The stepper and the wheel work the same.
 
-### 7.5 Resources
+### 8.5 Resources
 
 `resourceField` shows the resource in the tooltip and, with
 `resourceHistogram`, a strip under the chart with one bar per tick per
 resource from `resourceLoad`; over-capacity ticks paint red through
-`overallocations`. Assignment is edited in the drawer or the table, not by drag.
+`overallocations`. Assigning is edited in the drawer, not by drag, in this
+phase.
 
-## 8. Demos, docs and the sweep
+## 9. Demos, docs and the sweep
 
-### 8.1 Demos
+### 9.1 Demos
 
 Ids continue from 473. Add `'Gantt'` to `DemoCategory` and to
 `ENTERPRISE_CATEGORIES` in `examples/src/shared/registry.ts` (lines 439 and
@@ -723,141 +935,153 @@ Ids continue from 473. Add `'Gantt'` to `DemoCategory` and to
 `meta/<id>.json` (description, five keywords, three FAQ entries, no dash
 characters), `prompts/<id>.md`, and a `website/src/lib/demos.ts` entry.
 
-- `474-gantt-intro`, "Project plan": a 14-week release with four phases, 18
-  tasks, three milestones, 12 FS links and one SS link, progress on every
-  leaf, sortable and filterable task columns (Name, Owner, Start, Duration,
-  Progress), `tooltip: true`, read-only.
+- `474-gantt-intro`, "Project plan": a 14-week software release with four
+  phases (Discovery, Design, Build, Launch), 18 tasks, three milestones, 12
+  FS links and one SS link, progress on every leaf, a Gantt / Table toggle
+  over the same rows (the pattern demo 389 uses),
+  `tableColumns: ['name', 'owner', '__duration', '__progress']`. Read-only,
+  `tooltip: true`.
 - `475-gantt-editing`, "Plan editing": the same data with `editable`,
   `history`, `drawer`, link drawing, a holiday list, `respectWorkingTime`,
-  inline editing in the table, and a log panel printing every callback so
-  the write-back is visible.
+  and a log panel that prints every callback so the write-back is visible.
 - `476-gantt-critical-path`, "Critical path and baselines": a construction
-  schedule with `criticalPath`, baselines, a Slack column, `collapseWeekends`
-  and the `ZoomLevel` ladder down to hours.
-- Demo 45 stays as the free, no-plug-in recipe. Its meta and the recipe
-  paragraph in `docs/help/recipes.md` (line 215) gain one sentence pointing
-  at `SvGantt`.
+  schedule with `criticalPath`, baselines that differ from the plan, a
+  Slack column, `collapseWeekends`, and the `ZoomLevel` ladder down to
+  hours.
+- Demo 45 stays (it is the free, no-plug-in recipe). Its meta and the
+  recipe paragraph in `docs/help/recipes.md` (line 215) gain one sentence
+  pointing at the Pro view.
 
-Website registration is a separate commit in the private submodule;
-`pnpm demos:count` fails until it lands. The submodule is not checked out in
-this environment. Thumbnails come from `pnpm thumbs` afterwards.
+Website registration (`website/src/lib/demos.ts`) is a separate commit in
+the private submodule; `pnpm demos:count` fails until it lands. The
+submodule is not checked out in this environment. Thumbnails come from
+`pnpm thumbs` after the website has the entries.
 
-### 8.2 Docs page: `docs/help/rows/gantt.md`
+### 9.2 Docs page: `docs/help/rows/gantt.md`
 
-H1 "Gantt chart" (the title template adds "Svelte"). Structured like
+H1 "Gantt chart mode" (the title template adds "Svelte"). Structured like
 `scheduler.md`:
 
-1. Intro: `SvGantt`, a task table beside a time chart, the same rows,
-   columns and editing as the grid; the Enterprise call-out with
-   `setLicenseKey` and the soft gate; the demo embed for 474.
-2. `{preamble}` block: a `Task` type (`id`, `name`, `owner`, `start`, `end`,
-   `progress`, `parentId`, `milestone`), a dataset anchored on today with
-   the `at()` helper the scheduler page uses, `columns`, a `deps` array.
-3. The minimum: `startField` + `endField`.
-4. Work breakdown: `parentField`, summary bars, chevrons, controlled
-   `expanded`.
+1. Intro: one `gantt` prop, task table beside a time chart, a view of the
+   grid; the Enterprise call-out with `enableGanttView()` and the
+   `installEnterprise` note; the demo embed for 474.
+2. `{preamble}` block: `enableGanttView()`, a `Task` type with `id`,
+   `name`, `owner`, `start`, `end`, `progress`, `parentId`, `milestone`,
+   and a small dataset anchored on today with the `at()` helper the
+   scheduler page uses; `columns`; a `deps` array.
+3. The minimum: `startField` + `endField`, what renders.
+4. Work breakdown: `parentField`, summary bars, collapse, controlled
+   `collapsed`, the note about `treeData`.
 5. Bars, progress and milestones: `progressField`, `milestoneField`,
    colours, `labelPosition`, the `task` snippet.
 6. Dependencies and auto-reschedule: the four types, `lag` in days,
    `dependencyField`, `autoReschedule`, `respectWorkingTime`, violations,
    cycles.
 7. Editing: `editable`, the callbacks with a write-back example, link
-   drawing, the drawer, inline table editing, `history`, keyboard.
+   drawing, the drawer, `history`, keyboard.
 8. Working time and the axis: `nonWorkingDays`, `holidays`, `zoom`,
    `zoomLevels`, `minDate` / `maxDate`, `rangePaddingDays`.
-9. The task table: it is a `<SvGrid>`; `features`, sorting, filtering,
-   `tableWidth`, `showTable: false`, `onApiReady`.
+9. The task table: `tableColumns`, `__duration`, `__progress`,
+   `tableWidth`, column `cell` snippets, the light-table limits and the
+   Table toggle.
 10. Gantt Pro: critical path, baselines, constraints, the Pro axis,
-    resources, each with a snippet and the 476 embed.
+    resources, each with a short snippet and the demo embed for 476.
 11. Config reference table, then a Gantt Pro table (the scheduler page's
-    format at line 910), then the `SvGantt` props table.
-12. More examples: 475 and 476.
+    format at line 910).
+12. More examples: 475 and 476 with one paragraph each.
 
 Every fenced `ts` / `svelte` block must type-check
 (`tools/docs-snippets.test.ts`). Add the page to the `help/rows` section of
-`docs/docs.json` with `node tools/build-docs-index.mjs`, which also
-regenerates `llms.txt` and `llms-full.txt` and needs `website/public`.
+`docs/docs.json` by running `node tools/build-docs-index.mjs`, which also
+regenerates `llms.txt` and `llms-full.txt` and needs `website/public` for
+the served copies.
 
-### 8.3 Text to change elsewhere
+### 9.3 Text to change elsewhere
 
-- `docs/help/rows/scheduler.md` line 682: reword the call-out to "Scheduler
-  or Gantt? The Scheduler is a resource / booking / calendar view. For a
-  project plan with a work-breakdown tree, percent-done, critical path and
-  baselines, use [SvGantt](/help/rows/gantt)." Keep the sentence that
-  scheduler dependencies are an opt-in convenience.
+- `docs/help/rows/scheduler.md` line 682: reword the call-out to
+  "Scheduler or Gantt? The Scheduler is a resource / booking / calendar
+  view. For a project plan with a work-breakdown tree, percent-done,
+  critical path and baselines, use the [Gantt view](/help/rows/gantt)."
+  Keep the sentence that scheduler dependencies are an opt-in convenience.
 - `examples/src/demos/meta/389-scheduler-dependencies.json`: the "Is this a
-  Gantt chart?" answer points at the Gantt page.
-- One-line mentions: `AGENTS.md` line 27, `README.md` line 208,
-  `packages/grid/README.md` line 164, `packages/enterprise/README.md`,
-  `skills/svgrid/SKILL.md` line 136, `packages/svgrid-sv/index.mjs` line 68.
+  Gantt chart?" answer points at the Gantt view.
+- One-line mentions: `AGENTS.md` line 27 ("Kanban board + scheduler
+  renderers"), `README.md` line 208, `packages/grid/README.md` line 164,
+  `packages/enterprise/README.md`, `skills/svgrid/SKILL.md` line 136,
+  `packages/svgrid-sv/index.mjs` line 68, `packages/grid-wc` comments that
+  list the views, `packages/grid-wc/test/enterprise-interop.test.ts` header.
 - `docs/changelog.md` is generated from changesets; do not edit by hand.
 
-### 8.4 Later, not in this plan
+### 9.4 Later, not in this plan
 
 - Studio: `GanttViewConfig` in `packages/enterprise/src/studio/project.ts`
-  beside `SchedulerViewConfig` (line 191), the inspector section, an
-  `SvGantt` emitter in `emit-project.ts` beside `schedulerConfigExpr` (line
-  886), and `docs/enterprise/studio/gantt.md`.
-- `api.getScrollElement()` on the grid, so `SvGantt` stops querying
-  `.sv-grid-container`.
-- MCP: `packages/mcp` `build:manifests` regenerates `data.ts` once demos and
-  docs exist.
-- Print / PDF of the chart through `exportGrid`.
+  beside `SchedulerViewConfig` (line 191), the inspector section, a
+  `ganttConfigExpr` in `emit-project.ts` beside `schedulerConfigExpr`
+  (line 886) with the write-back handlers against the controller, the
+  `usesGantt` import wiring (line 1932), and
+  `docs/enterprise/studio/gantt.md`.
+- MCP: `packages/mcp` `build:manifests` regenerates `data.ts` from demos
+  and docs once they exist.
+- Export: print / PDF of the chart through `exportGrid`.
+- A real inner `<SvGrid>` for the task pane (section 11).
 
-## 9. PR slicing, order and acceptance criteria
+## 10. PR slicing, order and acceptance criteria
 
-1. Phase 1, part A (pure). `gantt/gantt-config.ts`, `gantt/gantt-model.ts`
-   + test, `gantt/timeline-arrows.ts` + test with the Scheduler switched to
-   it, `gantt/gantt.ts`, the `install.ts` line, `gantt/index.ts`, the
-   `./gantt` subpath, main index exports. About 350 lines of types, 350 of
-   model, 400 of tests.
-   Done when: `pnpm --filter @svgrid/enterprise test` and `pnpm test:types`
-   pass; `scheduler-timeline.spec.ts` still passes on a website checkout.
-2. Phase 1, part B (component). `SvGantt.svelte` read-only (about 1,100
-   lines with styles), `gantt.dom.test.ts`, demo 474 with meta and prompt,
-   `gantt.md` and the docs index, the scheduler call-out and demo 389 FAQ,
-   changeset.
+1. Phase 0 (grid). Types, seam, `SvGrid.svelte` branch, messages, the two
+   test files, `groupMajors` export, budget notes, surface regen, changeset.
+   About 300 lines of types and doc comments, 100 of code, 200 of tests.
+   Done when: `pnpm test`, `pnpm test:types`, `pnpm lint`, `pnpm size:check`
+   and the grid-wc build + `size:check` + parity test pass; a grid with
+   `gantt` set shows the upsell with the licensing line.
+2. Phase 1A (enterprise, pure). `gantt/gantt-config.ts`, `gantt-model.ts` +
+   test, `timeline-arrows.ts` + test with the Scheduler switched to it,
+   `gantt.ts`, the `install.ts` line, `gantt/index.ts`, the `./gantt`
+   subpath, main index exports. About 350 lines of model, 400 of tests.
+   Done when: the enterprise suite and `pnpm test:types` pass;
+   `scheduler-timeline.spec.ts` still passes on a website checkout.
+3. Phase 1B (enterprise, renderer). `SvGridGantt.svelte` read-only (about
+   1,200 lines including styles), `gantt.dom.test.ts`, demo 474 with meta
+   and prompt, `gantt.md` and the docs index, the scheduler call-out and
+   demo 389 FAQ, changeset.
    Done when: 474 renders the fixture with arrows, summaries and
-   milestones; sorting and filtering the table reorder and filter the
-   chart; the panes scroll together; `tools/docs-snippets.test.ts` passes.
-3. Phase 2 (editing). Drag, resize, progress, link drawing, cascade,
+   milestones; search filters the rows; `tools/docs-snippets.test.ts` passes.
+4. Phase 2 (editing). Drag, resize, progress, link drawing, cascade,
    history, keyboard, drawer, menu; demo 475; `gantt.spec.ts`.
    Done when: every callback in the demo's log panel fires from the
-   gesture that should fire it and source rows are unchanged until the
+   gesture that should fire it and the source rows are unchanged until the
    consumer writes them.
-4. Phase 3 (planning). `gantt-critical-path.ts` + tests, the `bounds`
+5. Phase 3 (planning). `gantt-critical-path.ts` + tests, the `bounds`
    argument on `cascade` + tests, baselines, constraints, Pro axis,
    resources; demo 476.
    Done when: the diamond fixture highlights the longer branch and the
    histogram paints the over-allocated tick.
-5. The sweep. README and skill lines, Studio, MCP regen, thumbnails, the
-   optional `api.getScrollElement()`.
+6. The sweep. README and skill lines, Studio, MCP regen, thumbnails.
 
-Every PR runs `pnpm test`, `pnpm test:types`, `pnpm lint` and
-`pnpm --filter @svgrid/enterprise test`, matching `.github/workflows/test.yml`.
-No grid bundle budget changes unless `groupMajors` is exported (then
-`pnpm size` and a note in `measure-size.mjs`).
+Every PR runs `pnpm test`, `pnpm test:types`, `pnpm lint`,
+`pnpm --filter @svgrid/enterprise test`, and PR 1 also `pnpm size` and the
+grid-wc build + size check, matching `.github/workflows/test.yml`.
 
-## 10. Open questions and risks
+## 11. Open questions and risks
 
-- Scroll mirroring between two scrollers can jitter on trackpads. The
-  Scheduler avoids it by owning one scroller. Mitigation: mirror in the
-  `scroll` handler with `requestAnimationFrame` coalescing and a reentrancy
-  flag; if it still shows, the fallback is to make the chart pane
-  non-scrolling vertically and translate its body by `-scrollTop` instead.
-- `api.getDisplayedRows()` returns data rows only, in display order. The
-  Gantt needs depth per row for nothing (the grid indents its own cells)
-  and gets summaries from the model's full tree, so no grid API addition
-  is required. If pagination is ever turned on for the inner grid the chart
-  shows the page; the docs say to leave it off.
-- Row heights must be uniform. `rowHeight` is forced to a number on the
-  inner grid; `autoRowHeight` and `rowResize` are not forwarded.
+- The task pane is a light table. If demos or customers want inline
+  editing, column resize or per-column menus in the pane, the renderer can
+  mount an inner `<SvGrid>` for it: the outer grid keeps search and
+  filtering, the inner one takes `data` (already filtered) with
+  `treeData`, `rowHeight` and `virtualization`, and the chart mirrors its
+  `.sv-grid-container` scroll. Two row models then run for one view, and
+  scroll mirroring between two scrollers can jitter on trackpads, which is
+  why this plan starts with the light table. The seam does not change
+  either way.
 - `GanttDependency` and `SchedulerDependency` are the same shape with a
-  different `lag` unit (days vs minutes). One type would need a unit flag;
-  two types with a boundary conversion is simpler.
-- Inclusive date-only ends: documented and tested, but a consumer whose end
-  strings already mean exclusive midnight will see bars a day too long.
-  `endInclusive: false` can be added if it comes up.
-- Time zones and sub-day durations: deferred to the Pro axis.
-- `cascade` gains an optional `bounds` argument in Phase 3; every scheduler
-  dependency test must still pass unchanged.
+  different `lag` unit (days vs minutes). One type would need a unit
+  flag; two types with a boundary conversion is simpler.
+- Row ordering: grid sort order versus WBS order. The plan keeps the
+  grid's sorted order among siblings and nests children under parents.
+- Inclusive date-only ends: documented and tested, but a consumer whose
+  end strings already mean exclusive midnight will see bars a day too
+  long. `endInclusive: false` can be added if it comes up.
+- Time zones and sub-day durations: deferred to the Pro axis in Phase 3.
+- Bundle budgets: the grid-wc entry has 0.3 KiB of headroom. Phase 0 needs
+  a measured bump in both budget files.
+- `cascade` gains an optional `bounds` argument in Phase 3; every
+  scheduler dependency test must still pass unchanged.
