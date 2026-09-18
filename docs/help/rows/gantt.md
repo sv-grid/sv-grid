@@ -219,6 +219,96 @@ A link pointing into a **collapsed** phase re-anchors on that phase's summary
 bar, so folding a phase never makes an arrow disappear. A link to a row the grid
 has filtered out simply draws nothing.
 
+## Editing
+
+Set `editable` and the chart becomes a plan you can change: drag a bar to move
+it, drag either edge to resize, drag the diamond on the fill to set percent, and
+drag the handle at a bar's end onto another bar to draw a link.
+
+The view **never mutates your rows**. It moves its own overlay so the drag is
+live, and reports what it wants through a callback; writing the row is yours.
+
+```svelte {runnable}
+<SvGrid {data} {columns}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    progressField: 'progress',
+    dependencies,
+    editable: true,
+    history: true,
+    drawer: true,
+    onTaskMove: (e) => {
+      writeSpan(e.row, e.start, e.end)
+      // A phase carries its children: one callback, the whole batch.
+      for (const s of e.subtree ?? []) writeSpan(s.row, s.start, s.end)
+    },
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+    onProgressChange: (e) => { e.row.progress = e.progress },
+    onDependenciesChange: (moves) => {
+      for (const m of moves) {
+        const row = data.find((r) => r.id === m.id)
+        if (row) writeSpan(row, m.start, m.end)
+      }
+    },
+  }} />
+```
+
+> **`end` is exclusive on the way back too.** If your rows store an inclusive
+> date-only finish, subtract a day when you write it:
+>
+> ```ts
+> function writeSpan(row: Task, start: Date, end: Date) {
+>   row.start = isoDay(start)
+>   const last = new Date(end.getTime() - 86_400_000)
+>   row.end = isoDay(last < start ? start : last)
+> }
+> ```
+
+### What each gesture reports
+
+| Gesture | Callback | Notes |
+| --- | --- | --- |
+| Drag a bar | `onTaskMove` | Keeps the duration. Dragging a **phase** moves its whole subtree and fills `subtree` with the batch. |
+| Drag an edge | `onTaskResize` | `edge` says which one. A bar never shrinks below a day. |
+| Drag the progress diamond | `onProgressChange` | Whole 5% steps. Leaves only; a phase shows its rollup. |
+| Drag a bar's end handle onto another bar | `onDependencyAdd` | The edge you drag from and the half you drop on pick `FS` / `SS` / `FF` / `SF`. |
+| Right-click an arrow | `onDependencyRemove` | |
+| Double-click empty space | `onTaskAdd` | Creates a one-day task in that row's phase. |
+| Drawer save | `onTaskCommit` | Start, Finish and Progress are pinned above the column fields. |
+
+A drag under three pixels counts as a click, so clicking a bar still opens the
+drawer rather than nudging the plan by a day.
+
+### Auto-reschedule
+
+With dependencies present, moving or resizing a task pushes its successors
+forward far enough to keep every link legal, preserving each one's duration.
+The shifts arrive together in `onDependenciesChange`. Cascading only ever pushes
+**forward** - it never pulls a task earlier - and with `respectWorkingTime` (on
+by default) a cascaded start lands on a working day.
+
+Set `autoReschedule: false` to draw the arrows without moving anything.
+
+A link that would close a **cycle**, or one that already exists, is refused: both
+bars flash and no callback fires. A cycle has no legal schedule, so there is
+nothing the cascade could do with it.
+
+### Keyboard
+
+Bars are focusable, so the whole plan is reachable without a mouse.
+
+| Key | Does |
+| --- | --- |
+| `Left` / `Right` | Move a day. With `Shift`, a week. With `Alt`, stretch the finish. |
+| `+` / `-` | Step progress by 5. |
+| `Enter` | Open the drawer. |
+| `Delete` | `onTaskDelete`. |
+| `Escape` | Cancel the drag in progress, restoring the bar. |
+| `Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z` | Undo / redo, with `history`. |
+
+Undo **re-fires the callbacks** with the reversed values, cascade included, so
+your data follows it back rather than drifting out of step with the chart.
+
 ## Working time and the axis
 
 Non-working days are shaded, and every duration and cascade calculation skips
@@ -321,6 +411,15 @@ Sorting reorders tasks **within each phase**; children stay under their parent.
 | `drawer` / `onTaskCommit` | The built-in detail drawer and its save callback. |
 | `taskMenu` | Right-click menu items for a bar. |
 | `searchable` / `searchPlaceholder` | The toolbar search box. |
+
+## More examples
+
+### Plan editing
+
+Every gesture with a log panel listing the callbacks it fires: drag, resize, the
+progress grip, drawing links, auto-reschedule over a holiday, and undo.
+
+<div data-docs-demo="475-gantt-editing" data-height="600"></div>
 
 ## See also
 

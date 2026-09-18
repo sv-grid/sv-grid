@@ -1,0 +1,24 @@
+{
+  "description": "An editable project plan in the Svelte 5 data grid: drag a Gantt bar to move it, drag either edge to resize, drag the diamond on the fill to set percent complete, and drag a bar's end handle onto another bar to draw a dependency. Dragging a phase moves its whole subtree in one callback, moving a predecessor slides its successors forward over weekends and holidays, a link that would close a cycle is refused with a flash, and Ctrl+Z replays the callbacks backwards. A log panel lists every write-back the view asks for, because the view never mutates a row itself.",
+  "keywords": [
+    "svelte gantt drag and drop",
+    "svelte 5 editable gantt",
+    "svelte gantt auto reschedule",
+    "svelte draw gantt dependencies",
+    "svelte gantt undo redo"
+  ],
+  "faq": [
+    {
+      "question": "Does dragging a bar change my data?",
+      "answer": "No. The view moves its own overlay and fires onTaskMove with the new dates; your handler decides whether to write them to the row. Every gesture in this demo is listed in the log panel for that reason."
+    },
+    {
+      "question": "What happens when I drag a phase?",
+      "answer": "Its whole subtree moves by the same amount and one onTaskMove fires carrying the batch in its subtree field, so the write-back is a single pass rather than one callback per child."
+    },
+    {
+      "question": "How is a dependency drawn?",
+      "answer": "Drag the dot at a bar's start or end onto another bar. The edge you drag from and the half you drop on choose finish-to-start, start-to-start, finish-to-finish or start-to-finish. A link that would close a cycle flashes red and is not added."
+    }
+  ]
+}

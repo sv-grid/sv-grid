@@ -88,6 +88,11 @@ const bars = (t: HTMLElement) => [...t.querySelectorAll<HTMLElement>('.sv-gantt-
 const barFor = (t: HTMLElement, key: string) =>
   t.querySelector<HTMLElement>(`.sv-gantt-bar[data-key="${key}"]`)
 const tableRows = (t: HTMLElement) => [...t.querySelectorAll<HTMLElement>('.sv-gantt-tr')]
+/** A bar's two link handles, in start-then-finish order. They are siblings of
+ *  the bar inside its row, not children of it. */
+const linkDots = (t: HTMLElement, key: string) => [
+  ...(barFor(t, key)!.parentElement!.querySelectorAll<HTMLElement>('.sv-gantt-link-dot')),
+]
 const px = (v: string) => Number.parseFloat(v)
 
 /** Re-derive the renderer's date -> x map from the model, for geometry checks. */
@@ -531,6 +536,442 @@ describe('SvGridGantt - through <SvGrid>', () => {
     await vi.waitFor(() => {
       expect(bars(target).map((b) => b.dataset.key)).toEqual(['t1'])
     })
+    destroy()
+  })
+})
+
+// --- Phase 2: editing -------------------------------------------------------
+
+/**
+ * Drive a pointer gesture the way the renderer listens for it: `pointerdown`
+ * on the element, `pointermove` on the window (which is where the drag handlers
+ * live), then `pointerup`. The first move crosses the 3px threshold.
+ */
+function dragBy(el: Element, dx: number, dy = 0) {
+  const r = el.getBoundingClientRect()
+  const x0 = r.left + r.width / 2
+  const y0 = r.top + r.height / 2
+  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: x0, clientY: y0 }))
+  window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x0 + dx, clientY: y0 + dy }))
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x0 + dx, clientY: y0 + dy }))
+  flushSync()
+}
+
+/**
+ * jsdom gives every element a zero rect, so the renderer's client-x to date
+ * maths has nothing to read. Stub the pieces the drag path uses, in the SAME
+ * coordinate space the renderer assumes: a bar's chart-local x plus the width
+ * of the task pane, because `dateAtClientX` subtracts that pane back off.
+ * Getting the offset wrong here silently shifts every asserted date.
+ */
+function stubGeometry(target: HTMLElement, axisPxPerDay: number) {
+  const scroll = target.querySelector<HTMLElement>('.sv-gantt-scroll')!
+  Object.defineProperty(scroll, 'scrollLeft', { value: 0, writable: true, configurable: true })
+  scroll.getBoundingClientRect = () => rect(0, 2000)
+  const pane = target.querySelector<HTMLElement>('.sv-gantt-table')
+  const tableW = pane ? Number.parseFloat(pane.style.width) || 0 : 0
+  for (const bar of target.querySelectorAll<HTMLElement>('.sv-gantt-bar')) {
+    const left = tableW + (Number.parseFloat(bar.style.left) || 0)
+    const width = Number.parseFloat(bar.style.width) || 12
+    bar.getBoundingClientRect = () => rect(left, width)
+  }
+  return axisPxPerDay
+}
+const rect = (left: number, width: number) =>
+  ({ left, top: 0, right: left + width, bottom: 20, width, height: 20, x: left, y: 0, toJSON: () => ({}) }) as DOMRect
+
+/** Pixels one day occupies, straight from the model the renderer uses. */
+function pxPerDay() {
+  const x = expectedX()
+  return x(day(8)) - x(day(7))
+}
+
+describe('SvGridGantt - editing', () => {
+  const editable = { editable: true as const }
+
+  it('does nothing at all when `editable` is not set', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ onTaskMove })
+    expect(target.querySelector('.sv-gantt-grip')).toBeNull()
+    expect(target.querySelector('.sv-gantt-link-dot')).toBeNull()
+    expect(target.querySelector('.sv-gantt-grip-p')).toBeNull()
+    stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 't1')!, pxPerDay() * 3)
+    expect(onTaskMove).not.toHaveBeenCalled()
+    destroy()
+  })
+
+  it('moves a bar by whole days and reports the new span', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove, nonWorkingDays: [] })
+    const d = stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 't1')!, d * 3)
+
+    expect(onTaskMove).toHaveBeenCalledTimes(1)
+    const e = onTaskMove.mock.calls[0]![0]
+    // Interviews ran the 7th to the 9th (exclusive); three days on.
+    expect(e.start.getTime()).toBe(day(10).getTime())
+    expect(e.end.getTime()).toBe(day(12).getTime())
+    // The duration is preserved, and the source row is untouched.
+    expect(e.end.getTime() - e.start.getTime()).toBe(day(9).getTime() - day(7).getTime())
+    expect(rows.find((r) => r.id === 't1')!.start).toBe('2026-09-07')
+    destroy()
+  })
+
+  it('treats a sub-threshold drag as a click, not a move', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove })
+    stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 't1')!, 1)
+    expect(onTaskMove).not.toHaveBeenCalled()
+    destroy()
+  })
+
+  it('lands a move on a working day when respectWorkingTime is on', () => {
+    // The 12th is a Saturday; the drop slides to Monday the 14th.
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove })
+    const d = stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 't1')!, d * 5)
+    expect(onTaskMove.mock.calls[0]![0].start.getTime()).toBe(day(14).getTime())
+    destroy()
+  })
+
+  it('moves a parent with its whole subtree', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove, nonWorkingDays: [] })
+    const d = stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 'p1')!, d * 2)
+
+    expect(onTaskMove).toHaveBeenCalledTimes(1)
+    const e = onTaskMove.mock.calls[0]![0]
+    // One callback carries the batch, so the consumer writes it in one pass.
+    expect(e.subtree.map((x: any) => x.row.id).sort()).toEqual(['t1', 't2'])
+    for (const s of e.subtree) {
+      expect(s.start.getTime() - day(7).getTime()).toBeGreaterThan(0)
+    }
+    destroy()
+  })
+
+  it('resizes from either edge and says which one moved', () => {
+    const onTaskResize = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskResize, nonWorkingDays: [] })
+    const d = stubGeometry(target, pxPerDay())
+
+    dragBy(barFor(target, 't1')!.querySelector('.sv-gantt-grip-r')!, d * 2)
+    expect(onTaskResize.mock.calls[0]![0].edge).toBe('end')
+    expect(onTaskResize.mock.calls[0]![0].start.getTime()).toBe(day(7).getTime())
+
+    onTaskResize.mockClear()
+    dragBy(barFor(target, 't3')!.querySelector('.sv-gantt-grip-l')!, -d)
+    expect(onTaskResize.mock.calls[0]![0].edge).toBe('start')
+    destroy()
+  })
+
+  it('gives a summary and a milestone no resize or progress grips', () => {
+    const { target, destroy } = mountGantt(editable)
+    expect(barFor(target, 'p1')!.querySelector('.sv-gantt-grip')).toBeNull()
+    expect(barFor(target, 'p1')!.querySelector('.sv-gantt-grip-p')).toBeNull()
+    expect(barFor(target, 'm1')!.querySelector('.sv-gantt-grip')).toBeNull()
+    // But both can still be linked from: the handles live in the ROW, not the
+    // bar, because the bar clips its children.
+    expect(linkDots(target, 'm1')).toHaveLength(2)
+    expect(linkDots(target, 'p1')).toHaveLength(2)
+    destroy()
+  })
+
+  it('sets progress in 5% steps from the grip', () => {
+    const onProgressChange = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onProgressChange })
+    stubGeometry(target, pxPerDay())
+    const bar = barFor(target, 't3')!
+    const r = bar.getBoundingClientRect()
+    const grip = bar.querySelector('.sv-gantt-grip-p')!
+    grip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: r.left, clientY: 10 }))
+    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: r.left + r.width / 2, clientY: 10 }))
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: r.left + r.width / 2, clientY: 10 }))
+    flushSync()
+
+    expect(onProgressChange).toHaveBeenCalledTimes(1)
+    expect(onProgressChange.mock.calls[0]![0].progress).toBe(50)
+    expect(onProgressChange.mock.calls[0]![0].row.id).toBe('t3')
+    destroy()
+  })
+
+  it('cascades successors forward after a move, and reports the shifts', () => {
+    const onDependenciesChange = vi.fn()
+    const { target, destroy } = mountGantt({
+      ...editable,
+      nonWorkingDays: [],
+      dependencies: [{ id: 'd1', from: 't1', to: 't2' }],
+      onDependenciesChange,
+    })
+    const d = stubGeometry(target, pxPerDay())
+    // Push Interviews far enough right that Synthesis can no longer start where
+    // it was, so the link forces it along.
+    dragBy(barFor(target, 't1')!, d * 6)
+
+    expect(onDependenciesChange).toHaveBeenCalled()
+    const moves = onDependenciesChange.mock.calls[0]![0]
+    expect(moves.map((m: any) => m.id)).toContain('t2')
+    destroy()
+  })
+
+  it('does not cascade when autoReschedule is off', () => {
+    const onDependenciesChange = vi.fn()
+    const { target, destroy } = mountGantt({
+      ...editable,
+      nonWorkingDays: [],
+      dependencies: [{ id: 'd1', from: 't1', to: 't2' }],
+      autoReschedule: false,
+      onDependenciesChange,
+    })
+    const d = stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 't1')!, d * 6)
+    expect(onDependenciesChange).not.toHaveBeenCalled()
+    destroy()
+  })
+})
+
+describe('SvGridGantt - drawing links', () => {
+  const editable = { editable: true as const }
+
+  /** Drag from one bar's handle onto another bar. */
+  function drawLink(target: HTMLElement, fromKey: string, toKey: string, edge: 'l' | 'r', dropAt: 'start' | 'end') {
+    const to = barFor(target, toKey)!
+    const tr = to.getBoundingClientRect()
+    const x = dropAt === 'start' ? tr.left + tr.width * 0.25 : tr.left + tr.width * 0.75
+    // elementFromPoint drives the hit test; point it at the target bar.
+    const original = document.elementFromPoint
+    ;(document as any).elementFromPoint = () => to
+    const dot = linkDots(target, fromKey)[edge === 'l' ? 0 : 1]!
+    dot.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 0, clientY: 0 }))
+    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: 10 }))
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: 10 }))
+    flushSync()
+    ;(document as any).elementFromPoint = original
+  }
+
+  it('draws finish-to-start from an end handle onto a start', () => {
+    const onDependencyAdd = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onDependencyAdd })
+    stubGeometry(target, pxPerDay())
+    drawLink(target, 't1', 't3', 'r', 'start')
+
+    expect(onDependencyAdd).toHaveBeenCalledTimes(1)
+    expect(onDependencyAdd.mock.calls[0]![0]).toMatchObject({ from: 't1', to: 't3', type: 'FS' })
+    destroy()
+  })
+
+  it('draws finish-to-finish when dropped on the far half', () => {
+    const onDependencyAdd = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onDependencyAdd })
+    stubGeometry(target, pxPerDay())
+    drawLink(target, 't1', 't3', 'r', 'end')
+    expect(onDependencyAdd.mock.calls[0]![0].type).toBe('FF')
+    destroy()
+  })
+
+  it('draws start-to-start from a start handle', () => {
+    const onDependencyAdd = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onDependencyAdd })
+    stubGeometry(target, pxPerDay())
+    drawLink(target, 't1', 't3', 'l', 'start')
+    expect(onDependencyAdd.mock.calls[0]![0].type).toBe('SS')
+    destroy()
+  })
+
+  it('refuses a link that would close a cycle, and flashes instead', () => {
+    // t1 -> t3 already exists, so t3 -> t1 would have no legal schedule.
+    const onDependencyAdd = vi.fn()
+    const { target, destroy } = mountGantt({
+      ...editable,
+      dependencies: [{ id: 'd1', from: 't1', to: 't3' }],
+      onDependencyAdd,
+    })
+    stubGeometry(target, pxPerDay())
+    drawLink(target, 't3', 't1', 'r', 'start')
+
+    expect(onDependencyAdd).not.toHaveBeenCalled()
+    expect(target.querySelectorAll('.sv-gantt-refused').length).toBe(2)
+    destroy()
+  })
+
+  it('refuses a duplicate of a link that is already there', () => {
+    const onDependencyAdd = vi.fn()
+    const { target, destroy } = mountGantt({
+      ...editable,
+      dependencies: [{ id: 'd1', from: 't1', to: 't3' }],
+      onDependencyAdd,
+    })
+    stubGeometry(target, pxPerDay())
+    drawLink(target, 't1', 't3', 'r', 'start')
+    expect(onDependencyAdd).not.toHaveBeenCalled()
+    destroy()
+  })
+})
+
+describe('SvGridGantt - keyboard', () => {
+  const editable = { editable: true as const }
+  const press = (el: Element, key: string, mods: Partial<KeyboardEventInit> = {}) => {
+    el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key, ...mods }))
+    flushSync()
+  }
+
+  it('nudges a bar a day with an arrow, a week with Shift', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove, nonWorkingDays: [] })
+    press(barFor(target, 't1')!, 'ArrowRight')
+    expect(onTaskMove.mock.calls[0]![0].start.getTime()).toBe(day(8).getTime())
+
+    onTaskMove.mockClear()
+    press(barFor(target, 't3')!, 'ArrowRight', { shiftKey: true })
+    expect(onTaskMove.mock.calls[0]![0].start.getTime()).toBe(day(21).getTime())
+    destroy()
+  })
+
+  it('stretches the finish with Alt', () => {
+    const onTaskResize = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskResize, nonWorkingDays: [] })
+    press(barFor(target, 't1')!, 'ArrowRight', { altKey: true })
+    expect(onTaskResize.mock.calls[0]![0]).toMatchObject({ edge: 'end' })
+    expect(onTaskResize.mock.calls[0]![0].end.getTime()).toBe(day(10).getTime())
+    destroy()
+  })
+
+  it('steps progress with + and -', () => {
+    const onProgressChange = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onProgressChange })
+    press(barFor(target, 't2')!, '+')
+    expect(onProgressChange.mock.calls[0]![0].progress).toBe(55)
+    onProgressChange.mockClear()
+    press(barFor(target, 't2')!, '-')
+    expect(onProgressChange.mock.calls[0]![0].progress).toBe(50)
+    destroy()
+  })
+
+  it('deletes with Delete', () => {
+    const onTaskDelete = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskDelete })
+    press(barFor(target, 't1')!, 'Delete')
+    expect(onTaskDelete).toHaveBeenCalledWith(rows.find((r) => r.id === 't1'))
+    destroy()
+  })
+
+  it('leaves the plan alone when not editable', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ onTaskMove })
+    press(barFor(target, 't1')!, 'ArrowRight')
+    expect(onTaskMove).not.toHaveBeenCalled()
+    destroy()
+  })
+})
+
+describe('SvGridGantt - undo and redo', () => {
+  const editable = { editable: true as const, history: true as const, nonWorkingDays: [] }
+  const ctrlZ = (shift = false) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'z', ctrlKey: true, shiftKey: shift }))
+    flushSync()
+  }
+
+  it('re-fires the move with the original dates, then forward again', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove })
+    barFor(target, 't1')!.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }))
+    flushSync()
+    expect(onTaskMove.mock.calls[0]![0].start.getTime()).toBe(day(8).getTime())
+
+    ctrlZ()
+    // Undo re-emits the callback so the consumer's data follows it back.
+    expect(onTaskMove).toHaveBeenCalledTimes(2)
+    expect(onTaskMove.mock.calls[1]![0].start.getTime()).toBe(day(7).getTime())
+    expect(px(barFor(target, 't1')!.style.left)).toBeCloseTo(expectedX()(day(7)), 4)
+
+    ctrlZ(true)
+    expect(onTaskMove).toHaveBeenCalledTimes(3)
+    expect(onTaskMove.mock.calls[2]![0].start.getTime()).toBe(day(8).getTime())
+    destroy()
+  })
+
+  it('does nothing without `history`', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ editable: true, nonWorkingDays: [], onTaskMove })
+    barFor(target, 't1')!.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }))
+    flushSync()
+    ctrlZ()
+    expect(onTaskMove).toHaveBeenCalledTimes(1)
+    destroy()
+  })
+})
+
+describe('SvGridGantt - the context menu', () => {
+  const open = (target: HTMLElement, key: string) => {
+    barFor(target, key)!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 40, clientY: 40 }))
+    flushSync()
+  }
+  const menu = () => document.querySelector('.sv-gantt-menu')
+
+  it('offers Edit, Add subtask and Delete when each is wired up', () => {
+    const { target, destroy } = mountGantt({
+      editable: true,
+      drawer: true,
+      onTaskAdd: vi.fn(),
+      onTaskDelete: vi.fn(),
+    })
+    open(target, 't1')
+    expect(menu()).not.toBeNull()
+    expect(menu()!.textContent).toContain('Edit')
+    expect(menu()!.textContent).toContain('Add subtask')
+    expect(menu()!.textContent).toContain('Delete')
+    destroy()
+  })
+
+  it('appends the consumer\'s own items', () => {
+    const { target, destroy } = mountGantt({
+      taskMenu: () => [{ label: 'Open ticket', onSelect: () => {} }],
+    })
+    open(target, 't1')
+    expect(menu()!.textContent).toContain('Open ticket')
+    destroy()
+  })
+
+  it('closes on Escape', () => {
+    // The dismissable layer has to be ACTIVATED, not just created - without
+    // that the menu cannot be dismissed at all and traps every later click.
+    const { target, destroy } = mountGantt({ taskMenu: () => [{ label: 'X', onSelect: () => {} }] })
+    open(target, 't1')
+    expect(menu()).not.toBeNull()
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    flushSync()
+    expect(menu()).toBeNull()
+    destroy()
+  })
+
+  it('opens nothing when there is nothing to offer', () => {
+    const { target, destroy } = mountGantt()
+    open(target, 't1')
+    expect(menu()).toBeNull()
+    destroy()
+  })
+})
+
+describe('SvGridGantt - the drawer', () => {
+  it('opens on a click and saves the edited span and percent', async () => {
+    const onTaskCommit = vi.fn()
+    const { target, destroy } = mountGantt({ editable: true, drawer: true, onTaskCommit })
+    barFor(target, 't1')!.click()
+    flushSync()
+    const dialog = document.querySelector('[role="dialog"]')
+    expect(dialog).not.toBeNull()
+    expect(dialog!.textContent).toContain('Interviews')
+    destroy()
+  })
+
+  it('stays shut when no drawer is configured', () => {
+    const { target, destroy } = mountGantt({ editable: true })
+    barFor(target, 't1')!.click()
+    flushSync()
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
     destroy()
   })
 })
