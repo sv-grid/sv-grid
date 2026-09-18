@@ -9,7 +9,7 @@ import { FUNCTIONS } from './functions'
 import { SIGNATURES } from './autocomplete'
 
 export type FunctionGroup =
-  | 'Math' | 'Statistical' | 'Logical' | 'Information' | 'Text' | 'Date & Time' | 'Lookup & Reference' | 'Other'
+  | 'Financial' | 'Math' | 'Statistical' | 'Logical' | 'Information' | 'Text' | 'Date & Time' | 'Lookup & Reference' | 'Other'
 
 export type FunctionInfo = {
   name: string
@@ -90,13 +90,113 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   XLOOKUP: { group: 'Lookup & Reference', description: 'Searches a range for a match and returns the corresponding item from a second range.' },
   INDEX: { group: 'Lookup & Reference', description: 'Returns a value from a range at the intersection of a given row and column.' },
   MATCH: { group: 'Lookup & Reference', description: 'Returns the relative position of an item in a range that matches a specified value.' },
+
+  PMT: { group: 'Financial', description: 'Calculates the payment for a loan based on constant payments and a constant interest rate.', signature: 'PMT(rate, nper, pv, [fv], [type])' },
+  IPMT: { group: 'Financial', description: 'Returns the interest payment for a given period of an investment, based on periodic, constant payments and a constant interest rate.', signature: 'IPMT(rate, per, nper, pv, [fv], [type])' },
+  PPMT: { group: 'Financial', description: 'Returns the payment on the principal for a given period of an investment.', signature: 'PPMT(rate, per, nper, pv, [fv], [type])' },
+  PV: { group: 'Financial', description: 'Returns the present value of an investment: the total amount that a series of future payments is worth now.', signature: 'PV(rate, nper, pmt, [fv], [type])' },
+  FV: { group: 'Financial', description: 'Returns the future value of an investment based on periodic, constant payments and a constant interest rate.', signature: 'FV(rate, nper, pmt, [pv], [type])' },
+  NPER: { group: 'Financial', description: 'Returns the number of periods for an investment based on periodic, constant payments and a constant interest rate.', signature: 'NPER(rate, pmt, pv, [fv], [type])' },
+  RATE: { group: 'Financial', description: 'Returns the interest rate per period of a loan or an investment.', signature: 'RATE(nper, pmt, pv, [fv], [type], [guess])' },
+  NPV: { group: 'Financial', description: 'Returns the net present value of an investment based on a discount rate and a series of future payments (negative values) and income (positive values).', signature: 'NPV(rate, value1, [value2], ...)' },
+  IRR: { group: 'Financial', description: 'Returns the internal rate of return for a series of cash flows.', signature: 'IRR(values, [guess])' },
+  SLN: { group: 'Financial', description: 'Returns the straight-line depreciation of an asset for one period.', signature: 'SLN(cost, salvage, life)' },
+
+  PRODUCT: { group: 'Math', description: 'Multiplies all the numbers given as arguments.', signature: 'PRODUCT(number1, [number2], ...)' },
+  SUMSQ: { group: 'Math', description: 'Returns the sum of the squares of the arguments.', signature: 'SUMSQ(number1, [number2], ...)' },
+  SUMPRODUCT: { group: 'Math', description: 'Returns the sum of the products of corresponding ranges or arrays.', signature: 'SUMPRODUCT(array1, [array2], ...)' },
+  CEILING: { group: 'Math', description: 'Rounds a number up, away from zero, to the nearest multiple of significance.', signature: 'CEILING(number, significance)' },
+  'CEILING.MATH': { group: 'Math', description: 'Rounds a number up to the nearest integer or to the nearest multiple of significance.', signature: 'CEILING.MATH(number, [significance], [mode])' },
+  FLOOR: { group: 'Math', description: 'Rounds a number down, toward zero, to the nearest multiple of significance.', signature: 'FLOOR(number, significance)' },
+  'FLOOR.MATH': { group: 'Math', description: 'Rounds a number down to the nearest integer or to the nearest multiple of significance.', signature: 'FLOOR.MATH(number, [significance], [mode])' },
+  MROUND: { group: 'Math', description: 'Returns a number rounded to the desired multiple.', signature: 'MROUND(number, multiple)' },
+  TRUNC: { group: 'Math', description: 'Truncates a number to an integer by removing the decimal, or fractional, part of the number.', signature: 'TRUNC(number, [digits])' },
+  LOG: { group: 'Math', description: 'Returns the logarithm of a number to the base you specify.', signature: 'LOG(number, [base])' },
+  LOG10: { group: 'Math', description: 'Returns the base-10 logarithm of a number.', signature: 'LOG10(number)' },
+  LN: { group: 'Math', description: 'Returns the natural logarithm of a number.', signature: 'LN(number)' },
+  EXP: { group: 'Math', description: 'Returns e raised to the power of a given number.', signature: 'EXP(number)' },
+  PI: { group: 'Math', description: 'Returns the value of pi, 3.14159265358979, accurate to 15 digits.', signature: 'PI()' },
+  RAND: { group: 'Math', description: 'Returns a random number greater than or equal to 0 and less than 1, evenly distributed. Changes on recalculation.', signature: 'RAND()' },
+  RANDBETWEEN: { group: 'Math', description: 'Returns a random number between the numbers you specify.', signature: 'RANDBETWEEN(bottom, top)' },
+  SIGN: { group: 'Math', description: 'Returns the sign of a number: 1 if the number is positive, zero if the number is 0, or -1 if the number is negative.', signature: 'SIGN(number)' },
+  EVEN: { group: 'Math', description: 'Rounds a positive number up and a negative number down to the nearest even integer.', signature: 'EVEN(number)' },
+  ODD: { group: 'Math', description: 'Rounds a positive number up and a negative number down to the nearest odd integer.', signature: 'ODD(number)' },
+  QUOTIENT: { group: 'Math', description: 'Returns the integer portion of a division.', signature: 'QUOTIENT(numerator, denominator)' },
+  GCD: { group: 'Math', description: 'Returns the greatest common divisor.', signature: 'GCD(number1, [number2], ...)' },
+  LCM: { group: 'Math', description: 'Returns the least common multiple.', signature: 'LCM(number1, [number2], ...)' },
+  FACT: { group: 'Math', description: 'Returns the factorial of a number, equal to 1*2*3*...*number.', signature: 'FACT(number)' },
+
+  LARGE: { group: 'Statistical', description: 'Returns the k-th largest value in a data set.', signature: 'LARGE(range, k)' },
+  SMALL: { group: 'Statistical', description: 'Returns the k-th smallest value in a data set.', signature: 'SMALL(range, k)' },
+  PERCENTILE: { group: 'Statistical', description: 'Returns the k-th percentile of values in a range.', signature: 'PERCENTILE(range, k)' },
+  'PERCENTILE.INC': { group: 'Statistical', description: 'Returns the k-th percentile of values in a range, where k is in the range 0..1, inclusive.', signature: 'PERCENTILE.INC(range, k)' },
+  'PERCENTILE.EXC': { group: 'Statistical', description: 'Returns the k-th percentile of values in a range, where k is in the range 0..1, exclusive.', signature: 'PERCENTILE.EXC(range, k)' },
+  QUARTILE: { group: 'Statistical', description: 'Returns the quartile of a data set.', signature: 'QUARTILE(range, quart)' },
+  'QUARTILE.INC': { group: 'Statistical', description: 'Returns the quartile of a data set, based on percentile values from 0..1, inclusive.', signature: 'QUARTILE.INC(range, quart)' },
+  'QUARTILE.EXC': { group: 'Statistical', description: 'Returns the quartile of a data set, based on percentile values from 0..1, exclusive.', signature: 'QUARTILE.EXC(range, quart)' },
+  VAR: { group: 'Statistical', description: 'Estimates variance based on a sample.', signature: 'VAR(number1, [number2], ...)' },
+  'VAR.S': { group: 'Statistical', description: 'Estimates variance based on a sample.', signature: 'VAR.S(number1, [number2], ...)' },
+  'VAR.P': { group: 'Statistical', description: 'Calculates variance based on the entire population.', signature: 'VAR.P(number1, [number2], ...)' },
+  VARP: { group: 'Statistical', description: 'Calculates variance based on the entire population.', signature: 'VARP(number1, [number2], ...)' },
+  'STDEV.S': { group: 'Statistical', description: 'Estimates standard deviation based on a sample.', signature: 'STDEV.S(number1, [number2], ...)' },
+  'STDEV.P': { group: 'Statistical', description: 'Calculates standard deviation based on the entire population.', signature: 'STDEV.P(number1, [number2], ...)' },
+  STDEVP: { group: 'Statistical', description: 'Calculates standard deviation based on the entire population.', signature: 'STDEVP(number1, [number2], ...)' },
+  MODE: { group: 'Statistical', description: 'Returns the most frequently occurring, or repetitive, value in a range of data.', signature: 'MODE(number1, [number2], ...)' },
+  'MODE.SNGL': { group: 'Statistical', description: 'Returns the most frequently occurring, or repetitive, value in a range of data.', signature: 'MODE.SNGL(number1, [number2], ...)' },
+  GEOMEAN: { group: 'Statistical', description: 'Returns the geometric mean of a range of positive numeric data.', signature: 'GEOMEAN(number1, [number2], ...)' },
+  AVERAGEIFS: { group: 'Statistical', description: 'Finds the average of the cells specified by a given set of conditions or criteria.', signature: 'AVERAGEIFS(avgRange, range, criterion, ...)' },
+  MAXIFS: { group: 'Statistical', description: 'Returns the maximum value among cells specified by a given set of conditions or criteria.', signature: 'MAXIFS(maxRange, range, criterion, ...)' },
+  MINIFS: { group: 'Statistical', description: 'Returns the minimum value among cells specified by a given set of conditions or criteria.', signature: 'MINIFS(minRange, range, criterion, ...)' },
+  CORREL: { group: 'Statistical', description: 'Returns the correlation coefficient between two data sets.', signature: 'CORREL(range1, range2)' },
+  SLOPE: { group: 'Statistical', description: 'Returns the slope of the linear regression line through the given data points.', signature: 'SLOPE(known_ys, known_xs)' },
+  INTERCEPT: { group: 'Statistical', description: 'Calculates the point at which a line will intersect the y-axis by using a best-fit regression line.', signature: 'INTERCEPT(known_ys, known_xs)' },
+  FORECAST: { group: 'Statistical', description: 'Calculates, or predicts, a future value along a linear trend by using existing values.', signature: 'FORECAST(x, known_ys, known_xs)' },
+  'FORECAST.LINEAR': { group: 'Statistical', description: 'Calculates, or predicts, a future value along a linear trend by using existing values.', signature: 'FORECAST.LINEAR(x, known_ys, known_xs)' },
+
+  ISERROR: { group: 'Information', description: 'Checks whether a value is an error, and returns TRUE or FALSE.', signature: 'ISERROR(value)' },
+  ISERR: { group: 'Information', description: 'Checks whether a value is an error other than #N/A, and returns TRUE or FALSE.', signature: 'ISERR(value)' },
+  ISNA: { group: 'Information', description: 'Checks whether a value is #N/A, and returns TRUE or FALSE.', signature: 'ISNA(value)' },
+  ISNONTEXT: { group: 'Information', description: 'Checks whether a value is not text (blank cells are not text), and returns TRUE or FALSE.', signature: 'ISNONTEXT(value)' },
+  ISEVEN: { group: 'Information', description: 'Returns TRUE if the number is even.', signature: 'ISEVEN(number)' },
+  ISODD: { group: 'Information', description: 'Returns TRUE if the number is odd.', signature: 'ISODD(number)' },
+  N: { group: 'Information', description: 'Converts a value to a number: a number stays, TRUE is 1, anything else is 0.', signature: 'N(value)' },
+  T: { group: 'Text', description: 'Returns the text referred to by value; anything that is not text is an empty string.', signature: 'T(value)' },
+
+  PROPER: { group: 'Text', description: 'Converts a text string to proper case: the first letter in each word to uppercase, and all other letters to lowercase.', signature: 'PROPER(text)' },
+  REPT: { group: 'Text', description: 'Repeats text a given number of times.', signature: 'REPT(text, count)' },
+  VALUE: { group: 'Text', description: 'Converts a text string that represents a number to a number.', signature: 'VALUE(text)' },
+  CHAR: { group: 'Text', description: 'Returns the character specified by the code number.', signature: 'CHAR(number)' },
+  CODE: { group: 'Text', description: 'Returns a numeric code for the first character in a text string.', signature: 'CODE(text)' },
+  UNICHAR: { group: 'Text', description: 'Returns the Unicode character referenced by the given numeric value.', signature: 'UNICHAR(number)' },
+  UNICODE: { group: 'Text', description: 'Returns the number (code point) corresponding to the first character of the text.', signature: 'UNICODE(text)' },
+  EXACT: { group: 'Text', description: 'Checks whether two text strings are exactly the same, and returns TRUE or FALSE. Case-sensitive.', signature: 'EXACT(text1, text2)' },
+  CLEAN: { group: 'Text', description: 'Removes all nonprintable characters from text.', signature: 'CLEAN(text)' },
+  REPLACE: { group: 'Text', description: 'Replaces part of a text string with a different text string.', signature: 'REPLACE(old_text, start, count, new_text)' },
+
+  WEEKDAY: { group: 'Date & Time', description: 'Returns a number from 1 to 7 identifying the day of the week of a date.', signature: 'WEEKDAY(date, [type])' },
+  EDATE: { group: 'Date & Time', description: 'Returns the date that is the indicated number of months before or after the start date.', signature: 'EDATE(date, months)' },
+  NETWORKDAYS: { group: 'Date & Time', description: 'Returns the number of whole workdays between two dates.', signature: 'NETWORKDAYS(start_date, end_date, [holidays])' },
+  WORKDAY: { group: 'Date & Time', description: 'Returns the date before or after a specified number of workdays.', signature: 'WORKDAY(start_date, days, [holidays])' },
+  WEEKNUM: { group: 'Date & Time', description: 'Returns the week number in the year.', signature: 'WEEKNUM(date, [type])' },
+  HOUR: { group: 'Date & Time', description: 'Returns the hour as a number from 0 (12:00 A.M.) to 23 (11:00 P.M.).', signature: 'HOUR(time)' },
+  MINUTE: { group: 'Date & Time', description: 'Returns the minute, a number from 0 to 59.', signature: 'MINUTE(time)' },
+  SECOND: { group: 'Date & Time', description: 'Returns the second, a number from 0 to 59.', signature: 'SECOND(time)' },
+  TIME: { group: 'Date & Time', description: 'Converts hours, minutes and seconds given as numbers to a time serial number.', signature: 'TIME(hour, minute, second)' },
+  DATEVALUE: { group: 'Date & Time', description: 'Converts a date in the form of text to a serial number.', signature: 'DATEVALUE(text)' },
+  TIMEVALUE: { group: 'Date & Time', description: 'Converts a time in the form of text to a serial number.', signature: 'TIMEVALUE(text)' },
+  DAYS360: { group: 'Date & Time', description: 'Calculates the number of days between two dates based on a 360-day year.', signature: 'DAYS360(start_date, end_date)' },
+  YEARFRAC: { group: 'Date & Time', description: 'Returns the year fraction representing the number of whole days between two dates.', signature: 'YEARFRAC(start_date, end_date, [basis])' },
+
+  CHOOSE: { group: 'Lookup & Reference', description: 'Chooses a value from a list of values, based on an index number.', signature: 'CHOOSE(index, value1, [value2], ...)' },
+  ROWS: { group: 'Lookup & Reference', description: 'Returns the number of rows in a range.', signature: 'ROWS(range)' },
+  COLUMNS: { group: 'Lookup & Reference', description: 'Returns the number of columns in a range.', signature: 'COLUMNS(range)' },
 }
 
 /** The IF family is dispatched by the evaluator, not the function table. */
-const EVALUATOR_FUNCTIONS = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH']
+const EVALUATOR_FUNCTIONS = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA']
 
 export const FUNCTION_GROUPS: ReadonlyArray<FunctionGroup> = [
-  'Math', 'Statistical', 'Logical', 'Information', 'Text', 'Date & Time', 'Lookup & Reference', 'Other',
+  'Financial', 'Math', 'Statistical', 'Logical', 'Information', 'Text', 'Date & Time', 'Lookup & Reference', 'Other',
 ]
 
 /** Every function the engine knows, described, alphabetical. */

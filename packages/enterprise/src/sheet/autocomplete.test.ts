@@ -54,7 +54,8 @@ describe('suggestFunctions', () => {
     // Alphabetical would offer SUBSTITUTE for "SU", which is backwards from
     // what someone typing two letters is reaching for.
     expect(names('=SU')[0]).toBe('SUM')
-    expect(names('=CO')[0]).toBe('COUNT')
+    expect(names('=CO')[0]).toBe('CODE')
+    expect(names('=COU')[0]).toBe('COUNT')
   })
 
   it('puts prefix matches before substring matches', () => {
