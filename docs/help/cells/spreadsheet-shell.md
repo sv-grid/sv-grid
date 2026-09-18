@@ -442,6 +442,54 @@ is an `onChange` handler and a reload is one call after mount:
 />
 ```
 
+### Autosave to a server
+
+The same handler with a `fetch` in it, plus the three things a network
+makes you think about:
+
+```ts
+let timer: ReturnType<typeof setTimeout> | undefined
+let saving: Promise<unknown> = Promise.resolve()
+let revision = 0
+
+function autosave() {
+  clearTimeout(timer)
+  // Coalesce a burst of edits into one request. onChange already coalesces
+  // per tick; this coalesces per pause in the typing.
+  timer = setTimeout(() => {
+    const state = sheet!.getState()
+    // One request at a time, in order: a save that overtakes its
+    // predecessor writes an older document over a newer one.
+    saving = saving.then(async () => {
+      const response = await fetch(`/api/books/${id}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'if-match': String(revision) },
+        body: JSON.stringify(state),
+      })
+      if (response.status === 412) return onSomeoneElseSaved()
+      revision = Number(response.headers.get('etag') ?? revision + 1)
+    })
+  }, 800)
+}
+```
+
+- **Debounce, then serialise.** `getState()` is a full snapshot, so the
+  cost is in the transfer, not the call. One request per pause, and never
+  two in flight, or a slow request lands after a fast one and the older
+  document wins.
+- **Carry a revision.** Send what you last saw and let the server refuse a
+  save built on a stale document, rather than discovering the overwrite
+  later. `412` is the moment to reload, or to ask.
+- **Send changes instead, when there are two people.** A whole state per
+  keystroke is fine for one user and wrong for two. `createDeltaStream`
+  (see "Two people on one sheet") gives a delta per change, small enough to
+  send as it happens, and applies one from someone else without a reload.
+
+A save that runs on a timer rather than on `onChange` is worse, not
+better: it saves when nothing changed and misses the tab closing. If the
+tab closing matters, save on `visibilitychange` as well, with the same
+snapshot.
+
 `onChange` is called once per tick with every reason since the last call,
 so a paste of forty cells is one call, and it says what changed
 (`reasons.some((r) => r.kind === 'structure')` for an insert or delete, with
@@ -460,7 +508,11 @@ and `CfRule`):
 ```ts
 {
   version: 1,
-  workbook: { sheets: [{ name, cells }], active, names },
+  workbook: {
+    sheets: [{ name, cells }], active, names,
+    tables: [{ name: 'Orders', sheet: 'Budget', headerRow: 0, firstCol: 0, lastCol: 4, lastRow: 12, hasTotals: false }],
+    iteration: { enabled: true, maxIterations: 100, maxChange: 0.001 },
+  },
   sheets: {
     Budget: {
       formats: { 'r0 A': { bold: true, numFmt: '#,##0', locked: false } },
@@ -473,6 +525,9 @@ and `CfRule`):
       protection: { allow: { formatRows: true }, ranges: [{ id, title: 'Inputs', rects: [[1, 1, 9, 1]] }] },
       pageSetup: { orientation: 'landscape', paper: 'A4', margins: { top: 0.75, bottom: 0.75, left: 0.7, right: 0.7, header: 0.3, footer: 0.3 }, printArea: null, printTitleRows: [0, 0], gridlines: false, headings: false, scale: 100 },
       objects: [{ id, kind: 'chart', anchor: { row: 12, col: 1, dx: 8, dy: 8, width: 420, height: 260 }, range: [0, 0, 11, 2], type: 'bar', headers: true, series: 'columns' }],
+      sparklines: [{ id, location: [1, 6, 9, 6], data: [1, 1, 9, 5], type: 'line', color: '#2563eb' }],
+      pivots: [{ id, source: [0, 0, 200, 3], target: { row: 0, col: 8 }, rows: ['Region'], cols: [], values: [{ field: 'Amount', agg: 'sum' }] }],
+      links: { r1: { B: { target: 'https://example.com', tip: 'The spec' } } },
       merges: [],
       validation: [{ id, rects, allow: 'whole', operator: 'between', value1: '1', value2: '10', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' } }],
       conditionalFormats: [{ id, rects, kind: 'cellIs', operator: 'greater', value1: '50000', style: { fill: '#FFC7CE', color: '#9C0006' } }],

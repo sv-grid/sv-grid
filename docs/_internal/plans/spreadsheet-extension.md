@@ -63,6 +63,9 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- The autosave-to-a-server recipe in the shell page, and the saved-state
+  shape in the docs brought up to date with tables, iteration, links,
+  sparklines and pivots.
 - Evaluate Formula and Error Checking: `sheet/evaluate-steps.ts` (a
   formula walked one part at a time, each part handed back to the workbook
   as a formula so the meanings cannot drift, an untaken IF branch skipped)
@@ -202,7 +205,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Save the document as xlsx~~ | shipped: `documentToXlsx`, File > Save As | done |
 | ~~CSV out of the active sheet~~ | shipped: File > Export CSV; CSV in is still the grid's importer | done |
 | ~~Print and Page Layout~~ | shipped: the Page Layout tab, the Page Setup dialog, File > Print, `pageSetup` in the state and the xlsx | done |
-| Persistence hooks (autosave to a server) | `onChange` + `getState()`; demo 465 does localStorage | S (docs and a recipe) |
+| ~~Persistence hooks (autosave to a server)~~ | shipped: the Autosave to a server recipe in the shell page, with the debounce, the one-in-flight rule and the revision header, and the state shape brought up to date | done |
 
 ### Formula engine
 
