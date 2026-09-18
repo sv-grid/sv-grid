@@ -187,13 +187,18 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   DAYS360: { group: 'Date & Time', description: 'Calculates the number of days between two dates based on a 360-day year.', signature: 'DAYS360(start_date, end_date)' },
   YEARFRAC: { group: 'Date & Time', description: 'Returns the year fraction representing the number of whole days between two dates.', signature: 'YEARFRAC(start_date, end_date, [basis])' },
 
+  ROW: { group: 'Lookup & Reference', description: 'Returns the row number of a reference, or of the cell the formula is in.', signature: 'ROW([reference])' },
+  COLUMN: { group: 'Lookup & Reference', description: 'Returns the column number of a reference, or of the cell the formula is in.', signature: 'COLUMN([reference])' },
+  ADDRESS: { group: 'Lookup & Reference', description: 'Creates a cell reference as text, given specified row and column numbers.', signature: 'ADDRESS(row, column, [abs], [a1], [sheet])' },
+  OFFSET: { group: 'Lookup & Reference', description: 'Returns a reference to a range that is a given number of rows and columns from a given reference. Volatile.', signature: 'OFFSET(reference, rows, cols, [height], [width])' },
+  INDIRECT: { group: 'Lookup & Reference', description: 'Returns the reference specified by a text string. Volatile.', signature: 'INDIRECT(text, [a1])' },
   CHOOSE: { group: 'Lookup & Reference', description: 'Chooses a value from a list of values, based on an index number.', signature: 'CHOOSE(index, value1, [value2], ...)' },
   ROWS: { group: 'Lookup & Reference', description: 'Returns the number of rows in a range.', signature: 'ROWS(range)' },
   COLUMNS: { group: 'Lookup & Reference', description: 'Returns the number of columns in a range.', signature: 'COLUMNS(range)' },
 }
 
 /** The IF family is dispatched by the evaluator, not the function table. */
-const EVALUATOR_FUNCTIONS = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA']
+const EVALUATOR_FUNCTIONS = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT']
 
 export const FUNCTION_GROUPS: ReadonlyArray<FunctionGroup> = [
   'Financial', 'Math', 'Statistical', 'Logical', 'Information', 'Text', 'Date & Time', 'Lookup & Reference', 'Other',

@@ -19,7 +19,8 @@ import {
 } from './ast'
 import { toNumber, toBool, toText, looseEquals, compare } from './coerce'
 import { withCustomFunctions, type SheetFunction, type FnArgs } from './functions'
-import type { CellRef } from './address'
+import { colToLetters, type CellRef } from './address'
+import { parseFormula } from './parse'
 import {
   resolveTableRange, columnIndexOf,
   type TableRegion, type TableSpecifier,
@@ -95,6 +96,111 @@ function binary(op: string, l: CellValue, r: CellValue): CellValue {
 /** Functions handled before the table, because their arguments must not all
  *  be evaluated up front. */
 const SHORT_CIRCUIT = new Set(['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA'])
+
+/** Functions that PRODUCE a reference rather than a value. In scalar position
+ *  they read as their top-left cell, as a range does; as an argument they
+ *  expand to the range, so =SUM(OFFSET(A1,0,0,3,1)) adds three cells. */
+const REFERENCE_FUNCTIONS = new Set(['OFFSET', 'INDIRECT'])
+
+/** A rectangle on a sheet, what a reference function works out. */
+type RefRect = { sheet: string | null; r1: number; c1: number; r2: number; c2: number }
+
+/**
+ * The rectangle a node stands for: a cell, a range (open-ended ones closed
+ * at the last used row), a name that refers to one, or a reference
+ * function's result. Null for anything that is a plain value.
+ */
+function referenceOf(node: Node, ctx: EvalContext): RefRect | null {
+  switch (node.k) {
+    case 'ref':
+      return { sheet: node.ref.sheet, r1: node.ref.row ?? 0, c1: node.ref.col, r2: node.ref.row ?? 0, c2: node.ref.col }
+    case 'range': {
+      const sheet = node.from.sheet ?? node.to.sheet
+      const r1 = Math.min(node.from.row ?? 0, node.to.row ?? node.from.row ?? 0)
+      const r2 = node.to.row === null || node.from.row === null ? ctx.lastRow(sheet) : Math.max(node.from.row, node.to.row)
+      return { sheet, r1, c1: Math.min(node.from.col, node.to.col), r2, c2: Math.max(node.from.col, node.to.col) }
+    }
+    case 'name': {
+      const target = nameTarget(node.name, ctx)
+      return target ? referenceOf(target, ctx) : null
+    }
+    case 'fn':
+      return REFERENCE_FUNCTIONS.has(node.name) ? referenceCall(node, ctx) : null
+    default:
+      return null
+  }
+}
+
+function rectGrid(rect: RefRect, ctx: EvalContext): CellValue[][] {
+  return rangeGrid(
+    { sheet: rect.sheet, row: rect.r1, col: rect.c1, rowAbs: false, colAbs: false },
+    { sheet: rect.sheet, row: rect.r2, col: rect.c2, rowAbs: false, colAbs: false },
+    ctx,
+  )
+}
+
+const scalarArg = (node: Node | undefined, ctx: EvalContext): CellValue => (node ? evalNode(node, ctx) : '')
+const optNumber = (node: Node | undefined, ctx: EvalContext, fallback: number): number => {
+  if (!node || node.k === 'empty') return fallback
+  const v = evalNode(node, ctx)
+  if (isError(v)) throw new FormulaError(v.error)
+  return v === '' ? fallback : toNumber(v)
+}
+
+/** OFFSET and INDIRECT: the rectangle they name, or a throw for the error. */
+function referenceCall(node: Extract<Node, { k: 'fn' }>, ctx: EvalContext): RefRect {
+  const { name, args } = node
+  if (name === 'INDIRECT') {
+    const text = scalarArg(args[0], ctx)
+    if (isError(text)) throw new FormulaError(text.error)
+    const a1 = args[1] && args[1].k !== 'empty' ? toBool(evalNode(args[1], ctx)) : true
+    if (!a1) throw new FormulaError('#REF!')
+    let parsed: Node
+    try {
+      parsed = parseFormula(`=${toText(text).trim()}`)
+    } catch {
+      throw new FormulaError('#REF!')
+    }
+    const rect = parsed.k === 'ref' || parsed.k === 'range' || parsed.k === 'name' ? referenceOf(parsed, ctx) : null
+    if (!rect) throw new FormulaError('#REF!')
+    return rect
+  }
+  // OFFSET(reference, rows, cols, [height], [width])
+  const base = args[0] ? referenceOf(args[0], ctx) : null
+  if (!base) throw new FormulaError('#VALUE!')
+  const rows = Math.trunc(optNumber(args[1], ctx, 0))
+  const cols = Math.trunc(optNumber(args[2], ctx, 0))
+  const height = Math.trunc(optNumber(args[3], ctx, base.r2 - base.r1 + 1))
+  const width = Math.trunc(optNumber(args[4], ctx, base.c2 - base.c1 + 1))
+  if (height <= 0 || width <= 0) throw new FormulaError('#REF!')
+  const r1 = base.r1 + rows
+  const c1 = base.c1 + cols
+  if (r1 < 0 || c1 < 0) throw new FormulaError('#REF!')
+  return { sheet: base.sheet, r1, c1, r2: r1 + height - 1, c2: c1 + width - 1 }
+}
+
+/** ROW, COLUMN and ADDRESS: about a reference, not its value. */
+function positionCall(node: Extract<Node, { k: 'fn' }>, ctx: EvalContext): CellValue {
+  const { name, args } = node
+  if (name === 'ADDRESS') {
+    const row = Math.trunc(toNumber(scalarArg(args[0], ctx)))
+    const col = Math.trunc(toNumber(scalarArg(args[1], ctx)))
+    const abs = Math.trunc(optNumber(args[2], ctx, 1))
+    if (row < 1 || col < 1 || abs < 1 || abs > 4) return err('#VALUE!')
+    const sheet = args[4] && args[4].k !== 'empty' ? toText(scalarArg(args[4], ctx)) : ''
+    const rowText = `${abs === 1 || abs === 2 ? '$' : ''}${row}`
+    const colText = `${abs === 1 || abs === 3 ? '$' : ''}${colToLetters(col - 1)}`
+    const prefix = sheet ? (/^[A-Za-z_][A-Za-z0-9_]*$/.test(sheet) ? `${sheet}!` : `'${sheet.replace(/'/g, "''")}'!`) : ''
+    return `${prefix}${colText}${rowText}`
+  }
+  const target = args[0] && args[0].k !== 'empty' ? referenceOf(args[0], ctx) : null
+  if (!target) {
+    const here = ctx.currentCell
+    if (!here) return err('#VALUE!')
+    return name === 'ROW' ? here.row + 1 : here.col + 1
+  }
+  return name === 'ROW' ? target.r1 + 1 : target.c1 + 1
+}
 
 function evalNode(node: Node, ctx: EvalContext): CellValue {
   switch (node.k) {
@@ -299,6 +405,13 @@ function evalCall(
     return i < args.length ? evalNode(args[i]!, ctx) : err('#N/A')
   }
 
+  if (name === 'ROW' || name === 'COLUMN' || name === 'ADDRESS') return positionCall(node, ctx)
+  if (REFERENCE_FUNCTIONS.has(name)) {
+    // In scalar position a reference collapses to its top-left cell.
+    const rect = referenceCall(node, ctx)
+    return ctx.resolve(rect.sheet, rect.r1, rect.c1)
+  }
+
   const table = ctx.functions ?? withCustomFunctions(undefined)
   const fn = table[name]
   if (!fn) return err('#NAME?')
@@ -313,6 +426,12 @@ function evalCall(
     const arg = given.k === 'name' ? (nameTarget(given.name, ctx) ?? given) : given
     if (arg.k === 'range') {
       const grid = rangeGrid(arg.from, arg.to, ctx)
+      grids.push(grid)
+      perArg.push(grid.flat())
+    } else if (arg.k === 'fn' && REFERENCE_FUNCTIONS.has(arg.name)) {
+      // OFFSET and INDIRECT hand their whole rectangle to the caller, so
+      // =SUM(OFFSET(A1,0,0,3,1)) adds three cells rather than one.
+      const grid = rectGrid(referenceCall(arg, ctx), ctx)
       grids.push(grid)
       perArg.push(grid.flat())
     } else if (arg.k === 'table') {
@@ -360,6 +479,7 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
       const target = nameTarget(node.name, ctx)
       return target ? rangeValues(target, ctx) : null
     }
+    if (node.k === 'fn' && REFERENCE_FUNCTIONS.has(node.name)) return rectGrid(referenceCall(node, ctx), ctx)
     return null
   } catch (e) {
     if (e instanceof FormulaError) return [[err(e.code)]]
