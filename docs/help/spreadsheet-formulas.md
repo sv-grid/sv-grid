@@ -279,6 +279,41 @@ graph.cycles()   // every cell in a circular reference
 Cells caught in a cycle are still returned by `dirtyFrom`, so they can show
 `#CYCLE!` rather than keep a stale value while the rest of the sheet works.
 
+## Reading a formula back
+
+Two auditing helpers work on a formula rather than on the sheet, and
+neither needs a browser.
+
+`evaluationSteps` is Excel's Evaluate Formula as data: the formula, the part
+about to be worked out and what it is worth, one step at a time, ending on
+the cell's own answer.
+
+```ts
+import { evaluationSteps, parseFormula } from '@svgrid/enterprise'
+
+const steps = evaluationSteps(
+  parseFormula('=A1*B1+4'),
+  (part) => wb.evaluateText('Sheet1', part, undefined, { row: 2, col: 0 }),
+)
+// [{ formula: '=A1*B1+4', from: 1, to: 3, expression: 'A1', value: 2 }, ...]
+```
+
+Each step's `from` and `to` are offsets into that step's own `formula`, so a
+dialog can underline the part without doing any parsing of its own.
+
+`checkSheet` is Error Checking: every formula on a sheet whose value is an
+error, and every formula that breaks the pattern of the ones above and below
+it, in reading order. `describeFinding` turns one into a sentence.
+
+```ts
+import { checkSheet, describeFinding } from '@svgrid/enterprise'
+
+const problems = checkSheet('Sheet1', {
+  rowCount: () => wb.rowCount('Sheet1'), colCount: () => wb.colCount('Sheet1'),
+  getRaw: (r, c) => wb.getRaw('Sheet1', r, c), getValue: (r, c) => wb.getValue('Sheet1', r, c),
+})
+```
+
 ## Circular references on purpose
 
 `#CYCLE!` is the right answer almost every time: a total that includes
@@ -421,6 +456,12 @@ A three-sheet workbook on the Excel shell: Orders with XLOOKUP prices and IF dis
 An assumptions-driven twelve-month forecast where every formula reads a defined name - =B2*(1+Growth-Churn) - instead of an address. Pick a name in the Name Box to jump to its cell on the Assumptions sheet; open Formulas -> Name Manager to add, repoint or delete names and watch the forecast recompute. Inputs in blue, red negatives in parentheses, break-even found with INDEX / MATCH.
 
 <div data-docs-demo="459-named-ranges-forecast" data-height="560"></div>
+
+### Evaluate Formula and Error Checking
+
+A commission model with three planted faults, which is what a real one looks like a week after two people have edited it. Evaluate Formula underlines one part of the active cell's formula and replaces it with its value on each click. Error Checking walks every cell that reports an error, with a sentence on what each one means, and the row whose formula is not its column's formula.
+
+<div data-docs-demo="483-sheet-auditing" data-height="560"></div>
 
 ### Iterative calculation
 

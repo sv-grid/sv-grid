@@ -87,6 +87,16 @@ export {
   type CellAddress as GoalSeekCellAddress,
 } from './sheet/goal-seek'
 
+export {
+  evaluationSteps, printNode, printValue,
+  type EvaluationStep,
+} from './sheet/evaluate-steps'
+
+export {
+  checkSheet, describeFinding, ERROR_MEANINGS,
+  type ErrorFinding, type ErrorFindingKind, type SheetReader,
+} from './sheet/error-check'
+
 export { default as SvSheetTabs } from './SvSheetTabs.svelte'
 export {
   createWorkbook, isValidSheetName, cleanIteration, DEFAULT_ITERATION,

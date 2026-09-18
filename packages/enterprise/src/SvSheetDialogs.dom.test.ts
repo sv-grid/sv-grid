@@ -23,6 +23,8 @@ import SvSheetConditionalFormat from './SvSheetConditionalFormat.svelte'
 import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
 import SvSheetEditRanges from './SvSheetEditRanges.svelte'
 import SvSheetPageSetup from './SvSheetPageSetup.svelte'
+import SvSheetEvaluate from './SvSheetEvaluate.svelte'
+import SvSheetErrors from './SvSheetErrors.svelte'
 import { defaultPageSetup } from './sheet/page-setup'
 import { createWorkbook } from './sheet/workbook'
 import { setFindTarget } from './sheet/find-replace'
@@ -747,5 +749,74 @@ describe('SvSheetPageSetup (DOM)', () => {
       margins: { top: 1, bottom: 1, left: 1, right: 1, header: 0.5, footer: 0.5 },
     })
     expect(onPrint).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('SvSheetEvaluate (DOM)', () => {
+  const wb = () => createWorkbook([{ name: 'S', cells: [['2', '3'], ['=A1*B1+4', '']] }])
+
+  it('underlines the next part, replaces it on Evaluate, and ends on the answer', () => {
+    comp = mount(SvSheetEvaluate, { target: host!, props: { open: true, workbook: wb(), sheet: 'S', cell: { row: 1, col: 0 } } })
+    flushSync()
+    const line = () => q('[data-testid="sv-sheet-evaluation"]')!.textContent
+    const marked = () => q('[data-testid="sv-sheet-evaluation"] mark')?.textContent
+    expect(line()).toBe('=A1*B1+4')
+    expect(marked()).toBe('A1')
+    click(button('Evaluate'))
+    expect(line()).toBe('=2*B1+4')
+    expect(marked()).toBe('B1')
+    click(button('Evaluate'))
+    click(button('Evaluate'))
+    expect(line()).toBe('=6+4')
+    click(button('Evaluate'))
+    expect(line()).toBe('10')
+    expect(button('Evaluate').disabled).toBe(true)
+    // And Restart walks it again from the top.
+    click(button('Restart'))
+    expect(line()).toBe('=A1*B1+4')
+  })
+
+  it('says so when the cell holds no formula', () => {
+    comp = mount(SvSheetEvaluate, { target: host!, props: { open: true, workbook: wb(), sheet: 'S', cell: { row: 0, col: 0 } } })
+    flushSync()
+    expect(q('.sv-modal .error')?.textContent).toContain('formula')
+    expect(button('Evaluate').disabled).toBe(true)
+  })
+})
+
+describe('SvSheetErrors (DOM)', () => {
+  const broken = () => createWorkbook([{ name: 'S', cells: [
+    ['10', '=A1/0'],
+    ['0', '=NOSUCH(1)'],
+  ] }])
+
+  it('walks the sheet\'s problems, moves the selection, and hands one to Evaluate Formula', () => {
+    const onGoTo = vi.fn()
+    const onSteps = vi.fn()
+    comp = mount(SvSheetErrors, { target: host!, props: { open: true, workbook: broken(), sheet: 'S', onGoTo, onSteps } })
+    flushSync()
+    const text = () => q('.sv-modal')!.textContent!.replace(/\s+/g, ' ')
+    expect(text()).toContain('Problem 1 of 2')
+    expect(text()).toContain('B1')
+    expect(text()).toContain('#DIV/0!')
+    expect(text()).toContain('divided by zero')
+    expect(onGoTo).toHaveBeenLastCalledWith({ row: 0, col: 1 })
+    click(button('Next'))
+    expect(text()).toContain('Problem 2 of 2')
+    expect(text()).toContain('#NAME?')
+    expect(onGoTo).toHaveBeenLastCalledWith({ row: 1, col: 1 })
+    // It wraps, as Excel's walk does.
+    click(button('Next'))
+    expect(text()).toContain('Problem 1 of 2')
+    click(button('Show Calculation Steps...'))
+    expect(onSteps).toHaveBeenCalledWith({ row: 0, col: 1 })
+  })
+
+  it('says a clean sheet is clean', () => {
+    const wb = createWorkbook([{ name: 'S', cells: [['1', '=A1*2']] }])
+    comp = mount(SvSheetErrors, { target: host!, props: { open: true, workbook: wb, sheet: 'S', onGoTo: () => {}, onSteps: () => {} } })
+    flushSync()
+    expect(q('.sv-modal')!.textContent).toContain('No errors were found')
+    expect(button('Next').disabled).toBe(true)
   })
 })

@@ -1,0 +1,24 @@
+{
+  "description": "Excel's Evaluate Formula and Error Checking in a Svelte 5 spreadsheet. Evaluate Formula underlines one part of the active cell's formula and replaces it with its value on each click, until the formula is the cell's answer. Error Checking walks every cell on the sheet that reports an error, with a sentence on what each error means, and every formula that breaks the pattern of the ones above and below it. Show Calculation Steps takes one straight into the other. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet evaluate formula",
+    "svelte excel error checking",
+    "svelte sheet formula auditing",
+    "svelte spreadsheet debug formula",
+    "svelte sheet inconsistent formula"
+  ],
+  "faq": [
+    {
+      "question": "What does Evaluate Formula show?",
+      "answer": "The formula with one part underlined, which is the part about to be worked out. Each click replaces that part with its value, so a long formula collapses step by step into the cell's answer and the step where it goes wrong is the step you are looking at. Step Back and Restart walk it again."
+    },
+    {
+      "question": "What counts as an error worth checking?",
+      "answer": "Any formula whose value is an error code, and any formula that breaks the pattern of the cells above and below it. The second one is deliberately quiet: a formula is only called the odd one out when its two neighbours are formulas that agree with each other once translated and this one does not, which is the shape of a column filled down and then broken in the middle."
+    },
+    {
+      "question": "Can I run these checks without the dialog?",
+      "answer": "Yes. evaluationSteps() returns the walk as data, given a formula and something to evaluate a sub-formula with, and checkSheet() returns the findings for a sheet. Both are exported from @svgrid/enterprise, so a save-time check or a report can use them with no browser."
+    }
+  ]
+}

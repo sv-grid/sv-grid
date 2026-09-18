@@ -605,6 +605,39 @@ col)` and `wb.dependents(sheet, row, col)` are the two readings on the
 workbook. Raised as `trace-precedents`, `trace-dependents` and
 `remove-arrows`.
 
+The same group carries the two dialogs that answer "why does this cell say
+that?". **Evaluate Formula** shows the active cell's formula with one part
+underlined, and each click on Evaluate replaces that part with what it is
+worth, until the formula has collapsed into the cell's answer; Step Back and
+Restart walk it again. A branch of an `IF` that is not taken is never
+evaluated, so it never reports an error the cell does not have, and a range
+such as `A1:A9` stays where it is because a block is not a value.
+
+**Error Checking** walks the cells on the sheet worth a second look, one at
+a time, with the selection following: every formula whose value is an error,
+said in a sentence rather than a code, and every formula that breaks the
+pattern of the ones above and below it. That second check is deliberately
+quiet. A formula is only called the odd one out when the cells above and
+below it both hold formulas, those two agree with each other once
+translated, and this one does not, which is the shape of a column filled
+down and then broken in the middle. Show Calculation Steps hands the cell
+straight to Evaluate Formula.
+
+Both are engine functions first, so a save-time check or a report can use
+them with no browser:
+
+```ts
+import { evaluationSteps, checkSheet } from '@svgrid/enterprise'
+
+const steps = evaluationSteps(parseFormula(text), (part) => wb.evaluateText(sheet, part))
+const problems = checkSheet(sheet, {
+  rowCount: () => wb.rowCount(sheet), colCount: () => wb.colCount(sheet),
+  getRaw: (r, c) => wb.getRaw(sheet, r, c), getValue: (r, c) => wb.getValue(sheet, r, c),
+})
+```
+
+Raised as `evaluate-formula` and `error-checking`.
+
 ## The dialogs
 
 Four of Excel's dialogs are the shell's own, so nothing on the ribbon or in
@@ -622,6 +655,8 @@ the cell menu is a button that does nothing:
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
+| Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
+| Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
 | Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
 | Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it) and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
@@ -1301,6 +1336,12 @@ Excel's Insert > PivotTable over a block of cells, on the same pivot engine the 
 Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
 
 <div data-docs-demo="478-sheet-collaboration" data-height="620"></div>
+
+### Evaluate Formula and Error Checking
+
+The two auditing tools that answer why a cell says what it says, over a commission model with three planted faults. Evaluate Formula underlines one part of the formula and replaces it with its value on each click. Error Checking walks every cell that reports an error, with a sentence on what each one means, and the one row whose formula is not the column's formula. Show Calculation Steps takes one straight into the other.
+
+<div data-docs-demo="483-sheet-auditing" data-height="560"></div>
 
 ### Iterative calculation
 

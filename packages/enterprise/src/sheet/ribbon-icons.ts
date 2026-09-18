@@ -44,6 +44,7 @@ export type RibbonIconName =
   | 'cf-formula'
   | 'trace-precedents' | 'trace-dependents' | 'remove-arrows'
   | 'name-manager' | 'show-formulas' | 'calculate' | 'goal-seek'
+  | 'evaluate-formula' | 'error-checking'
   | 'text-to-columns' | 'remove-duplicates'
   | 'chevron-down' | 'format-cells'
   | 'format-painter'
@@ -300,6 +301,17 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'remove-arrows': [
     { d: 'M2.5 8h9M9.5 6l2 2-2 2', width: 1.3 },
     { d: 'M11 3l3 3M14 3l-3 3', width: 1.3 },
+  ],
+  // Evaluate Formula: an fx with a step under it. Error Checking: a cell
+  // with a warning triangle on it.
+  'evaluate-formula': [
+    { d: 'M4 8V4.5a1.5 1.5 0 0 1 3 0M2.5 6h3M8.5 3.5l4 4.5M12.5 3.5l-4 4.5', width: 1.3 },
+    { d: 'M2.5 13.5h3v-2.5h3v-2.5h3', width: 1.3 },
+  ],
+  'error-checking': [
+    { d: 'M2.5 2.5h7v5h-7z' },
+    { d: 'M7 14.5l4-7 4 7z', width: 1.2 },
+    { d: 'M11 10v2M11 13.2h.01', width: 1.3 },
   ],
   // A formula rule: an fx over a shaded cell.
   'cf-formula': [

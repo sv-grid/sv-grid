@@ -99,7 +99,11 @@ function render(node: Node): string {
       const rightMin = rightAssociative ? prec : prec + 1
       return `${wrap(node.left, leftMin)}${node.op}${wrap(node.right, rightMin)}`
     }
-    case 'fn': return `${node.name}(${node.args.map(render).join(',')})`
+    // `(` is the call node an immediate or curried lambda builds:
+    // LAMBDA(x, x*2)(21) is the callee, then its arguments.
+    case 'fn': return node.name === '('
+      ? `${render(node.args[0]!)}(${node.args.slice(1).map(render).join(',')})`
+      : `${node.name}(${node.args.map(render).join(',')})`
     case 'empty': return ''
   }
 }

@@ -63,6 +63,13 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Evaluate Formula and Error Checking: `sheet/evaluate-steps.ts` (a
+  formula walked one part at a time, each part handed back to the workbook
+  as a formula so the meanings cannot drift, an untaken IF branch skipped)
+  and `sheet/error-check.ts` (error cells, and the formula that breaks its
+  column's pattern), both as dialogs on the Formula Auditing group and both
+  exported as functions. The shared printer learned the lambda call node
+  while it was there, which fixes filling a `LAMBDA(...)(...)` cell down.
 - Iterative calculation: `workbook.iteration` and `setIteration`, a
   re-entrant read answering with the cell's previous value rather than
   `#CYCLE!`, passes over `graph.cycles()` until the largest move is under
@@ -215,7 +222,7 @@ weeks, L a quarter-scale piece of work.
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| ~~Formula auditing: Trace Precedents / Dependents~~ | shipped; Evaluate Formula and Error Checking not done | done |
+| ~~Formula auditing: Trace Precedents / Dependents~~ | shipped, with Evaluate Formula and Error Checking beside them | done |
 | ~~Conditional formatting: formula rule, negative axis and second colour on data bars~~ | shipped | done |
 | ~~AutoFilter: Date Filters, Filter by Color, custom Top 10~~ | shipped | done |
 | ~~Validation: Input Message, Circle Invalid Data~~ | shipped | done |

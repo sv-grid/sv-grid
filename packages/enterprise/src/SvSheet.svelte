@@ -46,6 +46,8 @@
   import SvSheetNameManager from './SvSheetNameManager.svelte'
   import SvSheetGoalSeek from './SvSheetGoalSeek.svelte'
   import SvSheetIteration from './SvSheetIteration.svelte'
+  import SvSheetEvaluate from './SvSheetEvaluate.svelte'
+  import SvSheetErrors from './SvSheetErrors.svelte'
   import SvSheetTextToColumns from './SvSheetTextToColumns.svelte'
   import SvSheetRemoveDuplicates from './SvSheetRemoveDuplicates.svelte'
   import SvSheetSort from './SvSheetSort.svelte'
@@ -2868,6 +2870,12 @@
   let goalSeekOpen = $state(false)
   /** Calculation Options, on the Formulas tab: iterative calculation. */
   let iterationOpen = $state(false)
+  /** Evaluate Formula and Error Checking, on the Formula Auditing group.
+   *  The cell each is looking at is held here, so Error Checking can hand a
+   *  cell to Evaluate Formula. */
+  let evaluateOpen = $state(false)
+  let evaluateCell = $state({ row: 0, col: 0 })
+  let errorsOpen = $state(false)
   let textToColumnsOpen = $state(false)
   let removeDuplicatesOpen = $state(false)
   /** The Sort dialog, with the block it opens over. */
@@ -2883,6 +2891,11 @@
       case 'name-manager': nameManagerOpen = true; return
       case 'goal-seek': goalSeekOpen = true; return
       case 'calc-options': iterationOpen = true; return
+      case 'evaluate-formula':
+        evaluateCell = { row: active.rowIndex, col: active.colIndex }
+        evaluateOpen = true
+        return
+      case 'error-checking': errorsOpen = true; return
       case 'text-to-columns': textToColumnsOpen = true; return
       case 'remove-duplicates': removeDuplicatesOpen = true; return
       case 'sort-custom': {
@@ -4845,6 +4858,20 @@
     onClose={() => afterDialog()}
   />
   <SvSheetGoalSeek bind:open={goalSeekOpen} workbook={wb} cmd={cmdOf} onClose={() => afterDialog()} />
+  <SvSheetEvaluate bind:open={evaluateOpen} workbook={wb} sheet={wb.active} cell={evaluateCell} onClose={() => afterDialog()} />
+  <SvSheetErrors
+    bind:open={errorsOpen}
+    workbook={wb}
+    sheet={wb.active}
+    onGoTo={(cell) => {
+      const cmd = cmdOf()
+      cmd?.setActiveCell(cell.row, cell.col)
+      cmd?.setSelection(cell.row, cell.col)
+      bump()
+    }}
+    onSteps={(cell) => { evaluateCell = cell; evaluateOpen = true }}
+    onClose={() => afterDialog()}
+  />
   <SvSheetIteration
     bind:open={iterationOpen}
     iteration={wb.iteration}
