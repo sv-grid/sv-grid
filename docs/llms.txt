@@ -232,6 +232,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Quick start: the grid in any page](https://svgrid.com/docs/help/web-components/quick-start/): @svgrid/grid-wc is a prebuilt custom element. One <script> tag, one HTML element, no bundler and no Svelte in your app.
 - [`<sv-grid>` reference](https://svgrid.com/docs/help/web-components/sv-grid/): Every property, attribute and event of the custom element.
 - [`<sv-chart>` reference](https://svgrid.com/docs/help/web-components/sv-chart/): Every property, attribute and event of the chart custom element.
+- [`<sv-sheet>`: the spreadsheet as a custom element](https://svgrid.com/docs/help/web-components/sv-sheet/): The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain <script> tag…
 - [Shadow DOM: `<sv-grid-shadow>`](https://svgrid.com/docs/help/web-components/shadow-dom/): Two elements ship, and which one you want is a styling decision:
 - [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 108 properties and 25 events are typed props, and it works the same on React 17, 18 and 19.
 - [SvGrid in Vue](https://svgrid.com/docs/help/web-components/vue/): The component is generated from <SvGrid>'s own types, and it removes the two things a raw custom element needs in Vue: the isCustomElement build config, and a .prop modifier on every object binding.

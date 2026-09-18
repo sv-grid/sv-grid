@@ -23,7 +23,14 @@ export default defineConfig({
         },
       },
       {
-        plugins: [svelte({ compilerOptions: { dev: false } })],
+        plugins: [svelte({
+          compilerOptions: { dev: false },
+          // The <sv-sheet> wrapper compiles as a custom element; the
+          // components inside it compile as the ordinary components they are.
+          dynamicCompileOptions({ filename }) {
+            if (filename.endsWith('sv-sheet-element.svelte')) return { customElement: true }
+          },
+        })],
         resolve: { conditions: ['browser'] },
         test: {
           name: 'dom',

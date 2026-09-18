@@ -8,6 +8,13 @@ Where the line falls is a packaging consequence, not a policy: four of the
 enterprise entry points are plain JavaScript, and the main entry pulls Svelte
 components with it.
 
+## The spreadsheet as an element
+
+The whole spreadsheet shell, ribbon and formula engine included, is its own
+element: [`<sv-sheet>`](sv-sheet.md), from `@svgrid/enterprise/wc`, with
+React and Vue wrappers beside it. It needs no `<sv-grid>` and no Svelte in
+the host.
+
 ## The api handle
 
 Everything here needs the grid's imperative api. The element parks it on itself

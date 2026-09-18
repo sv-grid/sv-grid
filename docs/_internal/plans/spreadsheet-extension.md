@@ -38,6 +38,10 @@ per item:
   list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
   beside the flag, and `sheetProtection` attributes and `protectedRanges`
   in the xlsx both ways. Phase C is complete.
+- Phase E item 3: `<sv-sheet>` under `@svgrid/enterprise/wc`, its surface
+  generated from the shell's Props (element props, types, React and Vue
+  wrappers, docs tables, a `--check` the tests run), built by
+  `scripts/build-wc.mjs` with Svelte and the grid bundled in.
 - Phase B item 3: dynamic arrays. The array pack (FILTER, UNIQUE, SORT,
   SORTBY, SEQUENCE, TRANSPOSE, TEXTSPLIT), array arithmetic with Excel's
   broadcasting, spill ranges kept by the workbook with `#SPILL!` and
@@ -265,11 +269,13 @@ serialised by Phase A. PivotTable from a range comes last and reuses
    instead of `en-US`.~~ Shipped.
 2. RTL, touch and accessibility audits with Playwright specs under
    `tests/`, fixing what they find.
-3. **`<sv-sheet>`**: a commercial web component entry under
+3. ~~**`<sv-sheet>`**: a commercial web component entry under
    `@svgrid/enterprise` (it already builds a CDN bundle with Svelte
    external), with wrappers generated the way `grid-wc` generates React,
    Vue and Angular ones. Licensing rule from `AGENTS.md`: nothing moves into
-   an MIT package.
+   an MIT package.~~ Shipped as `@svgrid/enterprise/wc` with React and Vue
+   wrappers; Angular uses the element with `CUSTOM_ELEMENTS_SCHEMA`, since a
+   partial-Ivy build needs ng-packagr in the pack, which it does not carry.
 4. ~~Studio codegen for a sheet page, MCP eval prompts that ask for a sheet,
    and a `skills/svgrid/rules/sheet.md` with the shell's house rules
    (`refresh()` after outside writes, `cmd.batch` for one undo, qualified
