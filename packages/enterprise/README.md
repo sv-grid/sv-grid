@@ -77,7 +77,7 @@ built in and free in [`@svgrid/grid`](https://www.npmjs.com/package/@svgrid/grid
 Installing Enterprise only adds the Excel/PDF export engine that
 AI-planned exports write through.
 
-`installEnterprise` returns the same grid API with the enterprise methods (`exportData`, `copyExport`, `print`, `importData`, `pivot.*`) added on top, so the rest of your integration is unchanged. It also registers the Kanban board and scheduler / calendar views, so `<SvGrid board={...}>` and `<SvGrid scheduler={...}>` render.
+`installEnterprise` returns the same grid API with the enterprise methods (`exportData`, `copyExport`, `print`, `importData`, `pivot.*`) added on top, so the rest of your integration is unchanged. It also registers the Kanban board, scheduler / calendar and Gantt views, so `<SvGrid board={...}>`, `<SvGrid scheduler={...}>` and `<SvGrid gantt={...}>` render.
 
 ## Licensing
 

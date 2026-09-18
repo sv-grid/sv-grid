@@ -33,7 +33,7 @@ in order of preference:
   `@svgrid/enterprise`: `setAIProvider`, `aiFilter`, `aiSmartFill`,
   `aiSummarize`, `aiClassify`, `aiFindAnomalies`, `mockAIProvider`.
 - **`@svgrid/enterprise` adds** export, import, pivot, print, and the
-  Kanban board + scheduler renderers. Do not use its symbols in a project
+  Kanban board, scheduler + Gantt renderers. Do not use its symbols in a project
   that does not depend on it.
 - **Import specifiers** are only `@svgrid/grid`, `@svgrid/grid/themes/*.css`,
   and `@svgrid/enterprise`. `@sv-grid/core`, `svelte-grid`, and `sv-grid`

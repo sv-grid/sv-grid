@@ -54,6 +54,7 @@
   import { getSchedulerView } from "./scheduler-view.svelte";
   import { getSelectionBarView } from "./selection-bar-view.svelte";
   import { getBoardView } from "./board-view.svelte";
+  import { getGanttView } from "./gantt-view.svelte";
   import { getChartView } from "./chart-view.svelte";
   let props: Props<TFeatures, TData> = $props();
   // Per-instance base for every DOM id the grid mints. `$props.id()` is stable
@@ -78,6 +79,9 @@
   const boardConfig = $derived(opt.board);
   // Scheduler / calendar mode: same "view of the grid" seam as the board.
   const schedulerConfig = $derived(opt.scheduler);
+  // Gantt mode: a task table beside a time chart. Same seam again; the renderer
+  // ships in @svgrid/enterprise (enableGanttView).
+  const ganttConfig = $derived(opt.gantt);
   // Chart mode: another "view of the grid". Unlike board/scheduler, the renderer
   // is free - a built-in default (SvGridChartView, lazy-loaded below) wraps the
   // standalone SvChart, overridable via the `chart-view` seam (getChartView).
@@ -1050,6 +1054,48 @@
             <code>@svgrid/enterprise</code> and call <code>enableSchedulerView()</code>
             to render it.
           </p>
+          {@render enterpriseLicenseNote()}
+        </div>
+      {/if}
+    </div>
+  </div>
+{:else if ganttConfig}
+  <div
+    class="sv-grid-root sv-grid-gantt-root"
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
+    style={`height: ${
+      typeof opt.containerHeight === "string"
+        ? opt.containerHeight
+        : `${opt.containerHeight ?? 520}px`
+    }; display: flex; flex-direction: column;`}
+  >
+    {#if ganttConfig.searchable !== false}
+      <label class="sv-grid-board-search">
+        {@render icon("search")}
+        <input
+          type="search"
+          placeholder={ganttConfig.searchPlaceholder ??
+            messages.ganttSearchPlaceholder}
+          bind:value={ctrl.globalFilter}
+          aria-label="Search tasks"
+        />
+      </label>
+    {/if}
+    <div style="flex: 1 1 auto; min-height: 0;">
+      {#if getGanttView()}
+        {@const GanttView = getGanttView()}
+        <GanttView
+          data={boardData}
+          columns={opt.columns}
+          gantt={ganttConfig}
+          getRowId={opt.getRowId}
+        />
+      {:else}
+        <!-- The Gantt renderer ships in @svgrid/enterprise. Call
+             `enableGanttView()` (or `installEnterprise(api)`) to register it. -->
+        <div class="sv-grid-scheduler-upsell sv-grid-gantt-upsell" role="note">
+          <strong>{messages.ganttUpsellTitle}</strong>
+          <p>{messages.ganttUpsellBody}</p>
           {@render enterpriseLicenseNote()}
         </div>
       {/if}

@@ -38,6 +38,8 @@ export type ValidateInput<TFeatures extends TableFeatures, TData extends RowData
   pageSize?: number
   groupBy?: ReadonlyArray<string>
   treeData?: { parentField?: string; idField?: string; column?: string }
+  /** Gantt mode. Only its presence matters here - see rule 6b. */
+  gantt?: unknown
   /** Server-side grouping: group rows carry their key and aggregates, not the leaf fields. */
   serverGroup?: unknown
   initialColumnPinning?: { left?: ReadonlyArray<string>; right?: ReadonlyArray<string> }
@@ -194,6 +196,22 @@ export function validateGridConfig<
           `data, so parent lookups cannot match and the tree stays flat.`,
       )
     }
+  }
+
+  // ---- 6b. gantt + treeData: two trees over one set of rows -----------------
+  // The Gantt builds its own work-breakdown tree from `gantt.parentField`,
+  // because it needs every descendant - a collapsed phase still contributes to
+  // its summary bar. `treeData` hides collapsed children from the view before
+  // the renderer sees them, so the two together silently drop tasks out of
+  // their phase's rollup the moment anything is collapsed.
+  if (input.gantt && input.treeData) {
+    messages.push(
+      '[svgrid] `gantt` and `treeData` are both set. The Gantt builds its own ' +
+        'work-breakdown tree from `gantt.parentField` and needs every ' +
+        'descendant row, but `treeData` hides collapsed children from the view, ' +
+        'so summary bars will under-report. Remove `treeData` and set ' +
+        '`gantt.parentField` instead.',
+    )
   }
 
   // ---- 7. Pinning that column virtualization will hide ----------------------

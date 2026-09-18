@@ -42,6 +42,11 @@
       "svelte": "./dist/pivot.js",
       "import": "./dist/pivot.js"
     },
+    "./gantt": {
+      "types": "./dist/gantt/index.d.ts",
+      "svelte": "./dist/gantt/index.js",
+      "import": "./dist/gantt/index.js"
+    },
     "./sheet": {
       "types": "./dist/sheet/index.d.ts",
       "svelte": "./dist/sheet/index.js",

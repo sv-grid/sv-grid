@@ -161,7 +161,7 @@ on the export- and analytics-heavy features teams tend to need last:
 - **Excel / PDF / CSV / TSV / HTML export** plus paginated print.
 - **Excel / CSV / TSV / JSON import** with auto-mapping and per-row validation.
 - **Pivot tables** with a drag-and-drop pivot Designer.
-- **Kanban board and scheduler / calendar renderers** for the `board` and `scheduler` props.
+- **Kanban board, scheduler / calendar and Gantt renderers** for the `board`, `scheduler` and `gantt` props.
 
 OSS projects receive an Enterprise key free. See [Pricing](https://svgrid.com/pricing/).
 

@@ -223,6 +223,10 @@ No special Gantt mode - it's a single wide cell per row whose snippet
 positions absolute bars by `(start - projectStart) / projectSpan * 100`.
 Axis above the grid uses the same math.
 
+For a real plan - a work-breakdown tree with rolled-up phases, dependency
+arrows and a zoomable axis - use [Gantt chart mode](/help/rows/gantt), the
+`gantt` prop's Enterprise renderer, rather than building on this recipe.
+
 ## Scheduler (single-day appointments)
 
 Providers as rows, an hour axis, click any appointment to edit it in

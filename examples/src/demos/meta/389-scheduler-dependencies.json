@@ -18,7 +18,7 @@
     },
     {
       "question": "Is this a Gantt chart?",
-      "answer": "No. The scheduler books resources over time; dependencies only order bookings. Critical paths, baselines and effort planning are project-planner features it does not attempt."
+      "answer": "No. This is a resource scheduler with ordered bookings: dependencies keep steps in sequence on a booking timeline. For a project plan - a work-breakdown tree, rolled-up phases and percent-done - use SvGrid's Gantt view instead, which is built for that."
     }
   ]
 }

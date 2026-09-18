@@ -1,11 +1,11 @@
 /**
  * Every Enterprise gate carries the same licensing line.
  *
- * There are four of them - Kanban board, scheduler, pivot mode and the
- * selection bar - and they used to be four hand-written paragraphs. Four gates
- * worded four ways is how a product ends up explaining its own licensing
+ * There are five of them - Kanban board, scheduler, Gantt, pivot mode and the
+ * selection bar - and they used to be four hand-written paragraphs. Gates
+ * worded one way each is how a product ends up explaining its own licensing
  * inconsistently, so they now share one snippet. This is the test that keeps
- * them sharing it: a fifth Enterprise feature that hand-rolls its own note
+ * them sharing it: a sixth Enterprise feature that hand-rolls its own note
  * will show up here as a missing licensing line.
  *
  * None of the renderers are registered in this file, which is the point - it
@@ -17,6 +17,7 @@ import SvGrid from './SvGrid.svelte'
 import {
   createCoreRowModel,
   hasBoardView,
+  hasGanttView,
   hasSchedulerView,
   hasSelectionBarView,
   tableFeatures,
@@ -69,12 +70,14 @@ describe('Enterprise upsell notes', () => {
     // Otherwise every assertion below is checking the wrong branch.
     expect(hasBoardView()).toBe(false)
     expect(hasSchedulerView()).toBe(false)
+    expect(hasGanttView()).toBe(false)
     expect(hasSelectionBarView()).toBe(false)
   })
 
   const gates: Array<[string, Record<string, unknown>, ((api: SvGridApi<typeof features, Row>) => void)?]> = [
     ['Kanban board', { board: { groupBy: 'team' } }],
     ['scheduler', { scheduler: { startField: 'name' } }],
+    ['Gantt', { gantt: { startField: 'name' } }],
     ['selection bar', { showRowSelection: true, selectionBar: true }, (api) => api.selectRows(['1'])],
     // pivotViewOn = a pivot config AND pivot mode on; without the Pro engine
     // `pivotResult` stays null and the upsell renders in its place.

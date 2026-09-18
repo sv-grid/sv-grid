@@ -679,10 +679,11 @@ The Enterprise renderer adds a set of advanced capabilities on top of the base
 scheduler. They are read from the same `scheduler` prop; type your config as
 `SchedulerProConfig` (from `@svgrid/enterprise`) to get the extra fields typed.
 
-> **Scheduler, not a Gantt.** SvGrid's Scheduler is a resource / booking / calendar
+> **Scheduler or Gantt?** SvGrid's Scheduler is a resource / booking / calendar
 > view of the grid - for appointments, staff and asset scheduling, and calendar
-> apps. It is deliberately *not* a project planner: there is no critical path,
-> percent-done, baselines, or work-breakdown structure, and none are planned. The
+> apps. It is deliberately *not* a project planner. For a plan with a
+> work-breakdown tree, percent-done and rolled-up phases, use
+> [Gantt chart mode](/help/rows/gantt), which is built for exactly that. The
 > **dependencies** below are an optional convenience for *ordered bookings* (a job
 > that must move through stations in sequence); they are fully opt-in - with no
 > dependency config the timeline draws no arrows and does no cascading.
