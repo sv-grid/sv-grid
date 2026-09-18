@@ -466,3 +466,27 @@ describe('snapshot', () => {
     expect(wb.snapshot('M')).toEqual([[1, 2], [3, '']])
   })
 })
+
+describe('copySheet', () => {
+  it('copies the cells after the source, named the way Excel names a copy, and makes it active', () => {
+    const wb = createWorkbook(budget())
+    expect(wb.copySheet('Budget')).toBe('Budget (2)')
+    expect(wb.sheets).toEqual(['Budget', 'Budget (2)', 'Summary'])
+    expect(wb.active).toBe('Budget (2)')
+    expect(wb.getValue('Budget (2)', 2, 0)).toBe(30)
+    // The copy's formula reads its own sheet, so a change there stays there.
+    wb.setRaw('Budget (2)', 0, 0, '100')
+    expect(wb.getValue('Budget (2)', 2, 0)).toBe(120)
+    expect(wb.getValue('Budget', 2, 0)).toBe(30)
+    expect(wb.getValue('Summary', 0, 0)).toBe(30)
+    expect(wb.copySheet('Budget')).toBe('Budget (3)')
+  })
+
+  it('takes a name, and declines an unknown source or a taken name', () => {
+    const wb = createWorkbook(budget())
+    expect(wb.copySheet('Budget', 'Plan')).toBe('Plan')
+    expect(wb.copySheet('Nope')).toBeNull()
+    expect(wb.copySheet('Budget', 'summary')).toBeNull()
+    expect(wb.copySheet('Budget', 'a:b')).toBeNull()
+  })
+})

@@ -126,8 +126,20 @@ calling `addSheet`.
 Click to switch, double-click or `F2` to rename, drag to reorder, `+` to add.
 The strip owns no state of its own, so the tabs and the keyboard shortcuts
 cannot disagree about which sheet is active. A duplicate or invalid name is
-reported rather than silently ignored, and the delete button is not rendered
-on the last sheet, because the workbook refuses to remove it.
+reported rather than silently ignored, and Delete is greyed on the last
+sheet, because the workbook refuses to remove it. Deleting a sheet that
+holds anything asks first, as Excel does; an empty one goes at once.
+
+The right-click menu also has Duplicate, Hide and Unhide. The strip keeps
+none of that itself: pass `hidden` (the names not to draw) and answer
+`onHide`, `onUnhide` and `onDuplicate`, which the shell does through its
+document (`sheetHidden` per sheet, `doc.duplicate(name)`), and Duplicate
+is only offered when `onDuplicate` is given. `wb.copySheet(from, to?)`
+copies a sheet's cells into a new sheet right after it, named Excel's
+"Name (2)" unless told otherwise; the copy's formulas read their own sheet.
+Hide is refused on the last sheet showing, and the shortcuts below step
+over hidden sheets when `setWorkbook` is told which they are:
+`setWorkbook(wb, onChange, (name) => doc.get(name).sheetHidden)`.
 
 | Key | Action |
 | --- | ------ |

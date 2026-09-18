@@ -56,6 +56,8 @@ export type PerSheetState = {
   /** Cell comments in the grid's `notes` shape: `r4` -> `B` -> text. */
   notes: NotesMap
   protected: boolean
+  /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
+  sheetHidden: boolean
   merges: Rect[]
   /** Data validation rules, in order; the last one covering a cell applies. */
   validation: ValidationRule[]
@@ -76,6 +78,8 @@ export type SheetStateEntry = {
   freeze: FreezeState
   comments: NotesMap
   protected: boolean
+  /** Absent in documents saved before hidden sheets existed. */
+  sheetHidden?: boolean
   merges: Array<[number, number, number, number]>
   validation: ValidationRule[]
   conditionalFormats: CfRule[]
@@ -100,6 +104,12 @@ export type SheetDocument = {
   has(name: string): boolean
   rename(from: string, to: string): void
   remove(name: string): void
+  /**
+   * Excel's Move or Copy > Create a copy: a new sheet after `from` with
+   * its cells and everything this document keeps beside them, named `to`
+   * or "Name (2)". Returns the new name, or null when it could not.
+   */
+  duplicate(from: string, to?: string): string | null
   /** The sheets that have state, in no particular order. */
   names(): string[]
   /**
@@ -142,6 +152,7 @@ function emptySheetState(): PerSheetState {
     freeze: { rows: 0, cols: 0 },
     notes: {},
     protected: false,
+    sheetHidden: false,
     merges: [],
     validation: [],
     conditionalFormats: [],
@@ -200,6 +211,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       freeze: { ...state.freeze },
       comments: Object.fromEntries(Object.entries(state.notes).map(([r, line]) => [r, { ...line }])),
       protected: state.protected,
+      sheetHidden: state.sheetHidden,
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
       validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
       conditionalFormats: state.conditionalFormats.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect) })),
@@ -215,6 +227,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.freeze = { rows: entry.freeze?.rows ?? 0, cols: entry.freeze?.cols ?? 0 }
     state.notes = Object.fromEntries(Object.entries(entry.comments ?? {}).map(([r, line]) => [r, { ...line }]))
     state.protected = entry.protected ?? false
+    state.sheetHidden = entry.sheetHidden ?? false
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     state.validation = (entry.validation ?? []).map((rule) => ({
       ...rule,
@@ -241,6 +254,16 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     },
     remove(name) {
       entries.delete(key(name))
+    },
+    duplicate(from, to) {
+      const made = workbook.copySheet(from, to)
+      if (made === null) return null
+      // Through the JSON shape, so nothing is shared between the two.
+      const copy = JSON.parse(JSON.stringify(serializeEntry(get(from)))) as SheetStateEntry
+      copy.sheetHidden = false
+      hydrateEntry(get(made), copy)
+      changed({ kind: 'sheets' })
+      return made
     },
     names: () => [...entries.keys()],
 

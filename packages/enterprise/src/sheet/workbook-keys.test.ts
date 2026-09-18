@@ -56,6 +56,19 @@ describe('sheet switching keys', () => {
     expect(wb.active).toBe('C')
   })
 
+  it('steps over hidden sheets, and stops before a hidden end', () => {
+    const wb = three()
+    setWorkbook(wb, undefined, (name) => name === 'B')
+    expect(handleSheetKey(key({ key: 'PageDown', ctrlKey: true }), cmd())).toBe(true)
+    expect(wb.active).toBe('C')
+    handleSheetKey(key({ key: 'PageUp', ctrlKey: true }), cmd())
+    expect(wb.active).toBe('A')
+    setWorkbook(wb, undefined, (name) => name === 'C')
+    wb.setActive('B')
+    expect(handleSheetKey(key({ key: 'PageDown', ctrlKey: true }), cmd())).toBe(false)
+    expect(wb.active).toBe('B')
+  })
+
   it('adds a sheet on Shift+F11 and makes it active', () => {
     const wb = three()
     setWorkbook(wb)
