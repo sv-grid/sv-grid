@@ -8,6 +8,7 @@
  * with an index, which the component owns.
  */
 import { FUNCTIONS } from './functions'
+import { ARRAY_FUNCTIONS } from './packs/array'
 
 export type FunctionSuggestion = {
   name: string
@@ -19,7 +20,7 @@ export type FunctionSuggestion = {
 
 /** The evaluator dispatches these itself, so they are not in the table. */
 const EVALUATOR_NAMES = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT']
-const NAMES = [...new Set([...Object.keys(FUNCTIONS), ...EVALUATOR_NAMES])].sort()
+const NAMES = [...new Set([...Object.keys(FUNCTIONS), ...Object.keys(ARRAY_FUNCTIONS), ...EVALUATOR_NAMES])].sort()
 
 /** Signature hints, for the ones whose argument order is not obvious. */
 export const SIGNATURES: Record<string, string> = {
@@ -96,6 +97,13 @@ export const SIGNATURES: Record<string, string> = {
   ADDRESS: 'ADDRESS(row, column, [abs], [a1], [sheet])',
   OFFSET: 'OFFSET(reference, rows, cols, [height], [width])',
   INDIRECT: 'INDIRECT(text, [a1])',
+  FILTER: 'FILTER(array, include, [if_empty])',
+  UNIQUE: 'UNIQUE(array, [by_col], [exactly_once])',
+  SORT: 'SORT(array, [sort_index], [sort_order], [by_col])',
+  SORTBY: 'SORTBY(array, by_array1, [sort_order1], ...)',
+  SEQUENCE: 'SEQUENCE(rows, [columns], [start], [step])',
+  TRANSPOSE: 'TRANSPOSE(array)',
+  TEXTSPLIT: 'TEXTSPLIT(text, col_delimiter, [row_delimiter], [ignore_empty])',
 }
 
 /**

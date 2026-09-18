@@ -54,6 +54,7 @@ const REL_VML = `${NS_REL}/vmlDrawing`
 const NS_THREADS = 'http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments'
 const REL_THREADS = 'http://schemas.microsoft.com/office/2017/10/relationships/threadedComment'
 const REL_PERSONS = 'http://schemas.microsoft.com/office/2017/10/relationships/person'
+const REL_METADATA = `${NS_REL}/sheetMetadata`
 /** What Excel puts in the legacy note of a threaded comment, for readers that predate threads. */
 const THREAD_LEGACY_HEAD = '[Threaded comment]\n\nYour version of Excel allows you to read this threaded comment; however, any edits to it will get removed if the file is opened in a newer version of Excel. Learn more: https://go.microsoft.com/fwlink/?linkid=870924\n\n'
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
@@ -234,16 +235,28 @@ function styleRegistry() {
 }
 
 /** A cell's `<c>` element: a formula with its cached value, or a literal. */
-function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean): string {
+function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean, spill?: { ref: string } | 'covered'): string {
   const sAttr = s ? ` s="${s}"` : ''
   const text = raw.trim()
+  if (text === '' && spill === 'covered') {
+    // A cell a dynamic array spills into: the value Excel caches there, no formula.
+    if (isError(value)) return `<c r="${ref}"${sAttr} t="e"><v>${esc(value.error)}</v></c>`
+    if (typeof value === 'boolean') return `<c r="${ref}"${sAttr} t="b"><v>${value ? 1 : 0}</v></c>`
+    if (typeof value === 'number') return `<c r="${ref}"${sAttr}><v>${Number.isFinite(value) ? value : 0}</v></c>`
+    if (value === '') return s ? `<c r="${ref}"${sAttr}/>` : ''
+    return `<c r="${ref}"${sAttr} t="str"><v>${esc(String(value))}</v></c>`
+  }
   if (text === '') return s ? `<c r="${ref}"${sAttr}/>` : ''
   if (text.startsWith('=')) {
-    const f = `<f>${esc(text.slice(1))}</f>`
-    if (isError(value)) return `<c r="${ref}"${sAttr} t="e">${f}<v>${esc(value.error)}</v></c>`
-    if (typeof value === 'boolean') return `<c r="${ref}"${sAttr} t="b">${f}<v>${value ? 1 : 0}</v></c>`
-    if (typeof value === 'number') return `<c r="${ref}"${sAttr}>${f}<v>${Number.isFinite(value) ? value : 0}</v></c>`
-    return `<c r="${ref}"${sAttr} t="str">${f}<v>${esc(String(value))}</v></c>`
+    // A dynamic array formula is an array formula over its spill with the
+    // metadata flag (`cm`) that tells Excel it spills rather than being an
+    // old-style CSE array.
+    const f = spill && spill !== 'covered' ? `<f t="array" ref="${spill.ref}">${esc(text.slice(1))}</f>` : `<f>${esc(text.slice(1))}</f>`
+    const cm = spill && spill !== 'covered' ? ' cm="1"' : ''
+    if (isError(value)) return `<c r="${ref}"${sAttr}${cm} t="e">${f}<v>${esc(value.error)}</v></c>`
+    if (typeof value === 'boolean') return `<c r="${ref}"${sAttr}${cm} t="b">${f}<v>${value ? 1 : 0}</v></c>`
+    if (typeof value === 'number') return `<c r="${ref}"${sAttr}${cm}>${f}<v>${Number.isFinite(value) ? value : 0}</v></c>`
+    return `<c r="${ref}"${sAttr}${cm} t="str">${f}<v>${esc(String(value))}</v></c>`
   }
   const serial = isoToSerial(text)
   if (serial !== null) return `<c r="${ref}"${sAttr}><v>${serial}</v></c>`
@@ -365,6 +378,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
   const parts: Record<string, string> = {}
   const overrides: string[] = []
   let hasVml = false
+  let hasSpills = false
   // The people a thread names, one part for the workbook; an entry
   // without an author is a person with no name.
   const persons: string[] = []
@@ -392,6 +406,16 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     }
     for (const r of state.heights.keys()) maxRow = Math.max(maxRow, r)
     for (const r of state.hidden.rows) maxRow = Math.max(maxRow, r)
+    // Dynamic arrays: the anchors with their rectangles, and every cell they cover.
+    const spillAt = new Map<string, { ref: string } | 'covered'>()
+    for (const spill of wb.spills(name)) {
+      const [r1, c1, r2, c2] = spill.rect
+      spillAt.set(`${spill.row},${spill.col}`, { ref: rectRef([r1, c1, r2, c2]) })
+      for (let r = r1; r <= r2; r += 1) for (let c = c1; c <= c2; c += 1) if (r !== spill.row || c !== spill.col) spillAt.set(`${r},${c}`, 'covered')
+      maxRow = Math.max(maxRow, r2)
+      maxCol = Math.max(maxCol, c2)
+    }
+    if (spillAt.size) hasSpills = true
 
     // <cols>: widths and hidden columns, one element per column that differs.
     const colXml: string[] = []
@@ -411,9 +435,10 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       for (let c = 0; c <= maxCol; c += 1) {
         const raw = wb.getRaw(name, r, c)
         const entry = byCell.get(`${r},${c}`)
-        if (raw === '' && !entry) continue
+        const spill = spillAt.get(`${r},${c}`)
+        if (raw === '' && !entry && !spill) continue
         const s = entry ? styles.xfId(entry) : 0
-        const xml = cellXml(`${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' ? '' : wb.getValue(name, r, c), s, isDateFormat(entry?.numFmt))
+        const xml = cellXml(`${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' && !spill ? '' : wb.getValue(name, r, c), s, isDateFormat(entry?.numFmt), spill)
         if (xml) cells.push(xml)
       }
       const height = state.heights.get(r)
@@ -543,7 +568,17 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     + sheetEntries.map((s) => `<Relationship Id="rId${s.n}" Type="${REL_WORKSHEET}" Target="worksheets/sheet${s.n}.xml"/>`).join('')
     + `<Relationship Id="rId${sheetEntries.length + 1}" Type="${REL_STYLES}" Target="styles.xml"/>`
     + (persons.length ? `<Relationship Id="rId${sheetEntries.length + 2}" Type="${REL_PERSONS}" Target="persons/person.xml"/>` : '')
+    + (hasSpills ? `<Relationship Id="rId${sheetEntries.length + 3}" Type="${REL_METADATA}" Target="metadata.xml"/>` : '')
     + '</Relationships>'
+  if (hasSpills) {
+    // The one piece of metadata a dynamic array needs: cell metadata record 1
+    // says "this array formula spills", which is what `cm="1"` points at.
+    parts['xl/metadata.xml'] = XML_HEAD + `<metadata xmlns="${NS_MAIN}" xmlns:xda="http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray">`
+      + '<metadataTypes count="1"><metadataType name="XLDAPR" minSupportedVersion="120000" copy="1" pasteAll="1" pasteValues="1" merge="1" splitFirst="1" rowColShift="1" clearFormats="1" clearComments="1" assign="1" coerce="1" cellMeta="1"/></metadataTypes>'
+      + '<futureMetadata name="XLDAPR" count="1"><bk><extLst><ext uri="{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}"><xda:dynamicArrayProperties fDynamic="1" fCollapsed="0"/></ext></extLst></bk></futureMetadata>'
+      + '<cellMetadata count="1"><bk><rc t="1" v="0"/></bk></cellMetadata></metadata>'
+    overrides.push('<Override PartName="/xl/metadata.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml"/>')
+  }
   if (persons.length) {
     parts['xl/persons/person.xml'] = XML_HEAD + `<personList xmlns="${NS_THREADS}" xmlns:x="${NS_MAIN}">`
       + persons.map((name, i) => `<person displayName="${esc(name)}" id="${guid(0, i + 1)}" userId="${esc(name)}" providerId="None"/>`).join('')
@@ -830,6 +865,8 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
       }
 
       const sharedFormulas = new Map<string, { row: number; col: number; text: string }>()
+      /** The rectangles of the array formulas seen so far: cells inside them without a formula hold spilled values, not text. */
+      const arrayRects: Rect[] = []
       for (const row of kids(kid(root, 'sheetData'), 'row')) {
         const r = (num(row, 'r') ?? 0) - 1
         if (r < 0) continue
@@ -840,6 +877,14 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
           const ref = parseA1(attr(cell, 'r') ?? '')
           if (!ref || ref.row === null) continue
           const c = ref.col
+          const fEl = kid(cell, 'f')
+          // The cached values under an array formula belong to its spill,
+          // not to the cells: read the anchor, skip the rest.
+          if (!fEl && arrayRects.some(([r1, c1, r2, c2]) => ref.row! >= r1 && ref.row! <= r2 && c >= c1 && c <= c2)) continue
+          if (fEl && attr(fEl, 't') === 'array') {
+            const rect = refRect(attr(fEl, 'ref') ?? '')
+            if (rect) arrayRects.push(rect)
+          }
           const s = num(cell, 's')
           const type = attr(cell, 't') ?? 'n'
           const f = kid(cell, 'f')

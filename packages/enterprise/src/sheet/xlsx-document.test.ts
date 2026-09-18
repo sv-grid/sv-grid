@@ -20,6 +20,8 @@ function fullDocument() {
   })
   const wb = doc.workbook
   wb.names.define('GrandTotal', 'Orders!$D$4')
+  // A dynamic array: F1 spills two rows.
+  wb.setRaw('Orders', 0, 5, '=SEQUENCE(2, 1, 7)')
   wb.setActive('Price list')
   const orders = doc.get('Orders')
   orders.formats.set([[0, 0, 0, 4]], { bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center' }, lookup)
@@ -71,7 +73,7 @@ describe('documentToXlsxParts', () => {
     }
     expect(Object.keys(parts).sort()).toEqual([
       '[Content_Types].xml', '_rels/.rels', 'xl/_rels/workbook.xml.rels', 'xl/comments1.xml', 'xl/drawings/vmlDrawing1.vml',
-      'xl/persons/person.xml', 'xl/styles.xml', 'xl/threadedComments/threadedComment1.xml', 'xl/workbook.xml',
+      'xl/metadata.xml', 'xl/persons/person.xml', 'xl/styles.xml', 'xl/threadedComments/threadedComment1.xml', 'xl/workbook.xml',
       'xl/worksheets/_rels/sheet1.xml.rels', 'xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml',
     ])
     const sheet = parts['xl/worksheets/sheet1.xml']!
@@ -79,6 +81,12 @@ describe('documentToXlsxParts', () => {
     expect(sheet).toContain('<c r="D2" s="2"><f>B2*C2</f><v>19</v></c>')
     expect(sheet).toContain('<c r="E2" s="3"><v>46085</v></c>')
     expect(sheet).toContain('<mergeCell ref="A5:D5"/>')
+    // The dynamic array: an array formula over its spill with the metadata flag, and the spilled value under it.
+    expect(sheet).toContain('<c r="F1" cm="1"><f t="array" ref="F1:F2">SEQUENCE(2, 1, 7)</f><v>7</v></c>')
+    expect(sheet).toContain('<c r="F2"><v>8</v></c>')
+    expect(parts['xl/metadata.xml']).toContain('<xda:dynamicArrayProperties fDynamic="1" fCollapsed="0"/>')
+    expect(parts['xl/_rels/workbook.xml.rels']).toContain('Target="metadata.xml"')
+    expect(parts['[Content_Types].xml']).toContain('/xl/metadata.xml')
     expect(sheet).toContain('<pane xSplit="1" ySplit="1" topLeftCell="B2" activePane="bottomRight" state="frozen"/>')
     expect(sheet).toContain('<sheetProtection sheet="1" objects="1" scenarios="1" formatCells="0" sort="0"/>')
     expect(sheet).toContain('<protectedRanges><protectedRange sqref="B2:B4" name="Quantities"/><protectedRange sqref="A2 A4" name="Two blocks"/></protectedRanges>')
@@ -133,6 +141,9 @@ describe('the round trip', () => {
     expect(again.workbook.getRaw('Orders', 3, 3)).toBe('=SUM(D2:D3)')
     expect(again.workbook.getValue('Orders', 3, 3)).toBe(31)
     expect(again.workbook.getRaw('Orders', 1, 4)).toBe('2026-03-04')
+    expect(again.workbook.getRaw('Orders', 0, 5)).toBe('=SEQUENCE(2, 1, 7)')
+    expect(again.workbook.getRaw('Orders', 1, 5)).toBe('')
+    expect(again.workbook.getValue('Orders', 1, 5)).toBe(8)
     expect(again.workbook.getRaw('Price list', 2, 1)).toBe('TRUE')
     expect(again.workbook.getRaw('Price list', 3, 1)).toBe('=1/0')
     expect(again.workbook.getValue('Price list', 3, 1)).toEqual({ error: '#DIV/0!' })
@@ -268,6 +279,18 @@ describe('reading what Excel writes', () => {
       printArea: [[1, 1, 8, 3]], printTitleRows: [0, 1], gridlines: false, headings: true, scale: 70,
     })
     expect(state.workbook.names).toEqual({ Rate: 'Data!$B$1' })
+  })
+
+  it('an array formula Excel wrote: the anchor keeps the formula, the spilled values are not text', () => {
+    const state = documentFromXlsxParts(wrap(
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+      + '<row r="1"><c r="A1" cm="1"><f t="array" ref="A1:B2">_xlfn.SEQUENCE(2,2)</f><v>1</v></c><c r="B1"><v>2</v></c><c r="C1"><v>9</v></c></row>'
+      + '<row r="2"><c r="A2"><v>3</v></c><c r="B2"><v>4</v></c></row>'
+      + '</sheetData></worksheet>',
+    ))
+    expect(state.workbook.sheets[0]!.cells).toEqual([['=SEQUENCE(2,2)', '', '9']])
+    const doc = createSheetDocument({ state })
+    expect(doc.workbook.getValue('Data', 1, 1)).toBe(4)
   })
 
   it('refuses a package with no workbook', () => {

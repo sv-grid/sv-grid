@@ -38,6 +38,11 @@ per item:
   list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
   beside the flag, and `sheetProtection` attributes and `protectedRanges`
   in the xlsx both ways. Phase C is complete.
+- Phase B item 3: dynamic arrays. The array pack (FILTER, UNIQUE, SORT,
+  SORTBY, SEQUENCE, TRANSPOSE, TEXTSPLIT), array arithmetic with Excel's
+  broadcasting, spill ranges kept by the workbook with `#SPILL!` and
+  `#CALC!`, the blue outline on the active spill, and array formulas with
+  the dynamic-array metadata in the xlsx both ways.
 - Phase A items 4 and 5: `PageSetup` per sheet, the Page Layout tab
   (margins, orientation, size, print area, print titles, gridlines,
   headings, the Page Setup dialog), File > Print over `sheetPrintHtml`,
@@ -115,10 +120,10 @@ weeks, L a quarter-scale piece of work.
 | --- | --- | --- |
 | ~~Financial functions (PMT, PV, FV, NPV, IRR, RATE, NPER)~~ | shipped, with IPMT, PPMT and SLN | done |
 | ~~Math and statistics (SUMPRODUCT, PRODUCT, CEILING, FLOOR, TRUNC, LOG, EXP, PI, RAND, RANDBETWEEN, LARGE, SMALL, PERCENTILE, QUARTILE, VAR, MODE, AVERAGEIFS, MAXIFS, MINIFS, CORREL, FORECAST)~~ | shipped | done |
-| ~~Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT)~~ | shipped; TEXTSPLIT waits on spill, NUMBERVALUE not done | done |
+| ~~Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT)~~ | shipped; TEXTSPLIT came with spill, NUMBERVALUE not done | done |
 | ~~Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME)~~ | shipped, with DATEVALUE, TIMEVALUE, DAYS360, YEARFRAC | done |
 | ~~Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE)~~ | shipped; INDIRECT and OFFSET are volatile, recomputed on every write | done |
-| Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`) | the evaluator returns one value per cell; no spill ranges in the workbook | L |
+| ~~Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`)~~ | shipped: `evaluateSpill`, spill ranges in the workbook, array arithmetic with broadcasting, TRANSPOSE and TEXTSPLIT too | done |
 | LET / LAMBDA | none | M, after spill |
 | A pluggable engine (HyperFormula behind the shell) | `withCustomFunctions` is the only seam | M |
 | Iterative calculation (circular references with a cap) | cycles are `#CYCLE!` | S |
@@ -213,11 +218,12 @@ The single most-asked question a spreadsheet gets is "can I open my file".
 2. **Reference functions** need one engine change: `precedentsOf` cannot
    see through `INDIRECT` or `OFFSET`. Mark such cells volatile in the
    dependency graph (recompute on every change) as Excel does.
-3. **Dynamic arrays**: `evaluate` returns a matrix, the workbook owns spill
+3. ~~**Dynamic arrays**: `evaluate` returns a matrix, the workbook owns spill
    ranges, a blocked spill is `#SPILL!`, `translateFormula` and
    `fixupReferences` treat the anchor as the formula cell. This is the L
    item; do it after the packs so FILTER, UNIQUE, SORT and SEQUENCE land on
-   a working spill.
+   a working spill.~~ Shipped: `evaluateSpill` beside `evaluate` rather
+   than a matrix from it, so every existing caller keeps its value.
 4. **Pluggable engine**: an `engine` option on `createWorkbook` with the
    built-in evaluator as default and a HyperFormula implementation moved
    from `packages/grid/src/hyperformula-adapter.ts`'s contract. Keeps the

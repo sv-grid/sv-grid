@@ -2691,6 +2691,28 @@
    */
   let marquee = $state<{ sheet: string; rect: readonly [number, number, number, number] } | null>(null)
   /** The edges of the marquee a cell sits on, as class names; null off it. */
+  /**
+   * Excel's blue outline around a dynamic array: the spill the active cell
+   * belongs to, drawn edge by edge on the cells at its rim, the way the
+   * marching ants are.
+   */
+  const activeSpill = $derived.by(() => {
+    void version
+    return wb.spillOf(wb.active, active.rowIndex, active.colIndex)?.rect ?? null
+  })
+  function spillEdges(r: number, c: number): string | null {
+    const rect = activeSpill
+    if (!rect) return null
+    const [r1, c1, r2, c2] = rect
+    if (r < r1 || r > r2 || c < c1 || c > c2) return null
+    const edges: string[] = []
+    if (r === r1) edges.push('top')
+    if (r === r2) edges.push('bottom')
+    if (c === c1) edges.push('left')
+    if (c === c2) edges.push('right')
+    return edges.length ? edges.join(' ') : null
+  }
+
   function marqueeEdges(r: number, c: number): string | null {
     // The active sheet is not state; the switch bumps the version.
     void version
@@ -3600,6 +3622,10 @@
       <span class="sheet-databar-axis" style:left="{Math.round(cf.dataBar.axis * 100)}%"></span>
     {/if}
   {/if}
+  {@const spilled = spillEdges(props.r, props.c)}
+  {#if spilled}
+    <span class="sheet-spill-edge {spilled}" aria-hidden="true"></span>
+  {/if}
   {@const ants = marqueeEdges(props.r, props.c)}
   {#if ants}
     <!-- Excel's marching ants around the copied block: each cell on the
@@ -4294,6 +4320,19 @@
   .sheet-ants.bottom { --ants-bottom: linear-gradient(to right, var(--ants-on) 0 4px, var(--ants-off) 4px 8px); }
   .sheet-ants.left { --ants-left: linear-gradient(to bottom, var(--ants-on) 0 4px, var(--ants-off) 4px 8px); }
   .sheet-ants.right { --ants-right: linear-gradient(to bottom, var(--ants-on) 0 4px, var(--ants-off) 4px 8px); }
+  /* The dynamic array's outline: a thin blue rim on the spill the active cell is in. */
+  .sheet-spill-edge {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    --spill-c: var(--sg-accent, #2b6cb0);
+    box-shadow: none;
+  }
+  .sheet-spill-edge.top { border-top: 1px solid var(--spill-c); }
+  .sheet-spill-edge.bottom { border-bottom: 1px solid var(--spill-c); }
+  .sheet-spill-edge.left { border-left: 1px solid var(--spill-c); }
+  .sheet-spill-edge.right { border-right: 1px solid var(--spill-c); }
   @keyframes sheet-ants {
     to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px; }
   }

@@ -7,7 +7,7 @@ import type { CellRef } from './address'
 
 export type SheetError =
   | '#REF!' | '#CYCLE!' | '#DIV/0!' | '#VALUE!' | '#NAME?'
-  | '#NUM!' | '#N/A' | '#PARSE!'
+  | '#NUM!' | '#N/A' | '#PARSE!' | '#SPILL!' | '#CALC!'
 
 /** A computed cell value. Errors are values, not exceptions, once evaluation
  *  finishes - that is what lets `=IFERROR(A1, 0)` see one. */

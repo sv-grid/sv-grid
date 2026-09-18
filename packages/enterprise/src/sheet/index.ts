@@ -148,7 +148,8 @@ export {
   parseFormula, parse,
 } from './parse'
 export { tokenize, type Token } from './tokenize'
-export { evaluate, formatValue, type EvalContext } from './evaluate'
+export { evaluate, evaluateSpill, formatValue, type EvalContext } from './evaluate'
+export { ARRAY_FUNCTIONS, type ArrayFunction, type Grid as SpillGrid } from './packs/array'
 export {
   FUNCTIONS, withCustomFunctions, type SheetFunction, type FnArgs,
 } from './functions'

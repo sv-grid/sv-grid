@@ -239,6 +239,7 @@ export {
   formatValue as formatCellValue,
   type EvalContext as SheetEvalContext,
 } from './sheet/evaluate'
+export { ARRAY_FUNCTIONS, type ArrayFunction, type Grid as SpillGrid } from './sheet/packs/array'
 export {
   FUNCTIONS as SHEET_FUNCTIONS,
   withCustomFunctions,

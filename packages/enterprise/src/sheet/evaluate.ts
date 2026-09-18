@@ -19,6 +19,7 @@ import {
 } from './ast'
 import { toNumber, toBool, toText, looseEquals, compare } from './coerce'
 import { withCustomFunctions, type SheetFunction, type FnArgs } from './functions'
+import { ARRAY_FUNCTIONS, type Grid } from './packs/array'
 import { colToLetters, type CellRef } from './address'
 import { parseFormula } from './parse'
 import {
@@ -412,11 +413,90 @@ function evalCall(
     return ctx.resolve(rect.sheet, rect.r1, rect.c1)
   }
 
+  if (ARRAY_FUNCTIONS[name]) {
+    // In scalar position a grid reads as its top-left cell; the workbook
+    // asks `evaluateSpill` for the whole of it.
+    const grid = arrayCall(node, ctx)
+    return Array.isArray(grid) ? grid[0]?.[0] ?? '' : grid
+  }
+
   const table = ctx.functions ?? withCustomFunctions(undefined)
   const fn = table[name]
   if (!fn) return err('#NAME?')
 
-  // Evaluate every argument, keeping range shape for the lookups that need it.
+  const { perArg, grids } = collectArgs(args, ctx)
+  const flat = perArg.flat()
+  // An error anywhere in the arguments propagates, except for the counting
+  // functions, which Excel lets see errors in their range.
+  if (name !== 'COUNTA' && name !== 'COUNTBLANK') {
+    for (const v of flat) if (isError(v)) return v
+  }
+
+  const payload: FnArgs = { flat, args: perArg, grids }
+  return fn(payload)
+}
+
+/** Whether a node stands for a grid: a range, an array or reference function, a name to one, or arithmetic over those. */
+function hasArray(node: Node, ctx: EvalContext, depth = 0): boolean {
+  switch (node.k) {
+    case 'range': return true
+    case 'name': { const target = depth < 8 ? nameTarget(node.name, ctx) : null; return target ? hasArray(target, ctx, depth + 1) : false }
+    case 'fn': return REFERENCE_FUNCTIONS.has(node.name) || Boolean(ARRAY_FUNCTIONS[node.name])
+    case 'binary': return hasArray(node.left, ctx, depth) || hasArray(node.right, ctx, depth)
+    case 'unary': return hasArray(node.arg, ctx, depth)
+    default: return false
+  }
+}
+
+/**
+ * A node as a grid, with Excel's broadcasting: a side that is one row, one
+ * column or one cell stretches to the other's shape, and where both are
+ * bigger and differ the cells past the shorter side are #N/A.
+ */
+function gridOf(node: Node, ctx: EvalContext): Grid {
+  if (node.k === 'binary') {
+    const l = gridOf(node.left, ctx)
+    const r = gridOf(node.right, ctx)
+    return broadcast(l, r, (a, b) => {
+      if (isError(a)) return a
+      if (isError(b)) return b
+      try { return binary(node.op, a, b) } catch (e) { if (e instanceof FormulaError) return err(e.code); throw e }
+    })
+  }
+  if (node.k === 'unary') {
+    return gridOf(node.arg, ctx).map((row) => row.map((v) => {
+      if (isError(v)) return v
+      try { return node.op === '-' ? -toNumber(v) : node.op === '%' ? toNumber(v) / 100 : toNumber(v) } catch (e) { if (e instanceof FormulaError) return err(e.code); throw e }
+    }))
+  }
+  const grid = rangeValues(node, ctx)
+  return grid ?? [[evalNode(node, ctx)]]
+}
+
+function broadcast(l: Grid, r: Grid, op: (a: CellValue, b: CellValue) => CellValue): Grid {
+  const lr = l.length, lc = l[0]?.length ?? 0
+  const rr = r.length, rc = r[0]?.length ?? 0
+  const rows = lr === 1 ? rr : rr === 1 ? lr : Math.max(lr, rr)
+  const cols = lc === 1 ? rc : rc === 1 ? lc : Math.max(lc, rc)
+  const pick = (g: Grid, gr: number, gc: number, i: number, j: number): CellValue => {
+    const y = gr === 1 ? 0 : i
+    const x = gc === 1 ? 0 : j
+    if (y >= gr || x >= gc) return err('#N/A')
+    return g[y]?.[x] ?? ''
+  }
+  return Array.from({ length: rows }, (_, i) => Array.from({ length: cols }, (_, j) => op(pick(l, lr, lc, i, j), pick(r, rr, rc, i, j))))
+}
+
+/** An array function's answer: a grid, or a value where it had none to give. */
+function arrayCall(node: Extract<Node, { k: 'fn' }>, ctx: EvalContext): Grid | CellValue {
+  const { perArg, grids } = collectArgs(node.args, ctx)
+  // Errors stay inside the array: FILTER and SORT carry an error cell
+  // through as Excel does, and decide for themselves about the rest.
+  return ARRAY_FUNCTIONS[node.name]!({ flat: perArg.flat(), args: perArg, grids })
+}
+
+/** Every argument evaluated, keeping range shape for the functions that need it. */
+function collectArgs(args: ReadonlyArray<Node>, ctx: EvalContext): { perArg: CellValue[][]; grids: Array<CellValue[][] | null> } {
   const perArg: CellValue[][] = []
   const grids: Array<CellValue[][] | null> = []
   for (const given of args) {
@@ -445,21 +525,29 @@ function evalCall(
         grids.push(grid)
         perArg.push(grid.flat())
       }
+    } else if (arg.k === 'fn' && ARRAY_FUNCTIONS[arg.name]) {
+      // An array function nested in another hands over its grid, so
+      // =SORT(FILTER(...)) and =SUM(SEQUENCE(10)) work.
+      const grid = arrayCall(arg, ctx)
+      if (Array.isArray(grid)) {
+        grids.push(grid)
+        perArg.push(grid.flat())
+      } else {
+        grids.push(null)
+        perArg.push([grid])
+      }
+    } else if ((arg.k === 'binary' || arg.k === 'unary') && hasArray(arg, ctx)) {
+      // Arithmetic over a range is a grid, cell by cell: the `B2:B9>3` a
+      // FILTER takes, or `A1:A9*2` on its own.
+      const grid = gridOf(arg, ctx)
+      grids.push(grid)
+      perArg.push(grid.flat())
     } else {
       grids.push(null)
       perArg.push([evalNode(arg, ctx)])
     }
   }
-
-  const flat = perArg.flat()
-  // An error anywhere in the arguments propagates, except for the counting
-  // functions, which Excel lets see errors in their range.
-  if (name !== 'COUNTA' && name !== 'COUNTBLANK') {
-    for (const v of flat) if (isError(v)) return v
-  }
-
-  const payload: FnArgs = { flat, args: perArg, grids }
-  return fn(payload)
+  return { perArg, grids }
 }
 
 /**
@@ -480,9 +568,36 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
       return target ? rangeValues(target, ctx) : null
     }
     if (node.k === 'fn' && REFERENCE_FUNCTIONS.has(node.name)) return rectGrid(referenceCall(node, ctx), ctx)
+    if (node.k === 'fn' && ARRAY_FUNCTIONS[node.name]) {
+      const grid = arrayCall(node, ctx)
+      return Array.isArray(grid) ? grid : [[grid]]
+    }
     return null
   } catch (e) {
     if (e instanceof FormulaError) return [[err(e.code)]]
+    throw e
+  }
+}
+
+/**
+ * The grid a formula spills, or null when it is a plain value: a range on
+ * its own (`=A1:A5`), a name that refers to one, a reference function's
+ * rectangle, or an array function's answer, when that is more than one
+ * cell. A throw inside is the error the cell shows, and no spill.
+ */
+export function evaluateSpill(node: Node, ctx: EvalContext): Grid | null {
+  try {
+    let grid: Grid | null = null
+    if (node.k === 'range' || node.k === 'name' || (node.k === 'fn' && (REFERENCE_FUNCTIONS.has(node.name) || ARRAY_FUNCTIONS[node.name]))) {
+      grid = rangeValues(node, ctx)
+    } else if ((node.k === 'binary' || node.k === 'unary') && hasArray(node, ctx)) {
+      grid = gridOf(node, ctx)
+    }
+    if (!grid || (grid.length === 1 && (grid[0]?.length ?? 0) <= 1)) return null
+    const width = grid.reduce((m, row) => Math.max(m, row.length), 0)
+    return grid.map((row) => Array.from({ length: width }, (_, i) => row[i] ?? ''))
+  } catch (e) {
+    if (e instanceof FormulaError) return null
     throw e
   }
 }
