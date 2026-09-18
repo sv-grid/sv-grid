@@ -105,9 +105,10 @@ export {
   type SparklineGroup, type SheetSparklineType,
 } from './sparklines'
 export {
-  pivotFields, pivotRecords, pivotBlock, pivotLayout, pivotDrill, pivotFromRange, pivotWrittenRect, flattenPivotColumns,
+  pivotFields, pivotFieldValues, pivotRecords, filteredRecords, pivotBlock, pivotLayout, pivotDrill,
+  pivotFromRange, pivotWrittenRect, flattenPivotColumns, ALL_VALUES,
   shiftPivot, shiftPivots, copyPivot, pivotId, SHEET_PIVOT_AGGS,
-  type SheetPivot, type SheetPivotValue, type SheetPivotAgg, type PivotLayout, type PivotDrill,
+  type SheetPivot, type SheetPivotValue, type SheetPivotAgg, type SheetPivotFilter, type PivotLayout, type PivotDrill,
 } from './pivot-range'
 export {
   createDeltaStream, applySheetDelta, partsOfReasons,

@@ -69,6 +69,9 @@ Shipped on the plan's branch, one commit per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- A PivotTable report filter: the Filters area written above the block,
+  applied before anything is grouped, picked in the dialog or typed into
+  the cell, which refreshes the pivot on the spot.
 - A trendline and a secondary axis in the Chart dialog, over the grid
   chart's own overlay and right axis, with the trendline in the .xlsx.
 - PivotTable Show Details: `pivotLayout` giving every line and column of a

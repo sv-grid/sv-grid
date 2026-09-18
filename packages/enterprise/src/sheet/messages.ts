@@ -689,6 +689,8 @@ export const defaultDialogMessages = {
   'pivot.place.rows': 'Rows',
   'pivot.place.cols': 'Columns',
   'pivot.place.values': 'Values',
+  'pivot.place.filters': 'Filter',
+  'pivot.filterValue': 'Value for {field}',
   'pivot.agg.sum': 'Sum',
   'pivot.agg.avg': 'Average',
   'pivot.agg.count': 'Count',

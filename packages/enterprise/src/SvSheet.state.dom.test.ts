@@ -911,3 +911,56 @@ describe('SvSheet PivotTable Show Details', () => {
     expect(doc.get('Details').freeze).toEqual({ rows: 1, cols: 0 })
   })
 })
+
+describe('SvSheet PivotTable report filter', () => {
+  it('narrows the pivot to the value typed in the filter cell', async () => {
+    const doc = createSheetDocument({
+      sheets: [{ name: 'Sales', cells: [
+        ['Region', 'Quarter', 'Amount'],
+        ['North', 'Q1', '100'],
+        ['North', 'Q2', '150'],
+        ['South', 'Q1', '80'],
+        ['South', 'Q2', '120'],
+      ] }],
+    })
+    doc.get('Sales').pivots = [{
+      id: 'p1',
+      source: [0, 0, 4, 2] as never,
+      target: { row: 7, col: 0 },
+      rows: ['Region'],
+      cols: [],
+      values: [{ field: 'Amount', agg: 'sum' }],
+      filters: [{ field: 'Quarter', value: '' }],
+    }]
+    const { api, sheet } = await mountSheet({ document: doc, rows: 24, columns: 4 })
+    const cmd = api.getCommandContext()
+    const paint = async () => { flushSync(); await tick() }
+    cmd.setActiveCell(7, 0)
+    cmd.setSelection(7, 0)
+    await paint()
+    sheet.act('refresh-pivot')
+    await paint()
+
+    // The filter line is written above the block, with (All) in it.
+    expect(doc.workbook.getRaw('Sales', 7, 0)).toBe('Quarter')
+    expect(doc.workbook.getRaw('Sales', 7, 1)).toBe('(All)')
+    const totalRow = (want: string) => {
+      for (let r = 8; r < 20; r += 1) if (doc.workbook.getRaw('Sales', r, 0).trim() === want) return doc.workbook.getRaw('Sales', r, 1)
+      return 'missing'
+    }
+    expect(totalRow('North')).toBe('250')
+
+    // Typing a quarter into the filter cell narrows every number at once.
+    cmd.setCellValue(7, 1, 'Q1')
+    await paint()
+    await paint()
+    expect(totalRow('North')).toBe('100')
+    expect(totalRow('South')).toBe('80')
+
+    // And clearing it back to (All) widens it again.
+    cmd.setCellValue(7, 1, '(All)')
+    await paint()
+    await paint()
+    expect(totalRow('North')).toBe('250')
+  })
+})
