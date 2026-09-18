@@ -36,6 +36,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { buildCases } from './bench/cases.mjs'
+import { buildSheetCases } from './bench/sheet-cases.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
@@ -80,6 +81,17 @@ const distFiltering = join(ROOT, 'packages', 'grid', 'dist', 'filtering', 'excel
 const filtering = existsSync(distFiltering) ? await import(pathToFileURL(distFiltering).href) : {}
 const api = { ...core, ...format, ...filtering }
 
+// The spreadsheet engine, from the built @svgrid/enterprise. Its own modules
+// rather than the package entry: that entry re-exports Svelte components,
+// which node cannot import. A checkout that has not built enterprise runs the
+// grid cases alone and says so, rather than failing the whole bench.
+const sheetDist = join(ROOT, 'packages', 'enterprise', 'dist', 'sheet')
+const sheetWorkbook = join(sheetDist, 'workbook.js')
+const sheetEngine = join(sheetDist, 'engine.js')
+const sheet = existsSync(sheetWorkbook) && existsSync(sheetEngine)
+  ? { ...(await import(pathToFileURL(sheetWorkbook).href)), ...(await import(pathToFileURL(sheetEngine).href)) }
+  : null
+
 // ---- measurement ----------------------------------------------------------
 
 const median = (xs) => {
@@ -118,7 +130,12 @@ async function heapCase(make) {
 
 // ---- run ------------------------------------------------------------------
 
-const cases = buildCases(api).filter((c) => !ONLY || c.id === ONLY)
+const allCases = [...buildCases(api), ...(sheet ? buildSheetCases(sheet) : [])]
+if (!sheet && !JSON_OUT) {
+  log('  (no built @svgrid/enterprise: the spreadsheet cases are skipped.')
+  log('   Run `pnpm --filter @svgrid/enterprise build:lib` to include them.)')
+}
+const cases = allCases.filter((c) => !ONLY || c.id === ONLY)
 if (ONLY && cases.length === 0) {
   console.error(`bench: no case with id "${ONLY}"`)
   process.exit(1)

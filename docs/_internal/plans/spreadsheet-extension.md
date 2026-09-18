@@ -63,6 +63,18 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Phase F item 1: the spreadsheet bench. `tools/bench/sheet-cases.mjs` fills
+  a sheet with a formula per row at 1k, 10k and 50k, times opening it and
+  one keystroke in it (plain, under a 10k-cell SUM, and at the top of a 10k
+  chain), and counts CELL EVALUATIONS through the engine seam, which is what
+  CI gates. The ceiling is published in `docs/help/benchmarks.md` and in the
+  shell's own page. What the bench found and this fixed: a dependency chain
+  longer than about a thousand rows overflowed the stack on the first
+  keystroke and left `#NUM!` in the cell; the workbook now primes a deep
+  chain from its far end. What it found and did NOT change: an edit costs
+  one evaluation, a 50k-row sheet opens in about half a second and retains
+  about 84 MB, so sparse storage and a worker (item 2) are not called for
+  yet.
 - Phase D, PivotTable: `sheet/pivot-range.ts` (the definition, the records
   read from a range, the block the engine's result becomes, shifting) over
   the existing `pivot.ts`, `pivots` per sheet in the document, Insert >
@@ -330,12 +342,17 @@ own, and a sparkline is an x14 extension).
 
 ### Phase F. Scale and collaboration (L)
 
-1. Measure first: a `tools/bench.mjs` case that fills a sheet with a
+1. ~~Measure first: a `tools/bench.mjs` case that fills a sheet with a
    formula per row at growing sizes and records type-to-paint time. Publish
-   the ceiling in the docs rather than a guess.
+   the ceiling in the docs rather than a guess.~~ Shipped, with the
+   evaluation counters gated in CI and the ceiling in the docs.
 2. If the bench says so: sparse cell storage in `Workbook`, batched
    recalculation, and a worker build of the evaluator behind the `engine`
-   seam from Phase B.
+   seam from Phase B. The bench does not say so yet: one keystroke is one
+   evaluation, 50k formula rows open in about half a second and retain
+   about 84 MB. The one thing it did say, a deep chain overflowing the
+   stack, is fixed. Revisit at 500k rows, or when a sheet arrives that is
+   mostly empty, where dense `string[][]` storage is the waste.
 3. Collaboration: turn `SheetChangeReason` into a delta stream (each
    reason already names its sheet and kind; add the payload), an
    `applyDelta` on the document, and a recipe with a socket server. Presence
