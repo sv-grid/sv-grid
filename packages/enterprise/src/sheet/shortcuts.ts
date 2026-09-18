@@ -148,6 +148,7 @@ export function setFindReplaceHandler(fn: ((cmd: GridCommandContext) => void) | 
  * nothing is behind the action and the key falls through.
  */
 export type RibbonKeyAction =
+  | 'file-open' | 'file-save-xlsx'
   | 'recalculate' | 'toggle-formulas' | 'toggle-filter'
   | 'insert-function' | 'name-manager' | 'insert-table'
   | 'hide-rows' | 'hide-columns' | 'unhide-rows' | 'unhide-columns'
@@ -632,6 +633,10 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: 'F1', mod: true, run: raise('toggle-ribbon'), label: 'Collapse or expand the ribbon' },
   { key: 'F3', mod: true, run: raise('name-manager'), label: 'Name Manager' },
   { key: 't', mod: true, run: raise('insert-table'), label: 'Format as Table' },
+  // The File tab's keys. The browser's own Open and Save are what they
+  // replace, as in Excel; with no shell to answer them they fall through.
+  { key: 'o', mod: true, run: raise('file-open'), label: 'Open' },
+  { key: 's', mod: true, run: raise('file-save-xlsx'), label: 'Save As' },
 
   // Structure. Like the format bindings, these decline when nothing is
   // attached. Excel opens a dialog for an ambiguous selection; deciding what

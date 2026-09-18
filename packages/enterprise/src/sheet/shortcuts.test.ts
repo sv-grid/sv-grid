@@ -82,7 +82,9 @@ describe('handleSheetKey dispatch', () => {
       expect(handleSheetKey(key({ key: 'F3', shiftKey: true }), cmd)).toBe(true)
       expect(handleSheetKey(key({ key: 'F3', ctrlKey: true }), cmd)).toBe(true)
       expect(handleSheetKey(key({ key: 't', ctrlKey: true }), cmd)).toBe(false)
-      expect(seen).toEqual(['recalculate', 'toggle-formulas', 'toggle-filter', 'insert-function', 'name-manager', 'insert-table'])
+      expect(handleSheetKey(key({ key: 'o', ctrlKey: true }), cmd)).toBe(true)
+      expect(handleSheetKey(key({ key: 's', ctrlKey: true }), cmd)).toBe(true)
+      expect(seen).toEqual(['recalculate', 'toggle-formulas', 'toggle-filter', 'insert-function', 'name-manager', 'insert-table', 'file-open', 'file-save-xlsx'])
     } finally {
       setRibbonActionHandler(null)
     }

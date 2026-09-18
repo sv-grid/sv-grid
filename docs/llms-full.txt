@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-17 from 383 pages, 18 comparison pages, plus 73 API reference pages.
+Generated 2026-09-18 from 383 pages, 18 comparison pages, plus 73 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -17653,8 +17653,10 @@ so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
 
 | Key | Action |
 | --- | ------ |
-| Ctrl/Cmd + Page Down / Page Up | Next / previous sheet. |
+| Ctrl/Cmd + Page Down / Page Up | Next / previous sheet, stepping over hidden ones. |
 | Shift + F11 | New sheet. |
+| Ctrl/Cmd + O | Open an .xlsx (the shell's File > Open). |
+| Ctrl/Cmd + S | Save As .xlsx (File > Save As). |
 
 ## What Ctrl+Arrow actually does
 
@@ -17852,8 +17854,34 @@ compileNumberFormat('0.00;[Red](0.00)').format(-5)
 Text in quotes, or after a backslash, is emitted as-is. `@` in the fourth
 section is the text placeholder.
 
-Conditions like `[<100]` are **not** supported; they are dropped rather than
-printed.
+`_x` (leave the width of `x`) and `*x` (fill the cell with `x`) both render
+as one space: text has no cell width to leave or fill. That is enough for
+Excel's accounting patterns to read as `$ 1,234.50` with the symbol on the
+left and the number on the right.
+
+A condition in brackets picks a section by value: the first section whose
+condition the value passes is used, and a section without one is the
+fallback. `[<=9999999]###-####;(###) ###-####` is Excel's phone number.
+
+```ts
+formatWithPattern(50, '[<100]"small";"big"')    // 'small'
+formatWithPattern(5551234567, '[<=9999999]###-####;(###) ###-####')
+// '(555) 123-4567'
+```
+
+### Masks
+
+Literal text between integer placeholders turns the integer side into a
+mask that the digits are laid into from the right. Excel's Special formats
+are all masks:
+
+```ts
+formatWithPattern(123456789, '000-00-0000')   // '123-45-6789'
+formatWithPattern(1234, '00000')              // '01234'
+formatWithPattern(1234, '###-####')           // '-1234'   as Excel gives
+```
+
+`SPECIAL_FORMATS` holds the four: `zip`, `zip4`, `phone` and `ssn`.
 
 ### Dates
 
@@ -17878,7 +17906,19 @@ break real dates.
 ### Presets
 
 `FORMAT_PRESETS` holds what `Ctrl+Shift+1` through `6` apply: `number`, `time`,
-`date`, `currency`, `percent`, `scientific`, plus `general`.
+`date`, `currency`, `percent`, `scientific`, plus `general` and `accounting`,
+which the ribbon's `$` button applies, as Excel's does.
+
+`accountingPattern(symbol, decimals)` spells an accounting pattern for any
+symbol (an empty one is Excel's "None"), and `accountingParts` reads one
+back, which is how Increase Decimal works on an accounting cell:
+
+```ts
+accountingPattern('$', 2)
+// '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'
+formatWithPattern(1234.5, accountingPattern('$', 2))   // ' $ 1,234.50 '
+formatWithPattern(-1234.5, accountingPattern('$', 2))  // ' $ (1,234.50)'
+```
 
 ## The per-cell store
 
@@ -18614,10 +18654,10 @@ empty single-sheet workbook, which is what "open a spreadsheet" means.
 
 | Part | Comes from |
 | --- | --- |
-| Ribbon: Home, Insert, Formulas, Data, Review, View | `SvSheetRibbon` |
+| Ribbon: File, Home, Insert, Formulas, Data, Review, View | `SvSheetRibbon` |
 | Name Box and fx bar, showing the RAW text of the active cell | `SvFormulaBar` |
 | A..Z headers over the built-in 1..N row gutter | `SvGrid` |
-| Sheet tabs: switch, rename, reorder, add | `SvSheetTabs` |
+| Sheet tabs: switch, rename, reorder, add, duplicate, hide and unhide | `SvSheetTabs` |
 | Sum / Average / Count of the selection | the shell |
 | Every Excel shortcut | `enableSheet()` |
 
@@ -18713,8 +18753,12 @@ the wiring BETWEEN the parts, done once:
   marked with a line in the accent, the Select All corner sits top-left,
   and the status bar reads Ready on the left and Average / Count / Sum on
   the right.
-- Sheet tabs delete, insert, rename and move from a right-click menu, as in
-  Excel; nothing on the tab face can remove a sheet.
+- Sheet tabs delete, insert, rename, move, duplicate, hide and unhide from
+  a right-click menu, as in Excel; nothing on the tab face can remove a
+  sheet, and deleting one that holds data asks first. A hidden sheet keeps
+  its cells and every reference to it, Ctrl+PageUp and PageDown step over
+  it, and the flag rides in the document. Duplicate copies the cells and
+  everything the document keeps beside them.
 - Click a column letter to select the column, a row number to select the
   row, the corner to select the sheet; Shift+click extends. Drag the edge of
   a row number to resize the row, as with a column letter.
@@ -18885,7 +18929,7 @@ otherwise the shell's own dialog opens:
 
 The shell answers everything on the ribbon itself: `recalculate`,
 `toggle-formulas` (Excel's `Ctrl+` `` ` ``), `toggle-filter`, `sort-asc` /
-`sort-desc`, and the dialogs listed below. Two buttons have nothing behind
+`sort-desc` / `sort-custom`, and the dialogs listed below. Two buttons have nothing behind
 them in the library, Insert > Table and Insert > Chart, and are left off the
 ribbon unless `extras={['insert-table', 'insert-chart']}` says the
 application answers them.
@@ -18932,6 +18976,39 @@ or `'Price list'!C2` when the name has a space:
 ```
 
 <div data-docs-demo="456-sales-report-workbook" data-height="600"></div>
+
+## Files
+
+The File tab is the part of Excel's a document in a page can do: New,
+Open, Save As and Export CSV. Open takes an .xlsx from disk and replaces
+the document with everything the file holds that the document keeps
+(cells with their formulas, formats, widths and heights, hidden lines and
+sheets, frozen panes, merges, the filter region, validation, conditional
+formatting, protection, comments, names, the active sheet); Save As
+downloads the document as an .xlsx that Excel and Google Sheets open with
+the same parts; Export CSV downloads the active sheet as its cells show;
+New starts over with one empty sheet, asking first when the sheets hold
+anything. `documentToXlsx` and `documentFromXlsx` are the two halves, in
+`@svgrid/enterprise/sheet`, and need the `jszip` peer.
+
+An app that keeps its workbooks somewhere other than the user's disk takes
+the actions over through `onAction` (`file-open`, `file-save-xlsx`,
+`file-new`, `file-export-csv`) and calls the component's own methods:
+`open(file)` replaces the document with an .xlsx Blob, `toXlsx()` returns
+the document as a Blob, `toCsv()` the active sheet as text, and
+`newWorkbook()` empties it.
+
+```svelte
+<SvSheet bind:this={sheet} onAction={(action) => {
+  if (action === 'file-save-xlsx') { sheet.toXlsx().then((blob) => upload(blob)); return true }
+  if (action === 'file-open') { pickFromServer().then((blob) => sheet.open(blob)); return true }
+}} />
+```
+
+Dates are `yyyy-mm-dd` text in the sheet and serial numbers in the file:
+a text date goes out as a serial under a date format, and a serial under a
+date format comes back as text. Tables, charts and images are not carried
+either way.
 
 ## Saving and restoring
 
@@ -19042,6 +19119,11 @@ name, an import replacing a sheet, a solver applying its answer with
 }} />
 ```
 
+`act(action)` runs a ribbon action as if its button had been clicked
+(`sheet.act('sort-asc')`, `sheet.act('circle-invalid')`), for a host with
+chrome of its own; what the ribbon would raise for `onAction` is raised
+here too.
+
 The shell carries Goal Seek, Text to Columns, Remove Duplicates and the
 Name Manager itself. The demos below each replace one with a dialog of
 their own, returning `true` from `onAction`, and show the write paths a
@@ -19096,10 +19178,11 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
-| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
+| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
+| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it) and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
@@ -19226,6 +19309,16 @@ arrow, or Alt+Down, drops the list (arrows and Enter pick, Escape leaves
 the cell alone), and a pick is one undo. A typed entry is matched against
 the list without regard to case.
 
+The dialog's Input Message tab gives a rule a title and a message that
+show in a small box under the cell while it is selected, as Excel's do;
+the rule carries it as `input`. The arrow beside Data Validation has
+Circle Invalid Data, which draws Excel's red oval on every cell under a
+rule whose current contents break it (pasted, filled or written before the
+rule was), and Clear Validation Circles. The circles are worked out again
+on every repaint while they are on, so a corrected cell loses its circle
+at once; switching sheets turns them off. `invalidCells` is the same check
+for a shell of your own. Raised as `circle-invalid` and `clear-circles`.
+
 The rules are per sheet, move with an insert or delete (and drop when
 their cells go), ride in `getState()` as `validation` and report
 `{ kind: 'validation' }` on `onChange`. `ruleAt`, `checkEntry`,
@@ -19301,19 +19394,18 @@ are the parts it leaves out, on purpose, so nothing on the ribbon is a
 button that does nothing.
 
 - **Tabs:** no Page Layout (print setup has nothing behind it in the
-  grid), no track-changes on Review.
+  grid), no track-changes on Review; File has New, Open, Save As and
+  Export CSV, not Print.
 - **Comments** are notes, not threads: one text per cell, no replies, no
   author, no timestamp.
 - **Protection** takes no password and has no "allow users to" list: it
   guards against mistakes, not against the person at the keyboard.
-- **Validation** checks what is typed and pasted-over cells are left as
-  they land; there is no Circle Invalid Data and no Input Message.
+- **Validation** checks what is typed; pasted-over cells are left as they
+  land until Circle Invalid Data is asked for.
 - **Conditional formatting** has Excel's presets and Excel's "with"
   styles, one data bar colour (and no negative axis: a range with
   negatives runs from its minimum), one icon set per flavour and no
   formula rule; the grid's own value-driven rules are a separate feature.
-- **Format Cells** has no Number > Special or Accounting, since nothing in
-  the sheet reads them.
 - **AutoFilter** has no Date Filters, no Filter by Color and no custom
   Top 10; the values list is the whole column, unvirtualised, which is
   what a sheet's region holds.
@@ -20347,8 +20439,20 @@ calling `addSheet`.
 Click to switch, double-click or `F2` to rename, drag to reorder, `+` to add.
 The strip owns no state of its own, so the tabs and the keyboard shortcuts
 cannot disagree about which sheet is active. A duplicate or invalid name is
-reported rather than silently ignored, and the delete button is not rendered
-on the last sheet, because the workbook refuses to remove it.
+reported rather than silently ignored, and Delete is greyed on the last
+sheet, because the workbook refuses to remove it. Deleting a sheet that
+holds anything asks first, as Excel does; an empty one goes at once.
+
+The right-click menu also has Duplicate, Hide and Unhide. The strip keeps
+none of that itself: pass `hidden` (the names not to draw) and answer
+`onHide`, `onUnhide` and `onDuplicate`, which the shell does through its
+document (`sheetHidden` per sheet, `doc.duplicate(name)`), and Duplicate
+is only offered when `onDuplicate` is given. `wb.copySheet(from, to?)`
+copies a sheet's cells into a new sheet right after it, named Excel's
+"Name (2)" unless told otherwise; the copy's formulas read their own sheet.
+Hide is refused on the last sheet showing, and the shortcuts below step
+over hidden sheets when `setWorkbook` is told which they are:
+`setWorkbook(wb, onChange, (name) => doc.get(name).sheetHidden)`.
 
 | Key | Action |
 | --- | ------ |
@@ -41992,7 +42096,7 @@ can see both the trajectory and the (short) list of real gaps.
 | Gap | Status | Effort |
 | --- | ------ | ------ |
 | ~~Built-in tooltip API on `ColumnDef`~~ | **shipped** - `tooltip`; demo `85-tooltips-and-notes` | ✓ |
-| ~~Formula language~~ | **shipped** - a real module in `@svgrid/enterprise/sheet`: parser, evaluator, ~50 functions, cross-sheet and whole-column refs, short-circuiting `IF` / `IFERROR`, a dependency graph for incremental recalc, and `translateFormula` / `fixupReferences`. Absolute refs are now absolute (the demo copies stripped `$`, so anything filled or copied was quietly wrong) | ✓ |
+| ~~Formula language~~ | **shipped** - a real module in `@svgrid/enterprise/sheet`: parser, evaluator, the common functions plus financial, math, statistics, text and date packs (the [formulas page](./spreadsheet-formulas.md) lists them), cross-sheet and whole-column refs, short-circuiting `IF` / `IFERROR`, a dependency graph for incremental recalc, and `translateFormula` / `fixupReferences`. Absolute refs are now absolute (the demo copies stripped `$`, so anything filled or copied was quietly wrong) | ✓ |
 | ~~Formula editor (bar, autocomplete, Name Box)~~ | **shipped** - `<SvFormulaBar>` shows the raw text behind the active cell, autocompletes function names closest-match-first with signature hints, and its Name Box jumps to an address or a defined name; `createNames` defines them. Demo `453` | ✓ |
 | ~~Per-cell number formats and styles~~ | **shipped** - an Excel format-string compiler (`compileNumberFormat`) plus a store keyed on row id so formatting survives a sort, wired to Ctrl+1, Ctrl+Shift+1..6 and Ctrl+B/I/U. Demo `453` | ✓ |
 | ~~AutoSum~~ | **shipped** - Alt+= over the run Excel would guess | ✓ |
@@ -42003,6 +42107,7 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Paste Special~~ | **shipped** - values / formulas / formats / transpose / add-subtract-multiply-divide / skip-blanks, plus a `text/html` clipboard flavour so formats and formulas survive a round trip through Excel. `Ctrl+Shift+V` | ✓ |
 | ~~Find and Replace~~ | **shipped** - match case, whole cell, look in values or formulas, scope to the selection, Replace All as one undo. `Ctrl+H` | ✓ |
 | ~~Text to Columns, Remove Duplicates~~ | **shipped** - `textToColumns` / `splitText` / `guessDelimiter` split a column, quoted fields and doubled quotes included; `findDuplicates` / `removeDuplicates` report before they remove, and match case-insensitively as Excel does | done |
+| ~~Open and save xlsx~~ | **shipped** - the shell's File tab opens an .xlsx into the document and saves the document as one, formulas, formats, sizes, hidden lines and sheets, panes, merges, validation, conditional formatting, protection, comments and names included; `documentToXlsx` / `documentFromXlsx` in `@svgrid/enterprise/sheet` | done |
 | ~~Multi-sheet workbook~~ | **shipped** - `createWorkbook` holds named sheets that read each other, with the dependency graph and structural edits spanning them; `<SvSheetTabs>` plus Ctrl+PageUp/PageDown and Shift+F11 | done |
 | ~~Goal Seek~~ | **shipped** - `goalSeekCell` solves for the input that makes a formula hit a target, secant with a bisection fallback, restoring the input cell so a dialog can ask before applying | done |
 | ~~Tables with structured references~~ | **shipped** - `Orders[Amount]`, `[@Amount]`, `[#Headers]` / `[#Totals]` / `[#All]`, column spans and auto-expansion. Resolved at evaluation, so a total keeps covering rows added after it was typed | done |
@@ -53506,17 +53611,34 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 
 | Group | Functions |
 | ----- | --------- |
-| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` |
-| Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `RANK` |
-| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` |
+| Financial | `PMT` `IPMT` `PPMT` `PV` `FV` `NPER` `RATE` `NPV` `IRR` `SLN` |
+| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` |
+| Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
+| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
-| Information | `ISNUMBER` `ISTEXT` `ISLOGICAL` `ISBLANK` |
-| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `TRIM` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `FIND` `SEARCH` `TEXT` |
-| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `DAYS` `DATEDIF` |
-| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` |
+| Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` |
+| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
+| Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` |
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
+`ISERROR`, `ISERR` and `ISNA` see the error the same way, so
+`=IF(ISERROR(A1/B1), "n/a", A1/B1)` works.
+
+An argument left out between commas reads as a blank, so `=PMT(A1, A2, A3, , 1)`
+takes the default future value the way it does in Excel; a trailing comma
+is the same.
+
+The financial functions keep Excel's sign convention: money paid out is
+negative, money received positive. `=PMT(5%/12, 360, 200000)` is a
+negative payment on a positive loan, and `=FV(6%/12, 120, -100)` a
+positive balance from negative deposits. `RATE` and `IRR` are solved
+numerically and return `#NUM!` when no rate fits.
+
+Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
+`DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
+`TIMEVALUE` give a fraction of a day that the `h:mm` formats show.
 
 `%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is
@@ -81115,10 +81237,6 @@ What you give up:
 
 Migration guide: moving from AG Grid (community + enterprise) to SvGrid: https://svgrid.com/docs/help/migrating-from-ag-grid/
 
-## Live example
-
-AG Grid ↔ sv-grid side-by-side: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/139-migration-from-ag-grid/
-
 ## The bottom line
 
 AG Grid is the safer pick for a multi-framework organisation, or when you need its deepest Enterprise modules, AG Charts or the viewport row model. For a Svelte-first team, SvGrid covers the Enterprise surface most teams actually buy AG Grid for, in the MIT core: master/detail, tree data, range selection, grouping, flat server-side infinite scroll and integrated charts, with pivot tables, the server-side row model and Excel, PDF and print output in the @svgrid/enterprise pack. The bundle and benchmark numbers on this page are measured on the dates shown, so read them rather than either vendor's adjectives.
@@ -81276,10 +81394,6 @@ What you give up:
 
 Migration guide: moving from DevExtreme DataGrid (DevExpress) to SvGrid: https://svgrid.com/docs/help/migrating-from-devextreme/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 DevExtreme is a deep, commercial multi-framework grid with built-ins like state storing and broad export. SvGrid trades that breadth for a Svelte-native grid with an MIT core and a far lower-cost paid tier.
@@ -81417,10 +81531,6 @@ What you give up:
 - The React ecosystem around it, including Glide Data Editor.
 
 Migration guide: moving from Glide Data Grid to SvGrid: https://svgrid.com/docs/help/migrating-from-glide/
-
-## Live example
-
-Headless virtualization: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/187-headless-virtual/
 
 ## The bottom line
 
@@ -81561,10 +81671,6 @@ What you give up:
 - Wrappers for React, Angular and Vue.
 
 Migration guide: moving from Grid.js to SvGrid: https://svgrid.com/docs/help/migrating-from-gridjs/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -81728,10 +81834,6 @@ What you give up:
 
 Migration guide: moving from Handsontable to SvGrid: https://svgrid.com/docs/help/migrating-from-handsontable/
 
-## Live example
-
-Blank sheet - just type: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/207-blank-sheet/
-
 ## The bottom line
 
 When you need HyperFormula's full function library as a supported feature, or the deepest spreadsheet editing edge cases, Handsontable is hard to beat and its licence is the price of that. If you want a spreadsheet-like grid in Svelte under MIT, SvGrid covers the surface most teams use, with ranges, a fill handle, clipboard, freeze panes, merged cells and formulas, and lets you add HyperFormula when the built-in functions run out.
@@ -81887,10 +81989,6 @@ What you give up:
 
 Migration guide: moving from jqxGrid (jQWidgets) to SvGrid: https://svgrid.com/docs/help/migrating-from-jqxgrid/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 jqxGrid and SvGrid come from the same team. If your stack is jQuery, Angular, React, or Vue, jqxGrid is the proven choice with a decade-plus track record. If you are building on Svelte 5, SvGrid is the native option in the family, with an MIT core and the same engineering behind it.
@@ -82027,10 +82125,6 @@ What you give up:
 - Telerik support tiers with response-time commitments priced into the licence.
 
 Migration guide: moving from Kendo UI Grid (Telerik) to SvGrid: https://svgrid.com/docs/help/migrating-from-kendo-grid/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -82189,10 +82283,6 @@ What you give up:
 
 Migration guide: moving from MUI X DataGrid to SvGrid: https://svgrid.com/docs/help/migrating-from-mui-x/
 
-## Live example
-
-Tree + master/detail: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/08-tree-and-master-detail/
-
 ## The bottom line
 
 If your app already lives in Material UI and React, MUI X is the path of least resistance, and its Premium tier now includes a hosted AI assistant. On Svelte 5, SvGrid is the better fit: it puts pinning, master/detail, tree data, grouping and cell selection in the MIT core that MUI X reserves for Pro and Premium, keeps Material UI and Emotion out of the bundle, and runs its AI helpers against a model you choose.
@@ -82347,10 +82437,6 @@ What you give up:
 
 Migration guide: moving from PrimeVue / PrimeNG / PrimeReact DataTable to SvGrid: https://svgrid.com/docs/help/migrating-from-primevue-datatable/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 Inside the Prime ecosystem for Vue, Angular or React, the Prime DataTable is the obvious choice, with the PrimeUI licence terms now part of the decision. For Svelte 5, SvGrid is the native fit, with an MIT core, a headless engine and no Prime-theme dependency.
@@ -82496,10 +82582,6 @@ What you give up:
 
 Migration guide: moving from React Data Grid (adazzle) to SvGrid: https://svgrid.com/docs/help/migrating-from-react-data-grid/
 
-## Live example
-
-Excel-style fill handle: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/95-fill-handle/
-
 ## The bottom line
 
 react-data-grid is a strong, focused choice in React. On Svelte 5, SvGrid is the equivalent - similar editing and virtualization - plus a built-in filter menu, grouping, and a headless core, with no React dependency.
@@ -82638,10 +82720,6 @@ What you give up:
 - A perpetual licence model and the wider Smart UI suite.
 
 Migration guide: moving from Smart.Grid (Smart Web Components) to SvGrid: https://svgrid.com/docs/help/migrating-from-smart-grid/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -82826,10 +82904,6 @@ What you give up:
 
 Migration guide: moving from SVAR Svelte DataGrid to SvGrid: https://svgrid.com/docs/help/migrating-from-svar-svelte-datagrid/
 
-## Live example
-
-Grouping + aggregation: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/07-grouping-aggregation/
-
 ## The bottom line
 
 Both grids are Svelte-5-native and MIT, so this is not a licensing call. On capability SvGrid is the more complete grid: grouping, master/detail, range editing with a fill handle, charts, a server-side row model, a headless core, AI helpers and an MCP server. SVAR is the smaller, fully free, multi-framework option from the Webix team, and it prints for free where SvGrid charges for print and Excel and PDF export. Choose SvGrid when you need the deeper feature set or support; choose SVAR when a compact free grid covers your needs or you also ship React and Vue.
@@ -82999,10 +83073,6 @@ What you give up:
 
 Migration guide: moving from svelte-headless-table to SvGrid: https://svgrid.com/docs/help/migrating-from-svelte-headless-table/
 
-## Live example
-
-Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
-
 ## The bottom line
 
 For a Svelte 4 codebase that is not moving, svelte-headless-table still works. For a Svelte 5 codebase, the original package is not an option and its author says so; the choice is between the @humanspeak fork, which keeps the plugin API, and SvGrid, which keeps the headless approach and adds virtualization, filters, editing, selection and a rendered grid in the same MIT package.
@@ -83144,10 +83214,6 @@ What you give up:
 
 Migration guide: moving from Flowbite / Skeleton / shadcn-svelte tables to SvGrid: https://svgrid.com/docs/help/migrating-from-ui-kit-tables/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 A styled table from Flowbite, Skeleton, or shadcn-svelte is perfect until the behaviour becomes the work. Once you are hand-writing sort, filter, or virtualization, SvGrid replaces that code and still themes to match your design system.
@@ -83284,10 +83350,6 @@ What you give up:
 - Vendor support and the conditional free Community License for small companies.
 
 Migration guide: moving from Syncfusion Grid to SvGrid: https://svgrid.com/docs/help/migrating-from-syncfusion/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -83428,10 +83490,6 @@ What you give up:
 - Built-in download to CSV, XLSX and PDF without a paid pack; SvGrid has CSV free and Excel and PDF in @svgrid/enterprise.
 
 Migration guide: moving from Tabulator to SvGrid: https://svgrid.com/docs/help/migrating-from-tabulator/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -83605,10 +83663,6 @@ What you give up:
 
 Migration guide: moving from TanStack Table (Svelte) to SvGrid: https://svgrid.com/docs/help/migrating-from-tanstack-table/
 
-## Live example
-
-Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
-
 ## The bottom line
 
 If you build across React, Vue and Svelte and want one headless API, TanStack Table is the safer bet. If you are committed to Svelte 5 and want virtualization, Excel-style filters, editing and selection out of the box, SvGrid gets you there with far less code, and you keep a headless core when you need it.
@@ -83761,10 +83815,6 @@ What you give up:
 
 Migration guide: moving from @vincjo/datatables to SvGrid: https://svgrid.com/docs/help/migrating-from-vincjo-datatables/
 
-## Live example
-
-Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
-
 ## The bottom line
 
 For a small sort/filter/paginate list you keep full control over, @vincjo/datatables is delightfully light. The moment you need virtualization, Excel-style filters, editing, or grouping, SvGrid is the grid that already has them.
@@ -83811,7 +83861,7 @@ Every claim on this page was last checked on 12 Sep 2026. Versions, licences and
 
 # `@svgrid/enterprise` · `export.ts`
 
-Auto-generated. Source: `packages\enterprise\src\export.ts`.
+Auto-generated. Source: `packages/enterprise/src/export.ts`.
 
 ### `type ExportFormat`
 
@@ -84298,7 +84348,7 @@ export type ClipboardExportOptions<TData> = {
 
 # `@svgrid/enterprise` · `import.ts`
 
-Auto-generated. Source: `packages\enterprise\src\import.ts`.
+Auto-generated. Source: `packages/enterprise/src/import.ts`.
 
 ### `type ImportFormat`
 
@@ -84600,7 +84650,7 @@ export function inferImportColumnTypes(
 
 # `@svgrid/enterprise` · `install.ts`
 
-Auto-generated. Source: `packages\enterprise\src\install.ts`.
+Auto-generated. Source: `packages/enterprise/src/install.ts`.
 
 ### `type EnterpriseAIApi`
 
@@ -84757,7 +84807,7 @@ export function installEnterprise<
 
 # `@svgrid/enterprise` · `pivot-chart.ts`
 
-Auto-generated. Source: `packages\enterprise\src\pivot-chart.ts`.
+Auto-generated. Source: `packages/enterprise/src/pivot-chart.ts`.
 
 ### `type PivotChartOptions`
 
@@ -84813,7 +84863,7 @@ export function pivotToChartSpec<TFeatures extends TableFeatures>(
 
 # `@svgrid/enterprise` · `pivot.ts`
 
-Auto-generated. Source: `packages\enterprise\src\pivot.ts`.
+Auto-generated. Source: `packages/enterprise/src/pivot.ts`.
 
 ### `type PivotAggregatorId`
 
@@ -85074,7 +85124,7 @@ export function filterCollapsedPivotRows(
 
 # `@svgrid/enterprise` · `server/server-pivot.ts`
 
-Auto-generated. Source: `packages\enterprise\src\server\server-pivot.ts`.
+Auto-generated. Source: `packages/enterprise/src/server/server-pivot.ts`.
 
 ### `type PivotResultColumnOptions`
 
@@ -85160,7 +85210,7 @@ export function buildPivotResultColumns(
 
 # `@svgrid/enterprise` · `server/server-row-model.ts`
 
-Auto-generated. Source: `packages\enterprise\src\server\server-row-model.ts`.
+Auto-generated. Source: `packages/enterprise/src/server/server-row-model.ts`.
 
 ### `type ServerLevelParams`
 
@@ -86549,8 +86599,28 @@ export function createServerRowModel<TData>(
         // The grid re-derives the header checkbox and the row ticks from a
         // row-model notification, so a selection change is one.
         onChange: scheduleEmit,
+        leafCount: groupLeafCount,
       })
     : null
+
+  /**
+   * Leaves under a loaded group row, from its `count` aggregate (the same
+   * one `leafTotal` reads on the grand total); null without one, or when
+   * the group row is not loaded.
+   */
+  function groupLeafCount(route: ReadonlyArray<string>): number | null {
+    const counter = aggregations.find((a) => a.fn === 'count')
+    if (!counter || route.length === 0) return null
+    const parent = stores.get(routeKey(route.slice(0, -1)))
+    if (!parent) return null
+    const key = route[route.length - 1]
+    const index = parent.cache.findIndex((c) => c.kind === 'group' && c.key === key)
+    if (index < 0) return null
+    const child = parent.cache.getRow(index) as Child<TData>
+    if (child.kind !== 'group') return null
+    const n = Number(child.aggregates[counter.col])
+    return Number.isFinite(n) ? n : null
+  }
 
   /** Where a grid row lives in selection terms: its parent route and its own id. */
   function locateForSelection(
@@ -86907,7 +86977,8 @@ export function serverRowModelNav<TData>(ctl: ServerRowModel<TData>) {
 
 ### `function serverGroupText`
 
-The group column's text for one grid row: a group's key, `Total` for a
+The group column's text for one grid row: a group's key (or its
+`leafField` under `treeData`, where a node's key is its id), `Total` for a
 footer, `Grand total` for the grand total, the `leafField` value of a leaf,
 and nothing for the rows that carry no data (placeholders, skeletons, the
 "load more" row). `SvGroupCell` draws the expander, the count and the
@@ -86925,8 +86996,11 @@ export function serverGroupText<TData>(
   const meta = row.__group
   if (!meta) return ''
   switch (meta.kind) {
-    case 'group':
-      return meta.key
+    case 'group': {
+      if (meta.field !== '' || !leafField) return meta.key
+      const v = (row as Record<string, unknown>)[leafField]
+      return v == null ? meta.key : String(v)
+    }
     case 'footer':
       return 'Total'
     case 'grandTotal':
@@ -86946,7 +87020,7 @@ export function serverGroupText<TData>(
 
 # `@svgrid/enterprise` · `server/server-selection.ts`
 
-Auto-generated. Source: `packages\enterprise\src\server\server-selection.ts`.
+Auto-generated. Source: `packages/enterprise/src/server/server-selection.ts`.
 
 ### `type ServerSelectionGroupMode`
 
@@ -87002,6 +87076,14 @@ export type ServerSelectionModelOptions = {
   groupSelects?: ServerSelectionGroupMode
   /** Called after any change. The row model re-renders from here. */
   onChange?: () => void
+  /**
+   * How many leaves sit under a group, by its route, or `null` when that is
+   * not known. `selectedCount` needs it once a rule flips a whole group
+   * (a plan ticked under an unticked root): without it the count of such a
+   * rule is unknown. The row model answers from the group row's `count`
+   * aggregate.
+   */
+  leafCount?: (route: ReadonlyArray<string>) => number | null
 }
 ```
 
@@ -87118,16 +87200,38 @@ export function createServerSelectionModel(
    * group whose own state matches its parent is a pass-through; only what
    * sits beneath it counts.
    */
-  function countExceptions(node: Node): number | null {
+  /**
+   * Leaves selected under `node`, whose own subtree holds `size` leaves
+   * (`null` when unknown). A selected node is its size minus the exceptions
+   * among its toggled children; an unselected one is the sum of what its
+   * toggled children select. A flipped group needs its size, which comes
+   * from `leafCount`; without it the answer is unknown.
+   */
+  function selectedUnder(node: Node, route: ReadonlyArray<string>, size: number | null): number | null {
+    if (node.selectAllChildren) {
+      if (size == null) return null
+      let minus = 0
+      for (const [key, child] of node.toggled) {
+        if (child.group) {
+          const childRoute = [...route, key]
+          const childSize = options.leafCount?.(childRoute) ?? null
+          const selected = selectedUnder(child, childRoute, childSize)
+          if (childSize == null || selected == null) return null
+          minus += childSize - selected
+        } else if (!child.selectAllChildren) {
+          minus += 1
+        }
+      }
+      return Math.max(0, size - minus)
+    }
     let n = 0
-    for (const child of node.toggled.values()) {
-      const flipped = child.selectAllChildren !== node.selectAllChildren
+    for (const [key, child] of node.toggled) {
       if (child.group) {
-        if (flipped) return null
-        const below = countExceptions(child)
-        if (below == null) return null
-        n += below
-      } else if (flipped) {
+        const childRoute = [...route, key]
+        const selected = selectedUnder(child, childRoute, options.leafCount?.(childRoute) ?? null)
+        if (selected == null) return null
+        n += selected
+      } else if (child.selectAllChildren) {
         n += 1
       }
     }
@@ -87189,10 +87293,7 @@ export function createServerSelectionModel(
         if (!selectAll) return toggled.size
         return rowCount == null ? null : Math.max(0, rowCount - toggled.size)
       }
-      const exceptions = countExceptions(root)
-      if (exceptions == null) return null
-      if (!root.selectAllChildren) return exceptions
-      return rowCount == null ? null : Math.max(0, rowCount - exceptions)
+      return selectedUnder(root, [], rowCount)
     },
 
     isSelectAllWithoutExceptions() {
@@ -87223,7 +87324,7 @@ export function createServerSelectionModel(
 
 # `@svgrid/enterprise` · `server/svgrid-adapter.ts`
 
-Auto-generated. Source: `packages\enterprise\src\server\svgrid-adapter.ts`.
+Auto-generated. Source: `packages/enterprise/src/server/svgrid-adapter.ts`.
 
 ### `type CallbackServerRequest`
 
@@ -87460,7 +87561,7 @@ export function toCallbackDatasource<TData>(source: ServerDataSource<TData>): Ca
 
 # `@svgrid/grid` · `advanced-filter.svelte.ts`
 
-Auto-generated. Source: `packages\grid\src\advanced-filter.svelte.ts`.
+Auto-generated. Source: `packages/grid/src/advanced-filter.svelte.ts`.
 
 ### `type AdvancedFilterCompileContext`
 
@@ -87543,7 +87644,7 @@ export function hasAdvancedFilterEngine(): boolean {
 
 # `@svgrid/grid` · `ai.ts`
 
-Auto-generated. Source: `packages\grid\src\ai.ts`.
+Auto-generated. Source: `packages/grid/src/ai.ts`.
 
 ### `type AIProvider`
 
@@ -88070,7 +88171,7 @@ export const mockAIProvider: AIProvider = async (req) => {
 
 # `@svgrid/grid` · `builtin-editors.ts`
 
-Auto-generated. Source: `packages\grid\src\builtin-editors.ts`.
+Auto-generated. Source: `packages/grid/src/builtin-editors.ts`.
 
 ### `function registerBuiltinEditors`
 
@@ -88122,7 +88223,7 @@ export function registerBuiltinEditors(): string[] {
 
 # `@svgrid/grid` · `cell-formatting.ts`
 
-Auto-generated. Source: `packages\grid\src\cell-formatting.ts`.
+Auto-generated. Source: `packages/grid/src/cell-formatting.ts`.
 
 ### `function resolveDatePattern`
 
@@ -88302,7 +88403,7 @@ export function formatNumericWithConfig(value: unknown, config: NumericFormatInp
 
 # `@svgrid/grid` · `chart-axes.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-axes.ts`.
+Auto-generated. Source: `packages/grid/src/chart-axes.ts`.
 
 ### `function chartScales`
 
@@ -88417,7 +88518,7 @@ export function chartScales(geo: ChartGeometry): ChartScales | null {
 
 # `@svgrid/grid` · `chart-cartesian.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-cartesian.ts`.
+Auto-generated. Source: `packages/grid/src/chart-cartesian.ts`.
 
 ### `function buildLinePath`
 
@@ -88652,7 +88753,7 @@ export function layoutDataLabels(
 
 # `@svgrid/grid` · `chart-decimate.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-decimate.ts`.
+Auto-generated. Source: `packages/grid/src/chart-decimate.ts`.
 
 ### `const PER_CATEGORY_SERIES_KEYS`
 
@@ -88843,7 +88944,7 @@ export function decimateSpec(spec: ChartSpec, plotW: number, cfg: ChartDecimateC
 
 # `@svgrid/grid` · `chart-export-pdf.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-export-pdf.ts`.
+Auto-generated. Source: `packages/grid/src/chart-export-pdf.ts`.
 
 ### `type ChartPdfOptions`
 
@@ -88980,7 +89081,7 @@ export function printChart(source: SVGSVGElement | HTMLElement, options: ChartEx
 
 # `@svgrid/grid` · `chart-export.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-export.ts`.
+Auto-generated. Source: `packages/grid/src/chart-export.ts`.
 
 ### `type ChartExportOptions`
 
@@ -89247,7 +89348,7 @@ export function downloadChartCsv(spec: ChartSpec, filename = 'chart.csv'): boole
 
 # `@svgrid/grid` · `chart-financial.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-financial.ts`.
+Auto-generated. Source: `packages/grid/src/chart-financial.ts`.
 
 ### `function heikinAshi`
 
@@ -89482,7 +89583,7 @@ export function rowsToOhlcSpec<T extends Record<string, unknown>>(
 
 # `@svgrid/grid` · `chart-format.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-format.ts`.
+Auto-generated. Source: `packages/grid/src/chart-format.ts`.
 
 ### `function formatChartValue`
 
@@ -89535,7 +89636,7 @@ export function formatChartValue(
 
 # `@svgrid/grid` · `chart-hierarchy.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-hierarchy.ts`.
+Auto-generated. Source: `packages/grid/src/chart-hierarchy.ts`.
 
 ### `function drillTree`
 
@@ -89578,7 +89679,7 @@ export function pathTo(tree: TreeNode, name: string): string[] | null {
 
 # `@svgrid/grid` · `chart-indicators.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-indicators.ts`.
+Auto-generated. Source: `packages/grid/src/chart-indicators.ts`.
 
 ### `type ChartIndicatorSpec`
 
@@ -89970,7 +90071,7 @@ export function indicatorPane(spec: ChartSpec, ind: ChartIndicatorSpec): ChartSp
 
 # `@svgrid/grid` · `chart-messages.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-messages.ts`.
+Auto-generated. Source: `packages/grid/src/chart-messages.ts`.
 
 ### `type ChartMessages`
 
@@ -90163,7 +90264,7 @@ export function chartMessage(template: string, vars: Record<string, string | num
 
 # `@svgrid/grid` · `chart-motion.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-motion.ts`.
+Auto-generated. Source: `packages/grid/src/chart-motion.ts`.
 
 ### `function interpolateGeometry`
 
@@ -90194,7 +90295,7 @@ export function interpolateGeometry(from: ChartGeometry, to: ChartGeometry, t: n
 
 # `@svgrid/grid` · `chart-panel-messages.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-panel-messages.ts`.
+Auto-generated. Source: `packages/grid/src/chart-panel-messages.ts`.
 
 ### `type GridChartPanelMessages`
 
@@ -90749,7 +90850,7 @@ export function chartPanelMessage(template: string, values: Record<string, strin
 
 # `@svgrid/grid` · `chart-pivot.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-pivot.ts`.
+Auto-generated. Source: `packages/grid/src/chart-pivot.ts`.
 
 ### `type PivotResultLike`
 
@@ -90960,7 +91061,7 @@ export function pivotResultToChartSpec(result: PivotResultLike, opts: PivotResul
 
 # `@svgrid/grid` · `chart-polar.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-polar.ts`.
+Auto-generated. Source: `packages/grid/src/chart-polar.ts`.
 
 ### `function arcPath`
 
@@ -90995,7 +91096,7 @@ export function arcPath(cx: number, cy: number, r0: number, r1: number, a0: numb
 
 # `@svgrid/grid` · `chart-samples.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-samples.ts`.
+Auto-generated. Source: `packages/grid/src/chart-samples.ts`.
 
 ### `const CHART_TYPE_LABELS`
 
@@ -91090,7 +91191,7 @@ export function sampleChartThumb(type: ChartType, palette?: string[], width = 15
 
 # `@svgrid/grid` · `chart-scale.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-scale.ts`.
+Auto-generated. Source: `packages/grid/src/chart-scale.ts`.
 
 ### `const DEFAULT_PALETTE`
 
@@ -91303,7 +91404,7 @@ export function ordinalDateTicks(times: number[], target = 6): number[] {
 
 # `@svgrid/grid` · `chart-stats.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-stats.ts`.
+Auto-generated. Source: `packages/grid/src/chart-stats.ts`.
 
 ### `function boxStats`
 
@@ -91741,7 +91842,7 @@ export function binValues(
 
 # `@svgrid/grid` · `chart-stream.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-stream.ts`.
+Auto-generated. Source: `packages/grid/src/chart-stream.ts`.
 
 ### `type ChartPoint`
 
@@ -91846,7 +91947,7 @@ export function appendPoints(spec: ChartSpec, points: ChartPoint | ReadonlyArray
 
 # `@svgrid/grid` · `chart-summary.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-summary.ts`.
+Auto-generated. Source: `packages/grid/src/chart-summary.ts`.
 
 ### `type ChartSummaryOptions`
 
@@ -91978,7 +92079,7 @@ export function chartSummary(spec: ChartSpec, opts: ChartSummaryOptions = {}): s
 
 # `@svgrid/grid` · `chart-sync.svelte.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-sync.svelte.ts`.
+Auto-generated. Source: `packages/grid/src/chart-sync.svelte.ts`.
 
 ### `type ChartSyncState`
 
@@ -92032,7 +92133,7 @@ export function publishSyncZoom(name: string, window: ChartZoomWindow | null, co
 
 # `@svgrid/grid` · `chart-table.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-table.ts`.
+Auto-generated. Source: `packages/grid/src/chart-table.ts`.
 
 ### `type ChartTableColumn`
 
@@ -92200,7 +92301,7 @@ export function chartSpecToTable(spec: ChartSpec): ChartTable {
 
 # `@svgrid/grid` · `chart-trend.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-trend.ts`.
+Auto-generated. Source: `packages/grid/src/chart-trend.ts`.
 
 ### `function linearTrend`
 
@@ -92252,7 +92353,7 @@ export function pearson(xs: ReadonlyArray<number>, ys: ReadonlyArray<number>): n
 
 # `@svgrid/grid` · `chart-types.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-types.ts`.
+Auto-generated. Source: `packages/grid/src/chart-types.ts`.
 
 ### `type ChartType`
 
@@ -93808,7 +93909,7 @@ export type ChartPointRef = { category: string; series: string; index?: number }
 
 # `@svgrid/grid` · `chart-validate.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-validate.ts`.
+Auto-generated. Source: `packages/grid/src/chart-validate.ts`.
 
 ### `type ChartDiagnostic`
 
@@ -94051,7 +94152,7 @@ export function validateChartSpec(spec: unknown): ChartDiagnostic[] {
 
 # `@svgrid/grid` · `chart-zoom.ts`
 
-Auto-generated. Source: `packages\grid\src\chart-zoom.ts`.
+Auto-generated. Source: `packages/grid/src/chart-zoom.ts`.
 
 ### `function wheelWindow`
 
@@ -94182,7 +94283,7 @@ export function nearestIndexByTime(categories: ReadonlyArray<string>, t: number)
 
 # `@svgrid/grid` · `chart.ts`
 
-Auto-generated. Source: `packages\grid\src\chart.ts`.
+Auto-generated. Source: `packages/grid/src/chart.ts`.
 
 ### `function chartStyleVars`
 
@@ -95248,7 +95349,7 @@ export function rowsToGaugeSpec<T extends Record<string, unknown>>(
 
 # `@svgrid/grid` · `core.ts`
 
-Auto-generated. Source: `packages\grid\src\core.ts`.
+Auto-generated. Source: `packages/grid/src/core.ts`.
 
 ### `type RowData`
 
@@ -97182,7 +97283,7 @@ export function isFunction(value: unknown): value is (...args: Array<any>) => an
 
 # `@svgrid/grid` · `createTree.svelte.ts`
 
-Auto-generated. Source: `packages\grid\src\createTree.svelte.ts`.
+Auto-generated. Source: `packages/grid/src/createTree.svelte.ts`.
 
 ### `type TreeNode`
 
@@ -97559,7 +97660,7 @@ export type Tree = ReturnType<typeof createTree>
 
 # `@svgrid/grid` · `datetime/date-core.ts`
 
-Auto-generated. Source: `packages\grid\src\datetime\date-core.ts`.
+Auto-generated. Source: `packages/grid/src/datetime/date-core.ts`.
 
 ### `type DateLike`
 
@@ -97858,7 +97959,7 @@ export function snapMinute(minute: number, interval: number): number {
 
 # `@svgrid/grid` · `datetime/date-format.ts`
 
-Auto-generated. Source: `packages\grid\src\datetime\date-format.ts`.
+Auto-generated. Source: `packages/grid/src/datetime/date-format.ts`.
 
 ### `function tokenizeMask`
 
@@ -98073,7 +98174,7 @@ export function parseDate(
 
 # `@svgrid/grid` · `datetime/date-restrict.ts`
 
-Auto-generated. Source: `packages\grid\src\datetime\date-restrict.ts`.
+Auto-generated. Source: `packages/grid/src/datetime/date-restrict.ts`.
 
 ### `type RestrictOptions`
 
@@ -98147,7 +98248,7 @@ export function isImportant(
 
 # `@svgrid/grid` · `dock-manager-model.ts`
 
-Auto-generated. Source: `packages\grid\src\dock-manager-model.ts`.
+Auto-generated. Source: `packages/grid/src/dock-manager-model.ts`.
 
 ### `type DockSide`
 
@@ -98760,7 +98861,7 @@ export function dedupeManagerNodeIds(state: DockManagerState): DockManagerState 
 
 # `@svgrid/grid` · `dock-model.ts`
 
-Auto-generated. Source: `packages\grid\src\dock-model.ts`.
+Auto-generated. Source: `packages/grid/src/dock-model.ts`.
 
 ### `type DockPane`
 
@@ -99205,7 +99306,7 @@ export function dockGroup(
 
 # `@svgrid/grid` · `duration.ts`
 
-Auto-generated. Source: `packages\grid\src\duration.ts`.
+Auto-generated. Source: `packages/grid/src/duration.ts`.
 
 ### `function parseDuration`
 
@@ -99264,7 +99365,7 @@ export function formatDuration(minutes: number, style: 'colon' | 'units' = 'colo
 
 # `@svgrid/grid` · `editor-contract.ts`
 
-Auto-generated. Source: `packages\grid\src\editor-contract.ts`.
+Auto-generated. Source: `packages/grid/src/editor-contract.ts`.
 
 ### `type EditorSize`
 
@@ -99473,7 +99574,7 @@ export function resolveMessages<T extends Record<string, string>>(
 
 # `@svgrid/grid` · `editor-registry.ts`
 
-Auto-generated. Source: `packages\grid\src\editor-registry.ts`.
+Auto-generated. Source: `packages/grid/src/editor-registry.ts`.
 
 ### `type CellEditorContext`
 
@@ -99605,7 +99706,7 @@ export function resolveEditorProps(
 
 # `@svgrid/grid` · `filtering/filter-operator-catalogue.ts`
 
-Auto-generated. Source: `packages\grid\src\filtering\filter-operator-catalogue.ts`.
+Auto-generated. Source: `packages/grid/src/filtering/filter-operator-catalogue.ts`.
 
 ### `type FilterValueType`
 
@@ -99701,7 +99802,7 @@ export function isRangeOperator(op: ExcelFilterOperator): boolean {
 
 # `@svgrid/grid` · `grid-icons.ts`
 
-Auto-generated. Source: `packages\grid\src\grid-icons.ts`.
+Auto-generated. Source: `packages/grid/src/grid-icons.ts`.
 
 ### `type GridIconName`
 
@@ -99832,7 +99933,7 @@ export const GRID_ICON_NAMES: ReadonlyArray<GridIconName> = [
 
 # `@svgrid/grid` · `grid-messages.ts`
 
-Auto-generated. Source: `packages\grid\src\grid-messages.ts`.
+Auto-generated. Source: `packages/grid/src/grid-messages.ts`.
 
 ### `type GridMessages`
 
@@ -100044,7 +100145,7 @@ export function resolveGridMessages(overrides?: Partial<GridMessages> | null): G
 
 # `@svgrid/grid` · `list-option.ts`
 
-Auto-generated. Source: `packages\grid\src\list-option.ts`.
+Auto-generated. Source: `packages/grid/src/list-option.ts`.
 
 ### `type ListOption`
 
@@ -100291,7 +100392,7 @@ export function isTypeaheadKey(e: KeyboardEvent): boolean {
 
 # `@svgrid/grid` · `datetime/mask.ts`
 
-Auto-generated. Source: `packages\grid\src\datetime\mask.ts`.
+Auto-generated. Source: `packages/grid/src/datetime/mask.ts`.
 
 ### `function applyMask`
 
@@ -100361,7 +100462,7 @@ export function isMaskComplete(value: string, pattern: string): boolean {
 
 # `@svgrid/grid` · `positioning.ts`
 
-Auto-generated. Source: `packages\grid\src\positioning.ts`.
+Auto-generated. Source: `packages/grid/src/positioning.ts`.
 
 ### `type Side`
 
@@ -100602,7 +100703,7 @@ export function autoUpdate(reference: Element, floating: HTMLElement, update: ()
 
 # `@svgrid/grid` · `row-model.ts`
 
-Auto-generated. Source: `packages\grid\src\row-model.ts`.
+Auto-generated. Source: `packages/grid/src/row-model.ts`.
 
 ### `type GridFilterState`
 
@@ -100722,7 +100823,7 @@ export function toServerFilterColumns(
 
 # `@svgrid/grid` · `filtering/row-predicate.ts`
 
-Auto-generated. Source: `packages\grid\src\filtering\row-predicate.ts`.
+Auto-generated. Source: `packages/grid/src/filtering/row-predicate.ts`.
 
 ### `function applyRowPredicate`
 
@@ -100775,7 +100876,7 @@ export function applyRowPredicate<TRow>(
 
 # `@svgrid/grid` · `scheduler-ical.ts`
 
-Auto-generated. Source: `packages\grid\src\scheduler-ical.ts`.
+Auto-generated. Source: `packages/grid/src/scheduler-ical.ts`.
 
 ### `type ICalEvent`
 
@@ -100939,7 +101040,7 @@ export function fromICS(text: string): ICalEvent[] {
 
 # `@svgrid/grid` · `scheduler-model.ts`
 
-Auto-generated. Source: `packages\grid\src\scheduler-model.ts`.
+Auto-generated. Source: `packages/grid/src/scheduler-model.ts`.
 
 ### `type ResolvedEvent`
 
@@ -101886,7 +101987,7 @@ export function timelineRows<TData>(
 
 # `@svgrid/grid` · `server-block-cache.ts`
 
-Auto-generated. Source: `packages\grid\src\server-block-cache.ts`.
+Auto-generated. Source: `packages/grid/src/server-block-cache.ts`.
 
 ### `function rowPlaceholderState`
 
@@ -102543,7 +102644,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
 
 # `@svgrid/grid` · `server-data-source.ts`
 
-Auto-generated. Source: `packages\grid\src\server-data-source.ts`.
+Auto-generated. Source: `packages/grid/src/server-data-source.ts`.
 
 ### `type ServerSortModel`
 
@@ -103481,7 +103582,7 @@ export function createServerDataSource<TData>(
 
 # `@svgrid/grid` · `spreadsheet.ts`
 
-Auto-generated. Source: `packages\grid\src\spreadsheet.ts`.
+Auto-generated. Source: `packages/grid/src/spreadsheet.ts`.
 
 ### `type BorderSpec`
 
@@ -103686,7 +103787,7 @@ export function spreadsheetLayout(node: HTMLElement, opts: SpreadsheetActionOpti
 
 # `@svgrid/grid` · `svgrid-wrapper.types.ts`
 
-Auto-generated. Source: `packages\grid\src\svgrid-wrapper.types.ts`.
+Auto-generated. Source: `packages/grid/src/svgrid-wrapper.types.ts`.
 
 ### `type SvGridFilterOperator`
 
@@ -104457,7 +104558,7 @@ export type SvGridWrapperProps<
 
 # `@svgrid/grid` · `SvGridChart.types.ts`
 
-Auto-generated. Source: `packages\grid\src\SvGridChart.types.ts`.
+Auto-generated. Source: `packages/grid/src/SvGridChart.types.ts`.
 
 ### `type ChartHoverPoint`
 
@@ -104833,7 +104934,7 @@ export type SvChartProps = {
 
 # `@svgrid/grid` · `datetime/timezone.ts`
 
-Auto-generated. Source: `packages\grid\src\datetime\timezone.ts`.
+Auto-generated. Source: `packages/grid/src/datetime/timezone.ts`.
 
 ### `type ZoneParts`
 
@@ -104982,7 +105083,7 @@ export function normalizeTimeZone(timeZone?: string): string | undefined {
 
 # `@svgrid/grid` · `toast-store.svelte.ts`
 
-Auto-generated. Source: `packages\grid\src\toast-store.svelte.ts`.
+Auto-generated. Source: `packages/grid/src/toast-store.svelte.ts`.
 
 ### `type ToastVariant`
 

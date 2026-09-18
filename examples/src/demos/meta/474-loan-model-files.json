@@ -1,0 +1,24 @@
+{
+  "description": "A mortgage model on the Svelte 5 spreadsheet shell built from the sheet's own financial functions: PMT for the fixed payment, IPMT and PPMT for each period's split, NPER and RATE for the term and rate that fit, SUMPRODUCT for the first-year interest. Money cells wear the Accounting number format so symbols and figures line up, an Extra Payment column carries a validation rule with an Input Message, and Circle Invalid Data rings the entries that break it. The File tab saves the whole model as an .xlsx that Excel opens with formulas, formats and rules in place, opens one back, and exports the sheet as CSV; Ctrl+O and Ctrl+S do the same. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet pmt",
+    "svelte spreadsheet open xlsx",
+    "svelte spreadsheet save xlsx",
+    "svelte spreadsheet accounting format",
+    "svelte sheet financial functions"
+  ],
+  "faq": [
+    {
+      "question": "Does the saved .xlsx keep the formulas?",
+      "answer": "Yes. Every formula goes out as a formula with its cached value, so Excel shows the numbers at once and recalculates when an input changes. Formats, column widths, the frozen row, the validation rule and its input message go with it."
+    },
+    {
+      "question": "Which financial functions does the sheet have?",
+      "answer": "PMT, IPMT, PPMT, PV, FV, NPER, RATE, NPV, IRR and SLN, with Excel's sign convention: money paid out is negative, money received is positive. RATE and IRR are solved numerically."
+    },
+    {
+      "question": "Can an app keep the file somewhere other than the user's disk?",
+      "answer": "Yes. Take file-open and file-save-xlsx over in onAction and call the component's open(file) and toXlsx() with a Blob from wherever the workbook lives."
+    }
+  ]
+}

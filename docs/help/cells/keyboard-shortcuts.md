@@ -129,8 +129,10 @@ so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
 
 | Key | Action |
 | --- | ------ |
-| Ctrl/Cmd + Page Down / Page Up | Next / previous sheet. |
+| Ctrl/Cmd + Page Down / Page Up | Next / previous sheet, stepping over hidden ones. |
 | Shift + F11 | New sheet. |
+| Ctrl/Cmd + O | Open an .xlsx (the shell's File > Open). |
+| Ctrl/Cmd + S | Save As .xlsx (File > Save As). |
 
 ## What Ctrl+Arrow actually does
 
