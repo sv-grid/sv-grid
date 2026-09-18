@@ -196,7 +196,7 @@ export type RibbonActionId =
   | 'toggle-ribbon'
   | 'cf-greater' | 'cf-less' | 'cf-between' | 'cf-equal' | 'cf-text' | 'cf-duplicates'
   | 'cf-top10' | 'cf-bottom10' | 'cf-above-average' | 'cf-below-average'
-  | 'cf-data-bar' | 'cf-color-scale-3' | 'cf-color-scale-2' | 'cf-icon-set'
+  | 'cf-data-bar' | 'cf-color-scale-3' | 'cf-color-scale-2' | 'cf-icon-set' | 'cf-formula'
   | 'cf-clear-selection' | 'cf-clear-sheet' | 'cf-manage'
   | 'merge-center' | 'merge-across' | 'merge-cells' | 'unmerge-cells'
 
@@ -748,6 +748,8 @@ const HOME: RibbonTab = {
             { value: 'cf-color-scale-2', label: 'Green - White Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-2' },
             { value: 'cf-icon-set', label: 'Icon Set (3 Arrows)', icon: 'cf-icons', emits: 'cf-icon-set' },
             { value: 'c', label: 'Clear Rules', heading: true },
+            { value: 'n', label: 'New Rule', heading: true },
+            { value: 'cf-formula', label: 'Use a Formula...', icon: 'cf-formula', emits: 'cf-formula' },
             { value: 'cf-clear-selection', label: 'Clear Rules from Selected Cells', emits: 'cf-clear-selection' },
             { value: 'cf-clear-sheet', label: 'Clear Rules from Entire Sheet', emits: 'cf-clear-sheet' },
             { value: 'm', label: 'Manage', heading: true },

@@ -107,7 +107,7 @@ export {
 } from './sheet/validation'
 export {
   ruleStats, evaluateCf, shiftCf, removeCf, cfIn, describeCf, scaleColor, iconIndex, hasStyle, cfId,
-  CF_PRESET_STYLES, COLOR_SCALES, DATA_BAR_COLOR,
+  CF_PRESET_STYLES, COLOR_SCALES, DATA_BAR_COLOR, DATA_BAR_NEGATIVE_COLOR,
   type CfRule, type CfRuleBody, type CfStyledRule, type CfBody, type CfPreset, type CfStyle, type CfStats, type CfResult, type CfContext,
   type CfOperator, type CfTextMatch, type CfIconSet, type CfScaleColors, type CfKind,
 } from './sheet/conditional-formats'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ruleStats, evaluateCf, shiftCf, removeCf, cfIn, describeCf, scaleColor, iconIndex, hasStyle,
-  CF_PRESET_STYLES, COLOR_SCALES, DATA_BAR_COLOR,
+  CF_PRESET_STYLES, COLOR_SCALES, DATA_BAR_COLOR, DATA_BAR_NEGATIVE_COLOR,
   type CfRule, type CfContext, type CfStats,
 } from './conditional-formats'
 import { createWorkbook } from './workbook'
@@ -15,7 +15,7 @@ function sheet(cells: string[][]) {
     const v = valueAt(r, c)
     return typeof v === 'object' && v !== null ? v.error : String(v)
   }
-  const ctx: CfContext = { evaluate: (t) => wb.evaluateText('S', t) }
+  const ctx: CfContext = { evaluate: (t, at) => wb.evaluateText('S', t, undefined, at) }
   const cache = new Map<string, CfStats>()
   const statsFor = (rule: CfRule) => {
     let s = cache.get(rule.id)
@@ -135,9 +135,9 @@ describe('Data Bars, Color Scales, Icon Sets', () => {
 
   it('a data bar is the value\'s share of the range', () => {
     const bar: CfRule = { id: 'bar', kind: 'dataBar', color: DATA_BAR_COLOR, rects: column }
-    expect(s.at([bar], 0, 0)).toEqual({ dataBar: { ratio: 0, color: DATA_BAR_COLOR } })
-    expect(s.at([bar], 1, 0)).toEqual({ dataBar: { ratio: 0.5, color: DATA_BAR_COLOR } })
-    expect(s.at([bar], 2, 0)).toEqual({ dataBar: { ratio: 1, color: DATA_BAR_COLOR } })
+    expect(s.at([bar], 0, 0)).toEqual({ dataBar: { ratio: 0, axis: 0, negative: false, color: DATA_BAR_COLOR } })
+    expect(s.at([bar], 1, 0)).toEqual({ dataBar: { ratio: 0.5, axis: 0, negative: false, color: DATA_BAR_COLOR } })
+    expect(s.at([bar], 2, 0)).toEqual({ dataBar: { ratio: 1, axis: 0, negative: false, color: DATA_BAR_COLOR } })
     expect(s.at([bar], 3, 0)).toBeNull()
   })
 
@@ -147,11 +147,46 @@ describe('Data Bars, Color Scales, Icon Sets', () => {
     expect(positive.at([bar], 0, 0)?.dataBar?.ratio).toBe(0.25)
     expect(positive.at([bar], 1, 0)?.dataBar?.ratio).toBe(0.5)
     expect(positive.at([bar], 2, 0)?.dataBar?.ratio).toBe(1)
-    // With negatives the bar runs from the minimum: no negative axis yet.
-    const mixed = sheet([['-10'], ['0'], ['10']])
-    expect(mixed.at([bar], 0, 0)?.dataBar?.ratio).toBe(0)
-    expect(mixed.at([bar], 1, 0)?.dataBar?.ratio).toBe(0.5)
-    expect(mixed.at([bar], 2, 0)?.dataBar?.ratio).toBe(1)
+  })
+
+  it('a range with negatives puts the axis at zero, and the bars grow away from it', () => {
+    const bar: CfRule = { id: 'bar', kind: 'dataBar', color: DATA_BAR_COLOR, rects: [[0, 0, 3, 0]] }
+    // -10 to 30: the axis a quarter of the way across; -10 is a quarter
+    // wide to the left of it in red, 30 three quarters to the right.
+    const mixed = sheet([['-10'], ['0'], ['30'], ['15']])
+    expect(mixed.at([bar], 0, 0)?.dataBar).toEqual({ ratio: 0.25, axis: 0.25, negative: true, color: DATA_BAR_NEGATIVE_COLOR })
+    expect(mixed.at([bar], 1, 0)?.dataBar).toEqual({ ratio: 0, axis: 0.25, negative: false, color: DATA_BAR_COLOR })
+    expect(mixed.at([bar], 2, 0)?.dataBar).toEqual({ ratio: 0.75, axis: 0.25, negative: false, color: DATA_BAR_COLOR })
+    expect(mixed.at([bar], 3, 0)?.dataBar).toEqual({ ratio: 0.375, axis: 0.25, negative: false, color: DATA_BAR_COLOR })
+    // A second colour of the rule's own, and an all-negative range with the axis at the right edge.
+    const own: CfRule = { ...bar, negativeColor: '#00AA00' }
+    expect(mixed.at([own], 0, 0)?.dataBar?.color).toBe('#00AA00')
+    const allNeg = sheet([['-5'], ['-20']])
+    const two: CfRule = { ...bar, rects: [[0, 0, 1, 0]] }
+    expect(allNeg.at([two], 0, 0)?.dataBar).toEqual({ ratio: 0.25, axis: 1, negative: true, color: DATA_BAR_NEGATIVE_COLOR })
+    expect(allNeg.at([two], 1, 0)?.dataBar).toEqual({ ratio: 1, axis: 1, negative: true, color: DATA_BAR_NEGATIVE_COLOR })
+  })
+
+  it('a formula rule is written for the top-left cell and moves with each cell', () => {
+    const s = sheet([
+      ['Item', 'Qty'],
+      ['a', '5'],
+      ['b', '15'],
+      ['c', 'x'],
+      ['d', '=B2*3'],
+    ])
+    const rule: CfRule = { id: 'f', kind: 'formula', formula: '=$B2>10', style: red, rects: [[1, 0, 4, 0]] }
+    expect(s.at([rule], 1, 0)).toBeNull()
+    expect(s.at([rule], 2, 0)).toEqual({ style: red })
+    expect(s.at([rule], 3, 0)).toBeNull()
+    expect(s.at([rule], 4, 0)).toEqual({ style: red })
+    // Without the leading = it still reads as a formula; an error is no match.
+    const bare: CfRule = { ...rule, formula: 'MOD(ROW(),2)=0' }
+    expect(s.at([bare], 1, 0)).toEqual({ style: red })
+    expect(s.at([bare], 2, 0)).toBeNull()
+    const broken: CfRule = { ...rule, formula: '=1/0' }
+    expect(s.at([broken], 1, 0)).toBeNull()
+    expect(describeCf(rule)).toBe('Formula: =$B2>10')
   })
 
   it('a three-colour scale runs low to mid to high; a two-colour one straight through', () => {
@@ -204,7 +239,7 @@ describe('priority and Stop If True', () => {
     const bar: CfRule = { id: 'b', kind: 'dataBar', color: DATA_BAR_COLOR, rects }
     const bold: CfRule = { id: 's', kind: 'cellIs', operator: 'greater', value1: '0', rects, style: { bold: true } }
     const ratio = s.at([bar], 0, 0)!.dataBar!.ratio
-    expect(s.at([bar, bold], 0, 0)).toEqual({ dataBar: { ratio, color: DATA_BAR_COLOR }, style: { bold: true } })
+    expect(s.at([bar, bold], 0, 0)).toEqual({ dataBar: { ratio, axis: 0, negative: false, color: DATA_BAR_COLOR }, style: { bold: true } })
   })
 
   it('a rule elsewhere says nothing about the cell', () => {

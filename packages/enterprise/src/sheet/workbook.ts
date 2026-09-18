@@ -66,9 +66,10 @@ export type Workbook = {
    * What `text` would be worth in a cell of `sheet`, without putting it in
    * one: a formula is evaluated there (names and other sheets included), a
    * literal is coerced the way a typed one is. Data validation checks its
-   * bounds and custom rules through this.
+   * bounds and custom rules through this, and conditional formatting its
+   * formula rules, with `at` naming the cell the text is read for.
    */
-  evaluateText(sheet: string, text: string, override?: CellOverride): CellValue
+  evaluateText(sheet: string, text: string, override?: CellOverride, at?: { row: number; col: number }): CellValue
   /**
    * The values of a range reference, or of a name that refers to one, as a
    * grid; null when `text` is not a reference. A list source.
@@ -402,13 +403,15 @@ export function createWorkbook(
       return compute(sheet, row, col)
     },
 
-    evaluateText(sheet, text, override) {
+    evaluateText(sheet, text, override, at) {
       const t = text.trim()
       if (t === '') return ''
       if (t.startsWith('=')) {
         if (!sheetCells(sheet)) return { error: '#REF!' }
         const ast = parseCached(t)
-        return ast ? evaluate(ast, contextFor(sheet, override)) : { error: '#PARSE!' }
+        // The cell the text is read for, so ROW() and COLUMN() and a
+        // [@Column] reference mean something in a rule's formula.
+        return ast ? evaluate(ast, contextFor(sheet, override, at ?? (override ? { row: override.row, col: override.col } : undefined))) : { error: '#PARSE!' }
       }
       return literal(t)
     },

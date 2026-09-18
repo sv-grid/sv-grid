@@ -17,7 +17,7 @@
  */
 import { isError, type CellValue } from './ast'
 import { toText } from './coerce'
-import type { StructuralEdit } from './refs'
+import { translateFormula, type StructuralEdit } from './refs'
 import { rectContains, shiftRects, subtractRect, rectsIntersect, type Rect } from './rects'
 import type { CellFormatEntry } from './format-store'
 
@@ -36,7 +36,12 @@ export type CfRule = { id: string; rects: ReadonlyArray<Rect>; stopIfTrue?: bool
   | { kind: 'duplicates'; unique?: boolean; style: CfStyle }
   | { kind: 'topBottom'; top: boolean; rank: number; percent?: boolean; style: CfStyle }
   | { kind: 'average'; above: boolean; style: CfStyle }
-  | { kind: 'dataBar'; color: string }
+  /** Excel's "Use a formula to determine which cells to format": written
+   *  for the rule's top-left cell and moved to each cell, TRUE formats. */
+  | { kind: 'formula'; formula: string; style: CfStyle }
+  /** `negativeColor` paints the bars left of the axis; without it a range
+   *  with negatives still draws them, in Excel's red. */
+  | { kind: 'dataBar'; color: string; negativeColor?: string }
   | { kind: 'colorScale'; colors: CfScaleColors }
   | { kind: 'iconSet'; set: CfIconSet }
 )
@@ -53,7 +58,7 @@ export type CfBody = DistributiveOmit<CfStyledRule, 'id' | 'rects'>
 /** The small dialogs, one per ribbon entry. */
 export type CfPreset =
   | 'greater' | 'less' | 'between' | 'equal' | 'text' | 'duplicates'
-  | 'top10' | 'bottom10' | 'aboveAverage' | 'belowAverage'
+  | 'top10' | 'bottom10' | 'aboveAverage' | 'belowAverage' | 'formula'
 
 /** What one rule knows about the numbers in its rectangles. */
 export type CfStats = {
@@ -69,16 +74,21 @@ export type CfStats = {
 /** What the rules say about one cell. */
 export type CfResult = {
   style?: CfStyle
-  /** A bar across the cell, 0..1 of its width. */
-  dataBar?: { ratio: number; color: string }
+  /**
+   * A bar across the cell: `ratio` of its width, starting `axis` of the
+   * way across (0 when the range has no negatives) and running right for a
+   * positive value, left for a negative one, which `negative` says.
+   */
+  dataBar?: { ratio: number; color: string; axis: number; negative: boolean }
   /** The icon set and which of its three icons: 0 = the top one. */
   icon?: { set: CfIconSet; index: 0 | 1 | 2 }
 }
 
 /** How a rule reads the sheet: the shell wires the workbook in. */
 export type CfContext = {
-  /** A formula or a literal, evaluated in the sheet. */
-  evaluate(text: string): CellValue
+  /** A formula or a literal, evaluated in the sheet; `at` is the cell a
+   *  formula rule is being read for, so ROW() and COLUMN() work in it. */
+  evaluate(text: string, at?: { row: number; col: number }): CellValue
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +105,8 @@ export const CF_PRESET_STYLES: ReadonlyArray<{ id: string; label: string; style:
 ]
 
 export const DATA_BAR_COLOR = '#638EC6'
+/** Excel's colour for the bars left of the axis. */
+export const DATA_BAR_NEGATIVE_COLOR = '#FF0000'
 export const COLOR_SCALES: Record<'green-yellow-red' | 'red-yellow-green' | 'green-white' | 'white-red', CfScaleColors> = {
   'green-yellow-red': ['#63BE7B', '#FFEB84', '#F8696B'],
   'red-yellow-green': ['#F8696B', '#FFEB84', '#63BE7B'],
@@ -185,6 +197,7 @@ function matches(
   display: string,
   stats: CfStats,
   ctx: CfContext,
+  at?: { row: number; col: number },
 ): boolean {
   switch (rule.kind) {
     case 'cellIs': {
@@ -235,22 +248,41 @@ function matches(
       if (typeof value !== 'number' || !stats.sorted.length) return false
       return rule.above ? value > stats.mean : value < stats.mean
     }
+    case 'formula': {
+      // Written for the rule's top-left cell and moved to the cell being
+      // painted, as a copied formula would be: =$B2>100 on A2:A9 reads
+      // each row's B. TRUE, or a number other than 0, formats.
+      const text = rule.formula.trim()
+      if (!text) return false
+      const origin = rule.rects[0]
+      const source = text.startsWith('=') ? text : `=${text}`
+      const moved = origin && at ? String(translateFormula(source, at.row - origin[0], at.col - origin[1])) : source
+      const v = ctx.evaluate(moved, at)
+      if (isError(v)) return false
+      return typeof v === 'boolean' ? v : typeof v === 'number' ? v !== 0 : false
+    }
     default:
       return false
   }
 }
 
 /**
- * A data bar's share of the cell, 0..1. Excel measures from zero when the
- * range is non-negative (10, 20, 40 draw a quarter, a half and the whole
- * width), so the smallest value keeps a bar; a range with negatives runs
- * from its minimum instead, since there is no negative axis here.
+ * A data bar's geometry. Excel measures from zero: over a non-negative
+ * range 10, 20, 40 draw a quarter, a half and the whole width, so the
+ * smallest value keeps a bar. A range with negatives puts an axis where
+ * zero falls between the minimum and the maximum, and a bar grows away
+ * from it, right for a positive value and left for a negative one, each
+ * as its share of the whole span, as Excel's automatic axis draws them.
  */
-function barRatio(value: number, stats: CfStats): number {
+function dataBarFor(value: number, stats: CfStats): { ratio: number; axis: number; negative: boolean } {
   const lo = Math.min(0, stats.min)
   const hi = Math.max(0, stats.max)
-  if (hi === lo) return 0
-  return Math.min(1, Math.max(0, (value - lo) / (hi - lo)))
+  const span = hi - lo
+  const negative = value < 0
+  if (span === 0) return { ratio: 0, axis: 0, negative }
+  const axis = lo < 0 ? -lo / span : 0
+  const ratio = Math.min(1, Math.abs(value) / span)
+  return { ratio, axis, negative }
 }
 
 /** Where a number sits in a range, 0..1; 0.5 for a flat range. */
@@ -307,8 +339,8 @@ export function evaluateCf(
     let hit = false
     if (rule.kind === 'dataBar') {
       if (typeof value === 'number' && !(out?.dataBar)) {
-        const stats = statsFor(rule)
-        out = { ...(out ?? {}), dataBar: { ratio: barRatio(value, stats), color: rule.color } }
+        const bar = dataBarFor(value, statsFor(rule))
+        out = { ...(out ?? {}), dataBar: { ...bar, color: bar.negative ? rule.negativeColor ?? DATA_BAR_NEGATIVE_COLOR : rule.color } }
         hit = true
       }
     } else if (rule.kind === 'colorScale') {
@@ -324,7 +356,7 @@ export function evaluateCf(
         out = { ...(out ?? {}), icon: { set: rule.set, index: iconIndex(ratioOf(value, stats)) } }
         hit = true
       }
-    } else if (hasStyle(rule) && matches(rule, value, display, statsFor(rule), ctx)) {
+    } else if (hasStyle(rule) && matches(rule, value, display, statsFor(rule), ctx, { row: r, col: c })) {
       const style: CfStyle = { ...(out?.style ?? {}) }
       const own: CfStyle = rule.style
       for (const key of Object.keys(own) as Array<keyof CfStyle>) {
@@ -382,6 +414,7 @@ export function describeCf(rule: CfRule): string {
     case 'duplicates': return rule.unique ? 'Unique Values' : 'Duplicate Values'
     case 'topBottom': return `${rule.top ? 'Top' : 'Bottom'} ${rule.rank}${rule.percent ? '%' : ''}`
     case 'average': return rule.above ? 'Above Average' : 'Below Average'
+    case 'formula': return `Formula: ${rule.formula}`
     case 'dataBar': return 'Data Bar'
     case 'colorScale': return rule.colors.length === 3 ? 'Graded Color Scale' : 'Two-Color Scale'
     case 'iconSet': return 'Icon Set'
