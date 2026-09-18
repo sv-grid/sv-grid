@@ -1,0 +1,24 @@
+{
+  "description": "Excel's Enable iterative calculation in a Svelte 5 spreadsheet: a circular reference settles on its fixed point instead of showing #CYCLE!, with a cap on the passes and on the smallest change worth another one. The classic bonus-out-of-profit model and an interest charge on the balance it is part of. Formulas > Calculation Options is the switch, the setting rides in getState() and goes into the .xlsx as calcPr, so the file opens the same way in Excel. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet circular reference",
+    "svelte excel iterative calculation",
+    "svelte sheet fixed point formula",
+    "svelte spreadsheet #CYCLE!",
+    "svelte sheet calcPr xlsx"
+  ],
+  "faq": [
+    {
+      "question": "Why is a circular reference an error by default?",
+      "answer": "Because it almost always is one: a total that includes itself, a formula dragged one row too far. The shell marks every cell in the loop #CYCLE! and leaves the rest of the sheet working, which is what Excel does. Iterative calculation is the opt-in for the models where the loop is meant."
+    },
+    {
+      "question": "What do the two limits mean?",
+      "answer": "Maximum iterations is how many passes over the loop before the answer is taken as it stands, 100 by default. Maximum change is how small a move counts as settled, 0.001 by default, so a converging model stops early rather than burning every pass. Neither promises convergence; together they promise the sheet stops."
+    },
+    {
+      "question": "Does the setting survive a save?",
+      "answer": "Yes. It rides in getState() with the workbook, and it goes into the .xlsx as calcPr with iterate, iterateCount and iterateDelta, which is where Excel keeps it. A file saved with iteration on opens with it on."
+    }
+  ]
+}

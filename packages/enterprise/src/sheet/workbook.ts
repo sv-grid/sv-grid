@@ -27,6 +27,28 @@ export type SheetData = {
   cells: string[][]
 }
 
+/**
+ * Excel's Enable iterative calculation, under File > Options > Formulas.
+ *
+ * A circular reference is normally an error: every cell in the loop shows
+ * #CYCLE!. Some models are written as one on purpose, though, because the
+ * answer is a fixed point rather than a mistake: a bonus that is a share of
+ * the profit the bonus is subtracted from, an interest charge on a balance
+ * the charge is added to. Excel solves those by running the loop over and
+ * over from the values it last had, and stopping when either the answer
+ * stops moving or the passes run out.
+ */
+export type IterationSettings = {
+  /** Off by default, which is Excel's default and keeps a cycle an error. */
+  enabled: boolean
+  /** Passes before the answer is taken as it stands. Excel's default is 100. */
+  maxIterations: number
+  /** The largest move that still counts as settled. Excel's default is 0.001. */
+  maxChange: number
+}
+
+export const DEFAULT_ITERATION: IterationSettings = { enabled: false, maxIterations: 100, maxChange: 0.001 }
+
 export type WorkbookOptions = {
   /** Extra functions merged over the built-ins. */
   functions?: Record<string, SheetFunction>
@@ -49,6 +71,8 @@ export type WorkbookOptions = {
   engine?: SheetEngine
   /** Tables the workbook starts with, for a document being restored. */
   tables?: ReadonlyArray<TableRegion>
+  /** Iterative calculation, off unless a model needs it. */
+  iteration?: Partial<IterationSettings>
 }
 
 /** One cell read as text that has not been written: what a validation rule checks. */
@@ -126,6 +150,14 @@ export type Workbook = {
   subscribeWrites(listener: (change: { sheet: string; row: number; col: number; text: string }) => void): () => void
   /** Recompute everything. Rarely needed; `setRaw` keeps itself current. */
   recalculate(): void
+  /** How circular references are treated, as the Formulas tab sets it. */
+  readonly iteration: IterationSettings
+  /**
+   * Turn iterative calculation on or off, or change its limits, and
+   * recalculate: the cells in a cycle go from #CYCLE! to their fixed point,
+   * or back.
+   */
+  setIteration(next: Partial<IterationSettings>): void
   /**
    * The spill a cell belongs to: the anchor holding the array formula and
    * the rectangle its answer covers, for the anchor itself and every cell
@@ -136,7 +168,7 @@ export type Workbook = {
   spills(sheet: string): Array<{ row: number; col: number; rect: readonly [number, number, number, number] }>
   rowCount(sheet: string): number
   colCount(sheet: string): number
-  serialize(): { sheets: SheetData[]; active: string; names: Record<string, string>; tables?: TableRegion[] }
+  serialize(): { sheets: SheetData[]; active: string; names: Record<string, string>; tables?: TableRegion[]; iteration?: IterationSettings }
 }
 
 /** A name Excel would accept for a sheet. */
@@ -153,6 +185,31 @@ function nextSheetName(taken: ReadonlyArray<string>): string {
     const candidate = `Sheet${i}`
     if (!used.has(candidate.toLowerCase())) return candidate
   }
+}
+
+/** Iteration settings with the defaults filled in and the numbers sane. */
+export function cleanIteration(next?: Partial<IterationSettings> | null): IterationSettings {
+  const passes = Math.round(Number(next?.maxIterations ?? DEFAULT_ITERATION.maxIterations))
+  const change = Number(next?.maxChange ?? DEFAULT_ITERATION.maxChange)
+  return {
+    enabled: next?.enabled === true,
+    maxIterations: Number.isFinite(passes) ? Math.min(Math.max(passes, 1), 32767) : DEFAULT_ITERATION.maxIterations,
+    maxChange: Number.isFinite(change) && change >= 0 ? change : DEFAULT_ITERATION.maxChange,
+  }
+}
+
+/**
+ * How far a cell moved between two passes. Two numbers are their distance;
+ * anything else has moved either not at all or immeasurably, and an
+ * immeasurable move keeps the loop going until the passes run out.
+ */
+function moved(before: CellValue | undefined, after: CellValue): number {
+  if (typeof before === 'number' && typeof after === 'number') return Math.abs(after - before)
+  if (before === undefined) return Infinity
+  if (isError(before) || isError(after)) {
+    return isError(before) && isError(after) && before.error === after.error ? 0 : Infinity
+  }
+  return before === after ? 0 : Infinity
 }
 
 export function createWorkbook(
@@ -203,6 +260,11 @@ export function createWorkbook(
   const values = new Map<CellKey, CellValue>()
   /** Cells currently being resolved, for cycle detection. */
   const visiting = new Set<CellKey>()
+  /** Iterative calculation, and the value each cell had on the pass before:
+   *  what a cell in a cycle reads for itself while iteration is on, and what
+   *  the convergence test measures against. */
+  let iteration: IterationSettings = cleanIteration(options.iteration)
+  const previous = new Map<CellKey, CellValue>()
   /** Cells whose formula is volatile (INDIRECT, OFFSET, RAND, NOW ...):
    *  recomputed on every write, since the graph cannot see what they read. */
   const volatile = new Set<CellKey>()
@@ -290,6 +352,7 @@ export function createWorkbook(
   /** Forget every derived thing: values, edges, volatility, spills. */
   function dropAll() {
     values.clear()
+    previous.clear()
     graph.clear()
     volatile.clear()
     spills.clear()
@@ -319,6 +382,41 @@ export function createWorkbook(
       }
     }
     settlePending()
+    runIterations()
+  }
+
+  /**
+   * Run the cycles until they stop moving.
+   *
+   * Everything in a cycle, and everything downstream of one, is recomputed
+   * from the values it last had; a pass that moves no cell by more than
+   * `maxChange` is the last one, and so is pass number `maxIterations`. This
+   * is Excel's model exactly: it does not promise convergence, it promises a
+   * bounded number of tries and whatever they reached.
+   */
+  function runIterations(): CellKey[] {
+    if (!iteration.enabled) return []
+    const seeds = graph.cycles()
+    if (seeds.length === 0) return []
+    // Cycle members are downstream of each other, so `dirtyFrom` already
+    // includes them; the union is for a seed whose readers were never
+    // evaluated.
+    const affected = [...new Set([...seeds, ...graph.dirtyFrom(seeds)])]
+    for (let pass = 0; pass < Math.max(1, iteration.maxIterations); pass += 1) {
+      const before = new Map<CellKey, CellValue | undefined>()
+      for (const key of affected) {
+        before.set(key, values.get(key) ?? previous.get(key))
+        values.delete(key)
+      }
+      let worst = 0
+      for (const key of affected) {
+        const at = parseCellKey(key)
+        const after = compute(at.sheet ?? '', at.row, at.col)
+        worst = Math.max(worst, moved(before.get(key), after))
+      }
+      if (worst <= iteration.maxChange) break
+    }
+    return affected
   }
 
   /** Compute what a spill changed under other formulas, until nothing is left. */
@@ -474,7 +572,13 @@ export function createWorkbook(
       compute(at.sheet ?? sheet, at.row, at.col)
       return values.get(key) ?? ''
     }
-    if (visiting.has(key)) return { error: '#CYCLE!' }
+    if (visiting.has(key)) {
+      // The cell is being asked for itself. Without iteration that is the
+      // error; with it, the loop is meant, and the answer is what this cell
+      // was worth on the last pass, starting from 0 as Excel does.
+      if (!iteration.enabled) return { error: '#CYCLE!' }
+      return previous.get(key) ?? 0
+    }
 
     // Deep enough that recursion is a risk: resolve what this cell reads from
     // the far end first, and come back to it with everything cached.
@@ -543,6 +647,7 @@ export function createWorkbook(
     visiting.delete(key)
     depth -= 1
     values.set(key, value)
+    if (iteration.enabled) previous.set(key, value)
     return value
   }
 
@@ -737,7 +842,7 @@ export function createWorkbook(
       // or changed spill is on record before anything reads under it;
       // plain dependents wait for their next read, as before.
       for (const k of keys) if (isFormulaKey(k)) { const at = parseCellKey(k); compute(at.sheet ?? sheet, at.row, at.col) }
-      reportRecalc([...new Set([...touched, ...settlePending()])])
+      reportRecalc([...new Set([...touched, ...settlePending(), ...runIterations()])])
     },
 
     getValue(sheet, row, col) {
@@ -875,6 +980,18 @@ export function createWorkbook(
       settleAll()
     },
 
+    get iteration() { return { ...iteration } },
+
+    setIteration(next) {
+      const wanted = cleanIteration({ ...iteration, ...next })
+      if (wanted.enabled === iteration.enabled && wanted.maxIterations === iteration.maxIterations && wanted.maxChange === iteration.maxChange) return
+      iteration = wanted
+      // Turning it on turns #CYCLE! into a number, and turning it off turns
+      // the number back into #CYCLE!, so every cached value is suspect.
+      dropAll()
+      settleAll()
+    },
+
     spillOf(sheet, row, col) {
       const name = order.find((n) => n.toLowerCase() === sheet.toLowerCase())
       if (!name) return null
@@ -913,6 +1030,9 @@ export function createWorkbook(
         // Absent rather than empty in a workbook with no tables, so a saved
         // document from before they existed reads the same either way.
         ...(list.length ? { tables: list.map((t) => ({ ...t })) } : {}),
+        // Written only when it is on, so a document saved by a workbook that
+        // never heard of iteration reads back identically.
+        ...(iteration.enabled ? { iteration: { ...iteration } } : {}),
       }
     },
   }

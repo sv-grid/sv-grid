@@ -63,6 +63,11 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Iterative calculation: `workbook.iteration` and `setIteration`, a
+  re-entrant read answering with the cell's previous value rather than
+  `#CYCLE!`, passes over `graph.cycles()` until the largest move is under
+  the tolerance or the cap is spent, Formulas > Calculation Options in the
+  shell, the setting in `getState()` and in the xlsx as `calcPr`.
 - Format as Table: a table registry on the workbook wired into the eval
   context, so the structured references the parser already read finally
   resolve; Insert > Table and Ctrl+T with Excel's dialog, the banded look
@@ -204,7 +209,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`)~~ | shipped: `evaluateSpill`, spill ranges in the workbook, array arithmetic with broadcasting, TRANSPOSE and TEXTSPLIT too | done |
 | ~~LET / LAMBDA~~ | shipped, with MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY, and the `_xlfn.` prefixes in the file | done |
 | ~~A pluggable engine (HyperFormula behind the shell)~~ | shipped: an `engine` option on `createWorkbook`, with `createHyperFormulaEngine` | done |
-| Iterative calculation (circular references with a cap) | cycles are `#CYCLE!` | S |
+| ~~Iterative calculation (circular references with a cap)~~ | shipped: `workbook.iteration`, Formulas > Calculation Options, the two limits, `calcPr` in the xlsx both ways | done |
 
 ### Ribbon parity
 

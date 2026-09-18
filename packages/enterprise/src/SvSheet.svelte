@@ -45,6 +45,7 @@
   import SvSheetSizeDialog from './SvSheetSizeDialog.svelte'
   import SvSheetNameManager from './SvSheetNameManager.svelte'
   import SvSheetGoalSeek from './SvSheetGoalSeek.svelte'
+  import SvSheetIteration from './SvSheetIteration.svelte'
   import SvSheetTextToColumns from './SvSheetTextToColumns.svelte'
   import SvSheetRemoveDuplicates from './SvSheetRemoveDuplicates.svelte'
   import SvSheetSort from './SvSheetSort.svelte'
@@ -2865,6 +2866,8 @@
   let insertFunctionOpen = $state(false)
   let nameManagerOpen = $state(false)
   let goalSeekOpen = $state(false)
+  /** Calculation Options, on the Formulas tab: iterative calculation. */
+  let iterationOpen = $state(false)
   let textToColumnsOpen = $state(false)
   let removeDuplicatesOpen = $state(false)
   /** The Sort dialog, with the block it opens over. */
@@ -2879,6 +2882,7 @@
       case 'insert-function': insertFunctionOpen = true; return
       case 'name-manager': nameManagerOpen = true; return
       case 'goal-seek': goalSeekOpen = true; return
+      case 'calc-options': iterationOpen = true; return
       case 'text-to-columns': textToColumnsOpen = true; return
       case 'remove-duplicates': removeDuplicatesOpen = true; return
       case 'sort-custom': {
@@ -4841,6 +4845,18 @@
     onClose={() => afterDialog()}
   />
   <SvSheetGoalSeek bind:open={goalSeekOpen} workbook={wb} cmd={cmdOf} onClose={() => afterDialog()} />
+  <SvSheetIteration
+    bind:open={iterationOpen}
+    iteration={wb.iteration}
+    onApply={(next) => {
+      // Every cycle in the workbook changes value, so the document hears
+      // about cells and the shell repaints from the new answers.
+      wb.setIteration(next)
+      doc.changed({ kind: 'cells' })
+      bump()
+    }}
+    onClose={() => afterDialog()}
+  />
   <SvSheetTextToColumns bind:open={textToColumnsOpen} workbook={wb} cmd={cmdOf} onDone={say} onClose={() => afterDialog()} />
   <SvSheetRemoveDuplicates bind:open={removeDuplicatesOpen} workbook={wb} cmd={cmdOf} onDone={say} onClose={() => afterDialog()} />
   {#if sortDialog}

@@ -734,3 +734,29 @@ describe('SvSheet marching ants', () => {
     expect(wb.getRaw('S', 1, 3)).toBe('=[@Qty]*[@Price]')
   })
 })
+
+describe('SvSheet calculation options', () => {
+  it('turns a circular reference into its fixed point, and back', async () => {
+    // A bonus that is a tenth of the profit it comes out of: circular on
+    // purpose, and 100000 / 11 once it settles.
+    const { sheet, doc } = await mountSheet({ data: [{ name: 'Sheet1', cells: [['100000'], ['=0.1*(A1-A2)']] }] })
+    const paint = async () => { flushSync(); await tick() }
+    expect(doc.workbook.getValue('Sheet1', 1, 0)).toEqual({ error: '#CYCLE!' })
+
+    sheet.act('calc-options')
+    await paint()
+    const check = document.querySelector<HTMLInputElement>('.sv-sheet-dialog input[type="checkbox"]')
+    expect(check).not.toBeNull()
+    check!.checked = true
+    check!.dispatchEvent(new Event('change', { bubbles: true }))
+    await paint()
+    const ok = [...document.querySelectorAll<HTMLButtonElement>('.sv-sheet-dialog-buttons button')].find((b) => b.textContent?.trim() === 'OK')
+    ok!.click()
+    await paint()
+
+    expect(doc.workbook.iteration.enabled).toBe(true)
+    expect(doc.workbook.getValue('Sheet1', 1, 0)).toBeCloseTo(100000 / 11, 2)
+    // And the state carries it, so a save keeps the model working.
+    expect(doc.getState().workbook.iteration).toEqual({ enabled: true, maxIterations: 100, maxChange: 0.001 })
+  })
+})

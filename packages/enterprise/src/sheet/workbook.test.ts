@@ -551,3 +551,71 @@ describe('a long dependency chain', () => {
     expect(wb.getValue('S', rows, 1)).toBe(expected(rows, 1))
   })
 })
+
+describe('iterative calculation', () => {
+  /** The classic circular model: a bonus that is a share of the profit it
+   *  is subtracted from. The fixed point is 100000 / 11. */
+  const bonusModel = () => [
+    ['Profit', '100000'],
+    ['Bonus', '=0.1*(B1-B2)'],
+    ['After bonus', '=B1-B2'],
+  ]
+
+  it('is off by default, and a cycle is an error', () => {
+    const wb = createWorkbook([{ name: 'S', cells: bonusModel() }])
+    expect(wb.iteration.enabled).toBe(false)
+    expect(wb.getValue('S', 1, 1)).toEqual({ error: '#CYCLE!' })
+  })
+
+  it('converges on the fixed point when it is on', () => {
+    const wb = createWorkbook([{ name: 'S', cells: bonusModel() }], { iteration: { enabled: true } })
+    expect(wb.getValue('S', 1, 1)).toBeCloseTo(100000 / 11, 2)
+    expect(wb.getValue('S', 2, 1)).toBeCloseTo(100000 - 100000 / 11, 2)
+  })
+
+  it('turns a cycle into a number and back', () => {
+    const wb = createWorkbook([{ name: 'S', cells: bonusModel() }])
+    expect(wb.getValue('S', 1, 1)).toEqual({ error: '#CYCLE!' })
+    wb.setIteration({ enabled: true })
+    expect(wb.getValue('S', 1, 1)).toBeCloseTo(100000 / 11, 2)
+    wb.setIteration({ enabled: false })
+    expect(wb.getValue('S', 1, 1)).toEqual({ error: '#CYCLE!' })
+  })
+
+  it('follows an edit to the input', () => {
+    const wb = createWorkbook([{ name: 'S', cells: bonusModel() }], { iteration: { enabled: true } })
+    wb.setRaw('S', 0, 1, '220000')
+    expect(wb.getValue('S', 1, 1)).toBeCloseTo(220000 / 11, 2)
+  })
+
+  it('stops at the cap when the loop does not settle', () => {
+    // =B1+1 never converges; Excel runs the passes and keeps what they reached.
+    const wb = createWorkbook([{ name: 'S', cells: [['', '=B1+1']] }], { iteration: { enabled: true, maxIterations: 7 } })
+    // The first evaluation counts one, then the seven passes: bounded, not
+    // hung, and a number rather than an error.
+    expect(wb.getValue('S', 0, 1)).toBe(8)
+  })
+
+  it('leaves the rest of the sheet alone', () => {
+    const wb = createWorkbook([{ name: 'S', cells: [['5', '=A1*2', '=B1+1'], ['', '=C1+A1']] }], { iteration: { enabled: true } })
+    expect(wb.getValue('S', 0, 1)).toBe(10)
+    expect(wb.getValue('S', 1, 1)).toBe(16)
+  })
+
+  it('keeps the settings, clamped, and serializes them only when on', () => {
+    const wb = createWorkbook([{ name: 'S', cells: [['1']] }])
+    expect(wb.serialize().iteration).toBeUndefined()
+    wb.setIteration({ enabled: true, maxIterations: 0, maxChange: -1 })
+    expect(wb.iteration).toEqual({ enabled: true, maxIterations: 1, maxChange: 0.001 })
+    expect(wb.serialize().iteration).toEqual({ enabled: true, maxIterations: 1, maxChange: 0.001 })
+  })
+
+  it('reaches the answer across sheets', () => {
+    const wb = createWorkbook([
+      { name: 'A', cells: [['100000'], ['=0.1*(A1-B!A1)']] },
+      { name: 'B', cells: [['=A!A2']] },
+    ], { iteration: { enabled: true } })
+    expect(wb.getValue('A', 1, 0)).toBeCloseTo(100000 / 11, 2)
+    expect(wb.getValue('B', 0, 0)).toBeCloseTo(100000 / 11, 2)
+  })
+})

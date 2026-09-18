@@ -100,11 +100,13 @@ handle it. Do not handle an action **and** let it fall through.
 ```svelte
 <SvSheet {data} onAction={(action, cmd) => {
   if (action === 'insert-chart') { openChartBuilder(cmd.ranges); return true }
-}} extras={['insert-chart']} />
+}} />
 ```
 
-`insert-table` and `insert-chart` have nothing behind them in the library
-and are left off the ribbon unless listed in `extras`.
+The shell answers `insert-table` and `insert-chart` itself, so both are
+always on the ribbon and the old `extras` prop is no longer needed. An
+application that wants its own dialog still takes either over through
+`onAction`.
 
 ## Qualify addresses in `formats` to reach another sheet
 

@@ -391,3 +391,25 @@ describe('tables', () => {
     ])
   })
 })
+
+describe('iterative calculation', () => {
+  it('goes out as calcPr and comes back on, limits included', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['100000'], ['=0.1*(A1-A2)']] }] })
+    doc.workbook.setIteration({ enabled: true, maxIterations: 50, maxChange: 0.0001 })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/workbook.xml']).toContain('<calcPr calcId="191029" iterate="1" iterateCount="50" iterateDelta="0.0001"/>')
+
+    const back = documentFromXlsxParts(parts)
+    expect(back.workbook.iteration).toEqual({ enabled: true, maxIterations: 50, maxChange: 0.0001 })
+    // And the circular model reaches its fixed point in the rebuilt document.
+    const again = createSheetDocument({ state: back })
+    expect(again.workbook.getValue('S', 1, 0)).toBeCloseTo(100000 / 11, 2)
+  })
+
+  it('writes no calcPr when it is off, and reads a file without one as off', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1']] }] })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/workbook.xml']).not.toContain('calcPr')
+    expect(documentFromXlsxParts(parts).workbook.iteration).toBeUndefined()
+  })
+})

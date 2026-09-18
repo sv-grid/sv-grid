@@ -34,6 +34,7 @@ import { listComments, isThreaded, type CommentThread, type CommentEntry } from 
 import { listLinks, parseLinkTarget } from './links'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
 import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
+import { cleanIteration, DEFAULT_ITERATION } from './workbook'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -626,11 +627,18 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
 
   const activeTab = Math.max(0, wb.sheets.indexOf(wb.active))
   const names = wb.names.list()
+  const iteration = wb.iteration
   parts['xl/workbook.xml'] = XML_HEAD
     + `<workbook xmlns="${NS_MAIN}" xmlns:r="${NS_REL}">`
     + `<bookViews><workbookView activeTab="${activeTab}"/></bookViews>`
     + `<sheets>${sheetEntries.map((s) => `<sheet name="${esc(s.name)}" sheetId="${s.n}"${s.hidden ? ' state="hidden"' : ''} r:id="rId${s.n}"/>`).join('')}</sheets>`
     + (names.length || printNames.length ? `<definedNames>${names.map((d) => `<definedName name="${esc(d.name)}">${esc(d.refersTo.replace(/^=/, ''))}</definedName>`).join('')}${printNames.join('')}</definedNames>` : '')
+    // Iterative calculation, which Excel keeps here rather than per sheet.
+    // Written only when it is on: a file with no calcPr is a file with the
+    // defaults, and that is what an untouched workbook means.
+    + (iteration?.enabled
+      ? `<calcPr calcId="191029" iterate="1" iterateCount="${iteration.maxIterations}" iterateDelta="${iteration.maxChange}"/>`
+      : '')
     + '</workbook>'
   parts['xl/_rels/workbook.xml.rels'] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">`
     + sheetEntries.map((s) => `<Relationship Id="rId${s.n}" Type="${REL_WORKSHEET}" Target="worksheets/sheet${s.n}.xml"/>`).join('')
@@ -964,6 +972,17 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
     }
   }
 
+  // <calcPr iterate="1" .../>: Excel's Enable iterative calculation.
+  const calcPr = kid(wbRoot, 'calcPr')
+  const iterateOn = calcPr ? attr(calcPr, 'iterate') === '1' || attr(calcPr, 'iterate') === 'true' : false
+  const iteration = iterateOn
+    ? cleanIteration({
+      enabled: true,
+      maxIterations: Number(attr(calcPr!, 'iterateCount') ?? DEFAULT_ITERATION.maxIterations),
+      maxChange: Number(attr(calcPr!, 'iterateDelta') ?? DEFAULT_ITERATION.maxChange),
+    })
+    : null
+
   const sheets: SheetState['workbook']['sheets'] = []
   const entries: Record<string, SheetStateEntry> = {}
   /** Tables are workbook-wide, though each part hangs off its own sheet. */
@@ -1289,7 +1308,7 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 
   return {
     version: 1,
-    workbook: { sheets, active, names, ...(tables.length ? { tables } : {}) },
+    workbook: { sheets, active, names, ...(tables.length ? { tables } : {}), ...(iteration ? { iteration } : {}) },
     sheets: entries,
   }
 }

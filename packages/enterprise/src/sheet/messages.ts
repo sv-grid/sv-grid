@@ -619,6 +619,13 @@ export const defaultDialogMessages = {
   'table.hint': 'A table names its columns, so a formula can say Orders[Amount] and keep meaning it as rows are added. Typing under the last row grows it.',
   'table.badRange': 'That is not a range on this sheet.',
   'table.badName': 'A table name starts with a letter and holds no spaces.',
+  // Calculation Options
+  'iteration.title': 'Calculation Options',
+  'iteration.enable': 'Enable iterative calculation',
+  'iteration.maxIterations': 'Maximum iterations:',
+  'iteration.maxChange': 'Maximum change:',
+  'iteration.hint': 'A circular reference is normally an error. Some models are one on purpose, because the answer is a fixed point: a bonus that is a share of the profit it is taken out of. With this on, the loop runs until it stops moving or the passes run out.',
+  'iteration.badNumbers': 'Iterations is a whole number of at least 1, and the change is not negative.',
   // Insert Link
   'link.title': 'Link',
   'link.address': 'Address:',
