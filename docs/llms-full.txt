@@ -53952,12 +53952,46 @@ graph.cycles()   // every cell in a circular reference
 Cells caught in a cycle are still returned by `dirtyFrom`, so they can show
 `#CYCLE!` rather than keep a stale value while the rest of the sheet works.
 
-## HyperFormula
+## A different engine under the same sheet
 
-For the full Excel function library, `createHyperFormulaSheet` in
-`@svgrid/grid` wraps [HyperFormula](https://hyperformula.handsontable.com) as
-an optional peer dependency. It is a heavier bundle and a separate licence;
-this engine is the dependency-free option that covers the common ground.
+What works a formula out is one option on `createWorkbook`. The built-in
+parser and evaluator are the default and need nothing; an application that
+wants Excel's full library hands over a
+[HyperFormula](https://hyperformula.handsontable.com) instance instead,
+which is an optional peer and a separate licence:
+
+```ts
+import { HyperFormula } from 'hyperformula'
+import { createWorkbook, createHyperFormulaEngine } from '@svgrid/enterprise'
+
+const hf = HyperFormula.buildEmpty({ licenseKey: 'gpl-v3' })
+const wb = createWorkbook(sheets, { engine: createHyperFormulaEngine({ hyperformula: hf }) })
+```
+
+The engine keeps HyperFormula's sheets as a mirror of the workbook's cells
+and writes each edit through; the workbook keeps everything else, because
+none of it is the engine's to decide. The dependency graph, the value
+cache, cycle detection, the volatile set and the spill ranges are read off
+the reference grammar, which is Excel's whatever evaluates it, so they stay
+right under either engine and every part of the shell works the same:
+tracing precedents, Goal Seek, validation formulas, conditional formatting
+rules.
+
+What changes is the function library, so HyperFormula's ~400 functions
+are available and the handful the built-in has that it does not are not,
+and dynamic arrays, which spill inside HyperFormula's own sheet rather
+than over the workbook's cells. A defined name is the workbook's, so a
+formula that uses one needs the same name defined in the instance.
+
+An engine of your own is the same shape: `evaluate(text, at, host)`
+returning the value and, where it has one, the grid to spill. `host.parse`
+is the workbook's cached parse and `host.context.resolve` reads a
+precedent through the cache and the cycle detection, so an engine never
+has to keep a copy unless it wants one (`load` and `write` are there for
+the ones that do).
+
+For a plain `<SvGrid>` with no workbook behind it, `createHyperFormulaSheet`
+in `@svgrid/grid` is the older, row-shaped adapter and is still there.
 
 <div data-docs-demo="173-hyperformula" data-height="520"></div>
 

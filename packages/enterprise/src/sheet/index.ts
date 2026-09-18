@@ -71,6 +71,11 @@ export {
 } from './page-setup'
 export { sheetPrintHtml, printAreas, type SheetPrintInput, type SheetPrintCell } from './print'
 export { sheetCellsFromRows, cellTextOf, type SheetField, type SheetFromRowsOptions } from './from-rows'
+export { builtinEngine, type SheetEngine, type SheetEngineHost, type SheetEngineCell, type SheetEngineResult } from './engine'
+export {
+  createHyperFormulaEngine, fromHyperFormula,
+  type HyperFormulaLike, type HyperFormulaEngineOptions,
+} from './hyperformula-engine'
 export { default as SvSheetSort } from '../SvSheetSort.svelte'
 
 export {

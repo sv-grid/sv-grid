@@ -167,3 +167,8 @@ Excel: `FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE`, `TRANSPOSE`,
 `TEXTSPLIT` and a bare range fill the cells under the formula, which keep
 blank text and read the anchor's values; a blocked spill is `#SPILL!`.
 `LET` and `LAMBDA` are not there.
+
+What evaluates is swappable: `createWorkbook(sheets, { engine })` takes a
+`SheetEngine`, with the built-in as the default and
+`createHyperFormulaEngine({ hyperformula })` for Excel's full library. The
+workbook keeps the graph, the cache and the spills either way.

@@ -12,12 +12,13 @@
  * disagree with the formula above it.
  */
 import { parseFormula } from './parse'
-import { evaluate, evaluateSpill, rangeValues, type EvalContext } from './evaluate'
+import { evaluate, rangeValues, type EvalContext } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
 import { createNames, type SheetNames } from './names'
 import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
+import { builtinEngine, type SheetEngine } from './engine'
 
 export type SheetData = {
   name: string
@@ -30,6 +31,13 @@ export type WorkbookOptions = {
   functions?: Record<string, SheetFunction>
   /** Fires after a recalculation, with the cells whose value changed. */
   onRecalc?(changed: ReadonlyArray<{ sheet: string; row: number; col: number; value: CellValue }>): void
+  /**
+   * What works a formula out. The built-in parser and evaluator by
+   * default; `createHyperFormulaEngine` puts Excel's full library there
+   * instead. The workbook keeps the dependency graph, the cache, the
+   * cycles and the spills whichever engine answers.
+   */
+  engine?: SheetEngine
 }
 
 /** One cell read as text that has not been written: what a validation rule checks. */
@@ -132,6 +140,7 @@ export function createWorkbook(
   const byName = new Map<string, string[][]>()
   const graph = createDependencyGraph()
   const functions = withCustomFunctions(options.functions)
+  const engine = options.engine ?? builtinEngine()
 
   /** Computed values, keyed the same way the graph is. Rebuilt lazily and
    *  invalidated by every write, so it can never hold a value whose formula
@@ -214,6 +223,11 @@ export function createWorkbook(
       resolveNameNode: (name) => names.resolve(name),
       functions,
     }
+  }
+
+  /** The engine's copy of the cells, for an engine that keeps one. */
+  function loadEngine() {
+    engine.load?.(order.map((name) => ({ name, cells: sheetCells(name)!.map((r) => [...r]) })))
   }
 
   /** Forget every derived thing: values, edges, volatility, spills. */
@@ -382,13 +396,18 @@ export function createWorkbook(
       value = ''
     } else if (text.startsWith('=')) {
       const ast = parseCached(text)
-      if (!ast) value = { error: '#PARSE!' }
-      else {
-        const ctx = contextFor(sheet, undefined, { row, col })
-        value = evaluate(ast, ctx)
-        const grid = isError(value) ? null : evaluateSpill(ast, ctx)
-        if (grid) value = recordSpill(key, sheet, row, col, grid)
-        else if (spills.has(key)) for (const k of clearSpill(key)) pending.add(k)
+      // The graph, the volatile set and the spill ranges are read off the
+      // reference grammar, which is Excel's whatever evaluates it, so they
+      // stay right for any engine. Only the value and the grid are asked for.
+      const result = engine.evaluate(text, { sheet, row, col }, {
+        context: contextFor(sheet, undefined, { row, col }),
+        parse: parseCached,
+      })
+      value = result.value
+      const grid = isError(value) ? null : result.spill ?? null
+      if (grid) value = recordSpill(key, sheet, row, col, grid)
+      else if (spills.has(key)) for (const k of clearSpill(key)) pending.add(k)
+      if (ast) {
         if (isVolatile(ast)) volatile.add(key)
         else volatile.delete(key)
         graph.setPrecedents(key, precedentsOf(
@@ -397,6 +416,9 @@ export function createWorkbook(
           (s) => Math.max(rowCount(s ?? sheet) - 1, 0),
           (name) => names.resolve(name),
         ))
+      } else {
+        graph.setPrecedents(key, null)
+        volatile.delete(key)
       }
     } else {
       const n = Number(text)
@@ -478,6 +500,7 @@ export function createWorkbook(
       const index = at === undefined ? order.length : Math.max(0, Math.min(at, order.length))
       order.splice(index, 0, chosen)
       active = chosen
+      loadEngine()
       return chosen
     },
 
@@ -490,6 +513,7 @@ export function createWorkbook(
       byName.delete(removed!.toLowerCase())
       // Every cached value may have read the sheet that just went.
       dropAll()
+      loadEngine()
       if (active.toLowerCase() === removed!.toLowerCase()) {
         active = order[Math.min(index, order.length - 1)] ?? order[0]!
       }
@@ -523,6 +547,7 @@ export function createWorkbook(
         if (typeof next === 'string' && next !== entry.refersTo) names.define(entry.name, next)
       }
       dropAll()
+      loadEngine()
       settleAll()
       return true
     },
@@ -555,7 +580,9 @@ export function createWorkbook(
       // Nothing cached read the new sheet yet, but a formula elsewhere
       // that reads a whole column of it by name cannot exist either, so
       // only the graph needs the new cells' precedents, which compute
-      // records on first read.
+      // records on first read. An engine with a copy of the cells does
+      // need the new sheet.
+      loadEngine()
       return name!
     },
 
@@ -571,6 +598,7 @@ export function createWorkbook(
       while (line.length <= col) line.push('')
       if (line[col] === text) return
       line[col] = text
+      engine.write?.(sheet, row, col, text)
 
       const key = cellKey(sheet, row, col)
       const keys: CellKey[] = [key]
@@ -675,6 +703,7 @@ export function createWorkbook(
 
       dropAll()
       astCache.clear()
+      loadEngine()
       settleAll()
     },
 
@@ -709,6 +738,7 @@ export function createWorkbook(
 
     recalculate() {
       dropAll()
+      loadEngine()
       settleAll()
     },
 
@@ -755,6 +785,7 @@ export function createWorkbook(
     order.push(sheet.name)
   }
   active = order[0] ?? ''
+  loadEngine()
   settleAll()
 
   return workbook
