@@ -404,14 +404,15 @@ describe('SvSheetSort (DOM)', () => {
       props: { open: true, workbook, block: { top: 0, left: 0, bottom: 2, right: 1 }, headerGuess: true, activeCol: 1, onApply },
     })
     flushSync()
+    // Three selects per level: the column, what to sort on, and the order.
     const selects = () => qa('.sv-modal select') as HTMLSelectElement[]
     expect(selects()[0]!.value).toBe('1')
     expect([...selects()[0]!.options].map((o) => o.textContent)).toEqual(['Region', 'Amount'])
     click(button('Add Level'))
-    expect(selects()).toHaveLength(4)
-    expect(selects()[2]!.value).toBe('0')
-    selects()[1]!.value = 'desc'
-    selects()[1]!.dispatchEvent(new Event('change', { bubbles: true }))
+    expect(selects()).toHaveLength(6)
+    expect(selects()[3]!.value).toBe('0')
+    selects()[2]!.value = 'desc'
+    selects()[2]!.dispatchEvent(new Event('change', { bubbles: true }))
     flushSync()
     // Without headers the columns are named by letter.
     const headers = qa('.sv-modal label').find((l) => l.textContent?.includes('My data has headers'))?.querySelector('input') as HTMLInputElement
@@ -419,7 +420,56 @@ describe('SvSheetSort (DOM)', () => {
     flushSync()
     expect([...selects()[0]!.options].map((o) => o.textContent)).toEqual(['Column A', 'Column B'])
     click(button('OK'))
-    expect(onApply).toHaveBeenCalledWith([{ col: 1, direction: 'desc' }, { col: 0, direction: 'asc' }], false)
+    expect(onApply).toHaveBeenCalledWith([{ col: 1, direction: 'desc', on: 'value' }, { col: 0, direction: 'asc', on: 'value' }], false)
+  })
+
+  it('sorts on a colour: the column\'s own colours, and On Top instead of A to Z', () => {
+    const onApply = vi.fn()
+    const workbook = createWorkbook([{ name: 'S', cells: [['Region'], ['East'], ['West'], ['North']] }])
+    // Two rows are filled yellow, one is not.
+    const fills: Record<number, string> = { 1: '#ffff00', 3: '#ffff00' }
+    comp = mount(SvSheetSort, {
+      target: host!,
+      props: {
+        open: true,
+        workbook,
+        block: { top: 0, left: 0, bottom: 3, right: 0 },
+        headerGuess: true,
+        activeCol: 0,
+        colourAt: (row: number, _col: number, on: 'fill' | 'color') => (on === 'fill' ? fills[row] ?? null : null),
+        onApply,
+      },
+    })
+    flushSync()
+    const selects = () => qa('.sv-modal select') as HTMLSelectElement[]
+    expect([...selects()[1]!.options].map((o) => o.textContent)).toEqual(['Values', 'Cell Colour', 'Font Colour'])
+    selects()[1]!.value = 'fill'
+    selects()[1]!.dispatchEvent(new Event('change', { bubbles: true }))
+    flushSync()
+    // The order list now offers Excel's On Top and On Bottom.
+    expect([...selects()[2]!.options].map((o) => o.textContent)).toEqual(['On Top', 'On Bottom'])
+    // And the colour list offers the one colour the column carries.
+    const colour = selects()[3]!
+    expect([...colour.options].map((o) => o.value)).toEqual(['#ffff00'])
+    click(button('OK'))
+    expect(onApply).toHaveBeenCalledWith([{ col: 0, direction: 'asc', on: 'fill', colour: '#ffff00' }], true)
+  })
+
+  it('says so when a column carries no colour of that kind', () => {
+    const workbook = createWorkbook([{ name: 'S', cells: [['Region'], ['East']] }])
+    comp = mount(SvSheetSort, {
+      target: host!,
+      props: {
+        open: true, workbook, block: { top: 0, left: 0, bottom: 1, right: 0 }, headerGuess: true, activeCol: 0,
+        colourAt: () => null, onApply: () => {},
+      },
+    })
+    flushSync()
+    const on = (qa('.sv-modal select') as HTMLSelectElement[])[1]!
+    on.value = 'color'
+    on.dispatchEvent(new Event('change', { bubbles: true }))
+    flushSync()
+    expect(q('.sv-modal')!.textContent).toContain('carries no colour of that kind')
   })
 })
 

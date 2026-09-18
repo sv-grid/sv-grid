@@ -1111,6 +1111,16 @@
     return cfAt(r, c, value)?.style?.fill ?? storeFor().get(`r${r}`, colToLetters(c))?.fill ?? null
   }
   const filterCtx = () => ({ fillAt: fillOnActive })
+  /**
+   * A cell's fill or font colour, for a sort level that sorts on one. The
+   * conditional format wins over the written format, as it does on screen:
+   * sorting by a colour you can see is the point.
+   */
+  const colourOnActive = (r: number, c: number, on: 'fill' | 'color'): string | null => {
+    if (on === 'fill') return fillOnActive(r, c)
+    const value = wb.getValue(wb.active, r, c)
+    return cfAt(r, c, value)?.style?.color ?? storeFor().get(`r${r}`, colToLetters(c))?.color ?? null
+  }
 
   /** What a cell of any sheet shows, for the filter over a sheet not on screen. */
   function displayOn(name: string, r: number, c: number): string {
@@ -2887,7 +2897,7 @@
     const start = headerRow ? r1 + 1 : r1
     if (r2 <= start) return
     const rows = Array.from({ length: r2 - start + 1 }, (_, i) => start + i)
-    const order = sortOrder(rows, keys, valueAt)
+    const order = sortOrder(rows, keys, valueAt, colourOnActive)
     if (order.every((r, i) => r === rows[i])) return
     const store = target.store
     const before = rows.map((r) => ({
@@ -5007,6 +5017,7 @@
       workbook={wb}
       block={sortDialog.block}
       headerGuess={sortDialog.headerGuess}
+      colourAt={colourOnActive}
       activeCol={active.colIndex}
       onApply={(keys, hasHeaders) => { const d = sortDialog; if (d) sortBy(d.block, keys, hasHeaders) }}
       onClose={() => { sortDialog = null; afterDialog() }}

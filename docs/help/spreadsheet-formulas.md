@@ -80,7 +80,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
 | Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` |
-| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
+| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
@@ -181,6 +181,10 @@ dynamic-array metadata, so Excel opens them as spills rather than as
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
 `TIMEVALUE` give a fraction of a day that the `h:mm` formats show.
+`NUMBERVALUE(text, decimal, group)` is `VALUE` for a number written the way
+another country writes one: the separators are given rather than guessed,
+because `1.234,56` is a thousand in Germany and one point two in
+Britain.
 
 `%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is

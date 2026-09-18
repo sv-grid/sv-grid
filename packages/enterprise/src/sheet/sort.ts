@@ -11,10 +11,24 @@ import { isBlankValue } from './navigate'
 
 export type SortDirection = 'asc' | 'desc'
 
+/**
+ * What a key sorts on. Excel's "Sort On" list: the cell's value, or one of
+ * its colours.
+ */
+export type SortOn = 'value' | 'fill' | 'color'
+
 export type SortKey = {
   /** The column the key reads, as a sheet column index. */
   col: number
   direction: SortDirection
+  /** What the key reads in that column. Absent means the value. */
+  on?: SortOn
+  /**
+   * The colour this key puts first, for a colour key: Excel sorts ONE
+   * colour to the top (ascending) or the bottom (descending) and leaves
+   * every other row where it was. Absent leaves the key doing nothing.
+   */
+  colour?: string
 }
 
 /** Excel's type order: numbers, then text, then booleans and errors. */
@@ -44,18 +58,50 @@ export function sortOrder(
   rows: ReadonlyArray<number>,
   keys: ReadonlyArray<SortKey>,
   valueAt: (row: number, col: number) => CellValue,
+  /**
+   * The colours a cell carries, for a key that sorts on one: its fill and
+   * its font colour, each as it is written, or null. Only a colour key
+   * calls it.
+   */
+  colourAt?: (row: number, col: number, on: 'fill' | 'color') => string | null,
 ): number[] {
   if (!keys.length) return [...rows]
   return rows
     .map((row, index) => ({ row, index }))
     .sort((a, b) => {
       for (const key of keys) {
-        const cmp = compareValues(valueAt(a.row, key.col), valueAt(b.row, key.col), key.direction)
+        const cmp = key.on === 'fill' || key.on === 'color'
+          ? compareColours(a.row, b.row, key, colourAt)
+          : compareValues(valueAt(a.row, key.col), valueAt(b.row, key.col), key.direction)
         if (cmp !== 0) return cmp
       }
       return a.index - b.index
     })
     .map((entry) => entry.row)
+}
+
+/**
+ * A colour key: the rows wearing the chosen colour move to the top, or to
+ * the bottom when the key runs the other way, and everything else keeps the
+ * order it had.
+ *
+ * That is Excel's model and it is worth stating, because the obvious
+ * alternative, ordering colours among themselves, has no order to use: two
+ * colours are not greater or lesser than one another.
+ */
+function compareColours(
+  rowA: number,
+  rowB: number,
+  key: SortKey,
+  colourAt?: (row: number, col: number, on: 'fill' | 'color') => string | null,
+): number {
+  if (!key.colour || !colourAt || (key.on !== 'fill' && key.on !== 'color')) return 0
+  const wanted = key.colour.trim().toLowerCase()
+  const has = (row: number) => (colourAt(row, key.col, key.on as 'fill' | 'color') ?? '').trim().toLowerCase() === wanted
+  const a = has(rowA)
+  const b = has(rowB)
+  if (a === b) return 0
+  return key.direction === 'asc' ? (a ? -1 : 1) : (a ? 1 : -1)
 }
 
 /**
