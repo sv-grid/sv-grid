@@ -253,7 +253,8 @@ function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt:
     // A dynamic array formula is an array formula over its spill with the
     // metadata flag (`cm`) that tells Excel it spills rather than being an
     // old-style CSE array.
-    const f = spill && spill !== 'covered' ? `<f t="array" ref="${spill.ref}">${esc(text.slice(1))}</f>` : `<f>${esc(text.slice(1))}</f>`
+    const body = esc(xlsxFormula(text.slice(1)))
+    const f = spill && spill !== 'covered' ? `<f t="array" ref="${spill.ref}">${body}</f>` : `<f>${body}</f>`
     const cm = spill && spill !== 'covered' ? ' cm="1"' : ''
     if (isError(value)) return `<c r="${ref}"${sAttr}${cm} t="e">${f}<v>${esc(value.error)}</v></c>`
     if (typeof value === 'boolean') return `<c r="${ref}"${sAttr}${cm} t="b">${f}<v>${value ? 1 : 0}</v></c>`
@@ -815,6 +816,62 @@ function readSharedStrings(xml: string | undefined): string[] {
 
 /** A formula as the engine spells it: a leading `=`, no `_xlfn.` prefixes. */
 const engineFormula = (text: string): string => `=${text.replace(/_xlfn\./g, '').replace(/_xlws\./g, '')}`
+
+/**
+ * Excel's "future functions", which it stores under a prefix.
+ *
+ * Anything added after the file format was frozen is written as
+ * `_xlfn.NAME`, and the ones that only make sense on a worksheet as
+ * `_xlfn._xlws.NAME`. A file that spells them plainly opens in Excel with
+ * `#NAME?` in every one of those cells, which is why this list exists: the
+ * reader already strips the prefixes, and the writer has to put them back.
+ */
+const XLWS_FUNCTIONS = new Set(['FILTER', 'SORT'])
+const XLFN_FUNCTIONS = new Set([
+  'LET', 'LAMBDA', 'MAP', 'BYROW', 'BYCOL', 'REDUCE', 'SCAN', 'MAKEARRAY',
+  'UNIQUE', 'SEQUENCE', 'SORTBY', 'RANDARRAY', 'TEXTSPLIT',
+  'XLOOKUP', 'XMATCH', 'TEXTJOIN', 'CONCAT', 'IFS', 'SWITCH', 'MAXIFS', 'MINIFS',
+])
+
+/**
+ * A formula as the FILE spells it: the future functions prefixed.
+ *
+ * Scanned rather than replaced by a regular expression, so that a name
+ * inside a string literal (`="SORT(x)"`) is left alone, and one that is
+ * part of a longer name (`MYSORT(`) is too.
+ */
+export function xlsxFormula(text: string): string {
+  let out = ''
+  let i = 0
+  while (i < text.length) {
+    const ch = text[i]!
+    if (ch === '"') {
+      const end = text.indexOf('"', i + 1)
+      const close = end < 0 ? text.length : end + 1
+      out += text.slice(i, close)
+      i = close
+      continue
+    }
+    if (/[A-Za-z_]/.test(ch)) {
+      let j = i
+      while (j < text.length && /[A-Za-z0-9_.]/.test(text[j]!)) j += 1
+      const word = text.slice(i, j)
+      const isCall = text[j] === '('
+      const before = i > 0 ? text[i - 1]! : ''
+      const upper = word.toUpperCase()
+      if (isCall && before !== '.' && before !== '!' && (XLFN_FUNCTIONS.has(upper) || XLWS_FUNCTIONS.has(upper))) {
+        out += XLWS_FUNCTIONS.has(upper) ? `_xlfn._xlws.${word}` : `_xlfn.${word}`
+      } else {
+        out += word
+      }
+      i = j
+      continue
+    }
+    out += ch
+    i += 1
+  }
+  return out
+}
 
 /** A bound as the file spells it, read back as a literal or a formula. */
 function readValidationFormula(text: string | null, allow: ValidationAllow): string | undefined {

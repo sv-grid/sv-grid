@@ -63,6 +63,13 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- LET and LAMBDA, with MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY: a
+  lexical scope in the evaluator's context, lambdas as a value only the
+  formula can hold, immediate and curried calls through a `(` node the
+  parser builds, and the helpers spilling like the other array functions.
+  The xlsx writer learned Excel's `_xlfn.` prefixes while it was there,
+  which also fixes every dynamic-array formula written before now opening
+  in Excel as `#NAME?`.
 - Hyperlinks (the last of the small gaps in section 2): `sheet/links.ts`
   with the links per sheet, Insert > Link and Ctrl+K, Insert > Remove, the
   `HYPERLINK` function and a clickable cell for it, internal targets that
@@ -188,7 +195,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME)~~ | shipped, with DATEVALUE, TIMEVALUE, DAYS360, YEARFRAC | done |
 | ~~Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE)~~ | shipped; INDIRECT and OFFSET are volatile, recomputed on every write | done |
 | ~~Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`)~~ | shipped: `evaluateSpill`, spill ranges in the workbook, array arithmetic with broadcasting, TRANSPOSE and TEXTSPLIT too | done |
-| LET / LAMBDA | none | M |
+| ~~LET / LAMBDA~~ | shipped, with MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY, and the `_xlfn.` prefixes in the file | done |
 | ~~A pluggable engine (HyperFormula behind the shell)~~ | shipped: an `engine` option on `createWorkbook`, with `createHyperFormulaEngine` | done |
 | Iterative calculation (circular references with a cap) | cycles are `#CYCLE!` | S |
 

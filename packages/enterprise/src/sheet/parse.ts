@@ -88,7 +88,25 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
         }
         const close = next()
         if (!close || close.t !== 'rparen') throw new FormulaError('#PARSE!')
-        return { k: 'fn', name: t.v, args }
+        let made: Node = { k: 'fn', name: t.v, args }
+        // `=LAMBDA(x, x * 2)(5)`: a lambda written and called on the spot.
+        // Only a lambda is callable this way, so nothing else changes shape;
+        // the call is a `fn` node named `(`, which no tokenizer can produce.
+        while (made.k === 'fn' && (made.name === 'LAMBDA' || made.name === '(') && peek()?.t === 'lparen') {
+          next()
+          const callArgs: Node[] = [made]
+          if (peek()?.t !== 'rparen') {
+            callArgs.push(argument())
+            while (peek()?.t === 'comma') {
+              next()
+              callArgs.push(argument())
+            }
+          }
+          const end = next()
+          if (!end || end.t !== 'rparen') throw new FormulaError('#PARSE!')
+          made = { k: 'fn', name: '(', args: callArgs }
+        }
+        return made
       }
       case 'op': {
         // Unary. Binds tighter than every binary operator except `^`, so
