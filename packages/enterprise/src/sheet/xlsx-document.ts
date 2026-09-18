@@ -607,7 +607,11 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         const ref = `${colToLetters(col)}${row + 1}`
         const tip = link.tip ? ` tooltip="${esc(link.tip)}"` : ''
         const target = parseLinkTarget(link.target)
-        if (target?.kind === 'external') {
+        // A target the shell will not follow is not written into the file
+        // either: a workbook that carries one is a workbook that hands it
+        // to whoever opens it next.
+        if (!target) return
+        if (target.kind === 'external') {
           const id = `rId${4 + i}`
           sheetRels += `<Relationship Id="${id}" Type="${REL_HYPERLINK}" Target="${esc(target.href)}" TargetMode="External"/>`
           refs.push(`<hyperlink ref="${ref}" r:id="${id}"${tip}/>`)

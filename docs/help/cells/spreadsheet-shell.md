@@ -956,6 +956,13 @@ has to. Anything with a scheme, or a bare `www.`, opens in a new tab. A
 single click follows the link and a drag from the same cell selects, which
 is Excel's rule.
 
+Only the schemes a link can sensibly mean are followed: `http`, `https`,
+`mailto`, `tel`, `sms`, `ftp` and `ftps`. A target carrying any other one,
+`javascript:` among them, is not a link at all: the cell keeps its text,
+nothing is clickable, and the target is never written into a saved file. A
+link is data, arriving from a colleague, a delta stream or an opened file,
+so what may be followed is named rather than assumed.
+
 Links are per sheet, ride in `getState()` as `links`, report
 `{ kind: 'links' }` on `onChange`, and move with an insert or a delete.
 They go into the .xlsx as real hyperlinks, an external one as a

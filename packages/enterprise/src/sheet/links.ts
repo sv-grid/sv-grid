@@ -89,6 +89,23 @@ export function copyLinks(links: LinksMap): LinksMap {
 /** Anything with a scheme, or a bare `www.`, is a link out of the page. */
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|www\.)/i
 
+/**
+ * The schemes a cell's link may carry.
+ *
+ * A link is data: it is typed by a colleague, arrives on a delta stream, or
+ * comes out of a file someone sent. Following `javascript:` from one runs
+ * that text in the page, so the set of schemes that may be followed is
+ * named here rather than assumed, and anything else is not a link at all.
+ */
+const SAFE_SCHEMES = new Set(['http', 'https', 'mailto', 'tel', 'sms', 'ftp', 'ftps'])
+
+/** Whether a target is one this shell will follow out of the page. */
+export function isSafeLinkTarget(target: string): boolean {
+  const text = target.trim()
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(text)
+  return scheme ? SAFE_SCHEMES.has(scheme[1]!.toLowerCase()) : true
+}
+
 export type LinkTarget =
   | { kind: 'external'; href: string }
   | { kind: 'internal'; sheet: string | null; row: number; col: number }
@@ -101,6 +118,10 @@ export type LinkTarget =
 export function parseLinkTarget(target: string): LinkTarget | null {
   const text = target.trim()
   if (text === '') return null
+  // A scheme that is not one of the safe ones is not a link: null rather
+  // than an address, so nothing downstream can follow it or write it into
+  // a file.
+  if (!isSafeLinkTarget(text)) return null
   if (EXTERNAL.test(text)) return { kind: 'external', href: text.toLowerCase().startsWith('www.') ? `https://${text}` : text }
   // `Sheet1!B4` and `'Two words'!B4`: the sheet is whatever is before the
   // last `!`, which `parseA1` takes as an argument rather than parsing.
