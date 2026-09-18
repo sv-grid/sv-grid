@@ -25,9 +25,9 @@ import { lineShift, remapNotes, shiftRect, type Rect } from './rects'
 import type { CommentsMap, CommentValue } from './comments'
 import { copyProtection, defaultProtection, type SheetProtection } from './protection'
 import { copyPageSetup, defaultPageSetup, shiftPageSetup, type PageSetup } from './page-setup'
-import { copyObject, shiftObjects, type SheetObject } from './objects'
-import { copySparkline, shiftSparklines, type SparklineGroup } from './sparklines'
-import { copyPivot, shiftPivots, type SheetPivot } from './pivot-range'
+import { copyObject, objectId, shiftObjects, type SheetObject } from './objects'
+import { copySparkline, shiftSparklines, sparklineId, type SparklineGroup } from './sparklines'
+import { copyPivot, pivotId, shiftPivots, type SheetPivot } from './pivot-range'
 import { copyLinks, shiftLinks, type LinksMap } from './links'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
@@ -401,6 +401,13 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       // Through the JSON shape, so nothing is shared between the two.
       const copy = JSON.parse(JSON.stringify(serializeEntry(get(from)))) as SheetStateEntry
       copy.sheetHidden = false
+      // The copy's chart, picture, sparkline and pivot are its own, so they
+      // get their own ids the way Excel's Move or Copy does. Sharing them
+      // would mean a shell that tracks the selected object by id following
+      // the copy's one across a sheet switch, and deleting it there.
+      copy.objects = copy.objects?.map((object) => ({ ...object, id: objectId() }))
+      copy.sparklines = copy.sparklines?.map((group) => ({ ...group, id: sparklineId() }))
+      copy.pivots = copy.pivots?.map((pivot) => ({ ...pivot, id: pivotId() }))
       hydrateEntry(get(made), copy)
       changed({ kind: 'sheets' })
       return made

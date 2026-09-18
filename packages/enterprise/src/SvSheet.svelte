@@ -1511,6 +1511,19 @@
     cmdOf()?.recordUndo(() => put(before), () => put(next))
   }
 
+  /**
+   * A selected object belongs to the sheet it sits on. Switching sheets
+   * drops the selection, so the handles do not appear on whatever the other
+   * sheet happens to have there and Delete cannot reach it.
+   */
+  let objectSheet = ''
+  $effect(() => {
+    void version
+    if (wb.active === objectSheet) return
+    objectSheet = wb.active
+    untrack(() => { selectedObject = null })
+  })
+
   const addObject = (object: SheetObject) => { putObjects([...objectsNow(), object]); selectedObject = object.id }
   const replaceObject = (object: SheetObject) => putObjects(objectsNow().map((o) => (o.id === object.id ? object : o)))
   function removeObject(id: string) {
