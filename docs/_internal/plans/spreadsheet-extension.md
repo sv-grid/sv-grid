@@ -187,11 +187,28 @@ Shipped on the plan's branch, one commit per item:
   ribbon's keys are read off the model. The rule descriptions in the
   Rules Manager and the function names stay English.
 
+Then a quality pass over the whole branch, looking for defects rather than
+features. What it found, each fixed with the test that would have caught
+it: a table left pointing at a sheet that had been renamed, and none on a
+copied sheet; a table header nobody could read; every ribbon group
+published as a landmark; a chart's trendline written where the schema wants
+its categories; a `javascript:` link followed out of a cell, and the same
+one carried in from a file; a duplicated sheet sharing its objects'
+identities with the sheet it came from, so Delete on the copy reached the
+original's selection; and `NUMBERVALUE` reading a thousands mark after the
+decimal point as a number rather than as the typo Excel calls it.
+
+What the pass leaves behind: QA suites over the round trips, the engine
+seam, the package surface, hostile input, a stranger's file and a copied
+sheet; two that read the shell against its own tables (every `t('...')` has
+a default, every ribbon action has a case); and a seeded generator that
+puts documents nobody wrote through both round trips, run to five hundred
+seeds with nothing to report.
+
 Deviations from the plan: Data Validation is a plain dropdown, not a split
 button, because the ribbon model forbids a dropdown that emits its own
 face; the xlsx reader uses DOMParser (present in browsers and jsdom) and
-throws a clear error where it is absent. Tables, charts and images do not
-ride in the file. Demos 474 and 475 show the milestone and are registered in the
+throws a clear error where it is absent. The demos are registered in the
 example gallery; their entries in the website's demo registry (a private
 submodule not checked out here) are still to add.
 
