@@ -17,7 +17,9 @@ export type FunctionSuggestion = {
   end: number
 }
 
-const NAMES = Object.keys(FUNCTIONS).sort()
+/** The evaluator dispatches these itself, so they are not in the table. */
+const EVALUATOR_NAMES = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT']
+const NAMES = [...new Set([...Object.keys(FUNCTIONS), ...EVALUATOR_NAMES])].sort()
 
 /** Signature hints, for the ones whose argument order is not obvious. */
 export const SIGNATURES: Record<string, string> = {
@@ -89,6 +91,11 @@ export const SIGNATURES: Record<string, string> = {
   TIME: 'TIME(hour, minute, second)',
   YEARFRAC: 'YEARFRAC(start_date, end_date, [basis])',
   CHOOSE: 'CHOOSE(index, value1, ...)',
+  ROW: 'ROW([reference])',
+  COLUMN: 'COLUMN([reference])',
+  ADDRESS: 'ADDRESS(row, column, [abs], [a1], [sheet])',
+  OFFSET: 'OFFSET(reference, rows, cols, [height], [width])',
+  INDIRECT: 'INDIRECT(text, [a1])',
 }
 
 /**

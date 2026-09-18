@@ -88,6 +88,22 @@ export function precedentsOf(
   return out
 }
 
+/**
+ * Functions whose result can change without any precedent changing: a
+ * reference built from text, a range built from arithmetic, the clock, a
+ * random number. A cell holding one is recomputed on every edit, as Excel
+ * recomputes its volatile cells, rather than trusting the graph.
+ */
+export const VOLATILE_FUNCTIONS: ReadonlySet<string> = new Set(['INDIRECT', 'OFFSET', 'RAND', 'RANDBETWEEN', 'NOW', 'TODAY'])
+
+export function isVolatile(ast: Node): boolean {
+  let found = false
+  visit(ast, (n) => {
+    if (n.k === 'fn' && VOLATILE_FUNCTIONS.has(n.name)) found = true
+  })
+  return found
+}
+
 export type DependencyGraph = {
   /** Record (or clear, with null) what one cell reads. */
   setPrecedents(cell: CellKey, precedents: ReadonlyArray<CellKey> | null): void

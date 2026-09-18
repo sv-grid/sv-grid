@@ -82,7 +82,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` |
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
-| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` |
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
@@ -98,6 +98,15 @@ negative, money received positive. `=PMT(5%/12, 360, 200000)` is a
 negative payment on a positive loan, and `=FV(6%/12, 120, -100)` a
 positive balance from negative deposits. `RATE` and `IRR` are solved
 numerically and return `#NUM!` when no rate fits.
+
+`OFFSET` and `INDIRECT` produce a reference rather than a value: on their
+own they read as the top-left cell, and inside a function they hand over
+the whole rectangle, so `=SUM(OFFSET(A1,0,0,A2,1))` adds as many cells as
+A2 says. Both are volatile, as `RAND`, `RANDBETWEEN`, `NOW` and `TODAY`
+are: a workbook recomputes a cell holding one on every write, since the
+dependency graph cannot see what text it will point at next. `ROW()` and
+`COLUMN()` without an argument need to know the cell they sit in, which a
+`Workbook` supplies as `currentCell`.
 
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and

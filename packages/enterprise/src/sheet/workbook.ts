@@ -15,7 +15,7 @@ import { parseFormula } from './parse'
 import { evaluate, rangeValues, type EvalContext } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
-import { createDependencyGraph, precedentsOf, cellKey, type CellKey } from './deps'
+import { createDependencyGraph, precedentsOf, isVolatile, cellKey, type CellKey } from './deps'
 import { createNames, type SheetNames } from './names'
 import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
 
@@ -117,6 +117,9 @@ export function createWorkbook(
   const values = new Map<CellKey, CellValue>()
   /** Cells currently being resolved, for cycle detection. */
   const visiting = new Set<CellKey>()
+  /** Cells whose formula is volatile (INDIRECT, OFFSET, RAND, NOW ...):
+   *  recomputed on every write, since the graph cannot see what they read. */
+  const volatile = new Set<CellKey>()
   /** Parsed formulas, keyed by their TEXT rather than their position: a
    *  column of =A1*2 filled down is one parse, not one per row. */
   const astCache = new Map<string, Node | null>()
@@ -160,8 +163,9 @@ export function createWorkbook(
     return ast
   }
 
-  function contextFor(self: string, override?: CellOverride): EvalContext {
+  function contextFor(self: string, override?: CellOverride, at?: { row: number; col: number }): EvalContext {
     return {
+      currentCell: at ? { sheet: self, row: at.row, col: at.col } : undefined,
       resolve: (sheet, row, col) => {
         const name = resolveSheetName(sheet, self)
         // A validation rule reads the cell it is checking as the text being
@@ -203,7 +207,9 @@ export function createWorkbook(
       const ast = parseCached(text)
       if (!ast) value = { error: '#PARSE!' }
       else {
-        value = evaluate(ast, contextFor(sheet))
+        value = evaluate(ast, contextFor(sheet, undefined, { row, col }))
+        if (isVolatile(ast)) volatile.add(key)
+        else volatile.delete(key)
         graph.setPrecedents(key, precedentsOf(
           ast,
           { sheet },
@@ -244,11 +250,15 @@ export function createWorkbook(
     return cells.reduce((max, row) => Math.max(max, row.length), 0)
   }
 
-  /** Drop cached values for a cell and everything downstream of it. */
+  /** Drop cached values for a cell and everything downstream of it, and
+   *  for every volatile cell and its readers, which any write may affect. */
   function invalidate(keys: ReadonlyArray<CellKey>): CellKey[] {
     const touched = [...keys]
     for (const key of keys) values.delete(key)
-    for (const key of graph.dirtyFrom(keys)) {
+    for (const key of volatile) {
+      if (values.delete(key)) touched.push(key)
+    }
+    for (const key of graph.dirtyFrom([...keys, ...volatile])) {
       values.delete(key)
       touched.push(key)
     }
@@ -300,6 +310,7 @@ export function createWorkbook(
       // Every cached value may have read the sheet that just went.
       values.clear()
       graph.clear()
+      volatile.clear()
       if (active.toLowerCase() === removed!.toLowerCase()) {
         active = order[Math.min(index, order.length - 1)] ?? order[0]!
       }
@@ -383,7 +394,7 @@ export function createWorkbook(
 
       const key = cellKey(sheet, row, col)
       // A cell that is no longer a formula reads nothing.
-      if (!text.trim().startsWith('=')) graph.setPrecedents(key, null)
+      if (!text.trim().startsWith('=')) { graph.setPrecedents(key, null); volatile.delete(key) }
       reportRecalc(invalidate([key]))
     },
 

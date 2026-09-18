@@ -21,6 +21,8 @@ per item:
   Cells Accounting and Special (the compiler learned padding tokens,
   conditions and integer masks); the Sort dialog; tab Hide, Unhide,
   Duplicate and a confirmed Delete.
+- Phase B item 2: ROW, COLUMN, ADDRESS, OFFSET and INDIRECT, with the
+  volatile set in the workbook.
 - Phase A items 1 to 3: `documentToXlsx` / `documentFromXlsx` with a
   round-trip test, and the File tab (New, Open, Save As, Export CSV, with
   Ctrl+O and Ctrl+S). Print and Page Layout (item 4) are not done.
@@ -90,7 +92,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Math and statistics (SUMPRODUCT, PRODUCT, CEILING, FLOOR, TRUNC, LOG, EXP, PI, RAND, RANDBETWEEN, LARGE, SMALL, PERCENTILE, QUARTILE, VAR, MODE, AVERAGEIFS, MAXIFS, MINIFS, CORREL, FORECAST)~~ | shipped | done |
 | ~~Text (PROPER, REPT, VALUE, CHAR, CODE, EXACT)~~ | shipped; TEXTSPLIT waits on spill, NUMBERVALUE not done | done |
 | ~~Date (WEEKDAY, EDATE, NETWORKDAYS, WORKDAY, WEEKNUM, HOUR, MINUTE, SECOND, TIME)~~ | shipped, with DATEVALUE, TIMEVALUE, DAYS360, YEARFRAC | done |
-| Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE) | none; INDIRECT and OFFSET need the dependency graph to learn dynamic precedents | M |
+| ~~Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE)~~ | shipped; INDIRECT and OFFSET are volatile, recomputed on every write | done |
 | Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`) | the evaluator returns one value per cell; no spill ranges in the workbook | L |
 | LET / LAMBDA | none | M, after spill |
 | A pluggable engine (HyperFormula behind the shell) | `withCustomFunctions` is the only seam | M |
