@@ -25,10 +25,19 @@
    * whatever arrived last. Two people in different cells never conflict,
    * which is the case that happens.
    *
+   * Presence rides the same wire and is NOT part of the document: each
+   * window sends where its cursor is, and the other draws it as a coloured
+   * box with a name on it. Nothing about it is ever saved, because a cursor
+   * belongs to a session rather than to a file.
+   *
    * Try: type a number in B2 on the left. Bold a row on the right. Insert
-   * a row above 3 on either. Watch the log, and the other sheet.
+   * a row above 3 on either. Select a block in one window and watch the box
+   * appear in the other. Watch the log, and the other sheet.
    */
-  import { SvSheet, createSheetDocument, createDeltaStream, type SheetDelta } from '@svgrid/enterprise'
+  import {
+    SvSheet, createSheetDocument, createDeltaStream,
+    type SheetDelta, type SheetPresence,
+  } from '@svgrid/enterprise'
 
   const cells: string[][] = [
     ['Region', 'Q1', 'Q2', 'Year'],
@@ -52,21 +61,42 @@
     }
     if (delta.kind === 'structure') return `structure ${delta.edit.kind} at ${delta.edit.at + 1} x${delta.edit.count}`
     if (delta.kind === 'state') return `state ${Object.keys(delta.entry).join(', ')}`
+    if (delta.kind === 'presence') {
+      const [r1, c1, r2, c2] = delta.who.rect
+      const box = `${String.fromCharCode(65 + c1)}${r1 + 1}:${String.fromCharCode(65 + c2)}${r2 + 1}`
+      return `presence ${delta.who.name} at ${box}`
+    }
     return 'document (full state)'
   }
 
   function note(from: 'A' | 'B', delta: SheetDelta) {
     const at = new Date().toLocaleTimeString([], { hour12: false })
-    log = [{ from, text: describe(delta), at }, ...log].slice(0, 40)
+    const entry: Entry = { from, text: describe(delta), at }
+    // A cursor moves on every arrow key, so the newest presence line from
+    // one side replaces the last rather than filling the log with a line
+    // per keystroke. A real transport throttles for the same reason.
+    const top = log[0]
+    if (delta.kind === 'presence' && top && top.from === from && top.text.startsWith('presence ')) {
+      log = [entry, ...log.slice(1)]
+      return
+    }
+    log = [entry, ...log].slice(0, 40)
   }
 
   // The wire. In an application these two callbacks are a socket send and a
   // socket message; here they hand the delta straight to the other stream.
+  // Who each window sees. Presence is a prop rather than document state, so
+  // it lives here in the page, not in either document.
+  let inLeft = $state<SheetPresence[]>([])
+  let inRight = $state<SheetPresence[]>([])
+
   const a = createDeltaStream(left, {
     onDelta: (delta) => { note('A', delta); b.apply(delta) },
+    onPresence: (who) => { inLeft = [who] },
   })
   const b = createDeltaStream(right, {
     onDelta: (delta) => { note('B', delta); a.apply(delta) },
+    onPresence: (who) => { inRight = [who] },
   })
 
   $effect(() => () => { a.stop(); b.stop() })
@@ -76,11 +106,25 @@
   <div class="pair">
     <section>
       <header><span class="who a">A</span> Ada's window</header>
-      <SvSheet document={left} height="100%" rows={14} columns={7} />
+      <SvSheet
+        document={left}
+        height="100%"
+        rows={14}
+        columns={7}
+        presence={inLeft}
+        onPresence={(me) => a.sendPresence({ id: 'ada', name: 'Ada', colour: '#2563eb', ...me })}
+      />
     </section>
     <section>
       <header><span class="who b">B</span> Grace's window</header>
-      <SvSheet document={right} height="100%" rows={14} columns={7} />
+      <SvSheet
+        document={right}
+        height="100%"
+        rows={14}
+        columns={7}
+        presence={inRight}
+        onPresence={(me) => b.sendPresence({ id: 'grace', name: 'Grace', colour: '#16a34a', ...me })}
+      />
     </section>
   </div>
   <aside>

@@ -47,6 +47,8 @@ export interface SvSheetElement extends HTMLElement {
   showTabs: boolean
   /** attribute `show-status-bar` */
   showStatusBar: boolean
+  /** property only - an attribute cannot hold this */
+  presence: readonly unknown[]
   /** The grid api, set before `ready` fires. */
   api: unknown
   /** The sheet document, set before `ready` fires. */
@@ -78,6 +80,7 @@ export interface SvSheetEventMap {
   action: CustomEvent<{ action: unknown; cmd: unknown }>
   ready: CustomEvent<{ api: unknown; document: unknown }>
   change: CustomEvent<unknown>
+  presence: CustomEvent<unknown>
 }
 
 declare global {

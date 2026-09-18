@@ -109,6 +109,7 @@
   } from './sheet/links'
   import { isValidTableName, type TableRegion } from './sheet/tables'
   import { tableStyleColours, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
+  import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, type SheetPresence } from './sheet/presence'
   import { SvChart, SvSparkline } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -248,6 +249,21 @@
      * (`getState()`, debounced). Undo and redo report too.
      */
     onChange?: (reasons: ReadonlyArray<SheetChangeReason>) => void
+    /**
+     * Other people on this workbook: each one's sheet, selection, name and
+     * colour, drawn over the cells as a coloured box with a tag.
+     *
+     * Presence is not part of the document and is never saved: a cursor
+     * belongs to a session. It comes in as a prop so the transport stays
+     * the application's, and `createDeltaStream` carries it for an
+     * application that wants one wire for both.
+     */
+    presence?: ReadonlyArray<SheetPresence>
+    /**
+     * Where THIS user is, every time it moves: the sheet, the selection and
+     * the active cell. What an application broadcasts as its own presence.
+     */
+    onPresence?: (me: { sheet: string; rect: Rect; active: { row: number; col: number } }) => void
   }
 
   /**
@@ -287,6 +303,8 @@
     onAction,
     onReady,
     onChange,
+    presence,
+    onPresence,
   }: Props = $props()
 
   enableSheet()
@@ -1891,6 +1909,52 @@
     if (!activeObjects.length) { objectBoxes = {}; return }
     void tick().then(() => requestAnimationFrame(measureObjects))
   })
+
+  // --- presence -------------------------------------------------------------
+  /**
+   * Other people's selections, drawn over the cells the way the auditing
+   * arrows are: measured from the rendered cells, and measured again on
+   * every scroll and repaint. A box whose cells are all scrolled out of the
+   * window is simply not drawn this paint.
+   */
+  const peersHere = $derived.by(() => presenceOnSheet(livePresence(presence ?? []), wb.active))
+  let peerBoxes = $state<Record<string, { left: number; top: number; width: number; height: number; tagLeft: number; tagTop: number }>>({})
+
+  function measurePeers() {
+    const host = gridHost
+    if (!host || !peersHere.length) { peerBoxes = {}; return }
+    const b = host.getBoundingClientRect()
+    const cellBox = (row: number, col: number) => host.querySelector<HTMLElement>(`td[data-svgrid-row="${row}"][data-svgrid-col="${col}"]`)?.getBoundingClientRect() ?? null
+    const next: typeof peerBoxes = {}
+    for (const person of peersHere) {
+      const [r1, c1, r2, c2] = person.rect
+      const first = cellBox(r1, c1)
+      const last = cellBox(r2, c2) ?? first
+      if (!first || !last) continue
+      const left = Math.min(startOf(first, b), startOf(last, b))
+      const top = Math.min(first.top, last.top) - b.top
+      const width = Math.max(startOf(first, b) + first.width, startOf(last, b) + last.width) - left
+      const height = Math.max(first.bottom, last.bottom) - b.top - top
+      const anchor = presenceAnchor(person)
+      const tag = cellBox(anchor.row, anchor.col) ?? first
+      next[person.id] = { left, top, width, height, tagLeft: startOf(tag, b), tagTop: tag.top - b.top }
+    }
+    peerBoxes = next
+  }
+  $effect(() => {
+    void version
+    void peersHere
+    if (!peersHere.length) { peerBoxes = {}; return }
+    void tick().then(() => requestAnimationFrame(measurePeers))
+  })
+
+  /** Tell the application where this user is, whenever that moves. */
+  function reportPresence() {
+    if (!onPresence) return
+    const rects = selection.length ? selection.map(normalRect) : []
+    const rect = (rects[rects.length - 1] ?? [active.rowIndex, active.colIndex, active.rowIndex, active.colIndex]) as Rect
+    onPresence({ sheet: wb.active, rect, active: { row: active.rowIndex, col: active.colIndex } })
+  }
 
   /** Drag to move, or drag the corner to resize; both land as one undo on release. */
   function onObjectPointerDown(event: PointerEvent, object: SheetObject, kind: 'move' | 'resize') {
@@ -4587,6 +4651,34 @@
       {/each}
     </svg>
   {/if}
+  {#if peersHere.length}
+    <!-- Who else is here: each peer's selection as a coloured box with a
+         tag on their cursor, drawn over the cells and measured again on
+         every scroll and repaint. Never part of the document. -->
+    <div class="sheet-presence-layer" aria-hidden="true">
+      {#each peersHere as person (person.id)}
+        {@const box = peerBoxes[person.id]}
+        {#if box}
+          {@const colour = person.colour ?? presenceColour(person.id)}
+          <div
+            class="sheet-presence"
+            style:inset-inline-start="{box.left}px"
+            style:top="{box.top}px"
+            style:width="{box.width}px"
+            style:height="{box.height}px"
+            style:--sheet-presence-colour={colour}
+          ></div>
+          <span
+            class="sheet-presence-tag"
+            style:inset-inline-start="{box.tagLeft}px"
+            style:top="{box.tagTop}px"
+            style:--sheet-presence-colour={colour}
+            title={person.name}
+          >{person.name.length > 14 ? presenceInitials(person.name) : person.name}</span>
+        {/if}
+      {/each}
+    </div>
+  {/if}
   {#if activeObjects.length}
     <!-- Excel's floating objects: each anchored to a cell, drawn over the
          rendered ones, moved by a drag and resized by the corner. -->
@@ -4730,6 +4822,7 @@
       // the formula bar and the status bar follow it rather than keeping a
       // second copy that can disagree after a keyboard move.
       active = { rowIndex: cell.rowIndex, colIndex: cell.colIndex }
+      reportPresence()
     }}
     onCellValueChange={onCellWritten}
     onColumnResize={() => { stashWidths(); changed({ kind: 'sizes' }) }}
@@ -4746,6 +4839,7 @@
       // `active` instead; bumping here repainted the whole sheet on every
       // arrow key.
       selection = ranges
+      reportPresence()
     }}
   />
   </div>
@@ -5785,6 +5879,36 @@
   .sheet-table-fill.totals {
     background: var(--sheet-table-totals, color-mix(in srgb, var(--sg-accent, #107c41) 12%, transparent));
     border-top: 1px solid var(--sheet-table-border, color-mix(in srgb, var(--sg-accent, #107c41) 45%, transparent));
+  }
+
+  /* Presence: a thin box in the person's colour around their selection, and
+     a tag on their cursor. Over the cells, out of the pointer's way, and
+     never in the way of reading a number: the box is a border, not a fill. */
+  .sheet-presence-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .sheet-presence {
+    position: absolute;
+    border: 2px solid var(--sheet-presence-colour, #2563eb);
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--sheet-presence-colour, #2563eb) 8%, transparent);
+  }
+  .sheet-presence-tag {
+    position: absolute;
+    transform: translateY(-100%);
+    padding: 1px 5px;
+    border-radius: 3px 3px 3px 0;
+    background: var(--sheet-presence-colour, #2563eb);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* Excel's link: the theme's link colour, underlined, and a hand over it.

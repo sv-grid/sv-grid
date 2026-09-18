@@ -24,9 +24,11 @@ export interface SvSheetProps {
   showFormulaBar?: boolean
   showTabs?: boolean
   showStatusBar?: boolean
+  presence?: readonly unknown[]
   onAction?: (detail: { action: unknown; cmd: unknown }, event: CustomEvent) => void
   onReady?: (detail: { api: unknown; document: unknown }, event: CustomEvent) => void
   onChange?: (detail: unknown, event: CustomEvent) => void
+  onPresence?: (detail: unknown, event: CustomEvent) => void
   className?: string
   style?: Record<string, string | number>
 }

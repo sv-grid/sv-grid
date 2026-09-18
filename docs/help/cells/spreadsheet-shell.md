@@ -1202,7 +1202,7 @@ socket between the two and the sheet is collaborative.
 <SvSheet document={doc} height="100%" />
 ```
 
-Four kinds of delta go out, and each is as small as it can be:
+Five kinds of delta go out, and each is as small as it can be:
 
 - **`cells`** carries the RAW TEXT of the cells that were written, not
   their values. A formula travels as `=SUM(B2:B4)` and the other side works
@@ -1229,8 +1229,39 @@ work and is not pretended at here. Applying is idempotent for `cells` and
 `state` and is not for `structure`, so a transport that can deliver twice
 has to deduplicate.
 
-Presence, other people's cursors, is not part of this: it is a grid overlay
-over `getSelection()`, and nothing about it needs the document.
+### Presence: where everyone is
+
+The deltas carry what people TYPE. Presence carries where they ARE, which
+is what stops two people typing into the same cell.
+
+`presence` is a prop, a list of who else is on this workbook, and the shell
+draws each person on the active sheet as a thin coloured box around their
+selection with their name on their cursor. `onPresence` fires whenever this
+user's own selection moves, with the sheet, the rectangle and the active
+cell, which is what an application broadcasts.
+
+```svelte
+<SvSheet
+  document={doc}
+  presence={others}
+  onPresence={(me) => stream.sendPresence({ id: myId, name: myName, ...me })}
+/>
+```
+
+The fifth delta kind, `presence`, rides the same wire so an application
+needs only one: `sendPresence` sends it, and it arrives at the receiving
+stream's `onPresence` rather than at the document. That is deliberate.
+**Presence is never part of the document**: not in `getState()`, not in the
+.xlsx, and `applySheetDelta` ignores it. A cursor belongs to a session, and
+a file that remembered where someone's cursor was last week would be
+remembering nothing worth keeping.
+
+A person with no `colour` is given a stable one from their id, so a set of
+peers is never all one colour, and anyone who has not been heard from for
+fifteen seconds is dropped, since a closed tab says no goodbye. A cursor
+moves on every arrow key, so throttle `onPresence` if the transport
+charges by the message; the shell does not, because it cannot know what
+the transport costs.
 
 ## How big a sheet it holds
 
@@ -1306,8 +1337,9 @@ button that does nothing.
   object: no drag-and-drop field list, no slicers, no drill-down on a
   double-click, and no report filter. Refresh is what brings it up to
   date.
-- **Collaboration** is the delta stream above and nothing more: no server,
-  no presence, no operational transform, and last writer wins per cell.
+- **Collaboration** is the delta stream and the presence overlay above and
+  nothing more: no server, no operational transform, no follow-the-leader
+  scrolling, and last writer wins per cell.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
@@ -1389,7 +1421,7 @@ Excel's Insert > PivotTable over a block of cells, on the same pivot engine the 
 
 ### Two people on one sheet
 
-Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
+Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows, and each window shows the other's cursor as a coloured box with a name on it. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
 
 <div data-docs-demo="478-sheet-collaboration" data-height="620"></div>
 

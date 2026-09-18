@@ -26,6 +26,7 @@
  * work and does not belong behind an API this small.
  */
 import type { SheetChangeReason, SheetDocument, SheetState, SheetStateEntry } from './document'
+import type { SheetPresence } from './presence'
 import type { StructuralEdit } from './refs'
 
 /** One cell's raw text, as typed. */
@@ -36,6 +37,12 @@ export type SheetDelta =
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }
   | { kind: 'state'; sheet: string; entry: Partial<SheetStateEntry> }
   | { kind: 'document'; state: SheetState }
+  /**
+   * Where someone is, which is not part of the document and is never
+   * applied to one: it rides the same wire because there is no reason to
+   * make an application run two, and the stream hands it to `onPresence`.
+   */
+  | { kind: 'presence'; who: SheetPresence }
 
 /** Which parts of a sheet's saved entry a change reason can have touched. */
 const PARTS: Partial<Record<SheetChangeReason['kind'], Array<keyof SheetStateEntry>>> = {
@@ -74,6 +81,9 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === 
  * has to deduplicate, which is its job rather than this function's.
  */
 export function applySheetDelta(doc: SheetDocument, delta: SheetDelta): void {
+  // Presence is a cursor, not a document change: there is nothing to apply,
+  // and applying it would put someone else's selection in the file.
+  if (delta.kind === 'presence') return
   if (delta.kind === 'cells') {
     for (const cell of delta.cells) doc.workbook.setRaw(delta.sheet, cell.row, cell.col, cell.text)
     doc.changed({ kind: 'cells' })
@@ -93,8 +103,12 @@ export function applySheetDelta(doc: SheetDocument, delta: SheetDelta): void {
 }
 
 export type SheetDeltaStream = {
-  /** Apply a delta from elsewhere without sending it straight back out. */
+  /** Apply a delta from elsewhere without sending it straight back out.
+   *  A `presence` delta changes no document; it goes to `onPresence`. */
   apply(delta: SheetDelta): void
+  /** Say where this user is. Sent as it stands, since a cursor has no
+   *  history worth batching. */
+  sendPresence(who: SheetPresence): void
   /** Send everything as one `document` delta: a new participant's first read. */
   resync(): void
   /** Stop listening. */
@@ -104,6 +118,9 @@ export type SheetDeltaStream = {
 export type SheetDeltaOptions = {
   /** Called with each delta, in the order they happened. */
   onDelta(delta: SheetDelta): void
+  /** Called when a `presence` delta arrives through `apply`: someone else
+   *  moved. Pass what it carries to the shell's `presence` prop. */
+  onPresence?(who: SheetPresence): void
 }
 
 /**
@@ -201,6 +218,7 @@ export function createDeltaStream(doc: SheetDocument, options: SheetDeltaOptions
   return {
     apply(delta) {
       if (stopped) return
+      if (delta.kind === 'presence') { options.onPresence?.(delta.who); return }
       if (delta.kind === 'structure') appliedStructures.push(JSON.stringify({ sheet: delta.sheet, edit: delta.edit }))
       if (delta.kind === 'document') appliedDocument = true
       applySheetDelta(doc, delta)
@@ -215,6 +233,10 @@ export function createDeltaStream(doc: SheetDocument, options: SheetDeltaOptions
       // What arrived is what the other side already has: fold it into the
       // baseline so the next comparison does not report it as ours.
       snapshot()
+    },
+    sendPresence(who) {
+      if (stopped) return
+      options.onDelta({ kind: 'presence', who })
     },
     resync() {
       options.onDelta({ kind: 'document', state: snapshot() })

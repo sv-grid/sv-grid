@@ -8,8 +8,8 @@ import { defineComponent, h, onMounted, ref } from 'vue'
 import type { PropType } from 'vue'
 import '@svgrid/enterprise/wc'
 
-const PROP_NAMES = ["document","workbook","data","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar"] as const
-const EVENT_NAMES = ["action","ready","change"] as const
+const PROP_NAMES = ["document","workbook","data","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar","presence"] as const
+const EVENT_NAMES = ["action","ready","change","presence"] as const
 
 export type SvSheetProps = {
   document?: unknown
@@ -30,6 +30,7 @@ export type SvSheetProps = {
   showFormulaBar?: boolean
   showTabs?: boolean
   showStatusBar?: boolean
+  presence?: readonly unknown[]
 }
 
 export const SvSheet = defineComponent({

@@ -761,3 +761,34 @@ describe('SvSheet calculation options', () => {
     expect(doc.getState().workbook.iteration).toEqual({ enabled: true, maxIterations: 100, maxChange: 0.001 })
   })
 })
+
+describe('SvSheet presence', () => {
+  it('draws a box and a tag for each peer on this sheet, and reports where this user is', async () => {
+    const moves: Array<{ sheet: string; rect: number[]; active: { row: number; col: number } }> = []
+    const { api, sheet } = await mountSheet({
+      presence: [
+        { id: 'ada', name: 'Ada', sheet: 'Sheet1', rect: [0, 0, 1, 1], active: { row: 0, col: 0 } },
+        { id: 'brin', name: 'Brin Fourier-Smith', sheet: 'Sheet1', rect: [1, 1, 1, 1], colour: '#ff0000' },
+        // Someone on another sheet is not drawn here.
+        { id: 'cyd', name: 'Cyd', sheet: 'Sheet2', rect: [0, 0, 0, 0] },
+        // And someone who has been quiet too long is gone.
+        { id: 'dov', name: 'Dov', sheet: 'Sheet1', rect: [0, 0, 0, 0], at: Date.now() - 60_000 },
+      ],
+      onPresence: (me: { sheet: string; rect: number[]; active: { row: number; col: number } }) => { moves.push(me) },
+    })
+    const paint = async () => { flushSync(); await tick(); await new Promise((r) => requestAnimationFrame(() => r(null))); flushSync() }
+    await paint()
+
+    const tags = [...host!.querySelectorAll('.sheet-presence-tag')].map((el) => el.textContent)
+    expect(tags).toEqual(['Ada', 'BF'])
+    expect(host!.querySelectorAll('.sheet-presence')).toHaveLength(2)
+
+    // Moving the cursor reports this user's own presence.
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(2, 1)
+    cmd.setSelection(2, 1)
+    await paint()
+    expect(moves.at(-1)).toEqual({ sheet: 'Sheet1', rect: [2, 1, 2, 1], active: { row: 2, col: 1 } })
+    expect(sheet).toBeTruthy()
+  })
+})
