@@ -702,7 +702,8 @@ describe('SvSheet marching ants', () => {
 
     const wb = doc.workbook
     expect(wb.tables.list()).toEqual([
-      { name: 'Table1', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 3, lastRow: 2, hasTotals: false },
+      // The default style rides along: a new table wears Excel's default.
+      { name: 'Table1', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 3, lastRow: 2, hasTotals: false, style: 'TableStyleMedium2' },
     ])
     // The per-row formula reads its own row through [@Qty], and a whole
     // column through the table's name.

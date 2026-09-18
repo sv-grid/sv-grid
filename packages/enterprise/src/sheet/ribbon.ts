@@ -183,6 +183,7 @@ export type RibbonActionId =
   | 'refresh-pivot'
   | 'insert-link'
   | 'remove-table'
+  | 'table-style'
   | 'remove-link'
   | 'insert-table'
   | 'recalculate'
@@ -932,6 +933,7 @@ const INSERT: RibbonTab = {
         { id: 'table', label: 'Table', title: 'Format the selection as a table', keys: 'Ctrl+T', icon: 'table', kind: 'button', size: 'large', emits: 'insert-table' },
         small(1, { id: 'pivot-refresh', label: 'Refresh', title: 'Rebuild the PivotTable here from its source', icon: 'calculate', kind: 'button', wide: true, emits: 'refresh-pivot' }),
         small(2, { id: 'table-remove', label: 'To Range', title: 'Convert the table here back to ordinary cells', icon: 'delete-cells', kind: 'button', wide: true, emits: 'remove-table' }),
+        small(3, { id: 'table-style', label: 'Table Styles', title: 'Pick the look of the table the cursor is in', icon: 'table', kind: 'button', wide: true, emits: 'table-style' }),
       ],
     },
     {

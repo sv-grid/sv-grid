@@ -82,6 +82,12 @@ export {
 } from './sheet/tables'
 
 export {
+  TABLE_STYLES, DEFAULT_TABLE_STYLE, NO_TABLE_STYLE,
+  findTableStyle, tableStyleColours, tableStyleLabel,
+  type TableStyle, type TableStyleTone, type TableStyleColours,
+} from './sheet/table-styles'
+
+export {
   goalSeek, goalSeekCell,
   type GoalSeekOptions, type GoalSeekResult, type GoalSeekSheet,
   type CellAddress as GoalSeekCellAddress,

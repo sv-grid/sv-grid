@@ -63,6 +63,11 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- The table styles gallery: `sheet/table-styles.ts` with Excel's eighteen
+  built-in names and their accents, `style` on a table region, the shell
+  drawing each table in its own colours, the gallery in the Create Table
+  dialog with Insert > Table Styles beside it, and `tableStyleInfo` in the
+  xlsx both ways.
 - The autosave-to-a-server recipe in the shell page, and the saved-state
   shape in the docs brought up to date with tables, iteration, links,
   sparklines and pivots.
@@ -234,7 +239,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Comments as threads (author, time, replies, resolve)~~ | shipped: the thread card, `commentAuthor`, and Excel's threaded parts in the xlsx | done |
 | ~~Protection: allowed ranges and the allow list~~ | shipped: the Protect Sheet dialog, Allow Edit Ranges, `sheetProtection` in the xlsx. A password is still not one: a lock in the browser is not a secret | done |
 | ~~Sheet tabs: hide / unhide, duplicate, delete with confirm~~ | shipped; move between workbooks not done | done |
-| ~~Format as Table~~ | shipped: `workbook.tables`, Insert > Table and Ctrl+T, the banded look, auto-expand, the xlsx both ways. A styles GALLERY (the twenty-odd presets) is still not one | done |
+| ~~Format as Table~~ | shipped: `workbook.tables`, Insert > Table and Ctrl+T, the banded look, auto-expand, the styles gallery, the xlsx both ways | done |
 
 ### Objects on the sheet
 

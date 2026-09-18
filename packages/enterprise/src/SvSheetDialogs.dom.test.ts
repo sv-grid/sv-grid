@@ -23,6 +23,7 @@ import SvSheetConditionalFormat from './SvSheetConditionalFormat.svelte'
 import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
 import SvSheetEditRanges from './SvSheetEditRanges.svelte'
 import SvSheetPageSetup from './SvSheetPageSetup.svelte'
+import SvSheetTable from './SvSheetTable.svelte'
 import SvSheetEvaluate from './SvSheetEvaluate.svelte'
 import SvSheetErrors from './SvSheetErrors.svelte'
 import { defaultPageSetup } from './sheet/page-setup'
@@ -818,5 +819,44 @@ describe('SvSheetErrors (DOM)', () => {
     flushSync()
     expect(q('.sv-modal')!.textContent).toContain('No errors were found')
     expect(button('Next').disabled).toBe(true)
+  })
+})
+
+describe('SvSheetTable (DOM)', () => {
+  it('shows the styles gallery and hands back the one picked', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetTable, {
+      target: host!,
+      props: { open: true, range: [0, 0, 5, 3], name: 'Orders', onApply },
+    })
+    flushSync()
+    const swatches = qa('.sv-modal [role="radio"]') as HTMLButtonElement[]
+    // None, then six accents in three tones.
+    expect(swatches).toHaveLength(19)
+    expect(swatches[0]!.getAttribute('aria-label')).toContain('None')
+    expect(swatches.map((b) => b.getAttribute('aria-label'))).toContain('Green, Dark')
+    // The default is the one lit when the dialog opens.
+    expect(swatches.filter((b) => b.getAttribute('aria-checked') === 'true')).toHaveLength(1)
+    expect(swatches.find((b) => b.getAttribute('aria-checked') === 'true')!.getAttribute('aria-label')).toBe('Blue, Medium')
+
+    const gold = swatches.find((b) => b.getAttribute('aria-label') === 'Gold, Light')!
+    click(gold)
+    expect(gold.getAttribute('aria-checked')).toBe('true')
+    click(button('OK'))
+    expect(onApply).toHaveBeenCalledWith({ range: [0, 0, 5, 3], name: 'Orders', headers: true, totals: false, style: 'TableStyleLight5' })
+  })
+
+  it('opens on the style a table already wears, and None keeps the cells as they are', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetTable, {
+      target: host!,
+      props: { open: true, range: [0, 0, 5, 3], name: 'Orders', style: 'TableStyleDark3', existing: true, onApply },
+    })
+    flushSync()
+    const chosen = () => (qa('.sv-modal [role="radio"]') as HTMLButtonElement[]).find((b) => b.getAttribute('aria-checked') === 'true')!
+    expect(chosen().getAttribute('aria-label')).toBe('Orange, Dark')
+    click((qa('.sv-modal [role="radio"]') as HTMLButtonElement[])[0])
+    click(button('OK'))
+    expect(onApply.mock.calls[0]![0].style).toBe('None')
   })
 })

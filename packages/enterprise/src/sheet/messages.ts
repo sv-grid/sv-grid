@@ -617,6 +617,8 @@ export const defaultDialogMessages = {
   'table.headers': 'My table has headers',
   'table.totals': 'Show a totals row',
   'table.hint': 'A table names its columns, so a formula can say Orders[Amount] and keep meaning it as rows are added. Typing under the last row grows it.',
+  'table.style': 'Style:',
+  'table.styleNone': 'None: keep the cells as they are',
   'table.badRange': 'That is not a range on this sheet.',
   'table.badName': 'A table name starts with a letter and holds no spaces.',
   // Evaluate Formula

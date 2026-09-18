@@ -372,11 +372,24 @@ describe('tables', () => {
 
     const back = documentFromXlsxParts(parts)
     expect(back.workbook.tables).toEqual([
-      { name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false },
+      { name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false, style: 'TableStyleMedium2' },
     ])
     // And a document rebuilt from it resolves a structured reference again.
     const again = createSheetDocument({ state: back })
     expect(again.workbook.evaluateText('S', '=SUM(Orders[Qty])')).toBe(5)
+  })
+
+  it('carries the style Excel names it by, and None as no style at all', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['Qty'], ['2']] }] })
+    doc.workbook.tables.define({ name: 'T', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 1, hasTotals: false, style: 'TableStyleDark4' })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/tables/table1.xml']).toContain('<tableStyleInfo name="TableStyleDark4"')
+    expect(documentFromXlsxParts(parts).workbook.tables?.[0]!.style).toBe('TableStyleDark4')
+
+    doc.workbook.tables.define({ name: 'T', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 1, hasTotals: false, style: 'None' })
+    const bare = documentToXlsxParts(doc)
+    expect(bare['xl/tables/table1.xml']).not.toContain('tableStyleInfo')
+    expect(documentFromXlsxParts(bare).workbook.tables?.[0]!.style).toBe('None')
   })
 
   it('a totals row is counted out of the data rows, both ways', () => {
@@ -387,7 +400,7 @@ describe('tables', () => {
     const parts = documentToXlsxParts(doc)
     expect(parts['xl/tables/table1.xml']).toContain('ref="A1:A4" headerRowCount="1" totalsRowCount="1"')
     expect(documentFromXlsxParts(parts).workbook.tables).toEqual([
-      { name: 'T', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 2, hasTotals: true },
+      { name: 'T', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 0, lastRow: 2, hasTotals: true, style: 'TableStyleMedium2' },
     ])
   })
 })

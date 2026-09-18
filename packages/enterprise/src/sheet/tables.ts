@@ -30,6 +30,12 @@ export type TableRegion = {
   lastRow: number
   /** Whether the row after `lastRow` is a totals row. */
   hasTotals: boolean
+  /**
+   * The look, by Excel's name for it (`TableStyleMedium2`), or `'None'` for
+   * cells that keep whatever formats they carry. Absent means the default,
+   * which is Excel's default too.
+   */
+  style?: string
 }
 
 /** Which part of a table a structured reference asks for. */
