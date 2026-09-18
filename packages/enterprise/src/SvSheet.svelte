@@ -87,6 +87,7 @@
   import SvSheetChartSetup from './SvSheetChartSetup.svelte'
   import SvSheetSparklines from './SvSheetSparklines.svelte'
   import SvSheetPivot from './SvSheetPivot.svelte'
+  import SvSheetLink from './SvSheetLink.svelte'
   import {
     chartSpecOf, chartFromRange, copyObject, objectId,
     type SheetObject, type SheetChartObject, type ObjectAnchor,
@@ -99,6 +100,9 @@
     pivotFields, pivotBlock, pivotFromRange, pivotWrittenRect, copyPivot,
     type SheetPivot,
   } from './sheet/pivot-range'
+  import {
+    linkAt, setLink, removeLink, parseLinkTarget, linkTitle, hyperlinkArgument, type SheetLink,
+  } from './sheet/links'
   import { SvChart, SvSparkline } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -1481,6 +1485,114 @@
     return { group, values, min: scale?.min, max: scale?.max }
   }
 
+  // --- hyperlinks -----------------------------------------------------------
+  /**
+   * Excel's links live on the CELL, not in its text: the cell keeps whatever
+   * was typed, and the link beside it survives an edit of that text. A click
+   * follows it, the way Excel's single click does; a drag from the cell
+   * still selects, because the click only counts when the pointer did not
+   * move.
+   */
+  const linksNow = () => doc.get(wb.active).links
+  const activeLinks = $derived.by(() => { void version; return linksNow() })
+  let linkSetup = $state<{ link: SheetLink; text: string; where: string; row: number; col: number; existing: boolean } | null>(null)
+
+  function putLinks(next: ReturnType<typeof linksNow>) {
+    const sheet = wb.active
+    const before = doc.get(sheet).links
+    const put = (value: ReturnType<typeof linksNow>) => {
+      doc.get(sheet).links = value
+      bump()
+      changed({ kind: 'links' })
+    }
+    put(next)
+    cmdOf()?.recordUndo(() => put(before), () => put(next))
+  }
+
+  /**
+   * The link a cell carries: the one put on it by Insert > Link, or the
+   * target of a top-level `=HYPERLINK(...)`, which Excel makes clickable
+   * too. The formula's first argument is evaluated, so a link built from
+   * its neighbours (`"…/issues/" & A2`) goes where it says.
+   */
+  function linkOf(row: number, col: number): SheetLink | undefined {
+    const own = linkAt(linksNow(), row, col)
+    if (own) return own
+    const argument = hyperlinkArgument(raw(row, col))
+    if (!argument) return undefined
+    const value = wb.evaluateText(wb.active, `=${argument}`, undefined, { row, col })
+    const target = typeof value === 'string' ? value : typeof value === 'number' ? String(value) : ''
+    return target.trim() ? { target } : undefined
+  }
+
+  /** Insert > Link, or Ctrl+K: the dialog on the active cell. */
+  function insertLink() {
+    if (protectedNow()) { refuse(); return }
+    const { rowIndex, colIndex } = active
+    const here = linkAt(linksNow(), rowIndex, colIndex)
+    linkSetup = {
+      link: here ?? { target: '' },
+      text: raw(rowIndex, colIndex),
+      where: `${colToLetters(colIndex)}${rowIndex + 1}`,
+      row: rowIndex,
+      col: colIndex,
+      existing: Boolean(here),
+    }
+  }
+
+  /** OK in the dialog: the link on the cell, and the text in it, one undo. */
+  function applyLink(link: SheetLink, text: string) {
+    const setup = linkSetup
+    const cmd = cmdOf()
+    if (!setup || !cmd) return
+    cmd.batch(() => {
+      if (text !== raw(setup.row, setup.col)) cmd.setCellValue(setup.row, setup.col, text)
+      putLinks(setLink(linksNow(), setup.row, setup.col, link))
+    })
+    bump()
+  }
+
+  function removeLinksIn() {
+    if (protectedNow()) { refuse(); return }
+    let next = linksNow()
+    for (const [r1, c1, r2, c2] of selectedRects().map(normalRect)) {
+      for (let r = r1; r <= r2; r += 1) for (let c = c1; c <= c2; c += 1) next = removeLink(next, r, c)
+    }
+    if (next === linksNow()) { say(t('noLinkHere')); return }
+    putLinks(next)
+    say(t('linkRemoved'))
+  }
+
+  /** Follow a link: out of the page, or to a cell on this workbook. */
+  async function followLink(link: SheetLink) {
+    const target = parseLinkTarget(link.target)
+    if (!target) return
+    if (target.kind === 'external') {
+      window.open(target.href, '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (target.kind === 'name') {
+      if (!wb.names.resolve(target.name)) { say(t('cannotOpenLink')); return }
+      await jumpToName(target.name)
+      return
+    }
+    const sheet = target.sheet
+    if (sheet && sheet.toLowerCase() !== wb.active.toLowerCase()) {
+      if (!wb.sheets.some((n) => n.toLowerCase() === sheet.toLowerCase())) { say(t('cannotOpenLink')); return }
+      wb.setActive(sheet)
+      bump()
+      // The grid rebuilds its rows from the new sheet on the next render; a
+      // selection set before that would land on the old ones.
+      await tick()
+    }
+    const cmd = cmdOf()
+    if (!cmd) return
+    cmd.setActiveCell(target.row, target.col)
+    cmd.setSelection(target.row, target.col)
+    focusSheet(cmd)
+    bump()
+  }
+
   // --- PivotTable over a range ---------------------------------------------
   /**
    * Excel's PivotTable, on the pivot engine the grid already has. The
@@ -2733,6 +2845,14 @@
         if (onAction?.(action, context) === true) return
         clearSparklinesHere()
         return
+      case 'insert-link':
+        if (onAction?.(action, context) === true) return
+        insertLink()
+        return
+      case 'remove-link':
+        if (onAction?.(action, context) === true) return
+        removeLinksIn()
+        return
       case 'insert-pivot':
         if (onAction?.(action, context) === true) return
         insertPivot()
@@ -2973,6 +3093,14 @@
   }
   /** The brush lands on the release of the selecting click or drag. */
   function onSheetPointerUp(event: PointerEvent) {
+    // Excel's rule for a linked cell: a click follows the link, and a drag
+    // of more than a few pixels was a selection and follows nothing.
+    const press = linkPress
+    linkPress = null
+    if (press && event.button === 0
+      && Math.abs(event.clientX - press.x) <= 4 && Math.abs(event.clientY - press.y) <= 4) {
+      void followLink(press.link)
+    }
     if (!painter) return
     const el = event.target as HTMLElement | null
     if (!el?.closest('td.sv-grid-cell')) return
@@ -3692,6 +3820,11 @@
     resizeGuide = null
   }
 
+  /** A press on a linked cell, waiting to see whether it becomes a drag. */
+  let linkPress: { link: SheetLink; x: number; y: number } | null = null
+
+  /** Excel's rule: a click follows the link, a drag of more than a few
+   *  pixels was a selection and follows nothing. */
   function onSheetPointerDown(event: PointerEvent) {
     if (event.button !== 0) return
     const target = event.target as HTMLElement | null
@@ -3708,7 +3841,17 @@
     const hit = headerHit(target)
     if (!hit) {
       // A press on a cell may become a range drag: the Name Box counts it.
-      if (target?.closest('td[data-svgrid-row][data-svgrid-col]')) cellDrag = true
+      const td = target?.closest<HTMLElement>('td[data-svgrid-row][data-svgrid-col]')
+      if (td) {
+        cellDrag = true
+        // Excel follows a link on a single click, and a drag from the same
+        // cell selects instead; so the press remembers, and the release
+        // decides, which is what `linkPress` is for.
+        const row = Number(td.dataset.svgridRow)
+        const col = Number(td.dataset.svgridCol)
+        const link = linkOf(row, col)
+        linkPress = link && editingText === null ? { link, x: event.clientX, y: event.clientY } : null
+      }
       return
     }
     const cmd = cmdOf()
@@ -4092,14 +4235,17 @@
          of view still shows the part of the outline that is in it. -->
     <span class="sheet-ants {ants}" aria-hidden="true"></span>
   {/if}
+  {@const link = showFormulas ? undefined : linkAt(activeLinks, props.r, props.c)}
+  {@const linked = !!link || (!showFormulas && !!hyperlinkArgument(raw(props.r, props.c)))}
   <span
     class="sheet-cell"
+    class:linked={linked}
     class:formula={showFormulas && shown.text.startsWith('=')}
     class:spill={spill > 0}
     class:wrap={!!entry?.wrap}
     class:has-icon={!!cf?.icon}
     style={`text-align:${align};${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
-    title={hashes ? shown.text : raw(props.r, props.c)}
+    title={link ? linkTitle(link) : hashes ? shown.text : raw(props.r, props.c)}
   >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{hashes ?? shown.text}</span>
   {@const arrow = filterArrowAt(props.r, props.c)}
   {#if arrow}
@@ -4447,6 +4593,22 @@
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
   <input class="sheet-file-input" type="file" accept="image/*" bind:this={imageInput} onchange={pickedPicture} aria-hidden="true" tabindex="-1" />
+  {#if linkSetup}
+    <SvSheetLink
+      open={true}
+      link={linkSetup.link}
+      text={linkSetup.text}
+      where={linkSetup.where}
+      existing={linkSetup.existing}
+      onApply={(link, text) => applyLink(link, text)}
+      onRemove={() => {
+        const at = linkSetup
+        linkSetup = null
+        if (at) putLinks(removeLink(linksNow(), at.row, at.col))
+      }}
+      onClose={() => { linkSetup = null; afterDialog() }}
+    />
+  {/if}
   {#if pivotSetup}
     <SvSheetPivot
       open={true}
@@ -5366,6 +5528,16 @@
     white-space: nowrap;
     overflow: hidden;
   }
+  /* Excel's link: the theme's link colour, underlined, and a hand over it.
+     The cell is still a cell - it is selected, dragged and typed into the
+     same way - so this is a span rather than an anchor. */
+  .sheet-cell.linked {
+    color: var(--sg-info, #0f6cbd);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .sheet-cell.linked:hover { color: color-mix(in srgb, var(--sg-info, #0f6cbd) 80%, var(--sg-fg, #242424)); }
   .sheet-cell.formula {
     font-family: ui-monospace, Menlo, monospace;
     color: var(--sg-accent, #107c41);

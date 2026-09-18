@@ -181,6 +181,8 @@ export type RibbonActionId =
   | 'clear-sparklines'
   | 'insert-pivot'
   | 'refresh-pivot'
+  | 'insert-link'
+  | 'remove-link'
   | 'insert-table'
   | 'recalculate'
   | 'toggle-formulas'
@@ -949,6 +951,17 @@ const INSERT: RibbonTab = {
         { id: 'sparkline-winloss', label: 'Win/Loss', title: 'A win/loss sparkline in each cell of a range', icon: 'sparkline-winloss', kind: 'button', size: 'large', emits: 'sparkline-winloss' },
         small(1, { id: 'sparkline-setup', label: 'Edit', title: 'The sparkline group here: its ranges, kind and colours', icon: 'chart-setup', kind: 'button', wide: true, emits: 'sparkline-setup' }),
         small(2, { id: 'sparkline-clear', label: 'Clear', title: 'Clear the sparklines in the selection', icon: 'delete-cells', kind: 'button', wide: true, emits: 'clear-sparklines' }),
+      ],
+    },
+    {
+      // Excel's Links group: one dialog for the address, the text and the tip,
+      // and Remove Link beside it.
+      id: 'links',
+      icon: 'link',
+      label: 'Links',
+      items: [
+        { id: 'link', label: 'Link', title: 'Link this cell to a page or an address', keys: 'Ctrl+K', icon: 'link', kind: 'button', size: 'large', emits: 'insert-link' },
+        small(1, { id: 'unlink', label: 'Remove', title: 'Remove the link from the selection', icon: 'unlink', kind: 'button', wide: true, emits: 'remove-link' }),
       ],
     },
     {

@@ -75,6 +75,7 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   FIND: { group: 'Text', description: 'Returns the starting position of one text string within another; case-sensitive.', signature: 'FIND(find, within, [start])' },
   SEARCH: { group: 'Text', description: 'Returns the position of one text string within another; not case-sensitive.', signature: 'SEARCH(find, within, [start])' },
   TEXT: { group: 'Text', description: 'Converts a value to text in a specific number format.' },
+  HYPERLINK: { group: 'Lookup & Reference', description: 'Shows the friendly name and follows the link when the cell is clicked.', signature: 'HYPERLINK(link, [friendly_name])' },
 
   TODAY: { group: 'Date & Time', description: "Returns the current date formatted as a date.", signature: 'TODAY()' },
   NOW: { group: 'Date & Time', description: 'Returns the current date and time formatted as a date and time.', signature: 'NOW()' },

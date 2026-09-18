@@ -152,7 +152,7 @@ export type RibbonKeyAction =
   | 'recalculate' | 'toggle-formulas' | 'toggle-filter'
   | 'insert-function' | 'name-manager' | 'insert-table'
   | 'hide-rows' | 'hide-columns' | 'unhide-rows' | 'unhide-columns'
-  | 'edit-comment' | 'open-list' | 'toggle-ribbon'
+  | 'edit-comment' | 'open-list' | 'toggle-ribbon' | 'insert-link'
   | 'merge-center' | 'merge-across' | 'merge-cells' | 'unmerge-cells'
 let onRibbonAction: ((action: RibbonKeyAction, cmd: GridCommandContext) => boolean) | null = null
 
@@ -629,6 +629,7 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: 'l', mod: true, shift: true, run: raise('toggle-filter'), label: 'Filter' },
   { key: 'F3', shift: true, run: raise('insert-function'), label: 'Insert Function' },
   { key: 'F2', shift: true, run: raise('edit-comment'), label: 'Insert or edit the comment on the active cell' },
+  { key: 'k', mod: true, run: raise('insert-link'), label: 'Insert or edit the link on the active cell' },
   { key: 'ArrowDown', alt: true, run: raise('open-list'), label: 'Open the list a validated cell offers' },
   { key: 'F1', mod: true, run: raise('toggle-ribbon'), label: 'Collapse or expand the ribbon' },
   { key: 'F3', mod: true, run: raise('name-manager'), label: 'Name Manager' },

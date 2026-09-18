@@ -814,6 +814,34 @@ Objects do not ride in the .xlsx, in either direction: Save As writes the
 cells, the formats and the rules, and a chart or a picture in a file that
 is opened is left behind.
 
+### Hyperlinks
+
+Two ways to put a link in a cell, both Excel's.
+
+**Insert > Link**, or Ctrl+K, puts a link ON the cell: the address, the
+text to display, and a ScreenTip. The cell keeps whatever it says and the
+link is kept beside it, so editing the text keeps the link, a format
+change keeps it, and clearing the cell takes it away. Insert > Remove
+takes the links off the selection. Each is one undo.
+
+**`=HYPERLINK(link, [friendly])`** puts one in a formula, showing the
+friendly name. A cell holding that formula is clickable too, and its
+target is whatever the first argument works out to, so a link built from
+its neighbours (`"…/issues/" & A2`) goes where it says.
+
+A target that reads like an address moves the selection instead of leaving
+the page: `Sheet2!B4`, `B4`, or a defined name, switching sheets when it
+has to. Anything with a scheme, or a bare `www.`, opens in a new tab. A
+single click follows the link and a drag from the same cell selects, which
+is Excel's rule.
+
+Links are per sheet, ride in `getState()` as `links`, report
+`{ kind: 'links' }` on `onChange`, and move with an insert or a delete.
+They go into the .xlsx as real hyperlinks, an external one as a
+relationship with `TargetMode="External"` and an internal one as a
+`location`, tooltips included, and a file opened back carries both.
+Raised as `insert-link` and `remove-link`.
+
 ### PivotTable from a range
 
 Insert > PivotTable summarises the selected block on the same pivot engine
@@ -1250,6 +1278,12 @@ Excel's Insert > PivotTable over a block of cells, on the same pivot engine the 
 Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
 
 <div data-docs-demo="478-sheet-collaboration" data-height="620"></div>
+
+### Hyperlinks: Insert > Link and HYPERLINK
+
+Excel's two ways of putting a link in a cell. Insert > Link (Ctrl+K) puts one on the cell, so editing the text keeps it and clearing the cell takes it away; the HYPERLINK function puts one in a formula with a friendly name. A target that reads like an address moves the selection instead of leaving the page, so a cell links to another sheet; anything with a scheme opens in a new tab. A single click follows, a drag selects. Links ride in getState(), move with an insert, and go into the .xlsx both ways.
+
+<div data-docs-demo="479-sheet-hyperlinks" data-height="560"></div>
 
 ## See also
 

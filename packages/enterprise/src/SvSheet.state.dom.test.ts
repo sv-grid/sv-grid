@@ -623,4 +623,52 @@ describe('SvSheet marching ants', () => {
     expect([block(1, 2), block(1, 3)]).toEqual(['North', '550'])
     expect(block(3, 3)).toBe('630')
   })
+
+  it('Insert > Link puts a link on the cell, the cell keeps its text, and Remove takes it off', async () => {
+    const { api, doc, sheet } = await mountSheet({
+      data: [{ name: 'S', cells: [['Our site', 'x'], ['Detail', 'y']] }],
+      rows: 8, columns: 4,
+    })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    flushSync()
+    sheet.act('insert-link')
+    flushSync()
+    const dialog = document.querySelector('.sv-modal')!
+    expect(dialog.textContent).toContain('Address:')
+    const fields = [...dialog.querySelectorAll('input[type="text"]')] as HTMLInputElement[]
+    // The address, the text as it stands, and the tip.
+    expect(fields[1]!.value).toBe('Our site')
+    const type = (input: HTMLInputElement, text: string) => {
+      input.value = text
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      flushSync()
+    }
+    type(fields[0]!, 'https://svgrid.com')
+    type(fields[2]!, 'The site')
+    ;[...dialog.querySelectorAll('button')].find((b) => b.textContent === 'OK')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    flushSync()
+    await tick()
+
+    expect(doc.get('S').links).toEqual({ r0: { A: { target: 'https://svgrid.com', tip: 'The site' } } })
+    // The cell still says what it said: the link is beside the text.
+    expect(cmd.getCellValue(0, 0)).toBe('Our site')
+    // And it rides the state.
+    const state = JSON.parse(JSON.stringify(sheet.getState()))
+    expect(state.sheets.S.links.r0.A.target).toBe('https://svgrid.com')
+
+    // An insert above moves it with its cell.
+    doc.shift('S', { kind: 'insertRows', at: 0, count: 2 })
+    expect(Object.keys(doc.get('S').links)).toEqual(['r2'])
+    sheet.setState(state)
+    flushSync()
+    await tick()
+    expect(Object.keys(doc.get('S').links)).toEqual(['r0'])
+
+    sheet.act('remove-link')
+    flushSync()
+    await tick()
+    expect(doc.get('S').links).toEqual({})
+  })
 })
