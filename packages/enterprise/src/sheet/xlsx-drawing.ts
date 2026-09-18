@@ -234,17 +234,21 @@ function chartPart(object: SheetChartObject, context: DrawingContext): string {
   const body = series.map((s, i) => {
     const name = s.name ? `<c:tx><c:strRef><c:f>${esc(s.name)}</c:f></c:strRef></c:tx>` : ''
     const cat = categories ? `<c:cat><c:strRef><c:f>${esc(categories)}</c:f></c:strRef></c:cat>` : ''
-    if (object.type === 'scatter') {
-      return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${name}`
-        + (categories ? `<c:xVal><c:numRef><c:f>${esc(categories)}</c:f></c:numRef></c:xVal>` : '')
-        + `<c:yVal><c:numRef><c:f>${esc(s.values)}</c:f></c:numRef></c:yVal></c:ser>`
-    }
     // Excel's own trendline element, so the line drawn here is a trendline
     // there rather than a second series of numbers.
+    //
+    // Its place in the series matters: the schema orders a series
+    // idx, order, tx, ..., trendline, errBars, cat, val, and Excel reports a
+    // file whose elements are out of that order as one needing repair.
     const trend = object.trend
       ? `<c:trendline><c:trendlineType val="${object.trend === 'sma3' ? 'movingAvg' : 'linear'}"/>${object.trend === 'sma3' ? '<c:period val="3"/>' : ''}</c:trendline>`
       : ''
-    return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${name}${cat}${trend}`
+    if (object.type === 'scatter') {
+      return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${name}${trend}`
+        + (categories ? `<c:xVal><c:numRef><c:f>${esc(categories)}</c:f></c:numRef></c:xVal>` : '')
+        + `<c:yVal><c:numRef><c:f>${esc(s.values)}</c:f></c:numRef></c:yVal></c:ser>`
+    }
+    return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/>${name}${trend}${cat}`
       + `<c:val><c:numRef><c:f>${esc(s.values)}</c:f></c:numRef></c:val></c:ser>`
   }).join('')
 

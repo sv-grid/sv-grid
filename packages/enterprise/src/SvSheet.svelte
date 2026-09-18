@@ -1747,7 +1747,7 @@
    * the banded look Excel gives one. The colours ride along because each
    * table has its own style, so they cannot live in a stylesheet.
    */
-  function tablePartAt(row: number, col: number): { part: 'header' | 'band' | 'totals' | 'row'; style: string; text: string } | null {
+  function tablePartAt(row: number, col: number): { part: 'header' | 'band' | 'totals' | 'row'; style: string; text: string; fill: string } | null {
     for (const table of activeTables) {
       if (col < table.firstCol || col > table.lastCol) continue
       const colours = tableStyleColours(table.style ?? DEFAULT_TABLE_STYLE)
@@ -1756,11 +1756,19 @@
       // A filled header needs its own text colour to stay readable; a
       // tinted one keeps the cell's. Either way a format written on the cell
       // still wins, because it is applied after this.
-      if (row === table.headerRow) return { part: 'header', style: css, text: colours.headerText }
+      //
+      // The filled header also paints its colour on the TEXT, not only in
+      // the band behind it. The band is a separate layer, so anything
+      // measuring the contrast of the text (a checker, a high-contrast
+      // mode, a print without backgrounds) sees white on white unless the
+      // colour travels with the text it belongs to.
+      if (row === table.headerRow) {
+        return { part: 'header', style: css, text: colours.headerText, fill: colours.headerText === 'inherit' ? '' : colours.header }
+      }
       const last = table.lastRow + (table.hasTotals ? 1 : 0)
       if (row < table.headerRow || row > last) continue
-      if (table.hasTotals && row === last) return { part: 'totals', style: css, text: 'inherit' }
-      return { part: (row - table.headerRow) % 2 === 0 ? 'band' : 'row', style: css, text: 'inherit' }
+      if (table.hasTotals && row === last) return { part: 'totals', style: css, text: 'inherit', fill: '' }
+      return { part: (row - table.headerRow) % 2 === 0 ? 'band' : 'row', style: css, text: 'inherit', fill: '' }
     }
     return null
   }
@@ -4711,7 +4719,7 @@
     class:spill={spill > 0}
     class:wrap={!!entry?.wrap}
     class:has-icon={!!cf?.icon}
-    style={`text-align:${align};${part && part.text !== 'inherit' ? `color:${part.text};` : ''}${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
+    style={`text-align:${align};${part && part.text !== 'inherit' ? `color:${part.text};${part.fill ? `background:${part.fill};` : ''}` : ''}${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
     title={link ? linkTitle(link) : hashes ? shown.text : raw(props.r, props.c)}
   >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{cellImage ? '' : hashes ?? shown.text}</span>
   {@const arrow = filterArrowAt(props.r, props.c)}

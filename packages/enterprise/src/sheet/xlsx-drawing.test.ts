@@ -147,6 +147,16 @@ describe('objects in the package', () => {
     expect(documentFromXlsxParts(plain).sheets.Sales!.objects![0]).not.toHaveProperty('trend')
   })
 
+  it('orders a series the way the schema does, trendline before the categories', () => {
+    // Excel reports a file whose chart elements are out of order as one
+    // needing repair, so the order is worth pinning rather than assuming.
+    const part = documentToXlsxParts(sheetWith([chart({ trend: 'linear' })]))['xl/charts/chart1.xml']!
+    const ser = part.slice(part.indexOf('<c:ser>'), part.indexOf('</c:ser>'))
+    const order = ['<c:idx', '<c:order', '<c:tx>', '<c:trendline>', '<c:cat>', '<c:val>'].map((tag) => ser.indexOf(tag))
+    expect(order.every((at) => at >= 0)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+  })
+
   it('writes each chart kind as the element Excel names it', () => {
     for (const [type, tag] of [['line', 'lineChart'], ['area', 'areaChart'], ['pie', 'pieChart'], ['scatter', 'scatterChart']] as const) {
       const parts = documentToXlsxParts(sheetWith([chart({ type })]))

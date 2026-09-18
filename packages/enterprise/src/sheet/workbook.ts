@@ -16,7 +16,7 @@ import { evaluate, rangeValues, type EvalContext, tableRectOf } from './evaluate
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
-import { createTableRegistry, shiftTables, type TableRegion, type TableRegistry } from './tables'
+import { createTableRegistry, isValidTableName, shiftTables, type TableRegion, type TableRegistry } from './tables'
 import { createNames, type SheetNames } from './names'
 import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
 import { builtinEngine, type SheetEngine } from './engine'
@@ -244,6 +244,23 @@ export function createWorkbook(
     remove(name) { const gone = rawTables.remove(name); if (gone) afterTables(); return gone },
     growToInclude(sheet, row, col) { const grew = rawTables.growToInclude(sheet, row, col); if (grew) afterTables(); return grew },
     clear() { rawTables.clear(); afterTables() },
+  }
+
+  /**
+   * `Orders2`, `Orders3`, ...: a table name nothing has taken yet.
+   *
+   * A short name plus a number can read as a cell reference (`T2`), which
+   * Excel refuses as a table name and so does the registry, so those fall
+   * back to Excel's own `Table2`.
+   */
+  function freeTableName(base: string): string {
+    const taken = new Set(rawTables.list().map((t) => t.name.toLowerCase()))
+    const root = base.replace(/\d+$/, '') || 'Table'
+    for (let i = 2; ; i += 1) {
+      for (const candidate of [`${root}${i}`, `Table${i}`]) {
+        if (!taken.has(candidate.toLowerCase()) && isValidTableName(candidate)) return candidate
+      }
+    }
   }
 
   function afterTables(): void {
@@ -737,6 +754,11 @@ export function createWorkbook(
       if (index < 0 || order.length <= 1) return false
       const [removed] = order.splice(index, 1)
       byName.delete(removed!.toLowerCase())
+      // The tables that lived on it go with it: a table on a sheet that is
+      // gone resolves to cells that are gone.
+      for (const table of rawTables.list()) {
+        if (table.sheet.toLowerCase() === removed!.toLowerCase()) rawTables.remove(table.name)
+      }
       // Every cached value may have read the sheet that just went.
       dropAll()
       loadEngine()
@@ -772,6 +794,12 @@ export function createWorkbook(
         const next = renameSheetReferences(entry.refersTo, from, to)
         if (typeof next === 'string' && next !== entry.refersTo) names.define(entry.name, next)
       }
+      // A table names the sheet it sits on, and a structured reference
+      // resolves through that name. Leaving it behind turned every
+      // `=SUM(Orders[Amount])` into #REF! the moment the sheet was renamed.
+      for (const table of rawTables.list()) {
+        if (table.sheet.toLowerCase() === from.toLowerCase()) rawTables.define({ ...table, sheet: to })
+      }
       dropAll()
       loadEngine()
       settleAll()
@@ -803,6 +831,14 @@ export function createWorkbook(
       byName.set(name!.toLowerCase(), source.map((line) => [...line]))
       order.splice(index + 1, 0, name!)
       active = name!
+      // A table belongs to its sheet, so the copy gets one of its own, as
+      // Excel's Move or Copy does. Without it the copied cells keep their
+      // `[@Qty]` formulas with no table to resolve them, and every one of
+      // them reads #REF!.
+      for (const table of rawTables.list()) {
+        if (table.sheet.toLowerCase() !== from.toLowerCase()) continue
+        rawTables.define({ ...table, sheet: name!, name: freeTableName(table.name) })
+      }
       // Nothing cached read the new sheet yet, but a formula elsewhere
       // that reads a whole column of it by name cannot exist either, so
       // only the graph needs the new cells' precedents, which compute
