@@ -11,6 +11,29 @@
  */
 import { FormulaError, isError, type CellValue } from './ast'
 
+/** The epoch Excel's date serials count from: serial 1 is 1900-01-01. Day 60
+ *  is Excel's phantom 1900-02-29, so every date from 1900-03-01 on is right
+ *  and the two months before it are a day out, which no sheet has cared
+ *  about. */
+const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30)
+
+/** A date from a cell: a serial number, or text `new Date` can read
+ *  (`2024-03-09`, `2024-03-09 13:45`). Anything else is `#VALUE!`. */
+export function toDate(v: CellValue): Date {
+  if (typeof v === 'number') return new Date(EXCEL_EPOCH_MS + v * 86400000)
+  const d = new Date(toText(v))
+  if (Number.isNaN(d.getTime())) throw new FormulaError('#VALUE!')
+  return d
+}
+
+/** The `yyyy-mm-dd` the date functions hand back. */
+export const isoDate = (d: Date): string => d.toISOString().slice(0, 10)
+
+/** Excel's serial for a date, fractional when it carries a time. */
+export function dateSerial(d: Date): number {
+  return (d.getTime() - EXCEL_EPOCH_MS) / 86400000
+}
+
 export function toNumber(v: CellValue): number {
   if (typeof v === 'number') return v
   if (typeof v === 'boolean') return v ? 1 : 0
@@ -108,4 +131,41 @@ export function matchesCriterion(value: CellValue, criterion: CellValue): boolea
     }
   }
   return looseEquals(value, criterion)
+}
+
+/** The indexes in `range` that meet `criterion`, for the IF family. */
+export function criteriaHits(
+  range: ReadonlyArray<CellValue>,
+  criterion: CellValue,
+): number[] {
+  const out: number[] = []
+  for (let i = 0; i < range.length; i += 1) {
+    if (matchesCriterion(range[i]!, criterion)) out.push(i)
+  }
+  return out
+}
+
+/** SUMIFS and its family: every (range, criterion) pair must match at an index. */
+export function multiCriteriaHits(pairs: Array<[ReadonlyArray<CellValue>, CellValue]>): number[] {
+  const firstPair = pairs[0]
+  if (!firstPair) return []
+  const out: number[] = []
+  for (let i = 0; i < firstPair[0].length; i += 1) {
+    if (pairs.every(([range, crit]) => matchesCriterion(range[i] ?? '', crit))) out.push(i)
+  }
+  return out
+}
+
+/** The (range, criterion) pairs of a *IFS call, starting at argument `from`. */
+export function criteriaPairs(
+  args: ReadonlyArray<ReadonlyArray<CellValue>>,
+  from: number,
+): Array<[ReadonlyArray<CellValue>, CellValue]> {
+  const pairs: Array<[ReadonlyArray<CellValue>, CellValue]> = []
+  for (let i = from; i < args.length; i += 2) {
+    const range = args[i]
+    if (!range) break
+    pairs.push([range, args[i + 1]?.[0] ?? ''])
+  }
+  return pairs
 }

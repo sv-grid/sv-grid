@@ -100,6 +100,7 @@ function render(node: Node): string {
       return `${wrap(node.left, leftMin)}${node.op}${wrap(node.right, rightMin)}`
     }
     case 'fn': return `${node.name}(${node.args.map(render).join(',')})`
+    case 'empty': return ''
   }
 }
 

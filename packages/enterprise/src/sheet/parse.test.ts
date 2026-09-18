@@ -155,8 +155,12 @@ describe('function calls', () => {
     expect((n.args[1] as Extract<Node, { k: 'fn' }>).name).toBe('SUM')
   })
 
-  it('rejects a trailing comma', () => {
-    fails('=SUM(1,)')
+  it('reads a trailing comma as an empty argument, as Excel does', () => {
+    const n = parseFormula('=SUM(1,)') as Extract<Node, { k: 'fn' }>
+    expect(n.args).toHaveLength(2)
+    expect(n.args[1]).toEqual({ k: 'empty' })
+    const gap = parseFormula('=PMT(1,2,3,,1)') as Extract<Node, { k: 'fn' }>
+    expect(gap.args.map((a) => a.k)).toEqual(['num', 'num', 'num', 'empty', 'num'])
   })
 
   it('rejects a call with no closing parenthesis', () => {

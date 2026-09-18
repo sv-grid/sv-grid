@@ -94,13 +94,14 @@ function binary(op: string, l: CellValue, r: CellValue): CellValue {
 
 /** Functions handled before the table, because their arguments must not all
  *  be evaluated up front. */
-const SHORT_CIRCUIT = new Set(['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH'])
+const SHORT_CIRCUIT = new Set(['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA'])
 
 function evalNode(node: Node, ctx: EvalContext): CellValue {
   switch (node.k) {
     case 'num': return node.v
     case 'str': return node.v
     case 'bool': return node.v
+    case 'empty': return ''
 
     case 'ref':
       return ctx.resolve(node.ref.sheet, node.ref.row ?? 0, node.ref.col)
@@ -247,6 +248,21 @@ function evalCall(
     const branch = toBool(cond) ? args[1] : args[2]
     if (!branch) return toBool(cond)
     return evalNode(branch, ctx)
+  }
+
+  if (name === 'ISERROR' || name === 'ISERR' || name === 'ISNA') {
+    let code: string | null = null
+    try {
+      const v = evalNode(args[0]!, ctx)
+      if (isError(v)) code = v.error
+    } catch (e) {
+      if (!(e instanceof FormulaError)) throw e
+      code = e.code
+    }
+    if (code === null) return false
+    if (name === 'ISNA') return code === '#N/A'
+    if (name === 'ISERR') return code !== '#N/A'
+    return true
   }
 
   if (name === 'IFERROR' || name === 'IFNA') {

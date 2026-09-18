@@ -68,6 +68,10 @@ export type Node =
   | { k: 'unary'; op: '-' | '+' | '%'; arg: Node }
   | { k: 'binary'; op: BinaryOp; left: Node; right: Node }
   | { k: 'fn'; name: string; args: Node[] }
+  /** An omitted argument: the gap in `PMT(rate, nper, pv, , 1)`. Reads as a
+   *  blank, so a function sees its default the way it does when the
+   *  argument is simply left off the end. */
+  | { k: 'empty' }
 
 export type BinaryOp =
   | '+' | '-' | '*' | '/' | '^' | '&'

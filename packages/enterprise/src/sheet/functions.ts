@@ -14,11 +14,15 @@
  * short-circuit semantics) are handled in the evaluator instead, because by the
  * time a table entry runs, evaluation has already happened.
  */
-import { FormulaError, isError, err, type CellValue } from './ast'
+import { isError, err, type CellValue } from './ast'
 import {
   toNumber, toBool, toText, looseEquals, compare,
-  numericOnly, isBlank, matchesCriterion,
+  numericOnly, isBlank, toDate, isoDate as iso,
+  criteriaHits, multiCriteriaHits, criteriaPairs,
 } from './coerce'
+import { FINANCIAL_FUNCTIONS } from './packs/financial'
+import { MATH_STATS_FUNCTIONS } from './packs/math-stats'
+import { TEXT_DATE_FUNCTIONS } from './packs/text-date'
 
 export type FnArgs = {
   flat: ReadonlyArray<CellValue>
@@ -48,41 +52,6 @@ function roundTo(value: number, digits: number): number {
   return Math.round((value * f) * (1 + Number.EPSILON)) / f
 }
 
-function toDate(v: CellValue): Date {
-  if (typeof v === 'number') {
-    // Excel serial: day 1 is 1900-01-01, with the famous phantom leap day.
-    return new Date(Date.UTC(1899, 11, 30) + v * 86400000)
-  }
-  const d = new Date(toText(v))
-  if (Number.isNaN(d.getTime())) throw new FormulaError('#VALUE!')
-  return d
-}
-
-const iso = (d: Date): string => d.toISOString().slice(0, 10)
-
-/** Sum / count / average over a criterion range, optionally summing a parallel
- *  range. The three IF functions differ only in what they do with the hits. */
-function criteriaHits(
-  range: ReadonlyArray<CellValue>,
-  criterion: CellValue,
-): number[] {
-  const out: number[] = []
-  for (let i = 0; i < range.length; i += 1) {
-    if (matchesCriterion(range[i]!, criterion)) out.push(i)
-  }
-  return out
-}
-
-/** SUMIFS / COUNTIFS: every (range, criterion) pair must match at an index. */
-function multiCriteriaHits(pairs: Array<[ReadonlyArray<CellValue>, CellValue]>): number[] {
-  const firstPair = pairs[0]
-  if (!firstPair) return []
-  const out: number[] = []
-  for (let i = 0; i < firstPair[0].length; i += 1) {
-    if (pairs.every(([range, crit]) => matchesCriterion(range[i] ?? '', crit))) out.push(i)
-  }
-  return out
-}
 
 export const FUNCTIONS: Record<string, SheetFunction> = {
   // ---- Math and aggregation -------------------------------------------
@@ -160,23 +129,9 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   },
   SUMIFS: (a) => {
     const target = a.args[0] ?? []
-    const pairs: Array<[ReadonlyArray<CellValue>, CellValue]> = []
-    for (let i = 1; i + 1 < a.args.length + 1; i += 2) {
-      const range = a.args[i]
-      if (!range) break
-      pairs.push([range, a.args[i + 1]?.[0] ?? ''])
-    }
-    return sum(multiCriteriaHits(pairs).map((i) => target[i] ?? ''))
+    return sum(multiCriteriaHits(criteriaPairs(a.args, 1)).map((i) => target[i] ?? ''))
   },
-  COUNTIFS: (a) => {
-    const pairs: Array<[ReadonlyArray<CellValue>, CellValue]> = []
-    for (let i = 0; i < a.args.length; i += 2) {
-      const range = a.args[i]
-      if (!range) break
-      pairs.push([range, a.args[i + 1]?.[0] ?? ''])
-    }
-    return multiCriteriaHits(pairs).length
-  },
+  COUNTIFS: (a) => multiCriteriaHits(criteriaPairs(a.args, 0)).length,
 
   // ---- Logical ---------------------------------------------------------
   NOT: (a) => !toBool(first(a)),
@@ -357,6 +312,14 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const cell = results[at]
     return cell === undefined ? err('#REF!') : cell
   },
+
+  // ---- The packs: financial, more math and statistics, more text and
+  // date. Each lives in its own module under ./packs so this table stays
+  // readable; all of them are on by default, as a sheet user expects PMT
+  // to work without registering anything.
+  ...FINANCIAL_FUNCTIONS,
+  ...MATH_STATS_FUNCTIONS,
+  ...TEXT_DATE_FUNCTIONS,
 }
 
 /** Merge caller-supplied functions over the built-ins. Keys are uppercased so

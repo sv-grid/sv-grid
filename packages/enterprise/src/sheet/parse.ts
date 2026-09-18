@@ -72,11 +72,18 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
         const open = next()
         if (!open || open.t !== 'lparen') throw new FormulaError('#PARSE!')
         const args: Node[] = []
+        // An argument left out between two commas, or before the closing
+        // paren after a comma, is an empty node rather than a parse error,
+        // as Excel reads `PMT(A1, A2, A3, , 1)`.
+        const argument = (): Node => {
+          const t = peek()?.t
+          return t === 'comma' || t === 'rparen' ? { k: 'empty' } : expression(1)
+        }
         if (peek()?.t !== 'rparen') {
-          args.push(expression(1))
+          args.push(argument())
           while (peek()?.t === 'comma') {
             next()
-            args.push(expression(1))
+            args.push(argument())
           }
         }
         const close = next()
