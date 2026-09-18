@@ -31,7 +31,7 @@ import { colToLetters, lettersToCol, parseA1 } from './address'
 import { translateFormula } from './refs'
 import { isError, type CellValue } from './ast'
 import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
-import { listLinks, parseLinkTarget } from './links'
+import { isSafeLinkTarget, listLinks, parseLinkTarget } from './links'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
 import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
 import { cleanIteration, DEFAULT_ITERATION } from './workbook'
@@ -1376,7 +1376,11 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
         if (!at || at.row === null) continue
         const id = link.getAttribute('r:id') ?? link.getAttributeNS(NS_REL, 'id')
         const target = id ? rawRelTarget(parts, relsPath, id) : attr(link, 'location')
-        if (!target) continue
+        // A file is the easiest way to hand someone a link they did not
+        // write. One carrying a scheme the shell will not follow is dropped
+        // on the way in, so it is not in the document to be followed, shown
+        // or written out again.
+        if (!target || !isSafeLinkTarget(target)) continue
         const tip = attr(link, 'tooltip')
         entry.links ??= {}
         const rowId = `r${at.row}`

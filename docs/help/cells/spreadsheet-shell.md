@@ -127,7 +127,9 @@ the wiring BETWEEN the parts, done once:
   sheet, and deleting one that holds data asks first. A hidden sheet keeps
   its cells and every reference to it, Ctrl+PageUp and PageDown step over
   it, and the flag rides in the document. Duplicate copies the cells and
-  everything the document keeps beside them.
+  everything the document keeps beside them, and the copy's table, charts,
+  pictures, sparklines and PivotTables are its own: each gets a fresh name
+  or identity, so working on the copy leaves the sheet it came from alone.
 - Click a column letter to select the column, a row number to select the
   row, the corner to select the sheet; Shift+click extends. Drag the edge of
   a row number to resize the row, as with a column letter.
@@ -959,7 +961,9 @@ is Excel's rule.
 Only the schemes a link can sensibly mean are followed: `http`, `https`,
 `mailto`, `tel`, `sms`, `ftp` and `ftps`. A target carrying any other one,
 `javascript:` among them, is not a link at all: the cell keeps its text,
-nothing is clickable, and the target is never written into a saved file. A
+nothing is clickable, the target is never written into a saved file, and one
+found in a file being opened is dropped on the way in rather than carried
+into the document. A
 link is data, arriving from a colleague, a delta stream or an opened file,
 so what may be followed is named rather than assumed.
 
