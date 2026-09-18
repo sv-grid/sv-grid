@@ -6,6 +6,7 @@
    * rows they vacated go blank, in one batch, so it is one Ctrl+Z; the
    * sentence Excel's dialog ends on is handed back for the status bar.
    */
+  import { useSheetText } from './sheet-text'
   import { untrack } from 'svelte'
   import { SvModal } from '@svgrid/grid'
   import type { GridCommandContext } from '@svgrid/grid/shortcuts'
@@ -22,6 +23,7 @@
   }
 
   let { open = $bindable(false), workbook, cmd, onDone, onClose }: Props = $props()
+  const t = useSheetText()
 
   type Block = { top: number; left: number; bottom: number; right: number }
   let block = $state<Block>({ top: 0, left: 0, bottom: 0, right: 0 })
@@ -33,7 +35,8 @@
   const headers = $derived.by(() =>
     Array.from({ length: block.right - block.left + 1 }, (_, i) => {
       const letter = colToLetters(block.left + i)
-      return hasHeaders ? raw(block.top, block.left + i) || `Column ${letter}` : `Column ${letter}`
+      const fallback = t('removeDuplicates.columnLetter', { letter })
+      return hasHeaders ? raw(block.top, block.left + i) || fallback : fallback
     }),
   )
 
@@ -98,16 +101,16 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Remove Duplicates" size="sm">
-  <div class="sv-sheet-dialog" role="group" aria-label="Remove Duplicates">
-    <p class="lead">To delete duplicate values, select one or more columns that contain duplicates.</p>
+<SvModal bind:open onClose={onClose} title={t('removeDuplicates.title')} size="sm">
+  <div class="sv-sheet-dialog" role="group" aria-label={t('removeDuplicates.title')}>
+    <p class="lead">{t('removeDuplicates.lead')}</p>
     <div class="checks">
-      <button type="button" class="small" onclick={() => (chosen = chosen.map(() => true))}>Select All</button>
-      <button type="button" class="small" onclick={() => (chosen = chosen.map(() => false))}>Unselect All</button>
-      <label class="check"><input type="checkbox" bind:checked={hasHeaders} /> My data has headers</label>
+      <button type="button" class="small" onclick={() => (chosen = chosen.map(() => true))}>{t('removeDuplicates.selectAll')}</button>
+      <button type="button" class="small" onclick={() => (chosen = chosen.map(() => false))}>{t('removeDuplicates.unselectAll')}</button>
+      <label class="check"><input type="checkbox" bind:checked={hasHeaders} /> {t('removeDuplicates.hasHeaders')}</label>
     </div>
     <fieldset class="group">
-      <legend>Columns</legend>
+      <legend>{t('removeDuplicates.columns')}</legend>
       {#each headers as header, i (i)}
         <label class="check"><input type="checkbox" bind:checked={chosen[i]} /> {header}</label>
       {/each}
@@ -115,8 +118,8 @@
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={remove} disabled={!chosen.some(Boolean)}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={remove} disabled={!chosen.some(Boolean)}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

@@ -7,6 +7,7 @@
    * list is a working copy: OK hands it back as one change, Cancel drops
    * it.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
   import { describeCf, hasStyle, cfIn, type CfRule, type CfStyledRule } from './sheet/conditional-formats'
   import { colToLetters } from './sheet/address'
@@ -25,6 +26,7 @@
   }
 
   let { open = $bindable(false), rules, selection, onApply, onEdit, onClose }: Props = $props()
+  const t = useSheetText()
 
   let working = $state<CfRule[]>([])
   let scope = $state<'sheet' | 'selection'>('sheet')
@@ -55,7 +57,7 @@
     if (hasStyle(rule)) return { background: rule.style.fill, color: rule.style.color, text: 'AaBbCcYyZz' }
     if (rule.kind === 'dataBar') return { background: `linear-gradient(90deg, ${rule.color} 60%, transparent 60%)`, text: '' }
     if (rule.kind === 'colorScale') return { background: `linear-gradient(90deg, ${rule.colors.join(', ')})`, text: '' }
-    return { text: 'Icon Set' }
+    return { text: t('manageRules.iconSet') }
   }
 
   function remove() {
@@ -93,30 +95,30 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Conditional Formatting Rules Manager" size="md" width={640}>
+<SvModal bind:open onClose={onClose} title={t('manageRules.title')} size="md" width={640}>
   <div class="sv-sheet-dialog manage">
     <label class="field auto">
-      <span>Show formatting rules for:</span>
+      <span>{t('manageRules.showFor')}</span>
       <select bind:value={scope}>
-        <option value="sheet">This Worksheet</option>
-        <option value="selection">Current Selection</option>
+        <option value="sheet">{t('manageRules.thisSheet')}</option>
+        <option value="selection">{t('manageRules.selection')}</option>
       </select>
     </label>
     <div class="toolbar">
-      <button type="button" class="btn" onclick={edit} disabled={!current || !hasStyle(current)}>Edit Rule...</button>
-      <button type="button" class="btn" onclick={remove} disabled={!current}>Delete Rule</button>
-      <button type="button" class="btn" onclick={() => move(-1)} disabled={index <= 0} aria-label="Move Up" title="Move Up">&#9650;</button>
-      <button type="button" class="btn" onclick={() => move(1)} disabled={index < 0 || index >= working.length - 1} aria-label="Move Down" title="Move Down">&#9660;</button>
+      <button type="button" class="btn" onclick={edit} disabled={!current || !hasStyle(current)}>{t('manageRules.editRule')}</button>
+      <button type="button" class="btn" onclick={remove} disabled={!current}>{t('manageRules.deleteRule')}</button>
+      <button type="button" class="btn" onclick={() => move(-1)} disabled={index <= 0} aria-label={t('manageRules.moveUp')} title={t('manageRules.moveUp')}>&#9650;</button>
+      <button type="button" class="btn" onclick={() => move(1)} disabled={index < 0 || index >= working.length - 1} aria-label={t('manageRules.moveDown')} title={t('manageRules.moveDown')}>&#9660;</button>
     </div>
-    <div class="list" role="grid" aria-label="Rules">
+    <div class="list" role="grid" aria-label={t('manageRules.rules')}>
       <div class="head" role="row">
-        <span role="columnheader">Rule (applied in order shown)</span>
-        <span role="columnheader">Format</span>
-        <span role="columnheader">Applies to</span>
-        <span role="columnheader">Stop If True</span>
+        <span role="columnheader">{t('manageRules.rule')}</span>
+        <span role="columnheader">{t('manageRules.format')}</span>
+        <span role="columnheader">{t('manageRules.appliesTo')}</span>
+        <span role="columnheader">{t('manageRules.stopIfTrue')}</span>
       </div>
       {#if shown.length === 0}
-        <div class="empty">No rules {scope === 'sheet' ? 'on this sheet' : 'over the selection'}.</div>
+        <div class="empty">{t(scope === 'sheet' ? 'manageRules.noneOnSheet' : 'manageRules.noneInSelection')}</div>
       {/if}
       {#each shown as rule (rule.id)}
         {@const s = sample(rule)}
@@ -125,15 +127,15 @@
           <span role="gridcell" class="what">{describeCf(rule)}</span>
           <span role="gridcell" class="sample" style:background={s.background ?? 'transparent'} style:color={s.color ?? 'inherit'}>{s.text}</span>
           <span role="gridcell" class="where">{address(rule.rects)}</span>
-          <span role="gridcell" class="stop"><input type="checkbox" checked={!!rule.stopIfTrue} aria-label="Stop If True" onchange={() => toggleStop(rule)} onclick={(e) => e.stopPropagation()} /></span>
+          <span role="gridcell" class="stop"><input type="checkbox" checked={!!rule.stopIfTrue} aria-label={t('manageRules.stopIfTrue')} onchange={() => toggleStop(rule)} onclick={(e) => e.stopPropagation()} /></span>
         </div>
       {/each}
     </div>
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={ok}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={ok}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

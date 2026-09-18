@@ -5,6 +5,7 @@
    * Finish writes the fields into the columns to the right of the source
    * inside one batch, so the whole split is one Ctrl+Z.
    */
+  import { useSheetText } from './sheet-text'
   import { untrack } from 'svelte'
   import { SvModal } from '@svgrid/grid'
   import type { GridCommandContext } from '@svgrid/grid/shortcuts'
@@ -22,13 +23,14 @@
   }
 
   let { open = $bindable(false), workbook, cmd, onDone, onClose }: Props = $props()
+  const t = useSheetText()
 
   const DELIMITERS = [
-    { id: 'tab', label: 'Tab', sep: '\t' },
-    { id: 'semicolon', label: 'Semicolon', sep: ';' },
-    { id: 'comma', label: 'Comma', sep: ',' },
-    { id: 'space', label: 'Space', sep: ' ' },
-    { id: 'other', label: 'Other', sep: '' },
+    { id: 'tab', label: 'textToColumns.tab', sep: '\t' },
+    { id: 'semicolon', label: 'textToColumns.semicolon', sep: ';' },
+    { id: 'comma', label: 'textToColumns.comma', sep: ',' },
+    { id: 'space', label: 'textToColumns.space', sep: ' ' },
+    { id: 'other', label: 'textToColumns.other', sep: '' },
   ] as const
   type DelimiterId = (typeof DELIMITERS)[number]['id']
 
@@ -90,7 +92,7 @@
     open = false
     c.setSelection(column.top, column.index)
     c.extendSelection(column.top + rows.length - 1, column.index + width - 1)
-    onDone(`Split ${rows.length} rows into ${width} columns.`)
+    onDone(t('textToColumns.done', { rows: rows.length, columns: width }))
     onClose?.()
   }
 
@@ -100,26 +102,26 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Convert Text to Columns Wizard" size="md">
-  <div class="sv-sheet-dialog" role="group" aria-label="Convert Text to Columns">
-    <p class="lead">Choose the delimiter your data contains. The preview shows how it splits.</p>
+<SvModal bind:open onClose={onClose} title={t('textToColumns.title')} size="md">
+  <div class="sv-sheet-dialog" role="group" aria-label={t('textToColumns.group')}>
+    <p class="lead">{t('textToColumns.lead')}</p>
     <fieldset class="group">
-      <legend>Delimiters</legend>
+      <legend>{t('textToColumns.delimiters')}</legend>
       {#each DELIMITERS as d (d.id)}
         <label class="check">
           <input type="radio" name="sheet-delimiter" value={d.id} bind:group={delimiter} />
-          {d.label}
+          {t(d.label)}
           {#if d.id === 'other'}
-            <input class="other" type="text" maxlength="1" bind:value={other} aria-label="Other delimiter" />
+            <input class="other" type="text" maxlength="1" bind:value={other} aria-label={t('textToColumns.otherDelimiter')} />
           {/if}
         </label>
       {/each}
     </fieldset>
     <div class="checks">
-      <label class="check"><input type="checkbox" bind:checked={collapse} /> Treat consecutive delimiters as one</label>
-      <label class="check"><input type="checkbox" bind:checked={trim} /> Trim spaces around each field</label>
+      <label class="check"><input type="checkbox" bind:checked={collapse} /> {t('textToColumns.collapse')}</label>
+      <label class="check"><input type="checkbox" bind:checked={trim} /> {t('textToColumns.trim')}</label>
     </div>
-    <div class="preview" aria-label="Data preview">
+    <div class="preview" aria-label={t('textToColumns.preview')}>
       <table>
         <tbody>
           {#each preview.rows as fields, i (i)}
@@ -129,15 +131,13 @@
       </table>
     </div>
     <p class="status">
-      {column.texts.length} rows in column {colToLetters(column.index)}
-      become {preview.width} column{preview.width === 1 ? '' : 's'} from column {colToLetters(column.index)}.
-      Anything already in those columns is replaced.
+      {t('textToColumns.status', { rows: column.texts.length, from: colToLetters(column.index), count: preview.width, unit: t(preview.width === 1 ? 'textToColumns.column' : 'textToColumns.columns') })}
     </p>
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={finish} disabled={column.texts.length === 0}>Finish</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={finish} disabled={column.texts.length === 0}>{t('textToColumns.finish')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

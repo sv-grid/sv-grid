@@ -9,6 +9,7 @@
   import { SvModal } from '@svgrid/grid'
   import type { Workbook } from './sheet/workbook'
   import { isValidSheetName } from './sheet/workbook'
+  import { useSheetText } from './sheet-text'
 
   type Props = {
     workbook: Workbook
@@ -47,6 +48,8 @@
   }
 
   let { workbook, onChange, onRename, onRemove, hidden = [], onHide, onUnhide, onDuplicate, editable = true, version = 0 }: Props = $props()
+
+  const t = useSheetText()
 
   let renaming = $state<string | null>(null)
   let draft = $state('')
@@ -99,11 +102,11 @@
     renaming = null
     if (to === '' || to === from) return
     if (!isValidSheetName(to)) {
-      error = `"${to}" is not a valid sheet name`
+      error = t('invalidSheetName', { name: to })
       return
     }
     if (!workbook.renameSheet(from, to)) {
-      error = `a sheet named "${to}" already exists`
+      error = t('duplicateSheetName', { name: to })
       return
     }
     error = null
@@ -266,15 +269,15 @@
 <div class="sv-sheet-tabs">
   <!-- Excel's tab-scrolling arrows: always drawn, greyed until they can move something. -->
   <div class="nav">
-    <button type="button" class="nav-btn" tabindex="-1" aria-label="Scroll tabs left" disabled={!canLeft} onclick={() => scrollTabs(-120)}>
+    <button type="button" class="nav-btn" tabindex="-1" aria-label={t('scrollTabsLeft')} disabled={!canLeft} onclick={() => scrollTabs(-120)}>
       <svg viewBox="0 0 8 8" width="8" height="8"><path d="M5.5 1L2.5 4l3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
-    <button type="button" class="nav-btn" tabindex="-1" aria-label="Scroll tabs right" disabled={!canRight} onclick={() => scrollTabs(120)}>
+    <button type="button" class="nav-btn" tabindex="-1" aria-label={t('scrollTabsRight')} disabled={!canRight} onclick={() => scrollTabs(120)}>
       <svg viewBox="0 0 8 8" width="8" height="8"><path d="M2.5 1l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
   </div>
 
-  <div role="tablist" aria-label="Sheets" class="tabs" bind:this={strip}>
+  <div role="tablist" aria-label={t('sheets')} class="tabs" bind:this={strip}>
     {#each sheets as name (name)}
       {@const isActive = name === activeSheet}
       <!-- role="presentation" so the tablist still OWNS the role="tab"
@@ -296,7 +299,7 @@
           <!-- svelte-ignore a11y_autofocus -->
           <input
             class="rename"
-            aria-label="Sheet name"
+            aria-label={t('sheetName')}
             autofocus
             value={draft}
             oninput={(e) => (draft = e.currentTarget.value)}
@@ -322,7 +325,7 @@
   </div>
 
   {#if editable}
-    <button type="button" class="add" aria-label="New sheet" title="New sheet (Shift+F11)" onclick={add}>
+    <button type="button" class="add" aria-label={t('newSheet')} title={`${t('newSheet')} (Shift+F11)`} onclick={add}>
       <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M5 1.5v7M1.5 5h7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></svg>
     </button>
   {/if}
@@ -338,21 +341,21 @@
     on the tab face, so a stray click cannot remove a sheet.
   -->
   <div class="sheet-menu" role="menu" aria-label={`${menu.name} sheet`} style:left={`${menu.x}px`} style:top={`${menu.y}px`} use:keepMenuInView={menu}>
-    <button type="button" role="menuitem" onclick={() => { insertBefore(menu!.name); menu = null }}>Insert...</button>
-    <button type="button" role="menuitem" disabled={workbook.sheets.length < 2} onclick={() => { askRemove(menu!.name); menu = null }}>Delete</button>
-    <button type="button" role="menuitem" onclick={() => { startRename(menu!.name); menu = null }}>Rename</button>
+    <button type="button" role="menuitem" onclick={() => { insertBefore(menu!.name); menu = null }}>{t('tabInsert')}</button>
+    <button type="button" role="menuitem" disabled={workbook.sheets.length < 2} onclick={() => { askRemove(menu!.name); menu = null }}>{t('tabDelete')}</button>
+    <button type="button" role="menuitem" onclick={() => { startRename(menu!.name); menu = null }}>{t('tabRename')}</button>
     {#if onDuplicate}
-      <button type="button" role="menuitem" onclick={() => { duplicate(menu!.name); menu = null }}>Duplicate</button>
+      <button type="button" role="menuitem" onclick={() => { duplicate(menu!.name); menu = null }}>{t('tabDuplicate')}</button>
     {/if}
     <div class="sep" role="separator"></div>
-    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === 0} onclick={() => { moveBy(menu!.name, -1); menu = null }}>Move Left</button>
-    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === sheets.length - 1} onclick={() => { moveBy(menu!.name, 1); menu = null }}>Move Right</button>
+    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === 0} onclick={() => { moveBy(menu!.name, -1); menu = null }}>{t('tabMoveLeft')}</button>
+    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === sheets.length - 1} onclick={() => { moveBy(menu!.name, 1); menu = null }}>{t('tabMoveRight')}</button>
     {#if onHide}
       <div class="sep" role="separator"></div>
-      <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { hide(menu!.name); menu = null }}>Hide</button>
+      <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { hide(menu!.name); menu = null }}>{t('tabHide')}</button>
       {#if hiddenSheets.length}
         <!-- Excel's Unhide opens a list; here each hidden sheet is an entry. -->
-        <div class="heading" role="presentation">Unhide</div>
+        <div class="heading" role="presentation">{t('tabUnhide')}</div>
         {#each hiddenSheets as name (name)}
           <button type="button" role="menuitem" class="indent" onclick={() => { unhide(name); menu = null }}>{name}</button>
         {/each}
@@ -361,14 +364,14 @@
   </div>
 {/if}
 
-<SvModal open={confirmDelete !== null} title="Delete sheet" size="sm" onClose={() => (confirmDelete = null)}>
+<SvModal open={confirmDelete !== null} title={t('deleteSheetTitle')} size="sm" onClose={() => (confirmDelete = null)}>
   <div class="sv-sheet-dialog">
-    <p class="note">This sheet holds data. Deleting it cannot be undone. Delete "{confirmDelete}"?</p>
+    <p class="note">{t('deleteSheetMessage', { name: confirmDelete ?? '' })}</p>
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={() => { if (confirmDelete) remove(confirmDelete) }}>Delete</button>
-      <button type="button" class="btn" onclick={() => (confirmDelete = null)}>Cancel</button>
+      <button type="button" class="btn primary" onclick={() => { if (confirmDelete) remove(confirmDelete) }}>{t('delete')}</button>
+      <button type="button" class="btn" onclick={() => (confirmDelete = null)}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

@@ -7,6 +7,7 @@
    * Function Arguments dialog; typing the arguments in place with the
    * signature shown is the same information with less chrome.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
   import { functionCatalog, FUNCTION_GROUPS, type FunctionGroup, type FunctionInfo } from './sheet/function-catalog'
 
@@ -17,6 +18,7 @@
   }
 
   let { open = $bindable(false), onPick, onClose }: Props = $props()
+  const t = useSheetText()
 
   const all = functionCatalog()
   let search = $state('')
@@ -69,24 +71,24 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Insert Function" size="md">
-  <div class="sv-sheet-dialog insert" role="group" aria-label="Insert Function">
+<SvModal bind:open onClose={onClose} title={t('insertFunction.title')} size="md">
+  <div class="sv-sheet-dialog insert" role="group" aria-label={t('insertFunction.title')}>
     <label class="field">
-      <span>Search for a function:</span>
-      <input bind:this={searchInput} type="text" bind:value={search} onkeydown={onListKey} spellcheck="false" autocomplete="off" placeholder="Type a name or what you want to do" />
+      <span>{t('insertFunction.search')}</span>
+      <input bind:this={searchInput} type="text" bind:value={search} onkeydown={onListKey} spellcheck="false" autocomplete="off" placeholder={t('insertFunction.searchPlaceholder')} />
     </label>
     <label class="field">
-      <span>Or select a category:</span>
+      <span>{t('insertFunction.category')}</span>
       <select bind:value={group}>
-        <option value="All">All</option>
+        <option value="All">{t('insertFunction.all')}</option>
         {#each FUNCTION_GROUPS as g (g)}
-          <option value={g}>{g}</option>
+          <option value={g}>{t(`insertFunction.group.${g}`)}</option>
         {/each}
       </select>
     </label>
-    <div class="label">Select a function:</div>
+    <div class="label">{t('insertFunction.select')}</div>
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <ul class="list" role="listbox" aria-label="Functions" tabindex="0" onkeydown={onListKey}>
+    <ul class="list" role="listbox" aria-label={t('insertFunction.functions')} tabindex="0" onkeydown={onListKey}>
       {#each shown as fn (fn.name)}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
         <li
@@ -97,20 +99,20 @@
           ondblclick={ok}
         >{fn.name}</li>
       {:else}
-        <li class="empty">No function matches.</li>
+        <li class="empty">{t('insertFunction.noMatch')}</li>
       {/each}
     </ul>
     {#if current}
       <div class="about">
         <div class="signature">{current.signature}</div>
-        <div class="description">{current.description || 'No description.'}</div>
+        <div class="description">{current.description || t('insertFunction.noDescription')}</div>
       </div>
     {/if}
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={ok} disabled={!current}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={ok} disabled={!current}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

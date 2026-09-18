@@ -5,6 +5,7 @@
    * Writes go to `workbook.names`, and the shell is told afterwards, since
    * no cell was typed into and the sheet would otherwise not repaint.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
   import type { Workbook } from './sheet/workbook'
   import type { DefinedName } from './sheet/names'
@@ -20,6 +21,7 @@
   }
 
   let { open = $bindable(false), workbook, onChange, onClose }: Props = $props()
+  const t = useSheetText()
 
   let names = $state<DefinedName[]>([])
   let newName = $state('')
@@ -123,11 +125,11 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Name Manager" size="md">
-  <div class="sv-sheet-dialog manager" role="group" aria-label="Name Manager">
+<SvModal bind:open onClose={onClose} title={t('nameManager.title')} size="md">
+  <div class="sv-sheet-dialog manager" role="group" aria-label={t('nameManager.title')}>
     <table class="names">
       <thead>
-        <tr><th>Name</th><th>Refers to</th><th>Value</th><th></th></tr>
+        <tr><th>{t('nameManager.name')}</th><th>{t('nameManager.refersTo')}</th><th>{t('nameManager.value')}</th><th></th></tr>
       </thead>
       <tbody>
         {#each names as entry (entry.name)}
@@ -138,7 +140,7 @@
                 <input
                   type="text"
                   bind:value={editRefersTo}
-                  aria-label="Refers to"
+                  aria-label={t('nameManager.refersTo')}
                   spellcheck="false"
                   onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveEdit() } if (e.key === 'Escape') { e.stopPropagation(); editing = null } }}
                 />
@@ -149,36 +151,36 @@
             <td class="num">{valueOf(entry)}</td>
             <td class="actions">
               {#if editing === entry.name}
-                <button type="button" class="link" onclick={saveEdit}>Save</button>
-                <button type="button" class="link" onclick={() => (editing = null)}>Cancel</button>
+                <button type="button" class="link" onclick={saveEdit}>{t('save')}</button>
+                <button type="button" class="link" onclick={() => (editing = null)}>{t('cancel')}</button>
               {:else}
-                <button type="button" class="link" onclick={() => startEdit(entry)}>Edit</button>
-                <button type="button" class="link" onclick={() => remove(entry.name)}>Delete</button>
+                <button type="button" class="link" onclick={() => startEdit(entry)}>{t('nameManager.edit')}</button>
+                <button type="button" class="link" onclick={() => remove(entry.name)}>{t('delete')}</button>
               {/if}
             </td>
           </tr>
         {:else}
-          <tr><td colspan="4" class="empty">No defined names. Add one below.</td></tr>
+          <tr><td colspan="4" class="empty">{t('nameManager.empty')}</td></tr>
         {/each}
       </tbody>
     </table>
 
     <form class="new" onsubmit={(e) => { e.preventDefault(); add() }}>
       <label>
-        <span>Name:</span>
-        <input type="text" bind:value={newName} placeholder="TaxRate" spellcheck="false" />
+        <span>{t('nameManager.nameField')}</span>
+        <input type="text" bind:value={newName} placeholder={t('nameManager.namePlaceholder')} spellcheck="false" />
       </label>
       <label>
-        <span>Refers to:</span>
-        <input type="text" bind:value={newRefersTo} placeholder="Inputs!B3 or B2:B13" spellcheck="false" />
+        <span>{t('nameManager.refersToField')}</span>
+        <input type="text" bind:value={newRefersTo} placeholder={t('nameManager.refersToPlaceholder')} spellcheck="false" />
       </label>
-      <button type="submit" class="btn">New</button>
+      <button type="submit" class="btn">{t('nameManager.new')}</button>
     </form>
     {#if problem}<p class="status problem" role="alert">{problem}</p>{/if}
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn" onclick={close}>Close</button>
+      <button type="button" class="btn" onclick={close}>{t('close')}</button>
     </div>
   {/snippet}
 </SvModal>

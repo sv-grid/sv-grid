@@ -320,6 +320,7 @@ application answers them.
 | `showRibbon` / `showFormulaBar` / `showTabs` / `showStatusBar` | `true` | Hide any part of the chrome. |
 | `onAction` | | Every ribbon action, first; return `true` to take one over. |
 | `extras` | `[]` | Which of Insert > Table and Insert > Chart to show, because the application answers them. |
+| `localization` | | `{ locale, text }`: the language of the chrome. `text` overrides any of the shell's strings (see [Localisation](#localisation)); `locale` formats the status bar's numbers and reaches the grid underneath. |
 | `onReady` | | The `SvGridApi` and the document, once the grid has mounted. |
 | `onChange` | | Every change the user lands, once per tick: `cells`, `formats`, `sizes`, `hidden`, `freeze`, `sheets`, `comments`, `protection`, `validation`, `conditional-formats`, `structure` (with the insert or delete), `restore`. Undo and redo report too. |
 
@@ -788,6 +789,57 @@ application can put its own Format Cells in place of this one:
   if (action === 'format-cells') { openMyDialog(cmd); return true }
 }} />
 ```
+
+## Localisation
+
+Every string the shell shows is English by default and lives in one flat
+map, `SheetMessages`, the way the grid's `GridMessages` does. Pass any
+subset as `localization.text` and unset keys stay English; `locale` is the
+BCP-47 tag the status bar's Sum, Average and Count are printed with, and
+it reaches the grid underneath for its own matching and formatting.
+
+```svelte
+<SvSheet {data}
+  localization={{
+    locale: 'de-DE',
+    text: {
+      'ribbon.tab.home': 'Start',
+      'ribbon.bold.title': 'Fett',
+      statusReady: 'Bereit',
+      statusRecordsFound: '{shown} von {total} Datensätzen gefunden',
+      'formatCells.title': 'Zellen formatieren',
+      ok: 'OK', cancel: 'Abbrechen',
+    },
+  }} />
+```
+
+Three families of key:
+
+- **The ribbon's** are read off the ribbon model, so every tab, group and
+  button is covered without a second list: `ribbon.tab.<tab>`,
+  `ribbon.group.<group>`, `ribbon.<item>.label`, `ribbon.<item>.title`
+  (the tooltip), `ribbon.<item>.option.<value>` for a dropdown's entries
+  and `ribbon.<item>.none` for its "no fill" kind of entry. The ids are
+  the `RibbonActionId`s: `ribbon.bold.label`, `ribbon.file-open.title`,
+  `ribbon.number-format.option.percent`.
+- **The dialogs'** are `<dialog>.<part>`: `formatCells.title`,
+  `filter.dateFilters`, `validation.allow.list`, `findReplace.findNext`,
+  `sort.addLevel`, `goalSeek.setCell`, and so on.
+- **The chrome's** are plain camelCase: `statusReady`, `nameBox`,
+  `newSheet`, `menuFormatCells`, `ok`, `cancel`, the sentences the status
+  bar says (`openedFile`, `sheetProtected`, `noInvalidData`).
+
+A sentence with `{placeholders}` (`statusRecordsFound`, `deleteSheetMessage`,
+`linesToggled`, `textToColumns.status`) lets a translator choose the word
+order; `formatMessage` fills them. `defaultSheetMessages` is exported, so
+the full English map is there to copy from, and `resolveSheetMessages`
+gives the merged map for an app that wants to read it.
+
+What stays English: the function names and error values (`SUM`,
+`#VALUE!`), which Excel keeps in every locale too, the rule descriptions
+the Conditional Formatting Rules Manager lists, and the font names.
+Formulas are typed with `,` between arguments and `.` as the decimal
+point whatever the locale.
 
 ## What it does not do
 

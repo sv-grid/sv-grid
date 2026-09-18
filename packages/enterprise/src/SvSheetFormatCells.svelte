@@ -9,6 +9,7 @@
    * The shell opens it for Ctrl+1, the group launchers on the ribbon, the
    * cell menu's Format Cells... and the `format-cells` action.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
   import type { CellFormatEntry } from './sheet/format-store'
   import {
@@ -32,40 +33,41 @@
   }
 
   let { open = $bindable(false), entry, sample, mixedLocked = false, onApply, onClose }: Props = $props()
+  const t = useSheetText()
 
   type Tab = 'number' | 'alignment' | 'font' | 'border' | 'fill' | 'protection'
   const TABS: ReadonlyArray<{ id: Tab; label: string }> = [
-    { id: 'number', label: 'Number' },
-    { id: 'alignment', label: 'Alignment' },
-    { id: 'font', label: 'Font' },
-    { id: 'border', label: 'Border' },
-    { id: 'fill', label: 'Fill' },
-    { id: 'protection', label: 'Protection' },
+    { id: 'number', label: 'formatCells.tab.number' },
+    { id: 'alignment', label: 'formatCells.tab.alignment' },
+    { id: 'font', label: 'formatCells.tab.font' },
+    { id: 'border', label: 'formatCells.tab.border' },
+    { id: 'fill', label: 'formatCells.tab.fill' },
+    { id: 'protection', label: 'formatCells.tab.protection' },
   ]
   let tab = $state<Tab>('number')
 
   type Category = 'general' | 'number' | 'currency' | 'accounting' | 'percent' | 'date' | 'time' | 'scientific' | 'special' | 'custom'
   const CATEGORIES: ReadonlyArray<{ id: Category; label: string }> = [
-    { id: 'general', label: 'General' },
-    { id: 'number', label: 'Number' },
-    { id: 'currency', label: 'Currency' },
-    { id: 'accounting', label: 'Accounting' },
-    { id: 'percent', label: 'Percentage' },
-    { id: 'date', label: 'Date' },
-    { id: 'time', label: 'Time' },
-    { id: 'scientific', label: 'Scientific' },
-    { id: 'special', label: 'Special' },
-    { id: 'custom', label: 'Custom' },
+    { id: 'general', label: 'formatCells.category.general' },
+    { id: 'number', label: 'formatCells.category.number' },
+    { id: 'currency', label: 'formatCells.category.currency' },
+    { id: 'accounting', label: 'formatCells.category.accounting' },
+    { id: 'percent', label: 'formatCells.category.percent' },
+    { id: 'date', label: 'formatCells.category.date' },
+    { id: 'time', label: 'formatCells.category.time' },
+    { id: 'scientific', label: 'formatCells.category.scientific' },
+    { id: 'special', label: 'formatCells.category.special' },
+    { id: 'custom', label: 'formatCells.category.custom' },
   ]
   /** Excel's symbol list, the short one. An empty value is its "None". */
   const SYMBOLS: ReadonlyArray<{ value: string; label: string }> = [
     { value: '$', label: '$' },
-    { value: '', label: 'None' },
-    { value: '\u20ac', label: '\u20ac Euro' },
-    { value: '\u00a3', label: '\u00a3 Pound' },
-    { value: '\u00a5', label: '\u00a5 Yen' },
+    { value: '', label: 'formatCells.symbol.none' },
+    { value: '\u20ac', label: 'formatCells.symbol.euro' },
+    { value: '\u00a3', label: 'formatCells.symbol.pound' },
+    { value: '\u00a5', label: 'formatCells.symbol.yen' },
   ]
-  const SPECIALS = Object.entries(SPECIAL_FORMATS) as Array<[SpecialFormatName, { label: string; pattern: string }]>
+  const SPECIALS = Object.keys(SPECIAL_FORMATS) as SpecialFormatName[]
 
   // Number
   let category = $state<Category>('general')
@@ -136,7 +138,7 @@
     decimals = num.decimals
     thousands = num.thousands
     symbol = accountingParts(initial.numFmt)?.symbol ?? '$'
-    special = SPECIALS.find(([, sp]) => sp.pattern === initial.numFmt)?.[0] ?? 'zip'
+    special = SPECIALS.find((id) => SPECIAL_FORMATS[id].pattern === initial.numFmt) ?? 'zip'
     custom = initial.numFmt ?? ''
     align = initial.align ?? ''
     wrap = initial.wrap ?? false
@@ -190,29 +192,29 @@
   }
 
   const BORDERS: ReadonlyArray<{ value: BorderPreset; label: string }> = [
-    { value: 'none', label: 'None' },
-    { value: 'outside', label: 'Outline' },
-    { value: 'all', label: 'All borders' },
-    { value: 'top', label: 'Top' },
-    { value: 'bottom', label: 'Bottom' },
-    { value: 'left', label: 'Left' },
-    { value: 'right', label: 'Right' },
-    { value: 'thick-bottom', label: 'Thick bottom' },
+    { value: 'none', label: 'formatCells.border.none' },
+    { value: 'outside', label: 'formatCells.border.outside' },
+    { value: 'all', label: 'formatCells.border.all' },
+    { value: 'top', label: 'formatCells.border.top' },
+    { value: 'bottom', label: 'formatCells.border.bottom' },
+    { value: 'left', label: 'formatCells.border.left' },
+    { value: 'right', label: 'formatCells.border.right' },
+    { value: 'thick-bottom', label: 'formatCells.border.thick-bottom' },
   ]
 </script>
 
-<SvModal bind:open onClose={onClose} title="Format Cells" size="md">
-  <div class="sv-sheet-dialog format" role="group" aria-label="Format Cells">
-    <div class="tabs" role="tablist" aria-label="Format Cells tabs">
-      {#each TABS as t (t.id)}
+<SvModal bind:open onClose={onClose} title={t('formatCells.title')} size="md">
+  <div class="sv-sheet-dialog format" role="group" aria-label={t('formatCells.title')}>
+    <div class="tabs" role="tablist" aria-label={t('formatCells.tabs')}>
+      {#each TABS as tabEntry (tabEntry.id)}
         <button
           type="button"
           role="tab"
           class="tab"
-          class:on={tab === t.id}
-          aria-selected={tab === t.id}
-          onclick={() => (tab = t.id)}
-        >{t.label}</button>
+          class:on={tab === tabEntry.id}
+          aria-selected={tab === tabEntry.id}
+          onclick={() => (tab = tabEntry.id)}
+        >{t(tabEntry.label)}</button>
       {/each}
     </div>
 
@@ -220,83 +222,74 @@
       {#if tab === 'number'}
         <div class="number">
           <div class="categories">
-            <div class="label">Category:</div>
-            <ul role="listbox" aria-label="Category">
+            <div class="label">{t('formatCells.category')}</div>
+            <ul role="listbox" aria-label={t('formatCells.categoryList')}>
               {#each CATEGORIES as c (c.id)}
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-                <li role="option" aria-selected={category === c.id} class:selected={category === c.id} onclick={() => (category = c.id)}>{c.label}</li>
+                <li role="option" aria-selected={category === c.id} class:selected={category === c.id} onclick={() => (category = c.id)}>{t(c.label)}</li>
               {/each}
             </ul>
           </div>
           <div class="settings">
             <div class="sample">
-              <div class="label">Sample</div>
+              <div class="label">{t('formatCells.sample')}</div>
               <div class="sample-text">{preview}</div>
             </div>
             {#if category === 'number' || category === 'currency' || category === 'accounting' || category === 'percent' || category === 'scientific'}
               <label class="field auto">
-                <span>Decimal places:</span>
+                <span>{t('formatCells.decimalPlaces')}</span>
                 <input type="number" min="0" max="10" bind:value={decimals} />
               </label>
             {/if}
             {#if category === 'number'}
-              <label class="check"><input type="checkbox" bind:checked={thousands} /> Use 1000 separator (,)</label>
+              <label class="check"><input type="checkbox" bind:checked={thousands} /> {t('formatCells.thousands')}</label>
             {/if}
             {#if category === 'accounting'}
               <label class="field auto">
-                <span>Symbol:</span>
+                <span>{t('formatCells.symbol')}</span>
                 <select bind:value={symbol}>
-                  {#each SYMBOLS as sy (sy.value)}<option value={sy.value}>{sy.label}</option>{/each}
+                  {#each SYMBOLS as sy (sy.value)}<option value={sy.value}>{sy.value === '$' ? sy.label : t(sy.label)}</option>{/each}
                 </select>
               </label>
             {/if}
             {#if category === 'special'}
               <label class="field auto">
-                <span>Type:</span>
+                <span>{t('formatCells.type')}</span>
                 <select bind:value={special}>
-                  {#each SPECIALS as [id, sp] (id)}<option value={id}>{sp.label}</option>{/each}
+                  {#each SPECIALS as id (id)}<option value={id}>{t(`formatCells.special.${id}`)}</option>{/each}
                 </select>
               </label>
             {/if}
             {#if category === 'custom'}
               <label class="field auto">
-                <span>Type:</span>
+                <span>{t('formatCells.type')}</span>
                 <input type="text" bind:value={custom} spellcheck="false" placeholder="#,##0.00" />
               </label>
             {/if}
             <p class="hint">
-              {#if category === 'general'}General format cells have no specific number format.
-              {:else if category === 'number'}Number is used for general display of numbers.
-              {:else if category === 'currency'}Currency formats are used for general monetary values.
-              {:else if category === 'accounting'}Accounting formats line up the currency symbols and decimal points in a column.
-              {:else if category === 'special'}Special formats are useful for tracking list and database values.
-              {:else if category === 'percent'}Percentage formats multiply the cell value by 100 and display the result with a percent symbol.
-              {:else if category === 'date'}Date formats display date serial numbers as dates.
-              {:else if category === 'time'}Time formats display date serial numbers as times.
-              {:else if category === 'scientific'}Scientific formats display numbers in exponential notation.
-              {:else}Type the number format code, using one of the existing codes as a starting point.{/if}
+              {t(`formatCells.hint.${category}`)}
             </p>
           </div>
         </div>
       {:else if tab === 'alignment'}
         <label class="field">
-          <span>Horizontal:</span>
+          <span>{t('formatCells.horizontal')}</span>
           <select bind:value={align}>
-            <option value="">General</option>
-            <option value="left">Left (Indent)</option>
-            <option value="center">Center</option>
-            <option value="right">Right (Indent)</option>
+            <option value="">{t('formatCells.align.general')}</option>
+            <option value="left">{t('formatCells.align.left')}</option>
+            <option value="center">{t('formatCells.align.center')}</option>
+            <option value="right">{t('formatCells.align.right')}</option>
           </select>
         </label>
         <label class="field">
-          <span>Indent:</span>
+          <span>{t('formatCells.indent')}</span>
           <input type="number" min="0" max="15" bind:value={indent} />
         </label>
-        <div class="label">Text control</div>
-        <label class="check"><input type="checkbox" bind:checked={wrap} /> Wrap text</label>
+        <div class="label">{t('formatCells.textControl')}</div>
+        <label class="check"><input type="checkbox" bind:checked={wrap} /> {t('formatCells.wrap')}</label>
       {:else if tab === 'font'}
         <label class="field">
-          <span>Font:</span>
+          <span>{t('formatCells.font')}</span>
           <select bind:value={fontFamily}>
             {#each FONT_FAMILIES as f (f.value)}
               <option value={f.value}>{f.label}</option>
@@ -304,49 +297,49 @@
           </select>
         </label>
         <label class="field">
-          <span>Size:</span>
+          <span>{t('formatCells.size')}</span>
           <select bind:value={fontSize}>
-            <option value="">Default</option>
+            <option value="">{t('formatCells.sizeDefault')}</option>
             {#each FONT_SIZES as s (s)}
               <option value={String(s)}>{s}</option>
             {/each}
           </select>
         </label>
-        <div class="label">Font style</div>
+        <div class="label">{t('formatCells.fontStyle')}</div>
         <div class="checks">
-          <label class="check"><input type="checkbox" bind:checked={bold} /> Bold</label>
-          <label class="check"><input type="checkbox" bind:checked={italic} /> Italic</label>
-          <label class="check"><input type="checkbox" bind:checked={underline} /> Underline</label>
-          <label class="check"><input type="checkbox" bind:checked={strike} /> Strikethrough</label>
+          <label class="check"><input type="checkbox" bind:checked={bold} /> {t('formatCells.bold')}</label>
+          <label class="check"><input type="checkbox" bind:checked={italic} /> {t('formatCells.italic')}</label>
+          <label class="check"><input type="checkbox" bind:checked={underline} /> {t('formatCells.underline')}</label>
+          <label class="check"><input type="checkbox" bind:checked={strike} /> {t('formatCells.strikethrough')}</label>
         </div>
-        <div class="label">Color</div>
+        <div class="label">{t('formatCells.color')}</div>
         <div class="checks">
-          <label class="check"><input type="checkbox" bind:checked={colorAuto} /> Automatic</label>
-          <input type="color" bind:value={color} disabled={colorAuto} aria-label="Font colour" />
+          <label class="check"><input type="checkbox" bind:checked={colorAuto} /> {t('formatCells.automatic')}</label>
+          <input type="color" bind:value={color} disabled={colorAuto} aria-label={t('formatCells.fontColor')} />
         </div>
         <div class="font-preview" style:font-family={fontFamily || undefined} style:font-size={fontSize ? `${fontSize}px` : undefined} style:font-weight={bold ? 700 : 400} style:font-style={italic ? 'italic' : 'normal'} style:text-decoration={[underline ? 'underline' : '', strike ? 'line-through' : ''].join(' ').trim() || 'none'} style:color={colorAuto ? undefined : color}>AaBbCcYyZz</div>
       {:else if tab === 'border'}
-        <div class="label">Presets</div>
-        <div class="borders" role="radiogroup" aria-label="Border">
-          <label class="check"><input type="radio" name="sheet-border" value="" bind:group={border} /> Keep as is</label>
+        <div class="label">{t('formatCells.presets')}</div>
+        <div class="borders" role="radiogroup" aria-label={t('formatCells.borderGroup')}>
+          <label class="check"><input type="radio" name="sheet-border" value="" bind:group={border} /> {t('formatCells.keepAsIs')}</label>
           {#each BORDERS as b (b.value)}
-            <label class="check"><input type="radio" name="sheet-border" value={b.value} bind:group={border} /> {b.label}</label>
+            <label class="check"><input type="radio" name="sheet-border" value={b.value} bind:group={border} /> {t(b.label)}</label>
           {/each}
         </div>
-        <p class="hint">Bottom, top, left and right go on the edge of the selection; All borders lines every cell; Outline frames the block.</p>
+        <p class="hint">{t('formatCells.borderHint')}</p>
       {:else if tab === 'fill'}
-        <div class="label">Background Color</div>
+        <div class="label">{t('formatCells.backgroundColor')}</div>
         <div class="no-fill">
-          <button type="button" class="swatch none" class:on={fill === null} aria-label="No Color" title="No Color" onclick={() => (fill = null)}></button>
-          <span>No Color</span>
+          <button type="button" class="swatch none" class:on={fill === null} aria-label={t('formatCells.noColor')} title={t('formatCells.noColor')} onclick={() => (fill = null)}></button>
+          <span>{t('formatCells.noColor')}</span>
         </div>
-        <div class="swatches" role="radiogroup" aria-label="Fill colour">
+        <div class="swatches" role="radiogroup" aria-label={t('formatCells.fillGroup')}>
           {#each ALL_COLOURS as c, i (i)}
             <button type="button" class="swatch" class:on={fill === c.value} style:background={c.value} aria-label={c.label} title={c.label} onclick={() => (fill = c.value)}></button>
           {/each}
         </div>
         <div class="sample">
-          <div class="label">Sample</div>
+          <div class="label">{t('formatCells.sample')}</div>
           <div class="fill-sample" style:background={fill ?? 'transparent'}></div>
         </div>
       {:else if tab === 'protection'}
@@ -357,16 +350,16 @@
             indeterminate={locked === null}
             onchange={(e) => (locked = (e.currentTarget as HTMLInputElement).checked)}
           />
-          Locked
+          {t('formatCells.locked')}
         </label>
-        <p class="hint">Locking cells has no effect until you protect the sheet (Review tab, Protect Sheet). Every cell is locked to begin with; unlock the ones that may change, then protect the sheet.</p>
+        <p class="hint">{t('formatCells.lockedHint')}</p>
       {/if}
     </div>
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={ok}>OK</button>
-      <button type="button" class="btn" onclick={close}>Cancel</button>
+      <button type="button" class="btn primary" onclick={ok}>{t('ok')}</button>
+      <button type="button" class="btn" onclick={close}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

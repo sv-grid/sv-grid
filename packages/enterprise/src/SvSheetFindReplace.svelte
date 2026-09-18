@@ -12,6 +12,7 @@
    * grid's history like a typed edit. Styled by the `.sv-sheet-dialog`
    * rules the shell carries for all four of its dialogs.
    */
+  import { useSheetText } from './sheet-text'
   import { SvModal } from '@svgrid/grid'
   import type { GridCommandContext } from '@svgrid/grid/shortcuts'
   import { findAll, findNext, replaceOne, replaceAll, type FindOptions } from './sheet/find-replace'
@@ -24,6 +25,7 @@
   }
 
   let { open = $bindable(false), cmd, onClose }: Props = $props()
+  const t = useSheetText()
 
   let findText = $state('')
   let replaceText = $state('')
@@ -47,7 +49,7 @@
     const c = cmd()
     if (!c) return
     if (!hit) {
-      status = findText ? `We couldn't find what you were looking for.` : ''
+      status = findText ? t('findReplace.notFound') : ''
       return
     }
     c.setActiveCell(hit.rowIndex, hit.colIndex)
@@ -66,7 +68,7 @@
     const c = cmd()
     if (!c || !findText) return
     const n = findAll(c, findText, options()).length
-    status = n === 0 ? `We couldn't find what you were looking for.` : `${n} cell${n === 1 ? '' : 's'} found`
+    status = n === 0 ? t('findReplace.notFound') : t(n === 1 ? 'findReplace.cellFound' : 'findReplace.cellsFound', { count: n })
   }
 
   function replace() {
@@ -79,9 +81,7 @@
     const c = cmd()
     if (!c || !findText) return
     const n = replaceAll(c, findText, replaceText, options())
-    status = n === 0
-      ? `We couldn't find anything to replace.`
-      : `All done. We made ${n} replacement${n === 1 ? '' : 's'}.`
+    status = n === 0 ? t('findReplace.nothingToReplace') : t(n === 1 ? 'findReplace.replacedOne' : 'findReplace.replacedMany', { count: n })
   }
 
   function close() {
@@ -97,24 +97,24 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title="Find and Replace" size="sm">
-  <div class="sv-sheet-dialog" role="group" aria-label="Find and Replace">
+<SvModal bind:open onClose={onClose} title={t('findReplace.title')} size="sm">
+  <div class="sv-sheet-dialog" role="group" aria-label={t('findReplace.title')}>
     <label class="field">
-      <span>Find what:</span>
+      <span>{t('findReplace.findWhat')}</span>
       <input bind:this={findInput} type="text" bind:value={findText} onkeydown={onKey} spellcheck="false" autocomplete="off" />
     </label>
     <label class="field">
-      <span>Replace with:</span>
+      <span>{t('findReplace.replaceWith')}</span>
       <input type="text" bind:value={replaceText} onkeydown={onKey} spellcheck="false" autocomplete="off" />
     </label>
     <div class="checks">
-      <label class="check"><input type="checkbox" bind:checked={matchCase} /> Match case</label>
-      <label class="check"><input type="checkbox" bind:checked={entireCell} /> Match entire cell contents</label>
+      <label class="check"><input type="checkbox" bind:checked={matchCase} /> {t('findReplace.matchCase')}</label>
+      <label class="check"><input type="checkbox" bind:checked={entireCell} /> {t('findReplace.entireCell')}</label>
       <label class="field auto">
-        <span>Look in:</span>
+        <span>{t('findReplace.lookIn')}</span>
         <select bind:value={lookIn}>
-          <option value="values">Values</option>
-          <option value="formulas">Formulas</option>
+          <option value="values">{t('findReplace.values')}</option>
+          <option value="formulas">{t('findReplace.formulas')}</option>
         </select>
       </label>
     </div>
@@ -122,11 +122,11 @@
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn" onclick={all} disabled={!findText}>Replace All</button>
-      <button type="button" class="btn" onclick={replace} disabled={!findText}>Replace</button>
-      <button type="button" class="btn" onclick={countAll} disabled={!findText}>Find All</button>
-      <button type="button" class="btn primary" onclick={() => next(1)} disabled={!findText}>Find Next</button>
-      <button type="button" class="btn" onclick={close}>Close</button>
+      <button type="button" class="btn" onclick={all} disabled={!findText}>{t('findReplace.replaceAll')}</button>
+      <button type="button" class="btn" onclick={replace} disabled={!findText}>{t('findReplace.replace')}</button>
+      <button type="button" class="btn" onclick={countAll} disabled={!findText}>{t('findReplace.findAll')}</button>
+      <button type="button" class="btn primary" onclick={() => next(1)} disabled={!findText}>{t('findReplace.findNext')}</button>
+      <button type="button" class="btn" onclick={close}>{t('close')}</button>
     </div>
   {/snippet}
 </SvModal>
