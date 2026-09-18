@@ -77,6 +77,18 @@ describe('what floats over the cells, on the page', () => {
     expect(html).toContain('td .sp { position: absolute;')
   })
 
+  it('fits an IMAGE cell\'s picture inside the cell, and prints no text under it', () => {
+    const html = sheetPrintHtml(input({
+      merges: [],
+      cellAt: (r, c) => (r === 1 && c === 1
+        ? { text: 'https://example.com/a.png', image: '<img src="https://example.com/a.png" alt="A logo">' }
+        : { text: `${r}${c}` }),
+    }))
+    expect(html).toContain('<span class="im"><img src="https://example.com/a.png" alt="A logo">')
+    expect(html).not.toContain('>https://example.com/a.png<')
+    expect(html).toContain('td .im img { width: 100%; height: 100%; object-fit: contain; }')
+  })
+
   it('hangs a picture and a chart from their anchor cells, with their own offsets', () => {
     const html = sheetPrintHtml(input({
       merges: [],

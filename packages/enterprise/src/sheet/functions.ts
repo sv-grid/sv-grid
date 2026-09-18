@@ -173,6 +173,13 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const friendly = a.args.length > 1 ? nth(a, 1) : undefined
     return friendly === undefined || friendly === '' ? target : friendly
   },
+  /**
+   * IMAGE(source, [alt]): a picture IN the cell. The value is the source,
+   * so the formula reads like any other one and a cell that reads it gets
+   * an address rather than a picture it cannot use; the shell is what
+   * draws it, from the call it finds on the cell (`sheet/cell-images.ts`).
+   */
+  IMAGE: (a) => toText(first(a)),
   CONCAT: (a) => a.flat.map((v) => toText(v)).join(''),
   CONCATENATE: (a) => a.flat.map((v) => toText(v)).join(''),
   TEXTJOIN: (a) => {

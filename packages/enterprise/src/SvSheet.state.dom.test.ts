@@ -829,3 +829,30 @@ describe('SvSheet printing what floats over the cells', () => {
     expect(html).toContain('alt="A &quot;logo&quot; &amp; mark"')
   })
 })
+
+describe('SvSheet IMAGE cells', () => {
+  const PNG = 'data:image/png;base64,AAAA'
+
+  it('draws the picture in the cell, with its alt text, and prints it there', async () => {
+    const { sheet } = await mountSheet({
+      data: [{ name: 'Sheet1', cells: [
+        ['Part', 'Photo', 'Alt'],
+        ['Widget', `=IMAGE("${PNG}", C2)`, 'A widget'],
+        ['Broken', '=IMAGE("javascript:alert(1)")', ''],
+      ] }],
+    })
+    const paint = async () => { flushSync(); await tick() }
+    await paint()
+
+    const images = [...host!.querySelectorAll('img.sheet-cell-image')]
+    expect(images).toHaveLength(1)
+    expect(images[0]!.getAttribute('src')).toBe(PNG)
+    // The alt text is the second argument, worked out like any other.
+    expect(images[0]!.getAttribute('alt')).toBe('A widget')
+    // A source a browser will not load stays text rather than a broken image.
+    expect(host!.textContent).toContain('javascript:alert(1)')
+
+    const html = sheet.printHtml()
+    expect(html).toContain(`<span class="im"><img src="${PNG}" alt="A widget">`)
+  })
+})

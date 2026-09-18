@@ -35,6 +35,9 @@ export default defineConfig({
       // test:types and vitest both pass, because those resolve through
       // package.json exports to dist.
       '@svgrid/grid/shortcuts': path.resolve(repoRoot, 'packages/grid/src/shortcut-registry.ts'),
+      // The sparkline geometry, which the sheet's printer reads without
+      // wanting a component in the graph.
+      '@svgrid/grid/sparkline': path.resolve(repoRoot, 'packages/grid/src/sparkline.ts'),
       '@svgrid/grid/server': path.resolve(repoRoot, 'packages/grid/src/server.ts'),
       '@svgrid/grid/themes': path.resolve(repoRoot, 'packages/grid/src/themes/index.ts'),
       '@svgrid/grid': path.resolve(repoRoot, 'packages/grid/src/index.ts'),

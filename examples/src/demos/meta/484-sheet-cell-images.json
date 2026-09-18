@@ -1,0 +1,24 @@
+{
+  "description": "Excel's IMAGE function in a Svelte 5 spreadsheet: a picture IN a cell rather than floating over one, so it sorts with its row, filters with it, copies as a formula and moves when the cells move. A product list with a thumbnail column reading the swatch beside it. The source is a web address or a data URL, anything else stays text rather than becoming a broken image, and the second argument is the alt text. The formula goes into the .xlsx as _xlfn.IMAGE, where Excel keeps it. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet image in cell",
+    "svelte excel IMAGE function",
+    "svelte sheet thumbnail column",
+    "svelte spreadsheet picture formula",
+    "svelte sheet product catalogue"
+  ],
+  "faq": [
+    {
+      "question": "How is this different from Insert > Picture?",
+      "answer": "Insert > Picture anchors an object that floats over the cells. An IMAGE cell is the picture: it sorts with its row, filters with it, copies as a formula and moves when the cells move, with nothing to keep in step. Use the object for a logo on the sheet and IMAGE for a column of thumbnails."
+    },
+    {
+      "question": "What can the source be?",
+      "answer": "A web address or a data URL. Anything else, a file path or a javascript: scheme, is left as text rather than drawn, because a cell showing its source says more than a broken image does. The source can be a reference or a formula, so a thumbnail column can read a URL column beside it."
+    },
+    {
+      "question": "Does a screen reader learn what the picture is?",
+      "answer": "Yes, from the second argument, which is worked out like any other argument and becomes the image's alt text. Without it the picture has an empty alt, which is right for a decorative swatch and wrong for a picture that carries meaning, so give it one."
+    }
+  ]
+}

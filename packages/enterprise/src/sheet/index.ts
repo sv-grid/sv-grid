@@ -36,6 +36,8 @@ export {
   type ErrorFinding, type ErrorFindingKind, type SheetReader,
 } from './error-check'
 
+export { imageCall, isDrawableImageSource, type ImageCall } from './cell-images'
+
 export {
   livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials,
   PRESENCE_COLOURS, type SheetPresence,

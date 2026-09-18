@@ -889,6 +889,18 @@ is a series, and the chart is anchored just under the block. It reads the
 Insert > Picture puts an image on the sheet from a file, carried in the
 document as a data URL.
 
+**`=IMAGE(source, [alt])`** is the other kind of picture, and the
+difference is the point: an `IMAGE` cell IS the picture rather than
+floating over one. It sorts with its row, filters with it, copies as a
+formula and moves when the cells move, with nothing to keep in step, which
+is what a catalogue with a thumbnail column wants. The source is a web
+address or a `data:` URL; anything else stays text rather than becoming a
+broken image. The second argument is the alt text, worked out like any
+other argument, so a screen reader is told what the picture is. The
+function's own value is the source, so a cell that reads it gets an
+address rather than a picture it cannot use, and the file stores it as
+`_xlfn.IMAGE`, which is where Excel keeps it.
+
 An object floats over the cells rather than living in them: drag it to
 move, drag its corner to resize, press Delete to remove it, and
 double-click a chart (or Insert > Setup) to open the Chart dialog. Each
@@ -1342,8 +1354,10 @@ button that does nothing.
   its own beyond the browser's.
 - **Objects** are charts and pictures: a chart has no trend lines or
   secondary axis of its own beyond what the Chart dialog sets, and a
-  picture whose source is a URL rather than a `data:` URL is left out of
-  the .xlsx, since its bytes are not in the document to write.
+  FLOATING picture whose source is a URL rather than a `data:` URL is left
+  out of the .xlsx, since its bytes are not in the document to write. A
+  picture in a cell, `=IMAGE(...)`, has no such limit: the formula is what
+  the file carries.
 - **Sparklines** are the three Excel draws: no axis options beyond one
   scale for the group, and no high and low point marks beyond the last one.
   They ride in the .xlsx as Excel's sparkline groups, both ways, and they
@@ -1451,6 +1465,12 @@ The two auditing tools that answer why a cell says what it says, over a commissi
 A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas > Calculation Options turns iteration on with its two limits, and both settle on their fixed point; turn it off and the cycle is an error again. The setting rides in getState() and goes into the .xlsx as calcPr.
 
 <div data-docs-demo="482-sheet-iterative" data-height="560"></div>
+
+### IMAGE: a picture inside the cell
+
+Excel's IMAGE puts a picture IN a cell rather than floating one over it, so it sorts with its row, filters with it, copies as a formula and moves when the cells move. A product list whose thumbnail column reads the swatch beside it: sort by price and the pictures follow their rows. The source is a web address or a data URL, anything else stays text rather than becoming a broken image, and the second argument is the alt text a screen reader reads.
+
+<div data-docs-demo="484-sheet-cell-images" data-height="520"></div>
 
 ### Hyperlinks: Insert > Link and HYPERLINK
 
