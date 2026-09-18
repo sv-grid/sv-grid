@@ -78,6 +78,7 @@
   } from "@svgrid/grid";
   // Scheduler Pro feature models (this package).
   import { cascade, violations, type SchedulerDependency } from "./scheduler-dependencies";
+  import { dependencyArrows, type Arrow } from "./gantt/timeline-arrows";
   import { expandAssignments, resourceLoad, type SchedulerAssignment } from "./scheduler-assignments";
   import { columnSummaries } from "./scheduler-summary";
   import { buildAxis, timeToX, xToTime, resolveZoom, zoomPresets, type Axis, type ZoomLevel } from "./scheduler-axis";
@@ -568,33 +569,18 @@
     }
     return { byKey, height: top };
   });
-  // SVG path + state for each dependency arrow (elbow connector, pred finish -> succ start).
-  const tlDepArrows = $derived.by(() => {
-    if (!isTimeline || !hasDeps) return [] as Array<{ id: string; d: string; bad: boolean; hx: number; hy: number }>;
-    const rects = tlBarRects.byKey;
-    const bad = new Set(depViolations.map((d) => d.id));
-    const out: Array<{ id: string; d: string; bad: boolean; hx: number; hy: number }> = [];
-    for (const dep of depList) {
-      const a = rects.get(dep.from);
-      const b = rects.get(dep.to);
-      if (!a || !b) continue;
-      const type = dep.type ?? "FS";
-      const x1 = type === "SS" || type === "SF" ? a.left : a.right;
-      const x2 = type === "FF" || type === "SF" ? b.right : b.left;
-      out.push({ id: dep.id, d: depElbow(x1, a.midY, x2, b.midY), bad: bad.has(dep.id), hx: x2, hy: b.midY });
-    }
-    return out;
+  // SVG path + state for each dependency arrow (elbow connector, pred finish ->
+  // succ start). The geometry lives in ./gantt/timeline-arrows, shared with the
+  // Gantt chart so the two views draw the same link the same way.
+  const tlDepArrows = $derived.by<Arrow[]>(() => {
+    if (!isTimeline || !hasDeps) return [];
+    return dependencyArrows(
+      tlBarRects.byKey,
+      depList,
+      new Set(depViolations.map((d) => d.id)),
+      tlLaneH,
+    );
   });
-  // Orthogonal elbow connector between two anchor points; loops around when the
-  // successor sits left of the predecessor (a backward / violating link).
-  function depElbow(x1: number, y1: number, x2: number, y2: number): string {
-    const s = 10;
-    const p = x1 + s;
-    if (x2 >= p) return `M${x1},${y1} L${p},${y1} L${p},${y2} L${x2},${y2}`;
-    const q = x2 - s;
-    const midY = y2 >= y1 ? y1 + tlLaneH : y1 - tlLaneH;
-    return `M${x1},${y1} L${p},${y1} L${p},${midY} L${q},${midY} L${q},${y2} L${x2},${y2}`;
-  }
   // Cascade successors forward after a move / resize, writing the shifts into the
   // overlay and reporting them (never mutating source rows).
   function cascadeDeps(movedKey: string, ns: Date, ne: Date) {

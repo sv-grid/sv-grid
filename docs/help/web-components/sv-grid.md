@@ -116,7 +116,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (34)
+### Properties only (35)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -127,6 +127,7 @@ only be assigned in script: `el.columns = [...]`.
 | `columns` | `Array<ColumnDef<TFeatures, TData>>` |
 | `board` | `BoardConfig<TFeatures, TData>` |
 | `scheduler` | `SchedulerConfig<TFeatures, TData>` |
+| `gantt` | `GanttConfig<TFeatures, TData>` |
 | `chart` | `ChartViewConfig<TFeatures, TData>` |
 | `pivot` | `GridPivotConfig<TData>` |
 | `features` | `TFeatures` |

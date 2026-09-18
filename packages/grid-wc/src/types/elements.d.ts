@@ -21,6 +21,8 @@ export interface SvGridElement extends HTMLElement {
   /** property only - an attribute cannot hold this */
   scheduler: unknown
   /** property only - an attribute cannot hold this */
+  gantt: unknown
+  /** property only - an attribute cannot hold this */
   chart: unknown
   /** property only - an attribute cannot hold this */
   pivot: unknown

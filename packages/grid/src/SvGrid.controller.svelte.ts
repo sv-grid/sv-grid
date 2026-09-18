@@ -5035,6 +5035,7 @@ export function createSvGridController<
         pageSize: props.pageSize,
         groupBy: props.groupBy,
         treeData: props.treeData,
+        gantt: props.gantt,
         serverGroup: props.serverGroup,
         initialColumnPinning: props.initialColumnPinning,
         columnVirtualization: props.columnVirtualization,

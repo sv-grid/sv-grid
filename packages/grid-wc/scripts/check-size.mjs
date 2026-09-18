@@ -155,10 +155,20 @@ const dist = join(here, '..', 'dist')
  * events: rowModel, rowPlaceholder, rowSelectionModel, pivotResultColumns,
  * onVisibleRangeChange, onRetryRow). The Enterprise row model itself is
  * not in it.
+ *
+ * 107.5 -> 107.9 and 108.0 -> 108.4 for the Gantt view's free half
+ * (2026-09-18). Measured 107.6 / 108.1: the grid's base went 93.1 -> 93.4
+ * (measure-size.mjs: the `gantt` prop, the gantt-view seam and the view branch
+ * in SvGrid.svelte), reaching the elements at 1:1, plus one surface entry
+ * (108 -> 109 properties; no new events - the Gantt reports through callbacks
+ * inside its config object, not through grid-level events). The Gantt itself -
+ * renderer, layout model, axis, planning helpers - is @svgrid/enterprise and
+ * costs an element consumer nothing. This is the two-edit cost the note above
+ * describes, for the third time: a prop on the grid is a prop on the elements.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.5 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 108.0 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.9 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 108.4 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

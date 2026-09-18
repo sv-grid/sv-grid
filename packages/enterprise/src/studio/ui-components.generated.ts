@@ -6622,6 +6622,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "gantt",
+        "label": "Gantt",
+        "type": "json",
+        "description": "Gantt mode. When set, the grid renders its rows as a task table beside a time chart: one bar per row by start / end, a work-breakdown tree from `parentField`, and dependency arrows. See . A view of the grid like the board and scheduler; the renderer ships in `@svgrid/enterprise` (call `enableGanttView()`).",
+        "group": "common"
+      },
+      {
         "key": "chart",
         "label": "Chart",
         "type": "json",
