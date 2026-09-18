@@ -42,6 +42,7 @@ export type RibbonIconName =
   | 'chart' | 'table' | 'function' | 'new-sheet'
   | 'file-new' | 'file-open' | 'file-save' | 'file-csv'
   | 'cf-formula'
+  | 'trace-precedents' | 'trace-dependents' | 'remove-arrows'
   | 'name-manager' | 'show-formulas' | 'calculate' | 'goal-seek'
   | 'text-to-columns' | 'remove-duplicates'
   | 'chevron-down' | 'format-cells'
@@ -281,6 +282,20 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'new-sheet': [
     ...SHEET,
     { d: 'M8.2 6.5v5M5.7 9h5', width: 1.7 },
+  ],
+  // Formula auditing: a dot and an arrow between two cells, and the arrow
+  // struck out.
+  'trace-precedents': [
+    { d: 'M2.5 3.5h4v4h-4zM9.5 8.5h4v4h-4z' },
+    { d: 'M4.5 7.5v3h4.5M7.5 9l1.5 1.5L7.5 12', width: 1.3 },
+  ],
+  'trace-dependents': [
+    { d: 'M2.5 3.5h4v4h-4zM9.5 8.5h4v4h-4z' },
+    { d: 'M6.5 5.5h5v2.5M10 6.5l1.5 1.5L13 6.5', width: 1.3 },
+  ],
+  'remove-arrows': [
+    { d: 'M2.5 8h9M9.5 6l2 2-2 2', width: 1.3 },
+    { d: 'M11 3l3 3M14 3l-3 3', width: 1.3 },
   ],
   // A formula rule: an fx over a shaded cell.
   'cf-formula': [

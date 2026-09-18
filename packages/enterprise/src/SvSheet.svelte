@@ -383,6 +383,83 @@
     version += 1
   }
 
+  // --- formula auditing --------------------------------------------------------
+  /**
+   * Excel's Trace Precedents and Trace Dependents: blue arrows on the sheet
+   * from a cell a formula reads to the formula, and from a cell to the
+   * formulas that read it. Each press traces one more level out from the
+   * cells the last press found, as Excel's does; Remove Arrows, a switch to
+   * another sheet or a new document clears them. Cells on other sheets are
+   * left out: there is nothing on this sheet to draw them to.
+   */
+  type TraceArrow = { from: { row: number; col: number }; to: { row: number; col: number } }
+  let traces = $state<TraceArrow[]>([])
+  let traceSheet = ''
+  let traceFrontier: { kind: 'precedents' | 'dependents'; at: string; cells: Array<{ row: number; col: number }> } | null = null
+  /** Where each arrow is drawn, measured from the rendered cells; an arrow
+   *  whose end is scrolled out of the window is left out this paint. */
+  let traceLines = $state<Array<{ x1: number; y1: number; x2: number; y2: number }>>([])
+
+  function trace(kind: 'precedents' | 'dependents') {
+    const here = `${active.rowIndex},${active.colIndex}`
+    if (traceSheet !== wb.active) { traces = []; traceFrontier = null; traceSheet = wb.active }
+    const fromFrontier = traceFrontier && traceFrontier.kind === kind && traceFrontier.at === here && traceFrontier.cells.length > 0
+    const starts = fromFrontier ? traceFrontier!.cells : [{ row: active.rowIndex, col: active.colIndex }]
+    const next: Array<{ row: number; col: number }> = []
+    const seen = new Set(traces.map((t) => `${t.from.row},${t.from.col}>${t.to.row},${t.to.col}`))
+    const added: TraceArrow[] = []
+    for (const start of starts) {
+      const linked = kind === 'precedents' ? wb.precedents(wb.active, start.row, start.col) : wb.dependents(wb.active, start.row, start.col)
+      for (const cell of linked) {
+        if (cell.sheet.toLowerCase() !== wb.active.toLowerCase()) continue
+        const arrow: TraceArrow = kind === 'precedents' ? { from: { row: cell.row, col: cell.col }, to: start } : { from: start, to: { row: cell.row, col: cell.col } }
+        const key = `${arrow.from.row},${arrow.from.col}>${arrow.to.row},${arrow.to.col}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        added.push(arrow)
+        next.push({ row: cell.row, col: cell.col })
+      }
+    }
+    if (!added.length && !fromFrontier) {
+      say(kind === 'precedents' ? 'The Trace Precedents command found no formula references in the active cell.' : 'The Trace Dependents command found no formulas that refer to the active cell.')
+    }
+    traces = [...traces, ...added]
+    traceFrontier = { kind, at: here, cells: next }
+    void tick().then(() => requestAnimationFrame(measureTraces))
+  }
+
+  function removeArrows() {
+    traces = []
+    traceFrontier = null
+    traceLines = []
+  }
+
+  function measureTraces() {
+    const host = gridHost
+    if (!host || !traces.length) { traceLines = []; return }
+    const b = host.getBoundingClientRect()
+    const centre = (cell: { row: number; col: number }) => {
+      const td = host.querySelector<HTMLElement>(`td[data-svgrid-row="${cell.row}"][data-svgrid-col="${cell.col}"]`)
+      if (!td) return null
+      const a = td.getBoundingClientRect()
+      return { x: a.left - b.left + a.width / 2, y: a.top - b.top + a.height / 2 }
+    }
+    const lines: Array<{ x1: number; y1: number; x2: number; y2: number }> = []
+    for (const arrow of traces) {
+      const from = centre(arrow.from)
+      const to = centre(arrow.to)
+      if (from && to) lines.push({ x1: from.x, y1: from.y, x2: to.x, y2: to.y })
+    }
+    traceLines = lines
+  }
+  $effect(() => {
+    void version
+    void traces
+    if (!traces.length) return
+    if (traceSheet && traceSheet.toLowerCase() !== wb.active.toLowerCase()) { removeArrows(); return }
+    void tick().then(() => requestAnimationFrame(measureTraces))
+  })
+
   // --- hidden and copied sheets -------------------------------------------
   /** The sheets whose tabs are not drawn; the document keeps the flag. */
   const hiddenSheets = $derived.by(() => {
@@ -2031,6 +2108,9 @@
         }
         return
       }
+      case 'trace-precedents': trace('precedents'); return
+      case 'trace-dependents': trace('dependents'); return
+      case 'remove-arrows': removeArrows(); return
       case 'circle-invalid': {
         circlesOn = wb.active
         bump()
@@ -3433,13 +3513,29 @@
     onkeydowncapture={onSheetKeyDownCapture}
     onpointerupcapture={onSheetPointerUp}
     class:painting={painter !== null}
-    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage() }}
+    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage(); if (traces.length) measureTraces() }}
   >
   {#if resizeGuide}
     <div class="sheet-resize-guide" class:col={resizeGuide.axis === 'col'} class:row={resizeGuide.axis === 'row'} aria-hidden="true" style:left={resizeGuide.axis === 'col' ? `${resizeGuide.at}px` : '0'} style:top={resizeGuide.axis === 'row' ? `${resizeGuide.at}px` : '0'}></div>
   {/if}
   {#if resizeTip}
     <div class="sheet-resize-tip" role="status" style:left={`${resizeTip.x}px`} style:top={`${resizeTip.y}px`}>{resizeTip.text}</div>
+  {/if}
+  {#if traceLines.length}
+    <!-- Excel's auditing arrows: a dot on the cell read, an arrowhead on
+         the formula, drawn over the rendered cells and measured again on
+         every scroll and repaint. -->
+    <svg class="sheet-trace-layer" aria-hidden="true">
+      <defs>
+        <marker id="sheet-trace-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#1d4ed8" />
+        </marker>
+      </defs>
+      {#each traceLines as line, i (i)}
+        <circle cx={line.x1} cy={line.y1} r="3" fill="#1d4ed8" />
+        <line class="sheet-trace-arrow" x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#1d4ed8" stroke-width="1.5" marker-end="url(#sheet-trace-head)" />
+      {/each}
+    </svg>
   {/if}
   {#if inputMessage && messageRect}
     <!-- Excel's Input Message: a small box under the selected cell, the
@@ -3838,6 +3934,15 @@
   }
   .sheet-cell-anchor .box { display: inline-block; }
   .sheet-file-input { display: none; }
+  .sheet-trace-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 6;
+    pointer-events: none;
+    overflow: visible;
+  }
   /* Circle Invalid Data: a red oval on the cell's box, over its content. */
   .sheet-invalid-circle {
     position: absolute;
