@@ -63,6 +63,18 @@ per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- Phase E item 2: the RTL, touch and accessibility audits, as
+  `tests/e2e/sheet-a11y.spec.ts` (an axe pass over every band of the shell
+  on five demos, light and dark, plus the keyboard model), `sheet-rtl.spec.ts`
+  and `mobile/sheet-touch.spec.ts`. What they found and what was fixed: the
+  grid's pinned columns and row gutter stuck to the physical left edge
+  (now logical insets), the object layer hung objects from the physical
+  left (now the inline start), both tab strips lacked Home, End and
+  focus-follows-selection, the Name Box carried the address as a
+  placeholder rather than a value, the empty row-number corner, the
+  focusable resize separator with no `aria-valuenow`, the watermark
+  appended inside the `role="grid"` table, and three small-text colours
+  under 4.5:1 on a host theme's accent. Phase E is complete.
 - Phase E item 1: `SheetMessages`, `SheetLocalization` and the
   `localization` prop, threaded through Svelte context to the ribbon,
   the formula bar, the tab strip, every dialog and the status bar; the
@@ -73,8 +85,9 @@ Deviations from the plan: Data Validation is a plain dropdown, not a split
 button, because the ribbon model forbids a dropdown that emits its own
 face; the xlsx reader uses DOMParser (present in browsers and jsdom) and
 throws a clear error where it is absent. Tables, charts and images do not
-ride in the file. Demo 474 shows the milestone; its entry in the website's
-demo registry (a private submodule not checked out here) is still to add.
+ride in the file. Demos 474 and 475 show the milestone and are registered in the
+example gallery; their entries in the website's demo registry (a private
+submodule not checked out here) are still to add.
 
 ## 1. Where the spreadsheet stands
 
@@ -283,8 +296,10 @@ reuses `pivot.ts` with a sheet range as its row source.
    `SvSheet`, threaded to the ribbon, dialogs and status bar the way
    `GridMessages` works. Format the status-bar numbers with the locale
    instead of `en-US`.~~ Shipped.
-2. RTL, touch and accessibility audits with Playwright specs under
-   `tests/`, fixing what they find.
+2. ~~RTL, touch and accessibility audits with Playwright specs under
+   `tests/`, fixing what they find.~~ Shipped, with the fixes listed in
+   the Status section. Left as it is on purpose: a font colour or fill
+   the DOCUMENT sets is used as it stands on a dark theme, as Excel does.
 3. ~~**`<sv-sheet>`**: a commercial web component entry under
    `@svgrid/enterprise` (it already builds a CDN bundle with Svelte
    external), with wrappers generated the way `grid-wc` generates React,

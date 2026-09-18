@@ -961,6 +961,36 @@ the Conditional Formatting Rules Manager lists, and the font names.
 Formulas are typed with `,` between arguments and `.` as the decimal
 point whatever the locale.
 
+## Right to left, touch and assistive tech
+
+The shell carries no direction of its own: set `dir="rtl"` on the page or
+on any element above it and everything mirrors, the row gutter and the
+frozen columns to the right edge, the ribbon and the tab strip in reading
+order, an anchored chart hanging from its cell's right edge and growing
+leftwards. The arrow keys follow the reading order with it, so on a
+right-to-left ribbon ArrowLeft is the next tab.
+
+The two bands that cannot fit a phone pan with a finger rather than
+clipping: the ribbon scrolls sideways over its groups, and the cells pan
+in both axes. A tap picks a cell, a second tap on the same cell opens its
+editor, and the formula bar is where the address and the formula are read
+and typed.
+
+For assistive tech the shell is the bands it looks like: the ribbon is a
+toolbar whose tab strip is a `tablist` with one Tab stop, the arrows plus
+Home and End moving between tabs with focus following the selection; the
+sheet tabs are a second `tablist` with the same model; the formula bar is
+a labelled group whose Name Box reads the active cell as its value; the
+cells are the grid's own `role="grid"`; every dialog takes focus and
+gives it back to the cells on Escape. `tests/e2e/sheet-a11y.spec.ts`,
+`sheet-rtl.spec.ts` and `mobile/sheet-touch.spec.ts` hold the shell to
+all of this in a real browser, the first with an axe audit of every band.
+
+One thing the shell does not decide: a font colour or a fill the DOCUMENT
+sets is used as it stands, on a dark theme as on a light one. A red on a
+dark canvas is as hard to read here as it is in Excel, and the answer is
+the same one: change the document's colours, not the app's.
+
 ## What it does not do
 
 The shell is the part of Excel a team's spreadsheet uses every day; these

@@ -6,6 +6,7 @@
    * and calls back, so the keyboard shortcuts and the tabs cannot disagree
    * about which sheet is active.
    */
+  import { tick } from 'svelte'
   import { SvModal } from '@svgrid/grid'
   import type { Workbook } from './sheet/workbook'
   import { isValidSheetName } from './sheet/workbook'
@@ -243,21 +244,30 @@
     changed()
   }
 
-  /** Left and right arrows move between tabs, which is what a tablist owes a
-   *  keyboard user; the shortcut layer's Ctrl+PageUp/Down does the same from
-   *  anywhere in the grid. */
+  /** The arrows move between tabs and Home and End reach the ends, which is
+   *  what a tablist owes a keyboard user; the shortcut layer's
+   *  Ctrl+PageUp/Down does the same from anywhere in the grid. Focus follows
+   *  the selection, and the arrows are mirrored on a right-to-left strip. */
   function onTabKey(event: KeyboardEvent, name: string) {
-    const at = sheets.indexOf(name)
-    if (event.key === 'ArrowRight' && at < sheets.length - 1) {
-      event.preventDefault()
-      select(sheets[at + 1]!)
-    } else if (event.key === 'ArrowLeft' && at > 0) {
-      event.preventDefault()
-      select(sheets[at - 1]!)
-    } else if (event.key === 'F2') {
+    if (event.key === 'F2') {
       event.preventDefault()
       startRename(name)
+      return
     }
+    const at = sheets.indexOf(name)
+    const list = (event.currentTarget as HTMLElement).closest<HTMLElement>('[role="tablist"]')
+    const rtl = list ? getComputedStyle(list).direction === 'rtl' : false
+    const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
+    const back = rtl ? 'ArrowRight' : 'ArrowLeft'
+    let next = -1
+    if (event.key === forward && at < sheets.length - 1) next = at + 1
+    else if (event.key === back && at > 0) next = at - 1
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = sheets.length - 1
+    if (next < 0 || next === at) return
+    event.preventDefault()
+    select(sheets[next]!)
+    void tick().then(() => list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus())
   }
 </script>
 
@@ -434,7 +444,10 @@
     box-shadow: inset 0 -2px 0 0 var(--sg-accent, #107c41);
   }
   .tab.active button {
-    color: var(--sg-accent, #107c41);
+    /* Mixed toward the text colour: the raw accent under 4.5:1 on the
+       lifted white tab is what axe finds and a low-vision reader feels.
+       The line along the bottom edge above keeps the accent pure. */
+    color: color-mix(in srgb, var(--sg-accent, #107c41) 72%, var(--sg-fg, #242424));
     font-weight: 600;
   }
   .tab:not(.active):hover { background: var(--sg-row-hover-bg, #e9e9e9); }

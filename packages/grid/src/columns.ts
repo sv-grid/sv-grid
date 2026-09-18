@@ -16,13 +16,18 @@ export function createColumns<
     // context (z=20) so a selected cell in the scrollable middle never
     // bleeds over the pinned columns during horizontal scroll. Still
     // sits below dropdowns (z=900+) and the column menu.
+    // Logical insets, not `left` / `right`: the offsets are measured from the
+    // pinned side in READING order, so under `dir="rtl"` the left-pinned
+    // columns have to stick to the right edge. `inset-inline-start` is that
+    // edge in either direction; with `left` a right-to-left grid scrolls its
+    // pinned columns off the screen.
     const leftOffset = ctx.pinnedOffsets.left[columnId];
     if (leftOffset !== undefined) {
-      return `position: sticky; left: ${leftOffset}px; z-index: 30;`;
+      return `position: sticky; inset-inline-start: ${leftOffset}px; z-index: 30;`;
     }
     const rightOffset = ctx.pinnedOffsets.right[columnId];
     if (rightOffset !== undefined) {
-      return `position: sticky; right: ${rightOffset}px; z-index: 30;`;
+      return `position: sticky; inset-inline-end: ${rightOffset}px; z-index: 30;`;
     }
     return "";
   }

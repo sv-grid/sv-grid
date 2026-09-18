@@ -1605,14 +1605,14 @@
                       {#if showRowNumbersEffective}
                         <td
                           class="sv-grid-cell sv-grid-row-number-cell"
-                          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+                          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
                           >{rowIndex + 1}</td
                         >
                       {/if}
                       {#if showRowSelectionEffective}
                         <td
                           class="sv-grid-cell sv-grid-selection-cell"
-                          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                           onclick={() => toggleRowSelectionById(row.id)}
                         >
                           <button
@@ -1859,14 +1859,14 @@
       {#if showRowNumbersEffective}
         <td
           class="sv-grid-cell sv-grid-row-number-cell"
-          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
           >{#if where === "top"}{@render icon("pinned-row-top")}{:else}{@render icon("pinned-row-bottom")}{/if}</td
         >
       {/if}
       {#if showRowSelectionEffective}
         <td
           class="sv-grid-cell sv-grid-selection-cell"
-          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
         ></td>
       {/if}
       {#if columnVirtualizationEnabled && columnWindowStart > 0}
@@ -2034,14 +2034,14 @@
                 {#if showRowNumbersEffective}
                   <th
                     class="sv-grid-column sv-grid-row-number-column"
-                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
                     aria-hidden="true"
                   ></th>
                 {/if}
                 {#if showRowSelectionEffective}
                   <th
                     class="sv-grid-column sv-grid-selection-column"
-                    style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                    style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                     aria-hidden="true"
                   ></th>
                 {/if}
@@ -2109,9 +2109,14 @@
                 {#if showRowNumbersEffective}
                   <th
                     class="sv-grid-column sv-grid-row-number-column"
-                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-                    aria-label="Row number"
+                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
                   >
+                    <!-- The corner over the row gutter. Its only content is an
+                         icon, which is aria-hidden, so the name comes from a
+                         visually-hidden span rather than an aria-label: axe's
+                         `empty-table-header` asks a th for text a screen
+                         reader can read, and a label attribute is not it. -->
+                    <span class="sv-grid-sr-only">Row number</span>
                     <span class="sv-grid-row-number-head"
                       >{@render icon("row-number")}</span
                     >
@@ -2120,7 +2125,7 @@
                 {#if showRowSelectionEffective}
                   <th
                     class="sv-grid-column sv-grid-selection-column"
-                    style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                    style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                   >
                     <button
                       type="button"
@@ -2366,7 +2371,7 @@
                   {#if showRowNumbersEffective}
                     <th
                       class="sv-grid-column sv-grid-row-number-column"
-                      style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+                      style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
                     ></th>
                   {/if}
                   {#if showRowSelectionEffective}
@@ -2376,7 +2381,7 @@
                          axe `empty-table-header` violation. -->
                     <th
                       class="sv-grid-column sv-grid-selection-column"
-                      style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                      style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                       aria-hidden="true"
                     ></th>
                   {/if}
@@ -2681,7 +2686,7 @@
                   <!-- Blank spacer, not a header - see the selection cell below. -->
                   <td
                     class="sv-grid-column sv-grid-summary-column sv-grid-row-number-column"
-                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
                   ></td>
                 {/if}
                 {#if showRowSelectionEffective}
@@ -2691,7 +2696,7 @@
                        (axe `empty-table-header`). -->
                   <td
                     class="sv-grid-column sv-grid-summary-column sv-grid-selection-column"
-                    style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                    style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                   ></td>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
