@@ -158,6 +158,27 @@ describe('SvSheetFormatCells (DOM)', () => {
     expect(border).toBeNull()
   })
 
+  it('Accounting takes a symbol and decimals, Special a type, and each opens on its own pattern', () => {
+    const onApply = vi.fn()
+    comp = mount(SvSheetFormatCells, {
+      target: host!,
+      props: { open: true, entry: { numFmt: '_("\u20ac"* #,##0.0_);_("\u20ac"* (#,##0.0);_("\u20ac"* "-"?_);_(@_)' }, sample: 1234.5, onApply },
+    })
+    flushSync()
+    expect(q('.sv-modal [role="option"][aria-selected="true"]')?.textContent).toBe('Accounting')
+    const symbol = qa('.sv-modal label').find((l) => l.textContent?.trim().startsWith('Symbol'))?.querySelector('select') as HTMLSelectElement
+    expect(symbol.value).toBe('\u20ac')
+    expect(q('.sv-modal .sample-text')?.textContent).toBe(' \u20ac 1,234.5 ')
+    click(qa('.sv-modal [role="option"]').find((o) => o.textContent === 'Special'))
+    const type = qa('.sv-modal label').find((l) => l.textContent?.trim().startsWith('Type'))?.querySelector('select') as HTMLSelectElement
+    type.value = 'ssn'
+    type.dispatchEvent(new Event('change', { bubbles: true }))
+    flushSync()
+    expect(q('.sv-modal .sample-text')?.textContent).toBe('000-00-1235')
+    click(button('OK'))
+    expect(onApply.mock.calls[0]![0]).toEqual({ numFmt: '000-00-0000' })
+  })
+
   it('the Protection tab unlocks a cell, and sends nothing when the box is left as it was', () => {
     const onApply = vi.fn()
     comp = mount(SvSheetFormatCells, {
@@ -359,7 +380,10 @@ describe('SvSheetInsertFunction (DOM)', () => {
     select.dispatchEvent(new Event('change', { bubbles: true }))
     flushSync()
     const shown = qa('.sv-modal [role="option"]').map((o) => o.textContent)
-    expect(shown).toEqual(['DATE', 'DATEDIF', 'DAY', 'DAYS', 'EOMONTH', 'MONTH', 'NOW', 'TODAY', 'YEAR'])
+    expect(shown).toEqual(functionCatalog().filter((f) => f.group === 'Date & Time').map((f) => f.name))
+    expect(shown).toContain('EOMONTH')
+    expect(shown).toContain('NETWORKDAYS')
+    expect(shown).not.toContain('SUM')
   })
 })
 

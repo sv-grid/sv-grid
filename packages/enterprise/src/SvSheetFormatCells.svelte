@@ -11,7 +11,10 @@
    */
   import { SvModal } from '@svgrid/grid'
   import type { CellFormatEntry } from './sheet/format-store'
-  import { compileNumberFormat, FORMAT_PRESETS, formatCategory } from './sheet/number-format'
+  import {
+    compileNumberFormat, FORMAT_PRESETS, SPECIAL_FORMATS, formatCategory, accountingPattern, accountingParts,
+    type SpecialFormatName,
+  } from './sheet/number-format'
   import { FONT_FAMILIES, FONT_SIZES, type BorderPreset } from './sheet/ribbon'
   import { ALL_COLOURS } from './sheet/palette'
 
@@ -41,22 +44,35 @@
   ]
   let tab = $state<Tab>('number')
 
-  type Category = 'general' | 'number' | 'currency' | 'percent' | 'date' | 'time' | 'scientific' | 'custom'
+  type Category = 'general' | 'number' | 'currency' | 'accounting' | 'percent' | 'date' | 'time' | 'scientific' | 'special' | 'custom'
   const CATEGORIES: ReadonlyArray<{ id: Category; label: string }> = [
     { id: 'general', label: 'General' },
     { id: 'number', label: 'Number' },
     { id: 'currency', label: 'Currency' },
+    { id: 'accounting', label: 'Accounting' },
     { id: 'percent', label: 'Percentage' },
     { id: 'date', label: 'Date' },
     { id: 'time', label: 'Time' },
     { id: 'scientific', label: 'Scientific' },
+    { id: 'special', label: 'Special' },
     { id: 'custom', label: 'Custom' },
   ]
+  /** Excel's symbol list, the short one. An empty value is its "None". */
+  const SYMBOLS: ReadonlyArray<{ value: string; label: string }> = [
+    { value: '$', label: '$' },
+    { value: '', label: 'None' },
+    { value: '\u20ac', label: '\u20ac Euro' },
+    { value: '\u00a3', label: '\u00a3 Pound' },
+    { value: '\u00a5', label: '\u00a5 Yen' },
+  ]
+  const SPECIALS = Object.entries(SPECIAL_FORMATS) as Array<[SpecialFormatName, { label: string; pattern: string }]>
 
   // Number
   let category = $state<Category>('general')
   let decimals = $state(2)
   let thousands = $state(true)
+  let symbol = $state('$')
+  let special = $state<SpecialFormatName>('zip')
   let custom = $state('')
   // Alignment
   let align = $state<'' | 'left' | 'center' | 'right'>('')
@@ -95,6 +111,8 @@
       case 'general': return undefined
       case 'number': return `${thousands ? '#,##' : ''}0${zeros(decimals)}`
       case 'currency': return `$#,##0${zeros(decimals)};($#,##0${zeros(decimals)})`
+      case 'accounting': return accountingPattern(symbol, decimals)
+      case 'special': return SPECIAL_FORMATS[special].pattern
       case 'percent': return `0${zeros(decimals)}%`
       case 'date': return FORMAT_PRESETS.date
       case 'time': return FORMAT_PRESETS.time
@@ -117,6 +135,8 @@
     category = num.category
     decimals = num.decimals
     thousands = num.thousands
+    symbol = accountingParts(initial.numFmt)?.symbol ?? '$'
+    special = SPECIALS.find(([, sp]) => sp.pattern === initial.numFmt)?.[0] ?? 'zip'
     custom = initial.numFmt ?? ''
     align = initial.align ?? ''
     wrap = initial.wrap ?? false
@@ -213,7 +233,7 @@
               <div class="label">Sample</div>
               <div class="sample-text">{preview}</div>
             </div>
-            {#if category === 'number' || category === 'currency' || category === 'percent' || category === 'scientific'}
+            {#if category === 'number' || category === 'currency' || category === 'accounting' || category === 'percent' || category === 'scientific'}
               <label class="field auto">
                 <span>Decimal places:</span>
                 <input type="number" min="0" max="10" bind:value={decimals} />
@@ -221,6 +241,22 @@
             {/if}
             {#if category === 'number'}
               <label class="check"><input type="checkbox" bind:checked={thousands} /> Use 1000 separator (,)</label>
+            {/if}
+            {#if category === 'accounting'}
+              <label class="field auto">
+                <span>Symbol:</span>
+                <select bind:value={symbol}>
+                  {#each SYMBOLS as sy (sy.value)}<option value={sy.value}>{sy.label}</option>{/each}
+                </select>
+              </label>
+            {/if}
+            {#if category === 'special'}
+              <label class="field auto">
+                <span>Type:</span>
+                <select bind:value={special}>
+                  {#each SPECIALS as [id, sp] (id)}<option value={id}>{sp.label}</option>{/each}
+                </select>
+              </label>
             {/if}
             {#if category === 'custom'}
               <label class="field auto">
@@ -232,6 +268,8 @@
               {#if category === 'general'}General format cells have no specific number format.
               {:else if category === 'number'}Number is used for general display of numbers.
               {:else if category === 'currency'}Currency formats are used for general monetary values.
+              {:else if category === 'accounting'}Accounting formats line up the currency symbols and decimal points in a column.
+              {:else if category === 'special'}Special formats are useful for tracking list and database values.
               {:else if category === 'percent'}Percentage formats multiply the cell value by 100 and display the result with a percent symbol.
               {:else if category === 'date'}Date formats display date serial numbers as dates.
               {:else if category === 'time'}Time formats display date serial numbers as times.

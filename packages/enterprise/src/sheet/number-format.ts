@@ -63,15 +63,33 @@ function splitSections(pattern: string): string[] {
   return out
 }
 
+type ConditionOp = '<' | '<=' | '>' | '>=' | '=' | '<>'
+
 type Section = {
   raw: string
   color?: string
+  /** `[<=9999999]`: the section applies only to values that pass. */
+  condition?: { op: ConditionOp; value: number }
   /** Pattern with the colour and other bracket directives removed. */
   body: string
 }
 
+const CONDITION = /^(<=|>=|<>|<|>|=)\s*(-?\d+(?:\.\d+)?)$/
+
+function passes(condition: { op: ConditionOp; value: number }, n: number): boolean {
+  switch (condition.op) {
+    case '<': return n < condition.value
+    case '<=': return n <= condition.value
+    case '>': return n > condition.value
+    case '>=': return n >= condition.value
+    case '=': return n === condition.value
+    case '<>': return n !== condition.value
+  }
+}
+
 function parseSection(raw: string): Section {
   let color: string | undefined
+  let condition: Section['condition']
   let body = ''
   // Walk rather than regex-replace: a pattern like `"[" @ "]"` has brackets
   // INSIDE quoted literals, and a global /\[[^\]]*\]/ happily eats the text
@@ -92,14 +110,16 @@ function parseSection(raw: string): Section {
       const inner = raw.slice(i + 1, end).trim().toUpperCase()
       const named = COLORS[inner]
       if (named) color = named
-      // Anything else (a condition like [<100]) is unsupported: drop it rather
-      // than print it.
+      const cond = CONDITION.exec(inner)
+      if (cond) condition = { op: cond[1] as ConditionOp, value: Number(cond[2]) }
+      // Anything else ([$-409] locale tags and the like) is dropped rather
+      // than printed.
       i = end
       continue
     }
     body += ch
   }
-  return { raw, color, body }
+  return condition ? { raw, color, condition, body } : { raw, color, body }
 }
 
 const DATE_TOKEN = /^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|A\/P)/
@@ -188,10 +208,17 @@ function renderDate(body: string, date: Date): string {
   return out
 }
 
+/** One piece of the integer side of a pattern: a digit slot, or literal
+ *  text sitting between digit slots, as the `-` in `000-00-0000`. */
+type MaskToken = { kind: 'digit'; ch: '0' | '#' | '?' } | { kind: 'lit'; text: string }
+
 type NumericPlan = {
   prefix: string
   suffix: string
   intPlaceholders: string
+  /** The integer side in order, when literals sit between its digits; null
+   *  when it is digits alone and the plain path applies. */
+  intMask: MaskToken[] | null
   fracPlaceholders: string
   expPlaceholders: string
   useGrouping: boolean
@@ -200,7 +227,18 @@ type NumericPlan = {
   scientific: boolean
 }
 
-/** Pull a numeric section apart into literal text and digit placeholders. */
+/**
+ * Pull a numeric section apart into literal text and digit placeholders.
+ *
+ * Literal text before the first digit is the prefix and after the last is
+ * the suffix. Literal text BETWEEN integer digits, as in `000-00-0000` or
+ * `(###) ###-####`, turns the integer side into a mask that the digits are
+ * laid into from the right, which is how Excel's Special formats work.
+ *
+ * `_x` (Excel: leave the width of x) and `*x` (fill the cell with x) both
+ * become one space here: text has no cell width to leave or fill, and one
+ * space is what keeps `_($* #,##0.00_)` reading as `$ 1,234.00`.
+ */
 function planNumeric(body: string): NumericPlan {
   let prefix = ''
   let suffix = ''
@@ -213,22 +251,35 @@ function planNumeric(body: string): NumericPlan {
   let scale = 1
   let seenPlaceholder = false
   let afterDecimal = false
+  // The integer side as tokens, literal text included, until the decimal
+  // point. `pending` holds literal text after the last integer digit, which
+  // is part of the mask only if another digit follows it.
+  const mask: MaskToken[] = []
+  let pending = ''
+  let maskHasLiteral = false
+
+  const literal = (text: string) => {
+    if (!seenPlaceholder) prefix += text
+    else if (afterDecimal || scientific) suffix += text
+    else pending += text
+  }
 
   for (let i = 0; i < body.length; i += 1) {
     const ch = body[i]!
 
     if (ch === '\\') {
-      const next = body[i + 1] ?? ''
-      if (seenPlaceholder) suffix += next
-      else prefix += next
+      literal(body[i + 1] ?? '')
+      i += 1
+      continue
+    }
+    if (ch === '_' || ch === '*') {
+      literal(' ')
       i += 1
       continue
     }
     if (ch === '"') {
       const end = body.indexOf('"', i + 1)
-      const text = body.slice(i + 1, end < 0 ? body.length : end)
-      if (seenPlaceholder) suffix += text
-      else prefix += text
+      literal(body.slice(i + 1, end < 0 ? body.length : end))
       i = end < 0 ? body.length : end
       continue
     }
@@ -238,7 +289,11 @@ function planNumeric(body: string): NumericPlan {
       // Counting them as decimals turns 0.00E+00 into four decimal places.
       if (scientific) expPlaceholders += ch
       else if (afterDecimal) fracPlaceholders += ch
-      else intPlaceholders += ch
+      else {
+        intPlaceholders += ch
+        if (pending) { mask.push({ kind: 'lit', text: pending }); maskHasLiteral = true; pending = '' }
+        mask.push({ kind: 'digit', ch })
+      }
       continue
     }
     if (ch === '.') { afterDecimal = true; seenPlaceholder = true; continue }
@@ -250,20 +305,42 @@ function planNumeric(body: string): NumericPlan {
       else scale *= 1000
       continue
     }
-    if (ch === '%') { percent = true; if (seenPlaceholder) suffix += '%'; else prefix += '%'; continue }
+    if (ch === '%') { percent = true; literal('%'); continue }
     if ((ch === 'E' || ch === 'e') && /^[+-]/.test(body.slice(i + 1))) {
       scientific = true
       i += 1
       continue
     }
-    if (seenPlaceholder) suffix += ch
-    else prefix += ch
+    literal(ch)
   }
+  // Literal text after the last integer digit belongs to the suffix, before
+  // whatever the fraction and exponent added.
+  if (pending) suffix = pending + suffix
 
+  // A `?` on the integer side pads with a space, which the mask renderer
+  // does and the plain path (digits, grouping) does not.
+  const needsMask = maskHasLiteral || intPlaceholders.includes('?')
   return {
-    prefix, suffix, intPlaceholders, fracPlaceholders, expPlaceholders,
+    prefix, suffix, intPlaceholders, intMask: needsMask ? mask : null,
+    fracPlaceholders, expPlaceholders,
     useGrouping, scale, percent, scientific,
   }
+}
+
+/** Lay digits into a mask from the right: `000-00-0000` on 123456789 is
+ *  `123-45-6789`; digits left over go in front, missing ones follow the
+ *  placeholder's rule, so `###-####` on 1234 is `-1234` as Excel gives. */
+function renderMask(mask: MaskToken[], digits: string): string {
+  let out = ''
+  let at = digits.length
+  for (let i = mask.length - 1; i >= 0; i -= 1) {
+    const token = mask[i]!
+    if (token.kind === 'lit') { out = token.text + out; continue }
+    if (at > 0) { at -= 1; out = digits[at]! + out; continue }
+    if (token.ch === '0') out = `0${out}`
+    else if (token.ch === '?') out = ` ${out}`
+  }
+  return digits.slice(0, at) + out
 }
 
 function group(intText: string): string {
@@ -293,9 +370,13 @@ function renderNumeric(plan: NumericPlan, value: number): string {
   // leading zero entirely when the pattern is all `#`.
   const minInt = plan.intPlaceholders.split('').filter((c) => c === '0').length
   let intText = rawInt
-  if (intText.length < minInt) intText = intText.padStart(minInt, '0')
-  if (minInt === 0 && intText === '0' && plan.intPlaceholders.length > 0) intText = ''
-  if (plan.useGrouping && intText !== '') intText = group(intText)
+  if (plan.intMask) {
+    intText = renderMask(plan.intMask, rawInt === '0' && minInt === 0 ? '' : rawInt)
+  } else {
+    if (intText.length < minInt) intText = intText.padStart(minInt, '0')
+    if (minInt === 0 && intText === '0' && plan.intPlaceholders.length > 0) intText = ''
+    if (plan.useGrouping && intText !== '') intText = group(intText)
+  }
 
   // Trim optional decimals from the right: `0.0#` on 1.5 gives "1.5", not
   // "1.50". A `0` placeholder is never trimmed, a `#` always may be, and a
@@ -318,6 +399,25 @@ function renderNumeric(plan: NumericPlan, value: number): string {
  *  zero section must print `-`, not `-0`. */
 function hasPlaceholders(plan: NumericPlan): boolean {
   return plan.intPlaceholders !== '' || plan.fracPlaceholders !== ''
+}
+
+/** The text section: `@` is the value, quotes and backslashes wrap
+ *  literals, `_x` and `*x` are one space, as on the numeric side. */
+function renderText(body: string, value: string): string {
+  let out = ''
+  for (let i = 0; i < body.length; i += 1) {
+    const ch = body[i]!
+    if (ch === '\\') { out += body[i + 1] ?? ''; i += 1; continue }
+    if (ch === '_' || ch === '*') { out += ' '; i += 1; continue }
+    if (ch === '"') {
+      const end = body.indexOf('"', i + 1)
+      out += body.slice(i + 1, end < 0 ? body.length : end)
+      i = end < 0 ? body.length : end
+      continue
+    }
+    out += ch === '@' ? value : ch
+  }
+  return out
 }
 
 /** Excel's General: up to 11 significant digits, no trailing zeros. */
@@ -346,6 +446,7 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
   const negative = sections[1]
   const zero = sections[2]
   const text = sections[3]
+  const conditional = sections.some((sec) => sec.condition)
 
   // Plans are built once here, not per value.
   const plans = new Map<Section, NumericPlan>()
@@ -369,9 +470,7 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
         if (!section) return { text: value }
         // The text section substitutes @ for the value; without an @ the
         // section's literal text is all you get.
-        const body = section.body.includes('@')
-          ? section.body.replace(/@/g, value).replace(/"/g, '')
-          : value
+        const body = section.body.includes('@') ? renderText(section.body, value) : value
         return { text: body, color: section.color }
       }
 
@@ -388,9 +487,17 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
       }
 
       // Pick the section. Two sections means the second covers zero too.
-      let section = positive
-      if (n < 0 && negative) section = negative
-      else if (n === 0 && zero) section = zero
+      // With conditions, the first section whose condition the value passes
+      // wins and an unconditioned one is the fallback, as in Excel's
+      // `[<=9999999]###-####;(###) ###-####`.
+      let section: Section | undefined
+      if (conditional) {
+        section = sections.find((sec) => sec && (sec.condition ? passes(sec.condition, n) : true))
+      } else {
+        section = positive
+        if (n < 0 && negative) section = negative
+        else if (n === 0 && zero) section = zero
+      }
       if (!section) return { text: general(value) }
 
       if (dateFlags.get(section)) {
@@ -406,7 +513,7 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
       }
       // A negative shown by its own section renders its ABSOLUTE value: the
       // section supplies the sign, usually as parentheses or a literal minus.
-      const usingNegativeSection = n < 0 && section === negative
+      const usingNegativeSection = n < 0 && section === negative && !conditional
       const magnitude = usingNegativeSection ? Math.abs(n) : n
       let out = renderNumeric(plan, magnitude)
       // With no negative section, put the sign back on.
@@ -431,9 +538,38 @@ export const FORMAT_PRESETS = {
   time: 'h:mm AM/PM',
   date: 'yyyy-mm-dd',
   currency: '$#,##0.00;($#,##0.00)',
+  accounting: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
   percent: '0.00%',
   scientific: '0.00E+00',
 } as const
+
+/** Excel's Special category: fixed-shape numbers laid into a mask. */
+export const SPECIAL_FORMATS = {
+  zip: { label: 'Zip Code', pattern: '00000' },
+  zip4: { label: 'Zip Code + 4', pattern: '00000-0000' },
+  phone: { label: 'Phone Number', pattern: '[<=9999999]###-####;(###) ###-####' },
+  ssn: { label: 'Social Security Number', pattern: '000-00-0000' },
+} as const
+
+export type SpecialFormatName = keyof typeof SPECIAL_FORMATS
+
+/** The pattern Excel's Accounting category spells for a symbol and a
+ *  number of decimals; an empty symbol is its "None". */
+export function accountingPattern(symbol: string, decimals: number): string {
+  const digits = `#,##0${decimals > 0 ? '.' + '0'.repeat(decimals) : ''}`
+  const sym = symbol === '$' ? '$* ' : symbol ? `${JSON.stringify(symbol)}* ` : '* '
+  return `_(${sym}${digits}_);_(${sym}(${digits});_(${sym}"-"${'?'.repeat(decimals)}_);_(@_)`
+}
+
+/** The symbol and decimals an accounting pattern was built from, or null
+ *  when the pattern is not one `accountingPattern` would spell. */
+export function accountingParts(fmt: string | undefined): { symbol: string; decimals: number } | null {
+  if (!fmt) return null
+  const m = /^_\((?:"([^"]*)"|\$)?\* #,##0(\.0+)?_\);/.exec(fmt)
+  if (!m) return null
+  const symbol = m[1] !== undefined ? m[1] : fmt.startsWith('_($') ? '$' : ''
+  return { symbol, decimals: m[2] ? m[2].length - 1 : 0 }
+}
 
 export type FormatPresetName = keyof typeof FORMAT_PRESETS
 
@@ -445,12 +581,14 @@ export type FormatPresetName = keyof typeof FORMAT_PRESETS
  * them is 'custom'.
  */
 export function formatCategory(fmt: string | undefined): {
-  category: FormatPresetName | 'custom'
+  category: FormatPresetName | 'special' | 'custom'
   decimals: number
   thousands: boolean
 } {
   if (!fmt || fmt === 'General') return { category: 'general', decimals: 2, thousands: true }
   const decimals = fmt.match(/\.(0+)/)?.[1]?.length ?? 0
+  if (accountingParts(fmt)) return { category: 'accounting', decimals, thousands: true }
+  if (Object.values(SPECIAL_FORMATS).some((sp) => sp.pattern === fmt)) return { category: 'special', decimals: 0, thousands: false }
   if (/E\+/i.test(fmt)) return { category: 'scientific', decimals, thousands: false }
   if (/%$/.test(fmt)) return { category: 'percent', decimals, thousands: false }
   if (/^\$/.test(fmt)) return { category: 'currency', decimals, thousands: true }

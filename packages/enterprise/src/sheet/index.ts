@@ -100,8 +100,9 @@ export {
 } from './shortcuts'
 
 export {
-  compileNumberFormat, formatWithPattern, FORMAT_PRESETS,
-  type CompiledFormat, type FormatPresetName,
+  compileNumberFormat, formatWithPattern, FORMAT_PRESETS, SPECIAL_FORMATS, formatCategory,
+  accountingPattern, accountingParts,
+  type CompiledFormat, type FormatPresetName, type SpecialFormatName,
 } from './number-format'
 export {
   createFormatStore, entryToStyle,
