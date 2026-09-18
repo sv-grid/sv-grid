@@ -38,7 +38,7 @@ export type RibbonIconName =
   | 'dec-more' | 'dec-less'
   | 'insert-cells' | 'delete-cells' | 'freeze' | 'unfreeze'
   | 'autosum' | 'fill-down' | 'fill-right' | 'clear' | 'find' | 'filter'
-  | 'sort-asc' | 'sort-desc'
+  | 'sort-asc' | 'sort-desc' | 'sort'
   | 'chart' | 'table' | 'function' | 'new-sheet'
   | 'name-manager' | 'show-formulas' | 'calculate' | 'goal-seek'
   | 'text-to-columns' | 'remove-duplicates'
@@ -254,6 +254,11 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
     { d: 'M3.2 2.5h3.6l-3.6 4h3.6', width: 1.2 },
     { d: 'M3 13.5l2-4 2 4M3.6 12.3h2.8', width: 1.2 },
     { d: 'M12 2.5v11M9.5 11l2.5 2.5 2.5-2.5' },
+  ],
+  // Excel's Sort: an arrow each way beside three bars of falling length.
+  sort: [
+    { d: 'M4 2.5v11M1.5 5L4 2.5 6.5 5', width: 1.3 },
+    { d: 'M9 3.5h5.5M9 8h4M9 12.5h2.5', width: 1.3 },
   ],
 
   chart: [

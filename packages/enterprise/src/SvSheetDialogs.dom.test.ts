@@ -10,6 +10,7 @@ import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import SvSheetFindReplace from './SvSheetFindReplace.svelte'
 import SvSheetPasteSpecial from './SvSheetPasteSpecial.svelte'
 import SvSheetFormatCells from './SvSheetFormatCells.svelte'
+import SvSheetSort from './SvSheetSort.svelte'
 import SvSheetInsertFunction from './SvSheetInsertFunction.svelte'
 import SvSheetNameManager from './SvSheetNameManager.svelte'
 import SvSheetGoalSeek from './SvSheetGoalSeek.svelte'
@@ -384,6 +385,34 @@ describe('SvSheetInsertFunction (DOM)', () => {
     expect(shown).toContain('EOMONTH')
     expect(shown).toContain('NETWORKDAYS')
     expect(shown).not.toContain('SUM')
+  })
+})
+
+describe('SvSheetSort (DOM)', () => {
+  it('opens on the active column with the headers guessed, adds a level, hands the keys back', () => {
+    const onApply = vi.fn()
+    const workbook = createWorkbook([{ name: 'S', cells: [['Region', 'Amount'], ['East', '10'], ['West', '5']] }])
+    comp = mount(SvSheetSort, {
+      target: host!,
+      props: { open: true, workbook, block: { top: 0, left: 0, bottom: 2, right: 1 }, headerGuess: true, activeCol: 1, onApply },
+    })
+    flushSync()
+    const selects = () => qa('.sv-modal select') as HTMLSelectElement[]
+    expect(selects()[0]!.value).toBe('1')
+    expect([...selects()[0]!.options].map((o) => o.textContent)).toEqual(['Region', 'Amount'])
+    click(button('Add Level'))
+    expect(selects()).toHaveLength(4)
+    expect(selects()[2]!.value).toBe('0')
+    selects()[1]!.value = 'desc'
+    selects()[1]!.dispatchEvent(new Event('change', { bubbles: true }))
+    flushSync()
+    // Without headers the columns are named by letter.
+    const headers = qa('.sv-modal label').find((l) => l.textContent?.includes('My data has headers'))?.querySelector('input') as HTMLInputElement
+    headers.click()
+    flushSync()
+    expect([...selects()[0]!.options].map((o) => o.textContent)).toEqual(['Column A', 'Column B'])
+    click(button('OK'))
+    expect(onApply).toHaveBeenCalledWith([{ col: 1, direction: 'desc' }, { col: 0, direction: 'asc' }], false)
   })
 })
 

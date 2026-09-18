@@ -54,6 +54,9 @@ export {
   type AutoFilterState, type ColumnFilter, type FilterCondition, type FilterValue,
 } from './auto-filter'
 
+export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sort'
+export { default as SvSheetSort } from '../SvSheetSort.svelte'
+
 export {
   splitText, textToColumns, guessDelimiter,
   findDuplicates, removeDuplicates,

@@ -154,6 +154,7 @@ export type RibbonActionId =
   | 'toggle-formulas'
   | 'sort-asc'
   | 'sort-desc'
+  | 'sort-custom'
   | 'toggle-filter'
   | 'freeze-panes'
   | 'unfreeze-panes'
@@ -878,6 +879,7 @@ const DATA: RibbonTab = {
       items: [
         small(1, { id: 'sort-asc', label: 'Sort A to Z', title: 'Sort A to Z', icon: 'sort-asc', kind: 'button', emits: 'sort-asc' }),
         small(2, { id: 'sort-desc', label: 'Sort Z to A', title: 'Sort Z to A', icon: 'sort-desc', kind: 'button', emits: 'sort-desc' }),
+        { id: 'sort-custom', label: 'Sort', title: 'Sort: by several columns, each its own way', icon: 'sort', kind: 'button', size: 'large', emits: 'sort-custom' },
         { id: 'filter-data', label: 'Filter', title: 'Filter', keys: 'Ctrl+Shift+L', icon: 'filter', kind: 'toggle', size: 'large', emits: 'toggle-filter' },
       ],
     },
