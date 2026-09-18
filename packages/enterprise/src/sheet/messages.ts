@@ -158,6 +158,11 @@ export type SheetTextMessages = {
   /** "{count} cells break a validation rule." */
   invalidCellsFound: string
   formatPainterHint: string
+  selectBlockToChart: string
+  selectChartFirst: string
+  couldNotReadPicture: string
+  chartObject: string
+  pictureObject: string
   printAreaSet: string
   printAreaCleared: string
   couldNotPrint: string
@@ -570,6 +575,23 @@ export const defaultDialogMessages = {
   'editRanges.invalidRef': '"{text}" is not a cell or range',
   'editRanges.new': 'New',
   'editRanges.protectSheet': 'Protect Sheet...',
+  // Chart Setup
+  'chartSetup.title': 'Chart',
+  'chartSetup.range': 'Reading {range}',
+  'chartSetup.type': 'Type:',
+  'chartSetup.type.bar': 'Column',
+  'chartSetup.type.line': 'Line',
+  'chartSetup.type.area': 'Area',
+  'chartSetup.type.pie': 'Pie',
+  'chartSetup.type.scatter': 'Scatter',
+  'chartSetup.chartTitle': 'Title:',
+  'chartSetup.titlePlaceholder': 'None',
+  'chartSetup.series': 'Series in:',
+  'chartSetup.series.columns': 'Columns',
+  'chartSetup.series.rows': 'Rows',
+  'chartSetup.headers': 'First row and column are labels',
+  'chartSetup.stacked': 'Stack the series',
+  'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
   // Page Setup
   'pageSetup.title': 'Page Setup',
   'pageSetup.orientation': 'Orientation:',
@@ -764,6 +786,11 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   invalidCellFound: '{count} cell breaks a validation rule.',
   invalidCellsFound: '{count} cells break a validation rule.',
   formatPainterHint: 'Select where to paste the format, or press Esc',
+  selectBlockToChart: 'Select the cells to chart, headers included.',
+  selectChartFirst: 'Select a chart first.',
+  couldNotReadPicture: 'Could not read the picture.',
+  chartObject: 'Chart',
+  pictureObject: 'Picture',
   printAreaSet: 'Print area set to {range}.',
   printAreaCleared: 'Print area cleared.',
   couldNotPrint: 'Could not open the print window; the browser blocked the popup.',

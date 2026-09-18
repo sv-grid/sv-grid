@@ -25,6 +25,7 @@ import { lineShift, remapNotes, shiftRect, type Rect } from './rects'
 import type { CommentsMap, CommentValue } from './comments'
 import { copyProtection, defaultProtection, type SheetProtection } from './protection'
 import { copyPageSetup, defaultPageSetup, shiftPageSetup, type PageSetup } from './page-setup'
+import { copyObject, shiftObjects, type SheetObject } from './objects'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
@@ -43,6 +44,7 @@ export type SheetChangeReason =
   | { kind: 'conditional-formats' }
   | { kind: 'protection' }
   | { kind: 'page-setup' }
+  | { kind: 'objects' }
   | { kind: 'merges' }
   | { kind: 'filter' }
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }
@@ -64,6 +66,8 @@ export type PerSheetState = {
   protection: SheetProtection
   /** Page Layout: orientation, paper, margins, print area, title rows, gridlines, headings, scale. */
   pageSetup: PageSetup
+  /** Charts and pictures anchored over the cells, back to front. */
+  objects: SheetObject[]
   /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
   sheetHidden: boolean
   merges: Rect[]
@@ -91,6 +95,8 @@ export type SheetStateEntry = {
   protection?: SheetProtection
   /** Absent in documents saved before Page Layout existed. */
   pageSetup?: PageSetup
+  /** Absent in documents saved before objects existed. */
+  objects?: SheetObject[]
   /** Absent in documents saved before hidden sheets existed. */
   sheetHidden?: boolean
   merges: Array<[number, number, number, number]>
@@ -167,6 +173,7 @@ function emptySheetState(): PerSheetState {
     protected: false,
     protection: defaultProtection(),
     pageSetup: defaultPageSetup(),
+    objects: [],
     sheetHidden: false,
     merges: [],
     validation: [],
@@ -235,6 +242,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       protected: state.protected,
       protection: copyProtection(state.protection),
       pageSetup: copyPageSetup(state.pageSetup),
+      objects: state.objects.map(copyObject),
       sheetHidden: state.sheetHidden,
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
       validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
@@ -253,6 +261,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.protected = entry.protected ?? false
     state.protection = entry.protection ? copyProtection({ allow: entry.protection.allow ?? {}, ranges: entry.protection.ranges ?? [] }) : defaultProtection()
     state.pageSetup = entry.pageSetup ? copyPageSetup({ ...defaultPageSetup(), ...entry.pageSetup }) : defaultPageSetup()
+    state.objects = (entry.objects ?? []).map(copyObject)
     state.sheetHidden = entry.sheetHidden ?? false
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     state.validation = (entry.validation ?? []).map((rule) => ({
@@ -342,6 +351,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       state.conditionalFormats = shiftCf(state.conditionalFormats, edit)
       state.autoFilter = shiftAutoFilter(state.autoFilter, edit)
       state.pageSetup = shiftPageSetup(state.pageSetup, edit)
+      state.objects = shiftObjects(state.objects, edit)
       state.protection = {
         allow: state.protection.allow,
         ranges: state.protection.ranges

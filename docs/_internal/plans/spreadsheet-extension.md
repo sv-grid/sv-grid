@@ -38,6 +38,11 @@ per item:
   list, Allow Edit Ranges, `protection: { allow, ranges }` in the state
   beside the flag, and `sheetProtection` attributes and `protectedRanges`
   in the xlsx both ways. Phase C is complete.
+- Phase D, charts and pictures: `sheet/objects.ts` (the anchor, the
+  chart's range and spec, shifting), `objects` per sheet in the document,
+  the object layer in the shell with move, resize, select and delete, the
+  Chart dialog, and Insert > Chart and Insert > Picture on the ribbon.
+  Insert > Chart no longer needs `extras`.
 - Phase B item 4: the `SheetEngine` seam on `createWorkbook`, the
   built-in engine as the default, and `createHyperFormulaEngine` mirroring
   the cells into a HyperFormula instance.
@@ -155,10 +160,10 @@ weeks, L a quarter-scale piece of work.
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| Charts anchored to cells, fed by a range | Insert > Chart is an `extras` entry the application answers; demo 356 shows the grid chart panel over a formula sheet | L |
+| ~~Charts anchored to cells, fed by a range~~ | shipped: the object layer, Insert > Chart, the Chart dialog; not in the .xlsx | done |
 | Sparklines in cells | the grid has sparkline columns, the sheet has no Insert > Sparkline | M |
 | Hyperlinks (HYPERLINK function and Insert > Link) | none | S |
-| Images in cells or floating | grid export knows images; sheet does not | M |
+| ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL; not in the .xlsx. In a cell is still not done | done |
 | PivotTable from a range | the pivot engine exists; no Insert > PivotTable | L |
 
 ### Reach
@@ -262,12 +267,15 @@ line from "What it does not do":
 
 ### Phase D. Objects (L)
 
-Charts first, because the chart engine is already free in `@svgrid/grid`
+~~Charts first, because the chart engine is already free in `@svgrid/grid`
 and demo 356 proves the data path. An object layer over the grid holds
 anchored rectangles (chart, image, sparkline group), stored in the document,
 moved with insert and delete through `shiftRect` in `rects.ts`, and
-serialised by Phase A. PivotTable from a range comes last and reuses
-`pivot.ts` with a sheet range as its row source.
+serialised by Phase A.~~ Charts and pictures shipped: the layer, the
+anchor, the Chart dialog, Insert > Chart and Insert > Picture. Not done:
+the objects in the .xlsx (a chart part is a large piece of OOXML of its
+own), a sparkline group, and PivotTable from a range, which comes last and
+reuses `pivot.ts` with a sheet range as its row source.
 
 ### Phase E. Reach (M)
 

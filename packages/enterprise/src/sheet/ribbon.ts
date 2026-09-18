@@ -171,6 +171,9 @@ export type RibbonActionId =
   | 'remove-duplicates'
   | 'goal-seek'
   | 'insert-chart'
+  | 'insert-picture'
+  | 'chart-setup'
+  | 'delete-object'
   | 'insert-table'
   | 'recalculate'
   | 'toggle-formulas'
@@ -919,6 +922,16 @@ const INSERT: RibbonTab = {
       label: 'Charts',
       items: [
         { id: 'chart', label: 'Chart', title: 'Chart the selected range', icon: 'chart', kind: 'button', size: 'large', emits: 'insert-chart' },
+        small(1, { id: 'chart-setup', label: 'Setup', title: 'Chart: type, title, labels and series', icon: 'chart-setup', kind: 'button', wide: true, emits: 'chart-setup' }),
+        small(2, { id: 'delete-object', label: 'Delete', title: 'Delete the selected chart or picture', icon: 'delete-cells', kind: 'button', wide: true, emits: 'delete-object' }),
+      ],
+    },
+    {
+      id: 'illustrations',
+      icon: 'picture',
+      label: 'Illustrations',
+      items: [
+        { id: 'picture', label: 'Picture', title: 'Put a picture on the sheet', icon: 'picture', kind: 'button', size: 'large', emits: 'insert-picture' },
       ],
     },
     {
