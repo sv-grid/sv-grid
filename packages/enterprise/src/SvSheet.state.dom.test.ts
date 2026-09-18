@@ -224,6 +224,39 @@ describe('SvSheet files', () => {
   })
 })
 
+describe('SvSheet formula auditing', () => {
+  it('traces precedents a level at a time, dependents too, and Remove Arrows clears them', async () => {
+    const { sheet, api } = await mountSheet({ data: [{ name: 'Sheet1', cells: [['1', '2', '=A1+B1'], ['=C1*2', '', '=A2+1']] }] })
+    const cmd = api.getCommandContext()
+    const paint = async () => { flushSync(); await tick(); await new Promise((r) => requestAnimationFrame(() => r(null))); flushSync() }
+    const arrows = () => host!.querySelectorAll('.sheet-trace-arrow').length
+    // A2 reads C1, which reads A1 and B1: one arrow, then two more.
+    cmd.setActiveCell(1, 0); cmd.setSelection(1, 0)
+    await paint()
+    sheet.act('trace-precedents')
+    await paint()
+    expect(arrows()).toBe(1)
+    sheet.act('trace-precedents')
+    await paint()
+    expect(arrows()).toBe(3)
+    sheet.act('remove-arrows')
+    await paint()
+    expect(arrows()).toBe(0)
+    // A1 is read by C1; C1 by A2; A2 by C2.
+    cmd.setActiveCell(0, 0); cmd.setSelection(0, 0)
+    await paint()
+    sheet.act('trace-dependents')
+    await paint()
+    expect(arrows()).toBe(1)
+    sheet.act('trace-dependents')
+    await paint()
+    expect(arrows()).toBe(2)
+    sheet.act('trace-dependents')
+    await paint()
+    expect(arrows()).toBe(3)
+  })
+})
+
 describe('SvSheet data validation chrome', () => {
   it('shows a rule\'s input message under the selected cell, and circles the cells that break rules', async () => {
     const doc = createSheetDocument({ sheets: [{ name: 'Sheet1', cells: [['7', 'x'], ['abc', '']] }] })

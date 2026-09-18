@@ -15,7 +15,7 @@ import { parseFormula } from './parse'
 import { evaluate, rangeValues, type EvalContext } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
-import { createDependencyGraph, precedentsOf, isVolatile, cellKey, type CellKey } from './deps'
+import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
 import { createNames, type SheetNames } from './names'
 import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
 
@@ -79,6 +79,19 @@ export type Workbook = {
   /** Apply a structural edit to one sheet, rewriting every formula in the
    *  WORKBOOK that pointed into it. */
   applyStructuralEdit(sheet: string, edit: StructuralEdit): void
+
+  /**
+   * Excel's Trace Precedents: the cells a formula reads directly, on any
+   * sheet. Empty for a literal. A whole-column reference contributes its
+   * used rows.
+   */
+  precedents(sheet: string, row: number, col: number): Array<{ sheet: string; row: number; col: number }>
+  /**
+   * Excel's Trace Dependents: the formulas that read a cell directly. Every
+   * formula in the workbook is evaluated first, so a dependent that was
+   * never on screen is found too.
+   */
+  dependents(sheet: string, row: number, col: number): Array<{ sheet: string; row: number; col: number }>
 
   /** Recompute everything. Rarely needed; `setRaw` keeps itself current. */
   recalculate(): void
@@ -485,6 +498,35 @@ export function createWorkbook(
       values.clear()
       graph.clear()
       astCache.clear()
+    },
+
+    precedents(sheet, row, col) {
+      const name = order.find((n) => n.toLowerCase() === sheet.toLowerCase())
+      if (!name) return []
+      // Computing the cell records what it reads.
+      compute(name, row, col)
+      return graph.precedentsOf(cellKey(name, row, col)).map((key) => {
+        const at = parseCellKey(key)
+        return { sheet: at.sheet ?? name, row: at.row, col: at.col }
+      })
+    },
+
+    dependents(sheet, row, col) {
+      const name = order.find((n) => n.toLowerCase() === sheet.toLowerCase())
+      if (!name) return []
+      // A formula that was never evaluated has no edge yet: evaluate every
+      // formula once so the graph is whole.
+      for (const other of order) {
+        const cells = sheetCells(other) ?? []
+        for (let r = 0; r < cells.length; r += 1) {
+          const line = cells[r]!
+          for (let c = 0; c < line.length; c += 1) if (line[c]!.trim().startsWith('=')) compute(other, r, c)
+        }
+      }
+      return graph.dependentsOf(cellKey(name, row, col)).map((key) => {
+        const at = parseCellKey(key)
+        return { sheet: at.sheet ?? name, row: at.row, col: at.col }
+      })
     },
 
     recalculate() {

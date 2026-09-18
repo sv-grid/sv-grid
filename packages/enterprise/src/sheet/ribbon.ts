@@ -156,6 +156,9 @@ export type RibbonActionId =
   | 'insert-table'
   | 'recalculate'
   | 'toggle-formulas'
+  | 'trace-precedents'
+  | 'trace-dependents'
+  | 'remove-arrows'
   | 'sort-asc'
   | 'sort-desc'
   | 'sort-custom'
@@ -898,6 +901,9 @@ const FORMULAS: RibbonTab = {
       icon: 'show-formulas',
       label: 'Formula Auditing',
       items: [
+        small(1, { id: 'trace-precedents', label: 'Trace Precedents', title: 'Trace Precedents: arrows from the cells the active formula reads; again for the next level', icon: 'trace-precedents', kind: 'button', wide: true, emits: 'trace-precedents' }),
+        small(2, { id: 'trace-dependents', label: 'Trace Dependents', title: 'Trace Dependents: arrows to the formulas that read the active cell; again for the next level', icon: 'trace-dependents', kind: 'button', wide: true, emits: 'trace-dependents' }),
+        small(3, { id: 'remove-arrows', label: 'Remove Arrows', title: 'Remove Arrows', icon: 'remove-arrows', kind: 'button', wide: true, emits: 'remove-arrows' }),
         small(1, { id: 'show-formulas', label: 'Show Formulas', title: 'Show formulas instead of their results', keys: 'Ctrl+`', icon: 'show-formulas', kind: 'toggle', wide: true, emits: 'toggle-formulas' }),
       ],
     },

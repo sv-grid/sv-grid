@@ -490,3 +490,29 @@ describe('copySheet', () => {
     expect(wb.copySheet('Budget', 'a:b')).toBeNull()
   })
 })
+
+describe('precedents and dependents', () => {
+  it('a formula\'s precedents are what it reads, on any sheet; a literal has none', () => {
+    const wb = createWorkbook([
+      { name: 'Budget', cells: [['10'], ['20'], ['=SUM(A1:A2)']] },
+      { name: 'Summary', cells: [['=Budget!A3*2'], ['x']] },
+    ])
+    expect(wb.precedents('Budget', 2, 0)).toEqual([{ sheet: 'Budget', row: 0, col: 0 }, { sheet: 'Budget', row: 1, col: 0 }])
+    expect(wb.precedents('Summary', 0, 0)).toEqual([{ sheet: 'Budget', row: 2, col: 0 }])
+    expect(wb.precedents('Budget', 0, 0)).toEqual([])
+    expect(wb.precedents('Nope', 0, 0)).toEqual([])
+  })
+
+  it('dependents are the formulas that read the cell, even ones never evaluated', () => {
+    const wb = createWorkbook([
+      { name: 'Budget', cells: [['10'], ['20'], ['=SUM(A1:A2)'], ['=A1*3']] },
+      { name: 'Summary', cells: [['=Budget!A3*2']] },
+    ])
+    expect(wb.dependents('Budget', 0, 0)).toEqual([{ sheet: 'Budget', row: 2, col: 0 }, { sheet: 'Budget', row: 3, col: 0 }])
+    expect(wb.dependents('Budget', 2, 0)).toEqual([{ sheet: 'Summary', row: 0, col: 0 }])
+    expect(wb.dependents('Budget', 3, 0)).toEqual([])
+    // An edit moves the edges with it.
+    wb.setRaw('Budget', 3, 0, '=A2*3')
+    expect(wb.dependents('Budget', 0, 0)).toEqual([{ sheet: 'Budget', row: 2, col: 0 }])
+  })
+})

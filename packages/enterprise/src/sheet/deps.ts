@@ -114,6 +114,8 @@ export type DependencyGraph = {
   cycles(): CellKey[]
   /** Direct readers of a cell. */
   dependentsOf(cell: CellKey): CellKey[]
+  /** What a cell reads directly, as last recorded. */
+  precedentsOf(cell: CellKey): CellKey[]
   clear(): void
 }
 
@@ -212,6 +214,10 @@ export function createDependencyGraph(): DependencyGraph {
         if (found) out.push(start)
       }
       return out
+    },
+
+    precedentsOf(cell) {
+      return [...(precedents.get(cell) ?? [])]
     },
 
     dependentsOf(cell) {

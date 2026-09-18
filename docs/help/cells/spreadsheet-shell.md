@@ -538,6 +538,20 @@ command is handed a context on every keystroke; a ribbon button has no
 keystroke to ride in on, and without it every action would have to be
 re-implemented against the public api and kept in step by hand.
 
+Formulas > Formula Auditing has Excel's arrows: Trace Precedents draws
+a blue arrow from each cell the active formula reads to the formula, a
+dot on the cell read and an arrowhead on the formula, and pressing it
+again traces one more level out; Trace Dependents draws the arrows the
+other way, to the formulas that read the active cell, every formula in
+the workbook counted whether or not it has been on screen; Remove Arrows
+clears them, as does a switch to another sheet. Cells on other sheets are
+left out, since there is nothing on this sheet to draw to. The arrows
+are measured from the rendered cells and follow every scroll and
+repaint; they are not part of the document. `wb.precedents(sheet, row,
+col)` and `wb.dependents(sheet, row, col)` are the two readings on the
+workbook. Raised as `trace-precedents`, `trace-dependents` and
+`remove-arrows`.
+
 ## The dialogs
 
 Four of Excel's dialogs are the shell's own, so nothing on the ribbon or in
