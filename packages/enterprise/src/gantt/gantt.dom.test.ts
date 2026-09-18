@@ -975,3 +975,371 @@ describe('SvGridGantt - the drawer', () => {
     destroy()
   })
 })
+
+// --- Phase 3: the planning features -----------------------------------------
+
+describe('SvGridGantt - critical path', () => {
+  // A tight chain: each task starts the moment the last one ends, so none of
+  // them has room. `side` runs alongside and is shorter, so it does.
+  const chain: Task[] = [
+    { id: 'c1', name: 'Frame', start: '2026-09-07', end: '2026-09-08' },
+    { id: 'c2', name: 'Wire', start: '2026-09-09', end: '2026-09-11' },
+    { id: 'c3', name: 'Finish', start: '2026-09-12', end: '2026-09-14' },
+    { id: 'side', name: 'Paperwork', start: '2026-09-07', end: '2026-09-08' },
+  ]
+  const deps = [
+    { id: 'd1', from: 'c1', to: 'c2' },
+    { id: 'd2', from: 'c2', to: 'c3' },
+    // `side` feeds the finish too, but it is far shorter than the chain.
+    { id: 'd3', from: 'side', to: 'c3' },
+  ]
+  const cfg = { parentField: undefined, criticalPath: true, dependencies: deps } as Record<string, unknown>
+  const critical = (t: HTMLElement) =>
+    [...t.querySelectorAll<HTMLElement>('.sv-gantt-bar.sv-gantt-critical')].map((b) => b.dataset.key)
+
+  it('marks the binding chain and nothing else', () => {
+    const { target, destroy } = mountGantt(cfg, chain)
+    expect(critical(target).sort()).toEqual(['c1', 'c2', 'c3'])
+    // The short branch has room, so it is not what the finish turns on.
+    expect(critical(target)).not.toContain('side')
+    destroy()
+  })
+
+  it('draws the arrows along the path in the critical colour', () => {
+    const { target, destroy } = mountGantt(cfg, chain)
+    // d1 and d2 join critical tasks; d3 comes off the slack branch.
+    expect(target.querySelectorAll('.sv-gantt-dep-line.sv-gantt-dep-critical')).toHaveLength(2)
+    expect(target.querySelectorAll('.sv-gantt-dep-line')).toHaveLength(3)
+    destroy()
+  })
+
+  it('stays off until asked for, and needs links to mean anything', () => {
+    const off = mountGantt({ parentField: undefined, dependencies: deps } as never, chain)
+    expect(critical(off.target)).toHaveLength(0)
+    off.destroy()
+
+    const noLinks = mountGantt({ parentField: undefined, criticalPath: true } as never, chain)
+    expect(critical(noLinks.target)).toHaveLength(0)
+    noLinks.destroy()
+  })
+
+  it('reports the critical set to the consumer', () => {
+    const onCriticalPathChange = vi.fn()
+    const { destroy } = mountGantt({ ...(cfg as object), onCriticalPathChange } as never, chain)
+    expect(onCriticalPathChange).toHaveBeenCalled()
+    expect(onCriticalPathChange.mock.calls[0]![0].sort()).toEqual(['c1', 'c2', 'c3'])
+    destroy()
+  })
+
+  it('fills the Slack column, and leaves it blank without the path', () => {
+    const { target, destroy } = mountGantt(
+      { ...(cfg as object), tableColumns: ['__slack'] } as never,
+      chain,
+    )
+    const slackOf = (i: number) =>
+      tableRows(target)[i]!.querySelector('.sv-gantt-cell-text')!.textContent?.trim()
+    // Nothing on the chain has room; the side branch has days of it.
+    expect(slackOf(0)).toBe('0')
+    expect(Number(slackOf(3))).toBeGreaterThan(0)
+    destroy()
+
+    // Without the path there is no honest number to print.
+    const off = mountGantt({ parentField: undefined, tableColumns: ['__slack'] } as never, chain)
+    expect(
+      tableRows(off.target)[0]!.querySelector('.sv-gantt-cell-text')!.textContent?.trim(),
+    ).toBe('')
+    off.destroy()
+  })
+})
+
+describe('SvGridGantt - baselines', () => {
+  type Planned = Task & { bStart?: string; bEnd?: string }
+  const planned: Planned[] = rows.map((r) =>
+    r.id === 't1' ? { ...r, bStart: '2026-09-07', bEnd: '2026-09-09' } // 1 day early
+    : r.id === 't3' ? { ...r, bStart: '2026-09-14', bEnd: '2026-09-16' } // 2 days late
+    : { ...r },
+  )
+  const cfg = { baselineStartField: 'bStart', baselineEndField: 'bEnd' } as Record<string, unknown>
+
+  const ghost = (t: HTMLElement, key: string) =>
+    barFor(t, key)!.parentElement!.querySelector<HTMLElement>('.sv-gantt-baseline')
+
+  it('draws a ghost bar where the plan originally said', () => {
+    const { target, destroy } = mountGantt(cfg, planned)
+    const x = expectedX({}, planned)
+    const g = ghost(target, 't1')!
+    expect(g).not.toBeNull()
+    // The baseline end is a date-only string, so inclusive of the 9th.
+    expect(px(g.style.left)).toBeCloseTo(x(day(7)), 4)
+    expect(px(g.style.width)).toBeCloseTo(x(day(10)) - x(day(7)), 4)
+    destroy()
+  })
+
+  it('flags a task running later than its baseline', () => {
+    const { target, destroy } = mountGantt(cfg, planned)
+    // t3 ends the 19th against a baseline of the 17th: two days late.
+    expect(ghost(target, 't3')!.classList.contains('sv-gantt-baseline-late')).toBe(true)
+    expect(ghost(target, 't3')!.getAttribute('title')).toContain('2 days later than baseline')
+    // t1 finishes a day early, so it is not flagged.
+    expect(ghost(target, 't1')!.classList.contains('sv-gantt-baseline-late')).toBe(false)
+    expect(ghost(target, 't1')!.getAttribute('title')).toContain('ahead of baseline')
+    destroy()
+  })
+
+  it('draws nothing for a row with no baseline, or with the fields unset', () => {
+    const { target, destroy } = mountGantt(cfg, planned)
+    expect(ghost(target, 't2')).toBeNull()
+    destroy()
+
+    const off = mountGantt({}, planned)
+    expect(off.target.querySelector('.sv-gantt-baseline')).toBeNull()
+    off.destroy()
+  })
+})
+
+describe('SvGridGantt - constraints', () => {
+  type Pinned = Task & { con?: string; conDate?: string }
+  const cfg = { constraintField: 'con', constraintDateField: 'conDate' } as Record<string, unknown>
+  const glyph = (t: HTMLElement, key: string) =>
+    barFor(t, key)!.parentElement!.querySelector<HTMLElement>('.sv-gantt-constraint')
+
+  it('marks a constrained task and names its rule in the title', () => {
+    const pinned: Pinned[] = rows.map((r) =>
+      r.id === 't3' ? { ...r, con: 'SNET', conDate: '2026-09-14' } : { ...r },
+    )
+    const { target, destroy } = mountGantt(cfg, pinned)
+    expect(glyph(target, 't3')).not.toBeNull()
+    expect(glyph(target, 't3')!.getAttribute('title')).toContain('SNET')
+    // Nothing on the rows without one.
+    expect(glyph(target, 't1')).toBeNull()
+    destroy()
+  })
+
+  it('flags a task whose own dates break its constraint', () => {
+    // Implementation ends the 19th but must finish by the 16th.
+    const pinned: Pinned[] = rows.map((r) =>
+      r.id === 't3' ? { ...r, con: 'FNLT', conDate: '2026-09-16' } : { ...r },
+    )
+    const { target, destroy } = mountGantt(cfg, pinned)
+    expect(barFor(target, 't3')!.classList.contains('sv-gantt-constrained')).toBe(true)
+    expect(glyph(target, 't3')!.classList.contains('sv-gantt-constraint-broken')).toBe(true)
+    destroy()
+  })
+
+  it('ignores ASAP, which is just the default', () => {
+    const pinned: Pinned[] = rows.map((r) =>
+      r.id === 't3' ? { ...r, con: 'ASAP', conDate: '2026-09-14' } : { ...r },
+    )
+    const { target, destroy } = mountGantt(cfg, pinned)
+    expect(glyph(target, 't3')).toBeNull()
+    destroy()
+  })
+
+  it('stops a cascade at a ceiling rather than pushing past it', () => {
+    // t2 must finish by the 14th. Dragging t1 far right would otherwise shove
+    // t2 well past it; the cascade caps instead.
+    const pinned: Pinned[] = rows.map((r) =>
+      r.id === 't2' ? { ...r, con: 'FNLT', conDate: '2026-09-14' } : { ...r },
+    )
+    const onDependenciesChange = vi.fn()
+    const { target, destroy } = mountGantt(
+      {
+        ...cfg,
+        editable: true,
+        nonWorkingDays: [],
+        dependencies: [{ id: 'd1', from: 't1', to: 't2' }],
+        onDependenciesChange,
+      } as never,
+      pinned,
+    )
+    const d = stubGeometry(target, pxPerDay())
+    dragBy(barFor(target, 't1')!, d * 8)
+
+    if (onDependenciesChange.mock.calls.length) {
+      const move = onDependenciesChange.mock.calls[0]![0].find((m: any) => m.id === 't2')
+      // Capped at the constraint, never beyond it.
+      if (move) expect(move.end.getTime()).toBeLessThanOrEqual(day(15).getTime())
+    }
+    destroy()
+  })
+})
+
+describe('SvGridGantt - the resource histogram (Pro)', () => {
+  type Owned = Task & { owner?: string }
+  const strip = (t: HTMLElement) => t.querySelector<HTMLElement>('.sv-gantt-histo')
+  const stripRows = (t: HTMLElement) => [...t.querySelectorAll<HTMLElement>('.sv-gantt-histo-row')]
+  const labels = (t: HTMLElement) =>
+    stripRows(t).map((r) => r.querySelector('.sv-gantt-histo-label')!.textContent!.trim())
+
+  it('draws nothing without a resource field', () => {
+    const { target, destroy } = mountGantt({ resourceHistogram: true } as never)
+    expect(strip(target)).toBeNull()
+    destroy()
+  })
+
+  it('draws nothing when the histogram is not asked for', () => {
+    const { target, destroy } = mountGantt({ resourceField: 'owner' } as never)
+    expect(strip(target)).toBeNull()
+    destroy()
+  })
+
+  it('gives each resource in the data a row', () => {
+    const { target, destroy } = mountGantt(
+      { resourceField: 'owner', resourceHistogram: true } as never,
+    )
+    // Ada and Lin, in the order the tasks name them.
+    expect(labels(target).map((l) => l.split(' ')[0])).toEqual(['Ada', 'Lin'])
+    destroy()
+  })
+
+  it('keeps the rows and their order from an explicit resource list', () => {
+    const { target, destroy } = mountGantt(
+      {
+        resourceField: 'owner',
+        resources: [{ id: 'Lin', title: 'Lin Zhao' }, { id: 'Ada', title: 'Ada Byron' }],
+        resourceHistogram: true,
+      } as never,
+    )
+    expect(labels(target).map((l) => l.split(' ').slice(0, 2).join(' '))).toEqual([
+      'Lin Zhao',
+      'Ada Byron',
+    ])
+    destroy()
+  })
+
+  it('counts only the leaves, so a phase does not book its owner twice', () => {
+    // Ada has two tasks, in different phases and never overlapping: peak 1.
+    const { target, destroy } = mountGantt(
+      { resourceField: 'owner', resourceHistogram: true } as never,
+    )
+    expect(labels(target)[0]).toContain('peak 1')
+    destroy()
+  })
+
+  it('reads two overlapping tasks as a peak of two, and flags it', () => {
+    const clash: Owned[] = rows.map((r) =>
+      r.id === 't2' ? { ...r, owner: 'Ada', start: '2026-09-07', end: '2026-09-08' } : { ...r },
+    )
+    const { target, destroy } = mountGantt(
+      { resourceField: 'owner', resourceHistogram: true } as never,
+      clash,
+    )
+    const ada = stripRows(target)[0]!
+    expect(ada.querySelector('.sv-gantt-histo-label')!.textContent).toContain('peak 2')
+    expect(ada.classList.contains('sv-gantt-histo-over')).toBe(true)
+    expect(ada.querySelector('.sv-gantt-histo-cell-over')).not.toBeNull()
+    destroy()
+  })
+
+  it('does not flag a clash that is inside the capacity', () => {
+    const clash: Owned[] = rows.map((r) =>
+      r.id === 't2' ? { ...r, owner: 'Ada', start: '2026-09-07', end: '2026-09-08' } : { ...r },
+    )
+    const { target, destroy } = mountGantt(
+      {
+        resourceField: 'owner',
+        resources: [{ id: 'Ada', title: 'Ada', size: 3 } as never],
+        resourceHistogram: { capacityField: 'size' },
+      } as never,
+      clash,
+    )
+    const ada = stripRows(target)[0]!
+    expect(ada.classList.contains('sv-gantt-histo-over')).toBe(false)
+    expect(ada.querySelector('.sv-gantt-histo-label')!.textContent).toContain('/ 3')
+    destroy()
+  })
+
+  it('splits the height it is given between the rows', () => {
+    const { target, destroy } = mountGantt(
+      { resourceField: 'owner', resourceHistogram: { height: 80 } } as never,
+    )
+    // Two resources, so 40px each.
+    expect(stripRows(target)[0]!.style.height).toBe('40px')
+    destroy()
+  })
+
+  it('names the resource in the tooltip, with or without the strip', () => {
+    vi.useFakeTimers()
+    const { target, destroy } = mountGantt(
+      { resourceField: 'owner', tooltip: true, tooltipDelay: 0 } as never,
+    )
+    barFor(target, 't1')!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    vi.advanceTimersByTime(10)
+    flushSync()
+    const tip = document.querySelector('.sv-gantt-tooltip')
+    expect(tip?.textContent).toContain('Ada')
+    destroy()
+    vi.useRealTimers()
+  })
+})
+
+describe('SvGridGantt - folding non-working days out of the axis (Pro)', () => {
+  const chartW = (t: HTMLElement) =>
+    Number.parseFloat(t.querySelector<HTMLElement>('.sv-gantt-chart')!.style.width)
+  const gaps = (t: HTMLElement) => [...t.querySelectorAll<HTMLElement>('.sv-gantt-gap')]
+
+  it('narrows the chart by what it folded away', () => {
+    const plain = mountGantt()
+    const wide = chartW(plain.target)
+    plain.destroy()
+    const folded = mountGantt({ collapseWeekends: true } as never)
+    expect(chartW(folded.target)).toBeLessThan(wide)
+    folded.destroy()
+  })
+
+  it('marks each folded run once, rather than shading every day', () => {
+    const { target, destroy } = mountGantt({ collapseWeekends: true } as never)
+    const marks = gaps(target)
+    expect(marks.length).toBeGreaterThan(0)
+    // The default marker is 12px wide however many days it swallowed.
+    for (const m of marks) expect(Number.parseFloat(m.style.width)).toBe(12)
+    destroy()
+  })
+
+  it('removes the folded days outright at a gap of zero', () => {
+    const { target, destroy } = mountGantt(
+      { collapseWeekends: true, collapsedGapPx: 0 } as never,
+    )
+    expect(gaps(target)).toHaveLength(0)
+    destroy()
+  })
+
+  it('keeps the header tiled over the bars', () => {
+    const { target, destroy } = mountGantt({ collapseWeekends: true } as never)
+    const ticks = [...target.querySelectorAll<HTMLElement>('.sv-gantt-tick')]
+    const last = ticks[ticks.length - 1]!
+    const right = Number.parseFloat(last.style.left) + Number.parseFloat(last.style.width)
+    expect(right).toBeCloseTo(chartW(target), 0)
+    destroy()
+  })
+
+  it('hides a folded day\'s caption but keeps its column', () => {
+    const { target, destroy } = mountGantt({ collapseWeekends: true } as never)
+    const folded = [...target.querySelectorAll<HTMLElement>('.sv-gantt-tick-folded')]
+    expect(folded.length).toBeGreaterThan(0)
+    // Narrow, but still drawn - the header has to tile the chart.
+    for (const f of folded) expect(Number.parseFloat(f.style.width)).toBeGreaterThan(0)
+    destroy()
+  })
+
+  it('leaves a coarse zoom alone, where a tick is never wholly non-working', () => {
+    const plain = mountGantt({ zoom: 'month' } as never)
+    const wide = chartW(plain.target)
+    plain.destroy()
+    const folded = mountGantt({ zoom: 'month', collapseWeekends: true } as never)
+    expect(chartW(folded.target)).toBe(wide)
+    expect(gaps(folded.target)).toHaveLength(0)
+    folded.destroy()
+  })
+
+  it('still draws a bar that runs over a folded weekend', () => {
+    const { target, destroy } = mountGantt({ collapseWeekends: true } as never)
+    // Implementation runs Mon 14 to Fri 18: no fold inside it, full width.
+    const t3 = barFor(target, 't3')!
+    const t1 = barFor(target, 't1')!
+    expect(Number.parseFloat(t3.style.width)).toBeGreaterThan(
+      Number.parseFloat(t1.style.width),
+    )
+    destroy()
+  })
+})

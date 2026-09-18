@@ -8,8 +8,7 @@
  *
  * Mirrors `scheduler-config.ts`, which does the same for the calendar.
  */
-import type { GanttConfig, GanttZoom, RowData, SchedulerResource, TableFeatures } from '@svgrid/grid'
-import type { ZoomLevel } from '../scheduler-axis'
+import type { GanttConfig, RowData, SchedulerResource, TableFeatures } from '@svgrid/grid'
 
 /**
  * How a task's dates are pinned, in the classic planning vocabulary:
@@ -56,28 +55,33 @@ export type GanttProConfig<
   constraintDateField?: keyof TData & string;
 
   /**
-   * Continuous zoom. A {@link GanttZoom} preset keeps the day-granular axis; a
-   * number (an index into `zoomLevels`) or an explicit {@link ZoomLevel}
-   * switches to the pixel axis shared with the scheduler, which brings
-   * hour-level ticks and non-working-time collapse.
+   * Fold whole non-working days out of the axis: a weekend shrinks to a narrow
+   * hatched gap instead of two empty columns, so a year of plan fits in the
+   * width a season used to take. Bars that do run over a folded weekend still
+   * draw across it.
+   *
+   * Only the day-granular presets (`day`, `week`) have weekend columns to fold;
+   * at `month` and coarser a tick is never wholly non-working, so this is
+   * ignored rather than shrinking a week by part of itself.
    */
-  zoom?: GanttZoom | number | ZoomLevel;
-  zoomLevels?: ReadonlyArray<GanttZoom> | ReadonlyArray<ZoomLevel>;
-  /** Compress whole non-working days out of the axis (weekends fold to a gap). */
   collapseWeekends?: boolean;
-  /** Width (px) of a collapsed-gap marker. Default 12; `0` omits it entirely. */
+  /** Width (px) of one folded run's marker. Default 12; `0` removes it outright. */
   collapsedGapPx?: number;
 
   /**
    * Field naming the resource (person, crew, machine) a task is assigned to,
    * plus the ordered resource list. Shown in the tooltip and, with
-   * `resourceHistogram`, summed into a load strip under the chart.
+   * `resourceHistogram`, summed into a load strip under the chart. Omit
+   * `resources` and the strip's rows come from the data, in first-seen order.
    */
   resourceField?: keyof TData & string;
   resources?: ReadonlyArray<SchedulerResource>;
   /**
-   * Show a per-resource load histogram below the chart. `true` uses defaults;
-   * the object form names the capacity field and the strip's height (px).
+   * Show a per-resource load histogram below the chart: one row per resource,
+   * one bar per axis column, counting the tasks that touch it, with anything
+   * past capacity in red. `true` uses the defaults (capacity 1, 88px tall);
+   * the object form names a field on each {@link SchedulerResource} holding its
+   * capacity, and the strip's total height in px.
    */
   resourceHistogram?: boolean | { capacityField?: string; height?: number };
 }

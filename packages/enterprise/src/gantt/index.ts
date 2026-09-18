@@ -24,6 +24,9 @@ export {
   projectRange,
   ganttAxis,
   ganttTickWidth,
+  ganttScale,
+  type GanttScale,
+  type GanttSegment,
   // working-time arithmetic
   makeCalendar,
   startOfDay,
@@ -34,6 +37,18 @@ export {
   snapToWorkingDay,
   type WorkingCalendar,
 } from './gantt-model'
+export {
+  criticalPath,
+  slackDays,
+  type CpmResult,
+} from './gantt-critical-path'
+export {
+  resourceLoad,
+  overallocations,
+  type ResourceAssignment,
+  type ResourceLoadCell,
+  type ResourceLoadRow,
+} from './gantt-resources'
 export {
   dependencyArrows,
   elbowPath,

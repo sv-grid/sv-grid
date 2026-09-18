@@ -30,7 +30,7 @@ Every example below runs against this setup.
 ```svelte {preamble}
 <script lang="ts">
   import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
-  import { enableGanttView } from '@svgrid/enterprise'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
 
   enableGanttView()
 
@@ -47,6 +47,8 @@ Every example below runs against this setup.
     milestone?: boolean
     color?: string
     blockedBy?: string[]
+    bStart?: string
+    bEnd?: string
   }
 
   // Anchored on a Monday so the weekend shading is obvious in every sample.
@@ -63,10 +65,10 @@ Every example below runs against this setup.
 
   let data = $state<Task[]>([
     { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
-    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya' },
-    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya', bStart: at(0), bEnd: at(3) },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco', bStart: at(4), bEnd: at(9) },
     { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
-    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven', bStart: at(10), bEnd: at(23) },
     { id: 'm1', name: 'Launch', parentId: null, start: at(26), milestone: true },
   ])
 
@@ -85,6 +87,28 @@ Every example below runs against this setup.
     { field: 'start', header: 'Start', width: 110 },
     { field: 'end', header: 'Finish', width: 110 },
   ]
+
+  // The view reports what it wants and never writes your rows, so every editing
+  // example needs this. `end` is exclusive on the way back, and these rows store
+  // an inclusive date-only finish, so it subtracts a day.
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+
+  // Resources for the load-strip example, with a capacity field of their own.
+  const crews = [
+    { id: 'Priya', title: 'Priya', cap: 2 },
+    { id: 'Marco', title: 'Marco', cap: 1 },
+    { id: 'Sven', title: 'Sven', cap: 1 },
+  ]
+
+  // The Enterprise config is a superset of the free grid's, so the `gantt` prop
+  // accepts it - but an inline object literal is checked against the narrower
+  // type. Real code writes `const cfg: GanttProConfig<any, Task> = { ... }`;
+  // this one-liner is just so the Pro examples below can stay inline.
+  const pro = (c: GanttProConfig<any, Task>) => c
 </script>
 ```
 
@@ -351,6 +375,8 @@ built-ins that need no column definition:
 
 - **`__duration`** - the task's length in working days.
 - **`__progress`** - a small meter plus the percent.
+- **`__slack`** - days of room before the task would move the project finish.
+  Needs `criticalPath` (see [Gantt Pro](#gantt-pro)); blank without it.
 
 ```svelte {runnable}
 <SvGrid {data} {columns}
@@ -379,6 +405,151 @@ search box above the chart, any column filters, and the sort order all apply
 without the view knowing about them.
 
 Sorting reorders tasks **within each phase**; children stay under their parent.
+
+## Gantt Pro
+
+Five options turn the chart from a picture of the plan into a tool for
+questioning it. They live on `GanttProConfig`, the Enterprise superset of the
+`gantt` config - structurally assignable to the prop, so the free grid never
+needs to know about them:
+
+```ts
+import type { GanttProConfig } from '@svgrid/enterprise'
+
+const cfg: GanttProConfig<any, Task> = { startField: 'start', /* ... */ }
+```
+
+### The critical path
+
+`criticalPath: true` runs the two passes every planner knows: a forward one
+giving each task its **earliest** start and finish, a backward one giving it its
+**latest**. Where the two agree the task has no slack - it cannot slip a day
+without moving the project's finish - and that chain, with the arrows along it,
+is ringed in red.
+
+```svelte {runnable}
+<SvGrid {data} {columns}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies,
+    criticalPath: true,
+    tableColumns: ['name', '__duration', '__slack'],
+    onCriticalPathChange: (keys) => console.log('critical', keys),
+  })} />
+```
+
+Two rules worth knowing, because both are judgement calls rather than
+arithmetic:
+
+- **A task in no dependency is never critical**, however late it runs. It is not
+  on any path, so calling it critical would point at something the schedule does
+  not actually turn on. It still gets a slack figure for the `__slack` column.
+- **Cyclic links are ignored**, exactly as the cascade ignores them: a cycle has
+  no legal schedule, so there is no earliest or latest to compute through it.
+
+The pass is a pure function, so a report or a test can call it without rendering
+anything:
+
+```ts
+import { criticalPath, slackDays } from '@svgrid/enterprise'
+
+const result = criticalPath(times, dependencies)
+result.critical              // Set<string> of task ids
+result.finish                // the earliest the project can end
+slackDays(result, 'task-7')  // whole days of room
+```
+
+### Baselines
+
+`baselineStartField` / `baselineEndField` draw the originally agreed dates as a
+**ghost bar** under each task. Where the plan now finishes later than the
+baseline did, the ghost turns red and the tooltip says by how many days.
+
+```svelte {runnable}
+<SvGrid {data} {columns}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    baselineStartField: 'bStart', baselineEndField: 'bEnd',
+    tooltip: true,
+  })} />
+```
+
+### Constraints
+
+`constraintField` pins a task's dates in the classic planning vocabulary, with
+the date itself in `constraintDateField`:
+
+| Constraint | Means |
+| --- | --- |
+| `ASAP` *(default)* | Schedule as early as the links allow. |
+| `MSO` / `MFO` | Must start / finish **on** the date. |
+| `SNET` / `SNLT` | Start no earlier / no later than. |
+| `FNET` / `FNLT` | Finish no earlier / no later than. |
+
+A constrained bar carries a small glyph, and one whose own dates already break
+its rule is flagged. More usefully, the **cascade respects the ceiling**: pushing
+a chain into a task that must finish by a contract date stops *at* the date and
+leaves the link drawn as unsatisfied, rather than overrunning it silently. A
+constraint and a dependency that disagree have no schedule satisfying both, so
+showing the conflict beats breaking one of them behind your back.
+
+### Resource load
+
+`resourceField` names the field holding who is on each task; `resourceHistogram`
+sums them into a strip under the chart - one row per resource, one bar per axis
+column, counting the tasks that touch it, with anything past capacity in red.
+
+```svelte {runnable}
+<SvGrid {data} {columns}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    resourceField: 'owner',
+    resources: crews,
+    resourceHistogram: { capacityField: 'cap', height: 80 },
+  })} />
+```
+
+A cell's number is **how many of that resource's tasks overlap the column**, not
+an average and not person-hours. On a day or week axis that is exactly
+concurrency; on a coarser one it counts everything touching the column, which
+reads high rather than low. Only **leaves** are counted - a phase is its
+children, so counting it too would book its owner twice for the same work.
+
+Omit `resources` and the rows come from the data, in the order the tasks first
+name them, each with a capacity of one. `resourceField` on its own (no
+histogram) still puts the resource in the tooltip.
+
+### A folded axis
+
+`collapseWeekends` takes the whole non-working days out of the timeline and
+leaves a narrow hatched marker where each run was, so a quarter fits in the width
+a month used to take. Working days keep their real size - nothing is squashed -
+and a task that does run over a folded weekend still draws across it.
+
+```svelte {runnable}
+<SvGrid {data} {columns}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    zoom: 'week', collapseWeekends: true, collapsedGapPx: 10,
+  })} />
+```
+
+`collapsedGapPx: 0` removes the folded days outright: Friday's finish and
+Monday's start land on the same pixel. Only the day-granular presets (`day`,
+`week`) have weekend columns to fold; at `month` and coarser a tick is never
+wholly non-working, so the option is ignored rather than shrinking a week by
+part of itself.
+
+### Pro config reference
+
+| Option | Purpose |
+| --- | --- |
+| `criticalPath` / `onCriticalPathChange` | Ring the chain with no slack, and report its task ids. |
+| `baselineStartField` / `baselineEndField` | The agreed dates, drawn as a ghost bar under each task. |
+| `constraintField` / `constraintDateField` | Pin a task's dates; the cascade stops at the constraint. |
+| `resourceField` / `resources` | Who is on each task, and the ordered resource list. |
+| `resourceHistogram` | The load strip: `true`, or `{ capacityField, height }`. |
+| `collapseWeekends` / `collapsedGapPx` | Fold non-working days out of the axis, and the marker's width. |
 
 ## Config reference
 
@@ -420,6 +591,21 @@ Every gesture with a log panel listing the callbacks it fires: drag, resize, the
 progress grip, drawing links, auto-reschedule over a holiday, and undo.
 
 <div data-docs-demo="475-gantt-editing" data-height="600"></div>
+
+### Critical path & baselines
+
+A fit-out schedule with the planning layer on: the chain with no slack ringed in
+red, a Slack column for everything else, baseline ghosts that redden where the
+plan has drifted, and two pinned tasks where a cascade stops at the constraint.
+
+<div data-docs-demo="476-gantt-critical-path" data-height="620"></div>
+
+### Resource load & a folded axis
+
+A field-service quarter with a load strip under the chart, per-resource capacity,
+and the weekends folded out of the timeline.
+
+<div data-docs-demo="477-gantt-resources" data-height="620"></div>
 
 ## See also
 

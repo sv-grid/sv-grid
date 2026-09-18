@@ -153,3 +153,56 @@ describe('violations', () => {
     expect(violations(t, [{ id: '1', from: 'a', to: 'b', type: 'FS' }])).toHaveLength(0)
   })
 })
+
+describe('cascade with constraint bounds', () => {
+  const day = (n: number) => new Date(2026, 8, n)
+  const span = (from: number, days: number) => ({ start: day(from), end: day(from + days) })
+  const times = (rows: Record<string, { start: Date; end: Date }>) => new Map(Object.entries(rows))
+  const fs = [{ id: '1', from: 'a', to: 'b' }]
+
+  it('raises a start to its floor even when no link moved it', () => {
+    // `b` is legal against the link but its constraint says not before the 10th.
+    const t = times({ a: span(1, 2), b: span(3, 2) })
+    const out = cascade(t, fs, {
+      bounds: new Map([['b', { minStart: day(10) }]]),
+    })
+    expect(out.get('b')!.start.getTime()).toBe(day(10).getTime())
+    // The duration travels with it.
+    expect(out.get('b')!.end.getTime()).toBe(day(12).getTime())
+  })
+
+  it('stops AT a ceiling instead of pushing a task past it', () => {
+    // The link wants b at the 6th; the constraint says it must finish by the
+    // 7th, and it is 3 days long, so the furthest it can go is the 4th.
+    const t = times({ a: span(1, 5), b: span(1, 3) })
+    const out = cascade(t, fs, {
+      bounds: new Map([['b', { maxEnd: day(7) }]]),
+    })
+    expect(out.get('b')!.start.getTime()).toBe(day(4).getTime())
+    expect(out.get('b')!.end.getTime()).toBe(day(7).getTime())
+  })
+
+  it('leaves the link reported as unsatisfied when a ceiling blocks it', () => {
+    // The honest outcome: a constraint and a link that disagree have no
+    // schedule satisfying both, so the arrow stays flagged.
+    const t = times({ a: span(1, 5), b: span(1, 3) })
+    const out = cascade(t, fs, { bounds: new Map([['b', { maxEnd: day(7) }]]) })
+    const after = new Map(t)
+    for (const [k, v] of out) after.set(k, v)
+    expect(violations(after, fs).map((d) => d.id)).toEqual(['1'])
+  })
+
+  it('changes nothing when the bounds are already satisfied', () => {
+    const t = times({ a: span(1, 2), b: span(3, 2) })
+    const out = cascade(t, fs, { bounds: new Map([['b', { minStart: day(1), maxEnd: day(30) }]]) })
+    expect(out.size).toBe(0)
+  })
+
+  it('is unchanged by an empty bounds map', () => {
+    const t = times({ a: span(1, 5), b: span(1, 2) })
+    const withOut = cascade(t, fs)
+    const withEmpty = cascade(t, fs, { bounds: new Map() })
+    expect([...withEmpty.keys()]).toEqual([...withOut.keys()])
+    expect(withEmpty.get('b')!.start.getTime()).toBe(withOut.get('b')!.start.getTime())
+  })
+})
