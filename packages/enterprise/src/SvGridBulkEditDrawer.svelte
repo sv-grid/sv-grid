@@ -35,7 +35,17 @@
 
   const messages = $derived(ctrl.messages)
   const columns = $derived(bulkEditableFields(ctrl) as BulkEditField[])
-  const count = $derived((ctrl.selectionBarTarget?.ids ?? []).length as number)
+  const count = $derived(
+    ((ctrl.selectionBarCount as number | undefined) ?? (ctrl.selectionBarTarget?.ids ?? []).length) as number,
+  )
+  // A selection model with `bulkUpdate` owns the write: the rule it stores
+  // covers rows this grid never loaded, which writing the loaded cells
+  // would silently miss.
+  const remoteUpdate = $derived(
+    (ctrl.props?.rowSelectionModel?.bulkUpdate ?? null) as
+      | ((patch: Record<string, unknown>) => Promise<number>)
+      | null,
+  )
 
   /** A column's editor type mapped onto the form's control vocabulary. */
   function controlFor(editorType: string, hasOptions: boolean): FormFieldType {
@@ -85,7 +95,8 @@
     })),
   )
 
-  const fill = (t: string, n: number) => t.replace(/\{count\}/g, String(n))
+  const locale = $derived(ctrl.props?.localization?.locale as string | string[] | undefined)
+  const fill = (t: string, n: number) => t.replace(/\{count\}/g, n.toLocaleString(locale))
 
   function submit(values: Record<string, unknown>) {
     const byId = new Map(columns.map((c) => [c.id, c]))
@@ -99,6 +110,19 @@
       if (next === baseline[name]) continue
       if (mixed.has(name) && (raw === '' || raw == null)) continue
       edits[name] = next
+    }
+    if (remoteUpdate) {
+      // Keyed by field, not column id: the write goes to the datasource.
+      const byField: Record<string, unknown> = {}
+      for (const [columnId, value] of Object.entries(edits)) {
+        const field = byId.get(columnId)?.field
+        if (field) byField[field] = value
+      }
+      open = false
+      void remoteUpdate(byField).then((changed) =>
+        onApplied?.({ changed, skipped: 0, fields: Object.keys(byField).length }),
+      )
+      return
     }
     const result = applyBulkEdit(ctrl, edits)
     open = false

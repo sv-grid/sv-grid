@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 pivot designer that pivots on the server. Drag fields into Rows, Columns and Values; on Apply the designer sends one request through the server-side row model, with Rows as groupBy, Columns as pivotBy and Values as aggregations. The backend answers with one field per pivot key and aggregation and lists them in pivotResultFields; the model turns that list into header groups per key with a value column under each, replacing the grid's columns while pivot mode lasts. Over the same million-row warehouse as the row model demo, with a grand total pinned at the bottom and a request log underneath.",
+  "keywords": [
+    "svelte server side pivot",
+    "svelte pivot table million rows",
+    "svelte pivot designer server mode",
+    "svelte grid pivot result fields",
+    "svelte grid deferred apply pivot"
+  ],
+  "faq": [
+    {
+      "question": "Where does the pivoting happen?",
+      "answer": "On the server. The request carries pivotBy and pivotMode beside groupBy and aggregations; the backend splits every aggregate per pivot key path and names the fields, for example 2024_amount, and lists them in pivotResultFields. The grid never sees the underlying rows."
+    },
+    {
+      "question": "Why is there an Apply button?",
+      "answer": "applyMode deferred holds the wells' edits locally until Apply, so a slice-and-dice session with three drags is one request rather than three. Cancel puts the wells back to the applied layout."
+    },
+    {
+      "question": "Can a pivoted group be expanded?",
+      "answer": "A region opens onto its countries with the pivot repeated per country. The innermost group level does not open under pivot: its rows are the pivoted result, and there are no leaves beneath them to show."
+    }
+  ]
+}

@@ -61,6 +61,9 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/datetime/mask.ts`](./svgrid-grid-mask.md) - 3 exports
 - [`@svgrid/grid/datetime/date-format.ts`](./svgrid-grid-date-format.md) - 3 exports
 - [`@svgrid/grid/datetime/date-restrict.ts`](./svgrid-grid-date-restrict.md) - 5 exports
+- [`@svgrid/grid/server-data-source.ts`](./svgrid-grid-server-data-source.md) - 19 exports
+- [`@svgrid/grid/server-block-cache.ts`](./svgrid-grid-server-block-cache.md) - 8 exports
+- [`@svgrid/grid/row-model.ts`](./svgrid-grid-row-model.md) - 4 exports
 
 ## @svgrid/enterprise
 
@@ -69,3 +72,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/enterprise/pivot-chart.ts`](./svgrid-enterprise-pivot-chart.md) - 2 exports
 - [`@svgrid/enterprise/import.ts`](./svgrid-enterprise-import.md) - 13 exports
 - [`@svgrid/enterprise/install.ts`](./svgrid-enterprise-install.md) - 4 exports
+- [`@svgrid/enterprise/server/server-row-model.ts`](./svgrid-enterprise-server-row-model.md) - 19 exports
+- [`@svgrid/enterprise/server/server-selection.ts`](./svgrid-enterprise-server-selection.md) - 6 exports
+- [`@svgrid/enterprise/server/server-pivot.ts`](./svgrid-enterprise-server-pivot.md) - 2 exports
+- [`@svgrid/enterprise/server/svgrid-adapter.ts`](./svgrid-enterprise-svgrid-adapter.md) - 10 exports

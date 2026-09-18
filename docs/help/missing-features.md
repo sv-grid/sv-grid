@@ -132,7 +132,8 @@ sparklines, collaboration). The genuine remaining gaps:
 | ~~**In-grid pivot mode** (toggle on the main grid)~~ | **shipped** - `enablePivot()` registers the engine and the main grid pivots in place | ✓ |
 | ~~**Integrated-chart depth** (chart toolbar, cross-filtering)~~ | **shipped** - `crossFilter` config plus `applyChartCrossFilter` / `clearChartCrossFilter`, wired from chart selection in `SvGridChartPanel`, with a Clear filter button; the panel toolbar has chart-type switching, export, AI, add-chart, tabs, maximize, dock and pop out. The picker now reaches all 15 types (it offered 4), gated on whether the current columns can feed each one, and `--sg-chart-*` tokens let a theme recolour the series | ✓ |
 | ~~**Chart depth program** (axis model, 13 more series types, interaction, financial toolkit, builder)~~ | **shipped** 12 Sep 2026, all free in `@svgrid/grid` - per-axis config with a numeric x axis and reference bands; histogram, range, lollipop, dumbbell, pareto, stream, sunburst, radial, nightingale, chord and bullet; wheel / pinch / pan zoom, range presets, `syncGroup`, a context menu, animation, drilldown, point selection, LTTB decimation; eight indicators with `SvChartPanes`, `rowsToOhlcSpec` + resampling, a last-price line, flags, drawing tools; PDF and print; the in-panel builder with a type gallery, Format tab and link / unlink; `<sv-chart>` with React / Vue / Angular wrappers. Demos 434 to 437 | ✓ |
-| **Server-side pivot / viewport row model** | SSRM ships sort/filter/group/infinite | L |
+| ~~**Server-side pivot**~~ | **shipped** (Enterprise) - `createServerRowModel` sends `pivotBy` + `pivotMode`, builds the columns from `pivotResultFields`, and `SvPivotDesigner` drives it in server mode; see [Server pivot](./server/server-pivot.md) | ✓ |
+| **Viewport row model** (the server pushes the visible window over a socket) | not built; [real-time](./real-time.md) merges deltas into loaded rows instead, and a socket can push a whole level through `applyRowData` | M |
 
 ## What's already there
 
@@ -144,7 +145,7 @@ data, master/detail + full-width detail rows, row + column virtualization
 handle + drag-the-border move/copy, inline editing with 14 editor types plus a custom `cellEditor` slot,
 undo/redo, staged editing, find-in-grid, notes + cell comments, tooltips,
 conditional formatting, sparklines, cell merging, column pinning/reorder/resize,
-row pinning, a formula engine (+ HyperFormula adapter), server-side row model,
+row pinning, a formula engine (+ HyperFormula adapter), a server-side row model (flat paging and infinite scroll free; grouping, tree, pivot, transactions and selection across unloaded rows in Enterprise),
 Excel/PDF/CSV/HTML export + print (Enterprise), pivot + charts + AI (Enterprise),
 WAI-ARIA + keyboard nav, RTL, i18n, theming via `--sg-*` tokens, SSR, and a
 CSP-clean runtime.

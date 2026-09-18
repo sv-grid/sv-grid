@@ -89,8 +89,11 @@ code pairs.
 - **Get the imperative API via `onApiReady`**, hold it in `$state`, and
   call methods (`api.setFilter`, `api.exportToCsv`, ...) from handlers.
 - **Server-side data uses `createServerDataSource`** implementing the
-  `ServerDataSource` contract - the grid emits intent, your source fetches
-  the page. Don't filter/sort locally in server mode.
+  `ServerDataSource` contract, passed as `rowModel={ctl}` - the grid emits
+  intent, your source fetches the page or block. Don't filter/sort
+  locally in server mode. Server-side grouping, tree, pivot, transactions
+  and select-all across unloaded rows are `createServerRowModel` in
+  `@svgrid/enterprise`, on the same contract and the same prop.
 
 ### Theming → [theming.md](./rules/theming.md)
 

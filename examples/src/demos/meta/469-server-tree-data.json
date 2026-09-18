@@ -1,0 +1,24 @@
+{
+  "description": "Lazy server-side tree data in a Svelte 5 data grid. A file tree the grid never holds whole: expanding a folder is one getRows call whose groupKeys is the path of folder ids, and the server answers with that folder's direct entries, one block at a time. createServerRowModel in treeData mode owns the expand and collapse state, a block cache per folder, open-by-default for the first level, expand-all over the loaded folders, a per-folder refresh that re-reads one folder in place, and transactions that add or delete a file without a refetch. The server here generates each folder's entries from a seeded PRNG on first request, five levels deep, so nothing exists before it is asked for.",
+  "keywords": [
+    "svelte server side tree data",
+    "svelte grid lazy tree load on demand",
+    "svelte 5 treegrid server",
+    "svelte grid expand folder fetch children",
+    "svelte grid refresh subtree"
+  ],
+  "faq": [
+    {
+      "question": "What does the server receive when a folder is expanded?",
+      "answer": "One getRows request with groupKeys set to the path of node ids from the root to that folder, plus startRow and endRow for the block and the current sortModel. It answers with the folder's direct children and their count; hasChildren decides which of them get an expander."
+    },
+    {
+      "question": "How does a folder label show the name and not the id?",
+      "answer": "Under treeData a node's key is its id, which is what routes are made of. SvGroupCell's leafField names the label field for every node, folders included, and serverGroupText reads the same field for copy, export and the pinned total."
+    },
+    {
+      "question": "What does Refresh folder do?",
+      "answer": "ctl.refresh({ route }) re-reads that one folder's loaded blocks in place. Its expanded subfolders, the scroll position and every other folder's cache stay as they are; only the rows that changed on the server update."
+    }
+  ]
+}

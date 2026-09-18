@@ -151,14 +151,26 @@
       }
     },
     {
-      "feature": "Server-side data",
+      "feature": "Server-side data, flat (sort, filter, paging, infinite scroll)",
       "svgrid": {
         "status": "yes",
-        "note": "server-side row model"
+        "note": "createServerDataSource: page or infinite block scroll"
       },
       "competitor": {
         "status": "yes",
         "note": "manual sorting, filtering and pagination flags",
+        "source": "tanstack-svelte"
+      }
+    },
+    {
+      "feature": "Server-side row model (lazy grouping, tree, pivot, transactions, select-all across unloaded rows)",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "the engine has no server row model; the app fetches per group",
         "source": "tanstack-svelte"
       }
     },

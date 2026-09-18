@@ -309,6 +309,60 @@ export function createSvGridController<
   // preserves reference identity for non-overridden keys, which the columns-identity
   // column cache and the `data`/`columns` sync effects rely on.
   let optionOverrides = $state<Record<string, unknown>>({});
+
+  /**
+   * A `rowModel` answers for the props it can, so a server-backed grid is
+   * one prop rather than a dozen.
+   *
+   * Bumped by the model itself through `subscribe` (see the effect below),
+   * which is what makes `getRows()` and `isLoading()` - plain method calls,
+   * invisible to the reactive system - re-read when the model changes.
+   */
+  let rowModelVersion = $state(0);
+  const rowModelProps = $derived.by(function rowModelProps_d() {
+    const model = rawProps.rowModel;
+    if (!model) return null;
+    rowModelVersion; // read, so a notification re-derives
+    const paging = model.pagination;
+    return {
+      data: model.getRows(),
+      loading: model.isLoading(),
+      loadingOverlay: true,
+      getRowId: model.getRowId,
+      // A model that sorts or filters server-side is telling the grid not
+      // to do it locally; one that does neither leaves the grid in charge.
+      externalSort: model.setSort ? true : undefined,
+      externalFilter: model.setFilter ? true : undefined,
+      onSortingChange: model.setSort ? (s: any) => model.setSort!(s) : undefined,
+      onFiltersChange: model.setFilter ? (f: any) => model.setFilter!(f) : undefined,
+      onVisibleRangeChange: model.setViewport
+        ? (r: { startIndex: number; endIndex: number }) =>
+            model.setViewport!(r.startIndex, r.endIndex)
+        : undefined,
+      rowPlaceholder: model.rowPlaceholder,
+      onRetryRow: model.retryRow,
+      serverGroup: model.group,
+      rowSelectionModel: model.selection,
+      serverFilterValues: model.filterValues
+        ? (columnId: string) => model.filterValues!(columnId)
+        : undefined,
+      pinnedTopRows: model.pinnedTopRows,
+      pinnedBottomRows: model.pinnedBottomRows,
+      pivotResultColumns: model.pivotResultColumns ?? undefined,
+      externalPagination: paging ? true : undefined,
+      rowCount: paging?.rowCount,
+      pageIndex: paging?.pageIndex,
+      pageSize: paging?.pageSize,
+      pageSizeOptions: paging?.pageSizes,
+      onPaginationChange: paging
+        ? (p: { pageIndex: number; pageSize: number }) => {
+            if (p.pageSize !== paging.pageSize) paging.setPageSize(p.pageSize);
+            else paging.setPage(p.pageIndex);
+          }
+        : undefined,
+    } as Partial<Props<TFeatures, TData>>;
+  });
+
   const props = new Proxy(rawProps, {
     // Read the override as a PROPERTY (tracked by `$state`), not via `in` (the `has`
     // trap is not tracked) - so a reactive read of `props.X` re-runs when an override
@@ -318,7 +372,21 @@ export function createSvGridController<
     get: (t, k) => {
       const v =
         typeof k === "string" ? optionOverrides[k] : undefined;
-      return v !== undefined ? v : Reflect.get(t, k);
+      if (v !== undefined) return v;
+      // Pivot mode swaps the column list: `pivotResultColumns` (the prop, or
+      // the row model's) stands in for `columns` while it is set, and
+      // `columns` itself stays the app's own list for when pivot ends.
+      if (k === "columns") {
+        const pivot =
+          Reflect.get(t, "pivotResultColumns") ??
+          (rowModelProps as Record<string, unknown> | null)?.pivotResultColumns;
+        if (pivot) return pivot;
+      }
+      const own = Reflect.get(t, k);
+      // A prop written on the grid always beats the row model, so adopting
+      // `rowModel` is never all-or-nothing.
+      if (own !== undefined || typeof k !== "string") return own;
+      return (rowModelProps as Record<string, unknown> | null)?.[k];
     },
   }) as Props<TFeatures, TData>;
 
@@ -739,7 +807,10 @@ export function createSvGridController<
   // re-synced whenever the parent passes a new array; the imperative API
   // mutates these so add/remove operations don't need a callback round-trip.
   // svelte-ignore state_referenced_locally
-  let internalData = $state.raw<ReadonlyArray<TData>>(props.data);
+  // `data` is optional on the type (a `rowModel` may supply the rows
+  // instead), so every read falls back to empty rather than to undefined.
+  const EMPTY_DATA: ReadonlyArray<TData> = [];
+  let internalData = $state.raw<ReadonlyArray<TData>>(props.data ?? EMPTY_DATA);
   // Resolve `cellDataType` / `inferColumnTypes` into concrete editorType +
   // format defaults once, up front, so every downstream reader sees a normal
   // column. Explicit fields on the ColumnDef always win.
@@ -791,7 +862,7 @@ export function createSvGridController<
     // accumulated cell-edit overrides - otherwise `getCellDisplayValue`
     // would keep returning the old edited values from `editedCellValues`
     // even though the underlying data has been replaced.
-    internalData = props.data;
+    internalData = props.data ?? EMPTY_DATA;
     editedCellValues = {};
   });
   $effect(() => {
@@ -1037,6 +1108,20 @@ export function createSvGridController<
    *
    * Returns null when the cell should render nothing.
    */
+  /**
+   * Why a row has no data yet, or null when it does.
+   *
+   * Group rows are never placeholders, so the check is skipped for them:
+   * their `original` is a synthetic bucket, not a row the consumer handed
+   * us, and passing it to `rowPlaceholder` would ask a question about a row
+   * that does not exist.
+   */
+  function placeholderStateOf(row: Row<TData>): "loading" | "failed" | null {
+    const ask = props.rowPlaceholder;
+    if (!ask || isGroupRow(row)) return null;
+    return ask(row.original, row.index);
+  }
+
   function autoGroupCell(
     row: Row<TData>,
     columnId: string,
@@ -1805,15 +1890,42 @@ export function createSvGridController<
     const rows: TData[] = [];
     const ids: string[] = [];
     if (!selectionBarOn) return { rows, ids };
+    // Under an external selection model the loaded rows are the ones the
+    // model says are selected; rows that never loaded are not in `allRows`
+    // and are counted by `selectionBarCount` below instead. This walks
+    // every loaded row, so it runs on every block a row model delivers:
+    // a model that can say "nothing is selected" spares the walk, and the
+    // props it needs are read once, not through the proxy per row.
+    const model = props.rowSelectionModel;
+    if (model && model.selectedCount?.() === 0) return { rows, ids };
+    const ask = props.rowPlaceholder;
+    const isPlaceholder = ask
+      ? (row: Row<TData>) => !isGroupRow(row) && !!ask(row.original as TData, row.index)
+      : () => false;
     for (const row of allRows) {
-      if (isGroupRow(row)) continue;
-      if (rowSelectionState[row.id]) {
+      if (isGroupRow(row) || isPlaceholder(row)) continue;
+      const selected = model
+        ? model.isSelected(row.id, row.original as TData)
+        : !!rowSelectionState[row.id];
+      if (selected) {
         rows.push(row.original as TData);
         ids.push(row.id);
       }
     }
     return { rows, ids };
   });
+  /**
+   * What the selection bar's count chip says. A model that stores the rule
+   * ("everything except these") knows about rows the grid never loaded, so
+   * its number wins over counting ticks on screen; `null` from it means it
+   * cannot say, and the bar falls back to the loaded count.
+   */
+  const selectionBarCount = $derived.by(function selectionBarCount_d() {
+    const fromModel = props.rowSelectionModel?.selectedCount?.();
+    return fromModel ?? selectionBarTarget.ids.length;
+  });
+  /** Whether the bar has anything to show: the model's count when it has one, else the loaded ticks. */
+  const selectionBarVisible = $derived(selectionBarOn && selectionBarCount > 0);
 
   // Forward selection changes to the consumer. Skips the very first invocation
   // (the initial empty state) so consumers don't get a spurious callback on mount.
@@ -2833,6 +2945,55 @@ export function createSvGridController<
     Math.max(virtualRowTotalSize - virtualRowEnd, 0),
   );
 
+  // A row model tells us when to re-read it. Subscribing here (rather than
+  // polling, or asking the consumer to wrap the model in a rune) is what lets
+  // `getRows()` be a plain method call on a plain object.
+  $effect(() => {
+    const model = rawProps.rowModel;
+    if (!model) return;
+    return model.subscribe(() => {
+      rowModelVersion += 1;
+    });
+  });
+
+  // The index range on screen, for data sources that fetch by block.
+  // `virtualRowStart` / `virtualRowEnd` above are PIXEL offsets; a fetcher
+  // needs row numbers, and needs them whether or not virtualization is on.
+  const visibleRowRange = $derived.by(function visibleRowRange_d() {
+    if (!rowVirtualizationEnabled) {
+      return { startIndex: 0, endIndex: Math.max(0, allRows.length - 1) };
+    }
+    const first = virtualRows[0];
+    const last = virtualRows[virtualRows.length - 1];
+    if (!first || !last) return { startIndex: 0, endIndex: 0 };
+    return { startIndex: first.index, endIndex: last.index };
+  });
+  // Emitted from an effect rather than the derived so a consumer that
+  // fetches (and therefore changes `data`) cannot re-enter the derivation.
+  let lastReportedRange = "";
+  $effect(() => {
+    const report = props.onVisibleRangeChange;
+    if (!report) return;
+    const range = visibleRowRange;
+    const key = range.startIndex + ":" + range.endIndex;
+    if (key === lastReportedRange) return;
+    lastReportedRange = key;
+    report(range);
+  });
+
+  // A paging row model that asks for `autoPageSize` gets as many rows as
+  // the body shows without scrolling, re-measured as the viewport changes.
+  $effect(() => {
+    rowModelVersion;
+    const paging = rawProps.rowModel?.pagination;
+    if (!paging?.autoPageSize) return;
+    const height = viewportHeight;
+    if (height <= 0) return;
+    const rowPx = rowSizePxOf(0) || 30;
+    const fit = Math.max(1, Math.floor(height / rowPx));
+    if (fit !== paging.pageSize) paging.setPageSize(fit);
+  });
+
   // --- Huge-list scroll scaling -----------------------------------------
   // Browsers cap how tall a single element may be, and mobile caps sit well
   // below desktop. Past a few hundred thousand rows the true content height
@@ -3596,7 +3757,13 @@ export function createSvGridController<
   // rows (10k iterations on the large-dataset demo, 100k on its top tier) to
   // recount a selection that had not changed.
   const headerSelectionState = $derived.by(function headerSelectionState_d() {
-    const selectable = allRows.filter((row) => !isGroupRow(row));
+    // An external model knows about rows the grid has never seen, so it is
+    // the only thing that can answer honestly once the data is a window
+    // onto a server.
+    if (props.rowSelectionModel) return props.rowSelectionModel.headerState();
+    const selectable = allRows.filter(
+      (row) => !isGroupRow(row) && !placeholderStateOf(row),
+    );
     if (!selectable.length) return "none";
     let selected = 0;
     for (const row of selectable) if (rowSelectionState[row.id]) selected += 1;
@@ -3820,7 +3987,12 @@ export function createSvGridController<
     for (const column of allColumns) {
       const meta = isBucketableColumn(column);
       if (!meta) continue;
-      const buckets = buildBuckets(column, meta.isDate, props.data, getColumnAccessorValue);
+      const buckets = buildBuckets(
+        column,
+        meta.isDate,
+        props.data ?? EMPTY_DATA,
+        getColumnAccessorValue,
+      );
       if (buckets) map.set(column.id, buckets);
     }
     return map;
@@ -4329,6 +4501,8 @@ export function createSvGridController<
     get selectionBarMaxVisible() { return selectionBarMaxVisible; },
     get selectionBarHideClear() { return selectionBarHideClear; },
     get selectionBarTarget() { return selectionBarTarget; },
+    get selectionBarCount() { return selectionBarCount; },
+    get selectionBarVisible() { return selectionBarVisible; },
     get lastSelectionSerialized() { return lastSelectionSerialized; },
     set lastSelectionSerialized(v) { lastSelectionSerialized = v as never; },
     get lastCellRangeSerialized() { return lastCellRangeSerialized; },
@@ -4664,7 +4838,14 @@ export function createSvGridController<
     get isRowSelected() { return isRowSelected; },
     get toggleRowSelectionById() { return toggleRowSelectionById; },
     get headerSelectionState() { return headerSelectionState; },
+    get visibleRowRange() { return visibleRowRange; },
+    placeholderStateOf,
+    /** Retry a failed placeholder row. No-op without `onRetryRow`. */
+    retryRow(row: Row<TData>) {
+      props.onRetryRow?.(row.original, row.index);
+    },
     get toggleSelectAllRows() { return toggleSelectAllRows; },
+    get setSelectAllRows() { return setSelectAllRows; },
     get userHasActivatedCell() { return userHasActivatedCell; },
     set userHasActivatedCell(v) { userHasActivatedCell = v as never; },
     get tabRunOrigin() { return tabRunOrigin; },
@@ -4814,7 +4995,7 @@ export function createSvGridController<
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
-  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
+  const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
@@ -4854,6 +5035,7 @@ export function createSvGridController<
         pageSize: props.pageSize,
         groupBy: props.groupBy,
         treeData: props.treeData,
+        serverGroup: props.serverGroup,
         initialColumnPinning: props.initialColumnPinning,
         columnVirtualization: props.columnVirtualization,
         externalPagination: props.externalPagination,

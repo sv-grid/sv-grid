@@ -23,7 +23,8 @@ import type {
   ServerFilterModel,
   ServerGroupRow,
   ServerSortModel,
-} from './server-data-source'
+} from '@svgrid/grid'
+import { nudgeServerRowModel } from './enable'
 
 export type ServerGroupState<TData> = {
   /** The flattened tree: top-level groups, with expanded groups' children spliced in. */
@@ -132,10 +133,18 @@ type GroupNode<TData> = {
   children: ChildDescriptor<TData>[]
 }
 
+/**
+ * @deprecated Use `createServerRowModel`: every level scrolls, blocks are
+ * cached and evicted, failed blocks retry, and `<SvGrid rowModel={ctl} />`
+ * wires it in one prop. This model stays for the "Load N more" button it
+ * renders, and is otherwise unchanged.
+ */
 export function createServerGroupModel<TData>(
   source: ServerDataSource<TData>,
   options: ServerGroupControllerOptions<TData>,
 ): ServerGroupController<TData> {
+  // Soft gate: works unlicensed, shows the watermark + one console nudge.
+  nudgeServerRowModel()
   let groupBy = [...(options.groupBy ?? [])]
   const aggregations = options.aggregations ?? []
   const pageSize = options.pageSize ?? 200

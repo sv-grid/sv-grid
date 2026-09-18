@@ -735,9 +735,10 @@ export function createGridApi<
         });
       },
       selectAllRows() {
-        const next: Record<string, boolean> = {};
-        for (const row of ctx.allRows) if (!isGroupRow(row)) next[row.id] = true;
-        ctx.grid.setRowSelection(() => next);
+        // One implementation of "select everything", shared with the header
+        // checkbox, so it knows about an external selection model and about
+        // rows whose data has not arrived.
+        ctx.setSelectAllRows(true);
       },
       toggleRowSelected(id) {
         ctx.toggleRowSelectionById(id);
@@ -745,7 +746,13 @@ export function createGridApi<
       // ---- Pagination
       getPageInfo() {
         const { pageIndex, pageSize } = ctx.paginationState;
-        const total = ctx.allRowsBeforePagination.length;
+        // Under external pagination the grid holds ONE page, so counting the
+        // rows in hand would report a 95-row table as a 20-row one. The
+        // consumer tells us the real total through rowCount, which is what
+        // the footer has always shown.
+        const total = ctx.externalPaginationEnabled
+          ? (ctx.props.rowCount ?? ctx.allRowsBeforePagination.length)
+          : ctx.allRowsBeforePagination.length;
         const pageCount = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
         return { pageIndex, pageSize, pageCount, total };
       },

@@ -274,6 +274,13 @@ import MergedReportHeaders463    from '../demos/463-merged-report-headers.svelte
 import TicketLogAutofilter464    from '../demos/464-ticket-log-autofilter.svelte'
 import AutosaveDocument465       from '../demos/465-autosave-document.svelte'
 import PasteFromExcel466         from '../demos/466-paste-from-excel.svelte'
+import ServerRowModel1m467       from '../demos/467-server-row-model-1m.svelte'
+import ServerPivot468            from '../demos/468-server-pivot.svelte'
+import ServerTreeData469        from '../demos/469-server-tree-data.svelte'
+import ServerTransactions470    from '../demos/470-server-transactions.svelte'
+import ServerSelection471       from '../demos/471-server-selection.svelte'
+import ServerSqlPlanner472      from '../demos/472-server-sql-planner.svelte'
+import ServerGroupingRules473   from '../demos/473-server-grouping-rules.svelte'
 import SelectionBar430          from '../demos/430-selection-bar.svelte'
 import CustomIcons431           from '../demos/431-custom-icons.svelte'
 import Candlestick432           from '../demos/432-chart-candlestick.svelte'
@@ -441,6 +448,7 @@ export type DemoCategory =
   | 'Tree & Hierarchy'
   | 'Master-Detail & Forms'
   | 'Server-Side Data'
+  | 'Server-Side Row Model'
   | 'Real-time & Streaming'
   | 'Spreadsheet'
   | 'Charts'
@@ -476,10 +484,15 @@ export type DemoCategory =
 // NOT in here: 'AI'. The AI helpers are free and MIT (packages/grid/src/ai.ts).
 // Enterprise carries AI-planned EXPORT - the paid xlsx/pdf writer - not the AI.
 export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
+  // The row model: grouping, tree, pivot, transactions and selection across
+  // unloaded rows, all in @svgrid/enterprise. 'Server-Side Data' is the free
+  // half (the datasource contract and the flat controller) and stays MIT.
+  'Server-Side Row Model',
   'Data Export & Import',
   'Pivot Grid',
   'Kanban',
   'Spreadsheet',
+  'Scheduler',
   'Studio',
   'Alerts',
 ])
@@ -524,6 +537,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   // AI helpers and the chart engine are both free @svgrid/grid features.
   'AI',
   'Charts',
+  'Server-Side Row Model',
   'Kanban',
   'Scheduler',
   'Themes & Styling',
@@ -840,12 +854,10 @@ export const demos: Demo[] = [
   demo('181-master-detail-grid',    'Master / detail (nested grid)','The classic AG-Grid master/detail: expand any account row to reveal a full nested SvGrid of its call records. Built on isDetailRow + renderDetailRow - a real full-width detail row hosting another grid. Expand-all / collapse-all.', 'Master-Detail & Forms', MasterDetailGrid),
 
   // ----- Server-Side Data
+  demo('148-server-row-model',      'Server-Side Row Model: paged and infinite', 'The free half of the row model: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Paged, the grid holds one 50-row page; infinite, a block cache under the scrollbar with placeholders, retry and an LRU. Here a 100,000-row in-memory server behind 250ms latency. Grouping, tree, pivot and transactions on top of the same contract are the Enterprise row model (demo 467).', 'Server-Side Data', ServerRowModel),
   demo('09-server-side',            'Server-side data',            'Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.', 'Server-Side Data', ServerSide),
   demo('33-server-infinite',        'Server-side infinite scroll', '100k-event audit log behind a mock API. Sparse chunked load on scroll; sort + filter + search pushed to the server.', 'Server-Side Data', ServerInfinite),
-  demo('148-server-row-model',      'Server-Side Row Model (SSRM)','One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page. The row model ships in @svgrid/enterprise.', 'Server-Side Data', ServerRowModel, { pro: true }),
-  demo('344-server-grouping-model', 'Server grouping (first-class)','First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.', 'Server-Side Data', ServerGroupingModel, { pro: true }),
   demo('72-graphql-adapter',        'GraphQL adapter',             'Server-side sort / filter / page wired to a mock GraphQL resolver. Side panel shows the live query doc so you can compare what the grid sent to the network tab.', 'Server-Side Data', GraphqlAdapter),
-  demo('337-live-rest-dummyjson',   'Live REST (public API)',      'Real rows over the network from dummyjson.com via the enterprise createRestDataSource + a shape adapter (dummyJsonAdapter): skip/limit paging and sortBy/order sorting mapped to the API dialect. Swap URL + adapter (jsonServerAdapter / offsetLimitAdapter) to point at any public API. Includes an error/retry surface.', 'Server-Side Data', LiveRestDummyJson, { pro: true }),
   demo('79-loading-from-rest',      'Loading from REST',           'Fetches rows from a public REST API with loading skeleton, retry, error surface, and a Reload button. The pattern every line-of-business app needs.', 'Server-Side Data', LoadingFromRest),
   demo('113-cursor-pagination',     'Cursor (keyset) pagination',  'The modern alternative to offset paging: server returns prev/next cursor tokens so writes never shift rows across pages and deep pages stay O(log N). Page-size picker, live timing readout.', 'Server-Side Data', CursorPagination),
   demo('114-server-grouping',       'Server-side grouping + aggregates','GROUP BY + SUM/AVG/MIN/MAX pushed to the server; grid renders pre-aggregated buckets with on-demand drill-in. Side-by-side: client 100k = ~600ms vs server 12 grouped rows = ~80ms.', 'Server-Side Data', ServerGrouping),
@@ -853,6 +865,17 @@ export const demos: Demo[] = [
   demo('116-websocket-live-updates','WebSocket live updates',      'Insert / update / delete deltas merged into the grid by id, with cell-flash on update, pause / resume, throughput slider, reconnect button, and a 12-event tail.', 'Server-Side Data', WebSocketLiveUpdates),
   demo('117-bulk-operations',       'Bulk server operations',      'Select N rows → choose approve / archive / reassign / delete → server processes with configurable concurrency (1/4/10). Live progress bar, per-row outcome chip, mid-flight cancel.', 'Server-Side Data', BulkOperations),
   demo('118-live-dashboard',        'Live 10M-row dashboard',      '10,000,000-transaction stream behind a mock API: server-side paging, sort, filter, a 1-second live feed, and inline SVG throughput/distribution charts.', 'Server-Side Data', LiveDashboard),
+
+  // ----- Server-Side Row Model
+  demo('467-server-row-model-1m',  'Server-Side Row Model: 1,000,000 rows', 'One grid, one rowModel prop, a million rows that stay on the server. Sort, filter, global search, grouping to any depth (Region > Country > Rep), infinite scroll or paging, inline edits applied back as transactions with the subtotal following, add and delete, select-all across rows the grid never loaded with a bulk edit by rule, failed blocks with Retry, and a request log that shows every call to the columnar warehouse behind it. The row model ships in @svgrid/enterprise; the datasource contract is free.', 'Server-Side Row Model', ServerRowModel1m467, { pro: true }),
+  demo('468-server-pivot',         'Server-side pivot',           'The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request. The backend answers with one field per pivot key and aggregation and lists them in pivotResultFields; the model builds the column groups from that list. Apply / Cancel hold a slice-and-dice session to one request, and a grand total row is pinned at the bottom.', 'Server-Side Row Model', ServerPivot468, { pro: true }),
+  demo('344-server-grouping-model', 'Server grouping (row model)', 'Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.', 'Server-Side Row Model', ServerGroupingModel, { pro: true }),
+  demo('469-server-tree-data', 'Server tree data (row model)', 'A file tree the grid never holds whole: expanding a folder is one getRows with the folder path as groupKeys, answered with that folder\'s entries one block at a time. createServerRowModel in treeData mode owns the lazy expand, a block cache per folder, open-by-default, expand and collapse all, a per-folder refresh that re-reads one folder in place, and transactions that add or delete a file without a refetch. The server generates each folder from a seeded PRNG on first request, five levels deep.', 'Server-Side Row Model', ServerTreeData469, { pro: true }),
+  demo('470-server-transactions', 'Server transactions (live feed)', 'A socket-style feed of changes the server already made, applied without a refetch: a price tick patches the loaded row in place with a flash (updateRowData), a new order lands at the top of its warehouse and a shipped one leaves (applyTransactionAsync, batched every 500 ms, addressed by route). Every result carries a status the log shows: applied, cancelled under the veto hook, storeNotFound for a warehouse whose level is not cached. Refresh totals recomputes the sums a transaction leaves alone.', 'Server-Side Row Model', ServerTransactions470, { pro: true }),
+  demo('471-server-selection', 'Server selection: select all, minus these', 'The header checkbox selects every row the filter matches, loaded or not, and the selection becomes a rule: all except these ids, or per group under grouping. The panel shows getSelectionState() live, Save and Restore round-trip it, and a bulk action sends the rule to the server as one updateWhere that answers with the count it changed. The selection bar shows the server\'s number, not the ticks on screen.', 'Server-Side Row Model', ServerSelection471, { pro: true }),
+  demo('472-server-sql-planner', 'Server row model to SQL', 'What the backend runs for each request: planQuery turns the ServerRequest into a QueryPlan against an entity schema, planToSql renders it for Postgres, MySQL or SQLite, and the panel shows the statements createSqlDataSource would hand your executor for the request that just went out - grouped or flat rows, the count, the grand total, and the two statements a pivot needs. The rows come from the in-memory reference source over the same plan.', 'Server-Side Row Model', ServerSqlPlanner472, { pro: true }),
+  demo('473-server-grouping-rules', 'Server grouping: totals, sort and refresh rules', 'The options around a grouped row model with the request log to show what each costs: a grand total in any of four positions, subtotal footers, levels that open on arrival, expand-all that reaches groups not loaded yet, refresh in place versus purge, and the rules for what a sort or a filter re-requests - a plain column re-fetches leaf levels only, a group column its own level, an aggregated column every level; a filter purges all or only the groups it touches.', 'Server-Side Row Model', ServerGroupingRules473, { pro: true }),
+  demo('337-live-rest-dummyjson',   'Live REST (public API)',      'Real rows over the network from dummyjson.com via the enterprise createRestDataSource + a shape adapter (dummyJsonAdapter): skip/limit paging and sortBy/order sorting mapped to the API dialect. Swap URL + adapter (jsonServerAdapter / offsetLimitAdapter) to point at any public API. Includes an error/retry surface.', 'Server-Side Row Model', LiveRestDummyJson, { pro: true }),
 
   // ----- Real-time & Streaming
   demo('11-stock-market',           'Stock market - live',         'WebSocket-style ticking feed. Cells flash on up/down ticks, pause control, throttle.', 'Real-time & Streaming', StockMarket),

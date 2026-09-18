@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/grid",
-  "version": "3.0.3",
+  "version": "4.0.0",
   "description": "Svelte 5-native data grid and data table. Headless-first engine with virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data, pivot, and server-side data. Drop-in <SvGrid> component. TypeScript, SSR-ready.",
   "author": "jQWidgets <boikom@jqwidgets.com>",
   "license": "MIT",
@@ -98,6 +98,11 @@
       "types": "./dist/shortcut-registry.d.ts",
       "svelte": "./dist/shortcut-registry.js",
       "import": "./dist/shortcut-registry.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "svelte": "./dist/server.js",
+      "import": "./dist/server.js"
     },
     "./flex-render": {
       "types": "./dist/flex-render.d.ts",

@@ -42,13 +42,14 @@ const cols = [
 const tick = () => new Promise<void>((r) => setTimeout(r))
 const BAR = '.sv-selbar'
 
-function mountGrid(selectionBar: unknown) {
+function mountGrid(selectionBar: unknown, extra: Record<string, unknown> = {}) {
   return new Promise<{ api: any; target: HTMLElement; destroy: () => void }>((res, rej) => {
     const target = document.createElement('div')
     document.body.appendChild(target)
     const app = mount(SvGrid as any, {
       target,
       props: {
+        ...extra,
         data: rows,
         columns: cols,
         getRowId: (r: Row) => String(r.id),
@@ -166,6 +167,44 @@ describe('selectionBar - the count', () => {
     api.selectRows(['1', '2', '3'])
     await vi.waitFor(() => expect(chip()).toBe('3'))
 
+    destroy()
+  })
+
+  it('groups a large count the way the grid formats numbers', async () => {
+    // A rule-based selection model (select-all across a server row model)
+    // reports rows the grid never loaded; the chip must not read 1000000.
+    // It rides on a row model, whose notification is what re-derives the
+    // count.
+    let all = false
+    const listeners = new Set<() => void>()
+    const selection = {
+      isSelected: () => all,
+      headerState: () => (all ? 'all' : 'none'),
+      toggle: () => {},
+      toggleAll: (next: boolean) => {
+        all = next
+        for (const l of listeners) l()
+      },
+      selectedCount: () => (all ? 1_000_000 : 0),
+    }
+    const rowModel = {
+      subscribe(onChange: () => void) {
+        listeners.add(onChange)
+        return () => listeners.delete(onChange)
+      },
+      getRows: () => rows,
+      isLoading: () => false,
+      getRowId: (r: Row) => String(r.id),
+      selection,
+    }
+    const { api, target, destroy } = await mountGrid(true, {
+      rowModel,
+      localization: { locale: 'en-US' },
+    })
+    await tick()
+    api.selectAllRows()
+    await vi.waitFor(() => expect(target.querySelector(BAR)).not.toBeNull())
+    expect(target.querySelector('.sv-selbar-chip')!.textContent!.trim()).toBe('1,000,000')
     destroy()
   })
 

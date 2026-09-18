@@ -1,4 +1,4 @@
-# Server tree data (load on demand)
+# Server tree data (load on demand) - Enterprise
 
 When a hierarchy is too large to ship up front - a file system, an org
 chart with tens of thousands of people, a geographic drill-down - you do
@@ -16,11 +16,16 @@ extension.
 
 ## First-class tree mode
 
-`createServerGroupModel` handles self-referential trees too - turn on
+A file tree the grid never holds whole, each folder read on first expand:
+
+<div data-docs-demo="469-server-tree-data" data-height="560"></div>
+
+`createServerRowModel` handles self-referential trees too - turn on
 `treeData` and give it `getRowId` (the node id) and `hasChildren` (whether a
-node can expand). It owns the lazy expand/collapse, per-node caching, and
-race-safety; each expand calls `getRows` with `groupKeys` set to the path of
-node ids, and you return that node's direct children:
+node can expand). It owns the lazy expand/collapse, a block cache per node,
+refresh and retry per route, and race-safety; each expand calls `getRows`
+with `groupKeys` set to the path of node ids, and you return that node's
+direct children, one block at a time:
 
 The examples on this page run against these rows:
 
@@ -57,33 +62,37 @@ The examples on this page run against these rows:
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, createServerGroupModel, serverGroupRows, SvGroupCell, renderComponent } from '@svgrid/grid'
+  import { SvGrid, renderComponent } from '@svgrid/grid'
+  import { createServerRowModel, SvGroupCell } from '@svgrid/enterprise'
 
   type Node = { id: string; name: string; expandable: boolean }
 
-  const ctl = createServerGroupModel<Node>(source, {
+  const ctl = createServerRowModel<Node>(source, {
     treeData: true,
     getRowId: (n) => n.id,
     hasChildren: (n) => n.expandable,
-    onChange: (s) => (view = s),
+    isGroupOpenByDefault: (route) => route.length < 2, // the first two levels open on arrival
   })
   ctl.refresh() // load the roots (getRows with groupKeys: [])
 
-  const rows = $derived(serverGroupRows(view))
   const columns = [
-    { field: 'name', header: 'Name',
-      cell: (ctx) => renderComponent(SvGroupCell, { row: ctx.row.original, onToggle: ctl.toggleGroup, leafField: 'name' }) },
+    { id: 'name', header: 'Name',
+      cell: (ctx) => renderComponent(SvGroupCell, { row: ctx.row.original, onToggle: () => ctl.group.onToggle(ctx.row.original), leafField: 'name' }) },
   ]
 </script>
 
-<SvGrid data={rows} {columns} />
+<SvGrid rowModel={ctl} {columns} />
 ```
 
 The source's `getRows` returns a node's children for the requested path; a row
-is expandable when `hasChildren` returns true. See
-[Server grouping](./server-grouping.md) for the full contract and the aggregate
-case. The rest of this page is the **roll-your-own** alternative, for when you
-want to own the flat-row derivation yourself.
+is expandable when `hasChildren` returns true. `rowModel` wires the rows, the
+treegrid keyboard (ArrowRight / ArrowLeft), the visible range and the
+placeholder rows; `refresh({ route })` reloads one node's children in place,
+`applyRowData` fills a node from a payload that shipped with its parent, and
+[transactions](./server-transactions.md) add or remove children without a
+request. See [Server grouping](./server-grouping.md) for the full contract
+and the aggregate case. The rest of this page is the **roll-your-own**
+alternative, for when you want to own the flat-row derivation yourself.
 
 <img src="/docs-media/server-tree-lazy.svg" alt="Load-on-demand tree flow: only roots are seeded; expanding a node fires an async fetchChildren call that shows a loading placeholder; the fetched children are appended to the flat rows and cached so re-expanding is instant." width="100%" />
 
@@ -260,9 +269,9 @@ the rows.
 
 ## More examples
 
-### Server grouping (first-class)
+### Server grouping (row model)
 
-First-class server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerGroupModel owns the group tree - lazy expand per level, aggregation, per-node caching, race-safety - handing back a flat displayRows list. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand.
+Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.
 
 <div data-docs-demo="344-server-grouping-model" data-height="560"></div>
 

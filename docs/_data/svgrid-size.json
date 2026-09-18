@@ -1,12 +1,12 @@
 {
   "readme": "Written by packages/grid/scripts/measure-size.mjs --json (pnpm size --json). Gzip level 9 of the minified Vite library build with Svelte external. Read by tools/lib/competitor-facts.mjs; never edit by hand.",
-  "measuredAt": "2026-09-12",
-  "version": "3.0.3",
+  "measuredAt": "2026-09-17",
+  "version": "4.0.0",
   "entries": {
     "full": {
-      "baseGzipKb": 84.5,
-      "cssGzipKb": 9.5,
-      "lazyGzipKb": 102.6
+      "baseGzipKb": 93,
+      "cssGzipKb": 10.1,
+      "lazyGzipKb": 183.1
     },
     "headless": {
       "baseGzipKb": 2.5,
@@ -19,9 +19,9 @@
       "lazyGzipKb": 0
     },
     "chart": {
-      "baseGzipKb": 32.1,
+      "baseGzipKb": 71.6,
       "cssGzipKb": 0,
-      "lazyGzipKb": 0
+      "lazyGzipKb": 15
     }
   }
 }

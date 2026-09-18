@@ -408,6 +408,11 @@
     ctrl.columnVirtualizationEnabled,
   );
   const virtualRows = $derived(ctrl.virtualRows);
+  // The first body row on screen: where a failed run that started above
+  // the window repeats its message.
+  const firstRenderedRowIndex = $derived(
+    rowVirtualizationEnabled ? (virtualRows[0]?.index ?? 0) : 0,
+  );
   const frozenRowCount = $derived(ctrl.frozenRowCount);
   const frozenRowList = $derived(ctrl.frozenRowList);
   // Merged cells. A merge is drawn once per band (the frozen rows, the
@@ -1461,6 +1466,73 @@
     </tr>
   {/snippet}
 
+  <!-- A row whose data has not arrived.
+
+       "loading" keeps the real columns and draws a shimmer bar in each,
+       so the table keeps its shape while blocks stream in - a full-width
+       bar would make the whole grid jump every time one landed. "failed"
+       is the opposite case: there is nothing per-column to say, just one
+       message and a way to try again, so it spans the row like a detail
+       cell does. Neither is selectable or editable; there is nothing
+       there to act on.
+
+       A failed block is a run of failed rows, one per row it claimed,
+       and one message serves the run: the first failed row on screen
+       carries it (the run's first row, or the top of the window when
+       the run started above it) and the rows under it are a plain
+       tinted band. A hundred "Could not load" lines for one block
+       was a wall of red. -->
+  {#snippet placeholderRowMarkup(
+    phRow: Row<TData>,
+    phRowIndex: number,
+    phState: "loading" | "failed",
+    phStyle: string,
+    phContinues: boolean,
+  )}
+    <tr
+      class="sv-grid-row sv-grid-placeholder-row"
+      class:sv-grid-placeholder-failed={phState === "failed"}
+      class:sv-grid-placeholder-failed-cont={phContinues}
+      aria-busy={phState === "loading" ? "true" : undefined}
+      {...getGridRowA11yProps(phRowIndex + 1)}
+      style={phStyle}
+    >
+      {#if phState === "failed"}
+        <td
+          class="sv-grid-cell sv-grid-placeholder-cell"
+          colspan={allColumns.length +
+            (showRowNumbersEffective ? 1 : 0) +
+            (showRowSelectionEffective ? 1 : 0)}
+        >
+          {#if !phContinues}
+            <div class="sv-grid-placeholder-failed-body">
+              <span class="sv-grid-placeholder-error">{messages.rowLoadFailed}</span>
+              {#if opt.onRetryRow}
+                <button
+                  type="button"
+                  class="sv-grid-placeholder-retry"
+                  onclick={() => ctrl.retryRow(phRow)}>{messages.rowLoadRetry}</button
+                >
+              {/if}
+            </div>
+          {/if}
+        </td>
+      {:else}
+        {#if showRowNumbersEffective}
+          <td class="sv-grid-cell sv-grid-rownum-cell"></td>
+        {/if}
+        {#if showRowSelectionEffective}
+          <td class="sv-grid-cell sv-grid-select-cell"></td>
+        {/if}
+        {#each allColumns as col (col.id)}
+          <td class="sv-grid-cell sv-grid-placeholder-cell">
+            <span class="sv-grid-placeholder-skeleton" aria-hidden="true"></span>
+          </td>
+        {/each}
+      {/if}
+    </tr>
+  {/snippet}
+
   <!-- A single pinned row (top or bottom). Read-only by design: no
        inline editing, no row-selection checkbox, no fill handle.
        Position-sticky CSS keeps it anchored to the top of the body or
@@ -1474,7 +1546,14 @@
     the virtualizer's measured size, or the declared one.
   -->
   {#snippet bodyRow(row: Row<TData>, rowIndex: number, rowStyle: string)}
-                  {#if opt.isDetailRow?.(row.original as TData, rowIndex)}
+                  {@const phState = ctrl.placeholderStateOf(row)}
+                  {#if phState}
+                    {@const phContinues =
+                      phState === "failed" &&
+                      rowIndex > firstRenderedRowIndex &&
+                      ctrl.placeholderStateOf(allRows[rowIndex - 1]!) === "failed"}
+                    {@render placeholderRowMarkup(row, rowIndex, phState, rowStyle, phContinues)}
+                  {:else if opt.isDetailRow?.(row.original as TData, rowIndex)}
                     {@render detailRowMarkup(row, rowIndex)}
                   {:else if isGroupRow(row) && !groupColumnMode}
                     <tr
@@ -1827,7 +1906,7 @@
     style={chartDockReserveStyle}
     data-move-grab={ctrl.moveGrabHover || ctrl.moveDrag ? "true" : undefined}
     data-selbar={
-      ctrl.selectionBarOn && ctrl.selectionBarTarget.ids.length > 0
+      ctrl.selectionBarVisible
         ? (getSelectionBarView() ? ctrl.selectionBarPosition : `upsell-${ctrl.selectionBarPosition}`)
         : undefined
     }
@@ -3004,7 +3083,7 @@
          `absolute` against it, so moving it outside would anchor it to the
          page. The renderer is Enterprise and arrives through the
          selection-bar-view seam; without it, a short note in its place. -->
-    {#if ctrl.selectionBarOn && ctrl.selectionBarTarget.ids.length > 0}
+    {#if ctrl.selectionBarVisible}
       {#if getSelectionBarView()}
         {@const SelectionBarView = getSelectionBarView()}
         <SelectionBarView {ctrl} />

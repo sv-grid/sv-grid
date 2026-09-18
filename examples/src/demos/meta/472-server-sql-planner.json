@@ -1,0 +1,24 @@
+{
+  "description": "The SQL behind each server-side row model request in a Svelte 5 data grid. planQuery turns a ServerRequest into a QueryPlan against an entity schema, so only declared fields reach the query, and planToSql renders the plan for Postgres, MySQL or SQLite. The panel shows the statements createSqlDataSource would hand your executor for the request that just went out: the grouped or flat rows with WHERE, GROUP BY, ORDER BY, LIMIT and OFFSET, the count, the grand total, and the two statements a server-side pivot needs. The rows come from the in-memory reference source over the same plan.",
+  "keywords": [
+    "svelte grid server side sql query",
+    "svelte grid query plan to sql",
+    "svelte 5 grid group by sql server side",
+    "svelte grid sveltekit sql data source",
+    "svelte grid pivot sql"
+  ],
+  "faq": [
+    {
+      "question": "Where do these statements run in a real app?",
+      "answer": "In a SvelteKit endpoint or any Node handler: createSqlDataSource takes the schema, the table and an execute function for your driver, plans each request the same way and runs exactly these statements with the bound params. Drizzle, pg, mysql2 and better-sqlite3 all fit the executor shape."
+    },
+    {
+      "question": "Why is the pivot two statements?",
+      "answer": "SQL cannot make columns out of values it has not seen. The first statement selects the distinct pivot key paths; the second is the grouped SELECT with one conditional aggregate per key path and aggregation, aliased the way the grid expects them in pivotResultFields."
+    },
+    {
+      "question": "Can a request name a column that is not in the schema?",
+      "answer": "No. planQuery only admits fields the EntitySchema declares, for sorting, filtering, grouping, aggregation and pivoting alike, so the request shape from the browser cannot become an injection or a wildcard read."
+    }
+  ]
+}

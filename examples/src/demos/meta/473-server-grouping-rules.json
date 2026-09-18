@@ -1,0 +1,24 @@
+{
+  "description": "The options around server-side grouping in a Svelte 5 data grid, each with the request log to show what it costs. A grand total row in any of four positions, subtotal footers per group, levels that open on arrival, expand-all that reaches groups not loaded yet, refresh in place versus purge, and the rules for what a sort or a filter re-requests: sorting a plain column re-fetches only the leaf levels, sorting a group column re-fetches that column's level alone, sorting an aggregated column re-fetches every level; a filter purges everything or, with onlyRefreshFilteredGroups, only the groups it touches.",
+  "keywords": [
+    "svelte grid server side grouping options",
+    "svelte grid grand total row server",
+    "svelte 5 grid group footers subtotal server",
+    "svelte grid sort refresh levels server side",
+    "svelte grid expand all groups server"
+  ],
+  "faq": [
+    {
+      "question": "Which levels does a sort re-fetch?",
+      "answer": "By default only the levels a sort can change. A plain column is not on a group row, so only leaf levels re-fetch. A group column changes the order of its own level and nothing beneath it, since the children of a group keep their own order. An aggregated column appears on every group row, so every level re-fetches. sortAllLevels turns the rule off and re-fetches everything."
+    },
+    {
+      "question": "What is the difference between refresh and purge?",
+      "answer": "Refresh re-reads the open levels' loaded blocks in place: expansion, scroll position and row count survive, and the rows update under the user. Purge drops every cached level and starts over from the top level."
+    },
+    {
+      "question": "How does expand everything reach groups that are not loaded?",
+      "answer": "expandAll({ includeUnloaded: true }) sets an auto-expand mode: every group row that arrives from then on opens on arrival, until the next collapseAll. It is the way to open a whole tree without knowing its shape in advance."
+    }
+  ]
+}

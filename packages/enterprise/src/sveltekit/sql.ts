@@ -66,6 +66,37 @@ export type SqlPlan = {
    * grid's scrollbar and paging will be sized from the wrong number.
    */
   countText: string
+  /**
+   * The grand-total statement's pieces, present only when the request asked
+   * for one (`plan.grandTotal`): a SELECT list of every aggregate over the
+   * whole filtered set (aliased like `select`), and a WHERE + params of the
+   * filters WITHOUT the group path. Run it as its own query:
+   *
+   *     SELECT ${sql.grandTotalSelect} FROM sales ${sql.grandTotalWhereText}
+   *
+   * All three are empty when no total was asked for.
+   */
+  grandTotalSelect: string
+  grandTotalWhereText: string
+  grandTotalParams: unknown[]
+  /**
+   * Server-side pivot needs two statements, because SQL cannot make
+   * columns out of values it has not seen yet. First fetch the distinct
+   * key paths: `SELECT ${sql.pivotKeysSelect} FROM t ${sql.whereText}`
+   * (one row per path, columns named after the pivot columns). Then build
+   * the grouped SELECT with `pivotSelect(keyRows)`: one conditional
+   * aggregate per (key path x aggregation), aliased `<key>_<col>` - the
+   * fields the grid expects in `pivotResultFields` (returned alongside).
+   * Key values are inlined as quoted literals; they came from the database
+   * itself. Both are empty when not pivoting.
+   */
+  pivotKeysSelect: string
+  pivotSelect: (keyRows: ReadonlyArray<Record<string, unknown>>) => {
+    select: string
+    fields: string[]
+    /** The same aggregates for the grand-total statement, no group column. */
+    grandTotalSelect: string
+  }
 }
 
 export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
@@ -73,40 +104,57 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
   const useIlike = dialect.ilike ?? false
   const params: unknown[] = []
 
-  const ph = () => {
-    if (dialect.placeholders === '$') return `$${params.length}`
-    if (dialect.placeholders === '@') return `@p${params.length}`
-    return '?'
-  }
-  const bind = (v: unknown): string => {
-    params.push(v)
-    return ph()
-  }
   const columnFor = dialect.column ?? ((f: string) => f)
   const id = (field: string) => {
     const c = columnFor(field)
     return `${q}${c.replace(new RegExp(q, 'g'), q + q)}${q}`
   }
 
-  const like = (field: string, pattern: string): string => {
-    const p = bind(pattern)
-    return useIlike ? `${id(field)} ILIKE ${p}` : `LOWER(${id(field)}) LIKE LOWER(${p})`
+  /**
+   * Render predicates + search into one WHERE body, binding into `into`.
+   * Placeholder numbering follows that array, so a second call with a fresh
+   * array (the grand total) starts from $1 again.
+   */
+  const buildWhere = (preds: PlanPredicate[], into: unknown[]): string => {
+    const ph = () => {
+      if (dialect.placeholders === '$') return `$${into.length}`
+      if (dialect.placeholders === '@') return `@p${into.length}`
+      return '?'
+    }
+    const bind = (v: unknown): string => {
+      into.push(v)
+      return ph()
+    }
+    const like = (field: string, pattern: string): string => {
+      const p = bind(pattern)
+      return useIlike ? `${id(field)} ILIKE ${p}` : `LOWER(${id(field)}) LIKE LOWER(${p})`
+    }
+    const clauses: string[] = []
+    for (const pred of preds) clauses.push(predicateSql(pred, { id, bind, like }))
+    if (plan.search && plan.search.fields.length > 0) {
+      const term = `%${plan.search.term}%`
+      const ors = plan.search.fields.map((f) => like(f, term))
+      clauses.push(`(${ors.join(' OR ')})`)
+    }
+    return clauses.join(' AND ')
   }
 
-  const clauses: string[] = []
-
-  for (const pred of plan.where) {
-    clauses.push(predicateSql(pred, { id, bind, like }))
+  const where = buildWhere(plan.where, params)
+  // A grouped level can only order by what it produces - the key and the
+  // aggregates (under pivot only the key, the aggregates being split per
+  // pivot key); a leaf column there is a SQL error. With nothing left the
+  // key orders the groups, so paging over them is deterministic. Same rule
+  // as the in-memory reference.
+  let order = plan.orderBy
+  if (plan.groupBy) {
+    const produced = new Set<string>([
+      plan.groupBy,
+      ...(plan.pivotBy?.length ? [] : (plan.aggregations ?? []).map((a) => a.field)),
+    ])
+    order = order.filter((o) => produced.has(o.field))
+    if (order.length === 0) order = [{ field: plan.groupBy, desc: false }]
   }
-
-  if (plan.search && plan.search.fields.length > 0) {
-    const term = `%${plan.search.term}%`
-    const ors = plan.search.fields.map((f) => like(f, term))
-    clauses.push(`(${ors.join(' OR ')})`)
-  }
-
-  const where = clauses.join(' AND ')
-  const orderBy = plan.orderBy.map((o) => `${id(o.field)} ${o.desc ? 'DESC' : 'ASC'}`).join(', ')
+  const orderBy = order.map((o) => `${id(o.field)} ${o.desc ? 'DESC' : 'ASC'}`).join(', ')
 
   // ---- Grouping ----------------------------------------------------------
   // `plan.groupBy` is a single column: the grid asks one level at a time and
@@ -124,7 +172,80 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
       // the aggregate from on the group row.
       parts.push(`${expr} AS ${id(agg.field)}`)
     }
+    // What opening the group would show, for the badge beside its key: the
+    // distinct keys of the next level, or the rows when this is the innermost
+    // group level. Always emitted; a caller that does not want the extra
+    // aggregate can drop the alias from the list.
+    parts.push(
+      plan.childGroupBy
+        ? `COUNT(DISTINCT ${id(plan.childGroupBy)}) AS ${id('childCount')}`
+        : `COUNT(*) AS ${id('childCount')}`,
+    )
     select = parts.join(', ')
+  }
+
+  // The grand total aggregates over everything the FILTERS admit, so the
+  // group path (the trailing `pathPredicates` entries of `where`, per
+  // planQuery) is left out.
+  let grandTotalSelect = ''
+  let grandTotalWhereText = ''
+  const grandTotalParams: unknown[] = []
+  if (plan.grandTotal) {
+    grandTotalSelect = (plan.aggregations ?? [])
+      .map((agg) => {
+        const expr = agg.fn === 'count' ? 'COUNT(*)' : `${agg.fn.toUpperCase()}(${id(agg.field)})`
+        return `${expr} AS ${id(agg.field)}`
+      })
+      .join(', ')
+    const filtersOnly = plan.where.slice(0, plan.where.length - (plan.pathPredicates ?? 0))
+    const body = buildWhere(filtersOnly, grandTotalParams)
+    grandTotalWhereText = body ? `WHERE ${body}` : ''
+  }
+
+  // ---- Pivot ------------------------------------------------------------
+  let pivotKeysSelect = ''
+  let pivotSelect: SqlPlan['pivotSelect'] = () => ({ select: '', fields: [], grandTotalSelect: '' })
+  if (plan.groupBy && plan.pivotBy?.length) {
+    const pivotCols = plan.pivotBy
+    const keyList = pivotCols
+      .map((c) => (columnFor(c) === c ? id(c) : `${id(c)} AS ${q}${c}${q}`))
+      .join(', ')
+    pivotKeysSelect = `DISTINCT ${keyList}`
+    pivotSelect = (keyRows) => {
+      // Key paths in plain string order, so the field list (and the
+      // columns the grid builds from it) is the same whatever order the
+      // distinct-keys query returned - and the same as the reference.
+      const pathOf = (row: Record<string, unknown>) => pivotCols.map((c) => String(row[c] ?? '')).join('_')
+      keyRows = [...keyRows].sort((a, b) => {
+        const x = pathOf(a)
+        const y = pathOf(b)
+        return x < y ? -1 : x > y ? 1 : 0
+      })
+      const groupCol = id(plan.groupBy!)
+      const parts = [groupCol]
+      const totals: string[] = []
+      const fields: string[] = []
+      for (const keyRow of keyRows) {
+        const path = pivotCols.map((c) => String(keyRow[c] ?? ''))
+        // The key path as an inline condition. Values are quoted as string
+        // literals with doubled quotes; a caller with typed columns can
+        // rewrite through `pivotSelect` itself.
+        const cond = pivotCols
+          .map((c, i) => `${id(c)} = '${path[i]!.replace(/'/g, "''")}'`)
+          .join(' AND ')
+        for (const agg of plan.aggregations ?? []) {
+          const field = `${path.join('_')}_${agg.field}`
+          const inner = agg.fn === 'count' ? '1' : id(agg.field)
+          const fn = agg.fn === 'count' ? 'COUNT' : agg.fn.toUpperCase()
+          const expr = `${fn}(CASE WHEN ${cond} THEN ${inner} END) AS ${id(field)}`
+          parts.push(expr)
+          totals.push(expr)
+          fields.push(field)
+        }
+      }
+      parts.push(`COUNT(*) AS ${id('childCount')}`)
+      return { select: parts.join(', '), fields, grandTotalSelect: totals.join(', ') }
+    }
   }
 
   // A grouped total is the number of distinct keys, not of underlying rows.
@@ -144,6 +265,11 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     groupBy,
     groupByText: groupBy ? `GROUP BY ${groupBy}` : '',
     countText,
+    grandTotalSelect,
+    grandTotalWhereText,
+    grandTotalParams,
+    pivotKeysSelect,
+    pivotSelect,
   }
 }
 

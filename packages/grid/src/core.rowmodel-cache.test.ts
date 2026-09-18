@@ -119,3 +119,54 @@ describe('row-model cache: selection', () => {
     expect(target.getIsSelected()).toBe(false)
   })
 })
+
+describe('base rows: reuse across a data swap', () => {
+  // The core reads `options.data` and `options.columns` off the object it was
+  // given (the component hands it a reactive one), so a swap is a write there.
+  const grid = () => {
+    const options = {
+      _features: tableFeatures({ rowSelectionFeature }),
+      _rowModels: { coreRowModel: createCoreRowModel<Row>() },
+      columns: COLUMNS as unknown as Array<ColumnDef<ReturnType<typeof tableFeatures>, Row>>,
+      data: makeRows(50),
+      getRowId: (r: Row) => String(r.id),
+    }
+    return { g: createSvGridCore<ReturnType<typeof tableFeatures>, Row>(options), options }
+  }
+
+  it('keeps the row object for a data object that stayed at its index, and rebuilds the rest', () => {
+    const { g, options } = grid()
+    const before = g.getRowModel().rows
+    const data = options.data.slice()
+    // A block landing: forty of fifty entries are the same objects, ten are new.
+    for (let i = 20; i < 30; i += 1) data[i] = { ...data[i]!, name: 'fresh' }
+    options.data = data
+    const after = g.getRowModel().rows
+    expect(after).toHaveLength(50)
+    for (let i = 0; i < 50; i += 1) {
+      if (i >= 20 && i < 30) expect(after[i]).not.toBe(before[i])
+      else expect(after[i]).toBe(before[i])
+    }
+    expect(after[25]!.getCellValueByColumnId('name')).toBe('fresh')
+  })
+
+  it('does not serve a memoised value after the object was changed in place', () => {
+    const { g, options } = grid()
+    const rows = g.getRowModel().rows
+    expect(rows[3]!.getCellValueByColumnId('score')).toBe((3 * 31) % 1000)
+    options.data[3]!.score = 4242
+    options.data = options.data.slice()
+    const again = g.getRowModel().rows
+    expect(again[3]).toBe(rows[3])
+    expect(again[3]!.getCellValueByColumnId('score')).toBe(4242)
+  })
+
+  it('rebuilds every row when the columns change', () => {
+    const { g, options } = grid()
+    const before = g.getRowModel().rows
+    options.columns = [...COLUMNS, { field: 'extra' }] as unknown as typeof options.columns
+    const after = g.getRowModel().rows
+    expect(after[0]).not.toBe(before[0])
+    expect(after[0]!.getAllCells()).toHaveLength(4)
+  })
+})

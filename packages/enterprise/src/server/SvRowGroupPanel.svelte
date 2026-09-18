@@ -12,7 +12,7 @@
       />
 -->
 <script lang="ts">
-  import { GRID_ICON_GLYPHS, type GridIconName, type GridIcons } from './grid-icons'
+  import { GRID_ICON_GLYPHS, type GridIconName, type GridIcons } from '@svgrid/grid'
 
   type Col = { id: string; label: string }
   type Props = {
@@ -31,27 +31,63 @@
      * consistent.
      */
     icons?: GridIcons
+    /**
+     * `'immediate'` (default) calls `onChange` on every edit. `'deferred'`
+     * collects edits in the panel and shows Apply / Cancel, so a server
+     * model reloads once per session of changes rather than once per chip.
+     */
+    applyMode?: 'immediate' | 'deferred'
   }
-  let { columns, groupBy, onChange, placeholder = 'Drag a column here to group by it', icons }: Props = $props()
+  let {
+    columns,
+    groupBy,
+    onChange,
+    placeholder = 'Drag a column here to group by it',
+    icons,
+    applyMode = 'immediate',
+  }: Props = $props()
+
+  // Deferred mode edits a local copy; `groupBy` from outside always wins
+  // over it (a change from elsewhere drops what was pending here).
+  let pending = $state<string[] | null>(null)
+  $effect(() => {
+    void groupBy
+    pending = null
+  })
+  const shown = $derived(pending ?? groupBy)
+  const dirty = $derived(pending !== null && JSON.stringify(pending) !== JSON.stringify(groupBy))
+  function commit(next: string[]) {
+    if (applyMode === 'deferred') pending = next
+    else onChange(next)
+  }
+  function apply() {
+    if (!pending) return
+    const next = pending
+    pending = null
+    onChange(next)
+  }
+  function cancel() {
+    pending = null
+  }
 
   const labelOf = (id: string) => columns.find((c) => c.id === id)?.label ?? id
-  const available = $derived(columns.filter((c) => !groupBy.includes(c.id)))
+  const available = $derived(columns.filter((c) => !shown.includes(c.id)))
 
   let dragIndex = $state<number | null>(null)
 
   function remove(id: string) {
-    onChange(groupBy.filter((g) => g !== id))
+    commit(shown.filter((g) => g !== id))
   }
   function add(id: string) {
-    if (id && !groupBy.includes(id)) onChange([...groupBy, id])
+    if (id && !shown.includes(id)) commit([...shown, id])
   }
   function reorder(to: number) {
     if (dragIndex === null || dragIndex === to) return
-    const next = [...groupBy]
+    const next = [...shown]
     const [moved] = next.splice(dragIndex, 1)
     next.splice(to, 0, moved!)
     dragIndex = null
-    onChange(next)
+    commit(next)
   }
   function onPanelDrop(e: DragEvent) {
     const id = e.dataTransfer?.getData('text/sv-column')
@@ -61,7 +97,7 @@
    *  reusing `reorder()` (via `dragIndex`) so there is a single source of truth for the move. */
   function moveByKeyboard(i: number, delta: number) {
     const to = i + delta
-    if (to < 0 || to >= groupBy.length) return
+    if (to < 0 || to >= shown.length) return
     dragIndex = i
     reorder(to)
   }
@@ -92,10 +128,10 @@
   ondrop={onPanelDrop}
 >
   <span class="sv-rgp-label" aria-hidden="true">Group by:</span>
-  {#if groupBy.length === 0}
+  {#if shown.length === 0}
     <span class="sv-rgp-empty">{placeholder}</span>
   {:else}
-    {#each groupBy as id, i (id)}
+    {#each shown as id, i (id)}
       {#if i > 0}<span class="sv-rgp-sep" aria-hidden="true">{@render ic('breadcrumb-separator')}</span>{/if}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
       <span
@@ -103,7 +139,7 @@
         class:sv-rgp-chip-drag={dragIndex === i}
         role="group"
         tabindex="0"
-        aria-label={`Grouped by ${labelOf(id)}, position ${i + 1} of ${groupBy.length}. Press Alt+Arrow keys to reorder.`}
+        aria-label={`Grouped by ${labelOf(id)}, position ${i + 1} of ${shown.length}. Press Alt+Arrow keys to reorder.`}
         draggable="true"
         ondragstart={() => (dragIndex = i)}
         ondragend={() => (dragIndex = null)}
@@ -126,6 +162,12 @@
       <option value="">+ Group by</option>
       {#each available as c (c.id)}<option value={c.id}>{c.label}</option>{/each}
     </select>
+  {/if}
+  {#if applyMode === 'deferred'}
+    <span class="sv-rgp-apply" role="group" aria-label="Apply grouping">
+      <button type="button" class="sv-rgp-btn sv-rgp-btn-primary" disabled={!dirty} onclick={apply}>Apply</button>
+      <button type="button" class="sv-rgp-btn" disabled={!dirty} onclick={cancel}>Cancel</button>
+    </span>
   {/if}
 </div>
 
@@ -183,4 +225,21 @@
     color: var(--sg-accent, #2563eb);
     cursor: pointer;
   }
+  .sv-rgp-apply { display: inline-flex; gap: 6px; margin-left: auto; }
+  .sv-rgp-btn {
+    font: inherit;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-border, #e2e8f0);
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #0f172a);
+    cursor: pointer;
+  }
+  .sv-rgp-btn-primary {
+    background: var(--sg-accent, #2563eb);
+    border-color: var(--sg-accent, #2563eb);
+    color: var(--sg-on-accent, #fff);
+  }
+  .sv-rgp-btn:disabled { opacity: 0.5; cursor: default; }
 </style>

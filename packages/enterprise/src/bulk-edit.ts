@@ -7,8 +7,10 @@
  */
 
 export type BulkEditField = {
-  /** Column id, which is what the write is addressed by. */
+  /** Column id, which is what a local write is addressed by. */
   id: string
+  /** The row field behind the column, which is what a datasource write is keyed by. */
+  field: string
   /** Header text, or the column id when the header is not a plain string. */
   label: string
   /** The column's editor type, mapped to a form control by the drawer. */
@@ -44,7 +46,7 @@ export function bulkEditableFields(ctx: any): BulkEditField[] {
             : { value: o, label: String(o) },
         )
       : undefined
-    out.push({ id: column.id, label, editorType: String(def.editorType ?? 'text'), options })
+    out.push({ id: column.id, field: String(def.field), label, editorType: String(def.editorType ?? 'text'), options })
   }
   return out
 }

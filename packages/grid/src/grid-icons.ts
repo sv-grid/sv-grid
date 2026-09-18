@@ -97,8 +97,8 @@ export type GridIcons = Partial<Record<GridIconName, Snippet>>
 
 /**
  * Icons whose built-in form is a character rather than an SVG path. Kept as
- * data so `<SvGrid>`, its footer and the standalone `SvRowGroupPanel` render
- * the same defaults instead of three copies drifting apart.
+ * data so `<SvGrid>`, its footer and the row-group panel in @svgrid/enterprise
+ * render the same defaults instead of three copies drifting apart.
  *
  * Each is the exact character that shipped inline before, so a grid that sets
  * no `icons` renders byte-for-byte what it always did.

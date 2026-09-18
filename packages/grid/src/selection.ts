@@ -21,16 +21,45 @@ export function createSelection<
   TData extends RowData = RowData,
 >(ctx: any) {
   function isRowSelected(rowId: string) {
+    const model = ctx.props.rowSelectionModel;
+    if (model) {
+      const row = ctx.allRows.find((r: any) => r.id === rowId);
+      return row ? model.isSelected(rowId, row.original) : false;
+    }
     return Boolean(ctx.rowSelectionState[rowId]);
   }
 
   function toggleRowSelectionById(rowId: string) {
+    const model = ctx.props.rowSelectionModel;
+    if (model) {
+      const row = ctx.allRows.find((r: any) => r.id === rowId);
+      if (!row) return;
+      model.toggle(rowId, row.original, !model.isSelected(rowId, row.original));
+      return;
+    }
     ctx.grid.setRowSelection((prev: any) => ({ ...prev, [rowId]: !prev[rowId] }));
   }
 
   function toggleSelectAllRows() {
-    const selectable = ctx.allRows.filter((row: any) => !isGroupRow(row));
-    const select = ctx.headerSelectionState !== "all";
+    setSelectAllRows(ctx.headerSelectionState !== "all");
+  }
+
+  /**
+   * Select or clear every row, for the header checkbox and for
+   * `api.selectAllRows()`.
+   */
+  function setSelectAllRows(select: boolean) {
+    // An external model decides what "all" means - possibly a million rows
+    // the grid has never seen - so it gets the intent, not a row list.
+    if (ctx.props.rowSelectionModel) {
+      ctx.props.rowSelectionModel.toggleAll(select);
+      return;
+    }
+    // Placeholder rows are excluded: there is no row there to select yet,
+    // and ticking one would leave a selected id that never resolves.
+    const selectable = ctx.allRows.filter(
+      (row: any) => !isGroupRow(row) && !ctx.placeholderStateOf(row),
+    );
     ctx.grid.setRowSelection((prev: any) => {
       const next = { ...prev };
       for (const row of selectable) {
@@ -687,6 +716,7 @@ export function createSelection<
     isRowSelected,
     toggleRowSelectionById,
     toggleSelectAllRows,
+    setSelectAllRows,
     setActiveCell,
     scrollActiveCellIntoView,
     setSelection,

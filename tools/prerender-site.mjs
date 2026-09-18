@@ -556,7 +556,7 @@ function homeCrawlBody(faq) {
     'Kanban board view: the same rows as cards in lanes, drag-and-drop, swimlanes, WIP limits, a card drawer',
     'Scheduler / calendar view: month, week, day, agenda and timeline views, resources, booking rules',
     'Spreadsheet: an Excel-style shell (&lt;SvSheet&gt;) with a ribbon, formula bar, sheet tabs, a formula engine, cell formats, merged cells, comments, data validation, conditional formatting, AutoFilter and sheet protection',
-    'Server-Side Row Model: one getRows contract for paging, sort, filter and race-safe writes, server-side grouping, and SQL / REST / Supabase sources',
+    'Server-Side Row Model: lazy grouping and tree data per level, server-side pivot, transactions, select-all across unloaded rows, and SQL / REST / Supabase sources (flat paging and infinite scroll are free)',
     'Excel (xlsx) and PDF export, styled HTML export, a paginated printable view, Excel / CSV import',
     'Pivot tables with a drag-and-drop Pivot Designer, no-code alert rules, and SvGrid Studio for grid-powered CRUD screens',
   ]

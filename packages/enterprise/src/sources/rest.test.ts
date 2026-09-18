@@ -157,3 +157,74 @@ describe('createRestDataSource server-side grouping', () => {
     expect(p.aggregate).toBeUndefined()
   })
 })
+
+describe('createRestDataSource grand total', () => {
+  it('asks for the total with the aggregate list, and reads it from the envelope', async () => {
+    const { fetch, calls } = mockFetch(() =>
+      jsonResponse({ rows: [{ id: '1', name: 'Ada' }], rowCount: 5, grandTotal: { mrr: 1234 } }),
+    )
+    const src = createRestDataSource<Row>({ url: '/api/customers', fetch })
+    const out = await src.getRows(
+      req({ needsGrandTotal: true, aggregations: [{ col: 'mrr', fn: 'sum' }] }),
+    )
+    const usp = new URLSearchParams(calls[0]!.url.split('?')[1])
+    expect(usp.get('grandTotal')).toBe('1')
+    // A leaf-level request has no `groupBy`, so the aggregate list rides on
+    // the total flag alone - the endpoint still needs to know what to sum.
+    expect(usp.get('aggregate')).toBe('sum:mrr')
+    expect(out.grandTotal).toEqual({ mrr: 1234 })
+  })
+
+  it('leaves grandTotal out of the result when the endpoint did not answer it', async () => {
+    const { fetch } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0 }))
+    const src = createRestDataSource<Row>({ url: '/api/customers', fetch })
+    const out = await src.getRows(req({ needsGrandTotal: true }))
+    expect('grandTotal' in out).toBe(false)
+  })
+
+  it('passes a null total through as "there is none"', async () => {
+    const { fetch } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0, grandTotal: null }))
+    const src = createRestDataSource<Row>({ url: '/api/customers', fetch })
+    const out = await src.getRows(req({ needsGrandTotal: true }))
+    expect(out.grandTotal).toBeNull()
+  })
+
+  it('sends the pivot columns with a grouped request and reads the fields back', async () => {
+    const { fetch, calls } = mockFetch(() =>
+      jsonResponse({ rows: [{ region: 'EMEA', '2024_amount': 1, '2025_amount': 2 }], rowCount: 1, pivotResultFields: ['2024_amount', '2025_amount'] }),
+    )
+    const src = createRestDataSource<Row>({ url: '/api/sales', fetch })
+    const out = await src.getRows(
+      req({ groupBy: ['region'], groupKeys: [], aggregations: [{ col: 'amount', fn: 'sum' }], pivotBy: ['year'], pivotMode: true }),
+    )
+    const usp = new URLSearchParams(calls[0]!.url.split('?')[1])
+    expect(usp.get('groupBy')).toBe('region')
+    expect(usp.get('pivot')).toBe('year')
+    expect(out.pivotResultFields).toEqual(['2024_amount', '2025_amount'])
+  })
+
+  it('sends no pivot outside pivot mode or at the leaf level', async () => {
+    const { fetch, calls } = mockFetch(() => jsonResponse({ rows: [], rowCount: 0 }))
+    const src = createRestDataSource<Row>({ url: '/api/sales', fetch })
+    await src.getRows(req({ groupBy: ['region'], groupKeys: [], pivotBy: ['year'] }))
+    await src.getRows(req({ groupBy: ['region'], groupKeys: ['EMEA'], pivotBy: ['year'], pivotMode: true }))
+    expect(new URLSearchParams(calls[0]!.url.split('?')[1]).has('pivot')).toBe(false)
+    expect(new URLSearchParams(calls[1]!.url.split('?')[1]).has('pivot')).toBe(false)
+  })
+
+  it('reports an unknown count for a full block without a total, and the end for a short one', async () => {
+    const full = Array.from({ length: 10 }, (_, i) => ({ id: String(i), name: 'x' }))
+    const { fetch } = mockFetch((url) => jsonResponse(url.includes('offset=40') ? full.slice(0, 3) : full))
+    const src = createRestDataSource<Row>({ url: '/api/customers', fetch })
+    // No Content-Range, no envelope: a full block says nothing about the end.
+    expect((await src.getRows(req({}))).rowCount).toBe(-1)
+    // Three rows where ten were asked for: the end is at 43.
+    expect((await src.getRows(req({ startRow: 40, endRow: 50, pageIndex: 4 }))).rowCount).toBe(43)
+  })
+
+  it('does the same for an envelope without a count', async () => {
+    const { fetch } = mockFetch(() => jsonResponse({ data: [{ id: '1', name: 'Ada' }] }))
+    const src = createRestDataSource<Row>({ url: '/api/customers', fetch })
+    expect((await src.getRows(req({}))).rowCount).toBe(1)
+  })
+})

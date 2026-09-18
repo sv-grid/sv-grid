@@ -56,9 +56,16 @@ const SOURCES = [
       'chart-export.ts', 'scheduler-ical.ts', 'duration.ts',
       'datetime/date-core.ts', 'datetime/timezone.ts',
       'datetime/mask.ts', 'datetime/date-format.ts', 'datetime/date-restrict.ts',
+      // Server-side data: the datasource contract every backend implements,
+      // the flat controller, the block cache and the row-model adapter shape.
+      'server-data-source.ts', 'server-block-cache.ts', 'row-model.ts',
     ] },
   { pkg: '@svgrid/enterprise',       dir: 'packages/enterprise/src',
-    files: ['export.ts', 'pivot.ts', 'pivot-chart.ts', 'import.ts', 'install.ts'] },
+    files: [
+      'export.ts', 'pivot.ts', 'pivot-chart.ts', 'import.ts', 'install.ts',
+      // The Server-Side Row Model and what runs beside it.
+      'server/server-row-model.ts', 'server/server-selection.ts', 'server/server-pivot.ts', 'server/svgrid-adapter.ts',
+    ] },
 ]
 const OUT_DIR = 'docs/reference/auto'
 

@@ -1577,6 +1577,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
   let cachedBaseRowsInput: ReadonlyArray<TData> | null = null
   let cachedBaseRowsColumns: Array<Column<TData>> | null = null
   let cachedBaseRows: Array<Row<TData>> = []
+  let cachedRowCtx: BaseRowCtx<TData> | null = null
   let cachedRowModel: RowModel<TData> | null = null
   let cachedRowModelBaseRows: Array<Row<TData>> | null = null
   let cachedPipeline = options._rowModels
@@ -1786,22 +1787,35 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
     getRowModel() {
       const columns = grid.getAllColumns()
       if (cachedBaseRowsInput !== options.data || cachedBaseRowsColumns !== columns) {
+        // Same columns as last time: the shared context still describes them,
+        // and a row whose data object sits at the same index can keep its
+        // row object. A row model that streams blocks hands the grid a new
+        // array of 60k entries per block where 100 changed; building 60k
+        // fresh row objects each time was most of the cost of a block
+        // landing. The reused row drops its memoised values and cells, since
+        // an app may have changed the object in place before passing a new
+        // array - that is the case the old rebuild covered by accident.
+        const previous = cachedBaseRowsColumns === columns && cachedRowCtx ? cachedBaseRows : null
         cachedBaseRowsInput = options.data
         cachedBaseRowsColumns = columns
         // O(1) column-id → index lookup so getCellValueByColumnId doesn't do
         // a linear `findIndex` on every cell read (was O(rows × cells × cols)).
-        const columnIndexById = new Map<string, number>()
-        for (let i = 0; i < columns.length; i++) columnIndexById.set(columns[i]!.id, i)
-        const columnCount = columns.length
-
-        // One shared context for every row in this table, so a row carries a
-        // pointer rather than a closure scope. See BASE_ROW_METHODS.
-        const rowCtx: BaseRowCtx<TData> = {
-          grid: grid as SvGrid<TData>,
-          store,
-          columns,
-          columnCount,
-          columnIndexById,
+        let rowCtx: BaseRowCtx<TData>
+        if (previous && cachedRowCtx) {
+          rowCtx = cachedRowCtx
+        } else {
+          const columnIndexById = new Map<string, number>()
+          for (let i = 0; i < columns.length; i++) columnIndexById.set(columns[i]!.id, i)
+          // One shared context for every row in this table, so a row carries a
+          // pointer rather than a closure scope. See BASE_ROW_METHODS.
+          rowCtx = {
+            grid: grid as SvGrid<TData>,
+            store,
+            columns,
+            columnCount: columns.length,
+            columnIndexById,
+          }
+          cachedRowCtx = rowCtx
         }
 
         cachedBaseRows = new Array(options.data.length)
@@ -1817,6 +1831,13 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         }
         for (let index = 0; index < options.data.length; index++) {
           const original = options.data[index]!
+          const kept = previous?.[index] as BaseRowState<TData> | undefined
+          if (kept && kept.original === original) {
+            kept[ROW_VALUES] = null
+            kept[ROW_CELLS] = null
+            cachedBaseRows[index] = kept
+            continue
+          }
           // `_values` and `_cells` stay null until something reads them - a
           // 100k-row grid showing twenty rows must not materialise every row's
           // values or cell objects to paint.

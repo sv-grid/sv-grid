@@ -35,8 +35,12 @@ export type RestDataSourceConfig<TData extends RowData> = {
   query?: Record<string, string>
   /** Build read query params from the grid request. Override for bespoke APIs. */
   buildQuery?: (request: ServerRequest) => Record<string, string>
-  /** Parse a read response body into rows + total. Override for bespoke shapes. */
-  parse?: (body: unknown, response: Response) => ServerResult<TData>
+  /**
+   * Parse a read response body into rows + total. Override for bespoke
+   * shapes. Receives the request too, so a parser can tell a short last
+   * block from a full one when the API sends no total.
+   */
+  parse?: (body: unknown, response: Response, request: ServerRequest) => ServerResult<TData>
 }
 
 const encodePredicate = (p: NormalizedPredicate): string => {
@@ -82,20 +86,56 @@ function defaultBuildQuery(request: ServerRequest): Record<string, string> {
     const aggs = request.aggregations ?? []
     if (aggs.length) params.aggregate = aggs.map((a) => `${a.fn}:${a.col}`).join(',')
   }
+  // The grid wants a grand-total row it does not have yet. An endpoint that
+  // supports it answers with `grandTotal` in the body (the aggregates over
+  // the filtered set, path excluded); one that does not simply ignores the
+  // flag and the grid shows no total. The aggregate list is sent either
+  // way, so a leaf-level request still says what to total.
+  if (request.needsGrandTotal) {
+    params.grandTotal = '1'
+    const aggs = request.aggregations ?? []
+    if (aggs.length && !params.aggregate) params.aggregate = aggs.map((a) => `${a.fn}:${a.col}`).join(',')
+  }
+  // Pivot: the columns whose values become fields, on a grouped request.
+  // The endpoint answers with the pivoted fields on each group row and
+  // lists them in `pivotResultFields`; see the SQL source for the shape.
+  //
+  //   ?groupBy=region&aggregate=sum:amount&pivot=year,quarter
+  if (request.pivotMode && request.pivotBy?.length && params.groupBy) {
+    params.pivot = request.pivotBy.join(',')
+  }
   return params
 }
 
-function defaultParse<TData>(body: unknown, response: Response): ServerResult<TData> {
+/**
+ * The count when the API sent none: a short block is the last one, so the
+ * end is known; a full block says nothing, so the count is unknown (`-1`)
+ * and an infinite-scrolling grid discovers the end from a later short
+ * block. Claiming `rows.length` would tell a pager there is one page.
+ */
+function countWithoutTotal(rows: ReadonlyArray<unknown>, request: ServerRequest): number {
+  const asked = Math.max(1, request.endRow - request.startRow)
+  return rows.length < asked ? request.startRow + rows.length : -1
+}
+
+function defaultParse<TData>(body: unknown, response: Response, request: ServerRequest): ServerResult<TData> {
   if (Array.isArray(body)) {
     // Total from a Content-Range header (`items 0-9/240`) when present.
     const range = response.headers.get('content-range')
     const total = range && /\/(\d+)\s*$/.exec(range)
-    return { rows: body as TData[], rowCount: total ? Number(total[1]) : body.length }
+    return { rows: body as TData[], rowCount: total ? Number(total[1]) : countWithoutTotal(body, request) }
   }
   const b = (body ?? {}) as Record<string, unknown>
+  // `grandTotal` rides along in an envelope body when the endpoint answered
+  // the request for one. Absent means "keep what you have", `null` means
+  // "there is none" - the same three-way contract as ServerResult.
+  const grandTotal =
+    'grandTotal' in b ? { grandTotal: (b.grandTotal ?? null) as TData | null } : {}
   const rows = (b.rows ?? b.data ?? b.items ?? []) as TData[]
-  const rowCount = Number(b.rowCount ?? b.total ?? b.count ?? rows.length)
-  return { rows, rowCount }
+  const declared = b.rowCount ?? b.total ?? b.count
+  const rowCount = declared == null ? countWithoutTotal(rows, request) : Number(declared)
+  const pivot = Array.isArray(b.pivotResultFields) ? { pivotResultFields: b.pivotResultFields as string[] } : {}
+  return { rows, rowCount, ...grandTotal, ...pivot }
 }
 
 export function createRestDataSource<TData extends RowData>(
@@ -126,7 +166,7 @@ export function createRestDataSource<TData extends RowData>(
       const qs = new URLSearchParams({ ...config.query, ...buildQuery(request) }).toString()
       const url = qs ? `${base}?${qs}` : base
       const { body, res } = (await send(url, { headers: headers() })) as { body: unknown; res: Response }
-      return parse(body, res)
+      return parse(body, res, request)
     },
 
     async createRow(input: Partial<TData>): Promise<TData> {

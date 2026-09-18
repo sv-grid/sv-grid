@@ -208,9 +208,21 @@
       }
     },
     {
-      "feature": "Server-side row model",
+      "feature": "Server-side data, flat (sort, filter, paging, infinite scroll)",
       "svgrid": {
         "status": "yes"
+      },
+      "competitor": {
+        "status": "no",
+        "note": "not a plugin",
+        "source": "sht-docs"
+      }
+    },
+    {
+      "feature": "Server-side row model (lazy grouping, tree, pivot, transactions, select-all across unloaded rows)",
+      "svgrid": {
+        "status": "paid",
+        "note": "@svgrid/enterprise"
       },
       "competitor": {
         "status": "no",

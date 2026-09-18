@@ -24,6 +24,7 @@
     "audit:mobile": "node tools/audit-mobile.mjs",
     "size": "node packages/grid/scripts/measure-size.mjs",
     "size:json": "node packages/grid/scripts/measure-size.mjs --json",
+    "size:why": "node packages/grid/scripts/attribute-size.mjs",
     "sbom": "node tools/build-sbom.mjs",
     "sbom:check": "node tools/build-sbom.mjs --check",
     "plugin:sync": "node tools/sync-plugin.mjs",

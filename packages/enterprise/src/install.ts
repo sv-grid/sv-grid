@@ -34,6 +34,7 @@ import { enableSelectionBar } from './selection-bar'
 import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
 import { enableSheet } from './sheet-enable'
+import { enableServerRowModel } from './server/enable'
 
 /** The `api.ai.*` namespace added by the enterprise install. */
 export type EnterpriseAIApi<TData extends RowData> = {
@@ -150,6 +151,9 @@ export function installEnterprise<
   // grid interprets a key itself only when nothing claims it, so a free grid
   // is unaffected.
   enableSheet()
+  // Raise the soft gate for the server-side row model. No registry to fill -
+  // the model hands the grid ordinary rows - so this only nudges when unlicensed.
+  enableServerRowModel()
   pro.pivot = {
     build: (config) =>
       createPivotModel<TFeatures, TData>(pro.getData(), config),

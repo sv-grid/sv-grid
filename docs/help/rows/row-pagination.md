@@ -71,10 +71,13 @@ The wrapper renders a footer with page nav and a page-size selector.
 
 The wrapper's footer renders 10 / 25 / 50 / 100 in the size selector
 and lets the user change it at runtime. Jumping to a page from outside
-or driving a server-side fetcher is best done by hiding the built-in
-footer (`showPagination={false}`) and rendering your own controls -
-see the [`09-server-side` demo](../../../examples/src/demos/09-server-side.svelte)
-for the canonical pattern.
+is best done by hiding the built-in footer (`showPagination={false}`)
+and rendering your own controls - see the
+[`09-server-side` demo](../../../examples/src/demos/09-server-side.svelte)
+for the canonical pattern. A server-side fetcher keeps the footer: hand
+`createServerDataSource` to the grid as `rowModel` and the pager reads the
+server's count and drives the controller's `setPage` - see
+[Server paging](../server/server-paging.md).
 
 ## Page size
 

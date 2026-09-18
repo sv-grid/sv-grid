@@ -20,18 +20,16 @@ const SRC = join(process.cwd(), 'src')
 const read = (f: string) => readFileSync(join(SRC, f), 'utf8')
 
 /** Files that render grid chrome and therefore must go through the seam. */
-const CHROME = ['SvGrid.svelte', 'GridMenus.svelte', 'GridFooter.svelte', 'SvRowGroupPanel.svelte']
+const CHROME = ['SvGrid.svelte', 'GridMenus.svelte', 'GridFooter.svelte']
 
 /**
  * Drop the regions allowed to contain raw icon markup: the `icon` snippet's own
- * body (which IS the built-in set), the `ic` snippet in SvRowGroupPanel, and
- * every `<script>` block.
+ * body (which IS the built-in set) and every `<script>` block.
  */
 function stripAllowedRegions(src: string): string {
   let out = src.replace(/<script[\s\S]*?<\/script>/g, '')
   // The built-in catalogue: from the snippet header to its closing tag.
   out = out.replace(/\{#snippet icon\(name: GridIconName\)\}[\s\S]*?\n\{\/snippet\}/g, '')
-  out = out.replace(/\{#snippet ic\(name: GridIconName\)\}[\s\S]*?\{\/snippet\}/g, '')
   return out
 }
 

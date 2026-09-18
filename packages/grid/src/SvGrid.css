@@ -463,6 +463,79 @@
   user-select: text;
 }
 
+/* Rows whose data has not arrived yet (server-side / infinite loading).
+
+   The shimmer is per CELL, not per row, so the columns keep their widths
+   and the table does not reflow as blocks land. Widths vary a little by
+   column position so a screenful of them reads as text rather than as a
+   barcode - the same trick every skeleton screen uses. */
+.sv-grid-placeholder-cell {
+  user-select: none;
+  cursor: default;
+}
+/* The per-cell shimmer of a placeholder row. Its own name: `.sv-grid-skeleton`
+   above is the full-body loading overlay, absolutely positioned under the
+   header, and sharing it pulled every placeholder cell's bar up there. */
+.sv-grid-placeholder-skeleton {
+  display: inline-block;
+  width: 72%;
+  height: 9px;
+  border-radius: 5px;
+  vertical-align: middle;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sg-fg, #0f172a) 8%, transparent) 25%,
+    color-mix(in srgb, var(--sg-fg, #0f172a) 3%, transparent) 50%,
+    color-mix(in srgb, var(--sg-fg, #0f172a) 8%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: sv-grid-skeleton-shimmer 1.2s linear infinite;
+}
+.sv-grid-placeholder-cell:nth-child(2n) .sv-grid-placeholder-skeleton { width: 54%; }
+.sv-grid-placeholder-cell:nth-child(3n) .sv-grid-placeholder-skeleton { width: 84%; }
+@keyframes sv-grid-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv-grid-placeholder-skeleton { animation: none; }
+}
+
+/* A block that failed to load: one message across the row, and a way out.
+   The cell stays a table cell so its colspan holds; the flex box is inside
+   it (a flex `td` stops spanning and the tint shrank to the text). Rows
+   that continue a failed run are the same band without the message. */
+.sv-grid-placeholder-failed .sv-grid-placeholder-cell {
+  background: color-mix(in srgb, var(--sg-danger, #dc2626) 6%, transparent);
+}
+.sv-grid-placeholder-failed-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 100%;
+  padding-left: var(--sg-cell-px, 7px);
+}
+.sv-grid-placeholder-failed-cont .sv-grid-placeholder-cell {
+  border-top-color: transparent;
+}
+.sv-grid-placeholder-error {
+  color: var(--sg-danger, #dc2626);
+  font-size: 13px;
+}
+.sv-grid-placeholder-retry {
+  background: none;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: var(--sg-radius, 6px);
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--sg-fg, #0f172a);
+  cursor: pointer;
+}
+.sv-grid-placeholder-retry:hover {
+  background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent);
+}
+
 /* Pinned columns read as "frozen" via three layered cues:
      1. A distinct fill (slightly stronger than the header) so the
         pinned strip is visible even before you scroll. Themes with a

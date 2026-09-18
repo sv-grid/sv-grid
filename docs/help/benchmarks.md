@@ -306,6 +306,22 @@ Demo [33. Server-side infinite scroll](https://svgrid.com/demos/33-server-infini
 | Scroll 50,000 rows in 1.5 s (fast wheel-flick)   | 16 chunk requests cancelled mid-flight  |
 | Sort 100k server-side rows                       | round-trip dominated by the mock latency (50-140 ms) |
 
+### The Server-Side Row Model over one million rows
+
+Demo [467](https://svgrid.com/demos/467-server-row-model-1m/) runs the
+Enterprise row model over a columnar in-memory warehouse of a million rows,
+grouped Region > Country. `tests/perf/server-row-model.spec.ts` drives it in
+headless Chromium (a developer workstation, 17 September 2026; a release
+ritual, not a gate):
+
+| Scenario                                                      | Result                                        |
+| ------------------------------------------------------------- | --------------------------------------------- |
+| First paint, navigation to the first group row (includes building the warehouse in the page) | 2.4 s |
+| Scroll 60,000 px through an open country of 62,000 leaves     | 17 leaf requests, 0.28 per 1,000 px (one block of 100 rows is 3,400 px) |
+| Worst frame while blocks streamed in                          | 83 ms (layout of the changed rows; the grid keeps the row objects a block did not touch) |
+| Heap before / after streaming 700,000 px with `maxBlocksInCache: 24` | 225 MB / 225 MB - evicted blocks are collected |
+| Warehouse: a million rows as typed arrays                     | 22 MB; a cold sort on a new column 0.8 to 1.1 s, cached after; a grouped level 140 ms; a pivot with a grand total 330 ms |
+
 ## AI helpers
 
 End-to-end timings against the bundled `mockAIProvider`:

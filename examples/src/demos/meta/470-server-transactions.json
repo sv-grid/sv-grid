@@ -1,0 +1,24 @@
+{
+  "description": "Server-side transactions in a Svelte 5 data grid: a live feed of changes the server already made, applied to the grid without a refetch. A price tick patches the loaded row in place with updateRowData and a cell flash; a new order lands at the top of its warehouse and a shipped one leaves through applyTransactionAsync, batched every 500 ms and addressed by route. Every result carries a status the log shows: applied, cancelled when the veto hook rejects adds, storeNotFound for a warehouse whose level is not cached. Group sums are not recomputed by a transaction; a refresh of the top level does that.",
+  "keywords": [
+    "svelte server side transactions",
+    "svelte grid apply transaction async",
+    "svelte grid websocket updates server row model",
+    "svelte 5 grid update row in place flash",
+    "svelte grid batched transactions"
+  ],
+  "faq": [
+    {
+      "question": "When is a transaction applied, and when is it storeNotFound?",
+      "answer": "A transaction targets a route, the path of group keys. If that level is cached, the add, update and remove are applied to its block cache and the result is applied. If the level is not cached, because it was never expanded or was collapsed with purgeClosedGroups on, the result is storeNotFound and nothing changes; the next expand reads the level from the server, which already has the change."
+    },
+    {
+      "question": "What is the difference between updateRowData and a transaction?",
+      "answer": "updateRowData patches one loaded row by id, on whatever level holds it, synchronously and without batching; it is the path for socket-driven ticks. A transaction adds, updates or removes rows at one route and can be queued with applyTransactionAsync, which batches everything received within asyncTransactionWaitMs into one flush."
+    },
+    {
+      "question": "Why do the warehouse totals not change with the feed?",
+      "answer": "A transaction changes rows, not aggregates, the same rule other server-side row models follow. Refresh totals re-reads the top level, where the server recomputes the sums."
+    }
+  ]
+}

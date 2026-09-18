@@ -130,7 +130,7 @@ Re-derive the numbers yourself: `pnpm size` and `pnpm demos:count`.
 - **Selection.** Cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, drag a selected range by its border to move it (`moveCells`), edge auto-scroll while dragging, row selection.
 - **Views.** Row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas, plus Kanban board and scheduler/calendar views.
 - **Layout.** Row + column pinning, sticky header + first column, header drag-to-reorder, opt-in drag handles for row and column sizing (`rowResize` / `columnResize`, each loaded only when enabled), keyboard-accessible column sizing, responsive mode for mobile.
-- **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
+- **Operations.** Find in grid (Ctrl+F), undo / redo (Ctrl+Z), transaction API, optimistic updates, server-side data with sort / filter / paging / infinite-scroll pushdown (lazy grouping, tree, pivot and transactions on the server are in `@svgrid/enterprise`).
 - **Charts, free.** A chart panel on the grid's rows and a standalone `SvChart`: 29 SVG types from bar to candlestick, sunburst and chord, a configurable axis model, wheel / pinch / pan zoom with presets, synchronized charts, drilldown, decimation for 50,000-point series, eight technical indicators with stacked panes, drawing tools, a builder with live thumbnails, and PNG / SVG / PDF / CSV export. No charting library.
 - **AI helpers, free.** Natural-language filter, smart fill, summarize, classify, anomaly detection, and "chart this". Model-agnostic: you register one provider, nothing is bundled.
 - **UI components.** A Svelte 5 component suite ships in the same package (inputs, selection, date/time, overlays, layout, feedback), usable standalone or as grid cell editors.
@@ -236,8 +236,9 @@ what lets it skip the abstraction layer a cross-version grid would need.
 ### How many rows can it handle?
 
 100k rows x 100 columns scroll smoothly on the client thanks to row and column virtualization, and only
-the visible window is ever in the DOM. Past that, use the server-side row model, which pushes sorting,
-filtering, and grouping to your backend.
+the visible window is ever in the DOM. Past that, use server-side data: the free controller pushes sorting,
+filtering and paging (or infinite block scroll) to your backend, and the Enterprise server-side row
+model adds lazy grouping, tree, pivot, transactions and selection across unloaded rows.
 
 ### How big is the bundle?
 
@@ -293,7 +294,7 @@ Honest list:
 - Custom filter / floating-filter component slot. Filters are configurable but not yet pluggable as your own component. Medium effort.
 - Custom tool panels. The tool panel is a fixed Columns + Filters pair. Medium effort.
 - Integrated-chart depth is **done**, builder included. 29 chart types, a configurable axis model (numeric x, min / max / ticks / formatters / grid lines, reference bands), wheel / pinch / pan zoom with range presets, synchronized charts, a context menu, animation, drilldown, point selection, decimation for 50,000-point series, eight technical indicators with stacked panes, drawing tools, a last-price line and event flags, PNG / SVG / PDF / CSV export and print, and an in-panel builder (type gallery with live thumbnails, data pickers, a Format tab, link / unlink) all ship free, plus a standalone `<sv-chart>` element with React / Vue / Angular wrappers. Not built: maps, network graphs, 3D, a canvas renderer.
-- Server-side pivot and a viewport row model. The server-side row model does sort / filter / group / infinite today. Large effort.
+- A viewport row model (the server pushes the visible window over a socket). The server-side row model does sort / filter / infinite scroll / lazy grouping / tree / pivot / transactions / select-all across unloaded rows today. Medium effort.
 - A formula language of our own. `createHyperFormulaSheet` ships in the package so you can bring HyperFormula, and there are in-grid formula demos, but the engine itself is not ours and there is no formula bar.
 - Custom calendar systems (Hijri, Buddhist, fiscal year) for the date editor. Gregorian dates / times / datetimes are built in.
 

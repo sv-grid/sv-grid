@@ -1,8 +1,8 @@
 # Enterprise feature pack
 
 `@svgrid/enterprise` is a paid add-on for `@svgrid/grid`. It bolts onto
-the same `<SvGrid>` you already have and adds three feature areas: data
-export, data import, and pivot tables. (The AI helpers are built in and
+the same `<SvGrid>` you already have and adds four feature areas: the
+server-side row model, data export, data import, and pivot tables. (The AI helpers are built in and
 **free** in `@svgrid/grid` - see [AI assistant](../help/ai.md).)
 
 ![The @svgrid/enterprise pack bolts data export, data import, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
@@ -81,6 +81,19 @@ aggregators (sum/avg/min/max/count/countDistinct/first/last) or
 custom, grand-total row + column, subtotals, custom axis sort.
 
 Demo: [52 pivot table + designer](../../examples/src/demos/52-pivot-table.svelte).
+
+### [Server-Side Row Model](../help/server/server-grouping.md)
+
+`createServerRowModel(source, options)` runs over the free datasource
+contract (`ServerDataSource.getRows`) and hands the grid one `rowModel`
+prop: lazy grouping and tree data one level at a time with a block cache
+per level, aggregates, child counts and grand totals, server-side pivot
+with `SvPivotDesigner` in server mode, transactions on loaded rows,
+paging over the tree, and a selection kept as a rule so select-all
+reaches rows the grid never loaded, with a bulk edit by rule. Flat paging
+and infinite scroll stay free in `@svgrid/grid`.
+
+Demo: [467 one million rows](../../examples/src/demos/467-server-row-model-1m.svelte).
 
 ## Licensing
 

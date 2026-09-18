@@ -274,7 +274,7 @@ const PROP_RENAMES: Record<string, string> = {
 
 const PROP_RENAME_NOTES: Record<string, string> = {
   defaultColDef: 'SvGrid has no shared column default; set the key on each column, or map over your columns to add it.',
-  rowModelType: 'SvGrid always renders from `data`. For server-side paging/sorting, build the rows with `createServerDataSource` and feed its result into `data`.',
+  rowModelType: 'SvGrid has no row-model switch. Build the rows with `createServerDataSource` and pass the controller as `rowModel` - add `mode: "infinite"` for block-loaded scrolling. Server-side grouping, tree data, pivot, transactions and selection across unloaded rows are `createServerRowModel` in @svgrid/enterprise, on the same contract and the same prop.',
   theme: 'Themes are stylesheets, not a prop: import one, e.g. `import "@svgrid/grid/themes/shadcn.css"`.',
 }
 

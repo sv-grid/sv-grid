@@ -160,6 +160,15 @@ const { values, mixed } = bulkEditInitialValues(ctrl, fields) // what to show
 const { changed, skipped, fields: n } = applyBulkEdit(ctrl, { status: 'Done', points: 8 })
 ```
 
+## On a server-side row model
+
+Under `<SvGrid rowModel={ctl}>` with the Enterprise row model's selection
+turned on, the bar reads the model instead of the loaded rows: the count
+chip says what the rule selects - a million under select-all, even with
+twenty rows on screen - and **Edit fields** sends the patch and the rule
+to the datasource's `updateWhere` as one request, rather than writing the
+loaded cells. See [Server selection](../server/server-selection.md).
+
 ## Where it floats
 
 `position` pins the bar to the `'bottom'` (default) or `'top'` edge of the
@@ -275,5 +284,6 @@ layout.
 ## See also
 
 - [Row selection](../accessibility.md)
+- [Server selection](../server/server-selection.md) - the bar over a million rows the grid never loaded
 - [Kanban board mode](./kanban-board.md)
 - [Scheduler](./scheduler.md)

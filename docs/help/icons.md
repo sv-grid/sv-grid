@@ -164,9 +164,9 @@ holds the defaults.
 
 ## Components you mount yourself
 
-`SvGroupCell` and `SvRowGroupPanel` are exported so you can place them
-in your own markup, which means they never see the grid's `icons`.
-Pass the same object to them:
+`SvGroupCell` and `SvRowGroupPanel` (from `@svgrid/enterprise`) are exported
+so you can place them in your own markup, which means they never see the
+grid's `icons`. Pass the same object to them:
 
 ```svelte
 <SvRowGroupPanel {columns} {groupBy} {onChange} {icons} />

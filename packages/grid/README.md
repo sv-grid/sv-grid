@@ -92,7 +92,7 @@ all wire up the moment you turn on the matching prop.
 - **Selection** - cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
 - **Views** - row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas.
 - **Layout** - row + column pinning, sticky header + first column, header drag-to-reorder, autosize, keyboard-accessible column sizing, zebra rows, responsive mode.
-- **Data operations** - find in grid (Ctrl+F), undo / redo, transaction API, optimistic updates, server-side row model with sort / filter / group pushdown.
+- **Data operations** - find in grid (Ctrl+F), undo / redo, transaction API, optimistic updates, server-side data with sort / filter / paging / infinite-scroll pushdown (lazy grouping, tree, pivot and transactions on the server are in `@svgrid/enterprise`).
 - **AI helpers, free** - natural-language filter, smart fill, summarize, classify, anomaly detection, and "chart this". Model-agnostic: register one provider, nothing is bundled.
 - **UI components** - a Svelte 5 component suite ships in the package (inputs, selection, date/time, overlays, layout, feedback), standalone or as grid cell editors.
 - **Accessibility** - WAI-ARIA grid roles, full keyboard navigation, RTL, high-contrast theme.
@@ -154,8 +154,8 @@ See [Use sv-grid docs as LLM context](https://svgrid.com/docs/help/llm-grounding
 ## Enterprise features
 
 The MIT core is free for any use, including commercial, with **no feature gating**. Sorting, filtering,
-editing, virtualization, the **server-side row model**, and the **AI helpers** all ship in the free
-package. The optional [`@svgrid/enterprise`](https://www.npmjs.com/package/@svgrid/enterprise) pack layers
+editing, virtualization, **server-side data** (paging, infinite block scroll, sort, filter, CRUD) and the
+**AI helpers** all ship in the free package. The optional [`@svgrid/enterprise`](https://www.npmjs.com/package/@svgrid/enterprise) pack layers
 on the export- and analytics-heavy features teams tend to need last:
 
 - **Excel / PDF / CSV / TSV / HTML export** plus paginated print.

@@ -11,6 +11,17 @@ client and onto your API. Three flavours, ranked by complexity:
    slots you haven't loaded yet; you fetch chunks as the user scrolls
    through them, with debounce + cancellation.
 
+All three are patterns you can assemble over the grid's props. The
+packaged version is the [Server-Side Row Model](./server/server-row-model.md):
+one `getRows` contract, `createServerDataSource` for paging or
+[infinite block scroll](./server/server-infinite-scroll.md) (free), and
+`createServerRowModel` for [lazy grouping](./server/server-grouping.md),
+tree, [pivot](./server/server-pivot.md),
+[transactions](./server/server-transactions.md) and
+[selection across unloaded rows](./server/server-selection.md) (Enterprise),
+all mounted through `<SvGrid rowModel={ctl} />`. This page is the
+any-backend fallback: the same shapes, wired by hand.
+
 ![The SvGrid emits a request with sort, filter, and page state to your ServerDataSource, which queries the backend and returns rows and a total back to the grid.](/docs-media/grid-server-row-model.svg)
 
 > Live demos: **#33 Server-side infinite scroll** is the production
@@ -147,8 +158,12 @@ Notes:
 ## Option 3: sparse infinite scroll
 
 The most polished pattern - the user scrolls a "1,000,000 rows" grid
-that pulls slices on demand. Demo #33 above is the canonical
-implementation; the engine of it boils down to:
+that pulls slices on demand. `createServerDataSource({ mode: 'infinite' })`
+is this pattern packaged, with an LRU block cache, retry and an
+unknown-count mode; see
+[Server-side infinite scroll](./server/server-infinite-scroll.md). Demo #33
+above is the hand-wired version, for a backend the contract does not fit;
+the engine of it boils down to:
 
 ```ts
 // Sparse rows: one placeholder per unloaded slot, real Transaction per loaded.
@@ -227,10 +242,11 @@ has an empty `id`; the snippet checks that.
 | Group + aggregate | Send `{ groupBy: string[], aggregators: Record<col, 'sum'|'avg'|'count'|...> }`. Build a `GROUP BY` per dimension and a `SELECT SUM(col)` per aggregator. |
 | Search            | Concatenate the searchable fields server-side: `WHERE field1 || ' ' || field2 ILIKE '%' || $1 || '%'`. |
 
-Pivot is intentionally NOT on this list - the pivot engine in
-[pivot.md](./pivot.md) is designed for in-memory facts. For server-side
-pivots, compute the pivoted result server-side and feed `PivotedRow[]`
-straight into the demo's render pipeline.
+Pivot by hand is not on this list - the pivot engine in [pivot.md](./pivot.md)
+is designed for in-memory facts. Pivoting on the server is the Enterprise
+row model's job: the request carries `pivotBy`, the backend answers with
+the pivoted fields, and the grid builds the columns from them. See
+[Server pivot](./server/server-pivot.md).
 
 ## Error handling
 
@@ -308,6 +324,8 @@ Multi-row bulk action with configurable concurrency, live progress bar, per-row 
 
 ## See also
 
+- [Server-Side Row Model](./server/server-row-model.md) - the packaged
+  version of every pattern on this page, free and Enterprise.
 - [Architecture](./architecture.md) - where the engine sits in the
   pipeline.
 - [Row pagination](./rows/row-pagination.md) - controlled vs

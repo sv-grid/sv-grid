@@ -68,6 +68,49 @@ describe('SvelteKit transport round trip', () => {
     expect(backend.rows().some((r) => r.id === '1')).toBe(false)
   })
 
+  it('updateWhere travels as one message and answers with the count', async () => {
+    const { client, backend } = wireClientToServer()
+    // Everyone except Bob: the rule the selection model sends under select-all.
+    const count = await client.updateWhere({}, { tier: 'gold' }, { selectAll: true, toggled: ['2'] })
+    expect(count).toBe(1)
+    expect(backend.rows().map((r) => `${r.id}:${r.tier}`)).toEqual(['1:gold', '2:free'])
+  })
+
+  it('refuses updateWhere with 405 when the backend cannot do it', async () => {
+    const handlers = createKitHandlers({
+      schema,
+      source: { getRows: async () => ({ rows: [], rowCount: 0 }) },
+    })
+    const client = createKitDataSource<Customer>({
+      endpoint: '/x',
+      fetch: (url, init) => handlers.handle(new Request(`http://localhost${url}`, init)),
+    })
+    await expect(client.updateWhere({}, { tier: 'gold' }, { selectAll: true, toggled: [] })).rejects.toThrow(/405/)
+  })
+
+  it('treats updateWhere as an update for authorize, validation and audit', async () => {
+    const log: string[] = []
+    const handlers = createKitHandlers({
+      schema,
+      source: createInMemoryDataSource(seed, schema),
+      authorize: ({ action }) => action !== 'delete',
+      validate: ({ action, values }) => {
+        log.push(`validate:${action}:${Object.keys(values).join(',')}`)
+        return (values as { age?: number }).age === -1 ? { age: 'no' } : null
+      },
+      audit: (e) => {
+        log.push(`audit:${e.action}:${e.id}`)
+      },
+    })
+    const client = createKitDataSource<Customer>({
+      endpoint: '/x',
+      fetch: (url, init) => handlers.handle(new Request(`http://localhost${url}`, init)),
+    })
+    await expect(client.updateWhere({}, { age: -1 }, { selectAll: true, toggled: [] })).rejects.toThrow(/422/)
+    expect(await client.updateWhere({}, { age: 50 }, { selectAll: true, toggled: [] })).toBe(2)
+    expect(log).toEqual(['validate:update:age', 'validate:update:age', 'audit:update:null'])
+  })
+
   it('surfaces a backend error as a rejected fetch', async () => {
     const { client } = wireClientToServer()
     // updating a non-existent id makes the in-memory source throw -> 500

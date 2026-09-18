@@ -119,6 +119,22 @@ Wire it up in Svelte with runes:
 `pageable={false}` hands paging to your own pager plus the controller - the grid
 does not slice or count the data itself, because the server already did.
 
+The shorter form hands the controller to the grid and keeps the built-in
+footer pager: the model supplies `pageIndex`, `pageSize` and the server's
+`rowCount`, and the footer's page buttons and size selector call
+`setPage` / `setPageSize` on it.
+
+```svelte
+<SvGrid rowModel={ctl} {columns} pageable />
+```
+
+No pages at all? `createServerDataSource(source, { mode: 'infinite' })` is
+one block-cached list the user scrolls; see
+[Server-side infinite scroll](./server-infinite-scroll.md). Paging a
+grouped tree - a page of top-level groups, or of the flattened rows - is
+the Enterprise row model's `pagination` option, in
+[Server grouping](./server-grouping.md#paging-the-tree).
+
 ## A numbered pager
 
 With `pageIndex` and `pageCount` in hand, a numbered pager is `setPage` calls
@@ -235,6 +251,10 @@ Now pair it with the "Load more" pattern above: `hasMore` (derived from
 `pageIndex < pageCount - 1`) stays true until the last, short page arrives, at
 which point `rowCount` settles to the real running total and the button hides.
 Avoid a numbered pager in this mode - the page numbers would be fictional.
+
+In `infinite` mode there is a third option: return `rowCount: -1` and the
+controller runs without a total, growing the scrollbar a block past the
+highest loaded block until the first short block marks the end.
 
 
 ## A paged grid against a fake endpoint
@@ -362,4 +382,5 @@ it. The trade is that you lose the range text, so show a count yourself.
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the full datasource contract, controller methods, writes, and race safety.
+- [Server-side infinite scroll](./server-infinite-scroll.md) - the same controller with blocks instead of pages.
 - [Server sorting](./server-sorting.md) - the sibling deep dive on the sort model and ORDER BY.

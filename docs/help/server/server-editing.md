@@ -222,9 +222,9 @@ UI updates immediately; server validates async; on reject the value rolls back w
 
 <div data-docs-demo="33-server-infinite" data-height="560"></div>
 
-### Server-Side Row Model (SSRM)
+### Server-Side Row Model: paged and infinite
 
-One datasource contract for server-backed data: implement a single async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Here a 100,000-row in-memory server behind 250ms latency; the grid holds only the current 50-row page.
+The free half of the row model: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Paged, the grid holds one 50-row page; infinite, a block cache under the scrollbar with placeholders, retry and an LRU. Here a 100,000-row in-memory server behind 250ms latency. Grouping, tree, pivot and transactions on top of the same contract are the Enterprise row model (demo 467).
 
 <div data-docs-demo="148-server-row-model" data-height="560"></div>
 

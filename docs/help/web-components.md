@@ -53,7 +53,7 @@ project, with no local setup.
   `<sv-grid>` like any built-in element.
 - **One bundle, no framework lock-in.** Ship a single file to a CDN; consumers
   add one `<script type="module">` and a tag.
-- **The whole grid.** 104 properties and 23 events, so virtualization,
+- **The whole grid.** 108 properties and 25 events, so virtualization,
   Excel-style filters, inline editing, grouping, tree data, pinning, pagination
   and the enterprise features are all reachable - not a hand-picked subset. The
   surface is **generated** from `<SvGrid>`'s own `Props` type and CI fails if

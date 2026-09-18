@@ -142,6 +142,16 @@ jobs:
           node tools/build-doc-snippets.mjs
           pnpm vitest run tools/demo-doc-coverage.test.ts tools/docs-links.test.ts tools/reference-coverage.test.ts tools/reference-defaults.test.ts tools/llm-only-docs.test.ts tools/shadcn-registry.test.ts
 
+      - name: Demo warehouse answers like the reference backend
+        # examples/src/shared/server-warehouse.ts is the columnar million-row
+        # "server" behind the server-side row model demos (467, 468). It lives
+        # in examples/, which has no vitest config of its own, so its contract
+        # test runs from tools/: every request shape the row model sends -
+        # paging, sorts, filters, search, each grouping level, child counts,
+        # grand totals, pivot - must come back exactly as
+        # createInMemoryDataSource answers it on the same 5,000-row sample.
+        run: pnpm vitest run tools/server-warehouse.test.ts
+
       - name: Machine-readable changelog is current
         # docs/changelog.md tells readers (and, through llms-full.txt, models)
         # to fetch /changelog.json for the same content in a parseable shape.
