@@ -1037,6 +1037,30 @@ the Conditional Formatting Rules Manager lists, and the font names.
 Formulas are typed with `,` between arguments and `.` as the decimal
 point whatever the locale.
 
+## How big a sheet it holds
+
+Measured rather than guessed, by `pnpm bench` over the built engine (the
+cases are in `tools/bench/sheet-cases.mjs`, the numbers and the rig in
+[Benchmarks](../benchmarks.md#spreadsheet-engine)). On a CI-class Linux
+container:
+
+| Sheet                                   | Opens in | Retains |
+| ---------------------------------------- | -------- | ------- |
+| 1,000 rows, a formula each                | 8 ms     | 1.6 MB  |
+| 10,000 rows, a formula each               | 91 ms    | 16.5 MB |
+| 50,000 rows, a formula each               | 547 ms   | 84.2 MB |
+
+A keystroke costs one evaluation rather than a sheet's worth: the
+dependency graph recomputes what read the cell, and nothing else. What
+makes an edit expensive is not the size of the sheet but how much of it
+one cell feeds. A single `SUM` over 10,000 cells is one evaluation that
+re-reads ten thousand cells (14 ms); a running-balance column, where every
+row reads the row above, is 10,000 evaluations for one keystroke, and that
+is the true cost of that shape.
+
+CI gates the evaluation counts rather than the milliseconds, since a count
+is the same on every machine.
+
 ## Right to left, touch and assistive tech
 
 The shell carries no direction of its own: set `dir="rtl"` on the page or

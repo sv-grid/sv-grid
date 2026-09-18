@@ -356,6 +356,44 @@ export function createWorkbook(
     return grid[0]?.[0] ?? ''
   }
 
+  /**
+   * How deep a cell's value may be resolved by recursion before the chain is
+   * primed from the far end instead. A running-balance column is a chain as
+   * long as the sheet, and evaluating the last cell of one by recursion
+   * overflows the JavaScript stack somewhere past a thousand rows, which the
+   * evaluator turns into a `#NUM!`. Priming keeps the depth flat, so the
+   * only limit left is the sheet's own size.
+   */
+  const DEEP = 150
+  let depth = 0
+
+  /**
+   * Compute what a cell reads, furthest first, so the cell itself resolves
+   * against cached values rather than by recursing through the chain. The
+   * precedents are the ones the graph recorded at the last evaluation, which
+   * is exactly the chain a re-evaluation is about to walk again.
+   */
+  function primeChain(from: CellKey): void {
+    const seen = new Set<CellKey>([from])
+    const chain: CellKey[] = [from]
+    const stack: CellKey[] = [from]
+    while (stack.length) {
+      const cur = stack.pop()!
+      for (const p of graph.precedentsOf(cur)) {
+        if (seen.has(p) || values.get(p) !== undefined) continue
+        seen.add(p)
+        chain.push(p)
+        stack.push(p)
+      }
+    }
+    for (let i = chain.length - 1; i >= 1; i -= 1) {
+      const key = chain[i]!
+      if (values.get(key) !== undefined) continue
+      const at = parseCellKey(key)
+      compute(at.sheet ?? '', at.row, at.col)
+    }
+  }
+
   function compute(sheet: string, row: number, col: number): CellValue {
     const cells = sheetCells(sheet)
     if (!cells) return { error: '#REF!' }
@@ -381,7 +419,12 @@ export function createWorkbook(
     }
     if (visiting.has(key)) return { error: '#CYCLE!' }
 
+    // Deep enough that recursion is a risk: resolve what this cell reads from
+    // the far end first, and come back to it with everything cached.
+    if (depth >= DEEP) primeChain(key)
+
     visiting.add(key)
+    depth += 1
     const text = (cells[row]?.[col] ?? '').trim()
     let value: CellValue
     if (text === '') {
@@ -391,7 +434,7 @@ export function createWorkbook(
         const at = parseCellKey(anchor)
         compute(at.sheet ?? sheet, at.row, at.col)
         const spilled = values.get(key)
-        if (spilled !== undefined) { visiting.delete(key); return spilled }
+        if (spilled !== undefined) { visiting.delete(key); depth -= 1; return spilled }
       }
       value = ''
     } else if (text.startsWith('=')) {
@@ -429,6 +472,7 @@ export function createWorkbook(
         : text
     }
     visiting.delete(key)
+    depth -= 1
     values.set(key, value)
     return value
   }

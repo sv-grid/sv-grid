@@ -516,3 +516,38 @@ describe('precedents and dependents', () => {
     expect(wb.dependents('Budget', 0, 0)).toEqual([{ sheet: 'Budget', row: 2, col: 0 }])
   })
 })
+
+describe('a long dependency chain', () => {
+  /** A running-balance column: every row reads the row above it. */
+  const runningBalance = (rows: number) => {
+    const cells = [['Seed', 'Running'], ['1', '=A2']]
+    for (let r = 2; r <= rows; r += 1) cells.push([String(r), `=B${r}+A${r + 1}`])
+    return cells
+  }
+  const expected = (rows: number, seed: number) => {
+    let total = seed
+    for (let r = 2; r <= rows; r += 1) total += r
+    return total
+  }
+
+  it('resolves after an edit at the top, however long it is', () => {
+    // A chain of this length used to overflow the stack on the read after an
+    // edit, and the evaluator turned that into a #NUM! in the cell: the value
+    // was right on open and wrong from the first keystroke.
+    const rows = 5_000
+    const wb = createWorkbook([{ name: 'S', cells: runningBalance(rows) }])
+    expect(wb.getValue('S', rows, 1)).toBe(expected(rows, 1))
+    wb.setRaw('S', 1, 0, '100')
+    expect(wb.getValue('S', rows, 1)).toBe(expected(rows, 100))
+    // And from the middle, where only the tail of the chain is stale.
+    wb.setRaw('S', 2_500, 0, '0')
+    expect(wb.getValue('S', rows, 1)).toBe(expected(rows, 100) - 2_500)
+  })
+
+  it('reads a cell deep in a chain that has never been computed', () => {
+    const rows = 3_000
+    const wb = createWorkbook([{ name: 'S', cells: runningBalance(rows) }])
+    // Straight to the far end, nothing cached along the way.
+    expect(wb.getValue('S', rows, 1)).toBe(expected(rows, 1))
+  })
+})

@@ -245,6 +245,47 @@ one is now closed and has a counter that fails the build if it returns:
 
 Numbers here will move; the command that produces them will not.
 
+## Spreadsheet engine
+
+**Measured.** Run `pnpm bench` with `@svgrid/enterprise` built
+(`pnpm --filter @svgrid/enterprise build:lib`) to reproduce; the cases live
+in `tools/bench/sheet-cases.mjs`. These were taken on a CI-class Linux
+container with Node v22, not the workstation the table above used, so
+compare the rows with each other rather than with the grid's.
+
+Two different questions, because a spreadsheet is asked both: what does
+opening a workbook full of formulas cost once, and what does one keystroke
+cost all day.
+
+| Case                                                     | Median  | Cells evaluated | Retained |
+| -------------------------------------------------------- | ------- | --------------- | -------- |
+| Open 1,000 rows, one `SUM` per row                        | 8 ms    | 1,000           | 1.6 MB   |
+| Open 10,000 rows, one `SUM` per row                       | 91 ms   | 10,000          | 16.5 MB  |
+| Open 50,000 rows, one `SUM` per row                       | 547 ms  | 50,000          | 84.2 MB  |
+| Type in one cell of a 10,000-row sheet                    | 0 ms    | 1               | -        |
+| Type in a column a single `SUM` of 10,000 cells reads     | 14 ms   | 1               | -        |
+| Type at the top of a 10,000-row dependency chain          | 71 ms   | 10,000          | -        |
+
+Read the third column first: it is the one CI gates, and the one that says
+what the engine is doing. A keystroke costs **one evaluation**, not a
+sheet's worth, because the dependency graph recomputes what read the cell
+and nothing else. The column-`SUM` row is the interesting pair: one
+evaluation, 14 ms, because that single `SUM` re-reads its 10,000 cells. The
+chain row is the worst case a sheet can have, a running balance where every
+row reads the row above it: 10,000 evaluations for one keystroke, which is
+the true cost of that shape and not a bug.
+
+So the practical ceiling, on this container: **a sheet of tens of thousands
+of formula rows opens in well under a second and edits instantly**, and the
+thing that changes that is not the sheet's size but how much of it one cell
+feeds. 50,000 formula rows retain about 84 MB, roughly 1.7 KB per row for
+the text, the cached value and the graph edges.
+
+A chain longer than about a thousand rows used to overflow the JavaScript
+stack on the first keystroke and land `#NUM!` in the cell. The workbook now
+primes a deep chain from its far end instead of recursing through it, so
+the only limit left is the sheet's own size.
+
 ## What CI enforces
 
 Elapsed time is too noisy on a shared runner to fail a build on, and a
@@ -259,10 +300,14 @@ identical on every machine:
 | `getAllCells` materialisations while filtering | 0      | 0      |
 | Filter re-runs caused by a selection change    | 0      | 0      |
 | Sort re-runs caused by a selection change      | 0      | 0      |
+| Cells evaluated opening a 10,000-row sheet     | 10,004 | 10,000 |
+| Cells evaluated by one keystroke in that sheet | 4      | 1      |
+| Cells evaluated when a 10,000-cell `SUM` reads the edit | 3 | 1  |
 
 A count is a claim about the algorithm; a millisecond is a claim about the
 hardware. Only the first belongs in CI. Budgets live beside each case in
-`tools/bench/cases.mjs`.
+`tools/bench/cases.mjs`, and the spreadsheet's in
+`tools/bench/sheet-cases.mjs`.
 
 Each case also declares which counters must be *present*, not just within
 budget. Without that, a stage that stopped running altogether would satisfy
