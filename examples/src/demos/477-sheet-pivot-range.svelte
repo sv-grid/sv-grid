@@ -20,9 +20,10 @@
    * down the rows, quarters across the columns, the amounts summed.
    *
    * Try: change an Amount in E2:E25, put the cursor in the pivot and press
-   * Refresh. Open the dialog from inside it and move Rep into Rows under
-   * Region, or make Amount an Average. Select A1:E25 and build a second
-   * one somewhere else.
+   * Refresh. Click a number in the pivot and press Show Details for the
+   * rows behind it, on a sheet of their own. Open the dialog from inside it
+   * and move Rep into Rows under Region, or make Amount an Average. Select
+   * A1:E25 and build a second one somewhere else.
    */
   import {
     SvSheet, createWorkbook, createSheetDocument,

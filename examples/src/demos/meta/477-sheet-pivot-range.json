@@ -19,6 +19,10 @@
     {
       "question": "What happens when rows are inserted above it?",
       "answer": "The definition moves with the cells: the source block, the target cell and the rectangle the last refresh wrote all shift. A pivot whose source is deleted, or whose target cell is, is dropped."
+    },
+    {
+      "question": "Can I see the rows behind a number?",
+      "answer": "Yes: put the cursor in the cell and press Insert > Show Details, Excel's drill-down. The source rows behind that cell are written to a sheet of their own with the field names across the top. A cell in a subtotal line opens its whole group, one in the grand total column opens the whole line, and the grand total opens every row."
     }
   ]
 }

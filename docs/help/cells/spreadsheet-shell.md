@@ -1451,7 +1451,7 @@ Excel's smallest chart, and not an object: a sparkline IS the cell. One per row 
 
 ### PivotTable from a range
 
-Excel's Insert > PivotTable over a block of cells, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source, and opening the dialog from inside one edits it.
+Excel's Insert > PivotTable over a block of cells, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source, opening the dialog from inside one edits it, and Show Details writes the source rows behind a cell to a sheet of their own.
 
 <div data-docs-demo="477-sheet-pivot-range" data-height="560"></div>
 
