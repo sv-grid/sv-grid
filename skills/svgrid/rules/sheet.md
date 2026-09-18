@@ -162,5 +162,8 @@ Arguments are separated by `,`, the decimal point is `.`, ranges are
 on `wb.names`. Custom functions register through `withCustomFunctions`,
 never by patching `FUNCTIONS`. Check
 `https://svgrid.com/llms-full.txt` (the "Spreadsheet formulas" page) for
-the function list before promising one; the engine has no spill (dynamic
-arrays) yet, so `FILTER`, `UNIQUE`, `SORT` and `SEQUENCE` are not there.
+the function list before promising one. Dynamic arrays spill as in
+Excel: `FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE`, `TRANSPOSE`,
+`TEXTSPLIT` and a bare range fill the cells under the formula, which keep
+blank text and read the anchor's values; a blocked spill is `#SPILL!`.
+`LET` and `LAMBDA` are not there.

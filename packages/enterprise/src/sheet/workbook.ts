@@ -12,7 +12,7 @@
  * disagree with the formula above it.
  */
 import { parseFormula } from './parse'
-import { evaluate, rangeValues, type EvalContext } from './evaluate'
+import { evaluate, evaluateSpill, rangeValues, type EvalContext } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
 import { isError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
@@ -95,6 +95,14 @@ export type Workbook = {
 
   /** Recompute everything. Rarely needed; `setRaw` keeps itself current. */
   recalculate(): void
+  /**
+   * The spill a cell belongs to: the anchor holding the array formula and
+   * the rectangle its answer covers, for the anchor itself and every cell
+   * it spills into; null for a cell that is neither.
+   */
+  spillOf(sheet: string, row: number, col: number): { anchor: { row: number; col: number }; rect: readonly [number, number, number, number] } | null
+  /** Every spill on a sheet, anchors computed, for a writer that saves the ranges. */
+  spills(sheet: string): Array<{ row: number; col: number; rect: readonly [number, number, number, number] }>
   rowCount(sheet: string): number
   colCount(sheet: string): number
   serialize(): { sheets: SheetData[]; active: string; names: Record<string, string> }
@@ -141,9 +149,24 @@ export function createWorkbook(
   // the dependency graph only knows the CELLS a name pointed at when the
   // formula was last evaluated. Dropping the cache is the honest answer:
   // names change rarely, and a full recompute costs less than one stale total.
+  /**
+   * Dynamic arrays. A formula whose answer is a grid spills it over the
+   * cells below and to the right: `spills` keeps each anchor's rectangle,
+   * `spilledBy` points every covered cell back at its anchor, and a covered
+   * cell reads its value from the anchor's grid while its own text stays
+   * blank, as in Excel. An anchor whose rectangle runs into a cell that
+   * holds text, or into another spill, shows #SPILL! and sits in `blocked`
+   * until a write frees the way.
+   */
+  const spills = new Map<CellKey, { r1: number; c1: number; r2: number; c2: number }>()
+  const spilledBy = new Map<CellKey, CellKey>()
+  const blocked = new Set<CellKey>()
+  /** Cells whose value a spill just changed under them, to compute once the write settles. */
+  const pending = new Set<CellKey>()
+
   const names = ((): SheetNames => {
     const inner = createNames()
-    const drop = () => { values.clear(); graph.clear() }
+    const drop = () => { dropAll(); settleAll() }
     return {
       ...inner,
       define: (name, refersTo) => { inner.define(name, refersTo); drop() },
@@ -193,6 +216,132 @@ export function createWorkbook(
     }
   }
 
+  /** Forget every derived thing: values, edges, volatility, spills. */
+  function dropAll() {
+    values.clear()
+    graph.clear()
+    volatile.clear()
+    spills.clear()
+    spilledBy.clear()
+    blocked.clear()
+    pending.clear()
+  }
+
+  /** Whether a key holds a formula, for the settling passes. */
+  function isFormulaKey(key: CellKey): boolean {
+    const at = parseCellKey(key)
+    return (sheetCells(at.sheet ?? '')?.[at.row]?.[at.col] ?? '').trim().startsWith('=')
+  }
+
+  /**
+   * Compute every formula in the workbook, so every spill is on record
+   * before any cell it covers is read. Lazy evaluation alone would leave a
+   * covered cell blank when it is read before its anchor, which a repaint
+   * from the top of a scrolled sheet does.
+   */
+  function settleAll() {
+    for (const other of order) {
+      const cells = sheetCells(other) ?? []
+      for (let r = 0; r < cells.length; r += 1) {
+        const line = cells[r]!
+        for (let c = 0; c < line.length; c += 1) if (line[c]!.trim().startsWith('=')) compute(other, r, c)
+      }
+    }
+    settlePending()
+  }
+
+  /** Compute what a spill changed under other formulas, until nothing is left. */
+  function settlePending(): CellKey[] {
+    const done: CellKey[] = []
+    while (pending.size) {
+      const batch = [...pending]
+      pending.clear()
+      for (const key of batch) {
+        const at = parseCellKey(key)
+        compute(at.sheet ?? '', at.row, at.col)
+        done.push(key)
+      }
+    }
+    return done
+  }
+
+  /** Drop an anchor's spill; the covered cells' values and edges go with it. */
+  function clearSpill(anchor: CellKey): CellKey[] {
+    const rect = spills.get(anchor)
+    if (!rect) return []
+    spills.delete(anchor)
+    const at = parseCellKey(anchor)
+    const covered: CellKey[] = []
+    for (let r = rect.r1; r <= rect.r2; r += 1) {
+      for (let c = rect.c1; c <= rect.c2; c += 1) {
+        if (r === at.row && c === at.col) continue
+        const key = cellKey(at.sheet, r, c)
+        if (spilledBy.get(key) !== anchor) continue
+        spilledBy.delete(key)
+        values.delete(key)
+        graph.setPrecedents(key, null)
+        covered.push(key)
+      }
+    }
+    return covered
+  }
+
+  /**
+   * Record an anchor's grid over its rectangle, or refuse it. Returns the
+   * anchor's own value: the grid's top-left cell, or #SPILL! when a cell
+   * in the way holds text or belongs to another spill.
+   */
+  function recordSpill(anchor: CellKey, sheet: string, row: number, col: number, grid: CellValue[][]): CellValue {
+    const cells = sheetCells(sheet)!
+    const rect = { r1: row, c1: col, r2: row + grid.length - 1, c2: col + (grid[0]?.length ?? 1) - 1 }
+    for (let r = rect.r1; r <= rect.r2; r += 1) {
+      for (let c = rect.c1; c <= rect.c2; c += 1) {
+        if (r === row && c === col) continue
+        const key = cellKey(sheet, r, c)
+        const owner = spilledBy.get(key)
+        if ((cells[r]?.[c] ?? '').trim() !== '' || (owner !== undefined && owner !== anchor)) {
+          for (const k of clearSpill(anchor)) pending.add(k)
+          blocked.add(anchor)
+          return { error: '#SPILL!' }
+        }
+      }
+    }
+    blocked.delete(anchor)
+    const before = spills.get(anchor)
+    const stillCovered = new Set<CellKey>()
+    for (let r = rect.r1; r <= rect.r2; r += 1) {
+      for (let c = rect.c1; c <= rect.c2; c += 1) {
+        if (r === row && c === col) continue
+        const key = cellKey(sheet, r, c)
+        stillCovered.add(key)
+        const fresh = spilledBy.get(key) !== anchor
+        spilledBy.set(key, anchor)
+        values.set(key, grid[r - row]?.[c - col] ?? '')
+        graph.setPrecedents(key, [anchor])
+        // Reported as changed, and a formula that read this cell while it
+        // was blank has a stale value.
+        pending.add(key)
+        if (fresh) for (const k of graph.dirtyFrom([key])) if (k !== key) { values.delete(k); pending.add(k) }
+      }
+    }
+    // The cells the old rectangle covered and the new one does not read blank again.
+    if (before) {
+      for (let r = before.r1; r <= before.r2; r += 1) {
+        for (let c = before.c1; c <= before.c2; c += 1) {
+          const key = cellKey(sheet, r, c)
+          if (stillCovered.has(key) || spilledBy.get(key) !== anchor) continue
+          spilledBy.delete(key)
+          values.delete(key)
+          graph.setPrecedents(key, null)
+          pending.add(key)
+          for (const k of graph.dirtyFrom([key])) if (k !== key) { values.delete(k); pending.add(k) }
+        }
+      }
+    }
+    spills.set(anchor, rect)
+    return grid[0]?.[0] ?? ''
+  }
+
   function compute(sheet: string, row: number, col: number): CellValue {
     const cells = sheetCells(sheet)
     if (!cells) return { error: '#REF!' }
@@ -205,23 +354,41 @@ export function createWorkbook(
     // #REF! is reserved for the two cases that really are broken: a sheet
     // that does not exist, and a negative index, which is what a reference
     // shifted off the top by a delete becomes.
-    if (row >= cells.length || col >= (cells[row]?.length ?? 0)) return ''
-
     const key = cellKey(sheet, row, col)
     const cached = values.get(key)
     if (cached !== undefined) return cached
+    if (row >= cells.length || col >= (cells[row]?.length ?? 0)) {
+      // Past the written area, unless a spill reaches here.
+      const anchor = spilledBy.get(key)
+      if (anchor === undefined) return ''
+      const at = parseCellKey(anchor)
+      compute(at.sheet ?? sheet, at.row, at.col)
+      return values.get(key) ?? ''
+    }
     if (visiting.has(key)) return { error: '#CYCLE!' }
 
     visiting.add(key)
     const text = (cells[row]?.[col] ?? '').trim()
     let value: CellValue
     if (text === '') {
+      // A blank cell shows what an array formula spills into it.
+      const anchor = spilledBy.get(key)
+      if (anchor !== undefined) {
+        const at = parseCellKey(anchor)
+        compute(at.sheet ?? sheet, at.row, at.col)
+        const spilled = values.get(key)
+        if (spilled !== undefined) { visiting.delete(key); return spilled }
+      }
       value = ''
     } else if (text.startsWith('=')) {
       const ast = parseCached(text)
       if (!ast) value = { error: '#PARSE!' }
       else {
-        value = evaluate(ast, contextFor(sheet, undefined, { row, col }))
+        const ctx = contextFor(sheet, undefined, { row, col })
+        value = evaluate(ast, ctx)
+        const grid = isError(value) ? null : evaluateSpill(ast, ctx)
+        if (grid) value = recordSpill(key, sheet, row, col, grid)
+        else if (spills.has(key)) for (const k of clearSpill(key)) pending.add(k)
         if (isVolatile(ast)) volatile.add(key)
         else volatile.delete(key)
         graph.setPrecedents(key, precedentsOf(
@@ -322,12 +489,11 @@ export function createWorkbook(
       const [removed] = order.splice(index, 1)
       byName.delete(removed!.toLowerCase())
       // Every cached value may have read the sheet that just went.
-      values.clear()
-      graph.clear()
-      volatile.clear()
+      dropAll()
       if (active.toLowerCase() === removed!.toLowerCase()) {
         active = order[Math.min(index, order.length - 1)] ?? order[0]!
       }
+      settleAll()
       return true
     },
 
@@ -356,8 +522,8 @@ export function createWorkbook(
         const next = renameSheetReferences(entry.refersTo, from, to)
         if (typeof next === 'string' && next !== entry.refersTo) names.define(entry.name, next)
       }
-      values.clear()
-      graph.clear()
+      dropAll()
+      settleAll()
       return true
     },
 
@@ -407,9 +573,21 @@ export function createWorkbook(
       line[col] = text
 
       const key = cellKey(sheet, row, col)
-      // A cell that is no longer a formula reads nothing.
+      const keys: CellKey[] = [key]
+      // A cell that is no longer a formula reads nothing, and spills nothing.
       if (!text.trim().startsWith('=')) { graph.setPrecedents(key, null); volatile.delete(key) }
-      reportRecalc(invalidate([key]))
+      if (spills.has(key)) keys.push(...clearSpill(key))
+      // Text landing in a spilled cell blocks its anchor; a cell going
+      // blank may free one that was blocked.
+      const anchor = spilledBy.get(key)
+      if (anchor !== undefined) keys.push(anchor)
+      keys.push(...blocked)
+      const touched = invalidate(keys)
+      // The written cell and the anchors it touched compute now, so a new
+      // or changed spill is on record before anything reads under it;
+      // plain dependents wait for their next read, as before.
+      for (const k of keys) if (isFormulaKey(k)) { const at = parseCellKey(k); compute(at.sheet ?? sheet, at.row, at.col) }
+      reportRecalc([...new Set([...touched, ...settlePending()])])
     },
 
     getValue(sheet, row, col) {
@@ -495,9 +673,9 @@ export function createWorkbook(
         }
       }
 
-      values.clear()
-      graph.clear()
+      dropAll()
       astCache.clear()
+      settleAll()
     },
 
     precedents(sheet, row, col) {
@@ -530,8 +708,34 @@ export function createWorkbook(
     },
 
     recalculate() {
-      values.clear()
-      graph.clear()
+      dropAll()
+      settleAll()
+    },
+
+    spillOf(sheet, row, col) {
+      const name = order.find((n) => n.toLowerCase() === sheet.toLowerCase())
+      if (!name) return null
+      compute(name, row, col)
+      const key = cellKey(name, row, col)
+      const anchor = spills.has(key) ? key : spilledBy.get(key)
+      if (anchor === undefined) return null
+      const rect = spills.get(anchor)
+      if (!rect) return null
+      const at = parseCellKey(anchor)
+      return { anchor: { row: at.row, col: at.col }, rect: [rect.r1, rect.c1, rect.r2, rect.c2] as const }
+    },
+
+    spills(sheet) {
+      const name = order.find((n) => n.toLowerCase() === sheet.toLowerCase())
+      if (!name) return []
+      settleAll()
+      const out: Array<{ row: number; col: number; rect: readonly [number, number, number, number] }> = []
+      for (const [anchor, rect] of spills) {
+        const at = parseCellKey(anchor)
+        if ((at.sheet ?? '').toLowerCase() !== name.toLowerCase()) continue
+        out.push({ row: at.row, col: at.col, rect: [rect.r1, rect.c1, rect.r2, rect.c2] as const })
+      }
+      return out.sort((a, b) => a.row - b.row || a.col - b.col)
     },
 
     rowCount,
@@ -551,6 +755,7 @@ export function createWorkbook(
     order.push(sheet.name)
   }
   active = order[0] ?? ''
+  settleAll()
 
   return workbook
 }

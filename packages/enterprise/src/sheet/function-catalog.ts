@@ -6,6 +6,7 @@
  * custom function registered through `withCustomFunctions` appears too.
  */
 import { FUNCTIONS } from './functions'
+import { ARRAY_FUNCTIONS } from './packs/array'
 import { SIGNATURES } from './autocomplete'
 
 export type FunctionGroup =
@@ -195,6 +196,13 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   CHOOSE: { group: 'Lookup & Reference', description: 'Chooses a value from a list of values, based on an index number.', signature: 'CHOOSE(index, value1, [value2], ...)' },
   ROWS: { group: 'Lookup & Reference', description: 'Returns the number of rows in a range.', signature: 'ROWS(range)' },
   COLUMNS: { group: 'Lookup & Reference', description: 'Returns the number of columns in a range.', signature: 'COLUMNS(range)' },
+  FILTER: { group: 'Lookup & Reference', description: 'Filters a range or array by a condition. Spills the rows that match.', signature: 'FILTER(array, include, [if_empty])' },
+  UNIQUE: { group: 'Lookup & Reference', description: 'Returns the unique values from a range or array. Spills.', signature: 'UNIQUE(array, [by_col], [exactly_once])' },
+  SORT: { group: 'Lookup & Reference', description: 'Sorts a range or array by one of its columns. Spills.', signature: 'SORT(array, [sort_index], [sort_order], [by_col])' },
+  SORTBY: { group: 'Lookup & Reference', description: 'Sorts a range or array by the values in another range or array. Spills.', signature: 'SORTBY(array, by_array1, [sort_order1], ...)' },
+  SEQUENCE: { group: 'Math', description: 'Generates a list of sequential numbers in an array. Spills.', signature: 'SEQUENCE(rows, [columns], [start], [step])' },
+  TRANSPOSE: { group: 'Lookup & Reference', description: 'Converts a vertical range into a horizontal one, or the reverse. Spills.', signature: 'TRANSPOSE(array)' },
+  TEXTSPLIT: { group: 'Text', description: 'Splits text into columns and rows by delimiters. Spills.', signature: 'TEXTSPLIT(text, col_delimiter, [row_delimiter], [ignore_empty])' },
 }
 
 /** The IF family is dispatched by the evaluator, not the function table. */
@@ -206,7 +214,7 @@ export const FUNCTION_GROUPS: ReadonlyArray<FunctionGroup> = [
 
 /** Every function the engine knows, described, alphabetical. */
 export function functionCatalog(): FunctionInfo[] {
-  const names = new Set<string>([...Object.keys(FUNCTIONS), ...EVALUATOR_FUNCTIONS])
+  const names = new Set<string>([...Object.keys(FUNCTIONS), ...Object.keys(ARRAY_FUNCTIONS), ...EVALUATOR_FUNCTIONS])
   return [...names].sort().map((name) => {
     const entry = CATALOG[name]
     return {

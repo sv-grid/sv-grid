@@ -83,6 +83,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` |
+| Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
@@ -108,6 +109,28 @@ dependency graph cannot see what text it will point at next. `ROW()` and
 `COLUMN()` without an argument need to know the cell they sit in, which a
 `Workbook` supplies as `currentCell`.
 
+### Dynamic arrays
+
+A formula whose answer is a grid spills it over the cells below and to
+the right, as Excel has done since 2018: `=SORT(A2:B9, 2, -1)` in D2
+fills D2:E9, `=UNIQUE(C2:C50)` lists the distinct values, `=SEQUENCE(12)`
+numbers twelve rows, and a range on its own (`=A2:A9`) spills a copy.
+The cells it spills into keep blank text of their own and read the
+anchor's values; select any of them and the whole spill wears a blue
+outline. Arithmetic over a range is a grid too, cell by cell with Excel's
+broadcasting, which is what `FILTER(A2:C9, B2:B9>3)` and `=A2:A9*2` need.
+
+A spill that would run into a cell holding text, or into another spill,
+shows `#SPILL!` in the anchor and nothing under it until the way clears;
+a `FILTER` that keeps nothing is `#CALC!` unless its `if_empty` says
+otherwise. Where only one value fits (an arithmetic operand, most function
+arguments) a grid reads as its top-left cell. The workbook keeps the
+spill ranges (`spillOf(sheet, row, col)` names the anchor and the
+rectangle of the spill a cell belongs to), moves them with an insert or
+delete, and writes them to the xlsx as array formulas with Excel's
+dynamic-array metadata, so Excel opens them as spills rather than as
+`@`-prefixed legacy formulas. `LET` and `LAMBDA` are not there yet.
+
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
 `TIMEVALUE` give a fraction of a day that the `h:mm` formats show.
@@ -130,6 +153,8 @@ Need the full ~400? The [HyperFormula adapter](#hyperformula) is still there.
 | `#NUM!` | Numeric domain error, e.g. `SQRT(-1)` |
 | `#N/A` | A lookup found nothing |
 | `#PARSE!` | Syntax error |
+| `#SPILL!` | A dynamic array's spill runs into a cell that holds text, or into another spill |
+| `#CALC!` | An array function has nothing to return, e.g. `FILTER` with no match and no `if_empty` |
 
 Errors are values, not exceptions, which is what lets `IFERROR` see one.
 
