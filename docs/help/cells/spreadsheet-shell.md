@@ -902,9 +902,15 @@ the grid's. Raised as `insert-chart`, `insert-picture`, `chart-setup`
 and `delete-object`, so an application can put its own chart builder in
 their place.
 
-Objects do not ride in the .xlsx, in either direction: Save As writes the
-cells, the formats and the rules, and a chart or a picture in a file that
-is opened is left behind.
+Objects ride in the .xlsx both ways, as Excel's own drawing part. A
+picture's bytes go into `xl/media` and a chart becomes a chart part of its
+own, both anchored to their cell; a file being opened gives its pictures
+and charts back the same way. A chart part carries the REFERENCES its
+series read rather than a copy of the numbers, so Excel redraws it from
+the cells beside it instead of from a snapshot that can drift. The one
+thing left behind is a picture whose source is a URL rather than a `data:`
+URL: its bytes are somewhere else, and a file with a broken image in it is
+worse than one without the image.
 
 ### Hyperlinks
 
@@ -1015,9 +1021,10 @@ Sparklines are per sheet, ride in `getState()` as `sparklines` and report
 
 A sparkline is behind whatever the cell shows, so a label typed over one
 still reads, and the pointer goes through it: the cell is selected,
-dragged and edited as a cell. Like the objects above, sparklines do not
-ride in the .xlsx, and File > Print leaves them out, since the printed
-page is built from what each cell says.
+dragged and edited as a cell. Sparklines ride in the .xlsx as Excel's own
+sparkline groups, both ways, in the worksheet's extension list where Excel
+keeps them; File > Print still leaves them out, since the printed page is
+built from what each cell says.
 
 ```svelte
 <script>
@@ -1326,13 +1333,14 @@ button that does nothing.
 - **Tabs:** no track-changes on Review; Page Layout has no themes, no
   page breaks and no header or footer text, and Print has no preview of
   its own beyond the browser's.
-- **Objects** are charts and pictures, and they stay in the document: a
-  chart has no trend lines or secondary axis of its own beyond what the
-  Chart dialog sets, and neither kind rides in the .xlsx.
-- **Sparklines** are the three Excel draws, and they stay in the document
-  too: no axis options beyond one scale for the group, no high and low
-  point marks beyond the last one, and they neither ride in the .xlsx nor
-  reach the printed page.
+- **Objects** are charts and pictures: a chart has no trend lines or
+  secondary axis of its own beyond what the Chart dialog sets, and a
+  picture whose source is a URL rather than a `data:` URL is left out of
+  the .xlsx, since its bytes are not in the document to write.
+- **Sparklines** are the three Excel draws: no axis options beyond one
+  scale for the group, and no high and low point marks beyond the last one.
+  They ride in the .xlsx as Excel's sparkline groups, both ways, but they
+  do not reach the printed page, which is built from what each cell says.
 - **A PivotTable** is a definition plus the cells it writes, not a live
   object: no drag-and-drop field list, no slicers, no drill-down on a
   double-click, and no report filter. Refresh is what brings it up to

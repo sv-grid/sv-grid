@@ -116,6 +116,34 @@ export function sparklineSeries(
 }
 
 /** The group drawn in a cell, or null: the last one wins, as Excel's does. */
+/**
+ * One line per cell of the group: the cell the sparkline is drawn in and
+ * the block of numbers it reads.
+ *
+ * The drawing works this out cell by cell as it paints; a writer needs the
+ * whole list, because Excel stores a sparkline group as one entry per cell
+ * with its own reference.
+ */
+export function sparklineLines(group: SparklineGroup): Array<{ row: number; col: number; data: Rect }> {
+  const [lr1, lc1, lr2, lc2] = group.location
+  const [dr1, dc1, dr2, dc2] = group.data
+  const down = isColumnLocation(group)
+  const out: Array<{ row: number; col: number; data: Rect }> = []
+  const count = down ? lr2 - lr1 + 1 : lc2 - lc1 + 1
+  for (let i = 0; i < count; i += 1) {
+    if (down) {
+      const r = dr1 + i
+      if (r > dr2) break
+      out.push({ row: lr1 + i, col: lc1, data: [r, dc1, r, dc2] as unknown as Rect })
+    } else {
+      const c = dc1 + i
+      if (c > dc2) break
+      out.push({ row: lr1, col: lc1 + i, data: [dr1, c, dr2, c] as unknown as Rect })
+    }
+  }
+  return out
+}
+
 export function sparklineAt(groups: ReadonlyArray<SparklineGroup>, row: number, col: number): SparklineGroup | null {
   for (let i = groups.length - 1; i >= 0; i -= 1) {
     if (rectContains(groups[i]!.location, row, col)) return groups[i]!

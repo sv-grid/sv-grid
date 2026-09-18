@@ -36,6 +36,9 @@ import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } fro
 import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
 import { cleanIteration, DEFAULT_ITERATION } from './workbook'
 import { findTableStyle, DEFAULT_TABLE_STYLE, NO_TABLE_STYLE } from './table-styles'
+import { drawingPartsFor, objectsFromDrawing, rectOfRef, REL_DRAWING } from './xlsx-drawing'
+import { objectId } from './objects'
+import { sparklineLines, sparklineId, type SparklineGroup } from './sparklines'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -48,6 +51,9 @@ const esc = (s: string): string => s.replace(INVALID_XML, '').replace(/[&<>"']/g
 
 const NS_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
 const NS_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+/** Excel's 2009 extensions, which is where a sparkline lives. */
+const NS_X14 = 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/main'
+const NS_XM = 'http://schemas.microsoft.com/office/excel/2006/main'
 const NS_PKG_REL = 'http://schemas.openxmlformats.org/package/2006/relationships'
 const REL_WORKSHEET = `${NS_REL}/worksheet`
 const REL_STYLES = `${NS_REL}/styles`
@@ -386,6 +392,12 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
   let hasVml = false
   /** Table parts are numbered across the workbook, not per sheet. */
   let tableCount = 0
+  /** Drawings, charts and media are numbered across the workbook too. */
+  let drawingCount = 0
+  let chartCount = 0
+  let mediaCount = 0
+  /** The extensions the media written needs declared in [Content_Types]. */
+  const mediaExtensions = new Set<string>()
   let hasSpills = false
   // The people a thread names, one part for the workbook; an entry
   // without an author is a person with no name.
@@ -605,6 +617,67 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       })
       hyperlinks = `<hyperlinks>${refs.join('')}</hyperlinks>`
     }
+    // Sparklines, which Excel keeps in the worksheet's extension list
+    // rather than in a part of their own: one group per definition, one
+    // entry per cell, each with the line of numbers it reads.
+    let sparklineExt = ''
+    const groups = state.sparklines ?? []
+    if (groups.length) {
+      const quotedSheet = /^[A-Za-z_][A-Za-z0-9_.]*$/.test(name) ? name : `'${name.replace(/'/g, "''")}'`
+      const xml = groups.map((group) => {
+        const lines = sparklineLines(group).map((line) => {
+          const from = `${colToLetters(line.data[1])}${line.data[0] + 1}`
+          const to = `${colToLetters(line.data[3])}${line.data[2] + 1}`
+          return `<x14:sparkline><xm:f>${esc(`${quotedSheet}!${from}:${to}`)}</xm:f>`
+            + `<xm:sqref>${colToLetters(line.col)}${line.row + 1}</xm:sqref></x14:sparkline>`
+        }).join('')
+        if (!lines) return ''
+        const type = group.type === 'column' ? ' type="column"' : group.type === 'winloss' ? ' type="stacked"' : ''
+        return `<x14:sparklineGroup${type}${group.sameScale ? ' minAxisType="group" maxAxisType="group"' : ''}${group.markers ? ' markers="1"' : ''} displayEmptyCellsAs="gap">`
+          + (group.color ? `<x14:colorSeries rgb="${argb(group.color)}"/>` : '')
+          + (group.negativeColor ? `<x14:colorNegative rgb="${argb(group.negativeColor)}"/>` : '')
+          + `<x14:sparklines>${lines}</x14:sparklines></x14:sparklineGroup>`
+      }).join('')
+      if (xml) {
+        sparklineExt = '<extLst><ext uri="{05C60535-1F16-4fd2-B633-F4F36F0B64E0}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main">'
+          + `<x14:sparklineGroups xmlns:xm="http://schemas.microsoft.com/office/excel/2006/main">${xml}</x14:sparklineGroups>`
+          + '</ext></extLst>'
+      }
+    }
+
+    // The objects on this sheet: a picture's bytes in xl/media, a chart's
+    // definition in its own part, both anchored by one drawing part.
+    let drawing = ''
+    const objects = state.objects ?? []
+    if (objects.length) {
+      drawingCount += 1
+      const built = drawingPartsFor(objects, {
+        sheet: name,
+        index: drawingCount,
+        chartsSoFar: chartCount,
+        mediaSoFar: mediaCount,
+        valueAt: (row, col) => wb.getValue(name, row, col),
+        textAt: (row, col) => {
+          const value = wb.getValue(name, row, col)
+          return isError(value) ? value.error : String(value ?? '')
+        },
+      })
+      if (built.drawingPath) {
+        chartCount += Object.keys(built.parts).filter((path) => path.startsWith('xl/charts/')).length
+        mediaCount += Object.keys(built.parts).filter((path) => path.startsWith('xl/media/')).length
+        Object.assign(parts, built.parts)
+        parts[built.drawingPath] = XML_HEAD + built.drawingXml
+        parts[`xl/drawings/_rels/drawing${drawingCount}.xml.rels`] = XML_HEAD + built.drawingRels
+        overrides.push(...built.overrides)
+        for (const extension of built.extensions) mediaExtensions.add(extension)
+        const id = `rIdD${drawingCount}`
+        sheetRels += `<Relationship Id="${id}" Type="${REL_DRAWING}" Target="../drawings/drawing${drawingCount}.xml"/>`
+        drawing = `<drawing r:id="${id}"/>`
+      } else {
+        drawingCount -= 1
+      }
+    }
+
     if (sheetRels) {
       parts[`xl/worksheets/_rels/sheet${n}.xml.rels`] = XML_HEAD + `<Relationships xmlns="${NS_PKG_REL}">${sheetRels}</Relationships>`
     }
@@ -624,7 +697,9 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       + `<sheetViews>${sheetView}</sheetViews><sheetFormatPr defaultRowHeight="15"/>`
       + (colXml.length ? `<cols>${colXml.join('')}</cols>` : '')
       + `<sheetData>${rowXml.join('')}</sheetData>`
-      + protection + editRanges + autoFilter + merges + cf + dv + hyperlinks + printOptions + pageMargins + pageSetup + legacyDrawing + tableParts
+      // Order matters in a worksheet: `drawing` comes after the page setup
+      // and before the legacy drawing the comments use.
+      + protection + editRanges + autoFilter + merges + cf + dv + hyperlinks + printOptions + pageMargins + pageSetup + drawing + legacyDrawing + tableParts + sparklineExt
       + '</worksheet>'
     overrides.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
     return { name, n, hidden: state.sheetHidden }
@@ -672,6 +747,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
     + '<Default Extension="xml" ContentType="application/xml"/>'
     + (hasVml ? '<Default Extension="vml" ContentType="application/vnd.openxmlformats-officedocument.vmlDrawing"/>' : '')
+    + [...mediaExtensions].map((extension) => `<Default Extension="${extension}" ContentType="image/${extension === 'jpeg' ? 'jpeg' : extension}"/>`).join('')
     + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
     + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
     + overrides.join('')
@@ -1204,6 +1280,62 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
       const relsPath = path.replace(/worksheets\/([^/]+)$/, 'worksheets/_rels/$1.rels')
       const rels = readRels(parts, relsPath, path)
 
+      // Sparklines, out of the worksheet's extension list.
+      const sparklineGroups: SparklineGroup[] = []
+      for (const group of root.getElementsByTagNameNS(NS_X14, 'sparklineGroup')) {
+        const cells: Array<{ row: number; col: number; data: Rect }> = []
+        for (const one of group.getElementsByTagNameNS(NS_X14, 'sparkline')) {
+          const formula = one.getElementsByTagNameNS(NS_XM, 'f')[0]?.textContent ?? ''
+          const at = one.getElementsByTagNameNS(NS_XM, 'sqref')[0]?.textContent ?? ''
+          const data = rectOfRef(formula)
+          const cell = parseA1(at.replace(/\$/g, '').trim())
+          if (!data || !cell || cell.row === null) continue
+          cells.push({ row: cell.row, col: cell.col, data: data.rect })
+        }
+        if (!cells.length) continue
+        // One group covers a run of cells and the block they read; both come
+        // back as the outer rectangle of the entries, which is how the group
+        // was written.
+        const location = cells.reduce<Rect>(
+          (box, c) => [Math.min(box[0], c.row), Math.min(box[1], c.col), Math.max(box[2], c.row), Math.max(box[3], c.col)] as unknown as Rect,
+          [cells[0]!.row, cells[0]!.col, cells[0]!.row, cells[0]!.col] as unknown as Rect,
+        )
+        const data = cells.reduce<Rect>(
+          (box, c) => [Math.min(box[0], c.data[0]), Math.min(box[1], c.data[1]), Math.max(box[2], c.data[2]), Math.max(box[3], c.data[3])] as unknown as Rect,
+          cells[0]!.data,
+        )
+        const kind = attr(group, 'type')
+        const colour = fromArgb(attr(group.getElementsByTagNameNS(NS_X14, 'colorSeries')[0] ?? null, 'rgb'))
+        const negative = fromArgb(attr(group.getElementsByTagNameNS(NS_X14, 'colorNegative')[0] ?? null, 'rgb'))
+        sparklineGroups.push({
+          id: sparklineId(),
+          location,
+          data,
+          type: kind === 'column' ? 'column' : kind === 'stacked' ? 'winloss' : 'line',
+          ...(colour ? { color: colour } : {}),
+          ...(negative ? { negativeColor: negative } : {}),
+          ...(attr(group, 'minAxisType') === 'group' ? { sameScale: true } : {}),
+          ...(attr(group, 'markers') === '1' ? { markers: true } : {}),
+        })
+      }
+      if (sparklineGroups.length) entry.sparklines = sparklineGroups
+
+      // The drawing, through the same relationships: the pictures and the
+      // charts anchored over this sheet.
+      const drawingId = kid(root, 'drawing')?.getAttribute('r:id') ?? kid(root, 'drawing')?.getAttributeNS(NS_REL, 'id')
+      const drawingPath = drawingId ? rels.get(drawingId)?.target : undefined
+      const drawingXml = drawingPath ? parts[drawingPath] : undefined
+      if (drawingXml && drawingPath) {
+        const objects = objectsFromDrawing(drawingXml, {
+          parse: parseXml,
+          rels: readRels(parts, drawingPath.replace(/drawings\/([^/]+)$/, 'drawings/_rels/$1.rels'), drawingPath),
+          parts,
+          newId: objectId,
+          columnWidth: (col) => entry.columnWidths[colToLetters(col)] ?? 64,
+        })
+        if (objects.length) entry.objects = objects
+      }
+
       // Tables, through the sheet's relationships: the part carries the
       // range, the header count and whether there is a totals row.
       for (const part of kids(kid(root, 'tableParts'), 'tablePart')) {
@@ -1326,8 +1458,22 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 // ---------------------------------------------------------------------------
 
 type ZipCtor = {
-  new (): { file(path: string, data: string): void; generateAsync(opts: { type: 'blob'; mimeType?: string }): Promise<Blob> }
-  loadAsync(data: ArrayBuffer | Blob | Uint8Array): Promise<{ file(path: string): { async(type: 'string'): Promise<string> } | null; forEach(fn: (path: string, entry: { dir: boolean; async(type: 'string'): Promise<string> }) => void): void }>
+  new (): { file(path: string, data: string, options?: { base64?: boolean }): void; generateAsync(opts: { type: 'blob'; mimeType?: string }): Promise<Blob> }
+  loadAsync(data: ArrayBuffer | Blob | Uint8Array): Promise<{ file(path: string): { async(type: 'string' | 'base64'): Promise<string> } | null; forEach(fn: (path: string, entry: { dir: boolean; async(type: 'string' | 'base64'): Promise<string> }) => void): void }>
+}
+
+/**
+ * A picture's bytes travel through the parts map as the `data:` URL the
+ * document holds, because everything else in the package is text and a map
+ * of strings is what the tests read. The zip is where they become bytes
+ * again, and the only place that has to know.
+ */
+const MEDIA_PREFIX = 'xl/media/'
+
+/** The media type a media part's extension stands for. */
+function mediaTypeOf(path: string): string {
+  const extension = path.slice(path.lastIndexOf('.') + 1).toLowerCase()
+  return extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' : `image/${extension || 'png'}`
 }
 
 let zipPromise: Promise<ZipCtor> | null = null
@@ -1354,7 +1500,14 @@ async function loadZip(given?: ZipCtor): Promise<ZipCtor> {
 export async function documentToXlsx(doc: SheetDocument, JSZip?: ZipCtor): Promise<Blob> {
   const Zip = await loadZip(JSZip)
   const zip = new Zip()
-  for (const [path, content] of Object.entries(documentToXlsxParts(doc))) zip.file(path, content)
+  for (const [path, content] of Object.entries(documentToXlsxParts(doc))) {
+    if (path.startsWith(MEDIA_PREFIX)) {
+      const comma = content.indexOf(',')
+      zip.file(path, comma >= 0 ? content.slice(comma + 1) : content, { base64: true })
+    } else {
+      zip.file(path, content)
+    }
+  }
   return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 
@@ -1366,8 +1519,15 @@ export async function documentFromXlsx(file: Blob | ArrayBuffer | Uint8Array, JS
   const pending: Array<Promise<void>> = []
   zip.forEach((path, entry) => {
     if (entry.dir) return
+    const clean = path.replace(/^\//, '')
+    // A picture comes back as the data URL an image object holds, so the
+    // rest of the reader never has to think about bytes.
+    if (clean.startsWith(MEDIA_PREFIX)) {
+      pending.push(entry.async('base64').then((base64) => { parts[clean] = `data:${mediaTypeOf(clean)};base64,${base64}` }))
+      return
+    }
     if (!/\.(xml|rels|vml)$/i.test(path)) return
-    pending.push(entry.async('string').then((text) => { parts[path.replace(/^\//, '')] = text }))
+    pending.push(entry.async('string').then((text) => { parts[clean] = text }))
   })
   await Promise.all(pending)
   return documentFromXlsxParts(parts)
