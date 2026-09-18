@@ -108,6 +108,14 @@ describe('translateFormula', () => {
     expect(t('', 1, 0)).toBe('')
   })
 
+  it('keeps a lambda called where it stands callable', () => {
+    // The call node is printed as callee-then-arguments; rendering it like
+    // an ordinary function turned =LAMBDA(x,x*2)(21) into a formula that
+    // no longer parses.
+    expect(t('=LAMBDA(x,x*2)(A1)', 1, 0)).toBe('=LAMBDA(x,x*2)(A2)')
+    expect(t('=LAMBDA(x,LAMBDA(y,x+y))(A1)(B1)', 1, 0)).toBe('=LAMBDA(x,LAMBDA(y,x+y))(A2)(B2)')
+  })
+
   it('passes non-strings straight through', () => {
     expect(translateFormula(42, 1, 0)).toBe(42)
     expect(translateFormula(null, 1, 0)).toBeNull()

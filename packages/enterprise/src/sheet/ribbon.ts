@@ -187,6 +187,8 @@ export type RibbonActionId =
   | 'insert-table'
   | 'recalculate'
   | 'calc-options'
+  | 'evaluate-formula'
+  | 'error-checking'
   | 'toggle-formulas'
   | 'trace-precedents'
   | 'trace-dependents'
@@ -1051,6 +1053,8 @@ const FORMULAS: RibbonTab = {
         small(2, { id: 'trace-dependents', label: 'Trace Dependents', title: 'Trace Dependents: arrows to the formulas that read the active cell; again for the next level', icon: 'trace-dependents', kind: 'button', wide: true, emits: 'trace-dependents' }),
         small(3, { id: 'remove-arrows', label: 'Remove Arrows', title: 'Remove Arrows', icon: 'remove-arrows', kind: 'button', wide: true, emits: 'remove-arrows' }),
         small(1, { id: 'show-formulas', label: 'Show Formulas', title: 'Show formulas instead of their results', keys: 'Ctrl+`', icon: 'show-formulas', kind: 'toggle', wide: true, emits: 'toggle-formulas' }),
+        small(2, { id: 'evaluate-formula', label: 'Evaluate Formula', title: 'Evaluate Formula: work the active cell out one part at a time', icon: 'evaluate-formula', kind: 'button', wide: true, emits: 'evaluate-formula' }),
+        small(3, { id: 'error-checking', label: 'Error Checking', title: 'Error Checking: walk the cells on this sheet that report an error, and the formulas that break their column\'s pattern', icon: 'error-checking', kind: 'button', wide: true, emits: 'error-checking' }),
       ],
     },
     {

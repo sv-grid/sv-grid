@@ -20,10 +20,20 @@ export {
   type CellAddress as GoalSeekCellAddress,
 } from './goal-seek'
 
+export {
+  evaluationSteps, printNode, printValue,
+  type EvaluationStep,
+} from './evaluate-steps'
+
+export {
+  checkSheet, describeFinding, ERROR_MEANINGS,
+  type ErrorFinding, type ErrorFindingKind, type SheetReader,
+} from './error-check'
+
 export { default as SvSheetTabs } from '../SvSheetTabs.svelte'
 export {
-  createWorkbook, isValidSheetName,
-  type Workbook, type SheetData, type WorkbookOptions,
+  createWorkbook, isValidSheetName, cleanIteration, DEFAULT_ITERATION,
+  type Workbook, type SheetData, type WorkbookOptions, type IterationSettings,
 } from './workbook'
 export { setWorkbook, getWorkbook } from './shortcuts'
 export {
