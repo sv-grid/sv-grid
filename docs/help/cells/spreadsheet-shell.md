@@ -999,10 +999,18 @@ that pivot instead of making another, so moving a field or changing an
 aggregation is two clicks. Each write is one undo, cells and definition
 together.
 
+**Insert > Show Details** is Excel's drill-down: the source rows behind
+the number in the cell the cursor is in, written to a sheet of their own,
+with the field names across the top and the first row frozen. A cell in a
+subtotal line opens its whole group, one in the grand total column opens
+the whole line, and the grand total opens every row, which is what each of
+those numbers stands for. The sheet is an ordinary one, so deleting it is
+how it is dismissed. `pivotDrill` is the same answer as data.
+
 Pivots are per sheet, ride in `getState()` as `pivots` and report
 `{ kind: 'pivots' }` on `onChange`. The definition moves with an insert or
 a delete, and is dropped when its source or its target cell is deleted.
-Raised as `insert-pivot` and `refresh-pivot`.
+Raised as `insert-pivot`, `refresh-pivot` and `pivot-details`.
 
 With one measure the block is Excel's compact form: the column values
 carry the corner label, the row labels run down the first column indented
@@ -1363,9 +1371,8 @@ button that does nothing.
   They ride in the .xlsx as Excel's sparkline groups, both ways, and they
   print with the sheet.
 - **A PivotTable** is a definition plus the cells it writes, not a live
-  object: no drag-and-drop field list, no slicers, no drill-down on a
-  double-click, and no report filter. Refresh is what brings it up to
-  date.
+  object: no drag-and-drop field list, no slicers and no report filter.
+  Refresh is what brings it up to date, and Show Details is the drill-down.
 - **Collaboration** is the delta stream and the presence overlay above and
   nothing more: no server, no operational transform, no follow-the-leader
   scrolling, and last writer wins per cell.

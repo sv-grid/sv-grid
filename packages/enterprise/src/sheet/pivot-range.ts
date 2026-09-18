@@ -198,7 +198,38 @@ export function pivotBlock(
   valueAt: (row: number, col: number) => CellValue,
   textAt: (row: number, col: number) => string,
 ): string[][] {
-  if (!pivot.values.length) return []
+  return pivotLayout(pivot, valueAt, textAt).cells
+}
+
+/**
+ * The block, and what each of its lines and columns stands for.
+ *
+ * `pivotBlock` writes the cells; drilling into one needs to know which
+ * field values pin it, which is the same walk. Both come from here so they
+ * cannot drift: a cell drawn from one layout and read from another would
+ * open the wrong rows.
+ */
+export type PivotLayout = {
+  cells: string[][]
+  /** How many lines of `cells` are column headers. */
+  headerCount: number
+  /**
+   * The row field values that pin each line, outermost first, aligned to
+   * `cells`. Null for a header line; shorter than the pivot's row fields
+   * for a group, a subtotal or the grand total, which pin fewer of them.
+   */
+  rowPaths: Array<string[] | null>
+  /** The same for each column of `cells`. Null for the label column. */
+  colPaths: Array<string[] | null>
+}
+
+export function pivotLayout(
+  pivot: SheetPivot,
+  valueAt: (row: number, col: number) => CellValue,
+  textAt: (row: number, col: number) => string,
+): PivotLayout {
+  const empty: PivotLayout = { cells: [], headerCount: 0, rowPaths: [], colPaths: [] }
+  if (!pivot.values.length) return empty
   const records = pivotRecords(pivot.source, valueAt, textAt)
   const result = createPivotModel<TableFeatures, Record<string, unknown>>(records, {
     rows: pivot.rows,
@@ -219,10 +250,11 @@ export function pivotBlock(
   // first column here rather than one of the leaves.
   const label = leaves[0]?.id === '__pivotRowHeader' ? leaves.shift() : undefined
   const headerLabel = label?.header ?? ''
+  const dropped = label ? 1 : 0
 
   const out: string[][] = headerRows.map((row, i) => [
     i === headerRows.length - 1 ? headerLabel : '',
-    ...row.slice(label ? 1 : 0),
+    ...row.slice(dropped),
   ])
   // With one measure, the bottom header row is that measure's name under
   // every column, which says nothing the dialog has not. Drop it and let
@@ -231,13 +263,102 @@ export function pivotBlock(
     const measures = out.pop()!
     out[out.length - 1]![0] = measures[0] ?? ''
   }
+  const headerCount = out.length
+  const rowPaths: Array<string[] | null> = Array.from({ length: headerCount }, () => null)
+
+  // The row axis is a walk down a tree, and the model hands its rows out in
+  // that order: a group before what is under it. Keeping the labels seen at
+  // each depth is enough to know the path of the line being written, and
+  // the label IS the value as the model grouped it, since it groups on the
+  // text too.
+  const stack: string[] = []
   for (const row of result.rows as PivotRow[]) {
-    // Depth 1 is the outermost row field, which sits flush; Excel indents
-    // only what is under it.
     const indent = '    '.repeat(Math.max(0, row.__pivotDepth - 1))
     out.push([`${indent}${row.__pivotLabel}`, ...leaves.map((leaf) => cellText(row[leaf.id]))])
+    const depth = Math.max(0, row.__pivotDepth)
+    if (row.__pivotKind === 'grandTotal') {
+      rowPaths.push([])
+      continue
+    }
+    stack.length = depth
+    if (depth > 0) stack[depth - 1] = row.__pivotLabel
+    rowPaths.push([...stack])
   }
-  return out
+
+  // A column's path is the headers above it, with a group's label repeated
+  // under it: `flattenPivotColumns` writes a group once, over its leftmost
+  // leaf, the way Excel writes one.
+  const levels = Math.min(pivot.cols.length, headerRows.length)
+  const colPaths: Array<string[] | null> = [null]
+  leaves.forEach((leaf, i) => {
+    // The grand total column reads every record, and a sheet with no column
+    // field has one column per measure, which is the same.
+    if (leaf.id.includes('__total__m') || leaf.id.startsWith('pv__all__m')) { colPaths.push([]); return }
+    const path: string[] = []
+    for (let level = 0; level < levels; level += 1) {
+      let value = ''
+      for (let j = 0; j <= i + dropped; j += 1) {
+        const cell = headerRows[level]?.[j]
+        if (cell) value = cell
+      }
+      path.push(value)
+    }
+    colPaths.push(path)
+  })
+
+  return { cells: out, headerCount, rowPaths, colPaths }
+}
+
+/** The source rows behind one cell of a written pivot. */
+export type PivotDrill = {
+  /** The row and column field values that pin the cell, outermost first. */
+  rowPath: string[]
+  colPath: string[]
+  /** The records behind it, in the source's own order. */
+  records: Array<Record<string, unknown>>
+  /** The source's fields, in its own order. */
+  fields: string[]
+}
+
+/**
+ * Excel's "show details": the rows behind the number in a pivot cell.
+ *
+ * `row` and `col` are a cell on the sheet, not a place in the block. Null
+ * when the cell is outside the pivot, or is a header, or is the row label
+ * column, none of which stand for a number.
+ */
+export function pivotDrill(
+  pivot: SheetPivot,
+  row: number,
+  col: number,
+  valueAt: (row: number, col: number) => CellValue,
+  textAt: (row: number, col: number) => string,
+): PivotDrill | null {
+  const layout = pivotLayout(pivot, valueAt, textAt)
+  if (!layout.cells.length) return null
+  const line = row - pivot.target.row
+  const column = col - pivot.target.col
+  if (line < 0 || line >= layout.cells.length) return null
+  if (column < 0 || column >= (layout.cells[line]?.length ?? 0)) return null
+  const rowPath = layout.rowPaths[line]
+  const colPath = layout.colPaths[column]
+  if (!rowPath || !colPath) return null
+
+  const records = pivotRecords(pivot.source, valueAt, textAt)
+  const matches = records.filter((record) => {
+    for (let i = 0; i < rowPath.length; i += 1) {
+      const field = pivot.rows[i]
+      if (field === undefined) return false
+      if (String(record[field] ?? '') !== rowPath[i]) return false
+    }
+    for (let i = 0; i < colPath.length; i += 1) {
+      const field = pivot.cols[i]
+      if (field === undefined) return false
+      if (String(record[field] ?? '') !== colPath[i]) return false
+    }
+    return true
+  })
+  return { rowPath: [...rowPath], colPath: [...colPath], records: matches, fields: pivotFields(pivot.source, textAt) }
 }
 
 /** The rectangle a block written at the target covers. */

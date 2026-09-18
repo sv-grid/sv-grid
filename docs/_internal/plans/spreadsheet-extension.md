@@ -69,6 +69,9 @@ Shipped on the plan's branch, one commit per item:
 - Phase E item 4: `skills/svgrid/rules/sheet.md` with the shell's house
   rules, a `build_sheet` prompt in `@svgrid/mcp`, and a Spreadsheet block
   in Studio that emits `<SvSheet>` over `sheetCellsFromRows(allRows)`.
+- PivotTable Show Details: `pivotLayout` giving every line and column of a
+  written pivot its field values, `pivotDrill` returning the records behind
+  a cell, and the shell writing them to a sheet of their own.
 - Excel's `IMAGE` function: a picture in the cell rather than over it,
   `sheet/cell-images.ts` reading the call off the formula, drawn in the
   cell and on the printed page, and stored as `_xlfn.IMAGE`.
@@ -275,7 +278,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Sparklines in cells~~ | shipped: the groups in the document, Insert > Sparklines (Line, Column, Win/Loss, Edit, Clear), drawn over `<SvSparkline>`, in the .xlsx both ways, and on the printed page | done |
 | ~~Hyperlinks (HYPERLINK function and Insert > Link)~~ | shipped: links per sheet, Insert > Link and Ctrl+K, the function, internal targets, and the xlsx both ways | done |
 | ~~Images floating over the cells~~ | shipped: Insert > Picture, carried in the document as a data URL, and in the .xlsx both ways. In a cell is shipped too, as Excel's `IMAGE` function. A floating picture that is a URL rather than a data URL is left out of the file | done |
-| ~~PivotTable from a range~~ | shipped: `SheetPivot` in the document, Insert > PivotTable and Refresh, the result written as cells | done |
+| ~~PivotTable from a range~~ | shipped: `SheetPivot` in the document, Insert > PivotTable, Refresh and Show Details, the result written as cells | done |
 
 ### Reach
 

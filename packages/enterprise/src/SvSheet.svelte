@@ -102,7 +102,7 @@
     type SparklineGroup, type SheetSparklineType,
   } from './sheet/sparklines'
   import {
-    pivotFields, pivotBlock, pivotFromRange, pivotWrittenRect, copyPivot,
+    pivotFields, pivotBlock, pivotDrill, pivotFromRange, pivotWrittenRect, copyPivot,
     type SheetPivot,
   } from './sheet/pivot-range'
   import {
@@ -1964,6 +1964,47 @@
     say(t('pivotRefreshed'))
   }
 
+  /**
+   * Excel's Show Details: the source rows behind the number in a pivot
+   * cell, written to a sheet of their own.
+   *
+   * A new sheet rather than a panel, because that is what the rows are
+   * for: filtering them, charting them, sending them to someone. The sheet
+   * is an ordinary one, so deleting it is how it is dismissed.
+   */
+  function showPivotDetails() {
+    const here = pivotAt(active.rowIndex, active.colIndex)
+    if (!here) { say(t('noPivotHere')); return }
+    const drill = pivotDrill(here, active.rowIndex, active.colIndex, cellValueAt, cellTextAt)
+    if (!drill || !drill.records.length) { say(t('noPivotDetails')); return }
+    const name = wb.addSheet(nextDetailSheetName())
+    drill.fields.forEach((field, c) => wb.setRaw(name, 0, c, field))
+    drill.records.forEach((record, r) => {
+      drill.fields.forEach((field, c) => {
+        const value = record[field]
+        wb.setRaw(name, r + 1, c, value === null || value === undefined ? '' : String(value))
+      })
+    })
+    doc.get(name).formats.set(
+      [[0, 0, 0, Math.max(0, drill.fields.length - 1)] as unknown as Rect],
+      { bold: true, fill: '#e2e8f0' },
+      { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => colToLetters(i) },
+    )
+    doc.get(name).freeze = { rows: 1, cols: 0 }
+    wb.setActive(name)
+    changed({ kind: 'sheets' })
+    bump()
+    say(t('pivotDetails', { count: drill.records.length, name }))
+  }
+
+  /** "Details", then "Details2" and so on: a name no sheet has yet. */
+  function nextDetailSheetName(): string {
+    const taken = new Set(wb.sheets.map((n) => n.toLowerCase()))
+    const base = t('pivotDetailsSheet')
+    if (!taken.has(base.toLowerCase())) return base
+    for (let i = 2; ; i += 1) if (!taken.has(`${base}${i}`.toLowerCase())) return `${base}${i}`
+  }
+
   /** The spec a chart object draws right now: its range, read live. */
   function specOf(object: SheetChartObject) {
     void version
@@ -3213,6 +3254,10 @@
       case 'refresh-pivot':
         if (onAction?.(action, context) === true) return
         refreshPivot()
+        return
+      case 'pivot-details':
+        if (onAction?.(action, context) === true) return
+        showPivotDetails()
         return
       case 'trace-precedents': trace('precedents'); return
       case 'trace-dependents': trace('dependents'); return
