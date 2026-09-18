@@ -451,6 +451,11 @@ name, an import replacing a sheet, a solver applying its answer with
 }} />
 ```
 
+`act(action)` runs a ribbon action as if its button had been clicked
+(`sheet.act('sort-asc')`, `sheet.act('circle-invalid')`), for a host with
+chrome of its own; what the ribbon would raise for `onAction` is raised
+here too.
+
 The shell carries Goal Seek, Text to Columns, Remove Duplicates and the
 Name Manager itself. The demos below each replace one with a dialog of
 their own, returning `true` from `onAction`, and show the write paths a
@@ -635,6 +640,16 @@ arrow, or Alt+Down, drops the list (arrows and Enter pick, Escape leaves
 the cell alone), and a pick is one undo. A typed entry is matched against
 the list without regard to case.
 
+The dialog's Input Message tab gives a rule a title and a message that
+show in a small box under the cell while it is selected, as Excel's do;
+the rule carries it as `input`. The arrow beside Data Validation has
+Circle Invalid Data, which draws Excel's red oval on every cell under a
+rule whose current contents break it (pasted, filled or written before the
+rule was), and Clear Validation Circles. The circles are worked out again
+on every repaint while they are on, so a corrected cell loses its circle
+at once; switching sheets turns them off. `invalidCells` is the same check
+for a shell of your own. Raised as `circle-invalid` and `clear-circles`.
+
 The rules are per sheet, move with an insert or delete (and drop when
 their cells go), ride in `getState()` as `validation` and report
 `{ kind: 'validation' }` on `onChange`. `ruleAt`, `checkEntry`,
@@ -715,8 +730,8 @@ button that does nothing.
   author, no timestamp.
 - **Protection** takes no password and has no "allow users to" list: it
   guards against mistakes, not against the person at the keyboard.
-- **Validation** checks what is typed and pasted-over cells are left as
-  they land; there is no Circle Invalid Data and no Input Message.
+- **Validation** checks what is typed; pasted-over cells are left as they
+  land until Circle Invalid Data is asked for.
 - **Conditional formatting** has Excel's presets and Excel's "with"
   styles, one data bar colour (and no negative axis: a range with
   negatives runs from its minimum), one icon set per flavour and no

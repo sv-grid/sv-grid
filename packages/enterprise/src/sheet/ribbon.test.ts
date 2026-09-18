@@ -122,9 +122,10 @@ describe('the model is well-formed', () => {
     expect(typeof merge.run).toBe('function')
   })
 
-  it('Data > Data Tools raises Data Validation', () => {
+  it('Data > Data Tools raises Data Validation, Circle Invalid Data and Clear Validation Circles', () => {
     const item = ribbonItems().find((i) => i.id === 'data-validation')!
-    expect(item).toMatchObject({ emits: 'data-validation', size: 'large' })
+    expect(item).toMatchObject({ kind: 'dropdown', size: 'large' })
+    expect(item.options!.map((o) => o.emits)).toEqual(['data-validation', 'circle-invalid', 'clear-circles'])
   })
 
   it('the Format menu carries Lock Cell as a toggle under Protection', () => {

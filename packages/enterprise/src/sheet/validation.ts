@@ -41,6 +41,9 @@ export type ValidationRule = {
   /** List rules: show the arrow and the picker on the cell. */
   inCellDropdown: boolean
   alert: { style: 'stop' | 'warning'; title?: string; message?: string }
+  /** Excel's Input Message: shown under the cell while it is selected.
+   *  Absent when the rule has none. */
+  input?: { title?: string; message?: string }
 }
 
 /** How a rule reads the sheet: the shell wires the workbook in. */
@@ -275,4 +278,43 @@ export function describeRule(rule: ValidationRule): string {
     case 'list': return `List: ${v1}`
     case 'custom': return `Custom: ${v1}`
   }
+}
+
+/**
+ * Excel's Circle Invalid Data: every cell under a rule whose current text
+ * breaks it. Blank cells count when the rule says they do. The rectangles
+ * are clipped to `rows` by `cols`, the sheet's used extent, so a rule over
+ * a whole column costs the cells that hold something.
+ */
+export function invalidCells(
+  rules: ReadonlyArray<ValidationRule>,
+  ctx: ValidationContext,
+  rawAt: (row: number, col: number) => string,
+  rows: number,
+  cols: number,
+): Array<{ row: number; col: number }> {
+  const out: Array<{ row: number; col: number }> = []
+  const seen = new Set<number>()
+  for (const rule of rules) {
+    if (rule.allow === 'any') continue
+    for (const [r1, c1, r2, c2] of rule.rects) {
+      const rowEnd = Math.min(r2, rows - 1)
+      const colEnd = Math.min(c2, cols - 1)
+      for (let r = Math.max(0, r1); r <= rowEnd; r += 1) {
+        for (let c = Math.max(0, c1); c <= colEnd; c += 1) {
+          const key = r * 1048576 + c
+          if (seen.has(key)) continue
+          seen.add(key)
+          // The rule that applies is the last one covering the cell, which
+          // may not be this one.
+          const applies = ruleAt(rules, r, c)
+          if (!applies || applies.allow === 'any') continue
+          const text = rawAt(r, c)
+          if (text.trim() === '' && applies.ignoreBlank) continue
+          if (!checkEntry(applies, text, { row: r, col: c }, ctx).ok) out.push({ row: r, col: c })
+        }
+      }
+    }
+  }
+  return out
 }

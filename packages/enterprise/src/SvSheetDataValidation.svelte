@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
-   * Excel's Data Validation dialog, the two tabs with something behind them:
-   * Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell
-   * dropdown) and Error Alert (Style, Title, Message). It opens on the rule
+   * Excel's Data Validation dialog, its three tabs: Settings (Allow, Data,
+   * the bounds or the source, Ignore blank, In-cell dropdown), Input
+   * Message (shown under the cell while it is selected) and Error Alert
+   * (Style, Title, Message). It opens on the rule
    * at the active cell and, on OK, hands back one rule for the shell to put
    * over the selection; Clear All removes the validation from the selection.
    */
@@ -25,7 +26,7 @@
 
   let { open = $bindable(false), rule, address, onApply, onClear, onClose }: Props = $props()
 
-  type Tab = 'settings' | 'alert'
+  type Tab = 'settings' | 'input' | 'alert'
   let tab = $state<Tab>('settings')
 
   const ALLOWS: ReadonlyArray<{ id: ValidationAllow; label: string }> = [
@@ -48,6 +49,9 @@
   let style = $state<'stop' | 'warning'>('stop')
   let title = $state('')
   let message = $state('')
+  let showInput = $state(true)
+  let inputTitle = $state('')
+  let inputMessage = $state('')
   let first = $state<HTMLSelectElement | null>(null)
 
   $effect(() => {
@@ -62,6 +66,9 @@
     style = rule?.alert.style ?? 'stop'
     title = rule?.alert.title ?? ''
     message = rule?.alert.message ?? ''
+    showInput = rule ? rule.input !== undefined : true
+    inputTitle = rule?.input?.title ?? ''
+    inputMessage = rule?.input?.message ?? ''
     queueMicrotask(() => first?.focus())
   })
 
@@ -88,6 +95,10 @@
       ignoreBlank,
       inCellDropdown: allow === 'list' ? inCellDropdown : false,
       alert: { style, title: title.trim() || undefined, message: message.trim() || undefined },
+    }
+    // An input message exists when the box is on and there is text to show.
+    if (showInput && (inputTitle.trim() || inputMessage.trim())) {
+      spec.input = { title: inputTitle.trim() || undefined, message: inputMessage.trim() || undefined }
     }
     if (bounded) {
       spec.operator = operator
@@ -117,7 +128,7 @@
   <form class="sv-sheet-dialog validation" onsubmit={(e) => { e.preventDefault(); ok() }}>
     <div class="where">{address}</div>
     <div class="tabs" role="tablist" aria-label="Data Validation tabs">
-      {#each [['settings', 'Settings'], ['alert', 'Error Alert']] as [id, label] (id)}
+      {#each [['settings', 'Settings'], ['input', 'Input Message'], ['alert', 'Error Alert']] as [id, label] (id)}
         <button type="button" role="tab" class="tab" class:on={tab === id} aria-selected={tab === id} onclick={() => (tab = id as Tab)}>{label}</button>
       {/each}
     </div>
@@ -163,6 +174,17 @@
         {:else if allow !== 'any'}
           <p class="hint">A bound can be a formula, so =$B$1 follows B1.</p>
         {/if}
+      {:else if tab === 'input'}
+        <label class="check"><input type="checkbox" bind:checked={showInput} /> Show input message when cell is selected</label>
+        <div class="lead">When cell is selected, show this input message:</div>
+        <label class="field">
+          <span>Title:</span>
+          <input type="text" bind:value={inputTitle} disabled={!showInput} />
+        </label>
+        <label class="field message">
+          <span>Input message:</span>
+          <textarea rows="4" bind:value={inputMessage} disabled={!showInput}></textarea>
+        </label>
       {:else}
         <div class="lead">When the user enters invalid data, show this alert:</div>
         <label class="field">
