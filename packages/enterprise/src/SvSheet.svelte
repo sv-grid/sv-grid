@@ -1527,8 +1527,16 @@
   let dragging: { id: string; kind: 'move' | 'resize'; x: number; y: number; anchor: ObjectAnchor } | null = null
   let imageInput = $state<HTMLInputElement | null>(null)
 
-  /** Replace the active sheet's objects, one undo. */
+  /**
+   * Replace the active sheet's objects, one undo.
+   *
+   * The refusal sits here rather than only on the commands: a chart is
+   * moved, resized, retyped, deleted from the ribbon, from a dialog and
+   * from the keyboard, and a protected sheet has to mean the same thing on
+   * every one of those paths.
+   */
   function putObjects(next: SheetObject[]) {
+    if (protectedNow()) { refuse(); return }
     const sheet = wb.active
     const before = doc.get(sheet).objects
     const put = (value: SheetObject[]) => {
@@ -1575,6 +1583,7 @@
 
   /** Replace the active sheet's sparkline groups, one undo. */
   function putSparklines(next: SparklineGroup[]) {
+    if (protectedNow()) { refuse(); return }
     const sheet = wb.active
     const before = doc.get(sheet).sparklines
     const put = (value: SparklineGroup[]) => {
@@ -1612,6 +1621,7 @@
 
   /** The Sparkline tab's Edit Data: the dialog again, on the group here. */
   function setupSparklines() {
+    if (protectedNow()) { refuse(); return }
     const here = sparklineHere()
     if (!here) { say(t('noSparklinesHere')); return }
     sparklineSetup = { group: here, existing: true }
@@ -3280,6 +3290,7 @@
         return
       case 'chart-setup': {
         if (onAction?.(action, context) === true) return
+        if (protectedNow()) { refuse(); return }
         const object = objectsNow().find((o) => o.id === selectedObject)
         if (object?.kind === 'chart') chartSetup = object
         else say(t('selectChartFirst'))
@@ -3287,6 +3298,7 @@
       }
       case 'delete-object': {
         if (onAction?.(action, context) === true) return
+        if (protectedNow()) { refuse(); return }
         if (selectedObject) removeObject(selectedObject)
         return
       }

@@ -158,3 +158,66 @@ describe('what the status bar claims happened', () => {
     expect(doc.workbook.tables.list()[0]!.style).not.toBe('TableStyleMedium2')
   })
 })
+
+describe('what a protected sheet refuses', () => {
+  const protectedSheet = () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['a', 'b'], ['1', '2']] }] })
+    doc.get('S').protected = true
+    doc.get('S').objects = [
+      { id: 'o1', kind: 'image', anchor: { row: 0, col: 0, dx: 0, dy: 0, width: 40, height: 40 }, src: 'https://example.com/a.png', alt: 'mark' },
+    ]
+    doc.get('S').sparklines = [{ id: 's1', location: [3, 0, 3, 0] as never, data: [0, 0, 1, 1] as never, type: 'line' }]
+    return doc
+  }
+
+  it('does not open the sparkline dialog, which is what wrote through the refusal', async () => {
+    const doc = protectedSheet()
+    const { api, sheet } = await mountSheet({ document: doc })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(3, 0); cmd.setSelection(3, 0)
+    await paint()
+    sheet.act('sparkline-setup')
+    await paint()
+    expect(document.querySelector('.sv-modal'), 'a dialog opened').toBeNull()
+    expect(doc.get('S').sparklines?.length, 'the group is still there').toBe(1)
+  })
+
+  it('keeps its sparklines whatever asks for them to go', async () => {
+    const doc = protectedSheet()
+    const { api, sheet } = await mountSheet({ document: doc })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(3, 0); cmd.setSelection(3, 0)
+    await paint()
+    for (const action of ['sparkline-line', 'sparkline-column', 'clear-sparklines'] as const) {
+      sheet.act(action)
+      await paint()
+    }
+    expect(doc.get('S').sparklines).toEqual([
+      { id: 's1', location: [3, 0, 3, 0], data: [0, 0, 1, 1], type: 'line' },
+    ])
+  })
+
+  it('keeps its objects: the ribbon Delete and the chart dialog both refuse', async () => {
+    const doc = protectedSheet()
+    const { sheet } = await mountSheet({ document: doc })
+    await paint()
+    sheet.act('delete-object')
+    await paint()
+    sheet.act('chart-setup')
+    await paint()
+    expect(document.querySelector('.sv-modal'), 'a dialog opened').toBeNull()
+    expect(doc.get('S').objects?.length, 'objects left').toBe(1)
+  })
+
+  it('and the last gate holds even when a command forgets: putObjects refuses', async () => {
+    // Driven through the one command that reaches it without a selection:
+    // Insert > Picture opens a file chooser on an open sheet and refuses
+    // here, so the refusal is the one a picture would have met.
+    const doc = protectedSheet()
+    const { sheet } = await mountSheet({ document: doc })
+    await paint()
+    sheet.act('insert-picture')
+    await paint()
+    expect(doc.get('S').objects?.length).toBe(1)
+  })
+})

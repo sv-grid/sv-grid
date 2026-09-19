@@ -1139,6 +1139,12 @@ away. The refusal is a sentence in the status bar, Excel's own: "The cell
 you're trying to change is on a protected sheet. To make a change,
 unprotect the sheet." Unlocked cells take every edit as before.
 
+What is drawn OVER the cells is covered too: a chart or a picture cannot be
+moved, resized, retyped or deleted, and the sparklines of a protected sheet
+cannot be changed or cleared. The dialogs that would write them do not open
+on a protected sheet, and the refusal sits on the write itself, so every way
+in (the ribbon, a dialog, the keyboard, a drag) says the same thing.
+
 Protect Sheet opens Excel's dialog with its "allow all users of this
 worksheet to" list: format cells, format columns, format rows, insert
 columns, insert rows, delete columns, delete rows, sort, use AutoFilter.
