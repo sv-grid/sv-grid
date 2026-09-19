@@ -56,7 +56,9 @@ What that gets you:
   six colours in three tones, under the names Excel stores them by
   (`TableStyleMedium2`), plus None for cells that keep exactly what they
   carry. The style lives on the table as `style`, so it rides in
-  `getState()` and goes into the file.
+  `getState()` and goes into the file, and File > Print carries the header
+  and the banding onto the page in the colours the sheet wears, under
+  whatever each cell says for itself.
 - **The calculated column.** A row typed under the last one joins the table
   (Excel's auto-expand), and every column whose cell above holds a formula
   is filled down into it, references translated, so `=[@Qty]*[@Price]`

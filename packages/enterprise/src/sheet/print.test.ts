@@ -164,3 +164,31 @@ describe('the area an object needs', () => {
     expect(areasWithObjects(base())).toEqual([[0, 0, 3, 2]])
   })
 })
+
+describe('a table on the printed page', () => {
+  it('prints the bands the sheet draws, under whatever the cell says itself', () => {
+    const html = sheetPrintHtml(input({
+      rowCount: 3,
+      colCount: 2,
+      merges: [],
+      hidden: { rows: new Set(), cols: new Set() },
+      cellAt: (r, c) => {
+        if (r === 0) return { text: `H${c}`, table: { fill: '#5b9bd5', color: '#ffffff', bold: true, borderBottom: '#2e75b6' } }
+        if (r === 1) return { text: `${r}${c}`, table: { fill: '#dce6f1' } }
+        // A cell with a fill of its own: the table's band goes under it.
+        return { text: `${r}${c}`, table: { fill: '#dce6f1' }, entry: { fill: '#fde68a' } }
+      },
+    }))
+    expect(html).toContain('background:#5b9bd5')
+    expect(html).toContain('color:#ffffff')
+    expect(html).toContain('border-bottom:1px solid #2e75b6')
+    expect(html).toContain('background:#dce6f1')
+    // The cell's own fill is written after the table's, so it wins.
+    const ownRow = html.slice(html.lastIndexOf('<tr'))
+    expect(ownRow.indexOf('background:#dce6f1')).toBeLessThan(ownRow.indexOf('background:#fde68a'))
+  })
+
+  it('leaves a sheet with no table exactly as it was', () => {
+    expect(sheetPrintHtml(input())).not.toContain('font-weight:600')
+  })
+})

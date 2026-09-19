@@ -445,6 +445,34 @@
     return drawn
   }
 
+  /**
+   * A table's look on one cell, as the printed page needs it: colours
+   * rather than the custom properties the screen's underlay reads, since a
+   * print document carries no stylesheet of ours.
+   *
+   * Excel prints a table banded, and this shell draws the look instead of
+   * writing it into the cells, so without this the page comes out plain
+   * wherever a table is.
+   */
+  function printTableLook(row: number, col: number): { fill?: string; color?: string; bold?: boolean; borderTop?: string; borderBottom?: string } | null {
+    const part = tablePartAt(row, col)
+    if (!part) return null
+    const table = activeTables.find((t) => col >= t.firstCol && col <= t.lastCol && row >= t.headerRow && row <= t.lastRow + (t.hasTotals ? 1 : 0))
+    const colours = tableStyleColours(table?.style ?? DEFAULT_TABLE_STYLE)
+    if (!colours) return null
+    if (part.part === 'header') {
+      return {
+        fill: colours.header,
+        ...(colours.headerText === 'inherit' ? {} : { color: colours.headerText }),
+        bold: true,
+        borderBottom: colours.border,
+      }
+    }
+    if (part.part === 'totals') return { fill: colours.totals, bold: true, borderTop: colours.border }
+    if (part.part === 'band') return { fill: colours.band }
+    return null
+  }
+
   /** The objects of a sheet as markup the print builder can place. */
   function printObjects(name: string): Array<{ row: number; col: number; dx: number; dy: number; width: number; height: number; html: string }> {
     const out: Array<{ row: number; col: number; dx: number; dy: number; width: number; height: number; html: string }> = []
@@ -492,7 +520,8 @@
             markers: spark.group.markers,
           })
           : ''
-        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}), ...(sparkline ? { sparkline } : {}), ...(image ? { image } : {}) }
+        const table = printTableLook(r, c)
+        return { text: shown.text, ...(shown.color ? { color: shown.color } : {}), align: typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left', ...(entry ? { entry } : {}), ...(cf ? { cf } : {}), ...(sparkline ? { sparkline } : {}), ...(image ? { image } : {}), ...(table ? { table } : {}) }
       },
       widths: api ? api.getColumnWidths() : state.widths,
       defaultWidth: columnWidth,
