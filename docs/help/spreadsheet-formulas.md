@@ -255,7 +255,11 @@ it there, and an empty pattern gives an empty string.
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is
 the function.
 
-Need the full ~400? The [HyperFormula adapter](#hyperformula) is still there.
+A function that is not here is a gap to report, not a reason to reach for
+another engine: the built-in one is what the sheet ships with and what it is
+tested against. For a plain `<SvGrid>` with no workbook behind it,
+`createHyperFormulaSheet` in `@svgrid/grid` is a separate, row-shaped adapter
+and is unaffected by any of this.
 
 ### Error codes
 
@@ -421,51 +425,48 @@ names and the tables, and it goes into the `.xlsx` as `calcPr` with
 `iterate`, `iterateCount` and `iterateDelta`, which is where Excel keeps it,
 so a file saved with iteration on opens with it on.
 
-## A different engine under the same sheet
+## An engine of your own under the same sheet
 
 What works a formula out is one option on `createWorkbook`. The built-in
-parser and evaluator are the default and need nothing; an application that
-wants Excel's full library hands over a
-[HyperFormula](https://hyperformula.handsontable.com) instance instead,
-which is an optional peer and a separate licence:
+parser and evaluator are what the sheet ships with, what every part of the
+shell is tested against, and what a workbook uses unless told otherwise.
+They need nothing installed and carry no second licence.
+
+The seam is there for an application that already has an evaluator and wants
+the sheet over it:
 
 ```ts
-import { HyperFormula } from 'hyperformula'
-import { createWorkbook, createHyperFormulaEngine } from '@svgrid/enterprise'
+import { createWorkbook, builtinEngine, type SheetEngine } from '@svgrid/enterprise'
 
-const hf = HyperFormula.buildEmpty({ licenseKey: 'gpl-v3' })
-const wb = createWorkbook(sheets, { engine: createHyperFormulaEngine({ hyperformula: hf }) })
+const builtin = builtinEngine()
+const mine: SheetEngine = {
+  name: 'mine',
+  evaluate(text, at, host) {
+    if (text === '=ANSWER()') return { value: 42 }
+    // Everything this engine does not answer falls through to the built-in one.
+    return builtin.evaluate(text, at, host)
+  },
+}
+
+const wb = createWorkbook([{ name: 'Sheet1', cells: [['=ANSWER()']] }], { engine: mine })
 ```
 
-The engine keeps HyperFormula's sheets as a mirror of the workbook's cells
-and writes each edit through; the workbook keeps everything else, because
-none of it is the engine's to decide. The dependency graph, the value
-cache, cycle detection, the volatile set and the spill ranges are read off
-the reference grammar, which is Excel's whatever evaluates it, so they stay
-right under either engine and every part of the shell works the same:
-tracing precedents, Goal Seek, validation formulas, conditional formatting
-rules.
+An engine answers `evaluate(text, at, host)` with the value and, where it has
+one, the grid to spill. The workbook keeps everything else, because none of it
+is the engine's to decide: the dependency graph, the value cache, cycle
+detection, the volatile set and the spill ranges are read off the reference
+grammar, which is Excel's whatever evaluates it. So they stay right under any
+engine, and every part of the shell works the same over it: tracing
+precedents, Goal Seek, validation formulas, conditional formatting rules.
 
-What changes is the function library, so HyperFormula's ~400 functions
-are available and the handful the built-in has that it does not are not,
-and dynamic arrays, which spill inside HyperFormula's own sheet rather
-than over the workbook's cells. A defined name is the workbook's, so a
-formula that uses one needs the same name defined in the instance.
-
-The mirror follows the workbook's sheets: one added arrives in the
-instance, one renamed or removed goes from it, so `=Costs!B2` answers
-`#REF!` after that sheet is gone rather than reading a copy left behind.
-Sheets the application put in the instance itself are left alone.
-
-An engine of your own is the same shape: `evaluate(text, at, host)`
-returning the value and, where it has one, the grid to spill. `host.parse`
-is the workbook's cached parse and `host.context.resolve` reads a
-precedent through the cache and the cycle detection, so an engine never
-has to keep a copy unless it wants one (`load` and `write` are there for
-the ones that do).
+`host.parse` is the workbook's cached parse and `host.context.resolve` reads a
+precedent through the cache and the cycle detection, so an engine never has to
+keep a copy of the cells unless it wants one. `load` and `write` are there for
+the ones that do: `load` when the workbook is built or its cells change
+wholesale, `write` on a single cell.
 
 For a plain `<SvGrid>` with no workbook behind it, `createHyperFormulaSheet`
-in `@svgrid/grid` is the older, row-shaped adapter and is still there.
+in `@svgrid/grid` is the older, row-shaped adapter, free and still there.
 
 <div data-docs-demo="173-hyperformula" data-height="520"></div>
 

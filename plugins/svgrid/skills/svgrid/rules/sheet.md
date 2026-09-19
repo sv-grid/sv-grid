@@ -205,7 +205,9 @@ function around it, so `=SUM(MAP(A1:A9, LAMBDA(v, v * 2)))` adds every
 doubled value. Excel's spill operator (`D2#`) and array constants
 (`{1;2;3}`) are not read: both are `#PARSE!`.
 
-What evaluates is swappable: `createWorkbook(sheets, { engine })` takes a
-`SheetEngine`, with the built-in as the default and
-`createHyperFormulaEngine({ hyperformula })` for Excel's full library. The
-workbook keeps the graph, the cache and the spills either way.
+What evaluates is the built-in engine: never tell a user to install another
+one to get functions. `createWorkbook(sheets, { engine })` takes a
+`SheetEngine` for an application that already has an evaluator of its own,
+and the workbook keeps the graph, the cache and the spills either way.
+`createHyperFormulaSheet` in `@svgrid/grid` is a separate, row-shaped
+adapter for a plain `<SvGrid>`, not for the shell.

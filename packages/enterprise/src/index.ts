@@ -238,10 +238,6 @@ export {
   linkTitle,
   type SheetLink, type LinksMap, type LinkTarget,
 } from './sheet/links'
-export {
-  createHyperFormulaEngine, fromHyperFormula,
-  type HyperFormulaLike, type HyperFormulaEngineOptions,
-} from './sheet/hyperformula-engine'
 export { functionCatalog, FUNCTION_GROUPS, type FunctionInfo, type FunctionGroup } from './sheet/function-catalog'
 export { parseEntry, completeEntry, type ParsedEntry } from './sheet/entry'
 export { cycleReference, type TextEdit } from './sheet/edit-keys'

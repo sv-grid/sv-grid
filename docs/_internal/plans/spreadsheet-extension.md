@@ -49,9 +49,10 @@ Shipped on the plan's branch, one commit per item:
   the object layer in the shell with move, resize, select and delete, the
   Chart dialog, and Insert > Chart and Insert > Picture on the ribbon.
   Insert > Chart no longer needs `extras`.
-- Phase B item 4: the `SheetEngine` seam on `createWorkbook`, the
-  built-in engine as the default, and `createHyperFormulaEngine` mirroring
-  the cells into a HyperFormula instance.
+- Phase B item 4: the `SheetEngine` seam on `createWorkbook`, with the
+  built-in engine behind it. A HyperFormula engine shipped here first and
+  was then retired unreleased when the built-in library outgrew the reason
+  for it; see the answer to question 2 in section 6.
 - Phase E item 3: `<sv-sheet>` under `@svgrid/enterprise/wc`, its surface
   generated from the shell's Props (element props, types, React and Vue
   wrappers, docs tables, a `--check` the tests run), built by
@@ -287,7 +288,7 @@ weeks, L a quarter-scale piece of work.
 | ~~Reference functions (INDIRECT, OFFSET, ROW, COLUMN, ROWS, COLUMNS, ADDRESS, CHOOSE)~~ | shipped; INDIRECT and OFFSET are volatile, recomputed on every write | done |
 | ~~Dynamic arrays and spill (FILTER, UNIQUE, SORT, SORTBY, SEQUENCE, `#SPILL!`)~~ | shipped: `evaluateSpill`, spill ranges in the workbook, array arithmetic with broadcasting, TRANSPOSE and TEXTSPLIT too | done |
 | ~~LET / LAMBDA~~ | shipped, with MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY, and the `_xlfn.` prefixes in the file | done |
-| ~~A pluggable engine (HyperFormula behind the shell)~~ | shipped: an `engine` option on `createWorkbook`, with `createHyperFormulaEngine` | done |
+| ~~A pluggable engine (HyperFormula behind the shell)~~ | shipped as the `engine` option on `createWorkbook`, over the built-in engine. HyperFormula behind the shell was tried and retired unreleased: see section 6 question 2 | done |
 | ~~Iterative calculation (circular references with a cap)~~ | shipped: `workbook.iteration`, Formulas > Calculation Options, the two limits, `calcPr` in the xlsx both ways | done |
 
 ### Ribbon parity
@@ -505,8 +506,15 @@ feedback from that.
 1. Should xlsx open and save be a ribbon File tab, or stay host-driven
    through `onAction` with only the functions exported? The plan assumes
    both: the tab by default, `onAction` to take it over.
-2. Is HyperFormula behind the shell worth its licence story, or should the
-   built-in engine grow until the adapter can be retired?
+2. ~~Is HyperFormula behind the shell worth its licence story, or should the
+   built-in engine grow until the adapter can be retired?~~ **Answered: the
+   built-in engine.** It carries 156 functions now (`Object.keys(FUNCTIONS)`
+   in `sheet/functions.ts`), including the packs the adapter was there to
+   cover, so `createHyperFormulaEngine` is gone from `@svgrid/enterprise`
+   before it was ever released. The `SheetEngine` seam stays, for an
+   application with an evaluator of its own and for the bench, which counts
+   evaluations through it. `createHyperFormulaSheet` in the free grid is a
+   separate, row-shaped adapter for a plain `<SvGrid>` and is untouched.
 3. Does the `<sv-sheet>` element ship inside `@svgrid/enterprise` or as its
    own commercial package? Pricing decides that, not code.
 4. Collaboration: is a reference server part of the product, or only a

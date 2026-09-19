@@ -2,9 +2,9 @@
  * The seam between the workbook and whatever works a formula out.
  *
  * The built-in engine (the tokenizer, parser and evaluator beside this
- * file) is the default and needs nothing. An application that wants
- * Excel's full library instead passes another one to `createWorkbook`:
- * `{ engine: createHyperFormulaEngine({ hyperformula }) }`.
+ * file) is the one the sheet ships with and the one it is tested against.
+ * The seam is here for an application that has its own evaluator to put
+ * behind the same sheet: `createWorkbook(sheets, { engine: mine })`.
  *
  * What an engine is asked for is narrow on purpose: a formula's value in
  * a cell, and the grid it spills when it has one. The workbook keeps

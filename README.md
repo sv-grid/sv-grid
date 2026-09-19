@@ -240,9 +240,8 @@ announcement layer, RTL, and a high-contrast theme. Details in
 [accessibility](https://svgrid.com/docs/help/accessibility/).
 
 **What's not built yet?** A custom filter component slot, custom tool panels, a viewport row model
-over a socket, a formula language of our own (HyperFormula plugs in today), and non-Gregorian
-calendars. Full list with effort tags on the [roadmap](https://svgrid.com/roadmap/) and in
-[missing features](docs/help/missing-features.md).
+over a socket, and non-Gregorian calendars. Full list with effort tags on the
+[roadmap](https://svgrid.com/roadmap/) and in [missing features](docs/help/missing-features.md).
 
 ## Who's behind it
 

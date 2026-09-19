@@ -72,10 +72,10 @@ export type WorkbookOptions = {
    */
   onWrite?(change: { sheet: string; row: number; col: number; text: string }): void
   /**
-   * What works a formula out. The built-in parser and evaluator by
-   * default; `createHyperFormulaEngine` puts Excel's full library there
-   * instead. The workbook keeps the dependency graph, the cache, the
-   * cycles and the spills whichever engine answers.
+   * What works a formula out. The built-in parser and evaluator unless an
+   * application hands over an evaluator of its own. The workbook keeps the
+   * dependency graph, the cache, the cycles and the spills whichever engine
+   * answers.
    */
   engine?: SheetEngine
   /** Tables the workbook starts with, for a document being restored. */

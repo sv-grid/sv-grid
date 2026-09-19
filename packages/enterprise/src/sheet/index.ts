@@ -121,10 +121,6 @@ export {
   linkTitle,
   type SheetLink, type LinksMap, type LinkTarget,
 } from './links'
-export {
-  createHyperFormulaEngine, fromHyperFormula,
-  type HyperFormulaLike, type HyperFormulaEngineOptions,
-} from './hyperformula-engine'
 export { default as SvSheetSort } from '../SvSheetSort.svelte'
 
 export {
