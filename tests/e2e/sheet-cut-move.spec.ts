@@ -134,3 +134,23 @@ test.describe('a copy leaves out the rows nobody can see', () => {
     expect(left).toEqual(['', '', '33', '', ''])
   })
 })
+
+test.describe('SUBTOTAL follows what the sheet is hiding', () => {
+  test('the 101-111 codes drop a row hidden by hand; SUM keeps it', async ({ page }) => {
+    await open(page)
+    for (let r = 0; r < 4; r += 1) await type(page, r, 0, String((r + 1) * 10))
+    await type(page, 5, 0, '=SUBTOTAL(9,A1:A4)')
+    await type(page, 6, 0, '=SUBTOTAL(109,A1:A4)')
+    await type(page, 7, 0, '=SUM(A1:A4)')
+    expect(await shown(page, 5, 0)).toBe('100')
+    expect(await shown(page, 6, 0)).toBe('100')
+
+    await cell(page, 1, 0).click()
+    await page.keyboard.press('Control+9')
+    await page.waitForTimeout(500)
+    // 9 keeps a row hidden by hand, 109 drops it, SUM knows nothing of either.
+    expect(await shown(page, 5, 0)).toBe('100')
+    expect(await shown(page, 6, 0)).toBe('80')
+    expect(await shown(page, 7, 0)).toBe('100')
+  })
+})

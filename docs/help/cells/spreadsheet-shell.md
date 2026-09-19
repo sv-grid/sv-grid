@@ -86,6 +86,10 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- `SUBTOTAL` follows the filter: `=SUBTOTAL(9, C2:C99)` under a filtered
+  list totals the rows that matched, and the 101-111 codes leave out rows
+  hidden by hand too. That is what a table's totals row should be written
+  with; `SUM` counts everything, as it does in Excel.
 - The status bar's Average, Count and Sum are of the cells you can see: a
   filtered-out row is not in the total, which is what makes the bar worth
   reading over a filtered block. Delete and Clear Contents leave such a row
