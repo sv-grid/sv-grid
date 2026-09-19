@@ -434,6 +434,87 @@ describe('the newer functions', () => {
   })
 })
 
+// A QA round opened these files in a real LibreOffice and read its own
+// output back. Each case below is something that cost data on one leg of
+// that trip, or something a file from Excel or Google Sheets carries.
+describe('files other spreadsheets write', () => {
+  const wrap = (sheet: string): Record<string, string> => ({
+    'xl/workbook.xml': '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+      + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      + '<sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>',
+    'xl/_rels/workbook.xml.rels': '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
+    'xl/worksheets/sheet1.xml': '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+      + ` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${sheet}</worksheet>`,
+  })
+
+  it('reads a row and a cell that carry no position, in order', () => {
+    const parts = wrap('<sheetData><row><c><v>1</v></c><c><v>2</v></c></row><row><c t="inlineStr"><is><t>x</t></is></c></row></sheetData>')
+    const cells = documentFromXlsxParts(parts).workbook.sheets[0]!.cells
+    expect(cells[0]).toEqual(['1', '2'])
+    expect(cells[1]).toEqual(['x'])
+  })
+
+  it('takes a row height LibreOffice left unflagged', () => {
+    // LibreOffice keeps the height and writes customHeight="false"; Excel
+    // flags the ones it was told. A height that differs from the sheet's
+    // default was meant either way.
+    const parts = wrap('<sheetFormatPr defaultRowHeight="15"/><sheetData>'
+      + '<row r="1" ht="30" customHeight="false"><c r="A1"><v>1</v></c></row>'
+      + '<row r="2" ht="15" customHeight="false"><c r="A2"><v>2</v></c></row></sheetData>')
+    const entry = documentFromXlsxParts(parts).sheets.S!
+    expect(entry.rowHeights).toEqual([[0, 40]])
+  })
+
+  it('does not take General as a number format', () => {
+    const parts = {
+      ...wrap('<sheetData><row r="1"><c r="A1" s="1"><v>1</v></c></row></sheetData>'),
+      'xl/styles.xml': '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        + '<numFmts count="1"><numFmt numFmtId="164" formatCode="General"/></numFmts>'
+        + '<cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="164" applyNumberFormat="1"/></cellXfs></styleSheet>',
+    }
+    const entry = documentFromXlsxParts(parts).sheets.S!
+    expect(entry.formats.A1?.numFmt).toBeUndefined()
+  })
+
+  it("turns the arrows on from a table's own filter", () => {
+    const parts = {
+      ...wrap('<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Region</t></is></c></row></sheetData>'
+        + '<tableParts count="1"><tablePart r:id="rIdT1"/></tableParts>'),
+      'xl/worksheets/_rels/sheet1.xml.rels': '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rIdT1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/table" Target="../tables/table1.xml"/></Relationships>',
+      'xl/tables/table1.xml': '<?xml version="1.0"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="Orders"'
+        + ' displayName="Orders" ref="A1:B4" headerRowCount="1"><autoFilter ref="A1:B4"/>'
+        + '<tableColumns count="2"><tableColumn id="1" name="Region"/><tableColumn id="2" name="Qty"/></tableColumns></table>',
+    }
+    const entry = documentFromXlsxParts(parts).sheets.S!
+    expect(entry.autoFilter?.range).toEqual([0, 0, 3, 1])
+  })
+})
+
+describe('what the writer refuses to write badly', () => {
+  it('skips a conditional format it cannot spell rather than breaking the file', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1'], ['2']] }] })
+    doc.get('S').conditionalFormats = [
+      // An operator that is not Excel's: from a newer schema, or a state
+      // built by hand. It used to reach the file as the text "undefined",
+      // which Excel offers to repair.
+      { id: 'bad', rects: [[0, 0, 1, 0]], kind: 'cellIs', operator: 'nope' as never, value1: '1', style: { fill: '#ff0000' } },
+      { id: 'good', rects: [[0, 0, 1, 0]], kind: 'cellIs', operator: 'greater', value1: '1', style: { fill: '#00ff00' } },
+    ]
+    const sheet = documentToXlsxParts(doc)['xl/worksheets/sheet1.xml']!
+    expect(sheet).not.toContain('undefined')
+    expect(sheet).toContain('operator="greaterThan"')
+    expect(sheet.match(/<conditionalFormatting/g)?.length).toBe(1)
+  })
+
+  it('writes a workbook whose link is nonsense rather than throwing', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['x']] }] })
+    doc.get('S').links = { r0: { A: { tip: 'no target' } as never } }
+    expect(() => documentToXlsxParts(doc)).not.toThrow()
+  })
+})
+
 describe("Excel's text prefix", () => {
   it('writes the text without the apostrophe, as a string', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [["'007"], ["'=A1+1"]] }] })

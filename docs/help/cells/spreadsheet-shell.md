@@ -86,6 +86,14 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- File > Open reads what the other spreadsheets write, not only what this
+  one wrote: a sheet's own `<cols>` or a table's filter, a row height
+  LibreOffice left unflagged, `General` as the absence of a format, a row
+  or a cell that carries no position of its own, an error or a boolean
+  saved as a formula. Save As writes a package Excel, Google Sheets and
+  LibreOffice all open; a rule it cannot spell is left out rather than
+  written badly, since a file with one bad element in it is a file Excel
+  offers to repair.
 - A sort reorders the rows you can see and leaves the hidden ones where
   they are, as Excel's does, so sorting a filtered list cannot drag a
   filtered-out row into view or overwrite what one holds. The status bar

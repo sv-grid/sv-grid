@@ -333,18 +333,29 @@ function cfFormula(text: string): string {
   return Number.isFinite(Number(t)) && t !== '' ? t : `"${t.replace(/"/g, '""')}"`
 }
 
-function cfRuleXml(rule: CfRule, priority: number, dxf: (style: CfStyle) => number, anchor: string): string {
+/**
+ * One `<cfRule>`, or null when the rule is not one this writer can spell.
+ *
+ * Null rather than a half-written element: a rule from a newer schema, or
+ * one a consumer built by hand with an operator that is not Excel's, used to
+ * put the text `undefined` inside `<conditionalFormatting>`, and a file with
+ * that in it is one Excel offers to repair. Skipping the rule loses a colour;
+ * writing it loses the workbook.
+ */
+function cfRuleXml(rule: CfRule, priority: number, dxf: (style: CfStyle) => number, anchor: string): string | null {
   const stop = rule.stopIfTrue ? ' stopIfTrue="1"' : ''
   const styled = 'style' in rule ? ` dxfId="${dxf(rule.style)}"` : ''
   const open = (attrs: string) => `<cfRule ${attrs}${styled} priority="${priority}"${stop}>`
   switch (rule.kind) {
     case 'cellIs': {
+      if (!CF_OP[rule.operator]) return null
       const formulas = `<formula>${esc(cfFormula(rule.value1))}</formula>`
         + (rule.value2 !== undefined && (rule.operator === 'between' || rule.operator === 'notBetween') ? `<formula>${esc(cfFormula(rule.value2))}</formula>` : '')
       return `${open(`type="cellIs" operator="${CF_OP[rule.operator]}"`)}${formulas}</cfRule>`
     }
     case 'text': {
       const type = CF_TEXT[rule.match]
+      if (!type) return null
       const quoted = `"${rule.value.replace(/"/g, '""')}"`
       const search = `SEARCH(${quoted},${anchor})`
       const formula = rule.match === 'contains' ? `NOT(ISERROR(${search}))`
@@ -372,7 +383,12 @@ function cfRuleXml(rule: CfRule, priority: number, dxf: (style: CfStyle) => numb
       return `${open('type="colorScale"')}<colorScale>${cfvo}${rule.colors.map((c) => `<color rgb="${argb(c) ?? 'FFFFFFFF'}"/>`).join('')}</colorScale></cfRule>`
     }
     case 'iconSet':
-      return `${open('type="iconSet"')}<iconSet iconSet="${CF_ICONS[rule.set]}"><cfvo type="percent" val="0"/><cfvo type="percent" val="33"/><cfvo type="percent" val="67"/></iconSet></cfRule>`
+      return CF_ICONS[rule.set]
+        ? `${open('type="iconSet"')}<iconSet iconSet="${CF_ICONS[rule.set]}"><cfvo type="percent" val="0"/><cfvo type="percent" val="33"/><cfvo type="percent" val="67"/></iconSet></cfRule>`
+        : null
+    default:
+      // A kind this writer does not know: better no rule than a broken file.
+      return null
   }
 }
 
@@ -513,8 +529,13 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       : ''
 
     const cf = state.conditionalFormats.map((rule, i) => {
+      if (!rule.rects.length) return ''
       const anchor = `${colToLetters(rule.rects[0]?.[1] ?? 0)}${(rule.rects[0]?.[0] ?? 0) + 1}`
-      return `<conditionalFormatting sqref="${rule.rects.map(rectRef).join(' ')}">${cfRuleXml(rule, i + 1, styles.dxfId, anchor)}</conditionalFormatting>`
+      const body = cfRuleXml(rule, i + 1, styles.dxfId, anchor)
+      // An empty <conditionalFormatting> is as invalid as a broken rule, so
+      // a rule that cannot be written takes its block with it.
+      if (!body) return ''
+      return `<conditionalFormatting sqref="${rule.rects.map(rectRef).join(' ')}">${body}</conditionalFormatting>`
     }).join('')
 
     const validations = state.validation.filter((rule) => VALIDATION_TYPE[rule.allow] !== null)
@@ -896,7 +917,14 @@ function readStyles(xml: string | undefined): StyleTable {
     const code = attr(nf, 'formatCode')
     if (id !== null && code) numFmts.set(id, code)
   }
-  const codeOf = (id: number | null): string | undefined => (id === null || id === 0 ? undefined : numFmts.get(id) ?? BUILTIN_NUMFMT[id])
+  const codeOf = (id: number | null): string | undefined => {
+    if (id === null || id === 0) return undefined
+    const code = numFmts.get(id) ?? BUILTIN_NUMFMT[id]
+    // LibreOffice writes General as a numbered format of its own. It is the
+    // absence of a format, not a format, and storing it would make every
+    // imported cell look as though someone had chosen one.
+    return code && code.toLowerCase() !== 'general' ? code : undefined
+  }
   const fonts = kids(kid(root, 'fonts'), 'font')
   const fills = kids(kid(root, 'fills'), 'fill').map((fill) => {
     const pattern = kid(fill, 'patternFill')
@@ -1133,16 +1161,31 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
       const sharedFormulas = new Map<string, { row: number; col: number; text: string }>()
       /** The rectangles of the array formulas seen so far: cells inside them without a formula hold spilled values, not text. */
       const arrayRects: Rect[] = []
+      // A row's own `r` is optional in the format: without one the rows are
+      // in order, which is what a streaming writer produces. The same goes
+      // for a cell's, so both fall back to counting.
+      const defaultHeight = num(kid(root, 'sheetFormatPr'), 'defaultRowHeight')
+      let nextRow = 0
       for (const row of kids(kid(root, 'sheetData'), 'row')) {
-        const r = (num(row, 'r') ?? 0) - 1
+        const given = num(row, 'r')
+        const r = given === null ? nextRow : given - 1
         if (r < 0) continue
+        nextRow = r + 1
         const ht = num(row, 'ht')
-        if (ht !== null && flag(row, 'customHeight')) entry.rowHeights.push([r, ptToPx(ht)])
+        // Excel marks a height it was told with `customHeight`; LibreOffice
+        // keeps the height and drops the flag, so a height that differs from
+        // the sheet's default counts either way.
+        const told = ht !== null
+          && (flag(row, 'customHeight') || defaultHeight === null || Math.abs(ht - defaultHeight) > 0.01)
+        if (told) entry.rowHeights.push([r, ptToPx(ht!)])
         if (flag(row, 'hidden')) entry.hidden.rows.push(r)
+        let nextCol = 0
         for (const cell of kids(row, 'c')) {
-          const ref = parseA1(attr(cell, 'r') ?? '')
+          const at = attr(cell, 'r')
+          const ref = at ? parseA1(at) : { row: r, col: nextCol, rowAbs: false, colAbs: false, sheet: null }
           if (!ref || ref.row === null) continue
           const c = ref.col
+          nextCol = c + 1
           const fEl = kid(cell, 'f')
           // The cached values under an array formula belong to its spill,
           // not to the cells: read the anchor, skip the rest.
@@ -1392,6 +1435,13 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
           // all, reads as no style rather than as a guess.
           style: findTableStyle(attr(kid(table, 'tableStyleInfo'), 'name') ?? undefined)?.id ?? NO_TABLE_STYLE,
         })
+        // A filtered table keeps its filter inside the table part, which is
+        // where LibreOffice leaves it. Without this the arrows are lost on
+        // the way in, though the table itself survives.
+        if (!entry.autoFilter) {
+          const range = refRect(attr(kid(table, 'autoFilter'), 'ref') ?? '')
+          if (range) entry.autoFilter = { range, filters: {} }
+        }
       }
 
       // Hyperlinks: an external one points at a relationship whose target is

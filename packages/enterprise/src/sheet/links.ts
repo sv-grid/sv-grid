@@ -116,6 +116,10 @@ export type LinkTarget =
  * `Sales` is a defined name; `Sheet1!B4` is the cell on that sheet.
  */
 export function parseLinkTarget(target: string): LinkTarget | null {
+  // Not a string at all: a state built by hand, or one from a version that
+  // spelled a link differently. No link, rather than a thrown TypeError
+  // taking a whole Save As with it.
+  if (typeof target !== 'string') return null
   const text = target.trim()
   if (text === '') return null
   // A scheme that is not one of the safe ones is not a link: null rather
