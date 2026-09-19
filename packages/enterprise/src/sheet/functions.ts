@@ -20,6 +20,7 @@ import {
   numericOnly, isBlank, toDate, isoDate as iso,
   criteriaHits, multiCriteriaHits, criteriaPairs,
 } from './coerce'
+import { formatWithPattern } from './number-format'
 import { FINANCIAL_FUNCTIONS } from './packs/financial'
 import { MATH_STATS_FUNCTIONS } from './packs/math-stats'
 import { TEXT_DATE_FUNCTIONS } from './packs/text-date'
@@ -72,7 +73,14 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const n = toNumber(nth(a, 0))
     return n - d * Math.floor(n / d)
   },
-  POWER: (a) => Math.pow(toNumber(nth(a, 0)), toNumber(nth(a, 1))),
+  POWER: (a) => {
+    // The cube root of a negative is NaN in JavaScript and #NUM! in Excel;
+    // letting NaN out reaches the sheet as a blank, which says nothing.
+    const out = Math.pow(toNumber(nth(a, 0)), toNumber(nth(a, 1)))
+    return Number.isFinite(out) ? out : err('#NUM!')
+  },
+  /** Excel's NA(): the #N/A a lookup writes when it finds nothing. */
+  NA: () => err('#N/A'),
   SQRT: (a) => {
     const n = toNumber(first(a))
     return n < 0 ? err('#NUM!') : Math.sqrt(n)
@@ -205,19 +213,17 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const at = toText(nth(a, 1)).toLowerCase().indexOf(toText(nth(a, 0)).toLowerCase())
     return at < 0 ? err('#VALUE!') : at + 1
   },
+  /**
+   * TEXT(value, format): the value through a number-format string, which is
+   * the same grammar a cell's own format speaks. It reads dates, fractions,
+   * elapsed time and the rest, since it is the same compiler; a colour in
+   * the pattern is ignored, as Excel ignores it here, and an empty pattern
+   * is an empty string.
+   */
   TEXT: (a) => {
-    // Minimal: the full Excel format grammar arrives with per-cell number
-    // formats. Until then this covers the common fixed-decimal case.
-    const v = toNumber(nth(a, 0))
     const pattern = toText(nth(a, 1))
-    const decimals = /\.(0+)/.exec(pattern)?.[1]?.length ?? 0
-    const body = v.toFixed(decimals)
-    if (pattern.includes(',')) {
-      const [int = '', frac] = body.split('.')
-      const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-      return frac ? `${grouped}.${frac}` : grouped
-    }
-    return body
+    if (pattern === '') return ''
+    return formatWithPattern(first(a), pattern)
   },
 
   // ---- Date ------------------------------------------------------------

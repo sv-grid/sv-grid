@@ -104,6 +104,7 @@ export const SIGNATURES: Record<string, string> = {
   WEEKNUM: 'WEEKNUM(date, [type])',
   TIME: 'TIME(hour, minute, second)',
   YEARFRAC: 'YEARFRAC(start_date, end_date, [basis])',
+  NA: 'NA()',
   CHOOSE: 'CHOOSE(index, value1, ...)',
   ROW: 'ROW([reference])',
   COLUMN: 'COLUMN([reference])',
