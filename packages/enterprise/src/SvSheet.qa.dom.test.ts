@@ -209,6 +209,29 @@ describe('what a protected sheet refuses', () => {
     expect(doc.get('S').objects?.length, 'objects left').toBe(1)
   })
 
+  it('a dialog opened before the sheet was protected does not write through the refusal', async () => {
+    // The shape a collaborator makes: the dialog is open, a delta arrives
+    // that protects the sheet, and then OK is pressed.
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['Spec', ''], ['1', '2']] }] })
+    doc.patch('S', { links: { r0: { A: { target: 'https://example.com/spec' } } } })
+    const { api, sheet } = await mountSheet({ document: doc })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 0); cmd.setSelection(0, 0)
+    await paint()
+    sheet.act('insert-link')
+    await paint()
+    const dialog = document.querySelector('.sv-modal')
+    expect(dialog, 'the link dialog opened on an open sheet').not.toBeNull()
+
+    doc.get('S').protected = true
+    doc.changed({ kind: 'protection' })
+    await paint()
+    const remove = [...dialog!.querySelectorAll('button')].find((b) => /Remove Link/i.test(b.textContent ?? ''))
+    remove?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await paint()
+    expect(Object.keys(doc.get('S').links ?? {}), 'the link is still there').toEqual(['r0'])
+  })
+
   it('and the last gate holds even when a command forgets: putObjects refuses', async () => {
     // Driven through the one command that reaches it without a selection:
     // Insert > Picture opens a file chooser on an open sheet and refuses

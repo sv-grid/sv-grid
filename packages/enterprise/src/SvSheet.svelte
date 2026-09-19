@@ -1683,7 +1683,11 @@
   let tableSetup = $state<{ range: Rect; name: string; headers: boolean; totals: boolean; style: string; existing: string | null } | null>(null)
 
   /** Replace the workbook's tables, one undo. */
+  /** Replace the workbook's tables, one undo. Refused on a protected sheet,
+   *  like every other write: a dialog left open while someone else protects
+   *  the sheet must not write through the refusal when its OK is pressed. */
   function putTables(next: ReadonlyArray<TableRegion>) {
+    if (protectedNow()) { refuse(); return }
     const before = tablesNow().map((t) => ({ ...t }))
     const put = (value: ReadonlyArray<TableRegion>) => {
       wb.tables.clear()
@@ -1846,6 +1850,7 @@
   let linkSetup = $state<{ link: SheetLink; text: string; where: string; row: number; col: number; existing: boolean } | null>(null)
 
   function putLinks(next: ReturnType<typeof linksNow>) {
+    if (protectedNow()) { refuse(); return }
     const sheet = wb.active
     const before = doc.get(sheet).links
     const put = (value: ReturnType<typeof linksNow>) => {
@@ -1961,6 +1966,7 @@
   let pivotSetup = $state<{ pivot: SheetPivot; fields: string[]; existing: boolean } | null>(null)
 
   function putPivots(next: SheetPivot[]) {
+    if (protectedNow()) { refuse(); return }
     const sheet = wb.active
     const before = doc.get(sheet).pivots
     const put = (value: SheetPivot[]) => {
