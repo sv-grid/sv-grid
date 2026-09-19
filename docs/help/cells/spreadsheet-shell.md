@@ -1518,6 +1518,13 @@ button that does nothing.
   feature.
 - **AutoFilter**'s values list is the whole column, unvirtualised, which
   is what a sheet's region holds.
+- **Files** carry what each format has a place for, so the three are not
+  equals: the .xlsx carries the most, the .ods has no charts, pictures,
+  pivots, validation, conditional formatting or frozen panes, and the .xls
+  is the oldest and carries the least, with no charts, pictures,
+  sparklines, pivots, validation, conditional formatting or comments, a
+  sheet of 65,536 rows by 256 columns, and a formula using a function Excel
+  97 never had saved as the value it worked out.
 
 ## More examples
 

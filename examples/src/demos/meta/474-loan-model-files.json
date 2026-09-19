@@ -1,11 +1,13 @@
 {
-  "description": "A mortgage model on the Svelte 5 spreadsheet shell built from the sheet's own financial functions: PMT for the fixed payment, IPMT and PPMT for each period's split, NPER and RATE for the term and rate that fit, SUMPRODUCT for the first-year interest. Money cells wear the Accounting number format so symbols and figures line up, an Extra Payment column carries a validation rule with an Input Message, and Circle Invalid Data rings the entries that break it. The File tab saves the whole model as an .xlsx that Excel opens with formulas, formats and rules in place, opens one back, and exports the sheet as CSV; Ctrl+O and Ctrl+S do the same. Enterprise, in @svgrid/enterprise.",
+  "description": "A mortgage model on the Svelte 5 spreadsheet shell built from the sheet's own financial functions: PMT for the fixed payment, IPMT and PPMT for each period's split, NPER and RATE for the term and rate that fit, SUMPRODUCT for the first-year interest. Money cells wear the Accounting number format so symbols and figures line up, an Extra Payment column carries a validation rule with an Input Message, and Circle Invalid Data rings the entries that break it. The File tab saves the whole model as an .xlsx that Excel opens with formulas, formats and rules in place, as an .ods for LibreOffice Calc, or as an Excel 97-2003 .xls; it opens any of the three back, or a .csv, deciding which from the bytes rather than the file name, and exports the sheet as CSV; Ctrl+O and Ctrl+S do the same. Enterprise, in @svgrid/enterprise.",
   "keywords": [
     "svelte spreadsheet pmt",
     "svelte spreadsheet open xlsx",
     "svelte spreadsheet save xlsx",
     "svelte spreadsheet accounting format",
-    "svelte sheet financial functions"
+    "svelte sheet financial functions",
+    "svelte spreadsheet save ods",
+    "svelte spreadsheet read xls"
   ],
   "faq": [
     {
@@ -19,6 +21,10 @@
     {
       "question": "Can an app keep the file somewhere other than the user's disk?",
       "answer": "Yes. Take file-open and file-save-xlsx over in onAction and call the component's open(file) and toXlsx() with a Blob from wherever the workbook lives."
+    },
+    {
+      "question": "Which spreadsheet files can it open and save?",
+      "answer": "Open takes an .xlsx as Excel and Google Sheets write one, an .ods as LibreOffice Calc does, an .xls as any Excel since 1997 does, or a .csv, and decides which from the bytes rather than the file name. Save As writes the first three. Each format carries what it has a place for: the .xlsx the most, the .xls the least, where a formula using a function Excel 97 never had is saved as the value it worked out."
     }
   ]
 }

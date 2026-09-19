@@ -17,16 +17,28 @@
    * selected; Data > Data Validation > Circle Invalid Data rings the two
    * that were typed wrong.
    *
-   * The File tab is the point: Save As downloads the whole model as an
-   * .xlsx that Excel opens with the formulas, the formats and the rule in
-   * place; Open takes one back, or any .xlsx of your own; Export CSV gives
-   * the sheet as its cells show; Print (Ctrl+P) hands the sheet to the
-   * browser's print dialog as the Page Layout tab says. Ctrl+O and Ctrl+S
-   * are the same actions.
+   * The File tab is the point, and it writes three formats: Save As
+   * downloads the whole model as an .xlsx that Excel opens with the
+   * formulas, the formats and the rule in place; Save As ODS writes the
+   * same model as OpenDocument, which LibreOffice Calc opens; Save As XLS
+   * writes the Excel 97-2003 binary, which every Excel since 1997 opens
+   * and which is still what a bank or an ERP hands out. Open takes any of
+   * the three back, or a .csv, and decides which it is from the bytes
+   * rather than the file name, so a file downloaded with no extension
+   * still opens as itself. Export CSV gives the sheet as its cells show;
+   * Print (Ctrl+P) hands the sheet to the browser's print dialog as the
+   * Page Layout tab says. Ctrl+O and Ctrl+S are the same actions.
+   *
+   * The three formats do not carry the same things: the .xlsx carries the
+   * most, and the .xls the least (no charts, pictures, pivots, validation
+   * or conditional formatting, and a formula using a function Excel 97
+   * never had is saved as the value it worked out). The model here is
+   * formulas, formats and a validation rule, so it survives all three.
    *
    * Try: change the rate in B3 and watch the payment. Select F3 to see the
    * input message. Data > Sort on the schedule with two levels. Save As,
-   * then New, then Open the file you just saved.
+   * then New, then Open the file you just saved - then do the same round
+   * trip through Save As ODS and Save As XLS.
    */
   import { SvSheet, createWorkbook, createSheetDocument, FORMAT_PRESETS, accountingPattern } from '@svgrid/enterprise'
 

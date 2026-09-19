@@ -110,7 +110,7 @@ See [paste, find and structure](./paste-find-structure.md).
 | Alt + Down | Drop the list a validated cell offers (raised as `open-list`). |
 | Ctrl/Cmd + F1 | Collapse or expand the ribbon (raised as `toggle-ribbon`). |
 | Ctrl/Cmd + F3 | Name Manager. |
-| Ctrl/Cmd + T | Format as Table, when the application answers Insert > Table (`extras`). |
+| Ctrl/Cmd + T | Format as Table: the shell's Create Table dialog over the selection. |
 
 The last seven raise the same actions as the ribbon buttons that name them;
 on a plain grid, `setRibbonActionHandler` decides what answers.
@@ -131,8 +131,8 @@ so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
 | --- | ------ |
 | Ctrl/Cmd + Page Down / Page Up | Next / previous sheet, stepping over hidden ones. |
 | Shift + F11 | New sheet. |
-| Ctrl/Cmd + O | Open an .xlsx (the shell's File > Open). |
-| Ctrl/Cmd + S | Save As .xlsx (File > Save As). |
+| Ctrl/Cmd + O | Open a file (the shell's File > Open): an .xlsx, an .ods, an .xls or a .csv, decided by the bytes rather than the name. |
+| Ctrl/Cmd + S | Save As .xlsx (File > Save As). The File tab has Save As ODS and Save As XLS beside it. |
 | Ctrl/Cmd + P | Print the active sheet as its Page Layout says (File > Print). |
 
 ## What Ctrl+Arrow actually does

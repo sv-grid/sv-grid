@@ -219,6 +219,43 @@ charts, pictures and sparklines could still be changed. Browser specs for
 what File > Print hands the printer and for Save As then Open guard the two
 that only a browser can see.
 
+Then a third round, on the question a spreadsheet is actually asked: can I
+open my file. It turned into three more formats and a pass of Excel-parity
+defects beside them.
+
+The formats: OpenDocument both ways (`documentToOds` / `documentFromOds`),
+which is what LibreOffice Calc saves by default and one of the two things
+Google Sheets hands back, with the formulas translated between A1 and ODF's
+own grammar and the values carrying their type, so a date stays a date and
+money stays money; CSV in as well as out, with the separator guessed and a
+quoted field keeping its commas and line breaks; and Excel 97-2003, the
+binary .xls, where the container is a compound file (a FAT filesystem in a
+file, mini stream and all) and a formula is RPN tokens rather than text, so
+reading one means walking the tokens back into a formula and writing one
+means walking the AST into tokens. `documentFromFile` decides which of the
+four a picked file is from its bytes rather than its name, and the File tab
+grew Save As ODS and Save As XLS. All of it checked against a real
+LibreOffice in both directions, including every function in Excel's table
+written out, read there, written back and read here again, which is what
+turned up FLOOR taking its argument count from the table rather than from
+the record.
+
+The defects the same round found, each fixed with the test that would have
+caught it: the lookup match modes and wildcards Excel's VLOOKUP, HLOOKUP,
+MATCH and XLOOKUP take; the start position FIND and SEARCH accept; Excel's
+text prefix and its typed error values surviving a file; a reference
+repointed when the cell it names is cut and moved, and Excel's cut at all;
+copy and Clear Contents skipping a hidden row or column, as Excel does;
+SUBTOTAL ignoring what a filter hides, and a sort leaving hidden rows
+where they are; an error typed into a cell being that error rather than
+text that reads like one; the filter arrows lost on the way into an .ods
+and out; a table's formulas lost in both files; a date saved to a file
+coming back as 46204, because the number Excel counts went out with
+nothing on the cell to say it was a date; and `^` binding right where
+Excel binds it left, with unary minus looser than `^` where Excel binds it
+tighter, so `=2^3^2` was 512 against Excel's 64 and `=-2^2` was -4 against
+Excel's 4.
+
 Deviations from the plan: Data Validation is a plain dropdown, not a split
 button, because the ribbon model forbids a dropdown that emits its own
 face; the xlsx reader uses DOMParser (present in browsers and jsdom) and
@@ -271,9 +308,9 @@ weeks, L a quarter-scale piece of work.
 
 | Gap | Today | Effort |
 | --- | --- | --- |
-| ~~Open an xlsx as a whole document~~ | shipped: `documentFromXlsx`, File > Open | done |
-| ~~Save the document as xlsx~~ | shipped: `documentToXlsx`, File > Save As | done |
-| ~~CSV out of the active sheet~~ | shipped: File > Export CSV; CSV in is still the grid's importer | done |
+| ~~Open an xlsx as a whole document~~ | shipped: `documentFromXlsx`, File > Open, which also takes an .ods, an .xls and a .csv, decided by the bytes | done |
+| ~~Save the document as xlsx~~ | shipped: `documentToXlsx`, File > Save As, with Save As ODS and Save As XLS beside it | done |
+| ~~CSV out of the active sheet~~ | shipped: File > Export CSV, and CSV in through File > Open, with the separator guessed | done |
 | ~~Print and Page Layout~~ | shipped: the Page Layout tab, the Page Setup dialog, File > Print, `pageSetup` in the state and the xlsx | done |
 | ~~Persistence hooks (autosave to a server)~~ | shipped: the Autosave to a server recipe in the shell page, with the debounce, the one-in-flight rule and the revision header, and the state shape brought up to date | done |
 
