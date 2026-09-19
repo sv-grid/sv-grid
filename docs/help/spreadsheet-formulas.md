@@ -154,7 +154,10 @@ The six helpers are where a lambda earns its keep, and each spills:
 | `MAKEARRAY(rows, cols, lambda)` | built from the row and column numbers |
 
 Arithmetic over ranges is a grid, so `=REDUCE(0, B2:B9 * D2:D9, LAMBDA(a, v, a + v))`
-folds the products rather than the first one.
+folds the products rather than the first one. A helper's answer is a grid
+too, wherever it stands: `=SUM(MAP(A1:A9, LAMBDA(v, v * 2)))` adds every
+doubled value, and a helper takes what another one, or an array function,
+hands it (`=SUM(MAP(FILTER(A2:A99, A2:A99 > 0), LAMBDA(v, v))))`.
 
 ### Dynamic arrays
 

@@ -810,6 +810,18 @@ function collectArgs(args: ReadonlyArray<Node>, ctx: EvalContext): { perArg: Cel
         grids.push(null)
         perArg.push([grid])
       }
+    } else if (arg.k === 'fn' && LAMBDA_HELPERS.has(arg.name)) {
+      // And so do the lambda helpers: =SUM(MAP(A1:A9, LAMBDA(v, v * 2))) is
+      // the sum of every doubled value, not of the first one. REDUCE hands
+      // back one value rather than a grid, which is the same branch.
+      const grid = lambdaCall(arg, ctx)
+      if (Array.isArray(grid)) {
+        grids.push(grid)
+        perArg.push(grid.flat())
+      } else {
+        grids.push(null)
+        perArg.push([grid])
+      }
     } else if ((arg.k === 'binary' || arg.k === 'unary') && hasArray(arg, ctx)) {
       // Arithmetic over a range is a grid, cell by cell: the `B2:B9>3` a
       // FILTER takes, or `A1:A9*2` on its own.
