@@ -134,6 +134,14 @@ export type Workbook = {
    */
   evaluateRange(sheet: string, text: string): CellValue[][] | null
 
+  /**
+   * Tell the workbook which rows are folded away, and by what: `'filter'`
+   * for an AutoFilter, `'hand'` for Hide Rows, null for a row on the
+   * screen. Only `SUBTOTAL` reads it, which is how a total under a filtered
+   * list follows the filter. Pass null to forget the source again.
+   */
+  setHiddenRows(source: ((sheet: string, row: number) => 'filter' | 'hand' | null) | null): void
+
   /** Apply a structural edit to one sheet, rewriting every formula in the
    *  WORKBOOK that pointed into it. */
   applyStructuralEdit(sheet: string, edit: StructuralEdit): void
@@ -234,6 +242,11 @@ export function createWorkbook(
   options: WorkbookOptions = {},
 ): Workbook {
   const order: string[] = []
+  /** What the shell is hiding, for SUBTOTAL. Null until it says. */
+  let hiddenRows: ((sheet: string, row: number) => 'filter' | 'hand' | null) | null = null
+  /** Whether any cell holds a SUBTOTAL, so a filter click can skip the
+   *  recalculation when nothing reads what is hidden. Null when unknown. */
+  let subtotalsHere: boolean | null = null
   const byName = new Map<string, string[][]>()
   const graph = createDependencyGraph()
   /**
@@ -374,6 +387,11 @@ export function createWorkbook(
       resolveNameNode: (name) => names.resolve(name),
       findTable: (name) => rawTables.get(name),
       tableAt: (sheet, row, col) => rawTables.at(resolveSheetName(sheet, self), row, col),
+      hiddenRow: hiddenRows ? (sheet, row) => hiddenRows!(resolveSheetName(sheet, self), row) : undefined,
+      isSubtotal: (sheet, row, col) => {
+        const text = sheetCells(resolveSheetName(sheet, self))?.[row]?.[col] ?? ''
+        return /^\s*=\s*SUBTOTAL\s*\(/i.test(text)
+      },
       functions,
     }
   }
@@ -385,6 +403,8 @@ export function createWorkbook(
 
   /** Forget every derived thing: values, edges, volatility, spills. */
   function dropAll() {
+    // Cells may have been replaced wholesale, so the SUBTOTAL flag is stale.
+    subtotalsHere = null
     values.clear()
     previous.clear()
     graph.clear()
@@ -393,6 +413,27 @@ export function createWorkbook(
     spilledBy.clear()
     blocked.clear()
     pending.clear()
+  }
+
+  const SUBTOTAL_TEXT = /^\s*=[\s\S]*SUBTOTAL\s*\(/i
+
+  /** Whether any cell in the workbook holds a SUBTOTAL. Worked out once and
+   *  forgotten again whenever a write could change the answer. */
+  function hasSubtotal(): boolean {
+    if (subtotalsHere !== null) return subtotalsHere
+    let found = false
+    for (const sheet of order) {
+      const cells = sheetCells(sheet)!
+      for (const line of cells) {
+        for (const text of line) {
+          if (text && SUBTOTAL_TEXT.test(text)) { found = true; break }
+        }
+        if (found) break
+      }
+      if (found) break
+    }
+    subtotalsHere = found
+    return found
   }
 
   /** Whether a key holds a formula, for the settling passes. */
@@ -886,6 +927,7 @@ export function createWorkbook(
       const line = cells[row]!
       while (line.length <= col) line.push('')
       if (line[col] === text) return
+      if (SUBTOTAL_TEXT.test(text) || SUBTOTAL_TEXT.test(line[col] ?? '')) subtotalsHere = null
       line[col] = text
       engine.write?.(sheet, row, col, text)
       emitWrite({ sheet: order.find((n) => n.toLowerCase() === sheet.toLowerCase()) ?? sheet, row, col, text })
@@ -1065,6 +1107,16 @@ export function createWorkbook(
     subscribeWrites(listener) {
       writeListeners.add(listener)
       return () => { writeListeners.delete(listener) }
+    },
+
+    setHiddenRows(source) {
+      hiddenRows = source
+      // Only SUBTOTAL reads what is hidden, and nothing in the dependency
+      // graph can see that it changed - so everything is recomputed, but
+      // only when there is a SUBTOTAL to recompute.
+      if (!hasSubtotal()) return
+      dropAll()
+      settleAll()
     },
 
     recalculate() {

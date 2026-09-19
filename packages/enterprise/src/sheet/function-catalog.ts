@@ -30,6 +30,7 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   ROUNDUP: { group: 'Math', description: 'Rounds a number up, away from zero.', signature: 'ROUNDUP(number, digits)' },
   ROUNDDOWN: { group: 'Math', description: 'Rounds a number down, toward zero.', signature: 'ROUNDDOWN(number, digits)' },
   SUMIF: { group: 'Math', description: 'Adds the cells specified by a given condition or criteria.' },
+  SUBTOTAL: { group: 'Math', description: 'Returns a subtotal in a list or database, leaving out the rows a filter has hidden.', signature: 'SUBTOTAL(code, range, ...)' },
   SUMIFS: { group: 'Math', description: 'Adds the cells specified by a given set of conditions or criteria.' },
 
   AVERAGE: { group: 'Statistical', description: 'Returns the average (arithmetic mean) of its arguments.', signature: 'AVERAGE(number1, [number2], ...)' },

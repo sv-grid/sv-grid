@@ -42,6 +42,7 @@ export const SIGNATURES: Record<string, string> = {
   MATCH: 'MATCH(lookup, range, [mode])',
   SUMIF: 'SUMIF(range, criterion, [sumRange])',
   SUMIFS: 'SUMIFS(sumRange, range, criterion, ...)',
+  SUBTOTAL: 'SUBTOTAL(code, range, ...)',
   COUNTIF: 'COUNTIF(range, criterion)',
   COUNTIFS: 'COUNTIFS(range, criterion, ...)',
   AVERAGEIF: 'AVERAGEIF(range, criterion, [avgRange])',

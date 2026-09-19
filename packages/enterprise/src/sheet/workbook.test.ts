@@ -154,6 +154,22 @@ describe('the sheet list', () => {
     expect(wb.names.list().find((n) => n.name === 'First')?.refersTo).toBe('=Data!$C$1')
   })
 
+  it('tells SUBTOTAL which rows are folded away', () => {
+    const wb = createWorkbook([{ name: 'S', cells: [
+      ['10'], ['20'], ['30'], ['=SUBTOTAL(9,A1:A3)'], ['=SUBTOTAL(109,A1:A3)'], ['=SUM(A1:A3)'],
+    ] }])
+    expect(wb.getValue('S', 3, 0)).toBe(60)
+    // Row 2 filtered out, row 3 hidden by hand.
+    const hidden = new Map<number, 'filter' | 'hand'>([[1, 'filter'], [2, 'hand']])
+    wb.setHiddenRows((_sheet, row) => hidden.get(row) ?? null)
+    expect(wb.getValue('S', 3, 0)).toBe(40)
+    expect(wb.getValue('S', 4, 0)).toBe(10)
+    // SUM knows nothing about filters, as in Excel.
+    expect(wb.getValue('S', 5, 0)).toBe(60)
+    wb.setHiddenRows(null)
+    expect(wb.getValue('S', 3, 0)).toBe(60)
+  })
+
   it('renames, following the active sheet', () => {
     const wb = createWorkbook()
     expect(wb.renameSheet('Sheet1', 'Data')).toBe(true)

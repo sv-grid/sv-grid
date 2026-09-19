@@ -56,6 +56,21 @@ export type EvalContext = {
   currentCell?: { sheet: string | null; row: number; col: number }
 
   // ---- LET and LAMBDA --------------------------------------------------
+  // ---- What the sheet is not showing ----------------------------------
+  /**
+   * Whether a row is folded away, and by what: `'filter'` for an AutoFilter,
+   * `'hand'` for Hide Rows, null for a row on the screen. Only `SUBTOTAL`
+   * asks, and it is what tells its 1-11 codes from its 101-111 ones. A
+   * consumer that hides nothing leaves this out.
+   */
+  hiddenRow?(sheet: string | null, row: number): 'filter' | 'hand' | null
+  /**
+   * Whether a cell holds a `SUBTOTAL` of its own. Excel's SUBTOTAL skips
+   * those, so a grand total over a column of subtotals counts each row once
+   * rather than twice.
+   */
+  isSubtotal?(sheet: string | null, row: number, col: number): boolean
+
   /**
    * Names bound INSIDE the formula, by `LET` or by a lambda's parameters.
    * Looked up before the workbook's own names, which is what makes
@@ -389,6 +404,60 @@ function nameTarget(name: string, ctx: EvalContext): Node | null {
 }
 
 /** Functions whose arguments must not all be evaluated up front. */
+
+/**
+ * `SUBTOTAL(code, ref1, ...)`: the aggregate Excel's AutoFilter is built on.
+ *
+ * The code names the function - 1 AVERAGE, 2 COUNT, 3 COUNTA, 4 MAX, 5 MIN,
+ * 6 PRODUCT, 7 STDEV, 8 STDEVP, 9 SUM, 10 VAR, 11 VARP - and a hundred more
+ * means "and leave out the rows hidden by hand as well". A filtered-out row
+ * is left out either way, which is what makes a total under a filtered list
+ * follow the filter, and why a table's totals row is written with this
+ * rather than with SUM. A cell holding a SUBTOTAL of its own is skipped, so
+ * a grand total over subtotals counts each row once.
+ */
+const SUBTOTAL_FUNCTIONS: Record<number, string> = {
+  1: 'AVERAGE', 2: 'COUNT', 3: 'COUNTA', 4: 'MAX', 5: 'MIN', 6: 'PRODUCT',
+  7: 'STDEV', 8: 'STDEVP', 9: 'SUM', 10: 'VAR', 11: 'VARP',
+}
+
+function subtotalCall(node: Extract<Node, { k: 'fn' }>, ctx: EvalContext): CellValue {
+  const first = node.args[0]
+  if (!first) return err('#VALUE!')
+  const codeValue = evalNode(first, ctx)
+  if (isError(codeValue)) return codeValue
+  const code = Math.trunc(toNumber(codeValue))
+  const ignoreHandHidden = code > 100
+  const fnName = SUBTOTAL_FUNCTIONS[ignoreHandHidden ? code - 100 : code]
+  if (!fnName) return err('#VALUE!')
+  const table = ctx.functions ?? withCustomFunctions(undefined)
+  const fn = table[fnName]
+  if (!fn) return err('#NAME?')
+
+  const perArg: CellValue[][] = []
+  for (const arg of node.args.slice(1)) {
+    const rect = referenceOf(arg, ctx)
+    if (!rect) {
+      // A plain value or an expression: nothing is hidden about it.
+      perArg.push([evalNode(arg, ctx)])
+      continue
+    }
+    const values: CellValue[] = []
+    for (let r = rect.r1; r <= rect.r2; r += 1) {
+      const how = ctx.hiddenRow?.(rect.sheet, r) ?? null
+      if (how === 'filter' || (how === 'hand' && ignoreHandHidden)) continue
+      for (let c = rect.c1; c <= rect.c2; c += 1) {
+        if (ctx.isSubtotal?.(rect.sheet, r, c)) continue
+        values.push(ctx.resolve(rect.sheet, r, c))
+      }
+    }
+    perArg.push(values)
+  }
+  const flat = perArg.flat()
+  for (const v of flat) if (isError(v)) return v
+  return fn({ flat, args: perArg, grids: perArg.map(() => null) })
+}
+
 function evalCall(
   node: Extract<Node, { k: 'fn' }>,
   ctx: EvalContext,
@@ -473,6 +542,8 @@ function evalCall(
     // A trailing odd argument is the default.
     return i < args.length ? evalNode(args[i]!, ctx) : err('#N/A')
   }
+
+  if (name === 'SUBTOTAL') return subtotalCall(node, ctx)
 
   if (name === 'ROW' || name === 'COLUMN' || name === 'ADDRESS') return positionCall(node, ctx)
   if (REFERENCE_FUNCTIONS.has(name)) {

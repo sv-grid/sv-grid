@@ -1244,6 +1244,20 @@
       for (const r of next) if (!before.has(r)) api.setRowCollapsed(r, true)
     }
     state.filterHidden = new Set(next)
+    tellWorkbookWhatIsHidden()
+  }
+
+  /**
+   * What SUBTOTAL needs to know. The workbook cannot see the document, and
+   * no dependency graph can hold "this row is filtered out", so the sheet
+   * hands the answer over and the workbook works its SUBTOTALs out again.
+   */
+  function tellWorkbookWhatIsHidden() {
+    wb.setHiddenRows((sheet, row) => {
+      const state = doc.get(sheet)
+      if (state.filterHidden.has(row)) return 'filter'
+      return state.hidden.rows.has(row) ? 'hand' : null
+    })
   }
 
   /** Replace the sheet's AutoFilter, one undo, the rows following. */
@@ -2460,7 +2474,14 @@
       say(t(hide ? 'nothingToHide' : 'nothingHidden'))
       return
     }
-    const apply = (on: boolean) => { for (const i of targets) setHidden(i, on); stashHidden(); bump(); changed({ kind: 'hidden' }) }
+    const apply = (on: boolean) => {
+      for (const i of targets) setHidden(i, on)
+      stashHidden()
+      // A SUBTOTAL with a 101-111 code counts the rows on the screen.
+      tellWorkbookWhatIsHidden()
+      bump()
+      changed({ kind: 'hidden' })
+    }
     apply(hide)
     cmd.recordUndo(() => apply(!hide), () => apply(hide))
     if (hide && cmd.activeCell) {
@@ -2504,6 +2525,7 @@
       guard: (rects) => allowNow('formatCells') || !rectsHaveLocked(store, lookup, rects, protectionNow().ranges),
       refused: refuse,
     })
+    tellWorkbookWhatIsHidden()
     setStructureTarget({
       // No insert or delete on a protected sheet unless its allow list says so, as in Excel.
       canApply: (edit) => allowNow(edit.kind === 'insertRows' ? 'insertRows' : edit.kind === 'insertCols' ? 'insertColumns' : edit.kind === 'deleteRows' ? 'deleteRows' : 'deleteColumns'),

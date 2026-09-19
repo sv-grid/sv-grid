@@ -77,7 +77,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Financial | `PMT` `IPMT` `PPMT` `PV` `FV` `NPER` `RATE` `NPV` `IRR` `SLN` |
 | Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` |
 | Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
-| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` |
+| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` `SUBTOTAL` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
 | Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` `NA` |
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
@@ -112,6 +112,17 @@ does not. Only text takes part: a number is never turned into text to meet
 `"1*"`. Both take an optional third argument saying where in the text the
 search begins, and the position they report is still counted from the
 start, so `=FIND("a", A1, FIND("a", A1) + 1)` walks to the next occurrence.
+
+`SUBTOTAL(code, range, ...)` is the aggregate an AutoFilter is built on: the
+code names the function - 1 `AVERAGE`, 2 `COUNT`, 3 `COUNTA`, 4 `MAX`, 5
+`MIN`, 6 `PRODUCT`, 7 `STDEV`, 8 `STDEVP`, 9 `SUM`, 10 `VAR`, 11 `VARP` - and
+a hundred more (101-111) means "and leave out the rows hidden by hand as
+well". A row a filter folded away is left out either way, so a total written
+with `=SUBTOTAL(9, C2:C99)` follows the filter while `=SUM(C2:C99)` does not,
+which is why a table's totals row is written with it. A cell holding a
+`SUBTOTAL` of its own is skipped, so a grand total over subtotals counts each
+row once. On a plain `Workbook`, with nothing hiding rows, it is the aggregate
+its code names.
 
 The lookup family carries Excel's match modes. `VLOOKUP` and `HLOOKUP` take
 `range_lookup` as a fourth argument, and it defaults to `TRUE`: the table is

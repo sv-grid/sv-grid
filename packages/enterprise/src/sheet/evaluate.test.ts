@@ -299,6 +299,39 @@ describe('the function library', () => {
     expect(run('=FIND("n?rth", "the North")')).toEqual({ error: '#VALUE!' })
   })
 
+  // A QA pass: SUBTOTAL is the function an AutoFilter is built on, and the
+  // one a table's totals row is written with.
+  it('does SUBTOTAL, following what is hidden', () => {
+    const rows: CellValue[][] = [[10], [20], [30], [40]]
+    const hidden = new Map<number, 'filter' | 'hand'>([[1, 'filter'], [2, 'hand']])
+    const ctx = {
+      ...ctxOf(rows),
+      hiddenRow: (_s: string | null, r: number) => hidden.get(r) ?? null,
+    }
+    const at = (src: string) => evaluate(parseFormula(src), ctx)
+    // 9 is SUM: the filtered row is out, the one hidden by hand is in.
+    expect(at('=SUBTOTAL(9, A1:A4)')).toBe(80)
+    // 109 leaves out the row hidden by hand as well.
+    expect(at('=SUBTOTAL(109, A1:A4)')).toBe(50)
+    expect(at('=SUBTOTAL(1, A1:A4)')).toBeCloseTo(80 / 3, 10)
+    expect(at('=SUBTOTAL(2, A1:A4)')).toBe(3)
+    expect(at('=SUBTOTAL(4, A1:A4)')).toBe(40)
+    expect(at('=SUBTOTAL(105, A1:A4)')).toBe(10)
+    expect(at('=SUBTOTAL(99, A1:A4)')).toEqual({ error: '#VALUE!' })
+    // Without a hidden-row source nothing is hidden, so it is a plain sum.
+    expect(run('=SUBTOTAL(9, A1:A4)', rows)).toBe(100)
+  })
+
+  it('skips a nested SUBTOTAL, so a grand total counts each row once', () => {
+    const rows: CellValue[][] = [[10], [20], [0], [40]]
+    const ctx = {
+      ...ctxOf(rows),
+      // A3 is itself a subtotal of the two rows above it.
+      isSubtotal: (_s: string | null, r: number) => r === 2,
+    }
+    expect(evaluate(parseFormula('=SUBTOTAL(9, A1:A4)'), ctx)).toBe(70)
+  })
+
   it('does multi-criteria aggregation', () => {
     const sheet: CellValue[][] = [['a', 'x', 1], ['a', 'y', 2], ['b', 'x', 4]]
     expect(run('=COUNTIFS(A1:A3, "a", B1:B3, "x")', sheet)).toBe(1)
