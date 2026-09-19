@@ -398,6 +398,11 @@ and dynamic arrays, which spill inside HyperFormula's own sheet rather
 than over the workbook's cells. A defined name is the workbook's, so a
 formula that uses one needs the same name defined in the instance.
 
+The mirror follows the workbook's sheets: one added arrives in the
+instance, one renamed or removed goes from it, so `=Costs!B2` answers
+`#REF!` after that sheet is gone rather than reading a copy left behind.
+Sheets the application put in the instance itself are left alone.
+
 An engine of your own is the same shape: `evaluate(text, at, host)`
 returning the value and, where it has one, the grid to spill. `host.parse`
 is the workbook's cached parse and `host.context.resolve` reads a
