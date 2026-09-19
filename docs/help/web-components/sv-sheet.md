@@ -50,10 +50,20 @@ primitives are attributes, arrays, objects and functions are properties.
 keeps a string attribute.
 
 A document built with `createSheetDocument` from `@svgrid/enterprise` is
-assigned as `sheet.document`, read once at mount as the component reads it;
-`ready` hands the api and the document back and parks both on the element
-(`sheet.api`, `sheet.document`), so a listener bound after the mount still
-reaches them.
+assigned as `sheet.document`; `ready` hands the api and the document back
+and parks both on the element (`sheet.api`, `sheet.document`), so a listener
+bound after the mount still reaches them.
+
+**Content assigned after the element is on the page is taken up.** A custom
+element is upgraded the moment its definition loads, which on a plain page
+is before the script that sets its properties runs, so `sheet.data = [...]`
+in the quick start above arrives after the shell has already mounted on an
+empty sheet. The element remounts on it. That happens only while nothing has
+been done to the sheet: once a cell has been written, a later `data`,
+`workbook` or `document` is ignored rather than throwing the work away,
+which is what a React render passing a fresh array does on every parent
+update. To load content over a sheet that has been edited, call
+`setState(state)` or `newWorkbook()`.
 
 ## Events and methods
 

@@ -86,4 +86,37 @@ describe('<sv-sheet>', () => {
     await settle()
     expect(seen.some((s) => s.startsWith('change:cells'))).toBe(true)
   })
+
+  it('takes content assigned after it is already on the page, which is what a plain page does', async () => {
+    // The element is upgraded when its definition loads, before the script
+    // that assigns its properties runs, so the shell has already mounted on
+    // the empty sheet by the time `data` arrives.
+    el = document.createElement('sv-sheet') as Sheet
+    document.body.appendChild(el)
+    await settle()
+    expect(el.getState().workbook.sheets[0]!.name).toBe('Sheet1')
+
+    el.data = [{ name: 'Budget', cells: [['Item', 'Amount'], ['Rent', '1200']] }]
+    await settle()
+    expect(el.getState().workbook.sheets[0]!.name).toBe('Budget')
+    expect(el.toCsv()).toContain('Rent,1200')
+    // The api is the remounted shell's, not the one that has gone.
+    expect(el.api).toBeTruthy()
+  })
+
+  it('does not throw away what someone has typed when the same prop is assigned again', async () => {
+    el = document.createElement('sv-sheet') as Sheet
+    document.body.appendChild(el)
+    await settle()
+    el.data = [{ name: 'Budget', cells: [['Item', 'Amount'], ['Rent', '1200']] }]
+    await settle()
+    ;(el.api as { getCommandContext(): { setCellValue(r: number, c: number, v: string): void } }).getCommandContext().setCellValue(1, 1, '9999')
+    await settle()
+    expect(el.toCsv()).toContain('9999')
+
+    // A host that re-renders and assigns a fresh array: the typed cell stays.
+    el.data = [{ name: 'Budget', cells: [['Item', 'Amount'], ['Rent', '1200']] }]
+    await settle()
+    expect(el.toCsv()).toContain('9999')
+  })
 })
