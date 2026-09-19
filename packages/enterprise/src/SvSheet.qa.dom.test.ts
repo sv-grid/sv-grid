@@ -127,6 +127,40 @@ describe('a protected sheet refuses the new writes', () => {
   })
 })
 
+// A QA pass read these against Excel: what a filter or Hide Rows folds away
+// is not part of the selection, so the totals beside it leave it out.
+describe('the status bar counts what can be seen', () => {
+  it('leaves a hidden row out of Count, Sum and Average', async () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['11'], ['22'], ['33'], ['44'],
+    ] }] })
+    const { api, sheet } = await mountSheet({ document: doc })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    cmd.extendSelection(3, 0)
+    await paint()
+    const all = document.querySelector('.sv-sheet .status')?.textContent ?? ''
+    expect(all).toContain('110')
+    expect(all).toContain('4')
+
+    // Row 3 folded away: hidden by hand here, which is the same state a
+    // filter leaves behind.
+    cmd.setActiveCell(2, 0)
+    cmd.setSelection(2, 0)
+    await paint()
+    sheet.act('hide-rows')
+    await paint()
+    cmd.setActiveCell(0, 0)
+    cmd.setSelection(0, 0)
+    cmd.extendSelection(3, 0)
+    await paint()
+    const some = document.querySelector('.sv-sheet .status')?.textContent ?? ''
+    expect(some).toContain('77')
+    expect(some).not.toContain('110')
+  })
+})
+
 describe('what the status bar claims happened', () => {
   it('editing a table says what it now wears rather than announcing a new one', async () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [

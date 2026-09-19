@@ -277,8 +277,10 @@ export function createClipboard<
       const minCol = Math.min(anchor.colIndex, focus.colIndex);
       const maxCol = Math.max(anchor.colIndex, focus.colIndex);
       for (let r = minRow; r <= maxRow; r += 1) {
+        if (ctx.isRowCollapsed?.(r)) continue;
         for (let c = minCol; c <= maxCol; c += 1) {
           const col = ctx.allColumns[c];
+          if (col && ctx.collapsedColumns?.[col.id]) continue;
           if (col?.columnDef.field && ctx.isCellEditableAt(r, c)) {
             writeCellRaw(r, col.id, null);
           }
@@ -923,6 +925,9 @@ export function createClipboard<
     for (let r = startRow; r <= endRow; r += 1) {
       const row = ctx.allRows[r];
       if (!row || isGroupRow(row)) continue;
+      // A collapsed row is not there as far as the user is concerned, and a
+      // Delete over a filtered block must not wipe what the filter hid.
+      if (ctx.isRowCollapsed?.(r)) continue;
       // By identity, not `Number(row.id)` - that is the array index only under
       // the default getRowId, so a custom one cleared the wrong row.
       const dataIndex = dataIndexOf(row);
@@ -936,6 +941,7 @@ export function createClipboard<
       for (let c = startCol; c <= endCol; c += 1) {
         const column = ctx.allColumns[c];
         if (!column?.columnDef.field) continue;
+        if (ctx.collapsedColumns?.[column.id]) continue;
         if (!ctx.isCellEditableAt(r, c)) continue;
         // Clear means: empty string for text, undefined for everything
         // else. parseEditorValue handles the per-type coercion.
