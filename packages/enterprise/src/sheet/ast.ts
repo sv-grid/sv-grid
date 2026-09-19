@@ -8,6 +8,9 @@ import type { CellRef } from './address'
 export type SheetError =
   | '#REF!' | '#CYCLE!' | '#DIV/0!' | '#VALUE!' | '#NAME?'
   | '#NUM!' | '#N/A' | '#PARSE!' | '#SPILL!' | '#CALC!'
+  /** Excel's empty intersection. Nothing here produces it; a file can
+   *  carry it, and a formula can name it, so it is one of the values. */
+  | '#NULL!'
 
 /** A computed cell value. Errors are values, not exceptions, once evaluation
  *  finishes - that is what lets `=IFERROR(A1, 0)` see one. */
@@ -25,7 +28,7 @@ export function err(code: SheetError): { error: SheetError } {
  *  as the error itself, so =ISNA(A1) over a cell holding #N/A is TRUE.
  *  #PARSE! is ours, not Excel's, and no one types it. */
 const TYPED_ERRORS: ReadonlyArray<SheetError> = [
-  '#REF!', '#DIV/0!', '#VALUE!', '#NAME?', '#NUM!', '#N/A', '#SPILL!', '#CALC!', '#CYCLE!',
+  '#REF!', '#DIV/0!', '#VALUE!', '#NAME?', '#NUM!', '#N/A', '#SPILL!', '#CALC!', '#CYCLE!', '#NULL!',
 ]
 
 /** The error a typed text stands for, or null when it is ordinary text. */
@@ -52,6 +55,10 @@ export type Node =
   | { k: 'num'; v: number }
   | { k: 'str'; v: string }
   | { k: 'bool'; v: boolean }
+  /** An error written INTO a formula: `=#N/A`, `=IFERROR(A1, #N/A)`. Excel
+   *  takes one as a value, and a file from Excel, Google Sheets or
+   *  LibreOffice can carry an error cell as a formula that is only this. */
+  | { k: 'err'; v: SheetError }
   /** A single cell. `ref.row` is never null here; a column-only reference
    *  parses as a range instead. */
   | { k: 'ref'; ref: CellRef }

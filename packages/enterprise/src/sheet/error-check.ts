@@ -43,6 +43,7 @@ export const ERROR_MEANINGS: Record<SheetError, string> = {
   '#PARSE!': 'The formula could not be read. A bracket or a quote is usually missing.',
   '#SPILL!': 'The answer is a block, and something is in the way of it. Clear the cells the outline covers.',
   '#CALC!': 'The answer is a block the sheet cannot hold: an empty array, or an array inside an array.',
+  '#NULL!': 'Two ranges were asked to overlap and do not. Excel writes it for an intersection with nothing in it.',
 }
 
 export type SheetReader = {

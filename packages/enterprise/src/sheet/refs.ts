@@ -53,6 +53,7 @@ function render(node: Node): string {
     case 'num': return String(node.v)
     case 'str': return `"${node.v.replace(/"/g, '""')}"`
     case 'bool': return node.v ? 'TRUE' : 'FALSE'
+    case 'err': return node.v
     case 'ref': return node.ref.col < 0 || (node.ref.row ?? 0) < 0 ? '#REF!' : formatA1(node.ref)
     case 'range': {
       if (isBroken(node.from) || isBroken(node.to)) return '#REF!'

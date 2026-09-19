@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseFormula } from './parse'
+import { formatFormula } from './refs'
 import { tokenize } from './tokenize'
 import { formatA1 } from './address'
 import { FormulaError, type Node } from './ast'
@@ -197,5 +198,22 @@ describe('tokenize edge cases', () => {
     expect(n.k).toBe('range')
     expect(n.from).toMatchObject({ col: 2, row: 0 })
     expect(n.to).toMatchObject({ col: 2, row: null })
+  })
+})
+
+describe('error literals and the boolean functions', () => {
+  // Excel, Google Sheets and LibreOffice all write an error cell as a
+  // formula that is only the code, and LibreOffice writes every boolean
+  // cell as TRUE() or FALSE(). Both used to be #PARSE!.
+  it('parses an error code as a value and prints it back', () => {
+    expect(formatFormula(parseFormula('=#N/A'))).toBe('=#N/A')
+    expect(formatFormula(parseFormula('=IFERROR(A1,#N/A)'))).toBe('=IFERROR(A1,#N/A)')
+    expect(formatFormula(parseFormula('=#div/0!'))).toBe('=#DIV/0!')
+  })
+
+  it('reads TRUE() and FALSE() as calls, and the bare words as booleans', () => {
+    expect(formatFormula(parseFormula('=TRUE()'))).toBe('=TRUE()')
+    expect(formatFormula(parseFormula('=IF(A1,TRUE(),FALSE())'))).toBe('=IF(A1,TRUE(),FALSE())')
+    expect(formatFormula(parseFormula('=TRUE'))).toBe('=TRUE')
   })
 })

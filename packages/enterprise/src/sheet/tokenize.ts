@@ -11,7 +11,7 @@
  * is what keeps absolute references absolute.
  */
 import { parseA1, type CellRef } from './address'
-import { FormulaError, type BinaryOp } from './ast'
+import { FormulaError, type BinaryOp, type SheetError } from './ast'
 
 export type TableRefToken = {
   t: 'table'
@@ -26,6 +26,7 @@ export type Token =
   | { t: 'num'; v: number }
   | { t: 'str'; v: string }
   | { t: 'bool'; v: boolean }
+  | { t: 'err'; v: SheetError }
   | { t: 'ref'; ref: CellRef }
   | { t: 'range'; from: CellRef; to: CellRef }
   | { t: 'name'; v: string }
@@ -44,6 +45,10 @@ const SPECIFIERS: Record<string, TableRefToken['specifier']> = {
   '#totals': '#Totals',
   '#this row': '#ThisRow',
 }
+/** The error values a formula can name, longest first so #NUM! cannot win
+ *  the prefix of a longer code. */
+const ERROR_LITERAL = /^(#NULL!|#DIV\/0!|#VALUE!|#NAME\?|#NUM!|#N\/A|#REF!|#SPILL!|#CALC!|#CYCLE!)/i
+
 const TWO_CHAR_OPS = new Set(['<=', '>=', '<>'])
 const ONE_CHAR_OPS = '+-*/^%&=<>'
 
@@ -252,17 +257,32 @@ export function tokenize(src: string): Token[] {
         continue
       }
 
-      if (upper === 'TRUE') { out.push({ t: 'bool', v: true }); continue }
-      if (upper === 'FALSE') { out.push({ t: 'bool', v: false }); continue }
-
       // A word followed by `[` is a table: Orders[Amount].
       if (src[i] === '[') { i += 1; out.push(readTableBracket(word)); continue }
 
-      // A word followed by `(` is a call, whatever else it might look like.
+      // A word followed by `(` is a call, whatever else it might look like -
+      // TRUE and FALSE included, since Excel has TRUE() and FALSE() as
+      // functions and that is how LibreOffice writes a boolean cell.
       if (src[skipSpace()] === '(') { out.push({ t: 'fn', v: upper }); continue }
+
+      if (upper === 'TRUE') { out.push({ t: 'bool', v: true }); continue }
+      if (upper === 'FALSE') { out.push({ t: 'bool', v: false }); continue }
 
       pushWord(word, null)
       continue
+    }
+
+    // An error written into the formula: =#N/A, =IFERROR(A1, #REF!). Excel
+    // reads one as a value, and a file can carry an error cell as a formula
+    // that is nothing else.
+    if (ch === '#') {
+      const code = ERROR_LITERAL.exec(src.slice(i))
+      if (code) {
+        out.push({ t: 'err', v: code[0].toUpperCase() as SheetError })
+        i += code[0].length
+        continue
+      }
+      throw new FormulaError('#PARSE!')
     }
 
     // A bare `[` is the unqualified form, which only means something in a

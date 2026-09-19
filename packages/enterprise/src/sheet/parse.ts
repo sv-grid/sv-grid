@@ -52,6 +52,7 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
       case 'num': return { k: 'num', v: t.v }
       case 'str': return { k: 'str', v: t.v }
       case 'bool': return { k: 'bool', v: t.v }
+      case 'err': return { k: 'err', v: t.v }
       case 'ref': return { k: 'ref', ref: t.ref }
       case 'range': return { k: 'range', from: t.from, to: t.to }
       case 'name': return { k: 'name', name: t.v }

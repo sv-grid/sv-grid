@@ -168,6 +168,8 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   ISERR: { group: 'Information', description: 'Checks whether a value is an error other than #N/A, and returns TRUE or FALSE.', signature: 'ISERR(value)' },
   ISNA: { group: 'Information', description: 'Checks whether a value is #N/A, and returns TRUE or FALSE.', signature: 'ISNA(value)' },
   NA: { group: 'Information', description: 'Returns the error value #N/A, which means a value is not available.', signature: 'NA()' },
+  TRUE: { group: 'Logical', description: 'Returns the logical value TRUE.', signature: 'TRUE()' },
+  FALSE: { group: 'Logical', description: 'Returns the logical value FALSE.', signature: 'FALSE()' },
   ISNONTEXT: { group: 'Information', description: 'Checks whether a value is not text (blank cells are not text), and returns TRUE or FALSE.', signature: 'ISNONTEXT(value)' },
   ISEVEN: { group: 'Information', description: 'Returns TRUE if the number is even.', signature: 'ISEVEN(number)' },
   ISODD: { group: 'Information', description: 'Returns TRUE if the number is odd.', signature: 'ISODD(number)' },

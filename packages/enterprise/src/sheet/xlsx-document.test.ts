@@ -454,6 +454,27 @@ describe("Excel's text prefix", () => {
     expect(back.workbook.getValue('S', 0, 1)).toBe('#N/A')
   })
 
+  it('reads an error cell another app wrote as a formula', () => {
+    // LibreOffice writes an error cell as <f>#N/A</f>, and a boolean one as
+    // <f>TRUE()</f>. Both used to come back as #PARSE!.
+    const parts: Record<string, string> = {
+      'xl/workbook.xml': '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        + '<sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>',
+      'xl/_rels/workbook.xml.rels': '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
+      'xl/worksheets/sheet1.xml': '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+        + '<row r="1"><c r="A1" t="e"><f aca="false">#N/A</f><v>#N/A</v></c>'
+        + '<c r="B1" t="b"><f aca="false">TRUE()</f><v>1</v></c>'
+        + '<c r="C1"><f aca="false">_xlfn.xlookup("a",A1:A1,A1:A1)</f><v>0</v></c></row>'
+        + '</sheetData></worksheet>',
+    }
+    const back = createSheetDocument({ state: documentFromXlsxParts(parts) })
+    expect(back.workbook.getValue('S', 0, 0)).toEqual({ error: '#N/A' })
+    expect(back.workbook.getValue('S', 0, 1)).toBe(true)
+    expect(back.workbook.getValue('S', 0, 2)).toEqual({ error: '#N/A' })
+  })
+
   it('keeps a string cell text when the file comes back', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [["'007", 'plain']] }] })
     const back = documentFromXlsxParts(documentToXlsxParts(doc))

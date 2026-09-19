@@ -264,6 +264,7 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
     case 'num': return node.v
     case 'str': return node.v
     case 'bool': return node.v
+    case 'err': return err(node.v)
     case 'empty': return ''
 
     case 'ref':

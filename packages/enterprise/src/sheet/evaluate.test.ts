@@ -461,6 +461,32 @@ describe('the function library', () => {
     expect(run('=MATCH(95, A1:A4, -1)', down)).toEqual({ error: '#N/A' })
   })
 
+  // A QA pass on files written by Excel, Google Sheets and LibreOffice:
+  // each of them can put an error, or TRUE(), into a formula.
+  it('reads an error written into a formula as that error', () => {
+    expect(run('=#N/A')).toEqual({ error: '#N/A' })
+    expect(run('=#REF!')).toEqual({ error: '#REF!' })
+    expect(run('=#DIV/0!')).toEqual({ error: '#DIV/0!' })
+    expect(run('=#NULL!')).toEqual({ error: '#NULL!' })
+    expect(run('=IFERROR(#N/A, "none")')).toBe('none')
+    expect(run('=ISNA(#N/A)')).toBe(true)
+    expect(run('=IF(A1="", #N/A, A1)', [['']])).toEqual({ error: '#N/A' })
+    // Case does not matter, as it does not in Excel.
+    expect(run('=#n/a')).toEqual({ error: '#N/A' })
+    // Text that only looks like a code is still a parse error.
+    expect(() => run('=#NOPE')).toThrow(/#PARSE!/)
+  })
+
+  it('has TRUE() and FALSE(), which is how a boolean cell arrives', () => {
+    expect(run('=TRUE()')).toBe(true)
+    expect(run('=FALSE()')).toBe(false)
+    expect(run('=IF(TRUE(), 1, 2)')).toBe(1)
+    expect(run('=AND(TRUE(), FALSE())')).toBe(false)
+    // The bare words are still the boolean literals.
+    expect(run('=TRUE')).toBe(true)
+    expect(run('=NOT(FALSE)')).toBe(true)
+  })
+
   it('returns #NAME? for a function it does not have', () => {
     expect(run('=NOSUCHFN(1)')).toEqual({ error: '#NAME?' })
   })

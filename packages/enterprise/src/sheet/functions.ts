@@ -134,6 +134,10 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   },
   /** Excel's NA(): the #N/A a lookup writes when it finds nothing. */
   NA: () => err('#N/A'),
+  // Excel's TRUE() and FALSE(). Worth having for their own sake, and a file
+  // from LibreOffice writes every boolean cell as one of them.
+  TRUE: () => true,
+  FALSE: () => false,
   SQRT: (a) => {
     const n = toNumber(first(a))
     return n < 0 ? err('#NUM!') : Math.sqrt(n)

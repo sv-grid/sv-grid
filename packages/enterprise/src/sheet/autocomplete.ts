@@ -43,6 +43,8 @@ export const SIGNATURES: Record<string, string> = {
   SUMIF: 'SUMIF(range, criterion, [sumRange])',
   SUMIFS: 'SUMIFS(sumRange, range, criterion, ...)',
   SUBTOTAL: 'SUBTOTAL(code, range, ...)',
+  TRUE: 'TRUE()',
+  FALSE: 'FALSE()',
   COUNTIF: 'COUNTIF(range, criterion)',
   COUNTIFS: 'COUNTIFS(range, criterion, ...)',
   AVERAGEIF: 'AVERAGEIF(range, criterion, [avgRange])',
