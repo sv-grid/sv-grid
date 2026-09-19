@@ -607,6 +607,21 @@ describe('iterative calculation', () => {
     expect(again.workbook.getValue('S', 1, 0)).toBeCloseTo(100000 / 11, 2)
   })
 
+  it('gives a date cell a date format, so Excel shows the date and not the number', () => {
+    // A date is stored here as its ISO text, and Excel has no such cell: it
+    // takes the number of days it counts. Without a format saying the number
+    // is a date, Excel shows 46204, and the file read back holds 46204.
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['2026-07-01', '=A1+1', "'2026-07-01"]] }] })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/styles.xml']).toContain('numFmtId="14"')
+    const back = createSheetDocument({ state: documentFromXlsxParts(parts) })
+    expect(back.workbook.getRaw('S', 0, 0)).toBe('2026-07-01')
+    expect(back.workbook.getRaw('S', 0, 1)).toBe('=A1+1')
+    // The apostrophe says this one is text, so it stays text rather than
+    // becoming a date on the way out.
+    expect(back.workbook.getRaw('S', 0, 2)).toBe("'2026-07-01")
+  })
+
   it('writes no calcPr when it is off, and reads a file without one as off', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1']] }] })
     const parts = documentToXlsxParts(doc)

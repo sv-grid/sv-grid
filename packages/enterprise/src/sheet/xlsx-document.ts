@@ -34,7 +34,7 @@ import { listComments, isThreaded, type CommentThread, type CommentEntry } from 
 import { isSafeLinkTarget, listLinks, parseLinkTarget } from './links'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
 import { PAPER_SIZES, defaultPageSetup, type PaperSize, type PageSetup } from './page-setup'
-import { cleanIteration, DEFAULT_ITERATION } from './workbook'
+import { cleanIteration, DEFAULT_ITERATION, TEXT_PREFIX } from './workbook'
 import { findTableStyle, DEFAULT_TABLE_STYLE, NO_TABLE_STYLE } from './table-styles'
 import { drawingPartsFor, objectsFromDrawing, rectOfRef, REL_DRAWING } from './xlsx-drawing'
 import { objectId } from './objects'
@@ -247,13 +247,14 @@ function styleRegistry() {
 
 
 /** A string cell's text as the workbook stores it. Text that would be read
- *  back as a number, a boolean or a formula takes Excel's apostrophe, which
- *  says "this is text" and is not part of the value. */
+ *  back as a number, a date, a boolean or a formula takes Excel's apostrophe,
+ *  which says "this is text" and is not part of the value. */
 export function asText(text: string): string {
   if (text === '') return ''
   const upper = text.trim().toUpperCase()
   const numberish = text.trim() !== '' && Number.isFinite(Number(text))
   const plain = !numberish && upper !== 'TRUE' && upper !== 'FALSE'
+    && isoToSerial(text.trim()) === null
     && !text.startsWith('=') && !text.startsWith("'") && !typedError(text.trim())
   return plain ? text : `'${text}`
 }
@@ -494,10 +495,17 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         const entry = byCell.get(`${r},${c}`)
         const spill = spillAt.get(`${r},${c}`)
         if (raw === '' && !entry && !spill) continue
-        const s = entry ? styles.xfId(entry) : 0
+        // A date is stored here as its ISO text and goes out as the number
+        // Excel counts. Without a date format on the cell that number is all
+        // Excel has: it shows 46204, and reading the file back hands back
+        // 46204 rather than the date. So a date cell that carries no format
+        // of its own is given Excel's own.
+        const dated = !raw.startsWith(TEXT_PREFIX) && isoToSerial(raw.trim()) !== null && !isDateFormat(entry?.numFmt)
+        const look = dated ? { ...(entry ?? {}), numFmt: BUILTIN_NUMFMT[14]! } : entry
+        const s = look ? styles.xfId(look) : 0
         const xml = cellXml(
           `${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' && !spill ? '' : wb.getValue(name, r, c),
-          s, isDateFormat(entry?.numFmt), spill, wb.tables.at(name, r, c)?.name,
+          s, dated || isDateFormat(entry?.numFmt), spill, wb.tables.at(name, r, c)?.name,
         )
         if (xml) cells.push(xml)
       }
