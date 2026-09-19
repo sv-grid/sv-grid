@@ -141,4 +141,3 @@ tools/bench/competitors/pnpm-lock.yaml
 tutorials-out/
 .tutorials-cache/
 tests/perf/.last-compare.json
-sv-grid/
