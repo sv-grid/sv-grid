@@ -30,6 +30,13 @@ export type SheetPrintCell = {
    * inside the cell, as it is on screen.
    */
   image?: string
+  /**
+   * The table's look on this cell, where it is inside one: Excel prints a
+   * table banded, and the shell draws the look rather than writing it into
+   * the cells, so it has to be handed in here or the page comes out plain.
+   * Laid under the cell's own format, as it is on screen.
+   */
+  table?: { fill?: string; color?: string; bold?: boolean; borderTop?: string; borderBottom?: string }
   /** An error's colour, as the sheet paints it. */
   color?: string
   /** Numbers right, text left, unless the format says. */
@@ -147,6 +154,15 @@ export function sheetPrintHtml(input: SheetPrintInput): string {
     const styles: string[] = []
     const align = cell.entry?.align ?? cell.align
     if (align && align !== 'left') styles.push(`text-align:${align}`)
+    // The table's bands go in first, so a fill or a colour written on the
+    // cell still wins, which is the order the screen draws them in.
+    if (cell.table) {
+      if (cell.table.fill) styles.push(`background:${cell.table.fill}`)
+      if (cell.table.color) styles.push(`color:${cell.table.color}`)
+      if (cell.table.bold) styles.push('font-weight:600')
+      if (cell.table.borderTop) styles.push(`border-top:1px solid ${cell.table.borderTop}`)
+      if (cell.table.borderBottom) styles.push(`border-bottom:1px solid ${cell.table.borderBottom}`)
+    }
     const own = entryToStyle(cell.entry)
     if (own) styles.push(own)
     if (cell.cf) styles.push(entryToStyle(cell.cf))

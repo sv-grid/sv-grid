@@ -403,7 +403,8 @@ and nothing is bundled: the print area or the used range, column widths
 and row heights as the sheet shows them, hidden lines left out, merges as
 spans, every cell as it shows with its format and its conditional style,
 the title rows repeated on each page, the sparklines drawn in their cells
-and the charts and pictures hung from theirs, gridlines and headings when
+and the charts and pictures hung from theirs, a table's header and banding
+in the colours it wears on the sheet, gridlines and headings when
 asked, and the orientation, paper and margins in `@page`. "Save as PDF" in that
 dialog is the PDF. The setup rides in `getState()` as `pageSetup` and in
 the xlsx as `pageSetup`, `pageMargins`, `printOptions` and Excel's own
