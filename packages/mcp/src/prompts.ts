@@ -84,7 +84,7 @@ export function getPrompt(name: string, args: Record<string, unknown>) {
           '1. Call `svgrid_search` for "spreadsheet shell" and for each part this needs ' +
           '(formulas, data validation, conditional formatting, comments, protection, xlsx). ' +
           'Do not rely on memory of the API.\n' +
-          '2. Call `svgrid_get` on the closest spreadsheet demo (ids 452 to 466 and 474) and follow ' +
+          '2. Call `svgrid_get` on the closest spreadsheet demo (ids 452 to 466 and 474 to 484) and follow ' +
           'its structure: `createWorkbook` for the cells as raw text with formulas as `=...` strings, ' +
           '`createSheetDocument` for everything that is not a cell, `<SvSheet document={doc}>`.\n' +
           '3. Write the component. Rectangles are `[minRow, minCol, maxRow, maxCol]`, 0-based; ' +
@@ -92,8 +92,9 @@ export function getPrompt(name: string, args: Record<string, unknown>) {
           '`refresh()`; addresses in `formats` for another sheet are qualified (`Orders!F2`).\n' +
           '4. Call `svgrid_check_code` on what you wrote and use the `fixed` source it returns, ' +
           'repeating until it is clean, BEFORE showing me the code.\n' +
-          '5. Say which formulas the engine evaluates and which it does not (there is no spill), ' +
-          'from the search results rather than from memory.',
+          '5. Say which formulas the engine evaluates and which it does not, from the search ' +
+          'results rather than from memory: the library is Excel-shaped but not complete, and ' +
+          'dynamic arrays spill while the spill operator (`D2#`) and array constants do not parse.',
       ),
     }
   }

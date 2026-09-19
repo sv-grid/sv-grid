@@ -4,8 +4,8 @@ An [Agent Skill](https://docs.claude.com/en/docs/agents-and-tools/agent-skills)
 that gives AI coding assistants (Claude Code, and any skill-aware client)
 project-aware context for writing correct [SvGrid](https://svgrid.com)
 code: the `ColumnDef` and `<SvGrid>` API, feature toggles, `--sg-*`
-theming, server-side data, and the enterprise add-on - plus
-correct-vs-incorrect patterns.
+theming, server-side data, the enterprise add-on and its `<SvSheet>`
+spreadsheet shell - plus correct-vs-incorrect patterns.
 
 It complements the [`@svgrid/mcp`](https://github.com/sv-grid/sv-grid/tree/main/packages/mcp) server: the skill is
 the always-on knowledge and house style; the MCP server is the live,
@@ -37,6 +37,7 @@ from `@svgrid/*`.
 | `rules/columns.md` | `ColumnDef`, custom cells, widths, types, conditional formatting, editors |
 | `rules/data-and-features.md` | Feature toggles, the `SvGridApi`, reactive data, server-side data source |
 | `rules/theming.md` | `--sg-*` tokens, dark mode, design-system presets, the shadcn / Tailwind bridge |
+| `rules/sheet.md` | The `<SvSheet>` spreadsheet shell: the document, writes from outside, `onAction`, qualified addresses, save and restore, protection, comments, localisation, formulas |
 
 ## Keeping it accurate
 
