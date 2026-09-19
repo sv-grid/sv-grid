@@ -56,6 +56,7 @@
   import { csvText } from './sheet/csv'
   import { documentFromFile } from './sheet/open-file'
   import { documentToOds } from './sheet/ods-document'
+  import { documentToXls } from './sheet/xls-document'
   import { sortOrder, guessHeaderRow, type SortKey } from './sheet/sort'
   import { currentRegion, isBlankValue } from './sheet/navigate'
   import { freezeAtActiveCell, freezeTopRow, freezeFirstColumn, applyFreeze, type FreezeState } from './sheet/freeze'
@@ -384,14 +385,15 @@
    */
   /**
    * File > Open: an .xlsx as Excel and Google Sheets write one, an .ods as
-   * LibreOffice does, or a .csv as all three export. The kind is read from
-   * the bytes rather than from the name, since a file picked on a phone
-   * often arrives with neither the extension nor the type set.
+   * LibreOffice does, an .xls as any Excel since 1997 does, or a .csv as
+   * all of them export. The kind is read from the bytes rather than from
+   * the name, since a file picked on a phone often arrives with neither the
+   * extension nor the type set.
    */
   export async function open(file: Blob & { name?: string }): Promise<void> {
     setState(await documentFromFile(file))
     const name = file.name ?? ''
-    if (name) fileName = name.replace(/\.(xlsx|ods|csv|tsv|txt)$/i, '')
+    if (name) fileName = name.replace(/\.(xlsx|xls|ods|csv|tsv|txt)$/i, '')
   }
 
   /** The document as an .xlsx Blob: what File > Save As downloads. */
@@ -405,6 +407,18 @@
   export function toOds(): Promise<Blob> {
     stashLive(wb.active)
     return documentToOds(doc)
+  }
+
+  /**
+   * The document as an .xls Blob: what File > Save As XLS downloads, and
+   * what every Excel since 1997 opens. The oldest format here, so the least
+   * of the document travels: cells, formulas, formats, widths, merges,
+   * panes and protection, but no charts, pictures, pivots, conditional
+   * formats or comments.
+   */
+  export function toXls(): Blob {
+    stashLive(wb.active)
+    return new Blob([documentToXls(doc) as BlobPart], { type: 'application/vnd.ms-excel' })
   }
 
   /** The active sheet as CSV text, cells as they show. */
@@ -597,6 +611,14 @@
   async function saveXlsx() {
     try {
       downloadBlobFile(await toXlsx(), `${fileName}.xlsx`)
+    } catch (e) {
+      say(e instanceof Error ? e.message : t('couldNotSave'))
+    }
+  }
+
+  function saveXls() {
+    try {
+      downloadBlobFile(toXls(), `${fileName}.xls`)
     } catch (e) {
       say(e instanceof Error ? e.message : t('couldNotSave'))
     }
@@ -3299,6 +3321,7 @@
       case 'file-open': fileInput?.click(); return
       case 'file-save-xlsx': void saveXlsx(); return
       case 'file-save-ods': void saveOds(); return
+      case 'file-save-xls': saveXls(); return
       case 'file-export-csv': {
         try {
           downloadBlobFile(new Blob([toCsv()], { type: 'text/csv;charset=utf-8' }), `${wb.active}.csv`)
@@ -5516,7 +5539,7 @@
     onAccept={acceptEntry}
     onCancel={() => { pendingAlert = null; const c = cmdOf(); if (c) focusSheet(c) }}
   />
-  <input class="sheet-file-input" type="file" accept=".xlsx,.ods,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
+  <input class="sheet-file-input" type="file" accept=".xlsx,.xls,.ods,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
   <SvModal open={newConfirm} title={t('newWorkbookTitle')} size="sm" onClose={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>
     <div class="sv-sheet-dialog">
       <p class="note">{t('newWorkbookMessage')}</p>

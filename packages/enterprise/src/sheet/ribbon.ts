@@ -145,6 +145,7 @@ export type RibbonActionId =
   | 'file-save-xlsx'
   | 'file-export-csv'
   | 'file-save-ods'
+  | 'file-save-xls'
   | 'file-print'
   | 'page-portrait'
   | 'page-landscape'
@@ -528,7 +529,7 @@ const FILE: RibbonTab = {
       icon: 'file-open',
       label: 'Open',
       items: [
-        { id: 'file-open', label: 'Open', title: 'Open an .xlsx file', keys: 'Ctrl+O', icon: 'file-open', kind: 'button', size: 'large', emits: 'file-open' },
+        { id: 'file-open', label: 'Open', title: 'Open an .xlsx, .xls, .ods or .csv file', keys: 'Ctrl+O', icon: 'file-open', kind: 'button', size: 'large', emits: 'file-open' },
       ],
     },
     {
@@ -538,6 +539,7 @@ const FILE: RibbonTab = {
       items: [
         { id: 'file-save-xlsx', label: 'Save As', title: 'Save the workbook as an .xlsx file', keys: 'Ctrl+S', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-xlsx' },
         { id: 'file-save-ods', label: 'Save As ODS', title: 'Save the workbook as an .ods file, which LibreOffice Calc opens', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-ods' },
+        { id: 'file-save-xls', label: 'Save As XLS', title: 'Save the workbook as an .xls file, which Excel 97-2003 opens', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-xls' },
         { id: 'file-export-csv', label: 'Export CSV', title: 'Export the active sheet as CSV', icon: 'file-csv', kind: 'button', size: 'large', emits: 'file-export-csv' },
       ],
     },

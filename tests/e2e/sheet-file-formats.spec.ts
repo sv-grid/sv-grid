@@ -10,7 +10,8 @@ import { join } from 'node:path'
  * the zip is made by jszip loaded on demand, the download goes through the
  * browser, and File > Open reads the bytes back with no name to go on. The
  * .ods leg also proves the ODF writer produces a package a reader accepts,
- * which no unit test over strings can say.
+ * and the .xls leg that the compound file the BIFF writer lays out is one a
+ * reader can walk, which no unit test over strings can say.
  *
  * Runs against the gallery on :5174.
  */
@@ -40,7 +41,11 @@ async function block(page: Page, rows: number, cols: number): Promise<string[]> 
   return out
 }
 
-for (const [label, title] of [['xlsx', 'Save the workbook as an .xlsx'], ['ods', 'Save the workbook as an .ods']] as const) {
+for (const [label, title] of [
+  ['xlsx', 'Save the workbook as an .xlsx'],
+  ['ods', 'Save the workbook as an .ods'],
+  ['xls', 'Save the workbook as an .xls'],
+] as const) {
   test(`a ${label} written by the shell opens in the shell`, async ({ page }) => {
     await open(page, '456-sales-report-workbook')
     const before = await block(page, 8, 5)

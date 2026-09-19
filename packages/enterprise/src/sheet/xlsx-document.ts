@@ -74,12 +74,12 @@ const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30)
 const DAY_MS = 86400000
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
-const isoToSerial = (iso: string): number | null => {
+export const isoToSerial = (iso: string): number | null => {
   const m = ISO_DATE.exec(iso)
   if (!m) return null
   return Math.round((Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) - EXCEL_EPOCH_MS) / DAY_MS)
 }
-const serialToIso = (serial: number): string => new Date(EXCEL_EPOCH_MS + Math.round(serial) * DAY_MS).toISOString().slice(0, 10)
+export const serialToIso = (serial: number): string => new Date(EXCEL_EPOCH_MS + Math.round(serial) * DAY_MS).toISOString().slice(0, 10)
 
 /** `#rrggbb` (or a bare rrggbb) as OOXML ARGB; null for any other colour. */
 function argb(colour: string | undefined): string | null {
@@ -94,7 +94,7 @@ const fromArgb = (rgb: string | null | undefined): string | undefined =>
   rgb && /^[0-9a-f]{8}$/i.test(rgb) ? `#${rgb.slice(2).toLowerCase()}` : rgb && /^[0-9a-f]{6}$/i.test(rgb) ? `#${rgb.toLowerCase()}` : undefined
 
 /** Excel's built-in number formats, the ones a file names by id alone. */
-const BUILTIN_NUMFMT: Record<number, string> = {
+export const BUILTIN_NUMFMT: Record<number, string> = {
   0: 'General', 1: '0', 2: '0.00', 3: '#,##0', 4: '#,##0.00', 9: '0%', 10: '0.00%', 11: '0.00E+00', 12: '# ?/?', 13: '# ??/??',
   14: 'm/d/yyyy', 15: 'd-mmm-yy', 16: 'd-mmm', 17: 'mmm-yy', 18: 'h:mm AM/PM', 19: 'h:mm:ss AM/PM', 20: 'h:mm', 21: 'h:mm:ss',
   22: 'm/d/yyyy h:mm', 37: '#,##0 ;(#,##0)', 38: '#,##0 ;[Red](#,##0)', 39: '#,##0.00;(#,##0.00)', 40: '#,##0.00;[Red](#,##0.00)',
@@ -102,7 +102,7 @@ const BUILTIN_NUMFMT: Record<number, string> = {
 }
 
 /** Is this a date pattern: date tokens outside quotes, no digit placeholders. */
-function isDateFormat(fmt: string | undefined): boolean {
+export function isDateFormat(fmt: string | undefined): boolean {
   if (!fmt) return false
   const bare = fmt.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '')
   return /[ymd]/i.test(bare) && !/[#0?]/.test(bare) && !/^General$/i.test(fmt)
@@ -127,10 +127,10 @@ const sqrefRects = (sqref: string): Rect[] => sqref.split(/\s+/).map(refRect).fi
 
 /** Excel column width units from pixels, and back. Excel's unit is the
  *  width of a digit in the default font, close to seven pixels. */
-const pxToWidth = (px: number): number => Math.max(0, Math.round((px / 7) * 100) / 100)
-const widthToPx = (w: number): number => Math.round(w * 7)
-const pxToPt = (px: number): number => Math.round(px * 0.75 * 100) / 100
-const ptToPx = (pt: number): number => Math.round(pt / 0.75)
+export const pxToWidth = (px: number): number => Math.max(0, Math.round((px / 7) * 100) / 100)
+export const widthToPx = (w: number): number => Math.round(w * 7)
+export const pxToPt = (px: number): number => Math.round(px * 0.75 * 100) / 100
+export const ptToPx = (pt: number): number => Math.round(pt / 0.75)
 
 const formatKey = formatKeyAt
 function splitFormatKey(key: string): { row: number; col: number } | null {
@@ -249,7 +249,7 @@ function styleRegistry() {
 /** A string cell's text as the workbook stores it. Text that would be read
  *  back as a number, a boolean or a formula takes Excel's apostrophe, which
  *  says "this is text" and is not part of the value. */
-function asText(text: string): string {
+export function asText(text: string): string {
   if (text === '') return ''
   const upper = text.trim().toUpperCase()
   const numberish = text.trim() !== '' && Number.isFinite(Number(text))

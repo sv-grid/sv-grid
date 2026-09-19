@@ -134,13 +134,18 @@ call, so an autosave is a debounced handler, never a per-keystroke write.
   onReady={() => { if (saved) sheet?.setState(saved) }} />
 ```
 
-Files: `sheet.toXlsx()`, `sheet.toOds()` and `sheet.open(file)` (also File >
-Save As, Save As ODS and Open on the ribbon, Ctrl+S and Ctrl+O). `open` takes
-an .xlsx, an .ods or a .csv and decides by the bytes, not the file name.
-Outside the component: `documentToXlsx(doc)` / `documentFromXlsx(bytes)`,
-`documentToOds(doc)` / `documentFromOds(bytes)`, `documentFromFile(blob)` for
-any of the three, and `csvText` / `sheetStateFromCsv` for CSV. Everything but
-the CSV pair needs `jszip`, an optional peer, installed in the app.
+Files: `sheet.toXlsx()`, `sheet.toOds()`, `sheet.toXls()` and
+`sheet.open(file)` (also File > Save As, Save As ODS, Save As XLS and Open on
+the ribbon, Ctrl+S and Ctrl+O). `open` takes an .xlsx, an .ods, an .xls or a
+.csv and decides by the bytes, not the file name. Outside the component:
+`documentToXlsx(doc)` / `documentFromXlsx(bytes)`, `documentToOds(doc)` /
+`documentFromOds(bytes)`, `documentToXls(doc)` / `documentFromXls(bytes)`,
+`documentFromFile(blob)` for any of the four, and `csvText` /
+`sheetStateFromCsv` for CSV. The two zip formats need `jszip`, an optional
+peer, installed in the app; the .xls and CSV pairs need nothing. The .xls is
+Excel 97-2003 and carries the least: no charts, pictures, pivots, validation,
+conditional formatting or comments, and a formula using a function that
+format never had (XLOOKUP, LET, TEXTJOIN) goes out as its value.
 
 ## Protection, comments and localisation are props and document state, not CSS
 

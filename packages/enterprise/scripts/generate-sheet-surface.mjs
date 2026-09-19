@@ -128,6 +128,7 @@ export const METHODS = [
   ['open', '(file: Blob & { name?: string }): Promise<void>', 'Replace the document with an .xlsx, .ods or .csv file.'],
   ['toXlsx', '(): Promise<Blob>', 'The document as an .xlsx Blob.'],
   ['toOds', '(): Promise<Blob>', 'The document as an .ods Blob, which LibreOffice Calc opens.'],
+  ['toXls', '(): Blob', 'The document as an .xls Blob, which Excel 97-2003 opens.'],
   ['toCsv', '(): string', 'The active sheet as CSV.'],
   ['newWorkbook', '(): void', 'Start over with one empty sheet.'],
   ['print', '(): void', 'The active sheet in the print dialog.'],

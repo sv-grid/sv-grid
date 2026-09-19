@@ -204,6 +204,8 @@ export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './s
 export { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
 export { csvText, csvRows, guessCsvSeparator, sheetStateFromCsv } from './sheet/csv'
 export { sheetStateFromOds, documentFromOds, formulaFromOdf, formulaToOdf } from './sheet/ods-document'
+export { sheetStateFromXls, documentFromXls, documentToXls, isXlsFile } from './sheet/xls-document'
+export { formulaFromRpn, rpnFromFormula } from './sheet/xls-formula'
 export { documentFromFile, readSpreadsheetFile, type OpenedFile } from './sheet/open-file'
 export {
   defaultPageSetup, copyPageSetup, marginPresetOf, shiftPageSetup, marginsCss, MARGIN_PRESETS, PAPER_SIZES,

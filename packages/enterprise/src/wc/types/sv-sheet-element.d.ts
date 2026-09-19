@@ -67,6 +67,8 @@ export interface SvSheetElement extends HTMLElement {
   toXlsx(): Promise<Blob>
   /** The document as an .ods Blob, which LibreOffice Calc opens. */
   toOds(): Promise<Blob>
+  /** The document as an .xls Blob, which Excel 97-2003 opens. */
+  toXls(): Blob
   /** The active sheet as CSV. */
   toCsv(): string
   /** Start over with one empty sheet. */

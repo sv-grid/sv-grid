@@ -1,16 +1,19 @@
 /**
  * One door for a file the user picked.
  *
- * A spreadsheet arrives as one of three things, whatever the picker called
+ * A spreadsheet arrives as one of four things, whatever the picker called
  * it: an .xlsx from Excel or Google Sheets, an .ods from LibreOffice (or
- * Google Sheets, which offers both), or a .csv, which every one of them
- * exports. The kind is read from the BYTES rather than from the name: a file
- * picked on a phone often arrives with no extension and no media type, and a
- * zip always starts PK, with the package inside saying which package it is.
+ * Google Sheets, which offers both), an .xls from any Excel since 1997, or a
+ * .csv, which every one of them exports. The kind is read from the BYTES
+ * rather than from the name: a file picked on a phone often arrives with no
+ * extension and no media type, a zip always starts PK with the package
+ * inside saying which package it is, and an .xls starts with the compound
+ * file signature.
  */
 import { documentFromXlsxParts, loadZip, type ZipCtor } from './xlsx-document'
 import { sheetStateFromOds } from './ods-document'
 import { sheetStateFromCsv } from './csv'
+import { isXlsFile, sheetStateFromXls } from './xls-document'
 import type { SheetState } from './document'
 
 /** A picture travels as the data URL the document holds, as in the xlsx reader. */
@@ -20,14 +23,15 @@ const mediaTypeOf = (path: string): string => {
   return extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' : `image/${extension || 'png'}`
 }
 
-export type OpenedFile = { state: SheetState; kind: 'xlsx' | 'ods' | 'csv' }
+export type OpenedFile = { state: SheetState; kind: 'xlsx' | 'ods' | 'xls' | 'csv' }
 
 /** What a file holds, and which kind of file it turned out to be. */
 export async function readSpreadsheetFile(
   file: Blob & { name?: string },
   JSZip?: ZipCtor,
 ): Promise<OpenedFile> {
-  const head = new Uint8Array(await file.slice(0, 2).arrayBuffer())
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer())
+  if (isXlsFile(head)) return { state: sheetStateFromXls(new Uint8Array(await file.arrayBuffer())), kind: 'xls' }
   if (head[0] !== 0x50 || head[1] !== 0x4b) {
     const name = (file.name ?? '').replace(/\.[^.]+$/, '')
     return { state: sheetStateFromCsv(await file.text(), (name || 'Sheet1').slice(0, 31)), kind: 'csv' }
@@ -51,7 +55,7 @@ export async function readSpreadsheetFile(
   return { state: documentFromXlsxParts(parts), kind: 'xlsx' }
 }
 
-/** The document a file holds: .xlsx, .ods or .csv, decided by its bytes. */
+/** The document a file holds: .xlsx, .ods, .xls or .csv, decided by its bytes. */
 export async function documentFromFile(file: Blob & { name?: string }, JSZip?: ZipCtor): Promise<SheetState> {
   return (await readSpreadsheetFile(file, JSZip)).state
 }

@@ -397,9 +397,9 @@ or `'Price list'!C2` when the name has a space:
 ## Files
 
 The File tab is the part of Excel's a document in a page can do: New,
-Open, Save As, Save As ODS, Export CSV and Print. Open takes an .xlsx, an
-.ods or a .csv from disk - the kind is read from the bytes, not from the
-name - and replaces
+Open, Save As, Save As ODS, Save As XLS, Export CSV and Print. Open takes an
+.xlsx, an .ods, an .xls or a .csv from disk - the kind is read from the
+bytes, not from the name - and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
 sheets, frozen panes, merges, the filter region, validation, conditional
@@ -409,7 +409,9 @@ open with the same parts; Save As ODS writes the same document in
 OpenDocument, the format LibreOffice Calc saves by default and one of the
 files Google Sheets hands back, with the cells, their formulas in ODF's own
 reference grammar, the number formats, the looks, widths and heights, merges,
-hidden lines, links and notes; Export CSV downloads the active sheet as its cells
+hidden lines, links and notes; Save As XLS writes an Excel 97-2003 workbook,
+the binary .xls that every Excel since 1997 opens and that a bank or an ERP
+export still often is; Export CSV downloads the active sheet as its cells
 show, and Open reads such a file back: the separator is guessed, so a comma,
 a semicolon or a tab file all read as themselves, a quoted field keeps its
 commas and line breaks, and a field that reads as a percentage, a currency
@@ -420,9 +422,10 @@ anything; Print (Ctrl+P) opens the active sheet in the browser's print
 dialog as its Page Layout says (below). `documentToXlsx` and
 `documentFromXlsx` are the two halves, in `@svgrid/enterprise/sheet`, and
 need the `jszip` peer; `documentToOds` and `documentFromOds` are the same
-pair for OpenDocument, and `documentFromFile` takes any of the three and
-decides by the bytes; `csvText` and `sheetStateFromCsv` are the CSV pair,
-and need nothing.
+pair for OpenDocument; `documentToXls` and `documentFromXls` are the pair for
+the old binary format, and need nothing, since an .xls is not a zip; and
+`documentFromFile` takes any of the four and decides by the bytes. `csvText`
+and `sheetStateFromCsv` are the CSV pair, and need nothing either.
 
 What an .ods carries is the document this package keeps, not every corner of
 either format: cells and their formulas (translated both ways, so
@@ -433,12 +436,28 @@ filter region, hyperlinks, notes, defined names and sheet protection. Charts,
 images, sparklines, pivots, validation, conditional formatting and frozen
 panes travel in the .xlsx and not yet in the .ods.
 
+The .xls is the oldest of the three and carries the least. Cells and their
+formulas travel, with the formulas as the RPN tokens Excel 97 stored rather
+than as text: a function that format never had (XLOOKUP, LET, TEXTJOIN, a
+structured reference) has no token, so such a cell goes out as the value it
+worked out, and a workbook opened from an .xls reads those the same way
+round - Excel writes `_xlfn.XLOOKUP` as a defined name and calls it, and
+that name turns back into the function here. Number formats, fonts, colours,
+fills, borders, alignment, column widths, row heights, hidden rows, columns
+and sheets, merges, frozen panes, sheet protection and defined names travel;
+charts, pictures, sparklines, pivots, validation, conditional formatting and
+comments do not, since the format kept them somewhere this reader does not
+go. The sheet is 65,536 rows by 256 columns, and anything past that edge is
+left out rather than written wrong.
+
 An app that keeps its workbooks somewhere other than the user's disk takes
 the actions over through `onAction` (`file-open`, `file-save-xlsx`,
-`file-new`, `file-export-csv`, `file-print`) and calls the component's
-own methods: `open(file)` replaces the document with an .xlsx, .ods or .csv
-Blob, `toXlsx()` returns the document as a Blob, `toOds()` the same document
-in OpenDocument, `toCsv()` the active sheet as text, `newWorkbook()` empties it, `print()` opens the print dialog and
+`file-save-ods`, `file-save-xls`, `file-new`, `file-export-csv`,
+`file-print`) and calls the component's
+own methods: `open(file)` replaces the document with an .xlsx, .ods, .xls or
+.csv Blob, `toXlsx()` returns the document as a Blob, `toOds()` the same
+document in OpenDocument, `toXls()` it as an Excel 97-2003 workbook,
+`toCsv()` the active sheet as text, `newWorkbook()` empties it, `print()` opens the print dialog and
 `printHtml()` returns the page it would print, for an app that prints
 its own way.
 
