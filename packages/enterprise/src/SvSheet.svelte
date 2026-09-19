@@ -3215,6 +3215,7 @@
         evaluateCell = { row: active.rowIndex, col: active.colIndex }
         evaluateOpen = true
         return
+      case 'cut': cutSelection(context); return
       case 'error-checking': errorsOpen = true; return
       case 'text-to-columns': textToColumnsOpen = true; return
       case 'remove-duplicates': removeDuplicatesOpen = true; return
@@ -3462,6 +3463,12 @@
     const landing = plan.filter((entry) => !covered(entry.row, entry.col))
     const rects: Array<readonly [number, number, number, number]> = []
     for (const entry of landing) rects.push([entry.row, entry.col, entry.row, entry.col])
+    // A cut lands as a MOVE: the cells leave where they were, and every
+    // formula that read them follows. Both reach further than the grid's
+    // own history (other sheets, the defined names), so the whole document
+    // before and after is what makes it one Ctrl+Z.
+    const moving = origin === null && copied?.cut ? copied : null
+    const before = moving ? getState() : null
     pasting = true
     try {
       cmd.batch(() => {
@@ -3482,8 +3489,7 @@
     } finally {
       pasting = false
     }
-    // A cut and paste MOVES the cells, so the formulas that read them follow.
-    if (origin === null && copied?.cut) repointMoved(cmd, copied, dest)
+    if (moving && before) finishMove(cmd, moving, dest, landing, before)
     // A cut is moved once; Excel's ants go with it.
     if (origin === null) marquee = null
     bump()
@@ -3491,13 +3497,20 @@
   }
 
   /**
-   * What a MOVE owes the rest of the workbook: every reference to a cell
-   * that was cut and pasted elsewhere points at where the cell now is, as
-   * Excel does, so =A1*2 reads =D1*2 after A1 is moved to D1 rather than
-   * quietly reading an emptied cell. Recorded as one step with the paste,
-   * since the rewrites reach sheets the grid's own history knows nothing of.
+   * The rest of a MOVE, once the pasted cells are in place: the block leaves
+   * where it was, and every formula that read it points at where it now is,
+   * as Excel does, so =A1*2 reads =D1*2 after A1 is moved to D1 rather than
+   * quietly reading an emptied cell. Both halves reach past the grid's own
+   * history - the source may be on another sheet, the rewrites on every
+   * sheet - so the document before and after is recorded as one step.
    */
-  function repointMoved(cmd: GridCommandContext, block: Copied, dest: { row: number; col: number }): void {
+  function finishMove(
+    cmd: GridCommandContext,
+    block: Copied,
+    dest: { row: number; col: number },
+    landing: ReadonlyArray<{ row: number; col: number }>,
+    before: SheetState,
+  ): void {
     const height = block.cells.length
     const width = block.cells.reduce((max, line) => Math.max(max, line.length), 0)
     if (height === 0 || width === 0) return
@@ -3512,13 +3525,34 @@
       dCol: dest.col - block.origin.col,
     }
     if (move.sheet === move.toSheet && move.dRow === 0 && move.dCol === 0) return
-    const before = getState()
+    // The cells the paste has just written stay; the rest of the block empties.
+    const written = new Set(landing.map((at) => `${at.row}:${at.col}`))
+    const sameSheet = move.sheet === move.toSheet
+    for (let r = move.top; r <= move.bottom; r += 1) {
+      for (let c = move.left; c <= move.right; c += 1) {
+        if (sameSheet && written.has(`${r}:${c}`)) continue
+        if (wb.getRaw(move.sheet, r, c) !== '') wb.setRaw(move.sheet, r, c, '')
+      }
+    }
     wb.repointAfterMove(move)
     const after = getState()
     cmd.recordUndo?.(
       () => { doc.setState(before); registerSheetTargets(); applyLive(wb.active); bump() },
       () => { doc.setState(after); registerSheetTargets(); applyLive(wb.active); bump() },
     )
+  }
+
+  /**
+   * Excel's Cut: a copy that MARKS the block rather than emptying it. The
+   * cells leave when the paste lands, which is what makes Escape harmless
+   * and a move one Ctrl+Z. The grid's own cut clears at once; the sheet
+   * takes Ctrl+X, the ribbon's Cut and the menu's before it can.
+   */
+  function cutSelection(cmd: GridCommandContext): void {
+    const rects = selectedRects(cmd)
+    if (protectedNow() && rectsHaveLocked(storeFor(), lookup, rects, protectionNow().ranges)) { refuse(); return }
+    cmd.copy()
+    if (copied) copied.cut = true
   }
 
   function pasteSpecial(opts: PasteSpecialOptions) {
@@ -3651,6 +3685,20 @@
         return
       }
       if (event.key === 'Escape') selectedObject = null
+    }
+    // Excel's cut: the cells stay where they are until the paste lands, so
+    // Escape leaves the sheet as it was and one Ctrl+Z puts a move back.
+    // The grid's own Ctrl+X empties them at once, which is right for a data
+    // grid and wrong here, so the sheet takes the key first.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey
+      && (event.key === 'x' || event.key === 'X') && !editorOf(event.target) && !painter) {
+      const cmd = cmdOf()
+      if (cmd) {
+        event.preventDefault()
+        event.stopPropagation()
+        cutSelection(cmd)
+        return
+      }
     }
     if (protectedNow() && !editorOf(event.target) && wouldEdit(event) && locked(active.rowIndex, active.colIndex)) refuse()
     if (event.key === 'Escape' && marquee && !editorOf(event.target)) marquee = null
@@ -3997,7 +4045,8 @@
   const glyph = (name: RibbonIconName): ContextMenuIcon => ({ paths: RIBBON_ICONS[name] })
   const contextMenu = $derived.by((): ContextMenuItem<SheetRow>[] => [
     // The grid's own Cut / Copy / Paste, with the ribbon's icons on them.
-    { key: 'cut', icon: glyph('cut') },
+    // The sheet's own Cut, not the grid's: the cells stay until the paste.
+    { key: 'cut', icon: glyph('cut'), action: () => withCmd((c) => cutSelection(c)) },
     { key: 'copy', icon: glyph('copy') },
     { key: 'paste', icon: glyph('paste') },
     { key: 'paste-special', label: t('menuPasteSpecial'), icon: glyph('paste-special'), action: () => withCmd((c) => delegate('paste-special', c)) },

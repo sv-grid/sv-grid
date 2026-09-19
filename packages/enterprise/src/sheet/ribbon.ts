@@ -163,6 +163,7 @@ export type RibbonActionId =
   | 'print-gridlines'
   | 'print-headings'
   | 'paste-special'
+  | 'cut'
   | 'format-cells'
   | 'find-replace'
   | 'insert-function'
@@ -649,7 +650,14 @@ const HOME: RibbonTab = {
         small(1, {
           id: 'cut', label: 'Cut', title: 'Cut', keys: 'Ctrl+X', icon: 'cut', kind: 'button',
           isEnabled: hasTarget,
-          run: (cmd) => { void cmd.cut(); return true },
+          // Raised, so a spreadsheet shell can give it Excel's meaning: the
+          // cells stay where they are until the paste lands. A host that
+          // answers nothing falls back to the grid's cut, which clears now.
+          run: (cmd) => {
+            if (raiseRibbonAction('cut', cmd)) return true
+            void cmd.cut()
+            return true
+          },
         }),
         small(2, {
           id: 'copy', label: 'Copy', title: 'Copy', keys: 'Ctrl+C', icon: 'copy', kind: 'button',
