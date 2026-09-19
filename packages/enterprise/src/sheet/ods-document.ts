@@ -13,12 +13,13 @@
  * (`of:=SUM([.A1:.A3])`), which has to be translated both ways. Everything
  * else is the same document this package already keeps.
  */
-import { colToLetters } from './address'
+import { colToLetters, lettersToCol } from './address'
 import { tokenize, type TableRefToken } from './tokenize'
 import { formatKeyAt, type CellFormatEntry } from './format-store'
 import type { SheetDocument, SheetState, SheetStateEntry } from './document'
 import { linkAt, type LinksMap } from './links'
 import { threadAt, type CommentsMap } from './comments'
+import type { Rect } from './rects'
 import { loadZip, type ZipCtor } from './xlsx-document'
 
 // ---------------------------------------------------------------------------
@@ -548,6 +549,20 @@ export function sheetStateFromOds(parts: Record<string, string>): SheetState {
     }
   }
 
+  // The filter regions: ODF keeps them beside the tables rather than inside
+  // one, which is where LibreOffice leaves a sheet's filter arrows.
+  for (const range of kids(kid(body, 'database-ranges'), 'database-range')) {
+    const target = attr(range, 'target-range-address')
+    if (!target || attr(range, 'display-filter-buttons') === 'false') continue
+    const [fromText, toText] = target.split(':')
+    const from = odfCell(fromText ?? '')
+    const to = odfCell(toText ?? '')
+    if (!from || !to || !from.sheet) continue
+    const entry = entries[from.sheet] ?? Object.entries(entries).find(([name]) => name.toLowerCase() === from.sheet!.toLowerCase())?.[1]
+    if (!entry || entry.autoFilter) continue
+    entry.autoFilter = { range: [from.row, from.col, to.row, to.col] as Rect, filters: {} }
+  }
+
   // Defined names: `table:named-expressions` beside the tables.
   for (const range of kids(kid(body, 'named-expressions'), 'named-range')) {
     const name = attr(range, 'name')
@@ -916,9 +931,21 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
       + ` table:cell-range-address="${esc(address)}"/>`
   }).join('')
 
+  // The filter regions, which ODF keeps beside the tables.
+  const filters = wb.sheets.map((name) => {
+    const filter = doc.get(name).autoFilter
+    if (!filter) return ''
+    const [r1, c1, r2, c2] = filter.range
+    const where = (r: number, c: number) => `${esc(name)}.${colToLetters(c)}${r + 1}`
+    return `<table:database-range table:name="__Anonymous_Sheet_DB__${wb.sheets.indexOf(name)}"`
+      + ` table:target-range-address="${where(r1, c1)}:${where(r2, c2)}" table:display-filter-buttons="true"/>`
+  }).join('')
+
   const content = `${XML_HEAD}<office:document-content ${NS} office:version="1.3">`
     + `<office:automatic-styles>${styles.join('')}</office:automatic-styles>`
-    + `<office:body><office:spreadsheet>${tables}`
+    + `<office:body><office:spreadsheet>`
+    + (filters ? `<table:database-ranges>${filters}</table:database-ranges>` : '')
+    + tables
     + (names ? `<table:named-expressions>${names}</table:named-expressions>` : '')
     + '</office:spreadsheet></office:body></office:document-content>'
 
@@ -1073,4 +1100,15 @@ export async function documentToOds(doc: SheetDocument, JSZip?: ZipCtor): Promis
     zip.file(path, content)
   }
   return zip.generateAsync({ type: 'blob', mimeType: ODS_MIME })
+}
+
+/** `Data.A1`, `$Data.$A$1` or `.A1` as a sheet and a position. */
+function odfCell(text: string): { sheet: string | null; row: number; col: number } | null {
+  const cleaned = text.trim().replace(/^\$/, '')
+  const dot = cleaned.lastIndexOf('.')
+  const sheetPart = dot < 0 ? '' : cleaned.slice(0, dot).replace(/^\$/, '').replace(/^'|'$/g, '')
+  const cell = (dot < 0 ? cleaned : cleaned.slice(dot + 1)).replace(/\$/g, '')
+  const m = /^([A-Za-z]+)(\d+)$/.exec(cell)
+  if (!m) return null
+  return { sheet: sheetPart || null, row: Number(m[2]) - 1, col: lettersToCol(m[1]!) }
 }

@@ -160,6 +160,28 @@ describe('a table in an .ods', () => {
   })
 })
 
+describe('the filter region', () => {
+  it('reads the database range LibreOffice leaves beside the tables', () => {
+    const state = sheetStateFromOds(content(
+      '<table:database-ranges><table:database-range table:name="Orders"'
+      + ' table:target-range-address="S.A1:S.C9" table:display-filter-buttons="true"/></table:database-ranges>'
+      + '<table:table table:name="S"><table:table-row>'
+      + '<table:table-cell office:value-type="string"><text:p>Region</text:p></table:table-cell></table:table-row></table:table>',
+    ))
+    expect(state.sheets.S!.autoFilter?.range).toEqual([0, 0, 8, 2])
+  })
+
+  it('writes one back', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['Region'], ['North']] }] })
+    doc.get('S').autoFilter = { range: [0, 0, 1, 0], filters: {} }
+    const body = documentToOdsParts(doc)['content.xml']!
+    expect(body).toContain('table:target-range-address="S.A1:S.A2"')
+    expect(body).toContain('table:display-filter-buttons="true"')
+    // And it comes back as the same region.
+    expect(sheetStateFromOds(documentToOdsParts(doc)).sheets.S!.autoFilter?.range).toEqual([0, 0, 1, 0])
+  })
+})
+
 describe('writing an .ods', () => {
   const doc = () => {
     const made = createSheetDocument({ sheets: [{ name: 'Data', cells: [

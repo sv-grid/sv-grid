@@ -426,11 +426,12 @@ and need nothing.
 
 What an .ods carries is the document this package keeps, not every corner of
 either format: cells and their formulas (translated both ways, so
-`=SUM(A1:A3)` here is `of:=SUM([.A1:.A3])` there), number formats, the cell
-looks, column widths and row heights, merges, hidden rows and columns,
-hyperlinks, notes, defined names and sheet protection. Charts, images,
-sparklines, pivots, validation and conditional formatting travel in the
-.xlsx and not yet in the .ods.
+`=SUM(A1:A3)` here is `of:=SUM([.A1:.A3])` there, and a structured reference
+becomes the rectangle it names, since ODF has none), number formats, the cell
+looks, column widths and row heights, merges, hidden rows and columns, the
+filter region, hyperlinks, notes, defined names and sheet protection. Charts,
+images, sparklines, pivots, validation, conditional formatting and frozen
+panes travel in the .xlsx and not yet in the .ods.
 
 An app that keeps its workbooks somewhere other than the user's disk takes
 the actions over through `onAction` (`file-open`, `file-save-xlsx`,
