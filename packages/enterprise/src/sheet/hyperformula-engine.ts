@@ -82,6 +82,17 @@ export function createHyperFormulaEngine(options: HyperFormulaEngineOptions): Sh
   const hf = options.hyperformula
   /** Sheet name (lower case) to HyperFormula's id. */
   const ids = new Map<string, number>()
+  /**
+   * The sheets this engine put into the instance, lower case.
+   *
+   * A sheet renamed or removed in the workbook has to go from the mirror
+   * too, or a formula naming it keeps answering out of a sheet that is no
+   * longer there: rename `Costs` and `=Costs!B2` still reads the old one,
+   * where the workbook's own grammar says `#REF!`. Only the ones this
+   * engine added are dropped, since the application built the instance and
+   * may keep sheets of its own in it.
+   */
+  const mine = new Set<string>()
 
   function idOf(name: string): number | null {
     const known = ids.get(name.toLowerCase())
@@ -96,6 +107,13 @@ export function createHyperFormulaEngine(options: HyperFormulaEngineOptions): Sh
 
     load(sheets: ReadonlyArray<SheetData>) {
       ids.clear()
+      const wanted = new Set(sheets.map((sheet) => sheet.name.toLowerCase()))
+      for (const name of [...mine]) {
+        if (wanted.has(name)) continue
+        mine.delete(name)
+        const id = hf.getSheetId(name)
+        if (id !== undefined) hf.removeSheet?.(id)
+      }
       for (const sheet of sheets) {
         let id = hf.getSheetId(sheet.name)
         if (id === undefined) {
@@ -104,6 +122,7 @@ export function createHyperFormulaEngine(options: HyperFormulaEngineOptions): Sh
         }
         if (id === undefined) continue
         ids.set(sheet.name.toLowerCase(), id)
+        mine.add(sheet.name.toLowerCase())
         // A ragged row is squared off: HyperFormula wants a rectangle.
         const width = sheet.cells.reduce((m, row) => Math.max(m, row.length), 0)
         hf.setSheetContent(id, sheet.cells.map((row) => Array.from({ length: width }, (_, c) => row[c] ?? '')))

@@ -66,11 +66,15 @@ describe('the engine seam', () => {
 function mockHyperFormula(answers: Record<string, unknown>): HyperFormulaLike & { sheets: Map<number, unknown[][]> } {
   const names = new Map<string, number>()
   const sheets = new Map<number, unknown[][]>()
+  // Ids come from a counter rather than the number of sheets, as
+  // HyperFormula's do: one that has gone is never handed out again.
+  let nextId = 0
   return {
     sheets,
     getSheetId: (name) => names.get(name.toLowerCase()),
     addSheet(name) {
-      const id = names.size
+      const id = nextId
+      nextId += 1
       names.set((name ?? `Sheet${id + 1}`).toLowerCase(), id)
       sheets.set(id, [])
       return name ?? `Sheet${id + 1}`
@@ -90,6 +94,12 @@ function mockHyperFormula(answers: Record<string, unknown>): HyperFormulaLike & 
       if (typeof text === 'string' && text !== '' && Number.isFinite(Number(text))) return Number(text)
       return text ?? null
     },
+    // Ids stay put when one goes, as HyperFormula's do.
+    removeSheet(id) {
+      for (const [name, at] of names) if (at === id) names.delete(name)
+      sheets.delete(id as number)
+    },
+    getSheetNames: () => [...names.keys()],
   }
 }
 
@@ -127,6 +137,36 @@ describe('the HyperFormula engine', () => {
     expect(fromHyperFormula({ value: '#ERROR!' })).toEqual({ error: '#VALUE!' })
     expect(fromHyperFormula({ type: 'NAME' })).toEqual({ error: '#NAME?' })
     expect(fromHyperFormula(new Date(Date.UTC(2026, 2, 4)))).toBe('2026-03-04')
+  })
+
+  it('a sheet renamed or removed in the workbook goes from the instance too', () => {
+    // Otherwise `=Costs!B2` keeps answering out of a sheet the workbook no
+    // longer has, where its own grammar says #REF!, and every rename leaves
+    // a copy behind for as long as the instance lives.
+    const hf = mockHyperFormula({})
+    const wb = createWorkbook([
+      { name: 'Costs', cells: [['5']] },
+      { name: 'Summary', cells: [['1']] },
+    ], { engine: createHyperFormulaEngine({ hyperformula: hf }) })
+    expect(hf.getSheetNames!()).toEqual(['costs', 'summary'])
+
+    wb.renameSheet('Costs', 'Spend')
+    expect(hf.getSheetNames!(), 'the old name is gone').toEqual(['summary', 'spend'])
+    expect(hf.sheets.get(hf.getSheetId('Spend')!), 'with the cells on it').toEqual([['5']])
+
+    wb.removeSheet('Spend')
+    expect(hf.getSheetNames!()).toEqual(['summary'])
+  })
+
+  it('leaves a sheet the application keeps in its own instance alone', () => {
+    // The application builds the instance and may hold sheets of its own in
+    // it; only the ones this engine mirrored are its to remove.
+    const hf = mockHyperFormula({})
+    hf.addSheet('AppOnly')
+    const wb = createWorkbook([{ name: 'S', cells: [['1']] }], { engine: createHyperFormulaEngine({ hyperformula: hf }) })
+    wb.addSheet('T')
+    wb.removeSheet('T')
+    expect(hf.getSheetNames!()).toContain('apponly')
   })
 
   it('a sheet the instance does not know is #REF!, and a new sheet is added to it', () => {
