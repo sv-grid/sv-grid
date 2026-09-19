@@ -84,12 +84,21 @@ function nearestIndex(
 }
 
 
+/** FIND and SEARCH count their optional start from 1; -1 says the argument
+ *  is out of range, which Excel reports as #VALUE!. */
+function startPosition(a: FnArgs): number {
+  if (a.args[2] === undefined) return 0
+  const given = Math.trunc(toNumber(nth(a, 2)))
+  return given < 1 ? -1 : given - 1
+}
+
+
 /** Where a wildcard pattern starts inside a text, or -1. Excel reports the
  *  earliest position a match can begin at, so the search walks forward and
  *  tries every ending from the shortest up. */
-function wildcardSearch(text: string, pattern: string): number {
+function wildcardSearch(text: string, pattern: string, from = 0): number {
   const re = wildcardRegExp(pattern)
-  for (let start = 0; start <= text.length; start += 1) {
+  for (let start = from; start <= text.length; start += 1) {
     for (let end = start; end <= text.length; end += 1) {
       if (re.test(text.slice(start, end))) return start
     }
@@ -247,10 +256,14 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     if (find === '') return s
     return s.split(find).join(replace)
   },
+  // FIND(find, within, [start]): case sensitive, 1-based, #VALUE! when the
+  // text is not there. The third argument is where the search BEGINS, and
+  // the answer is still counted from the start of the text, which is what
+  // makes the walk over every occurrence work.
   FIND: (a) => {
-    // Case sensitive, 1-based, #VALUE! when absent. SEARCH is its
-    // case-insensitive twin.
-    const at = toText(nth(a, 1)).indexOf(toText(nth(a, 0)))
+    const from = startPosition(a)
+    if (from < 0) return err('#VALUE!')
+    const at = toText(nth(a, 1)).indexOf(toText(nth(a, 0)), from)
     return at < 0 ? err('#VALUE!') : at + 1
   },
   // SEARCH is FIND's case-insensitive twin, and unlike FIND it reads Excel's
@@ -258,11 +271,13 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   SEARCH: (a) => {
     const needle = toText(nth(a, 0))
     const hay = toText(nth(a, 1))
+    const from = startPosition(a)
+    if (from < 0) return err('#VALUE!')
     if (hasWildcards(needle)) {
-      const at = wildcardSearch(hay, needle)
+      const at = wildcardSearch(hay, needle, from)
       return at < 0 ? err('#VALUE!') : at + 1
     }
-    const at = hay.toLowerCase().indexOf(unescapeWildcards(needle).toLowerCase())
+    const at = hay.toLowerCase().indexOf(unescapeWildcards(needle).toLowerCase(), from)
     return at < 0 ? err('#VALUE!') : at + 1
   },
   /**

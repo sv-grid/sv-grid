@@ -278,6 +278,19 @@ describe('the function library', () => {
     expect(run('=XLOOKUP("Sou*", A1:A2, B1:B2, "none", 2)', sheet)).toBe(30)
   })
 
+  it('begins FIND and SEARCH at the position given', () => {
+    // The third argument says where to start; the answer is still counted
+    // from the start of the text, which is how a walk over every occurrence
+    // is written.
+    expect(run('=FIND("a", "banana", 3)')).toBe(4)
+    expect(run('=SEARCH("a", "banana", 3)')).toBe(4)
+    expect(run('=SEARCH("N?", "banana", 4)')).toBe(5)
+    // A fractional start truncates, and one before the text is #VALUE!.
+    expect(run('=SEARCH("a", "banana", 4.9)')).toBe(4)
+    expect(run('=FIND("a", "banana", 0)')).toEqual({ error: '#VALUE!' })
+    expect(run('=FIND("a", "banana", 7)')).toEqual({ error: '#VALUE!' })
+  })
+
   it('reads wildcards in SEARCH but not FIND', () => {
     expect(run('=SEARCH("n?rth", "the North")')).toBe(5)
     expect(run('=SEARCH("st*", "North East")')).toBe(9)
