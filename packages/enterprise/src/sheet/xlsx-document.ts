@@ -23,7 +23,7 @@
  * unzip them with jszip, an optional peer loaded on demand.
  */
 import type { SheetDocument, SheetState, SheetStateEntry } from './document'
-import type { CellFormatEntry } from './format-store'
+import { formatKeyAt, type CellFormatEntry } from './format-store'
 import type { ValidationRule, ValidationAllow, ValidationOperator } from './validation'
 import type { CfRule, CfStyle, CfOperator, CfTextMatch, CfIconSet } from './conditional-formats'
 import type { Rect } from './rects'
@@ -132,7 +132,7 @@ const widthToPx = (w: number): number => Math.round(w * 7)
 const pxToPt = (px: number): number => Math.round(px * 0.75 * 100) / 100
 const ptToPx = (pt: number): number => Math.round(pt / 0.75)
 
-const formatKey = (row: number, col: number): string => `${encodeURIComponent(`r${row}`)} ${encodeURIComponent(colToLetters(col))}`
+const formatKey = formatKeyAt
 function splitFormatKey(key: string): { row: number; col: number } | null {
   const gap = key.indexOf(' ')
   if (gap < 0) return null

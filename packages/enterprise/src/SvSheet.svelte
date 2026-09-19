@@ -53,7 +53,7 @@
   import SvSheetSort from './SvSheetSort.svelte'
   import { downloadBlobFile } from '@svgrid/grid'
   import { documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
-  import { csvText } from './sheet/csv'
+  import { csvText, sheetStateFromCsv } from './sheet/csv'
   import { sortOrder, guessHeaderRow, type SortKey } from './sheet/sort'
   import { currentRegion, isBlankValue } from './sheet/navigate'
   import { freezeAtActiveCell, freezeTopRow, freezeFirstColumn, applyFreeze, type FreezeState } from './sheet/freeze'
@@ -380,10 +380,22 @@
    * Open does once a file is picked. Resolves when the sheet shows it;
    * rejects with the reader's message when the file is not one.
    */
+  /**
+   * File > Open. An .xlsx as written by Excel, Google Sheets or
+   * LibreOffice, or a .csv (or .tsv) as all three export one: the kind is
+   * read from the bytes rather than from the name, since a file picked on a
+   * phone often arrives with neither the extension nor the type set.
+   */
   export async function open(file: Blob & { name?: string }): Promise<void> {
-    const state = await documentFromXlsx(file)
+    const name = file.name ?? ''
+    const head = new Uint8Array(await file.slice(0, 4).arrayBuffer())
+    // Every .xlsx is a zip, and every zip starts PK\x03\x04.
+    const zipped = head[0] === 0x50 && head[1] === 0x4b
+    const state = zipped
+      ? await documentFromXlsx(file)
+      : sheetStateFromCsv(await file.text(), (name.replace(/\.[^.]+$/, '') || 'Sheet1').slice(0, 31))
     setState(state)
-    if (file.name) fileName = file.name.replace(/\.xlsx$/i, '')
+    if (name) fileName = name.replace(/\.(xlsx|csv|tsv|txt)$/i, '')
   }
 
   /** The document as an .xlsx Blob: what File > Save As downloads. */
@@ -5492,7 +5504,7 @@
     onAccept={acceptEntry}
     onCancel={() => { pendingAlert = null; const c = cmdOf(); if (c) focusSheet(c) }}
   />
-  <input class="sheet-file-input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
+  <input class="sheet-file-input" type="file" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/tab-separated-values" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
   <SvModal open={newConfirm} title={t('newWorkbookTitle')} size="sm" onClose={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>
     <div class="sv-sheet-dialog">
       <p class="note">{t('newWorkbookMessage')}</p>

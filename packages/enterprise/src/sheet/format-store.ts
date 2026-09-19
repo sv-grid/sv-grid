@@ -13,6 +13,7 @@
  */
 // Type-only, so it is erased at build time and does not pull SvGrid.svelte in.
 import type { BorderSpec } from '@svgrid/grid'
+import { colToLetters } from './address'
 
 /** One cell's formatting. Every field optional; absent means inherit. */
 /** The boolean fields `toggle` can flip. Every one of them is a plain
@@ -100,9 +101,13 @@ export type SheetFormatStore = {
  * has to split it, or the row and column indexes come back empty and
  * `forgetRow` / `forgetColumn` become silent no-ops on a restored store.
  */
-function keyOf(rowId: string, columnId: string): string {
+export function keyOf(rowId: string, columnId: string): string {
   return `${encodeURIComponent(rowId)} ${encodeURIComponent(columnId)}`
 }
+
+/** The stored key for a cell by position, for anything building a saved
+ *  sheet from the outside: an importer, a fixture, a test. */
+export const formatKeyAt = (row: number, col: number): string => keyOf(`r${row}`, colToLetters(col))
 
 function splitKey(key: string): { rowId: string; columnId: string } | null {
   const gap = key.indexOf(' ')

@@ -202,7 +202,7 @@ export { default as SvSheetRemoveDuplicates } from './SvSheetRemoveDuplicates.sv
 export { default as SvSheetSort } from './SvSheetSort.svelte'
 export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sheet/sort'
 export { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
-export { csvText } from './sheet/csv'
+export { csvText, csvRows, guessCsvSeparator, sheetStateFromCsv } from './sheet/csv'
 export {
   defaultPageSetup, copyPageSetup, marginPresetOf, shiftPageSetup, marginsCss, MARGIN_PRESETS, PAPER_SIZES,
   type PageSetup, type PageMargins, type PageOrientation, type PaperSize, type MarginPreset,

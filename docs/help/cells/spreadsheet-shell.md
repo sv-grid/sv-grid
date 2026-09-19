@@ -397,23 +397,30 @@ or `'Price list'!C2` when the name has a space:
 ## Files
 
 The File tab is the part of Excel's a document in a page can do: New,
-Open, Save As, Export CSV and Print. Open takes an .xlsx from disk and replaces
+Open, Save As, Export CSV and Print. Open takes an .xlsx or a .csv from disk -
+the kind is read from the bytes, not from the name - and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
 sheets, frozen panes, merges, the filter region, validation, conditional
 formatting, protection, comments, names, the active sheet); Save As
-downloads the document as an .xlsx that Excel and Google Sheets open with
-the same parts; Export CSV downloads the active sheet as its cells show;
+downloads the document as an .xlsx that Excel, Google Sheets and LibreOffice
+open with the same parts; Export CSV downloads the active sheet as its cells
+show, and Open reads such a file back: the separator is guessed, so a comma,
+a semicolon or a tab file all read as themselves, a quoted field keeps its
+commas and line breaks, and a field that reads as a percentage, a currency
+amount or a grouped number lands as the number with the format it implies.
+A CSV field is never read as a formula, as it is not in Excel;
 New starts over with one empty sheet, asking first when the sheets hold
 anything; Print (Ctrl+P) opens the active sheet in the browser's print
 dialog as its Page Layout says (below). `documentToXlsx` and
 `documentFromXlsx` are the two halves, in `@svgrid/enterprise/sheet`, and
-need the `jszip` peer.
+need the `jszip` peer; `csvText` and `sheetStateFromCsv` are the CSV pair,
+and need nothing.
 
 An app that keeps its workbooks somewhere other than the user's disk takes
 the actions over through `onAction` (`file-open`, `file-save-xlsx`,
 `file-new`, `file-export-csv`, `file-print`) and calls the component's
-own methods: `open(file)` replaces the document with an .xlsx Blob,
+own methods: `open(file)` replaces the document with an .xlsx or .csv Blob,
 `toXlsx()` returns the document as a Blob, `toCsv()` the active sheet as
 text, `newWorkbook()` empties it, `print()` opens the print dialog and
 `printHtml()` returns the page it would print, for an app that prints
