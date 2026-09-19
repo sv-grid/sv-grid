@@ -1004,7 +1004,7 @@ const engineFormula = (text: string): string => `=${text.replace(/_xlfn\./g, '')
  * reader already strips the prefixes, and the writer has to put them back.
  */
 const XLWS_FUNCTIONS = new Set(['FILTER', 'SORT'])
-const XLFN_FUNCTIONS = new Set([
+export const XLFN_FUNCTIONS = new Set([
   'LET', 'LAMBDA', 'MAP', 'BYROW', 'BYCOL', 'REDUCE', 'SCAN', 'MAKEARRAY',
   'UNIQUE', 'SEQUENCE', 'SORTBY', 'RANDARRAY', 'TEXTSPLIT',
   'XLOOKUP', 'XMATCH', 'TEXTJOIN', 'CONCAT', 'IFS', 'SWITCH', 'MAXIFS', 'MINIFS',
@@ -1541,8 +1541,8 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 // The zip, through jszip
 // ---------------------------------------------------------------------------
 
-type ZipCtor = {
-  new (): { file(path: string, data: string, options?: { base64?: boolean }): void; generateAsync(opts: { type: 'blob'; mimeType?: string }): Promise<Blob> }
+export type ZipCtor = {
+  new (): { file(path: string, data: string, options?: { base64?: boolean; compression?: 'STORE' | 'DEFLATE' }): void; generateAsync(opts: { type: 'blob'; mimeType?: string }): Promise<Blob> }
   loadAsync(data: ArrayBuffer | Blob | Uint8Array): Promise<{ file(path: string): { async(type: 'string' | 'base64'): Promise<string> } | null; forEach(fn: (path: string, entry: { dir: boolean; async(type: 'string' | 'base64'): Promise<string> }) => void): void }>
 }
 
@@ -1561,7 +1561,8 @@ function mediaTypeOf(path: string): string {
 }
 
 let zipPromise: Promise<ZipCtor> | null = null
-async function loadZip(given?: ZipCtor): Promise<ZipCtor> {
+/** The jszip a caller gave, the one on the page, or the optional peer. */
+export async function loadZip(given?: ZipCtor): Promise<ZipCtor> {
   if (given) return given
   const g = globalThis as unknown as { JSZip?: ZipCtor }
   if (g.JSZip) return g.JSZip
@@ -1572,7 +1573,7 @@ async function loadZip(given?: ZipCtor): Promise<ZipCtor> {
         // @ts-ignore - "jszip" is an optional peerDependency
         mod = await import('jszip')
       } catch {
-        throw new Error('@svgrid/enterprise: reading and writing xlsx needs the "jszip" peer dependency. Install it with: pnpm add jszip')
+        throw new Error('@svgrid/enterprise: reading and writing .xlsx and .ods needs the "jszip" peer dependency. Install it with: pnpm add jszip')
       }
       return ((mod as { default?: ZipCtor }).default ?? mod) as ZipCtor
     })()

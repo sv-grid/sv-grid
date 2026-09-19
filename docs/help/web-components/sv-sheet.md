@@ -157,7 +157,7 @@ takes the action over, as returning `true` from `onAction` does.
 | `change` | `onChange` | `reasons` |
 | `presence` | `onPresence` | `me` |
 
-### Methods (10)
+### Methods (11)
 
 The component's own, on the element once `ready` has fired.
 
@@ -167,8 +167,9 @@ The component's own, on the element once `ready` has fired.
 | `setState(state: SheetState): void` | Put a saved document back. |
 | `refresh(): void` | Repaint after a write the shell could not see. |
 | `act(action: RibbonActionId): void` | Run a ribbon action as if its button had been clicked. |
-| `open(file: Blob & { name?: string }): Promise<void>` | Replace the document with an .xlsx. |
+| `open(file: Blob & { name?: string }): Promise<void>` | Replace the document with an .xlsx, .ods or .csv file. |
 | `toXlsx(): Promise<Blob>` | The document as an .xlsx Blob. |
+| `toOds(): Promise<Blob>` | The document as an .ods Blob, which LibreOffice Calc opens. |
 | `toCsv(): string` | The active sheet as CSV. |
 | `newWorkbook(): void` | Start over with one empty sheet. |
 | `print(): void` | The active sheet in the print dialog. |

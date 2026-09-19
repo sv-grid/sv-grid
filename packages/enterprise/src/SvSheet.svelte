@@ -53,7 +53,9 @@
   import SvSheetSort from './SvSheetSort.svelte'
   import { downloadBlobFile } from '@svgrid/grid'
   import { documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
-  import { csvText, sheetStateFromCsv } from './sheet/csv'
+  import { csvText } from './sheet/csv'
+  import { documentFromFile } from './sheet/open-file'
+  import { documentToOds } from './sheet/ods-document'
   import { sortOrder, guessHeaderRow, type SortKey } from './sheet/sort'
   import { currentRegion, isBlankValue } from './sheet/navigate'
   import { freezeAtActiveCell, freezeTopRow, freezeFirstColumn, applyFreeze, type FreezeState } from './sheet/freeze'
@@ -381,27 +383,28 @@
    * rejects with the reader's message when the file is not one.
    */
   /**
-   * File > Open. An .xlsx as written by Excel, Google Sheets or
-   * LibreOffice, or a .csv (or .tsv) as all three export one: the kind is
-   * read from the bytes rather than from the name, since a file picked on a
-   * phone often arrives with neither the extension nor the type set.
+   * File > Open: an .xlsx as Excel and Google Sheets write one, an .ods as
+   * LibreOffice does, or a .csv as all three export. The kind is read from
+   * the bytes rather than from the name, since a file picked on a phone
+   * often arrives with neither the extension nor the type set.
    */
   export async function open(file: Blob & { name?: string }): Promise<void> {
+    setState(await documentFromFile(file))
     const name = file.name ?? ''
-    const head = new Uint8Array(await file.slice(0, 4).arrayBuffer())
-    // Every .xlsx is a zip, and every zip starts PK\x03\x04.
-    const zipped = head[0] === 0x50 && head[1] === 0x4b
-    const state = zipped
-      ? await documentFromXlsx(file)
-      : sheetStateFromCsv(await file.text(), (name.replace(/\.[^.]+$/, '') || 'Sheet1').slice(0, 31))
-    setState(state)
-    if (name) fileName = name.replace(/\.(xlsx|csv|tsv|txt)$/i, '')
+    if (name) fileName = name.replace(/\.(xlsx|ods|csv|tsv|txt)$/i, '')
   }
 
   /** The document as an .xlsx Blob: what File > Save As downloads. */
   export function toXlsx(): Promise<Blob> {
     stashLive(wb.active)
     return documentToXlsx(doc)
+  }
+
+  /** The document as an .ods Blob: what File > Save As ODS downloads, and
+   *  what LibreOffice Calc and Google Sheets open. */
+  export function toOds(): Promise<Blob> {
+    stashLive(wb.active)
+    return documentToOds(doc)
   }
 
   /** The active sheet as CSV text, cells as they show. */
@@ -594,6 +597,14 @@
   async function saveXlsx() {
     try {
       downloadBlobFile(await toXlsx(), `${fileName}.xlsx`)
+    } catch (e) {
+      say(e instanceof Error ? e.message : t('couldNotSave'))
+    }
+  }
+
+  async function saveOds() {
+    try {
+      downloadBlobFile(await toOds(), `${fileName}.ods`)
     } catch (e) {
       say(e instanceof Error ? e.message : t('couldNotSave'))
     }
@@ -3287,6 +3298,7 @@
         return
       case 'file-open': fileInput?.click(); return
       case 'file-save-xlsx': void saveXlsx(); return
+      case 'file-save-ods': void saveOds(); return
       case 'file-export-csv': {
         try {
           downloadBlobFile(new Blob([toCsv()], { type: 'text/csv;charset=utf-8' }), `${wb.active}.csv`)
@@ -5504,7 +5516,7 @@
     onAccept={acceptEntry}
     onCancel={() => { pendingAlert = null; const c = cmdOf(); if (c) focusSheet(c) }}
   />
-  <input class="sheet-file-input" type="file" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/tab-separated-values" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
+  <input class="sheet-file-input" type="file" accept=".xlsx,.ods,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/tab-separated-values" bind:this={fileInput} onchange={openPicked} aria-hidden="true" tabindex="-1" />
   <SvModal open={newConfirm} title={t('newWorkbookTitle')} size="sm" onClose={() => { newConfirm = false; const c = cmdOf(); if (c) focusSheet(c) }}>
     <div class="sv-sheet-dialog">
       <p class="note">{t('newWorkbookMessage')}</p>

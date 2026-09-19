@@ -61,10 +61,12 @@ export interface SvSheetElement extends HTMLElement {
   refresh(): void
   /** Run a ribbon action as if its button had been clicked. */
   act(action: RibbonActionId): void
-  /** Replace the document with an .xlsx. */
+  /** Replace the document with an .xlsx, .ods or .csv file. */
   open(file: Blob & { name?: string }): Promise<void>
   /** The document as an .xlsx Blob. */
   toXlsx(): Promise<Blob>
+  /** The document as an .ods Blob, which LibreOffice Calc opens. */
+  toOds(): Promise<Blob>
   /** The active sheet as CSV. */
   toCsv(): string
   /** Start over with one empty sheet. */

@@ -144,6 +144,7 @@ export type RibbonActionId =
   | 'file-open'
   | 'file-save-xlsx'
   | 'file-export-csv'
+  | 'file-save-ods'
   | 'file-print'
   | 'page-portrait'
   | 'page-landscape'
@@ -536,6 +537,7 @@ const FILE: RibbonTab = {
       label: 'Save',
       items: [
         { id: 'file-save-xlsx', label: 'Save As', title: 'Save the workbook as an .xlsx file', keys: 'Ctrl+S', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-xlsx' },
+        { id: 'file-save-ods', label: 'Save As ODS', title: 'Save the workbook as an .ods file, which LibreOffice Calc opens', icon: 'file-save', kind: 'button', size: 'large', emits: 'file-save-ods' },
         { id: 'file-export-csv', label: 'Export CSV', title: 'Export the active sheet as CSV', icon: 'file-csv', kind: 'button', size: 'large', emits: 'file-export-csv' },
       ],
     },

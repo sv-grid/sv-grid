@@ -134,10 +134,13 @@ call, so an autosave is a debounced handler, never a per-keystroke write.
   onReady={() => { if (saved) sheet?.setState(saved) }} />
 ```
 
-Files: `sheet.toXlsx()` and `sheet.open(file)` (also File > Save As and
-File > Open on the ribbon, Ctrl+S and Ctrl+O), `documentToXlsx(doc)` and
-`documentFromXlsx(bytes)` outside the component. Both need `jszip`, an
-optional peer, installed in the app.
+Files: `sheet.toXlsx()`, `sheet.toOds()` and `sheet.open(file)` (also File >
+Save As, Save As ODS and Open on the ribbon, Ctrl+S and Ctrl+O). `open` takes
+an .xlsx, an .ods or a .csv and decides by the bytes, not the file name.
+Outside the component: `documentToXlsx(doc)` / `documentFromXlsx(bytes)`,
+`documentToOds(doc)` / `documentFromOds(bytes)`, `documentFromFile(blob)` for
+any of the three, and `csvText` / `sheetStateFromCsv` for CSV. Everything but
+the CSV pair needs `jszip`, an optional peer, installed in the app.
 
 ## Protection, comments and localisation are props and document state, not CSS
 

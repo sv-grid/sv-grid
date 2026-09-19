@@ -159,4 +159,4 @@ export const ELEMENT_EVENTS = [
 ]
 
 /** The component's methods the element mirrors onto itself. */
-export const ELEMENT_METHODS = ["getState","setState","refresh","act","open","toXlsx","toCsv","newWorkbook","print","printHtml"]
+export const ELEMENT_METHODS = ["getState","setState","refresh","act","open","toXlsx","toOds","toCsv","newWorkbook","print","printHtml"]

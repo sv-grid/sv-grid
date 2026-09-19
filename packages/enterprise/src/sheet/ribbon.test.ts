@@ -69,9 +69,10 @@ describe('the model is well-formed', () => {
     expect(RIBBON_TABS.map((t) => t.id)).toEqual(['file', 'home', 'insert', 'page-layout', 'formulas', 'data', 'review', 'view'])
   })
 
-  it('File raises New, Open, Save As, Export CSV and Print for the shell', () => {
+  it('File raises New, Open, both Save As, Export CSV and Print for the shell', () => {
     const file = RIBBON_TABS.find((t) => t.id === 'file')!
-    expect(file.groups.flatMap((g) => g.items.map((i) => i.emits))).toEqual(['file-new', 'file-open', 'file-save-xlsx', 'file-export-csv', 'file-print'])
+    expect(file.groups.flatMap((g) => g.items.map((i) => i.emits)))
+      .toEqual(['file-new', 'file-open', 'file-save-xlsx', 'file-save-ods', 'file-export-csv', 'file-print'])
   })
 
   it('Page Layout raises the setup as dropdown entries, Print Titles, the launcher and two toggles', () => {
