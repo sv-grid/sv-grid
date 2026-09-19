@@ -205,6 +205,19 @@ a default, every ribbon action has a case); and a seeded generator that
 puts documents nobody wrote through both round trips, run to five hundred
 seeds with nothing to report.
 
+Then a second round, driving the shell in a browser rather than in jsdom,
+which is where the remaining defects were: a table printed plain, because
+its look is drawn over the cells and the printed page is built from them; a
+refused link reported as an empty address, and a link the shell will not
+follow reported as one that goes nowhere on this workbook; a table edit
+announcing a new table; `<sv-sheet>` ignoring `sheet.data = [...]`, its own
+quick start, because a custom element is upgraded before the script that
+assigns its properties runs and the element read its own parked document
+back as content; and a protected sheet that kept its cells while its
+charts, pictures and sparklines could still be changed. Browser specs for
+what File > Print hands the printer and for Save As then Open guard the two
+that only a browser can see.
+
 Deviations from the plan: Data Validation is a plain dropdown, not a split
 button, because the ribbon model forbids a dropdown that emits its own
 face; the xlsx reader uses DOMParser (present in browsers and jsdom) and
