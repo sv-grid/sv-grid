@@ -7,7 +7,7 @@
    */
   import { SvModal } from '@svgrid/grid'
   import { useSheetText } from './sheet-text'
-  import { parseLinkTarget, type SheetLink } from './sheet/links'
+  import { isSafeLinkTarget, parseLinkTarget, type SheetLink } from './sheet/links'
 
   type Props = {
     open?: boolean
@@ -43,7 +43,14 @@
 
   function ok() {
     const target = parseLinkTarget(address)
-    if (!target) { error = t('link.badAddress'); return }
+    if (!target) {
+      // Two ways to have no target, and they are not the same mistake: an
+      // address nobody typed, and one carrying a scheme this shell will not
+      // open. Telling the second one it is empty sends the user back to a
+      // field that is not.
+      error = address.trim() && !isSafeLinkTarget(address) ? t('link.unsafeScheme') : t('link.badAddress')
+      return
+    }
     const next: SheetLink = { target: address.trim() }
     if (tip.trim()) next.tip = tip.trim()
     open = false

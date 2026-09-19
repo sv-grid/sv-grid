@@ -24,6 +24,7 @@ import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
 import SvSheetEditRanges from './SvSheetEditRanges.svelte'
 import SvSheetPageSetup from './SvSheetPageSetup.svelte'
 import SvSheetTable from './SvSheetTable.svelte'
+import SvSheetLink from './SvSheetLink.svelte'
 import SvSheetChartSetup from './SvSheetChartSetup.svelte'
 import SvSheetEvaluate from './SvSheetEvaluate.svelte'
 import SvSheetErrors from './SvSheetErrors.svelte'
@@ -958,5 +959,42 @@ describe('SvSheetChartSetup (DOM)', () => {
     // And the settings that cannot apply are dropped rather than kept.
     expect(onApply.mock.calls[0]![0]).not.toHaveProperty('trend')
     expect(onApply.mock.calls[0]![0]).not.toHaveProperty('secondary')
+  })
+})
+
+describe('SvSheetLink (DOM)', () => {
+  const mountLink = (onApply = vi.fn()) => {
+    comp = mount(SvSheetLink, {
+      target: host!,
+      props: { open: true, link: { target: '' }, text: 'Click me', where: 'B2', onApply },
+    })
+    flushSync()
+    return onApply
+  }
+
+  it('takes an address and hands back the link', () => {
+    const onApply = mountLink()
+    typeInto(qa('.sv-modal input[type="text"]')[0] as HTMLInputElement, 'https://example.com/spec')
+    click(button('OK'))
+    expect(onApply).toHaveBeenCalledWith({ target: 'https://example.com/spec' }, 'Click me')
+  })
+
+  it('says which addresses a cell opens rather than telling a typed one it is empty', () => {
+    const onApply = mountLink()
+    typeInto(qa('.sv-modal input[type="text"]')[0] as HTMLInputElement, 'javascript:alert(1)')
+    click(button('OK'))
+    // Refused, and said so as what it is: the field is not empty, and
+    // reporting it as empty sends the user back to a field they filled in.
+    expect(onApply).not.toHaveBeenCalled()
+    const error = q('.sv-modal .error')!.textContent ?? ''
+    expect(error).toContain('not opened from a cell')
+    expect(error).toContain('https')
+    expect(q('.sv-modal')).not.toBeNull()
+  })
+
+  it('an empty address is still the empty message', () => {
+    mountLink()
+    click(button('OK'))
+    expect(q('.sv-modal .error')!.textContent).toContain('Type an address')
   })
 })

@@ -106,11 +106,11 @@
     type SheetPivot,
   } from './sheet/pivot-range'
   import {
-    linkAt, setLink, removeLink, parseLinkTarget, linkTitle, hyperlinkArgument, type SheetLink,
+    linkAt, setLink, removeLink, parseLinkTarget, isSafeLinkTarget, linkTitle, hyperlinkArgument, type SheetLink,
   } from './sheet/links'
   import { imageCall, isDrawableImageSource } from './sheet/cell-images'
   import { isValidTableName, type TableRegion } from './sheet/tables'
-  import { tableStyleColours, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
+  import { tableStyleColours, tableStyleLabel, findTableStyle, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
   import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, type SheetPresence } from './sheet/presence'
   import { SvChart, SvSparkline, chartToSvgString } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
@@ -1726,7 +1726,15 @@
       applyAutoFilter({ range: [r1, c1, next.totals ? r2 - 1 : r2, c2] as unknown as Rect, filters: {} }, cmd)
     })
     bump()
-    say(t('tableMade', { name: next.name, range: `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${r2 + 1}` }))
+    // The dialog both makes a table and edits one, and the two are not the
+    // same news: saying "Orders covers A1:E13" after a style was picked
+    // reports something that did not happen. An edit names the look it now
+    // wears, which is what was just chosen.
+    const range = `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${r2 + 1}`
+    const look = findTableStyle(next.style)
+    say(existing
+      ? t('tableUpdated', { name: next.name, range, style: look ? tableStyleLabel(look) : t('table.styleNoneShort') })
+      : t('tableMade', { name: next.name, range }))
   }
 
   /** Convert to Range: the cells stay, the table goes. */
@@ -1869,8 +1877,12 @@
     const target = parseLinkTarget(link.target)
     // Null is a target this shell will not follow: an empty one, or a
     // scheme that is not on the safe list. Saying so is better than a click
-    // that does nothing.
-    if (!target) { say(t('cannotOpenLink')); return }
+    // that does nothing, and the two are said apart: one goes nowhere on
+    // this workbook, the other is not a kind of address a cell opens.
+    if (!target) {
+      say(t(isSafeLinkTarget(link.target) ? 'cannotOpenLink' : 'linkNotFollowed'))
+      return
+    }
     if (target.kind === 'external') {
       window.open(target.href, '_blank', 'noopener,noreferrer')
       return

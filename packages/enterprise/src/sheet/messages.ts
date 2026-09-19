@@ -175,8 +175,10 @@ export type SheetTextMessages = {
   noTableHere: string
   tableRemoved: string
   tableMade: string
+  tableUpdated: string
   tableNameTaken: string
   cannotOpenLink: string
+  linkNotFollowed: string
   pivotRefreshed: string
   pivotWritten: string
   selectRangeForSparklines: string
@@ -636,6 +638,8 @@ export const defaultDialogMessages = {
   'table.hint': 'A table names its columns, so a formula can say Orders[Amount] and keep meaning it as rows are added. Typing under the last row grows it.',
   'table.style': 'Style:',
   'table.styleNone': 'None: keep the cells as they are',
+  /** The same choice named in a sentence, where the explanation does not fit. */
+  'table.styleNoneShort': 'no style',
   'table.badRange': 'That is not a range on this sheet.',
   'table.badName': 'A table name starts with a letter and holds no spaces.',
   // Evaluate Formula
@@ -676,6 +680,7 @@ export const defaultDialogMessages = {
   'link.hint': 'A link on a cell, not on its text: editing the cell keeps it, clearing the cell takes it away. An address on this workbook moves the selection instead of leaving the page.',
   'link.remove': 'Remove Link',
   'link.badAddress': 'Type an address: a URL, or a cell like Sheet2!B4.',
+  'link.unsafeScheme': 'That kind of address is not opened from a cell. Use http, https, mailto, tel, sms or ftp, or an address on this workbook.',
   // Create PivotTable
   'pivot.title': 'PivotTable',
   'pivot.source': 'Source block:',
@@ -930,8 +935,10 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   noTableHere: 'No table here. Select a cell inside one.',
   tableRemoved: '{name} is ordinary cells again.',
   tableMade: '{name} covers {range}.',
+  tableUpdated: '{name} covers {range}, in {style}.',
   tableNameTaken: 'A table called {name} already exists.',
   cannotOpenLink: 'That link goes nowhere on this workbook.',
+  linkNotFollowed: 'That kind of address is not opened from a cell.',
   pivotRefreshed: 'PivotTable refreshed.',
   pivotWritten: 'PivotTable written to {range}.',
   selectRangeForSparklines: 'Select the numbers the sparklines read.',
