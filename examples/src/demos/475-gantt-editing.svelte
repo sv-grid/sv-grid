@@ -50,26 +50,40 @@
     x.setDate(x.getDate() + d)
     return iso(x)
   }
+  /**
+   * The inclusive finish of a task that starts `from` days from the anchor
+   * (a Monday) and runs `days` WORKING days: every task starts on a weekday
+   * and ends on one, the way a real plan is typed in.
+   */
+  const wd = (from: number, days: number) => {
+    let d = from
+    for (let left = days; left > 1; left--) {
+      d += d % 7 === 4 ? 3 : 1 // Friday -> Monday
+    }
+    return at(d)
+  }
 
   let seq = 100
   let rows = $state<Task[]>([
     { id: 'p1', name: 'Plan', owner: 'Priya', start: at(0), progress: 0, parentId: null, color: COLOR.plan },
-    { id: 't1', name: 'Scope & estimates', owner: 'Priya', start: at(0), end: at(3), progress: 100, parentId: 'p1', color: COLOR.plan },
-    { id: 't2', name: 'Tech design', owner: 'Marco', start: at(6), end: at(10), progress: 60, parentId: 'p1', color: COLOR.plan },
+    { id: 't1', name: 'Scope & estimates', owner: 'Priya', start: at(0), end: wd(0, 4), progress: 100, parentId: 'p1', color: COLOR.plan },
+    { id: 't2', name: 'Tech design', owner: 'Marco', start: at(7), end: wd(7, 4), progress: 60, parentId: 'p1', color: COLOR.plan },
 
-    { id: 'p2', name: 'Build', owner: 'Sven', start: at(13), progress: 0, parentId: null, color: COLOR.build },
-    { id: 't3', name: 'Service layer', owner: 'Sven', start: at(13), end: at(20), progress: 30, parentId: 'p2', color: COLOR.build },
-    { id: 't4', name: 'Client', owner: 'Mia', start: at(15), end: at(27), progress: 10, parentId: 'p2', color: COLOR.build },
-    { id: 't5', name: 'QA pass', owner: 'Lena', start: at(28), end: at(34), progress: 0, parentId: 'p2', color: COLOR.build },
+    { id: 'p2', name: 'Build', owner: 'Sven', start: at(14), progress: 0, parentId: null, color: COLOR.build },
+    { id: 't3', name: 'Service layer', owner: 'Sven', start: at(14), end: wd(14, 5), progress: 30, parentId: 'p2', color: COLOR.build },
+    { id: 't4', name: 'Client', owner: 'Mia', start: at(16), end: wd(16, 8), progress: 10, parentId: 'p2', color: COLOR.build },
+    { id: 't5', name: 'QA pass', owner: 'Lena', start: at(28), end: wd(28, 5), progress: 0, parentId: 'p2', color: COLOR.build },
 
     { id: 'p3', name: 'Ship', owner: 'Omar', start: at(35), progress: 0, parentId: null, color: COLOR.ship },
-    { id: 't6', name: 'Release notes', owner: 'Lena', start: at(35), end: at(38), progress: 0, parentId: 'p3', color: COLOR.ship },
-    { id: 'm1', name: 'Go live', owner: '-', start: at(41), progress: 0, parentId: null, milestone: true, color: MILESTONE },
+    { id: 't6', name: 'Release notes', owner: 'Lena', start: at(35), end: wd(35, 4), progress: 0, parentId: 'p3', color: COLOR.ship },
+    { id: 'm1', name: 'Go live', owner: '-', start: at(42), progress: 0, parentId: null, milestone: true, color: MILESTONE },
   ])
 
   let dependencies = $state<GanttDependency[]>([
     { id: 'd1', from: 't1', to: 't2' },
     { id: 'd2', from: 't2', to: 't3' },
+    // The client starts two days after the service layer has: start-to-start.
+    { id: 'd7', from: 't3', to: 't4', type: 'SS', lag: 2 },
     { id: 'd3', from: 't3', to: 't5' },
     { id: 'd4', from: 't4', to: 't5' },
     { id: 'd5', from: 't5', to: 't6' },
@@ -183,6 +197,9 @@
   // `dependencies` is reassigned when a link is drawn, so the config has to see
   // the new array rather than the one captured above.
   const cfg = $derived({ ...ganttCfg, dependencies })
+
+  // The same rows as a plain table: the Gantt is one view of the grid.
+  let view = $state<'gantt' | 'table'>('gantt')
 </script>
 
 <section class="ge">
@@ -194,18 +211,26 @@
         Ctrl+Z undoes. Nothing here mutates a row until a callback below says so.
       </span>
     </div>
+    <div class="ge-seg" role="tablist" aria-label="View">
+      <button class="ge-seg-btn" role="tab" aria-selected={view === 'gantt'} class:ge-on={view === 'gantt'} onclick={() => (view = 'gantt')}>Gantt</button>
+      <button class="ge-seg-btn" role="tab" aria-selected={view === 'table'} class:ge-on={view === 'table'} onclick={() => (view = 'table')}>Table</button>
+    </div>
   </header>
 
   <div class="ge-body">
     <div class="ge-chart">
-      <SvGrid
-        columnResize
-        data={rows}
-        columns={columns}
-        getRowId={(r) => r.id}
-        containerHeight="100%"
-        gantt={cfg}
-      />
+      {#if view === 'gantt'}
+        <SvGrid
+          columnResize
+          data={rows}
+          columns={columns}
+          getRowId={(r) => r.id}
+          containerHeight="100%"
+          gantt={cfg}
+        />
+      {:else}
+        <SvGrid columnResize data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" sortable fitColumns />
+      {/if}
     </div>
 
     <aside class="ge-log">
@@ -242,7 +267,13 @@
     overflow: hidden;
     background: var(--sg-bg, #fff);
   }
-  .ge-head { padding: 10px 14px; border-bottom: 1px solid var(--sg-border, #e5e7eb); }
+  .ge-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--sg-border, #e5e7eb); }
+  .ge-seg { display: inline-flex; flex: none; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
+  .ge-seg-btn { padding: 5px 12px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 0.8rem; cursor: pointer; }
+  .ge-seg-btn:hover { background: color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent); }
+  .ge-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .ge-on:hover { background: var(--sg-accent, #4f46e5); }
+
   .ge-title { display: flex; flex-direction: column; gap: 2px; }
   .ge-sub { font-size: 0.78rem; color: var(--sg-muted, #6b7280); }
 
@@ -250,7 +281,7 @@
   .ge-chart { flex: 1 1 auto; min-width: 0; padding: 8px; }
 
   .ge-log {
-    flex: 0 0 260px;
+    flex: 0 0 230px;
     display: flex;
     flex-direction: column;
     min-height: 0;

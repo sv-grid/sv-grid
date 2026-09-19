@@ -34,6 +34,8 @@ export {
   isWorkingDay,
   workingDays,
   addWorkingDays,
+  startForWorkingDays,
+  moveWorkingSpan,
   snapToWorkingDay,
   type WorkingCalendar,
 } from './gantt-model'

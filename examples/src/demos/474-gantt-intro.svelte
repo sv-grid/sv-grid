@@ -56,6 +56,18 @@
     x.setDate(x.getDate() + d)
     return iso(x)
   }
+  /**
+   * The inclusive finish of a task that starts `from` days from the anchor
+   * (a Monday) and runs `days` WORKING days: every task starts on a weekday
+   * and ends on one, the way a real plan is typed in.
+   */
+  const wd = (from: number, days: number) => {
+    let d = from
+    for (let left = days; left > 1; left--) {
+      d += d % 7 === 4 ? 3 : 1 // Friday -> Monday
+    }
+    return at(d)
+  }
 
   const mk = (t: Omit<Task, 'color'>): Task => ({
     ...t,
@@ -66,27 +78,27 @@
   // children, so there is nothing to keep in sync by hand.
   const rows: Task[] = [
     mk({ id: 'p1', name: 'Discovery', owner: 'Priya', phase: 'discovery', start: at(0), progress: 0, parentId: null }),
-    mk({ id: 't1', name: 'Stakeholder interviews', owner: 'Priya', phase: 'discovery', start: at(0), end: at(4), progress: 100, parentId: 'p1' }),
-    mk({ id: 't2', name: 'Competitive teardown', owner: 'Marco', phase: 'discovery', start: at(2), end: at(8), progress: 100, parentId: 'p1' }),
-    mk({ id: 't3', name: 'Synthesis & brief', owner: 'Priya', phase: 'discovery', start: at(9), end: at(13), progress: 80, parentId: 'p1' }),
+    mk({ id: 't1', name: 'Stakeholder interviews', owner: 'Priya', phase: 'discovery', start: at(0), end: wd(0, 5), progress: 100, parentId: 'p1' }),
+    mk({ id: 't2', name: 'Competitive teardown', owner: 'Marco', phase: 'discovery', start: at(2), end: wd(2, 5), progress: 100, parentId: 'p1' }),
+    mk({ id: 't3', name: 'Synthesis & brief', owner: 'Priya', phase: 'discovery', start: at(9), end: wd(9, 3), progress: 80, parentId: 'p1' }),
 
     mk({ id: 'p2', name: 'Design', owner: 'Dana', phase: 'design', start: at(14), progress: 0, parentId: null }),
-    mk({ id: 't4', name: 'Information architecture', owner: 'Dana', phase: 'design', start: at(14), end: at(20), progress: 100, parentId: 'p2' }),
-    mk({ id: 't5', name: 'Interface mocks', owner: 'Dana', phase: 'design', start: at(21), end: at(34), progress: 55, parentId: 'p2' }),
-    mk({ id: 't6', name: 'Design review', owner: 'Omar', phase: 'design', start: at(35), end: at(37), progress: 0, parentId: 'p2' }),
+    mk({ id: 't4', name: 'Information architecture', owner: 'Dana', phase: 'design', start: at(14), end: wd(14, 5), progress: 100, parentId: 'p2' }),
+    mk({ id: 't5', name: 'Interface mocks', owner: 'Dana', phase: 'design', start: at(21), end: wd(21, 10), progress: 55, parentId: 'p2' }),
+    mk({ id: 't6', name: 'Design review', owner: 'Omar', phase: 'design', start: at(35), end: wd(35, 3), progress: 0, parentId: 'p2' }),
 
     mk({ id: 'm1', name: 'Design sign-off', owner: '-', phase: 'design', start: at(38), progress: 0, parentId: null, milestone: true }),
 
     mk({ id: 'p3', name: 'Build', owner: 'Sven', phase: 'build', start: at(38), progress: 0, parentId: null }),
-    mk({ id: 't7', name: 'Data model & API', owner: 'Sven', phase: 'build', start: at(38), end: at(51), progress: 40, parentId: 'p3' }),
-    mk({ id: 't8', name: 'Front end', owner: 'Mia', phase: 'build', start: at(45), end: at(65), progress: 20, parentId: 'p3' }),
-    mk({ id: 't9', name: 'Migration tooling', owner: 'Kai', phase: 'build', start: at(52), end: at(62), progress: 0, parentId: 'p3' }),
-    mk({ id: 't10', name: 'Hardening & QA', owner: 'Lena', phase: 'build', start: at(66), end: at(76), progress: 0, parentId: 'p3' }),
+    mk({ id: 't7', name: 'Data model & API', owner: 'Sven', phase: 'build', start: at(38), end: wd(38, 10), progress: 40, parentId: 'p3' }),
+    mk({ id: 't8', name: 'Front end', owner: 'Mia', phase: 'build', start: at(45), end: wd(45, 15), progress: 20, parentId: 'p3' }),
+    mk({ id: 't9', name: 'Migration tooling', owner: 'Kai', phase: 'build', start: at(52), end: wd(52, 7), progress: 0, parentId: 'p3' }),
+    mk({ id: 't10', name: 'Hardening & QA', owner: 'Lena', phase: 'build', start: at(66), end: wd(66, 8), progress: 0, parentId: 'p3' }),
 
-    mk({ id: 'p4', name: 'Launch', owner: 'Omar', phase: 'launch', start: at(77), progress: 0, parentId: null }),
-    mk({ id: 't11', name: 'Beta with design partners', owner: 'Omar', phase: 'launch', start: at(77), end: at(86), progress: 0, parentId: 'p4' }),
-    mk({ id: 't12', name: 'Docs & release notes', owner: 'Lena', phase: 'launch', start: at(80), end: at(90), progress: 0, parentId: 'p4' }),
-    mk({ id: 't13', name: 'Go-live runbook', owner: 'Sven', phase: 'launch', start: at(87), end: at(93), progress: 0, parentId: 'p4' }),
+    mk({ id: 'p4', name: 'Launch', owner: 'Omar', phase: 'launch', start: at(78), progress: 0, parentId: null }),
+    mk({ id: 't11', name: 'Beta with design partners', owner: 'Omar', phase: 'launch', start: at(78), end: wd(78, 7), progress: 0, parentId: 'p4' }),
+    mk({ id: 't12', name: 'Docs & release notes', owner: 'Lena', phase: 'launch', start: at(80), end: wd(80, 8), progress: 0, parentId: 'p4' }),
+    mk({ id: 't13', name: 'Go-live runbook', owner: 'Sven', phase: 'launch', start: at(87), end: wd(87, 5), progress: 0, parentId: 'p4' }),
 
     mk({ id: 'm2', name: 'General availability', owner: '-', phase: 'launch', start: at(94), progress: 0, parentId: null, milestone: true }),
   ]

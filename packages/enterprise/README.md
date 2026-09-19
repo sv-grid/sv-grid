@@ -29,6 +29,7 @@
 - **Data import** - read Excel / CSV / TSV / JSON into typed rows with column auto-mapping, type inference, and per-row validation, plus a ready-made `SvImportDialog`.
 - **Paginated print** - opens a clean, paginated, printable view of the grid with title and page breaks.
 - **Pivot tables** - drag-and-drop pivot Designer with row/column/value fields, aggregation, drill-through to source rows, and pivot-to-chart.
+- **Kanban board view** - `enableBoardView()` lets `<SvGrid board={...}>` render the rows as cards in lanes, with drag-and-drop, swimlanes, WIP limits and a card drawer.
 - **Scheduler / calendar view** - a Month/Week/Day/Agenda calendar rendered as a view of the grid: `enableSchedulerView()` lets `<SvGrid scheduler={...}>` show events with resources, recurrence, and drag/resize.
 - **Staged editing** - collect edits into a reviewable change set before committing.
 - **Scheduling automation** - a client-side cron / one-off scheduler (`createScheduler`, `parseCron`, `CRON_PRESETS`) to drive recurring exports and alerts with no backend.

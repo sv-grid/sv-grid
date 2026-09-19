@@ -78,7 +78,7 @@
   } from "@svgrid/grid";
   // Scheduler Pro feature models (this package).
   import { cascade, violations, type SchedulerDependency } from "./scheduler-dependencies";
-  import { dependencyArrows, type Arrow } from "./gantt/timeline-arrows";
+  import { arrowHeadPath, dependencyArrows, type Arrow } from "./gantt/timeline-arrows";
   import { expandAssignments, resourceLoad, type SchedulerAssignment } from "./scheduler-assignments";
   import { columnSummaries } from "./scheduler-summary";
   import { buildAxis, timeToX, xToTime, resolveZoom, zoomPresets, type Axis, type ZoomLevel } from "./scheduler-axis";
@@ -588,7 +588,9 @@
     const times = new Map<string, { start: Date; end: Date }>();
     for (const [k, v] of depTimes) times.set(k, v);
     times.set(movedKey, { start: ns, end: ne });
-    const shifts = cascade(times, depList, { snapForward: depSnapForward });
+    // Successors only: the moved event stays where it was dropped, and a link
+    // it now breaks is drawn as violated rather than the drop being undone.
+    const shifts = cascade(times, depList, { from: [movedKey], snapForward: depSnapForward });
     if (!shifts.size) return;
     const moves: Array<{ id: string; start: Date; end: Date }> = [];
     for (const [k, t] of shifts) {
@@ -3177,9 +3179,9 @@
       {/if}
       {#if zoomOn && proAxisData}
         <div class="sv-sched-slots sv-sched-zoom" role="group" aria-label="Zoom">
-          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(-1)} aria-label="Zoom in">-</button>
+          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(1)} aria-label="Zoom out">-</button>
           <span class="sv-sched-zoom-label">{proAxisData.level?.label ?? "Zoom"}</span>
-          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(1)} aria-label="Zoom out">+</button>
+          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(-1)} aria-label="Zoom in">+</button>
         </div>
       {/if}
       {#each views as v (v)}
@@ -3414,7 +3416,7 @@
               <path
                 class="sv-sched-dep-arrow"
                 class:sv-sched-dep-bad={arr.bad}
-                d={`M${arr.hx},${arr.hy} l-6,-3.5 l0,7 z`}
+                d={arrowHeadPath(arr.hx, arr.hy, arr.dir)}
               />
             {/each}
           </svg>
@@ -5135,13 +5137,14 @@
   .sv-sched-dep-arrow {
     fill: var(--sv-sched-dep, color-mix(in srgb, var(--sg-fg, #1f2937) 45%, transparent));
   }
-  .sv-sched-dep-line.sv-sched-dep-bad,
-  .sv-sched-dep-arrow.sv-sched-dep-bad {
-    stroke: var(--sv-sched-dep-bad, #dc2626);
-    fill: var(--sv-sched-dep-bad, #dc2626);
-  }
+  /* The line keeps `fill: none` - a fill on the elbow path paints the polygon
+     it encloses, and a violated link showed up as a solid red slab. */
   .sv-sched-dep-line.sv-sched-dep-bad {
+    stroke: var(--sv-sched-dep-bad, #dc2626);
     stroke-dasharray: 4 3;
+  }
+  .sv-sched-dep-arrow.sv-sched-dep-bad {
+    fill: var(--sv-sched-dep-bad, #dc2626);
   }
   /* Resource utilization histogram (Scheduler Pro) - a subtle meter strip at the
      bottom of each resource row, clearly separated from the event lanes above. */

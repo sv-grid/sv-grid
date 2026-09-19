@@ -10,10 +10,11 @@
  * The corpus assertion is the important half: it fails when someone adds a
  * link to a demo that does not exist, which the resolver cannot rescue.
  */
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { movedAnchor, resolveDocsLink } from '../website/src/lib/docs-links'
+import { movedAnchor, movedPage, resolveDocsLink } from '../website/src/lib/docs-links'
+import { isReleased, RELEASES } from './lib/releases.mjs'
 // @ts-expect-error - plain .mjs helper, no types
 import { loadDocs } from './demo-doc-coverage.mjs'
 
@@ -87,14 +88,48 @@ describe('docs link resolver', () => {
   it('every moved anchor points at a heading that exists on its target page', () => {
     const bad: string[] = []
     for (const [from, moves] of Object.entries(MOVES)) {
-      const own = headingSlugs(from)
+      // An empty anchor is the page itself moving. Its source must be gone
+      // (two pages at both paths would be the worse bug) and its target must
+      // be a page, not a section; the page's other anchors then map section
+      // by section like any split.
+      const pageMove = moves[''] !== undefined
+      if (pageMove) {
+        // A release's stub is the one page allowed at a moved path: it holds
+        // the URL until the date, when the gate hides it and the move applies.
+        const stub = Object.values(RELEASES).some((r) => (r.stubs ?? []).includes(from))
+        if (!stub && existsSync(join('docs', `${from}.md`))) bad.push(`${from} is mapped as moved but still exists`)
+        if (moves['']!.includes('#') || !existsSync(join('docs', `${moves['']}.md`)))
+          bad.push(`${from} -> ${moves['']} is not a page`)
+      }
+      const own = pageMove ? new Set<string>() : headingSlugs(from)
       for (const [anchor, target] of Object.entries(moves)) {
+        if (!anchor) continue
         if (own.has(anchor)) bad.push(`${from}#${anchor} still exists on the hub and is also mapped`)
         const [page, hash] = target.split('#')
         if (!hash || !headingSlugs(page!).has(hash)) bad.push(`${from}#${anchor} -> ${target} has no such heading`)
       }
     }
     expect(bad).toEqual([])
+  })
+
+  it('sends a page that moved to its new home, anchor and all', () => {
+    // The Gantt guide moved out of Rows into its own section when it was
+    // split into pages. A bookmark or an old link keeps working: the route,
+    // a mapped section, and an anchor the map does not know.
+    if (isReleased('gantt')) {
+      expect(movedPage('help/rows/gantt')).toBe('#/docs/help/gantt')
+      expect(movedPage('help/rows/gantt', 'baselines')).toBe('#/docs/help/gantt/critical-path#baselines')
+      expect(movedPage('help/rows/gantt', 'pages')).toBe('#/docs/help/gantt#pages')
+      expect(resolveDocsLink('./gantt.md#editing', 'help/rows/scheduler')).toBe('#/docs/help/gantt/editing#turning-it-on')
+      expect(resolveDocsLink('../rows/gantt.md', 'help/charts/start')).toBe('#/docs/help/gantt')
+    } else {
+      // Until the Gantt's release date the old slug is a live stub page, so
+      // the move waits and links keep landing on the stub.
+      expect(movedPage('help/rows/gantt')).toBeNull()
+      expect(movedPage('help/rows/gantt', 'baselines')).toBeNull()
+      expect(resolveDocsLink('../rows/gantt.md', 'help/charts/start')).toBe('#/docs/help/rows/gantt')
+    }
+    expect(movedPage('help/rows/kanban-board')).toBeNull()
   })
 
   it('every anchor link into the charts hub resolves on the hub or through a move', () => {

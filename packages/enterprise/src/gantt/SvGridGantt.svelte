@@ -43,7 +43,7 @@
     type SchedulerDependency,
   } from "../scheduler-dependencies";
   import { criticalPath, slackDays } from "./gantt-critical-path";
-  import { dependencyArrows, type BarRect } from "./timeline-arrows";
+  import { arrowHeadPath, dependencyArrows, nearestArrow, type BarRect } from "./timeline-arrows";
   import {
     ganttAxis,
     ganttScale,
@@ -60,6 +60,8 @@
     addDays,
     visibleAnchor,
     workingDays,
+    moveWorkingSpan,
+    startForWorkingDays,
     type GanttNode,
     type GanttTaskSpec,
     type ResolvedTask,
@@ -216,8 +218,34 @@
   // The tree is built from EVERY task, not the visible rows, so a collapsed
   // phase still rolls its children up into its summary bar.
   const nodes = $derived(ganttTree(tasks, collapsed));
+  /** The same tree with nothing folded: what the planning passes read, so a
+   *  collapsed phase's tasks stay in the critical path and keep their slack. */
+  const NOTHING_COLLAPSED = new Set<string>();
+  const allNodes = $derived(collapsed.size ? ganttTree(tasks, NOTHING_COLLAPSED) : nodes);
   const rowIndexOf = $derived(nodeIndex(nodes));
   const anchorOf = $derived(visibleAnchor(nodes, tasks));
+  /** key -> its descendants: moving a phase moves everything under it, and a
+   *  phase's slack and critical ring come from what is under it. */
+  const descendantsOf = $derived.by(() => {
+    const kids = new Map<string, string[]>();
+    for (const t of tasks) {
+      if (t.parentKey == null) continue;
+      (kids.get(t.parentKey) ?? kids.set(t.parentKey, []).get(t.parentKey)!).push(t.key);
+    }
+    const out = new Map<string, string[]>();
+    const walk = (k: string): string[] => {
+      const hit = out.get(k);
+      if (hit) return hit;
+      const acc: string[] = [];
+      out.set(k, acc); // guard a cycle: the partial list is already in place
+      for (const c of kids.get(k) ?? []) {
+        acc.push(c, ...walk(c));
+      }
+      return acc;
+    };
+    for (const t of tasks) walk(t.key);
+    return out;
+  });
 
   // --- the axis, and the ONE function that turns a date into an x ---
   const range = $derived(
@@ -231,7 +259,8 @@
   const axis = $derived(
     ganttAxis(range.start, range.end, zoom, { weekStartsOn, today: showTodayLine ? today : null }),
   );
-  const fullPx = $derived(
+  /** The axis at its preset's tick width - the width it scrolls at. */
+  const naturalPx = $derived(
     Math.max(240, Math.round(axis.ticks.length * ganttTickWidth[zoom])),
   );
   /** Fold whole non-working days out of the axis (Pro). Only a day-granular
@@ -240,13 +269,50 @@
   const collapseOff = $derived(
     pcfg.collapseWeekends === true && (zoom === "day" || zoom === "week"),
   );
-  /** The chart's date <-> pixel mapping, and the only thing that owns it. */
-  const scale = $derived(
-    ganttScale(axis.start, axis.end, fullPx, {
-      collapsed: collapseOff ? (d: Date) => !isWorkingDay(d, cal) : null,
-      gapPx: pcfg.collapsedGapPx ?? 12,
-    }),
-  );
+  /** Width of the scroll container, for the fill rule below. */
+  let viewportW = $state(0);
+  /** The room beside the task pane (its 1px border included, so the chart can
+   *  never come out a pixel wider than the pane and grow a scrollbar for it). */
+  const paneW = $derived.by(() => Math.floor(viewportW - (showTable ? tableW + 1 : 0)));
+  /** The chart's date <-> pixel mapping, and the only thing that owns it.
+   *
+   *  A short plan at a coarse zoom is narrower than the pane, and a chart that
+   *  stops two thirds of the way across leaves the rest blank, so when the
+   *  natural width falls short the ticks stretch to fill the pane. Folded
+   *  days keep their fixed gap width, which is why the folded case rebuilds
+   *  from the working-day share rather than scaling the whole thing. */
+  const scaleOpts = $derived({
+    collapsed: collapseOff ? (d: Date) => !isWorkingDay(d, cal) : null,
+    gapPx: pcfg.collapsedGapPx ?? 12,
+  });
+  /** The width the scale is asked for: the natural one, or the pane's when
+   *  the plan is narrower than that. */
+  const requestPx = $derived.by(() => {
+    const natural = ganttScale(axis.start, axis.end, naturalPx, scaleOpts);
+    if (paneW <= natural.totalPx) return naturalPx;
+    const gaps = natural.segments.filter((sg) => sg.collapsed).length;
+    const gapsPx = gaps * Math.max(0, scaleOpts.gapPx);
+    const workingPx = natural.totalPx - gapsPx;
+    if (workingPx <= 0) return naturalPx;
+    return Math.floor(((paneW - gapsPx) * naturalPx) / workingPx);
+  });
+  /**
+   * Pixels per millisecond, held for the length of a drag. The window is read
+   * through the drag overlay, so a bar dragged past the last finish grows it
+   * as it goes; with the pane-filling stretch above that would change the
+   * mapping under the pointer, the bar would jump further, the window grow
+   * again - a 12-day drag ran away to 40. Frozen, the axis still extends, at
+   * the same scale.
+   */
+  let frozenPxPerMs = $state<number | null>(null);
+  const scale = $derived.by(() => {
+    const totalMs = Math.max(1, axis.end.getTime() - axis.start.getTime());
+    const px = frozenPxPerMs != null ? Math.max(240, Math.round(frozenPxPerMs * totalMs)) : requestPx;
+    return ganttScale(axis.start, axis.end, px, scaleOpts);
+  });
+  function freezeScale() {
+    frozenPxPerMs = requestPx / Math.max(1, axis.end.getTime() - axis.start.getTime());
+  }
   const axisPx = $derived(scale.totalPx);
   /** Date -> x offset (px) in the chart body. Every bar, gridline, band, arrow
    *  anchor and the today line goes through this; nothing else maps a date. */
@@ -377,14 +443,26 @@
   const depBad = $derived(
     hasDeps ? new Set(violations(depTimes, depList).map((d) => d.id)) : new Set<string>(),
   );
+  /** Half the width of a milestone's diamond: a square of side barH on its corner. */
+  const milestoneR = $derived(barH * Math.SQRT1_2);
   const barRects = $derived.by(() => {
     const m = new Map<string, BarRect>();
     for (const b of bars) {
-      m.set(b.key, {
-        left: b.left,
-        right: b.left + b.width,
-        midY: b.index * rowH + rowH / 2,
-      });
+      const midY = b.index * rowH + rowH / 2;
+      if (b.kind === "milestone") {
+        // The diamond is centred on its date, so an arrow lands on its
+        // corner, not at the centre where it would pierce the shape.
+        m.set(b.key, { left: b.left - milestoneR, right: b.left + milestoneR, midY, kind: "milestone" });
+      } else {
+        m.set(b.key, {
+          left: b.left,
+          right: b.left + b.width,
+          midY,
+          // Only a task bar is entered from above or below; a summary's
+          // spine is too thin to point a head at.
+          halfH: b.kind === "task" ? barH / 2 : undefined,
+        });
+      }
     }
     return m;
   });
@@ -392,12 +470,17 @@
    *  a link into a collapsed phase draws to that phase's summary bar. */
   const arrows = $derived.by(() => {
     if (!hasDeps) return [];
-    const resolved = depList.map((d) => ({
-      id: d.id,
-      from: anchorOf.get(d.from) ?? d.from,
-      to: anchorOf.get(d.to) ?? d.to,
-      type: d.type,
-    }));
+    const resolved = depList
+      .map((d) => ({
+        id: d.id,
+        from: anchorOf.get(d.from) ?? d.from,
+        to: anchorOf.get(d.to) ?? d.to,
+        type: d.type,
+      }))
+      // A link between two tasks of the same collapsed phase re-anchors both
+      // ends on that phase's summary bar; drawn, it is a hook from the bar
+      // back to itself.
+      .filter((d) => d.from !== d.to);
     return dependencyArrows(barRects, resolved, depBad, rowH);
   });
 
@@ -411,12 +494,22 @@
    * the critical path needing a special case for it.
    */
   const drawnTimes = $derived(
-    new Map(nodes.map((n) => [n.task.key, (({ start, end }) => ({ start, end }))(drawnSpan(n))])),
+    new Map(allNodes.map((n) => [n.task.key, (({ start, end }) => ({ start, end }))(drawnSpan(n))])),
   );
 
   const criticalOn = $derived(pcfg.criticalPath === true && hasDeps);
-  const cpm = $derived(criticalOn ? criticalPath(drawnTimes, depList) : null);
+  const cpm = $derived(criticalOn ? criticalPath(drawnTimes, depList, respectWorking ? cal : undefined) : null);
   const criticalKeys = $derived(cpm?.critical ?? new Set<string>());
+  /** The bars that draw the ring: the critical tasks, and every phase over
+   *  one - folded, the summary bar is all that stands for the chain. */
+  const criticalBars = $derived.by(() => {
+    if (!criticalKeys.size) return criticalKeys;
+    const out = new Set(criticalKeys);
+    for (const [key, kids] of descendantsOf) {
+      if (kids.some((k) => criticalKeys.has(k))) out.add(key);
+    }
+    return out;
+  });
   /** An arrow is critical when both of its ends are. */
   const criticalArrows = $derived.by(() => {
     if (!cpm) return new Set<string>();
@@ -515,12 +608,18 @@
     }
     return out;
   });
-  const CONSTRAINT_GLYPH: Record<string, string> = {
-    MSO: "\u25C6", MFO: "\u25C6",
-    SNET: "\u25B8", FNET: "\u25B8",
-    SNLT: "\u25C2", FNLT: "\u25C2",
-    ALAP: "\u25C2",
+  const CONSTRAINT_LABEL: Record<string, string> = {
+    MSO: "Must start on",
+    MFO: "Must finish on",
+    SNET: "Start no earlier than",
+    SNLT: "Start no later than",
+    FNET: "Finish no earlier than",
+    FNLT: "Finish no later than",
+    ALAP: "As late as possible",
   };
+  /** Whether a constraint names a FINISH, so its pin sits at the end of that day. */
+  const constraintPinsFinish = (kind: string) =>
+    kind === "MFO" || kind === "FNET" || kind === "FNLT";
 
   // --- resource load (Pro) ---------------------------------------------------
   // Who is booked on what, summed per axis column. Leaves only: a phase is its
@@ -601,6 +700,9 @@
     /** `link` mode only. */
     fromEdge: "start" | "end";
     pointer: { x: number; y: number };
+    /** Pixels the edge scroll could not scroll yet (pinned at an end of the
+     *  axis); the bar is laid out as if the pointer had gone on that far. */
+    edgePx: number;
     targetKey?: string;
     targetEdge?: "start" | "end";
   };
@@ -618,27 +720,6 @@
 
   const DRAG_THRESHOLD = 3;
 
-  /** key -> its descendants, so moving a phase moves everything under it. */
-  const descendantsOf = $derived.by(() => {
-    const kids = new Map<string, string[]>();
-    for (const t of tasks) {
-      if (t.parentKey == null) continue;
-      (kids.get(t.parentKey) ?? kids.set(t.parentKey, []).get(t.parentKey)!).push(t.key);
-    }
-    const out = new Map<string, string[]>();
-    const walk = (k: string): string[] => {
-      const hit = out.get(k);
-      if (hit) return hit;
-      const acc: string[] = [];
-      out.set(k, acc); // guard a cycle: the partial list is already in place
-      for (const c of kids.get(k) ?? []) {
-        acc.push(c, ...walk(c));
-      }
-      return acc;
-    };
-    for (const t of tasks) walk(t.key);
-    return out;
-  });
   const taskByKey = $derived(new Map(tasks.map((t) => [t.key, t])));
 
   /** The day a drag snaps to. Ends land on the NEXT midnight, so a bar covers
@@ -692,9 +773,28 @@
       subtree: sub,
       fromEdge,
       pointer: { x: e.clientX, y: e.clientY },
+      edgePx: 0,
     };
+    freezeScale();
+    // The hover card describes the bar as it was grabbed; after a move it
+    // would go on showing those dates until the pointer left the bar.
+    clearTimeout(tipTimer);
+    tipBar = null;
     window.addEventListener("pointermove", onDragMove);
     window.addEventListener("pointerup", onDragEnd, { once: true });
+    window.addEventListener("pointercancel", onDragCancel, { once: true });
+    window.addEventListener("keydown", onDragKey);
+  }
+  /** The browser took the pointer (a touch turned into a scroll): put
+   *  everything back rather than leave a half-moved bar. */
+  function onDragCancel() {
+    cancelDrag();
+  }
+  /** Escape while the pointer is down: put everything back. */
+  function onDragKey(e: KeyboardEvent) {
+    if (e.key !== "Escape" || !drag) return;
+    e.preventDefault();
+    cancelDrag();
   }
 
   function onDragMove(e: PointerEvent) {
@@ -708,22 +808,30 @@
       d.moved = true;
     }
     d.pointer = { x: e.clientX, y: e.clientY };
+    applyPointer(d);
+    edgeScroll();
+  }
+
+  /** Lay the drag out for where the pointer is, plus the scroll debt the
+   *  edge scroll still owes it (see `edgeScroll`). */
+  function applyPointer(d: BarDrag) {
+    const clientX = d.pointer.x + d.edgePx;
 
     if (d.mode === "link") {
-      const hit = barAtPoint(e.clientX, e.clientY);
+      const hit = barAtPoint(d.pointer.x, d.pointer.y);
       d.targetKey = hit?.key;
       d.targetEdge = hit?.edge;
       return;
     }
 
-    const at = dateAtClientX(e.clientX);
+    const at = dateAtClientX(clientX);
     if (!at) return;
 
     if (d.mode === "progress") {
       const el = barEl(d.key);
       if (!el) return;
       const r = el.getBoundingClientRect();
-      const frac = r.width > 0 ? (e.clientX - r.left) / r.width : 0;
+      const frac = r.width > 0 ? (clientX - r.left) / r.width : 0;
       // 5% steps: fine enough to mean something, coarse enough to hit.
       d.origProgress = d.origProgress; // keep the undo value
       progressOf[d.key] = Math.max(0, Math.min(100, Math.round((frac * 100) / 5) * 5));
@@ -732,8 +840,9 @@
 
     if (d.mode === "move") {
       let ns = snapStart(new Date(at.getTime() - d.grabOffsetMs));
-      if (respectWorking) ns = snapToWorkingDay(ns, 1, cal);
-      const span = clampSpan(ns, new Date(ns.getTime() + d.durationMs));
+      if (respectWorking) ns = nearestWorkingDay(ns);
+      const moved = movedSpan(ns, { start: d.origStart, end: d.origEnd });
+      const span = clampSpan(moved.start, moved.end);
       applyMove(d, span.start.getTime() - d.origStart.getTime());
       return;
     }
@@ -750,18 +859,110 @@
     }
   }
 
+  /** The working day nearest a day-floored date: Saturday goes back to
+   *  Friday, Sunday on to Monday. Snapping forward alone made a bar leap two
+   *  days ahead of the pointer the moment it entered a weekend going right,
+   *  and refuse to move until the pointer had cleared it going left. */
+  function nearestWorkingDay(d: Date): Date {
+    const fwd = snapToWorkingDay(d, 1, cal);
+    const back = snapToWorkingDay(d, -1, cal);
+    return d.getTime() - back.getTime() <= fwd.getTime() - d.getTime() ? back : fwd;
+  }
+
+  // --- scrolling the pane while a drag sits at its edge ----------------------
+  /** How close to the pane's edge the pointer has to be, in px. */
+  const EDGE_PX = 32;
+  let edgeRaf = 0;
+  /**
+   * A drag that reaches the edge of the pane keeps going: the pane scrolls
+   * under the pointer a little each frame until the pointer comes back in,
+   * and a link drag scrolls the rows as well. Pinned at an end of the axis,
+   * the pixels it could not scroll are kept as `edgePx` and the bar is laid
+   * out as if the pointer had gone on that far; the window grows to meet it
+   * and the debt is paid back in scroll as soon as there is room. Without
+   * this a link could only be drawn between two bars already on screen, and
+   * a bar could not be dragged past the pane's edge at all.
+   */
+  function edgeScroll() {
+    edgeRaf = 0;
+    const d = drag;
+    const el = scrollEl;
+    if (!d || !el || !d.moved) return;
+    const rect = el.getBoundingClientRect();
+    const paneLeft = rect.left + (showTable ? tableW : 0);
+    const { x, y } = d.pointer;
+    let dx = 0;
+    let dy = 0;
+    // A few px a frame, more the deeper into the zone: slow enough to stop
+    // on the day wanted, and it goes on for as long as the pointer stays.
+    const speed = (depth: number) => Math.min(8, 1 + depth / 4);
+    if (x > rect.right - EDGE_PX) dx = speed(x - (rect.right - EDGE_PX));
+    else if (x < paneLeft + EDGE_PX) dx = -speed(paneLeft + EDGE_PX - x);
+    if (d.mode === "link") {
+      if (y > rect.bottom - EDGE_PX) dy = speed(y - (rect.bottom - EDGE_PX));
+      else if (y < rect.top + axisHeadH + EDGE_PX) dy = -speed(rect.top + axisHeadH + EDGE_PX - y);
+    }
+    if (!dx && !dy && !d.edgePx) return;
+    const wantX = dx + d.edgePx;
+    const sl = el.scrollLeft;
+    const st = el.scrollTop;
+    if (wantX) el.scrollLeft = Math.max(0, sl + wantX);
+    if (dy) el.scrollTop = Math.max(0, st + dy);
+    const gotX = el.scrollLeft - sl;
+    // A link drag has nothing to grow the window with; a bar drag keeps the
+    // unscrolled remainder as debt.
+    d.edgePx = d.mode === "link" ? 0 : wantX - gotX;
+    const was = startOf[d.key]?.getTime();
+    applyPointer(d);
+    const stuck = gotX === 0 && el.scrollTop === st && startOf[d.key]?.getTime() === was;
+    // Nothing moved and nothing can (a maxDate, an empty axis): stop rather
+    // than spin until the pointer moves.
+    if (stuck && ++edgeStall > 12) {
+      edgeStall = 0;
+      return;
+    }
+    if (!stuck) edgeStall = 0;
+    edgeRaf = requestAnimationFrame(edgeScroll);
+  }
+  let edgeStall = 0;
+  function stopEdgeScroll() {
+    if (edgeRaf) cancelAnimationFrame(edgeRaf);
+    edgeRaf = 0;
+    edgeStall = 0;
+  }
+
+  /**
+   * The span a task keeps when it lands on `start`. With working time on it
+   * is the task's WORKING days laid out from there, so a Monday-to-Friday
+   * task dragged to Wednesday ends the Tuesday after rather than shrinking to
+   * three working days over the weekend; off, it is the calendar length.
+   */
+  function movedSpan(start: Date, orig: { start: Date; end: Date }): { start: Date; end: Date } {
+    if (respectWorking) return moveWorkingSpan(start, orig, cal);
+    return { start, end: new Date(start.getTime() + (orig.end.getTime() - orig.start.getTime())) };
+  }
   /** Write a move of `deltaMs` into the overlay, for the bar AND its subtree. */
   function applyMove(d: BarDrag, deltaMs: number) {
-    startOf[d.key] = new Date(d.origStart.getTime() + deltaMs);
-    endOf[d.key] = new Date(d.origEnd.getTime() + deltaMs);
+    const own = movedSpan(new Date(d.origStart.getTime() + deltaMs), { start: d.origStart, end: d.origEnd });
+    startOf[d.key] = own.start;
+    endOf[d.key] = own.end;
     for (const k of d.subtree) {
-      startOf[k.key] = new Date(k.start.getTime() + deltaMs);
-      endOf[k.key] = new Date(k.end.getTime() + deltaMs);
+      // Each task under a moved phase lands on a working day of its own and
+      // keeps its own working length; the phase's bar is their rollup.
+      let ks = new Date(k.start.getTime() + deltaMs);
+      if (respectWorking) ks = snapToWorkingDay(ks, 1, cal);
+      const span = movedSpan(ks, k);
+      startOf[k.key] = span.start;
+      endOf[k.key] = span.end;
     }
   }
 
   function onDragEnd() {
     window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointercancel", onDragCancel);
+    window.removeEventListener("keydown", onDragKey);
+    stopEdgeScroll();
+    frozenPxPerMs = null;
     const d = drag;
     drag = null;
     if (!d) return;
@@ -829,6 +1030,10 @@
     const d = drag;
     if (!d) return;
     window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointercancel", onDragCancel);
+    window.removeEventListener("keydown", onDragKey);
+    stopEdgeScroll();
+    frozenPxPerMs = null;
     drag = null;
     if (d.mode === "progress") {
       if (d.origProgress != null) progressOf[d.key] = d.origProgress;
@@ -858,6 +1063,8 @@
     const k = el?.dataset.key;
     if (!k) return undefined;
     const r = el!.getBoundingClientRect();
+    // A milestone is a date, not a span: a link into it is to that date.
+    if (el!.classList.contains("sv-gantt-bar-milestone")) return { key: k, edge: "start" };
     return { key: k, edge: x < r.left + r.width / 2 ? "start" : "end" };
   }
 
@@ -867,13 +1074,25 @@
    * Push successors forward so every link stays legal, writing the shifts into
    * the overlay and reporting them. Returns what moved, for the undo entry.
    */
-  function cascadeFrom(_key: string): Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }> {
+  function cascadeFrom(key: string): Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }> {
     if (!autoReschedule || !hasDeps) return [];
     const times = new Map<string, { start: Date; end: Date }>();
     for (const t of tasks) times.set(t.key, { start: t.start, end: t.end });
     const shifts = cascade(times, depList, {
+      // Only the successors of what moved: the moved task (and, for a phase,
+      // its subtree) stays where it was put, even too early for a link -
+      // that link is then drawn as violated, which is the feedback.
+      from: [key, ...(descendantsOf.get(key) ?? [])],
       snapForward: respectWorking ? (d) => snapToWorkingDay(d, 1, cal) : undefined,
       bounds: cascadeBounds,
+      // A pushed task keeps its working days, not its calendar span.
+      endFor: respectWorking ? (start, orig) => moveWorkingSpan(start, orig, cal).end : undefined,
+      startFor: respectWorking
+        ? (end, orig) => {
+            const days = workingDays(orig.start, orig.end, cal);
+            return days > 0 ? startForWorkingDays(end, days, cal) : new Date(end.getTime() - (orig.end.getTime() - orig.start.getTime()));
+          }
+        : undefined,
     });
     if (!shifts.size) return [];
     const out: Array<{ key: string; start: Date; end: Date; before: { start: Date; end: Date } }> = [];
@@ -1053,23 +1272,30 @@
       pushHistory({ kind: "resize", key: bar.key, row: bar.row, edge: "end", before: { start: bar.start, end: bar.end }, after: { start: bar.start, end: ne }, cascaded: moves });
       return;
     }
-    const span = clampSpan(addDays(bar.start, days), addDays(bar.end, days));
+    // Step a day (a week with Shift): a WORKING day when the plan respects
+    // working time, so Right from Friday lands on Monday, not Saturday.
+    let ns = addDays(bar.start, days);
+    if (respectWorking) ns = snapToWorkingDay(ns, dir, cal);
+    const moved = movedSpan(ns, { start: bar.start, end: bar.end });
+    const span = clampSpan(moved.start, moved.end);
     const delta = span.start.getTime() - bar.start.getTime();
+    if (delta === 0) return;
     const fake: BarDrag = {
       key: bar.key, bar, mode: "move", startX: 0, startY: 0, moved: true,
       grabOffsetMs: 0, durationMs: bar.end.getTime() - bar.start.getTime(),
       origStart: bar.start, origEnd: bar.end, origProgress: bar.progress,
-      subtree: sub, fromEdge: "end", pointer: { x: 0, y: 0 },
+      subtree: sub, fromEdge: "end", pointer: { x: 0, y: 0 }, edgePx: 0,
     };
     applyMove(fake, delta);
+    const subAfter = sub.map((k) => ({ key: k.key, start: startOf[k.key] ?? k.start, end: endOf[k.key] ?? k.end }));
     gantt.onTaskMove?.({
       row: bar.row,
-      start: span.start,
-      end: span.end,
-      subtree: sub.length
-        ? sub.flatMap((k) => {
+      start: startOf[bar.key] ?? span.start,
+      end: endOf[bar.key] ?? span.end,
+      subtree: subAfter.length
+        ? subAfter.flatMap((k) => {
             const t = taskByKey.get(k.key);
-            return t ? [{ row: t.row, start: new Date(k.start.getTime() + delta), end: new Date(k.end.getTime() + delta) }] : [];
+            return t ? [{ row: t.row, start: k.start, end: k.end }] : [];
           })
         : undefined,
     });
@@ -1077,10 +1303,7 @@
     pushHistory({
       kind: "move", key: bar.key, row: bar.row,
       before: { start: bar.start, end: bar.end, subtree: sub },
-      after: {
-        start: span.start, end: span.end,
-        subtree: sub.map((k) => ({ key: k.key, start: new Date(k.start.getTime() + delta), end: new Date(k.end.getTime() + delta) })),
-      },
+      after: { start: startOf[bar.key] ?? span.start, end: endOf[bar.key] ?? span.end, subtree: subAfter },
       cascaded: moves,
     });
   }
@@ -1160,6 +1383,21 @@
     tableWSeeded = true;
     tableW = gantt.tableWidth ?? Math.min(520, Math.max(180, tableColsWidth));
   });
+  /** Whether the splitter has been dragged: after that the width is the user's. */
+  let tableWTouched = false;
+  let tableWFitted = false;
+  $effect(() => {
+    // Without a configured width the pane also gives way to the container:
+    // capped at 40% of it once the container has a width (the first pass has
+    // none). The chart is the point, and on a laptop a 520px table beside a
+    // 660px container left it a sliver. The cap never squeezes the name
+    // column - the one that flexes - under 120px: the trailing columns keep
+    // their widths, so it is the name that would pay.
+    if (tableWFitted || tableWTouched || gantt.tableWidth != null || viewportW <= 0) return;
+    tableWFitted = true;
+    const trailing = tableColsWidth - (tableCols[0]?.width ?? 0);
+    tableW = Math.max(180, trailing + 120, Math.min(tableW, Math.floor(viewportW * 0.4)));
+  });
   const showTable = $derived(tableCols.length > 0 && tableW > 0);
 
   /** The board's display rule: dates read locally, everything else as text. */
@@ -1178,7 +1416,16 @@
     if (col.kind === "slack") {
       // Only meaningful with the critical path on; blank rather than a
       // confident zero when it is off.
-      return cpm ? String(slackDays(cpm, n.task.key)) : "";
+      if (!cpm) return "";
+      // A phase is in no link of its own, so the pass gives it the room
+      // between its rollup and the project finish - 28 days over children
+      // with none. It can slip only as far as its tightest task, so report
+      // the least slack under it.
+      if (n.hasChildren) {
+        const kids = descendantsOf.get(n.task.key) ?? [];
+        if (kids.length) return String(Math.min(...kids.map((k) => slackDays(cpm, k))));
+      }
+      return String(slackDays(cpm, n.task.key));
     }
     if (col.kind === "field" && col.field) return fmt(fieldValue(n.task.row, col.field));
     return "";
@@ -1190,6 +1437,7 @@
     if (e.button !== 0) return;
     e.preventDefault();
     splitDrag = { startX: e.clientX, startW: tableW };
+    tableWTouched = true;
     window.addEventListener("pointermove", onSplitMove);
     window.addEventListener("pointerup", endSplit, { once: true });
   }
@@ -1255,6 +1503,27 @@
       el.scrollLeft = xOf(before) + (showTable ? tableW : 0) - offset;
     });
   }
+  /**
+   * The axis start the drag was last laid out against. A task dragged before
+   * the plan's start grows the window on the left, which moves every x by the
+   * days added; the scroll position moves by the same amount so nothing
+   * changes under the pointer. Without it the origin moved, the pointer
+   * mapped to an earlier day, the origin moved again: a three-day drag on
+   * the first task ran off by forty-five days.
+   */
+  let dragAxisStart: Date | null = null;
+  $effect(() => {
+    const start = axis.start;
+    const el = scrollEl;
+    if (!drag) {
+      dragAxisStart = null;
+      return;
+    }
+    if (dragAxisStart && el && start.getTime() !== dragAxisStart.getTime()) {
+      el.scrollLeft += xOf(dragAxisStart);
+    }
+    dragAxisStart = start;
+  });
   function dateAtClientX(clientX: number): Date | null {
     if (!scrollEl) return null;
     const rect = scrollEl.getBoundingClientRect();
@@ -1262,20 +1531,37 @@
     return scale.dateAt(x);
   }
 
-  /** Centre the chart on today (or the first task) when it first has a width. */
+  /** Open on today (or the first task) when the chart first has a width: a
+   *  third of the way into the chart pane, so most of what is on screen is
+   *  what comes next. The pane starts where the sticky task table ends, which
+   *  is why this measures from `paneW` and not the scroll container - centred
+   *  on the container, today landed at the chart's left edge. */
   let scrolledIn = false;
   $effect(() => {
     const el = scrollEl;
-    if (!el || scrolledIn || !axisPx) return;
+    if (!el || scrolledIn || !axisPx || paneW <= 0) return;
     const target = todayX ?? (bars.length ? bars[0]!.left : null);
     if (target == null) return;
     scrolledIn = true;
-    const half = el.clientWidth ? el.clientWidth / 2 : 0;
-    el.scrollLeft = Math.max(0, target + (showTable ? tableW : 0) - half);
+    let left = target - paneW / 3;
+    // A plan that started a week or two ago would open with its first bars
+    // hidden under the task table, and rows with no bar read as an empty
+    // chart. When the first bar can share the pane with today, start there.
+    const first = bars.length ? Math.min(...bars.map((b) => b.left)) : null;
+    if (first != null && first < left && target - first < paneW * 0.8) left = first - 12;
+    el.scrollLeft = Math.max(0, left);
   });
 
   /** The window the chart spans, as its first and last header groups. */
   const rangeLabel = $derived.by(() => {
+    // At the day preset the majors are weeks, labelled "7 - 13 Sep", and
+    // joining two of those with another dash reads as four dates. Name the
+    // window's own first and last day instead.
+    if (zoom === "day") {
+      const last = new Date(axis.end.getTime() - 1);
+      const f = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+      return `${f(axis.start)} - ${f(last)}`;
+    }
     const first = axis.majors[0]?.label
     const last = axis.majors[axis.majors.length - 1]?.label
     if (!first) return ""
@@ -1317,6 +1603,9 @@
   let drawerOpen = $state(false);
   let drawerBar = $state<Bar | null>(null);
   let drawerValues = $state<Record<string, unknown>>({});
+  /** What the form opens with. `drawerValues` follows every keystroke; this
+   *  is the snapshot the form is seeded from, so it is not re-read mid-edit. */
+  let drawerInitial = $state<Record<string, unknown>>({});
 
   type DrawerCol = ColumnDef<TFeatures, TData> & { field: string };
   const drawerFieldCols = $derived.by<DrawerCol[]>(() => {
@@ -1400,7 +1689,8 @@
       __progress: Math.round(bar.progress),
     };
     for (const col of drawerFieldCols) next[col.field] = fieldValue(bar.row, col.field);
-    drawerValues = next;
+    drawerInitial = next;
+    drawerValues = { ...next };
     drawerBar = bar;
     drawerOpen = true;
   }
@@ -1467,6 +1757,32 @@
     if (!items.length) return;
     e.preventDefault();
     menuItems = items;
+    menuPos = { x: e.clientX, y: e.clientY };
+    menuOpen = true;
+  }
+  /** How close to an arrow a right-click has to land to mean that link. */
+  const ARROW_HIT_PX = 6;
+  let bodyEl = $state<HTMLElement | null>(null);
+  /** Right-click on an arrow: offer to remove the link it draws. A bar
+   *  handles its own menu and stops here; anything else on the body is
+   *  hit-tested against the arrow geometry, since the arrows layer takes no
+   *  pointer events of its own. */
+  function onBodyContextMenu(e: MouseEvent) {
+    if (!editable || !gantt.onDependencyRemove || !bodyEl || !arrows.length) return;
+    if ((e.target as HTMLElement | null)?.closest?.(".sv-gantt-bar")) return;
+    const r = bodyEl.getBoundingClientRect();
+    const hit = nearestArrow(arrows, e.clientX - r.left, e.clientY - r.top, ARROW_HIT_PX);
+    if (!hit) return;
+    const dep = depList.find((d) => d.id === hit.id);
+    if (!dep) return;
+    e.preventDefault();
+    const nameOf = (k: string) => tasks.find((t) => t.key === k)?.title ?? k;
+    menuItems = [
+      {
+        label: `Remove link: ${nameOf(dep.from)} \u2192 ${nameOf(dep.to)}`,
+        onSelect: () => gantt.onDependencyRemove?.(dep.id),
+      },
+    ];
     menuPos = { x: e.clientX, y: e.clientY };
     menuOpen = true;
   }
@@ -1540,17 +1856,17 @@
           <button
             type="button"
             class="sv-gantt-btn"
-            aria-label="Zoom in"
-            disabled={zoomIndex <= 0}
-            onclick={() => stepZoom(-1)}
+            aria-label="Zoom out"
+            disabled={zoomIndex >= zoomLadder.length - 1}
+            onclick={() => stepZoom(1)}
           >-</button>
           <span class="sv-gantt-zoom-label">{zoom}</span>
           <button
             type="button"
             class="sv-gantt-btn"
-            aria-label="Zoom out"
-            disabled={zoomIndex >= zoomLadder.length - 1}
-            onclick={() => stepZoom(1)}
+            aria-label="Zoom in"
+            disabled={zoomIndex <= 0}
+            onclick={() => stepZoom(-1)}
           >+</button>
         </div>
       {/if}
@@ -1564,6 +1880,7 @@
     class="sv-gantt-scroll"
     bind:this={scrollEl}
     bind:clientHeight={viewportH}
+    bind:clientWidth={viewportW}
     onscroll={onScroll}
     onwheel={onWheel}
   >
@@ -1656,8 +1973,10 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="sv-gantt-body"
+          bind:this={bodyEl}
           style={`width:${axisPx}px; height:${bodyH}px`}
           ondblclick={onBodyDblClick}
+          oncontextmenu={onBodyContextMenu}
         >
           {#each shadeBands as band, i (i)}
             <div
@@ -1694,7 +2013,7 @@
                   class="sv-gantt-dep-arrow"
                   class:sv-gantt-dep-bad={a.bad}
                   class:sv-gantt-dep-critical={criticalArrows.has(a.id)}
-                  d={`M${a.hx},${a.hy} l-6,-3.5 l0,7 z`}
+                  d={arrowHeadPath(a.hx, a.hy, a.dir)}
                 />
               {/each}
             </svg>
@@ -1719,7 +2038,7 @@
               <div
                 class="sv-gantt-bar sv-gantt-bar-{b.kind}"
                 class:sv-gantt-bar-done={b.progress >= 100}
-                class:sv-gantt-critical={criticalKeys.has(b.key)}
+                class:sv-gantt-critical={criticalBars.has(b.key)}
                 class:sv-gantt-constrained={constraintBroken.has(b.key)}
                 class:sv-gantt-refused={refused.has(b.key)}
                 class:sv-gantt-dragging={drag?.key === b.key && drag?.moved}
@@ -1743,7 +2062,7 @@
                     aria-hidden="true"
                   ></span>
                 {/if}
-                {#if gantt.task}
+                {#if gantt.task && b.kind === "task"}
                   <span class="sv-gantt-bar-body">{@render gantt.task(b.row)}</span>
                 {:else if labelInside(b)}
                   <span class="sv-gantt-bar-label">{b.title}</span>
@@ -1793,16 +2112,19 @@
               {#if constraintOn}
                 {@const c = constraintOf(b.row)}
                 {#if c}
+                  <!-- A pin at the DATE the constraint names, not at the bar:
+                       "finish by the 25th" is a line on the 25th, and it stays
+                       put while the bar is dragged toward it. -->
                   <span
                     class="sv-gantt-constraint"
                     class:sv-gantt-constraint-broken={constraintBroken.has(b.key)}
-                    style={`left:${b.left - 14}px`}
-                    title={`${c.kind} ${fmtDay(c.date)}`}
+                    style={`left:${xOf(constraintPinsFinish(c.kind) ? addDays(c.date, 1) : c.date)}px`}
+                    title={`${CONSTRAINT_LABEL[c.kind] ?? c.kind} ${fmtDay(c.date)} (${c.kind})`}
                     aria-hidden="true"
-                  >{CONSTRAINT_GLYPH[c.kind] ?? "\u25C6"}</span>
+                  ></span>
                 {/if}
               {/if}
-              {#if !gantt.task && labelOutside(b)}
+              {#if (!gantt.task || b.kind !== "task") && labelOutside(b)}
                 <span
                   class="sv-gantt-label"
                   style={`left:${b.left + (b.kind === "milestone" ? 12 : b.width) + 8}px`}
@@ -1895,7 +2217,7 @@
   >
     <SvForm
       fields={drawerFields}
-      values={drawerValues}
+      initial={drawerInitial}
       columns={drawerCfg?.columns ?? 1}
       submitLabel={drawerCfg?.submitLabel ?? "Save"}
       cancelLabel="Cancel"
@@ -1946,6 +2268,14 @@
           <div class="sv-gantt-tooltip-meta">
             {Math.abs(bl.varianceDays)} day{Math.abs(bl.varianceDays) === 1 ? "" : "s"}
             {bl.varianceDays > 0 ? "later than" : "ahead of"} baseline
+          </div>
+        {/if}
+      {/if}
+      {#if constraintOn}
+        {@const c = constraintOf(tipBar.row)}
+        {#if c}
+          <div class="sv-gantt-tooltip-meta">
+            {CONSTRAINT_LABEL[c.kind] ?? c.kind} {fmtDay(c.date)}{constraintBroken.has(tipBar.key) ? " - not met" : ""}
           </div>
         {/if}
       {/if}
@@ -2254,6 +2584,16 @@
     outline: 2px solid var(--sg-accent, #4f46e5);
     outline-offset: 2px;
   }
+  /* A finger on something draggable drags it; the browser would otherwise
+     turn the touch into a scroll and cancel the pointer. Read-only bars keep
+     scrolling by touch. */
+  .sv-gantt-editable .sv-gantt-bar,
+  .sv-gantt-grip,
+  .sv-gantt-grip-p,
+  .sv-gantt-link-dot,
+  .sv-gantt-splitter {
+    touch-action: none;
+  }
   .sv-gantt-progress {
     position: absolute;
     left: 0;
@@ -2426,12 +2766,15 @@
     box-shadow: 0 0 0 2px var(--sv-gantt-critical, #dc2626);
   }
   .sv-gantt-bar-summary.sv-gantt-critical { box-shadow: 0 0 0 1.5px var(--sv-gantt-critical, #dc2626); }
-  .sv-gantt-dep-line.sv-gantt-dep-critical,
-  .sv-gantt-dep-arrow.sv-gantt-dep-critical {
+  /* The line keeps `fill: none` - a fill on the elbow path paints the polygon
+     it encloses, and every critical link came out as a solid red slab. */
+  .sv-gantt-dep-line.sv-gantt-dep-critical {
     stroke: var(--sv-gantt-critical, #dc2626);
+    stroke-width: 2;
+  }
+  .sv-gantt-dep-arrow.sv-gantt-dep-critical {
     fill: var(--sv-gantt-critical, #dc2626);
   }
-  .sv-gantt-dep-line.sv-gantt-dep-critical { stroke-width: 2; }
 
   /* The baseline: a thin ghost under the bar, so drift reads as the gap
      between the two rather than as a second bar competing with it. */
@@ -2447,19 +2790,30 @@
     background: color-mix(in srgb, var(--sv-gantt-dep-bad, #dc2626) 45%, transparent);
   }
 
-  /* A constraint marker sits just before the bar it pins. */
+  /* A constraint is a pin on the date it names: a flag at the top of the row
+     and a dashed tick down through it. It sits above the arrows so an incoming
+     link cannot cover it, and takes no pointer events so the bar under it can
+     still be dragged. */
   .sv-gantt-constraint {
+    --sv-gantt-pin: color-mix(in srgb, var(--sg-fg, #1f2937) 60%, transparent);
     position: absolute;
     top: 0;
+    width: 0;
     height: var(--gantt-row-h);
-    display: flex;
-    align-items: center;
-    font-size: 0.68rem;
-    line-height: 1;
-    color: var(--sg-muted, #6b7280);
+    border-left: 1.5px dashed var(--sv-gantt-pin);
+    z-index: 4;
     pointer-events: none;
   }
-  .sv-gantt-constraint-broken { color: var(--sv-gantt-dep-bad, #dc2626); font-weight: 700; }
+  .sv-gantt-constraint::before {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: -5.5px;
+    border: 5px solid transparent;
+    border-top: 7px solid var(--sv-gantt-pin);
+    border-bottom: 0;
+  }
+  .sv-gantt-constraint-broken { --sv-gantt-pin: var(--sv-gantt-dep-bad, #dc2626); }
   /* A bar whose own dates break its constraint. The cascade stops at the cap
      rather than overrunning it, so this is a state to read, not an error. */
   .sv-gantt-bar.sv-gantt-constrained {
@@ -2468,7 +2822,16 @@
   }
 
   /* ---- context menu + drawer ---- */
-  .sv-gantt-menu { z-index: 2147483001; }
+  /* Portalled to the body, so it carries its own panel: without the
+     background it rendered as bare text over whatever was behind it. */
+  .sv-gantt-menu {
+    z-index: 2147483001;
+    background: var(--sg-bg, #fff);
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+  }
   .sv-gantt-delete {
     margin-top: 12px;
     width: 100%;
@@ -2502,12 +2865,11 @@
   .sv-gantt-dep-arrow {
     fill: var(--sv-gantt-dep, color-mix(in srgb, var(--sg-fg, #1f2937) 45%, transparent));
   }
-  .sv-gantt-dep-line.sv-gantt-dep-bad,
-  .sv-gantt-dep-arrow.sv-gantt-dep-bad {
+  .sv-gantt-dep-line.sv-gantt-dep-bad {
     stroke: var(--sv-gantt-dep-bad, #dc2626);
-    fill: var(--sv-gantt-dep-bad, #dc2626);
+    stroke-dasharray: 4 3;
   }
-  .sv-gantt-dep-line.sv-gantt-dep-bad { stroke-dasharray: 4 3; }
+  .sv-gantt-dep-arrow.sv-gantt-dep-bad { fill: var(--sv-gantt-dep-bad, #dc2626); }
 
   /* ---- tooltip ---- */
   .sv-gantt-tooltip {

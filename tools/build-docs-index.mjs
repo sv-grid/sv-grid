@@ -25,6 +25,7 @@ import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
 import { join, relative, sep, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
+import { isReleased } from './lib/releases.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { comparePageModel, renderCompareMarkdown } from './lib/compare-page.mjs'
 import { compareSeo, compareKeywords } from './lib/compare-meta.mjs'
@@ -53,6 +54,7 @@ const SECTION_TITLES = {
   'help/server':       'Server data',
   'help/state':        'State & views',
   'help/charts':       'Charts',
+  'help/gantt':        'Gantt',
   'help/ui-components':'UI components',
   'help/web-components':'Web components',
   'recipes':           'Recipes / cookbook',
@@ -89,6 +91,7 @@ const SECTION_PILLAR = {
   'help/server':       'grid',
   'help/state':        'grid',
   'help/charts':       'grid',
+  'help/gantt':        'grid',
   'recipes':           'grid',
   'reference':         'grid',
   'enterprise/studio': 'studio',
@@ -106,7 +109,7 @@ const SECTION_ORDER = [
   '', 'getting-started', 'help',
   'help/cells', 'help/columns', 'help/rows',
   'help/editing', 'help/filtering', 'help/grouping',
-  'help/headless', 'help/server', 'help/state', 'help/charts',
+  'help/headless', 'help/server', 'help/state', 'help/charts', 'help/gantt',
   // Before recipes, matching CATEGORY_ORDER in website/src/lib/docs.ts - this
   // list drives docs.json and llms.txt, that one drives the visible sidebar,
   // and a reader following the topic map should meet them in the same order.
@@ -130,6 +133,15 @@ const PAGE_GROUPS = {
     { label: 'Start here', pages: ['start', 'types', 'gallery', 'axes-and-styling'] },
     { label: 'Depth', pages: ['interaction', 'financial', 'accessibility'] },
     { label: 'Grid and reference', pages: ['from-the-grid', 'api'] },
+  ],
+  // The Gantt guide: the hub, then the basics in the order a plan grows
+  // (rows, phases, links, edits, the axis), then the planning layer, then the
+  // pages that look outward. Mirrors PAGE_ORDER in website/src/lib/docs.ts.
+  'help/gantt': [
+    { label: '', pages: ['help/gantt.md'] },
+    { label: 'Start here', pages: ['start', 'work-breakdown', 'dependencies', 'editing', 'axis-and-working-time'] },
+    { label: 'Planning', pages: ['critical-path', 'resources'] },
+    { label: 'Beyond the chart', pages: ['customizing', 'views', 'api'] },
   ],
   // Reading order, not alphabetical: the attribute-vs-property rule in
   // `quick-start` is the thing every reader needs before anything else, and
@@ -394,7 +406,7 @@ async function main() {
   llmsLines.push('')
   llmsLines.push('> SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row + column virtualization to 1M rows, Excel-style filters, grouping, tree, master/detail, inline editing, WAI-ARIA, built-in AI helpers and an MCP server. Also searched for as "Svelte datagrid", "Svelte grid" and "Svelte table".')
   llmsLines.push('')
-  llmsLines.push('Two npm packages: `@svgrid/grid` (MIT, open source: the full grid, the AI helpers and the UI components) and `@svgrid/enterprise` (commercial: the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, alert rules and SvGrid Studio).')
+  llmsLines.push('Two npm packages: `@svgrid/grid` (MIT, open source: the full grid, the AI helpers and the UI components) and `@svgrid/enterprise` (commercial: the Kanban board, ' + (isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet') + ' views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, alert rules and SvGrid Studio).')
   llmsLines.push('')
   llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
   llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')

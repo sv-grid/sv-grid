@@ -65,7 +65,7 @@ export default defineAddon({
       default: true,
     })
     .add('enterprise', {
-      question: 'Add the Enterprise pack (Excel/PDF export, pivot, Kanban, scheduler, Gantt)? Needs a paid license key.',
+      question: 'Add the Enterprise pack (Excel/PDF export, pivot, Kanban, scheduler)? Needs a paid license key.',
       type: 'boolean',
       default: false,
     })

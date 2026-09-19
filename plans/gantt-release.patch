@@ -1,0 +1,667 @@
+--- a/docs/changelog.md
++++ b/docs/changelog.md
+@@ -25,6 +25,19 @@
+ 
+ #### Added
+ 
++- **`gantt` prop.** The rows drawn as a project plan. `startField` /
++  `endField` place each row's bar on a time axis, `parentField` nests
++  the rows into phases that draw a rolled-up summary bar, `progressField`
++  fills the bar, and a `dependencies` list draws FS, SS, FF and SF links
++  with lag. `zoom` picks day, week, month, quarter or year; `editable`
++  turns on drag to move, resize and set percent, with `onTaskMove`,
++  `onTaskResize`, `onProgressChange` and `onDependenciesChange`
++  reporting every gesture and writing nothing themselves; `history` replays
++  them with Ctrl+Z; `drawer` opens a form on click. The prop and its
++  `GanttConfig` types are free. The renderer registers from
++  `@svgrid/enterprise` through the same view seam as the board and the
++  scheduler, so a grid with no renderer registered stays a table.
++
+ - **`chartSpecToTable`.** The rows and columns a spec amounts to, in the
+   shape `SvGrid` takes: one row per category with a column per series (a
+   grouped axis adds a Group column, a histogram From and To, candles their
+@@ -581,6 +594,22 @@
+ 
+ #### Added
+ 
++- **The Gantt view.** `enableGanttView()` renders `<SvGrid gantt={...}>`:
++  a task table beside a time axis, phases folded with a chevron, arrows for
++  the four link types routed to the edge of the bar they enter, drag to move
++  or resize a bar, a diamond to set percent, a dot to draw a link, a
++  right-click menu to remove one, an edit drawer and undo. A moved task keeps
++  its working-day length across a weekend, and its successors slide forward
++  over weekends and holidays. The planning layer on top: `criticalPath`
++  runs the forward and backward passes in working time, rings the chain
++  with no slack and fills a `__slack` table column in working days;
++  `baselineStartField` / `baselineEndField` draw the agreed dates as
++  ghost bars; `constraintField` / `constraintDateField` pin a date the
++  cascade stops at; `resourceField` + `resources` draw a load strip that
++  turns red past capacity; `collapseWeekends` folds the axis. Demos
++  474-481 and the Gantt category on the demos page; docs at
++  [/docs/help/gantt/](/docs/help/gantt/).
++
+ - **The pivot designer's Chart view grew up.** It offers every shape a pivot
+   can take (bar, line, area, lollipop, pareto, the three radial forms, pie,
+   funnel, waterfall, radar, heat map, stream) in the panel's groups, with
+--- a/docs/enterprise/README.md
++++ b/docs/enterprise/README.md
+@@ -3,8 +3,8 @@
+ `@svgrid/enterprise` is a paid add-on for `@svgrid/grid`. It bolts onto
+ the same `<SvGrid>` you already have and adds five feature areas: the
+ server-side row model, data export, data import, pivot tables, and the
+-Kanban, Scheduler and Spreadsheet views of the same grid. (The AI helpers
+-are built in and **free** in `@svgrid/grid` - see
++Kanban, Scheduler, Gantt and Spreadsheet views of the same grid. (The AI
++helpers are built in and **free** in `@svgrid/grid` - see
+ [AI assistant](../help/ai.md).)
+ 
+ ![The @svgrid/enterprise pack bolts data export, data import, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
+@@ -99,17 +99,19 @@
+ 
+ ### Views of the same grid
+ 
+-The `board` and `scheduler` props and their config types are free in
+-`@svgrid/grid`; what Enterprise ships is the renderer behind each,
+-registered once with `enableBoardView()` or `enableSchedulerView()`
+-(`installEnterprise(api)` calls both). The same rows, columns, sort and
+-filter feed every one of them. A [Gantt view](../help/rows/gantt.md) of the
+-same grid is in progress and due on 1 November 2026.
++The `board`, `scheduler` and `gantt` props and their config types are
++free in `@svgrid/grid`; what Enterprise ships is the renderer behind each,
++registered once with `enableBoardView()`, `enableSchedulerView()` or
++`enableGanttView()` (`installEnterprise(api)` calls all three). The
++same rows, columns, sort and filter feed every one of them.
+ 
+ - [Kanban board](../help/rows/kanban-board.md) - cards in lanes, drag-and-drop,
+   swimlanes, WIP limits, a card drawer.
+ - [Scheduler / calendar](../help/rows/scheduler.md) - month, week, day, agenda
+   and timeline views with resources, recurrence and booking rules.
++- [Gantt chart](../help/gantt.md) - phases, dependency arrows, drag to
++  reschedule with a working-day cascade, critical path, baselines,
++  constraints, resource load.
+ - [The spreadsheet shell](../help/cells/spreadsheet-shell.md) - `<SvSheet />`
+   wraps the grid in a ribbon, formula bar, gutter and sheet tabs over the
+   [formula engine](../help/spreadsheet-formulas.md).
+--- a/docs/help/recipes.md
++++ b/docs/help/recipes.md
+@@ -224,7 +224,7 @@
+ Axis above the grid uses the same math.
+ 
+ For a real plan - a work-breakdown tree with rolled-up phases, dependency
+-arrows and a zoomable axis - use [Gantt chart mode](/help/rows/gantt), the
++arrows and a zoomable axis - use [Gantt chart mode](/help/gantt), the
+ `gantt` prop's Enterprise renderer, rather than building on this recipe.
+ 
+ ## Scheduler (single-day appointments)
+--- a/docs/help/rows/kanban-board.md
++++ b/docs/help/rows/kanban-board.md
+@@ -646,4 +646,4 @@
+ - [Mobile card view](../mobile-card-view.md) - the responsive grid/card pivot.
+ - [Grouping & aggregation](../grouping-aggregation.md) - the row-bucketing model board lanes reuse.
+ - [Scheduler / calendar mode](./scheduler.md) - the same rows as bookings on a calendar.
+-- [Gantt chart mode](./gantt.md) - the same rows as a project plan: in progress, due 1 November 2026.
++- [Gantt chart mode](../gantt.md) - the same rows as a project plan: phases, links, a critical path.
+--- a/docs/help/rows/scheduler.md
++++ b/docs/help/rows/scheduler.md
+@@ -683,7 +683,7 @@
+ > view of the grid - for appointments, staff and asset scheduling, and calendar
+ > apps. It is deliberately *not* a project planner. For a plan with a
+ > work-breakdown tree, percent-done and rolled-up phases, use
+-> [Gantt chart mode](/help/rows/gantt), which is built for exactly that. The
++> [Gantt chart mode](/help/gantt), which is built for exactly that. The
+ > **dependencies** below are an optional convenience for *ordered bookings* (a job
+ > that must move through stations in sequence); they are fully opt-in - with no
+ > dependency config the timeline draws no arrows and does no cascading.
+--- a/docs/_data/comparisons/svar-svelte-datagrid.json
++++ b/docs/_data/comparisons/svar-svelte-datagrid.json
+@@ -29,7 +29,7 @@
+   "alternativeIntro": "The closest comparison on this list, since both are Svelte-native and both are MIT, so licensing does not decide it. The differences are depth and direction: SvGrid ships a larger feature surface, a UI component suite, in-grid AI helpers and an MCP server, while SVAR spans Svelte, React and Vue and keeps a smaller core. The At a glance table above has both measured bundle sizes; if a compact MIT grid with sorting, filtering, editing, tree data and CSV export is all you need, SVAR is a perfectly good answer.",
+   "intro": [
+     "SVAR DataGrid (npm: wx-svelte-grid) is part of the SVAR suite from XB Software, the makers of Webix, and is one of the few grids built for Svelte rather than wrapped from another framework. Its docs list in-cell editing, header and advanced filtering, single and multi-column sorting, tree data, virtual scrolling for rows and columns, columns pinned to the left, column and row spans in the header and footer, auto-sized rows, undo and redo, a context menu, row reordering, CSV export, a print API and a REST data provider, all under MIT.",
+-    "SvGrid overlaps on the Svelte-native angle and reaches further: row grouping with aggregation, master/detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left and right column pinning, integrated charts, a server-side row model, a headless engine, in-grid AI helpers and the @svgrid/mcp server, all in the MIT package. Excel, PDF and print output, import, pivot tables and the Kanban and Scheduler views of the grid live in the paid @svgrid/enterprise pack, whereas SVAR keeps its grid entirely free and sells PRO editions of its Gantt, Calendar and Kanban instead."
++    "SvGrid overlaps on the Svelte-native angle and reaches further: row grouping with aggregation, master/detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left and right column pinning, integrated charts, a server-side row model, a headless engine, in-grid AI helpers and the @svgrid/mcp server, all in the MIT package. Excel, PDF and print output, import, pivot tables and the Kanban, Scheduler and Gantt views of the grid live in the paid @svgrid/enterprise pack, whereas SVAR keeps its grid entirely free and sells PRO editions of its Gantt, Calendar and Kanban instead."
+   ],
+   "similarities": [
+     "Purpose-built for Svelte 5, not a cross-framework wrapper.",
+@@ -397,7 +397,7 @@
+     },
+     {
+       "question": "Are SvGrid and SVAR both free?",
+-      "answer": "Both are free under MIT, including commercial use. SVAR keeps the whole grid free, CSV export and print included, and sells PRO editions of its Gantt, Calendar and Kanban. SvGrid's grid is free too, including CSV, TSV and JSON export, charts and the AI helpers; Excel, PDF and print output, import, pivot tables, the Kanban and Scheduler views and support are in @svgrid/enterprise at $599 per developer per year."
++      "answer": "Both are free under MIT, including commercial use. SVAR keeps the whole grid free, CSV export and print included, and sells PRO editions of its Gantt, Calendar and Kanban. SvGrid's grid is free too, including CSV, TSV and JSON export, charts and the AI helpers; Excel, PDF and print output, import, pivot tables, the Kanban, Scheduler and Gantt views and support are in @svgrid/enterprise at $599 per developer per year."
+     },
+     {
+       "question": "Are both built for Svelte 5?",
+--- a/docs/_data/solutions.json
++++ b/docs/_data/solutions.json
+@@ -169,7 +169,7 @@
+         },
+         {
+           "question": "Is the scheduler a Gantt chart?",
+-          "answer": "No. The scheduler is a resource, booking and calendar view: appointments, staff and asset scheduling, with no critical path, baselines or work-breakdown structure. Those belong to the Gantt view of the same grid, which is in progress and due on 1 November 2026: the scheduler for bookings, the Gantt for a project plan."
++          "answer": "No. The scheduler is a resource, booking and calendar view: appointments, staff and asset scheduling, with no critical path, baselines or work-breakdown structure. Those belong to the Gantt view, the same grid with a gantt prop instead: use the scheduler for bookings and the Gantt for a project plan. The two can read the same rows."
+         },
+         {
+           "question": "Is the scheduler free?",
+@@ -262,7 +262,7 @@
+         },
+         {
+           "question": "Is the pivot table free?",
+-          "answer": "No. Pivot is part of the commercial @svgrid/enterprise package, alongside export, import, print and the board and scheduler views. It runs unlicensed with a watermark while you evaluate it."
++          "answer": "No. Pivot is part of the commercial @svgrid/enterprise package, alongside export, import, print and the board, scheduler and Gantt views. It runs unlicensed with a watermark while you evaluate it."
+         },
+         {
+           "question": "Can users build their own pivot?",
+@@ -470,92 +470,7 @@
+         "scheduler",
+         "kanban-board",
+         "tree-grid"
+-      ],
+-      "release": "gantt",
+-      "prerelease": {
+-        "kind": "feature",
+-        "icon": "▬",
+-        "cardText": "Task bars in one wide custom cell.",
+-        "seoTitle": "Svelte Gantt Chart - Project Timeline in a Grid",
+-        "seoDescription": "A Gantt-style project plan in a Svelte 5 data grid: task bars positioned by start and end date in one wide cell, with phase colour and progress fill.",
+-        "tier": "community",
+-        "intro": [
+-          "A Gantt view of the grid - one gantt prop, phases, dependency arrows, drag to reschedule, a critical path - is in progress in @svgrid/enterprise and due on 1 November 2026; it is on the roadmap. Until then, what SvGrid has is a grid with custom cells, and a Gantt row is a task on the left and one wide cell on the right whose bar is positioned by percentage of the project span. That is exactly how the demo below is built, in one file you can copy.",
+-          "If your plan is really a schedule of bookings across resources rather than a work-breakdown structure, the enterprise scheduler timeline is the better fit today: it draws real bars on a time axis with drag to re-time and resize, one lane per person or asset."
+-        ],
+-        "install": "npm i @svgrid/grid",
+-        "snippet": {
+-          "lang": "svelte",
+-          "code": "<script lang=\"ts\">\n  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'\n</script>\n\n{#snippet TimelineCell({ row })}\n  <div class=\"track\">\n    <div\n      class=\"bar\"\n      style:left=\"{((+new Date(row.start) - projectStart) / projectSpan) * 100}%\"\n      style:width=\"{((+new Date(row.end) - +new Date(row.start)) / projectSpan) * 100}%\"\n    ></div>\n  </div>\n{/snippet}\n\n<SvGrid\n  data={tasks}\n  columns={[\n    { field: 'name', header: 'Task', width: 240 },\n    { field: 'end', header: 'Schedule', width: 400,\n      cell: (ctx) => renderSnippet(TimelineCell, { row: ctx.row.original }) },\n  ]}\n/>"
+-        },
+-        "heroDemo": "45-gantt-chart",
+-        "demos": [
+-          "45-gantt-chart",
+-          "384-scheduler-app-roadmap",
+-          "205-project-management",
+-          "167-project-tracker",
+-          "29-wbs-project-tree",
+-          "47-trash-truck-timeline"
+-        ],
+-        "docs": [
+-          "help/recipes",
+-          "help/rows/scheduler",
+-          "help/rows/gantt"
+-        ],
+-        "posts": [
+-          "project-task-board-grid",
+-          "pinned-frozen-columns"
+-        ],
+-        "features": [
+-          {
+-            "title": "One wide custom cell",
+-            "body": "The timeline is a snippet cell that positions absolutely-placed bars by date arithmetic. No plugin, no second component, no new mental model."
+-          },
+-          {
+-            "title": "Pinned task columns",
+-            "body": "Pin the name, owner and progress columns so they stay put while months of timeline scroll sideways."
+-          },
+-          {
+-            "title": "Phases and progress",
+-            "body": "Colour bars by phase, fill them by percent done, and draw a today line and an overdue glow with plain CSS."
+-          },
+-          {
+-            "title": "A tree of tasks",
+-            "body": "Combine it with tree data and a work-breakdown structure indents under its parent, expandable and collapsible."
+-          },
+-          {
+-            "title": "Or the scheduler timeline",
+-            "body": "For resource scheduling with real drag to re-time, the enterprise timeline views give you bars on a shared axis per squad or person."
+-          },
+-          {
+-            "title": "Free and MIT",
+-            "body": "The Gantt-style grid is entirely @svgrid/grid. Only the scheduler timeline route needs the commercial package."
+-          }
+-        ],
+-        "faq": [
+-          {
+-            "question": "Does SvGrid have a Gantt chart component?",
+-            "answer": "Not yet. A Gantt view of the grid - one gantt prop, phases that roll up, dependency arrows, drag to reschedule, a critical path - is in progress in @svgrid/enterprise and due on 1 November 2026. Until then a Gantt is built as a grid with one wide custom cell per row that positions task bars by date, which is what the example on this page does."
+-          },
+-          {
+-            "question": "Can I use the scheduler as a Gantt chart?",
+-            "answer": "For resource and booking timelines, yes. The scheduler's timeline views draw bars on a time axis with drag to re-time and resize. It is not a project planner: no critical path, baselines or work-breakdown structure. Those are what the Gantt view due on 1 November 2026 adds."
+-          },
+-          {
+-            "question": "Can tasks have dependencies?",
+-            "answer": "The enterprise scheduler has optional dependencies for ordered bookings, where a job moves through stations in sequence. They are opt-in, and without dependency config the timeline draws no arrows and cascades nothing."
+-          },
+-          {
+-            "question": "Is it free?",
+-            "answer": "The grid-based recipe is MIT-licensed in @svgrid/grid. The scheduler timeline needs the commercial @svgrid/enterprise package, and so will the Gantt view when it ships."
+-          }
+-        ],
+-        "related": [
+-          "scheduler",
+-          "kanban-board",
+-          "tree-grid"
+-        ]
+-      }
++      ]
+     },
+     {
+       "slug": "tree-grid",
+@@ -1005,7 +920,7 @@
+         },
+         {
+           "title": "Free and MIT",
+-          "body": "The grid, the UI kit and the starter are all MIT. Only export, pivot and the board and scheduler views are commercial."
++          "body": "The grid, the UI kit and the starter are all MIT. Only export, pivot and the board, scheduler and Gantt views are commercial."
+         }
+       ],
+       "faq": [
+--- a/examples/src/demos/407-grid-chart-view.svelte
++++ b/examples/src/demos/407-grid-chart-view.svelte
+@@ -2,8 +2,8 @@
+   /**
+    * Chart view of the grid - the `chart` prop turns the SAME <SvGrid> into a
+    * chart, driven by the grid's filtered + sorted rows (search and sort flow
+-   * straight through). It sits alongside the board and scheduler views, but the
+-   * renderer is FREE: the grid lazy-loads a built-in view that wraps the
++   * straight through). It sits alongside the board, scheduler and Gantt views,
++   * but the renderer is FREE: the grid lazy-loads a built-in view that wraps the
+    * standalone SvChart via `rowsToChartSpec`. Flip Table <-> Chart to see the
+    * same data, same source of truth, two renderings.
+    */
+--- a/packages/enterprise/README.md
++++ b/packages/enterprise/README.md
+@@ -31,6 +31,7 @@
+ - **Pivot tables** - drag-and-drop pivot Designer with row/column/value fields, aggregation, drill-through to source rows, and pivot-to-chart.
+ - **Kanban board view** - `enableBoardView()` lets `<SvGrid board={...}>` render the rows as cards in lanes, with drag-and-drop, swimlanes, WIP limits and a card drawer.
+ - **Scheduler / calendar view** - a Month/Week/Day/Agenda calendar rendered as a view of the grid: `enableSchedulerView()` lets `<SvGrid scheduler={...}>` show events with resources, recurrence, and drag/resize.
++- **Gantt view** - `enableGanttView()` lets `<SvGrid gantt={...}>` draw the rows as a project plan: phases with rolled-up bars, dependency arrows with lag, drag to reschedule with a cascade over working days, critical path, baselines, constraints and resource load.
+ - **Staged editing** - collect edits into a reviewable change set before committing.
+ - **Scheduling automation** - a client-side cron / one-off scheduler (`createScheduler`, `parseCron`, `CRON_PRESETS`) to drive recurring exports and alerts with no backend.
+ - **SvGrid Studio** - a schema-driven data-app layer: `EntitySchema`, memory / SQL / Supabase / REST data sources, a SvelteKit adapter, edit panels, master/detail, schema charts + KPI dashboards, and the project model + codegen behind the visual designer. See [`@svgrid/studio`](https://www.npmjs.com/package/@svgrid/studio).
+--- a/packages/svgrid-sv/index.mjs
++++ b/packages/svgrid-sv/index.mjs
+@@ -65,7 +65,7 @@
+       default: true,
+     })
+     .add('enterprise', {
+-      question: 'Add the Enterprise pack (Excel/PDF export, pivot, Kanban, scheduler)? Needs a paid license key.',
++      question: 'Add the Enterprise pack (Excel/PDF export, pivot, Kanban, scheduler, Gantt)? Needs a paid license key.',
+       type: 'boolean',
+       default: false,
+     })
+--- a/packages/svgrid-sv/README.md
++++ b/packages/svgrid-sv/README.md
+@@ -22,7 +22,7 @@
+ | Prompt | Default | Effect |
+ | --- | --- | --- |
+ | Add a demo grid so you can see it working? | yes | Writes `src/routes/svgrid-demo/+page.svelte` in a SvelteKit project, or `src/lib/SvGridDemo.svelte` otherwise |
+-| Add the Enterprise pack? | no | Also adds `@svgrid/enterprise` (Excel/PDF export, pivot, Kanban, scheduler). Needs a [paid license key](https://svgrid.com/pricing/) |
++| Add the Enterprise pack? | no | Also adds `@svgrid/enterprise` (Excel/PDF export, pivot, Kanban, scheduler, Gantt). Needs a [paid license key](https://svgrid.com/pricing/) |
+ 
+ The demo is written in whichever language the project already uses. It never
+ overwrites a file that already exists.
+--- a/skills/svgrid/SKILL.md
++++ b/skills/svgrid/SKILL.md
+@@ -1,181 +1,181 @@
+----
+-name: svgrid
+-description: Writes, fixes, and reviews SvGrid data-grid code in Svelte 5 projects - columns, features, inline editing, filtering, theming with --sg-* tokens, server-side data, the built-in AI helpers, and the enterprise add-on (export/import/pivot). Provides project context, the ColumnDef and <SvGrid> API surface, and correct-vs-incorrect patterns. Applies when working with @svgrid/grid, @svgrid/enterprise, <SvGrid>, ColumnDef, SvGridApi, or any project that imports from @svgrid/*.
+-user-invocable: false
+-allowed-tools: Bash(npm create @svgrid@latest *), Bash(pnpm create @svgrid *), Bash(yarn create @svgrid *), Bash(npx @svgrid/mcp *), Bash(pnpm dlx @svgrid/mcp *)
+----
+-
+-# SvGrid
+-
+-SvGrid is a modern **Svelte 5** data grid: a headless core engine paired
+-with a render component (`<SvGrid>`). It scales from a 10-row read-only
+-table to a virtualized 100k-row editing surface with grouping, filtering,
+-server-side data, and full keyboard + screen-reader support. Two packages:
+-`@svgrid/grid` (MIT) and `@svgrid/enterprise` (commercial add-on).
+-
+-> **This is a library, not a source-copy CLI.** You `import` from
+-> `@svgrid/grid`; there is no "add component" step. Write correct code
+-> against the API below and ground uncertain details in the live docs
+-> (see [Grounding](#grounding-look-it-up-dont-guess)).
+-
+-## Current project context
+-
+-Before writing grid code, read the project to learn what it has:
+-
+-1. **Which packages are installed** - check `package.json` for
+-   `@svgrid/grid` and `@svgrid/enterprise`. Never use an enterprise
+-   symbol (`installEnterprise`, pivot, export) in a
+-   project that only has `@svgrid/grid`.
+-2. **Svelte version** - SvGrid requires **Svelte 5**. Use runes
+-   (`$state`, `$derived`, `$effect`), never legacy stores or `export let`.
+-3. **How the app themes** - grep for `--sg-` in the app's CSS, and for a
+-   dark-mode attribute (`data-theme`, `.dark`). Match the existing
+-   convention instead of inventing a new one. See [theming.md](./rules/theming.md).
+-4. **Existing grids** - if the project already renders `<SvGrid>`, copy
+-   its column/feature conventions rather than introducing a second style.
+-
+-## The minimal grid
+-
+-The smallest correct grid is two arrays and a component. **The shortcut
+-props inject their own features** - you do *not* need `tableFeatures`
+-for the common cases:
+-
+-```svelte
+-<script lang="ts">
+-  import { SvGrid, type GridColumns } from '@svgrid/grid'
+-
+-  type Row = { id: number; name: string; amount: number }
+-  const data = $state<Row[]>([/* ...rows... */])
+-
+-  const columns: GridColumns<Row> = [
+-    { id: 'id',     field: 'id',     header: 'ID',     width: 80 },
+-    { id: 'name',   field: 'name',   header: 'Name' },
+-    { id: 'amount', field: 'amount', header: 'Amount', cellDataType: 'number' },
+-  ]
+-</script>
+-
+-<SvGrid {data} {columns} sortable filterable pageable />
+-```
+-
+-**Typing the columns array.** Use `GridColumns<Row>` (or `GridColumnDef<Row>`
+-for a single column). The underlying `ColumnDef` takes *two* type parameters -
+-a phantom feature bag first, your row type second - so `ColumnDef<Row>` is a
+-compile error and `ColumnDef<{}, Row>[]` is the long form you will see in
+-older docs. All three describe the same shape.
+-
+-## Critical rules
+-
+-These are **always enforced**. Each links to a file with Incorrect/Correct
+-code pairs.
+-
+-### Columns & cells → [columns.md](./rules/columns.md)
+-
+-- **Every column needs a stable `id`.** `field` maps to the data key;
+-  `id` is the identity used by state, sorting, and the API. They can match.
+-- **Custom cells are `{#snippet}`s assigned to `cell`**, not raw HTML in
+-  the column. Snippet params are `{ value, row, column }`.
+-- **Set widths in `ColumnDef` (`width` / `minWidth` / `flex`)**, never
+-  with CSS on the grid's internal nodes - the renderer owns those.
+-- **Use `cellDataType: 'number' | 'date' | 'boolean'`** for alignment,
+-  parsing, and the right default editor, instead of hand-formatting. (The
+-  member is `cellDataType`, not `type`.)
+-
+-### Features & props → [data-and-features.md](./rules/data-and-features.md)
+-
+-- **Prefer the shortcut props** (`sortable`, `filterable`, `pageable`,
+-  `editable`, `groupable`) for the common path - each injects the matching
+-  feature. Reach for `tableFeatures({ ... })` only when you need a feature
+-  with no shortcut, or want explicit control.
+-- **Get the imperative API via `onApiReady`**, hold it in `$state`, and
+-  call methods (`api.setFilter`, `api.exportToCsv`, ...) from handlers.
+-- **Server-side data uses `createServerDataSource`** implementing the
+-  `ServerDataSource` contract, passed as `rowModel={ctl}` - the grid emits
+-  intent, your source fetches the page or block. Don't filter/sort
+-  locally in server mode. Server-side grouping, tree, pivot, transactions
+-  and select-all across unloaded rows are `createServerRowModel` in
+-  `@svgrid/enterprise`, on the same contract and the same prop.
+-
+-### Theming → [theming.md](./rules/theming.md)
+-
+-- **Theme with `--sg-*` CSS custom properties**, declared at `:root` or on
+-  a wrapper - never by targeting Svelte-mangled internal class names.
+-- **For a design system (shadcn, Tailwind, Material)**, either import a
+-  shipped preset (`@svgrid/grid/themes/<id>.css`) or bridge `--sg-*` to the
+-  app's own tokens so dark mode flips for free.
+-- **Dark mode** = redeclare the same `--sg-*` tokens under the app's dark
+-  selector. The grid reads tokens at paint time; no JS listener needed.
+-
+-## Grounding: look it up, don't guess
+-
+-SvGrid ships machine-readable grounding so you never invent an API. When a
+-detail is uncertain, **fetch, don't hallucinate**:
+-
+-| Resource | Use for |
+-| --- | --- |
+-| `https://svgrid.com/llms.txt` | Topic map with one-line summaries - the index to fetch first |
+-| `https://svgrid.com/llms-full.txt` | Every doc page concatenated - deep API detail |
+-| `https://svgrid.com/schemas/column-def.json` | JSON Schema for `ColumnDef` - validate generated columns against it |
+-| `https://svgrid.com/schemas/svgrid-options.json` | JSON Schema for `<SvGrid>` props |
+-
+-If the project uses an MCP client (Claude Desktop, Cursor, Zed, Claude
+-Code), the **`@svgrid/mcp`** server exposes the same facts as callable
+-tools (`svgrid_search`, `svgrid_get`) - prefer it for
+-version-pinned answers. It needs no API key and runs locally.
+-
+-When that server is available, **run `svgrid_check_code` on every file you
+-write** before showing it to the user. It validates the file against the
+-exported surface of the installed version and compiles it, and returns the
+-exact replacement for each problem. It is the difference between code that
+-looks right and code that is right.
+-
+-## Package boundary
+-
+-- **`@svgrid/grid`** (MIT) - the grid, all features, theming, server data,
+-  headless engine. Everything in the rules files is here unless marked.
+-- **`@svgrid/enterprise`** (commercial) - `installEnterprise(api)` adds
+-  export, import, pivot, and the Kanban board + scheduler renderers. Runs
+-  unlicensed with a watermark, so it is safe to scaffold - but only use it
+-  when the package is actually a dependency.
+-- **AI helpers are FREE and live in `@svgrid/grid`** - `setAIProvider`,
+-  `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`,
+-  `aiFindAnomalies`, `mockAIProvider`. Import them from `@svgrid/grid`,
+-  never from `@svgrid/enterprise`.
+-
+-**Never** import from `@sv-grid/core`, `svelte-grid`, or `sv-grid` - those
+-are unrelated projects. The only import specifiers are `@svgrid/grid`,
+-`@svgrid/grid/themes/*.css`, and `@svgrid/enterprise`.
+-
+-## Scaffolding a new project
+-
+-To start a fresh app with the grid already wired up:
+-
+-```bash
+-npm create @svgrid@latest my-app        # interactive
+-npm create @svgrid@latest my-app -- --template admin-dashboard
+-```
+-
+-Templates: `minimal` (Vite + Svelte 5) and `admin-dashboard` (SvelteKit +
+-Tailwind). Use the project's package runner (`npm create` / `pnpm create` /
+-`yarn create`).
+-
+-## Workflow
+-
+-1. **Read context** - installed `@svgrid/*` packages, Svelte 5, theming
+-   convention, any existing grid.
+-2. **Write against the API** - start from the minimal grid, add shortcut
+-   props, then columns/cells/editing as needed.
+-3. **Ground the uncertain bits** - fetch `llms.txt` / a schema, or use the
+-   `@svgrid/mcp` tools, before inventing a prop or method name.
+-4. **Match the theme** - reuse the app's `--sg-*` tokens or a preset; wire
+-   dark mode through the existing selector.
+-5. **Review** - confirm every column has an `id`, no CSS targets internal
+-   nodes, and no enterprise symbol leaks into a grid-only project.
+-6. **Verify** - if the `@svgrid/mcp` server is connected, run
+-   `svgrid_check_code` on each file and fix everything it reports. Do not
+-   hand over code that has not passed it.
+-
+-## Detailed references
+-
+-- [rules/columns.md](./rules/columns.md) - ColumnDef, custom cells, widths, types, formatting, editors
+-- [rules/data-and-features.md](./rules/data-and-features.md) - feature toggles, the SvGridApi, selection, server-side data
+-- [rules/theming.md](./rules/theming.md) - `--sg-*` tokens, dark mode, design-system presets, the shadcn bridge
++---
++name: svgrid
++description: Writes, fixes, and reviews SvGrid data-grid code in Svelte 5 projects - columns, features, inline editing, filtering, theming with --sg-* tokens, server-side data, the built-in AI helpers, and the enterprise add-on (export/import/pivot). Provides project context, the ColumnDef and <SvGrid> API surface, and correct-vs-incorrect patterns. Applies when working with @svgrid/grid, @svgrid/enterprise, <SvGrid>, ColumnDef, SvGridApi, or any project that imports from @svgrid/*.
++user-invocable: false
++allowed-tools: Bash(npm create @svgrid@latest *), Bash(pnpm create @svgrid *), Bash(yarn create @svgrid *), Bash(npx @svgrid/mcp *), Bash(pnpm dlx @svgrid/mcp *)
++---
++
++# SvGrid
++
++SvGrid is a modern **Svelte 5** data grid: a headless core engine paired
++with a render component (`<SvGrid>`). It scales from a 10-row read-only
++table to a virtualized 100k-row editing surface with grouping, filtering,
++server-side data, and full keyboard + screen-reader support. Two packages:
++`@svgrid/grid` (MIT) and `@svgrid/enterprise` (commercial add-on).
++
++> **This is a library, not a source-copy CLI.** You `import` from
++> `@svgrid/grid`; there is no "add component" step. Write correct code
++> against the API below and ground uncertain details in the live docs
++> (see [Grounding](#grounding-look-it-up-dont-guess)).
++
++## Current project context
++
++Before writing grid code, read the project to learn what it has:
++
++1. **Which packages are installed** - check `package.json` for
++   `@svgrid/grid` and `@svgrid/enterprise`. Never use an enterprise
++   symbol (`installEnterprise`, pivot, export) in a
++   project that only has `@svgrid/grid`.
++2. **Svelte version** - SvGrid requires **Svelte 5**. Use runes
++   (`$state`, `$derived`, `$effect`), never legacy stores or `export let`.
++3. **How the app themes** - grep for `--sg-` in the app's CSS, and for a
++   dark-mode attribute (`data-theme`, `.dark`). Match the existing
++   convention instead of inventing a new one. See [theming.md](./rules/theming.md).
++4. **Existing grids** - if the project already renders `<SvGrid>`, copy
++   its column/feature conventions rather than introducing a second style.
++
++## The minimal grid
++
++The smallest correct grid is two arrays and a component. **The shortcut
++props inject their own features** - you do *not* need `tableFeatures`
++for the common cases:
++
++```svelte
++<script lang="ts">
++  import { SvGrid, type GridColumns } from '@svgrid/grid'
++
++  type Row = { id: number; name: string; amount: number }
++  const data = $state<Row[]>([/* ...rows... */])
++
++  const columns: GridColumns<Row> = [
++    { id: 'id',     field: 'id',     header: 'ID',     width: 80 },
++    { id: 'name',   field: 'name',   header: 'Name' },
++    { id: 'amount', field: 'amount', header: 'Amount', cellDataType: 'number' },
++  ]
++</script>
++
++<SvGrid {data} {columns} sortable filterable pageable />
++```
++
++**Typing the columns array.** Use `GridColumns<Row>` (or `GridColumnDef<Row>`
++for a single column). The underlying `ColumnDef` takes *two* type parameters -
++a phantom feature bag first, your row type second - so `ColumnDef<Row>` is a
++compile error and `ColumnDef<{}, Row>[]` is the long form you will see in
++older docs. All three describe the same shape.
++
++## Critical rules
++
++These are **always enforced**. Each links to a file with Incorrect/Correct
++code pairs.
++
++### Columns & cells → [columns.md](./rules/columns.md)
++
++- **Every column needs a stable `id`.** `field` maps to the data key;
++  `id` is the identity used by state, sorting, and the API. They can match.
++- **Custom cells are `{#snippet}`s assigned to `cell`**, not raw HTML in
++  the column. Snippet params are `{ value, row, column }`.
++- **Set widths in `ColumnDef` (`width` / `minWidth` / `flex`)**, never
++  with CSS on the grid's internal nodes - the renderer owns those.
++- **Use `cellDataType: 'number' | 'date' | 'boolean'`** for alignment,
++  parsing, and the right default editor, instead of hand-formatting. (The
++  member is `cellDataType`, not `type`.)
++
++### Features & props → [data-and-features.md](./rules/data-and-features.md)
++
++- **Prefer the shortcut props** (`sortable`, `filterable`, `pageable`,
++  `editable`, `groupable`) for the common path - each injects the matching
++  feature. Reach for `tableFeatures({ ... })` only when you need a feature
++  with no shortcut, or want explicit control.
++- **Get the imperative API via `onApiReady`**, hold it in `$state`, and
++  call methods (`api.setFilter`, `api.exportToCsv`, ...) from handlers.
++- **Server-side data uses `createServerDataSource`** implementing the
++  `ServerDataSource` contract, passed as `rowModel={ctl}` - the grid emits
++  intent, your source fetches the page or block. Don't filter/sort
++  locally in server mode. Server-side grouping, tree, pivot, transactions
++  and select-all across unloaded rows are `createServerRowModel` in
++  `@svgrid/enterprise`, on the same contract and the same prop.
++
++### Theming → [theming.md](./rules/theming.md)
++
++- **Theme with `--sg-*` CSS custom properties**, declared at `:root` or on
++  a wrapper - never by targeting Svelte-mangled internal class names.
++- **For a design system (shadcn, Tailwind, Material)**, either import a
++  shipped preset (`@svgrid/grid/themes/<id>.css`) or bridge `--sg-*` to the
++  app's own tokens so dark mode flips for free.
++- **Dark mode** = redeclare the same `--sg-*` tokens under the app's dark
++  selector. The grid reads tokens at paint time; no JS listener needed.
++
++## Grounding: look it up, don't guess
++
++SvGrid ships machine-readable grounding so you never invent an API. When a
++detail is uncertain, **fetch, don't hallucinate**:
++
++| Resource | Use for |
++| --- | --- |
++| `https://svgrid.com/llms.txt` | Topic map with one-line summaries - the index to fetch first |
++| `https://svgrid.com/llms-full.txt` | Every doc page concatenated - deep API detail |
++| `https://svgrid.com/schemas/column-def.json` | JSON Schema for `ColumnDef` - validate generated columns against it |
++| `https://svgrid.com/schemas/svgrid-options.json` | JSON Schema for `<SvGrid>` props |
++
++If the project uses an MCP client (Claude Desktop, Cursor, Zed, Claude
++Code), the **`@svgrid/mcp`** server exposes the same facts as callable
++tools (`svgrid_search`, `svgrid_get`) - prefer it for
++version-pinned answers. It needs no API key and runs locally.
++
++When that server is available, **run `svgrid_check_code` on every file you
++write** before showing it to the user. It validates the file against the
++exported surface of the installed version and compiles it, and returns the
++exact replacement for each problem. It is the difference between code that
++looks right and code that is right.
++
++## Package boundary
++
++- **`@svgrid/grid`** (MIT) - the grid, all features, theming, server data,
++  headless engine. Everything in the rules files is here unless marked.
++- **`@svgrid/enterprise`** (commercial) - `installEnterprise(api)` adds
++  export, import, pivot, and the Kanban board, scheduler + Gantt renderers. Runs
++  unlicensed with a watermark, so it is safe to scaffold - but only use it
++  when the package is actually a dependency.
++- **AI helpers are FREE and live in `@svgrid/grid`** - `setAIProvider`,
++  `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`,
++  `aiFindAnomalies`, `mockAIProvider`. Import them from `@svgrid/grid`,
++  never from `@svgrid/enterprise`.
++
++**Never** import from `@sv-grid/core`, `svelte-grid`, or `sv-grid` - those
++are unrelated projects. The only import specifiers are `@svgrid/grid`,
++`@svgrid/grid/themes/*.css`, and `@svgrid/enterprise`.
++
++## Scaffolding a new project
++
++To start a fresh app with the grid already wired up:
++
++```bash
++npm create @svgrid@latest my-app        # interactive
++npm create @svgrid@latest my-app -- --template admin-dashboard
++```
++
++Templates: `minimal` (Vite + Svelte 5) and `admin-dashboard` (SvelteKit +
++Tailwind). Use the project's package runner (`npm create` / `pnpm create` /
++`yarn create`).
++
++## Workflow
++
++1. **Read context** - installed `@svgrid/*` packages, Svelte 5, theming
++   convention, any existing grid.
++2. **Write against the API** - start from the minimal grid, add shortcut
++   props, then columns/cells/editing as needed.
++3. **Ground the uncertain bits** - fetch `llms.txt` / a schema, or use the
++   `@svgrid/mcp` tools, before inventing a prop or method name.
++4. **Match the theme** - reuse the app's `--sg-*` tokens or a preset; wire
++   dark mode through the existing selector.
++5. **Review** - confirm every column has an `id`, no CSS targets internal
++   nodes, and no enterprise symbol leaks into a grid-only project.
++6. **Verify** - if the `@svgrid/mcp` server is connected, run
++   `svgrid_check_code` on each file and fix everything it reports. Do not
++   hand over code that has not passed it.
++
++## Detailed references
++
++- [rules/columns.md](./rules/columns.md) - ColumnDef, custom cells, widths, types, formatting, editors
++- [rules/data-and-features.md](./rules/data-and-features.md) - feature toggles, the SvGridApi, selection, server-side data
++- [rules/theming.md](./rules/theming.md) - `--sg-*` tokens, dark mode, design-system presets, the shadcn bridge

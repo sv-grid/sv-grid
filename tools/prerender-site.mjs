@@ -28,6 +28,7 @@ import { clampDescription, firstSentence } from './lib/seo-text.mjs'
 import { demoAboutModel, renderDemoAboutHtml } from './lib/demo-page.mjs'
 import { parseDemoRegistry, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
+import { isReleased, resolveSolution } from './lib/releases.mjs'
 import { compareSeo, compareKeywords, compareJsonLd, COMPARE_HUB } from './lib/compare-meta.mjs'
 import { comparePageModel, renderCompareHtml, compareHubModel, renderCompareHubHtml } from './lib/compare-page.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
@@ -377,7 +378,9 @@ async function parseSolutions() {
   try {
     const raw = await readFile(SOLUTIONS_FILE, 'utf-8')
     const data = JSON.parse(raw.replace(/^﻿/, ''))
-    return Array.isArray(data.solutions) ? data.solutions : []
+    // Each page as it reads today: a feature with a release date shows its
+    // prerelease copy until the morning of the date (tools/lib/releases.mjs).
+    return Array.isArray(data.solutions) ? data.solutions.map((s) => resolveSolution(s)) : []
   } catch {
     return []
   }
@@ -568,7 +571,7 @@ function homeCrawlBody(faq) {
   let html = '<main class="prerender-home" data-prerender="1">'
   html += '<h1>SvGrid - the Svelte data grid. Headless-first. Render-ready.</h1>'
   html += '<p>SvGrid is a Svelte data grid: a headless engine you can compose plus a full-featured render component you can drop in, written for Svelte 5 runes from the first line rather than a React grid wrapped in a Svelte shim. Call it a Svelte datagrid, a Svelte grid or a Svelte table; it is one component, <code>&lt;SvGrid&gt;</code>, from the npm package <code>@svgrid/grid</code>.</p>'
-  html += '<p>Sorting, Excel-style filtering, grouping, virtualization, inline editing and accessibility ship free under the MIT License, with 400+ production-quality examples. The paid <code>@svgrid/enterprise</code> pack adds the Kanban board, Scheduler and Spreadsheet views of the same grid, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.</p>'
+  html += '<p>Sorting, Excel-style filtering, grouping, virtualization, inline editing and accessibility ship free under the MIT License, with 400+ production-quality examples. The paid <code>@svgrid/enterprise</code> pack adds the Kanban board, ' + (isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet') + ' views of the same grid, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.</p>'
   html += `<h2>What the free Svelte data grid includes</h2><ul>${li(free)}</ul>`
   html += `<h2>What @svgrid/enterprise adds</h2><ul>${li(enterprise)}</ul>`
   html += `<h2>Two packages</h2><p><code>npm install @svgrid/grid</code> is the full data grid under the MIT License, including commercial use, with no license key and no row-count cap. <code>npm install @svgrid/enterprise</code> plugs into it: Enterprise - Single App is $599 per developer and Enterprise - Multi App $999 per developer, a perpetual license with one year of updates and support. <a href="${BASE}pricing/">Pricing and the full feature matrix</a>.</p>`
@@ -821,7 +824,7 @@ function faqIndexBody(items) {
 // The three pricing tiers - kept in step with website/src/routes/Pricing.svelte.
 const PRICING_TIERS = [
   { name: 'Community', price: '0', cadence: 'forever', desc: 'The full data grid, MIT-licensed and free for commercial use. No license key, no row-count cap. Sorting, Excel-style filters, grouping, virtualization, inline editing, master/detail, tree, server-side data, and WAI-ARIA.' },
-  { name: 'Enterprise - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the @svgrid/enterprise feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
+  { name: 'Enterprise - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the @svgrid/enterprise feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, ' + (isReleased('gantt') ? 'the Gantt view, ' : '') + 'no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
   { name: 'Enterprise - Multiple Application Developer License', price: '999', cadence: 'per developer', desc: 'For an unlimited number of deployed applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime). Everything in Single Application plus volume / multi-year discounts.' },
 ]
 
@@ -928,7 +931,7 @@ const OG_SECTIONS = {
   api:     { eyebrow: 'API REFERENCE', line1: 'Every prop, type,', line2white: 'and', line2accent: 'export.', sub1: 'SvGrid, ColumnDef, the headless core,', sub2: 'and the imperative SvGridApi.' },
   mcp:     { eyebrow: 'MCP SERVER', line1: 'Your agent writes it.', line2white: 'This', line2accent: 'checks it.', sub1: 'Model Context Protocol server for', sub2: 'Claude, Cursor, Zed, and more.' },
   blog:    { eyebrow: 'BLOG', line1: 'Tips & guides for', line2white: 'the Svelte 5', line2accent: 'data grid.', sub1: 'Sorting, filtering, virtualization, editing,', sub2: 'server-side data, theming, and more.' },
-  svelte:  { eyebrow: 'SOLUTIONS', line1: 'Build it in', line2white: 'Svelte, with', line2accent: 'one prop.', sub1: 'Kanban, scheduler, pivot, spreadsheet,', sub2: 'tree grid, date picker, and more.' },
+  svelte:  { eyebrow: 'SOLUTIONS', line1: 'Build it in', line2white: 'Svelte, with', line2accent: 'one prop.', sub1: isReleased('gantt') ? 'Kanban, scheduler, Gantt, pivot,' : 'Kanban, scheduler, pivot, spreadsheet,', sub2: isReleased('gantt') ? 'spreadsheet, tree grid, and more.' : 'tree grid, date picker, and more.' },
 }
 
 // ---- main ------------------------------------------------------------------

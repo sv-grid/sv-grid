@@ -61,29 +61,42 @@
     x.setDate(x.getDate() + d)
     return iso(x)
   }
+  /**
+   * The inclusive finish of a task that starts `from` days from the anchor
+   * (a Monday) and runs `days` WORKING days: every task starts on a weekday
+   * and ends on one, the way a real plan is typed in.
+   */
+  const wd = (from: number, days: number) => {
+    let d = from
+    for (let left = days; left > 1; left--) {
+      d += d % 7 === 4 ? 3 : 1 // Friday -> Monday
+    }
+    return at(d)
+  }
 
-  // The long chain runs back to back - strip, structure, services,
-  // commissioning, handover - so none of it has a day to give: that is what
-  // makes it critical. Joinery and signage branch off with real room.
+  // The long chain runs back to back in working time - strip, structure,
+  // services, commissioning, handover, each starting the working day after
+  // the last one ends - so none of it has a day to give: that is what makes
+  // it critical. Joinery and signage branch off with real room.
   let rows = $state<Task[]>([
     { id: 'p1', name: 'Shell', trade: 'strip', start: at(0), progress: 0, parentId: null, color: TRADE.strip },
-    { id: 't1', name: 'Strip out', trade: 'strip', start: at(0), end: at(4), progress: 100, parentId: 'p1', color: TRADE.strip, bStart: at(0), bEnd: at(3) },
-    { id: 't2', name: 'Structural works', trade: 'build', start: at(5), end: at(18), progress: 70, parentId: 'p1', color: TRADE.build, bStart: at(4), bEnd: at(15) },
+    { id: 't1', name: 'Strip out', trade: 'strip', start: at(0), end: wd(0, 5), progress: 100, parentId: 'p1', color: TRADE.strip, bStart: at(0), bEnd: wd(0, 4) },
+    { id: 't2', name: 'Structural works', trade: 'build', start: at(7), end: wd(7, 10), progress: 70, parentId: 'p1', color: TRADE.build, bStart: at(7), bEnd: wd(7, 7) },
 
-    { id: 'p2', name: 'Fit-out', trade: 'fit', start: at(19), progress: 0, parentId: null, color: TRADE.fit },
-    { id: 't3', name: 'Services rough-in', trade: 'fit', start: at(19), end: at(32), progress: 30, parentId: 'p2', color: TRADE.fit, bStart: at(16), bEnd: at(29) },
+    { id: 'p2', name: 'Fit-out', trade: 'fit', start: at(21), progress: 0, parentId: null, color: TRADE.fit },
+    { id: 't3', name: 'Services rough-in', trade: 'fit', start: at(21), end: wd(21, 10), progress: 30, parentId: 'p2', color: TRADE.fit, bStart: at(16), bEnd: wd(16, 10) },
     // The short branch: it feeds commissioning too, but finishes with days
     // to spare, so it is not what the handover date turns on.
-    { id: 't4', name: 'Joinery', trade: 'fit', start: at(19), end: at(25), progress: 20, parentId: 'p2', color: TRADE.fit, bStart: at(19), bEnd: at(25) },
-    { id: 't5', name: 'Signage & branding', trade: 'sign', start: at(26), end: at(30), progress: 0, parentId: 'p2', color: TRADE.sign, bStart: at(26), bEnd: at(30) },
+    { id: 't4', name: 'Joinery', trade: 'fit', start: at(21), end: wd(21, 5), progress: 20, parentId: 'p2', color: TRADE.fit, bStart: at(21), bEnd: wd(21, 5) },
+    { id: 't5', name: 'Signage & branding', trade: 'sign', start: at(28), end: wd(28, 3), progress: 0, parentId: 'p2', color: TRADE.sign, bStart: at(28), bEnd: wd(28, 3) },
 
-    { id: 'p3', name: 'Handover', trade: 'sign', start: at(33), progress: 0, parentId: null, color: TRADE.sign },
+    { id: 'p3', name: 'Handover', trade: 'sign', start: at(35), progress: 0, parentId: null, color: TRADE.sign },
     // Pinned: the inspector is booked and cannot come earlier.
-    { id: 't6', name: 'Commissioning', trade: 'fit', start: at(33), end: at(39), progress: 0, parentId: 'p3', color: TRADE.fit, bStart: at(30), bEnd: at(36), con: 'SNET', conDate: at(33) },
+    { id: 't6', name: 'Commissioning', trade: 'fit', start: at(35), end: wd(35, 5), progress: 0, parentId: 'p3', color: TRADE.fit, bStart: at(30), bEnd: wd(30, 5), con: 'SNET', conDate: at(35) },
     // Pinned: the lease says the keys change hands by this date.
-    { id: 't7', name: 'Snagging & handover', trade: 'sign', start: at(40), end: at(46), progress: 0, parentId: 'p3', color: TRADE.sign, bStart: at(37), bEnd: at(42), con: 'FNLT', conDate: at(48) },
+    { id: 't7', name: 'Snagging & handover', trade: 'sign', start: at(42), end: wd(42, 5), progress: 0, parentId: 'p3', color: TRADE.sign, bStart: at(37), bEnd: wd(37, 5), con: 'FNLT', conDate: at(49) },
 
-    { id: 'm1', name: 'Keys handed over', trade: 'sign', start: at(47), progress: 0, parentId: null, milestone: true, color: '#f59e0b' },
+    { id: 'm1', name: 'Keys handed over', trade: 'sign', start: at(49), progress: 0, parentId: null, milestone: true, color: '#f59e0b' },
   ])
 
   const dependencies: GanttDependency[] = [
@@ -130,6 +143,8 @@
     dependencies,
     zoom: 'month',
     weekStartsOn: 1,
+    // Room on the right for the last bars' labels.
+    rangePaddingDays: 14,
 
     // --- the planning layer -------------------------------------------------
     criticalPath: true,
@@ -153,6 +168,9 @@
       }
     },
   }
+
+  // The same rows as a plain table: the Gantt is one view of the grid.
+  let view = $state<'gantt' | 'table'>('gantt')
 </script>
 
 <section class="cp">
@@ -161,13 +179,19 @@
       <strong>Unit 4 fit-out</strong>
       <span class="cp-sub">
         Red rings mark the chain with no slack - slip any of it and the handover moves.
-        Grey ghosts are the agreed baseline; red ones mean the plan has drifted late.
+        Grey ghosts are the agreed baseline, red ones mean the plan has drifted late,
+        and the pins are the two dates the contract holds tasks to.
       </span>
     </div>
     <div class="cp-legend">
       <span class="cp-key"><span class="cp-swatch cp-swatch-crit"></span>Critical</span>
       <span class="cp-key"><span class="cp-swatch cp-swatch-base"></span>Baseline</span>
       <span class="cp-key"><span class="cp-swatch cp-swatch-late"></span>Behind it</span>
+      <span class="cp-key"><span class="cp-pin"></span>Pinned date</span>
+    </div>
+    <div class="cp-seg" role="tablist" aria-label="View">
+      <button class="cp-seg-btn" role="tab" aria-selected={view === 'gantt'} class:cp-on={view === 'gantt'} onclick={() => (view = 'gantt')}>Gantt</button>
+      <button class="cp-seg-btn" role="tab" aria-selected={view === 'table'} class:cp-on={view === 'table'} onclick={() => (view = 'table')}>Table</button>
     </div>
   </header>
 
@@ -179,14 +203,18 @@
   {/if}
 
   <div class="cp-body">
-    <SvGrid
-      columnResize
-      data={rows}
-      columns={columns}
-      getRowId={(r) => r.id}
-      containerHeight="100%"
-      gantt={cfg}
-    />
+    {#if view === 'gantt'}
+      <SvGrid
+        columnResize
+        data={rows}
+        columns={columns}
+        getRowId={(r) => r.id}
+        containerHeight="100%"
+        gantt={cfg}
+      />
+    {:else}
+      <SvGrid columnResize data={rows} columns={columns} getRowId={(r) => r.id} containerHeight="100%" sortable fitColumns />
+    {/if}
   </div>
 </section>
 
@@ -211,12 +239,34 @@
   }
   .cp-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .cp-sub { font-size: 0.78rem; color: var(--sg-muted, #6b7280); }
-  .cp-legend { display: flex; flex: none; gap: 12px; padding-top: 3px; }
+  .cp-legend { display: flex; flex: none; gap: 12px; padding-top: 3px; margin-left: auto; }
+  .cp-seg { display: inline-flex; flex: none; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
+  .cp-seg-btn { padding: 5px 12px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 0.8rem; cursor: pointer; }
+  .cp-seg-btn:hover { background: color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent); }
+  .cp-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .cp-on:hover { background: var(--sg-accent, #4f46e5); }
+
   .cp-key { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; color: var(--sg-muted, #6b7280); }
   .cp-swatch { width: 12px; height: 8px; border-radius: 2px; flex: none; }
   .cp-swatch-crit { background: transparent; box-shadow: 0 0 0 2px #dc2626; }
   .cp-swatch-base { height: 5px; background: color-mix(in srgb, var(--sg-fg, #1f2937) 28%, transparent); }
   .cp-swatch-late { height: 5px; background: color-mix(in srgb, #dc2626 45%, transparent); }
+  .cp-pin {
+    width: 0;
+    height: 10px;
+    border-left: 1.5px dashed color-mix(in srgb, var(--sg-fg, #1f2937) 60%, transparent);
+    position: relative;
+    margin: 0 5px;
+  }
+  .cp-pin::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -5.5px;
+    border: 5px solid transparent;
+    border-top: 6px solid color-mix(in srgb, var(--sg-fg, #1f2937) 60%, transparent);
+    border-bottom: 0;
+  }
 
   .cp-path {
     margin: 0;

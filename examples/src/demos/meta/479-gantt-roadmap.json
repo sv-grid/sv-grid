@@ -1,0 +1,24 @@
+{
+  "description": "A product roadmap on the Svelte 5 data grid's Gantt view: three teams, their initiatives across four quarters, and the releases that cut across them as milestones. A task snippet draws the owner's initials and a status chip inside each bar, colour is by status rather than team, a custom tooltip carries the effort and a one-line summary, the header chips filter the plan by status, and a month / quarter / year zoom ladder drills in with Ctrl+wheel.",
+  "keywords": [
+    "svelte roadmap gantt",
+    "svelte 5 product roadmap component",
+    "svelte gantt custom bar snippet",
+    "svelte quarterly timeline chart",
+    "svelte gantt status filter"
+  ],
+  "faq": [
+    {
+      "question": "How is the bar body customised?",
+      "answer": "Through the gantt config's task snippet, which receives the row and replaces the built-in label. The snippet here renders an avatar, the name and a status chip. Summary bars keep their plain label, because a phase's spine has no room for a body."
+    },
+    {
+      "question": "How does the status filter work?",
+      "answer": "The chips hand the grid a filtered copy of the rows. The Gantt draws whatever rows the grid holds, so filtering is the grid's job and the view needs no filter API of its own. The team rows are always kept so an empty team still reads as a team."
+    },
+    {
+      "question": "What does the zoom ladder control?",
+      "answer": "zoomLevels lists the axis presets the stepper and Ctrl+wheel move between; here month, quarter and year. The chart opens on the quarter preset so the whole year fits."
+    }
+  ]
+}

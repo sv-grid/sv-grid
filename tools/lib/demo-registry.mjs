@@ -28,8 +28,13 @@ function unesc(s) {
  * carry a multi-line opts object with pro / seoTitle / seoDescription, so the
  * source is sliced between calls and the overrides read per chunk.
  */
+import { pendingDemoIds } from './releases.mjs'
+
 export async function parseDemoRegistry(root) {
   const src = await readFile(join(root, 'website', 'src', 'lib', 'demos.ts'), 'utf-8')
+  // Demos of a feature whose release date has not come are not in the gallery
+  // yet, so they are not in the prerender, the search index or the manifests.
+  const pending = pendingDemoIds()
   const re = /demo\(\s*'([^']+)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'((?:\\.|[^'\\])*)'\s*,\s*'([^']+)'/g
   const marks = []
   let m
@@ -38,6 +43,7 @@ export async function parseDemoRegistry(root) {
   }
   const out = []
   for (let i = 0; i < marks.length; i += 1) {
+    if (pending.has(marks[i].id)) continue
     const chunk = src.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : marks[i].at + 1000)
     const st = chunk.match(/seoTitle:\s*'((?:\\.|[^'\\])*)'/)
     const sd = chunk.match(/seoDescription:\s*'((?:\\.|[^'\\])*)'/)

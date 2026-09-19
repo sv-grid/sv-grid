@@ -1074,6 +1074,61 @@ the served copies.
 - Export: print / PDF of the chart through `exportGrid`.
 - A real inner `<SvGrid>` for the task pane (section 11).
 
+## 9.5 Gap list against the established commercial Gantt components (2026-09-19)
+
+Measured against the feature inventories of the two commercial Gantt
+components most often bought instead of building one (their public feature
+pages and demo indexes, fetched 2026-09-19), after the second QA pass. What
+ships is in the config surface (`GanttConfig` + `GanttProConfig`); nothing
+below is a guess about our side.
+
+**Ships and matches:** WBS tree with rolled-up summary bars, milestones, the
+four link types with lag/lead, drawing and removing links, cycle refusal,
+violated links drawn, forward-only cascade over working days, one working
+calendar (non-working days + holidays, working-day durations), zoom day to
+year with Ctrl+wheel and edge auto-scroll, today line, min/max window, a
+task pane from the grid's columns with `__duration` / `__progress` /
+`__slack`, splitter, drag move/resize/progress, add/delete, undo/redo,
+drawer, task + tooltip snippets, context menu, search, critical path in
+working time, baselines, six constraint types, folded weekends, a resource
+load strip with capacity, row virtualization, keyboard, dark mode, touch.
+
+**Missing, by weight (what a buyer of either product would look for):**
+
+| Area | Gap | Effort |
+| --- | --- | --- |
+| Scheduling | Task types / effort-driven scheduling (fixed units, work, duration; effort + assignment units). We schedule by duration only. | L |
+| Scheduling | Per-task manual scheduling and inactive tasks (a task the cascade and the critical path leave alone). | M |
+| Scheduling | ASAP / ALAP on top of the six date constraints. | S |
+| Scheduling | Split tasks (segments with gaps). | L |
+| Time | Hour-level working time and hour/minute durations; zoom below a day. The scheduler has the axis; the Gantt stops at days. | L |
+| Time | Multiple calendars (per task, per resource), per-task non-working shading. | L |
+| Time | Event markers / named time ranges beyond the today line (a highlighted span, a deadline flag with a late indicator). | S |
+| Time | Time zones (dates are local). | M |
+| Editing | Inline cell editing in the task pane, header sort on click, per-column resize and reorder in the pane. The pane is a custom table, not an inner grid (plan section 11). | M |
+| Editing | Indent / outdent, row drag to reorder and reparent, copy / paste of tasks. | M |
+| Editing | Predecessor editing as text ("3FS+2d") in the table or the drawer; editing a link's type and lag after it is drawn; re-attaching an arrow by dragging its end. | M |
+| Editing | A tabbed task editor (general / predecessors / successors / resources / notes) - the drawer is a form over the columns. | M |
+| Editing | Conflict dialogs: a dropped task that breaks a constraint or a link gets a dashed arrow, not a choice (move anyway / remove link / cancel). | S |
+| Editing | Live cascade preview while dragging (successors move with the pointer); ours moves them on drop. | S |
+| Views | Progress line / S-curve / planned percent done, rollups of children onto the summary bar, early/late start and finish columns (the pass computes them; only slack is a column), WBS code column, labels above/below/left of a bar. | S-M each |
+| Views | Grouping by a field with collapsible headers, aggregation rows, multi-select of bars and cell selection. | M |
+| Views | Custom timeline header formats or a header snippet; a milestone snippet (`task` covers task bars only). | S |
+| Views | Multiple baselines and saved versions to compare. | M |
+| Resources | More than one resource per task, assignment units (%), a resource picker in the editor, a resource-centred view / utilization panel. The strip counts tasks against a capacity. | L |
+| Data | Load on demand for children; import from Microsoft Project / Primavera. | M / L |
+| Output | PDF / PNG of the chart, the chart in the print view, Excel export of the plan with the timeline. The grid exports the rows; the chart has no output at all. | M |
+| Platform | Localization: only the search placeholder and the upsell are in `grid-messages`; about 27 UI strings (Collapse all, Zoom in, Remove link, Slack, the tooltip) are hard-coded English. RTL is not handled. | S / M |
+| Scale | Every arrow is drawn (600 paths in demo 480); rows are virtualized, arrows are not. Fine to a few thousand links, not ten thousand tasks. | M |
+
+**Suggested order:** (1) localization of the UI strings and ASAP/ALAP,
+because both are cheap and turn up in every evaluation; (2) event markers
+and deadlines; (3) the task pane as an inner grid (inline editing, sort,
+resize, reorder, indent/outdent) since it unlocks most of the editing rows;
+(4) chart PDF/PNG and print; (5) multi-resource assignment with units and
+a resource view; (6) hour-level time and task types last - each is a model
+change that touches the cascade, the critical path and the calendar.
+
 ## 10. PR slicing, order and acceptance criteria
 
 1. Phase 0 (grid). Types, seam, `SvGrid.svelte` branch, messages, the two

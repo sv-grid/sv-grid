@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'n
 import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseDocFrontmatter, sectionOf, SECTION_TITLES } from '../../../tools/lib/doc-meta.mjs'
+import { isPendingDoc, pendingDemoIds } from '../../../tools/lib/releases.mjs'
 import { parseDemoRegistry } from '../../../tools/lib/demo-registry.mjs'
 import { buildApiSurface } from './api-surface.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from '../../../tools/lib/compare-data.mjs'
@@ -46,7 +47,10 @@ const categoryById = await (async () => {
   }
 })()
 
-const examples = readAll(demosDir, '.svelte').map((path) => {
+// A feature that has not reached its release date is not in the manifests:
+// the server would otherwise answer with demos and docs the site does not show.
+const pendingDemos = pendingDemoIds()
+const examples = readAll(demosDir, '.svelte').filter((path) => !pendingDemos.has(path.split(/[\\/]/).pop().replace('.svelte', ''))).map((path) => {
   const base = path.split(/[\\/]/).pop().replace('.svelte', '')
   const source = readFileSync(path, 'utf8')
   // Extract a short blurb from the leading JSDoc-style comment if any.
@@ -74,6 +78,7 @@ const examples = readAll(demosDir, '.svelte').map((path) => {
 
 const routedDocs = readAll(docsDir, '.md')
   .filter((p) => !p.includes('examples-plan'))
+  .filter((p) => !isPendingDoc(relative(docsDir, p).replaceAll('\\', '/').replace(/\.md$/, '')))
   .map((path) => {
     // Search-facing frontmatter (seoTitle etc.) is for the website; the model
     // gets the page body only.

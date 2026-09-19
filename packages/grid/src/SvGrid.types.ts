@@ -1249,8 +1249,11 @@ export type GanttConfig<
    */
   autoReschedule?: boolean;
   /**
-   * Cascaded starts land on a working day (see `nonWorkingDays` / `holidays`).
-   * Default `true`.
+   * Schedule in working time (see `nonWorkingDays` / `holidays`): a moved
+   * or cascaded task lands on a working day and keeps its WORKING length, so
+   * a five-day task dragged over a weekend stays five days of work, and the
+   * critical path measures slack in working days. `false` schedules in
+   * calendar time. Default `true`.
    */
   respectWorkingTime?: boolean;
   /** Fired with the cascaded shifts after a move / resize (never mutates rows). */
@@ -1347,7 +1350,11 @@ export type GanttConfig<
   onTaskDelete?: (row: TData) => void;
 
   // --- chrome -----------------------------------------------------------------
-  /** Custom bar body. Receives the row. Omit for the built-in label. */
+  /**
+   * Custom body for a TASK bar. Receives the row. Omit for the built-in label.
+   * A phase's summary bar is a thin spine with no room for a body, so it keeps
+   * its plain label; a milestone has no body at all.
+   */
   task?: Snippet<[TData]>;
   /**
    * Hover tooltip for a bar. A `Snippet<[TData]>` for custom content, or `true`

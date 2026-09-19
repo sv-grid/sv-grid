@@ -266,6 +266,16 @@ describe('SvGridGantt - the axis', () => {
     destroy()
   })
 
+  it('magnifies with "+" and steps back with "-"', () => {
+    const { target, destroy } = mountGantt({ zoom: 'month' })
+    expect(target.querySelector('[aria-label="Zoom in"]')!.textContent).toBe('+')
+    expect(target.querySelector('[aria-label="Zoom out"]')!.textContent).toBe('-')
+    target.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!.click()
+    flushSync()
+    expect(target.querySelector('.sv-gantt-zoom-label')!.textContent).toBe('week')
+    destroy()
+  })
+
   it('offers only the presets it was given', () => {
     const { target, destroy } = mountGantt({ zoomLevels: ['week', 'month'], zoom: 'week' })
     const zoomIn = target.querySelector<HTMLButtonElement>('[aria-label="Zoom in"]')!
@@ -627,13 +637,59 @@ describe('SvGridGantt - editing', () => {
     destroy()
   })
 
-  it('lands a move on a working day when respectWorkingTime is on', () => {
-    // The 12th is a Saturday; the drop slides to Monday the 14th.
+  it('lands a move on the NEAREST working day when respectWorkingTime is on', () => {
+    // The 12th is a Saturday and goes back to Friday the 11th; the 13th is a
+    // Sunday and goes on to Monday the 14th. Always snapping forward made a
+    // bar leap two days ahead of the pointer as soon as it entered a weekend.
+    const saturday = vi.fn()
+    const a = mountGantt({ ...editable, onTaskMove: saturday })
+    dragBy(barFor(a.target, 't1')!, stubGeometry(a.target, pxPerDay()) * 5)
+    expect(saturday.mock.calls[0]![0].start.getTime()).toBe(day(11).getTime())
+    a.destroy()
+    const sunday = vi.fn()
+    const b = mountGantt({ ...editable, onTaskMove: sunday })
+    dragBy(barFor(b.target, 't1')!, stubGeometry(b.target, pxPerDay()) * 6)
+    expect(sunday.mock.calls[0]![0].start.getTime()).toBe(day(14).getTime())
+    b.destroy()
+  })
+
+  it('keeps a moved task\'s WORKING days, not its calendar span', () => {
+    // Synthesis runs Wed 9th to Fri 11th: three working days. Dragged two
+    // days on it starts Friday and runs Fri, Mon, Tue - ending Wednesday the
+    // 16th - rather than keeping three calendar days and shrinking to one
+    // day of work before the weekend.
     const onTaskMove = vi.fn()
     const { target, destroy } = mountGantt({ ...editable, onTaskMove })
     const d = stubGeometry(target, pxPerDay())
-    dragBy(barFor(target, 't1')!, d * 5)
-    expect(onTaskMove.mock.calls[0]![0].start.getTime()).toBe(day(14).getTime())
+    dragBy(barFor(target, 't2')!, d * 2)
+    const e = onTaskMove.mock.calls[0]![0]
+    expect(e.start.getTime()).toBe(day(11).getTime())
+    expect(e.end.getTime()).toBe(day(16).getTime())
+    destroy()
+
+    // With working time off the calendar span travels as it is.
+    const plain = vi.fn()
+    const off = mountGantt({ ...editable, onTaskMove: plain, respectWorkingTime: false })
+    const d2 = stubGeometry(off.target, pxPerDay())
+    dragBy(barFor(off.target, 't2')!, d2 * 2)
+    expect(plain.mock.calls[0]![0].end.getTime()).toBe(day(14).getTime())
+    off.destroy()
+  })
+
+  it('keeps every task under a moved phase on working days at its own length', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, onTaskMove })
+    const d = stubGeometry(target, pxPerDay())
+    // Discovery moves three days: Interviews (Mon-Tue) lands Thursday and
+    // keeps two working days; Synthesis (Wed-Fri) would land Saturday, so it
+    // starts Monday the 14th and runs three working days to Thursday.
+    dragBy(barFor(target, 'p1')!, d * 3)
+    const e = onTaskMove.mock.calls[0]![0]
+    const by = Object.fromEntries(e.subtree.map((s: any) => [s.row.id, s]))
+    expect(by.t1.start.getTime()).toBe(day(10).getTime())
+    expect(by.t1.end.getTime()).toBe(day(12).getTime())
+    expect(by.t2.start.getTime()).toBe(day(14).getTime())
+    expect(by.t2.end.getTime()).toBe(day(17).getTime())
     destroy()
   })
 
@@ -714,6 +770,50 @@ describe('SvGridGantt - editing', () => {
     expect(onDependenciesChange).toHaveBeenCalled()
     const moves = onDependenciesChange.mock.calls[0]![0]
     expect(moves.map((m: any) => m.id)).toContain('t2')
+    destroy()
+  })
+
+  it('leaves a task dropped before its predecessor where it landed, with the link drawn as violated', () => {
+    const onDependenciesChange = vi.fn()
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({
+      ...editable,
+      nonWorkingDays: [],
+      dependencies: [{ id: 'd1', from: 't1', to: 't2' }],
+      onDependenciesChange,
+      onTaskMove,
+    })
+    const d = stubGeometry(target, pxPerDay())
+    // Synthesis back to the 7th, under Interviews (7th-8th). It used to spring
+    // forward to the 9th again through the cascade, so the drop did nothing.
+    dragBy(barFor(target, 't2')!, -d * 2)
+    expect(onTaskMove).toHaveBeenCalledTimes(1)
+    expect(onTaskMove.mock.calls[0]![0].start).toEqual(day(7))
+    expect(onDependenciesChange).not.toHaveBeenCalled()
+    expect(target.querySelectorAll('.sv-gantt-dep-line.sv-gantt-dep-bad')).toHaveLength(1)
+    destroy()
+  })
+
+  it('Escape during a pointer drag puts the bar back', () => {
+    const onTaskMove = vi.fn()
+    const { target, destroy } = mountGantt({ ...editable, nonWorkingDays: [], onTaskMove })
+    const d = stubGeometry(target, pxPerDay())
+    const el = barFor(target, 't3')!
+    const before = el.getAttribute('aria-label')
+    const r = el.getBoundingClientRect()
+    const x0 = r.left + r.width / 2
+    const y0 = r.top + r.height / 2
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: x0, clientY: y0 }))
+    window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x0 + d * 3, clientY: y0 }))
+    flushSync()
+    expect(el.getAttribute('aria-label')).not.toBe(before)
+    // The bar has no focus during a pointer drag (pointerdown is prevented),
+    // so the key has to be caught on the window.
+    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x0 + d * 3, clientY: y0 }))
+    flushSync()
+    expect(el.getAttribute('aria-label')).toBe(before)
+    expect(onTaskMove).not.toHaveBeenCalled()
     destroy()
   })
 
@@ -953,10 +1053,66 @@ describe('SvGridGantt - the context menu', () => {
     expect(menu()).toBeNull()
     destroy()
   })
+
+  describe('on an arrow', () => {
+    // A right-click on the chart body is hit-tested against the arrow
+    // geometry, because the arrows layer takes no pointer events (bars stay
+    // draggable under it). jsdom has no layout, so the body's rect is 0,0
+    // and body coordinates ARE client coordinates.
+    const onArrow = (target: HTMLElement) => {
+      const path = target.querySelector<SVGPathElement>('.sv-gantt-dep-line')!
+      const [, x1, y1] = /M([\d.]+),([\d.]+)/.exec(path.getAttribute('d')!)!
+      // Two px along the first, horizontal run and one px below it.
+      target.querySelector('.sv-gantt-body')!.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: Number(x1) + 2, clientY: Number(y1) + 1 }),
+      )
+      flushSync()
+    }
+
+    it('offers to remove the link, naming both ends, and fires onDependencyRemove', () => {
+      const onDependencyRemove = vi.fn()
+      const { target, destroy } = mountGantt({
+        editable: true,
+        dependencies: [{ id: 'd1', from: 't1', to: 't2' }],
+        onDependencyRemove,
+      })
+      onArrow(target)
+      expect(menu()).not.toBeNull()
+      expect(menu()!.textContent).toContain('Remove link')
+      expect(menu()!.textContent).toContain('Interviews')
+      expect(menu()!.textContent).toContain('Synthesis')
+      menu()!.querySelector<HTMLElement>('[role="menuitem"]')!.click()
+      flushSync()
+      expect(onDependencyRemove).toHaveBeenCalledWith('d1')
+      destroy()
+    })
+
+    it('does nothing off the arrow, or without the callback, or read-only', () => {
+      const onDependencyRemove = vi.fn()
+      const wired = mountGantt({ editable: true, dependencies: [{ id: 'd1', from: 't1', to: 't2' }], onDependencyRemove })
+      // Far from any arrow.
+      wired.target.querySelector('.sv-gantt-body')!.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5000, clientY: 5000 }),
+      )
+      flushSync()
+      expect(menu()).toBeNull()
+      wired.destroy()
+
+      const readOnly = mountGantt({ dependencies: [{ id: 'd1', from: 't1', to: 't2' }], onDependencyRemove })
+      onArrow(readOnly.target)
+      expect(menu()).toBeNull()
+      readOnly.destroy()
+
+      const unwired = mountGantt({ editable: true, dependencies: [{ id: 'd1', from: 't1', to: 't2' }] })
+      onArrow(unwired.target)
+      expect(menu()).toBeNull()
+      unwired.destroy()
+    })
+  })
 })
 
 describe('SvGridGantt - the drawer', () => {
-  it('opens on a click and saves the edited span and percent', async () => {
+  it('opens on a click with the task\'s own values in its fields', async () => {
     const onTaskCommit = vi.fn()
     const { target, destroy } = mountGantt({ editable: true, drawer: true, onTaskCommit })
     barFor(target, 't1')!.click()
@@ -964,6 +1120,13 @@ describe('SvGridGantt - the drawer', () => {
     const dialog = document.querySelector('[role="dialog"]')
     expect(dialog).not.toBeNull()
     expect(dialog!.textContent).toContain('Interviews')
+    // The form is SEEDED with the task, not opened blank: the name and owner
+    // columns, and the percent. (It once passed the values under a prop the
+    // form does not have, and every field opened empty.)
+    const values = [...dialog!.querySelectorAll<HTMLInputElement>('input')].map((i) => i.value)
+    expect(values).toContain('Interviews')
+    expect(values).toContain('Ada')
+    expect(values).toContain('100')
     destroy()
   })
 
@@ -1049,6 +1212,65 @@ describe('SvGridGantt - critical path', () => {
       tableRows(off.target)[0]!.querySelector('.sv-gantt-cell-text')!.textContent?.trim(),
     ).toBe('')
     off.destroy()
+  })
+
+  // A phase over the chain, plus one over the slack branch: the fixture for
+  // everything a folded phase must still get right.
+  const phased: Task[] = [
+    { id: 'ph', name: 'Works', parentId: null, start: '2026-09-07' },
+    ...chain.slice(0, 3).map((t) => ({ ...t, parentId: 'ph' })),
+    { id: 'pp', name: 'Admin', parentId: null, start: '2026-09-07' },
+    { ...chain[3]!, parentId: 'pp' },
+  ]
+  const phasedCfg = { criticalPath: true, dependencies: deps, tableColumns: ['__slack'] } as Record<string, unknown>
+  const slackAt = (t: HTMLElement, i: number) =>
+    tableRows(t)[i]!.querySelector('.sv-gantt-cell-text')!.textContent?.trim()
+
+  it('gives a phase the least slack of its tasks, not the room after its rollup', () => {
+    const { target, destroy } = mountGantt(phasedCfg as never, phased)
+    // The pass sees the phase in no link, so on its own it would report the
+    // days between the rollup and the project finish: 0 for Works only by
+    // luck, and days of room for Admin that its one task does not have all
+    // of. The phase can slip only as far as its tightest task.
+    expect(slackAt(target, 0)).toBe('0')
+    expect(slackAt(target, 4)).toBe(slackAt(target, 5))
+    destroy()
+  })
+
+  it('keeps the path when a phase is folded, and rings the summary bar', () => {
+    const { target, destroy } = mountGantt(phasedCfg as never, phased)
+    tableRows(target)[0]!.querySelector<HTMLButtonElement>('.sv-gantt-chevron')!.click()
+    flushSync()
+    // The chain is hidden, not gone: the pass still runs over it ...
+    expect(slackAt(target, 0)).toBe('0')
+    // ... and the summary bar standing for it carries the ring.
+    expect(barFor(target, 'ph')!.classList.contains('sv-gantt-critical')).toBe(true)
+    // The branch's phase has room, so it is not ringed.
+    expect(barFor(target, 'pp')!.classList.contains('sv-gantt-critical')).toBe(false)
+    destroy()
+  })
+
+  it('still reports the task ids, not the phases, when folded', () => {
+    const onCriticalPathChange = vi.fn()
+    const { target, destroy } = mountGantt({ ...phasedCfg, onCriticalPathChange } as never, phased)
+    tableRows(target)[0]!.querySelector<HTMLButtonElement>('.sv-gantt-chevron')!.click()
+    flushSync()
+    const last = onCriticalPathChange.mock.calls.at(-1)![0] as string[]
+    expect(last.sort()).toEqual(['c1', 'c2', 'c3'])
+    destroy()
+  })
+
+  it('draws no arrow for a link folded inside one phase', () => {
+    const { target, destroy } = mountGantt(phasedCfg as never, phased)
+    // Open: the chain's two links plus the branch's.
+    expect(target.querySelectorAll('.sv-gantt-dep-line')).toHaveLength(3)
+    tableRows(target)[0]!.querySelector<HTMLButtonElement>('.sv-gantt-chevron')!.click()
+    flushSync()
+    // Folded: c1 -> c2 and c2 -> c3 both re-anchor on the Works summary, a
+    // link from the bar to itself, which used to draw as a hook under it.
+    // Only the branch's link into the phase remains.
+    expect(target.querySelectorAll('.sv-gantt-dep-line')).toHaveLength(1)
+    destroy()
   })
 })
 

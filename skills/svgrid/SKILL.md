@@ -133,7 +133,7 @@ looks right and code that is right.
 - **`@svgrid/grid`** (MIT) - the grid, all features, theming, server data,
   headless engine. Everything in the rules files is here unless marked.
 - **`@svgrid/enterprise`** (commercial) - `installEnterprise(api)` adds
-  export, import, pivot, and the Kanban board, scheduler + Gantt renderers. Runs
+  export, import, pivot, and the Kanban board + scheduler renderers. Runs
   unlicensed with a watermark, so it is safe to scaffold - but only use it
   when the package is actually a dependency.
 - **AI helpers are FREE and live in `@svgrid/grid`** - `setAIProvider`,

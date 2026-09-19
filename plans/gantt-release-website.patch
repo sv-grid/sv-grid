@@ -1,0 +1,180 @@
+--- a/src/content/blog/svar-svelte-datagrid-alternative.md
++++ b/src/content/blog/svar-svelte-datagrid-alternative.md
+@@ -69,7 +69,7 @@
+ 
+ Two levels of grouping, per-group subtotals and a grand total row, from three props. That is the shape of the capability gap: not that the other grid cannot show a table, but that this class of feature is either there or it is a week of your time.
+ 
+-**A headless engine underneath.** `createSvGrid` plus row models exists as a separate layer from the component, so you can build a card list, a Kanban board or a mobile view over the same sorting and filtering state without a second implementation. The board and scheduler views in SvGrid are literally that: different renderers over one engine.
++**A headless engine underneath.** `createSvGrid` plus row models exists as a separate layer from the component, so you can build a card list, a Kanban board or a mobile view over the same sorting and filtering state without a second implementation. The board, scheduler and Gantt views in SvGrid are literally that: different renderers over one engine.
+ 
+ **AI grounding.** `@svgrid/mcp` is an MCP server that answers questions about the grid accurately, so an assistant writing your code gets the real prop names instead of plausible ones. Whether that matters depends entirely on how your team works; if half your code arrives from a model, it matters a lot.
+ 
+--- a/src/content/blog/svelte-headless-table-svelte-5-options.md
++++ b/src/content/blog/svelte-headless-table-svelte-5-options.md
+@@ -67,7 +67,7 @@
+ 
+ **Pick this if** the markup is the part you are tired of. The clearest signal is if you have hand-rolled virtualization, a filter menu, or column resizing on top of headless-table and you resent maintaining them.
+ 
+-**The honest cost:** you give up DOM control at the component level, and some things genuinely do not come across - `createRender(MyComponent)` cell renderers become snippets, and custom plugins have no equivalent because there is no plugin system to port them into. That is a rewrite, not a migration. Advanced features (export, pivot, board and scheduler views) are a paid add-on; the grid itself is not.
++**The honest cost:** you give up DOM control at the component level, and some things genuinely do not come across - `createRender(MyComponent)` cell renderers become snippets, and custom plugins have no equivalent because there is no plugin system to port them into. That is a rewrite, not a migration. Advanced features (export, pivot, the board, scheduler and Gantt views) are a paid add-on; the grid itself is not.
+ 
+ ## Choosing
+ 
+--- a/src/routes/Home.svelte
++++ b/src/routes/Home.svelte
+@@ -135,7 +135,7 @@
+       name: "@svgrid/enterprise",
+       tag: "Enterprise · from $599/dev",
+       blurb:
+-        "Companion feature pack that plugs into Community: the Kanban board, Scheduler and Excel-style Spreadsheet views of the same grid, the Server-Side Row Model with SQL / REST / Supabase sources, export to Excel (xlsx), PDF and styled HTML, a paginated printable view and pivot tables (CSV, TSV and JSON export are already free in the grid). Enterprise - Single App ($599) or Enterprise - Multi App ($999) Developer License, per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Email support, private Slack, priority bug fixes.",
++        "Companion feature pack that plugs into Community: the Kanban board, Scheduler, Gantt and Excel-style Spreadsheet views of the same grid, the Server-Side Row Model with SQL / REST / Supabase sources, export to Excel (xlsx), PDF and styled HTML, a paginated printable view and pivot tables (CSV, TSV and JSON export are already free in the grid). Enterprise - Single App ($599) or Enterprise - Multi App ($999) Developer License, per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Email support, private Slack, priority bug fixes.",
+       install: "npm install @svgrid/enterprise",
+       cta: { label: "See license tiers", href: "#/pricing" },
+       highlight: true,
+@@ -230,7 +230,7 @@
+     },
+     {
+       q: "What is the difference between @svgrid/grid and @svgrid/enterprise?",
+-      a: "@svgrid/grid is the full grid: sorting, filtering, grouping, virtualization, inline editing, master/detail, tree, accessibility, the sort / filter / page intents for your own backend, and built-in AI helpers (natural-language filter, smart-fill, chart-this). Free under the MIT License. @svgrid/enterprise is a paid companion that adds the Kanban board, Scheduler and Excel-style Spreadsheet views, the Server-Side Row Model with SQL / REST / Supabase sources, export (Excel, PDF, CSV, TSV, HTML), a printable view, and pivot tables, plus direct support.",
++      a: "@svgrid/grid is the full grid: sorting, filtering, grouping, virtualization, inline editing, master/detail, tree, accessibility, the sort / filter / page intents for your own backend, and built-in AI helpers (natural-language filter, smart-fill, chart-this). Free under the MIT License. @svgrid/enterprise is a paid companion that adds the Kanban board, Scheduler, Gantt and Excel-style Spreadsheet views, the Server-Side Row Model with SQL / REST / Supabase sources, export (Excel, PDF, CSV, TSV, HTML), a printable view, and pivot tables, plus direct support.",
+     },
+     {
+       q: "How much does @svgrid/enterprise cost?",
+@@ -365,20 +365,20 @@
+         { label: "Excel/CSV import", href: "#/demos/53-excel-import" },
+       ],
+     },
+-    // Beyond the table: the grid's other renderers. The board and scheduler
+-    // models live in the free grid, but the renderers behind the `board` and
+-    // `scheduler` props and the whole spreadsheet shell ship in
+-    // @svgrid/enterprise, so the card says so - the pricing page does too.
+-    // The Gantt joins this card on its release date (1 November 2026,
+-    // tools/lib/releases.mjs); plans/gantt-release.patch carries the words.
++    // Beyond the table: the grid's other renderers. The board, scheduler and
++    // Gantt models live in the free grid, but the renderers behind the
++    // `board`, `scheduler` and `gantt` props and the whole spreadsheet
++    // shell ship in @svgrid/enterprise, so the card says so - the pricing
++    // page does too.
+     {
+-      title: "Boards, scheduler & spreadsheet",
++      title: "Boards, scheduler, Gantt & spreadsheet",
+       icon: "M4 4h4v16H4z M10 4h4v10h-4z M16 4h4v13h-4z",
+-      body: "The same rows, the view your users need: a Kanban board (one board prop), a scheduler / calendar with month, week, day, agenda and timeline views (one scheduler prop), and an Excel-style spreadsheet shell with a ribbon, formula bar and formula engine. Not bolt-ons: the same grid, rendered three more ways.",
++      body: "The same rows, the view your users need: a Kanban board (one board prop), a scheduler / calendar with month, week, day, agenda and timeline views (one scheduler prop), a Gantt chart with phases, dependency arrows and a critical path (one gantt prop), and an Excel-style spreadsheet shell with a ribbon, formula bar and formula engine. Not bolt-ons: the same grid, rendered four more ways.",
+       enterprise: true,
+       proofs: [
+         { label: "Kanban board", href: "#/demos/343-kanban-board" },
+         { label: "Scheduler", href: "#/demos/363-scheduler-intro" },
++        { label: "Gantt", href: "#/demos/474-gantt-intro" },
+         { label: "Spreadsheet", href: "#/demos/27-spreadsheet-ribbon" },
+       ],
+     },
+@@ -976,8 +976,8 @@
+       class="mt-2 text-2xl md:text-3xl font-bold tracking-tight"
+       style="color: var(--sg-fg)"
+     >
+-      Free Community with built-in AI. Paid Enterprise for the board, scheduler
+-      &amp; spreadsheet views, the server-side row model, export, pivot &amp; support.
++      Free Community with built-in AI. Paid Enterprise for the board, scheduler,
++      Gantt &amp; spreadsheet views, the server-side row model, export, pivot &amp; support.
+     </h2>
+     <p class="mt-2 text-sm md:text-base" style="color: var(--site-muted);">
+       Use one or both. Enterprise plugs into Community - no separate runtime.
+--- a/src/routes/Pricing.svelte
++++ b/src/routes/Pricing.svelte
+@@ -253,18 +253,18 @@
+         { label: 'Components double as grid cell editors + standalone', community: true, proSingle: true, proMulti: true },
+       ],
+     },
+-    // The three other renderers of the same <SvGrid>. The board and scheduler
+-    // MODELS are in the free grid (the `board` / `scheduler` props type-check
+-    // without Enterprise); what you pay for is the renderer behind them
+-    // (SvGridBoard / SvGridScheduler) and the whole sheet engine, which all
+-    // live in packages/enterprise/src. Keep the rows honest to that split.
+-    // The Gantt view joins this group on its release date (1 November 2026,
+-    // tools/lib/releases.mjs); plans/gantt-release.patch carries the row.
++    // The four other renderers of the same <SvGrid>. The board, scheduler and
++    // Gantt MODELS are in the free grid (the `board` / `scheduler` / `gantt`
++    // props type-check without Enterprise); what you pay for is the renderer
++    // behind them (SvGridBoard / SvGridScheduler / SvGridGantt) and the whole
++    // sheet engine, which all live in packages/enterprise/src. Keep the rows
++    // honest to that split.
+     {
+-      category: 'Board, Scheduler & Spreadsheet views',
++      category: 'Board, Scheduler, Gantt & Spreadsheet views',
+       rows: [
+         { label: 'Kanban board view (drag-and-drop, swimlanes, WIP limits, card drawer, virtualized)', community: false, proSingle: true, proMulti: true },
+         { label: 'Scheduler / calendar view (month / week / day / agenda / timeline, resources, booking rules)', community: false, proSingle: true, proMulti: true },
++        { label: 'Gantt view (phases, dependency arrows, drag to reschedule, critical path, baselines, constraints, resource load)', community: false, proSingle: true, proMulti: true },
+         { label: 'Excel-style spreadsheet shell (<SvSheet>: ribbon, formula bar, sheet tabs, status bar)', community: false, proSingle: true, proMulti: true },
+         { label: 'Formula engine (~50 functions, cross-sheet + structured refs, named ranges, Goal Seek)', community: false, proSingle: true, proMulti: true },
+         { label: 'Cell formats, merged cells, comments, data validation, conditional formatting, AutoFilter, sheet protection', community: false, proSingle: true, proMulti: true },
+@@ -314,15 +314,15 @@
+     { q: 'What is the difference between Enterprise - Single App and Enterprise - Multi App?',
+       a: 'A Single Application Developer License covers one deployed application - typically one product or one customer-facing web app. A Multiple Application Developer License covers an unlimited number of deployed apps in your organisation, including subsidiaries and sister products. Both are licensed per developer as a perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime), where "developer" means engineers who write or modify code that imports @svgrid/enterprise.' },
+     { q: 'What happens if I use @svgrid/enterprise without a license key?',
+-      a: 'The Enterprise features still work - the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, export, import, print, and the pivot helpers all run. The grid renders a small "Unlicensed @svgrid/enterprise" watermark in the bottom-right and the console emits a one-time notice with a link to pricing. Set a valid SVENTERPRISE-... license key via setLicenseKey() and the watermark disappears. (The AI helpers are built into the free @svgrid/grid and are never gated.)' },
++      a: 'The Enterprise features still work - the Kanban board, Scheduler, Gantt and Spreadsheet views, the Server-Side Row Model, export, import, print, and the pivot helpers all run. The grid renders a small "Unlicensed @svgrid/enterprise" watermark in the bottom-right and the console emits a one-time notice with a link to pricing. Set a valid SVENTERPRISE-... license key via setLicenseKey() and the watermark disappears. (The AI helpers are built into the free @svgrid/grid and are never gated.)' },
+     { q: 'Do the AI features call OpenAI or Anthropic out of the box?',
+       a: 'No. @svgrid/enterprise stays model-agnostic: you register an AIProvider adapter via setAIProvider(fn) that talks to whatever endpoint you choose - OpenAI, Anthropic, a self-hosted llama, or a server-side proxy. No keys are ever embedded in the package, and no data is sent anywhere by default. The bundled mockAIProvider returns deterministic canned shapes so demos and tests work without a real model.' },
+     { q: 'Which import formats does the importer accept?',
+       a: '@svgrid/enterprise reads Excel (.xlsx), CSV, TSV, and JSON arrays. The importer parses the file in the browser via the same JSZip peer dependency that powers Excel export, infers a column header row, lets you map source columns to your grid columns, runs per-column validation, and surfaces row-level errors before committing. No server round-trip required.' },
+     { q: 'Does the pivot table need a special pivot grid?',
+       a: 'No. The pivot is built on top of the standard SvGrid using its multi-level column headers and custom-cell rendering. @svgrid/enterprise ships the pivot engine, the drag-and-drop Pivot Designer component, and pivot-aware sort wiring - you keep using the same headless engine you already know.' },
+-    { q: 'Are the Kanban board, Scheduler and Spreadsheet separate products?',
+-      a: 'No. They are three more ways to render the same <SvGrid>: the board and scheduler are switched on with a board or scheduler prop on the grid you already have, and <SvSheet> wraps that grid in the ribbon, formula bar and sheet tabs. All three ship in @svgrid/enterprise under the same license. One key covers the grid views, the board, the scheduler, the spreadsheet shell and its formula engine, export / import / print, pivot and Studio; there is no per-view add-on. The board and scheduler data models are part of the free grid, so the props type-check without Enterprise; what the pack adds is the renderer behind them and the whole sheet engine.' },
++    { q: 'Are the Kanban board, Scheduler, Gantt and Spreadsheet separate products?',
++      a: 'No. They are four more ways to render the same <SvGrid>: the board, scheduler and Gantt are switched on with a board, scheduler or gantt prop on the grid you already have, and <SvSheet> wraps that grid in the ribbon, formula bar and sheet tabs. All four ship in @svgrid/enterprise under the same license. One key covers the grid views, the board, the scheduler, the Gantt, the spreadsheet shell and its formula engine, export / import / print, pivot and Studio; there is no per-view add-on. The board and scheduler data models are part of the free grid, so the props type-check without Enterprise; what the pack adds is the renderer behind them and the whole sheet engine.' },
+     { q: 'Can I trial the Enterprise pack before paying?',
+       a: 'Yes. Contact us and we will issue a 30-day SVENTERPRISE-EVAL-... key that unlocks the full Enterprise feature set with no watermark. You can also evaluate the feature unlicensed (watermarked) for as long as you like - no time bomb, no broken functionality.' },
+     { q: 'Do you offer team or volume pricing?',
+@@ -387,7 +387,7 @@
+     </h1>
+     <p class="mt-5 max-w-3xl mx-auto text-base md:text-lg" style="color: var(--site-muted);">
+       The full grid is free under the <strong>MIT License</strong>. The <strong>Enterprise</strong>
+-      pack (<code>@svgrid/enterprise</code>) adds the Kanban board, Scheduler and Spreadsheet
++      pack (<code>@svgrid/enterprise</code>) adds the Kanban board, Scheduler, Gantt and Spreadsheet
+       views, the Server-Side Row Model, Excel / PDF export + print, Excel import, a pivot table
+       with drag-and-drop designer, password-protected export, and direct
+       support. <strong>Buy once, keep forever - the optional yearly renewal only pays for new
+@@ -787,7 +787,7 @@
+         <p style="color: var(--site-muted);">
+           The core grid (sorting, filtering, grouping, virtualization, editing) plus CSV / TSV /
+           JSON export and clipboard, plus flat server-side data (paging, infinite scroll, sort,
+-          filter). No Excel / PDF export, no pivot, no Kanban / Scheduler / Spreadsheet views, no
++          filter). No Excel / PDF export, no pivot, no Kanban / Scheduler / Gantt / Spreadsheet views, no
+           Server-Side Row Model (grouping, tree, pivot and transactions on the server).
+           GitHub-issue support is enough.
+         </p>
+@@ -795,7 +795,7 @@
+       <div>
+         <p class="decide-key" style="color: var(--site-accent-2);">Enterprise - Single App</p>
+         <p style="color: var(--site-muted);">
+-          You ship <strong>one</strong> production app and want the Kanban board, Scheduler or
++          You ship <strong>one</strong> production app and want the Kanban board, Scheduler, Gantt or
+           Spreadsheet view, the Server-Side Row Model, export + print, Excel / CSV import, pivot
+           table + designer, and paid support. Most common choice for product teams with a single
+           SaaS product.
+--- a/src/routes/Roadmap.svelte
++++ b/src/routes/Roadmap.svelte
+@@ -40,12 +40,6 @@
+       ],
+     },
+     {
+-      area: 'Views (@svgrid/enterprise)',
+-      items: [
+-        { status: 'in_progress', title: 'Gantt view (gantt prop) - phases that roll up, FS / SS / FF / SF arrows with lag, drag to move or resize with a cascade over working days, critical path with a slack column, baselines, constraints, resource load, undo', effort: 'L', note: 'In progress, due 1 November 2026. The renderer, the demos and the guide are built and being finished; until the date the site does not list them. Demo 45 is the free recipe in the meantime: a Gantt-shaped timeline drawn in one wide cell.' },
+-      ],
+-    },
+-    {
+       area: 'Export (@svgrid/enterprise)',
+       items: [
+         { discussion: 35, title: 'PDF export layout extensions: cover page, repeating section headers, multi-section reports', effort: 'M', note: 'Branded headers/footers/logo (demo 57) plus the portrait / landscape toggle with auto-landscape for wide grids already ship, and the Print path has a boardroom cover page (demo 39). Bringing the cover page and the multi-section pass to PDF export is what is left.' },
+@@ -85,6 +79,7 @@
+   // roadmap reads as a track record, not just a wish list.
+   type Shipped = { title: string; demo?: string }
+   const shipped: Shipped[] = [
++    { title: 'Gantt view (gantt prop) - phases that roll up, FS / SS / FF / SF arrows with lag, drag to move or resize with a cascade over working days, critical path with a slack column, baselines, constraints, resource load, undo', demo: '474-gantt-intro' },
+     { title: 'PDF export with charts and a KPI strip alongside the table - pdf.charts takes rendered chart elements (rasterised on export) or images with a title and caption, above or below the table; pdf.kpis prints a strip of headline numbers with a coloured delta line' },
+     { title: 'Rich-text + Markdown cells - SvRichCell paints formatted values through a strict sanitizer, and the richtext editorType edits them' },
+     { title: 'SvelteKit starter with an auth scaffold - cookie sessions, PBKDF2 over Web Crypto, and role gating enforced in the load and the action' },

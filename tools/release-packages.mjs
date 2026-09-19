@@ -205,6 +205,30 @@ function syncVersionConstant(dir, version) {
   if (next !== text) writeFileSync(file, next)
 }
 
+/**
+ * Two more places a version is written by hand, both in the MCP package and
+ * both checked by tools/mcp-tools.test.ts against the workspace: server.json
+ * (the MCP registry manifest carries the package version twice) follows
+ * @svgrid/mcp, and the grid-wc version the preview pins on the CDN follows
+ * @svgrid/grid-wc. The 3.0.2 release moved the manifests and left both
+ * behind.
+ */
+function syncMcpPins(dir, version) {
+  if (dir === 'mcp') {
+    const file = join(ROOT, 'packages', 'mcp', 'server.json')
+    const server = JSON.parse(readFileSync(file, 'utf8'))
+    server.version = version
+    for (const p of server.packages ?? []) if (p.identifier === '@svgrid/mcp') p.version = version
+    writeFileSync(file, JSON.stringify(server, null, 2) + '\n')
+  }
+  if (dir === 'grid-wc') {
+    const file = join(ROOT, 'packages', 'mcp', 'src', 'preview.ts')
+    const text = readFileSync(file, 'utf8')
+    const next = text.replace(/(export const PREVIEW_GRID_WC_VERSION = ')[^']*(')/, `$1${version}$2`)
+    if (next !== text) writeFileSync(file, next)
+  }
+}
+
 // True only when this exact name@version is already on the registry. `npm view`
 // exits non-zero on a 404, which is the normal "not published yet" case.
 function isPublished(name, version) {
@@ -312,16 +336,23 @@ function main() {
     }
 
     // A working version already ahead of the last tag is a deliberate bump -
-    // a major set by hand with its changeset - and publishes as it stands; a
-    // version at or behind the tag gets the next patch.
+    // a major set by hand with its changeset - and publishes as it stands,
+    // unless the registry already has it. Then it was published by hand
+    // without a tag (grid 4.0.0 on 2026-09-18), everything since is
+    // unreleased, and it takes the next patch like any other change. The
+    // alternative - publish nothing, tag the hand release at HEAD - ships the
+    // siblings in the same run against grid exports npm never received.
     const ahead = !!last && cmpVer(current, last.ver) > 0
-    const next = ahead ? current : bumpPatch(last ? last.ver : current)
+    const handPublished = ahead && isPublished(manifest.name, fmtVer(current))
+    const next = ahead && !handPublished ? current : bumpPatch(handPublished ? current : last ? last.ver : current)
     const nextStr = fmtVer(next)
+    if (handPublished) reason += `, ${fmtVer(current)} already on the registry`
 
     if (!CHECK_ONLY) {
       manifest.version = nextStr
       writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n')
       syncVersionConstant(pkg.dir, nextStr)
+      syncMcpPins(pkg.dir, nextStr)
     }
     console.error(
       `- ${manifest.name}: ${reason}: ${fmtVer(current)} -> ${nextStr}${CHECK_ONLY ? ' (check only, not written)' : ''}.`,

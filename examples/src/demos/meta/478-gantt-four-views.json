@@ -1,0 +1,24 @@
+{
+  "description": "One Svelte 5 data grid, one array of rows, and four renderers behind a switch: the plain table with inline editing, a Gantt chart with phases and dependency links, a resource timeline with a lane per owner, and a Kanban board of status lanes. Each view is the same SvGrid with a different prop (gantt, scheduler, board) and writes back through a callback to the same rows. Change a status in the table and the card moves lane; drag a bar in the Gantt and the timeline follows; drop a card on Done and its progress reads 100.",
+  "keywords": [
+    "svelte grid gantt kanban scheduler",
+    "svelte 5 multiple views same data",
+    "svelte data grid view switcher",
+    "svelte project management views",
+    "svelte gantt and kanban board"
+  ],
+  "faq": [
+    {
+      "question": "Is it four components or one?",
+      "answer": "One. Each view is the same SvGrid with a different prop: gantt, scheduler or board. Without any of them it renders the table. The rows, columns and getRowId are shared, so the views cannot drift apart."
+    },
+    {
+      "question": "How do edits in one view reach the others?",
+      "answer": "Every view reports what it wants through a callback (onTaskMove, onEventMove, onCardMove, onCellValueChange) and never mutates a row itself. The demo writes the change to the one rows array, and whichever view is showing reads it from there."
+    },
+    {
+      "question": "Why are the dates stored as local timestamps?",
+      "answer": "So every view reads them the same way. A date-only string is a calendar day to the Gantt and UTC midnight to the scheduler, which west of Greenwich is the day before. A local timestamp with an exclusive end is unambiguous to all four."
+    }
+  ]
+}

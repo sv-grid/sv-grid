@@ -173,6 +173,43 @@ export function addWorkingDays(start: Date, days: number, cal: WorkingCalendar):
 }
 
 /**
+ * The start of a task that lasts `days` WORKING days and ends (exclusively) at
+ * `end`: the inverse of {@link addWorkingDays}. Walks back from the day before
+ * `end` counting working days, so a five-day task ending Saturday 00:00
+ * started the Monday before. Zero days gives `end`'s own midnight.
+ */
+export function startForWorkingDays(end: Date, days: number, cal: WorkingCalendar): Date {
+  const to = startOfDay(end)
+  if (!(days > 0) || !hasWorkingDay(cal)) return to
+  let cur = to
+  let left = Math.ceil(days)
+  let guard = 0
+  while (left > 0 && guard++ < GUARD) {
+    cur = addDays(cur, -1)
+    if (isWorkingDay(cur, cal)) left--
+  }
+  return cur
+}
+
+/**
+ * The span a task keeps when it is moved to `start`: its WORKING days laid
+ * out from there, so a Monday-to-Friday task dragged to Wednesday ends the
+ * Tuesday after, not the Sunday. A task with no working day in it (a
+ * milestone, or one parked on a weekend) keeps its calendar length instead,
+ * so nothing collapses to zero.
+ */
+export function moveWorkingSpan(
+  start: Date,
+  original: { start: Date; end: Date },
+  cal: WorkingCalendar,
+): { start: Date; end: Date } {
+  const calMs = original.end.getTime() - original.start.getTime()
+  const days = workingDays(original.start, original.end, cal)
+  if (days <= 0 || calMs <= 0) return { start, end: new Date(start.getTime() + calMs) }
+  return { start, end: addWorkingDays(start, days, cal) }
+}
+
+/**
  * The nearest working day at or after `d` (`dir` 1) or at or before it
  * (`dir` -1), at local midnight. A calendar with no working day at all returns
  * `d`'s own midnight rather than spinning.
@@ -375,22 +412,26 @@ export function ganttTree<TData>(
         pctSum: t.progress,
       }
     } else {
-      let start = t.start
-      let end = t.end
+      // The descendants alone. A phase row has a start of its own only
+      // because `startField` is required; folding it in anchored the summary
+      // to wherever the phase was first typed in, so when its tasks moved the
+      // bar stretched back to that date instead of following them.
+      let start: Date | null = null
+      let end: Date | null = null
       let weighted = 0
       let days = 0
       let leaves = 0
       let pctSum = 0
       for (const k of kids) {
         const r = roll(k)
-        if (r.start.getTime() < start.getTime()) start = r.start
-        if (r.end.getTime() > end.getTime()) end = r.end
+        if (!start || r.start.getTime() < start.getTime()) start = r.start
+        if (!end || r.end.getTime() > end.getTime()) end = r.end
         weighted += r.weighted
         days += r.days
         leaves += r.leaves
         pctSum += r.pctSum
       }
-      acc = { start, end, weighted, days, leaves, pctSum }
+      acc = { start: start ?? t.start, end: end ?? t.end, weighted, days, leaves, pctSum }
     }
     rollOf.set(t.key, acc)
     return acc

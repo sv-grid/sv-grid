@@ -7,11 +7,13 @@ import {
   ganttTree,
   isWorkingDay,
   makeCalendar,
+  moveWorkingSpan,
   nodeIndex,
   parseDay,
   projectRange,
   resolveTasks,
   snapToWorkingDay,
+  startForWorkingDays,
   visibleAnchor,
   workingDays,
   type GanttTaskSpec,
@@ -118,6 +120,35 @@ describe('working days', () => {
     expect(isWorkingDay(day(10), never)).toBe(false)
     expect(snapToWorkingDay(day(10), 1, never).getTime()).toBe(day(10).getTime())
     expect(addWorkingDays(day(10), 5, never).getTime()).toBe(day(10).getTime())
+    expect(startForWorkingDays(day(10), 5, never).getTime()).toBe(day(10).getTime())
+  })
+
+  it('counts a start back from an end over working days', () => {
+    // Five working days ending Saturday the 12th (Mon-Fri) started Monday the 7th ...
+    expect(startForWorkingDays(day(12), 5, cal).getTime()).toBe(day(7).getTime())
+    // ... and so did five ending Monday the 14th: the weekend before the end
+    // is skipped, which is what lets a latest finish land on a Monday.
+    expect(startForWorkingDays(day(14), 5, cal).getTime()).toBe(day(7).getTime())
+    // The inverse of addWorkingDays for any working-day start.
+    for (const from of [7, 8, 9, 10, 11]) {
+      expect(startForWorkingDays(addWorkingDays(day(from), 3, cal), 3, cal).getTime()).toBe(day(from).getTime())
+    }
+    expect(startForWorkingDays(day(10), 0, cal).getTime()).toBe(day(10).getTime())
+  })
+
+  it('lays a moved task out over its working days, not its calendar span', () => {
+    // Mon 7th to Sat 12th: five working days. Moved to Wednesday the 9th it
+    // runs Wed, Thu, Fri, Mon, Tue and ends Wednesday the 16th - the same
+    // five days of work, not three days squeezed before the weekend.
+    const orig = { start: day(7), end: day(12) }
+    expect(moveWorkingSpan(day(9), orig, cal)).toEqual({ start: day(9), end: day(16) })
+    // Moved to another Monday it is the same shape it was.
+    expect(moveWorkingSpan(day(14), orig, cal)).toEqual({ start: day(14), end: day(19) })
+    // A milestone stays a milestone ...
+    expect(moveWorkingSpan(day(9), { start: day(7), end: day(7) }, cal)).toEqual({ start: day(9), end: day(9) })
+    // ... and a task parked entirely on a weekend keeps its calendar length
+    // rather than collapsing to nothing.
+    expect(moveWorkingSpan(day(9), { start: day(12), end: day(14) }, cal)).toEqual({ start: day(9), end: day(11) })
   })
 })
 
@@ -253,6 +284,19 @@ describe('ganttTree', () => {
     // Children run the 7th to the 12th (the 11th, end-inclusive).
     expect(p1!.summary!.start.getTime()).toBe(day(7).getTime())
     expect(p1!.summary!.end.getTime()).toBe(day(12).getTime())
+  })
+
+  it('rolls a summary up from the tasks alone, not the phase row\'s own date', () => {
+    // The phase row says the 1st; its tasks run from the 7th. The bar is the
+    // tasks': a phase typed in weeks ago must follow its work when it moves.
+    const stale = resolve([
+      { id: 'p', start: '2026-09-01', end: '2026-09-02', parent: null },
+      { id: 'a', start: '2026-09-07', end: '2026-09-08', parent: 'p' },
+      { id: 'b', start: '2026-09-10', end: '2026-09-11', parent: 'p' },
+    ])
+    const [p] = ganttTree(stale)
+    expect(p!.summary!.start.getTime()).toBe(day(7).getTime())
+    expect(p!.summary!.end.getTime()).toBe(day(12).getTime())
   })
 
   it('weights summary progress by duration, not by task count', () => {

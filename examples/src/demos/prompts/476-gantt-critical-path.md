@@ -1,4 +1,5 @@
 # Prompt: 476-gantt-critical-path
+<!-- hand-written: keep -->
 
 Source: `examples/src/demos/476-gantt-critical-path.svelte`
 Live:   https://svgrid.com/demos/476-gantt-critical-path/

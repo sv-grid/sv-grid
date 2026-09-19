@@ -10,4 +10,4 @@
  *
  * `version.test.ts` asserts this matches `package.json`, so the two cannot drift.
  */
-export const SVGRID_VERSION = '3.0.1'
+export const SVGRID_VERSION = '3.0.2'

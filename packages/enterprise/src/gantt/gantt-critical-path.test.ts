@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { criticalPath, slackDays } from './gantt-critical-path'
+import { makeCalendar } from './gantt-model'
 import type { SchedulerDependency } from '../scheduler-dependencies'
 import type { EventTimes } from '../scheduler-dependencies'
 
@@ -170,6 +171,66 @@ describe('criticalPath - earliest and latest', () => {
     for (const l of r.latest.values()) {
       expect(l.end.getTime()).toBeLessThanOrEqual(r.finish.getTime())
     }
+  })
+})
+
+describe('criticalPath - in working time', () => {
+  // September 2026: the 7th is a Monday. Weekends off.
+  const cal = makeCalendar()
+
+  it('calls a Friday-to-Monday handover critical, which calendar time does not', () => {
+    // a runs Mon 7th to Fri 11th; b starts Mon 14th. The two days between
+    // them are a weekend: a cannot slip a working day without moving b.
+    const t = times({ a: span(7, 5), b: span(14, 2) })
+    const deps = [link('1', 'a', 'b')]
+    const calendar = criticalPath(t, deps)
+    expect(calendar.critical.has('a')).toBe(false)
+    expect(slackDays(calendar, 'a')).toBe(2)
+    const working = criticalPath(t, deps, cal)
+    expect(working.critical.has('a')).toBe(true)
+    expect(slackDays(working, 'a')).toBe(0)
+    expect(working.latest.get('a')!.start.getTime()).toBe(day(7).getTime())
+  })
+
+  it('reports slack in working days', () => {
+    // a ends Friday the 11th; b starts Monday the 21st. In calendar time a
+    // could start as late as Wednesday the 16th - nine days of room, two of
+    // them a weekend a five-day task cannot use. In working time it could
+    // start Monday the 14th: five working days.
+    const t = times({ a: span(7, 5), b: span(21, 2) })
+    const deps = [link('1', 'a', 'b')]
+    expect(slackDays(criticalPath(t, deps), 'a')).toBe(9)
+    const r = criticalPath(t, deps, cal)
+    expect(slackDays(r, 'a')).toBe(5)
+    expect(r.latest.get('a')!.start.getTime()).toBe(day(14).getTime())
+  })
+
+  it('keeps a task\'s working length when a link pushes its earliest start', () => {
+    // b is five working days but starts too early; pushed to Monday the 14th
+    // it still spans five working days, ending Saturday the 19th.
+    const t = times({ a: span(7, 5), b: span(7, 5) })
+    const r = criticalPath(t, [link('1', 'a', 'b')], cal)
+    const b = r.earliest.get('b')!
+    expect(b.start.getTime()).toBe(day(14).getTime())
+    expect(b.end.getTime()).toBe(day(19).getTime())
+  })
+
+  it('lands a pushed start on a working day, like the cascade does', () => {
+    // a ends Saturday the 12th 00:00 (a Friday finish); b, with a two-day
+    // lag, would be required on Sunday - it starts Monday.
+    const t = times({ a: span(7, 5), b: span(7, 1) })
+    const r = criticalPath(t, [link('1', 'a', 'b', { lag: 1 * 1440 })], cal)
+    expect(r.earliest.get('b')!.start.getTime()).toBe(day(14).getTime())
+  })
+
+  it('skips a holiday like a weekend', () => {
+    // With Wednesday the 9th off, a five-day task from Monday runs to the
+    // following Monday, and its Tuesday-starting successor is critical.
+    const holiday = makeCalendar([0, 6], ['2026-09-09'])
+    const t = times({ a: span(7, 8), b: span(15, 1) })
+    const r = criticalPath(t, [link('1', 'a', 'b')], holiday)
+    expect(r.critical.has('a')).toBe(true)
+    expect(slackDays(r, 'a')).toBe(0)
   })
 })
 

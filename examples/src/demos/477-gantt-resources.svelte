@@ -78,6 +78,12 @@
     { field: 'site', header: 'Site', width: 100 },
     { field: 'crew', header: 'Crew', width: 110 },
   ]
+  // The table view shows the dates the bars are drawn from.
+  const tableColumns: ColumnDef<any, Job>[] = [
+    ...columns,
+    { field: 'start', header: 'Start', width: 110 },
+    { field: 'end', header: 'Finish', width: 110 },
+  ]
 
   let folded = $state(true)
 
@@ -120,6 +126,9 @@
     },
     onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
   })
+
+  // The same rows as a plain table: the Gantt is one view of the grid.
+  let view = $state<'gantt' | 'table'>('gantt')
 </script>
 
 <section class="rl">
@@ -136,17 +145,25 @@
       <input type="checkbox" bind:checked={folded} />
       Fold weekends out
     </label>
+    <div class="rl-seg" role="tablist" aria-label="View">
+      <button class="rl-seg-btn" role="tab" aria-selected={view === 'gantt'} class:rl-on={view === 'gantt'} onclick={() => (view = 'gantt')}>Gantt</button>
+      <button class="rl-seg-btn" role="tab" aria-selected={view === 'table'} class:rl-on={view === 'table'} onclick={() => (view = 'table')}>Table</button>
+    </div>
   </header>
 
   <div class="rl-body">
-    <SvGrid
-      columnResize
-      data={rows}
-      columns={columns}
-      getRowId={(r) => r.id}
-      containerHeight="100%"
-      gantt={cfg}
-    />
+    {#if view === 'gantt'}
+      <SvGrid
+        columnResize
+        data={rows}
+        columns={columns}
+        getRowId={(r) => r.id}
+        containerHeight="100%"
+        gantt={cfg}
+      />
+    {:else}
+      <SvGrid columnResize data={rows} columns={tableColumns} getRowId={(r) => r.id} containerHeight="100%" sortable fitColumns />
+    {/if}
   </div>
 </section>
 
@@ -170,6 +187,12 @@
     border-bottom: 1px solid var(--sg-border, #e5e7eb);
   }
   .rl-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .rl-seg { display: inline-flex; flex: none; border: 1px solid var(--sg-border, #e5e7eb); border-radius: 8px; overflow: hidden; }
+  .rl-seg-btn { padding: 5px 12px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 0.8rem; cursor: pointer; }
+  .rl-seg-btn:hover { background: color-mix(in srgb, var(--sg-fg, #1f2937) 6%, transparent); }
+  .rl-on { background: var(--sg-accent, #4f46e5); color: #fff; }
+  .rl-on:hover { background: var(--sg-accent, #4f46e5); }
+
   .rl-sub { font-size: 0.78rem; color: var(--sg-muted, #6b7280); }
   .rl-toggle {
     display: inline-flex;

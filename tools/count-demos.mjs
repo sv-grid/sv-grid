@@ -43,6 +43,8 @@ const STALE_GAP = 60
 // demos"), and matching them produces only false positives.
 const MIN_CLAIM = 100
 
+import { pendingDemoIds } from './lib/releases.mjs'
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const REGISTRY = join(ROOT, 'website', 'src', 'lib', 'demos.ts')
 const DEMO_DIR = join(ROOT, 'examples', 'src', 'demos')
@@ -56,7 +58,8 @@ const files = new Set(
     .map((f) => f.slice(0, -'.svelte'.length)),
 )
 
-const live = ids.filter((id) => files.has(id))
+const pending = pendingDemoIds()
+const live = ids.filter((id) => files.has(id) && !pending.has(id))
 const orphanEntries = ids.filter((id) => !files.has(id))
 const orphanFiles = [...files].filter((f) => !ids.includes(f))
 
@@ -78,7 +81,9 @@ const total = live.length + community
 function verifyClaims(actual) {
   const problems = []
   const claim = /(\d{2,4})(\+?)\s+(?:[\w-]+\s+){0,3}?(demos|examples)/gi
-  const constant = /DEMO_COUNT\s*=\s*(\d{2,4})/g
+  // The literal may carry the FULL count and subtract the demos of a feature
+  // whose release date has not come (tools/lib/releases.mjs), as Mcp.svelte does.
+  const constant = /DEMO_COUNT\s*=\s*(\d{2,4})(\s*-\s*pendingDemoIds\(\)\.size)?/g
 
   for (const rel of CLAIM_FILES) {
     let text
@@ -99,7 +104,8 @@ function verifyClaims(actual) {
     }
     for (const m of text.matchAll(constant)) {
       const n = Number(m[1])
-      if (n !== actual) problems.push(`${rel}:${lineOf(m.index)} sets DEMO_COUNT = ${n} but the real total is ${actual}`)
+      const want = m[2] ? actual + pending.size : actual
+      if (n !== want) problems.push(`${rel}:${lineOf(m.index)} sets DEMO_COUNT = ${n} but the real total is ${want}`)
     }
   }
   return problems

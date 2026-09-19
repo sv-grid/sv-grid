@@ -1,4 +1,5 @@
 import type { Component } from 'svelte'
+import { pendingDemoIds } from '../../../tools/lib/releases.mjs'
 import Calendar250 from '../demos/250-calendar.svelte'
 import TimePicker251 from '../demos/251-timepicker.svelte'
 import DateTimePicker252 from '../demos/252-datetimepicker.svelte'
@@ -103,6 +104,10 @@ import GanttIntro474 from '../demos/474-gantt-intro.svelte'
 import GanttEditing475 from '../demos/475-gantt-editing.svelte'
 import GanttCriticalPath476 from '../demos/476-gantt-critical-path.svelte'
 import GanttResources477 from '../demos/477-gantt-resources.svelte'
+import GanttFourViews478 from '../demos/478-gantt-four-views.svelte'
+import GanttRoadmap479 from '../demos/479-gantt-roadmap.svelte'
+import GanttProgram480 from '../demos/480-gantt-program.svelte'
+import GanttPortfolioConsole481 from '../demos/481-gantt-portfolio-console.svelte'
 import AlertRulesEngine399 from '../demos/399-alert-rules-engine.svelte'
 import AlertStylingRules400 from '../demos/400-alert-styling-rules.svelte'
 import AlertAggregateKpi401 from '../demos/401-alert-aggregate-kpi.svelte'
@@ -546,6 +551,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Server-Side Row Model',
   'Kanban',
   'Scheduler',
+  'Gantt',
   'Themes & Styling',
   'Keyboard & Accessibility',
   'Mobile & Responsive',
@@ -591,7 +597,7 @@ function demo(
   return { id, title, blurb, category, component, pro: opts?.pro, source: sourceFor(id) }
 }
 
-export const demos: Demo[] = [
+const baseDemos: Demo[] = [
   // ===== SvGrid Editors product (UI components in @svgrid/grid that double as
   // grid cell editors). Scoped to their own switcher entry, not the grid gallery.
   demo('250-calendar',              'Calendar',                    'SvCalendar: a themeable month/year/decade calendar with single / range / week / multi selection, min-max, restricted + important dates and week numbers. The same component SvGrid mounts to edit a date cell - and usable standalone in any SvGrid app.', 'Date & Time', Calendar250),
@@ -746,7 +752,11 @@ export const demos: Demo[] = [
   demo('474-gantt-intro', 'Project plan', 'A 14-week release as a Gantt: phases nest their tasks and draw a rolled-up summary bar, finish-to-start links draw as arrows, and a violated one turns red. Collapse a phase and its summary keeps the span. Toggle to the Table - same grid rows, just a view.', 'Gantt', GanttIntro474, { pro: true }),
   demo('475-gantt-editing', 'Plan editing', 'The same plan with editing on: drag a bar or its edges, drag the diamond to set percent, drag a dot onto another bar to draw a link. A phase moves its whole subtree in one callback, successors slide forward over weekends, a cycle is refused, and Ctrl+Z replays it backwards. A log panel lists every write-back the view asks for.', 'Gantt', GanttEditing475, { pro: true }),
   demo('476-gantt-critical-path', 'Critical path & baselines', 'A fit-out schedule with the planning layer on: the chain with no slack ringed in red with its arrows, a Slack column for everything else, baseline ghosts that redden where the plan has drifted, and two pinned tasks where a cascade stops at the constraint instead of running past it.', 'Gantt', GanttCriticalPath476, { pro: true }),
-  demo('477-gantt-resources', 'Resource load & folded axis', "A field-service quarter with a load strip under the chart: one row per crew, one bar per column, red where a crew is booked past its capacity - the specialist is one person with two sign-offs in the same week. Capacity is per resource, so a two-van crew takes two jobs at once. Fold the weekends out and the quarter fits in the width a month used to take.", 'Gantt', GanttResources477, { pro: true }),
+  demo('477-gantt-resources', 'Resource load & folded axis', 'A field-service quarter with a load strip under the chart: one row per crew, one bar per column, red where a crew is booked past its capacity - the specialist is one person with two sign-offs in the same week. Capacity is per resource, so a two-van crew takes two jobs at once. Fold the weekends out and the quarter fits in the width a month used to take.', 'Gantt', GanttResources477, { pro: true }),
+  demo('478-gantt-four-views', 'One plan, four views: Grid, Gantt, Scheduler, Kanban', 'One <SvGrid>, one array, four renderers behind a switch: the plain table with inline editing, the Gantt with phases and links, a resource timeline with a lane per owner, and a Kanban of status lanes. Every view writes back through a callback to the same rows - change a status in the grid and the card moves lane, drag a bar in the Gantt and the timeline follows - and a line under the switcher names the last write.', 'Gantt', GanttFourViews478, { pro: true }),
+  demo('479-gantt-roadmap', 'Product roadmap - a year in quarters', 'The Gantt as a roadmap: three teams, their initiatives across four quarters, and the releases that cut across them as milestones. A `task` snippet draws the owner and a status chip inside each bar, colour is by status, a custom tooltip carries the effort and a summary, the header chips filter by status, and a month / quarter / year zoom ladder drills in with Ctrl+wheel.', 'Gantt', GanttRoadmap479, { pro: true }),
+  demo('480-gantt-program', 'A programme of 40 sites, 640 tasks', 'A fibre roll-out at programme scale: 40 sites, each a phase of 16 linked tasks, 640 tasks and 600 links, opening folded to one bar per site. Rows past the viewport are not rendered, the critical path over every chain names the site the finish date turns on, baselines count the sites running late, and the search box filters the whole thing. Ctrl+wheel to the week preset and the weekends fold out of the axis.', 'Gantt', GanttProgram480, { pro: true }),
+  demo('481-gantt-portfolio-console', 'Portfolio office - project console', 'A PMO console with the Gantt as the hero: a rail of projects with health and percent complete, live KPIs, and a dockable workspace (SvDockManager) with the plan over a risk register and a remaining-work chart. The plan runs with the critical path and baselines on and is editable; drag a task and the register, the chart and the KPIs recompute from the same rows.', 'Gantt', GanttPortfolioConsole481, { pro: true }),
   demo('399-alert-rules-engine', 'Alert Rules engine', 'A live trading desk where end users define alert rules at runtime - no code - that watch the data and react: raise a toast, tint the row, flash the cell, or log it. A visual condition builder (or free-text expression) reuses the grid own filter operators; rules persist to localStorage and export as shareable JSON. The bell opens the fired-alert log. Engine: @svgrid/enterprise.', 'Alerts', AlertRulesEngine399, { pro: true }),
   demo('400-alert-styling-rules', 'Styling rules', 'Alert rules are not just notifications: a highlight or badge action becomes live conditional formatting, painted through the grid own format pipeline. A server fleet lights up by rule - hot CPU turns amber, near-full disks turn red via a cross-column rule (used / total > 0.9). Randomise the load and the colours follow. Add your own styling rule in the visual builder.', 'Alerts', AlertStylingRules400, { pro: true }),
   demo('401-alert-aggregate-kpi', 'KPI & aggregate alerts', 'Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language SUM / AVG / COUNT reducers.', 'Alerts', AlertAggregateKpi401, { pro: true }),
@@ -1061,6 +1071,11 @@ export const demos: Demo[] = [
   demo('204-import-dialog','Import - dialog + auto-mapping','The round-trip partner of export: SvImportDialog drops in a drag-drop / paste importer that auto-maps a file\'s headers to your columns, coerces each value with the column\'s own format (currency / date), previews the typed rows with bad cells flagged, then appends the clean ones. Reads .xlsx, CSV, TSV, JSON.', 'Data Export & Import', ImportDialog, { pro: true }),
 
 ]
+
+/** Demos of a feature whose release date has not come (tools/lib/releases.mjs)
+ *  stay out of the gallery until it does, as they do on the website. */
+const pendingDemos = pendingDemoIds()
+export const demos: Demo[] = baseDemos.filter((d) => !pendingDemos.has(d.id))
 
 export type DemoGroup = { category: DemoCategory; demos: Demo[] }
 

@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-18T14:20:03.046Z",
+  "generatedAt": "2026-09-19T05:09:07.483Z",
   "counts": {
     "pages": 384,
     "enterprise": 60,
@@ -731,7 +731,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 10441,
-      "lastUpdated": "2026-09-14",
+      "lastUpdated": "2026-09-19",
       "demoIds": []
     },
     {
@@ -904,7 +904,7 @@
       "tier": "enterprise",
       "group": "Three ways to build",
       "words": 3902,
-      "lastUpdated": "2026-08-23",
+      "lastUpdated": "2026-09-18",
       "demoIds": []
     },
     {
@@ -1586,7 +1586,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2365,
-      "lastUpdated": "2026-09-14",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "17-accessibility",
         "65-keyboard-shortcuts",
@@ -1701,7 +1701,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3687,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -1833,7 +1833,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1820,
-      "lastUpdated": "2026-09-15",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "452-excel-shortcuts"
       ]
@@ -1847,7 +1847,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 872,
-      "lastUpdated": "2026-09-14",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "453-formula-bar-formats"
       ]
@@ -1903,7 +1903,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 7648,
-      "lastUpdated": "2026-09-15",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "27-spreadsheet-ribbon",
         "456-sales-report-workbook",
@@ -1941,7 +1941,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 592,
-      "lastUpdated": "2026-09-14",
+      "lastUpdated": "2026-09-18",
       "demoIds": []
     },
     {
@@ -1993,7 +1993,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1493,
-      "lastUpdated": "2026-09-15",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "455-workbook",
         "459-named-ranges-forecast",
@@ -2947,7 +2947,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1782,
-      "lastUpdated": "2026-09-13",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "38-rtl-i18n",
         "15-localization"
@@ -3263,7 +3263,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2509,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-18",
       "demoIds": []
     },
     {
@@ -3355,7 +3355,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1558,
-      "lastUpdated": "2026-09-18",
+      "lastUpdated": "2026-09-19",
       "demoIds": [
         "02-sort-filter-paginate",
         "04-selection-copy-paste",
@@ -3415,17 +3415,15 @@
       "path": "help/rows/gantt.md",
       "url": "/docs/help/rows/gantt/",
       "title": "Gantt chart mode",
-      "summary": "Set one gantt prop and the grid renders its rows as a **task table beside a time chart**: one bar per row, placed by its start and finish, nested into a work-breakdown tree, with arrows between linked tasks. It is the same <SvGrid>, the same data and columns - only the presentation changes.",
+      "summary": "The Gantt view of the grid is in progress and due on **1 November 2026**. It is on the roadmap as an in-progress item, and this page becomes its guide on that date.",
+      "seoDescription": "The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 4005,
-      "lastUpdated": "2026-09-18",
+      "words": 245,
+      "lastUpdated": "2026-09-19",
       "demoIds": [
-        "474-gantt-intro",
-        "475-gantt-editing",
-        "476-gantt-critical-path",
-        "477-gantt-resources"
+        "45-gantt-chart"
       ]
     },
     {
@@ -3436,8 +3434,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 4308,
-      "lastUpdated": "2026-09-12",
+      "words": 4340,
+      "lastUpdated": "2026-09-19",
       "demoIds": [
         "343-kanban-board",
         "344-kanban-sprint",
@@ -3579,7 +3577,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 7520,
-      "lastUpdated": "2026-09-18",
+      "lastUpdated": "2026-09-19",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3956,7 +3954,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1845,
-      "lastUpdated": "2026-09-15",
+      "lastUpdated": "2026-09-18",
       "demoIds": [
         "83-spreadsheet-formulas",
         "173-hyperformula",
@@ -5577,7 +5575,7 @@
       "tier": "enterprise",
       "group": "Reference",
       "words": 725,
-      "lastUpdated": "2026-09-06",
+      "lastUpdated": "2026-09-18",
       "demoIds": []
     },
     {

@@ -139,7 +139,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 - [Accessing rows](https://svgrid.com/docs/help/rows/accessing-rows/): You can read the grid's current rows in three ways.
 - [Full-width rows](https://svgrid.com/docs/help/rows/full-width-rows/): "Full-width rows" are rows whose content takes the entire grid width instead of being cell-by-cell - useful for inline editors, banner ads, section dividers, and detail-row expansions.
-- [Gantt chart mode](https://svgrid.com/docs/help/rows/gantt/): Set one gantt prop and the grid renders its rows as a **task table beside a time chart**: one bar per row, placed by its start and finish, nested into a work-breakdown tree, with arrows between lin…
+- [Gantt chart mode](https://svgrid.com/docs/help/rows/gantt/): The Gantt view of the grid is in progress and due on **1 November 2026**. It is on the roadmap as an in-progress item, and this page becomes its guide on that date.
 - [Kanban board mode](https://svgrid.com/docs/help/rows/kanban-board/): Set one board prop and the grid renders its rows as **cards in horizontal lanes** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Lanes are b…
 - [Master / detail (nested grids)](https://svgrid.com/docs/help/rows/master-detail/): Master/detail is the pattern where each **master** row expands to reveal a **detail** panel - most often a nested grid of the row's child records. SvGrid builds it from two props on <SvGrid>:
 - [Row data](https://svgrid.com/docs/help/rows/row-data/): Row data is whatever you pass to <SvGrid data={...}>. It is a ReadonlyArray<TData> where TData is your row type. Any shape works; the grid does not require a base class or interface.

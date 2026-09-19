@@ -1,0 +1,24 @@
+{
+  "description": "A portfolio management console built on the Svelte 5 data grid: a rail of projects with health and percent complete, live KPIs, and a dockable workspace (SvDockManager) with an editable Gantt over a risk register grid and a remaining-work-by-owner chart. The plan runs with the critical path and baselines on; drag a task and the register, the chart and the KPIs recompute from the same rows.",
+  "keywords": [
+    "svelte project management dashboard",
+    "svelte 5 pmo console",
+    "svelte gantt dock layout",
+    "svelte portfolio gantt",
+    "svelte risk register grid"
+  ],
+  "faq": [
+    {
+      "question": "Where does the risk register get its slack from?",
+      "answer": "From the same critical path pass the Gantt runs, called directly: criticalPath and slackDays are exported from @svgrid/enterprise as pure functions, so a grid, a KPI or a test can use them without rendering a chart."
+    },
+    {
+      "question": "Does switching projects lose an edit?",
+      "answer": "No. Each project's rows are their own state, and the Gantt writes back into them through its callbacks, so a change sticks when you switch away and back."
+    },
+    {
+      "question": "Can the panes be rearranged?",
+      "answer": "Yes. The workspace is an SvDockManager: drag a pane by its tab to dock it elsewhere or float it, and the layout persists in localStorage. Reset layout puts it back."
+    }
+  ]
+}

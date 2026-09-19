@@ -1,4 +1,5 @@
 # Prompt: 475-gantt-editing
+<!-- hand-written: keep -->
 
 Source: `examples/src/demos/475-gantt-editing.svelte`
 Live:   https://svgrid.com/demos/475-gantt-editing/

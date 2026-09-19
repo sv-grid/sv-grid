@@ -1,4 +1,5 @@
 # Prompt: 477-gantt-resources
+<!-- hand-written: keep -->
 
 Source: `examples/src/demos/477-gantt-resources.svelte`
 Live:   https://svgrid.com/demos/477-gantt-resources/

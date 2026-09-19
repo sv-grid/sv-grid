@@ -1,4 +1,5 @@
 # Prompt: 474-gantt-intro
+<!-- hand-written: keep -->
 
 Source: `examples/src/demos/474-gantt-intro.svelte`
 Live:   https://svgrid.com/demos/474-gantt-intro/

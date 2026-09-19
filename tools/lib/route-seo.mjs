@@ -26,6 +26,9 @@
  * into the site.
  */
 import { PRODUCT_KEYWORDS } from './product-ld.mjs'
+import { isReleased } from './releases.mjs'
+
+const GANTT = isReleased('gantt')
 
 export const ROUTE_SEO = {
   '': {
@@ -70,10 +73,10 @@ export const ROUTE_SEO = {
     path: '/compare',
   },
   svelte: {
-    title: 'Build It in Svelte - Kanban, Scheduler, Pivot, Spreadsheet, Grid',
+    title: GANTT ? 'Build It in Svelte - Kanban, Scheduler, Gantt, Pivot, Spreadsheet' : 'Build It in Svelte - Kanban, Scheduler, Pivot, Spreadsheet, Grid',
     description:
-      'What you can build with SvGrid and Svelte 5: a Kanban board, a scheduler, a pivot table, a spreadsheet, a tree grid, an editable table, a date picker. Each with the prop that turns it on, a live demo, and the docs.',
-    keywords: ['svelte kanban board', 'svelte scheduler', 'svelte pivot table', 'svelte spreadsheet', 'svelte tree grid', 'svelte date picker', 'svelte data grid'],
+      `What you can build with SvGrid and Svelte 5: a Kanban board, a scheduler, ${GANTT ? 'a Gantt chart, ' : ''}a pivot table, a spreadsheet, a tree grid, an editable table, a date picker. Each with the prop that turns it on, a live demo, and the docs.`,
+    keywords: ['svelte kanban board', 'svelte scheduler', ...(GANTT ? ['svelte gantt chart'] : []), 'svelte pivot table', 'svelte spreadsheet', 'svelte tree grid', 'svelte date picker', 'svelte data grid'],
     path: '/svelte',
   },
   'ai-prompts': {
@@ -108,7 +111,7 @@ export const ROUTE_SEO = {
     // Kept as the prerendered wording: this is the title Google has indexed.
     title: 'Pricing - SvGrid Community (Free) + @svgrid/enterprise',
     description:
-      'SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer: Enterprise - Single App ($599) or Enterprise - Multi App ($999) - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support. AI helpers are built into the free @svgrid/grid.',
+      `SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer: Enterprise - Single App ($599) or Enterprise - Multi App ($999) - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds the Kanban board, ${GANTT ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet'} views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support. AI helpers are built into the free @svgrid/grid.`,
     keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'enterprise single app developer license', 'enterprise multi app developer license', 'enterprise custom svelte grid', 'svelte table commercial license'],
     path: '/pricing',
   },
