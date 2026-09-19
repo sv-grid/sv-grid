@@ -46,13 +46,22 @@ if (!existsSync(BLOG_DIR)) {
   process.exit(1)
 }
 
-// The three hubs, so each can cross-link to the other two (hub-to-hub links
-// concentrate authority and give crawlers a clear cluster map).
+// The learn cluster is an experiment (category `Svelte` in tools/blog-topics.json),
+// so it is gated: below this many published posts the hub is neither written nor
+// linked from the other three. An empty hub is a thin page, and a cross-link to a
+// page that was never written is a 404 in every other hub.
+const LEARN_SLUG = 'learn-svelte-5'
+const LEARN_MIN_POSTS = 3
+
+// The hubs, so each can cross-link to the others (hub-to-hub links concentrate
+// authority and give crawlers a clear cluster map).
 const PILLARS = [
   { slug: 'svelte-data-grid-comparisons', label: 'Comparisons and alternatives' },
   { slug: 'svelte-data-grid-integrations', label: 'Backend and framework integrations' },
   { slug: 'svelte-data-grid-guides', label: 'Guides and tutorials' },
+  { slug: LEARN_SLUG, label: 'Learn Svelte 5' },
 ]
+// Every pillar slug, gated or not, so a hub is never listed inside another hub.
 const PILLAR_SLUGS = new Set(PILLARS.map((p) => p.slug))
 
 const posts = readdirSync(BLOG_DIR)
@@ -74,13 +83,20 @@ const byCategory = (cat) =>
 const byCategories = (cats) =>
   posts.filter((p) => cats.includes(p.category)).sort((a, b) => a.title.localeCompare(b.title))
 
+// Hubs that exist on disk after this run, so cross-links only point at real pages.
+const LIVE_HUBS = new Set(
+  PILLARS.filter((p) => p.slug !== LEARN_SLUG || byCategory('Svelte').length >= LEARN_MIN_POSTS).map((p) => p.slug),
+)
+
 function linkList(list) {
   return list
     .map((p) => `- [${p.title}](/blog/${p.slug})${p.description ? ` - ${p.description}` : ''}`)
     .join('\n')
 }
 
-function writePillar({ slug, title, description, tags, intro, sections }) {
+// `category` decides which blog group the hub itself lands in (CATEGORY_TO_GROUP
+// on the site). The three grid hubs are Concepts, which groups them under Guides.
+function writePillar({ slug, title, description, tags, intro, sections, category = 'Concepts' }) {
   const path = join(BLOG_DIR, `${slug}.md`)
   const date = PUBLISH_DATE
   const frontmatter = [
@@ -89,14 +105,14 @@ function writePillar({ slug, title, description, tags, intro, sections }) {
     `description: ${description}`,
     `date: ${date}`,
     `updated: "${TODAY}"`,
-    'category: Concepts',
+    `category: ${category}`,
     `tags: ${tags.join(', ')}`,
     `author: ${AUTHOR}`,
     'pinned: true',
     '---',
   ].join('\n')
 
-  const otherHubs = PILLARS.filter((p) => p.slug !== slug)
+  const otherHubs = PILLARS.filter((p) => p.slug !== slug && LIVE_HUBS.has(p.slug))
     .map((p) => `- [${p.label}](/blog/${p.slug})`)
     .join('\n')
   const hubsSection = `## More Svelte data grid hubs\n\n${otherHubs}`
@@ -168,5 +184,36 @@ writePillar({
     { heading: 'Real-world use cases', blurb: 'Complete screens built end to end.', list: byCategory('Use cases') },
   ],
 })
+
+// ---- Learn Svelte 5 pillar ----------------------------------------------
+// Deliberately not about SvGrid features. This cluster targets the Svelte 5 and
+// SvelteKit questions a developer hits while building a data-heavy screen, where
+// svelte.dev's tutorial stops and no canonical answer exists. Syntax basics stay
+// out: svelte.dev owns those queries and that reader does not evaluate a grid.
+if (LIVE_HUBS.has(LEARN_SLUG)) {
+  writePillar({
+    slug: LEARN_SLUG,
+    // Sits in the Learn group with the posts it lists, not in Guides with the
+    // three grid hubs, so the group reads as one self-contained track.
+    category: 'Svelte',
+    title: 'Learn Svelte 5: State, Runes, and Data in Real Apps',
+    description:
+      'Working guides to Svelte 5 and SvelteKit for data-heavy apps: $state vs stores, $derived vs $effect, snippets, load functions, form actions, and rendering large lists.',
+    tags: ['svelte 5', 'sveltekit', 'runes', 'learn svelte'],
+    intro:
+      'The official Svelte tutorial teaches the syntax. These guides pick up where it stops: what to reach for once a ' +
+      'real app has a few thousand rows, a server to load them from, and state that more than one component needs. Each ' +
+      'one answers a question with runnable Svelte 5 code, explains the tradeoff behind the answer, and says when the ' +
+      'simpler option is still the right one.',
+    sections: [
+      { heading: 'State and reactivity', blurb: 'Runes in an app that outgrew a single component.', list: byCategory('Svelte').filter((p) => /(state|store|derived|effect|context|bindable|reactiv)/i.test(p.slug)) },
+      { heading: 'SvelteKit and data loading', blurb: 'Getting rows from a server into a page.', list: byCategory('Svelte').filter((p) => /(sveltekit|load|action|fetch|pagination|server)/i.test(p.slug)) },
+      { heading: 'Rendering and components', blurb: 'Snippets, lists, and what gets slow.', list: byCategory('Svelte').filter((p) => !/(state|store|derived|effect|context|bindable|reactiv|sveltekit|load|action|fetch|pagination|server)/i.test(p.slug)) },
+    ].filter((sec) => sec.list.length > 0),
+  })
+} else {
+  const have = byCategory('Svelte').length
+  console.log(`skipped ${LEARN_SLUG}.md (${have}/${LEARN_MIN_POSTS} published posts in category Svelte)`)
+}
 
 console.log(DRY_RUN ? '\n(dry run - nothing written)' : 'done')

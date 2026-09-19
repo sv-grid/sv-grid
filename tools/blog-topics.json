@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "readme": "Priority-ordered search queries the daily blog generator writes against (node tools/generate-blog-post.mjs --next). A topic is consumed once website/src/content/blog/<slug>.md exists; nothing here changes when a post ships. Every demo, doc and api reference is validated by tools/seo-guardrails.test.ts. Sources: gsc = Search Console query with impressions and no page, p2 = marketing/seo-content-plan.md money term, ai-prompts = a question from website/src/lib/ai-prompts.ts, api = an SvGridApi identifier people search for, component = a UI component x task query.",
+  "readme": "Priority-ordered search queries the daily blog generator writes against (node tools/generate-blog-post.mjs --next). A topic is consumed once website/src/content/blog/<slug>.md exists; nothing here changes when a post ships. Every demo, doc and api reference is validated by tools/seo-guardrails.test.ts. Sources: gsc = Search Console query with impressions and no page, p2 = marketing/seo-content-plan.md money term, ai-prompts = a question from website/src/lib/ai-prompts.ts, api = an SvGridApi identifier people search for, component = a UI component x task query, learn = the Svelte 5 / SvelteKit learning cluster (category Svelte), which targets language and framework questions rather than grid features.",
   "topics": [
     {
       "slug": "svelte-kanban-board-drag-and-drop-lanes",
@@ -1708,6 +1708,259 @@
       "api": [],
       "brief": "The responsive prop, the breakpoint where columns unpin, and the card renderer for narrow screens. Show the same data at three widths.",
       "source": "component"
+    },
+    {
+      "slug": "svelte-5-state-vs-stores-shared-table-data",
+      "query": "svelte 5 state vs store",
+      "secondary": [
+        "svelte 5 stores deprecated",
+        "svelte writable store vs runes",
+        "svelte 5 shared state"
+      ],
+      "intent": "concept",
+      "workingTitle": "Svelte 5: when $state replaces a store, and when it does not",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "runes",
+        "state"
+      ],
+      "demos": [
+        "01-quick-start"
+      ],
+      "docs": [
+        "help/headless/controlled-state"
+      ],
+      "brief": "A store is still the right answer in two cases: state that lives outside the component tree, and state something non-Svelte subscribes to. Everywhere else $state in a .svelte.js module is less code. Show all three: a component-local $state, a shared $state module, and a writable store, with the exact reason to pick each. Explain why $state cannot be exported directly from a module as a bare binding and what to export instead. Assume the reader has Svelte 4 code to move.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "svelte-5-derived-vs-effect-for-filtered-lists",
+      "query": "svelte derived vs effect",
+      "secondary": [
+        "svelte 5 $derived",
+        "when to use $effect svelte",
+        "svelte $effect infinite loop"
+      ],
+      "intent": "concept",
+      "workingTitle": "$derived or $effect: the rule that stops the infinite loop",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "runes",
+        "derived"
+      ],
+      "demos": [
+        "02-sort-filter-paginate"
+      ],
+      "docs": [
+        "help/headless/controlled-state"
+      ],
+      "brief": "The rule is one line: if you are computing a value, use $derived; if you are reaching outside Svelte, use $effect. Most $effect bugs are a $derived written the wrong way round. Take a filtered and sorted list of rows, write it as an $effect that assigns to $state, show the loop it causes, then rewrite it as $derived. Cover $derived.by for multi-statement work, and the one legitimate $effect here (syncing a query string to the URL).",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "sveltekit-load-vs-client-fetch-for-table-data",
+      "query": "sveltekit load function vs fetch",
+      "secondary": [
+        "sveltekit load data table",
+        "sveltekit +page.server.ts data",
+        "sveltekit client side fetch"
+      ],
+      "intent": "how-to",
+      "workingTitle": "Loading table data in SvelteKit: load, +page.server, or client fetch",
+      "category": "Svelte",
+      "tags": [
+        "sveltekit",
+        "data loading",
+        "ssr"
+      ],
+      "demos": [
+        "09-server-side"
+      ],
+      "docs": [
+        "getting-started/sveltekit",
+        "help/server/server-paging"
+      ],
+      "brief": "Three places rows can come from and what each costs. +page.server.ts when the query needs secrets or the first paint needs data. +page.ts when the same fetch works on both sides. A client fetch in onMount when the data is user-triggered and should not block navigation. Show the same table wired all three ways, then say what breaks: waterfalls from awaiting in series, data that serializes badly, and re-running load on every filter change when invalidation would do.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "svelte-5-snippets-instead-of-slots-with-examples",
+      "query": "svelte 5 snippets",
+      "secondary": [
+        "svelte snippet vs slot",
+        "svelte 5 named slots",
+        "svelte render snippet"
+      ],
+      "intent": "how-to",
+      "workingTitle": "Svelte 5 snippets: porting every slot pattern you had",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "snippets",
+        "components"
+      ],
+      "demos": [
+        "10-custom-cells-and-themes"
+      ],
+      "docs": [
+        "help/cells/cell-components"
+      ],
+      "brief": "Every Svelte 4 slot pattern and its snippet equivalent, side by side: default slot, named slots, slot props, $$slots checks, and a slot passed through two levels. Cover {#snippet}, {@render}, the Snippet type for typing a prop, and the implicit children prop. Use a cell renderer as the worked example since that is a snippet taking per-row arguments. Say plainly what got better (arguments are typed, a snippet is a value you can pass on) and what got more verbose.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "sveltekit-pagination-for-a-postgres-query",
+      "query": "sveltekit pagination",
+      "secondary": [
+        "sveltekit paginated table",
+        "sveltekit offset vs cursor pagination",
+        "sveltekit url search params pagination"
+      ],
+      "intent": "how-to",
+      "workingTitle": "Paginating a Postgres query in SvelteKit, with the page in the URL",
+      "category": "Svelte",
+      "tags": [
+        "sveltekit",
+        "pagination",
+        "postgres"
+      ],
+      "demos": [
+        "113-cursor-pagination"
+      ],
+      "docs": [
+        "help/server/server-paging"
+      ],
+      "brief": "Keep the page number in the URL, not in component state, so refresh and back work. Read it from url.searchParams in load, pass limit and offset to the query, return the total for the page count. Then show why OFFSET gets slow past a few thousand pages and rewrite it as keyset pagination on an indexed sort column. Include the invalidation path so changing pages does not do a full navigation.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "svelte-5-reactivity-with-large-arrays",
+      "query": "svelte 5 performance large array",
+      "secondary": [
+        "svelte 5 state proxy performance",
+        "svelte $state.raw",
+        "svelte slow with many rows"
+      ],
+      "intent": "concept",
+      "workingTitle": "Why $state gets slow at 50k rows, and what to use instead",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "performance",
+        "runes"
+      ],
+      "demos": [
+        "06-large-dataset"
+      ],
+      "docs": [
+        "help/benchmarks"
+      ],
+      "brief": "$state deep-proxies what you assign to it, and for an array of 50k objects that proxying is the cost, not the rendering. Measure it first, then show $state.raw for data you replace wholesale rather than mutate, and the reassignment pattern it forces. Cover $state.snapshot for handing data to a non-Svelte API. Derive every number you quote from a script the reader can run, do not assert a multiplier.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "svelte-virtual-scrolling-from-scratch-then-not",
+      "query": "svelte virtual scroll",
+      "secondary": [
+        "svelte virtual list",
+        "svelte render 100k rows",
+        "svelte windowing"
+      ],
+      "intent": "concept",
+      "workingTitle": "Virtual scrolling in Svelte: build it, then understand why you stop",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "virtualization",
+        "performance"
+      ],
+      "demos": [
+        "06-large-dataset"
+      ],
+      "docs": [
+        "help/headless/virtualization"
+      ],
+      "brief": "Build a working fixed-height virtual list in about 30 lines: a spacer div, a scroll handler, a visible slice from $derived. It works. Then walk the things that break it in a real table: variable row heights, keyboard focus landing on an unrendered row, sticky headers, horizontal virtualization, and screen readers needing aria-rowcount for rows that are not in the DOM. The honest conclusion is that the 30 lines are fine for a list and not for a grid.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "sveltekit-form-actions-for-inline-editing",
+      "query": "sveltekit form actions",
+      "secondary": [
+        "sveltekit use:enhance",
+        "sveltekit form action validation",
+        "sveltekit optimistic update"
+      ],
+      "intent": "how-to",
+      "workingTitle": "SvelteKit form actions for editing a row in place",
+      "category": "Svelte",
+      "tags": [
+        "sveltekit",
+        "form actions",
+        "editing"
+      ],
+      "demos": [
+        "05-inline-editing",
+        "115-optimistic-updates"
+      ],
+      "docs": [
+        "help/server/server-editing"
+      ],
+      "brief": "Editing one cell is still a form submit, and that is the point: it works before hydration. Start with a named action and a plain form, add use:enhance for the no-reload path, then return a validation failure with fail() and render it next to the cell. Finish with the optimistic update: apply locally, submit, roll back on failure. Show the rollback code, since that is the part most examples skip.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "svelte-5-bindable-props-two-way-data",
+      "query": "svelte 5 bindable",
+      "secondary": [
+        "svelte $bindable props",
+        "svelte 5 two way binding",
+        "svelte bind value component"
+      ],
+      "intent": "reference",
+      "workingTitle": "$bindable in Svelte 5: what it changed and when to avoid it",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "props",
+        "bindable"
+      ],
+      "demos": [
+        "04-selection-copy-paste"
+      ],
+      "docs": [
+        "help/state/named-views"
+      ],
+      "brief": "In Svelte 4 any prop could be bound. In Svelte 5 a prop is one-way unless it is $bindable, and that is a deliberate narrowing. Show the declaration, a fallback value, and bind: at the call site. Then argue the other side: for anything beyond a form input, a callback prop is easier to trace than a binding, because a binding hides who wrote the value. Use a selection state example where both work and say which one you would ship.",
+      "source": "learn:2026-09"
+    },
+    {
+      "slug": "svelte-context-api-for-shared-component-state",
+      "query": "svelte context api",
+      "secondary": [
+        "svelte setContext getContext",
+        "svelte 5 context runes",
+        "svelte share state between components"
+      ],
+      "intent": "how-to",
+      "workingTitle": "setContext with runes: sharing state without prop drilling",
+      "category": "Svelte",
+      "tags": [
+        "svelte 5",
+        "context",
+        "state"
+      ],
+      "demos": [
+        "07-grouping-aggregation"
+      ],
+      "docs": [
+        "help/headless/build-a-table",
+        "why-headless"
+      ],
+      "brief": "Context solves prop drilling and nothing else. It is per component tree, so two instances on one page each get their own, which is exactly what a module-level $state cannot do. Show the working pattern: setContext during init with a getter-bearing object, not a raw $state value, and explain why passing the value directly loses reactivity. Cover the typed key helper, and the rule that setContext only runs during component initialization.",
+      "source": "learn:2026-09"
     }
   ]
 }

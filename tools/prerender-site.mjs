@@ -414,7 +414,7 @@ function parseFrontmatter(raw) {
 }
 
 // Top-level groups for the blog index - mirrors BLOG_GROUPS in lib/blog.ts.
-const BLOG_GROUPS = ['Tutorials', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Enterprise', 'Company']
+const BLOG_GROUPS = ['Tutorials', 'Learn', 'Compare', 'Performance', 'Engineering', 'Guides', 'AI', 'Enterprise', 'Company']
 const CATEGORY_TO_GROUP = {
   'Getting started': 'Tutorials', Sorting: 'Tutorials', Filtering: 'Tutorials', Editing: 'Tutorials',
   Grouping: 'Tutorials', Selection: 'Tutorials', Columns: 'Tutorials', Cells: 'Tutorials', Rows: 'Tutorials',
@@ -422,6 +422,9 @@ const CATEGORY_TO_GROUP = {
   Performance: 'Performance', Engineering: 'Engineering', Architecture: 'Engineering',
   Accessibility: 'Guides', Theming: 'Guides', Integration: 'Guides', Concepts: 'Guides', Reference: 'Guides',
   'UI components': 'Tutorials',
+  // Svelte 5 language and SvelteKit topics, not SvGrid features: its own group so
+  // the cluster reads as a learning track rather than product tutorials.
+  Svelte: 'Learn',
   AI: 'AI', Enterprise: 'Enterprise', Export: 'Enterprise', Product: 'Enterprise', Company: 'Company',
 }
 const blogGroupOf = (cat) => CATEGORY_TO_GROUP[cat] ?? 'Guides'
