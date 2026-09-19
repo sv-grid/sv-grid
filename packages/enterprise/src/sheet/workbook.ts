@@ -14,7 +14,7 @@
 import { parseFormula } from './parse'
 import { evaluate, rangeValues, type EvalContext, tableRectOf } from './evaluate'
 import { withCustomFunctions, type SheetFunction } from './functions'
-import { isError, type CellValue, type Node } from './ast'
+import { isError, typedError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
 import { createTableRegistry, isValidTableName, shiftTables, type TableRegion, type TableRegistry } from './tables'
 import { createNames, type SheetNames } from './names'
@@ -674,7 +674,7 @@ export function createWorkbook(
       value = text !== '' && Number.isFinite(n) ? n
         : upper === 'TRUE' ? true
         : upper === 'FALSE' ? false
-        : text
+        : typedError(text) ?? text
     }
     visiting.delete(key)
     depth -= 1
@@ -691,7 +691,10 @@ export function createWorkbook(
     if (t.startsWith('=')) return t
     const n = Number(t)
     const upper = t.toUpperCase()
-    return Number.isFinite(n) ? n : upper === 'TRUE' ? true : upper === 'FALSE' ? false : t
+    return Number.isFinite(n) ? n
+      : upper === 'TRUE' ? true
+      : upper === 'FALSE' ? false
+      : typedError(t) ?? t
   }
 
   function rowCount(sheet: string): number {

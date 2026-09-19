@@ -444,6 +444,16 @@ describe("Excel's text prefix", () => {
     expect(sheet).not.toContain("'007")
   })
 
+  it('writes a typed error as an error, and reads it back as one', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['#N/A', "'#N/A"]] }] })
+    const parts = documentToXlsxParts(doc)
+    expect(parts['xl/worksheets/sheet1.xml']).toContain('t="e"><v>#N/A</v>')
+    const back = createSheetDocument({ state: documentFromXlsxParts(parts) })
+    expect(back.workbook.getValue('S', 0, 0)).toEqual({ error: '#N/A' })
+    // And the text of one stays text.
+    expect(back.workbook.getValue('S', 0, 1)).toBe('#N/A')
+  })
+
   it('keeps a string cell text when the file comes back', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [["'007", 'plain']] }] })
     const back = documentFromXlsxParts(documentToXlsxParts(doc))

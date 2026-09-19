@@ -21,6 +21,21 @@ export function err(code: SheetError): { error: SheetError } {
   return { error: code }
 }
 
+/** The error codes a user can type into a cell. Excel stores what is typed
+ *  as the error itself, so =ISNA(A1) over a cell holding #N/A is TRUE.
+ *  #PARSE! is ours, not Excel's, and no one types it. */
+const TYPED_ERRORS: ReadonlyArray<SheetError> = [
+  '#REF!', '#DIV/0!', '#VALUE!', '#NAME?', '#NUM!', '#N/A', '#SPILL!', '#CALC!', '#CYCLE!',
+]
+
+/** The error a typed text stands for, or null when it is ordinary text. */
+export function typedError(text: string): { error: SheetError } | null {
+  if (!text.startsWith('#')) return null
+  const upper = text.toUpperCase()
+  const found = TYPED_ERRORS.find((code) => code === upper)
+  return found ? { error: found } : null
+}
+
 /** Thrown during evaluation and caught at the boundary, where it becomes a
  *  value. Carrying the code on a real Error keeps stack traces useful in dev
  *  without the evaluator having to thread a result type through every branch. */
