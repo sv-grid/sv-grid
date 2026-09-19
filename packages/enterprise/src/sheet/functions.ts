@@ -16,7 +16,8 @@
  */
 import { isError, err, type CellValue } from './ast'
 import {
-  toNumber, toBool, toText, looseEquals, compare,
+  toNumber, toBool, toText, looseEquals, compare, patternEquals,
+  hasWildcards, wildcardRegExp, unescapeWildcards,
   numericOnly, isBlank, toDate, isoDate as iso,
   criteriaHits, multiCriteriaHits, criteriaPairs,
 } from './coerce'
@@ -80,6 +81,20 @@ function nearestIndex(
     if (best < 0 || compare(v, pool[best]!) * dir >= 0) best = i
   }
   return best
+}
+
+
+/** Where a wildcard pattern starts inside a text, or -1. Excel reports the
+ *  earliest position a match can begin at, so the search walks forward and
+ *  tries every ending from the shortest up. */
+function wildcardSearch(text: string, pattern: string): number {
+  const re = wildcardRegExp(pattern)
+  for (let start = 0; start <= text.length; start += 1) {
+    for (let end = start; end <= text.length; end += 1) {
+      if (re.test(text.slice(start, end))) return start
+    }
+  }
+  return -1
 }
 
 
@@ -238,8 +253,16 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const at = toText(nth(a, 1)).indexOf(toText(nth(a, 0)))
     return at < 0 ? err('#VALUE!') : at + 1
   },
+  // SEARCH is FIND's case-insensitive twin, and unlike FIND it reads Excel's
+  // wildcards: =SEARCH("n?rth", A1) finds either spelling.
   SEARCH: (a) => {
-    const at = toText(nth(a, 1)).toLowerCase().indexOf(toText(nth(a, 0)).toLowerCase())
+    const needle = toText(nth(a, 0))
+    const hay = toText(nth(a, 1))
+    if (hasWildcards(needle)) {
+      const at = wildcardSearch(hay, needle)
+      return at < 0 ? err('#VALUE!') : at + 1
+    }
+    const at = hay.toLowerCase().indexOf(unescapeWildcards(needle).toLowerCase())
     return at < 0 ? err('#VALUE!') : at + 1
   },
   /**
@@ -303,7 +326,7 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const keys = grid.map((row) => row[0] ?? '')
     const exact = a.args[3] !== undefined && !toBool(nth(a, 3))
     const at = exact
-      ? keys.findIndex((v) => looseEquals(v, needle))
+      ? keys.findIndex((v) => patternEquals(v, needle))
       : nearestIndex(keys, needle, 1)
     if (at < 0) return err('#N/A')
     const cell = grid[at]![col - 1]
@@ -320,7 +343,7 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const header = grid[0] ?? []
     const exact = a.args[3] !== undefined && !toBool(nth(a, 3))
     const at = exact
-      ? header.findIndex((v) => looseEquals(v, needle))
+      ? header.findIndex((v) => patternEquals(v, needle))
       : nearestIndex(header, needle, 1)
     if (at < 0) return err('#N/A')
     const cell = grid[rowIndex - 1]?.[at]
@@ -331,7 +354,8 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const pool = a.args[1] ?? []
     const mode = a.args[2] ? Math.round(toNumber(nth(a, 2))) : 1
     if (mode === 0) {
-      const at = pool.findIndex((v) => looseEquals(v, needle))
+      // An exact match takes Excel's wildcards: =MATCH("North*", ...).
+      const at = pool.findIndex((v) => patternEquals(v, needle))
       return at < 0 ? err('#N/A') : at + 1
     }
     // Ordered search: 1 wants the last value not past the needle in an
@@ -360,18 +384,24 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   },
   // XLOOKUP(lookup, haystack, results, [ifMissing], [matchMode], [searchMode]).
   // matchMode 0 is the exact match it defaults to, -1 falls back to the next
-  // smaller item and 1 to the next larger one; a negative searchMode reads the
-  // range from the end, which is how you pick the LAST of several matches.
+  // smaller item, 1 to the next larger one and 2 reads the value as a wildcard
+  // pattern; a negative searchMode reads the range from the end, which is how
+  // you pick the LAST of several matches.
   XLOOKUP: (a) => {
     const needle = nth(a, 0)
     const haystack = a.args[1] ?? []
     const results = a.args[2] ?? []
     const mode = a.args[4] !== undefined ? Math.round(toNumber(nth(a, 4))) : 0
     const back = a.args[5] !== undefined && Math.round(toNumber(nth(a, 5))) < 0
+    // Unlike the older lookups, XLOOKUP reads wildcards only when asked:
+    // match mode 2.
+    const same = mode === 2
+      ? (v: CellValue) => patternEquals(v, needle)
+      : (v: CellValue) => looseEquals(v, needle)
     let at = -1
     for (let i = 0; i < haystack.length; i += 1) {
       const j = back ? haystack.length - 1 - i : i
-      if (looseEquals(haystack[j]!, needle)) { at = j; break }
+      if (same(haystack[j]!)) { at = j; break }
     }
     if (at < 0 && mode === -1) at = nearestIndex(haystack, needle, 1)
     if (at < 0 && mode === 1) at = nearestIndex(haystack, needle, -1)

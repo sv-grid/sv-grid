@@ -80,6 +80,68 @@ export function looseEquals(a: CellValue, b: CellValue): boolean {
   return false
 }
 
+/**
+ * Excel's wildcards, which every text criterion and exact lookup speaks:
+ * `*` stands for any run of characters, `?` for exactly one, and `~` asks
+ * for the next character itself, so `"~*"` is a literal asterisk.
+ */
+export function hasWildcards(pattern: string): boolean {
+  for (let i = 0; i < pattern.length; i += 1) {
+    const ch = pattern[i]
+    if (ch === '~') { i += 1; continue }
+    if (ch === '*' || ch === '?') return true
+  }
+  return false
+}
+
+const LITERAL = /[\\^$.*+?()[\]{}|]/g
+
+/** The pattern as a regular expression, anchored at both ends and
+ *  case-insensitive, which is how Excel compares text. */
+export function wildcardRegExp(pattern: string): RegExp {
+  let out = ''
+  for (let i = 0; i < pattern.length; i += 1) {
+    const ch = pattern[i]!
+    if (ch === '~' && i + 1 < pattern.length) {
+      out += pattern[i + 1]!.replace(LITERAL, '\\$&')
+      i += 1
+      continue
+    }
+    if (ch === '*') { out += '[\\s\\S]*'; continue }
+    if (ch === '?') { out += '[\\s\\S]'; continue }
+    out += ch.replace(LITERAL, '\\$&')
+  }
+  return new RegExp(`^${out}$`, 'i')
+}
+
+/** The pattern with its `~` escapes taken off, which is the text a plain
+ *  comparison should look for: `"~*"` means a literal asterisk. */
+export function unescapeWildcards(pattern: string): string {
+  if (!pattern.includes('~')) return pattern
+  let out = ''
+  for (let i = 0; i < pattern.length; i += 1) {
+    const ch = pattern[i]!
+    if (ch === '~' && i + 1 < pattern.length) { out += pattern[i + 1]!; i += 1; continue }
+    out += ch
+  }
+  return out
+}
+
+/** Does this cell match a wildcard pattern? Only text takes part: Excel
+ *  never turns a number into text to match `"1*"`. */
+export function wildcardMatches(value: CellValue, pattern: string): boolean {
+  if (typeof value !== 'string') return false
+  return wildcardRegExp(pattern).test(value)
+}
+
+/** Equality as a criterion or an exact lookup reads it: a pattern carrying
+ *  wildcards matches, anything else compares as `=` does. */
+export function patternEquals(value: CellValue, operand: CellValue): boolean {
+  if (typeof operand !== 'string') return looseEquals(value, operand)
+  if (hasWildcards(operand)) return wildcardMatches(value, operand)
+  return looseEquals(value, unescapeWildcards(operand))
+}
+
 /** Ordering for `<` and friends. Excel orders number < text < boolean. */
 export function compare(a: CellValue, b: CellValue): number {
   if (typeof a === 'number' && typeof b === 'number') return a < b ? -1 : a > b ? 1 : 0
@@ -120,8 +182,8 @@ export function matchesCriterion(value: CellValue, criterion: CellValue): boolea
       const n = Number(rest)
       const operand: CellValue = rest !== '' && Number.isFinite(n) ? n : rest
       switch (opText) {
-        case '=': return looseEquals(value, operand)
-        case '<>': return !looseEquals(value, operand)
+        case '=': return patternEquals(value, operand)
+        case '<>': return !patternEquals(value, operand)
         case '<': return compare(value, operand) < 0
         case '>': return compare(value, operand) > 0
         case '<=': return compare(value, operand) <= 0
@@ -130,7 +192,7 @@ export function matchesCriterion(value: CellValue, criterion: CellValue): boolea
       }
     }
   }
-  return looseEquals(value, criterion)
+  return patternEquals(value, criterion)
 }
 
 /** The indexes in `range` that meet `criterion`, for the IF family. */

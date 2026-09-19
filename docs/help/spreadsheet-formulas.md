@@ -101,6 +101,16 @@ negative payment on a positive loan, and `=FV(6%/12, 120, -100)` a
 positive balance from negative deposits. `RATE` and `IRR` are solved
 numerically and return `#NUM!` when no rate fits.
 
+Text criteria and exact lookups read Excel's wildcards: `*` stands for any
+run of characters, `?` for exactly one, and `~` asks for the character
+itself, so `"~*"` is a literal asterisk. `=COUNTIF(A:A, "North*")`,
+`=SUMIFS(B:B, A:A, "North*")`, `=MATCH("Sou*", A1:A9, 0)` and
+`=VLOOKUP("Sou*", A1:B9, 2, FALSE)` all match that way, as does the
+`"<>North*"` form. `XLOOKUP` reads them only when asked, with match mode 2,
+and `SEARCH` takes them too while `FIND`, the literal case-sensitive one,
+does not. Only text takes part: a number is never turned into text to meet
+`"1*"`.
+
 The lookup family carries Excel's match modes. `VLOOKUP` and `HLOOKUP` take
 `range_lookup` as a fourth argument, and it defaults to `TRUE`: the table is
 read as sorted and the answer is the last entry not past the value looked up,

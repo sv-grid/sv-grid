@@ -248,6 +248,44 @@ describe('the function library', () => {
     expect(run('=COUNTIF(A1:A3, "<>5")', sheet)).toBe(2)
   })
 
+  // A QA pass read these against Excel. Wildcards are part of every text
+  // criterion, and a report filtering on "North*" is the usual reason.
+  it('reads Excel wildcards in a criterion', () => {
+    const sheet: CellValue[][] = [
+      ['North East', 10], ['North West', 20], ['South', 30], ['northern', 40],
+    ]
+    expect(run('=COUNTIF(A1:A4, "North*")', sheet)).toBe(3)
+    expect(run('=SUMIF(A1:A4, "North*", B1:B4)', sheet)).toBe(70)
+    expect(run('=SUMIFS(B1:B4, A1:A4, "North*")', sheet)).toBe(70)
+    expect(run('=COUNTIF(A1:A4, "=North*")', sheet)).toBe(3)
+    expect(run('=COUNTIF(A1:A4, "<>North*")', sheet)).toBe(1)
+    // ? is exactly one character, so a five-letter word matches nothing here.
+    expect(run('=COUNTIF(A1:A4, "Nort?")', sheet)).toBe(0)
+    expect(run('=COUNTIF(A1:A4, "Sout?")', sheet)).toBe(1)
+    // ~ asks for the character itself.
+    const stars: CellValue[][] = [['*'], ['ab']]
+    expect(run('=COUNTIF(A1:A2, "~*")', stars)).toBe(1)
+    expect(run('=COUNTIF(A1:A2, "*")', stars)).toBe(2)
+  })
+
+  it('reads wildcards in an exact lookup', () => {
+    const sheet: CellValue[][] = [['North East', 10], ['South', 30]]
+    expect(run('=MATCH("Sou*", A1:A2, 0)', sheet)).toBe(2)
+    expect(run('=VLOOKUP("Sou*", A1:B2, 2, FALSE)', sheet)).toBe(30)
+    expect(run('=HLOOKUP("Nor*", A1:B1, 1, FALSE)', [['North East', 'South']])).toBe('North East')
+    // XLOOKUP reads them only when asked, with match mode 2.
+    expect(run('=XLOOKUP("Sou*", A1:A2, B1:B2, "none")', sheet)).toBe('none')
+    expect(run('=XLOOKUP("Sou*", A1:A2, B1:B2, "none", 2)', sheet)).toBe(30)
+  })
+
+  it('reads wildcards in SEARCH but not FIND', () => {
+    expect(run('=SEARCH("n?rth", "the North")')).toBe(5)
+    expect(run('=SEARCH("st*", "North East")')).toBe(9)
+    expect(run('=SEARCH("~*", "a*b")')).toBe(2)
+    // FIND is the literal, case-sensitive one.
+    expect(run('=FIND("n?rth", "the North")')).toEqual({ error: '#VALUE!' })
+  })
+
   it('does multi-criteria aggregation', () => {
     const sheet: CellValue[][] = [['a', 'x', 1], ['a', 'y', 2], ['b', 'x', 4]]
     expect(run('=COUNTIFS(A1:A3, "a", B1:B3, "x")', sheet)).toBe(1)
