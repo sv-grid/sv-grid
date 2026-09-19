@@ -86,6 +86,10 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- Ctrl+X marks the block rather than emptying it, as Excel's cut does: the
+  cells stay where they are until the paste lands, Escape leaves the sheet
+  as it was, and one Ctrl+Z puts a whole move back. The ribbon's Cut and
+  the menu's mean the same thing.
 - Cut and paste MOVES the cells, so every formula that read them follows:
   moving A1 to D1 rewrites `=A1*2` as `=D1*2`, across every sheet and the
   defined names, the way Excel does. A `$` makes no difference, since the

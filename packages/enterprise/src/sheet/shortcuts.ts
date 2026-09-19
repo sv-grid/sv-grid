@@ -154,6 +154,7 @@ export type RibbonKeyAction =
   | 'hide-rows' | 'hide-columns' | 'unhide-rows' | 'unhide-columns'
   | 'edit-comment' | 'open-list' | 'toggle-ribbon' | 'insert-link'
   | 'merge-center' | 'merge-across' | 'merge-cells' | 'unmerge-cells'
+  | 'cut'
 let onRibbonAction: ((action: RibbonKeyAction, cmd: GridCommandContext) => boolean) | null = null
 
 export function setRibbonActionHandler(
