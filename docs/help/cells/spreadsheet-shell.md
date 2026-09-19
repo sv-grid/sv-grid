@@ -965,7 +965,11 @@ nothing is clickable, the target is never written into a saved file, and one
 found in a file being opened is dropped on the way in rather than carried
 into the document. A
 link is data, arriving from a colleague, a delta stream or an opened file,
-so what may be followed is named rather than assumed.
+so what may be followed is named rather than assumed. Insert > Link refuses
+such an address in the dialog and names the ones a cell does open, and
+clicking a cell that already carries one says the same thing in the status
+bar rather than pretending the address is empty or somewhere on this
+workbook.
 
 Links are per sheet, ride in `getState()` as `links`, report
 `{ kind: 'links' }` on `onChange`, and move with an insert or a delete.

@@ -126,3 +126,35 @@ describe('a protected sheet refuses the new writes', () => {
     expect(doc.workbook.getRaw('S', 6, 0)).toBe('')
   })
 })
+
+describe('what the status bar claims happened', () => {
+  it('editing a table says what it now wears rather than announcing a new one', async () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['Qty', 'Price'], ['2', '3'], ['4', '5'],
+    ] }] })
+    doc.workbook.tables.define({ name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false, style: 'TableStyleMedium2' })
+    const { api, sheet } = await mountSheet({ document: doc })
+    const cmd = api.getCommandContext()
+    cmd.setActiveCell(1, 0); cmd.setSelection(1, 0)
+    await paint()
+
+    // Insert > Table Styles on the table the cursor is in, then OK: the
+    // table is not being made, it is being dressed.
+    sheet.act('table-style')
+    await paint()
+    const dialog = document.querySelector('.sv-modal')
+    expect(dialog, 'the table dialog opened').not.toBeNull()
+    const green = dialog!.querySelector<HTMLButtonElement>('[role="radio"][aria-label*="Green"]')
+    green?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await paint()
+    const ok = [...dialog!.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'OK')
+    ok?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await paint()
+
+    const status = document.querySelector('.sv-sheet .status')?.textContent ?? ''
+    expect(status).toContain('Orders')
+    expect(status).toContain('Green')
+    // And the table really wears the style that was picked, not the one it had.
+    expect(doc.workbook.tables.list()[0]!.style).not.toBe('TableStyleMedium2')
+  })
+})
