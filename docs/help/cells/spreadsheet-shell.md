@@ -86,6 +86,12 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- A leading apostrophe says the rest is text, as it does in Excel: `'007`
+  is the text `007`, leading zero kept, and `'=A1+1` shows the formula
+  rather than working it out. The apostrophe is not part of the value, so
+  it is never displayed, printed, exported or compared; the formula bar
+  shows it, since it is what was typed. A cell that comes back from an
+  .xlsx as text keeps its prefix, so a part number survives the round trip.
 - The fill handle fills the way Excel's does: a lone value repeats, `1, 2`
   continues, `Jan` runs on to `Feb`, and a formula moves every relative
   reference by the distance dragged. Double-click it to fill down as far as

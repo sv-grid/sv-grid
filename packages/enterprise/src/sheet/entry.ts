@@ -62,7 +62,9 @@ export function completeEntry(typed: string, entries: Iterable<string>): string 
 
 export function parseEntry(text: string): ParsedEntry | null {
   const t = text.trim()
-  if (t === '' || t.startsWith('=')) return null
+  // An apostrophe says the rest is text, so nothing is read out of it and no
+  // format is implied: '12% is the text 12%, not twelve percent.
+  if (t === '' || t.startsWith('=') || t.startsWith("'")) return null
 
   let m = PERCENT.exec(t)
   if (m) {

@@ -49,6 +49,15 @@ export type IterationSettings = {
 
 export const DEFAULT_ITERATION: IterationSettings = { enabled: false, maxIterations: 100, maxChange: 0.001 }
 
+/** Excel's text prefix. A cell typed as `'007` holds the text `007`: the
+ *  apostrophe says "what follows is text", and it is not part of the value,
+ *  so it is never displayed, printed, exported or compared. */
+export const TEXT_PREFIX = "'"
+
+/** The value a typed text stands for once the prefix is taken off. */
+export const withoutTextPrefix = (text: string): string =>
+  text.startsWith(TEXT_PREFIX) ? text.slice(1) : text
+
 export type WorkbookOptions = {
   /** Extra functions merged over the built-ins. */
   functions?: Record<string, SheetFunction>
@@ -653,6 +662,12 @@ export function createWorkbook(
         graph.setPrecedents(key, null)
         volatile.delete(key)
       }
+    } else if (text.startsWith(TEXT_PREFIX)) {
+      // Excel's apostrophe: what follows is text, whatever it looks like,
+      // and the apostrophe itself is not part of it. It is the only way to
+      // keep a leading zero, a part number that reads as a date, or the
+      // text of a formula in a cell.
+      value = text.slice(1)
     } else {
       const n = Number(text)
       const upper = text.toUpperCase()
@@ -672,6 +687,7 @@ export function createWorkbook(
   function literal(text: string): CellValue {
     const t = text.trim()
     if (t === '') return ''
+    if (t.startsWith(TEXT_PREFIX)) return t.slice(1)
     if (t.startsWith('=')) return t
     const n = Number(t)
     const upper = t.toUpperCase()
