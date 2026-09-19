@@ -146,6 +146,46 @@ correct from 1900-03-01 on; Excel itself is a day out below serial 61 because
 it counts a 1900-02-29 that never existed, and matching that bug exactly would
 break real dates.
 
+### Elapsed time
+
+`[h]`, `[m]` and `[s]` (and `[hh]`, `[mm]`, `[ss]`) give the whole duration in
+that unit rather than the clock's reading of it, which is what a timesheet
+adds up:
+
+```ts
+formatWithPattern(1.5, '[h]:mm')       // '36:00'   a day and a half
+formatWithPattern(1.5, 'h:mm')         // '12:00'   the clock, for comparison
+formatWithPattern(0.5, '[mm]:ss')      // '720:00'
+```
+
+### Fractions
+
+`# ?/?` and its relatives show the closest fraction that fits the
+placeholders: one `?` allows a denominator up to 9, two up to 99. A literal
+denominator is used as it stands, unreduced, which is how eighths and
+sixteenths are written.
+
+```ts
+formatWithPattern(1.25, '# ?/?')       // '1 1/4'
+formatWithPattern(5.0625, '# ??/??')   // '5  1/16'
+formatWithPattern(1.25, '# ?/8')       // '1 2/8'
+formatWithPattern(1.25, '?/?')         // '5/4'     no integer part
+```
+
+### Text
+
+`@` is the text placeholder, and it stands for the value whatever the value
+is: a number in a cell formatted as Text reads as the number.
+
+```ts
+formatWithPattern('note', '@')         // 'note'
+formatWithPattern(5, '@')              // '5'
+formatWithPattern('note', '"x"@')      // 'xnote'
+formatWithPattern(5, ';;;')            // ''        Excel's hide-the-cell
+formatWithPattern('note', ';;;')       // ''        text as well
+formatWithPattern('note', '0.00')      // 'note'    no text section, so as it is
+```
+
 ### Presets
 
 `FORMAT_PRESETS` holds what `Ctrl+Shift+1` through `6` apply: `number`, `time`,

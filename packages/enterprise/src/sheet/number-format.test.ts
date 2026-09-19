@@ -291,3 +291,51 @@ describe('the presets behind Ctrl+Shift+1..6', () => {
     expect(f(42, FORMAT_PRESETS.general)).toBe('42')
   })
 })
+
+describe('the three Excel formats that were rendering nonsense', () => {
+  const show = (pattern: string, value: unknown) => compileNumberFormat(pattern).format(value).text
+
+  it('an elapsed time totals the duration rather than reading the clock', () => {
+    // A timesheet's [h]:mm over a day and a half is 36 hours, not noon.
+    expect(show('[h]:mm', 1.5)).toBe('36:00')
+    expect(show('[hh]:mm:ss', 1.5)).toBe('36:00:00')
+    expect(show('[mm]:ss', 0.5)).toBe('720:00')
+    expect(show('[s]', 0.5)).toBe('43200')
+    // The clock tokens are untouched by it.
+    expect(show('h:mm', 1.5)).toBe('12:00')
+    // And a bracket that is a colour or a condition still is one.
+    expect(compileNumberFormat('[Red]0.0').format(-5)).toEqual({ text: '-5.0', color: '#ff0000' })
+    expect(show('[>100]"big";[<=100]"small"', 150)).toBe('big')
+  })
+
+  it('a fraction finds the closest one that fits the placeholders', () => {
+    expect(show('# ?/?', 1.25)).toBe('1 1/4')
+    expect(show('# ?/?', 2.5)).toBe('2 1/2')
+    expect(show('# ?/?', -1.25)).toBe('-1 1/4')
+    // Rounding up to a whole is a whole, not 1/1.
+    expect(show('# ?/?', 0.99)).toBe('1')
+    expect(show('# ?/?', 3)).toBe('3')
+    // Two digits of denominator reach further.
+    expect(show('# ??/??', 5.0625)).toBe('5  1/16')
+    // A literal denominator is used as it stands, unreduced.
+    expect(show('# ?/8', 1.25)).toBe('1 2/8')
+    expect(show('# ?/16', 2.0625)).toBe('2 1/16')
+    // Without an integer part the whole value is the numerator.
+    expect(show('?/?', 1.25)).toBe('5/4')
+  })
+
+  it('the text placeholder shows the value, and an empty section hides it', () => {
+    // A number in a cell formatted as Text reads as the number.
+    expect(show('@', 5)).toBe('5')
+    expect(show('@', 'text')).toBe('text')
+    expect(show('"x"@', 'y')).toBe('xy')
+    // `;;;` is Excel's hide-the-cell trick, and it hides text too.
+    expect(show(';;;', 5)).toBe('')
+    expect(show(';;;', 'text')).toBe('')
+    // A numeric pattern with no text section leaves text alone.
+    expect(show('0.00', 'text')).toBe('text')
+    // A fourth section without an @ shows its own words instead.
+    expect(show('0.00;;;"n/a"', 'whatever')).toBe('n/a')
+  })
+})
+

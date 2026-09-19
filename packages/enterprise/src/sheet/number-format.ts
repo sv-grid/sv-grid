@@ -108,6 +108,9 @@ function parseSection(raw: string): Section {
       const end = raw.indexOf(']', i + 1)
       if (end < 0) { body += ch; continue }
       const inner = raw.slice(i + 1, end).trim().toUpperCase()
+      // An elapsed-time token is part of the pattern rather than a
+      // directive about it, so it stays in the body for the renderer.
+      if (ELAPSED_TOKEN.test(raw.slice(i))) { body += raw.slice(i, end + 1); i = end; continue }
       const named = COLORS[inner]
       if (named) color = named
       const cond = CONDITION.exec(inner)
@@ -123,6 +126,14 @@ function parseSection(raw: string): Section {
 }
 
 const DATE_TOKEN = /^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|A\/P)/
+/**
+ * Excel's elapsed-time tokens: the hours, minutes or seconds a duration
+ * holds in TOTAL rather than the clock's reading of it, which is what a
+ * timesheet needs. `[h]:mm` over 1.5 days is 36:00, not 12:00. Only h, m
+ * and s go in these brackets, so a colour (`[Red]`) or a condition
+ * (`[>100]`) never matches.
+ */
+const ELAPSED_TOKEN = /^\[(hh?|mm?|ss?)\]/
 
 /** Does this section describe a date? Scans outside quotes and escapes. */
 function looksLikeDate(body: string): boolean {
@@ -131,6 +142,14 @@ function looksLikeDate(body: string): boolean {
     if (ch === '\\') { i += 1; continue }
     if (ch === '"') {
       const end = body.indexOf('"', i + 1)
+      i = end < 0 ? body.length : end
+      continue
+    }
+    if (ELAPSED_TOKEN.test(body.slice(i))) return true
+    if (ch === '[') {
+      // Any other bracket is a colour or a condition, and says nothing
+      // about whether this is a date.
+      const end = body.indexOf(']', i + 1)
       i = end < 0 ? body.length : end
       continue
     }
@@ -165,12 +184,25 @@ function toDate(value: unknown): Date | null {
   return null
 }
 
-function renderDate(body: string, date: Date): string {
+function renderDate(body: string, date: Date, serial?: number): string {
   let out = ''
   let sawHour = false
   for (let i = 0; i < body.length; i += 1) {
     const ch = body[i]!
     if (ch === '\\') { out += body[i + 1] ?? ''; i += 1; continue }
+    const elapsed = ELAPSED_TOKEN.exec(body.slice(i))
+    if (elapsed) {
+      const token = elapsed[1]!
+      i += elapsed[0].length - 1
+      // Without a serial there is no duration to total, so the clock's own
+      // reading is the best answer; with one, the whole of it counts.
+      const days = serial ?? 0
+      const total = token.startsWith('h') ? days * 24 : token.startsWith('m') ? days * 1440 : days * 86400
+      const whole = Math.floor(Math.abs(total) + 1e-9) * (total < 0 ? -1 : 1)
+      out += token.length === 2 ? pad2(whole) : String(whole)
+      if (token.startsWith('h')) sawHour = true
+      continue
+    }
     if (ch === '"') {
       const end = body.indexOf('"', i + 1)
       out += body.slice(i + 1, end < 0 ? body.length : end)
@@ -225,6 +257,100 @@ type NumericPlan = {
   scale: number
   percent: boolean
   scientific: boolean
+}
+
+
+/**
+ * Excel's fraction patterns: `# ?/?`, `# ??/??`, `?/?`, `# ?/8`.
+ *
+ * The placeholders count DIGITS rather than values, so `?/?` allows a
+ * denominator up to 9 and `??/??` up to 99, and Excel shows the closest
+ * fraction that fits. A literal denominator (`?/8`) is used as it stands,
+ * which is how eighths of a dollar and sixteenths of an inch are written.
+ * The integer part is optional: without one the whole value goes into the
+ * numerator, so `?/?` over 1.25 reads 5/4.
+ */
+type FractionPlan = {
+  /** Placeholders before the space, or null when there is no integer part. */
+  int: string | null
+  num: string
+  den: string
+  denLiteral: number | null
+}
+
+const FRACTION = /^(?:([#0?]+)\s+)?([#0?]+)\/([#0?]+|\d+)$/
+
+/** The plan for a fraction section, or null when it is not one. */
+function planFraction(body: string): FractionPlan | null {
+  // Only the bare shape reads as a fraction; anything with quoted text or an
+  // escape around it stays on the ordinary numeric path, where it always was.
+  const m = FRACTION.exec(body.trim())
+  if (!m) return null
+  const den = m[3]!
+  return { int: m[1] ?? null, num: m[2]!, den, denLiteral: /^\d+$/.test(den) ? Number(den) : null }
+}
+
+/** The closest numerator and denominator, with the denominator capped. */
+function bestFraction(value: number, maxDen: number): { num: number; den: number } {
+  // Stern-Brocot: take the mediant of the two bounding fractions until the
+  // denominator would pass the cap. Exact for anything that fits, and it
+  // cannot run longer than the cap.
+  let loNum = 0
+  let loDen = 1
+  let hiNum = 1
+  let hiDen = 0
+  let bestNum = Math.round(value)
+  let bestDen = 1
+  let bestErr = Math.abs(value - bestNum)
+  for (let i = 0; i < 64; i += 1) {
+    const num = loNum + hiNum
+    const den = loDen + hiDen
+    if (den > maxDen) break
+    const mediant = num / den
+    const err = Math.abs(value - mediant)
+    if (err < bestErr - 1e-12) { bestErr = err; bestNum = num; bestDen = den }
+    if (err < 1e-12) break
+    if (mediant < value) { loNum = num; loDen = den } else { hiNum = num; hiDen = den }
+  }
+  return { num: bestNum, den: bestDen }
+}
+
+/** A placeholder group as Excel pads it: `0` a zero, `?` a space, `#` nothing. */
+function padHolders(text: string, holders: string): string {
+  if (text.length >= holders.length) return text
+  const filler = holders.includes('0') ? '0' : holders.includes('?') ? ' ' : ''
+  return filler ? filler.repeat(holders.length - text.length) + text : text
+}
+
+/** One number through a fraction pattern. */
+function renderFraction(plan: FractionPlan, value: number): string {
+  const sign = value < 0 ? '-' : ''
+  const magnitude = Math.abs(value)
+  const whole = plan.int ? Math.floor(magnitude + 1e-12) : 0
+  const rest = magnitude - whole
+  const maxDen = plan.denLiteral ?? Math.pow(10, plan.den.length) - 1
+  const found = plan.denLiteral
+    ? { num: Math.round(rest * plan.denLiteral), den: plan.denLiteral }
+    : bestFraction(rest, maxDen)
+  let num = found.num
+  const den = found.den
+  let carried = whole
+  // Rounding up to a whole: 0.99 over `# ?/?` is 1, not 1/1.
+  if (den > 0 && num >= den) { carried += Math.floor(num / den); num %= den }
+
+  if (!plan.int) {
+    return `${sign}${padHolders(String(num + carried * den), plan.num)}/${padHolders(String(den), plan.den)}`
+  }
+  const blanks = (holders: string) => (holders.includes('?') ? ' '.repeat(holders.length) : '')
+  const wholeText = carried === 0 && !plan.int.includes('0')
+    ? ' '.repeat(plan.int.includes('?') ? plan.int.length : 0)
+    : padHolders(String(carried), plan.int)
+  // No remainder: Excel leaves the fraction's width blank rather than
+  // printing 0/1, so a column of them still lines up.
+  const fraction = num === 0
+    ? `${blanks(plan.num)} ${blanks(plan.den)}`
+    : `${padHolders(String(num), plan.num)}/${padHolders(String(den), plan.den)}`
+  return `${sign}${wholeText} ${fraction}`.replace(/\s+$/, '')
 }
 
 /**
@@ -450,12 +576,16 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
 
   // Plans are built once here, not per value.
   const plans = new Map<Section, NumericPlan>()
+  const fractions = new Map<Section, FractionPlan>()
   const dateFlags = new Map<Section, boolean>()
   for (const s of sections) {
     if (!s) continue
     const isDate = looksLikeDate(s.body)
     dateFlags.set(s, isDate)
-    if (!isDate) plans.set(s, planNumeric(s.body))
+    if (isDate) continue
+    const fraction = planFraction(s.body)
+    if (fraction) fractions.set(s, fraction)
+    else plans.set(s, planNumeric(s.body))
   }
 
   const compiled: CompiledFormat = {
@@ -466,12 +596,14 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
       }
 
       if (typeof value === 'string' && value !== '') {
-        const section = text ?? positive
+        // Excel's FOURTH section is the one that governs text. With one, `@`
+        // puts the text where it stands and a section without an `@` shows
+        // only its own literals, which is what makes `;;;` hide a cell and
+        // `;;;"n/a"` show n/a whatever was typed. With no fourth section the
+        // text is shown as it is, even under a numeric pattern like `0.00`.
+        const section = text ?? (positive?.body.includes('@') ? positive : undefined)
         if (!section) return { text: value }
-        // The text section substitutes @ for the value; without an @ the
-        // section's literal text is all you get.
-        const body = section.body.includes('@') ? renderText(section.body, value) : value
-        return { text: body, color: section.color }
+        return { text: renderText(section.body, section.body.includes('@') ? value : ''), color: section.color }
       }
 
       if (value === null || value === undefined || value === '') return { text: '' }
@@ -502,13 +634,29 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
 
       if (dateFlags.get(section)) {
         const d = toDate(value)
+        // `n` is the serial the value stands for, which is what an elapsed
+        // token totals: 1.5 is a day and a half, [h]:mm reads 36:00.
         return d
-          ? { text: renderDate(section.body, d), color: section.color }
+          ? { text: renderDate(section.body, d, n), color: section.color }
           : { text: general(value) }
+      }
+
+      const asFraction = fractions.get(section)
+      if (asFraction) {
+        // A negative with its own section is rendered from its magnitude,
+        // as everywhere else: the section supplies the sign.
+        const usingNegative = n < 0 && section === negative && !conditional
+        return { text: renderFraction(asFraction, usingNegative ? Math.abs(n) : n), color: section.color }
       }
 
       const plan = plans.get(section)!
       if (!hasPlaceholders(plan)) {
+        // `@` is the text placeholder, and a NUMBER in a cell formatted as
+        // Text is still shown by Excel as the number rather than as the
+        // placeholder: `@` over 5 reads 5, not @.
+        if (section.body.includes('@')) {
+          return { text: renderText(section.body, general(value)), color: section.color }
+        }
         return { text: plan.prefix + plan.suffix, color: section.color }
       }
       // A negative shown by its own section renders its ABSOLUTE value: the
