@@ -109,7 +109,9 @@ itself, so `"~*"` is a literal asterisk. `=COUNTIF(A:A, "North*")`,
 `"<>North*"` form. `XLOOKUP` reads them only when asked, with match mode 2,
 and `SEARCH` takes them too while `FIND`, the literal case-sensitive one,
 does not. Only text takes part: a number is never turned into text to meet
-`"1*"`.
+`"1*"`. Both take an optional third argument saying where in the text the
+search begins, and the position they report is still counted from the
+start, so `=FIND("a", A1, FIND("a", A1) + 1)` walks to the next occurrence.
 
 The lookup family carries Excel's match modes. `VLOOKUP` and `HLOOKUP` take
 `range_lookup` as a fourth argument, and it defaults to `TRUE`: the table is
