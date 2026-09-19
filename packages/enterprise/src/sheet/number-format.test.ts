@@ -241,8 +241,34 @@ describe('dates', () => {
     expect(f(d, 'hh:mm:ss')).toBe('15:05:09')
   })
 
-  it('renders AM/PM', () => {
-    expect(f(d, 'h:mm AM/PM')).toBe('15:05 PM')
+  it('puts the hour on a 12-hour clock when the pattern names the meridiem', () => {
+    // This expected 15:05 PM until a QA pass read Excel: a pattern carrying
+    // AM/PM shows the hour the way a clock face does.
+    expect(f(d, 'h:mm AM/PM')).toBe('3:05 PM')
+    expect(f(d, 'hh:mm AM/PM')).toBe('03:05 PM')
+    expect(f(d, 'h:mm am/pm')).toBe('3:05 pm')
+    // A/P is the single letter Excel prints for it.
+    expect(f(d, 'h:mm A/P')).toBe('3:05 P')
+    // And without one the hour stays on the 24-hour clock.
+    expect(f(d, 'h:mm')).toBe('15:05')
+  })
+
+  it('renders the month as one letter for mmmmm', () => {
+    expect(f(d, 'mmmmm')).toBe('S')
+    expect(f(d, 'mmmm')).toBe('September')
+  })
+
+  it('rounds to the finest unit it shows, as Excel does', () => {
+    // 23:59:40 under hh:mm is midnight, and the date rolls with it.
+    expect(f(46275.9997685, 'hh:mm')).toBe('00:00')
+    expect(f(46275.9997685, 'yyyy-mm-dd hh:mm')).toBe('2026-09-11 00:00')
+    // A date-only pattern still truncates: an afternoon is not tomorrow.
+    expect(f(46275.99, 'yyyy-mm-dd')).toBe('2026-09-10')
+  })
+
+  it('shows fractional seconds where the pattern asks for them', () => {
+    expect(f(46275.5000116, 'h:mm:ss.000')).toBe('12:00:01.002')
+    expect(f(46275.5000116, 'h:mm:ss.0')).toBe('12:00:01.0')
   })
 
   it('parses an ISO string', () => {
@@ -336,6 +362,25 @@ describe('the three Excel formats that were rendering nonsense', () => {
     expect(show('0.00', 'text')).toBe('text')
     // A fourth section without an @ shows its own words instead.
     expect(show('0.00;;;"n/a"', 'whatever')).toBe('n/a')
+  })
+})
+
+describe('scientific and engineering notation', () => {
+  const show = (pattern: string, value: number) => compileNumberFormat(pattern).format(value).text
+
+  it('the integer placeholders set the step the exponent moves in', () => {
+    // One of them is the everyday scientific form; three make it
+    // engineering notation, where the exponent is a multiple of three and
+    // the mantissa carries up to three integer digits.
+    expect(show('0.00E+00', 12345)).toBe('1.23E+04')
+    expect(show('0.00E+00', 0.00012)).toBe('1.20E-04')
+    expect(show('0.00E+00', -12345)).toBe('-1.23E+04')
+    expect(show('0.0E+0', 12345)).toBe('1.2E+4')
+    expect(show('##0.0E+0', 12345)).toBe('12.3E+3')
+    expect(show('##0.0E+0', 0.000123)).toBe('123.0E-6')
+    // Rounding that carries the mantissa over its width moves a step out.
+    expect(show('##0.0E+0', 999.95)).toBe('1.0E+3')
+    expect(show('##0.0E+0', 0)).toBe('0.0E+0')
   })
 })
 

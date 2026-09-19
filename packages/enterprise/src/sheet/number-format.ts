@@ -125,7 +125,7 @@ function parseSection(raw: string): Section {
   return condition ? { raw, color, condition, body } : { raw, color, body }
 }
 
-const DATE_TOKEN = /^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|A\/P)/
+const DATE_TOKEN = /^(yyyy|yy|mmmmm|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|A\/P|a\/p)/
 /**
  * Excel's elapsed-time tokens: the hours, minutes or seconds a duration
  * holds in TOTAL rather than the clock's reading of it, which is what a
@@ -184,9 +184,50 @@ function toDate(value: unknown): Date | null {
   return null
 }
 
+/** The meridiem token a pattern carries, which puts `h` on a 12-hour clock. */
+function meridiemOf(body: string): 'AM/PM' | 'am/pm' | 'A/P' | 'a/p' | null {
+  for (let i = 0; i < body.length; i += 1) {
+    if (body[i] === '\\') { i += 1; continue }
+    if (body[i] === '"') { const end = body.indexOf('"', i + 1); i = end < 0 ? body.length : end; continue }
+    const m = /^(AM\/PM|am\/pm|A\/P|a\/p)/.exec(body.slice(i))
+    if (m) return m[1] as 'AM/PM'
+  }
+  return null
+}
+
+/**
+ * The finest unit a time pattern shows, in milliseconds, or null for a
+ * pattern that shows no time. Excel ROUNDS to it: 23:59:40 under `hh:mm`
+ * reads 00:00, and the date rolls with it where the pattern shows one.
+ */
+function finestUnit(body: string): number | null {
+  let unit: number | null = null
+  let sawHour = false
+  const finer = (ms: number) => { unit = unit === null ? ms : Math.min(unit, ms) }
+  for (let i = 0; i < body.length; i += 1) {
+    if (body[i] === '\\') { i += 1; continue }
+    if (body[i] === '"') { const end = body.indexOf('"', i + 1); i = end < 0 ? body.length : end; continue }
+    const fraction = /^\.(0+)/.exec(body.slice(i))
+    if (fraction && unit !== null) { finer(Math.pow(10, 3 - fraction[1]!.length)); i += fraction[0].length - 1; continue }
+    const m = DATE_TOKEN.exec(body.slice(i))
+    if (!m) continue
+    const token = m[1]!
+    i += token.length - 1
+    if (token === 'h' || token === 'hh') { sawHour = true; finer(3600000) }
+    else if (token === 's' || token === 'ss') finer(1000)
+    else if ((token === 'm' || token === 'mm') && sawHour) finer(60000)
+  }
+  return unit
+}
+
 function renderDate(body: string, date: Date, serial?: number): string {
+  const unit = finestUnit(body)
+  if (unit !== null && unit > 0) date = new Date(Math.round(date.getTime() / unit) * unit)
+  const meridiem = meridiemOf(body)
+  const hourOf = (d: Date) => (meridiem ? ((d.getUTCHours() + 11) % 12) + 1 : d.getUTCHours())
   let out = ''
   let sawHour = false
+  let sawSecond = false
   for (let i = 0; i < body.length; i += 1) {
     const ch = body[i]!
     if (ch === '\\') { out += body[i + 1] ?? ''; i += 1; continue }
@@ -209,10 +250,18 @@ function renderDate(body: string, date: Date, serial?: number): string {
       i = end < 0 ? body.length : end
       continue
     }
+    const fraction = sawSecond ? /^\.(0+)/.exec(body.slice(i)) : null
+    if (fraction) {
+      const digits = fraction[1]!.length
+      out += `.${String(date.getUTCMilliseconds()).padStart(3, '0').slice(0, digits).padEnd(digits, '0')}`
+      i += fraction[0].length - 1
+      continue
+    }
     const m = DATE_TOKEN.exec(body.slice(i))
     if (!m) { out += ch; continue }
     const token = m[1]!
     i += token.length - 1
+    if (token === 's' || token === 'ss') sawSecond = true
     switch (token) {
       case 'yyyy': out += date.getUTCFullYear(); break
       case 'yy': out += pad2(date.getUTCFullYear() % 100); break
@@ -222,13 +271,17 @@ function renderDate(body: string, date: Date, serial?: number): string {
       case 'ddd': out += DAYS[date.getUTCDay()]!.slice(0, 3); break
       case 'dd': out += pad2(date.getUTCDate()); break
       case 'd': out += date.getUTCDate(); break
-      case 'hh': out += pad2(date.getUTCHours()); sawHour = true; break
-      case 'h': out += date.getUTCHours(); sawHour = true; break
+      case 'hh': out += pad2(hourOf(date)); sawHour = true; break
+      case 'h': out += hourOf(date); sawHour = true; break
       case 'ss': out += pad2(date.getUTCSeconds()); break
       case 's': out += date.getUTCSeconds(); break
-      case 'AM/PM': case 'am/pm': case 'A/P':
-        out += date.getUTCHours() < 12 ? 'AM' : 'PM'
-        break
+      // Excel prints what the token spells: AM/PM in full, A/P as the one
+      // letter, and each in the case it was written in.
+      case 'AM/PM': out += date.getUTCHours() < 12 ? 'AM' : 'PM'; break
+      case 'am/pm': out += date.getUTCHours() < 12 ? 'am' : 'pm'; break
+      case 'A/P': out += date.getUTCHours() < 12 ? 'A' : 'P'; break
+      case 'a/p': out += date.getUTCHours() < 12 ? 'a' : 'p'; break
+      case 'mmmmm': out += MONTHS[date.getUTCMonth()]!.slice(0, 1); break
       // `m` and `mm` are MINUTES after an hour token, MONTHS otherwise. This
       // is the one piece of context the scanner carries, and getting it wrong
       // turns 09:05 into 09:09.
@@ -479,13 +532,25 @@ function renderNumeric(plan: NumericPlan, value: number): string {
   if (plan.scale !== 1) n /= plan.scale
 
   if (plan.scientific) {
-    const text = n.toExponential(plan.fracPlaceholders.length)
-    // toExponential gives "1.23e+4"; Excel writes the exponent with at least
-    // as many digits as the pattern asked for.
-    const [mantissa = '', exponent = ''] = text.split('e')
-    const sign = exponent.startsWith('-') ? '-' : '+'
-    const digits = exponent.replace(/^[+-]/, '').padStart(plan.expPlaceholders.length || 1, '0')
-    return `${plan.prefix}${mantissa}E${sign}${digits}${plan.suffix}`
+    // The integer placeholders set the STEP of the exponent, which is what
+    // makes `##0.0E+0` engineering notation: three of them means the
+    // exponent moves in threes and the mantissa carries up to three integer
+    // digits, so 12345 reads 12.3E+3 rather than 1.2E+4. The everyday
+    // `0.00E+00` has one, and is the ordinary scientific form.
+    const step = Math.max(1, plan.intPlaceholders.length)
+    const decimals = plan.fracPlaceholders.length
+    let exponent = n === 0 ? 0 : Math.floor(Math.log10(Math.abs(n)))
+    exponent = Math.floor(exponent / step) * step
+    let mantissa = n / Math.pow(10, exponent)
+    // Rounding can carry the mantissa over its own width: 999.95 with one
+    // decimal is 1000.0, which is 1.0 a step further out.
+    if (Math.abs(Number(mantissa.toFixed(decimals))) >= Math.pow(10, step)) {
+      mantissa /= Math.pow(10, step)
+      exponent += step
+    }
+    const sign = exponent < 0 ? '-' : '+'
+    const digits = String(Math.abs(exponent)).padStart(plan.expPlaceholders.length || 1, '0')
+    return `${plan.prefix}${mantissa.toFixed(decimals)}E${sign}${digits}${plan.suffix}`
   }
 
   const decimals = plan.fracPlaceholders.length
