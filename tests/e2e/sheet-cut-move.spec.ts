@@ -85,3 +85,30 @@ test.describe('cut and paste moves cells the way Excel does', () => {
     expect(await shown(page, 4, 0)).toBe('20')
   })
 })
+
+test.describe('a copy leaves out the rows nobody can see', () => {
+  test('a hidden row is not carried, and the block closes up', async ({ page }) => {
+    await open(page)
+    for (let r = 0; r < 5; r += 1) await type(page, r, 0, String((r + 1) * 11))
+    // Ctrl+9 hides the row the way Excel does.
+    await cell(page, 2, 0).click()
+    await page.keyboard.press('Control+9')
+    await page.waitForTimeout(400)
+    const height = await cell(page, 2, 0).evaluate((el) => el.getBoundingClientRect().height)
+    expect(height).toBe(0)
+
+    await cell(page, 0, 0).click()
+    await page.keyboard.down('Shift')
+    await cell(page, 4, 0).click()
+    await page.keyboard.up('Shift')
+    await page.keyboard.press('Control+c')
+    await page.waitForTimeout(250)
+    await cell(page, 0, 2).click()
+    await page.keyboard.press('Control+v')
+    await page.waitForTimeout(500)
+
+    const pasted: string[] = []
+    for (let r = 0; r < 5; r += 1) pasted.push(await shown(page, r, 2))
+    expect(pasted).toEqual(['11', '22', '44', '55', ''])
+  })
+})
