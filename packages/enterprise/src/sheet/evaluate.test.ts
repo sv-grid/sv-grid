@@ -55,9 +55,15 @@ describe('arithmetic', () => {
     expect(run('=50%%')).toBeCloseTo(0.005, 10)
   })
 
-  it('raises to a power, right associatively', () => {
+  it('raises to a power, left associatively, and negates before it', () => {
     expect(run('=2^10')).toBe(1024)
-    expect(run('=2^3^2')).toBe(512)
+    // Excel reads 2^3^2 as (2^3)^2 and -2^2 as (-2)^2. Both checked against
+    // a real spreadsheet: 64 and 4, not 512 and -4.
+    expect(run('=2^3^2')).toBe(64)
+    expect(run('=-2^2')).toBe(4)
+    expect(run('=-3^2+1')).toBe(10)
+    expect(run('=2^-1')).toBe(0.5)
+    expect(run('=-(2^2)')).toBe(-4)
   })
 
   it('treats a blank cell as zero in arithmetic', () => {

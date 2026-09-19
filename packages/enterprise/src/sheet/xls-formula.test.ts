@@ -30,7 +30,7 @@ describe('a formula as an .xls holds it', () => {
   it('goes out and comes back the same', () => {
     for (const text of [
       '=1+2', '=A1*B2', '=SUM(A1:A9)', '=IF(A1>10,"many","few")', '=$A$1', '=A$1+$B2',
-      '=ROUND(AVERAGE(D2:D3),2)', '=COUNTIF(B2:B25,"North")', '=-A1', '=A1%', '=2^3',
+      '=ROUND(AVERAGE(D2:D3),2)', '=COUNTIF(B2:B25,"North")', '=-A1', '=A1%', '=2^3^2',
       '=1-(2-3)', '=(1+2)*3', '=A1&" "&B1', '=TRUE', '=NOT(FALSE)', '="say ""hi"""',
       '=VLOOKUP(A2,Data!$A$2:$C$9,3,FALSE)', "='Price list'!B2", '=Tax*A1', '=SUM(Data!A1:B2)',
     ]) {
@@ -47,7 +47,7 @@ describe('a formula as an .xls holds it', () => {
   it('adds the brackets that keep the meaning, and no others', () => {
     // The tokens hold a tree, not the text that was typed, so what comes
     // back is spelled the way the tree reads.
-    expect(around('=2^3^2')).toBe('2^(3^2)')
+    expect(around('=2^(3^2)')).toBe('2^(3^2)')
     expect(around('=(A1+A2)*A3')).toBe('(A1+A2)*A3')
     expect(around('=A1+A2*A3')).toBe('A1+A2*A3')
     expect(around('=A1-(A2-A3)')).toBe('A1-(A2-A3)')

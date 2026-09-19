@@ -25,9 +25,9 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
       const prec = PRECEDENCE[t.v]
       if (prec === undefined || prec < minPrec) break
       next()
-      // Left-associative for everything except `^`, which Excel binds right.
-      const nextMin = t.v === '^' ? prec : prec + 1
-      left = { k: 'binary', op: t.v as BinaryOp, left, right: expression(nextMin) }
+      // Every binary operator binds left, `^` included: Excel reads 2^3^2 as
+      // (2^3)^2, which is 64, where a right-binding `^` would make it 512.
+      left = { k: 'binary', op: t.v as BinaryOp, left, right: expression(prec + 1) }
     }
     return left
   }
@@ -110,10 +110,13 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
         return made
       }
       case 'op': {
-        // Unary. Binds tighter than every binary operator except `^`, so
-        // `-2^2` is -(2^2) as in Excel, and `-A1*2` is (-A1)*2.
-        if (t.v === '-') return { k: 'unary', op: '-', arg: expression(5) }
-        if (t.v === '+') return { k: 'unary', op: '+', arg: expression(5) }
+        // Unary, and it binds tighter than every binary operator, `^`
+        // included: Excel reads -2^2 as (-2)^2, which is 4, not -4. Only the
+        // postfix `%` is tighter still, so -A1% is -(A1/100). The operand is
+        // therefore one term, not an expression: taking an expression here
+        // is what swallows the `^`.
+        if (t.v === '-') return { k: 'unary', op: '-', arg: postfix(primary()) }
+        if (t.v === '+') return { k: 'unary', op: '+', arg: postfix(primary()) }
         throw new FormulaError('#PARSE!')
       }
       default:

@@ -91,13 +91,12 @@ function render(node: Node): string {
       // from precedence. Emitting the operands bare turns =(A1+B1)*2 into
       // =A2+B2*2, which is a silent wrong answer on every fill and paste.
       //
-      // Which SIDE needs one at equal precedence depends on associativity.
-      // Left-associative: the right operand does, because a-(b-c) is not
-      // a-b-c. Right-associative `^` is the mirror: the LEFT operand does,
-      // because (a^b)^c is not a^b^c.
-      const rightAssociative = node.op === '^'
-      const leftMin = rightAssociative ? prec + 1 : prec
-      const rightMin = rightAssociative ? prec : prec + 1
+      // Which SIDE needs one at equal precedence depends on associativity,
+      // and every operator here binds left, `^` included: the RIGHT operand
+      // is the one that needs the bracket, because a-(b-c) is not a-b-c and
+      // a^(b^c) is not a^b^c.
+      const leftMin = prec
+      const rightMin = prec + 1
       return `${wrap(node.left, leftMin)}${node.op}${wrap(node.right, rightMin)}`
     }
     // `(` is the call node an immediate or curried lambda builds:

@@ -70,6 +70,11 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Concatenation | `&` |
 | Literals | `1.5`, `2.5E-3`, `"text"`, `"say ""hi"""`, `TRUE` / `FALSE` |
 
+Operators bind as they do in Excel, which is not as they do in most
+languages: `^` associates to the LEFT, so `=2^3^2` is `(2^3)^2` = 64, and
+unary minus binds tighter than `^`, so `=-2^2` is `(-2)^2` = 4. Only the
+postfix `%` is tighter still, so `=-2%` is -0.02.
+
 ### Functions
 
 | Group | Functions |

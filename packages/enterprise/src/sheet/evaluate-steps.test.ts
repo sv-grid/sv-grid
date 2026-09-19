@@ -14,10 +14,11 @@ describe('printNode', () => {
     expect(back('=(1+2)*3')).toBe('(1+2)*3')
     expect(back('=10-(2-1)')).toBe('10-(2-1)')
     expect(back('=10-2-1')).toBe('10-2-1')
-    // `^` binds to the right, so the brackets it does not need are the
-    // ones on the right.
+    // `^` binds to the left like everything else, so the brackets it does
+    // not need are the ones on the left.
     expect(back('=2^3^2')).toBe('2^3^2')
-    expect(back('=(2^3)^2')).toBe('(2^3)^2')
+    expect(back('=(2^3)^2')).toBe('2^3^2')
+    expect(back('=2^(3^2)')).toBe('2^(3^2)')
   })
 
   it('prints references, ranges, names, strings and calls', () => {

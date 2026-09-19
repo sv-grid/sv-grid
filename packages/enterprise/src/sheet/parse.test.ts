@@ -91,10 +91,11 @@ describe('operators', () => {
     expect((n.right as Extract<Node, { k: 'binary' }>).op).toBe('*')
   })
 
-  it('binds ^ right-associatively, as Excel does', () => {
-    // 2^3^2 is 2^(3^2) = 512, not (2^3)^2 = 64.
+  it('binds ^ left-associatively, as Excel does', () => {
+    // 2^3^2 is (2^3)^2 = 64, not 2^(3^2) = 512.
     const n = parse('=2^3^2') as Extract<Node, { k: 'binary' }>
-    expect((n.right as Extract<Node, { k: 'binary' }>).op).toBe('^')
+    expect((n.left as Extract<Node, { k: 'binary' }>).op).toBe('^')
+    expect(n.right).toEqual({ k: 'num', v: 2 })
   })
 
   it('binds comparison loosest', () => {
@@ -118,10 +119,14 @@ describe('operators', () => {
     expect(parse('=-1')).toEqual({ k: 'unary', op: '-', arg: { k: 'num', v: 1 } })
   })
 
-  it('binds unary minus looser than ^, so -2^2 is -(2^2)', () => {
-    const n = parse('=-2^2') as Extract<Node, { k: 'unary' }>
-    expect(n.k).toBe('unary')
-    expect((n.arg as Extract<Node, { k: 'binary' }>).op).toBe('^')
+  it('binds unary minus tighter than ^, so -2^2 is (-2)^2', () => {
+    const n = parse('=-2^2') as Extract<Node, { k: 'binary' }>
+    expect(n.op).toBe('^')
+    expect(n.left).toEqual({ k: 'unary', op: '-', arg: { k: 'num', v: 2 } })
+    // The postfix `%` is tighter still: -2% is -(2/100).
+    const p = parse('=-2%') as Extract<Node, { k: 'unary' }>
+    expect(p.op).toBe('-')
+    expect((p.arg as Extract<Node, { k: 'unary' }>).op).toBe('%')
   })
 
   it('honours parentheses', () => {

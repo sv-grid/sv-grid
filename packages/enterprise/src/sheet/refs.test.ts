@@ -67,12 +67,11 @@ describe('parentheses survive a round trip', () => {
     expect(t('=-(A1+B1)', 1, 0)).toBe('=-(A2+B2)')
   })
 
-  it('keeps nested power grouping, which needs the LEFT parenthesis', () => {
-    // ^ is right-associative, so a^b^c means a^(b^c). That makes (a^b)^c the
-    // case where the parenthesis has to survive on the left - the mirror of
-    // every other operator.
-    expect(t('=(A1^B1)^C1', 1, 0)).toBe('=(A2^B2)^C2')
-    expect(t('=A1^(B1^C1)', 1, 0)).toBe('=A2^B2^C2')
+  it('keeps nested power grouping, which needs the right parenthesis', () => {
+    // ^ binds left like every other operator, so a^b^c means (a^b)^c and the
+    // parenthesis that has to survive is the one on the right.
+    expect(t('=(A1^B1)^C1', 1, 0)).toBe('=A2^B2^C2')
+    expect(t('=A1^(B1^C1)', 1, 0)).toBe('=A2^(B2^C2)')
   })
 
   it('drops parentheses that were never doing anything', () => {
