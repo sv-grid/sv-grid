@@ -111,4 +111,26 @@ test.describe('a copy leaves out the rows nobody can see', () => {
     for (let r = 0; r < 5; r += 1) pasted.push(await shown(page, r, 2))
     expect(pasted).toEqual(['11', '22', '44', '55', ''])
   })
+
+  test('Delete over the block leaves the hidden row holding its value', async ({ page }) => {
+    await open(page)
+    for (let r = 0; r < 5; r += 1) await type(page, r, 0, String((r + 1) * 11))
+    await cell(page, 2, 0).click()
+    await page.keyboard.press('Control+9')
+    await page.waitForTimeout(400)
+
+    await cell(page, 0, 0).click()
+    await page.keyboard.down('Shift')
+    await cell(page, 4, 0).click()
+    await page.keyboard.up('Shift')
+    // The status bar counts what can be seen: 11 + 22 + 44 + 55.
+    const status = (await page.locator('.sv-sheet .status').first().innerText()).replace(/\n/g, ' ')
+    expect(status).toContain('132')
+    await page.keyboard.press('Delete')
+    await page.waitForTimeout(500)
+
+    const left: string[] = []
+    for (let r = 0; r < 5; r += 1) left.push(await shown(page, r, 0))
+    expect(left).toEqual(['', '', '33', '', ''])
+  })
 })

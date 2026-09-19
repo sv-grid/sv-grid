@@ -2783,6 +2783,16 @@
    * while Count counts every non-empty cell including text, which is exactly
    * how Excel's own status bar splits them.
    */
+  /**
+   * A line the sheet is not showing: hidden by hand or folded away by the
+   * AutoFilter. What it covers is not part of what the user selected, which
+   * is why the status bar leaves it out and Clear Contents does not touch it.
+   */
+  function lineHidden(r: number, c: number): boolean {
+    const state = doc.get(wb.active)
+    return state.hidden.rows.has(r) || state.filterHidden.has(r) || state.hidden.cols.has(c)
+  }
+
   const aggregate = $derived.by(() => {
     void version
     const rects = selection.length
@@ -2794,6 +2804,9 @@
     for (const [minRow, minCol, maxRow, maxCol] of rects) {
       for (let r = minRow; r <= maxRow; r += 1) {
         for (let c = minCol; c <= maxCol; c += 1) {
+          // Excel's status bar counts what is on the screen: a filtered-out
+          // row is not in the Sum, which is how the bar is read at all.
+          if (lineHidden(r, c)) continue
           const value = wb.getValue(wb.active, r, c)
           if (value === '' || value == null || isError(value)) continue
           count += 1
@@ -4080,7 +4093,13 @@
         if (protectedNow() && rectsHaveLocked(storeFor(), lookup, rects, protectionNow().ranges)) { refuse(); return }
         c.batch(() => {
           for (const [r1, c1, r2, c2] of rects) {
-            for (let r = r1; r <= r2; r += 1) for (let col = c1; col <= c2; col += 1) c.setCellValue(r, col, '')
+            // The rows a filter hid keep what they hold, as they do in Excel.
+            for (let r = r1; r <= r2; r += 1) {
+              for (let col = c1; col <= c2; col += 1) {
+                if (lineHidden(r, col)) continue
+                c.setCellValue(r, col, '')
+              }
+            }
           }
         })
       }),

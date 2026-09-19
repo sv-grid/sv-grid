@@ -86,6 +86,11 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- The status bar's Average, Count and Sum are of the cells you can see: a
+  filtered-out row is not in the total, which is what makes the bar worth
+  reading over a filtered block. Delete and Clear Contents leave such a row
+  as it is, so clearing a filtered selection cannot wipe what the filter
+  hid.
 - A copy carries only the cells you can see: a row a filter or Hide Rows
   folded away is left out, and the block closes up around it, so filtering
   a log and copying the block gives the rows that matched with nothing

@@ -888,6 +888,23 @@ describe('clearSelectedCells', () => {
     expect(ctx.grid.store.setState).toHaveBeenCalled()
   })
 
+  // The same QA pass: Delete over a filtered block wiped the rows the
+  // filter had hidden, which is data the user could not even see.
+  it('leaves a collapsed row alone, as a spreadsheet leaves a filtered one', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+      data: [{ a: 'one' }, { a: 'two' }, { a: 'three' }],
+    })
+    ctx.isRowCollapsed = (index: number) => index === 1
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 2, colIndex: 0 },
+    }
+    const cb = createClipboard(ctx)
+    expect(cb.clearSelectedCells()).toBe(true)
+    expect(ctx.internalData.map((r: { a: string }) => r.a)).toEqual(['', 'two', ''])
+  })
+
   it('fires onCellValueChange per cleared cell (so formula engines recompute)', () => {
     const onCellValueChange = vi.fn()
     const ctx = makeCtx({
