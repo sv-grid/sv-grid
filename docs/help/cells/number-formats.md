@@ -135,11 +135,26 @@ A pattern containing date tokens is a date pattern.
 | `yyyy` `yy` | 2026, 26 |
 | `mmmm` `mmm` `mm` `m` | September, Sep, 09, 9 |
 | `dddd` `ddd` `dd` `d` | Monday, Mon, 14, 14 |
+| `mmmmm` | S (the month's first letter) |
 | `hh` `h` `ss` `s` | Hours and seconds |
-| `AM/PM` | Meridiem |
+| `AM/PM` `am/pm` `A/P` `a/p` | Meridiem, in the case and length the token is written in |
+| `.0` `.00` `.000` after seconds | Fractional seconds |
 
 `m` and `mm` mean **minutes** after an hour token and **months** otherwise, so
 `hh:mm` gives `15:05` rather than `15:09`.
+
+A pattern that names the meridiem puts the hour on a **12-hour clock**, as a
+clock face reads it, and one that does not leaves it on the 24-hour one:
+
+```ts
+formatWithPattern(46275.625, 'h:mm AM/PM')   // '3:00 PM'
+formatWithPattern(46275.625, 'h:mm')         // '15:00'
+formatWithPattern(46275.625, 'h:mm A/P')     // '3:00 P'
+```
+
+Times are **rounded to the finest unit the pattern shows**, which is Excel's
+rule and the reason 23:59:40 under `hh:mm` reads `00:00` with the date rolled
+over. A date-only pattern truncates instead: an afternoon is not tomorrow.
 
 Numbers are read as Excel serial days against the 1899-12-30 epoch. That is
 correct from 1900-03-01 on; Excel itself is a day out below serial 61 because
@@ -184,6 +199,19 @@ formatWithPattern('note', '"x"@')      // 'xnote'
 formatWithPattern(5, ';;;')            // ''        Excel's hide-the-cell
 formatWithPattern('note', ';;;')       // ''        text as well
 formatWithPattern('note', '0.00')      // 'note'    no text section, so as it is
+```
+
+### Scientific and engineering notation
+
+The integer placeholders set the step the exponent moves in. One of them is
+the everyday scientific form; three make it engineering notation, where the
+exponent is a multiple of three and the mantissa carries up to three integer
+digits, which is how an engineer reads a datasheet.
+
+```ts
+formatWithPattern(12345, '0.00E+00')   // '1.23E+04'
+formatWithPattern(12345, '##0.0E+0')   // '12.3E+3'
+formatWithPattern(0.000123, '##0.0E+0')// '123.0E-6'
 ```
 
 ### Presets
