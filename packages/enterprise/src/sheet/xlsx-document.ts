@@ -245,6 +245,18 @@ function styleRegistry() {
   return { xfId, dxfId, build }
 }
 
+
+/** A string cell's text as the workbook stores it. Text that would be read
+ *  back as a number, a boolean or a formula takes Excel's apostrophe, which
+ *  says "this is text" and is not part of the value. */
+function asText(text: string): string {
+  if (text === '') return ''
+  const upper = text.trim().toUpperCase()
+  const numberish = text.trim() !== '' && Number.isFinite(Number(text))
+  if (!numberish && upper !== 'TRUE' && upper !== 'FALSE' && !text.startsWith('=') && !text.startsWith("'")) return text
+  return `'${text}`
+}
+
 /** A cell's `<c>` element: a formula with its cached value, or a literal. */
 function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean, spill?: { ref: string } | 'covered'): string {
   const sAttr = s ? ` s="${s}"` : ''
@@ -269,6 +281,11 @@ function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt:
     if (typeof value === 'boolean') return `<c r="${ref}"${sAttr}${cm} t="b">${f}<v>${value ? 1 : 0}</v></c>`
     if (typeof value === 'number') return `<c r="${ref}"${sAttr}${cm}>${f}<v>${Number.isFinite(value) ? value : 0}</v></c>`
     return `<c r="${ref}"${sAttr}${cm} t="str">${f}<v>${esc(String(value))}</v></c>`
+  }
+  // Excel's text prefix is not part of the value: '007 is written as the
+  // string 007, which is what the file carries and what Excel shows.
+  if (text.startsWith("'")) {
+    return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${esc(text.slice(1))}</t></is></c>`
   }
   const serial = isoToSerial(text)
   if (serial !== null) return `<c r="${ref}"${sAttr}><v>${serial}</v></c>`
@@ -1151,9 +1168,13 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
             text = body ? engineFormula(body) : ''
           }
           if (!text) {
-            if (type === 's') text = shared[Number(v)] ?? ''
-            else if (type === 'inlineStr') text = textOf(kid(cell, 'is'))
-            else if (type === 'str') text = v ?? ''
+            // A string cell holds TEXT even when the text reads as a number,
+            // which is the whole point of a part number like 007. The
+            // apostrophe is how the workbook spells that, and without it the
+            // round trip would hand back the number 7.
+            if (type === 's') text = asText(shared[Number(v)] ?? '')
+            else if (type === 'inlineStr') text = asText(textOf(kid(cell, 'is')))
+            else if (type === 'str') text = asText(v ?? '')
             else if (type === 'b') text = v === '1' || v === 'true' ? 'TRUE' : 'FALSE'
             else if (type === 'e') text = v ?? ''
             else if (v !== null && v !== '') {

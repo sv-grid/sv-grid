@@ -434,6 +434,28 @@ describe('the newer functions', () => {
   })
 })
 
+describe("Excel's text prefix", () => {
+  it('writes the text without the apostrophe, as a string', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [["'007"], ["'=A1+1"]] }] })
+    const sheet = documentToXlsxParts(doc)['xl/worksheets/sheet1.xml']!
+    expect(sheet).toContain('<t xml:space="preserve">007</t>')
+    // The text of a formula stays text: no <f> element goes out for it.
+    expect(sheet).toContain('<t xml:space="preserve">=A1+1</t>')
+    expect(sheet).not.toContain("'007")
+  })
+
+  it('keeps a string cell text when the file comes back', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [["'007", 'plain']] }] })
+    const back = documentFromXlsxParts(documentToXlsxParts(doc))
+    const cells = back.workbook.sheets[0]!.cells
+    // Without the prefix the text 007 would read back as the number 7.
+    expect(cells[0]![0]).toBe("'007")
+    expect(cells[0]![1]).toBe('plain')
+    const again = createSheetDocument({ state: back })
+    expect(again.workbook.getValue('S', 0, 0)).toBe('007')
+  })
+})
+
 describe('iterative calculation', () => {
   it('goes out as calcPr and comes back on, limits included', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['100000'], ['=0.1*(A1-A2)']] }] })

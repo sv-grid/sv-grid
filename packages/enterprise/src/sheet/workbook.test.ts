@@ -92,6 +92,24 @@ describe('the sheet list', () => {
     expect(wb.getValue('S', 0, 4)).toBe('truer')
   })
 
+  // A QA pass read this against Excel: the apostrophe is how a part number
+  // keeps its leading zero, and it is not part of the value.
+  it("reads a leading apostrophe as Excel's text prefix", () => {
+    const wb = createWorkbook([{ name: 'S', cells: [
+      ["'007", "'TRUE", "'=A1+1", "'12%", '=A1&"!"', '=SUM(A1:D1)', '=ISTEXT(A1)'],
+    ] }])
+    expect(wb.getValue('S', 0, 0)).toBe('007')
+    expect(wb.getValue('S', 0, 1)).toBe('TRUE')
+    expect(wb.getValue('S', 0, 2)).toBe('=A1+1')
+    expect(wb.getValue('S', 0, 3)).toBe('12%')
+    // The apostrophe reaches nothing that reads the value.
+    expect(wb.getValue('S', 0, 4)).toBe('007!')
+    expect(wb.getValue('S', 0, 5)).toBe(0)
+    expect(wb.getValue('S', 0, 6)).toBe(true)
+    // What the user typed is what the formula bar gets back.
+    expect(wb.getRaw('S', 0, 0)).toBe("'007")
+  })
+
   it('renames, following the active sheet', () => {
     const wb = createWorkbook()
     expect(wb.renameSheet('Sheet1', 'Data')).toBe(true)
