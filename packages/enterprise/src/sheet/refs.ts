@@ -144,6 +144,73 @@ export function translateFormula(text: unknown, dRow: number, dCol: number): unk
  * formula that names no such sheet is returned as it was, untouched.
  */
 /**
+ * A block of cells that has MOVED: cut and pasted somewhere else, or dragged
+ * there. `sheet` is where it was, `toSheet` where it landed, and the rect is
+ * the block's old position, zero-based and inclusive.
+ */
+export type CellMove = {
+  sheet: string
+  toSheet: string
+  top: number
+  left: number
+  bottom: number
+  right: number
+  dRow: number
+  dCol: number
+}
+
+const inside = (move: CellMove, row: number | null, col: number): boolean =>
+  row !== null && row >= move.top && row <= move.bottom && col >= move.left && col <= move.right
+
+/**
+ * Point every reference to a moved cell at where the cell now is.
+ *
+ * This is what a cut and paste owes the rest of the workbook, and Excel does
+ * it: moving A1 to D1 rewrites `=A1*2` as `=D1*2` rather than leaving it
+ * reading an emptied cell. A `$` makes no difference - the cell moved, so
+ * every way of naming it moves - and a RANGE only follows when the whole of
+ * it moved, which is why `=SUM(A1:A2)` stays as it is when only A1 goes.
+ *
+ * `self` is the sheet the formula lives on, so an unqualified reference is
+ * read against the right geometry; a reference that lands on another sheet
+ * takes that sheet's name, as Excel writes it.
+ */
+export function repointReferences(text: unknown, move: CellMove, self: string | null): unknown {
+  if (typeof text !== 'string' || !text.startsWith('=')) return text
+  if (move.dRow === 0 && move.dCol === 0 && move.sheet === move.toSheet) return text
+  let ast: Node
+  try {
+    ast = parseFormula(text)
+  } catch {
+    return text
+  }
+  const names = (sheet: string | null): boolean =>
+    (sheet ?? self ?? '').toLowerCase() === move.sheet.toLowerCase()
+  const landed = (ref: CellRef): CellRef => ({
+    ...ref,
+    row: ref.row === null ? null : ref.row + move.dRow,
+    col: ref.col + move.dCol,
+    // Unqualified only when the formula already lives on the sheet it landed on.
+    sheet: move.toSheet.toLowerCase() === (self ?? '').toLowerCase() ? null : move.toSheet,
+  })
+  const moved = mapNode(ast, (n) => {
+    if (n.k === 'ref') {
+      if (!names(n.ref.sheet) || !inside(move, n.ref.row, n.ref.col)) return n
+      return { ...n, ref: landed(n.ref) }
+    }
+    if (n.k === 'range') {
+      const sheet = n.from.sheet ?? n.to.sheet
+      if (!names(sheet)) return n
+      if (!inside(move, n.from.row, n.from.col) || !inside(move, n.to.row, n.to.col)) return n
+      return { ...n, from: landed(n.from), to: landed(n.to) }
+    }
+    return n
+  })
+  const next = formatFormula(moved)
+  return next === text ? text : next
+}
+
+/**
  * Excel's reference colours: the A1 references in a formula being typed,
  * each occurrence with the colour of its range, so the cells a formula
  * names and the text that names them can be painted alike. Colours go by

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { translateFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, REFERENCE_COLOURS } from './refs'
+import { translateFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, repointReferences, REFERENCE_COLOURS } from './refs'
 import { parseFormula } from './parse'
 
 const t = (src: string, dRow: number, dCol: number) => translateFormula(src, dRow, dCol)
@@ -286,5 +286,43 @@ describe('referenceSpans', () => {
     const spans = referenceSpans('=A1+B1+C1+D1+E1+F1+G1')
     expect(spans[6]!.colour).toBe(blue)
     expect(spans[2]!.colour).toBe(purple)
+  })
+})
+
+// A QA pass read this against Excel: moving a cell repoints the formulas
+// that read it, which is what keeps a move from quietly zeroing a total.
+describe('repointReferences', () => {
+  const move = {
+    sheet: 'S', toSheet: 'S', top: 0, left: 0, bottom: 1, right: 0, dRow: 0, dCol: 3,
+  }
+
+  it('points a reference at where the cell went', () => {
+    expect(repointReferences('=A1*2', move, 'S')).toBe('=D1*2')
+    expect(repointReferences('=$A$1*2', move, 'S')).toBe('=$D$1*2')
+    expect(repointReferences('=A1+B1', move, 'S')).toBe('=D1+B1')
+  })
+
+  it('moves a range only when the whole of it moved', () => {
+    expect(repointReferences('=SUM(A1:A2)', move, 'S')).toBe('=SUM(D1:D2)')
+    // A2:A3 hangs out of the moved block, so Excel leaves it alone.
+    expect(repointReferences('=SUM(A2:A3)', move, 'S')).toBe('=SUM(A2:A3)')
+  })
+
+  it('leaves another sheet alone unless the formula names this one', () => {
+    expect(repointReferences('=A1*2', move, 'Other')).toBe('=A1*2')
+    expect(repointReferences('=S!A1*2', move, 'Other')).toBe('=S!D1*2')
+  })
+
+  it('qualifies a reference that lands on another sheet', () => {
+    const across = { ...move, toSheet: 'Two', dCol: 0 }
+    expect(repointReferences('=A1*2', across, 'S')).toBe('=Two!A1*2')
+    // The formula already lives there, so it needs no name.
+    expect(repointReferences('=S!A1*2', across, 'Two')).toBe('=A1*2')
+  })
+
+  it('leaves literals, whole columns and unparseable text as they are', () => {
+    expect(repointReferences('42', move, 'S')).toBe('42')
+    expect(repointReferences('=SUM(A:A)', move, 'S')).toBe('=SUM(A:A)')
+    expect(repointReferences('=SUM(', move, 'S')).toBe('=SUM(')
   })
 })

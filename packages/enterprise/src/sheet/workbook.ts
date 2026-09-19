@@ -18,7 +18,7 @@ import { isError, typedError, type CellValue, type Node } from './ast'
 import { createDependencyGraph, precedentsOf, isVolatile, cellKey, parseCellKey, type CellKey } from './deps'
 import { createTableRegistry, isValidTableName, shiftTables, type TableRegion, type TableRegistry } from './tables'
 import { createNames, type SheetNames } from './names'
-import { fixupReferences, renameSheetReferences, type StructuralEdit } from './refs'
+import { fixupReferences, renameSheetReferences, repointReferences, type CellMove, type StructuralEdit } from './refs'
 import { builtinEngine, type SheetEngine } from './engine'
 
 export type SheetData = {
@@ -137,6 +137,14 @@ export type Workbook = {
   /** Apply a structural edit to one sheet, rewriting every formula in the
    *  WORKBOOK that pointed into it. */
   applyStructuralEdit(sheet: string, edit: StructuralEdit): void
+
+  /**
+   * A block of cells has been MOVED (cut and pasted, or dragged): point
+   * every reference to those cells at where they now are, across the whole
+   * workbook and the defined names, as Excel does. The cells themselves are
+   * moved by whoever did the moving; this is only the repointing.
+   */
+  repointAfterMove(move: CellMove): void
 
   /**
    * Excel's Trace Precedents: the cells a formula reads directly, on any
@@ -934,6 +942,36 @@ export function createWorkbook(
         out.push(line)
       }
       return out
+    },
+
+    repointAfterMove(move) {
+      if (!sheetCells(move.sheet) || !sheetCells(move.toSheet)) return
+      if (move.dRow === 0 && move.dCol === 0 && move.sheet === move.toSheet) return
+      let touched = false
+      // The whole workbook: another sheet's =Orders!A5 names a moved cell
+      // just as a local reference does.
+      for (const other of order) {
+        const cells = sheetCells(other)!
+        for (let r = 0; r < cells.length; r += 1) {
+          const line = cells[r]!
+          for (let c = 0; c < line.length; c += 1) {
+            const text = line[c] ?? ''
+            if (!text.startsWith('=')) continue
+            const next = repointReferences(text, move, other)
+            if (typeof next === 'string' && next !== text) { line[c] = next; touched = true }
+          }
+        }
+      }
+      // A name has no home sheet, so only a qualified reference can match.
+      for (const entry of names.list()) {
+        const next = repointReferences(entry.refersTo, move, null)
+        if (typeof next === 'string' && next !== entry.refersTo) { names.define(entry.name, next); touched = true }
+      }
+      if (!touched) return
+      dropAll()
+      astCache.clear()
+      loadEngine()
+      settleAll()
     },
 
     applyStructuralEdit(sheet, edit) {
