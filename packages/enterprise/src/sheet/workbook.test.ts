@@ -130,6 +130,30 @@ describe('the sheet list', () => {
     expect(wb.getValue('S', 1, 2)).toBe(true)
   })
 
+  it('repoints every sheet at a block that moved', () => {
+    const wb = createWorkbook([
+      { name: 'Data', cells: [['10'], ['20'], [''], [''], ['=A1*2', '=SUM(A1:A2)']] },
+      { name: 'Report', cells: [['=Data!A1+1']] },
+    ])
+    wb.names.define('First', '=Data!$A$1')
+    // A1:A2 has been cut and pasted into C1:C2.
+    wb.setRaw('Data', 0, 2, '10')
+    wb.setRaw('Data', 1, 2, '20')
+    wb.setRaw('Data', 0, 0, '')
+    wb.setRaw('Data', 1, 0, '')
+    wb.repointAfterMove({
+      sheet: 'Data', toSheet: 'Data', top: 0, left: 0, bottom: 1, right: 0, dRow: 0, dCol: 2,
+    })
+    expect(wb.getRaw('Data', 4, 0)).toBe('=C1*2')
+    expect(wb.getRaw('Data', 4, 1)).toBe('=SUM(C1:C2)')
+    expect(wb.getValue('Data', 4, 0)).toBe(20)
+    expect(wb.getValue('Data', 4, 1)).toBe(30)
+    // Another sheet and a defined name follow the cells too.
+    expect(wb.getRaw('Report', 0, 0)).toBe('=Data!C1+1')
+    expect(wb.getValue('Report', 0, 0)).toBe(11)
+    expect(wb.names.list().find((n) => n.name === 'First')?.refersTo).toBe('=Data!$C$1')
+  })
+
   it('renames, following the active sheet', () => {
     const wb = createWorkbook()
     expect(wb.renameSheet('Sheet1', 'Data')).toBe(true)

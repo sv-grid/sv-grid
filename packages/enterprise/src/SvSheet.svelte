@@ -75,7 +75,7 @@
   import { setStructureTarget, insertRows, insertColumns, deleteRows, deleteColumns, axisForSelection } from './sheet/structure'
   import { setFindTarget } from './sheet/find-replace'
   import { setFillTranslator, setSheetValueProbe } from './sheet/commands'
-  import { translateFormula } from './sheet/refs'
+  import { translateFormula, type CellMove } from './sheet/refs'
   import { entryToStyle, type SheetFormatStore, type CellFormatEntry } from './sheet/format-store'
   import { compileNumberFormat } from './sheet/number-format'
   import { colToLetters, lettersToCol, parseA1 } from './sheet/address'
@@ -3482,10 +3482,43 @@
     } finally {
       pasting = false
     }
+    // A cut and paste MOVES the cells, so the formulas that read them follow.
+    if (origin === null && copied?.cut) repointMoved(cmd, copied, dest)
     // A cut is moved once; Excel's ants go with it.
     if (origin === null) marquee = null
     bump()
     return true
+  }
+
+  /**
+   * What a MOVE owes the rest of the workbook: every reference to a cell
+   * that was cut and pasted elsewhere points at where the cell now is, as
+   * Excel does, so =A1*2 reads =D1*2 after A1 is moved to D1 rather than
+   * quietly reading an emptied cell. Recorded as one step with the paste,
+   * since the rewrites reach sheets the grid's own history knows nothing of.
+   */
+  function repointMoved(cmd: GridCommandContext, block: Copied, dest: { row: number; col: number }): void {
+    const height = block.cells.length
+    const width = block.cells.reduce((max, line) => Math.max(max, line.length), 0)
+    if (height === 0 || width === 0) return
+    const move: CellMove = {
+      sheet: block.sheet,
+      toSheet: wb.active,
+      top: block.origin.row,
+      left: block.origin.col,
+      bottom: block.origin.row + height - 1,
+      right: block.origin.col + width - 1,
+      dRow: dest.row - block.origin.row,
+      dCol: dest.col - block.origin.col,
+    }
+    if (move.sheet === move.toSheet && move.dRow === 0 && move.dCol === 0) return
+    const before = getState()
+    wb.repointAfterMove(move)
+    const after = getState()
+    cmd.recordUndo?.(
+      () => { doc.setState(before); registerSheetTargets(); applyLive(wb.active); bump() },
+      () => { doc.setState(after); registerSheetTargets(); applyLive(wb.active); bump() },
+    )
   }
 
   function pasteSpecial(opts: PasteSpecialOptions) {
@@ -3774,6 +3807,8 @@
   type CopiedCell = { shown: string; raw: string; value: string; format: CellFormatEntry | undefined }
   type Copied = {
     origin: { row: number; col: number }
+    /** The sheet the block was taken from: a cut can be pasted onto another. */
+    sheet: string
     cells: CopiedCell[][]
     fresh: boolean
     cut: boolean
@@ -3841,7 +3876,7 @@
     // kept, as Excel keeps only one.
     const [minRow, minCol, maxRow, maxCol] = rects[0]!
     if (r === minRow && col === minCol) {
-      copied = { origin: { row: r, col }, cells: [], fresh: true, cut: false }
+      copied = { origin: { row: r, col }, sheet: wb.active, cells: [], fresh: true, cut: false }
       queueMicrotask(() => { if (copied) copied.fresh = false })
       // A whole column or row is selected to Infinity; the ants stop at
       // the sheet's last line.

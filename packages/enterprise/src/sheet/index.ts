@@ -207,8 +207,8 @@ export {
 } from './functions'
 export {
   translateFormula, fixupReferences, renameSheetReferences, formatFormula,
-  referenceSpans, REFERENCE_COLOURS,
-  type StructuralEdit, type EditScope, type ReferenceSpan,
+  referenceSpans, repointReferences, REFERENCE_COLOURS,
+  type StructuralEdit, type EditScope, type ReferenceSpan, type CellMove,
 } from './refs'
 export {
   createDependencyGraph, precedentsOf, cellKey, parseCellKey,

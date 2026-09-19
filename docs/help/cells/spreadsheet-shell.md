@@ -86,6 +86,12 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- Cut and paste MOVES the cells, so every formula that read them follows:
+  moving A1 to D1 rewrites `=A1*2` as `=D1*2`, across every sheet and the
+  defined names, the way Excel does. A `$` makes no difference, since the
+  cell itself moved; a range follows only when all of it moved, so
+  `=SUM(A1:A2)` stays as it is when A1 alone goes. A copy translates
+  relative references by the distance pasted, as before.
 - A typed error code is that error, as it is in Excel: a cell holding
   `#N/A` answers TRUE to `=ISNA(A1)` and carries the error into anything
   that reads it, so a placeholder row reads as missing rather than as the
