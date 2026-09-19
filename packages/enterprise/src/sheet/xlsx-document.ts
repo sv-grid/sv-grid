@@ -259,7 +259,7 @@ function asText(text: string): string {
 }
 
 /** A cell's `<c>` element: a formula with its cached value, or a literal. */
-function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean, spill?: { ref: string } | 'covered'): string {
+function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean, spill?: { ref: string } | 'covered', inTable?: string): string {
   const sAttr = s ? ` s="${s}"` : ''
   const text = raw.trim()
   if (text === '' && spill === 'covered') {
@@ -275,7 +275,7 @@ function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt:
     // A dynamic array formula is an array formula over its spill with the
     // metadata flag (`cm`) that tells Excel it spills rather than being an
     // old-style CSE array.
-    const body = esc(xlsxFormula(text.slice(1)))
+    const body = esc(xlsxFormula(text.slice(1), inTable))
     const f = spill && spill !== 'covered' ? `<f t="array" ref="${spill.ref}">${body}</f>` : `<f>${body}</f>`
     const cm = spill && spill !== 'covered' ? ' cm="1"' : ''
     if (isError(value)) return `<c r="${ref}"${sAttr}${cm} t="e">${f}<v>${esc(value.error)}</v></c>`
@@ -495,7 +495,10 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         const spill = spillAt.get(`${r},${c}`)
         if (raw === '' && !entry && !spill) continue
         const s = entry ? styles.xfId(entry) : 0
-        const xml = cellXml(`${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' && !spill ? '' : wb.getValue(name, r, c), s, isDateFormat(entry?.numFmt), spill)
+        const xml = cellXml(
+          `${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' && !spill ? '' : wb.getValue(name, r, c),
+          s, isDateFormat(entry?.numFmt), spill, wb.tables.at(name, r, c)?.name,
+        )
         if (xml) cells.push(xml)
       }
       const height = state.heights.get(r)
@@ -1018,7 +1021,7 @@ export const XLFN_FUNCTIONS = new Set([
  * inside a string literal (`="SORT(x)"`) is left alone, and one that is
  * part of a longer name (`MYSORT(`) is too.
  */
-export function xlsxFormula(text: string): string {
+export function xlsxFormula(text: string, inTable?: string): string {
   let out = ''
   let i = 0
   while (i < text.length) {
@@ -1029,6 +1032,20 @@ export function xlsxFormula(text: string): string {
       out += text.slice(i, close)
       i = close
       continue
+    }
+    // `[@Amount]` is the shorthand Excel takes in the formula bar; what it
+    // STORES is the long form, naming the table and the specifier. A file
+    // carrying the shorthand is one other readers refuse.
+    if (ch === '[' && text[i + 1] === '@' && inTable) {
+      const end = text.indexOf(']', i)
+      if (end > 0) {
+        const column = text.slice(i + 2, end).trim()
+        out += column === ''
+          ? `${inTable}[#This Row]`
+          : `${inTable}[[#This Row],[${column}]]`
+        i = end + 1
+        continue
+      }
     }
     if (/[A-Za-z_]/.test(ch)) {
       let j = i

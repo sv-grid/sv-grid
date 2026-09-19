@@ -515,6 +515,31 @@ describe('what the writer refuses to write badly', () => {
   })
 })
 
+describe('a table in an .xlsx', () => {
+  it("stores the this-row reference the long way Excel stores it", () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['Region', 'Qty', 'Price', 'Amount'],
+      ['North', '2', '3', '=[@Qty]*[@Price]'],
+      ['', '', '', '=SUM(Orders[Amount])'],
+    ] }] })
+    doc.workbook.tables.define({
+      name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 3, lastRow: 1,
+      hasTotals: false, style: 'TableStyleMedium2',
+    })
+    const sheet = documentToXlsxParts(doc)['xl/worksheets/sheet1.xml']!
+    // The bare [@Qty] is the formula bar's shorthand, and a file carrying it
+    // is one other readers refuse.
+    expect(sheet).toContain('Orders[[#This Row],[Qty]]*Orders[[#This Row],[Price]]')
+    expect(sheet).not.toContain('>[@Qty]')
+    expect(sheet).toContain('SUM(Orders[Amount])')
+
+    // And it reads back as the formula the sheet works with.
+    const back = createSheetDocument({ state: documentFromXlsxParts(documentToXlsxParts(doc)) })
+    expect(back.workbook.getValue('S', 1, 3)).toBe(6)
+    expect(back.workbook.getValue('S', 2, 3)).toBe(6)
+  })
+})
+
 describe("Excel's text prefix", () => {
   it('writes the text without the apostrophe, as a string', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [["'007"], ["'=A1+1"]] }] })

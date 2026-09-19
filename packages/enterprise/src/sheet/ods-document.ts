@@ -14,7 +14,7 @@
  * else is the same document this package already keeps.
  */
 import { colToLetters } from './address'
-import { tokenize } from './tokenize'
+import { tokenize, type TableRefToken } from './tokenize'
 import { formatKeyAt, type CellFormatEntry } from './format-store'
 import type { SheetDocument, SheetState, SheetStateEntry } from './document'
 import { linkAt, type LinksMap } from './links'
@@ -159,19 +159,29 @@ function lastUnquotedDot(text: string): number {
 }
 
 /**
+ * What a structured reference points at, for a writer that has a workbook:
+ * ODF has no `Orders[Amount]`, so one has to become the rectangle it names
+ * or the formula cannot be written at all.
+ */
+export type TableResolver = (token: TableRefToken) => { sheet: string | null; r1: number; c1: number; r2: number; c2: number } | null
+
+/**
  * An A1 formula as ODF writes one: every reference in brackets, `;` between
  * arguments. Rebuilt from the tokens rather than by substitution, so a comma
  * inside a string stays a comma and `A1` inside one is not a reference.
+ *
+ * Returns null when the formula cannot be spelled in ODF - a structured
+ * reference with no workbook to resolve it - so the caller can write the
+ * cell's value on its own rather than a formula the reader would refuse.
  */
-export function formulaToOdf(text: string): string {
+export function formulaToOdf(text: string, resolve?: TableResolver): string | null {
   const body = text.startsWith('=') ? text.slice(1) : text
   let tokens
   try {
     tokens = tokenize(body)
   } catch {
-    // Not something this engine can read: send the text as it stands rather
-    // than a broken translation.
-    return `of:=${body}`
+    // Not something this engine can read: no formula rather than a broken one.
+    return null
   }
   const ref = (r: { sheet: string | null; col: number; colAbs: boolean; row: number | null; rowAbs: boolean }): string => {
     const sheet = r.sheet === null ? '' : `$${/^[A-Za-z_][A-Za-z0-9_.]*$/.test(r.sheet) ? r.sheet : `'${r.sheet.replace(/'/g, "''")}'`}`
@@ -199,9 +209,21 @@ export function formulaToOdf(text: string): string {
       case 'lparen': out += '('; break
       case 'rparen': out += ')'; break
       case 'comma': out += ';'; break
-      // A structured reference has no ODF spelling, so the formula goes as
-      // text rather than as something that would read as another range.
-      default: return `of:=${body}`
+      // A structured reference has no ODF spelling: it goes as the
+      // rectangle it names, or the formula does not go at all.
+      case 'table': {
+        const rect = resolve?.(token)
+        if (!rect) return null
+        const where = rect.sheet === null
+          ? ''
+          : `$${/^[A-Za-z_][A-Za-z0-9_.]*$/.test(rect.sheet) ? rect.sheet : `'${rect.sheet.replace(/'/g, "''")}'`}`
+        const from = `${where}.${colToLetters(rect.c1)}${rect.r1 + 1}`
+        out += rect.r1 === rect.r2 && rect.c1 === rect.c2
+          ? `[${from}]`
+          : `[${from}:.${colToLetters(rect.c2)}${rect.r2 + 1}]`
+        break
+      }
+      default: return null
     }
   }
   return `of:=${out}`
@@ -885,7 +907,9 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
   }).join('')
 
   const names = wb.names.list().map((entry) => {
-    const target = formulaToOdf(entry.refersTo).replace(/^of:=/, '')
+    const written = formulaToOdf(entry.refersTo)
+    if (!written) return ''
+    const target = written.replace(/^of:=/, '')
     const bare = /^\[(.+)\]$/.exec(target)
     const address = bare ? bare[1]! : target
     return `<table:named-range table:name="${esc(entry.name)}" table:base-cell-address="${esc(address.split(':')[0] ?? address)}"`
@@ -944,7 +968,10 @@ function cellXml(
   const style = styleName ? ` table:style-name="${styleName}"` : ''
   const spanned = span ? ` table:number-columns-spanned="${span.across}" table:number-rows-spanned="${span.down}"` : ''
   if (raw === '') return `<table:table-cell${style}${spanned}/>`
-  const formula = raw.startsWith('=') ? ` table:formula="${esc(formulaToOdf(raw))}"` : ''
+  // A formula ODF cannot spell is left off, and the value stands on its own:
+  // a reader shows the right number instead of refusing the cell.
+  const odf = raw.startsWith('=') ? formulaToOdf(raw, tableResolver(doc, sheet, row, col)) : null
+  const formula = odf ? ` table:formula="${esc(odf)}"` : ''
   const value = doc.workbook.getValue(sheet, row, col)
   const link = linkAt(doc.get(sheet).links, row, col)
   const note = noteXml(doc, sheet, row, col)
@@ -978,6 +1005,47 @@ function cellXml(
     return `${open} office:value-type="string" calcext:value-type="error">${note}${paragraph(text)}</table:table-cell>`
   }
   return `${open} office:value-type="string" calcext:value-type="string">${note}${paragraph(text)}</table:table-cell>`
+}
+
+/**
+ * What `Orders[Amount]`, `[@Qty]` and their kin point at, in the sheet the
+ * formula sits on. ODF has no structured references, so this is what lets
+ * one cross into an .ods at all: the table's registry gives the block, the
+ * header row gives the column, and the specifier picks the rows.
+ */
+function tableResolver(doc: SheetDocument, sheet: string, row: number, col: number): TableResolver {
+  return (token) => {
+    const tables = doc.workbook.tables
+    const table = token.table ? tables.get(token.table) : tables.at(sheet, row, col)
+    if (!table) return null
+    // A reference on its own sheet needs no sheet name, as in A1.
+    const where = table.sheet.toLowerCase() === sheet.toLowerCase() ? null : table.sheet
+    const columnAt = (name: string | null | undefined): number | null => {
+      if (!name) return null
+      const wanted = name.trim().toLowerCase()
+      for (let c = table.firstCol; c <= table.lastCol; c += 1) {
+        if (doc.workbook.getRaw(table.sheet, table.headerRow, c).trim().toLowerCase() === wanted) return c
+      }
+      return null
+    }
+    const c1 = columnAt(token.column) ?? table.firstCol
+    const c2 = columnAt(token.columnTo) ?? c1
+    const totalsRow = table.hasTotals ? table.lastRow + 1 : null
+    switch (token.specifier) {
+      case '#Headers': return { sheet: where, r1: table.headerRow, c1, r2: table.headerRow, c2 }
+      case '#Totals':
+        return totalsRow === null ? null : { sheet: where, r1: totalsRow, c1, r2: totalsRow, c2 }
+      case '#All':
+        return { sheet: where, r1: table.headerRow, c1, r2: totalsRow ?? table.lastRow, c2 }
+      case '#ThisRow':
+        // Only inside the table, as in Excel.
+        if (where !== null) return null
+        if (row <= table.headerRow || row > (totalsRow ?? table.lastRow)) return null
+        return { sheet: where, r1: row, c1, r2: row, c2 }
+      default:
+        return { sheet: where, r1: table.headerRow + 1, c1, r2: table.lastRow, c2 }
+    }
+  }
 }
 
 /** A cell's note as ODF's annotation. */

@@ -57,8 +57,15 @@ describe('the ODF formula grammar', () => {
 
   it('round-trips through both directions', () => {
     for (const formula of ['=SUM(A1:A3)', '=IF(A1>0,"y","n")', '=Summary!B2*2', '=ROUND(A1/B1,2)']) {
-      expect(formulaFromOdf(formulaToOdf(formula))).toBe(formula)
+      expect(formulaFromOdf(formulaToOdf(formula)!)).toBe(formula)
     }
+  })
+
+  it('has no spelling for a structured reference without a workbook', () => {
+    // ODF has no Orders[Amount]: the writer resolves one to the rectangle it
+    // names, and says so rather than writing brackets a reader would refuse.
+    expect(formulaToOdf('=SUM(Orders[Amount])')).toBeNull()
+    expect(formulaToOdf('=[@Qty]*[@Price]')).toBeNull()
   })
 })
 
@@ -129,6 +136,27 @@ describe('reading an .ods', () => {
     ))
     expect(state.workbook.sheets[0]!.cells.length).toBe(1)
     expect(state.workbook.sheets[0]!.cells[0]).toEqual(['1'])
+  })
+})
+
+describe('a table in an .ods', () => {
+  it('writes a structured reference as the rectangle it names', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['Region', 'Qty', 'Price', 'Amount'],
+      ['North', '2', '3', '=[@Qty]*[@Price]'],
+      ['South', '4', '5', '=[@Qty]*[@Price]'],
+      ['', '', '', '=SUM(Orders[Amount])'],
+    ] }] })
+    doc.workbook.tables.define({
+      name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 3, lastRow: 2,
+      hasTotals: false, style: 'TableStyleMedium2',
+    })
+    const body = documentToOdsParts(doc)['content.xml']!
+    // This row of a column, and a whole column of the table.
+    expect(body).toContain('table:formula="of:=[.B2]*[.C2]"')
+    expect(body).toContain('table:formula="of:=SUM([.D2:.D3])"')
+    expect(body).not.toContain('[@Qty]')
+    expect(body).not.toContain('Orders[')
   })
 })
 
