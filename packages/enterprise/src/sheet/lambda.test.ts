@@ -114,4 +114,24 @@ describe('the lambda helpers', () => {
     expect(spill('=LET(twice, LAMBDA(v, v * 2), MAP(A1:C1, twice))')).toEqual([[2, 4, 6]])
     expect(run('=MAP(A1:C1, 5)')).toEqual({ error: '#VALUE!' })
   })
+
+  it('hands its whole answer to the function around it, not the first cell', () => {
+    // A helper nested in an ordinary function is an array argument, exactly
+    // as SEQUENCE or FILTER is: =SUM(MAP(...)) adds every answer. Reading
+    // the first one instead is a wrong number rather than an error, which
+    // is the worst kind.
+    expect(run('=SUM(MAP(A1:C1, LAMBDA(v, v * 10)))')).toBe(60)
+    expect(run('=SUM(BYROW(A1:C3, LAMBDA(r, SUM(r))))')).toBe(45)
+    expect(run('=SUM(BYCOL(A1:C3, LAMBDA(c, SUM(c))))')).toBe(45)
+    expect(run('=SUM(SCAN(0, A1:C1, LAMBDA(a, v, a + v)))')).toBe(10)
+    expect(run('=SUM(MAKEARRAY(2, 2, LAMBDA(r, c, 1)))')).toBe(4)
+    expect(run('=COUNT(MAP(A1:C1, LAMBDA(v, v)))')).toBe(3)
+    expect(run('=MAX(MAP(A1:C1, LAMBDA(v, v * 10)))')).toBe(30)
+    // REDUCE answers with one value, which goes in as one value.
+    expect(run('=SUM(REDUCE(0, A1:C1, LAMBDA(a, v, a + v)), 4)')).toBe(10)
+    // And the other way round: a helper over an array function's answer.
+    expect(run('=SUM(MAP(FILTER(A1:A3, A1:A3 > 1), LAMBDA(v, v)))')).toBe(11)
+    expect(spill('=MAP(SEQUENCE(3), LAMBDA(v, v * 2))')).toEqual([[2], [4], [6]])
+    expect(run('=SUM(BYCOL(MAP(A1:C3, LAMBDA(v, v * 2)), LAMBDA(c, MAX(c))))')).toBe(48)
+  })
 })
