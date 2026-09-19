@@ -29,7 +29,7 @@ import type { CfRule, CfStyle, CfOperator, CfTextMatch, CfIconSet } from './cond
 import type { Rect } from './rects'
 import { colToLetters, lettersToCol, parseA1 } from './address'
 import { translateFormula } from './refs'
-import { isError, type CellValue } from './ast'
+import { isError, typedError, type CellValue } from './ast'
 import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
 import { isSafeLinkTarget, listLinks, parseLinkTarget } from './links'
 import { PROTECTION_PERMISSIONS, newEditRangeId, type ProtectionPermission } from './protection'
@@ -253,8 +253,9 @@ function asText(text: string): string {
   if (text === '') return ''
   const upper = text.trim().toUpperCase()
   const numberish = text.trim() !== '' && Number.isFinite(Number(text))
-  if (!numberish && upper !== 'TRUE' && upper !== 'FALSE' && !text.startsWith('=') && !text.startsWith("'")) return text
-  return `'${text}`
+  const plain = !numberish && upper !== 'TRUE' && upper !== 'FALSE'
+    && !text.startsWith('=') && !text.startsWith("'") && !typedError(text.trim())
+  return plain ? text : `'${text}`
 }
 
 /** A cell's `<c>` element: a formula with its cached value, or a literal. */
@@ -287,6 +288,9 @@ function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt:
   if (text.startsWith("'")) {
     return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${esc(text.slice(1))}</t></is></c>`
   }
+  // A typed error code IS the error, as it is in Excel, so it goes out as
+  // one rather than as the text that spells it.
+  if (isError(value) && text.startsWith('#')) return `<c r="${ref}"${sAttr} t="e"><v>${esc(value.error)}</v></c>`
   const serial = isoToSerial(text)
   if (serial !== null) return `<c r="${ref}"${sAttr}><v>${serial}</v></c>`
   if (typeof value === 'number' && !dateFmt) return `<c r="${ref}"${sAttr}><v>${value}</v></c>`

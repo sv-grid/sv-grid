@@ -110,6 +110,26 @@ describe('the sheet list', () => {
     expect(wb.getRaw('S', 0, 0)).toBe("'007")
   })
 
+  // Excel stores a typed error code as the error itself, which is how a
+  // placeholder row reads as missing rather than as the text that spells it.
+  it('reads a typed error code as that error', () => {
+    const wb = createWorkbook([{ name: 'S', cells: [
+      ['#N/A', '=ISNA(A1)', '=A1+1', '=IFNA(A1, "none")', "'#N/A", '=ISNA(E1)'],
+      ['#value!', '#nope', '=ISERROR(A2)'],
+    ] }])
+    expect(wb.getValue('S', 0, 0)).toEqual({ error: '#N/A' })
+    expect(wb.getValue('S', 0, 1)).toBe(true)
+    expect(wb.getValue('S', 0, 2)).toEqual({ error: '#N/A' })
+    expect(wb.getValue('S', 0, 3)).toBe('none')
+    // The apostrophe keeps the text of one.
+    expect(wb.getValue('S', 0, 4)).toBe('#N/A')
+    expect(wb.getValue('S', 0, 5)).toBe(false)
+    // Case does not matter, and text that only looks like a code is text.
+    expect(wb.getValue('S', 1, 0)).toEqual({ error: '#VALUE!' })
+    expect(wb.getValue('S', 1, 1)).toBe('#nope')
+    expect(wb.getValue('S', 1, 2)).toBe(true)
+  })
+
   it('renames, following the active sheet', () => {
     const wb = createWorkbook()
     expect(wb.renameSheet('Sheet1', 'Data')).toBe(true)

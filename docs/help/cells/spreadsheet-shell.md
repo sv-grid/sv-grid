@@ -86,6 +86,10 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- A typed error code is that error, as it is in Excel: a cell holding
+  `#N/A` answers TRUE to `=ISNA(A1)` and carries the error into anything
+  that reads it, so a placeholder row reads as missing rather than as the
+  text that spells it. Case does not matter, and `'#N/A` is the text.
 - A leading apostrophe says the rest is text, as it does in Excel: `'007`
   is the text `007`, leading zero kept, and `'=A1+1` shows the formula
   rather than working it out. The apostrophe is not part of the value, so
