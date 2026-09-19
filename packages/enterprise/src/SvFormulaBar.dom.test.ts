@@ -123,7 +123,7 @@ describe('SvFormulaBar (DOM)', () => {
     const el = render({})
     type(formulaInput(el), '=VLOOKUP(')
     expect(el.querySelector('.hint')!.textContent)
-      .toBe('VLOOKUP(lookup, table, colIndex)')
+      .toBe('VLOOKUP(lookup, table, colIndex, [rangeLookup])')
   })
 
   it('navigates when an address is typed into the name box', () => {

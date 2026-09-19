@@ -101,6 +101,19 @@ negative payment on a positive loan, and `=FV(6%/12, 120, -100)` a
 positive balance from negative deposits. `RATE` and `IRR` are solved
 numerically and return `#NUM!` when no rate fits.
 
+The lookup family carries Excel's match modes. `VLOOKUP` and `HLOOKUP` take
+`range_lookup` as a fourth argument, and it defaults to `TRUE`: the table is
+read as sorted and the answer is the last entry not past the value looked up,
+which is what makes a tier table work - `=VLOOKUP(87, A1:B5, 2)` over a grade
+table beginning `0 / 60 / 70 / 80 / 90` answers `B`. Pass `FALSE` for an exact
+match, and `#N/A` when there is none. `MATCH` reads the same way: `1` (the
+default) down an ascending range, `-1` down a descending one, `0` exact.
+`XLOOKUP` is exact by default, and takes a match mode of `-1` to fall back to
+the next smaller item or `1` to the next larger one, plus a search mode of `-1`
+to read the range from the end and so return the last of several matches.
+Only cells of the same type as the value looked up take part in an approximate
+match, so a text header above a column of numbers is never the answer.
+
 `OFFSET` and `INDIRECT` produce a reference rather than a value: on their
 own they read as the top-left cell, and inside a function they hand over
 the whole rectangle, so `=SUM(OFFSET(A1,0,0,A2,1))` adds as many cells as
