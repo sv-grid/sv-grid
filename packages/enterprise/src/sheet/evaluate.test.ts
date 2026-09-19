@@ -318,7 +318,11 @@ describe('the function library', () => {
   it('does the lookups', () => {
     const table: CellValue[][] = [['a', 10], ['b', 20], ['c', 30]]
     expect(run('=VLOOKUP("b", A1:B3, 2)', table)).toBe(20)
-    expect(run('=VLOOKUP("z", A1:B3, 2)', table)).toEqual({ error: '#N/A' })
+    // Past the end of a sorted table the default IS the approximate match,
+    // so Excel answers with the last row rather than #N/A. Only the explicit
+    // FALSE asks for an exact match.
+    expect(run('=VLOOKUP("z", A1:B3, 2)', table)).toBe(30)
+    expect(run('=VLOOKUP("z", A1:B3, 2, FALSE)', table)).toEqual({ error: '#N/A' })
     expect(run('=VLOOKUP("b", A1:B3, 9)', table)).toEqual({ error: '#REF!' })
     expect(run('=MATCH("c", A1:A3, 0)', table)).toBe(3)
     expect(run('=INDEX(A1:B3, 2, 2)', table)).toBe(20)
@@ -329,6 +333,48 @@ describe('the function library', () => {
   it('does HLOOKUP across the header row', () => {
     const table: CellValue[][] = [['a', 'b'], [1, 2]]
     expect(run('=HLOOKUP("b", A1:B2, 2)', table)).toBe(2)
+  })
+
+  // A QA pass read these against Excel. The lookup family's approximate match
+  // is the DEFAULT, and a tier table is the reason it exists: without it every
+  // grade, tax band and commission table answers #N/A.
+  it('matches approximately by default, which is how tier tables work', () => {
+    const tiers: CellValue[][] = [[0, 'F'], [60, 'D'], [70, 'C'], [80, 'B'], [90, 'A']]
+    expect(run('=VLOOKUP(87, A1:B5, 2)', tiers)).toBe('B')
+    expect(run('=VLOOKUP(87, A1:B5, 2, TRUE)', tiers)).toBe('B')
+    expect(run('=VLOOKUP(90, A1:B5, 2)', tiers)).toBe('A')
+    // An exact hit still wins, and range_lookup FALSE keeps the strict read.
+    expect(run('=VLOOKUP(87, A1:B5, 2, FALSE)', tiers)).toEqual({ error: '#N/A' })
+    // Below the first band there is nothing to fall back to.
+    expect(run('=VLOOKUP(-5, A1:B5, 2)', tiers)).toEqual({ error: '#N/A' })
+    // The header above the numbers is text, so it never becomes the answer.
+    const headed: CellValue[][] = [['Score', 'Grade'], [0, 'F'], [80, 'B']]
+    expect(run('=VLOOKUP(85, A1:B3, 2)', headed)).toBe('B')
+  })
+
+  it('takes range_lookup on HLOOKUP too', () => {
+    const table: CellValue[][] = [[0, 60, 80], ['F', 'D', 'B']]
+    expect(run('=HLOOKUP(87, A1:C2, 2)', table)).toBe('B')
+    expect(run('=HLOOKUP(87, A1:C2, 2, FALSE)', table)).toEqual({ error: '#N/A' })
+  })
+
+  it('takes XLOOKUP match and search modes', () => {
+    const tiers: CellValue[][] = [[0, 'F'], [60, 'D'], [70, 'C'], [80, 'B'], [90, 'A']]
+    // 0 (the default) is exact; -1 falls back to the next smaller item, 1 to
+    // the next larger one.
+    expect(run('=XLOOKUP(87, A1:A5, B1:B5, "none")', tiers)).toBe('none')
+    expect(run('=XLOOKUP(87, A1:A5, B1:B5, "none", -1)', tiers)).toBe('B')
+    expect(run('=XLOOKUP(87, A1:A5, B1:B5, "none", 1)', tiers)).toBe('A')
+    // A negative search mode reads from the end, so it finds the LAST match.
+    const dupes: CellValue[][] = [['a', 1], ['b', 2], ['a', 3]]
+    expect(run('=XLOOKUP("a", A1:A3, B1:B3)', dupes)).toBe(1)
+    expect(run('=XLOOKUP("a", A1:A3, B1:B3, , 0, -1)', dupes)).toBe(3)
+  })
+
+  it('reads MATCH -1 down a descending range', () => {
+    const down: CellValue[][] = [[90], [80], [70], [60]]
+    expect(run('=MATCH(75, A1:A4, -1)', down)).toBe(2)
+    expect(run('=MATCH(95, A1:A4, -1)', down)).toEqual({ error: '#N/A' })
   })
 
   it('returns #NAME? for a function it does not have', () => {

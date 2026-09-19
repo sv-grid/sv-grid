@@ -54,6 +54,35 @@ function roundTo(value: number, digits: number): number {
 }
 
 
+/**
+ * Excel's approximate match, which is what the lookup family does when it
+ * cannot find the value itself. The column is taken as sorted, and the answer
+ * is the entry NEAREST the needle on one side: `dir` 1 for the largest entry
+ * not past it (VLOOKUP / HLOOKUP with range_lookup TRUE, MATCH 1, XLOOKUP -1),
+ * -1 for the smallest entry not before it (MATCH -1, XLOOKUP 1).
+ *
+ * Only cells of the needle's own type take part, so the text header sitting
+ * above a numeric tier table cannot become the answer. Among equal entries the
+ * later one wins, as Excel's own search lands on the last of a run.
+ */
+function nearestIndex(
+  pool: ReadonlyArray<CellValue>,
+  needle: CellValue,
+  dir: 1 | -1,
+): number {
+  let best = -1
+  for (let i = 0; i < pool.length; i += 1) {
+    const v = pool[i]
+    if (v === undefined || v === '' || isError(v)) continue
+    if (typeof v !== typeof needle) continue
+    const side = compare(v, needle)
+    if (dir === 1 ? side > 0 : side < 0) continue
+    if (best < 0 || compare(v, pool[best]!) * dir >= 0) best = i
+  }
+  return best
+}
+
+
 export const FUNCTIONS: Record<string, SheetFunction> = {
   // ---- Math and aggregation -------------------------------------------
   SUM: (a) => sum(a.flat),
@@ -261,20 +290,27 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   },
 
   // ---- Lookup ----------------------------------------------------------
+  // VLOOKUP(lookup, table, colIndex, [rangeLookup]). The fourth argument is
+  // Excel's range_lookup and it defaults to TRUE: the banded lookup - tax
+  // brackets, commission tiers, a grade table - is the DEFAULT reading, and
+  // FALSE is how you ask for an exact match.
   VLOOKUP: (a) => {
     const needle = nth(a, 0)
     const grid = a.grids[1]
     if (!grid) return err('#REF!')
     const col = Math.round(toNumber(nth(a, 2)))
     if (col < 1) return err('#VALUE!')
-    for (const row of grid) {
-      if (row[0] !== undefined && looseEquals(row[0], needle)) {
-        const cell = row[col - 1]
-        return cell === undefined ? err('#REF!') : cell
-      }
-    }
-    return err('#N/A')
+    const keys = grid.map((row) => row[0] ?? '')
+    const exact = a.args[3] !== undefined && !toBool(nth(a, 3))
+    const at = exact
+      ? keys.findIndex((v) => looseEquals(v, needle))
+      : nearestIndex(keys, needle, 1)
+    if (at < 0) return err('#N/A')
+    const cell = grid[at]![col - 1]
+    return cell === undefined ? err('#REF!') : cell
   },
+  // HLOOKUP reads the same way, along the header row instead of down the
+  // first column.
   HLOOKUP: (a) => {
     const needle = nth(a, 0)
     const grid = a.grids[1]
@@ -282,13 +318,13 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const rowIndex = Math.round(toNumber(nth(a, 2)))
     if (rowIndex < 1) return err('#VALUE!')
     const header = grid[0] ?? []
-    for (let c = 0; c < header.length; c += 1) {
-      if (looseEquals(header[c]!, needle)) {
-        const cell = grid[rowIndex - 1]?.[c]
-        return cell === undefined ? err('#REF!') : cell
-      }
-    }
-    return err('#N/A')
+    const exact = a.args[3] !== undefined && !toBool(nth(a, 3))
+    const at = exact
+      ? header.findIndex((v) => looseEquals(v, needle))
+      : nearestIndex(header, needle, 1)
+    if (at < 0) return err('#N/A')
+    const cell = grid[rowIndex - 1]?.[at]
+    return cell === undefined ? err('#REF!') : cell
   },
   MATCH: (a) => {
     const needle = nth(a, 0)
@@ -298,12 +334,9 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
       const at = pool.findIndex((v) => looseEquals(v, needle))
       return at < 0 ? err('#N/A') : at + 1
     }
-    // Ordered search: the last value not past the needle.
-    let best = -1
-    for (let i = 0; i < pool.length; i += 1) {
-      const cmp = compare(pool[i]!, needle)
-      if (mode === 1 ? cmp <= 0 : cmp >= 0) best = i
-    }
+    // Ordered search: 1 wants the last value not past the needle in an
+    // ascending range, -1 the last value not before it in a descending one.
+    const best = nearestIndex(pool, needle, mode === 1 ? 1 : -1)
     return best < 0 ? err('#N/A') : best + 1
   },
   INDEX: (a) => {
@@ -325,12 +358,24 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const cell = row[colIndex - 1]
     return cell === undefined ? err('#REF!') : cell
   },
+  // XLOOKUP(lookup, haystack, results, [ifMissing], [matchMode], [searchMode]).
+  // matchMode 0 is the exact match it defaults to, -1 falls back to the next
+  // smaller item and 1 to the next larger one; a negative searchMode reads the
+  // range from the end, which is how you pick the LAST of several matches.
   XLOOKUP: (a) => {
     const needle = nth(a, 0)
     const haystack = a.args[1] ?? []
     const results = a.args[2] ?? []
-    const at = haystack.findIndex((v) => looseEquals(v, needle))
-    if (at < 0) return a.args[3] ? nth(a, 3) : err('#N/A')
+    const mode = a.args[4] !== undefined ? Math.round(toNumber(nth(a, 4))) : 0
+    const back = a.args[5] !== undefined && Math.round(toNumber(nth(a, 5))) < 0
+    let at = -1
+    for (let i = 0; i < haystack.length; i += 1) {
+      const j = back ? haystack.length - 1 - i : i
+      if (looseEquals(haystack[j]!, needle)) { at = j; break }
+    }
+    if (at < 0 && mode === -1) at = nearestIndex(haystack, needle, 1)
+    if (at < 0 && mode === 1) at = nearestIndex(haystack, needle, -1)
+    if (at < 0) return a.args[3] !== undefined ? nth(a, 3) : err('#N/A')
     const cell = results[at]
     return cell === undefined ? err('#REF!') : cell
   },

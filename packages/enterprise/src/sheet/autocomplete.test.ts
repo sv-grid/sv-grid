@@ -132,11 +132,11 @@ describe('balanceParens', () => {
 
 describe('signatureAt', () => {
   it('names the call the caret is inside', () => {
-    expect(signatureAt('=VLOOKUP(', 9)).toBe('VLOOKUP(lookup, table, colIndex)')
+    expect(signatureAt('=VLOOKUP(', 9)).toBe('VLOOKUP(lookup, table, colIndex, [rangeLookup])')
   })
 
   it('keeps the hint while arguments are typed', () => {
-    expect(signatureAt('=VLOOKUP("a", B1:C9, ', 21)).toBe('VLOOKUP(lookup, table, colIndex)')
+    expect(signatureAt('=VLOOKUP("a", B1:C9, ', 21)).toBe('VLOOKUP(lookup, table, colIndex, [rangeLookup])')
   })
 
   it('reports the INNER call when nested', () => {
