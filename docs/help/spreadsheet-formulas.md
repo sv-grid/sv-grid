@@ -79,7 +79,7 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
 | Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
-| Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` |
+| Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` `NA` |
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
@@ -196,6 +196,12 @@ because `1.234,56` is a thousand in Germany and one point two in
 Britain. Spaces are ignored, trailing `%` signs each divide by a hundred,
 and a group separator after the decimal one is `#VALUE!` rather than a
 number, which is Excel's rule for it.
+
+`TEXT(value, format)` speaks the same format grammar a cell's own number
+format does, so a date, a fraction, a duration, a currency or engineering
+notation all come out of it: `=TEXT(A1, "h:mm AM/PM")`, `=TEXT(A1, "# ?/?")`,
+`=TEXT(A1, "[h]:mm")`. A colour in the pattern is ignored, as Excel ignores
+it there, and an empty pattern gives an empty string.
 
 `%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is

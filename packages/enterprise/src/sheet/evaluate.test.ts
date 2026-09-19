@@ -274,9 +274,30 @@ describe('the function library', () => {
     expect(run('=SEARCH("b", "aBc")')).toBe(2)
   })
 
-  it('formats with TEXT', () => {
+  it('formats with TEXT through the same grammar a cell format speaks', () => {
     expect(run('=TEXT(1234.5, "0.00")')).toBe('1234.50')
     expect(run('=TEXT(1234.5, "#,##0.00")')).toBe('1,234.50')
+    // It used to read the decimals and the comma out of the pattern and
+    // ignore everything else, so a date, a fraction, a duration or a
+    // currency came back as the bare number.
+    expect(run('=TEXT(46275.625, "h:mm AM/PM")')).toBe('3:00 PM')
+    expect(run('=TEXT(46275, "yyyy-mm-dd")')).toBe('2026-09-10')
+    expect(run('=TEXT(1.25, "# ?/?")')).toBe('1 1/4')
+    expect(run('=TEXT(0.5, "[h]:mm")')).toBe('12:00')
+    expect(run('=TEXT(12345, "##0.0E+0")')).toBe('12.3E+3')
+    expect(run('=TEXT(-1234.5, "$#,##0.00;($#,##0.00)")')).toBe('($1,234.50)')
+    expect(run('=TEXT(0.125, "0.0%")')).toBe('12.5%')
+    // A colour in the pattern is ignored here, as Excel ignores it, and an
+    // empty pattern is an empty string.
+    expect(run('=TEXT(-5, "[Red]0.0")')).toBe('-5.0')
+    expect(run('=TEXT(5, "")')).toBe('')
+  })
+
+  it('answers NA() with the error a lookup writes, and POWER with #NUM! rather than nothing', () => {
+    expect(run('=NA()')).toEqual({ error: '#N/A' })
+    expect(run('=IFNA(NA(), "none")')).toBe('none')
+    expect(run('=POWER(-8, 1/3)')).toEqual({ error: '#NUM!' })
+    expect(run('=POWER(2, 10)')).toBe(1024)
   })
 
   it('does the date functions', () => {
