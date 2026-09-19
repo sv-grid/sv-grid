@@ -179,7 +179,13 @@ spill ranges (`spillOf(sheet, row, col)` names the anchor and the
 rectangle of the spill a cell belongs to), moves them with an insert or
 delete, and writes them to the xlsx as array formulas with Excel's
 dynamic-array metadata, so Excel opens them as spills rather than as
-`@`-prefixed legacy formulas. `LET` and `LAMBDA` are not there yet.
+`@`-prefixed legacy formulas. `LET`, `LAMBDA` and the six helpers go into
+the file the same way, under the `_xlfn.` prefix Excel spells them with.
+
+Two of Excel's array conveniences are not here: the spill operator
+(`=SUM(D2#)`, which names the whole block a spill covers) and array
+constants written in braces (`={1;2;3}`). Both read as `#PARSE!`; name the
+spilled range or put the values in cells instead.
 
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and

@@ -95,3 +95,17 @@ describe('spills in a workbook', () => {
     expect(reported).toEqual(expect.arrayContaining([[1, 0, 1], [2, 0, 2]]))
   })
 })
+
+describe('what Excel writes that this does not read', () => {
+  it('says so rather than guessing: the spill operator and array constants', () => {
+    // Both are Excel's, both are documented as absent, and both have to
+    // fail loudly: a formula that quietly means something else is worse
+    // than one that will not parse.
+    const wb = createWorkbook([{ name: 'S', cells: cells.map((r) => [...r]) }])
+    wb.setRaw('S', 6, 0, '=SUM(D2#)')
+    wb.setRaw('S', 7, 0, '={1;2;3}')
+    wb.recalculate()
+    expect(wb.getValue('S', 6, 0)).toEqual({ error: '#PARSE!' })
+    expect(wb.getValue('S', 7, 0)).toEqual({ error: '#PARSE!' })
+  })
+})
