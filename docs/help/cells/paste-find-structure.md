@@ -118,6 +118,12 @@ ones for the HTML flavour:
 />
 ```
 
+A copy leaves out what the copier cannot see: a collapsed row or column is
+folded to nothing, and the keyboard already walks past it, so the block that
+reaches the clipboard closes up around it. That is what makes "filter, copy,
+paste" in the spreadsheet shell carry the rows that matched, next to each
+other, rather than the hidden ones as well.
+
 `clipboardHtml` runs once per copy, after the text is assembled; return the
 HTML to put beside it, or nothing for a text-only copy. The grid writes both
 through the `copy` event (`execCommand`), so it works on plain HTTP too,

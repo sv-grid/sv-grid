@@ -844,6 +844,7 @@ export function createClipboard<
         const header: Array<string> = [];
         for (let c = rect.minCol; c <= rect.maxCol; c += 1) {
           const column = ctx.allColumns[c];
+          if (column && ctx.collapsedColumns?.[column.id]) continue;
           header.push(column ? toolPanelHeaderLabel(column) : "");
         }
         lines.push(header.join("\t"));
@@ -851,6 +852,11 @@ export function createClipboard<
       for (let r = rect.minRow; r <= rect.maxRow; r += 1) {
         const row = ctx.allRows[r];
         if (!row || isGroupRow(row)) continue;
+        // A collapsed row is folded to nothing: the user cannot see it and
+        // the keyboard walks past it, so a copy leaves it out too. That is
+        // what a spreadsheet does with a filtered or hidden row, and it is
+        // what makes "filter, copy, paste" carry the rows that matched.
+        if (ctx.isRowCollapsed?.(r)) continue;
         const cells: Array<string> = [];
         for (let c = rect.minCol; c <= rect.maxCol; c += 1) {
           const column = ctx.allColumns[c];
@@ -858,6 +864,7 @@ export function createClipboard<
             cells.push("");
             continue;
           }
+          if (ctx.collapsedColumns?.[column.id]) continue;
           const base = getColumnBaseValue(row, column);
           let value: unknown = ctx.getCellDisplayValue(row.id, column.id, base);
           if (processCell) {

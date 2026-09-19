@@ -3858,6 +3858,14 @@
     /** The sheet the block was taken from: a cut can be pasted onto another. */
     sheet: string
     cells: CopiedCell[][]
+    /**
+     * Where each copied row and column sits in `cells`. A hidden or filtered
+     * row is not copied at all, so the block CLOSES UP around it the way
+     * Excel's does: filter, copy, paste gives the rows that matched, next to
+     * each other, rather than a block with holes in it.
+     */
+    rowAt: Map<number, number>
+    colAt: Map<number, number>
     fresh: boolean
     cut: boolean
   }
@@ -3924,22 +3932,27 @@
     // kept, as Excel keeps only one.
     const [minRow, minCol, maxRow, maxCol] = rects[0]!
     if (r === minRow && col === minCol) {
-      copied = { origin: { row: r, col }, sheet: wb.active, cells: [], fresh: true, cut: false }
+      copied = {
+        origin: { row: r, col }, sheet: wb.active, cells: [],
+        rowAt: new Map(), colAt: new Map(), fresh: true, cut: false,
+      }
       queueMicrotask(() => { if (copied) copied.fresh = false })
       // A whole column or row is selected to Infinity; the ants stop at
       // the sheet's last line.
       marquee = { sheet: wb.active, rect: [minRow, minCol, Math.min(maxRow, rowCount - 1), Math.min(maxCol, colCount - 1)] }
     }
     if (copied && !copied.cut) {
-      const dr = r - copied.origin.row
-      const dc = col - copied.origin.col
-      if (dr >= 0 && dc >= 0) {
-        // Read back after the write: $state hands out a proxy of what was
-        // assigned, and writing into the raw array would fill nothing.
-        if (!copied.cells[dr]) copied.cells[dr] = []
-        const line = copied.cells[dr]!
-        line[dc] = { shown, raw: raw(r, col), value: plainValue(r, col), format: storeFor().get(`r${r}`, params.columnId) }
-      }
+      // Dense positions, not distances from the origin: the grid never
+      // offers a hidden row, so the block closes up around one.
+      let dr = copied.rowAt.get(r)
+      if (dr === undefined) { dr = copied.rowAt.size; copied.rowAt.set(r, dr) }
+      let dc = copied.colAt.get(col)
+      if (dc === undefined) { dc = copied.colAt.size; copied.colAt.set(col, dc) }
+      // Read back after the write: $state hands out a proxy of what was
+      // assigned, and writing into the raw array would fill nothing.
+      if (!copied.cells[dr]) copied.cells[dr] = []
+      const line = copied.cells[dr]!
+      line[dc] = { shown, raw: raw(r, col), value: plainValue(r, col), format: storeFor().get(`r${r}`, params.columnId) }
     }
     return shown
   }

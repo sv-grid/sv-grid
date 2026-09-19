@@ -676,6 +676,45 @@ describe('copySelectionToClipboard', () => {
     expect(writeText).toHaveBeenCalledWith('a0\tb0\na1\tb1')
   })
 
+  // A QA pass on the spreadsheet shell: a filtered or hidden row is folded
+  // to nothing, and a copy that carried it put rows the user had filtered
+  // out into the paste.
+  it('leaves out a collapsed row, as a spreadsheet leaves out a filtered one', () => {
+    const ctx = makeCtx({
+      data: [
+        { a: 'a0', b: 'b0' },
+        { a: 'a1', b: 'b1' },
+        { a: 'a2', b: 'b2' },
+      ],
+    })
+    ctx.isRowCollapsed = (index: number) => index === 1
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 2, colIndex: 1 },
+    }
+    const cb = createClipboard(ctx)
+    cb.copySelectionToClipboard()
+    expect(writeText).toHaveBeenCalledWith('a0\tb0\na2\tb2')
+  })
+
+  it('leaves out a collapsed column too, header row included', () => {
+    const ctx = makeCtx({
+      data: [
+        { a: 'a0', b: 'b0' },
+        { a: 'a1', b: 'b1' },
+      ],
+    })
+    ctx.collapsedColumns = { b: true }
+    ctx.props.copyHeadersToClipboard = true
+    ctx.selectionRange = {
+      anchor: { rowIndex: 0, colIndex: 0 },
+      focus: { rowIndex: 1, colIndex: 1 },
+    }
+    const cb = createClipboard(ctx)
+    cb.copySelectionToClipboard()
+    expect(writeText).toHaveBeenCalledWith('a\na0\na1')
+  })
+
   it('prepends a header row when copyHeadersToClipboard is set', () => {
     const ctx = makeCtx({
       data: [
