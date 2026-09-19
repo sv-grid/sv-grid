@@ -3164,19 +3164,25 @@
     const valueAt = (r: number, c: number) => wb.getValue(wb.active, r, c)
     const start = headerRow ? r1 + 1 : r1
     if (r2 <= start) return
-    const rows = Array.from({ length: r2 - start + 1 }, (_, i) => start + i)
+    const span = Array.from({ length: r2 - start + 1 }, (_, i) => start + i)
+    // A row the filter folded away, or one hidden by hand, keeps what it
+    // holds and stays where it is: Excel sorts the rows you can see among
+    // the places you can see, which is what keeps a filtered sort honest.
+    const rows = span.filter((r) => !lineHidden(r, c1))
+    const skipped = span.length - rows.length
+    if (rows.length < 2) return
     const order = sortOrder(rows, keys, valueAt, colourOnActive)
     if (order.every((r, i) => r === rows[i])) return
     const store = target.store
-    const before = rows.map((r) => ({
+    const before = new Map(rows.map((r) => [r, {
       raw: Array.from({ length: c2 - c1 + 1 }, (_, i) => wb.getRaw(wb.active, r, c1 + i)),
       formats: Array.from({ length: c2 - c1 + 1 }, (_, i) => store.get(`r${r}`, colToLetters(c1 + i))),
-    }))
+    }]))
     cmd.batch(() => {
       withFormatUndo(cmd, target, [[start, c1, r2, c2]], () => {
         order.forEach((source, i) => {
-          const row = start + i
-          const from = before[source - start]!
+          const row = rows[i]!
+          const from = before.get(source)!
           for (let k = 0; k <= c2 - c1; k += 1) {
             const c = c1 + k
             cmd.setCellValue(row, c, from.raw[k])
@@ -3188,10 +3194,11 @@
       })
       // A one-row merge in the region rides with its row.
       if (mergesIn(mergesNow(), [[start, c1, r2, c2]]).length) {
-        const rowFor = (oldRow: number) => { const i = order.indexOf(oldRow); return i < 0 ? oldRow : start + i }
+        const rowFor = (oldRow: number) => { const i = order.indexOf(oldRow); return i < 0 ? oldRow : rows[i]! }
         setMerges(reorderMerges(mergesNow(), [start, c1, r2, c2], rowFor))
       }
     })
+    if (skipped > 0) say(t('sortKeptHidden', { count: skipped, unit: t(skipped === 1 ? 'unitRow' : 'unitRows') }))
     cmd.setSelection(r1, c1)
     cmd.extendSelection(r2, c2)
     bump()

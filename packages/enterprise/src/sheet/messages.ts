@@ -144,6 +144,8 @@ export type SheetTextMessages = {
   nothingHidden: string
   /** "{count} {unit} {state}" */
   linesToggled: string
+  /** "{count} hidden {unit} left in place", after a sort that skipped them. */
+  sortKeptHidden: string
   unitRow: string
   unitRows: string
   unitColumn: string
@@ -906,6 +908,7 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   nothingToHide: 'Nothing to hide',
   nothingHidden: 'Nothing hidden in the selection',
   linesToggled: '{count} {unit} {state}',
+  sortKeptHidden: '{count} hidden {unit} left in place',
   unitRow: 'row',
   unitRows: 'rows',
   unitColumn: 'column',

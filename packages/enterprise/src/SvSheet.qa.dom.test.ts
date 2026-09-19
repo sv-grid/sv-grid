@@ -161,6 +161,30 @@ describe('the status bar counts what can be seen', () => {
   })
 })
 
+describe('sorting with a row folded away', () => {
+  it('sorts the rows you can see, and leaves the hidden one where it is', async () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['50'], ['10'], ['40'], ['20'], ['30'],
+    ] }] })
+    const { api, sheet } = await mountSheet({ document: doc })
+    const cmd = api.getCommandContext()
+    // Hide row 3, which holds 40.
+    cmd.setActiveCell(2, 0); cmd.setSelection(2, 0)
+    await paint()
+    sheet.act('hide-rows')
+    await paint()
+
+    cmd.setActiveCell(0, 0); cmd.setSelection(0, 0); cmd.extendSelection(4, 0)
+    await paint()
+    sheet.act('sort-asc')
+    await paint()
+
+    const column = [0, 1, 2, 3, 4].map((r) => doc.workbook.getRaw('S', r, 0))
+    expect(column).toEqual(['10', '20', '40', '30', '50'])
+    expect(document.querySelector('.sv-sheet .status')?.textContent ?? '').toContain('hidden')
+  })
+})
+
 describe('what the status bar claims happened', () => {
   it('editing a table says what it now wears rather than announcing a new one', async () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
