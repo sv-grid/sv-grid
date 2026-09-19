@@ -52,6 +52,13 @@ export type SheetChangeReason =
   | { kind: 'pivots' }
   | { kind: 'links' }
   | { kind: 'tables' }
+  /**
+   * The workbook's own parts rather than a sheet's: its defined names and
+   * its calculation settings. They belong to no sheet, so nothing keyed by
+   * sheet can carry them, and a listener that mirrors a document elsewhere
+   * has to hear about them separately.
+   */
+  | { kind: 'workbook' }
   | { kind: 'merges' }
   | { kind: 'filter' }
   | { kind: 'structure'; sheet: string; edit: StructuralEdit }

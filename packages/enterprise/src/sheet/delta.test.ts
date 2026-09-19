@@ -121,6 +121,61 @@ describe('the delta stream', () => {
   })
 })
 
+describe('what the workbook keeps, rather than a sheet', () => {
+  // Tables, defined names and the calculation settings belong to the
+  // workbook, so no `state` delta (which is keyed by sheet and carries a
+  // sheet's own entry) can describe them. Without this the two sides drift
+  // silently: the same structured reference answers a number on one and
+  // #REF! on the other.
+  it('a table defined on one side reaches the other, and its references resolve there', async () => {
+    const { left, right, sentLeft } = pair()
+    left.workbook.tables.define({ name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false })
+    left.changed({ kind: 'tables' })
+    await tick()
+    expect(sentLeft.map((d) => d.kind)).toEqual(['document'])
+    expect(right.workbook.tables.list().map((t) => t.name)).toEqual(['Orders'])
+    right.workbook.setRaw('S', 5, 0, '=SUM(Orders[Amount])')
+    right.workbook.recalculate()
+    expect(right.workbook.getValue('S', 5, 0)).toBe(30)
+  })
+
+  it('a table that grows under the last row grows on the other side too', async () => {
+    const { left, right } = pair()
+    left.workbook.tables.define({ name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false })
+    left.changed({ kind: 'tables' })
+    await tick()
+    left.workbook.setRaw('S', 3, 0, 'EMEA')
+    left.workbook.setRaw('S', 3, 1, '5')
+    left.workbook.tables.growToInclude('S', 3, 1)
+    left.changed({ kind: 'tables' })
+    left.changed({ kind: 'cells' })
+    await tick()
+    expect(right.workbook.tables.list()[0]!.lastRow, 'the table there').toBe(3)
+    right.workbook.setRaw('S', 5, 0, '=SUM(Orders[Amount])')
+    right.workbook.recalculate()
+    expect(right.workbook.getValue('S', 5, 0), 'the total there').toBe(35)
+  })
+
+  it('a defined name and the calculation settings reach the other', async () => {
+    const { left, right } = pair()
+    left.workbook.names.define('Tax', 'S!B2')
+    left.workbook.setIteration({ enabled: true, maxIterations: 30, maxChange: 0.5 })
+    left.changed({ kind: 'workbook' })
+    await tick()
+    expect(right.workbook.names.list().map((n) => n.name)).toEqual(['Tax'])
+    expect(right.workbook.iteration).toEqual({ enabled: true, maxIterations: 30, maxChange: 0.5 })
+  })
+
+  it('and what arrives is not sent straight back', async () => {
+    const { left, sentLeft, sentRight } = pair()
+    left.workbook.tables.define({ name: 'Orders', sheet: 'S', headerRow: 0, firstCol: 0, lastCol: 1, lastRow: 2, hasTotals: false })
+    left.changed({ kind: 'tables' })
+    await tick()
+    expect(sentLeft).toHaveLength(1)
+    expect(sentRight, 'the other side echoed nothing back').toHaveLength(0)
+  })
+})
+
 describe('applySheetDelta', () => {
   it('applies each kind to a plain document', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['1'], ['=A1*2']] }] })
