@@ -86,6 +86,10 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- A sort reorders the rows you can see and leaves the hidden ones where
+  they are, as Excel's does, so sorting a filtered list cannot drag a
+  filtered-out row into view or overwrite what one holds. The status bar
+  says how many stayed put.
 - `SUBTOTAL` follows the filter: `=SUBTOTAL(9, C2:C99)` under a filtered
   list totals the rows that matched, and the 101-111 codes leave out rows
   hidden by hand too. That is what a table's totals row should be written
