@@ -497,7 +497,11 @@ snapshot.
 `onChange` is called once per tick with every reason since the last call,
 so a paste of forty cells is one call, and it says what changed
 (`reasons.some((r) => r.kind === 'structure')` for an insert or delete, with
-the edit on the reason). `setState` clears the grid's undo history, since
+the edit on the reason). A change to the workbook's own parts rather than a
+sheet's, its names or its calculation settings, reports `workbook`; a table
+reports `tables`. A host writing those straight to the workbook raises the
+same reason with `document.changed({ kind: 'workbook' })`, which is what
+puts it on a delta stream. `setState` clears the grid's undo history, since
 none of it describes the restored sheet, and reports a single `restore`.
 
 The same document is available outside the component: build it with
@@ -1281,9 +1285,14 @@ Five kinds of delta go out, and each is as small as it can be:
   rewrite their own formulas identically.
 - **`state`** carries the one part of the one sheet that changed, the way
   `getState` serializes it: the formats, the merges, a rule, the objects.
-- **`document`** carries the whole state, for the two changes not worth
-  describing piecemeal, adding or removing a sheet and a restore, and for
-  `resync()`.
+- **`document`** carries the whole state, for the changes not worth
+  describing piecemeal or that cannot be: adding or removing a sheet, a
+  restore, and the parts the WORKBOOK keeps rather than a sheet, which are
+  its tables, its defined names and its calculation settings. A `state`
+  delta is keyed by sheet and carries a sheet's own entry, so none of those
+  fit in one: without this the two sides drift silently, and the same
+  `=SUM(Orders[Amount])` answers a number on one and `#REF!` on the other.
+  `resync()` sends the same kind.
 
 The shell follows its document, so a delta applied from outside repaints
 the sheet without anything else being called. `refresh()` remains for a

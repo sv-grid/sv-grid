@@ -5170,7 +5170,7 @@
   <SvSheetPasteSpecial bind:open={pasteSpecialOpen} hasClipboard={copied !== null} onPaste={pasteSpecial} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetFormatCells bind:open={formatCellsOpen} entry={activeEntry} sample={activeValue} mixedLocked={mixedLocked} onApply={applyFormatCells} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetInsertFunction bind:open={insertFunctionOpen} onPick={insertFunction} />
-  <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); bump() }} onClose={() => afterDialog()} />
+  <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); doc.changed({ kind: 'workbook' }); bump() }} onClose={() => afterDialog()} />
   <SvSheetProtectSheet bind:open={protectSheetOpen} allow={protectionState.allow} onApply={(allow) => setProtected(true, cmdOf(), allow)} onClose={() => afterDialog()} />
   <input class="sheet-file-input" type="file" accept="image/*" bind:this={imageInput} onchange={pickedPicture} aria-hidden="true" tabindex="-1" />
   {#if tableSetup}
@@ -5281,6 +5281,11 @@
       // Every cycle in the workbook changes value, so the document hears
       // about cells and the shell repaints from the new answers.
       wb.setIteration(next)
+      // The setting belongs to the workbook, and every cycle in it changes
+      // value: a collaborator needs both, or their copy keeps answering
+      // #CYCLE! to a model that now converges.
+      wb.recalculate()
+      doc.changed({ kind: 'workbook' })
       doc.changed({ kind: 'cells' })
       bump()
     }}

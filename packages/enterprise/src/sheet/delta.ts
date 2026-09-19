@@ -14,9 +14,11 @@
  *   state      the one part of one sheet that changed, serialized the way
  *              `getState` serializes it (the formats, the merges, the rules,
  *              the objects, ...);
- *   document   the whole state, for the two changes that are not worth
- *              describing piecemeal: adding, removing or reordering sheets,
- *              and a restore.
+ *   document   the whole state, for the changes that are not worth
+ *              describing piecemeal or cannot be: adding, removing or
+ *              reordering sheets, a restore, and the parts the WORKBOOK
+ *              keeps rather than a sheet - its tables, its defined names and
+ *              its calculation settings.
  *
  * **Conflicts are last-writer-wins, per cell.** A delta carries no version
  * and no transform: two people typing in the same cell end on whichever
@@ -189,9 +191,12 @@ export function createDeltaStream(doc: SheetDocument, options: SheetDeltaOptions
       options.onDelta({ kind: 'structure', sheet: reason.sheet, edit: reason.edit })
     }
 
-    // Sheets added, removed or reordered, and a restore, are the two changes
-    // a part-by-part delta cannot describe: send the document.
-    if (reasons.some((r) => r.kind === 'sheets' || r.kind === 'restore')) {
+    // Sheets added, removed or reordered, a restore, and the parts that
+    // belong to the WORKBOOK rather than to a sheet - its tables, its names,
+    // its calculation settings - are the changes a part-by-part delta cannot
+    // describe: a `state` delta is keyed by sheet and carries a sheet's own
+    // entry, and none of these live there. Send the document.
+    if (reasons.some((r) => r.kind === 'sheets' || r.kind === 'restore' || r.kind === 'tables' || r.kind === 'workbook')) {
       if (appliedDocument) { appliedDocument = false; snapshot(); return }
       options.onDelta({ kind: 'document', state: snapshot() })
       return
