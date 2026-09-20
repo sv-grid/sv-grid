@@ -52,7 +52,7 @@ async function printed(page: Page): Promise<string> {
 test.describe('the printed page', () => {
   test('carries the table header and its banding, not bare cells', async ({ page }) => {
     test.setTimeout(120_000)
-    await open(page, '481-sheet-tables')
+    await open(page, '491-sheet-tables')
     const html = await printed(page)
     expect(html).toContain('<table')
     // The header band, bold and filled, and a tinted row under it. The
@@ -65,17 +65,17 @@ test.describe('the printed page', () => {
 
   test('draws the sparklines in their cells', async ({ page }) => {
     test.setTimeout(120_000)
-    await open(page, '476-sheet-sparklines')
+    await open(page, '486-sheet-sparklines')
     const html = await printed(page)
     expect((html.match(/<svg/g) ?? []).length).toBeGreaterThan(0)
   })
 
   test('puts a picture in the cell it belongs to, and a chart over its anchor', async ({ page }) => {
     test.setTimeout(120_000)
-    await open(page, '484-sheet-cell-images')
+    await open(page, '494-sheet-cell-images')
     expect((await printed(page)).match(/<img/g)?.length ?? 0).toBeGreaterThan(0)
 
-    await open(page, '475-sheet-charts-objects')
+    await open(page, '485-sheet-charts-objects')
     const charts = await printed(page)
     expect((charts.match(/<svg/g) ?? []).length).toBeGreaterThan(0)
     expect(charts).toContain('class="ob"')
@@ -83,7 +83,7 @@ test.describe('the printed page', () => {
 
   test('is a document of its own, with no script in it', async ({ page }) => {
     test.setTimeout(120_000)
-    await open(page, '481-sheet-tables')
+    await open(page, '491-sheet-tables')
     const html = await printed(page)
     expect(html).toContain('<!DOCTYPE html>')
     expect(html).toContain('print-color-adjust: exact')

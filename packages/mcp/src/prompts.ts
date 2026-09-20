@@ -84,7 +84,7 @@ export function getPrompt(name: string, args: Record<string, unknown>) {
           '1. Call `svgrid_search` for "spreadsheet shell" and for each part this needs ' +
           '(formulas, data validation, conditional formatting, comments, protection, xlsx). ' +
           'Do not rely on memory of the API.\n' +
-          '2. Call `svgrid_get` on the closest spreadsheet demo (ids 452 to 466 and 474 to 484) and follow ' +
+          '2. Call `svgrid_get` on the closest spreadsheet demo (ids 452 to 466 and 484 to 494) and follow ' +
           'its structure: `createWorkbook` for the cells as raw text with formulas as `=...` strings, ' +
           '`createSheetDocument` for everything that is not a cell, `<SvSheet document={doc}>`.\n' +
           '3. Write the component. Rectangles are `[minRow, minCol, maxRow, maxCol]`, 0-based; ' +

@@ -36,7 +36,7 @@ const drawn = (page: Page) => page.evaluate(() => ({
 }))
 
 test.describe('a file written by the shell opens in the shell', () => {
-  for (const demo of ['484-sheet-cell-images', '475-sheet-charts-objects']) {
+  for (const demo of ['494-sheet-cell-images', '485-sheet-charts-objects']) {
     test(`with everything still on it: ${demo}`, async ({ page }, testInfo) => {
       test.setTimeout(180_000)
       await open(page, demo)

@@ -80,7 +80,7 @@ test.describe('right-to-left spreadsheet', () => {
 
   test('an anchored chart hangs from its cell and grows into the sheet', async ({ page }) => {
     test.setTimeout(120_000)
-    await open(page, '475-sheet-charts-objects', 'rtl')
+    await open(page, '485-sheet-charts-objects', 'rtl')
     const sheet = (await box(page, '.sv-sheet'))!
     const anchor = (await box(page, 'td[data-svgrid-row="6"][data-svgrid-col="0"]'))!
     const object = (await box(page, '.sheet-object'))!
@@ -93,7 +93,7 @@ test.describe('right-to-left spreadsheet', () => {
 
   test('the same chart hangs from the other edge when the app is left to right', async ({ page }) => {
     test.setTimeout(120_000)
-    await open(page, '475-sheet-charts-objects', 'ltr')
+    await open(page, '485-sheet-charts-objects', 'ltr')
     const anchor = (await box(page, 'td[data-svgrid-row="6"][data-svgrid-col="0"]'))!
     const object = (await box(page, '.sheet-object'))!
     expect(Math.abs(object.left - (anchor.left + 8))).toBeLessThanOrEqual(2)

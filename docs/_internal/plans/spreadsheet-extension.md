@@ -96,7 +96,7 @@ Shipped on the plan's branch, one commit per item:
   stable colour, the sheet and rectangle they are on, the fifteen-second
   prune), a `presence` prop the shell draws over the cells and an
   `onPresence` callback for this user's own selection, a fifth delta kind
-  that rides the same wire without touching the document, and demo 478
+  that rides the same wire without touching the document, and demo 488
   showing both cursors.
 - The table styles gallery: `sheet/table-styles.ts` with Excel's eighteen
   built-in names and their accents, `style` on a table region, the shell
@@ -142,7 +142,7 @@ Shipped on the plan's branch, one commit per item:
   restore), last-writer-wins per cell and said so. It needed three seams
   that ship on their own: `workbook.subscribeWrites`, `document.patch`, and
   a shell that follows its document rather than waiting for `refresh()`.
-  Demo 478 wires two sheets together and logs the wire. Presence is left
+  Demo 488 wires two sheets together and logs the wire. Presence is left
   where the plan put it, as a grid overlay over the selection. Phase F is
   complete but for item 2, which the bench says is not called for yet.
 - Phase F item 1: the spreadsheet bench. `tools/bench/sheet-cases.mjs` fills
@@ -403,7 +403,7 @@ The single most-asked question a spreadsheet gets is "can I open my file".
 5. ~~Docs: a new `docs/help/cells/sheet-files.md`; remove "no Page Layout"
    from the shell page; a demo that opens a bundled xlsx.~~ Done as the
    Files and Page Layout sections of the shell page rather than a page of
-   their own, and demo 474 saves and reopens a file.
+   their own, and demo 484 saves and reopens a file.
 
 ### Phase B. Engine breadth (M, then L for spill)
 
@@ -508,7 +508,7 @@ own, and a sparkline is an x14 extension).
    (other users' active cells) is a grid overlay. Conflict handling starts as
    last-writer-wins per cell, documented as such.~~ Shipped as
    `createDeltaStream` / `applySheetDelta`, with the socket recipe in the
-   shell's docs and demo 478. Presence is still a grid overlay and still to
+   shell's docs and demo 488. Presence is still a grid overlay and still to
    do.
 
 ## 4. Rules that apply to every phase

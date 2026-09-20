@@ -536,19 +536,19 @@ An assumptions-driven twelve-month forecast where every formula reads a defined 
 
 A commission model with three planted faults, which is what a real one looks like a week after two people have edited it. Evaluate Formula underlines one part of the active cell's formula and replaces it with its value on each click. Error Checking walks every cell that reports an error, with a sentence on what each one means, and the row whose formula is not its column's formula.
 
-<div data-docs-demo="483-sheet-auditing" data-height="560"></div>
+<div data-docs-demo="493-sheet-auditing" data-height="560"></div>
 
 ### Iterative calculation
 
 A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas -> Calculation Options turns on iterative calculation with its two limits, and both models settle on their fixed point; turn it off and the cycle is an error again.
 
-<div data-docs-demo="482-sheet-iterative" data-height="560"></div>
+<div data-docs-demo="492-sheet-iterative" data-height="560"></div>
 
 ### LET and LAMBDA
 
 The two modern Excel functions that turn a formula into something you can read, and the helpers that make a lambda worth writing. LET names a value inside the formula so it is written once and read by name; LAMBDA is a function written in the sheet, bound by LET and called by name, or called where it stands. MAP, BYROW, BYCOL, REDUCE, SCAN and MAKEARRAY put one over every cell, every row, every column, a fold, a running total, and an array built from its own indexes.
 
-<div data-docs-demo="480-sheet-let-lambda" data-height="560"></div>
+<div data-docs-demo="490-sheet-let-lambda" data-height="560"></div>
 
 ## See also
 

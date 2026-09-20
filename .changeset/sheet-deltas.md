@@ -17,4 +17,4 @@ Three things this needed and now ship on their own: `workbook.subscribeWrites`
 (and an `onWrite` option) for the raw text of every write, `document.patch`
 for putting back only the parts an entry names, and a shell that follows
 its document, so a change applied from outside repaints without
-`refresh()`. Demo 478 wires two sheets to each other and logs every delta.
+`refresh()`. Demo 488 wires two sheets to each other and logs every delta.

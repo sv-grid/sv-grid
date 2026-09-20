@@ -21,11 +21,11 @@ import AxeBuilder from '@axe-core/playwright'
 const GALLERY = 'http://localhost:5174'
 const DEMOS = [
   '207-blank-sheet', '456-sales-report-workbook', '464-ticket-log-autofilter',
-  '460-review-comments-protection', '475-sheet-charts-objects', '476-sheet-sparklines',
+  '460-review-comments-protection', '485-sheet-charts-objects', '486-sheet-sparklines',
   // The surfaces added since: a table's banded look, a collaborator's
   // cursor, a circular model, the auditing sheet and pictures in cells.
-  '481-sheet-tables', '478-sheet-collaboration', '482-sheet-iterative',
-  '483-sheet-auditing', '484-sheet-cell-images',
+  '491-sheet-tables', '488-sheet-collaboration', '492-sheet-iterative',
+  '493-sheet-auditing', '494-sheet-cell-images',
 ]
 
 /** The gallery reads its theme from localStorage before it paints. */

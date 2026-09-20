@@ -1574,55 +1574,55 @@ Excel puts an HTML document on the clipboard beside the tab-separated text: form
 
 A mortgage model built from the sheet's own financial functions: PMT for the payment, IPMT and PPMT for each period's split, NPER and RATE for the term and the rate that fit, SUMPRODUCT for the first year of interest. The money cells wear the Accounting format, Extra Payment carries a validation rule with an Input Message, and Circle Invalid Data rings what breaks it. The File tab is the point: Save As writes the whole model as an .xlsx Excel opens with its formulas, formats and rules, Open reads one back, Export CSV takes the active sheet.
 
-<div data-docs-demo="474-loan-model-files" data-height="560"></div>
+<div data-docs-demo="484-loan-model-files" data-height="560"></div>
 
 ### Charts and pictures on the sheet
 
 Charts anchored over the cells the way Excel anchors one: each reads a range rather than a copy of the numbers, so typing into a cell redraws it. Insert > Chart charts the selected block and reads its first row and column as the labels, Insert > Picture puts an image on the sheet, and a double-click opens the Chart dialog for the type, the title, series in columns or rows and stacking. Drag an object to move it, its corner to resize, Delete to remove. It hangs from a cell, so inserting a row above moves it, and it rides in getState().
 
-<div data-docs-demo="475-sheet-charts-objects" data-height="560"></div>
+<div data-docs-demo="485-sheet-charts-objects" data-height="560"></div>
 
 ### Sparklines: a chart inside the cell
 
 Excel's smallest chart, and not an object: a sparkline IS the cell. One per row of a block of numbers, drawn from the range rather than a copy, so editing a number redraws it. Insert > Sparklines offers Line, Column and Win/Loss, with Edit for the group's ranges, kind and colours and Clear for the groups the selection touches; selecting a cell that holds one turns the kind buttons into a change to that group. They are kept per group the way Excel keeps them, ride in getState() and move with an insert or a delete.
 
-<div data-docs-demo="476-sheet-sparklines" data-height="560"></div>
+<div data-docs-demo="486-sheet-sparklines" data-height="560"></div>
 
 ### PivotTable from a range
 
 Excel's Insert > PivotTable over a block of cells, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source, opening the dialog from inside one edits it, and Show Details writes the source rows behind a cell to a sheet of their own.
 
-<div data-docs-demo="477-sheet-pivot-range" data-height="560"></div>
+<div data-docs-demo="487-sheet-pivot-range" data-height="560"></div>
 
 ### Two people on one sheet
 
 Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows, and each window shows the other's cursor as a coloured box with a name on it. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
 
-<div data-docs-demo="478-sheet-collaboration" data-height="620"></div>
+<div data-docs-demo="488-sheet-collaboration" data-height="620"></div>
 
 ### Evaluate Formula and Error Checking
 
 The two auditing tools that answer why a cell says what it says, over a commission model with three planted faults. Evaluate Formula underlines one part of the formula and replaces it with its value on each click. Error Checking walks every cell that reports an error, with a sentence on what each one means, and the one row whose formula is not the column's formula. Show Calculation Steps takes one straight into the other.
 
-<div data-docs-demo="483-sheet-auditing" data-height="560"></div>
+<div data-docs-demo="493-sheet-auditing" data-height="560"></div>
 
 ### Iterative calculation
 
 A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas > Calculation Options turns iteration on with its two limits, and both settle on their fixed point; turn it off and the cycle is an error again. The setting rides in getState() and goes into the .xlsx as calcPr.
 
-<div data-docs-demo="482-sheet-iterative" data-height="560"></div>
+<div data-docs-demo="492-sheet-iterative" data-height="560"></div>
 
 ### IMAGE: a picture inside the cell
 
 Excel's IMAGE puts a picture IN a cell rather than floating one over it, so it sorts with its row, filters with it, copies as a formula and moves when the cells move. A product list whose thumbnail column reads the swatch beside it: sort by price and the pictures follow their rows. The source is a web address or a data URL, anything else stays text rather than becoming a broken image, and the second argument is the alt text a screen reader reads.
 
-<div data-docs-demo="484-sheet-cell-images" data-height="520"></div>
+<div data-docs-demo="494-sheet-cell-images" data-height="520"></div>
 
 ### Hyperlinks: Insert > Link and HYPERLINK
 
 Excel's two ways of putting a link in a cell. Insert > Link (Ctrl+K) puts one on the cell, so editing the text keeps it and clearing the cell takes it away; the HYPERLINK function puts one in a formula with a friendly name. A target that reads like an address moves the selection instead of leaving the page, so a cell links to another sheet; anything with a scheme opens in a new tab. A single click follows, a drag selects. Links ride in getState(), move with an insert, and go into the .xlsx both ways.
 
-<div data-docs-demo="479-sheet-hyperlinks" data-height="560"></div>
+<div data-docs-demo="489-sheet-hyperlinks" data-height="560"></div>
 
 ## See also
 
