@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 // jsdom doesn't implement ResizeObserver, which the grid sets up on mount.
 // A no-op shim lets the element connect without throwing. (Real layout /
@@ -15,6 +15,15 @@ beforeAll(async () => {
   globalThis.ResizeObserver ??= ResizeObserverShim
   // Importing the bundle registers <sv-grid> and injects its <style>.
   await import('../dist/sv-grid-element.js')
+})
+
+/** Off the page while the window is alive: Svelte destroys a custom element
+ *  a tick after it is disconnected, and one left to come down with jsdom
+ *  removes its window listeners against a closed window (see the note in
+ *  enterprise-interop.test.ts). */
+afterEach(async () => {
+  for (const el of document.body.querySelectorAll('sv-grid, sv-grid-shadow')) el.remove()
+  await new Promise((r) => setTimeout(r, 20))
 })
 
 describe('sv-grid built bundle', () => {

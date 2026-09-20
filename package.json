@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:mobile": "playwright test --project=mobile",
+    "test:e2e:sheet": "playwright test sheet- --project=chromium",
     "test:e2e:install": "playwright install chromium",
     "lint": "node tools/check-mobile-css.mjs && node tools/check-encoding.mjs && node tools/check-api-examples.mjs && pnpm -r lint",
     "api:check": "node tools/check-api-examples.mjs",

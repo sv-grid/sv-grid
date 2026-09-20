@@ -53,6 +53,7 @@
   import SvSheetSort from './SvSheetSort.svelte'
   import { downloadBlobFile } from '@svgrid/grid'
   import { documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
+  import { xlsxCanCarryPicture } from './sheet/xlsx-drawing'
   import { csvText } from './sheet/csv'
   import { documentFromFile } from './sheet/open-file'
   import { documentToOds } from './sheet/ods-document'
@@ -114,7 +115,7 @@
   import { imageCall, isDrawableImageSource } from './sheet/cell-images'
   import { isValidTableName, type TableRegion } from './sheet/tables'
   import { tableStyleColours, tableStyleLabel, findTableStyle, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
-  import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, type SheetPresence } from './sheet/presence'
+  import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, presenceInk, type SheetPresence } from './sheet/presence'
   import { SvChart, SvSparkline, chartToSvgString } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -611,6 +612,16 @@
   async function saveXlsx() {
     try {
       downloadBlobFile(await toXlsx(), `${fileName}.xlsx`)
+      // The writer leaves out a picture whose bytes it does not have (a web
+      // address) or cannot store as they are; saying so beats a file that
+      // opens in Excel a picture short with nothing to explain it.
+      let left = 0
+      for (const name of wb.sheets) {
+        for (const object of doc.get(name).objects ?? []) {
+          if (object.kind === 'image' && !xlsxCanCarryPicture(object.src)) left += 1
+        }
+      }
+      if (left > 0) say(t('picturesNotSaved', { count: left, unit: t(left === 1 ? 'unitPicture' : 'unitPictures') }))
     } catch (e) {
       say(e instanceof Error ? e.message : t('couldNotSave'))
     }
@@ -2328,14 +2339,49 @@
   }
 
   /** Insert > Picture: the file as a data URL, anchored on the active cell. */
+  /**
+   * A picture as a PNG data URL, drawn through a canvas.
+   *
+   * For a file the .xlsx cannot carry as it is: an SVG logo went in through
+   * Insert > Picture, drew on the sheet, and was left out of the saved file
+   * without a word, because Excel keeps only a few raster types in
+   * `xl/media`. Rasterised on the way in, what is drawn is what is saved.
+   * A vector is drawn at twice the object's size, so it stays sharp when
+   * the object is enlarged a little; a raster keeps its own pixels.
+   */
+  async function pictureAsPng(src: string, width: number, height: number): Promise<string> {
+    const image = new Image()
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve()
+      image.onerror = () => reject(new Error('decode failed'))
+      image.src = src
+    })
+    const vector = /^data:image\/svg\+xml/i.test(src)
+    const natural = { w: image.naturalWidth || width, h: image.naturalHeight || height }
+    const scale = vector ? Math.max(1, (width * 2) / natural.w, (height * 2) / natural.h) : 1
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(natural.w * scale))
+    canvas.height = Math.max(1, Math.round(natural.h * scale))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('no canvas')
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    return canvas.toDataURL('image/png')
+  }
+
   async function insertPicture(file: Blob & { name?: string }) {
     if (protectedNow()) { refuse(); return }
-    const src = await new Promise<string>((resolve, reject) => {
+    let src = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(String(reader.result ?? ''))
       reader.onerror = () => reject(reader.error ?? new Error('read failed'))
       reader.readAsDataURL(file)
     })
+    if (!xlsxCanCarryPicture(src)) {
+      // A picture that cannot be rasterised (a type the browser does not
+      // decode) still goes on the sheet as it is: on screen it may draw,
+      // and Save As says what it leaves out.
+      try { src = await pictureAsPng(src, 240, 180) } catch { /* kept as read */ }
+    }
     addObject({
       id: objectId(),
       kind: 'image',
@@ -3230,7 +3276,12 @@
           const from = before.get(source)!
           for (let k = 0; k <= c2 - c1; k += 1) {
             const c = c1 + k
-            cmd.setCellValue(row, c, from.raw[k])
+            // A row that moves takes its formulas along the way a copy
+            // would, the relative references shifted by the move and the
+            // absolute ones left alone: `=SUM(B5:E5)` on a row that lands
+            // in row 2 reads B2:E2, as it does in Excel. Written verbatim,
+            // the row's own total read the row that took its place.
+            cmd.setCellValue(row, c, translateFormula(from.raw[k], row - source, 0))
             const one = [[row, c, row, c] as const]
             store.clear(one, target.lookup)
             if (from.formats[k]) store.set(one, from.formats[k]!, target.lookup)
@@ -4916,7 +4967,12 @@
   {@const value = wb.getValue(wb.active, props.r, props.c)}
   {@const cf = showFormulas || typing ? null : cfAt(props.r, props.c, value)}
   {@const shown = typing ? { text: barDraft! } : display(props.r, props.c, cf?.style?.numFmt)}
-  {@const spill = showFormulas ? 0 : spillWidth(props.r, props.c, value, entry)}
+  {@const cellImage = showFormulas || typing ? null : imageAt(props.r, props.c)}
+  <!-- An IMAGE cell's VALUE is its source, a long string that would spill
+       over the empty cells beside it; the span that spills paints an opaque
+       background, and it covered the picture. The cell shows a picture, not
+       that text, so it never spills. -->
+  {@const spill = showFormulas || cellImage ? 0 : spillWidth(props.r, props.c, value, entry)}
   {@const align = typing ? 'left' : entry?.align ?? (showFormulas ? 'left' : typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left')}
   {@const hashes = typeof value === 'number' && !showFormulas && !typing ? hashesFor(shown.text, props.c, entry, props.r, entry?.numFmt || cf?.style?.numFmt ? undefined : value) : null}
   {#if cf?.dataBar}
@@ -4964,13 +5020,6 @@
   {/if}
   {@const link = showFormulas ? undefined : linkAt(activeLinks, props.r, props.c)}
   {@const linked = !!link || (!showFormulas && !!hyperlinkArgument(raw(props.r, props.c)))}
-  {@const cellImage = showFormulas || typing ? null : imageAt(props.r, props.c)}
-  {#if cellImage}
-    <!-- Excel's IMAGE: the picture IS the cell, so it sorts, filters and
-         moves with its row and nothing has to be kept in step. It fits the
-         cell, which is what Excel's default sizing does. -->
-    <img class="sheet-cell-image" src={cellImage.src} alt={cellImage.alt} draggable="false" />
-  {/if}
   {@const part = activeTables.length ? tablePartAt(props.r, props.c) : null}
   {#if part}
     <!-- Excel's table style, drawn rather than written into the cells: the
@@ -4989,6 +5038,14 @@
     style={`text-align:${align};${part && part.text !== 'inherit' ? `color:${part.text};${part.fill ? `background:${part.fill};` : ''}` : ''}${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
     title={link ? linkTitle(link) : hashes ? shown.text : raw(props.r, props.c)}
   >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{cellImage ? '' : hashes ?? shown.text}</span>
+  {#if cellImage}
+    <!-- Excel's IMAGE: the picture IS the cell, so it sorts, filters and
+         moves with its row and nothing has to be kept in step. It fits the
+         cell, which is what Excel's default sizing does. Painted after the
+         span and the table band, so a fill or a banded row sits BEHIND the
+         picture, as in Excel, rather than over it. -->
+    <img class="sheet-cell-image" src={cellImage.src} alt={cellImage.alt} draggable="false" />
+  {/if}
   {@const arrow = filterArrowAt(props.r, props.c)}
   {#if arrow}
     <!-- Excel's AutoFilter arrow on the region's header row: a funnel once
@@ -5150,6 +5207,7 @@
             style:inset-inline-start="{box.tagLeft}px"
             style:top="{box.tagTop}px"
             style:--sheet-presence-colour={colour}
+            style:color={presenceInk(colour)}
             title={person.name}
           >{person.name.length > 14 ? presenceInitials(person.name) : person.name}</span>
         {/if}

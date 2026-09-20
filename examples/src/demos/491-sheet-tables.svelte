@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 481. Format as Table, and structured references
+   * 491. Format as Table, and structured references
    * -----------------------------------------------
    * Excel's Ctrl+T. A table names its columns, so a formula says
    * `Orders[Amount]` instead of `E2:E13` and keeps meaning it as rows are

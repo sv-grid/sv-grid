@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 476. Sparklines: a chart inside the cell
+   * 486. Sparklines: a chart inside the cell
    * ----------------------------------------
    * Excel's smallest chart. A sparkline is not an object floating over the
    * sheet: it IS the cell, one per row of a block of numbers, drawn from

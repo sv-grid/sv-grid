@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 478. Two people on one sheet: the delta stream
+   * 488. Two people on one sheet: the delta stream
    * ----------------------------------------------
    * Two full spreadsheets over two SEPARATE documents, wired to each other
    * by `createDeltaStream`. Type in either one and the other follows.
@@ -123,7 +123,7 @@
         rows={14}
         columns={7}
         presence={inRight}
-        onPresence={(me) => b.sendPresence({ id: 'grace', name: 'Grace', colour: '#16a34a', ...me })}
+        onPresence={(me) => b.sendPresence({ id: 'grace', name: 'Grace', colour: '#15803d', ...me })}
       />
     </section>
   </div>
@@ -183,7 +183,7 @@
     background: var(--sg-muted, #64748b);
   }
   .who.a { background: #2563eb; }
-  .who.b { background: #16a34a; }
+  .who.b { background: #15803d; }
   aside {
     flex: 0 0 150px;
     overflow: auto;

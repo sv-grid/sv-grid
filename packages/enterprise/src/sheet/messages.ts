@@ -163,6 +163,10 @@ export type SheetTextMessages = {
   selectBlockToChart: string
   selectChartFirst: string
   couldNotReadPicture: string
+  /** "{count} {unit} left out of the file: a web address, or a type the file cannot hold" */
+  picturesNotSaved: string
+  unitPicture: string
+  unitPictures: string
   chartObject: string
   pictureObject: string
   sparklineObject: string
@@ -924,6 +928,9 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   selectBlockToChart: 'Select the cells to chart, headers included.',
   selectChartFirst: 'Select a chart first.',
   couldNotReadPicture: 'Could not read the picture.',
+  picturesNotSaved: '{count} {unit} left out of the file: a web address, or a type the file cannot hold',
+  unitPicture: 'picture',
+  unitPictures: 'pictures',
   chartObject: 'Chart',
   pictureObject: 'Picture',
   sparklineObject: '{type} sparkline',

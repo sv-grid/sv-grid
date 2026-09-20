@@ -855,6 +855,27 @@ describe('SvSheet IMAGE cells', () => {
     const html = sheet.printHtml()
     expect(html).toContain(`<span class="im"><img src="${PNG}" alt="A widget">`)
   })
+
+  it('paints the picture over the cell rather than under a spilling span', async () => {
+    // Empty cells to the right: a text cell here would spill over them,
+    // and the span that spills paints an opaque background. The cell's
+    // VALUE is the data URL, a long string, so that is what happened to
+    // every IMAGE cell with an empty neighbour: the picture was under it.
+    await mountSheet({
+      data: [{ name: 'Sheet1', cells: [
+        [`=IMAGE("${PNG}")`, '', '', ''],
+      ] }],
+    })
+    flushSync(); await tick()
+
+    const image = host!.querySelector('img.sheet-cell-image')!
+    const span = image.parentElement!.querySelector('.sheet-cell')!
+    expect(span.classList.contains('spill')).toBe(false)
+    expect(span.textContent).toBe('')
+    // Painted after the span (and any table band) in DOM order, so a fill
+    // or a banded row sits behind the picture, as in Excel.
+    expect(span.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })
 
 describe('SvSheet PivotTable Show Details', () => {

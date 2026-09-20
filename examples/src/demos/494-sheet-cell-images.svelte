@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 484. IMAGE: a picture inside the cell
+   * 494. IMAGE: a picture inside the cell
    * -------------------------------------
    * Excel's `IMAGE` puts a picture IN a cell rather than floating one over
    * it, and the difference is the whole point.
@@ -40,7 +40,10 @@
   ]
 
   const rows: string[][] = [
-    ['Product', 'Price', 'Source', 'Alt text', 'Thumbnail'],
+    // "Source (data URL)": the column is text on purpose, the address the
+    // thumbnail reads, and the header says so before the truncated
+    // `data:image/...` reads as a picture that failed to draw.
+    ['Product', 'Price', 'Source (data URL)', 'Alt text', 'Thumbnail'],
     ...products.map((p, i) => [...p, `=IMAGE(C${i + 2}, D${i + 2})`]),
     ['', '', '', '', ''],
     ['Not an image source', '', 'ftp://example.com/a.png', 'Left as text', '=IMAGE(C7, D7)'],

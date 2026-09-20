@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 479. Hyperlinks: Insert > Link and the HYPERLINK function
+   * 489. Hyperlinks: Insert > Link and the HYPERLINK function
    * ---------------------------------------------------------
    * Excel's two ways of putting a link in a cell, both here.
    *

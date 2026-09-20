@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 /**
  * Smoke test of the BUILT <sv-grid-shadow> bundle: registration, the open
@@ -22,6 +22,15 @@ beforeAll(async () => {
   // @ts-expect-error - assigning a test shim
   globalThis.ResizeObserver ??= ResizeObserverShim
   await import('../dist/shadow/sv-grid-shadow-element.js')
+})
+
+/** Off the page while the window is alive: Svelte destroys a custom element
+ *  a tick after it is disconnected, and one left to come down with jsdom
+ *  removes its window listeners against a closed window (see the note in
+ *  enterprise-interop.test.ts). */
+afterEach(async () => {
+  for (const el of document.body.querySelectorAll('sv-grid, sv-grid-shadow')) el.remove()
+  await new Promise((r) => setTimeout(r, 20))
 })
 
 describe('sv-grid-shadow built bundle', () => {

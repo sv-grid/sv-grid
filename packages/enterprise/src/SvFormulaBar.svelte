@@ -120,7 +120,33 @@
    */
   let expanded = $state(false)
   const lines = $derived(draft.split('\n').length)
-  const rows = $derived(expanded ? Math.min(6, Math.max(2, lines)) : 1)
+  /**
+   * The lines the draft takes at the bar's width once it wraps, which is
+   * what the expanded bar is for: a long formula is one line of text and
+   * six lines on screen, and counting its line breaks gave it two rows with
+   * the rest cut off under `overflow: hidden`, so the chevron showed an
+   * empty second row and nothing more. Measured from the textarea at one
+   * row, where its scroll height is the text's rather than the box's.
+   */
+  let wrapped = $state(1)
+  /** The scrollbar's width once the bar scrolls, so the mirror wraps where the text does. */
+  let gutter = $state(0)
+  let mirror = $state<HTMLDivElement | null>(null)
+  $effect(() => {
+    void draft
+    if (!expanded || !input) { wrapped = 1; gutter = 0; return }
+    const el = input
+    const style = getComputedStyle(el)
+    const line = parseFloat(style.lineHeight) || 18
+    const pad = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
+    const was = el.rows
+    el.rows = 1
+    wrapped = Math.max(1, Math.round((el.scrollHeight - pad) / line))
+    el.rows = was
+    // Read after the rows settle: the gutter is there only past six lines.
+    requestAnimationFrame(() => { gutter = el.offsetWidth - el.clientWidth })
+  })
+  const rows = $derived(expanded ? Math.min(6, Math.max(2, lines, wrapped)) : 1)
   let nameBoxText = $state('')
   /** True while the Name Box has focus, which is when it shows a draft. */
   let nameBoxTyping = $state(false)
@@ -347,12 +373,13 @@
          typed with Alt+Enter holds, and would commit "twolines" for a cell
          showing two lines. One row until there are breaks to show. -->
     {#if runs.length > 0}
-      <div class="formula mirror" aria-hidden="true">{#each runs as run, i (i)}{#if run.colour}<span style:color={run.colour}>{run.text}</span>{:else}{run.text}{/if}{/each}</div>
+      <div class="formula mirror" bind:this={mirror} style:padding-right={gutter ? `${6 + gutter}px` : undefined} aria-hidden="true">{#each runs as run, i (i)}{#if run.colour}<span style:color={run.colour}>{run.text}</span>{:else}{run.text}{/if}{/each}</div>
     {/if}
     <textarea
       bind:this={input}
       class="formula"
       class:coloured={runs.length > 0}
+      class:tall={expanded}
       aria-label={t('formula')}
       autocomplete="off"
       spellcheck="false"
@@ -368,6 +395,7 @@
       }}
       onkeyup={syncCaret}
       onclick={syncCaret}
+      onscroll={(e) => { if (mirror) mirror.scrollTop = e.currentTarget.scrollTop }}
       onfocus={startEditing}
       onblur={() => { if (editing) commit('blur') }}
       onkeydown={onKeyDown}
@@ -536,6 +564,10 @@
     overflow: hidden;
     white-space: pre-wrap;
   }
+  /* Expanded, the bar shows up to six lines and scrolls past them, as
+     Excel's does; the mirror follows the scroll from the textarea's
+     onscroll. Collapsed, it stays one line with no scrollbar of its own. */
+  .formula.tall { overflow-y: auto; }
   .formula:focus-visible {
     outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #107c41));
     outline-offset: -2px;

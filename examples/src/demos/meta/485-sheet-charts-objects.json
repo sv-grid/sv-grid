@@ -18,7 +18,7 @@
     },
     {
       "question": "Do charts ride in the .xlsx?",
-      "answer": "Yes, both ways. A chart goes out as a chart part of its own, carrying the references its series read rather than a copy of the numbers, so Excel redraws it from the cells beside it; a picture goes out as bytes in xl/media. Both are anchored by a drawing part, and a file opened here gives them back. The one exception is a picture whose source is a URL rather than a data URL, whose bytes are not in the document to write."
+      "answer": "Yes, both ways. A chart goes out as a chart part of its own, carrying the references its series read rather than a copy of the numbers, so Excel redraws it from the cells beside it; a picture goes out as bytes in xl/media, and a picture Excel cannot keep as it is, an SVG say, is drawn to a PNG when it is inserted so the file can carry it. Both are anchored by a drawing part, and a file opened here gives them back. The one exception is a picture whose source is a URL rather than a data URL, whose bytes are not in the document to write; Save As says so in the status bar."
     }
   ]
 }

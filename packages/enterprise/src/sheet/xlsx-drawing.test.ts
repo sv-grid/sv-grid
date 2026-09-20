@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSheetDocument } from './document'
 import { documentToXlsxParts, documentFromXlsxParts } from './xlsx-document'
-import { chartRefs, dataUrlParts, rectOfRef, EMU_PER_PX } from './xlsx-drawing'
+import { chartRefs, dataUrlParts, rectOfRef, xlsxCanCarryPicture, EMU_PER_PX } from './xlsx-drawing'
 import type { SheetChartObject, SheetImageObject } from './objects'
 
 /** A one-pixel PNG, which is a real image and a short string. */
@@ -73,6 +73,14 @@ describe('a data URL', () => {
     expect(dataUrlParts(PNG)).toMatchObject({ mime: 'image/png' })
     expect(dataUrlParts('data:image/svg+xml,<svg/>')).toBeNull()
     expect(dataUrlParts('https://example.com/a.png')).toBeNull()
+  })
+
+  it('says which pictures the package can carry: a raster data URL, not an SVG or a web address', () => {
+    expect(xlsxCanCarryPicture(PNG)).toBe(true)
+    expect(xlsxCanCarryPicture('data:image/jpeg;base64,AAAA')).toBe(true)
+    // Excel wants a PNG blip for an SVG; the shell rasterises one on the way in.
+    expect(xlsxCanCarryPicture('data:image/svg+xml;base64,PHN2Zy8+')).toBe(false)
+    expect(xlsxCanCarryPicture('https://example.com/a.png')).toBe(false)
   })
 })
 

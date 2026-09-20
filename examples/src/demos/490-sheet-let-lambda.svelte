@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 480. LET and LAMBDA
+   * 490. LET and LAMBDA
    * -------------------
    * The two modern Excel functions that turn a formula into something you
    * can read, and the helpers that make a lambda worth writing.

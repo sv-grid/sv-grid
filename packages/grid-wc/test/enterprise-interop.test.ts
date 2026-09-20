@@ -22,7 +22,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const entRoot = join(here, '..', '..', 'enterprise')
@@ -39,6 +39,19 @@ beforeAll(async () => {
   // @ts-expect-error - test shim, as in element.test.ts
   globalThis.ResizeObserver ??= ResizeObserverShim
   await import('../dist/sv-grid-element.js')
+})
+
+/**
+ * Take the elements a test mounted off the page while the window is still
+ * alive. Svelte destroys a custom element a tick after it is disconnected,
+ * and one left on the page comes down with jsdom itself: its window and
+ * document listeners are then removed against a closed window, which on
+ * CI's Linux surfaced as unhandled "removeEventListener is not a function"
+ * rejections, one per element, and failed a run whose tests all passed.
+ */
+afterEach(async () => {
+  for (const el of document.body.querySelectorAll('sv-grid, sv-grid-shadow, sv-chart')) el.remove()
+  await new Promise((r) => setTimeout(r, 20))
 })
 
 /** Mount the element and hand back its api, the way a host gets one. */

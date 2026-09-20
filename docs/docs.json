@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-20T09:50:17.112Z",
+  "generatedAt": "2026-09-20T21:06:15.749Z",
   "counts": {
     "pages": 385,
     "enterprise": 60,
@@ -1904,7 +1904,7 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 16456,
+      "words": 16587,
       "lastUpdated": "2026-09-20",
       "demoIds": [
         "27-spreadsheet-ribbon",

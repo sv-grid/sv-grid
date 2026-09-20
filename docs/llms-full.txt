@@ -18846,8 +18846,10 @@ the wiring BETWEEN the parts, done once:
 - The formula bar follows an in-cell edit as it is typed, and the cell
   follows the bar; both go back when the edit is cancelled.
 - The formula bar keeps a cell's line breaks. It shows one line until the
-  chevron at its end expands it to every line (up to six), and Alt+Enter
-  typed in the bar breaks the line there and expands the bar.
+  chevron at its end expands it to every line the text takes at the bar's
+  width, whether from a line break or from wrapping, up to six, with a
+  scrollbar past that; Alt+Enter typed in the bar breaks the line there and
+  expands the bar.
 - A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
@@ -18863,7 +18865,10 @@ the wiring BETWEEN the parts, done once:
 - A sort reorders the rows you can see and leaves the hidden ones where
   they are, as Excel's does, so sorting a filtered list cannot drag a
   filtered-out row into view or overwrite what one holds. The status bar
-  says how many stayed put.
+  says how many stayed put. A row takes its formulas along the way a copy
+  would: the relative references shift to the row's new place and the
+  absolute ones stay, so `=SUM(B5:E5)` on a row that lands in row 2 reads
+  `B2:E2`, and an `=IMAGE(C5)` thumbnail still shows its own row's picture.
 - `SUBTOTAL` follows the filter: `=SUBTOTAL(9, C2:C99)` under a filtered
   list totals the rows that matched, and the 101-111 codes leave out rows
   hidden by hand too. That is what a table's totals row should be written
@@ -19747,7 +19752,11 @@ read as the labels when they look like labels, each column of the block
 is a series, and the chart is anchored just under the block. It reads the
 **range**, not a copy of the numbers, so editing a cell redraws it.
 Insert > Picture puts an image on the sheet from a file, carried in the
-document as a data URL.
+document as a data URL. A file the .xlsx cannot hold as it is (an SVG, say:
+Excel keeps only a few raster types in `xl/media`) is drawn to a PNG on
+the way in, so what is on the sheet is what the file will carry; a picture
+whose source is a web address is left out of the file, and Save As says
+so in the status bar.
 
 **`=IMAGE(source, [alt])`** is the other kind of picture, and the
 difference is the point: an `IMAGE` cell IS the picture rather than

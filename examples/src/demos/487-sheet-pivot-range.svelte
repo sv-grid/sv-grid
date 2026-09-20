@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 477. PivotTable from a range
+   * 487. PivotTable from a range
    * ----------------------------
    * Excel's Insert > PivotTable over a block of cells, on the same pivot
    * engine the grid uses for its own pivot mode.
