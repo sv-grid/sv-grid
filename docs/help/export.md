@@ -463,6 +463,20 @@ The header row repeats on every page, each page gets a `Page X of Y` +
 date footer, per-column alignment is honored, and wide grids auto-switch to
 landscape (override with `pdf.pageOrientation`).
 
+The PDF looks like the grid it came from. With `pdf.matchTheme` (default
+true) the exporter reads the mounted grid's computed colours - header fill
+and text, body text, the zebra stripe, the lines, a group row's fill - so a
+grid on the Ember theme or a Theme Builder palette prints in those colours
+rather than the slate defaults. A dark theme lends only its header: the
+page is white, so its body text and stripes would not read. The order of
+precedence is explicit `pdf` colours (`headerColor`, `headerTextColor`,
+`textColor`, `zebraColor`, `borderColor`, `groupColor`, ...), then
+`styles`, then the theme, then the defaults. `styles.headerRow` /
+`styles.rows` / `styles.rowAlternate` / `styles.cells` (A1 references, row
+1 being the header) apply to the PDF table the way they do to xlsx and
+html, `header` / `footer` lines print above and below the table, and
+`merges` span data cells.
+
 When the grid is grouped, the PDF carries the grouping: a bold **group header**
 per cluster (nested for multi-level grouping) and a **subtotal row** summing the
 number / currency columns - matching the xlsx outline export. It's on by
