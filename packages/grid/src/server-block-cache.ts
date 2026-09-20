@@ -178,6 +178,11 @@ export type BlockCache<TData> = {
   /** Re-fetch the blocks that failed. */
   retryFailed(): void
   /**
+   * Re-fetch the failed block holding `rowIndex`, and only that one; the
+   * Retry on a failed row. A row whose block has not failed is a no-op.
+   */
+  retryFailedAt(rowIndex: number): void
+  /**
    * Re-fetch the loaded blocks in place, keeping the row count and scroll
    * position. What you want after a mutation lands on the server.
    */
@@ -500,6 +505,14 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
         any = true
       }
       if (any) emit()
+    },
+
+    retryFailedAt(rowIndex) {
+      const index = blockOf(Math.max(0, rowIndex))
+      if (blocks.get(index)?.status !== 'failed') return
+      blocks.delete(index)
+      ensureBlock(index)
+      emit()
     },
 
     refresh() {

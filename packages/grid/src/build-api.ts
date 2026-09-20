@@ -111,6 +111,10 @@ export function createGridApi<
     };
 
     return {
+      getElement() {
+        const el = ctx.scrollContainer as HTMLElement | null
+        return (el?.closest(".sv-grid-root") as HTMLElement | null) ?? null
+      },
       getCellValue(rowIndex, columnId) {
         const row = ctx.internalData[rowIndex];
         const column = findColumn(columnId);
@@ -631,10 +635,10 @@ export function createGridApi<
         ctx.autosizeColumn(columnId);
       },
       getRowHeight(rowIndex: number) {
-        const own = ctx.rowResizeHeightPx(rowIndex);
-        if (own != null) return own;
-        const declared = ctx.props.rowHeight;
-        return typeof declared === "function" ? declared(rowIndex) : (declared ?? 30);
+        // The height the grid draws the row at, whatever decided it: a drag,
+        // a measurement under auto height, a detail row's own height, the
+        // declared rowHeight or the default.
+        return ctx.rowSizePxOf(rowIndex);
       },
       setRowHeight(rowIndex: number, height: number | null) {
         ctx.setRowResizeHeight(rowIndex, height);

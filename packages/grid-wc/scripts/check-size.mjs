@@ -165,10 +165,33 @@ const dist = join(here, '..', 'dist')
  * renderer, layout model, axis, planning helpers - is @svgrid/enterprise and
  * costs an element consumer nothing. This is the two-edit cost the note above
  * describes, for the third time: a prop on the grid is a prop on the elements.
+ *
+ * 107.9 -> 109.4 and 108.4 -> 109.9 for sticky group rows and sized detail
+ * rows (2026-09-19). Measured 109.1 / 109.6: the grid's base went 93.5 ->
+ * 94.8 (measure-size.mjs: the sticky band and its ancestor walk, the
+ * detailRowHeight sizing), reaching the elements at 1:1, plus two surface
+ * entries (109 -> 111 properties: stickyGroupRows, detailRowHeight; no new
+ * events). The fourth time for the two-edit cost.
+ *
+ * 109.4 -> 109.7 and 109.9 -> 110.3 for a custom row drop and Ctrl+Enter
+ * (2026-09-19). Measured 109.5 / 110.1: the grid's base went 94.8 -> 95.0,
+ * under its own budget (measure-size.mjs), for the `onRowDrop` prop with
+ * its third drop side (`into`, over the middle of a group row: a tinted
+ * row instead of a line) and the Ctrl+Enter branch that toggles a group
+ * or a server-side detail panel from the keyboard, plus one surface entry
+ * (25 -> 26 events: rowDrop). The fifth time.
+ *
+ * 109.7 -> 110.6 and 110.3 -> 111.1 for the detail-toggle column
+ * (2026-09-20). Measured 110.5 / 111.0: the grid's base went 95.0 -> 95.8
+ * (measure-size.mjs: `showDetailToggle`, a third system column with a
+ * chevron cell per row and a blank cell in every other row kind), reaching
+ * the elements at 1:1, plus four surface entries (111 -> 114 properties:
+ * showDetailToggle, isDetailOpen, hasDetail; 26 -> 27 events: detailToggle).
+ * The sixth time.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.9 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 108.4 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 110.6 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.1 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

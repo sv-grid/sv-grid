@@ -86,6 +86,25 @@ describe('createServerDataSource', () => {
     expect(ctl.getState().rows[0]).toEqual({ id: 30 })
   })
 
+  it('aborts the page fetch a newer one supersedes, and the last one on dispose', async () => {
+    const signals: AbortSignal[] = []
+    const src: ServerDataSource<Row> = {
+      getRows: async (req) => {
+        signals.push(req.signal!)
+        return new Promise(() => {})
+      },
+    }
+    const ctl = createServerDataSource(src, { pageSize: 10, onChange: () => {} })
+    ctl.refresh()
+    ctl.setPage(3)
+    await new Promise((r) => setTimeout(r, 5))
+    expect(signals).toHaveLength(2)
+    expect(signals[0]!.aborted).toBe(true)
+    expect(signals[1]!.aborted).toBe(false)
+    ctl.dispose()
+    expect(signals[1]!.aborted).toBe(true)
+  })
+
   it('dispose stops further updates', async () => {
     const src = makeSource(50, 20)
     const onChange = vi.fn()

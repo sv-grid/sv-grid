@@ -193,6 +193,28 @@ export function createKeyboard<
         row.toggleExpanded?.();
         return;
       }
+      // The same key on a server-side tree: a group opens or closes, a leaf
+      // opens or closes its detail panel when the grid draws one.
+      const sg = ctx.props.serverGroup;
+      if (event.ctrlKey && sg && row) {
+        const data = row.original;
+        if (sg.isGroup(data)) {
+          sg.onToggle(data);
+          return;
+        }
+        if (sg.toggleDetail && ctx.props.renderDetailRow && (sg.hasDetail?.(data) ?? true)) {
+          sg.toggleDetail(data);
+          return;
+        }
+      }
+      // ...and on a client-side master-detail: the app's own toggle.
+      if (event.ctrlKey && row && ctx.props.onDetailToggle && ctx.props.renderDetailRow) {
+        const data = row.original;
+        if (!ctx.props.isDetailRow?.(data, current.rowIndex) && (ctx.props.hasDetail?.(data) ?? true)) {
+          ctx.props.onDetailToggle(data, current.rowIndex);
+          return;
+        }
+      }
       if (column?.columnDef.editorType === "checkbox") {
         ctx.toggleBooleanCell(current.rowIndex, current.colIndex);
         return;
@@ -287,7 +309,10 @@ export function createKeyboard<
   }
 
   function onWindowKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape" && (ctx.columnMenuFor || ctx.operatorMenuFor)) {
+    if (
+      event.key === "Escape" &&
+      (ctx.columnMenuFor || ctx.operatorMenuFor || ctx.filterMenuFor || ctx.inSuggestFor || ctx.chooseColumnsPos)
+    ) {
       ctx.closeMenus();
     }
   }

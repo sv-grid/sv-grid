@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createDismissableLayer, dismissableDepth, onScrollOutside } from './dismissable'
 
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
 function panel(): HTMLElement {
   const el = document.createElement('div')
   document.body.appendChild(el)
@@ -77,12 +79,19 @@ describe('createDismissableLayer', () => {
     expect(dismissableDepth()).toBe(0)
   })
 
-  it('close-on-scroll ignores scrolling inside the panel', () => {
+  it('close-on-scroll ignores scrolling inside the panel', async () => {
     const el = panel()
     const list = document.createElement('div') // e.g. the filter menu's facet list
     el.appendChild(list)
     let closed = 0
     const off = onScrollOutside(() => el, () => closed++)
+
+    // A scroll that finished before the panel opened is still queued for
+    // the next rendering step; it lands after the listener is asked for
+    // and must not close what the same click just opened.
+    document.body.dispatchEvent(new Event('scroll'))
+    expect(closed).toBe(0)
+    await nextFrame()
 
     // Inner scroll containers don't bubble, so this only reaches the capture
     // listener - it must NOT close the menu the user is scrolling.

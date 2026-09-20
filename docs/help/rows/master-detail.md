@@ -100,11 +100,23 @@ The examples on this page run against these rows:
   {columns}
   isDetailRow={(row) => row.kind === 'detail'}
   renderDetailRow={DetailGrid}
+  showDetailToggle
+  onDetailToggle={(row) => toggle(row.id)}
+  isDetailOpen={(row) => expanded.has(row.id)}
 />
 ```
 
-The first master column typically renders a chevron whose click calls
-`toggle(row.id)`.
+### The toggle column
+
+`showDetailToggle` adds the chevrons as a row-header column, beside the
+row numbers and the selection checkbox: sticky at the left, on the
+header band's colour, with no column menu, no resize handle, and outside
+the active cell and the selection. A chevron calls `onDetailToggle(row,
+rowIndex)` and points down while `isDetailOpen(row)` is true; `hasDetail`
+leaves it out on rows with nothing to open, and a detail row gets an
+empty cell. Ctrl+Enter on a row does what the chevron does. Before the
+column existed, demos drew the chevron in a data column of their own,
+which took the menu, the resize handle and the active cell along with it.
 
 ## Notes
 
@@ -112,8 +124,15 @@ The first master column typically renders a chevron whose click calls
   the full width regardless of the master's column layout.
 - Give the detail container a fixed height (e.g. `200px`) so the nested grid
   scrolls internally instead of pushing the master layout around.
-- Set `virtualization={false}` on the master when detail rows have variable
-  height, so the fixed-row-height virtualizer doesn't fight them.
+- Under `virtualization` (the default) give the grid `detailRowHeight`, a
+  number or a function of the row: the virtualizer then sizes detail rows
+  and the panel scrolls inside its cell when taller. Without it a detail
+  row is auto height, which needs `virtualization={false}` so the
+  fixed-row-height virtualizer does not fight it.
+- On a [server-side row model](../server/server-grouping.md#master-detail)
+  the model inserts the detail row for you: `ctl.toggleDetail(id)`, the
+  toggle column reads the model (no `onDetailToggle` needed), and
+  **Ctrl+Enter** on a leaf opens or closes it from the keyboard.
 - The detail content is arbitrary - a nested grid, a form, timelines, charts.
   See [detail rows](../../../examples/src/demos/106-detail-rows.svelte) for a
   multi-panel (non-grid) detail.

@@ -109,6 +109,12 @@ export type GridChromeMessages = {
   // Rows whose data has not arrived (server-side / infinite loading)
   rowLoadFailed: string
   rowLoadRetry: string
+  // The expander on a client-side group row
+  expandGroup: string
+  collapseGroup: string
+  // The chevron of the detail-toggle column (`showDetailToggle`)
+  openDetail: string
+  closeDetail: string
   // Upsell notes (enterprise views not installed)
   pivotUpsellTitle: string
   pivotUpsellBody: string
@@ -194,6 +200,10 @@ export const defaultGridMessages: GridChromeMessages = {
   chartRange: 'Chart selected range',
   rowLoadFailed: 'Could not load these rows.',
   rowLoadRetry: 'Retry',
+  expandGroup: 'Expand group',
+  collapseGroup: 'Collapse group',
+  openDetail: 'Open details',
+  closeDetail: 'Close details',
   pivotUpsellTitle: 'Pivot mode',
   pivotUpsellBody: 'Pivot mode is an Enterprise feature. Install @svgrid/enterprise and call enablePivot() to use it.',
   ganttUpsellTitle: 'Gantt view',

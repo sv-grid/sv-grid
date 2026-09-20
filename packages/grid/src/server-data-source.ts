@@ -63,8 +63,17 @@ export type ServerFilterModel = {
   expression?: GridPredicateExpr
 }
 
-/** A value column to roll up per group. */
-export type ServerAggregation = { col: string; fn: 'sum' | 'avg' | 'min' | 'max' | 'count' }
+/** The aggregate functions every backend helper understands. */
+export type ServerAggFn = 'sum' | 'avg' | 'min' | 'max' | 'count'
+
+/**
+ * One value column to roll up per group. `fn` is one of the five built-ins
+ * or any name your backend knows (`median`, `countDistinct`, a domain
+ * aggregate): the request carries it untouched. The SvelteKit planner emits
+ * only the built-ins plus the names it was told to allow, since `fn` ends
+ * up in SQL.
+ */
+export type ServerAggregation = { col: string; fn: ServerAggFn | (string & {}) }
 
 /**
  * One range of rows as the grid asks for it. A flat request carries the
@@ -122,6 +131,16 @@ export type ServerRequest = {
    * transport posts the whole request to your endpoint.
    */
   context?: unknown
+  /**
+   * Aborted when the grid no longer wants the answer: the block was purged
+   * or evicted, the sort or filter changed, a group was collapsed, the
+   * controller was disposed. Hand it to `fetch` and a query the user has
+   * scrolled past is cancelled at the server instead of completing for
+   * nothing; a rejection carrying the abort is ignored by the grid. Not
+   * serialisable - the SvelteKit transport reads it and leaves it out of
+   * the body.
+   */
+  signal?: AbortSignal
 }
 
 /**
@@ -237,6 +256,21 @@ export type ServerPlaceholderRow = {
 }
 
 /**
+ * The detail panel under a leaf whose detail is open: master-detail on a
+ * server-side row model. The grid draws it through `renderDetailRow`
+ * (mark it with `isDetailRow`); `master` is the leaf it belongs to.
+ */
+export type ServerDetailRow<TData> = {
+  kind: 'detail'
+  id: string
+  level: number
+  route?: string[]
+  /** The leaf's id, as `getRowId` names it. */
+  masterId: string
+  master: TData
+}
+
+/**
  * Every row a server row model can put on screen. Each carries an `id` and
  * a `level`. The block-cached model adds {@link ServerPlaceholderRow} for
  * rows not yet loaded - see its own `ServerRowModelDisplayRow`.
@@ -244,6 +278,7 @@ export type ServerPlaceholderRow = {
 export type ServerDisplayRow<TData> =
   | ServerGroupRow<TData>
   | ServerLeafRow<TData>
+  | ServerDetailRow<TData>
   | ServerMoreRow
   | ServerFooterRow<TData>
   | ServerSkeletonRow
@@ -523,6 +558,8 @@ export function createServerDataSource<TData>(
   // Monotonic request id: only the latest fetch is allowed to land, so a slow
   // response for an old sort/filter can't clobber a newer one.
   let requestSeq = 0
+  /** The page fetch in flight; a newer one, or dispose, aborts it. */
+  let pageAbort: AbortController | null = null
   let disposed = false
   // Once per controller: a misconfigured backend would otherwise log on every
   // page, scroll and filter change.
@@ -559,7 +596,7 @@ export function createServerDataSource<TData>(
       maxConcurrentRequests: options.maxConcurrentRequests,
       blockLoadDebounceMs: options.blockLoadDebounceMs,
       initialRowCount: options.initialRowCount,
-      fetch: async (startRow, endRow) => {
+      fetch: async (startRow, endRow, signal) => {
         const result = await source.getRows({
           startRow,
           endRow,
@@ -572,6 +609,7 @@ export function createServerDataSource<TData>(
           groupBy: [],
           groupKeys: [],
           aggregations: [],
+          signal,
         })
         noteExpressionApplied(result)
         return { rows: result.rows, rowCount: result.rowCount }
@@ -617,6 +655,9 @@ export function createServerDataSource<TData>(
   async function fetchPage() {
     if (disposed) return
     const id = ++requestSeq
+    pageAbort?.abort()
+    const controller = new AbortController()
+    pageAbort = controller
     state.loading = true
     state.error = null
     emit()
@@ -634,6 +675,7 @@ export function createServerDataSource<TData>(
         groupBy: [],
         groupKeys: [],
         aggregations: [],
+        signal: controller.signal,
       })
       if (disposed || id !== requestSeq) return // stale
       state.rows = result.rows
@@ -815,7 +857,7 @@ export function createServerDataSource<TData>(
     getRowId: options.getRowId ? (row: TData) => options.getRowId!(row) : undefined,
     // Only infinite mode has unloaded rows to stand in for.
     rowPlaceholder: infinite ? (row: TData) => rowPlaceholderState(row) : undefined,
-    retryRow: infinite ? () => cache?.retryFailed() : undefined,
+    retryRow: infinite ? (_row: TData, rowIndex: number) => cache?.retryFailedAt(rowIndex) : undefined,
     /**
      * A getter, not a snapshot: the grid re-reads this after every change
      * notification, and a frozen object would leave the pager on page 1
@@ -878,6 +920,8 @@ export function createServerDataSource<TData>(
     getState: () => ({ ...state }),
     dispose() {
       disposed = true
+      pageAbort?.abort()
+      pageAbort = null
       cache?.dispose()
       cache = null
       // An in-flight fetch's resolution short-circuits on `disposed`, so it

@@ -599,7 +599,25 @@ export function createSvGridController<
   // catch-all gridStateVersion, so navigation doesn't rebuild 1M rows.
   let dataStateVersion = $state(0);
   const selectionColumnWidth = 44;
+  const detailToggleColumnWidth = 36;
   const rowNumberColumnWidth = $derived(props.rowNumberWidth ?? 56);
+  const showDetailToggleEffective = $derived(props.showDetailToggle === true);
+  /**
+   * What the chevron on a row does, or null when the row has no detail to
+   * open: a detail row itself, a group or placeholder on a server model, a
+   * row `hasDetail` rules out, or a grid with nothing to call.
+   */
+  function detailToggleOf(row: Row<TData>, rowIndex: number): { open: boolean; toggle: () => void } | null {
+    const data = row.original;
+    if (props.isDetailRow?.(data, rowIndex)) return null;
+    const sg = props.serverGroup;
+    if (sg) {
+      if (!sg.toggleDetail || sg.isGroup(data) || (sg.hasDetail && !sg.hasDetail(data))) return null;
+      return { open: sg.detailOpen?.(data) ?? false, toggle: () => sg.toggleDetail!(data) };
+    }
+    if (!props.onDetailToggle || (props.hasDetail && !props.hasDetail(data))) return null;
+    return { open: props.isDetailOpen?.(data) ?? false, toggle: () => props.onDetailToggle!(data, rowIndex) };
+  }
   // A per-row `rowHeight` function already supplies heights, so auto-measuring
   // would fight it. Fixed numbers are fine - they become the pre-measure estimate.
   const autoRowHeightOn = $derived(
@@ -770,6 +788,16 @@ export function createSvGridController<
     props.showRowSelection ??
       ((props.selectionMode ?? "both") === "row" ||
         (props.selectionMode ?? "both") === "both"),
+  );
+  /** The system columns to the left of the data: row numbers, selection, the detail toggle. */
+  const systemColumnsWidth = $derived(
+    (showRowNumbersEffective ? rowNumberColumnWidth : 0) +
+      (showRowSelectionEffective ? selectionColumnWidth : 0) +
+      (showDetailToggleEffective ? detailToggleColumnWidth : 0),
+  );
+  /** Where the detail-toggle column sticks: after the row numbers and the selection column. */
+  const detailToggleColumnLeft = $derived(
+    (showRowNumbersEffective ? rowNumberColumnWidth : 0) + (showRowSelectionEffective ? selectionColumnWidth : 0),
   );
   // `selectable` is the shortcut alias, so it wins over the fine-grained prop,
   // which in turn wins over `selectionMode` - the same precedence the other
@@ -1384,10 +1412,8 @@ export function createSvGridController<
 
   /** Cumulative pixel offsets for left- and right-pinned columns. */
   const pinnedOffsets = $derived.by(function pinnedOffsets_d() {
-    const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
-    const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
     const left: Record<string, number> = {};
-    let leftAcc = rowNumberWidth + selectionWidth;
+    let leftAcc = systemColumnsWidth;
     for (const id of effectivePinning.left) {
       // Hidden pinned columns don't render, so they must contribute neither an
       // offset entry nor width - otherwise the next visible pinned column is
@@ -1422,7 +1448,7 @@ export function createSvGridController<
   // index currently hovered; `rowDropSide` says which edge the drop line paints.
   let rowDragActive = $state<boolean>(false);
   let rowDropIndex  = $state<number | null>(null);
-  let rowDropSide   = $state<"before" | "after" | null>(null);
+  let rowDropSide   = $state<"before" | "after" | "into" | null>(null);
 
 
 
@@ -3063,11 +3089,21 @@ export function createSvGridController<
     return total;
   });
   /** The declared or dragged height of one row; measured under auto height. */
+  /** A detail row's declared height, or null when the row is not one (or none is declared). */
+  function detailRowHeightPx(i: number): number | null {
+    const dh = props.detailRowHeight;
+    if (dh == null || !props.isDetailRow) return null;
+    const row = allRows[i];
+    if (!row || !props.isDetailRow(row.original as TData, i)) return null;
+    return typeof dh === "function" ? dh(row.original as TData) : dh;
+  }
   function rowSizePxOf(i: number): number {
     if (isRowCollapsed(i)) return 0;
     if (autoRowHeightOn) return measuredRowHeights.get(i) ?? autoRowHeightFallback;
     const own = rowResizeHeightPx(i);
     if (own != null) return own;
+    const detail = detailRowHeightPx(i);
+    if (detail != null) return detail;
     const rh = props.rowHeight;
     return typeof rh === "function" ? rh(i) : (rh ?? 30);
   }
@@ -3077,10 +3113,94 @@ export function createSvGridController<
     for (let k = 0; k < i; k += 1) top += rowSizePxOf(k);
     return top;
   }
+  // --- Sticky group rows --------------------------------------------------
+  // The group a row belongs to, kept under the header while its rows scroll
+  // past. The ancestors of the first row under the header are the nearest
+  // group rows above it at each shallower level; under virtualization they
+  // are usually outside the rendered window, so the band renders a copy of
+  // each (its height taken off the top spacer, like the frozen band), and
+  // without virtualization the rows themselves are made sticky.
+  type StickyGroupRow = { row: Row<TData>; rowIndex: number; top: number; size: number };
+  const NO_STICKY: StickyGroupRow[] = [];
+  /** Whether a row is a group and how deep it sits, for any of the three tree sources. */
+  function rowGroupLevel(row: Row<TData>): { group: boolean; level: number } {
+    const sg = props.serverGroup;
+    if (sg) {
+      const data = row.original as TData;
+      return { group: sg.isGroup(data), level: sg.level(data) };
+    }
+    // Client grouping and tree data: an expandable row is the group (a tree
+    // row is a data row too, which is why isGroupRow() excludes it, but for
+    // the band it is the parent its children scroll under).
+    if (typeof row.getCanExpand === "function" && row.getCanExpand()) return { group: true, level: row.depth ?? 0 };
+    return { group: false, level: row.depth ?? 0 };
+  }
+  /** The first row whose bottom edge is under the header, in row-index space. */
+  const firstRowUnderHeader = $derived.by(function firstRowUnderHeader_d() {
+    if (allRows.length === 0) return -1;
+    if (rowVirtualizationEnabled) {
+      virtualizer.version;
+      const offset = virtualizer.getState().scrollOffset;
+      const hit = virtualRows.find((it) => it.end > offset);
+      return hit ? hit.index : -1;
+    }
+    rowResizeVersion;
+    autoRowHeightVersion;
+    const top = scrollMetrics.scrollTop;
+    let acc = 0;
+    let i = 0;
+    while (i < allRows.length - 1 && acc + rowSizePxOf(i) <= top) {
+      acc += rowSizePxOf(i);
+      i += 1;
+    }
+    return i;
+  });
+  const stickyGroupRows = $derived.by(function stickyGroupRows_d(): StickyGroupRow[] {
+    if (!props.stickyGroupRows) return NO_STICKY;
+    const first = firstRowUnderHeader;
+    if (first < 0) return NO_STICKY;
+    const head = allRows[first];
+    if (!head) return NO_STICKY;
+    // A group row at level L, or a leaf at level L, has its ancestors at
+    // levels L-1 .. 0, each the nearest group row above at that level.
+    let want = rowGroupLevel(head).level - 1;
+    if (want < 0) return NO_STICKY;
+    const found: Array<{ row: Row<TData>; rowIndex: number }> = [];
+    for (let i = first - 1; i >= frozenRowCount && want >= 0; i -= 1) {
+      const row = allRows[i]!;
+      const info = rowGroupLevel(row);
+      if (info.group && info.level === want) {
+        found.push({ row, rowIndex: i });
+        want -= 1;
+      }
+    }
+    if (found.length === 0) return NO_STICKY;
+    found.reverse();
+    rowResizeVersion;
+    autoRowHeightVersion;
+    let top = headerHeight + frozenBandHeight;
+    return found.map((f) => {
+      const at = top;
+      const size = rowSizePxOf(f.rowIndex);
+      top += size;
+      return { ...f, top: at, size };
+    });
+  });
+  /** The band's height under virtualization, taken off the top spacer. */
+  const stickyBandHeight = $derived(
+    rowVirtualizationEnabled ? stickyGroupRows.reduce((sum, s) => sum + s.size, 0) : 0,
+  );
+  /** Without virtualization the real row sticks: its top, or undefined. */
+  function stickyTopOfRow(rowIndex: number): number | undefined {
+    if (rowVirtualizationEnabled || stickyGroupRows.length === 0) return undefined;
+    return stickyGroupRows.find((s) => s.rowIndex === rowIndex)?.top;
+  }
+
   // Spacer heights in DOM space. With scaling inert these equal the original
-  // virtualRowStart / virtualRowBottomSpacer. The frozen band is in the flow
-  // before the spacer whatever the window shows, so it comes off the spacer.
-  const rowTopSpacer = $derived(Math.max(virtualRowStart - rowOffsetAdjustment - frozenBandHeight, 0));
+  // virtualRowStart / virtualRowBottomSpacer. The frozen band and the sticky
+  // group band are in the flow before the spacer whatever the window shows,
+  // so they come off the spacer.
+  const rowTopSpacer = $derived(Math.max(virtualRowStart - rowOffsetAdjustment - frozenBandHeight - stickyBandHeight, 0));
   const rowBottomSpacer = $derived(
     Math.max(rowDomTotalSize - (virtualRowEnd - rowOffsetAdjustment), 0),
   );
@@ -3165,10 +3285,7 @@ export function createSvGridController<
    *  `fittedColumnWidths`, so the overflow decision settles in the same
    *  render where fit-scaling lands - no race, no scrollbar flash. */
   const hasHorizontalOverflow = $derived.by(function hasHorizontalOverflow_d() {
-    const fixedCols =
-      (showRowNumbersEffective ? rowNumberColumnWidth : 0) +
-      (showRowSelectionEffective ? selectionColumnWidth : 0);
-    let total = fixedCols;
+    let total = systemColumnsWidth;
     for (const column of allColumns) total += getColumnWidth(column.id);
     // +1 to tolerate sub-pixel rounding residue from `fitColumns`.
     return total > viewportWidth + 1;
@@ -3620,9 +3737,13 @@ export function createSvGridController<
       : typeof rh === "function"
         ? rh
         : (rh ?? 30);
-    const estimateSize = rowResizeHeights.size > 0 || collapsedRows.size > 0
+    // Detail rows have their own height; only when the props say so does
+    // the per-index lookup replace the uniform fast path.
+    const detailOn = props.detailRowHeight != null && !!props.isDetailRow;
+    const estimateSize = rowResizeHeights.size > 0 || collapsedRows.size > 0 || detailOn
       ? (index: number) =>
           rowResizeHeightPx(index) ??
+          detailRowHeightPx(index) ??
           (typeof base === "function" ? base(index) : base)
       : base;
     virtualizer.setOptions({
@@ -3810,8 +3931,6 @@ export function createSvGridController<
     // widths stay in the fit distribution and leave a blank gap at the edge.
     const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id] && !hiddenByGroupCollapse[c.id] && !collapsedColumns[c.id]);
     if (!cols.length) return null;
-    const rowNumberWidth = showRowNumbersEffective ? rowNumberColumnWidth : 0;
-    const selectionWidth = showRowSelectionEffective ? selectionColumnWidth : 0;
     // Reserve the custom vertical scrollbar's width when it's visible. It
     // overlays the right 16px of the viewport (absolute, z-index 40) and
     // does NOT shrink clientWidth, so without this the last fitted column
@@ -3820,8 +3939,7 @@ export function createSvGridController<
     const scrollbarWidth = hasVerticalOverflow ? 16 : 0;
     const target =
       (scrollContainer?.clientWidth ?? 0) -
-      rowNumberWidth -
-      selectionWidth -
+      systemColumnsWidth -
       scrollbarWidth;
     if (target <= 0) return null;
 
@@ -4355,6 +4473,11 @@ export function createSvGridController<
     get gridStateVersion() { return gridStateVersion; },
     set gridStateVersion(v) { gridStateVersion = v as never; },
     get selectionColumnWidth() { return selectionColumnWidth; },
+    get detailToggleColumnWidth() { return detailToggleColumnWidth; },
+    get detailToggleColumnLeft() { return detailToggleColumnLeft; },
+    get showDetailToggleEffective() { return showDetailToggleEffective; },
+    get systemColumnsWidth() { return systemColumnsWidth; },
+    get detailToggleOf() { return detailToggleOf; },
     get rowNumberColumnWidth() { return rowNumberColumnWidth; },
     get showRowNumbersEffective() { return showRowNumbersEffective; },
     get filterOperatorOptions() { return filterOperatorOptions; },
@@ -4772,6 +4895,8 @@ export function createSvGridController<
     get frozenRowList() { return frozenRowList; },
     get frozenBandHeight() { return frozenBandHeight; },
     get frozenRowTop() { return frozenRowTop; },
+    get stickyGroupRows() { return stickyGroupRows; },
+    get stickyTopOfRow() { return stickyTopOfRow; },
     /** Record the height the user dragged a row to. */
     get setRowResizeHeight() { return setRowResizeHeight; },
     get isRowCollapsed() { return isRowCollapsed; },
@@ -4783,6 +4908,12 @@ export function createSvGridController<
     get rowResizeHeightPx() {
       rowResizeVersion;
       return rowResizeHeightPx;
+    },
+    /** The height row i is drawn at: dragged, measured, detail, declared or default. */
+    get rowSizePxOf() {
+      rowResizeVersion;
+      autoRowHeightVersion;
+      return rowSizePxOf;
     },
     get virtualRowTotalSize() { return virtualRowTotalSize; },
     get virtualRowStart() { return virtualRowStart; },

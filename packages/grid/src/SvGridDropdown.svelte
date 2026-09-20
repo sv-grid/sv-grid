@@ -45,6 +45,18 @@
      *  loading line instead of "No options", which would read as "nothing to
      *  pick" when the truth is "not here yet". */
     loading?: boolean
+    /**
+     * The trigger's element id, so a form's `<label for>` reaches it and
+     * clicking the label focuses it. Without one a select in a form was a
+     * button with no name.
+     */
+    id?: string
+    /** Accessible name for the trigger when no label points at `id`. */
+    ariaLabel?: string
+    /** Marks the trigger `aria-invalid`, the way an input in the same form is. */
+    invalid?: boolean
+    /** `aria-describedby` for the trigger: the error or help text of the field. */
+    describedBy?: string
   }
 
   let {
@@ -59,6 +71,10 @@
     onCommit,
     onCancel,
     loading = false,
+    id,
+    ariaLabel,
+    invalid = false,
+    describedBy,
   }: Props = $props()
 
   /** Stable per-instance id used to build option ids for
@@ -348,10 +364,14 @@
   <!-- svelte-ignore a11y_role_supports_aria_props_implicit -->
   <button
     type="button"
+    {id}
     class="sv-grid-dropdown-trigger"
     class:sv-grid-dropdown-trigger-chips={renderChipsInTrigger && selectedArr.length > 0}
     aria-haspopup="listbox"
     aria-expanded={open}
+    aria-label={ariaLabel}
+    aria-invalid={invalid || undefined}
+    aria-describedby={describedBy}
     aria-activedescendant={open ? optionId(highlighted) : undefined}
     bind:this={triggerEl}
     use:focusTrigger

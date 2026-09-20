@@ -535,6 +535,10 @@
 .sv-grid-placeholder-retry:hover {
   background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent);
 }
+.sv-grid-placeholder-retry:focus-visible {
+  outline: 2px solid var(--sg-accent, #2563eb);
+  outline-offset: 2px;
+}
 
 /* Pinned columns read as "frozen" via three layered cues:
      1. A distinct fill (slightly stronger than the header) so the
@@ -813,6 +817,12 @@
 .sv-grid-row-drop-after > td {
   box-shadow: inset 0 -2px 0 0 var(--sg-accent, #6366f1);
 }
+/* Landing inside a group or tree row (the row becomes its child): the
+ * whole row is the target, so it takes a tint and a ring rather than a line. */
+.sv-grid-row-drop-into > td {
+  box-shadow: inset 0 2px 0 0 var(--sg-accent, #6366f1), inset 0 -2px 0 0 var(--sg-accent, #6366f1);
+  background: color-mix(in srgb, var(--sg-accent, #6366f1) 10%, transparent);
+}
 
 /* Pinned rows (top / bottom). Each cell sticks individually so the
  * row tracks scroll on every browser. Top rows stick below the sticky
@@ -1016,6 +1026,50 @@
   padding-inline: 6px;
   position: sticky;
   z-index: 4;
+}
+
+/* Detail-toggle column (`showDetailToggle`): a row-header gutter of chevrons
+   that open and close detail rows. Sticky beside the row numbers and the
+   selection column, on the header band's colour so it reads as chrome, not
+   data; no menu, no resize handle, outside the active cell. */
+.sv-grid-detail-toggle-column,
+.sv-grid-detail-toggle-cell {
+  text-align: center;
+  padding: 0;
+  position: sticky;
+  z-index: 4;
+  background: var(--sg-header-bg, #f5f7fb);
+  vertical-align: middle;
+}
+.sv-grid-detail-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--sg-muted, #64748b);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.sv-grid-detail-toggle:hover {
+  background: color-mix(in srgb, var(--sg-accent, #2563eb) 12%, transparent);
+  color: var(--sg-accent, #2563eb);
+}
+.sv-grid-detail-toggle:focus-visible {
+  outline: 2px solid var(--sg-accent, #2563eb);
+  outline-offset: 1px;
+}
+.sv-grid-detail-toggle > .sv-grid-icon {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.15s ease;
+}
+.sv-grid-detail-toggle[aria-expanded="true"] > .sv-grid-icon {
+  transform: rotate(90deg);
 }
 
 /* Row-number column: sticks to the left edge of the scroll viewport. */
@@ -1327,6 +1381,15 @@ select.sv-grid-fr-editor {
      overflow: hidden so the chips picker would otherwise be clipped). */
   overflow: visible;
 }
+/* The active cell a grid mounts with is seeded at (0,0), not chosen: no
+   ring until a click, an arrow key or the api activates a cell (the same
+   gate the fill handle has always had). Once activated it stays through a
+   blur, so a toolbar acting on "the focused row" keeps its cue. A page with
+   six grids on it, or a detail grid inside each open row, used to open
+   with an accent ring in every one of them. */
+.sv-grid-active-seeded .sv-grid-cell-active {
+  box-shadow: none;
+}
 
 /* ---- The editing cell's border -------------------------------------------
    One ring for every editor, drawn by the CELL rather than by each editor.
@@ -1622,6 +1685,40 @@ select.sv-grid-fr-editor {
 }
 /* The band's lower edge, so the frozen rows read as a pane. */
 .sv-grid-row.sv-grid-row-frozen-last > .sv-grid-cell {
+  border-bottom: 1px solid var(--sg-frozen-edge, var(--sg-border, #94a3b8));
+}
+
+/* A detail row with a declared height (detailRowHeight): the row keeps the
+   height the virtualizer counted on - the auto-height rule above must not
+   win - and the panel's body, a block inside the cell, takes that height
+   and scrolls what does not fit. (A table cell's own height is only a
+   minimum, so the height goes on the block.) */
+.sv-grid-row.sv-grid-detail-row.sv-grid-detail-row-sized {
+  height: var(--sv-detail-h) !important;
+}
+.sv-grid-row.sv-grid-detail-row-sized > .sv-grid-detail-cell {
+  vertical-align: top;
+  box-sizing: border-box;
+  height: var(--sv-detail-h);
+}
+.sv-grid-detail-body {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+}
+
+/* Sticky group rows: the group a row belongs to, held under the header
+   (and under the frozen band) while its rows scroll past. Same layer as
+   the frozen band; the last one carries the band's edge. */
+.sv-grid-row.sv-grid-row-sticky-group {
+  position: sticky;
+  z-index: 31;
+  background: var(--sg-bg, #fff);
+}
+.sv-grid-row.sv-grid-row-sticky-group > .sv-grid-cell {
+  background: var(--sg-bg, #fff);
+}
+.sv-grid-row.sv-grid-row-sticky-group-last > .sv-grid-cell {
   border-bottom: 1px solid var(--sg-frozen-edge, var(--sg-border, #94a3b8));
 }
 
@@ -3080,6 +3177,12 @@ select.sv-grid-fr-editor {
 /* Row-number gutter: neutralize the right border so it fuses with the header. */
 .sv-grid-row-number-column,
 .sv-grid-row-number-cell {
+  border-right-color: var(--sg-header-bg, #f1f5f9);
+}
+/* The detail-toggle gutter fuses with the row numbers the same way; only
+   its own right edge keeps a line, between the chrome and the data. */
+.sv-grid-row-number-cell:has(+ .sv-grid-detail-toggle-cell),
+.sv-grid-row-number-column:has(+ .sv-grid-detail-toggle-column) {
   border-right-color: var(--sg-header-bg, #f1f5f9);
 }
 

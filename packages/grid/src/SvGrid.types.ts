@@ -2487,6 +2487,35 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   renderDetailRow?: Snippet<[{ row: TData; rowIndex: number }]>;
   /**
+   * The height of a detail row, in px, or a function of its data. With it
+   * the virtualizer can size detail rows, so master-detail works with
+   * `virtualization` on (the panel scrolls inside its cell when taller).
+   * Without it a detail row is auto height, which needs
+   * `virtualization={false}`.
+   */
+  detailRowHeight?: number | ((row: TData) => number);
+  /**
+   * A row-header column of chevrons that open and close detail rows. It
+   * sits with the row-number and selection columns: sticky at the left,
+   * no column menu, not resizable, not reorderable, outside the active
+   * cell and the selection. The chevron calls `onDetailToggle` (or, on a
+   * server row model, the model's own toggle) and reads `isDetailOpen`
+   * for its direction; `hasDetail` hides it on rows that have nothing to
+   * open. Detail rows themselves get an empty cell.
+   */
+  showDetailToggle?: boolean;
+  /**
+   * Open or close the detail under a row. The chevron of `showDetailToggle`
+   * and Ctrl+Enter on a row call it; you keep the open set and insert or
+   * remove the detail row in `data`. A server row model supplies its own
+   * (the `rowModel` prop wires `toggleDetail`), so this is the client side.
+   */
+  onDetailToggle?: (row: TData, rowIndex: number) => void;
+  /** Whether the detail under a row is open: the chevron's direction and `aria-expanded`. */
+  isDetailOpen?: (row: TData) => boolean;
+  /** Whether a row has a detail to open; the chevron is left out where this returns false. */
+  hasDetail?: (row: TData) => boolean;
+  /**
    * Server-side group / tree keyboard + accessibility, built into the grid. When
    * set, the grid uses the treegrid role and marks matching rows with
    * `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse
@@ -2504,6 +2533,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     expanded?: (row: TData) => boolean;
     /** Expand / collapse a group row. Called on ArrowRight / ArrowLeft. */
     onToggle: (row: TData) => void;
+    /** Open / close the detail panel under a leaf. Called on Ctrl+Enter when `renderDetailRow` is set, and by the `showDetailToggle` chevron. */
+    toggleDetail?: (row: TData) => void;
+    /** Whether the detail under a leaf is open (the chevron's direction). */
+    detailOpen?: (row: TData) => boolean;
+    /** Whether a row can open a detail at all; a group, a placeholder or a detail row cannot. */
+    hasDetail?: (row: TData) => boolean;
   };
   /**
    * Server-side set-filter values. When set, a column's filter checklist is
@@ -2531,6 +2566,17 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * skips them.
    */
   frozenRows?: number;
+  /**
+   * Keep the group a row belongs to in view: while the rows of an open
+   * group scroll past, the group's row (and its parents' rows) stay under
+   * the header, the way a section heading stays put in a long list, so a
+   * screen deep inside a 60,000-row group still says which group it is.
+   * Works for server-side groups (`rowModel` / `serverGroup`), client
+   * grouping and tree data. Under `virtualization` the band shows a copy
+   * of each ancestor row; without it the rows themselves stick. Off by
+   * default.
+   */
+  stickyGroupRows?: boolean;
   /**
    * Merged cells: rectangles drawn as one cell, a spreadsheet's Merge &
    * Center. Each entry is the top-left cell (display indices) and how many
@@ -2606,6 +2652,23 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     sameGrid: boolean;
     fromGridId: number;
     toGridId: number;
+  }) => void;
+  /**
+   * Take the drop yourself. With this set the grid keeps the drag
+   * affordance and the drop indicator but does not touch its data: the
+   * handler gets the dragged row, the row it landed on (null for the
+   * empty space below the rows) and the side - `before` / `after`, or
+   * `into` when it landed on the middle of a group or tree row, which
+   * makes it that row's child. The path for a `rowModel`, whose rows the
+   * grid does not own: hand the move to the model (`moveRow`) or to your
+   * server. Only fires within one grid; a drop from another grid stays
+   * managed.
+   */
+  onRowDrop?: (event: {
+    row: TData;
+    target: TData | null;
+    targetIndex: number | null;
+    side: "before" | "after" | "into";
   }) => void;
   /**
    * Align this grid with others that share the same non-empty

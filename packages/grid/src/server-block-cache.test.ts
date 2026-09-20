@@ -294,6 +294,33 @@ describe('createBlockCache', () => {
     cache.dispose()
   })
 
+  it('retries one failed block by a row index, leaving the other failed blocks alone', async () => {
+    const server = scriptedFetch({ failBlocks: new Set([1, 3]) })
+    const cache = createBlockCache<Row>({
+      blockSize: 100,
+      fetch: server.fetch,
+      onChange: () => {},
+      schedule: sync,
+    })
+    cache.setViewport(100, 399)
+    await server.flush()
+    expect(cache.getCacheState().filter((b) => b.status === 'failed').map((b) => b.blockIndex)).toEqual([1, 3])
+
+    server.failBlocks.clear()
+    // The Retry on a row in block 3: block 1 stays failed, one request goes out.
+    const before = server.startsRequested().length
+    cache.retryFailedAt(350)
+    await server.flush()
+    expect(server.startsRequested().length).toBe(before + 1)
+    expect(cache.getCacheState().find((b) => b.blockIndex === 3)!.status).toBe('loaded')
+    expect(cache.getCacheState().find((b) => b.blockIndex === 1)!.status).toBe('failed')
+    // A row whose block is fine is a no-op.
+    cache.retryFailedAt(250)
+    await server.flush()
+    expect(server.startsRequested().length).toBe(before + 1)
+    cache.dispose()
+  })
+
   it('keeps the first block at its skeleton length when it fails with no count', async () => {
     // Nothing is known about the list yet, so the failed rows are the few
     // the level showed while loading, not a hundred and one of them.

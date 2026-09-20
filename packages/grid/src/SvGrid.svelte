@@ -214,6 +214,10 @@
   const columnResizeEnabled = $derived(opt.columnResize === true);
   const selectionColumnWidth = $derived(ctrl.selectionColumnWidth);
   const rowNumberColumnWidth = $derived(ctrl.rowNumberColumnWidth);
+  const detailToggleColumnWidth = $derived(ctrl.detailToggleColumnWidth);
+  const detailToggleColumnLeft = $derived(ctrl.detailToggleColumnLeft);
+  const showDetailToggleEffective = $derived(ctrl.showDetailToggleEffective);
+  const detailToggleOf = $derived(ctrl.detailToggleOf);
   const showRowNumbersEffective = $derived(ctrl.showRowNumbersEffective);
   const columnMenuFor = $derived(ctrl.columnMenuFor);
   const filterMenuFor = $derived(ctrl.filterMenuFor);
@@ -276,7 +280,9 @@
     if (!rowDragManagedEffective || rowDropIndex !== rowIndex) return "";
     return rowDropSide === "after"
       ? "sv-grid-row-drop-after"
-      : "sv-grid-row-drop-before";
+      : rowDropSide === "into"
+        ? "sv-grid-row-drop-into"
+        : "sv-grid-row-drop-before";
   }
   const getColumnBaseValue = $derived(ctrl.getColumnBaseValue);
   const hasConditionalFormats = $derived(ctrl.hasConditionalFormats);
@@ -419,6 +425,8 @@
   );
   const frozenRowCount = $derived(ctrl.frozenRowCount);
   const frozenRowList = $derived(ctrl.frozenRowList);
+  const stickyGroupRows = $derived(ctrl.stickyGroupRows);
+  const stickyTopOfRow = $derived(ctrl.stickyTopOfRow);
   // Merged cells. A merge is drawn once per band (the frozen rows, the
   // scrolling body), by the top-left cell of the part the band shows, with
   // its spans clamped to the rendered window: a td never spans into rows
@@ -545,12 +553,17 @@
   // normal cell path and their aggregates land under the right columns; only
   // the class distinguishes them. Typed here rather than cast inline - an `as`
   // inside template markup type-checks but breaks the vitest/build parse.
+  // The client-side controller sets the flags on the row objects it builds;
+  // a row model (server-side grouping) sets them on the data it hands over,
+  // so both places are read and either model's totals get the same chrome.
   const isGroupFooterRow = (row: Row<TData>): boolean =>
-    (row as { __groupFooter?: boolean }).__groupFooter === true;
+    (row as { __groupFooter?: boolean }).__groupFooter === true ||
+    (row.original as { __groupFooter?: boolean } | null)?.__groupFooter === true;
   // The grand total is a group footer that closes the whole set rather than one
   // group, so it carries both classes - shared chrome, heavier top rule.
   const isGrandTotalRow = (row: Row<TData>): boolean =>
-    (row as { __grandTotal?: boolean }).__grandTotal === true;
+    (row as { __grandTotal?: boolean }).__grandTotal === true ||
+    (row.original as { __grandTotal?: boolean } | null)?.__grandTotal === true;
   const computeCellClass = $derived(ctrl.computeCellClass);
   const computeCellTooltip = $derived(ctrl.computeCellTooltip);
   const computeCellValidity = $derived(ctrl.computeCellValidity);
@@ -1460,7 +1473,7 @@
         type="button"
         class="sv-grid-group-toggle"
         aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
-        aria-label={row.getIsExpanded?.() ? "Collapse group" : "Expand group"}
+        aria-label={row.getIsExpanded?.() ? messages.collapseGroup : messages.expandGroup}
         onclick={(event) => {
           event.stopPropagation();
           row.toggleExpanded?.();
@@ -1468,7 +1481,7 @@
       >
       <span class="sv-grid-group-label">{headerLabel}: {groupValue}</span>
       <span class="sv-grid-group-count"
-        >{count} {count === 1 ? "row" : "rows"}</span
+        >{count} {count === 1 ? messages.rowSuffix : messages.rowsSuffix}</span
       >
       {#each allColumns as col (col.id)}
         {#if col.columnDef.aggregate && col.id !== groupingColumnId}
@@ -1491,22 +1504,37 @@
   <!-- A full-width detail row: one colspan cell spanning every column,
        hosting the consumer's `renderDetailRow` snippet. Auto height (no
        fixed row height) so the panel grows to fit its content. -->
-  {#snippet detailRowMarkup(detailRow: Row<TData>, detailRowIndex: number)}
+  {#snippet detailRowMarkup(detailRow: Row<TData>, detailRowIndex: number, rowStyle: string)}
+    <!-- A declared detailRowHeight sizes the row (the virtualizer counts on
+         it); the cell then scrolls what does not fit. Without one the row
+         is auto height, as before. -->
     <tr
       class="sv-grid-row sv-grid-detail-row"
+      class:sv-grid-detail-row-sized={opt.detailRowHeight != null}
+      style={opt.detailRowHeight != null ? `--sv-detail-h: ${ctrl.rowSizePxOf(detailRowIndex)}px; ${rowStyle}` : undefined}
       {...getGridRowA11yProps(detailRowIndex + 1)}
     >
       <td
         class="sv-grid-cell sv-grid-detail-cell"
         colspan={allColumns.length +
           (showRowNumbersEffective ? 1 : 0) +
-          (showRowSelectionEffective ? 1 : 0)}
+          (showRowSelectionEffective ? 1 : 0) +
+          (showDetailToggleEffective ? 1 : 0)}
       >
         {#if opt.renderDetailRow}
-          {@render opt.renderDetailRow({
-            row: detailRow.original as TData,
-            rowIndex: detailRowIndex,
-          })}
+          {#if opt.detailRowHeight != null}
+            <div class="sv-grid-detail-body">
+              {@render opt.renderDetailRow({
+                row: detailRow.original as TData,
+                rowIndex: detailRowIndex,
+              })}
+            </div>
+          {:else}
+            {@render opt.renderDetailRow({
+              row: detailRow.original as TData,
+              rowIndex: detailRowIndex,
+            })}
+          {/if}
         {/if}
       </td>
     </tr>
@@ -1548,7 +1576,8 @@
           class="sv-grid-cell sv-grid-placeholder-cell"
           colspan={allColumns.length +
             (showRowNumbersEffective ? 1 : 0) +
-            (showRowSelectionEffective ? 1 : 0)}
+            (showRowSelectionEffective ? 1 : 0) +
+            (showDetailToggleEffective ? 1 : 0)}
         >
           {#if !phContinues}
             <div class="sv-grid-placeholder-failed-body">
@@ -1569,6 +1598,9 @@
         {/if}
         {#if showRowSelectionEffective}
           <td class="sv-grid-cell sv-grid-select-cell"></td>
+        {/if}
+        {#if showDetailToggleEffective}
+          <td class="sv-grid-cell sv-grid-detail-toggle-cell"></td>
         {/if}
         {#each allColumns as col (col.id)}
           <td class="sv-grid-cell sv-grid-placeholder-cell">
@@ -1600,14 +1632,16 @@
                       ctrl.placeholderStateOf(allRows[rowIndex - 1]!) === "failed"}
                     {@render placeholderRowMarkup(row, rowIndex, phState, rowStyle, phContinues)}
                   {:else if opt.isDetailRow?.(row.original as TData, rowIndex)}
-                    {@render detailRowMarkup(row, rowIndex)}
+                    {@render detailRowMarkup(row, rowIndex, rowStyle)}
                   {:else if isGroupRow(row) && !groupColumnMode}
+                    {@const stickyTop = stickyTopOfRow(rowIndex)}
                     <tr
                       class="sv-grid-row sv-grid-group-row"
                       class:sv-grid-row-selected={isRowSelected(row.id)}
                       class:sv-grid-row-frozen={rowIndex < frozenRowCount}
                       class:sv-grid-row-frozen-last={frozenRowCount > 0 && rowIndex === frozenRowCount - 1}
-                      style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : undefined}
+                      class:sv-grid-row-sticky-group={stickyTop !== undefined}
+                      style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : stickyTop !== undefined ? `${stickyTop}px` : undefined}
                       aria-level={row.depth + 1}
                       aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
                       {...getGridRowA11yProps(rowIndex + 1)}
@@ -1620,7 +1654,8 @@
                           rowIndex}
                         colspan={allColumns.length +
                           (showRowNumbersEffective ? 1 : 0) +
-                          (showRowSelectionEffective ? 1 : 0)}
+                          (showRowSelectionEffective ? 1 : 0) +
+                          (showDetailToggleEffective ? 1 : 0)}
                         onclick={() => row.toggleExpanded?.()}
                       >
                         {@render groupRowContent(row)}
@@ -1628,6 +1663,7 @@
                     </tr>
                   {:else}
                     {@const userRowClass = computeRowClass(row, rowIndex)}
+                    {@const stickyTop = stickyTopOfRow(rowIndex)}
                     <tr
                       class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
                       class:sv-grid-row-selected={isRowSelected(row.id)}
@@ -1639,7 +1675,8 @@
                       class:sv-grid-row-auto-height={autoRowHeightOn}
                       class:sv-grid-row-frozen={rowIndex < frozenRowCount}
                       class:sv-grid-row-frozen-last={frozenRowCount > 0 && rowIndex === frozenRowCount - 1}
-                      style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : undefined}
+                      class:sv-grid-row-sticky-group={stickyTop !== undefined}
+                      style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : stickyTop !== undefined ? `${stickyTop}px` : undefined}
                       {...getGridRowA11yProps(rowIndex + 1)}
                       aria-level={sgAriaLevel(row)}
                       aria-expanded={sgAriaExpanded(row)}
@@ -1677,6 +1714,26 @@
                                 toggleRowSelectionById(row.id);
                               })}
                           ></button>
+                        </td>
+                      {/if}
+                      {#if showDetailToggleEffective}
+                        {@const dt = detailToggleOf(row, rowIndex)}
+                        <td
+                          class="sv-grid-cell sv-grid-detail-toggle-cell"
+                          style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
+                        >
+                          {#if dt}
+                            <button
+                              type="button"
+                              class="sv-grid-detail-toggle"
+                              aria-expanded={dt.open ? "true" : "false"}
+                              aria-label={dt.open ? messages.closeDetail : messages.openDetail}
+                              onclick={(event) => {
+                                event.stopPropagation();
+                                dt.toggle();
+                              }}>{@render icon("chevron-right")}</button
+                            >
+                          {/if}
                         </td>
                       {/if}
                       {#if columnVirtualizationEnabled && columnWindowStart > 0}
@@ -1892,6 +1949,90 @@
                     </tr>
                   {/if}
   {/snippet}
+  <!-- A sticky copy of an ancestor group row, for the band under the header
+       while its rows scroll past. The real row is elsewhere in the flow (or
+       outside the rendered window), so this one carries no cell ids, no
+       row index attributes and is hidden from assistive tech; the group
+       cell's own expander still works, since it is the same renderer. -->
+  {#snippet stickyGroupRow(row: Row<TData>, rowIndex: number, top: number, size: number, last: boolean)}
+    {#if isGroupRow(row) && !groupColumnMode}
+      <tr
+        class="sv-grid-row sv-grid-group-row sv-grid-row-sticky-group"
+        class:sv-grid-row-sticky-group-last={last}
+        style:top={`${top}px`}
+        style={rowHeightStyle(size)}
+        aria-hidden="true"
+      >
+        <td
+          class="sv-grid-cell sv-grid-group-cell"
+          colspan={allColumns.length +
+            (showRowNumbersEffective ? 1 : 0) +
+            (showRowSelectionEffective ? 1 : 0) +
+            (showDetailToggleEffective ? 1 : 0)}
+          onclick={() => row.toggleExpanded?.()}
+        >
+          {@render groupRowContent(row)}
+        </td>
+      </tr>
+    {:else}
+      <tr
+        class={`sv-grid-row sv-grid-row-sticky-group ${computeRowClass(row, rowIndex)}`}
+        class:sv-grid-row-sticky-group-last={last}
+        style:top={`${top}px`}
+        style={rowHeightStyle(size)}
+        aria-hidden="true"
+      >
+        {#if showRowNumbersEffective}
+          <td
+            class="sv-grid-cell sv-grid-row-number-cell"
+            style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+            >{rowIndex + 1}</td
+          >
+        {/if}
+        {#if showRowSelectionEffective}
+          <td
+            class="sv-grid-cell sv-grid-selection-cell"
+            style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+          ></td>
+        {/if}
+        {#if showDetailToggleEffective}
+          <td
+            class="sv-grid-cell sv-grid-detail-toggle-cell"
+            style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
+          ></td>
+        {/if}
+        {#if columnVirtualizationEnabled && columnWindowStart > 0}
+          <td
+            class="sv-grid-cell sv-grid-cell-spacer"
+            style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
+          ></td>
+        {/if}
+        {#each renderedColumns as rendered (rendered.column.id)}
+          {@const cellValue = getCellDisplayValue(row.id, rendered.column.id, getColumnBaseValue(row, rendered.column))}
+          <td
+            class={`sv-grid-cell ${computeCellClass(row, rendered.column)}`}
+            class:sv-grid-cell-cf={hasConditionalFormats}
+            data-col-id={rendered.column.id}
+            data-align={getColumnAlign(rendered.column)}
+            data-pinned={isColumnPinned(rendered.column.id) ?? undefined}
+            style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
+          >
+            {#if plainCellBody}
+              {@render cellBody(row, rendered.column, cellValue)}
+            {:else}
+              {@render cellBodyWithFormat(row, rendered.column, cellValue)}
+            {/if}
+          </td>
+        {/each}
+        {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+          <td
+            class="sv-grid-cell sv-grid-cell-spacer"
+            style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
+          ></td>
+        {/if}
+      </tr>
+    {/if}
+  {/snippet}
   {#snippet pinnedRowBody(
     rowData: TData,
     where: "top" | "bottom",
@@ -1915,6 +2056,12 @@
           style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
         ></td>
       {/if}
+      {#if showDetailToggleEffective}
+        <td
+          class="sv-grid-cell sv-grid-detail-toggle-cell"
+          style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
+        ></td>
+      {/if}
       {#if columnVirtualizationEnabled && columnWindowStart > 0}
         <td
           class="sv-grid-cell sv-grid-cell-spacer"
@@ -1931,6 +2078,7 @@
         <td
           class={`sv-grid-cell ${userCellClass}`}
           data-col-id={rendered.column.id}
+          data-align={getColumnAlign(rendered.column)}
           data-pinned={isColumnPinned(rendered.column.id) ?? undefined}
           style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
           >{formatPinnedValue(rendered.column, value)}</td
@@ -1949,6 +2097,7 @@
   <div
     class="sv-grid-root"
     class:sv-grid-root-fill={opt.containerHeight === "100%"}
+    class:sv-grid-active-seeded={!ctrl.userHasActivatedCell}
     style={chartDockReserveStyle}
     data-move-grab={ctrl.moveGrabHover || ctrl.moveDrag ? "true" : undefined}
     data-selbar={
@@ -2091,6 +2240,13 @@
                     aria-hidden="true"
                   ></th>
                 {/if}
+                {#if showDetailToggleEffective}
+                  <th
+                    class="sv-grid-column sv-grid-detail-toggle-column"
+                    style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
+                    aria-hidden="true"
+                  ></th>
+                {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
                   <th
                     class="sv-grid-column sv-grid-column-spacer"
@@ -2183,6 +2339,13 @@
                         toggleCheckboxWithKeyboard(event, toggleSelectAllRows)}
                     ></button>
                   </th>
+                {/if}
+                {#if showDetailToggleEffective}
+                  <th
+                    class="sv-grid-column sv-grid-detail-toggle-column"
+                    style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
+                    aria-hidden="true"
+                  ></th>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
                   <th
@@ -2426,6 +2589,13 @@
                       aria-hidden="true"
                     ></th>
                   {/if}
+                  {#if showDetailToggleEffective}
+                    <th
+                      class="sv-grid-column sv-grid-detail-toggle-column"
+                      style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
+                      aria-hidden="true"
+                    ></th>
+                  {/if}
                   {#if columnVirtualizationEnabled && columnWindowStart > 0}
                     <th
                       class="sv-grid-column sv-grid-column-spacer"
@@ -2653,7 +2823,8 @@
                   class="sv-grid-cell sv-grid-empty-cell"
                   colSpan={allColumns.length +
                     (showRowNumbersEffective ? 1 : 0) +
-                    (showRowSelectionEffective ? 1 : 0)}
+                    (showRowSelectionEffective ? 1 : 0) +
+                    (showDetailToggleEffective ? 1 : 0)}
                 >
                   {opt.emptyMessage ?? messages.noRows}
                 </td>
@@ -2662,6 +2833,9 @@
               {#each frozenRowList as row, rowIndex (row.id)}
                 {@render bodyRow(row, rowIndex, rowStyleFor(rowIndex))}
               {/each}
+              {#each stickyGroupRows as sticky, k (`sticky:${sticky.row.id}`)}
+                {@render stickyGroupRow(sticky.row, sticky.rowIndex, sticky.top, sticky.size, k === stickyGroupRows.length - 1)}
+              {/each}
               {#if rowTopSpacer > 0}
                 <tr class="sv-grid-row sv-grid-row-spacer" aria-hidden="true">
                   <td
@@ -2669,7 +2843,8 @@
                     style={`height: ${rowTopSpacer}px; padding: 0; border: 0;`}
                     colSpan={allColumns.length +
                       (showRowNumbersEffective ? 1 : 0) +
-                      (showRowSelectionEffective ? 1 : 0)}
+                      (showRowSelectionEffective ? 1 : 0) +
+                      (showDetailToggleEffective ? 1 : 0)}
                   ></td>
                 </tr>
               {/if}
@@ -2693,7 +2868,8 @@
                     style={`height: ${rowBottomSpacer}px; padding: 0; border: 0;`}
                     colSpan={allColumns.length +
                       (showRowNumbersEffective ? 1 : 0) +
-                      (showRowSelectionEffective ? 1 : 0)}
+                      (showRowSelectionEffective ? 1 : 0) +
+                      (showDetailToggleEffective ? 1 : 0)}
                   ></td>
                 </tr>
               {/if}
@@ -2738,6 +2914,12 @@
                   <td
                     class="sv-grid-column sv-grid-summary-column sv-grid-selection-column"
                     style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; left: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                  ></td>
+                {/if}
+                {#if showDetailToggleEffective}
+                  <td
+                    class="sv-grid-column sv-grid-summary-column sv-grid-detail-toggle-column"
+                    style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
                   ></td>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
@@ -2820,9 +3002,7 @@
       {/if}
       {#if hasMeasured && hasHorizontalOverflow}
         {@const horizontalContentSize =
-          totalColumnWidth +
-          (showRowNumbersEffective ? rowNumberColumnWidth : 0) +
-          (showRowSelectionEffective ? selectionColumnWidth : 0)}
+          totalColumnWidth + ctrl.systemColumnsWidth}
         <sv-grid-scrollbar
           class="sv-grid-scrollbar sv-grid-scrollbar-horizontal"
           bind:this={ctrl.horizontalScrollbarEl}

@@ -73,6 +73,57 @@ describe('createRowDrag - same-grid reorder', () => {
   })
 })
 
+describe('createRowDrag - a custom drop (onRowDrop)', () => {
+  it('reports the drop with its side and leaves the data alone', () => {
+    const rows: Task[] = [
+      { id: 1, title: 'a' },
+      { id: 2, title: 'b' },
+      { id: 3, title: 'c' },
+    ]
+    const onRowDrop = vi.fn()
+    const ctx = makeCtx(rows, { ...P, onRowDrop })
+    const h = createRowDrag(ctx)
+    h.onRowDragStart(fakeEvent(), 0) // drag 'a'
+    h.onRowDragOver(fakeEvent(35, 0, 40), 2) // low on c: after
+    expect(ctx.rowDropSide).toBe('after')
+    h.onRowDrop(fakeEvent(), 2)
+    expect(onRowDrop).toHaveBeenCalledWith({ row: rows[0], target: rows[2], targetIndex: 2, side: 'after' })
+    expect((ctx.internalData as Task[]).map((r) => r.title)).toEqual(['a', 'b', 'c'])
+    // The empty space below the rows reports no target.
+    h.onRowDragStart(fakeEvent(), 1)
+    h.onRowsContainerDrop(fakeEvent())
+    expect(onRowDrop).toHaveBeenLastCalledWith({ row: rows[1], target: null, targetIndex: null, side: 'after' })
+  })
+
+  it('offers "into" over the middle of a group row, and only then', () => {
+    const rows: Task[] = [
+      { id: 1, title: 'folder' },
+      { id: 2, title: 'file' },
+    ]
+    const ctx = makeCtx(rows, {
+      ...P,
+      onRowDrop: vi.fn(),
+      serverGroup: { isGroup: (r: Task) => r.title === 'folder', level: () => 0, onToggle: () => {} },
+    })
+    const h = createRowDrag(ctx)
+    h.onRowDragStart(fakeEvent(), 1)
+    h.onRowDragOver(fakeEvent(20, 0, 40), 0) // the middle of the folder
+    expect(ctx.rowDropSide).toBe('into')
+    h.onRowDragOver(fakeEvent(3, 0, 40), 0) // its top edge
+    expect(ctx.rowDropSide).toBe('before')
+    h.onRowDragOver(fakeEvent(19, 0, 40), 1) // the middle of a file: no nesting, just the halves
+    expect(ctx.rowDropSide).toBe('before')
+    h.onRowDragOver(fakeEvent(21, 0, 40), 1)
+    expect(ctx.rowDropSide).toBe('after')
+    // Without a custom handler the middle band does not exist.
+    const managed = makeCtx(rows, { ...P, serverGroup: ctx.props.serverGroup })
+    const hm = createRowDrag(managed)
+    hm.onRowDragStart(fakeEvent(), 1)
+    hm.onRowDragOver(fakeEvent(20, 0, 40), 0)
+    expect(managed.rowDropSide).toBe('after')
+  })
+})
+
 describe('createRowDrag - grid-to-grid', () => {
   it('moves a row from source into target when groups match', () => {
     const a = makeCtx([{ id: 1, title: 'a1' }, { id: 2, title: 'a2' }], { ...P, rowDragGroup: 'g' })

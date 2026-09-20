@@ -384,7 +384,33 @@ const BUDGET_KB = {
   // pay for, and the price of the prop living on the grid rather than behind a
   // second component import. The two-edit cost the grid-wc note describes
   // applies: the elements moved by the same amount.
-  'full render component (SvGrid)': 93.7,
+  //
+  // 93.7 -> 95.1 for sticky group rows and sized detail rows (2026-09-19).
+  // Measured 94.8, up from 93.5. `stickyGroupRows` walks back from the first
+  // row under the header to its ancestor group rows and, under
+  // virtualization, renders a copy of each in a band the top spacer pays
+  // for (the band snippet is most of the 1.3 KB: a row of cells drawn
+  // through the same cell renderers, without the interactive attributes);
+  // without virtualization the rows themselves are made sticky. It serves
+  // server-side groups, client grouping and tree data from one code path.
+  // `detailRowHeight` sizes detail rows for the virtualizer, which is what
+  // lets master-detail keep virtualization on. Both sit on the render and
+  // scroll path, so neither can be lazy. The row model side of master-
+  // detail is @svgrid/enterprise and adds nothing here. The two-edit cost
+  // the grid-wc note describes applies: the elements moved by the same
+  // amount, plus two surface entries.
+  //
+  // 95.1 -> 95.9 for the detail-toggle column (2026-09-20). Measured 95.8,
+  // up from 95.0. `showDetailToggle` is a third system column beside the
+  // row numbers and the selection checkbox: a chevron cell in the body row
+  // (the bulk of the 0.8 KB, with its aria state and the click), a blank
+  // cell in every other row kind (header levels, filter row, summary,
+  // pinned rows, the sticky band, skeletons) and the colspan and offset
+  // arithmetic that keeps full-width rows and left-pinned columns lined up.
+  // A system column cannot be lazy: it is part of every row. The demos had
+  // each drawn their own chevron in a data column, which took the menu,
+  // the resize handle and the active cell along with it.
+  'full render component (SvGrid)': 95.9,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for

@@ -60,6 +60,14 @@ function mountGrid() {
   })
 }
 
+/**
+ * The close-on-scroll listener arms one animation frame after a popover
+ * mounts, so a scroll queued before the opening click cannot dismiss what
+ * that click opened. Every open helper waits that frame out before a case
+ * dispatches its scroll.
+ */
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
 async function openFilterMenu(target: HTMLElement) {
   const btn = target.querySelector('.sv-grid-col-filter-btn') as HTMLButtonElement
   expect(btn).not.toBeNull()
@@ -74,6 +82,7 @@ async function openFilterMenu(target: HTMLElement) {
     expect(menu).not.toBeNull()
     expect(menu!.querySelector('.sv-listbox')).not.toBeNull()
   })
+  await nextFrame()
   return target.querySelector('.sv-grid-filter-menu') as HTMLElement
 }
 

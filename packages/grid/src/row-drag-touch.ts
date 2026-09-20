@@ -23,7 +23,7 @@ export type TouchDragDeps = {
   ctx: any;
   managed: () => boolean;
   originalAt: (rowIndex: number) => unknown;
-  commitDropOnRow: (rowIndex: number, side: "before" | "after") => void;
+  commitDropOnRow: (rowIndex: number, side: "before" | "after" | "into") => void;
   clearIndicators: () => void;
   cancelPendingLeave: () => void;
   /** Publish the dragged row on the shared cross-grid bus. */
@@ -135,7 +135,7 @@ export function createTouchDrag(deps: TouchDragDeps): TouchDragHandle {
     if (commit && ctx.rowDropIndex != null) {
       deps.commitDropOnRow(
         ctx.rowDropIndex as number,
-        (ctx.rowDropSide ?? "before") as "before" | "after",
+        (ctx.rowDropSide ?? "before") as "before" | "after" | "into",
       );
     } else {
       deps.clearIndicators();

@@ -40,7 +40,7 @@ const rows: Row[] = [
 const cols: ColumnDef<typeof features, Row>[] = [
   { field: 'id',      header: 'ID',      width: 100, editable: false },
   { field: 'account', header: 'Account', width: 200, editable: false },
-  { field: 'arr',     header: 'ARR',     width: 130, editable: false, align: 'right',
+  { field: 'arr',     header: 'ARR',     width: 130, editable: false, align: 'right', cellClass: 'money',
     format: { type: 'number', options: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 } } },
   { field: 'seats',   header: 'Seats',   width:  90, editable: false, align: 'right' },
 ]
@@ -164,6 +164,20 @@ describe('SvGrid - pinnedTopRows render', () => {
       const arrCellText = (tds[2]?.textContent ?? '').trim()
       expect(arrCellText).toMatch(/\$/)
       expect(arrCellText).toContain('515')
+    } finally { destroy() }
+  })
+
+  it('aligns and classes the cells the way the column says (a total sat left under a right-aligned column)', async () => {
+    const { target, destroy } = await mountGrid({ pinnedTopRows: [TOTALS] })
+    try {
+      await tick()
+      const tds = target.querySelectorAll('tr.sv-grid-pinned-row-top td')
+      expect(tds[0]!.getAttribute('data-align')).toBe('left')
+      expect(tds[2]!.getAttribute('data-align')).toBe('right')
+      expect(tds[3]!.getAttribute('data-align')).toBe('right')
+      // A static cellClass reaches the pinned cell; only a function did before.
+      expect(tds[2]!.classList.contains('money')).toBe(true)
+      expect(tds[0]!.classList.contains('money')).toBe(false)
     } finally { destroy() }
   })
 

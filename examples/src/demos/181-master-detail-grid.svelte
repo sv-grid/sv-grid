@@ -87,13 +87,9 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
+  // The chevron is the grid's own row-header column (`showDetailToggle`);
+  // `onDetailToggle` and `isDetailOpen` below wire it to the expanded set.
   const columns: GridColumns<AnyRow> = [
-    {
-      id: 'expand', header: '', width: 40, editable: false, sortable: false, filterable: false,
-      cell: (ctx) => ctx.row.original.kind === 'account'
-        ? renderSnippet(Chevron, { id: ctx.row.original.id, open: expanded.has(ctx.row.original.id) })
-        : renderSnippet(Blank, {}),
-    },
     { field: 'name', header: 'Name', width: 190, editable: false,
       cell: (ctx) => ctx.row.original.kind === 'account'
         ? renderSnippet(Plain, { value: ctx.row.original.name }) : renderSnippet(Blank, {}) },
@@ -126,13 +122,6 @@
   ]
 </script>
 
-{#snippet Chevron(props: { id: string; open: boolean })}
-  <button class="md-chev" aria-label={props.open ? 'Collapse' : 'Expand'} onclick={() => toggle(props.id)}>
-    <svg class={props.open ? 'is-open' : ''} viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="6 4 10 8 6 12"></polyline>
-    </svg>
-  </button>
-{/snippet}
 {#snippet Blank()}{/snippet}
 {#snippet Plain(props: { value: string })}<span>{props.value}</span>{/snippet}
 
@@ -187,6 +176,9 @@
       virtualization={false}
       isDetailRow={(row) => row.kind === 'detail'}
       renderDetailRow={DetailGrid}
+      showDetailToggle
+      onDetailToggle={(row) => toggle(row.id)}
+      isDetailOpen={(row) => expanded.has(row.id)}
     />
   </div>
 </section>
@@ -208,14 +200,6 @@
   .md-btn:hover { filter: brightness(1.07); }
   .md-count { font-size: 11px; color: var(--sg-muted, #64748b); }
 
-  :global(.md-chev) {
-    width: 24px; height: 24px; background: transparent; border: 0; cursor: pointer;
-    color: var(--sg-muted, #64748b); border-radius: 4px;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  :global(.md-chev:hover) { background: color-mix(in oklab, var(--sg-accent, #6366f1) 12%, transparent); color: var(--sg-accent, #6366f1); }
-  :global(.md-chev svg) { transition: transform 140ms; }
-  :global(.md-chev svg.is-open) { transform: rotate(90deg); }
 
   /* Detail row: a nested grid on an inset, accent-bordered panel. */
   :global(.md-detail) {

@@ -588,10 +588,34 @@ export const ELEMENT_PROPS = [
     "ts": "(row: TData, rowIndex: number) => boolean"
   },
   {
+    "name": "detailRowHeight",
+    "type": "Number",
+    "attribute": "detail-row-height",
+    "ts": "number | ((row: TData) => number)"
+  },
+  {
+    "name": "showDetailToggle",
+    "type": "Boolean",
+    "attribute": "show-detail-toggle",
+    "ts": "boolean"
+  },
+  {
+    "name": "isDetailOpen",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(row: TData) => boolean"
+  },
+  {
+    "name": "hasDetail",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(row: TData) => boolean"
+  },
+  {
     "name": "serverGroup",
     "type": "Object",
     "attribute": null,
-    "ts": "{ isGroup: (row: TData) => boolean; level: (row: TData) => number; expanded?: (row: TData) => boolean; onToggle: (row: TData) => void; }"
+    "ts": "{ isGroup: (row: TData) => boolean; level: (row: TData) => number; expanded?: (row: TData) => boolean; onToggle: (row: TData) => void; toggleDetail?: (row: TData) => void; detailOpen?: (row: TData) => boolean; hasDetail?: (row: TData) => boolean; }"
   },
   {
     "name": "serverFilterValues",
@@ -610,6 +634,12 @@ export const ELEMENT_PROPS = [
     "type": "Number",
     "attribute": "frozen-rows",
     "ts": "number"
+  },
+  {
+    "name": "stickyGroupRows",
+    "type": "Boolean",
+    "attribute": "sticky-group-rows",
+    "ts": "boolean"
   },
   {
     "name": "mergedCells",
@@ -847,6 +877,15 @@ export const ELEMENT_EVENTS = [
     "detail": "{ row: Record<string, unknown>; rowIndex: number }"
   },
   {
+    "callback": "onDetailToggle",
+    "event": "detailtoggle",
+    "params": [
+      "row",
+      "rowIndex"
+    ],
+    "detail": "{ row: Record<string, unknown>; rowIndex: number }"
+  },
+  {
     "callback": "onColumnOrderChange",
     "event": "columnorderchange",
     "params": [
@@ -861,6 +900,14 @@ export const ELEMENT_EVENTS = [
       "event"
     ],
     "detail": "{ row: Record<string, unknown>; toIndex: number; sameGrid: boolean; fromGridId: number; toGridId: number; }"
+  },
+  {
+    "callback": "onRowDrop",
+    "event": "rowdrop",
+    "params": [
+      "event"
+    ],
+    "detail": "{ row: Record<string, unknown>; target: Record<string, unknown> | null; targetIndex: number | null; side: \"before\" | \"after\" | \"into\"; }"
   }
 ]
 

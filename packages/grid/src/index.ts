@@ -779,6 +779,7 @@ export {
   type ServerState,
   type ServerSortModel,
   type ServerFilterModel,
+  type ServerAggFn,
   type ServerAggregation,
   type ServerGroupRow,
   type ServerLeafRow,
@@ -788,6 +789,7 @@ export {
   type ServerGrandTotalRow,
   type ServerPlaceholderRow,
   type ServerDisplayRow,
+  type ServerDetailRow,
 } from './server-data-source'
 export {
   createBlockCache,
