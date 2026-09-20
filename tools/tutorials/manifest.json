@@ -13,10 +13,10 @@
         "chart builder",
         "cross filter chart"
       ],
-      "duration": 39.6,
+      "duration": 33.1,
       "width": 960,
       "height": 540,
-      "recordedAt": "2026-09-13",
+      "recordedAt": "2026-09-20",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -25,33 +25,33 @@
         "vtt": "/tutorials/chart-from-the-grid.vtt"
       },
       "bytes": {
-        "mp4": 409896,
-        "poster": 39148
+        "mp4": 319690,
+        "poster": 39188
       },
       "transcript": [
         {
           "start": 1.21,
-          "end": 10.71,
+          "end": 8.76,
           "text": "Add the charting prop and the grid grows a chart panel. It charts the rows on screen, so filtering or sorting redraws it."
         },
         {
-          "start": 11.2,
-          "end": 15.1,
+          "start": 9.17,
+          "end": 12.39,
           "text": "Pick a type, a group-by column and the aggregate."
         },
         {
-          "start": 15.46,
-          "end": 22.16,
+          "start": 13.36,
+          "end": 18.53,
           "text": "Click a bar and the grid filters to that category. Clear filter brings the rows back."
         },
         {
-          "start": 22.55,
-          "end": 30.45,
+          "start": 18.85,
+          "end": 25.28,
           "text": "Build opens a gallery with a live thumbnail per type, and a Format tab for titles, axes and series."
         },
         {
-          "start": 30.94,
-          "end": 38.04,
+          "start": 25.61,
+          "end": 31.53,
           "text": "Everything here is a config field or an API call, and it round-trips through the saved view."
         }
       ]
@@ -69,10 +69,10 @@
         "svelte data grid filtering",
         "filter by value"
       ],
-      "duration": 32.7,
+      "duration": 28.4,
       "width": 960,
       "height": 540,
-      "recordedAt": "2026-09-12",
+      "recordedAt": "2026-09-20",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -81,28 +81,28 @@
         "vtt": "/tutorials/excel-filter-menu.vtt"
       },
       "bytes": {
-        "mp4": 277789,
-        "poster": 39706
+        "mp4": 221474,
+        "poster": 39748
       },
       "transcript": [
         {
           "start": 1.21,
-          "end": 9.51,
+          "end": 8.01,
           "text": "Set filterMode to menu, and each column header shows a filter button on hover. Click it to open the menu."
         },
         {
-          "start": 9.88,
-          "end": 15.78,
+          "start": 8.33,
+          "end": 14.15,
           "text": "The menu lists every distinct value. Untick one, and the grid re-filters right away."
         },
         {
-          "start": 16.26,
-          "end": 22.56,
+          "start": 14.57,
+          "end": 19.61,
           "text": "Long value lists have a search box. Type a few letters to narrow the choices."
         },
         {
-          "start": 23.22,
-          "end": 31.12,
+          "start": 20.23,
+          "end": 26.89,
           "text": "Done closes the menu. The filtered column keeps its marker, and Clear filter in the same menu resets it."
         }
       ]
