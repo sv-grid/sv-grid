@@ -15,8 +15,8 @@ builds it from two props on `<SvGrid>`:
 
 <!-- tutorial:master-detail-expand -->
 <figure class="docs-tutorial" id="tutorial-master-detail-expand" data-docs-tutorial="master-detail-expand">
-<video class="docs-tutorial-video" src="/tutorials/master-detail-expand.mp4" poster="/tutorials/master-detail-expand.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Master detail rows in SvGrid, 38 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/master-detail-expand.vtt" default>Your browser does not play embedded video. <a href="/tutorials/master-detail-expand.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Master detail rows in SvGrid</strong> (38 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/master-detail-expand.mp4" poster="/tutorials/master-detail-expand.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Master detail rows in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/master-detail-expand.vtt" default>Your browser does not play embedded video. <a href="/tutorials/master-detail-expand.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Master detail rows in SvGrid</strong> (34 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Master detail in SvGrid is two props. isDetailRow marks a row as a detail, and renderDetailRow draws whatever you like inside it.</p>
 <p>Click the chevron on an account to expand its call records, a nested grid with its own sorting.</p>

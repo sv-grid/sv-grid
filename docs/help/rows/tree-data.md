@@ -6,8 +6,8 @@ Nest rows into an expandable hierarchy with the `treeData` prop.
 
 <!-- tutorial:tree-data -->
 <figure class="docs-tutorial" id="tutorial-tree-data" data-docs-tutorial="tree-data">
-<video class="docs-tutorial-video" src="/tutorials/tree-data.mp4" poster="/tutorials/tree-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Tree data in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/tree-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/tree-data.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Tree data in SvGrid</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/tree-data.mp4" poster="/tutorials/tree-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Tree data in SvGrid, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/tree-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/tree-data.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Tree data in SvGrid</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Tree data is one prop. Point treeData at the parent field and name the tree column, and flat rows become a hierarchy.</p>
 <p>Click an expander to open a branch. Children indent under their parent and keep every column.</p>

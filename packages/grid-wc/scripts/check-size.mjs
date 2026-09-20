@@ -194,10 +194,21 @@ const dist = join(here, '..', 'dist')
  * rules (the element inlines the sheet) that paint the strip the floating
  * bar sits over, under the lowest pinned row or above the header, so body
  * rows stop scrolling through it. 0.1 KiB of stylesheet.
+ *
+ * 110.8 -> 111.0 and 111.3 -> 111.5 for the spreadsheet branch's grid
+ * changes, merged 2026-09-20. Measured 110.8 / 111.3, the shadow element
+ * 18 bytes over: the row-number, selection and pinned columns stick with
+ * `inset-inline-start` / `inset-inline-end` rather than `left` / `right`
+ * (eleven inline styles, longer by the word, so a `dir="rtl"` grid keeps
+ * its pinned columns on the screen), the row-resize separator carries
+ * aria-valuenow/min/max (axe's aria-required-attr), a visually-hidden
+ * "Row number" text in the corner th (axe's empty-table-header), and the
+ * clipboard leaves collapsed rows and columns out of a copy the way a
+ * sheet leaves hidden rows out. No surface change.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 110.8 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.3 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 111.0 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.5 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

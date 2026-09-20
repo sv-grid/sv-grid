@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-20 from 384 pages, 18 comparison pages, plus 73 API reference pages.
+Generated 2026-09-20 from 385 pages, 18 comparison pages, plus 73 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -15828,8 +15828,8 @@ one structurally cannot.
 
 <!-- tutorial:million-rows-scroll -->
 <figure class="docs-tutorial" id="tutorial-million-rows-scroll" data-docs-tutorial="million-rows-scroll">
-<video class="docs-tutorial-video" src="/tutorials/million-rows-scroll.mp4" poster="/tutorials/million-rows-scroll.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="One million rows in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/million-rows-scroll.vtt" default>Your browser does not play embedded video. <a href="/tutorials/million-rows-scroll.mp4">Download the MP4</a>.</video>
-<figcaption><strong>One million rows in SvGrid</strong> (34 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/million-rows-scroll.mp4" poster="/tutorials/million-rows-scroll.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="One million rows in SvGrid, 32 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/million-rows-scroll.vtt" default>Your browser does not play embedded video. <a href="/tutorials/million-rows-scroll.mp4">Download the MP4</a>.</video>
+<figcaption><strong>One million rows in SvGrid</strong> (32 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>This SvGrid holds one million rows, generated in the browser, with sorting, filtering and inline editing switched on.</p>
 <p>Rows are virtualized, so only the ones in view are drawn. Scroll, and the frame rate stays flat.</p>
@@ -17694,7 +17694,7 @@ See [paste, find and structure](./paste-find-structure.md).
 | Alt + Down | Drop the list a validated cell offers (raised as `open-list`). |
 | Ctrl/Cmd + F1 | Collapse or expand the ribbon (raised as `toggle-ribbon`). |
 | Ctrl/Cmd + F3 | Name Manager. |
-| Ctrl/Cmd + T | Format as Table, when the application answers Insert > Table (`extras`). |
+| Ctrl/Cmd + T | Format as Table: the shell's Create Table dialog over the selection. |
 
 The last seven raise the same actions as the ribbon buttons that name them;
 on a plain grid, `setRibbonActionHandler` decides what answers.
@@ -17715,8 +17715,8 @@ so a single-sheet grid leaves `Ctrl+PageDown` to the browser. See
 | --- | ------ |
 | Ctrl/Cmd + Page Down / Page Up | Next / previous sheet, stepping over hidden ones. |
 | Shift + F11 | New sheet. |
-| Ctrl/Cmd + O | Open an .xlsx (the shell's File > Open). |
-| Ctrl/Cmd + S | Save As .xlsx (File > Save As). |
+| Ctrl/Cmd + O | Open a file (the shell's File > Open): an .xlsx, an .ods, an .xls or a .csv, decided by the bytes rather than the name. |
+| Ctrl/Cmd + S | Save As .xlsx (File > Save As). The File tab has Save As ODS and Save As XLS beside it. |
 | Ctrl/Cmd + P | Print the active sheet as its Page Layout says (File > Print). |
 
 ## What Ctrl+Arrow actually does
@@ -17953,16 +17953,84 @@ A pattern containing date tokens is a date pattern.
 | `yyyy` `yy` | 2026, 26 |
 | `mmmm` `mmm` `mm` `m` | September, Sep, 09, 9 |
 | `dddd` `ddd` `dd` `d` | Monday, Mon, 14, 14 |
+| `mmmmm` | S (the month's first letter) |
 | `hh` `h` `ss` `s` | Hours and seconds |
-| `AM/PM` | Meridiem |
+| `AM/PM` `am/pm` `A/P` `a/p` | Meridiem, in the case and length the token is written in |
+| `.0` `.00` `.000` after seconds | Fractional seconds |
 
 `m` and `mm` mean **minutes** after an hour token and **months** otherwise, so
 `hh:mm` gives `15:05` rather than `15:09`.
+
+A pattern that names the meridiem puts the hour on a **12-hour clock**, as a
+clock face reads it, and one that does not leaves it on the 24-hour one:
+
+```ts
+formatWithPattern(46275.625, 'h:mm AM/PM')   // '3:00 PM'
+formatWithPattern(46275.625, 'h:mm')         // '15:00'
+formatWithPattern(46275.625, 'h:mm A/P')     // '3:00 P'
+```
+
+Times are **rounded to the finest unit the pattern shows**, which is Excel's
+rule and the reason 23:59:40 under `hh:mm` reads `00:00` with the date rolled
+over. A date-only pattern truncates instead: an afternoon is not tomorrow.
 
 Numbers are read as Excel serial days against the 1899-12-30 epoch. That is
 correct from 1900-03-01 on; Excel itself is a day out below serial 61 because
 it counts a 1900-02-29 that never existed, and matching that bug exactly would
 break real dates.
+
+### Elapsed time
+
+`[h]`, `[m]` and `[s]` (and `[hh]`, `[mm]`, `[ss]`) give the whole duration in
+that unit rather than the clock's reading of it, which is what a timesheet
+adds up:
+
+```ts
+formatWithPattern(1.5, '[h]:mm')       // '36:00'   a day and a half
+formatWithPattern(1.5, 'h:mm')         // '12:00'   the clock, for comparison
+formatWithPattern(0.5, '[mm]:ss')      // '720:00'
+```
+
+### Fractions
+
+`# ?/?` and its relatives show the closest fraction that fits the
+placeholders: one `?` allows a denominator up to 9, two up to 99. A literal
+denominator is used as it stands, unreduced, which is how eighths and
+sixteenths are written.
+
+```ts
+formatWithPattern(1.25, '# ?/?')       // '1 1/4'
+formatWithPattern(5.0625, '# ??/??')   // '5  1/16'
+formatWithPattern(1.25, '# ?/8')       // '1 2/8'
+formatWithPattern(1.25, '?/?')         // '5/4'     no integer part
+```
+
+### Text
+
+`@` is the text placeholder, and it stands for the value whatever the value
+is: a number in a cell formatted as Text reads as the number.
+
+```ts
+formatWithPattern('note', '@')         // 'note'
+formatWithPattern(5, '@')              // '5'
+formatWithPattern('note', '"x"@')      // 'xnote'
+formatWithPattern(5, ';;;')            // ''        Excel's hide-the-cell
+formatWithPattern('note', ';;;')       // ''        text as well
+formatWithPattern('note', '0.00')      // 'note'    no text section, so as it is
+```
+
+### Scientific and engineering notation
+
+The integer placeholders set the step the exponent moves in. One of them is
+the everyday scientific form; three make it engineering notation, where the
+exponent is a multiple of three and the mantissa carries up to three integer
+digits, which is how an engineer reads a datasheet.
+
+```ts
+formatWithPattern(12345, '0.00E+00')   // '1.23E+04'
+formatWithPattern(12345, '##0.0E+0')   // '12.3E+3'
+formatWithPattern(0.000123, '##0.0E+0')// '123.0E-6'
+```
 
 ### Presets
 
@@ -18162,6 +18230,12 @@ ones for the HTML flavour:
   }}
 />
 ```
+
+A copy leaves out what the copier cannot see: a collapsed row or column is
+folded to nothing, and the keyboard already walks past it, so the block that
+reaches the clipboard closes up around it. That is what makes "filter, copy,
+paste" in the spreadsheet shell carry the rows that matched, next to each
+other, rather than the hidden ones as well.
 
 `clipboardHtml` runs once per copy, after the text is assembled; return the
 HTML to put beside it, or nothing for a text-only copy. The grid writes both
@@ -18778,6 +18852,51 @@ the wiring BETWEEN the parts, done once:
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
   format of its own. `=A1*2` over a `12%` cell is 0.24.
+- File > Open reads what the other spreadsheets write, not only what this
+  one wrote: a sheet's own `<cols>` or a table's filter, a row height
+  LibreOffice left unflagged, `General` as the absence of a format, a row
+  or a cell that carries no position of its own, an error or a boolean
+  saved as a formula. Save As writes a package Excel, Google Sheets and
+  LibreOffice all open; a rule it cannot spell is left out rather than
+  written badly, since a file with one bad element in it is a file Excel
+  offers to repair.
+- A sort reorders the rows you can see and leaves the hidden ones where
+  they are, as Excel's does, so sorting a filtered list cannot drag a
+  filtered-out row into view or overwrite what one holds. The status bar
+  says how many stayed put.
+- `SUBTOTAL` follows the filter: `=SUBTOTAL(9, C2:C99)` under a filtered
+  list totals the rows that matched, and the 101-111 codes leave out rows
+  hidden by hand too. That is what a table's totals row should be written
+  with; `SUM` counts everything, as it does in Excel.
+- The status bar's Average, Count and Sum are of the cells you can see: a
+  filtered-out row is not in the total, which is what makes the bar worth
+  reading over a filtered block. Delete and Clear Contents leave such a row
+  as it is, so clearing a filtered selection cannot wipe what the filter
+  hid.
+- A copy carries only the cells you can see: a row a filter or Hide Rows
+  folded away is left out, and the block closes up around it, so filtering
+  a log and copying the block gives the rows that matched with nothing
+  between them. A hidden column goes the same way.
+- Ctrl+X marks the block rather than emptying it, as Excel's cut does: the
+  cells stay where they are until the paste lands, Escape leaves the sheet
+  as it was, and one Ctrl+Z puts a whole move back. The ribbon's Cut and
+  the menu's mean the same thing.
+- Cut and paste MOVES the cells, so every formula that read them follows:
+  moving A1 to D1 rewrites `=A1*2` as `=D1*2`, across every sheet and the
+  defined names, the way Excel does. A `$` makes no difference, since the
+  cell itself moved; a range follows only when all of it moved, so
+  `=SUM(A1:A2)` stays as it is when A1 alone goes. A copy translates
+  relative references by the distance pasted, as before.
+- A typed error code is that error, as it is in Excel: a cell holding
+  `#N/A` answers TRUE to `=ISNA(A1)` and carries the error into anything
+  that reads it, so a placeholder row reads as missing rather than as the
+  text that spells it. Case does not matter, and `'#N/A` is the text.
+- A leading apostrophe says the rest is text, as it does in Excel: `'007`
+  is the text `007`, leading zero kept, and `'=A1+1` shows the formula
+  rather than working it out. The apostrophe is not part of the value, so
+  it is never displayed, printed, exported or compared; the formula bar
+  shows it, since it is what was typed. A cell that comes back from an
+  .xlsx as text keeps its prefix, so a part number survives the round trip.
 - The fill handle fills the way Excel's does: a lone value repeats, `1, 2`
   continues, `Jan` runs on to `Feb`, and a formula moves every relative
   reference by the distance dragged. Double-click it to fill down as far as
@@ -18819,7 +18938,9 @@ the wiring BETWEEN the parts, done once:
   sheet, and deleting one that holds data asks first. A hidden sheet keeps
   its cells and every reference to it, Ctrl+PageUp and PageDown step over
   it, and the flag rides in the document. Duplicate copies the cells and
-  everything the document keeps beside them.
+  everything the document keeps beside them, and the copy's table, charts,
+  pictures, sparklines and PivotTables are its own: each gets a fresh name
+  or identity, so working on the copy leaves the sheet it came from alone.
 - Click a column letter to select the column, a row number to select the
   row, the corner to select the sheet; Shift+click extends. Drag the edge of
   a row number to resize the row, as with a column letter.
@@ -19042,25 +19163,67 @@ or `'Price list'!C2` when the name has a space:
 ## Files
 
 The File tab is the part of Excel's a document in a page can do: New,
-Open, Save As, Export CSV and Print. Open takes an .xlsx from disk and replaces
+Open, Save As, Save As ODS, Save As XLS, Export CSV and Print. Open takes an
+.xlsx, an .ods, an .xls or a .csv from disk - the kind is read from the
+bytes, not from the name - and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
 sheets, frozen panes, merges, the filter region, validation, conditional
 formatting, protection, comments, names, the active sheet); Save As
-downloads the document as an .xlsx that Excel and Google Sheets open with
-the same parts; Export CSV downloads the active sheet as its cells show;
+downloads the document as an .xlsx that Excel, Google Sheets and LibreOffice
+open with the same parts; Save As ODS writes the same document in
+OpenDocument, the format LibreOffice Calc saves by default and one of the
+files Google Sheets hands back, with the cells, their formulas in ODF's own
+reference grammar, the number formats, the looks, widths and heights, merges,
+hidden lines, links and notes; Save As XLS writes an Excel 97-2003 workbook,
+the binary .xls that every Excel since 1997 opens and that a bank or an ERP
+export still often is; Export CSV downloads the active sheet as its cells
+show, and Open reads such a file back: the separator is guessed, so a comma,
+a semicolon or a tab file all read as themselves, a quoted field keeps its
+commas and line breaks, and a field that reads as a percentage, a currency
+amount or a grouped number lands as the number with the format it implies.
+A CSV field is never read as a formula, as it is not in Excel;
 New starts over with one empty sheet, asking first when the sheets hold
 anything; Print (Ctrl+P) opens the active sheet in the browser's print
 dialog as its Page Layout says (below). `documentToXlsx` and
 `documentFromXlsx` are the two halves, in `@svgrid/enterprise/sheet`, and
-need the `jszip` peer.
+need the `jszip` peer; `documentToOds` and `documentFromOds` are the same
+pair for OpenDocument; `documentToXls` and `documentFromXls` are the pair for
+the old binary format, and need nothing, since an .xls is not a zip; and
+`documentFromFile` takes any of the four and decides by the bytes. `csvText`
+and `sheetStateFromCsv` are the CSV pair, and need nothing either.
+
+What an .ods carries is the document this package keeps, not every corner of
+either format: cells and their formulas (translated both ways, so
+`=SUM(A1:A3)` here is `of:=SUM([.A1:.A3])` there, and a structured reference
+becomes the rectangle it names, since ODF has none), number formats, the cell
+looks, column widths and row heights, merges, hidden rows and columns, the
+filter region, hyperlinks, notes, defined names and sheet protection. Charts,
+images, sparklines, pivots, validation, conditional formatting and frozen
+panes travel in the .xlsx and not yet in the .ods.
+
+The .xls is the oldest of the three and carries the least. Cells and their
+formulas travel, with the formulas as the RPN tokens Excel 97 stored rather
+than as text: a function that format never had (XLOOKUP, LET, TEXTJOIN, a
+structured reference) has no token, so such a cell goes out as the value it
+worked out, and a workbook opened from an .xls reads those the same way
+round - Excel writes `_xlfn.XLOOKUP` as a defined name and calls it, and
+that name turns back into the function here. Number formats, fonts, colours,
+fills, borders, alignment, column widths, row heights, hidden rows, columns
+and sheets, merges, frozen panes, sheet protection and defined names travel;
+charts, pictures, sparklines, pivots, validation, conditional formatting and
+comments do not, since the format kept them somewhere this reader does not
+go. The sheet is 65,536 rows by 256 columns, and anything past that edge is
+left out rather than written wrong.
 
 An app that keeps its workbooks somewhere other than the user's disk takes
 the actions over through `onAction` (`file-open`, `file-save-xlsx`,
-`file-new`, `file-export-csv`, `file-print`) and calls the component's
-own methods: `open(file)` replaces the document with an .xlsx Blob,
-`toXlsx()` returns the document as a Blob, `toCsv()` the active sheet as
-text, `newWorkbook()` empties it, `print()` opens the print dialog and
+`file-save-ods`, `file-save-xls`, `file-new`, `file-export-csv`,
+`file-print`) and calls the component's
+own methods: `open(file)` replaces the document with an .xlsx, .ods, .xls or
+.csv Blob, `toXlsx()` returns the document as a Blob, `toOds()` the same
+document in OpenDocument, `toXls()` it as an Excel 97-2003 workbook,
+`toCsv()` the active sheet as text, `newWorkbook()` empties it, `print()` opens the print dialog and
 `printHtml()` returns the page it would print, for an app that prints
 its own way.
 
@@ -19092,8 +19255,10 @@ to the browser's own print engine, so fonts, CJK and RTL come out right
 and nothing is bundled: the print area or the used range, column widths
 and row heights as the sheet shows them, hidden lines left out, merges as
 spans, every cell as it shows with its format and its conditional style,
-the title rows repeated on each page, gridlines and headings when asked,
-and the orientation, paper and margins in `@page`. "Save as PDF" in that
+the title rows repeated on each page, the sparklines drawn in their cells
+and the charts and pictures hung from theirs, a table's header and banding
+in the colours it wears on the sheet, gridlines and headings when
+asked, and the orientation, paper and margins in `@page`. "Save as PDF" in that
 dialog is the PDF. The setup rides in `getState()` as `pageSetup` and in
 the xlsx as `pageSetup`, `pageMargins`, `printOptions` and Excel's own
 `Print_Area` and `Print_Titles` names, both ways.
@@ -19134,10 +19299,62 @@ is an `onChange` handler and a reload is one call after mount:
 />
 ```
 
+### Autosave to a server
+
+The same handler with a `fetch` in it, plus the three things a network
+makes you think about:
+
+```ts
+let timer: ReturnType<typeof setTimeout> | undefined
+let saving: Promise<unknown> = Promise.resolve()
+let revision = 0
+
+function autosave() {
+  clearTimeout(timer)
+  // Coalesce a burst of edits into one request. onChange already coalesces
+  // per tick; this coalesces per pause in the typing.
+  timer = setTimeout(() => {
+    const state = sheet!.getState()
+    // One request at a time, in order: a save that overtakes its
+    // predecessor writes an older document over a newer one.
+    saving = saving.then(async () => {
+      const response = await fetch(`/api/books/${id}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'if-match': String(revision) },
+        body: JSON.stringify(state),
+      })
+      if (response.status === 412) return onSomeoneElseSaved()
+      revision = Number(response.headers.get('etag') ?? revision + 1)
+    })
+  }, 800)
+}
+```
+
+- **Debounce, then serialise.** `getState()` is a full snapshot, so the
+  cost is in the transfer, not the call. One request per pause, and never
+  two in flight, or a slow request lands after a fast one and the older
+  document wins.
+- **Carry a revision.** Send what you last saw and let the server refuse a
+  save built on a stale document, rather than discovering the overwrite
+  later. `412` is the moment to reload, or to ask.
+- **Send changes instead, when there are two people.** A whole state per
+  keystroke is fine for one user and wrong for two. `createDeltaStream`
+  (see "Two people on one sheet") gives a delta per change, small enough to
+  send as it happens, and applies one from someone else without a reload.
+
+A save that runs on a timer rather than on `onChange` is worse, not
+better: it saves when nothing changed and misses the tab closing. If the
+tab closing matters, save on `visibilitychange` as well, with the same
+snapshot.
+
 `onChange` is called once per tick with every reason since the last call,
 so a paste of forty cells is one call, and it says what changed
 (`reasons.some((r) => r.kind === 'structure')` for an insert or delete, with
-the edit on the reason). `setState` clears the grid's undo history, since
+the edit on the reason). A change to the workbook's own parts rather than a
+sheet's, its names or its calculation settings, reports `workbook`; a table
+reports `tables`. A host writing those straight to the workbook raises the
+same reason with `document.changed({ kind: 'workbook' })`, which is what
+puts it on a delta stream. `setState` clears the grid's undo history, since
 none of it describes the restored sheet, and reports a single `restore`.
 
 The same document is available outside the component: build it with
@@ -19152,7 +19369,11 @@ and `CfRule`):
 ```ts
 {
   version: 1,
-  workbook: { sheets: [{ name, cells }], active, names },
+  workbook: {
+    sheets: [{ name, cells }], active, names,
+    tables: [{ name: 'Orders', sheet: 'Budget', headerRow: 0, firstCol: 0, lastCol: 4, lastRow: 12, hasTotals: false }],
+    iteration: { enabled: true, maxIterations: 100, maxChange: 0.001 },
+  },
   sheets: {
     Budget: {
       formats: { 'r0 A': { bold: true, numFmt: '#,##0', locked: false } },
@@ -19165,6 +19386,9 @@ and `CfRule`):
       protection: { allow: { formatRows: true }, ranges: [{ id, title: 'Inputs', rects: [[1, 1, 9, 1]] }] },
       pageSetup: { orientation: 'landscape', paper: 'A4', margins: { top: 0.75, bottom: 0.75, left: 0.7, right: 0.7, header: 0.3, footer: 0.3 }, printArea: null, printTitleRows: [0, 0], gridlines: false, headings: false, scale: 100 },
       objects: [{ id, kind: 'chart', anchor: { row: 12, col: 1, dx: 8, dy: 8, width: 420, height: 260 }, range: [0, 0, 11, 2], type: 'bar', headers: true, series: 'columns' }],
+      sparklines: [{ id, location: [1, 6, 9, 6], data: [1, 1, 9, 5], type: 'line', color: '#2563eb' }],
+      pivots: [{ id, source: [0, 0, 200, 3], target: { row: 0, col: 8 }, rows: ['Region'], cols: [], values: [{ field: 'Amount', agg: 'sum' }] }],
+      links: { r1: { B: { target: 'https://example.com', tip: 'The spec' } } },
       merges: [],
       validation: [{ id, rects, allow: 'whole', operator: 'between', value1: '1', value2: '10', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop' } }],
       conditionalFormats: [{ id, rects, kind: 'cellIs', operator: 'greater', value1: '50000', style: { fill: '#FFC7CE', color: '#9C0006' } }],
@@ -19297,6 +19521,39 @@ col)` and `wb.dependents(sheet, row, col)` are the two readings on the
 workbook. Raised as `trace-precedents`, `trace-dependents` and
 `remove-arrows`.
 
+The same group carries the two dialogs that answer "why does this cell say
+that?". **Evaluate Formula** shows the active cell's formula with one part
+underlined, and each click on Evaluate replaces that part with what it is
+worth, until the formula has collapsed into the cell's answer; Step Back and
+Restart walk it again. A branch of an `IF` that is not taken is never
+evaluated, so it never reports an error the cell does not have, and a range
+such as `A1:A9` stays where it is because a block is not a value.
+
+**Error Checking** walks the cells on the sheet worth a second look, one at
+a time, with the selection following: every formula whose value is an error,
+said in a sentence rather than a code, and every formula that breaks the
+pattern of the ones above and below it. That second check is deliberately
+quiet. A formula is only called the odd one out when the cells above and
+below it both hold formulas, those two agree with each other once
+translated, and this one does not, which is the shape of a column filled
+down and then broken in the middle. Show Calculation Steps hands the cell
+straight to Evaluate Formula.
+
+Both are engine functions first, so a save-time check or a report can use
+them with no browser:
+
+```ts
+import { evaluationSteps, checkSheet } from '@svgrid/enterprise'
+
+const steps = evaluationSteps(parseFormula(text), (part) => wb.evaluateText(sheet, part))
+const problems = checkSheet(sheet, {
+  rowCount: () => wb.rowCount(sheet), colCount: () => wb.colCount(sheet),
+  getRaw: (r, c) => wb.getRaw(sheet, r, c), getValue: (r, c) => wb.getValue(sheet, r, c),
+})
+```
+
+Raised as `evaluate-formula` and `error-checking`.
+
 ## The dialogs
 
 Four of Excel's dialogs are the shell's own, so nothing on the ribbon or in
@@ -19306,7 +19563,7 @@ the cell menu is a button that does nothing:
 | ------ | ---------- |
 | Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
-| Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking; Delete removes the chart. |
+| Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking, a trendline over every series and one series on a secondary axis; Delete removes the chart. |
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
 | Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
 | Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
@@ -19314,7 +19571,11 @@ the cell menu is a button that does nothing:
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
-| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it) and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. Sort A to Z and Z to A beside it sort on the active cell's column. |
+| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range, the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. Insert > Table Styles opens the same dialog on the table the cursor is in. |
+| Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
+| Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
+| Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
+| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
@@ -19488,9 +19749,25 @@ is a series, and the chart is anchored just under the block. It reads the
 Insert > Picture puts an image on the sheet from a file, carried in the
 document as a data URL.
 
+**`=IMAGE(source, [alt])`** is the other kind of picture, and the
+difference is the point: an `IMAGE` cell IS the picture rather than
+floating over one. It sorts with its row, filters with it, copies as a
+formula and moves when the cells move, with nothing to keep in step, which
+is what a catalogue with a thumbnail column wants. The source is a web
+address or a `data:` URL; anything else stays text rather than becoming a
+broken image. The second argument is the alt text, worked out like any
+other argument, so a screen reader is told what the picture is. The
+function's own value is the source, so a cell that reads it gets an
+address rather than a picture it cannot use, and the file stores it as
+`_xlfn.IMAGE`, which is where Excel keeps it.
+
 An object floats over the cells rather than living in them: drag it to
 move, drag its corner to resize, press Delete to remove it, and
-double-click a chart (or Insert > Setup) to open the Chart dialog. Each
+double-click a chart (or Insert > Setup) to open the Chart dialog, where a
+trendline (linear or a three-point moving average) goes over every series
+and one series can be moved to a secondary axis on the right, which is
+what makes a revenue-and-margin chart readable when the two are orders of
+magnitude apart. Each
 change is one undo. It hangs from a cell and an offset inside it, the way
 Excel's does, so inserting a row above moves it, deleting that row takes
 it with it, and resizing a column under it moves it without reshaping it.
@@ -19502,9 +19779,21 @@ the grid's. Raised as `insert-chart`, `insert-picture`, `chart-setup`
 and `delete-object`, so an application can put its own chart builder in
 their place.
 
-Objects do not ride in the .xlsx, in either direction: Save As writes the
-cells, the formats and the rules, and a chart or a picture in a file that
-is opened is left behind.
+Objects print with the sheet. File > Print hangs each one from its anchor
+cell with the offset and size it has on the page, and the default print
+area grows down and across to hold a chart anchored below the numbers,
+which is where a chart usually is. A named print area is honoured exactly
+as it stands, so an object outside it is left out.
+
+Objects ride in the .xlsx both ways, as Excel's own drawing part. A
+picture's bytes go into `xl/media` and a chart becomes a chart part of its
+own, both anchored to their cell; a file being opened gives its pictures
+and charts back the same way. A chart part carries the REFERENCES its
+series read rather than a copy of the numbers, so Excel redraws it from
+the cells beside it instead of from a snapshot that can drift. The one
+thing left behind is a picture whose source is a URL rather than a `data:`
+URL: its bytes are somewhere else, and a file with a broken image in it is
+worse than one without the image.
 
 ### Hyperlinks
 
@@ -19527,12 +19816,47 @@ has to. Anything with a scheme, or a bare `www.`, opens in a new tab. A
 single click follows the link and a drag from the same cell selects, which
 is Excel's rule.
 
+Only the schemes a link can sensibly mean are followed: `http`, `https`,
+`mailto`, `tel`, `sms`, `ftp` and `ftps`. A target carrying any other one,
+`javascript:` among them, is not a link at all: the cell keeps its text,
+nothing is clickable, the target is never written into a saved file, and one
+found in a file being opened is dropped on the way in rather than carried
+into the document. A
+link is data, arriving from a colleague, a delta stream or an opened file,
+so what may be followed is named rather than assumed. Insert > Link refuses
+such an address in the dialog and names the ones a cell does open, and
+clicking a cell that already carries one says the same thing in the status
+bar rather than pretending the address is empty or somewhere on this
+workbook.
+
 Links are per sheet, ride in `getState()` as `links`, report
 `{ kind: 'links' }` on `onChange`, and move with an insert or a delete.
 They go into the .xlsx as real hyperlinks, an external one as a
 relationship with `TargetMode="External"` and an internal one as a
 `location`, tooltips included, and a file opened back carries both.
 Raised as `insert-link` and `remove-link`.
+
+### Iterative calculation
+
+A circular reference is normally an error, and the shell says so: every
+cell in the loop shows `#CYCLE!` while the rest of the sheet keeps working.
+Some models are circular on purpose, because the answer is a fixed point: a
+bonus that is a tenth of the profit the bonus is taken out of, interest
+charged on the balance the interest is part of.
+
+**Formulas > Calculation Options** is Excel's switch for those, raised from
+File > Options because it is the one setting there that changes what a
+formula is worth. It takes the maximum number of passes over the loop, 100
+by default, and the smallest change worth another pass, 0.001 by default.
+With it on, the loop runs from the values it last had until the numbers
+stop moving or the passes run out, and every cell in it holds a number
+instead of an error.
+
+It is workbook-wide rather than per sheet, so `wb.iteration` reads it and
+`wb.setIteration({ enabled: true })` sets it from code, recalculating as it
+goes. It rides in `getState()` beside the defined names and the tables, and
+it goes into the .xlsx as `calcPr`, which is where Excel keeps it, so a
+file saved with iteration on opens with it on. Raised as `calc-options`.
 
 ### PivotTable from a range
 
@@ -19552,10 +19876,27 @@ that pivot instead of making another, so moving a field or changing an
 aggregation is two clicks. Each write is one undo, cells and definition
 together.
 
+A field placed in **Filter** narrows the whole pivot to one of its values.
+The filter is written above the block, a line per filter with the field
+and the value, so a reader sees what the numbers are of before reading
+one; the dialog offers the values that field carries, and typing another
+value straight into the cell (or `(All)` to clear it) narrows the pivot at
+once, since the cell IS the control. The filter applies before anything is
+grouped, so the totals, the subtotals and Show Details all see the same
+rows.
+
+**Insert > Show Details** is Excel's drill-down: the source rows behind
+the number in the cell the cursor is in, written to a sheet of their own,
+with the field names across the top and the first row frozen. A cell in a
+subtotal line opens its whole group, one in the grand total column opens
+the whole line, and the grand total opens every row, which is what each of
+those numbers stands for. The sheet is an ordinary one, so deleting it is
+how it is dismissed. `pivotDrill` is the same answer as data.
+
 Pivots are per sheet, ride in `getState()` as `pivots` and report
 `{ kind: 'pivots' }` on `onChange`. The definition moves with an insert or
 a delete, and is dropped when its source or its target cell is deleted.
-Raised as `insert-pivot` and `refresh-pivot`.
+Raised as `insert-pivot`, `refresh-pivot` and `pivot-details`.
 
 With one measure the block is Excel's compact form: the column values
 carry the corner label, the row labels run down the first column indented
@@ -19593,9 +19934,10 @@ Sparklines are per sheet, ride in `getState()` as `sparklines` and report
 
 A sparkline is behind whatever the cell shows, so a label typed over one
 still reads, and the pointer goes through it: the cell is selected,
-dragged and edited as a cell. Like the objects above, sparklines do not
-ride in the .xlsx, and File > Print leaves them out, since the printed
-page is built from what each cell says.
+dragged and edited as a cell. Sparklines ride in the .xlsx as Excel's own
+sparkline groups, both ways, in the worksheet's extension list where Excel
+keeps them, and they are drawn on the printed page too, in the cells they
+belong to.
 
 ```svelte
 <script>
@@ -19653,6 +19995,12 @@ Height, Column Width, AutoFit, Hide and Unhide, and the resize handles go
 away. The refusal is a sentence in the status bar, Excel's own: "The cell
 you're trying to change is on a protected sheet. To make a change,
 unprotect the sheet." Unlocked cells take every edit as before.
+
+What is drawn OVER the cells is covered too: a chart or a picture cannot be
+moved, resized, retyped or deleted, and the sparklines of a protected sheet
+cannot be changed or cleared. The dialogs that would write them do not open
+on a protected sheet, and the refusal sits on the write itself, so every way
+in (the ribbon, a dialog, the keyboard, a drag) says the same thing.
 
 Protect Sheet opens Excel's dialog with its "allow all users of this
 worksheet to" list: format cells, format columns, format rows, insert
@@ -19780,7 +20128,7 @@ socket between the two and the sheet is collaborative.
 <SvSheet document={doc} height="100%" />
 ```
 
-Four kinds of delta go out, and each is as small as it can be:
+Five kinds of delta go out, and each is as small as it can be:
 
 - **`cells`** carries the RAW TEXT of the cells that were written, not
   their values. A formula travels as `=SUM(B2:B4)` and the other side works
@@ -19790,9 +20138,14 @@ Four kinds of delta go out, and each is as small as it can be:
   rewrite their own formulas identically.
 - **`state`** carries the one part of the one sheet that changed, the way
   `getState` serializes it: the formats, the merges, a rule, the objects.
-- **`document`** carries the whole state, for the two changes not worth
-  describing piecemeal, adding or removing a sheet and a restore, and for
-  `resync()`.
+- **`document`** carries the whole state, for the changes not worth
+  describing piecemeal or that cannot be: adding or removing a sheet, a
+  restore, and the parts the WORKBOOK keeps rather than a sheet, which are
+  its tables, its defined names and its calculation settings. A `state`
+  delta is keyed by sheet and carries a sheet's own entry, so none of those
+  fit in one: without this the two sides drift silently, and the same
+  `=SUM(Orders[Amount])` answers a number on one and `#REF!` on the other.
+  `resync()` sends the same kind.
 
 The shell follows its document, so a delta applied from outside repaints
 the sheet without anything else being called. `refresh()` remains for a
@@ -19807,8 +20160,39 @@ work and is not pretended at here. Applying is idempotent for `cells` and
 `state` and is not for `structure`, so a transport that can deliver twice
 has to deduplicate.
 
-Presence, other people's cursors, is not part of this: it is a grid overlay
-over `getSelection()`, and nothing about it needs the document.
+### Presence: where everyone is
+
+The deltas carry what people TYPE. Presence carries where they ARE, which
+is what stops two people typing into the same cell.
+
+`presence` is a prop, a list of who else is on this workbook, and the shell
+draws each person on the active sheet as a thin coloured box around their
+selection with their name on their cursor. `onPresence` fires whenever this
+user's own selection moves, with the sheet, the rectangle and the active
+cell, which is what an application broadcasts.
+
+```svelte
+<SvSheet
+  document={doc}
+  presence={others}
+  onPresence={(me) => stream.sendPresence({ id: myId, name: myName, ...me })}
+/>
+```
+
+The fifth delta kind, `presence`, rides the same wire so an application
+needs only one: `sendPresence` sends it, and it arrives at the receiving
+stream's `onPresence` rather than at the document. That is deliberate.
+**Presence is never part of the document**: not in `getState()`, not in the
+.xlsx, and `applySheetDelta` ignores it. A cursor belongs to a session, and
+a file that remembered where someone's cursor was last week would be
+remembering nothing worth keeping.
+
+A person with no `colour` is given a stable one from their id, so a set of
+peers is never all one colour, and anyone who has not been heard from for
+fifteen seconds is dropped, since a closed tab says no goodbye. A cursor
+moves on every arrow key, so throttle `onPresence` if the transport
+charges by the message; the shell does not, because it cannot know what
+the transport costs.
 
 ## How big a sheet it holds
 
@@ -19873,19 +20257,23 @@ button that does nothing.
 - **Tabs:** no track-changes on Review; Page Layout has no themes, no
   page breaks and no header or footer text, and Print has no preview of
   its own beyond the browser's.
-- **Objects** are charts and pictures, and they stay in the document: a
-  chart has no trend lines or secondary axis of its own beyond what the
-  Chart dialog sets, and neither kind rides in the .xlsx.
-- **Sparklines** are the three Excel draws, and they stay in the document
-  too: no axis options beyond one scale for the group, no high and low
-  point marks beyond the last one, and they neither ride in the .xlsx nor
-  reach the printed page.
+- **Objects** are charts and pictures: a chart is what the Chart dialog
+  sets and no more, so there are no per-series colours, no data labels and
+  no axis titles. A floating picture whose source is a URL rather than a
+  `data:` URL is left out of the .xlsx, since its bytes are not in the
+  document to write; a picture in a cell, `=IMAGE(...)`, has no such limit,
+  because the formula is what the file carries.
+- **Sparklines** are the three Excel draws: no axis options beyond one
+  scale for the group, and no high and low point marks beyond the last one.
+  They ride in the .xlsx as Excel's sparkline groups, both ways, and they
+  print with the sheet.
 - **A PivotTable** is a definition plus the cells it writes, not a live
-  object: no drag-and-drop field list, no slicers, no drill-down on a
-  double-click, and no report filter. Refresh is what brings it up to
-  date.
-- **Collaboration** is the delta stream above and nothing more: no server,
-  no presence, no operational transform, and last writer wins per cell.
+  object: no drag-and-drop field list and no slicers, and a report filter
+  holds one value at a time rather than a tick list. Refresh brings it up
+  to date and Show Details is the drill-down.
+- **Collaboration** is the delta stream and the presence overlay above and
+  nothing more: no server, no operational transform, no follow-the-leader
+  scrolling, and last writer wins per cell.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
@@ -19896,6 +20284,13 @@ button that does nothing.
   feature.
 - **AutoFilter**'s values list is the whole column, unvirtualised, which
   is what a sheet's region holds.
+- **Files** carry what each format has a place for, so the three are not
+  equals: the .xlsx carries the most, the .ods has no charts, pictures,
+  pivots, validation, conditional formatting or frozen panes, and the .xls
+  is the oldest and carries the least, with no charts, pictures,
+  sparklines, pivots, validation, conditional formatting or comments, a
+  sheet of 65,536 rows by 256 columns, and a formula using a function Excel
+  97 never had saved as the value it worked out.
 
 ## More examples
 
@@ -19961,15 +20356,33 @@ Excel's smallest chart, and not an object: a sparkline IS the cell. One per row 
 
 ### PivotTable from a range
 
-Excel's Insert > PivotTable over a block of cells, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source, and opening the dialog from inside one edits it.
+Excel's Insert > PivotTable over a block of cells, on the same pivot engine the grid uses for its own pivot mode. The sheet keeps the definition, the source block, where the result goes and which field is a row, a column or a measure; the result is plain cells written in one undo, so it can be formatted, charted, printed and saved to an .xlsx like any other block. Refresh rebuilds it from the source, opening the dialog from inside one edits it, and Show Details writes the source rows behind a cell to a sheet of their own.
 
 <div data-docs-demo="487-sheet-pivot-range" data-height="560"></div>
 
 ### Two people on one sheet
 
-Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
+Two full spreadsheets over two separate documents, wired to each other by createDeltaStream: type in either and the other follows, and each window shows the other's cursor as a coloured box with a name on it. What crosses the wire is a delta rather than the document, and the log shows each one as it goes: a formula travels as its text so the other side works out its own answer, an insert travels as the edit so both rewrite their own formulas, a format travels as the one part of the one sheet that changed. Conflicts are last writer wins, per cell.
 
 <div data-docs-demo="488-sheet-collaboration" data-height="620"></div>
+
+### Evaluate Formula and Error Checking
+
+The two auditing tools that answer why a cell says what it says, over a commission model with three planted faults. Evaluate Formula underlines one part of the formula and replaces it with its value on each click. Error Checking walks every cell that reports an error, with a sentence on what each one means, and the one row whose formula is not the column's formula. Show Calculation Steps takes one straight into the other.
+
+<div data-docs-demo="493-sheet-auditing" data-height="560"></div>
+
+### Iterative calculation
+
+A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas > Calculation Options turns iteration on with its two limits, and both settle on their fixed point; turn it off and the cycle is an error again. The setting rides in getState() and goes into the .xlsx as calcPr.
+
+<div data-docs-demo="492-sheet-iterative" data-height="560"></div>
+
+### IMAGE: a picture inside the cell
+
+Excel's IMAGE puts a picture IN a cell rather than floating one over it, so it sorts with its row, filters with it, copies as a formula and moves when the cells move. A product list whose thumbnail column reads the swatch beside it: sort by price and the pictures follow their rows. The source is a web address or a data URL, anything else stays text rather than becoming a broken image, and the second argument is the alt text a screen reader reads.
+
+<div data-docs-demo="494-sheet-cell-images" data-height="520"></div>
 
 ### Hyperlinks: Insert > Link and HYPERLINK
 
@@ -20245,7 +20658,14 @@ What that gets you:
 
 - **The look.** A header band and stripes, drawn rather than written into
   the cells, so a row that joins the table is banded without a format being
-  written anywhere. The filter arrows come with it.
+  written anywhere. The filter arrows come with it. Insert > Table Styles,
+  and the gallery in the Create Table dialog, pick from eighteen presets:
+  six colours in three tones, under the names Excel stores them by
+  (`TableStyleMedium2`), plus None for cells that keep exactly what they
+  carry. The style lives on the table as `style`, so it rides in
+  `getState()` and goes into the file, and File > Print carries the header
+  and the banding onto the page in the colours the sheet wears, under
+  whatever each cell says for itself.
 - **The calculated column.** A row typed under the last one joins the table
   (Excel's auto-expand), and every column whose cell above holds a formula
   is filled down into it, references translated, so `=[@Qty]*[@Price]`
@@ -20256,6 +20676,16 @@ What that gets you:
 - **The file.** A table goes into the .xlsx as a real table part with its
   columns and its style, and one in a file being opened comes back, so
   Excel shows a table rather than cells that look like one.
+
+The presets are exported too, for an application that wants to show them
+its own way:
+
+```ts
+import { TABLE_STYLES, tableStyleColours, DEFAULT_TABLE_STYLE } from '@svgrid/enterprise'
+
+tableStyleColours('TableStyleDark6')
+// { header, headerText, band, totals, border }, as CSS colours
+```
 
 Insert > To Range removes the table and leaves the cells. Defining, growing
 or removing a table settles the workbook again, since a table decides what
@@ -20329,11 +20759,6 @@ In the shell this happens on every edit: typing under the last row grows
 the table, fills the calculated columns into the new row, and recomputes
 what reads it.
 
-## See also
-
-- [Workbooks](./workbooks.md)
-- [Spreadsheet formulas](../spreadsheet-formulas.md)
-
 ## More examples
 
 ### Format as Table and structured references
@@ -20341,6 +20766,11 @@ what reads it.
 Excel's Ctrl+T: a block becomes a table with a header row, the banded look, filter arrows and a name its columns are read by, so a formula says Orders[Amount] instead of E2:E13 and keeps meaning it as rows are added. [@Qty] is this row's cell. Typing under the last row grows the table, and every total that reads it grows too.
 
 <div data-docs-demo="491-sheet-tables" data-height="560"></div>
+
+## See also
+
+- [Workbooks](./workbooks.md)
+- [Spreadsheet formulas](../spreadsheet-formulas.md)
 
 <!-- =================================================================
      /docs/help/cells/text-formatting/  (community)
@@ -22550,8 +22980,8 @@ The whole toolkit on one page, standalone and then inside the grid panel:
 
 <!-- tutorial:financial-workbench -->
 <figure class="docs-tutorial" id="tutorial-financial-workbench" data-docs-tutorial="financial-workbench">
-<video class="docs-tutorial-video" src="/tutorials/financial-workbench.mp4" poster="/tutorials/financial-workbench.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="A financial chart workbench in Svelte, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/financial-workbench.vtt" default>Your browser does not play embedded video. <a href="/tutorials/financial-workbench.mp4">Download the MP4</a>.</video>
-<figcaption><strong>A financial chart workbench in Svelte</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/financial-workbench.mp4" poster="/tutorials/financial-workbench.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="A financial chart workbench in Svelte, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/financial-workbench.vtt" default>Your browser does not play embedded video. <a href="/tutorials/financial-workbench.mp4">Download the MP4</a>.</video>
+<figcaption><strong>A financial chart workbench in Svelte</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A year of sessions as candles, with volume, RSI and MACD panes under the price and Bollinger bands on it.</p>
 <p>Toggle an indicator chip and its pane comes and goes.</p>
@@ -22622,8 +23052,8 @@ filter the source column and empty the grid.
 
 <!-- tutorial:chart-from-the-grid -->
 <figure class="docs-tutorial" id="tutorial-chart-from-the-grid" data-docs-tutorial="chart-from-the-grid">
-<video class="docs-tutorial-video" src="/tutorials/chart-from-the-grid.mp4" poster="/tutorials/chart-from-the-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Chart the grid with one prop, 40 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/chart-from-the-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/chart-from-the-grid.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Chart the grid with one prop</strong> (40 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/chart-from-the-grid.mp4" poster="/tutorials/chart-from-the-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Chart the grid with one prop, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/chart-from-the-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/chart-from-the-grid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Chart the grid with one prop</strong> (33 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Add the charting prop and the grid grows a chart panel. It charts the rows on screen, so filtering or sorting redraws it.</p>
 <p>Pick a type, a group-by column and the aggregate.</p>
@@ -25881,6 +26311,12 @@ fires for edits from **other** users only (never echoes your own).
 
 See the live [Real-time collaboration](https://svgrid.com/demos/149-realtime-collaboration/)
 demo (open it in two tabs).
+
+**In the spreadsheet shell** this is a different pair of pieces, because a
+sheet's unit of change is a cell's raw text rather than a row's field:
+`createDeltaStream` sends the deltas and carries presence on the same wire,
+and `<SvSheet presence onPresence>` draws the other cursors. See
+[the spreadsheet shell](./cells/spreadsheet-shell.md#two-people-on-one-sheet).
 
 ## Try it
 
@@ -29895,8 +30331,8 @@ down as far as the neighbouring column has data. A drag is one undo.
 
 <!-- tutorial:fill-handle -->
 <figure class="docs-tutorial" id="tutorial-fill-handle" data-docs-tutorial="fill-handle">
-<video class="docs-tutorial-video" src="/tutorials/fill-handle.mp4" poster="/tutorials/fill-handle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style fill handle in SvGrid, 36 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/fill-handle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/fill-handle.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Excel-style fill handle in SvGrid</strong> (36 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/fill-handle.mp4" poster="/tutorials/fill-handle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style fill handle in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/fill-handle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/fill-handle.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Excel-style fill handle in SvGrid</strong> (33 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>With cell selection on, every range gets a fill handle at its corner. Select the two seed cells of the numeric series.</p>
 <p>Drag the handle to the right. Ten and twenty become a series in steps of ten, filled as far as you drag.</p>
@@ -29916,8 +30352,8 @@ selection - see [Drag a range to move or copy it](./move-cells.md).
 
 <!-- tutorial:inline-editing -->
 <figure class="docs-tutorial" id="tutorial-inline-editing" data-docs-tutorial="inline-editing">
-<video class="docs-tutorial-video" src="/tutorials/inline-editing.mp4" poster="/tutorials/inline-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Inline editing in SvGrid, 32 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/inline-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/inline-editing.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Inline editing in SvGrid</strong> (32 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/inline-editing.mp4" poster="/tutorials/inline-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Inline editing in SvGrid, 29 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/inline-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/inline-editing.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Inline editing in SvGrid</strong> (29 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Inline editing in SvGrid is one prop. Set enableInlineEditing and double-click any cell to start.</p>
 <p>Type a new value and press Enter to commit it.</p>
@@ -33606,8 +34042,8 @@ so the menu stays usable on big datasets:
 
 <!-- tutorial:excel-filter-menu -->
 <figure class="docs-tutorial" id="tutorial-excel-filter-menu" data-docs-tutorial="excel-filter-menu">
-<video class="docs-tutorial-video" src="/tutorials/excel-filter-menu.mp4" poster="/tutorials/excel-filter-menu.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style filter menu in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/excel-filter-menu.vtt" default>Your browser does not play embedded video. <a href="/tutorials/excel-filter-menu.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Excel-style filter menu in SvGrid</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/excel-filter-menu.mp4" poster="/tutorials/excel-filter-menu.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style filter menu in SvGrid, 28 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/excel-filter-menu.vtt" default>Your browser does not play embedded video. <a href="/tutorials/excel-filter-menu.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Excel-style filter menu in SvGrid</strong> (28 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Set filterMode to menu, and each column header shows a filter button on hover. Click it to open the menu.</p>
 <p>The menu lists every distinct value. Untick one, and the grid re-filters right away.</p>
@@ -42736,7 +43172,7 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Paste Special~~ | **shipped** - values / formulas / formats / transpose / add-subtract-multiply-divide / skip-blanks, plus a `text/html` clipboard flavour so formats and formulas survive a round trip through Excel. `Ctrl+Shift+V` | ✓ |
 | ~~Find and Replace~~ | **shipped** - match case, whole cell, look in values or formulas, scope to the selection, Replace All as one undo. `Ctrl+H` | ✓ |
 | ~~Text to Columns, Remove Duplicates~~ | **shipped** - `textToColumns` / `splitText` / `guessDelimiter` split a column, quoted fields and doubled quotes included; `findDuplicates` / `removeDuplicates` report before they remove, and match case-insensitively as Excel does | done |
-| ~~Open and save xlsx~~ | **shipped** - the shell's File tab opens an .xlsx into the document and saves the document as one, formulas, formats, sizes, hidden lines and sheets, panes, merges, validation, conditional formatting, protection, comments and names included; `documentToXlsx` / `documentFromXlsx` in `@svgrid/enterprise/sheet` | done |
+| ~~Open and save spreadsheet files~~ | **shipped** - the shell's File tab opens an .xlsx, an .ods, an .xls or a .csv into the document (decided by the bytes, not the file name) and saves the document back as any of the first three, formulas, formats, sizes, hidden lines and sheets, panes, merges, validation, conditional formatting, protection, comments and names included as far as each format carries them; `documentToXlsx` / `documentFromXlsx`, `documentToOds` / `documentFromOds`, `documentToXls` / `documentFromXls` and `documentFromFile` in `@svgrid/enterprise/sheet` | done |
 | ~~Multi-sheet workbook~~ | **shipped** - `createWorkbook` holds named sheets that read each other, with the dependency graph and structural edits spanning them; `<SvSheetTabs>` plus Ctrl+PageUp/PageDown and Shift+F11 | done |
 | ~~Goal Seek~~ | **shipped** - `goalSeekCell` solves for the input that makes a formula hit a target, secant with a bisection fallback, restoring the input cell so a dialog can ask before applying | done |
 | ~~Tables with structured references~~ | **shipped** - `Orders[Amount]`, `[@Amount]`, `[#Headers]` / `[#Totals]` / `[#All]`, column spans and auto-expansion. Resolved at evaluation, so a total keeps covering rows added after it was typed | done |
@@ -43897,8 +44333,8 @@ Built on <SvPivotDesigner panelPosition="right">: a docked tool panel with a PIV
 
 <!-- tutorial:pivot-mode-toggle -->
 <figure class="docs-tutorial" id="tutorial-pivot-mode-toggle" data-docs-tutorial="pivot-mode-toggle">
-<video class="docs-tutorial-video" src="/tutorials/pivot-mode-toggle.mp4" poster="/tutorials/pivot-mode-toggle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot mode in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-mode-toggle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-mode-toggle.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Pivot mode in SvGrid</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/pivot-mode-toggle.mp4" poster="/tutorials/pivot-mode-toggle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot mode in SvGrid, 30 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-mode-toggle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-mode-toggle.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Pivot mode in SvGrid</strong> (30 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>With panelPosition set to right, the pivot designer docks beside the grid. The flat rows stay editable, sortable and filterable.</p>
 <p>Flip the Pivot mode switch.</p>
@@ -43946,8 +44382,8 @@ SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-ra
 
 <!-- tutorial:pivot-designer-drag -->
 <figure class="docs-tutorial" id="tutorial-pivot-designer-drag" data-docs-tutorial="pivot-designer-drag">
-<video class="docs-tutorial-video" src="/tutorials/pivot-designer-drag.mp4" poster="/tutorials/pivot-designer-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot designer in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-designer-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-designer-drag.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Pivot designer in SvGrid</strong> (34 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/pivot-designer-drag.mp4" poster="/tutorials/pivot-designer-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot designer in SvGrid, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-designer-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-designer-drag.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Pivot designer in SvGrid</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>SvPivotDesigner is a pivot builder in one component: a field list on the left and drop wells for filters, columns, rows and values.</p>
 <p>Drag Salesperson into the Rows well.</p>
@@ -45298,8 +45734,8 @@ data.
 
 <!-- tutorial:kanban-board-drag -->
 <figure class="docs-tutorial" id="tutorial-kanban-board-drag" data-docs-tutorial="kanban-board-drag">
-<video class="docs-tutorial-video" src="/tutorials/kanban-board-drag.mp4" poster="/tutorials/kanban-board-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Kanban board mode in SvGrid, 37 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/kanban-board-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/kanban-board-drag.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Kanban board mode in SvGrid</strong> (37 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/kanban-board-drag.mp4" poster="/tutorials/kanban-board-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Kanban board mode in SvGrid, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/kanban-board-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/kanban-board-drag.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Kanban board mode in SvGrid</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>One board prop turns the grid into a Kanban board. Lanes come from the status field, and every card is a row.</p>
 <p>Drag a card from Backlog into Review.</p>
@@ -45955,8 +46391,8 @@ builds it from two props on `<SvGrid>`:
 
 <!-- tutorial:master-detail-expand -->
 <figure class="docs-tutorial" id="tutorial-master-detail-expand" data-docs-tutorial="master-detail-expand">
-<video class="docs-tutorial-video" src="/tutorials/master-detail-expand.mp4" poster="/tutorials/master-detail-expand.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Master detail rows in SvGrid, 38 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/master-detail-expand.vtt" default>Your browser does not play embedded video. <a href="/tutorials/master-detail-expand.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Master detail rows in SvGrid</strong> (38 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/master-detail-expand.mp4" poster="/tutorials/master-detail-expand.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Master detail rows in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/master-detail-expand.vtt" default>Your browser does not play embedded video. <a href="/tutorials/master-detail-expand.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Master detail rows in SvGrid</strong> (34 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Master detail in SvGrid is two props. isDetailRow marks a row as a detail, and renderDetailRow draws whatever you like inside it.</p>
 <p>Click the chevron on an account to expand its call records, a nested grid with its own sorting.</p>
@@ -49079,8 +49515,8 @@ Nest rows into an expandable hierarchy with the `treeData` prop.
 
 <!-- tutorial:tree-data -->
 <figure class="docs-tutorial" id="tutorial-tree-data" data-docs-tutorial="tree-data">
-<video class="docs-tutorial-video" src="/tutorials/tree-data.mp4" poster="/tutorials/tree-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Tree data in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/tree-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/tree-data.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Tree data in SvGrid</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/tree-data.mp4" poster="/tutorials/tree-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Tree data in SvGrid, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/tree-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/tree-data.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Tree data in SvGrid</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Tree data is one prop. Point treeData at the parent field and name the tree column, and flat rows become a hierarchy.</p>
 <p>Click an expander to open a branch. Children indent under their parent and keep every column.</p>
@@ -54560,6 +54996,11 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Concatenation | `&` |
 | Literals | `1.5`, `2.5E-3`, `"text"`, `"say ""hi"""`, `TRUE` / `FALSE` |
 
+Operators bind as they do in Excel, which is not as they do in most
+languages: `^` associates to the LEFT, so `=2^3^2` is `(2^3)^2` = 64, and
+unary minus binds tighter than `^`, so `=-2^2` is `(-2)^2` = 4. Only the
+postfix `%` is tighter still, so `=-2%` is -0.02.
+
 ### Functions
 
 | Group | Functions |
@@ -54567,12 +55008,12 @@ converts at the boundary. `A1` is `{ row: 0, col: 0 }`.
 | Financial | `PMT` `IPMT` `PPMT` `PV` `FV` `NPER` `RATE` `NPV` `IRR` `SLN` |
 | Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` |
 | Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
-| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` |
-| Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` |
-| Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` |
-| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
+| Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` `SUBTOTAL` |
+| Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` `TRUE` `FALSE` |
+| Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` `NA` |
+| Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
-| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
 | Names and lambdas | `LET` `LAMBDA` `MAP` `BYROW` `BYCOL` `REDUCE` `SCAN` `MAKEARRAY` `HYPERLINK` |
 
@@ -54590,6 +55031,49 @@ negative, money received positive. `=PMT(5%/12, 360, 200000)` is a
 negative payment on a positive loan, and `=FV(6%/12, 120, -100)` a
 positive balance from negative deposits. `RATE` and `IRR` are solved
 numerically and return `#NUM!` when no rate fits.
+
+Text criteria and exact lookups read Excel's wildcards: `*` stands for any
+run of characters, `?` for exactly one, and `~` asks for the character
+itself, so `"~*"` is a literal asterisk. `=COUNTIF(A:A, "North*")`,
+`=SUMIFS(B:B, A:A, "North*")`, `=MATCH("Sou*", A1:A9, 0)` and
+`=VLOOKUP("Sou*", A1:B9, 2, FALSE)` all match that way, as does the
+`"<>North*"` form. `XLOOKUP` reads them only when asked, with match mode 2,
+and `SEARCH` takes them too while `FIND`, the literal case-sensitive one,
+does not. Only text takes part: a number is never turned into text to meet
+`"1*"`. Both take an optional third argument saying where in the text the
+search begins, and the position they report is still counted from the
+start, so `=FIND("a", A1, FIND("a", A1) + 1)` walks to the next occurrence.
+
+An error can be written into a formula as itself: `=#N/A`, `=IF(A1="", #N/A,
+A1)`, `=IFERROR(B2, #REF!)`. Excel reads one as a value and so does this, in
+any case, which also matters on the way in: Excel, Google Sheets and
+LibreOffice all save an error cell as a formula that is only the code.
+`TRUE()` and `FALSE()` are functions as well as bare words, since that is how
+LibreOffice writes a boolean cell.
+
+`SUBTOTAL(code, range, ...)` is the aggregate an AutoFilter is built on: the
+code names the function - 1 `AVERAGE`, 2 `COUNT`, 3 `COUNTA`, 4 `MAX`, 5
+`MIN`, 6 `PRODUCT`, 7 `STDEV`, 8 `STDEVP`, 9 `SUM`, 10 `VAR`, 11 `VARP` - and
+a hundred more (101-111) means "and leave out the rows hidden by hand as
+well". A row a filter folded away is left out either way, so a total written
+with `=SUBTOTAL(9, C2:C99)` follows the filter while `=SUM(C2:C99)` does not,
+which is why a table's totals row is written with it. A cell holding a
+`SUBTOTAL` of its own is skipped, so a grand total over subtotals counts each
+row once. On a plain `Workbook`, with nothing hiding rows, it is the aggregate
+its code names.
+
+The lookup family carries Excel's match modes. `VLOOKUP` and `HLOOKUP` take
+`range_lookup` as a fourth argument, and it defaults to `TRUE`: the table is
+read as sorted and the answer is the last entry not past the value looked up,
+which is what makes a tier table work - `=VLOOKUP(87, A1:B5, 2)` over a grade
+table beginning `0 / 60 / 70 / 80 / 90` answers `B`. Pass `FALSE` for an exact
+match, and `#N/A` when there is none. `MATCH` reads the same way: `1` (the
+default) down an ascending range, `-1` down a descending one, `0` exact.
+`XLOOKUP` is exact by default, and takes a match mode of `-1` to fall back to
+the next smaller item or `1` to the next larger one, plus a search mode of `-1`
+to read the range from the end and so return the last of several matches.
+Only cells of the same type as the value looked up take part in an approximate
+match, so a text header above a column of numbers is never the answer.
 
 `OFFSET` and `INDIRECT` produce a reference rather than a value: on their
 own they read as the top-left cell, and inside a function they hand over
@@ -54644,7 +55128,10 @@ The six helpers are where a lambda earns its keep, and each spills:
 | `MAKEARRAY(rows, cols, lambda)` | built from the row and column numbers |
 
 Arithmetic over ranges is a grid, so `=REDUCE(0, B2:B9 * D2:D9, LAMBDA(a, v, a + v))`
-folds the products rather than the first one.
+folds the products rather than the first one. A helper's answer is a grid
+too, wherever it stands: `=SUM(MAP(A1:A9, LAMBDA(v, v * 2)))` adds every
+doubled value, and a helper takes what another one, or an array function,
+hands it (`=SUM(MAP(FILTER(A2:A99, A2:A99 > 0), LAMBDA(v, v))))`.
 
 ### Dynamic arrays
 
@@ -54666,17 +55153,39 @@ spill ranges (`spillOf(sheet, row, col)` names the anchor and the
 rectangle of the spill a cell belongs to), moves them with an insert or
 delete, and writes them to the xlsx as array formulas with Excel's
 dynamic-array metadata, so Excel opens them as spills rather than as
-`@`-prefixed legacy formulas. `LET` and `LAMBDA` are not there yet.
+`@`-prefixed legacy formulas. `LET`, `LAMBDA` and the six helpers go into
+the file the same way, under the `_xlfn.` prefix Excel spells them with.
+
+Two of Excel's array conveniences are not here: the spill operator
+(`=SUM(D2#)`, which names the whole block a spill covers) and array
+constants written in braces (`={1;2;3}`). Both read as `#PARSE!`; name the
+spilled range or put the values in cells instead.
 
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
 `TIMEVALUE` give a fraction of a day that the `h:mm` formats show.
+`NUMBERVALUE(text, decimal, group)` is `VALUE` for a number written the way
+another country writes one: the separators are given rather than guessed,
+because `1.234,56` is a thousand in Germany and one point two in
+Britain. Spaces are ignored, trailing `%` signs each divide by a hundred,
+and a group separator after the decimal one is `#VALUE!` rather than a
+number, which is Excel's rule for it.
+
+`TEXT(value, format)` speaks the same format grammar a cell's own number
+format does, so a date, a fraction, a duration, a currency or engineering
+notation all come out of it: `=TEXT(A1, "h:mm AM/PM")`, `=TEXT(A1, "# ?/?")`,
+`=TEXT(A1, "[h]:mm")`. A colour in the pattern is ignored, as Excel ignores
+it there, and an empty pattern gives an empty string.
 
 `%` is Excel's **postfix** percent, not a binary modulo: `=50%` is `0.5` and
 `=A1*5%` is five percent of `A1`. Excel has no binary `%` at all; `MOD()` is
 the function.
 
-Need the full ~400? The [HyperFormula adapter](#hyperformula) is still there.
+A function that is not here is a gap to report, not a reason to reach for
+another engine: the built-in one is what the sheet ships with and what it is
+tested against. For a plain `<SvGrid>` with no workbook behind it,
+`createHyperFormulaSheet` in `@svgrid/grid` is a separate, row-shaped adapter
+and is unaffected by any of this.
 
 ### Error codes
 
@@ -54769,46 +55278,121 @@ graph.cycles()   // every cell in a circular reference
 Cells caught in a cycle are still returned by `dirtyFrom`, so they can show
 `#CYCLE!` rather than keep a stale value while the rest of the sheet works.
 
-## A different engine under the same sheet
+## Reading a formula back
 
-What works a formula out is one option on `createWorkbook`. The built-in
-parser and evaluator are the default and need nothing; an application that
-wants Excel's full library hands over a
-[HyperFormula](https://hyperformula.handsontable.com) instance instead,
-which is an optional peer and a separate licence:
+Two auditing helpers work on a formula rather than on the sheet, and
+neither needs a browser.
+
+`evaluationSteps` is Excel's Evaluate Formula as data: the formula, the part
+about to be worked out and what it is worth, one step at a time, ending on
+the cell's own answer.
 
 ```ts
-import { HyperFormula } from 'hyperformula'
-import { createWorkbook, createHyperFormulaEngine } from '@svgrid/enterprise'
+import { evaluationSteps, parseFormula } from '@svgrid/enterprise'
 
-const hf = HyperFormula.buildEmpty({ licenseKey: 'gpl-v3' })
-const wb = createWorkbook(sheets, { engine: createHyperFormulaEngine({ hyperformula: hf }) })
+const steps = evaluationSteps(
+  parseFormula('=A1*B1+4'),
+  (part) => wb.evaluateText('Sheet1', part, undefined, { row: 2, col: 0 }),
+)
+// [{ formula: '=A1*B1+4', from: 1, to: 3, expression: 'A1', value: 2 }, ...]
 ```
 
-The engine keeps HyperFormula's sheets as a mirror of the workbook's cells
-and writes each edit through; the workbook keeps everything else, because
-none of it is the engine's to decide. The dependency graph, the value
-cache, cycle detection, the volatile set and the spill ranges are read off
-the reference grammar, which is Excel's whatever evaluates it, so they stay
-right under either engine and every part of the shell works the same:
-tracing precedents, Goal Seek, validation formulas, conditional formatting
-rules.
+Each step's `from` and `to` are offsets into that step's own `formula`, so a
+dialog can underline the part without doing any parsing of its own.
 
-What changes is the function library, so HyperFormula's ~400 functions
-are available and the handful the built-in has that it does not are not,
-and dynamic arrays, which spill inside HyperFormula's own sheet rather
-than over the workbook's cells. A defined name is the workbook's, so a
-formula that uses one needs the same name defined in the instance.
+`checkSheet` is Error Checking: every formula on a sheet whose value is an
+error, and every formula that breaks the pattern of the ones above and below
+it, in reading order. `describeFinding` turns one into a sentence.
 
-An engine of your own is the same shape: `evaluate(text, at, host)`
-returning the value and, where it has one, the grid to spill. `host.parse`
-is the workbook's cached parse and `host.context.resolve` reads a
-precedent through the cache and the cycle detection, so an engine never
-has to keep a copy unless it wants one (`load` and `write` are there for
-the ones that do).
+```ts
+import { checkSheet, describeFinding } from '@svgrid/enterprise'
+
+const problems = checkSheet('Sheet1', {
+  rowCount: () => wb.rowCount('Sheet1'), colCount: () => wb.colCount('Sheet1'),
+  getRaw: (r, c) => wb.getRaw('Sheet1', r, c), getValue: (r, c) => wb.getValue('Sheet1', r, c),
+})
+```
+
+## Circular references on purpose
+
+`#CYCLE!` is the right answer almost every time: a total that includes
+itself, a formula dragged one row too far. Some models are circular on
+purpose, though, because the answer is a fixed point rather than a mistake.
+A bonus that is a tenth of the profit the bonus is taken out of is the
+classic one: the bonus depends on the profit, the profit depends on the
+bonus, and exactly one pair of numbers satisfies both.
+
+Excel's answer is to run the loop from the values it last had, over and
+over, until the numbers stop moving or the passes run out. The shell has the
+same switch on **Formulas -> Calculation Options**, and it is the same
+setting from code:
+
+```ts
+const wb = createWorkbook(sheets, { iteration: { enabled: true } })
+
+// Or later, which recalculates:
+wb.setIteration({ enabled: true, maxIterations: 100, maxChange: 0.001 })
+wb.iteration          // { enabled: true, maxIterations: 100, maxChange: 0.001 }
+```
+
+`maxIterations` is how many passes before the answer is taken as it stands,
+and `maxChange` is how small a move counts as settled, so a model that
+converges stops early rather than burning every pass. Both default to
+Excel's own, 100 and 0.001. Neither promises convergence: `=A1+1` climbs
+by one on every pass and stops at the cap, exactly as it does in Excel.
+
+While iteration is on, a cell asked for its own value reads what it was
+worth on the last pass, starting from 0. Everything outside a cycle is
+unaffected, and turning the setting off turns those cells back into
+`#CYCLE!`.
+
+The setting is workbook-wide. It rides in `getState()` next to the defined
+names and the tables, and it goes into the `.xlsx` as `calcPr` with
+`iterate`, `iterateCount` and `iterateDelta`, which is where Excel keeps it,
+so a file saved with iteration on opens with it on.
+
+## An engine of your own under the same sheet
+
+What works a formula out is one option on `createWorkbook`. The built-in
+parser and evaluator are what the sheet ships with, what every part of the
+shell is tested against, and what a workbook uses unless told otherwise.
+They need nothing installed and carry no second licence.
+
+The seam is there for an application that already has an evaluator and wants
+the sheet over it:
+
+```ts
+import { createWorkbook, builtinEngine, type SheetEngine } from '@svgrid/enterprise'
+
+const builtin = builtinEngine()
+const mine: SheetEngine = {
+  name: 'mine',
+  evaluate(text, at, host) {
+    if (text === '=ANSWER()') return { value: 42 }
+    // Everything this engine does not answer falls through to the built-in one.
+    return builtin.evaluate(text, at, host)
+  },
+}
+
+const wb = createWorkbook([{ name: 'Sheet1', cells: [['=ANSWER()']] }], { engine: mine })
+```
+
+An engine answers `evaluate(text, at, host)` with the value and, where it has
+one, the grid to spill. The workbook keeps everything else, because none of it
+is the engine's to decide: the dependency graph, the value cache, cycle
+detection, the volatile set and the spill ranges are read off the reference
+grammar, which is Excel's whatever evaluates it. So they stay right under any
+engine, and every part of the shell works the same over it: tracing
+precedents, Goal Seek, validation formulas, conditional formatting rules.
+
+`host.parse` is the workbook's cached parse and `host.context.resolve` reads a
+precedent through the cache and the cycle detection, so an engine never has to
+keep a copy of the cells unless it wants one. `load` and `write` are there for
+the ones that do: `load` when the workbook is built or its cells change
+wholesale, `write` on a single cell.
 
 For a plain `<SvGrid>` with no workbook behind it, `createHyperFormulaSheet`
-in `@svgrid/grid` is the older, row-shaped adapter and is still there.
+in `@svgrid/grid` is the older, row-shaped adapter, free and still there.
 
 <div data-docs-demo="173-hyperformula" data-height="520"></div>
 
@@ -54873,6 +55457,18 @@ A three-sheet workbook on the Excel shell: Orders with XLOOKUP prices and IF dis
 An assumptions-driven twelve-month forecast where every formula reads a defined name - =B2*(1+Growth-Churn) - instead of an address. Pick a name in the Name Box to jump to its cell on the Assumptions sheet; open Formulas -> Name Manager to add, repoint or delete names and watch the forecast recompute. Inputs in blue, red negatives in parentheses, break-even found with INDEX / MATCH.
 
 <div data-docs-demo="459-named-ranges-forecast" data-height="560"></div>
+
+### Evaluate Formula and Error Checking
+
+A commission model with three planted faults, which is what a real one looks like a week after two people have edited it. Evaluate Formula underlines one part of the active cell's formula and replaces it with its value on each click. Error Checking walks every cell that reports an error, with a sentence on what each one means, and the row whose formula is not its column's formula.
+
+<div data-docs-demo="493-sheet-auditing" data-height="560"></div>
+
+### Iterative calculation
+
+A circular reference is normally an error, and every cell in the loop shows #CYCLE!. Two models here are circular on purpose: a bonus that is a share of the profit it is taken out of, and interest charged on the balance it is part of. Formulas -> Calculation Options turns on iterative calculation with its two limits, and both models settle on their fixed point; turn it off and the cycle is an error again.
+
+<div data-docs-demo="492-sheet-iterative" data-height="560"></div>
 
 ### LET and LAMBDA
 
@@ -76813,10 +77409,20 @@ primitives are attributes, arrays, objects and functions are properties.
 keeps a string attribute.
 
 A document built with `createSheetDocument` from `@svgrid/enterprise` is
-assigned as `sheet.document`, read once at mount as the component reads it;
-`ready` hands the api and the document back and parks both on the element
-(`sheet.api`, `sheet.document`), so a listener bound after the mount still
-reaches them.
+assigned as `sheet.document`; `ready` hands the api and the document back
+and parks both on the element (`sheet.api`, `sheet.document`), so a listener
+bound after the mount still reaches them.
+
+**Content assigned after the element is on the page is taken up.** A custom
+element is upgraded the moment its definition loads, which on a plain page
+is before the script that sets its properties runs, so `sheet.data = [...]`
+in the quick start above arrives after the shell has already mounted on an
+empty sheet. The element remounts on it. That happens only while nothing has
+been done to the sheet: once a cell has been written, a later `data`,
+`workbook` or `document` is ignored rather than throwing the work away,
+which is what a React render passing a fresh array does on every parent
+update. To load content over a sheet that has been edited, call
+`setState(state)` or `newWorkbook()`.
 
 ## Events and methods
 
@@ -76881,7 +77487,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `show-tabs` | `showTabs` | `boolean` |
 | `show-status-bar` | `showStatusBar` | `boolean` |
 
-### Properties only (7)
+### Properties only (8)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.document = doc`.
@@ -76895,8 +77501,9 @@ only be assigned in script: `el.document = doc`.
 | `formats` | `Readonly<Record<string, CellFormatEntry>>` |
 | `extras` | `ReadonlyArray<'insert-table' \| 'insert-chart'>` |
 | `localization` | `SheetLocalization` |
+| `presence` | `ReadonlyArray<SheetPresence>` |
 
-### Events (3)
+### Events (4)
 
 `detail` is the callback's argument, or an object keyed by the parameter names
 when it takes more than one. `action` is cancelable: `event.preventDefault()`
@@ -76907,8 +77514,9 @@ takes the action over, as returning `true` from `onAction` does.
 | `action` | `onAction` | `{ action, cmd }` |
 | `ready` | `onReady` | `{ api, document }` |
 | `change` | `onChange` | `reasons` |
+| `presence` | `onPresence` | `me` |
 
-### Methods (10)
+### Methods (12)
 
 The component's own, on the element once `ready` has fired.
 
@@ -76918,8 +77526,10 @@ The component's own, on the element once `ready` has fired.
 | `setState(state: SheetState): void` | Put a saved document back. |
 | `refresh(): void` | Repaint after a write the shell could not see. |
 | `act(action: RibbonActionId): void` | Run a ribbon action as if its button had been clicked. |
-| `open(file: Blob & { name?: string }): Promise<void>` | Replace the document with an .xlsx. |
+| `open(file: Blob & { name?: string }): Promise<void>` | Replace the document with an .xlsx, .ods or .csv file. |
 | `toXlsx(): Promise<Blob>` | The document as an .xlsx Blob. |
+| `toOds(): Promise<Blob>` | The document as an .ods Blob, which LibreOffice Calc opens. |
+| `toXls(): Blob` | The document as an .xls Blob, which Excel 97-2003 opens. |
 | `toCsv(): string` | The active sheet as CSV. |
 | `newWorkbook(): void` | Start over with one empty sheet. |
 | `print(): void` | The active sheet in the print dialog. |
@@ -82509,6 +83119,10 @@ What you give up:
 
 Migration guide: moving from AG Grid (community + enterprise) to SvGrid: https://svgrid.com/docs/help/migrating-from-ag-grid/
 
+## Live example
+
+AG Grid ↔ sv-grid side-by-side: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/139-migration-from-ag-grid/
+
 ## The bottom line
 
 AG Grid is the safer pick for a multi-framework organisation, or when you need its deepest Enterprise modules, AG Charts or the viewport row model. For a Svelte-first team, SvGrid covers the Enterprise surface most teams actually buy AG Grid for, in the MIT core: master/detail, tree data, range selection, grouping, flat server-side infinite scroll and integrated charts, with pivot tables, the server-side row model and Excel, PDF and print output in the @svgrid/enterprise pack. The bundle and benchmark numbers on this page are measured on the dates shown, so read them rather than either vendor's adjectives.
@@ -82666,6 +83280,10 @@ What you give up:
 
 Migration guide: moving from DevExtreme DataGrid (DevExpress) to SvGrid: https://svgrid.com/docs/help/migrating-from-devextreme/
 
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
+
 ## The bottom line
 
 DevExtreme is a deep, commercial multi-framework grid with built-ins like state storing and broad export. SvGrid trades that breadth for a Svelte-native grid with an MIT core and a far lower-cost paid tier.
@@ -82803,6 +83421,10 @@ What you give up:
 - The React ecosystem around it, including Glide Data Editor.
 
 Migration guide: moving from Glide Data Grid to SvGrid: https://svgrid.com/docs/help/migrating-from-glide/
+
+## Live example
+
+Headless virtualization: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/187-headless-virtual/
 
 ## The bottom line
 
@@ -82943,6 +83565,10 @@ What you give up:
 - Wrappers for React, Angular and Vue.
 
 Migration guide: moving from Grid.js to SvGrid: https://svgrid.com/docs/help/migrating-from-gridjs/
+
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -83106,6 +83732,10 @@ What you give up:
 
 Migration guide: moving from Handsontable to SvGrid: https://svgrid.com/docs/help/migrating-from-handsontable/
 
+## Live example
+
+Blank sheet - just type: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/207-blank-sheet/
+
 ## The bottom line
 
 When you need HyperFormula's full function library as a supported feature, or the deepest spreadsheet editing edge cases, Handsontable is hard to beat and its licence is the price of that. If you want a spreadsheet-like grid in Svelte under MIT, SvGrid covers the surface most teams use, with ranges, a fill handle, clipboard, freeze panes, merged cells and formulas, and lets you add HyperFormula when the built-in functions run out.
@@ -83261,6 +83891,10 @@ What you give up:
 
 Migration guide: moving from jqxGrid (jQWidgets) to SvGrid: https://svgrid.com/docs/help/migrating-from-jqxgrid/
 
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
+
 ## The bottom line
 
 jqxGrid and SvGrid come from the same team. If your stack is jQuery, Angular, React, or Vue, jqxGrid is the proven choice with a decade-plus track record. If you are building on Svelte 5, SvGrid is the native option in the family, with an MIT core and the same engineering behind it.
@@ -83397,6 +84031,10 @@ What you give up:
 - Telerik support tiers with response-time commitments priced into the licence.
 
 Migration guide: moving from Kendo UI Grid (Telerik) to SvGrid: https://svgrid.com/docs/help/migrating-from-kendo-grid/
+
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -83555,6 +84193,10 @@ What you give up:
 
 Migration guide: moving from MUI X DataGrid to SvGrid: https://svgrid.com/docs/help/migrating-from-mui-x/
 
+## Live example
+
+Tree + master/detail: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/08-tree-and-master-detail/
+
 ## The bottom line
 
 If your app already lives in Material UI and React, MUI X is the path of least resistance, and its Premium tier now includes a hosted AI assistant. On Svelte 5, SvGrid is the better fit: it puts pinning, master/detail, tree data, grouping and cell selection in the MIT core that MUI X reserves for Pro and Premium, keeps Material UI and Emotion out of the bundle, and runs its AI helpers against a model you choose.
@@ -83709,6 +84351,10 @@ What you give up:
 
 Migration guide: moving from PrimeVue / PrimeNG / PrimeReact DataTable to SvGrid: https://svgrid.com/docs/help/migrating-from-primevue-datatable/
 
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
+
 ## The bottom line
 
 Inside the Prime ecosystem for Vue, Angular or React, the Prime DataTable is the obvious choice, with the PrimeUI licence terms now part of the decision. For Svelte 5, SvGrid is the native fit, with an MIT core, a headless engine and no Prime-theme dependency.
@@ -83854,6 +84500,10 @@ What you give up:
 
 Migration guide: moving from React Data Grid (adazzle) to SvGrid: https://svgrid.com/docs/help/migrating-from-react-data-grid/
 
+## Live example
+
+Excel-style fill handle: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/95-fill-handle/
+
 ## The bottom line
 
 react-data-grid is a strong, focused choice in React. On Svelte 5, SvGrid is the equivalent - similar editing and virtualization - plus a built-in filter menu, grouping, and a headless core, with no React dependency.
@@ -83992,6 +84642,10 @@ What you give up:
 - A perpetual licence model and the wider Smart UI suite.
 
 Migration guide: moving from Smart.Grid (Smart Web Components) to SvGrid: https://svgrid.com/docs/help/migrating-from-smart-grid/
+
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -84176,6 +84830,10 @@ What you give up:
 
 Migration guide: moving from SVAR Svelte DataGrid to SvGrid: https://svgrid.com/docs/help/migrating-from-svar-svelte-datagrid/
 
+## Live example
+
+Grouping + aggregation: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/07-grouping-aggregation/
+
 ## The bottom line
 
 Both grids are Svelte-5-native and MIT, so this is not a licensing call. On capability SvGrid is the more complete grid: grouping, master/detail, range editing with a fill handle, charts, a server-side row model, a headless core, AI helpers and an MCP server. SVAR is the smaller, fully free, multi-framework option from the Webix team, and it prints for free where SvGrid charges for print and Excel and PDF export. Choose SvGrid when you need the deeper feature set or support; choose SVAR when a compact free grid covers your needs or you also ship React and Vue.
@@ -84345,6 +85003,10 @@ What you give up:
 
 Migration guide: moving from svelte-headless-table to SvGrid: https://svgrid.com/docs/help/migrating-from-svelte-headless-table/
 
+## Live example
+
+Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
+
 ## The bottom line
 
 For a Svelte 4 codebase that is not moving, svelte-headless-table still works. For a Svelte 5 codebase, the original package is not an option and its author says so; the choice is between the @humanspeak fork, which keeps the plugin API, and SvGrid, which keeps the headless approach and adds virtualization, filters, editing, selection and a rendered grid in the same MIT package.
@@ -84486,6 +85148,10 @@ What you give up:
 
 Migration guide: moving from Flowbite / Skeleton / shadcn-svelte tables to SvGrid: https://svgrid.com/docs/help/migrating-from-ui-kit-tables/
 
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
+
 ## The bottom line
 
 A styled table from Flowbite, Skeleton, or shadcn-svelte is perfect until the behaviour becomes the work. Once you are hand-writing sort, filter, or virtualization, SvGrid replaces that code and still themes to match your design system.
@@ -84622,6 +85288,10 @@ What you give up:
 - Vendor support and the conditional free Community License for small companies.
 
 Migration guide: moving from Syncfusion Grid to SvGrid: https://svgrid.com/docs/help/migrating-from-syncfusion/
+
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -84762,6 +85432,10 @@ What you give up:
 - Built-in download to CSV, XLSX and PDF without a paid pack; SvGrid has CSV free and Excel and PDF in @svgrid/enterprise.
 
 Migration guide: moving from Tabulator to SvGrid: https://svgrid.com/docs/help/migrating-from-tabulator/
+
+## Live example
+
+Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -84935,6 +85609,10 @@ What you give up:
 
 Migration guide: moving from TanStack Table (Svelte) to SvGrid: https://svgrid.com/docs/help/migrating-from-tanstack-table/
 
+## Live example
+
+Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
+
 ## The bottom line
 
 If you build across React, Vue and Svelte and want one headless API, TanStack Table is the safer bet. If you are committed to Svelte 5 and want virtualization, Excel-style filters, editing and selection out of the box, SvGrid gets you there with far less code, and you keep a headless core when you need it.
@@ -85086,6 +85764,10 @@ What you give up:
 - Full control of the markup without opting into a headless mode.
 
 Migration guide: moving from @vincjo/datatables to SvGrid: https://svgrid.com/docs/help/migrating-from-vincjo-datatables/
+
+## Live example
+
+Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
 
 ## The bottom line
 
@@ -88139,6 +88821,8 @@ export function createServerRowModel<TData>(
 
   // ---------------------------------------------------- the controller
 
+  // The id a leaf's detail is kept under: the app's row id, else the leaf's own.
+  const leafDetailId = (g: { id: string; data: TData }) => (getRowId ? getRowId(g.data) : g.id.slice(g.id.lastIndexOf(':') + 1))
   const nav = {
     isGroup: (row: ServerRowModelGridRow<TData>) => row.__group?.kind === 'group',
     level: (row: ServerRowModelGridRow<TData>) =>
@@ -88152,8 +88836,14 @@ export function createServerRowModel<TData>(
     // A leaf's detail, by the id the app gave the row; a detail row toggles its master.
     toggleDetail: (row: ServerRowModelGridRow<TData>) => {
       const g = row.__group
-      if (g?.kind === 'leaf') model.toggleDetail(getRowId ? getRowId(g.data) : g.id.slice(g.id.lastIndexOf(':') + 1))
+      if (g?.kind === 'leaf') model.toggleDetail(leafDetailId(g))
       else if (g?.kind === 'detail') model.toggleDetail(g.masterId)
+    },
+    // Only a leaf has a detail to open; a group's expander is in the group column.
+    hasDetail: (row: ServerRowModelGridRow<TData>) => row.__group?.kind === 'leaf',
+    detailOpen: (row: ServerRowModelGridRow<TData>) => {
+      const g = row.__group
+      return g?.kind === 'leaf' ? model.isDetailOpen(leafDetailId(g)) : false
     },
   }
 
@@ -101663,6 +102353,9 @@ export type GridChromeMessages = {
   // The expander on a client-side group row
   expandGroup: string
   collapseGroup: string
+  // The chevron of the detail-toggle column (`showDetailToggle`)
+  openDetail: string
+  closeDetail: string
   // Upsell notes (enterprise views not installed)
   pivotUpsellTitle: string
   pivotUpsellBody: string
@@ -101755,6 +102448,8 @@ export const defaultGridMessages: GridChromeMessages = {
   rowLoadRetry: 'Retry',
   expandGroup: 'Expand group',
   collapseGroup: 'Collapse group',
+  openDetail: 'Open details',
+  closeDetail: 'Close details',
   pivotUpsellTitle: 'Pivot mode',
   pivotUpsellBody: 'Pivot mode is an Enterprise feature. Install @svgrid/enterprise and call enablePivot() to use it.',
   ganttUpsellTitle: 'Gantt view',
@@ -102404,8 +103099,12 @@ export type GridRowModel<TData> = {
     level: (row: TData) => number
     expanded?: (row: TData) => boolean
     onToggle: (row: TData) => void
-    /** Open or close the detail panel under a leaf. Ctrl+Enter on a row calls it when `renderDetailRow` is set. */
+    /** Open or close the detail panel under a leaf. Ctrl+Enter on a row calls it when `renderDetailRow` is set, and so does the `showDetailToggle` chevron. */
     toggleDetail?: (row: TData) => void
+    /** Whether the detail under a leaf is open: the chevron's direction. */
+    detailOpen?: (row: TData) => boolean
+    /** Whether a row can open a detail; the chevron is left out where this is false. */
+    hasDetail?: (row: TData) => boolean
   }
   /** Selection the grid does not own - see the `rowSelectionModel` prop. */
   selection?: {

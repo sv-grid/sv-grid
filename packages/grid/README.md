@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://svgrid.com">Website</a> ·
   <a href="https://svgrid.com/docs/">Docs</a> ·
-  <a href="https://svgrid.com/demos/">370+ Demos</a> ·
+  <a href="https://svgrid.com/demos/">400+ Demos</a> ·
   <a href="https://svgrid.com/pricing/">Pricing</a> ·
   <a href="https://svgrid.com/roadmap/">Roadmap</a>
 </p>
@@ -141,7 +141,7 @@ Compatibility aliases are provided for the framework-neutral names: `createGrid`
 
 SvGrid publishes an [MCP server](https://www.npmjs.com/package/@svgrid/mcp) plus
 [llms.txt](https://svgrid.com/llms.txt) and [llms-full.txt](https://svgrid.com/llms-full.txt), so Claude,
-Cursor, and Zed answer with accurate, version-pinned APIs and all 370+ demo sources as context rather
+Cursor, and Zed answer with accurate, version-pinned APIs and all 400+ demo sources as context rather
 than hallucinated methods.
 
 ```bash
@@ -203,7 +203,7 @@ Full detail: [SvGrid vs AG Grid vs TanStack Table](https://svgrid.com/docs/help/
 ## Documentation
 
 - [Getting started](https://svgrid.com/docs/getting-started/) - end-to-end walkthrough.
-- [370+ live demos](https://svgrid.com/demos/) - copy-paste recipes for every feature.
+- [400+ live demos](https://svgrid.com/demos/) - copy-paste recipes for every feature.
 - [Why headless?](https://svgrid.com/docs/why-headless/) - when to compose vs. drop in.
 - [Theming and Tailwind](https://svgrid.com/docs/help/tailwind/) - re-skin via `--sg-*` tokens and dark mode.
 - [Accessibility](https://svgrid.com/docs/help/accessibility/) - the WAI-ARIA grid pattern as implemented.

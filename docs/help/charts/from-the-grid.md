@@ -40,8 +40,8 @@ filter the source column and empty the grid.
 
 <!-- tutorial:chart-from-the-grid -->
 <figure class="docs-tutorial" id="tutorial-chart-from-the-grid" data-docs-tutorial="chart-from-the-grid">
-<video class="docs-tutorial-video" src="/tutorials/chart-from-the-grid.mp4" poster="/tutorials/chart-from-the-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Chart the grid with one prop, 40 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/chart-from-the-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/chart-from-the-grid.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Chart the grid with one prop</strong> (40 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/chart-from-the-grid.mp4" poster="/tutorials/chart-from-the-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Chart the grid with one prop, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/chart-from-the-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/chart-from-the-grid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Chart the grid with one prop</strong> (33 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Add the charting prop and the grid grows a chart panel. It charts the rows on screen, so filtering or sorting redraws it.</p>
 <p>Pick a type, a group-by column and the aggregate.</p>

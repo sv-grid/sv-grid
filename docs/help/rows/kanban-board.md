@@ -12,8 +12,8 @@ data.
 
 <!-- tutorial:kanban-board-drag -->
 <figure class="docs-tutorial" id="tutorial-kanban-board-drag" data-docs-tutorial="kanban-board-drag">
-<video class="docs-tutorial-video" src="/tutorials/kanban-board-drag.mp4" poster="/tutorials/kanban-board-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Kanban board mode in SvGrid, 37 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/kanban-board-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/kanban-board-drag.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Kanban board mode in SvGrid</strong> (37 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/kanban-board-drag.mp4" poster="/tutorials/kanban-board-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Kanban board mode in SvGrid, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/kanban-board-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/kanban-board-drag.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Kanban board mode in SvGrid</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>One board prop turns the grid into a Kanban board. Lanes come from the status field, and every card is a row.</p>
 <p>Drag a card from Backlog into Review.</p>

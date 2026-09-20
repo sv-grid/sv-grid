@@ -152,11 +152,6 @@ In the shell this happens on every edit: typing under the last row grows
 the table, fills the calculated columns into the new row, and recomputes
 what reads it.
 
-## See also
-
-- [Workbooks](./workbooks.md)
-- [Spreadsheet formulas](../spreadsheet-formulas.md)
-
 ## More examples
 
 ### Format as Table and structured references
@@ -164,3 +159,8 @@ what reads it.
 Excel's Ctrl+T: a block becomes a table with a header row, the banded look, filter arrows and a name its columns are read by, so a formula says Orders[Amount] instead of E2:E13 and keeps meaning it as rows are added. [@Qty] is this row's cell. Typing under the last row grows the table, and every total that reads it grows too.
 
 <div data-docs-demo="491-sheet-tables" data-height="560"></div>
+
+## See also
+
+- [Workbooks](./workbooks.md)
+- [Spreadsheet formulas](../spreadsheet-formulas.md)

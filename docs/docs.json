@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-20T00:44:19.232Z",
+  "generatedAt": "2026-09-20T09:50:17.112Z",
   "counts": {
-    "pages": 384,
+    "pages": 385,
     "enterprise": 60,
-    "withDemo": 270
+    "withDemo": 271
   },
   "pillars": [
     {
@@ -905,8 +905,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 3902,
-      "lastUpdated": "2026-09-18",
+      "words": 3948,
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -1587,8 +1587,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2412,
-      "lastUpdated": "2026-09-19",
+      "words": 2472,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "17-accessibility",
         "65-keyboard-shortcuts",
@@ -1702,8 +1702,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3687,
-      "lastUpdated": "2026-09-18",
+      "words": 4152,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -1834,8 +1834,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1820,
-      "lastUpdated": "2026-09-18",
+      "words": 1899,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "452-excel-shortcuts"
       ]
@@ -1848,8 +1848,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 872,
-      "lastUpdated": "2026-09-18",
+      "words": 1452,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "453-formula-bar-formats"
       ]
@@ -1862,8 +1862,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 2067,
-      "lastUpdated": "2026-09-15",
+      "words": 2130,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "466-paste-from-excel",
         "454-paste-find-structure",
@@ -1904,8 +1904,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 7648,
-      "lastUpdated": "2026-09-18",
+      "words": 16456,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "27-spreadsheet-ribbon",
         "456-sales-report-workbook",
@@ -1917,7 +1917,16 @@
         "463-merged-report-headers",
         "464-ticket-log-autofilter",
         "465-autosave-document",
-        "466-paste-from-excel"
+        "466-paste-from-excel",
+        "484-loan-model-files",
+        "485-sheet-charts-objects",
+        "486-sheet-sparklines",
+        "487-sheet-pivot-range",
+        "488-sheet-collaboration",
+        "493-sheet-auditing",
+        "492-sheet-iterative",
+        "494-sheet-cell-images",
+        "489-sheet-hyperlinks"
       ]
     },
     {
@@ -1942,9 +1951,11 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 592,
-      "lastUpdated": "2026-09-18",
-      "demoIds": []
+      "words": 1061,
+      "lastUpdated": "2026-09-20",
+      "demoIds": [
+        "491-sheet-tables"
+      ]
     },
     {
       "path": "help/cells/text-formatting.md",
@@ -1994,8 +2005,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1493,
-      "lastUpdated": "2026-09-18",
+      "words": 1611,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "455-workbook",
         "459-named-ranges-forecast",
@@ -2082,7 +2093,7 @@
       "tier": "community",
       "group": "Depth",
       "words": 1690,
-      "lastUpdated": "2026-09-13",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "432-chart-candlestick",
         "437-chart-financial-workbench",
@@ -2102,7 +2113,7 @@
       "tier": "community",
       "group": "Grid and reference",
       "words": 2242,
-      "lastUpdated": "2026-09-14",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "353-built-in-charting",
         "357-ai-chart-this",
@@ -2208,8 +2219,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 625,
-      "lastUpdated": "2026-09-03",
+      "words": 675,
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -2492,7 +2503,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1188,
-      "lastUpdated": "2026-09-15",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "05-inline-editing",
         "206-cell-validation",
@@ -2613,7 +2624,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4946,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "21-export-and-print",
         "93-password-protected-export",
@@ -2761,7 +2772,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1069,
-      "lastUpdated": "2026-09-12",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "03-excel-filters"
       ],
@@ -2820,7 +2831,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2288,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "07-grouping-aggregation",
         "427-group-footers",
@@ -2948,8 +2959,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1782,
-      "lastUpdated": "2026-09-18",
+      "words": 1798,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "38-rtl-i18n",
         "15-localization"
@@ -3019,7 +3030,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3367,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -3264,8 +3275,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2509,
-      "lastUpdated": "2026-09-18",
+      "words": 2608,
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3303,7 +3314,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 2821,
-      "lastUpdated": "2026-09-13",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "52-pivot-table",
         "360-pivot-mode-grid",
@@ -3357,7 +3368,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1558,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "02-sort-filter-paginate",
         "04-selection-copy-paste",
@@ -3423,7 +3434,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 245,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "45-gantt-chart"
       ]
@@ -3437,7 +3448,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4340,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "343-kanban-board",
         "344-kanban-sprint",
@@ -3579,7 +3590,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 7520,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3650,7 +3661,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 966,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "426-tree-data",
         "29-wbs-project-tree",
@@ -3752,7 +3763,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1454,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "482-server-crud",
         "115-optimistic-updates",
@@ -3772,7 +3783,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2539,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "473-server-grouping-rules"
       ]
@@ -3805,7 +3816,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1021,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "148-server-row-model",
         "33-server-infinite",
@@ -3821,7 +3832,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1943,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "148-server-row-model",
         "344-server-grouping-model"
@@ -3836,7 +3847,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 1118,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "468-server-pivot",
         "467-server-row-model-1m",
@@ -3852,7 +3863,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2307,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m",
@@ -3880,7 +3891,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 849,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "471-server-selection",
         "467-server-row-model-1m",
@@ -3912,7 +3923,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 955,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "470-server-transactions",
         "467-server-row-model-1m",
@@ -3929,7 +3940,7 @@
       "pillar": "grid",
       "tier": "enterprise",
       "words": 2236,
-      "lastUpdated": "2026-09-19",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "469-server-tree-data",
         "31-lazy-tree-load",
@@ -3968,8 +3979,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1845,
-      "lastUpdated": "2026-09-18",
+      "words": 4665,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "83-spreadsheet-formulas",
         "173-hyperformula",
@@ -3982,7 +3993,10 @@
         "356-spreadsheet-chart",
         "169-cell-borders",
         "456-sales-report-workbook",
-        "459-named-ranges-forecast"
+        "459-named-ranges-forecast",
+        "493-sheet-auditing",
+        "492-sheet-iterative",
+        "490-sheet-let-lambda"
       ]
     },
     {
@@ -5589,8 +5603,8 @@
       "pillar": "grid",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 725,
-      "lastUpdated": "2026-09-18",
+      "words": 764,
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -5688,19 +5702,6 @@
       ]
     },
     {
-      "path": "help/web-components/sv-sheet.md",
-      "url": "/docs/help/web-components/sv-sheet/",
-      "title": "`<sv-sheet>`: the spreadsheet as a custom element",
-      "summary": "The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain script tag.",
-      "section": "help/web-components",
-      "pillar": "grid",
-      "tier": "enterprise",
-      "group": "Start here",
-      "words": 994,
-      "lastUpdated": "2026-09-18",
-      "demoIds": []
-    },
-    {
       "path": "help/web-components/sv-grid.md",
       "url": "/docs/help/web-components/sv-grid/",
       "title": "`<sv-grid>` reference",
@@ -5715,6 +5716,19 @@
         "07-grouping-aggregation",
         "90-selection-api"
       ]
+    },
+    {
+      "path": "help/web-components/sv-sheet.md",
+      "url": "/docs/help/web-components/sv-sheet/",
+      "title": "`<sv-sheet>`: the spreadsheet as a custom element",
+      "summary": "The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain <script> tag. It is part of the paid pack and runs unlicensed with the pack's watermark, as every entry does.",
+      "section": "help/web-components",
+      "pillar": "grid",
+      "tier": "community",
+      "group": "Start here",
+      "words": 1152,
+      "lastUpdated": "2026-09-20",
+      "demoIds": []
     },
     {
       "path": "help/web-components/typescript.md",

@@ -385,8 +385,8 @@ Built on <SvPivotDesigner panelPosition="right">: a docked tool panel with a PIV
 
 <!-- tutorial:pivot-mode-toggle -->
 <figure class="docs-tutorial" id="tutorial-pivot-mode-toggle" data-docs-tutorial="pivot-mode-toggle">
-<video class="docs-tutorial-video" src="/tutorials/pivot-mode-toggle.mp4" poster="/tutorials/pivot-mode-toggle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot mode in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-mode-toggle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-mode-toggle.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Pivot mode in SvGrid</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/pivot-mode-toggle.mp4" poster="/tutorials/pivot-mode-toggle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot mode in SvGrid, 30 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-mode-toggle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-mode-toggle.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Pivot mode in SvGrid</strong> (30 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>With panelPosition set to right, the pivot designer docks beside the grid. The flat rows stay editable, sortable and filterable.</p>
 <p>Flip the Pivot mode switch.</p>
@@ -434,8 +434,8 @@ SvPivotDesigner: self-contained, enterprise-ready pivot authoring with a left-ra
 
 <!-- tutorial:pivot-designer-drag -->
 <figure class="docs-tutorial" id="tutorial-pivot-designer-drag" data-docs-tutorial="pivot-designer-drag">
-<video class="docs-tutorial-video" src="/tutorials/pivot-designer-drag.mp4" poster="/tutorials/pivot-designer-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot designer in SvGrid, 34 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-designer-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-designer-drag.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Pivot designer in SvGrid</strong> (34 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/pivot-designer-drag.mp4" poster="/tutorials/pivot-designer-drag.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Pivot designer in SvGrid, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/pivot-designer-drag.vtt" default>Your browser does not play embedded video. <a href="/tutorials/pivot-designer-drag.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Pivot designer in SvGrid</strong> (31 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>SvPivotDesigner is a pivot builder in one component: a field list on the left and drop wells for filters, columns, rows and values.</p>
 <p>Drag Salesperson into the Rows well.</p>

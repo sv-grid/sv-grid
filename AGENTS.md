@@ -8,7 +8,7 @@ writing SvGrid code in someone else's project.
 Ground yourself before you generate. SvGrid ships three grounding surfaces,
 in order of preference:
 
-1. **MCP server** - live, version-pinned API and 370+ demo sources.
+1. **MCP server** - live, version-pinned API and 400+ demo sources.
    ```bash
    claude mcp add svgrid -- npx -y @svgrid/mcp
    # or add to any MCP client:
@@ -53,7 +53,7 @@ packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
 packages/svgrid-ui/       @svgrid/ui            - UI component CLI
 packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
-examples/                                       - 370+ live demos
+examples/                                       - 400+ live demos
 website/                                        - svgrid.com source (PRIVATE submodule)
 docs/                                           - markdown docs
 ```

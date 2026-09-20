@@ -10,8 +10,8 @@ so the menu stays usable on big datasets:
 
 <!-- tutorial:excel-filter-menu -->
 <figure class="docs-tutorial" id="tutorial-excel-filter-menu" data-docs-tutorial="excel-filter-menu">
-<video class="docs-tutorial-video" src="/tutorials/excel-filter-menu.mp4" poster="/tutorials/excel-filter-menu.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style filter menu in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/excel-filter-menu.vtt" default>Your browser does not play embedded video. <a href="/tutorials/excel-filter-menu.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Excel-style filter menu in SvGrid</strong> (33 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/excel-filter-menu.mp4" poster="/tutorials/excel-filter-menu.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style filter menu in SvGrid, 28 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/excel-filter-menu.vtt" default>Your browser does not play embedded video. <a href="/tutorials/excel-filter-menu.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Excel-style filter menu in SvGrid</strong> (28 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Set filterMode to menu, and each column header shows a filter button on hover. Click it to open the menu.</p>
 <p>The menu lists every distinct value. Untick one, and the grid re-filters right away.</p>

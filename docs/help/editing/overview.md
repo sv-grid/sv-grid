@@ -125,8 +125,8 @@ down as far as the neighbouring column has data. A drag is one undo.
 
 <!-- tutorial:fill-handle -->
 <figure class="docs-tutorial" id="tutorial-fill-handle" data-docs-tutorial="fill-handle">
-<video class="docs-tutorial-video" src="/tutorials/fill-handle.mp4" poster="/tutorials/fill-handle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style fill handle in SvGrid, 36 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/fill-handle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/fill-handle.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Excel-style fill handle in SvGrid</strong> (36 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/fill-handle.mp4" poster="/tutorials/fill-handle.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Excel-style fill handle in SvGrid, 33 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/fill-handle.vtt" default>Your browser does not play embedded video. <a href="/tutorials/fill-handle.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Excel-style fill handle in SvGrid</strong> (33 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>With cell selection on, every range gets a fill handle at its corner. Select the two seed cells of the numeric series.</p>
 <p>Drag the handle to the right. Ten and twenty become a series in steps of ten, filled as far as you drag.</p>
@@ -146,8 +146,8 @@ selection - see [Drag a range to move or copy it](./move-cells.md).
 
 <!-- tutorial:inline-editing -->
 <figure class="docs-tutorial" id="tutorial-inline-editing" data-docs-tutorial="inline-editing">
-<video class="docs-tutorial-video" src="/tutorials/inline-editing.mp4" poster="/tutorials/inline-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Inline editing in SvGrid, 32 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/inline-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/inline-editing.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Inline editing in SvGrid</strong> (32 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/inline-editing.mp4" poster="/tutorials/inline-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Inline editing in SvGrid, 29 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/inline-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/inline-editing.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Inline editing in SvGrid</strong> (29 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Inline editing in SvGrid is one prop. Set enableInlineEditing and double-click any cell to start.</p>
 <p>Type a new value and press Enter to commit it.</p>
