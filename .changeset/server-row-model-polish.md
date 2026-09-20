@@ -236,3 +236,7 @@ In `@svgrid/enterprise`:
   (106, 181, 483) drop their hand-drawn chevron columns, which took the
   menu, the resize handle and the active cell along with them. Two
   messages, `openDetail` and `closeDetail`.
+- While the selection bar is up, the strip it floats over is painted by
+  the lowest pinned row (bar at the bottom) or the header (bar at the
+  top), so body rows no longer scroll through it around the bar; a
+  pinned grand total floated mid-body with rows showing beneath it.

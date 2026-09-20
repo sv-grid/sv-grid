@@ -347,6 +347,20 @@ test.describe('the focused row model demos', () => {
     await expect(rows(page).first()).toContainText('@example.com', { timeout: 30_000 })
     await page.locator('thead .sv-grid-selection-column input[type=checkbox], thead .sv-grid-selection-column [role=checkbox], thead .sv-grid-selection-column button').first().click()
     await expect(foot(page).locator('[data-stat=selected]')).toContainText('100,000', { timeout: 15_000 })
+    // The selection bar floats over a strip the scroller reserves; the pinned
+    // grand total holds above that strip and paints it, so no body row shows
+    // through around the bar (they did: the total floated mid-body).
+    const total = page.locator('tr.sv-grid-pinned-row-bottom td').nth(2)
+    const strip = await total.evaluate((td) => {
+      const cont = td.closest('.sv-grid-container')!
+      const cs = getComputedStyle(td)
+      const reserve = parseFloat(getComputedStyle(cont).paddingBottom)
+      return { reserve, gap: Math.round(cont.getBoundingClientRect().bottom - td.getBoundingClientRect().bottom), shadow: cs.boxShadow, clip: cs.clipPath }
+    })
+    expect(strip.reserve).toBeGreaterThan(0)
+    expect(strip.gap).toBe(Math.round(strip.reserve))
+    expect(strip.shadow).not.toBe('none')
+    expect(strip.clip).toContain('inset')
     await page.locator('tbody .sv-grid-selection-cell .sv-grid-checkbox').nth(1).click()
     await expect(foot(page).locator('[data-stat=selected]')).toContainText('99,999')
     await expect(page.locator('.rule-body')).toContainText('"selectAll": true')

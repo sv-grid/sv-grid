@@ -847,6 +847,27 @@
 .sv-grid-pinned-row-bottom[data-pinned-index="1"] td { bottom: var(--sg-pinned-row-h, 32px); }
 .sv-grid-pinned-row-bottom[data-pinned-index="2"] td { bottom: calc(var(--sg-pinned-row-h, 32px) * 2); }
 .sv-grid-pinned-row-bottom[data-pinned-index="3"] td { bottom: calc(var(--sg-pinned-row-h, 32px) * 3); }
+/* While the selection bar is up the scroller carries bottom padding (see
+   --sg-selbar-reserve), and a sticky bottom edge is inset by that padding:
+   the lowest pinned row then holds 68px above the viewport's edge, with the
+   body rows scrolling through the strip beneath it, in and out from behind
+   the bar. That strip is meant to be the bar's own ground, so the lowest
+   pinned row paints it: a shadow in the body colour, spread by half the
+   reserve and pushed down by the same, fills the strip under each cell; the
+   clip cuts the spread's sideways spill at the cell's own edges so a later
+   cell's shadow never paints over its neighbour. The cells sit at z-index 4,
+   above the rows and under the floating bar. */
+.sv-grid-root[data-selbar$='bottom'] .sv-grid-pinned-row-bottom[data-pinned-index="0"] td {
+  box-shadow: 0 calc(var(--sg-selbar-reserve) / 2) 0 calc(var(--sg-selbar-reserve) / 2) var(--sg-bg, #fff);
+  clip-path: inset(0 0 calc(-1 * var(--sg-selbar-reserve)) 0);
+}
+/* The same strip above a sticky header when the bar sits at the top: the
+   header holds under the reserve and rows scrolled up showed through above
+   it. The first header row's cells paint the strip the same way. */
+.sv-grid-root[data-selbar$='top'] .sv-grid-head > tr:first-child > th {
+  box-shadow: 0 calc(-1 * var(--sg-selbar-reserve) / 2) 0 calc(var(--sg-selbar-reserve) / 2) var(--sg-bg, #fff);
+  clip-path: inset(calc(-1 * var(--sg-selbar-reserve)) 0 0 0);
+}
 /* Sticky-left columns keep their left position; just override their
  * z so they sit above non-pinned pinned-row cells. */
 .sv-grid-pinned-row td[data-pinned] { z-index: 5; }

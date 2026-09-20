@@ -235,6 +235,7 @@
         <SvGrid
           responsive={true}
           columnResize
+          fitColumns
           rowModel={ctl}
           stickyGroupRows
           {columns}

@@ -188,10 +188,16 @@ const dist = join(here, '..', 'dist')
  * the elements at 1:1, plus four surface entries (111 -> 114 properties:
  * showDetailToggle, isDetailOpen, hasDetail; 26 -> 27 events: detailToggle).
  * The sixth time.
+ *
+ * 110.6 -> 110.8 and 111.1 -> 111.3 for the selection bar's ground
+ * (2026-09-20). Measured 110.7 / 111.2, the grid's JS unchanged: two CSS
+ * rules (the element inlines the sheet) that paint the strip the floating
+ * bar sits over, under the lowest pinned row or above the header, so body
+ * rows stop scrolling through it. 0.1 KiB of stylesheet.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 110.6 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.1 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 110.8 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.3 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 
