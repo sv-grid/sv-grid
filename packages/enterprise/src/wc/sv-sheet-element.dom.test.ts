@@ -38,7 +38,10 @@ afterEach(() => { el?.remove(); el = null })
 
 const settle = async () => { await tick(); await new Promise((r) => setTimeout(r, 30)); await tick() }
 
-describe('<sv-sheet>', () => {
+// Every test here mounts the whole shell in jsdom, one of them twice: 1.4 to
+// 2.3 s each on an idle machine, and past the default 5 s once the rest of
+// the suite is transforming beside them. The same reason as the hook above.
+describe('<sv-sheet>', { timeout: 30_000 }, () => {
   it('registers on import and mounts the shell on a data property', async () => {
     expect(customElements.get('sv-sheet')).toBeTruthy()
     el = document.createElement('sv-sheet') as Sheet

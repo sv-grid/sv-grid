@@ -12,10 +12,13 @@ const pkg = join(here, '..', '..')
  * The member names of `<SvSheet>`'s Props type, read from the source with a
  * parser of this test's own, so a bug in the generator's parser cannot pass
  * itself: the block from `type Props = {` to its closing brace, comments
- * stripped, one member per line at the type's indent.
+ * stripped, one member per line at the type's indent. Line endings are
+ * normalised first: a CRLF checkout (core.autocrlf on Windows) never matches
+ * the `\n  }\n` that closes the block, and the scan then runs on into the
+ * component's CSS.
  */
 function propsMembers(): string[] {
-  const svelte = readFileSync(join(pkg, 'src', 'SvSheet.svelte'), 'utf8')
+  const svelte = readFileSync(join(pkg, 'src', 'SvSheet.svelte'), 'utf8').replace(/\r\n/g, '\n')
   const start = svelte.indexOf('\n  type Props = {')
   const end = svelte.indexOf('\n  }\n', start)
   const block = svelte.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, '')
