@@ -24,7 +24,7 @@ export default function Screen() {
 ```
 
 That is the whole integration. The component is generated from `<SvGrid>`'s
-own types, so all 108 properties and 25 events are typed props, and it works the
+own types, so all 114 properties and 27 events are typed props, and it works the
 same on React 17, 18 and 19.
 
 ## Why the wrapper rather than the raw element

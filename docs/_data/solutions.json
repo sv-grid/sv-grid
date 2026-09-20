@@ -169,7 +169,7 @@
         },
         {
           "question": "Is the scheduler a Gantt chart?",
-          "answer": "No. The scheduler is a resource, booking and calendar view: appointments, staff and asset scheduling. It deliberately has no critical path, baselines or work-breakdown structure, and none are planned."
+          "answer": "No. The scheduler is a resource, booking and calendar view: appointments, staff and asset scheduling, with no critical path, baselines or work-breakdown structure. Those belong to the Gantt view of the same grid, which is in progress and due on 1 November 2026: the scheduler for bookings, the Gantt for a project plan."
         },
         {
           "question": "Is the scheduler free?",
@@ -376,13 +376,13 @@
     },
     {
       "slug": "gantt-chart",
-      "kind": "feature",
-      "icon": "▬",
-      "cardText": "Task bars in one wide custom cell.",
+      "kind": "view",
+      "icon": "≡",
+      "cardText": "Task bars, links and a critical path from one prop.",
       "query": "svelte gantt chart",
       "h1": "Svelte Gantt Chart",
-      "seoTitle": "Svelte Gantt Chart - Project Timeline in a Grid",
-      "seoDescription": "A Gantt-style project plan in a Svelte 5 data grid: task bars positioned by start and end date in one wide cell, with phase colour and progress fill.",
+      "seoTitle": "Svelte Gantt Chart - Project Plan from Grid Data",
+      "seoDescription": "A Gantt chart in Svelte 5 from the rows you already have: one gantt prop, phases, dependency arrows, drag to reschedule, critical path, baselines and resources.",
       "keywords": [
         "svelte gantt chart",
         "svelte gantt",
@@ -390,82 +390,172 @@
         "svelte roadmap chart",
         "gantt component svelte"
       ],
-      "tier": "community",
+      "tier": "enterprise",
       "intro": [
-        "SvGrid has no Gantt mode, and it is worth saying that before you read further. What it has is a grid with custom cells, and a Gantt row is a task on the left and one wide cell on the right whose bar is positioned by percentage of the project span. That is exactly how the demo below is built, in one file you can copy.",
-        "If your plan is really a schedule of bookings across resources rather than a work-breakdown structure, the enterprise scheduler timeline is the better fit: it draws real bars on a time axis with drag to re-time and resize. It is deliberately not a project planner though, so there is no critical path, no baselines and no percent-complete roll-up, and none are planned."
+        "A Gantt chart is a data grid that draws its rows as bars on a time axis. SvGrid treats it exactly that way: same <SvGrid>, same data, same columns, one extra gantt prop. A parent field nests the rows into phases that draw a rolled-up bar, a dependency list draws the arrows between them, and the task table beside the chart is the grid itself, so search, sort and filter apply before a bar is drawn.",
+        "Dragging a bar does not mutate anything behind your back. The chart raises onTaskMove with the task and its new dates, pushes its successors forward through onDependenciesChange, and you write the rows. The planning layer is the part a table cannot fake: the critical path ringed in red with a slack column in working days, baseline ghosts where the plan drifted, constraints the cascade stops at, and a resource load strip that turns red past capacity."
       ],
-      "install": "npm i @svgrid/grid",
+      "install": "npm i @svgrid/grid @svgrid/enterprise",
       "snippet": {
         "lang": "svelte",
-        "code": "<script lang=\"ts\">\n  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'\n</script>\n\n{#snippet TimelineCell({ row })}\n  <div class=\"track\">\n    <div\n      class=\"bar\"\n      style:left=\"{((+new Date(row.start) - projectStart) / projectSpan) * 100}%\"\n      style:width=\"{((+new Date(row.end) - +new Date(row.start)) / projectSpan) * 100}%\"\n    ></div>\n  </div>\n{/snippet}\n\n<SvGrid\n  data={tasks}\n  columns={[\n    { field: 'name', header: 'Task', width: 240 },\n    { field: 'end', header: 'Schedule', width: 400,\n      cell: (ctx) => renderSnippet(TimelineCell, { row: ctx.row.original }) },\n  ]}\n/>"
+        "code": "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n  import { enableGanttView } from '@svgrid/enterprise'\n\n  enableGanttView()\n\n  let data = $state([\n    { id: 'p1', name: 'Discovery', parentId: null, start: '2026-09-07' },\n    { id: 't1', name: 'Interviews', parentId: 'p1', start: '2026-09-07', end: '2026-09-11', progress: 100 },\n    { id: 't2', name: 'Synthesis', parentId: 'p1', start: '2026-09-14', end: '2026-09-18', progress: 40 },\n  ])\n  const columns = [\n    { field: 'name', header: 'Task' },\n    { field: 'start', header: 'Start' },\n    { field: 'end', header: 'Finish' },\n  ]\n</script>\n\n<SvGrid {data} {columns} getRowId={(r) => r.id}\n  gantt={{\n    startField: 'start', endField: 'end', parentField: 'parentId', progressField: 'progress',\n    dependencies: [{ id: 'd1', from: 't1', to: 't2' }],\n  }} />"
       },
-      "heroDemo": "45-gantt-chart",
+      "heroDemo": "474-gantt-intro",
       "demos": [
-        "45-gantt-chart",
-        "384-scheduler-app-roadmap",
-        "205-project-management",
-        "167-project-tracker",
-        "29-wbs-project-tree",
-        "47-trash-truck-timeline"
+        "474-gantt-intro",
+        "475-gantt-editing",
+        "476-gantt-critical-path",
+        "477-gantt-resources",
+        "478-gantt-four-views",
+        "479-gantt-roadmap",
+        "480-gantt-program",
+        "481-gantt-portfolio-console",
+        "45-gantt-chart"
       ],
       "docs": [
-        "help/recipes",
-        "help/rows/scheduler"
+        "help/gantt",
+        "help/gantt/start",
+        "help/gantt/critical-path",
+        "help/gantt/views"
       ],
       "posts": [
-        "project-task-board-grid",
-        "pinned-frozen-columns"
+        "svelte-gantt-chart-with-the-scheduler-timeline",
+        "project-task-board-grid"
       ],
       "features": [
         {
-          "title": "One wide custom cell",
-          "body": "The timeline is a snippet cell that positions absolutely-placed bars by date arithmetic. No plugin, no second component, no new mental model."
+          "title": "Phases roll up",
+          "body": "parentField nests flat rows into a work-breakdown tree. A phase draws a summary bar spanning its tasks with a percent weighted by duration, and folds with a chevron."
         },
         {
-          "title": "Pinned task columns",
-          "body": "Pin the name, owner and progress columns so they stay put while months of timeline scroll sideways."
+          "title": "Links, drawn and enforced",
+          "body": "FS, SS, FF and SF links with lag draw as arrows. Move a task and its successors slide forward over weekends and holidays; a link that would close a cycle is refused."
         },
         {
-          "title": "Phases and progress",
-          "body": "Colour bars by phase, fill them by percent done, and draw a today line and an overdue glow with plain CSS."
+          "title": "Drag, resize, undo",
+          "body": "Drag a bar or an edge, drag the diamond to set percent, drag a dot onto another bar to link. Every gesture is a callback; Ctrl+Z replays them backwards."
         },
         {
-          "title": "A tree of tasks",
-          "body": "Combine it with tree data and a work-breakdown structure indents under its parent, expandable and collapsible."
+          "title": "The critical path",
+          "body": "Forward and backward passes in working time ring the chain with no slack, and a __slack column says how many working days of room every other task has."
         },
         {
-          "title": "Or the scheduler timeline",
-          "body": "For resource scheduling with real drag to re-time, the enterprise timeline views give you bars on a shared axis per squad or person."
+          "title": "Baselines, constraints, resources",
+          "body": "Ghost bars show the dates the plan was signed off with, a pin marks a date a task is held to, and a load strip counts who is booked past capacity."
         },
         {
-          "title": "Free and MIT",
-          "body": "The Gantt-style grid is entirely @svgrid/grid. Only the scheduler timeline route needs the commercial package."
+          "title": "Still a grid",
+          "body": "Toggle the gantt prop off and the full table is back with every column feature. The same rows can feed the scheduler and the Kanban board too."
         }
       ],
       "faq": [
         {
-          "question": "Does SvGrid have a Gantt chart component?",
-          "answer": "No. There is no Gantt mode or Gantt component. A Gantt view is built as a grid with one wide custom cell per row that positions task bars by date, which is what the example on this page does."
+          "question": "How do I build a Gantt chart in Svelte 5?",
+          "answer": "Give <SvGrid> your rows and columns and set the gantt prop with the field holding each task's start, for example gantt={{ startField: 'start', endField: 'end' }}. Add parentField for phases and a dependencies list for arrows. The renderer is registered once with enableGanttView() from @svgrid/enterprise."
         },
         {
-          "question": "Can I use the scheduler as a Gantt chart?",
-          "answer": "For resource and booking timelines, yes. The scheduler's timeline views draw bars on a time axis with drag to re-time and resize. It is explicitly not a project planner: no critical path, baselines or work-breakdown structure."
+          "question": "Is the Gantt chart free?",
+          "answer": "The grid, the gantt prop and its config types are MIT-licensed in @svgrid/grid. The Gantt renderer ships in the commercial @svgrid/enterprise package, which runs unlicensed with a small watermark while you evaluate it. The free recipe on this page, a timeline drawn in one custom cell, needs no license."
         },
         {
-          "question": "Can tasks have dependencies?",
-          "answer": "The enterprise scheduler has optional dependencies for ordered bookings, where a job moves through stations in sequence. They are opt-in, and without dependency config the timeline draws no arrows and cascades nothing."
+          "question": "Does it have a critical path, baselines and dependencies?",
+          "answer": "Yes. criticalPath rings the chain with no slack and fills a slack column in working days; baselineStartField and baselineEndField draw the agreed dates as ghost bars; dependencies draws finish-to-start, start-to-start, finish-to-finish and start-to-finish links with lag, and a moved task cascades its successors."
         },
         {
-          "question": "Is it free?",
-          "answer": "The grid-based Gantt is MIT-licensed in @svgrid/grid. The scheduler timeline alternative needs the commercial @svgrid/enterprise package."
+          "question": "Can I switch between the Gantt and a table?",
+          "answer": "Yes, and that is the point of the design. The Gantt is a view of the same grid, so toggling the gantt prop on and off swaps between bars and rows with no data changes. The same rows can also feed the scheduler for a resource timeline and the board prop for a Kanban."
         }
       ],
       "related": [
         "scheduler",
         "kanban-board",
         "tree-grid"
-      ]
+      ],
+      "release": "gantt",
+      "prerelease": {
+        "kind": "feature",
+        "icon": "▬",
+        "cardText": "Task bars in one wide custom cell.",
+        "seoTitle": "Svelte Gantt Chart - Project Timeline in a Grid",
+        "seoDescription": "A Gantt-style project plan in a Svelte 5 data grid: task bars positioned by start and end date in one wide cell, with phase colour and progress fill.",
+        "tier": "community",
+        "intro": [
+          "A Gantt view of the grid - one gantt prop, phases, dependency arrows, drag to reschedule, a critical path - is in progress in @svgrid/enterprise and due on 1 November 2026; it is on the roadmap. Until then, what SvGrid has is a grid with custom cells, and a Gantt row is a task on the left and one wide cell on the right whose bar is positioned by percentage of the project span. That is exactly how the demo below is built, in one file you can copy.",
+          "If your plan is really a schedule of bookings across resources rather than a work-breakdown structure, the enterprise scheduler timeline is the better fit today: it draws real bars on a time axis with drag to re-time and resize, one lane per person or asset."
+        ],
+        "install": "npm i @svgrid/grid",
+        "snippet": {
+          "lang": "svelte",
+          "code": "<script lang=\"ts\">\n  import { SvGrid, renderSnippet, type ColumnDef } from '@svgrid/grid'\n</script>\n\n{#snippet TimelineCell({ row })}\n  <div class=\"track\">\n    <div\n      class=\"bar\"\n      style:left=\"{((+new Date(row.start) - projectStart) / projectSpan) * 100}%\"\n      style:width=\"{((+new Date(row.end) - +new Date(row.start)) / projectSpan) * 100}%\"\n    ></div>\n  </div>\n{/snippet}\n\n<SvGrid\n  data={tasks}\n  columns={[\n    { field: 'name', header: 'Task', width: 240 },\n    { field: 'end', header: 'Schedule', width: 400,\n      cell: (ctx) => renderSnippet(TimelineCell, { row: ctx.row.original }) },\n  ]}\n/>"
+        },
+        "heroDemo": "45-gantt-chart",
+        "demos": [
+          "45-gantt-chart",
+          "384-scheduler-app-roadmap",
+          "205-project-management",
+          "167-project-tracker",
+          "29-wbs-project-tree",
+          "47-trash-truck-timeline"
+        ],
+        "docs": [
+          "help/recipes",
+          "help/rows/scheduler",
+          "help/rows/gantt"
+        ],
+        "posts": [
+          "project-task-board-grid",
+          "pinned-frozen-columns"
+        ],
+        "features": [
+          {
+            "title": "One wide custom cell",
+            "body": "The timeline is a snippet cell that positions absolutely-placed bars by date arithmetic. No plugin, no second component, no new mental model."
+          },
+          {
+            "title": "Pinned task columns",
+            "body": "Pin the name, owner and progress columns so they stay put while months of timeline scroll sideways."
+          },
+          {
+            "title": "Phases and progress",
+            "body": "Colour bars by phase, fill them by percent done, and draw a today line and an overdue glow with plain CSS."
+          },
+          {
+            "title": "A tree of tasks",
+            "body": "Combine it with tree data and a work-breakdown structure indents under its parent, expandable and collapsible."
+          },
+          {
+            "title": "Or the scheduler timeline",
+            "body": "For resource scheduling with real drag to re-time, the enterprise timeline views give you bars on a shared axis per squad or person."
+          },
+          {
+            "title": "Free and MIT",
+            "body": "The Gantt-style grid is entirely @svgrid/grid. Only the scheduler timeline route needs the commercial package."
+          }
+        ],
+        "faq": [
+          {
+            "question": "Does SvGrid have a Gantt chart component?",
+            "answer": "Not yet. A Gantt view of the grid - one gantt prop, phases that roll up, dependency arrows, drag to reschedule, a critical path - is in progress in @svgrid/enterprise and due on 1 November 2026. Until then a Gantt is built as a grid with one wide custom cell per row that positions task bars by date, which is what the example on this page does."
+          },
+          {
+            "question": "Can I use the scheduler as a Gantt chart?",
+            "answer": "For resource and booking timelines, yes. The scheduler's timeline views draw bars on a time axis with drag to re-time and resize. It is not a project planner: no critical path, baselines or work-breakdown structure. Those are what the Gantt view due on 1 November 2026 adds."
+          },
+          {
+            "question": "Can tasks have dependencies?",
+            "answer": "The enterprise scheduler has optional dependencies for ordered bookings, where a job moves through stations in sequence. They are opt-in, and without dependency config the timeline draws no arrows and cascades nothing."
+          },
+          {
+            "question": "Is it free?",
+            "answer": "The grid-based recipe is MIT-licensed in @svgrid/grid. The scheduler timeline needs the commercial @svgrid/enterprise package, and so will the Gantt view when it ships."
+          }
+        ],
+        "related": [
+          "scheduler",
+          "kanban-board",
+          "tree-grid"
+        ]
+      }
     },
     {
       "slug": "tree-grid",
@@ -499,6 +589,7 @@
         "08-tree-and-master-detail",
         "28-org-chart-tree",
         "31-lazy-tree-load",
+        "469-server-tree-data",
         "102-tree-checkbox-cascade",
         "30-bom-tree"
       ],
@@ -782,8 +873,7 @@
         "09-server-side",
         "33-server-infinite",
         "113-cursor-pagination",
-        "344-server-grouping-model",
-        "467-server-row-model-1m",
+        "114-server-grouping",
         "79-loading-from-rest"
       ],
       "docs": [
@@ -817,11 +907,11 @@
         },
         {
           "title": "Server-side grouping",
-          "body": "Group nodes expand one level at a time through the same contract, so the grid holds only the groups you opened."
+          "body": "Group nodes expand one level at a time through the same contract, so the grid holds only the groups you opened. Lazy grouping, tree data, pivot, transactions and select-all across unloaded rows are the Enterprise server-side row model; the hand-wired pattern stays free."
         },
         {
           "title": "Free and MIT",
-          "body": "The server row model, cursor paging and server grouping are all in @svgrid/grid."
+          "body": "The datasource contract, the paged and block-cached infinite controller and cursor paging are all in @svgrid/grid, MIT."
         }
       ],
       "faq": [
@@ -839,7 +929,7 @@
         },
         {
           "question": "Is server-side data free?",
-          "answer": "Yes. The server row model, infinite scroll, cursor paging and server-side grouping are MIT-licensed in @svgrid/grid."
+          "answer": "The contract, paged and infinite loading and cursor paging are MIT-licensed in @svgrid/grid. Lazy server-side grouping, tree data, pivot, transactions and select-all across rows the grid never loaded are the server-side row model in @svgrid/enterprise."
         }
       ],
       "related": [

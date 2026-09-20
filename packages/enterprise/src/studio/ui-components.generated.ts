@@ -6622,6 +6622,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "gantt",
+        "label": "Gantt",
+        "type": "json",
+        "description": "Gantt mode. When set, the grid renders its rows as a task table beside a time chart: one bar per row by start / end, a work-breakdown tree from `parentField`, and dependency arrows. See . A view of the grid like the board and scheduler; the renderer ships in `@svgrid/enterprise` (call `enableGanttView()`).",
+        "group": "common"
+      },
+      {
         "key": "chart",
         "label": "Chart",
         "type": "json",
@@ -7297,6 +7304,36 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "advanced"
       },
       {
+        "key": "detailRowHeight",
+        "label": "Detail Row Height",
+        "type": "number",
+        "description": "The height of a detail row, in px, or a function of its data. With it the virtualizer can size detail rows, so master-detail works with `virtualization` on (the panel scrolls inside its cell when taller). Without it a detail row is auto height, which needs `virtualization={false}`.",
+        "group": "common"
+      },
+      {
+        "key": "showDetailToggle",
+        "label": "Show Detail Toggle",
+        "type": "boolean",
+        "description": "A row-header column of chevrons that open and close detail rows. It sits with the row-number and selection columns: sticky at the left, no column menu, not resizable, not reorderable, outside the active cell and the selection. The chevron calls `onDetailToggle` (or, on a server row model, the model's own toggle) and reads `isDetailOpen` for its direction; `hasDetail` hides it on rows that have nothing to open. Detail rows themselves get an empty cell.",
+        "group": "common"
+      },
+      {
+        "key": "isDetailOpen",
+        "label": "Is Detail Open",
+        "type": "json",
+        "description": "Whether the detail under a row is open: the chevron's direction and `aria-expanded`.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
+        "key": "hasDetail",
+        "label": "Has Detail",
+        "type": "json",
+        "description": "Whether a row has a detail to open; the chevron is left out where this returns false.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "serverGroup",
         "label": "Server Group",
         "type": "json",
@@ -7323,6 +7360,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Frozen Rows",
         "type": "number",
         "description": "Freeze the first N rows: they stay under the header while the body scrolls, and unlike `pinnedTopRows` they are the grid's own rows, still editable, selectable and numbered as rows 1..N. Excel's Freeze Panes, for the row half; the column half is `columnPinning`. Under `virtualization` the frozen rows are always rendered and the window skips them.",
+        "group": "common"
+      },
+      {
+        "key": "stickyGroupRows",
+        "label": "Sticky Group Rows",
+        "type": "boolean",
+        "description": "Keep the group a row belongs to in view: while the rows of an open group scroll past, the group's row (and its parents' rows) stay under the header, the way a section heading stays put in a long list, so a screen deep inside a 60,000-row group still says which group it is. Works for server-side groups (`rowModel` / `serverGroup`), client grouping and tree data. Under `virtualization` the band shows a copy of each ancestor row; without it the rows themselves stick. Off by default.",
         "group": "common"
       },
       {
@@ -7523,6 +7567,12 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "description": "Called by the Retry button on a `\"failed\"` placeholder row."
       },
       {
+        "key": "detailToggle",
+        "label": "Detail Toggle",
+        "prop": "onDetailToggle",
+        "description": "Open or close the detail under a row. The chevron of `showDetailToggle` and Ctrl+Enter on a row call it; you keep the open set and insert or remove the detail row in `data`. A server row model supplies its own (the `rowModel` prop wires `toggleDetail`), so this is the client side."
+      },
+      {
         "key": "columnOrderChange",
         "label": "Column Order Change",
         "prop": "onColumnOrderChange",
@@ -7533,6 +7583,12 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Row Drag End",
         "prop": "onRowDragEnd",
         "description": "Fires on the TARGET grid after a managed row drag settles, with the moved row, its landing index, whether it stayed in the same grid, and the source / target grid ids. Use it to mirror the move into your own state (persistence, server sync). The grid has already applied the change to its internal data by the time this fires."
+      },
+      {
+        "key": "rowDrop",
+        "label": "Row Drop",
+        "prop": "onRowDrop",
+        "description": "Take the drop yourself. With this set the grid keeps the drag affordance and the drop indicator but does not touch its data: the handler gets the dragged row, the row it landed on (null for the empty space below the rows) and the side - `before` / `after`, or `into` when it landed on the middle of a group or tree row, which makes it that row's child. The path for a `rowModel`, whose rows the grid does not own: hand the move to the model (`moveRow`) or to your server. Only fires within one grid; a drop from another grid stays managed."
       }
     ]
   }

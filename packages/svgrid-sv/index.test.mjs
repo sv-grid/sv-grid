@@ -38,17 +38,18 @@ describe('@svgrid/sv add-on', () => {
     expect(addon.id).toMatch(/^[a-z][a-z0-9-]*$/)
   })
 
-  test('adds the grid dependency', async () => {
+  test('adds the grid dependency at its latest version', async () => {
     const w = makeWorkspace()
     await addon.run(w.ctx)
-    expect(w.deps['@svgrid/grid']).toBeTruthy()
+    // The tag, not a range pinned to the line this addon was written against.
+    expect(w.deps['@svgrid/grid']).toBe('latest')
     expect(w.deps['@svgrid/enterprise']).toBeUndefined()
   })
 
   test('adds enterprise only when asked', async () => {
     const w = makeWorkspace({ options: { demo: false, enterprise: true } })
     await addon.run(w.ctx)
-    expect(w.deps['@svgrid/enterprise']).toBeTruthy()
+    expect(w.deps['@svgrid/enterprise']).toBe('latest')
   })
 
   test('writes a SvelteKit route when the project is Kit', async () => {

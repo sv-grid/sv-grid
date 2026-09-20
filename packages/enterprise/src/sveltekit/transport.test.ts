@@ -54,6 +54,22 @@ describe('SvelteKit transport round trip', () => {
     expect(res.rows[0]?.name).toBe('Bob')
   })
 
+  it('puts the abort signal on the fetch and keeps it out of the body', async () => {
+    const seen: Array<{ body: string; signal: AbortSignal | null | undefined }> = []
+    const client = createKitDataSource<Customer>({
+      endpoint: '/api/customers',
+      fetch: async (_url, init) => {
+        seen.push({ body: String(init?.body), signal: init?.signal })
+        return new Response(JSON.stringify({ rows: [], rowCount: 0 }), { headers: { 'content-type': 'application/json' } })
+      },
+    })
+    const controller = new AbortController()
+    await client.getRows(req({ signal: controller.signal }))
+    expect(seen[0]!.signal).toBe(controller.signal)
+    expect(seen[0]!.body).not.toContain('signal')
+    expect(JSON.parse(seen[0]!.body).request).toEqual({ startRow: 0, endRow: 50, pageIndex: 0, pageSize: 50, sortModel: [], filterModel: {} })
+  })
+
   it('createRow / updateRow / deleteRow mutate the backend through the protocol', async () => {
     const { client, backend } = wireClientToServer()
 

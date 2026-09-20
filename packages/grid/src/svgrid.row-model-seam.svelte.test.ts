@@ -177,6 +177,22 @@ describe('rowPlaceholder', () => {
     destroy()
   })
 
+  it('styles footer and grand-total rows a row model flags on the data', async () => {
+    // A server-side model cannot reach the row objects the grid builds, so
+    // it puts the client model's flags on the data instead; same chrome.
+    const data = [
+      { id: 1, name: 'Row 1' },
+      { id: 2, name: 'Total', __groupFooter: true },
+      { id: 3, name: 'Grand total', __groupFooter: true, __grandTotal: true },
+    ] as Row[]
+    const { target, destroy } = await mountGrid({}, data)
+    await tick()
+    const rows = [...target.querySelectorAll('tbody .sv-grid-row')]
+    expect(rows.map((r) => r.classList.contains('sv-grid-group-footer-row'))).toEqual([false, true, true])
+    expect(rows.map((r) => r.classList.contains('sv-grid-grand-total-row'))).toEqual([false, false, true])
+    destroy()
+  })
+
   it('keeps placeholder rows out of select-all', async () => {
     const { api, destroy } = await mountGrid({
       showRowSelection: true,

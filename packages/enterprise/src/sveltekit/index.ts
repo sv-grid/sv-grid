@@ -1,9 +1,12 @@
 export {
   planQuery,
   coerce,
+  BUILTIN_AGGREGATORS,
   type QueryPlan,
   type PlanPredicate,
   type PlanOp,
+  type PlanAggregate,
+  type PlanOptions,
 } from './query-plan'
 export { createInMemoryDataSource } from './in-memory'
 export {

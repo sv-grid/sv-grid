@@ -114,10 +114,11 @@
     ],
     getRowId: (o) => o.id,
     childCount: (o) => o.childCount,
-    // North opens on arrival; South and West stay closed, so the feed's adds
-    // for them come back storeNotFound until they are opened (and a warehouse
-    // collapsed again drops its level, purgeClosedGroups).
-    isGroupOpenByDefault: (route) => route[0] === 'North',
+    // West, the last group, opens on arrival; North and South stay closed at
+    // the top of the list, so the feed's adds for them come back storeNotFound
+    // until they are opened (a warehouse collapsed again drops its level,
+    // purgeClosedGroups).
+    isGroupOpenByDefault: (route) => route[0] === 'West',
     purgeClosedGroups: true,
     blockSize: 100,
     skeletonRows: 3,
@@ -126,9 +127,18 @@
     isApplyTransaction: (tx: ServerTransaction<Order>) => !(vetoAdds && tx.add?.length),
     onAsyncTransactionsFlushed: (results) => {
       flushes += 1
+      queued = Math.max(0, queued - results.length)
       lastFlush = `${results.length} in the last flush`
     },
-    onChange: (s) => (view = s),
+    onChange: (s) => {
+      view = s
+      // The feed starts once the first level is on screen; before that
+      // every tick would find nothing to patch and no level to add to.
+      if (!started && s.gridRows.some((r) => r.__group?.kind === 'leaf')) {
+        started = true
+        start()
+      }
+    },
   })
   ctl.refresh()
   $effect(() => () => {
@@ -141,9 +151,20 @@
   const RATES: Record<Rate, number> = { slow: 1500, normal: 600, fast: 200 }
   let rate = $state<Rate>('normal')
   let running = $state(true)
+  let started = false
   let flushes = $state(0)
+  let queued = $state(0)
   let lastFlush = $state('')
   let timer: ReturnType<typeof setTimeout> | null = null
+  const RATE_LABEL: Record<Rate, string> = { slow: 'Slow', normal: 'Normal', fast: 'Fast' }
+  function setRate(next: Rate) {
+    rate = next
+    // Takes effect now, not after the current wait runs out.
+    if (running) {
+      stop()
+      start()
+    }
+  }
 
   function tick() {
     const roll = Math.random()
@@ -169,6 +190,7 @@
       const order = makeOrder(warehouse)
       order.updated = clock()
       orders.unshift(order)
+      queued += 1
       ctl.applyTransactionAsync({ route: [warehouse], add: [order], addIndex: 0 }, (result) =>
         record('add', [warehouse], result, `${order.id} ${order.customer}`),
       )
@@ -177,6 +199,7 @@
       const i = orders.findIndex((o) => o.status === 'shipped')
       if (i >= 0) {
         const [gone] = orders.splice(i, 1)
+        queued += 1
         ctl.applyTransactionAsync({ route: [warehouse], remove: [gone!.id] }, (result) =>
           record('remove', [warehouse], result, `${gone!.id} shipped`),
         )
@@ -194,7 +217,6 @@
     if (timer) clearTimeout(timer)
     timer = null
   }
-  start()
 
   // ---- Columns --------------------------------------------------------------
   const usd = { type: 'number' as const, options: { style: 'currency' as const, currency: 'USD', maximumFractionDigits: 0 } }
@@ -202,7 +224,7 @@
     {
       id: 'group',
       header: 'Warehouse / customer',
-      width: 200,
+      width: 190,
       sortable: false,
       filterable: false,
       fieldFn: (row) => serverGroupText(row, 'customer'),
@@ -213,33 +235,32 @@
           leafField: 'customer',
         }),
     },
-    { field: 'id', header: 'Order', width: 110, formatter: ({ value, row }) => (row?.original.__group?.kind === 'leaf' ? String(value) : '') },
-    { field: 'sku', header: 'SKU', width: 90 },
-    { field: 'qty', header: 'Qty', width: 70, align: 'right', format: { type: 'number' }, cellFlash: true },
+    { field: 'id', header: 'Order', width: 100, formatter: ({ value, row }) => (row?.original.__group?.kind === 'leaf' ? String(value) : '') },
+    { field: 'qty', header: 'Qty', width: 64, align: 'right', format: { type: 'number' }, cellFlash: true },
     { field: 'price', header: 'Price', width: 90, align: 'right', format: usd, cellFlash: true },
     { field: 'amount', header: 'Amount', width: 110, align: 'right', format: usd, cellFlash: true },
     { field: 'status', header: 'Status', width: 90 },
-    { field: 'updated', header: 'Updated', width: 90 },
   ]
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <div class="seg rate-seg" role="group" aria-label="Feed rate">
       {#each Object.keys(RATES) as r (r)}
-        <button type="button" class:is-on={rate === r} aria-pressed={rate === r} onclick={() => (rate = r as Rate)}>{r}</button>
+        <button type="button" class:is-on={rate === r} aria-pressed={rate === r} onclick={() => setRate(r as Rate)}>{RATE_LABEL[r as Rate]}</button>
       {/each}
     </div>
     <div class="actions">
-      <button type="button" class="btn" onclick={() => (running ? stop() : start())}>{running ? 'Pause feed' : 'Resume feed'}</button>
-      <button type="button" class="btn" onclick={() => ctl.flushAsyncTransactions()} title="Apply the queued transactions now instead of at the next batch">Flush now</button>
+      <button type="button" class="btn" onclick={() => (running ? stop() : start())} title={running ? 'Stop the feed; the queue drains at the next flush' : 'Resume the feed'}>{running ? 'Pause feed' : 'Resume feed'}</button>
+      <button type="button" class="btn" disabled={queued === 0} onclick={() => ctl.flushAsyncTransactions()} title="Apply the queued transactions now instead of at the next batch">Flush now</button>
       <button type="button" class="btn" onclick={() => ctl.refresh({ route: [] })} title="Transactions do not recompute the warehouse sums; a refresh of the top level does">Refresh totals</button>
     </div>
     <label class="chk"><input type="checkbox" bind:checked={vetoAdds} /> Veto adds</label>
     <span class="note">
       The server changes orders on its own and pushes what it did. A price tick patches the loaded row
       (<code>updateRowData</code>); a new or shipped order is a transaction at its warehouse's route,
-      batched every 500 ms. South and West are closed: adds for them come back <code>storeNotFound</code>
+      batched every 500 ms, and the count beside the warehouse follows it while the sums wait for
+      <em>Refresh totals</em>. North and South are closed: adds for them come back <code>storeNotFound</code>
       until you open them, and a warehouse collapsed again drops its level.
     </span>
   </header>
@@ -248,7 +269,9 @@
       <SvGrid
         responsive={true}
         columnResize
+        fitColumns
         rowModel={ctl}
+        stickyGroupRows
         {columns}
         {features}
         selectionMode="none"
@@ -260,11 +283,10 @@
       <div class="log-head">Transactions <span class="muted">newest first</span></div>
       {#each log as e (e.seq)}
         <div class="log-row" class:is-bad={e.status === 'storeNotFound' || e.status === 'cancelled'}>
-          <span class="log-at">{e.at}</span>
           <span class="log-kind">{e.kind}</span>
           <span class="log-route">{e.route}</span>
           <span class="log-status">{e.status}</span>
-          <span class="log-detail" title={e.detail}>{e.detail}</span>
+          <span class="log-detail" title={`${e.at} ${e.detail}`}>{e.detail}</span>
         </div>
       {/each}
       {#if !log.length}<div class="muted log-empty">Waiting for the feed.</div>{/if}
@@ -275,116 +297,18 @@
     <span class="stat"><span class="stat-label">Applied</span><strong>{counts.applied}</strong></span>
     <span class="stat"><span class="stat-label">Cancelled</span><strong>{counts.cancelled}</strong></span>
     <span class="stat"><span class="stat-label">Store not found</span><strong>{counts.storeNotFound}</strong></span>
+    <span class="stat"><span class="stat-label">Queued</span><strong>{queued}</strong></span>
     <span class="stat"><span class="stat-label">Flushes</span><strong>{flushes}</strong>{#if lastFlush}<span class="muted">{lastFlush}</span>{/if}</span>
     <span class="stat"><span class="stat-label">Requests</span><strong>{requests}</strong></span>
     <span class="stat"><span class="stat-label">On screen</span><strong>{(view?.gridRows.length ?? 0).toLocaleString()}</strong> rows</span>
+    {#if view?.error}<span class="stat err">{String((view.error as Error).message ?? view.error)}</span>{/if}
   </footer>
 </section>
 
 <style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); flex: 1 1 320px; }
-  .chk {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: var(--sg-fg, #0f172a);
-    white-space: nowrap;
-  }
-  .chk input { accent-color: var(--sg-accent, #2563eb); }
-  .seg {
-    display: inline-flex;
-    flex: none;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--sg-bg, #fff);
-  }
-  .seg > button {
-    font: inherit;
-    font-size: 12px;
-    padding: 3px 10px;
-    border: 0;
-    background: transparent;
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-    text-transform: capitalize;
-  }
-  .seg > button + button { border-left: 1px solid var(--sg-border, #e2e8f0); }
-  .seg > button.is-on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
-  .seg > button:focus-visible { outline: 2px solid var(--sg-accent, #2563eb); outline-offset: -2px; }
-  .actions { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-  .btn {
-    font: inherit;
-    font-size: 13px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-bg, #fff);
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
-  .body { display: flex; gap: 10px; flex: 1; min-height: 0; }
-  .gridpane { flex: 1; min-width: 0; min-height: 0; }
-  .log {
-    width: 320px;
-    flex: none;
-    overflow: auto;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 10px;
-    background: var(--sg-bg, #fff);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-  }
-  .log-head {
-    position: sticky;
-    top: 0;
-    padding: 8px 10px;
-    font-weight: 600;
-    color: var(--sg-fg, #0f172a);
-    background: var(--sg-header-bg, #f8fafc);
-    border-bottom: 1px solid var(--sg-border, #e2e8f0);
-  }
-  .log-row {
-    display: grid;
-    grid-template-columns: 58px 46px 44px 84px 1fr;
-    gap: 6px;
-    padding: 4px 10px;
-    border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    align-items: baseline;
-    color: var(--sg-fg, #0f172a);
-  }
+  /* Only what is particular to this demo; the chrome is the shared demo-kit. */
+  .log-row { grid-template-columns: 50px 44px 92px 1fr; }
   .log-row.is-bad .log-status { color: var(--sg-danger, #b91c1c); }
-  .log-at { color: var(--sg-muted, #64748b); }
-  .log-kind { font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.02em; }
   .log-status { font-size: 11px; }
   .log-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sg-muted, #64748b); }
-  .log-empty { padding: 10px; }
-  .muted { color: var(--sg-muted, #64748b); font-weight: 400; }
-  .foot {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-    flex: none;
-    align-items: center;
-    padding: 6px 12px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 8px;
-    background: var(--sg-header-bg, #f8fafc);
-    font-size: 12px;
-    color: var(--sg-muted, #64748b);
-    font-variant-numeric: tabular-nums;
-  }
-  .stat { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-  .stat-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .foot strong { color: var(--sg-fg, #0f172a); font-weight: 600; }
-  @media (max-width: 900px) {
-    .body { flex-direction: column; }
-    .log { width: auto; max-height: 160px; }
-  }
 </style>

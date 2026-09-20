@@ -17,6 +17,8 @@ export interface SvGridProps {
   board?: unknown
   /** `property only` - SchedulerConfig<TFeatures, TData> */
   scheduler?: unknown
+  /** `property only` - GanttConfig<TFeatures, TData> */
+  gantt?: unknown
   /** `property only` - ChartViewConfig<TFeatures, TData> */
   chart?: unknown
   /** `property only` - GridPivotConfig<TData> */
@@ -199,6 +201,14 @@ export interface SvGridProps {
   rowSelectionModel?: unknown
   /** `property only` - (row: TData, rowIndex: number) => boolean */
   isDetailRow?: unknown
+  /** `detail-row-height` - number | ((row: TData) => number) */
+  detailRowHeight?: number
+  /** `show-detail-toggle` - boolean */
+  showDetailToggle?: boolean
+  /** `property only` - (row: TData) => boolean */
+  isDetailOpen?: unknown
+  /** `property only` - (row: TData) => boolean */
+  hasDetail?: unknown
   /** `property only` - { isGroup: (row: TData) => boolean; level: (row: TData) => number; expanded?: (row: TData) */
   serverGroup?: unknown
   /** `property only` - (columnId: string) => Promise<string[]> */
@@ -207,6 +217,8 @@ export interface SvGridProps {
   pinnedTopRows?: readonly unknown[]
   /** `frozen-rows` - number */
   frozenRows?: number
+  /** `sticky-group-rows` - boolean */
+  stickyGroupRows?: boolean
   /** `property only` - ReadonlyArray<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }> */
   mergedCells?: readonly unknown[]
   /** `property only` - ReadonlyArray<TData> */
@@ -270,10 +282,14 @@ export interface SvGridProps {
   onVisibleRangeChange?: (detail: { startIndex: number; endIndex: number; }) => void
   /** `retryrow` */
   onRetryRow?: (detail: { row: Record<string, unknown>; rowIndex: number }) => void
+  /** `detailtoggle` */
+  onDetailToggle?: (detail: { row: Record<string, unknown>; rowIndex: number }) => void
   /** `columnorderchange` */
   onColumnOrderChange?: (detail: ReadonlyArray<string>) => void
   /** `rowdragend` */
   onRowDragEnd?: (detail: { row: Record<string, unknown>; toIndex: number; sameGrid: boolean; fromGridId: number; toGridId: number; }) => void
+  /** `rowdrop` */
+  onRowDrop?: (detail: { row: Record<string, unknown>; target: Record<string, unknown> | null; targetIndex: number | null; side: "before" | "after" | "into"; }) => void
   /** `selectionchange` - published alias of rowselectionchange, detail is the selected rows */
   onSelectionchange?: (detail: unknown) => void
 
@@ -292,9 +308,9 @@ export interface SvGridHandle {
   api: unknown
 }
 
-const PROP_NAMES = ["data","columns","board","scheduler","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"] as const
+const PROP_NAMES = ["data","columns","board","scheduler","gantt","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","detailRowHeight","showDetailToggle","isDetailOpen","hasDetail","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","stickyGroupRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"] as const
 
-const EVENTS: Array<[handler: string, event: string]> = [["onPivotModeChange","pivotmodechange"],["onExpandedChange","expandedchange"],["onPaginationChange","paginationchange"],["onColumnResize","columnresize"],["onRowResize","rowresize"],["onPasteClipboard","pasteclipboard"],["onApiReady","apiready"],["onRowSelectionChange","rowselectionchange"],["onCellSelectionChange","cellselectionchange"],["onSortingChange","sortingchange"],["onAdvancedFilterChange","advancedfilterchange"],["onFiltersChange","filterschange"],["onNoteChange","notechange"],["onCellValueChange","cellvaluechange"],["onActiveCellChange","activecellchange"],["onCellClick","cellclick"],["onRowClick","rowclick"],["onCellDoubleClick","celldoubleclick"],["onRowDoubleClick","rowdoubleclick"],["onScrollBottomReached","scrollbottomreached"],["onVisibleRangeChange","visiblerangechange"],["onRetryRow","retryrow"],["onColumnOrderChange","columnorderchange"],["onRowDragEnd","rowdragend"],["onSelectionchange","selectionchange"]]
+const EVENTS: Array<[handler: string, event: string]> = [["onPivotModeChange","pivotmodechange"],["onExpandedChange","expandedchange"],["onPaginationChange","paginationchange"],["onColumnResize","columnresize"],["onRowResize","rowresize"],["onPasteClipboard","pasteclipboard"],["onApiReady","apiready"],["onRowSelectionChange","rowselectionchange"],["onCellSelectionChange","cellselectionchange"],["onSortingChange","sortingchange"],["onAdvancedFilterChange","advancedfilterchange"],["onFiltersChange","filterschange"],["onNoteChange","notechange"],["onCellValueChange","cellvaluechange"],["onActiveCellChange","activecellchange"],["onCellClick","cellclick"],["onRowClick","rowclick"],["onCellDoubleClick","celldoubleclick"],["onRowDoubleClick","rowdoubleclick"],["onScrollBottomReached","scrollbottomreached"],["onVisibleRangeChange","visiblerangechange"],["onRetryRow","retryrow"],["onDetailToggle","detailtoggle"],["onColumnOrderChange","columnorderchange"],["onRowDragEnd","rowdragend"],["onRowDrop","rowdrop"],["onSelectionchange","selectionchange"]]
 
 /**
  * SvGrid as a React component.

@@ -576,6 +576,17 @@ describe('onWindowKeydown', () => {
     expect(ctx.closeMenus).toHaveBeenCalled()
   })
 
+  it('Escape closes the funnel filter popover, the value suggestions and the column chooser too', () => {
+    // The filter popover focuses its condition input, so Escape from there
+    // used to go unanswered while the column menu closed as expected.
+    for (const open of [{ filterMenuFor: 'col1' }, { inSuggestFor: 'col1' }, { chooseColumnsPos: { x: 1, y: 1 } }]) {
+      const ctx = makeCtx(open)
+      const { onWindowKeydown } = createKeyboard(ctx)
+      onWindowKeydown(new KeyboardEvent('keydown', { key: 'Escape' }))
+      expect(ctx.closeMenus).toHaveBeenCalled()
+    }
+  })
+
   it('does nothing when no menu is open', () => {
     const ctx = makeCtx()
     const { onWindowKeydown } = createKeyboard(ctx)
@@ -676,5 +687,59 @@ describe('onHeaderSortClick', () => {
     const { onHeaderSortClick } = createKeyboard(ctx)
     onHeaderSortClick(new MouseEvent('click'), 'name')
     expect(ctx._state.sorting).toEqual([{ id: 'name', desc: false }])
+  })
+})
+
+describe('onGridKeyDown / Ctrl+Enter on a server-side tree', () => {
+  const tree = () => {
+    const toggle = vi.fn()
+    const toggleDetail = vi.fn()
+    const rows = [
+      { original: { id: 'g', kind: 'group' } },
+      { original: { id: 'a', kind: 'leaf' } },
+    ]
+    const serverGroup = {
+      isGroup: (r: { kind: string }) => r.kind === 'group',
+      level: () => 0,
+      onToggle: toggle,
+      toggleDetail,
+    }
+    return { toggle, toggleDetail, rows, serverGroup }
+  }
+
+  it('opens or closes the group under the active cell', () => {
+    const t = tree()
+    const ctx = makeCtx({ allRows: t.rows, props: { rowHeight: 30, serverGroup: t.serverGroup, renderDetailRow: () => {} }, state: { activeCell: { rowIndex: 0, colIndex: 0, cellId: null } } })
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'Enter', ctrlKey: true }))
+    expect(t.toggle).toHaveBeenCalledWith(t.rows[0]!.original)
+    expect(t.toggleDetail).not.toHaveBeenCalled()
+    expect(ctx.onCellDoubleClick).not.toHaveBeenCalled()
+  })
+
+  it('opens or closes the detail panel under a leaf, when the grid draws one', () => {
+    const t = tree()
+    const ctx = makeCtx({ allRows: t.rows, props: { rowHeight: 30, serverGroup: t.serverGroup, renderDetailRow: () => {} }, state: { activeCell: { rowIndex: 1, colIndex: 0, cellId: null } } })
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'Enter', ctrlKey: true }))
+    expect(t.toggleDetail).toHaveBeenCalledWith(t.rows[1]!.original)
+    expect(t.toggle).not.toHaveBeenCalled()
+    // Without a renderer there is no panel to open: Enter falls through to editing.
+    const plain = makeCtx({ allRows: t.rows, props: { rowHeight: 30, serverGroup: t.serverGroup }, state: { activeCell: { rowIndex: 1, colIndex: 0, cellId: null } } })
+    createKeyboard(plain).onGridKeyDown(rootKeyEvent({ key: 'Enter', ctrlKey: true }))
+    expect(t.toggleDetail).toHaveBeenCalledTimes(1)
+    expect(plain.onCellDoubleClick).toHaveBeenCalled()
+  })
+
+  it('on a client master-detail calls onDetailToggle with the row, never on the detail row itself', () => {
+    const onDetailToggle = vi.fn()
+    const rows = [{ original: { id: 'a', kind: 'data' } }, { original: { id: 'a-detail', kind: 'detail' } }]
+    const props = { rowHeight: 30, renderDetailRow: () => {}, onDetailToggle, isDetailRow: (r: { kind: string }) => r.kind === 'detail' }
+    const ctx = makeCtx({ allRows: rows, props, state: { activeCell: { rowIndex: 0, colIndex: 0, cellId: null } } })
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'Enter', ctrlKey: true }))
+    expect(onDetailToggle).toHaveBeenCalledWith(rows[0]!.original, 0)
+    expect(ctx.onCellDoubleClick).not.toHaveBeenCalled()
+    const onDetail = makeCtx({ allRows: rows, props, state: { activeCell: { rowIndex: 1, colIndex: 0, cellId: null } } })
+    createKeyboard(onDetail).onGridKeyDown(rootKeyEvent({ key: 'Enter', ctrlKey: true }))
+    expect(onDetailToggle).toHaveBeenCalledTimes(1)
+    expect(onDetail.onCellDoubleClick).toHaveBeenCalled()
   })
 })

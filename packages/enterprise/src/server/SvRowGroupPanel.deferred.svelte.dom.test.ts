@@ -94,6 +94,49 @@ describe('SvRowGroupPanel applyMode="deferred"', () => {
     expect(button(host, 'Apply').disabled).toBe(true)
   })
 
+  it('keeps pending edits when groupBy is handed in again with the same values', () => {
+    // A server row model emits a fresh array on every block landing; a
+    // scroll must not throw away the chips the user has not applied yet.
+    const { host, state } = render({ applyMode: 'deferred', onChange: () => {} })
+    host.querySelector<HTMLButtonElement>('.sv-rgp-x')!.click()
+    flushSync()
+    expect(chips(host)).toEqual(['Country'])
+    state.groupBy = ['region', 'country']
+    flushSync()
+    expect(chips(host)).toEqual(['Country'])
+    expect(button(host, 'Apply').disabled).toBe(false)
+  })
+
+  it('takes its strings from messages', () => {
+    const { host } = render({
+      applyMode: 'deferred',
+      onChange: () => {},
+      messages: { groupBy: 'Gruppieren nach:', apply: 'Anwenden', stopGroupingBy: '{label} entfernen', groupedBy: '{label}, {index} von {total}' },
+    })
+    expect(host.querySelector('.sv-rgp-label')!.textContent).toBe('Gruppieren nach:')
+    expect(button(host, 'Anwenden')).toBeDefined()
+    expect(host.querySelector('.sv-rgp-x')!.getAttribute('aria-label')).toBe('Region entfernen')
+    expect(host.querySelector('.sv-rgp-chip')!.getAttribute('aria-label')).toBe('Region, 1 von 2')
+    // A key left out keeps its English default.
+    expect([...host.querySelectorAll('.sv-rgp-apply button')].map((b) => b.textContent)).toEqual(['Anwenden', 'Cancel'])
+  })
+
+  it('puts the dragged chip id on the transfer and announces a keyboard move', () => {
+    const { host } = render({ onChange: () => {} })
+    const chip = host.querySelector<HTMLElement>('.sv-rgp-chip')!
+    const data = new Map<string, string>()
+    const transfer = { setData: (k: string, v: string) => data.set(k, v), effectAllowed: 'none' }
+    const ev = new Event('dragstart', { bubbles: true }) as DragEvent
+    Object.defineProperty(ev, 'dataTransfer', { value: transfer })
+    chip.dispatchEvent(ev)
+    expect(data.get('text/plain')).toBe('region')
+    expect(transfer.effectAllowed).toBe('move')
+
+    chip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, bubbles: true }))
+    flushSync()
+    expect(host.querySelector('.sv-rgp-live')!.textContent).toBe('Region moved to position 2 of 2')
+  })
+
   it('shows no Apply / Cancel in immediate mode and calls onChange at once', () => {
     const onChange = vi.fn()
     const { host } = render({ onChange })

@@ -96,8 +96,9 @@ function aggregateInto<T extends RowData>(
         out[`${path}_${agg.field}`] = aggregate(cellRows, agg.field, agg.fn)
       }
     }
-    return
   }
+  // The plain aggregate, on its own or beside the per-key fields of a pivot,
+  // where it is the row total.
   for (const agg of plan.aggregations ?? []) out[agg.field] = aggregate(rows, agg.field, agg.fn)
 }
 
@@ -122,7 +123,7 @@ function grandTotalOf<T extends RowData>(
 function aggregate<T extends RowData>(
   rows: ReadonlyArray<T>,
   field: string,
-  fn: 'sum' | 'avg' | 'min' | 'max' | 'count',
+  fn: string,
 ): number | null {
   if (fn === 'count') return rows.length
   const nums: number[] = []

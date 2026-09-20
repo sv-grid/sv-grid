@@ -7,7 +7,11 @@
  * free so Vite can bundle it and a fresh clone can run it without an install.
  */
 
+import { isPendingDoc } from './releases.mjs'
+
 // Slugs with no route. A page listed here is neither prerendered nor indexed.
+// A page of a feature whose release date has not come is hidden the same way
+// (tools/lib/releases.mjs), and a release's stub page from the date on.
 export const HIDDEN_SLUGS = new Set([
   'examples-plan',      // historical planning doc
   'help/index',         // duplicate of the sidebar itself
@@ -23,7 +27,7 @@ export const HIDDEN_SLUGS = new Set([
 export const HIDDEN_PREFIXES = ['_internal/', 'reference/', 'legal/', 'brand/', 'schemas/']
 
 export function isHiddenDoc(slug) {
-  return HIDDEN_SLUGS.has(slug) || HIDDEN_PREFIXES.some((p) => slug.startsWith(p))
+  return HIDDEN_SLUGS.has(slug) || HIDDEN_PREFIXES.some((p) => slug.startsWith(p)) || isPendingDoc(slug)
 }
 
 /**

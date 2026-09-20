@@ -16,8 +16,9 @@ itself to it through one prop.
   import { SvGrid, createServerDataSource, type ServerDataSource } from '@svgrid/grid'
 
   const source: ServerDataSource<Row> = {
-    async getRows({ startRow, endRow, sortModel, filterModel }) {
-      const res = await fetch('/api/rows', { method: 'POST', body: JSON.stringify({ startRow, endRow, sortModel, filterModel }) })
+    async getRows({ startRow, endRow, sortModel, filterModel, signal }) {
+      // `signal` aborts when the block is scrolled out of the cache or purged.
+      const res = await fetch('/api/rows', { method: 'POST', body: JSON.stringify({ startRow, endRow, sortModel, filterModel }), signal })
       const { rows, total } = await res.json()
       return { rows, rowCount: total }
     },
@@ -46,7 +47,8 @@ in every cell and marks the row `aria-busy`. Placeholder rows cannot be
 selected, edited or navigated into; there is nothing there yet. A block whose
 request rejected keeps its rows as a tinted band with one full-width "could
 not load" message and a **Retry** button on the first row in view, which
-calls `retryLoads()`. A first block that fails before anything is known
+re-fetches that block and no other (`retryLoads()` re-fetches every failed
+block). A first block that fails before anything is known
 about the list stays `initialRowCount` rows tall, so the message is not
 followed by a hundred empty slots.
 

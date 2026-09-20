@@ -24,7 +24,7 @@
     rows: 1_000_000,
     latencyMs: [40, 120],
     onRequest: (entry) => {
-      log = [entry, ...log].slice(0, 12)
+      log = [entry, ...log].slice(0, 30)
     },
   })
 
@@ -43,6 +43,8 @@
       format: { type: 'number', options: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 } },
     }),
   })
+
+  $effect(() => () => server.dispose())
 
   const money = { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } as const
   const fields: PivotField<WarehouseRow>[] = [
@@ -76,7 +78,7 @@
   ]
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <span class="note">
       Drag Quarter into Columns beside Year, or Status into Rows, then Apply: one request per applied layout,
@@ -84,7 +86,7 @@
       beneath it; the innermost group is the result itself, so it has no expander.
     </span>
   </header>
-  <div class="host">
+  <div class="gridpane">
     <SvPivotDesigner
       {server}
       {fields}
@@ -99,35 +101,26 @@
       toolTabs
     />
   </div>
-  <footer class="log" aria-label="Request log">
-    <span class="log-label">Requests</span>
+  <aside class="log log-strip" aria-label="Request log">
+    <div class="log-head">Requests <span class="muted">newest first</span></div>
     {#each log as e (e.seq)}
-      <span class="log-item" class:is-failed={e.failed}>
-        <strong>{e.kind}</strong> {e.route.length ? e.route.join(' > ') : 'root'} {e.range} <em>{e.ms} ms</em>
-      </span>
+      <div class="log-row log-item" class:is-failed={e.failed}>
+        <span class="log-kind">{e.kind}</span>
+        <span class="log-route" title={e.route.join(' > ')}>{e.route.length ? e.route.join(' > ') : 'root'}</span>
+        <span class="log-range">{e.range}</span>
+        <span class="log-ms">{e.ms} ms</span>
+      </div>
     {/each}
-    {#if !log.length}<span class="log-item">none yet</span>{/if}
-  </footer>
+    {#if !log.length}<div class="muted log-empty">No requests yet.</div>{/if}
+  </aside>
 </section>
 
 <style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); }
-  .host { flex: 1; min-height: 0; }
-  .log {
-    display: flex;
-    gap: 12px;
-    flex: none;
-    overflow: auto;
-    white-space: nowrap;
-    font-size: 12px;
-    color: var(--sg-muted, #64748b);
-    font-variant-numeric: tabular-nums;
-    padding: 2px 0;
-  }
-  .log-label { font-weight: 600; color: var(--sg-fg, #0f172a); }
-  .log-item strong { color: var(--sg-fg, #0f172a); text-transform: uppercase; font-size: 10.5px; }
-  .log-item em { font-style: normal; color: var(--sg-fg, #0f172a); }
-  .log-item.is-failed { color: var(--sg-danger, #b91c1c); }
+  /* Only what is particular to this demo; the chrome is the shared demo-kit. */
+  /* Under the designer, not beside it: the designer has a tool panel of its own. */
+  .log-strip { width: auto; max-height: 132px; }
+  .log-row { grid-template-columns: 44px 1fr 72px 56px; }
+  .log-row.is-failed { color: var(--sg-danger, #b91c1c); }
+  .log-route { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-range, .log-ms { text-align: right; white-space: nowrap; }
 </style>

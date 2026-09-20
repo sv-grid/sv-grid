@@ -67,6 +67,16 @@ describe('buildPivotResultColumns', () => {
   it('returns a flat value column for a field with no key', () => {
     expect(shape(buildPivotResultColumns(['amount'], [sum]))).toBe('amount')
   })
+
+  it('appends a row-totals group reading the plain aggregate fields when asked', () => {
+    const fields = ['2024_amount', '2025_amount']
+    expect(shape(buildPivotResultColumns(fields, [sum], { rowTotals: true }))).toBe('2024(2024_amount) 2025(2025_amount) Total(amount)')
+    expect(shape(buildPivotResultColumns(fields, [sum], { rowTotals: 'All years' }))).toBe('2024(2024_amount) 2025(2025_amount) All years(amount)')
+    expect(shape(buildPivotResultColumns(fields, [sum]))).toBe('2024(2024_amount) 2025(2025_amount)')
+    // The hook shapes the total column like any other value column.
+    const cols = buildPivotResultColumns(fields, [sum], { rowTotals: true, pivotResultColumn: (field, def) => ({ ...def, cellClass: `c-${field}` }) })
+    expect((cols.at(-1) as Col).columns![0]).toMatchObject({ field: 'amount', cellClass: 'c-amount' })
+  })
 })
 
 // ---------------------------------------------------------------- model
@@ -131,6 +141,14 @@ describe('createServerRowModel pivot', () => {
     expect(view!.pivotResultFields).toEqual(['2024_amount', '2025_amount'])
     // The leading column first, then the generated tree.
     expect(shape(ctl.pivotResultColumns!)).toBe('region 2024(2024_amount) 2025(2025_amount)')
+    // Row totals switch on without a request: the group rows already carry
+    // the plain aggregate the Total column reads.
+    const before = requests.length
+    ctl.setLayout({ pivotRowTotals: true })
+    await settle()
+    expect(requests.length).toBe(before)
+    expect(shape(ctl.pivotResultColumns!)).toBe('region 2024(2024_amount) 2025(2025_amount) Total(amount)')
+    expect((view!.gridRows[0] as unknown as { amount: number }).amount).toBe(900)
     ctl.dispose()
   })
 
@@ -243,7 +261,7 @@ describe('createServerRowModel pivot', () => {
     await settle()
     const total = view!.displayRows.at(-1) as { kind: string; data: Record<string, unknown> }
     expect(total.kind).toBe('grandTotal')
-    expect(total.data).toEqual({ '2024_amount': 800, '2025_amount': 700 })
+    expect(total.data).toEqual({ '2024_amount': 800, '2025_amount': 700, amount: 1500 })
     ctl.dispose()
   })
 })

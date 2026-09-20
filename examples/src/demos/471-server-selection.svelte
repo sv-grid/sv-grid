@@ -14,7 +14,7 @@
    * The row model and the selection rules are Enterprise; the datasource
    * contract the in-memory reference source implements is free.
    */
-  import { SvGrid, renderComponent, tableFeatures, rowSortingFeature, columnFilteringFeature, rowSelectionFeature, type GridColumns, type SvGridApi } from '@svgrid/grid'
+  import { SvGrid, renderComponent, tableFeatures, rowSortingFeature, columnFilteringFeature, rowSelectionFeature, type GridColumns } from '@svgrid/grid'
   import {
     setLicenseKey,
     installEnterprise,
@@ -52,7 +52,7 @@
       status: rng.pick(STATUS),
       country: rng.pick(COUNTRIES),
       mrr: plan === 'Free' ? 0 : plan === 'Pro' ? rng.int(9, 29) : rng.int(49, 199),
-      signedUp: new Date(Date.UTC(2026, 8, 17) - rng.int(0, 900) * 86_400_000).toISOString().slice(0, 10),
+      signedUp: new Date(Date.now() - rng.int(1, 900) * 86_400_000).toISOString().slice(0, 10),
     }
   })
   const schema: EntitySchema<Subscriber> = {
@@ -154,11 +154,18 @@
   function restore() {
     if (saved) ctl.setSelectionState(saved)
   }
+  let busy = $state(false)
   async function bulk(patch: Partial<Subscriber>) {
-    if (!selectedCount) return
-    await ctl.bulkUpdate(patch)
+    if (!selectedCount || busy) return
+    busy = true
+    try {
+      await ctl.bulkUpdate(patch)
+    } finally {
+      busy = false
+    }
   }
-  let api = $state<SvGridApi<typeof features, Row> | null>(null)
+  // A rule worth saving is one that selects something.
+  const hasRule = $derived(selectedCount > 0)
   // The leaf total: the count aggregate on the grand total, which is what
   // the selection model divides by too.
   const total = $derived(Number(view?.grandTotal?.id ?? view?.rowCount ?? ROWS))
@@ -204,17 +211,17 @@
   const columns = $derived(mode === 'grouped' ? groupedColumns : flatColumns)
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <div class="seg mode-seg" role="group" aria-label="Layout">
       <button type="button" class:is-on={mode === 'flat'} aria-pressed={mode === 'flat'} onclick={() => setMode('flat')}>Flat</button>
       <button type="button" class:is-on={mode === 'grouped'} aria-pressed={mode === 'grouped'} onclick={() => setMode('grouped')}>Grouped by plan</button>
     </div>
     <div class="actions">
-      <button type="button" class="btn" disabled={!selectedCount} onclick={() => bulk({ status: 'paused' })} title="One updateWhere with the rule; the server answers with the count it changed">Pause selected</button>
-      <button type="button" class="btn" disabled={!selectedCount} onclick={() => bulk({ status: 'active' })}>Activate selected</button>
-      <button type="button" class="btn" disabled={!rule} onclick={save}>Save rule</button>
-      <button type="button" class="btn" disabled={!saved} onclick={restore}>Restore rule</button>
+      <button type="button" class="btn" disabled={!selectedCount || busy} onclick={() => bulk({ status: 'paused' })} title="One updateWhere with the rule; the server answers with the count it changed">{busy ? 'Applying...' : 'Pause selected'}</button>
+      <button type="button" class="btn" disabled={!selectedCount || busy} onclick={() => bulk({ status: 'active' })} title="The same updateWhere, the other way">Activate selected</button>
+      <button type="button" class="btn" disabled={!hasRule} onclick={save} title="Keep the rule as data (getSelectionState)">Save rule</button>
+      <button type="button" class="btn" disabled={!saved} onclick={restore} title="Put the saved rule back (setSelectionState)">Restore rule</button>
     </div>
     <span class="note">
       Tick the header checkbox: 100,000 rows are selected and the grid has loaded a hundred. Untick a few
@@ -228,7 +235,9 @@
         <SvGrid
           responsive={true}
           columnResize
+          fitColumns
           rowModel={ctl}
+          stickyGroupRows
           {columns}
           {features}
           sortable
@@ -238,7 +247,7 @@
           selectionBar={['selectAll', 'editFields']}
           rowHeight={32}
           containerHeight="100%"
-          onApiReady={(next) => (api = installEnterprise(next))}
+          onApiReady={(next) => installEnterprise(next)}
         />
       {/key}
     </div>
@@ -252,51 +261,13 @@
     <span class="stat" data-stat="selected"><span class="stat-label">Selected</span><strong>{selectedCount.toLocaleString()}</strong> of {total.toLocaleString()}</span>
     <span class="stat"><span class="stat-label">Loaded</span><strong>{(view?.gridRows.filter((r) => r.__group?.kind === 'leaf').length ?? 0).toLocaleString()}</strong> rows</span>
     <span class="stat"><span class="stat-label">Requests</span><strong>{requests}</strong></span>
+    {#if view?.error}<span class="stat err">{String((view.error as Error).message ?? view.error)}</span>{/if}
     {#if lastBulk}<span class="stat last">{lastBulk}</span>{/if}
   </footer>
 </section>
 
 <style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); flex: 1 1 320px; }
-  .seg {
-    display: inline-flex;
-    flex: none;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--sg-bg, #fff);
-  }
-  .seg > button {
-    font: inherit;
-    font-size: 12px;
-    padding: 3px 10px;
-    border: 0;
-    background: transparent;
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .seg > button + button { border-left: 1px solid var(--sg-border, #e2e8f0); }
-  .seg > button.is-on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
-  .seg > button:focus-visible { outline: 2px solid var(--sg-accent, #2563eb); outline-offset: -2px; }
-  .actions { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-  .btn {
-    font: inherit;
-    font-size: 13px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-bg, #fff);
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
-  .btn:disabled { opacity: 0.45; cursor: default; }
-  .body { display: flex; gap: 10px; flex: 1; min-height: 0; }
-  .gridpane { flex: 1; min-width: 0; min-height: 0; }
+  /* Only what is particular to this demo; the chrome is the shared demo-kit. */
   .rule {
     width: 280px;
     flex: none;
@@ -328,27 +299,7 @@
     color: var(--sg-fg, #0f172a);
   }
   .rule-saved { padding: 8px 10px; border-top: 1px solid var(--sg-border, #e2e8f0); color: var(--sg-muted, #64748b); }
-  .muted { color: var(--sg-muted, #64748b); font-weight: 400; font-family: inherit; }
-  .foot {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-    flex: none;
-    align-items: center;
-    padding: 6px 12px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 8px;
-    background: var(--sg-header-bg, #f8fafc);
-    font-size: 12px;
-    color: var(--sg-muted, #64748b);
-    font-variant-numeric: tabular-nums;
-  }
-  .stat { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-  .stat.last { white-space: normal; color: var(--sg-fg, #0f172a); }
-  .stat-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .foot strong { color: var(--sg-fg, #0f172a); font-weight: 600; }
   @media (max-width: 900px) {
-    .body { flex-direction: column; }
     .rule { width: auto; max-height: 180px; }
   }
 </style>

@@ -31,6 +31,7 @@
     type ServerState,
     rowPlaceholderState,
   } from '@svgrid/grid'
+  import BlockMap from '../shared/BlockMap.svelte'
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -60,18 +61,18 @@
         // Facet (checklist) selection: keep rows whose value is selected.
         if (f.selectedValues && f.selectedValues.length) {
           const allowed = new Set(f.selectedValues)
-          rows = rows.filter((r) => allowed.has(String((r as any)[id])))
+          rows = rows.filter((r) => allowed.has(String((r as Record<string, unknown>)[id])))
         }
         // Operator (text) filter: substring match.
         const v = f.value.trim().toLowerCase()
-        if (v) rows = rows.filter((r) => String((r as any)[id]).toLowerCase().includes(v))
+        if (v) rows = rows.filter((r) => String((r as Record<string, unknown>)[id]).toLowerCase().includes(v))
       }
       const sort = req.sortModel[0]
       if (sort) {
         rows = [...rows].sort((a, b) => {
-          const av = (a as any)[sort.id]
-          const bv = (b as any)[sort.id]
-          const c = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv))
+          const av = (a as Record<string, unknown>)[sort.id]
+          const bv = (b as Record<string, unknown>)[sort.id]
+          const c = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv))
           return sort.desc ? -c : c
         })
       }
@@ -131,49 +132,43 @@
   const loadedRows = $derived(
     inf.rows.reduce((n, r) => (rowPlaceholderState(r) ? n : n + 1), 0),
   )
-  // Both of these have to hang off `inf`: a bare `infCtl.getCacheState()` in
-  // the markup reads no rune, so Svelte would render it once and never again.
-  const cachedBlocks = $derived((inf.rows, infCtl.getCacheState().length))
+  // Hangs off `inf`: a bare `infCtl.getCacheState()` in the markup reads no
+  // rune, so Svelte would render it once and never again.
+  const cachedBlocks = $derived.by(() => {
+    void inf.rows
+    return infCtl.getCacheState().length
+  })
+  // The cache drawn: with six blocks kept, the ones behind you fall out
+  // as you scroll, which the map shows better than a count.
+  const cacheLevels = $derived.by(() => {
+    void inf.rows
+    return [{ label: 'rows', rowCount: inf.rowCount ?? inf.total, blocks: infCtl.getCacheState() }]
+  })
 </script>
 
-<section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="shrink-0 rounded-lg border px-4 py-3" style="border-color: var(--sg-border); background: var(--sg-header-bg);">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <p class="text-sm font-semibold" style="color: var(--sg-fg);">
-        100,000 rows on the "server" via <code>createServerDataSource</code>
-      </p>
-      <div class="srm-modes" role="group" aria-label="Row model">
-        <button
-          class="srm-mode"
-          class:is-on={mode === 'page'}
-          aria-pressed={mode === 'page'}
-          onclick={() => (mode = 'page')}>Paged</button
-        >
-        <button
-          class="srm-mode"
-          class:is-on={mode === 'infinite'}
-          aria-pressed={mode === 'infinite'}
-          onclick={() => (mode = 'infinite')}>Infinite scroll</button
-        >
-      </div>
+<section class="wrap demo-kit">
+  <header class="chrome">
+    <div class="seg mode-seg" role="group" aria-label="Row model">
+      <button type="button" class:is-on={mode === 'page'} aria-pressed={mode === 'page'} onclick={() => (mode = 'page')}>Paged</button>
+      <button type="button" class:is-on={mode === 'infinite'} aria-pressed={mode === 'infinite'} onclick={() => (mode = 'infinite')}>Infinite scroll</button>
     </div>
     {#if mode === 'page'}
-      <p class="mt-1 text-xs" style="color: var(--sg-muted);">
-        The grid holds only the current 50-row page. Sort a header or open a
-        column filter - the request goes to the datasource (250ms simulated
-        latency), and stale responses are raced away automatically.
-      </p>
+      <span class="note">
+        100,000 rows on the "server" through <code>createServerDataSource</code>; the grid holds only the
+        current 50-row page. Sort a header or open a column filter: the request goes to the datasource
+        (250 ms simulated latency), and stale responses are raced away. This half spells out the props
+        the controller feeds the grid.
+      </span>
     {:else}
-      <p class="mt-1 text-xs" style="color: var(--sg-muted);">
-        One list of 100,000 rows. Blocks of 100 load as you scroll into them,
-        rows you have not reached yet render as skeletons, and only the last
-        6 blocks are kept - scroll back far enough and they reload. The whole
-        grid is wired by one <code>rowModel</code> prop.
-      </p>
+      <span class="note">
+        One list of 100,000 rows. Blocks of 100 load as you scroll into them, rows you have not reached
+        render as placeholders, and only the last 6 blocks are kept: scroll back far enough and they
+        reload. The whole grid is wired by one <code>rowModel</code> prop.
+      </span>
     {/if}
-  </div>
+  </header>
 
-  <div class="flex-1 min-h-0">
+  <div class="gridpane">
     {#if mode === 'infinite'}
       <!-- Everything the paged branch spells out below - data, loading,
            externalSort, externalFilter, the two change handlers, the
@@ -192,6 +187,7 @@
         containerHeight="100%"
         fitColumns={true}
       />
+      <BlockMap levels={cacheLevels} max={1} title="Block cache (6 kept)" />
     {:else}
     <SvGrid responsive={true}
       columnResize
@@ -225,51 +221,32 @@
     {/if}
   </div>
 
-  <footer class="shrink-0 flex items-center gap-3 text-sm" style="color: var(--sg-fg);">
+  <footer class="foot">
     {#if mode === 'page'}
-      <button class="srm-btn" disabled={s.pageIndex <= 0 || s.loading} onclick={() => ctl.setPage(s.pageIndex - 1)}>‹ Prev</button>
-      <button class="srm-btn" disabled={s.pageIndex >= s.pageCount - 1 || s.loading} onclick={() => ctl.setPage(s.pageIndex + 1)}>Next ›</button>
-      <span style="color: var(--sg-muted)">
-        {rangeStart.toLocaleString()}–{rangeEnd.toLocaleString()} of {s.total.toLocaleString()}
-        · page {s.pageIndex + 1}/{s.pageCount}
-        {#if s.loading}· <span style="color: var(--site-accent, #2563eb)">loading…</span>{/if}
-      </span>
+      <div class="actions">
+        <button type="button" class="btn" disabled={s.pageIndex <= 0 || s.loading} onclick={() => ctl.setPage(s.pageIndex - 1)}>Previous</button>
+        <button type="button" class="btn" disabled={s.pageIndex >= s.pageCount - 1 || s.loading} onclick={() => ctl.setPage(s.pageIndex + 1)}>Next</button>
+      </div>
+      <span class="stat"><span class="stat-label">Rows</span><strong>{rangeStart.toLocaleString()} - {rangeEnd.toLocaleString()}</strong> of {s.total.toLocaleString()}</span>
+      <span class="stat"><span class="stat-label">Page</span><strong>{s.pageIndex + 1}</strong> of {s.pageCount.toLocaleString()}</span>
+      {#if s.loading}<span class="stat">loading...</span>{/if}
+      {#if s.error}<span class="stat err">{String((s.error as Error).message ?? s.error)}</span>{/if}
     {:else}
-      <button class="srm-btn" onclick={() => infCtl.purge()}>Purge cache</button>
-      <span style="color: var(--sg-muted)">
-        {loadedRows.toLocaleString()} of {inf.total.toLocaleString()} rows loaded
-        · {cachedBlocks} blocks cached
-        {#if inf.loading}· <span style="color: var(--site-accent, #2563eb)">loading…</span>{/if}
-      </span>
+      <div class="actions">
+        <button type="button" class="btn" onclick={() => infCtl.purge()} title="Drop every cached block and re-read the viewport">Purge cache</button>
+      </div>
+      <span class="stat"><span class="stat-label">Loaded</span><strong>{loadedRows.toLocaleString()}</strong> of {inf.total.toLocaleString()} rows</span>
+      <span class="stat"><span class="stat-label">Cache</span><strong>{cachedBlocks}</strong> block{cachedBlocks === 1 ? '' : 's'}</span>
+      {#if inf.loading}<span class="stat">loading...</span>{/if}
+      {#if inf.error}<span class="stat err">{String((inf.error as Error).message ?? inf.error)}</span>{/if}
     {/if}
   </footer>
 </section>
 
 <style>
-  .srm-btn {
-    padding: 5px 12px;
-    border: 1px solid var(--sg-border);
-    border-radius: 6px;
-    background: var(--sg-bg);
-    color: var(--sg-fg);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .srm-btn:disabled { opacity: 0.45; cursor: default; }
-  .srm-modes { display: inline-flex; gap: 0; }
-  .srm-mode {
-    padding: 4px 12px;
-    border: 1px solid var(--sg-border);
-    background: var(--sg-bg);
-    color: var(--sg-muted);
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .srm-mode:first-child { border-radius: 6px 0 0 6px; }
-  .srm-mode:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
-  .srm-mode.is-on {
-    background: var(--sg-accent, #2563eb);
-    border-color: var(--sg-accent, #2563eb);
-    color: #fff;
-  }
+  /* Only what is particular to this demo; the chrome is the shared demo-kit.
+     The grid pane stacks the grid over the block map in infinite mode. */
+  .gridpane { display: flex; flex-direction: column; }
+  .gridpane :global(.sv-grid-root) { flex: 1; min-height: 0; }
+  .gridpane :global(.blockmap) { flex: none; margin-top: 8px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 8px; }
 </style>

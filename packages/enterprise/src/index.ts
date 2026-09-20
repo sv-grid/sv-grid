@@ -63,6 +63,12 @@ export { enableSchedulerView, SvGridScheduler } from './scheduler'
 // Kanban board view (Pro). `enableBoardView()` registers the renderer so
 // `<SvGrid board={...}>` shows lanes of cards. Config types live in @svgrid/grid.
 export { enableBoardView, SvGridBoard } from './board'
+// Gantt view (Pro). `enableGanttView()` registers the renderer so
+// `<SvGrid gantt={...}>` shows a task table beside a time chart. The `gantt`
+// prop and its config types live in @svgrid/grid; the layout model, the
+// planning helpers and the renderer are here. Also its own entry point,
+// `@svgrid/enterprise/gantt`.
+export * from './gantt/index'
 // Bulk-action bar over the row selection (Pro). `enableSelectionBar()` registers
 // the renderer so `<SvGrid selectionBar={...}>` floats a bar over the grid while
 // rows are selected. The prop + its config types live in @svgrid/grid.
@@ -494,9 +500,12 @@ export {
   createKitHandlers,
   createSqlDataSource,
   planToSql,
+  BUILTIN_AGGREGATORS,
   type QueryPlan,
   type PlanPredicate,
   type PlanOp,
+  type PlanAggregate,
+  type PlanOptions,
   type KitDataSourceOptions,
   type KitHandlerOptions,
   type KitScope,
@@ -516,6 +525,9 @@ export {
   serverRowModelRows,
   serverRowModelNav,
   serverGroupText,
+  defaultServerGroupMessages,
+  resolveServerGroupMessages,
+  type ServerGroupMessages,
   GRAND_TOTAL_ROW_ID,
   GROUP_TOTAL_ROW_ID_PREFIX,
   type ServerRowModel,
@@ -540,6 +552,12 @@ export {
   toCallbackRequest,
   fromCallbackFilterModel,
   toCallbackFilterModel,
+  fromCallbackSelectionState,
+  toCallbackSelectionState,
+  isCallbackSelectionState,
+  type CallbackSelectionState,
+  type CallbackGroupSelectionState,
+  type SelectionStateMapping,
   type CallbackServerRequest,
   type CallbackColumnFilter,
   type CallbackGetRowsParams,

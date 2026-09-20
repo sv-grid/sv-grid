@@ -470,13 +470,17 @@ export function createCellRender<
     rowData: TData,
     column: Column<TData>,
   ): string {
-    const cellClass = column.columnDef.cellClass as
-      | ((ctx: { getValue: () => unknown; value: unknown; row: null; column: Column<TData> }) => string | undefined | null)
-      | undefined;
-    if (typeof cellClass !== "function") return "";
+    const raw = column.columnDef.cellClass;
+    if (raw == null) return "";
+    // A static class applies to the pinned cell the way it does to a body
+    // cell; a function gets the pinned value and `row: null`, since the
+    // pinned row is not a row of the table.
+    if (typeof raw === "string" || Array.isArray(raw)) return resolveClassList(raw);
+    if (typeof raw !== "function") return "";
+    const cellClass = raw as unknown as
+      (ctx: { getValue: () => unknown; value: unknown; row: null; column: Column<TData> }) => string | ReadonlyArray<string> | Record<string, boolean> | undefined | null;
     const value = getPinnedCellValue(rowData, column);
-    const out = cellClass({ getValue: () => value, value, row: null, column });
-    return out ? String(out) : "";
+    return resolveClassList(cellClass({ getValue: () => value, value, row: null, column }));
   }
 
   return {

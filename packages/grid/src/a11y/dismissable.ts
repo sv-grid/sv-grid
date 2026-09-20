@@ -101,6 +101,16 @@ export function dismissableDepth(): number {
  * window listener gets wrong: inner scroll containers don't bubble, so the
  * capture listener sees them and dismisses the panel the user is scrolling.
  *
+ * The listener arms one animation frame after it is asked for, not at once.
+ * Scroll events are queued and dispatched in the next rendering step, so a
+ * scroll that FINISHED before the click that opened the panel - the browser
+ * pulling a half-hidden funnel button into view as it focuses it, a test
+ * driver scrolling the header into place - still lands after the panel has
+ * mounted and wired this listener, and used to close it on the spot. The
+ * panel measured its anchor after that scroll, so the event carries nothing
+ * it needs to react to. Rendering runs the scroll steps before the animation
+ * frame callbacks, which is why one frame is exactly the right delay.
+ *
  * Returns the unsubscribe function.
  */
 export function onScrollOutside(element: () => DismissTarget, onOutside: () => void): () => void {
@@ -109,6 +119,16 @@ export function onScrollOutside(element: () => DismissTarget, onOutside: () => v
     if (containsTarget(element(), event.target as Node)) return
     onOutside()
   }
-  window.addEventListener('scroll', handler, true)
-  return () => window.removeEventListener('scroll', handler, true)
+  let armed = false
+  let frame: number | null = requestAnimationFrame(() => {
+    frame = null
+    armed = true
+    window.addEventListener('scroll', handler, true)
+  })
+  return () => {
+    if (frame !== null) cancelAnimationFrame(frame)
+    frame = null
+    if (armed) window.removeEventListener('scroll', handler, true)
+    armed = false
+  }
 }

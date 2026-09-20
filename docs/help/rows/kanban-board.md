@@ -645,3 +645,5 @@ Point board.childrenField at a row child rows and each card gains a children cou
 - [Row dragging](./row-dragging.md) - reorder rows and move them between grids.
 - [Mobile card view](../mobile-card-view.md) - the responsive grid/card pivot.
 - [Grouping & aggregation](../grouping-aggregation.md) - the row-bucketing model board lanes reuse.
+- [Scheduler / calendar mode](./scheduler.md) - the same rows as bookings on a calendar.
+- [Gantt chart mode](./gantt.md) - the same rows as a project plan: in progress, due 1 November 2026.

@@ -127,6 +127,132 @@ export type PdfExportOptions = {
   kpis?: ReadonlyArray<PdfKpi>
   /** KPI box fill. Default '#f8fafc'. */
   kpiColor?: string
+  /** Body text colour. Default black. */
+  textColor?: string
+  /** Table line colour. Default '#e2e8f0'. */
+  borderColor?: string
+  /**
+   * Take the colours from the grid on screen - header fill and text, body
+   * text, zebra fill, lines - so the PDF looks like the grid it came from
+   * rather than the default slate table. Default true. Explicit colour
+   * options and `styles` win over the theme. A dark theme lends only its
+   * header: the page stays white, so its body text and stripes would not
+   * read.
+   */
+  matchTheme?: boolean
+}
+
+/** One cell's look, the same keys `ExportCellStyle` has. */
+export type PdfCellStyle = {
+  color?: string
+  backgroundColor?: string
+  fontWeight?: 'normal' | 'bold' | number
+  fontStyle?: 'normal' | 'italic'
+  fontSize?: number | string
+  textAlign?: 'left' | 'right' | 'center'
+}
+
+/** Blanket styles for the PDF table: what `ExportOptions.styles` carries. */
+export type PdfStyles = {
+  headerRow?: PdfCellStyle
+  rows?: PdfCellStyle
+  rowAlternate?: PdfCellStyle
+  /** Per-cell overrides by Excel-style reference: `A1` is the first header cell, `A2` the first data cell. */
+  cells?: Record<string, PdfCellStyle>
+}
+
+/** A line above or below the table: what `ExportOptions.header` / `footer` carry. */
+export type PdfPageLine =
+  | { text: string; style?: PdfCellStyle }
+  | { image: string; width?: number; height?: number }
+  | { left?: string; center?: string; right?: string }
+
+/** A merged block of data cells, zero-based within the data rows. */
+export type PdfMerge = { row: number; col: number; rowSpan?: number; colSpan?: number }
+
+/** The colours the grid on screen is drawn with, as `readGridPdfTheme` reports them. */
+export type PdfTheme = Partial<
+  Pick<PdfExportOptions, 'headerColor' | 'headerTextColor' | 'textColor' | 'zebraColor' | 'borderColor' | 'groupColor' | 'groupTextColor' | 'subtotalColor'>
+>
+
+/** `rgb(...)` / `rgba(...)` / `#hex` -> `#rrggbb`, or null for transparent and anything else. */
+export function cssColorToHex(value: string | null | undefined): string | null {
+  if (!value) return null
+  const v = value.trim()
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v)
+  if (hex) {
+    const h = hex[1]!
+    return '#' + (h.length === 3 ? h.split('').map((c) => c + c).join('') : h).toLowerCase()
+  }
+  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+%?))?\s*\)$/i.exec(v)
+  if (!rgb) return null
+  const alpha = rgb[4] === undefined ? 1 : rgb[4].endsWith('%') ? Number(rgb[4].slice(0, -1)) / 100 : Number(rgb[4])
+  if (!(alpha > 0.05)) return null
+  const to = (n: string) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, '0')
+  return '#' + to(rgb[1]!) + to(rgb[2]!) + to(rgb[3]!)
+}
+
+/** Relative luminance of a `#rrggbb`, 0 (black) to 1 (white). */
+export function hexLuminance(hex: string): number {
+  const n = parseInt(hex.slice(1), 16)
+  const ch = (c: number) => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  }
+  return 0.2126 * ch((n >> 16) & 255) + 0.7152 * ch((n >> 8) & 255) + 0.0722 * ch(n & 255)
+}
+
+/**
+ * Read the colours a mounted grid is drawn with, from computed styles: the
+ * header cell's fill and text, a body cell's text and line colour, the
+ * stripe of an alternate row, a group row's fill and text. Colours that are
+ * transparent or unreadable are left out, and under a dark theme (a dark
+ * body background) only the header colours are reported, since the page
+ * the PDF prints on is white.
+ */
+export function readGridPdfTheme(root: HTMLElement | null | undefined): PdfTheme {
+  if (!root || typeof getComputedStyle !== 'function') return {}
+  const q = (sel: string) => root.querySelector<HTMLElement>(sel)
+  const style = (el: HTMLElement | null, prop: string) => (el ? cssColorToHex(getComputedStyle(el).getPropertyValue(prop)) : null)
+  // The fill an element shows is the first painted background on the way
+  // up: a header cell is transparent over its column, a body cell over its
+  // row, the grid over the page. The walk goes past the root because a
+  // dark page is often what a dark theme's grid sits on, unpainted itself.
+  const fill = (el: HTMLElement | null): string | null => {
+    for (let node: HTMLElement | null = el; node; node = node.parentElement) {
+      const c = style(node, 'background-color')
+      if (c) return c
+    }
+    return null
+  }
+  // A data column, not the row-number gutter or the checkbox column, and
+  // a data row, not the header row (which is a `.sv-grid-row` too).
+  const plain = ':not([class*="row-number"]):not([class*="selection"])'
+  const header = q(`.sv-grid-head .sv-grid-column${plain}`) ?? q('.sv-grid-header-cell') ?? q('thead th')
+  const cell = q(`.sv-grid-body .sv-grid-row:not(.sv-grid-row-alt):not(.sv-grid-header-row) .sv-grid-cell${plain}`) ?? q('tbody td')
+  const alt = q(`.sv-grid-body .sv-grid-row-alt .sv-grid-cell${plain}`)
+  const group = q('.sv-grid-group-row .sv-grid-cell')
+  const out: PdfTheme = {}
+  const headerFill = fill(header)
+  const headerText = style(header, 'color')
+  if (headerFill) out.headerColor = headerFill
+  if (headerText) out.headerTextColor = headerText
+  const bodyBg = cell ? fill(cell.parentElement) : fill(q('.sv-grid-container') ?? root)
+  const text = style(cell, 'color')
+  // Dark: a dark ground, or light text (which would vanish on the white page
+  // whatever the ground was).
+  const dark = (bodyBg ? hexLuminance(bodyBg) < 0.4 : false) || (text ? hexLuminance(text) > 0.5 : false)
+  if (dark) return out
+  if (text) out.textColor = text
+  const line = style(cell, 'border-bottom-color') ?? style(header, 'border-bottom-color')
+  if (line) out.borderColor = line
+  const stripe = style(alt, 'background-color')
+  if (stripe && stripe !== bodyBg) out.zebraColor = stripe
+  const groupFill = style(group, 'background-color')
+  const groupText = style(group, 'color')
+  if (groupFill && groupFill !== bodyBg) out.groupColor = groupFill
+  if (groupText) out.groupTextColor = groupText
+  return out
 }
 
 /** A chart for the PDF: an element to rasterise, or a finished image. */
@@ -194,6 +320,9 @@ type PdfCell = {
   color?: string
   fillColor?: string
   colSpan?: number
+  rowSpan?: number
+  italics?: boolean
+  fontSize?: number
   margin?: [number, number, number, number]
   link?: string
   decoration?: string
@@ -230,21 +359,65 @@ export function buildPdfDocDefinition(params: {
    *  precedence over the `element` entries of `opts.charts`, which cannot be
    *  drawn here. */
   charts?: ReadonlyArray<PdfChartImage>
+  /** Blanket header / row / zebra / per-cell styles (`ExportOptions.styles`). */
+  styles?: PdfStyles
+  /** The grid's own colours (see `readGridPdfTheme`); `opts` and `styles` win over them. */
+  theme?: PdfTheme
+  /** Lines printed above the table (`ExportOptions.header`). */
+  headerLines?: ReadonlyArray<PdfPageLine>
+  /** Lines printed below the table (`ExportOptions.footer`). */
+  footerLines?: ReadonlyArray<PdfPageLine>
+  /** Merged data cells; ignored with a structured `body`, whose rows own the layout. */
+  merges?: ReadonlyArray<PdfMerge>
   now?: Date
 }): PdfDocDefinition {
   const { columns } = params
   const o = params.opts ?? {}
+  const st = params.styles ?? {}
+  const theme = params.theme ?? {}
   const now = params.now ?? new Date(0)
 
   const fontSize = o.fontSize ?? 8
-  const headerColor = o.headerColor ?? '#334155'
-  const headerTextColor = o.headerTextColor ?? '#ffffff'
+  // Explicit PDF options, then the blanket styles, then the grid on screen, then the slate defaults.
+  const headerColor = o.headerColor ?? st.headerRow?.backgroundColor ?? theme.headerColor ?? '#334155'
+  const headerTextColor = o.headerTextColor ?? st.headerRow?.color ?? theme.headerTextColor ?? '#ffffff'
   const zebra = o.zebra ?? true
-  const zebraColor = o.zebraColor ?? '#f1f5f9'
-  const groupColor = o.groupColor ?? '#e2e8f0'
-  const groupTextColor = o.groupTextColor ?? '#0f172a'
-  const subtotalColor = o.subtotalColor ?? '#f8fafc'
+  const zebraColor = o.zebraColor ?? st.rowAlternate?.backgroundColor ?? theme.zebraColor ?? '#f1f5f9'
+  const groupColor = o.groupColor ?? theme.groupColor ?? '#e2e8f0'
+  const groupTextColor = o.groupTextColor ?? theme.groupTextColor ?? '#0f172a'
+  const subtotalColor = o.subtotalColor ?? theme.subtotalColor ?? '#f8fafc'
+  const textColor = o.textColor ?? st.rows?.color ?? theme.textColor
+  const borderColor = o.borderColor ?? theme.borderColor ?? '#e2e8f0'
   const repeatHeader = o.repeatHeader ?? true
+
+  const isBold = (w: PdfCellStyle['fontWeight'] | undefined) => w === 'bold' || (typeof w === 'number' && w >= 600)
+  const ptSize = (v: PdfCellStyle['fontSize'] | undefined): number | undefined => {
+    if (v === undefined) return undefined
+    const n = typeof v === 'number' ? v : parseFloat(v)
+    return Number.isFinite(n) && n > 0 ? n : undefined
+  }
+  /** Lay one cell style over a cell, keys the style names. */
+  const applyStyle = (cell: PdfCell, s: PdfCellStyle | undefined) => {
+    if (!s) return
+    if (s.backgroundColor) cell.fillColor = s.backgroundColor
+    if (s.color) cell.color = s.color
+    if (isBold(s.fontWeight)) cell.bold = true
+    else if (s.fontWeight === 'normal') cell.bold = false
+    if (s.fontStyle === 'italic') cell.italics = true
+    const size = ptSize(s.fontSize)
+    if (size) cell.fontSize = size
+    if (s.textAlign) cell.alignment = s.textAlign
+  }
+  // Per-cell overrides by A1 reference: row 1 is the header, so a data row
+  // `r` (0-based) is row `r + 2`, matching the xlsx and html writers.
+  const cellRefs = new Map<string, PdfCellStyle>()
+  for (const [ref, s] of Object.entries(st.cells ?? {})) {
+    const m = /^([A-Z]+)(\d+)$/i.exec(ref.trim())
+    if (!m) continue
+    let col = 0
+    for (const ch of m[1]!.toUpperCase()) col = col * 26 + (ch.charCodeAt(0) - 64)
+    cellRefs.set(`${Number(m[2]) - 1}:${col - 1}`, s)
+  }
 
   const orientation: 'portrait' | 'landscape' =
     o.pageOrientation ??
@@ -255,13 +428,19 @@ export function buildPdfDocDefinition(params: {
     : columns.map(() => (o.columnWidths === 'auto' ? 'auto' : '*'))
 
   // Header row.
-  const headerRow: PdfCell[] = columns.map((c) => ({
-    text: c.header,
-    bold: true,
-    alignment: c.align ?? 'left',
-    color: headerTextColor,
-    fillColor: headerColor,
-  }))
+  const headerRow: PdfCell[] = columns.map((c, ci) => {
+    const cell: PdfCell = {
+      text: c.header,
+      bold: true,
+      alignment: c.align ?? 'left',
+      color: headerTextColor,
+      fillColor: headerColor,
+    }
+    // The blanket header style already set the colours above; its weight, size and alignment apply here.
+    applyStyle(cell, st.headerRow ? { ...st.headerRow, backgroundColor: undefined, color: undefined } : undefined)
+    applyStyle(cell, cellRefs.get(`0:${ci}`))
+    return cell
+  })
 
   // Normalize to a structured body: `body` wins, else wrap flat `rows`.
   const model: ReadonlyArray<PdfBodyRow> =
@@ -302,6 +481,11 @@ export function buildPdfDocDefinition(params: {
       bodyCells.push(
         columns.map((c, ci) => {
           const cell: PdfCell = { text: row.cells[ci] ?? '', alignment: c.align ?? 'left' }
+          if (textColor) cell.color = textColor
+          // Blanket row style, the zebra text colour on alternate rows, then the A1 override.
+          applyStyle(cell, st.rows ? { ...st.rows, backgroundColor: undefined } : undefined)
+          if (zebra && ord % 2 === 1 && st.rowAlternate?.color) cell.color = st.rowAlternate.color
+          applyStyle(cell, cellRefs.get(`${ord + 1}:${ci}`))
           const s = dataCellStyle?.(ord, ci)
           if (s) {
             if (s.fill) cell.fillColor = s.fill
@@ -320,6 +504,31 @@ export function buildPdfDocDefinition(params: {
     }
   })
 
+  // Merged data cells: pdfmake spans from the top-left cell and expects the
+  // covered cells to be present and empty. Only flat exports: with group
+  // or subtotal rows the data row numbering would not be the body's.
+  if (params.merges?.length && !params.body) {
+    const dataRowsAt = [...dataRowIdx].sort((a, b) => a - b)
+    for (const m of params.merges) {
+      const rs = Math.max(1, Math.floor(m.rowSpan ?? 1))
+      const cs = Math.max(1, Math.floor(m.colSpan ?? 1))
+      if (rs === 1 && cs === 1) continue
+      const top = dataRowsAt[m.row]
+      if (top === undefined || m.col < 0 || m.col >= columns.length) continue
+      const anchor = bodyCells[top]?.[m.col]
+      if (!anchor) continue
+      if (rs > 1) anchor.rowSpan = Math.min(rs, bodyCells.length - top)
+      if (cs > 1) anchor.colSpan = Math.min(cs, columns.length - m.col)
+      for (let r = 0; r < (anchor.rowSpan ?? 1); r += 1) {
+        for (let c = 0; c < (anchor.colSpan ?? 1); c += 1) {
+          if (r === 0 && c === 0) continue
+          const covered = bodyCells[top + r]?.[m.col + c]
+          if (covered) covered.text = ''
+        }
+      }
+    }
+  }
+
   const table = {
     table: {
       headerRows: repeatHeader ? 1 : 0,
@@ -333,8 +542,8 @@ export function buildPdfDocDefinition(params: {
         zebra && rowIndex > 0 && rowIndex % 2 === 0 && dataRowIdx.has(rowIndex) ? zebraColor : null,
       hLineWidth: () => 0.5,
       vLineWidth: () => 0.5,
-      hLineColor: () => '#e2e8f0',
-      vLineColor: () => '#e2e8f0',
+      hLineColor: () => borderColor,
+      vLineColor: () => borderColor,
       paddingTop: () => 3,
       paddingBottom: () => 3,
       paddingLeft: () => 5,
@@ -342,7 +551,31 @@ export function buildPdfDocDefinition(params: {
     },
   }
 
+  // The lines `ExportOptions.header` / `footer` carry: text with a style, an
+  // image, or a left / centre / right triple, above and below the table the
+  // way the xlsx writer puts them in rows around it.
+  const pageLines = (lines: ReadonlyArray<PdfPageLine> | undefined, margin: [number, number, number, number]): unknown[] =>
+    (lines ?? []).map((line) => {
+      if ('image' in line) {
+        return { image: line.image, ...(line.width ? { width: line.width } : {}), ...(line.height ? { height: line.height } : {}), margin }
+      }
+      if ('text' in line) {
+        const cell: PdfCell = { text: line.text }
+        applyStyle(cell, line.style)
+        return { ...cell, margin }
+      }
+      return {
+        columns: [
+          { text: line.left ?? '', alignment: 'left' },
+          { text: line.center ?? '', alignment: 'center' },
+          { text: line.right ?? '', alignment: 'right' },
+        ],
+        margin,
+      }
+    })
+
   const content: unknown[] = []
+  content.push(...pageLines(params.headerLines, [0, 0, 0, 4]))
   if (o.logo) content.push({ image: o.logo, width: o.logoWidth ?? 90, margin: [0, 0, 0, 8] })
   if (o.title) content.push({ text: o.title, fontSize: fontSize + 8, bold: true, margin: [0, 0, 0, 2] })
   if (o.subtitle) content.push({ text: o.subtitle, fontSize: fontSize + 1, color: '#64748b', margin: [0, 0, 0, 8] })
@@ -398,6 +631,7 @@ export function buildPdfDocDefinition(params: {
     if (chartBlocks.length) content.push({ text: '', margin: [0, 0, 0, 12] })
     content.push(...chartBlocks)
   }
+  content.push(...pageLines(params.footerLines, [0, 4, 0, 0]))
 
   const def: PdfDocDefinition = {
     pageSize: o.pageSize ?? 'A4',

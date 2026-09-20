@@ -2,7 +2,7 @@
  * E2E: the Server-Side Row Model over one million rows (demo 467), the
  * server pivot (demo 468) and the focused demos in the same category (tree
  * data 469, transactions 470, selection 471, SQL planner 472, grouping
- * rules 473), in a real browser.
+ * rules 473, CRUD 482), in a real browser.
  *
  * The demo's request log is the oracle: every call the model makes to the
  * warehouse is a row in it, with its kind (group / leaf / update / create /
@@ -31,18 +31,28 @@ async function logKinds(page: Page, n = 40): Promise<string[]> {
 async function open(page: Page) {
   await page.setViewportSize({ width: 1400, height: 900 })
   await page.goto(DEMO)
-  // Building a million rows and answering the first request takes a moment.
   await groupCells(page).first().waitFor({ timeout: 60_000 })
-  await expect(logRows(page).first()).toContainText('group', { timeout: 30_000 })
+  // Americas and United States open on load: the newest request is their
+  // first leaf block, which is the whole cascade proven in one line.
+  await expect(logRows(page).first()).toContainText('leaf', { timeout: 30_000 })
 }
 
-/** Expand the first region and its first country, and wait for the leaves. */
+/**
+ * Put the first country right under its region with its leaves showing:
+ * Americas and United States open on load, so close United States (its
+ * 62,000 rows push everything else off screen) and open Brazil, the first
+ * country, so row 1 is the country and row 2 its first leaf.
+ */
 async function drillIn(page: Page) {
-  await groupCells(page).nth(0).click()
+  const us = groupCells(page).filter({ hasText: 'United States' }).first()
+  await expect(us).toHaveAttribute('aria-expanded', 'true', { timeout: 30_000 })
+  await us.click()
   await expect(groupCells(page)).toHaveCount(4 + 4, { timeout: 30_000 })
+  const mark = await logRows(page).count()
   await groupCells(page).nth(1).click()
+  await expect.poll(() => logRows(page).count(), { timeout: 30_000 }).toBeGreaterThan(mark)
   await expect.poll(() => logKinds(page, 1), { timeout: 30_000 }).toEqual(['leaf'])
-  await expect(rows(page).nth(2)).not.toContainText('(')
+  await expect(rows(page).nth(2)).not.toContainText('(', { timeout: 30_000 })
 }
 
 async function scrollBody(page: Page, by: number) {
@@ -57,8 +67,8 @@ async function scrollBody(page: Page, by: number) {
 test.describe('server-side row model over one million rows', () => {
   test('loads the top level, drills in, and streams leaf blocks as the level scrolls', async ({ page }) => {
     await open(page)
-    // Four regions, each with its child count and subtotal.
-    await expect(groupCells(page)).toHaveCount(4)
+    // The first region with its child count, open over its four countries.
+    await expect(groupCells(page).first()).toContainText('Americas')
     await expect(rows(page).first()).toContainText('(4)')
     await drillIn(page)
 
@@ -74,6 +84,24 @@ test.describe('server-side row model over one million rows', () => {
     )
     expect(blank).toBe(0)
     await expect(page.locator('.sv-grid-placeholder-failed')).toHaveCount(0)
+  })
+
+  test('the group a row belongs to holds under the header while its rows scroll past', async ({ page }) => {
+    await open(page)
+    // Americas > United States open on load; forty rows down both are out
+    // of view and the band holds them, region over country.
+    const band = page.locator('tr.sv-grid-row-sticky-group')
+    await expect(band).toHaveCount(0)
+    await scrollBody(page, 34 * 40)
+    await expect(band).toHaveCount(2, { timeout: 15_000 })
+    await expect(band.nth(0)).toContainText('Americas')
+    await expect(band.nth(1)).toContainText('United States')
+    const header = await page.locator('thead').first().evaluate((el) => el.getBoundingClientRect().bottom)
+    const top = await band.nth(0).evaluate((el) => el.getBoundingClientRect().top)
+    expect(Math.abs(top - header)).toBeLessThan(2)
+    // Collapsing from the band closes the country: the band drops to the region.
+    await band.nth(1).locator('button.sv-group-cell').click()
+    await expect(band).toHaveCount(0, { timeout: 15_000 })
   })
 
   test('sorting a plain column refetches leaf levels only; an aggregated column refetches every level', async ({ page }) => {
@@ -264,13 +292,51 @@ test.describe('the focused row model demos', () => {
     expect(await requestsOf()).toBe(mark)
   })
 
+  test('tree data: a file dragged onto a closed folder moves there on the server, and both badges follow', async ({ page }) => {
+    await openDemo(page, '469-server-tree-data')
+    await groupCells(page).first().waitFor({ timeout: 30_000 })
+    await expect(page.locator('.sv-group-spinner')).toHaveCount(0, { timeout: 30_000 })
+    const text = async (i: number) => (await rows(page).nth(i).textContent())!.replace(/\s+/g, ' ').trim()
+    const badge = async (i: number) => Number((await rows(page).nth(i).locator('.sv-group-count').textContent())!.replace(/\D/g, ''))
+    // Row 0 is fixtures (open on load), row 1 its first folder (closed); the
+    // first file below is the row to move.
+    const target = 1
+    const all = await rows(page).evaluateAll((els) => els.map((r) => r.textContent!.replace(/\s+/g, ' ').trim()))
+    const source = all.findIndex((t) => /\.(ts|md|json|css|svelte|png|svg|sql)\b/.test(t))
+    expect(source).toBeGreaterThan(target)
+    const name = all[source]!.split(' ')[0]!
+    const parentBadge = await badge(0)
+    const targetBadge = await badge(target)
+    const box = (await rows(page).nth(target).locator('td').nth(2).boundingBox())!
+    await rows(page).nth(source).locator('td').nth(1).hover()
+    await page.mouse.down()
+    await page.mouse.move(box.x + 10, box.y + box.height / 2, { steps: 5 })
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 })
+    // Over the middle of a folder the whole row is the target, not a line between rows.
+    await expect(rows(page).nth(target)).toHaveClass(/sv-grid-row-drop-into/)
+    await page.mouse.up()
+    await expect(foot(page).locator('.stat.last')).toContainText(`${name} moved to`, { timeout: 15_000 })
+    // The file left its level; the closed folder's count moved before it was read.
+    await expect(rows(page).filter({ hasText: name })).toHaveCount(0)
+    expect(await badge(0)).toBe(parentBadge - 1)
+    await expect.poll(() => badge(target)).toBe(targetBadge + 1)
+    // The demo opens the folder: the file is inside, one level below it (its
+    // subfolders sort first, so not the first row).
+    await expect(rows(page).nth(target).locator('button.sv-group-cell')).toHaveAttribute('aria-expanded', 'true', { timeout: 15_000 })
+    const moved = rows(page).filter({ hasText: name }).first()
+    await expect(moved).toBeVisible({ timeout: 15_000 })
+    const level = Number(await rows(page).nth(target).getAttribute('aria-level'))
+    await expect(moved).toHaveAttribute('aria-level', String(level + 1))
+    expect(await text(target)).toContain('(' + (targetBadge + 1) + ')')
+  })
+
   test('transactions: the feed patches, applies, reports storeNotFound for a closed level, and cancelled under the veto', async ({ page }) => {
     await openDemo(page, '470-server-transactions')
     await page.getByRole('button', { name: 'fast' }).click()
     const statuses = () => page.locator('.log-row .log-status').evaluateAll((els) => els.map((e) => e.textContent!.trim()))
     await expect.poll(statuses, { timeout: 30_000 }).toContain('patched')
     await expect.poll(statuses, { timeout: 30_000 }).toContain('applied')
-    // South and West are closed, so their adds have no level to land in.
+    // North and South are closed, so their adds have no level to land in.
     await expect.poll(statuses, { timeout: 30_000 }).toContain('storeNotFound')
     await page.getByLabel('Veto adds').check()
     await expect.poll(statuses, { timeout: 30_000 }).toContain('cancelled')
@@ -281,6 +347,20 @@ test.describe('the focused row model demos', () => {
     await expect(rows(page).first()).toContainText('@example.com', { timeout: 30_000 })
     await page.locator('thead .sv-grid-selection-column input[type=checkbox], thead .sv-grid-selection-column [role=checkbox], thead .sv-grid-selection-column button').first().click()
     await expect(foot(page).locator('[data-stat=selected]')).toContainText('100,000', { timeout: 15_000 })
+    // The selection bar floats over a strip the scroller reserves; the pinned
+    // grand total holds above that strip and paints it, so no body row shows
+    // through around the bar (they did: the total floated mid-body).
+    const total = page.locator('tr.sv-grid-pinned-row-bottom td').nth(2)
+    const strip = await total.evaluate((td) => {
+      const cont = td.closest('.sv-grid-container')!
+      const cs = getComputedStyle(td)
+      const reserve = parseFloat(getComputedStyle(cont).paddingBottom)
+      return { reserve, gap: Math.round(cont.getBoundingClientRect().bottom - td.getBoundingClientRect().bottom), shadow: cs.boxShadow, clip: cs.clipPath }
+    })
+    expect(strip.reserve).toBeGreaterThan(0)
+    expect(strip.gap).toBe(Math.round(strip.reserve))
+    expect(strip.shadow).not.toBe('none')
+    expect(strip.clip).toContain('inset')
     await page.locator('tbody .sv-grid-selection-cell .sv-grid-checkbox').nth(1).click()
     await expect(foot(page).locator('[data-stat=selected]')).toContainText('99,999')
     await expect(page.locator('.rule-body')).toContainText('"selectAll": true')
@@ -301,10 +381,14 @@ test.describe('the focused row model demos', () => {
   test('sql planner: the statements follow the request and the dialect', async ({ page }) => {
     await openDemo(page, '472-server-sql-planner')
     const sql = page.locator('.sql-text')
-    await expect(sql.first()).toContainText('GROUP BY "region"', { timeout: 30_000 })
-    await expect(page.locator('.sql-label')).toContainText(['group rows', 'count', 'grand total'])
+    // Americas opens on load, so the newest statement is the country level
+    // under the region as a predicate.
+    await expect(sql.first()).toContainText('GROUP BY "country"', { timeout: 30_000 })
+    await expect(sql.first()).toContainText('"region" = $1')
+    // A child level has no grand total statement; the top level asked for that.
+    await expect(page.locator('.sql-label')).toContainText(['group rows', 'count'])
     await page.getByRole('button', { name: 'MySQL' }).click()
-    await expect(sql.first()).toContainText('GROUP BY `region`')
+    await expect(sql.first()).toContainText('GROUP BY `country`')
     await page.getByLabel('Pivot by year').check()
     await expect(page.locator('.sql-label').first()).toContainText('pivot keys', { timeout: 30_000 })
     await expect(sql.nth(1)).toContainText('CASE WHEN')
@@ -324,5 +408,122 @@ test.describe('the focused row model demos', () => {
     await page.locator('thead th', { hasText: 'Amount' }).locator('button, [role=button], .sv-grid-header-sort').first().click()
     await expect.poll(async () => (await kinds()).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(mark + 13)
     expect((await kinds()).slice(0, 13)).toContain('group')
+  })
+
+  test('crud: the server refuses a bad edit, a lost race and a shipped delete; a delete is undone; a form creates under the region', async ({ page }) => {
+    await openDemo(page, '482-server-crud')
+    await groupCells(page).first().waitFor({ timeout: 30_000 })
+    await expect(foot(page)).toContainText(/Loaded\s*300/, { timeout: 30_000 })
+    const kit = page.locator('.demo-kit')
+    const entries = () => page.locator('.log-row').evaluateAll((els) => els.map((e) => e.textContent!.replace(/\s+/g, ' ').trim()))
+    const leaf = (status: string) => rows(page).filter({ hasText: status }).filter({ hasNot: page.locator('button.sv-group-cell') }).first()
+    const editQty = async (row: ReturnType<typeof leaf>, value: string) => {
+      await row.locator('td').nth(3).dblclick()
+      const input = page.locator('td input').first()
+      await input.fill(value)
+      await input.press('Enter')
+    }
+
+    // A quantity under 1 is refused on the server; the cell keeps its value.
+    const draft = leaf('draft')
+    await draft.locator('td').nth(1).click()
+    const qty = (await draft.locator('td').nth(3).textContent())!.trim()
+    await editQty(draft, '0')
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/update .* refused .*qty/)
+    expect((await draft.locator('td').nth(3).textContent())!.trim()).toBe(qty)
+
+    // A lost race: another user saved the row, so the version no longer matches.
+    // (Enter moved the active cell down a row; the buttons act on the focused row.)
+    await draft.locator('td').nth(1).click()
+    await kit.getByRole('button', { name: 'Someone else edits' }).click()
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/other user/)
+    await editQty(draft, '5')
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/refused .*someone else/)
+    await kit.getByRole('button', { name: 'Reload group' }).click()
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/reload/)
+    await page.waitForTimeout(600)
+    await editQty(draft, '5')
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/update .* ok .*-> 5/)
+
+    // A shipped order cannot be deleted; a draft can, and comes back with Undo.
+    await leaf('shipped').locator('td').nth(1).click()
+    await kit.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/delete .* refused .*shipped/)
+    await draft.locator('td').nth(1).click()
+    await kit.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/delete .* ok/)
+    await expect(foot(page)).toContainText(/Loaded\s*299/, { timeout: 15_000 })
+    await kit.getByRole('button', { name: 'Undo' }).click()
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/undo .* ok/)
+    await expect(foot(page)).toContainText(/Loaded\s*300/, { timeout: 15_000 })
+
+    // The form: a new order under the focused region, counted by the grand total.
+    await kit.getByRole('button', { name: 'New order' }).click()
+    const dialog = page.locator('[role="dialog"]').last()
+    await dialog.locator('#sv-ef-customer').fill('Playwright Co')
+    await dialog.locator('#sv-ef-product').click()
+    await page.locator('[role="option"]', { hasText: 'Bolt M8' }).first().click()
+    await dialog.locator('#sv-ef-qty').fill('3')
+    await dialog.locator('#sv-ef-unitPrice').fill('12')
+    await dialog.getByRole('button', { name: 'Create' }).click()
+    await expect.poll(async () => (await entries())[0] ?? '', { timeout: 15_000 }).toMatch(/create .* ok .*Playwright Co/)
+    await expect(page.locator('[role="dialog"]')).toHaveCount(0)
+    await expect(foot(page)).toContainText(/Orders\s*3,001/, { timeout: 15_000 })
+  })
+
+  test('master-detail: a detail row opens under its order at its declared height, fetches once, closes with the rest', async ({ page }) => {
+    await openDemo(page, '483-server-master-detail')
+    await groupCells(page).first().waitFor({ timeout: 30_000 })
+    await expect(foot(page)).toContainText(/Orders\s*4,000/, { timeout: 30_000 })
+    const details = page.locator('tr.sv-grid-detail-row')
+    // The grid's own toggle column: a row-header gutter, so no column menu or resize handle on it.
+    await expect(page.locator('thead th.sv-grid-detail-toggle-column').first()).toHaveCount(1)
+    expect(await page.locator('thead th.sv-grid-detail-toggle-column .sv-grid-col-menu-btn, thead th.sv-grid-detail-toggle-column .sv-grid-resize-handle').count()).toBe(0)
+    const chevron = page.locator('button.sv-grid-detail-toggle').first()
+    const order = (await chevron.locator('xpath=ancestor::tr').textContent())!.replace(/\s+/g, ' ').trim()
+    await chevron.click()
+    await expect(details).toHaveCount(1)
+    await expect(chevron).toHaveAttribute('aria-expanded', 'true')
+    expect(await details.first().evaluate((el) => el.getBoundingClientRect().height)).toBe(200)
+    await expect(details.first().locator('.sv-grid-root tbody tr').first()).toBeVisible({ timeout: 15_000 })
+    await expect(foot(page)).toContainText(/Line requests\s*1\b/)
+    const above = (await details.first().locator('xpath=preceding-sibling::tr[1]').textContent())!.replace(/\s+/g, ' ').trim()
+    expect(above).toBe(order)
+    // Closed and reopened: the lines come from the kept promise, no request.
+    await chevron.click()
+    await expect(details).toHaveCount(0)
+    await chevron.click()
+    await expect(details.first().locator('.sv-grid-root tbody tr').first()).toBeVisible({ timeout: 15_000 })
+    await expect(foot(page)).toContainText(/Line requests\s*1\b/)
+    await page.getByRole('button', { name: 'Open 3' }).click()
+    await expect(foot(page)).toContainText(/Open details\s*3\b/)
+    await page.getByRole('button', { name: 'Close all details' }).click()
+    await expect(details).toHaveCount(0)
+  })
+
+  test('master-detail: Ctrl+Enter on an order opens its panel, and on a region row closes the region', async ({ page }) => {
+    await openDemo(page, '483-server-master-detail')
+    await groupCells(page).first().waitFor({ timeout: 30_000 })
+    await expect(foot(page)).toContainText(/Orders\s*4,000/, { timeout: 30_000 })
+    const details = page.locator('tr.sv-grid-detail-row')
+    const chevron = page.locator('button.sv-grid-detail-toggle').first()
+    const order = chevron.locator('xpath=ancestor::tr')
+    // A click on a plain cell makes it the active cell; the key acts on its row.
+    await order.locator('td').nth(2).click()
+    await page.keyboard.press('Control+Enter')
+    await expect(details).toHaveCount(1)
+    await expect(chevron).toHaveAttribute('aria-expanded', 'true')
+    await expect(details.first().locator('.sv-grid-root tbody tr').first()).toBeVisible({ timeout: 15_000 })
+    // The active cell did not move: the same key closes the panel again.
+    await page.keyboard.press('Control+Enter')
+    await expect(details).toHaveCount(0)
+    await expect(chevron).toHaveAttribute('aria-expanded', 'false')
+    // On a group row the key collapses it, the way ArrowLeft does.
+    const region = rows(page).filter({ has: groupCells(page) }).first()
+    await region.locator('td').nth(2).click()
+    await page.keyboard.press('Control+Enter')
+    await expect(region.locator('button.sv-group-cell')).toHaveAttribute('aria-expanded', 'false')
+    await page.keyboard.press('Control+Enter')
+    await expect(region.locator('button.sv-group-cell')).toHaveAttribute('aria-expanded', 'true')
   })
 })

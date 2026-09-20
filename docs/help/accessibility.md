@@ -98,6 +98,12 @@ The keyboard handler in [Tree rows](./rows/tree-rows.md) adds:
 | Arrow Left          | Collapse an expanded node.          |
 | Enter / Space       | Toggle.                             |
 
+On a grouped grid, a tree (`getSubRows`) or a
+[server-side row model](./server/server-grouping.md#keyboard-and-accessibility)
+the grid handles these itself, and **Ctrl+Enter** on any cell of a group
+row toggles it; on the server model a leaf with a detail panel
+(`renderDetailRow`) opens or closes it with the same key.
+
 ## Screen-reader announcements
 
 The grid shares one visually-hidden `aria-live="polite"` region with the rest of

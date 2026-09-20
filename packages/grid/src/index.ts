@@ -121,6 +121,23 @@ export type {
   SchedulerOccurrenceChangeEvent,
 } from './SvGrid.types'
 export { registerSchedulerView, getSchedulerView, hasSchedulerView } from './scheduler-view.svelte'
+// Gantt view. Same split as the scheduler: the `gantt` prop and its config
+// types live in the free grid, the RENDERER ships in @svgrid/enterprise and
+// registers itself through this seam (see gantt-view.svelte.ts). Unlike the
+// scheduler, the Gantt's layout model lives in enterprise too - only the
+// renderer reads it.
+export type {
+  GanttConfig,
+  GanttDrawerConfig,
+  GanttTaskMoveEvent,
+  GanttTaskResizeEvent,
+  GanttProgressChangeEvent,
+  GanttTaskCommitEvent,
+  GanttDependency,
+  GanttDependencyType,
+  GanttZoom,
+} from './SvGrid.types'
+export { registerGanttView, getGanttView, hasGanttView } from './gantt-view.svelte'
 // Bulk-action bar over the row selection. Prop + types free, renderer Pro.
 export { registerSelectionBarView, getSelectionBarView, hasSelectionBarView } from './selection-bar-view.svelte'
 // Chart view. The `chart` prop + its config live in the free grid AND so does the
@@ -762,6 +779,7 @@ export {
   type ServerState,
   type ServerSortModel,
   type ServerFilterModel,
+  type ServerAggFn,
   type ServerAggregation,
   type ServerGroupRow,
   type ServerLeafRow,
@@ -771,6 +789,7 @@ export {
   type ServerGrandTotalRow,
   type ServerPlaceholderRow,
   type ServerDisplayRow,
+  type ServerDetailRow,
 } from './server-data-source'
 export {
   createBlockCache,

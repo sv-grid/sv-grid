@@ -19,14 +19,18 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readDemoSource } from './lib/demo-registry.mjs'
+import { pendingDemoIds } from './lib/releases.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const META_DIR = join(ROOT, 'examples', 'src', 'demos', 'meta')
 const OUT = join(ROOT, 'website', 'src', 'lib', 'demos-search.json')
 
 const entries = []
+// Demos of a feature whose release date has not come are not searchable yet.
+const pending = pendingDemoIds()
 for (const name of (await readdir(META_DIR)).filter((n) => n.endsWith('.json')).sort()) {
   const id = name.replace(/\.json$/, '')
+  if (pending.has(id)) continue
   const meta = JSON.parse(await readFile(join(META_DIR, name), 'utf-8'))
   // The pitch is the demo's own explanation of what it shows, often naming
   // the props and API it uses; the source itself stays out (too big, and the

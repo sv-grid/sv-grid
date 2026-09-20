@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPdfDocDefinition, registerPdfFonts, resolvePdfCharts, resolvePdfVfs } from './export-pdf'
+import { buildPdfDocDefinition, cssColorToHex, hexLuminance, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, resolvePdfVfs } from './export-pdf'
 
 const columns = [
   { header: 'Company', align: 'left' as const },
@@ -134,6 +134,126 @@ describe('buildPdfDocDefinition', () => {
     expect(def.pageMargins).toEqual([10, 10, 10, 10])
     expect(table.body[0][0].fillColor).toBe('#111827')
     expect((def.content[0] as any).layout.fillColor(2)).toBeNull() // zebra off
+  })
+
+  it('applies the blanket styles: header, rows, zebra, and A1 cell overrides', () => {
+    const def = buildPdfDocDefinition({
+      columns,
+      rows,
+      styles: {
+        headerRow: { backgroundColor: '#0f766e', color: '#ecfeff', fontSize: 10, textAlign: 'center' },
+        rows: { color: '#1e293b', fontStyle: 'italic', fontWeight: 'bold' },
+        rowAlternate: { backgroundColor: '#fefce8', color: '#713f12' },
+        cells: { B3: { backgroundColor: '#fee2e2', fontWeight: 700 }, A1: { color: '#ff0000' } },
+      },
+      now,
+    })
+    const t = def.content[0] as any
+    const header = t.table.body[0]
+    expect(header[0]).toMatchObject({ fillColor: '#0f766e', color: '#ff0000', fontSize: 10, alignment: 'center', bold: true })
+    expect(header[1].color).toBe('#ecfeff')
+    // Data rows: the blanket colour and weight, the alternate text colour on odd rows.
+    expect(t.table.body[1][0]).toMatchObject({ color: '#1e293b', italics: true, bold: true })
+    expect(t.table.body[2][0].color).toBe('#713f12')
+    expect(t.layout.fillColor(2)).toBe('#fefce8')
+    // B3 is the second data row, second column.
+    expect(t.table.body[2][1]).toMatchObject({ fillColor: '#fee2e2', bold: true })
+  })
+
+  it('takes explicit pdf colours over styles over the grid theme over the defaults', () => {
+    const theme = {
+      headerColor: '#123456', headerTextColor: '#abcdef', textColor: '#222222', zebraColor: '#eeeeee', borderColor: '#cccccc',
+    }
+    const themed = buildPdfDocDefinition({ columns, rows, theme, now }).content[0] as any
+    expect(themed.table.body[0][0]).toMatchObject({ fillColor: '#123456', color: '#abcdef' })
+    expect(themed.table.body[1][0].color).toBe('#222222')
+    expect(themed.layout.fillColor(2)).toBe('#eeeeee')
+    expect(themed.layout.hLineColor()).toBe('#cccccc')
+
+    const layered = buildPdfDocDefinition({
+      columns,
+      rows,
+      theme,
+      styles: { headerRow: { backgroundColor: '#654321' }, rowAlternate: { backgroundColor: '#dddddd' } },
+      opts: { headerColor: '#000000' },
+      now,
+    }).content[0] as any
+    expect(layered.table.body[0][0].fillColor).toBe('#000000') // pdf option
+    expect(layered.layout.fillColor(2)).toBe('#dddddd') // styles over theme
+    expect(layered.table.body[1][0].color).toBe('#222222') // theme where nothing else says
+  })
+
+  it('prints header and footer lines around the table, and merges data cells', () => {
+    const def = buildPdfDocDefinition({
+      columns,
+      rows,
+      headerLines: [{ text: 'Quarterly report', style: { fontWeight: 'bold', fontSize: 12 } }, { left: 'ACME', right: 'Q3' }],
+      footerLines: [{ image: 'data:image/png;base64,AAAA', width: 40 }],
+      merges: [{ row: 0, col: 0, colSpan: 2 }, { row: 1, col: 1, rowSpan: 2 }],
+      opts: { showPageNumbers: false },
+      now,
+    })
+    const c = def.content as any[]
+    expect(c[0]).toMatchObject({ text: 'Quarterly report', bold: true, fontSize: 12 })
+    expect(c[1].columns.map((x: any) => x.text)).toEqual(['ACME', '', 'Q3'])
+    expect(c.at(-1)).toMatchObject({ image: 'data:image/png;base64,AAAA', width: 40 })
+    const body = c.find((x) => x.table).table.body
+    expect(body[1][0].colSpan).toBe(2)
+    expect(body[1][1].text).toBe('')
+    expect(body[2][1].rowSpan).toBe(2)
+    expect(body[3][1].text).toBe('')
+  })
+
+  it('leaves merges alone under a structured body', () => {
+    const def = buildPdfDocDefinition({
+      columns,
+      body: [{ kind: 'group', label: 'A' }, { kind: 'data', cells: ['ACME', '1'] }, { kind: 'data', cells: ['Globex', '2'] }],
+      merges: [{ row: 0, col: 0, rowSpan: 2 }],
+      now,
+    })
+    const body = (def.content[0] as any).table.body
+    expect(body[2][0].rowSpan).toBeUndefined()
+  })
+})
+
+describe('the grid theme', () => {
+  it('converts css colours and measures luminance', () => {
+    expect(cssColorToHex('rgb(51, 65, 85)')).toBe('#334155')
+    expect(cssColorToHex('rgba(0, 0, 0, 0)')).toBeNull()
+    expect(cssColorToHex('#fff')).toBe('#ffffff')
+    expect(cssColorToHex('transparent')).toBeNull()
+    expect(hexLuminance('#ffffff')).toBeCloseTo(1, 5)
+    expect(hexLuminance('#000000')).toBe(0)
+  })
+
+  it('reads the header, text, stripe and line colours off a mounted grid, header only under a dark theme', () => {
+    const root = document.createElement('div')
+    root.className = 'sv-grid-root'
+    root.innerHTML = [
+      '<div class="sv-grid-container" style="background-color: rgb(255, 255, 255)">',
+      '<table><thead class="sv-grid-head"><tr><th class="sv-grid-column" style="background-color: rgb(241, 245, 249); color: rgb(15, 23, 42)"><div class="sv-grid-header-cell">A</div></th></tr></thead>',
+      '<tbody class="sv-grid-body"><tr class="sv-grid-row"><td class="sv-grid-cell sv-grid-row-number-cell" style="color: rgb(148, 163, 184)">1</td><td class="sv-grid-cell" style="color: rgb(30, 41, 59); border-bottom-color: rgb(226, 232, 240); border-bottom-style: solid">1</td></tr>',
+      '<tr class="sv-grid-row sv-grid-row-alt"><td class="sv-grid-cell sv-grid-row-number-cell">2</td><td class="sv-grid-cell" style="background-color: rgb(248, 250, 252)">2</td></tr></tbody></table></div>',
+    ].join('')
+    document.body.appendChild(root)
+    expect(readGridPdfTheme(root)).toEqual({
+      headerColor: '#f1f5f9',
+      headerTextColor: '#0f172a',
+      textColor: '#1e293b',
+      borderColor: '#e2e8f0',
+      zebraColor: '#f8fafc',
+    })
+    root.querySelector<HTMLElement>('.sv-grid-container')!.style.backgroundColor = 'rgb(15, 23, 42)'
+    expect(readGridPdfTheme(root)).toEqual({ headerColor: '#f1f5f9', headerTextColor: '#0f172a' })
+    // A dark page under an unpainted grid, and light text on its own, read as dark too.
+    root.querySelector<HTMLElement>('.sv-grid-container')!.style.backgroundColor = ''
+    document.body.style.backgroundColor = 'rgb(28, 25, 23)'
+    expect(readGridPdfTheme(root)).toEqual({ headerColor: '#f1f5f9', headerTextColor: '#0f172a' })
+    document.body.style.backgroundColor = ''
+    root.querySelectorAll<HTMLElement>('.sv-grid-cell:not(.sv-grid-row-number-cell)')[0]!.style.color = 'rgb(250, 250, 249)'
+    expect(readGridPdfTheme(root)).toEqual({ headerColor: '#f1f5f9', headerTextColor: '#0f172a' })
+    root.remove()
+    expect(readGridPdfTheme(null)).toEqual({})
   })
 })
 

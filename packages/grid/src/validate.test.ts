@@ -161,6 +161,25 @@ describe('treeData fields', () => {
   })
 })
 
+describe('gantt versus treeData', () => {
+  it('flags both trees being configured at once', () => {
+    const msg = run({ gantt: { startField: 'name' }, treeData: { parentField: 'name' } }).find(
+      (m) => m.includes('`gantt` and `treeData`'),
+    )!
+    expect(msg).toBeDefined()
+    expect(msg).toContain('gantt.parentField')
+    expect(msg).toContain('summary bars will under-report')
+  })
+
+  it('is silent for a Gantt on its own', () => {
+    expect(run({ gantt: { startField: 'name' } })).toEqual([])
+  })
+
+  it('is silent for treeData on its own', () => {
+    expect(run({ treeData: { parentField: 'name' } })).toEqual([])
+  })
+})
+
 describe('pinning versus column virtualization', () => {
   it('flags pinning while column virtualization is on by default', () => {
     const msg = run({ initialColumnPinning: { left: ['name'] } })[0]!

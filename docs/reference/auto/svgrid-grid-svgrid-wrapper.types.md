@@ -174,6 +174,14 @@ export type SvGridApi<
   TFeatures extends TableFeatures,
   TData extends RowData,
 > = {
+  // ----- DOM -----
+  /**
+   * The grid's root element (`.sv-grid-root`), or null before mount and
+   * after unmount. For measuring, focusing, or reading the theme the grid
+   * is drawn with - the PDF export takes its colours from here.
+   */
+  getElement(): HTMLElement | null
+
   // ----- Cells -----
   /** Read a cell value from the underlying data at `rowIndex`. */
   getCellValue(rowIndex: number, columnId: string): unknown

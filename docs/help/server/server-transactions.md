@@ -45,9 +45,10 @@ Rules worth knowing, each one a test:
 - A route whose group has not been expanded is `storeNotFound`. A transaction
   does not create levels; add the group row to the parent level instead.
 - A row added under a group inherits that group's selection state.
-- Aggregates are not recomputed by a transaction. Call
-  `refresh({ route: parentRoute })` after a leaf edit when the subtotal must
-  follow; the flagship demo does exactly that.
+- The parent group row's `childCount` moves by the net add and remove, so
+  the badge beside its key stays right. Aggregates are not recomputed by a
+  transaction. Call `refresh({ route: parentRoute })` after a leaf edit when
+  the subtotal must follow; the flagship demo does exactly that.
 
 ## Async transactions
 
@@ -97,6 +98,14 @@ Group rows do not take edits: the grid refuses them itself when a row model
 marks a row as a group, so the handler only ever sees leaves. Mark the value
 columns `cellFlash: true` and an updated cell flashes when the transaction
 lands.
+
+`createRow(input, route, addIndex)` puts the saved row at `addIndex` in its
+level; without one it goes to the end, which in a level of thousands is
+out of sight. `0` is the top of the level; the index a row had before a
+delete puts it back where it was, which is what an undo wants. Writes are
+non-optimistic unless the model has `optimistic: true`, in which case
+`updateRow` and `deleteRow` show the change first and put the row back if
+the server refuses; `state.saving` is true while any write is out.
 
 ## Delivering a whole level
 

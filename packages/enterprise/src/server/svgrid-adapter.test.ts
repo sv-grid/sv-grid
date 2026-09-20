@@ -4,10 +4,14 @@ import {
   adaptCallbackDatasource,
   fromCallbackFilterModel,
   fromCallbackRequest,
+  fromCallbackSelectionState,
+  isCallbackSelectionState,
   toCallbackDatasource,
   toCallbackRequest,
+  toCallbackSelectionState,
   type CallbackGetRowsParams,
 } from './svgrid-adapter'
+import { createServerSelectionModel } from './server-selection'
 
 const req = (over: Partial<ServerRequest> = {}): ServerRequest => ({
   startRow: 200,
@@ -141,5 +145,65 @@ describe('toCallbackDatasource', () => {
       ds.getRows({ request: toCallbackRequest(req()), success: () => resolve(false), fail: () => resolve(true) })
     })
     expect(failed).toBe(true)
+  })
+})
+
+describe('selection state mapping', () => {
+  it('maps the flat rule both ways', () => {
+    const theirs = toCallbackSelectionState({ selectAll: true, toggled: ['s2', 's7'] })
+    expect(theirs).toEqual({ selectAll: true, toggledNodes: ['s2', 's7'] })
+    expect(fromCallbackSelectionState(theirs)).toEqual({ selectAll: true, toggled: ['s2', 's7'] })
+    expect(isCallbackSelectionState(theirs)).toBe(true)
+    expect(isCallbackSelectionState({ selectAll: true, toggled: [] })).toBe(false)
+  })
+
+  it('maps the group rule both ways, keeping which exceptions are groups', () => {
+    // Everything, except EMEA, except DE within it, except one row in DE.
+    const ours = {
+      selectAllChildren: true,
+      toggled: {
+        EMEA: {
+          selectAllChildren: false,
+          group: true,
+          toggled: { DE: { selectAllChildren: true, group: true, toggled: { s3: { selectAllChildren: false, toggled: {} } } } },
+        },
+      },
+    }
+    const theirs = toCallbackSelectionState(ours)
+    expect(theirs).toEqual({
+      selectAllChildren: true,
+      toggledNodes: [
+        {
+          nodeId: 'EMEA',
+          selectAllChildren: false,
+          toggledNodes: [{ nodeId: 'DE', selectAllChildren: true, toggledNodes: [{ nodeId: 's3', selectAllChildren: false, toggledNodes: [] }] }],
+        },
+      ],
+    })
+    expect(fromCallbackSelectionState(theirs)).toEqual(ours)
+
+    // The restored rule answers the same questions the original did.
+    const model = createServerSelectionModel({ groupSelects: 'descendants' })
+    model.setState(fromCallbackSelectionState(theirs))
+    expect(model.isSelected(['APAC'], 's9')).toBe(true)
+    expect(model.isSelected(['EMEA', 'FR'], 's5')).toBe(false)
+    expect(model.isSelected(['EMEA', 'DE'], 's2')).toBe(true)
+    expect(model.isSelected(['EMEA', 'DE'], 's3')).toBe(false)
+  })
+
+  it('takes a mapping when group ids and group keys differ', () => {
+    const ours = {
+      selectAllChildren: false,
+      toggled: { EMEA: { selectAllChildren: true, group: true, toggled: {} } },
+    }
+    const mapping = {
+      groupId: (route: string[]) => 'row-group-' + route.join('-'),
+      groupKey: (id: string) => id.replace(/^row-group-(.*-)?/, ''),
+      isGroup: (id: string) => id.startsWith('row-group-'),
+    }
+    const theirs = toCallbackSelectionState(ours, mapping)
+    expect(theirs).toEqual({ selectAllChildren: false, toggledNodes: [{ nodeId: 'row-group-EMEA', selectAllChildren: true, toggledNodes: [] }] })
+    // Without exceptions of its own the node would read as a leaf; the mapping says group.
+    expect(fromCallbackSelectionState(theirs, mapping)).toEqual(ours)
   })
 })

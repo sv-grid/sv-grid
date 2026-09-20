@@ -20,6 +20,7 @@
  *
  * Dependency-free so Vite can bundle it into the site.
  */
+import { isReleased } from './releases.mjs'
 
 export const PRODUCT_NAME = 'SvGrid'
 
@@ -49,13 +50,17 @@ export const PRODUCT_KEYWORDS = [
   'TanStack Table svelte 5',
 ]
 
+
+/** The views the paid pack adds, as the calendar has them today. */
+const VIEWS = isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet'
+
 export const PRODUCT_DESCRIPTION =
-  'SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row and column virtualization, Excel-style filters, sorting, grouping with aggregation, tree data, master/detail, inline editing, cell-range selection with clipboard, WAI-ARIA and keyboard navigation, 20 themes. MIT-licensed core; @svgrid/enterprise adds the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.'
+  `SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row and column virtualization, Excel-style filters, sorting, grouping with aggregation, tree data, master/detail, inline editing, cell-range selection with clipboard, WAI-ARIA and keyboard navigation, 20 themes. MIT-licensed core; @svgrid/enterprise adds the Kanban board, ${VIEWS} views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.`
 
 /** What the paid pack adds, in one sentence, for the Enterprise offers. Keep
  *  in step with the pricing matrix (website/src/routes/Pricing.svelte). */
 export const ENTERPRISE_PACK =
-  'the Kanban board, Scheduler and Spreadsheet views, the Server-Side Row Model with SQL / REST / Supabase sources, Excel / PDF / CSV / HTML export + Print, Excel import, pivot tables + Pivot Designer, no-code alert rules, staged batch editing and SvGrid Studio'
+  `the Kanban board, ${VIEWS} views, the Server-Side Row Model with SQL / REST / Supabase sources, Excel / PDF / CSV / HTML export + Print, Excel import, pivot tables + Pivot Designer, no-code alert rules, staged batch editing and SvGrid Studio`
 
 export const FEATURE_LIST = [
   'Headless engine (createSvGrid) plus a drop-in <SvGrid> render component',
@@ -67,7 +72,7 @@ export const FEATURE_LIST = [
   'WAI-ARIA grid roles, keyboard navigation, right-to-left layout',
   '20 themes on CSS custom properties',
   'MCP server and llms.txt for AI assistants',
-  'Enterprise: Kanban board, Scheduler and Spreadsheet views of the same grid',
+  `Enterprise: Kanban board, ${VIEWS} views of the same grid`,
   'Enterprise: Server-Side Row Model with SQL, REST and Supabase sources',
   'Enterprise: Excel / PDF export, import, print, pivot tables, SvGrid Studio',
 ]

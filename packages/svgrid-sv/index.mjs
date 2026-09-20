@@ -12,10 +12,11 @@
  */
 import { defineAddon, defineAddonOptions } from 'sv'
 
-// Ranges rather than exact pins: the grid follows semver and a user running
-// `sv add` months from now should get current patches.
-const GRID = '^2.6.0'
-const ENTERPRISE = '^2.6.0'
+// The `latest` tag, as the create-svgrid templates use it: a user running
+// `sv add` gets whatever is current on the day, not the line this file was
+// written against (a caret range on 2.6 kept installing 2.6 after 3.0 shipped).
+const GRID = 'latest'
+const ENTERPRISE = 'latest'
 
 /** The starter component, in whichever language the project already uses. */
 function demoComponent(language) {

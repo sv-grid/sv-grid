@@ -167,6 +167,68 @@ describe('createServerDataSource in infinite mode', () => {
     ctl.dispose()
   })
 
+  it('retries only the block under the row the grid asks about', async () => {
+    let failing = true
+    const starts: number[] = []
+    const source: ServerDataSource<Row> = {
+      async getRows(req) {
+        starts.push(req.startRow)
+        if (failing && req.startRow >= 100) throw new Error('backend down')
+        const rows: Row[] = []
+        for (let i = req.startRow; i < Math.min(req.endRow, 1000); i += 1) {
+          rows.push({ id: i, name: `Row ${i}` })
+        }
+        return { rows, rowCount: 1000 }
+      },
+    }
+    let view!: ServerState<Row>
+    const ctl = createServerDataSource<Row>(source, {
+      mode: 'infinite',
+      blockSize: 100,
+      onChange: (s) => (view = s),
+    })
+    ctl.setViewport(100, 299)
+    await settle()
+    expect(view.failedBlocks).toEqual([1, 2])
+
+    failing = false
+    const before = starts.length
+    // The GridRowModel seam the failed row's Retry button goes through.
+    ctl.retryRow!(view.rows[250]!, 250)
+    await settle()
+    expect(starts.slice(before)).toEqual([200])
+    expect(view.failedBlocks).toEqual([1])
+    ctl.dispose()
+  })
+
+  it('hands each block a signal that purge, a sort change and dispose abort', async () => {
+    const signals: AbortSignal[] = []
+    const source: ServerDataSource<Row> = {
+      async getRows(req) {
+        signals.push(req.signal!)
+        // A server that never answers: only the abort can end these.
+        return new Promise(() => {})
+      },
+    }
+    const ctl = createServerDataSource<Row>(source, { mode: 'infinite', blockSize: 100, onChange: () => {} })
+    ctl.setViewport(0, 20)
+    await settle()
+    expect(signals).toHaveLength(1)
+    expect(signals[0]!.aborted).toBe(false)
+
+    ctl.purge()
+    await settle()
+    expect(signals[0]!.aborted).toBe(true)
+    expect(signals).toHaveLength(2)
+
+    ctl.setSort([{ id: 'id', desc: true }])
+    await settle()
+    expect(signals[1]!.aborted).toBe(true)
+
+    ctl.dispose()
+    expect(signals.at(-1)!.aborted).toBe(true)
+  })
+
   it('refresh keeps the count and the scroll position, purge does not', async () => {
     const { source, starts } = tableOf(1000)
     let view!: ServerState<Row>

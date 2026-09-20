@@ -35,7 +35,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (74)
+### Attributes (77)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -108,7 +108,10 @@ Primitives, so they work in plain HTML as well as through a property.
 | `external-filter` | `externalFilter` | `boolean` |
 | `editable-comments` | `editableComments` | `boolean` |
 | `conditional-stat-scope` | `conditionalStatScope` | `"filtered" \| "visible" \| "all"` |
+| `detail-row-height` | `detailRowHeight` | `number \| ((row: TData) => number)` |
+| `show-detail-toggle` | `showDetailToggle` | `boolean` |
 | `frozen-rows` | `frozenRows` | `number` |
+| `sticky-group-rows` | `stickyGroupRows` | `boolean` |
 | `enable-column-reorder` | `enableColumnReorder` | `boolean` |
 | `infer-column-types` | `inferColumnTypes` | `boolean` |
 | `row-drag-managed` | `rowDragManaged` | `boolean` |
@@ -116,7 +119,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (34)
+### Properties only (37)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -127,6 +130,7 @@ only be assigned in script: `el.columns = [...]`.
 | `columns` | `Array<ColumnDef<TFeatures, TData>>` |
 | `board` | `BoardConfig<TFeatures, TData>` |
 | `scheduler` | `SchedulerConfig<TFeatures, TData>` |
+| `gantt` | `GanttConfig<TFeatures, TData>` |
 | `chart` | `ChartViewConfig<TFeatures, TData>` |
 | `pivot` | `GridPivotConfig<TData>` |
 | `features` | `TFeatures` |
@@ -151,6 +155,8 @@ only be assigned in script: `el.columns = [...]`.
 | `pivotResultColumns` | `Array<ColumnDef<TFeatures, TData>> \| null` |
 | `rowSelectionModel` | `{ ... }` |
 | `isDetailRow` | `(row: TData, rowIndex: number) => boolean` |
+| `isDetailOpen` | `(row: TData) => boolean` |
+| `hasDetail` | `(row: TData) => boolean` |
 | `serverGroup` | `{ ... }` |
 | `serverFilterValues` | `(columnId: string) => Promise<string[]>` |
 | `pinnedTopRows` | `ReadonlyArray<TData>` |
@@ -158,7 +164,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (24)
+### Events (26)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -187,8 +193,10 @@ an object keyed by its parameter names.
 | `scrollbottomreached` | `onScrollBottomReached` | `event` |
 | `visiblerangechange` | `onVisibleRangeChange` | `range` |
 | `retryrow` | `onRetryRow` | `{ row, rowIndex }` |
+| `detailtoggle` | `onDetailToggle` | `{ row, rowIndex }` |
 | `columnorderchange` | `onColumnOrderChange` | `order` |
 | `rowdragend` | `onRowDragEnd` | `event` |
+| `rowdrop` | `onRowDrop` | `event` |
 
 Plus one alias kept from before the surface was generated:
 

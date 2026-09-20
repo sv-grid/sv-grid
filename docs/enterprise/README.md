@@ -1,9 +1,11 @@
 # Enterprise feature pack
 
 `@svgrid/enterprise` is a paid add-on for `@svgrid/grid`. It bolts onto
-the same `<SvGrid>` you already have and adds four feature areas: the
-server-side row model, data export, data import, and pivot tables. (The AI helpers are built in and
-**free** in `@svgrid/grid` - see [AI assistant](../help/ai.md).)
+the same `<SvGrid>` you already have and adds five feature areas: the
+server-side row model, data export, data import, pivot tables, and the
+Kanban, Scheduler and Spreadsheet views of the same grid. (The AI helpers
+are built in and **free** in `@svgrid/grid` - see
+[AI assistant](../help/ai.md).)
 
 ![The @svgrid/enterprise pack bolts data export, data import, and pivot tables onto the same SvGrid you already have.](/docs-media/enterprise-pack.svg)
 
@@ -93,7 +95,32 @@ paging over the tree, and a selection kept as a rule so select-all
 reaches rows the grid never loaded, with a bulk edit by rule. Flat paging
 and infinite scroll stay free in `@svgrid/grid`.
 
-Demo: [467 one million rows](../../examples/src/demos/467-server-row-model-1m.svelte).
+Demos: [467 one million rows](../../examples/src/demos/467-server-row-model-1m.svelte),
+[468 server pivot](../../examples/src/demos/468-server-pivot.svelte),
+[469 tree data](../../examples/src/demos/469-server-tree-data.svelte),
+[470 transactions](../../examples/src/demos/470-server-transactions.svelte),
+[471 selection by rule](../../examples/src/demos/471-server-selection.svelte),
+[472 request to SQL](../../examples/src/demos/472-server-sql-planner.svelte),
+[473 grouping rules](../../examples/src/demos/473-server-grouping-rules.svelte),
+[482 CRUD with a version check](../../examples/src/demos/482-server-crud.svelte),
+[483 master-detail](../../examples/src/demos/483-server-master-detail.svelte).
+
+### Views of the same grid
+
+The `board` and `scheduler` props and their config types are free in
+`@svgrid/grid`; what Enterprise ships is the renderer behind each,
+registered once with `enableBoardView()` or `enableSchedulerView()`
+(`installEnterprise(api)` calls both). The same rows, columns, sort and
+filter feed every one of them. A [Gantt view](../help/rows/gantt.md) of the
+same grid is in progress and due on 1 November 2026.
+
+- [Kanban board](../help/rows/kanban-board.md) - cards in lanes, drag-and-drop,
+  swimlanes, WIP limits, a card drawer.
+- [Scheduler / calendar](../help/rows/scheduler.md) - month, week, day, agenda
+  and timeline views with resources, recurrence and booking rules.
+- [The spreadsheet shell](../help/cells/spreadsheet-shell.md) - `<SvSheet />`
+  wraps the grid in a ribbon, formula bar, gutter and sheet tabs over the
+  [formula engine](../help/spreadsheet-formulas.md).
 
 ## Licensing
 
@@ -178,6 +205,6 @@ pnpm add @svgrid/enterprise jszip pdfmake    # also pdf
 
 - [Getting started](../getting-started.md) - if you haven't seen the
   Community walkthrough yet.
-- [Help index](../help/index.md) - all topic pages including the four
+- [Help index](../help/index.md) - all topic pages including the
   Enterprise pages.
 - [Missing features](../help/missing-features.md) - the honest gap list.

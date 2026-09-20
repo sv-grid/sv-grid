@@ -138,6 +138,10 @@ export function requiredStart(
   return new Date(t)
 }
 
+/** A hard limit on where one event may be scheduled, from a planning
+ *  constraint (`SNET`, `FNLT` and the rest). Both ends are optional. */
+export type CascadeBound = { minStart?: Date; maxEnd?: Date }
+
 /** Options for {@link cascade}. */
 export type CascadeOptions = {
   /**
@@ -146,6 +150,35 @@ export type CascadeOptions = {
    * shifts / business hours; omit for calendar-time scheduling).
    */
   snapForward?: (start: Date) => Date
+  /**
+   * Only what lies downstream of these keys may move: their successors,
+   * transitively, and never the keys themselves. A move passes the moved
+   * task (a phase move its whole subtree), so a task dropped too early for
+   * its predecessor stays where it was dropped with the link drawn as
+   * violated instead of springing forward, and a violation elsewhere in the
+   * plan is left alone until its own task moves. Omitted, every task in the
+   * graph is eligible.
+   */
+  from?: Iterable<string>
+  /**
+   * Per-key limits the cascade may not push past. A `minStart` raises the floor
+   * (the event cannot begin before it); a `maxEnd` caps the ceiling, and a
+   * cascade that would need to go further stops AT the cap rather than moving
+   * past it. The link is then left unsatisfied, which {@link violations}
+   * reports - the honest outcome, because a constraint and a link that
+   * disagree have no schedule that satisfies both.
+   */
+  bounds?: ReadonlyMap<string, CascadeBound>
+  /**
+   * The span a pushed event keeps. By default it keeps its calendar length:
+   * `end = start + (end - start)`. A day-granular planner passes working-time
+   * arithmetic here so a five-working-day task pushed over a weekend stays
+   * five working days long instead of shrinking to three. `endFor` gives the
+   * new end for a new start; `startFor` the new start for a capped end (the
+   * ceiling case). Both receive the event's times before the push.
+   */
+  endFor?: (start: Date, original: EventTimes) => Date
+  startFor?: (end: Date, original: EventTimes) => Date
 }
 
 /**
@@ -168,8 +201,25 @@ export function cascade(
   const cur = new Map<string, EventTimes>()
   for (const [k, v] of times) cur.set(k, { start: v.start, end: v.end })
 
+  // With roots, the eligible set is their downstream closure minus the roots.
+  let eligible: Set<string> | null = null
+  if (opts.from) {
+    const roots = new Set(opts.from)
+    eligible = new Set()
+    const stack = [...roots]
+    while (stack.length) {
+      const k = stack.pop()!
+      for (const dep of graph.succ.get(k) ?? []) {
+        if (cyclicIds.has(dep.id) || roots.has(dep.to) || eligible.has(dep.to)) continue
+        eligible.add(dep.to)
+        stack.push(dep.to)
+      }
+    }
+  }
+
   const changed = new Map<string, EventTimes>()
   for (const key of order) {
+    if (eligible && !eligible.has(key)) continue
     const links = graph.pred.get(key)
     if (!links || !links.length) continue
     const self = cur.get(key)
@@ -184,11 +234,26 @@ export function cascade(
       const req = requiredStart(pred, dep, durationMs).getTime()
       if (req > minStartMs) minStartMs = req
     }
+    // A floor constraint applies whether or not a link moved the event.
+    const bound = opts.bounds?.get(key)
+    if (bound?.minStart && bound.minStart.getTime() > minStartMs) {
+      minStartMs = bound.minStart.getTime()
+    }
     if (minStartMs <= self.start.getTime()) continue // already legal - never pull earlier
 
     let newStart = new Date(minStartMs)
     if (opts.snapForward) newStart = opts.snapForward(newStart)
-    const newEnd = new Date(newStart.getTime() + durationMs)
+    // A ceiling stops the cascade at the cap instead of pushing past it. The
+    // link stays unsatisfied and `violations` says so, rather than the
+    // constraint being silently overrun.
+    if (bound?.maxEnd) {
+      const latestStart = opts.startFor
+        ? opts.startFor(bound.maxEnd, self).getTime()
+        : bound.maxEnd.getTime() - durationMs
+      if (newStart.getTime() > latestStart) newStart = new Date(latestStart)
+    }
+    if (newStart.getTime() <= self.start.getTime()) continue
+    const newEnd = opts.endFor ? opts.endFor(newStart, self) : new Date(newStart.getTime() + durationMs)
     const next = { start: newStart, end: newEnd }
     cur.set(key, next)
     changed.set(key, next)

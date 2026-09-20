@@ -4,6 +4,10 @@
  * `max-width` media query, so this import cannot affect desktop.
  * The website imports this same file - see website/src/index.css. */
 @import './mobile.css';
+/* The house chrome demos opt into with `.demo-kit` on their root (segmented
+ * controls, toolbar buttons, the log aside, the stat bar). Shared with the
+ * website the same way mobile.css is. */
+@import './demo-chrome.css';
 
 /* Tailwind's `dark:` modifier follows our data-theme attribute, so theme
  * switching is in sync with our own --sg-* tokens. App.svelte writes the

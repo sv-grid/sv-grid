@@ -338,6 +338,16 @@ if (plan.expression) {
 ```
 
 
+## What a filter re-requests under grouping
+
+Under the Enterprise row model a filter purges every level by default: a
+filtered group may have different children and different totals.
+`onlyRefreshFilteredGroups: true` re-fetches only the groups whose column is
+filtered. The demo shows both rules with a request log, beside the sort
+rules:
+
+<div data-docs-demo="473-server-grouping-rules" data-height="560"></div>
+
 ## Watching the filter model come out
 
 Before you wire a query builder, look at what the grid actually reports. Type

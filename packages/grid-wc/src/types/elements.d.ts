@@ -21,6 +21,8 @@ export interface SvGridElement extends HTMLElement {
   /** property only - an attribute cannot hold this */
   scheduler: unknown
   /** property only - an attribute cannot hold this */
+  gantt: unknown
+  /** property only - an attribute cannot hold this */
   chart: unknown
   /** property only - an attribute cannot hold this */
   pivot: unknown
@@ -202,6 +204,14 @@ export interface SvGridElement extends HTMLElement {
   rowSelectionModel: unknown
   /** property only - an attribute cannot hold this */
   isDetailRow: unknown
+  /** attribute `detail-row-height` */
+  detailRowHeight: number
+  /** attribute `show-detail-toggle` */
+  showDetailToggle: boolean
+  /** property only - an attribute cannot hold this */
+  isDetailOpen: unknown
+  /** property only - an attribute cannot hold this */
+  hasDetail: unknown
   /** property only - an attribute cannot hold this */
   serverGroup: unknown
   /** property only - an attribute cannot hold this */
@@ -210,6 +220,8 @@ export interface SvGridElement extends HTMLElement {
   pinnedTopRows: readonly unknown[]
   /** attribute `frozen-rows` */
   frozenRows: number
+  /** attribute `sticky-group-rows` */
+  stickyGroupRows: boolean
   /** property only - an attribute cannot hold this */
   mergedCells: readonly unknown[]
   /** property only - an attribute cannot hold this */
@@ -262,8 +274,10 @@ declare global {
     scrollbottomreached: CustomEvent<unknown>
     visiblerangechange: CustomEvent<unknown>
     retryrow: CustomEvent<unknown>
+    detailtoggle: CustomEvent<unknown>
     columnorderchange: CustomEvent<unknown>
     rowdragend: CustomEvent<unknown>
+    rowdrop: CustomEvent<unknown>
     selectionchange: CustomEvent<unknown>
   }
 }

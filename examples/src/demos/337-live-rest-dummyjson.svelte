@@ -22,7 +22,9 @@
     type GridColumns,
     type ServerState,
   } from '@svgrid/grid'
-  import { createRestDataSource, dummyJsonAdapter } from '@svgrid/enterprise'
+  import { createRestDataSource, dummyJsonAdapter, setLicenseKey } from '@svgrid/enterprise'
+
+  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -65,26 +67,17 @@
   const rangeEnd = $derived(Math.min(s.total, (s.pageIndex + 1) * s.pageSize))
 </script>
 
-<section class="flex flex-col flex-1 min-h-0 gap-3">
-  <div class="shrink-0 rounded-lg border px-4 py-3" style="border-color: var(--sg-border); background: var(--sg-header-bg);">
-    <p class="text-sm font-semibold" style="color: var(--sg-fg);">
-      Live products from <code>dummyjson.com</code> via <code>createRestDataSource</code>
-    </p>
-    <p class="mt-1 text-xs" style="color: var(--sg-muted);">
-      Real HTTP requests - open the network tab. Sorting maps to the API's
-      <code>sortBy</code>/<code>order</code>, paging to <code>skip</code>/<code>limit</code>;
-      the <code>dummyJsonAdapter</code> shapes the request and parses the response.
-    </p>
-  </div>
+<section class="wrap demo-kit">
+  <header class="chrome">
+    <span class="note">
+      Live products from <code>dummyjson.com</code> through <code>createRestDataSource</code>: real HTTP
+      requests, so open the network tab. Sorting maps to the API's <code>sortBy</code> / <code>order</code>,
+      paging to <code>skip</code> / <code>limit</code>; the <code>dummyJsonAdapter</code> shapes the
+      request and parses the response. Swap the URL and the adapter to point at any public API.
+    </span>
+  </header>
 
-  {#if s.error}
-    <div class="shrink-0 flex items-center gap-3 rounded-lg border px-4 py-3" style="border-color: var(--sg-danger, #b3261e); background: color-mix(in srgb, var(--sg-danger, #b3261e) 8%, transparent); color: var(--sg-danger, #b3261e);">
-      <span class="text-sm">Couldn't reach the API. {s.error instanceof Error ? s.error.message : String(s.error)}</span>
-      <button class="srm-btn" onclick={() => ctl.refresh()}>Retry</button>
-    </div>
-  {/if}
-
-  <div class="flex-1 min-h-0">
+  <div class="gridpane">
     <SvGrid responsive={true}
       columnResize
       data={s.rows}
@@ -104,26 +97,19 @@
     />
   </div>
 
-  <footer class="shrink-0 flex items-center gap-3 text-sm" style="color: var(--sg-fg);">
-    <button class="srm-btn" disabled={s.pageIndex <= 0 || s.loading} onclick={() => ctl.setPage(s.pageIndex - 1)}>‹ Prev</button>
-    <button class="srm-btn" disabled={s.pageIndex >= s.pageCount - 1 || s.loading} onclick={() => ctl.setPage(s.pageIndex + 1)}>Next ›</button>
-    <span style="color: var(--sg-muted)">
-      {rangeStart.toLocaleString()}–{rangeEnd.toLocaleString()} of {s.total.toLocaleString()}
-      · page {s.pageIndex + 1}/{s.pageCount}
-      {#if s.loading}· <span style="color: var(--site-accent, #2563eb)">loading…</span>{/if}
-    </span>
+  <footer class="foot">
+    <div class="actions">
+      <button type="button" class="btn" disabled={s.pageIndex <= 0 || s.loading} onclick={() => ctl.setPage(s.pageIndex - 1)}>Previous</button>
+      <button type="button" class="btn" disabled={s.pageIndex >= s.pageCount - 1 || s.loading} onclick={() => ctl.setPage(s.pageIndex + 1)}>Next</button>
+    </div>
+    <span class="stat"><span class="stat-label">Rows</span><strong>{rangeStart.toLocaleString()} - {rangeEnd.toLocaleString()}</strong> of {s.total.toLocaleString()}</span>
+    <span class="stat"><span class="stat-label">Page</span><strong>{s.pageIndex + 1}</strong> of {s.pageCount.toLocaleString()}</span>
+    {#if s.loading}<span class="stat">loading...</span>{/if}
+    {#if s.error}
+      <span class="stat err" role="alert">
+        Could not reach the API. {s.error instanceof Error ? s.error.message : String(s.error)}
+        <button type="button" class="btn" onclick={() => ctl.refresh()}>Retry</button>
+      </span>
+    {/if}
   </footer>
 </section>
-
-<style>
-  .srm-btn {
-    padding: 5px 12px;
-    border: 1px solid var(--sg-border);
-    border-radius: 6px;
-    background: var(--sg-bg);
-    color: var(--sg-fg);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .srm-btn:disabled { opacity: 0.45; cursor: default; }
-</style>

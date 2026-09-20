@@ -59,9 +59,17 @@ already applied, so the rule is the same.
 
 Both shapes are plain data. `ctl.getSelectionState()` returns the rule and
 `ctl.setSelectionState(rule)` restores it, so a selection survives a page
-reload or travels to an endpoint. Under a `descendants` rule the state also
-carries `groupBy`, the columns its levels are keyed by, which is what a
-backend needs to resolve it.
+reload or travels to an endpoint. When `bulkUpdate` sends a `descendants`
+rule to `updateWhere` it adds `groupBy`, the columns the levels are keyed
+by, which is what a backend needs to resolve it.
+
+A selection saved in the callback-style shape other server-side row models
+use - `{ selectAll, toggledNodes }` flat, `{ nodeId, selectAllChildren,
+toggledNodes }` per group - is accepted by `ctl.setSelectionState` as it
+is, with a group's `nodeId` read as its key. `toCallbackSelectionState(rule)`
+produces that shape for an endpoint written against it, and
+`fromCallbackSelectionState(state, { groupKey, isGroup })` maps it when
+group rows carry ids of their own rather than their keys.
 
 ## An honest count
 

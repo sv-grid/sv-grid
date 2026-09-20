@@ -27,8 +27,28 @@ export type PlanPredicate = {
   values?: unknown[]
 }
 
-/** An aggregate to compute per group. */
-export type PlanAggregate = { field: string; fn: 'sum' | 'avg' | 'min' | 'max' | 'count' }
+/**
+ * An aggregate to compute per group. `fn` is one of the built-ins or a
+ * name the planner was told to allow (`PlanOptions.aggregators`); it is
+ * never a string the client chose on its own, because it ends up in SQL.
+ */
+export type PlanAggregate = { field: string; fn: string }
+
+/** What the planner emits without being asked. */
+export const BUILTIN_AGGREGATORS: ReadonlyArray<string> = ['sum', 'avg', 'min', 'max', 'count']
+
+/** Function names are identifiers, nothing else, before they reach SQL. */
+const AGG_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
+
+export type PlanOptions = {
+  /**
+   * Aggregate function names to allow besides the built-ins, exactly as
+   * the database spells them (`median`, `percentile_cont`, `count_distinct`).
+   * Anything a request asks for that is not built in or listed here is
+   * dropped from the plan.
+   */
+  aggregators?: ReadonlyArray<string>
+}
 
 export type QueryPlan = {
   /** AND-combined column predicates. */
@@ -130,8 +150,13 @@ export function coerce(type: EntityFieldType, raw: unknown): unknown {
 export function planQuery<TData extends RowData>(
   schema: EntitySchema<TData>,
   request: ServerRequest,
+  options: PlanOptions = {},
 ): QueryPlan {
   const fields = new Map(schema.fields.map((f) => [f.field, f]))
+  const allowedFn = new Set([
+    ...BUILTIN_AGGREGATORS,
+    ...(options.aggregators ?? []).filter((name) => AGG_NAME.test(name)),
+  ])
   const where: PlanPredicate[] = []
   const fm = request.filterModel ?? {}
 
@@ -204,7 +229,8 @@ export function planQuery<TData extends RowData>(
   const aggregations: PlanAggregate[] =
     groupBy || request.needsGrandTotal
       ? (request.aggregations ?? [])
-          .filter((a) => fields.has(a.col))
+          // Column AND function are whitelisted: both end up in SQL.
+          .filter((a) => fields.has(a.col) && allowedFn.has(a.fn))
           .map((a) => ({ field: a.col, fn: a.fn }))
       : []
 

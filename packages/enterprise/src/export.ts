@@ -19,7 +19,7 @@ import {
 } from './export-serialize'
 import { serializeSpreadsheetML } from './export-xls'
 import { buildXlsxParts, packageXlsx, type XlsxCell, type XlsxCondFormat, type XlsxTableSpec } from './export-ooxml'
-import { buildPdfDocDefinition, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
+import { buildPdfDocDefinition, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
 import { buildConditionalResolver, type ExportCellVisualFn } from './export-conditional'
 import type { ConditionalFormat } from '@svgrid/grid/format'
 
@@ -1033,6 +1033,10 @@ async function exportPdf<
     ...opts.pdf,
     pageOrientation: opts.pdf?.pageOrientation ?? opts.pageOrientation,
   }
+  // The grid on screen lends its colours unless told not to; explicit
+  // `pdf` colours and `styles` still win inside the builder.
+  const theme = pdfOpts.matchTheme === false ? {} : readGridPdfTheme(api.getElement?.() ?? null)
+  const lines = { headerLines: opts.header, footerLines: opts.footer }
   // Charts handed over as elements are rasterised here, once, through the
   // grid chart's own PNG path at 2x, so the page gets the picture on screen.
   // The rasteriser comes from the grid's barrel, imported on demand: the
@@ -1048,7 +1052,7 @@ async function exportPdf<
     // Conditional formatting is skipped for grouped PDFs (group / subtotal
     // rows own the layout); the grid colors still show on screen.
     const body = buildGroupedPdfBody(cols, sourceRows, effGroupBy)
-    def = buildPdfDocDefinition({ columns, body, opts: pdfOpts, charts, now })
+    def = buildPdfDocDefinition({ columns, body, opts: pdfOpts, styles: opts.styles, theme, ...lines, charts, now })
   } else {
     const projected = await projectRows(sourceRows, cols, opts)
     const dataRows = projected.slice(1).map((r) => fields.map((f) => String(r[f] ?? '')))
@@ -1070,6 +1074,10 @@ async function exportPdf<
       },
       dataCellLink: link,
       opts: pdfOpts,
+      styles: opts.styles,
+      theme,
+      ...lines,
+      merges: opts.merges,
       charts,
       now,
     })

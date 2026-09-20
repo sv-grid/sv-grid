@@ -78,6 +78,7 @@
   } from "@svgrid/grid";
   // Scheduler Pro feature models (this package).
   import { cascade, violations, type SchedulerDependency } from "./scheduler-dependencies";
+  import { arrowHeadPath, dependencyArrows, type Arrow } from "./gantt/timeline-arrows";
   import { expandAssignments, resourceLoad, type SchedulerAssignment } from "./scheduler-assignments";
   import { columnSummaries } from "./scheduler-summary";
   import { buildAxis, timeToX, xToTime, resolveZoom, zoomPresets, type Axis, type ZoomLevel } from "./scheduler-axis";
@@ -568,33 +569,18 @@
     }
     return { byKey, height: top };
   });
-  // SVG path + state for each dependency arrow (elbow connector, pred finish -> succ start).
-  const tlDepArrows = $derived.by(() => {
-    if (!isTimeline || !hasDeps) return [] as Array<{ id: string; d: string; bad: boolean; hx: number; hy: number }>;
-    const rects = tlBarRects.byKey;
-    const bad = new Set(depViolations.map((d) => d.id));
-    const out: Array<{ id: string; d: string; bad: boolean; hx: number; hy: number }> = [];
-    for (const dep of depList) {
-      const a = rects.get(dep.from);
-      const b = rects.get(dep.to);
-      if (!a || !b) continue;
-      const type = dep.type ?? "FS";
-      const x1 = type === "SS" || type === "SF" ? a.left : a.right;
-      const x2 = type === "FF" || type === "SF" ? b.right : b.left;
-      out.push({ id: dep.id, d: depElbow(x1, a.midY, x2, b.midY), bad: bad.has(dep.id), hx: x2, hy: b.midY });
-    }
-    return out;
+  // SVG path + state for each dependency arrow (elbow connector, pred finish ->
+  // succ start). The geometry lives in ./gantt/timeline-arrows, shared with the
+  // Gantt chart so the two views draw the same link the same way.
+  const tlDepArrows = $derived.by<Arrow[]>(() => {
+    if (!isTimeline || !hasDeps) return [];
+    return dependencyArrows(
+      tlBarRects.byKey,
+      depList,
+      new Set(depViolations.map((d) => d.id)),
+      tlLaneH,
+    );
   });
-  // Orthogonal elbow connector between two anchor points; loops around when the
-  // successor sits left of the predecessor (a backward / violating link).
-  function depElbow(x1: number, y1: number, x2: number, y2: number): string {
-    const s = 10;
-    const p = x1 + s;
-    if (x2 >= p) return `M${x1},${y1} L${p},${y1} L${p},${y2} L${x2},${y2}`;
-    const q = x2 - s;
-    const midY = y2 >= y1 ? y1 + tlLaneH : y1 - tlLaneH;
-    return `M${x1},${y1} L${p},${y1} L${p},${midY} L${q},${midY} L${q},${y2} L${x2},${y2}`;
-  }
   // Cascade successors forward after a move / resize, writing the shifts into the
   // overlay and reporting them (never mutating source rows).
   function cascadeDeps(movedKey: string, ns: Date, ne: Date) {
@@ -602,7 +588,9 @@
     const times = new Map<string, { start: Date; end: Date }>();
     for (const [k, v] of depTimes) times.set(k, v);
     times.set(movedKey, { start: ns, end: ne });
-    const shifts = cascade(times, depList, { snapForward: depSnapForward });
+    // Successors only: the moved event stays where it was dropped, and a link
+    // it now breaks is drawn as violated rather than the drop being undone.
+    const shifts = cascade(times, depList, { from: [movedKey], snapForward: depSnapForward });
     if (!shifts.size) return;
     const moves: Array<{ id: string; start: Date; end: Date }> = [];
     for (const [k, t] of shifts) {
@@ -3191,9 +3179,9 @@
       {/if}
       {#if zoomOn && proAxisData}
         <div class="sv-sched-slots sv-sched-zoom" role="group" aria-label="Zoom">
-          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(-1)} aria-label="Zoom in">-</button>
+          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(1)} aria-label="Zoom out">-</button>
           <span class="sv-sched-zoom-label">{proAxisData.level?.label ?? "Zoom"}</span>
-          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(1)} aria-label="Zoom out">+</button>
+          <button type="button" class="sv-sched-btn sv-sched-btn-slot" onclick={() => stepZoom(-1)} aria-label="Zoom in">+</button>
         </div>
       {/if}
       {#each views as v (v)}
@@ -3428,7 +3416,7 @@
               <path
                 class="sv-sched-dep-arrow"
                 class:sv-sched-dep-bad={arr.bad}
-                d={`M${arr.hx},${arr.hy} l-6,-3.5 l0,7 z`}
+                d={arrowHeadPath(arr.hx, arr.hy, arr.dir)}
               />
             {/each}
           </svg>
@@ -5149,13 +5137,14 @@
   .sv-sched-dep-arrow {
     fill: var(--sv-sched-dep, color-mix(in srgb, var(--sg-fg, #1f2937) 45%, transparent));
   }
-  .sv-sched-dep-line.sv-sched-dep-bad,
-  .sv-sched-dep-arrow.sv-sched-dep-bad {
-    stroke: var(--sv-sched-dep-bad, #dc2626);
-    fill: var(--sv-sched-dep-bad, #dc2626);
-  }
+  /* The line keeps `fill: none` - a fill on the elbow path paints the polygon
+     it encloses, and a violated link showed up as a solid red slab. */
   .sv-sched-dep-line.sv-sched-dep-bad {
+    stroke: var(--sv-sched-dep-bad, #dc2626);
     stroke-dasharray: 4 3;
+  }
+  .sv-sched-dep-arrow.sv-sched-dep-bad {
+    fill: var(--sv-sched-dep-bad, #dc2626);
   }
   /* Resource utilization histogram (Scheduler Pro) - a subtle meter strip at the
      bottom of each resource row, clearly separated from the event lanes above. */

@@ -1,0 +1,24 @@
+{
+  "description": "A 640-task programme on the Svelte 5 data grid's Gantt view: 40 sites, each a phase of 16 linked tasks, opening folded to one bar per site. Rows past the viewport are not rendered, so 680 rows scroll like 40. The critical path runs over every chain and names the site the finish date turns on, baselines per site count the ones running late, and the search box filters the whole plan. Zoom in to the week preset and the weekends fold out of the axis.",
+  "keywords": [
+    "svelte gantt performance",
+    "svelte 5 large gantt chart",
+    "svelte gantt virtualized rows",
+    "svelte programme schedule",
+    "svelte gantt critical path many tasks"
+  ],
+  "faq": [
+    {
+      "question": "How many rows does the Gantt render?",
+      "answer": "Only the rows near the viewport once the plan passes 300 rows. Rows are positioned by index, so nothing else in the layout changes; the task table and the chart share one scroll container and stay in step."
+    },
+    {
+      "question": "Why is only one site critical?",
+      "answer": "Each site is its own chain of links with no link to any other site, so the project finish is set by whichever chain ends last. The tasks of that chain have no slack; every other site has days of room, which the Slack column shows."
+    },
+    {
+      "question": "Does folding a site drop its tasks from the critical path?",
+      "answer": "No. The planning pass runs over every task whether or not its phase is collapsed, and a folded phase whose tasks are critical carries the ring on its summary bar."
+    }
+  ]
+}

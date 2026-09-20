@@ -94,6 +94,44 @@ request. See [Server grouping](./server-grouping.md) for the full contract
 and the aggregate case. The rest of this page is the **roll-your-own**
 alternative, for when you want to own the flat-row derivation yourself.
 
+### Moving rows
+
+A file dragged onto a folder is a move on the server, not a reorder of the
+rows the grid holds. Two pieces do it. The grid prop `onRowDrop` hands you
+every drop instead of touching the data: the dragged row, the row it landed
+on (or `null` below the last one), that row's display index, and a side.
+Over the top or bottom edge the side is `before` or `after`; over the middle
+of a group row it is `into`, and the grid tints the whole row rather than
+drawing a line, so the user sees the difference. The middle band exists
+only when `onRowDrop` is set. The model method `moveRow(id, toRoute,
+{ patch?, addIndex? })` then writes the move through the source's
+`updateRow` when you give it a patch, takes the row out of the level it
+was in and puts it into `toRoute` at `addIndex` (the end when omitted):
+
+```svelte
+<SvGrid
+  rowModel={ctl}
+  {columns}
+  rowDragManaged
+  onRowDrop={async ({ row, target, side }) => {
+    const t = target?.__group
+    // Into a folder: its path. Beside a row: that row's folder.
+    const toRoute = !t ? [] : side === 'into' && t.kind === 'group' ? [...t.path] : t.kind === 'group' ? t.path.slice(0, -1) : [...(t.route ?? [])]
+    const parent = toRoute.at(-1) ?? 'root'
+    await ctl.moveRow(row.id, toRoute, { patch: { parent } })
+  }}
+/>
+```
+
+The result carries the row the server returned and the status of the add.
+A target folder nothing has opened has no cached level to add to, so the
+status is `storeNotFound`: the row is gone from its old level, the closed
+folder's `childCount` badge already moved, and the folder shows the row
+when it opens. Demo 469 above expands the folder in that case. `moveRow`
+rejects a row that is not loaded; a folder moves with its subtree (the
+cached levels under its old key are dropped and re-read on expand). Rows
+dragged from another grid still go through `onRowDragEnd` / `rowDropTarget`.
+
 <img src="/docs-media/server-tree-lazy.svg" alt="Load-on-demand tree flow: only roots are seeded; expanding a node fires an async fetchChildren call that shows a loading placeholder; the fetched children are appended to the flat rows and cached so re-expanding is instant." width="100%" />
 
 <div data-docs-demo="31-lazy-tree-load" data-height="480"></div>

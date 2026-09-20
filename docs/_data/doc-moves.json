@@ -76,5 +76,33 @@
     "pdf-and-print": "help/charts/from-the-grid#pdf-and-print",
     "csv": "help/charts/from-the-grid#csv",
     "notes": "help/charts/start#notes"
+  },
+  "help/rows/gantt": {
+    "": "help/gantt",
+    "the-minimum": "help/gantt/start#the-minimum",
+    "how-dates-are-read": "help/gantt/start#how-dates-are-read",
+    "work-breakdown": "help/gantt/work-breakdown#phases-from-a-parent-field",
+    "bars-progress-and-milestones": "help/gantt/start#bars-progress-and-milestones",
+    "dependencies": "help/gantt/dependencies#links-and-their-types",
+    "editing": "help/gantt/editing#turning-it-on",
+    "what-each-gesture-reports": "help/gantt/editing#what-each-gesture-reports",
+    "auto-reschedule": "help/gantt/dependencies#auto-reschedule",
+    "keyboard": "help/gantt/editing#keyboard",
+    "working-time-and-the-axis": "help/gantt/axis-and-working-time#zoom-presets",
+    "the-task-table": "help/gantt/start#the-task-table",
+    "search-filter-and-sort-flow-through": "help/gantt/start#search-filter-and-sort-flow-through",
+    "gantt-pro": "help/gantt/api#gantt-pro",
+    "the-critical-path": "help/gantt/critical-path#the-critical-path",
+    "baselines": "help/gantt/critical-path#baselines",
+    "constraints": "help/gantt/critical-path#constraints",
+    "resource-load": "help/gantt/resources#the-load-strip",
+    "a-folded-axis": "help/gantt/axis-and-working-time#folding-weekends-out-of-the-axis",
+    "pro-config-reference": "help/gantt/api#gantt-pro",
+    "config-reference": "help/gantt/api#fields",
+    "more-examples": "help/gantt#more-examples",
+    "plan-editing": "help/gantt/editing#turning-it-on",
+    "critical-path-baselines": "help/gantt/critical-path#the-critical-path",
+    "resource-load-a-folded-axis": "help/gantt/resources#a-field-service-quarter",
+    "see-also": "help/gantt#see-also"
   }
 }

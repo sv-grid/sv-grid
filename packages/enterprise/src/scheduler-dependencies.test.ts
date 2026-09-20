@@ -93,6 +93,25 @@ describe('cascade', () => {
     expect(out.size).toBe(0)
   })
 
+  it('with `from`, moves only what is downstream of the roots', () => {
+    // b was dropped before a ends (illegal), c follows b, and z is an
+    // unrelated pre-existing violation on the far side of the plan.
+    const t = times({ a: ev(9, 11), b: ev(9, 10), c: ev(9, 10), y: ev(9, 11), z: ev(9, 10) })
+    const deps = [
+      { id: '1', from: 'a', to: 'b', type: 'FS' as const },
+      { id: '2', from: 'b', to: 'c', type: 'FS' as const },
+      { id: '3', from: 'y', to: 'z', type: 'FS' as const },
+    ]
+    const out = cascade(t, deps, { from: ['b'] })
+    expect(out.has('b')).toBe(false) // the moved task stays where it was put
+    expect(out.get('c')).toEqual({ start: D(10), end: D(11) }) // its successor follows
+    expect(out.has('z')).toBe(false) // nothing upstream or elsewhere moves
+    // Without roots the whole plan is made legal, b and z included.
+    const all = cascade(t, deps)
+    expect(all.get('b')).toEqual({ start: D(11), end: D(12) })
+    expect(all.get('z')).toEqual({ start: D(11), end: D(12) })
+  })
+
   it('cascades multi-hop chains in one pass', () => {
     const t = times({ a: ev(9, 11), b: ev(9, 10), c: ev(9, 10) })
     const out = cascade(t, [
@@ -151,5 +170,93 @@ describe('violations', () => {
   it('treats exact touching (start == pred end) as legal', () => {
     const t = times({ a: ev(9, 11), b: ev(11, 12) })
     expect(violations(t, [{ id: '1', from: 'a', to: 'b', type: 'FS' }])).toHaveLength(0)
+  })
+})
+
+describe('cascade with constraint bounds', () => {
+  const day = (n: number) => new Date(2026, 8, n)
+  const span = (from: number, days: number) => ({ start: day(from), end: day(from + days) })
+  const times = (rows: Record<string, { start: Date; end: Date }>) => new Map(Object.entries(rows))
+  const fs = [{ id: '1', from: 'a', to: 'b' }]
+
+  it('raises a start to its floor even when no link moved it', () => {
+    // `b` is legal against the link but its constraint says not before the 10th.
+    const t = times({ a: span(1, 2), b: span(3, 2) })
+    const out = cascade(t, fs, {
+      bounds: new Map([['b', { minStart: day(10) }]]),
+    })
+    expect(out.get('b')!.start.getTime()).toBe(day(10).getTime())
+    // The duration travels with it.
+    expect(out.get('b')!.end.getTime()).toBe(day(12).getTime())
+  })
+
+  it('stops AT a ceiling instead of pushing a task past it', () => {
+    // The link wants b at the 6th; the constraint says it must finish by the
+    // 7th, and it is 3 days long, so the furthest it can go is the 4th.
+    const t = times({ a: span(1, 5), b: span(1, 3) })
+    const out = cascade(t, fs, {
+      bounds: new Map([['b', { maxEnd: day(7) }]]),
+    })
+    expect(out.get('b')!.start.getTime()).toBe(day(4).getTime())
+    expect(out.get('b')!.end.getTime()).toBe(day(7).getTime())
+  })
+
+  it('leaves the link reported as unsatisfied when a ceiling blocks it', () => {
+    // The honest outcome: a constraint and a link that disagree have no
+    // schedule satisfying both, so the arrow stays flagged.
+    const t = times({ a: span(1, 5), b: span(1, 3) })
+    const out = cascade(t, fs, { bounds: new Map([['b', { maxEnd: day(7) }]]) })
+    const after = new Map(t)
+    for (const [k, v] of out) after.set(k, v)
+    expect(violations(after, fs).map((d) => d.id)).toEqual(['1'])
+  })
+
+  it('changes nothing when the bounds are already satisfied', () => {
+    const t = times({ a: span(1, 2), b: span(3, 2) })
+    const out = cascade(t, fs, { bounds: new Map([['b', { minStart: day(1), maxEnd: day(30) }]]) })
+    expect(out.size).toBe(0)
+  })
+
+  it('lets the caller say what span a pushed event keeps', () => {
+    // A five-working-day b pushed from Monday the 7th to Wednesday the 9th.
+    // By default it keeps its calendar length and ends Monday the 14th - three
+    // working days. A working-time planner hands in the arithmetic, and it
+    // ends Wednesday the 16th: still five days of work.
+    const t = times({ a: span(1, 8), b: span(7, 5) })
+    const plain = cascade(t, fs)
+    expect(plain.get('b')!.end.getTime()).toBe(day(14).getTime())
+    const weekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6
+    const working = cascade(t, fs, {
+      endFor: (start, orig) => {
+        let left = 0
+        for (let d = new Date(orig.start); d < orig.end; d.setDate(d.getDate() + 1)) if (!weekend(d)) left++
+        const cur = new Date(start)
+        while (left > 0) { if (!weekend(cur)) left--; cur.setDate(cur.getDate() + 1) }
+        return cur
+      },
+    })
+    expect(working.get('b')!.start.getTime()).toBe(day(9).getTime())
+    expect(working.get('b')!.end.getTime()).toBe(day(16).getTime())
+  })
+
+  it('caps at a ceiling with the caller\'s start-for-end', () => {
+    // b must finish by the 14th and is five working days: with weekends off
+    // the latest start is Monday the 7th, not Wednesday the 9th (14 minus 5).
+    const t = times({ a: span(1, 9), b: span(1, 5) })
+    const out = cascade(t, fs, {
+      bounds: new Map([['b', { maxEnd: day(14) }]]),
+      startFor: () => day(7),
+      endFor: () => day(12),
+    })
+    expect(out.get('b')!.start.getTime()).toBe(day(7).getTime())
+    expect(out.get('b')!.end.getTime()).toBe(day(12).getTime())
+  })
+
+  it('is unchanged by an empty bounds map', () => {
+    const t = times({ a: span(1, 5), b: span(1, 2) })
+    const withOut = cascade(t, fs)
+    const withEmpty = cascade(t, fs, { bounds: new Map() })
+    expect([...withEmpty.keys()]).toEqual([...withOut.keys()])
+    expect(withEmpty.get('b')!.start.getTime()).toBe(withOut.get('b')!.start.getTime())
   })
 })

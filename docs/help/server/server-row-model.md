@@ -57,6 +57,14 @@ type ServerRequest = {
 not block-cache bounds. Return `{ rows, rowCount }` where `rowCount` is the total
 count **after filtering** - the pager needs it to compute the last page.
 
+Every request also carries `signal`, an `AbortSignal` the grid aborts when it
+no longer wants the answer: a newer page superseded this one, a block was
+purged or scrolled out of the cache, a group was collapsed, the controller
+was disposed. Hand it to `fetch(url, { signal })` and a query the user has
+scrolled past is cancelled at the server instead of completing for nothing;
+the grid ignores the rejection the abort produces. The SvelteKit transport
+does this for you and keeps the signal out of the posted body.
+
 ### The sort model
 
 ```ts
@@ -281,7 +289,73 @@ The flagship demo runs all of it over one million rows through one
 
 <div data-docs-demo="467-server-row-model-1m" data-height="640"></div>
 
+### A backend written for a callback-style datasource
+
+Some server-side row models hand the datasource a `getRows(params)` that
+answers through `params.success({ rowData, rowCount })`, with the request
+spelt `rowGroupCols` / `valueCols` / `pivotCols` and a `sortModel` of
+`{ colId, sort }`. `@svgrid/enterprise` maps that shape both ways, so a
+backend built for it needs no rewrite:
+
+- `adaptCallbackDatasource(ds)` wraps a datasource object of that shape
+  for `createServerRowModel` or `createServerDataSource`.
+- `toCallbackRequest(request)` turns a `ServerRequest` into that request
+  JSON, for a `getRows` that is a `fetch` against an endpoint which already
+  parses it; `fromCallbackRequest` reads it, for an endpoint of yours that
+  has to serve such a client too.
+- `toCallbackSelectionState` / `fromCallbackSelectionState` do the same for
+  a saved selection rule (`toggledNodes` instead of `toggled`); see
+  [Server selection](./server-selection.md).
+
 ## More examples
+
+### Server-side pivot
+
+The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request.
+
+<div data-docs-demo="468-server-pivot" data-height="560"></div>
+
+### Server tree data (row model)
+
+A file tree the grid never holds whole: expanding a folder is one getRows with the folder path as groupKeys, per-folder refresh, and a file added or deleted without a refetch.
+
+<div data-docs-demo="469-server-tree-data" data-height="560"></div>
+
+### Server transactions (live feed)
+
+Changes the server already made, applied without a refetch: in-place patches with a flash, batched add and remove transactions addressed by route, and a status for every result.
+
+<div data-docs-demo="470-server-transactions" data-height="560"></div>
+
+### Server selection: select all, minus these
+
+Select-all as a rule the server counts, flat and per group, with a bulk edit the server applies by rule.
+
+<div data-docs-demo="471-server-selection" data-height="560"></div>
+
+### Server row model to SQL
+
+The statements planToSql renders for every request, per dialect: rows, count, grand total and the two-step pivot.
+
+<div data-docs-demo="472-server-sql-planner" data-height="560"></div>
+
+### Server grouping: totals, sort and refresh rules
+
+Grand total positions, subtotal footers, open-by-default levels, expand-all over unloaded groups, refresh against purge, and what a sort or a filter re-requests, with the request log.
+
+<div data-docs-demo="473-server-grouping-rules" data-height="560"></div>
+
+### Server row model: CRUD
+
+The four writes against a backend that says no: a form under the focused region, inline edits with a version check, a refused delete, an undo, `saving`, and optimistic mode against a slow server.
+
+<div data-docs-demo="482-server-crud" data-height="560"></div>
+
+### Server row model: master-detail
+
+A detail panel under any order of the grouped, virtualized tree, fetched from its own endpoint when it opens, with the region row held under the header.
+
+<div data-docs-demo="483-server-master-detail" data-height="560"></div>
 
 ### Server grouping (row model)
 

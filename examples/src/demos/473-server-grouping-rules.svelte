@@ -94,10 +94,13 @@
   let filterScope = $state<FilterScope>('purge')
   let view = $state<ServerRowModelState<Sale>>()
 
-  // One string per combination: the {#key} below remounts the grid on it.
-  const optionsKey = $derived(`${totals}|${footers}|${openDepth}|${sortScope}|${filterScope}`)
+  // The options are construction-time, so a change rebuilds the model; the
+  // grid stays mounted (it re-subscribes to the new rowModel), the log keeps
+  // its entries, and the sort, filter and open groups carry over so the
+  // note's "compare the two rules" works on the same tree.
   let ctl = $state.raw<ServerRowModel<Sale>>(makeModel())
-  function makeModel() {
+  function makeModel(previous?: ServerRowModel<Sale>, carryExpansion = true) {
+    const carried = previous?.getState()
     const model = createServerRowModel<Sale>(source, {
       groupBy: ['region', 'country'],
       aggregations: [
@@ -115,18 +118,21 @@
       filterValues: async (columnId) => [...new Set(DB.map((r) => String(r[columnId as keyof Sale])))].sort(),
       onChange: (s) => (view = s),
     })
+    if (carried) {
+      if (carried.sortModel.length) model.setSort(carried.sortModel)
+      if (Object.keys(carried.filterModel.columns ?? {}).length || carried.filterModel.global) model.setFilter(carried.filterModel)
+    }
     model.refresh()
+    // Groups that were open re-open as their levels arrive (not when the
+    // option being changed is what opens on load).
+    if (carryExpansion) for (const key of carried?.expandedGroups ?? []) model.expandGroup(JSON.parse(key) as string[])
     return model
   }
-  let lastKey = optionsKey
-  $effect(() => {
-    const key = optionsKey
-    if (key === lastKey) return
-    lastKey = key
-    ctl.dispose()
-    log = []
-    ctl = makeModel()
-  })
+  function rebuild(carryExpansion = true) {
+    const previous = ctl
+    ctl = makeModel(previous, carryExpansion)
+    previous.dispose()
+  }
   $effect(() => () => ctl.dispose())
 
   // ---- Columns --------------------------------------------------------------
@@ -148,8 +154,8 @@
         }),
     },
     { field: 'product', header: 'Product (plain)', width: 140 },
-    { field: 'qty', header: 'Qty (aggregated)', width: 140, align: 'right', format: { type: 'number' } },
-    { field: 'amount', header: 'Amount (aggregated)', width: 160, align: 'right', format: usd },
+    { field: 'qty', header: 'Qty (sum)', width: 120, align: 'right', format: { type: 'number' } },
+    { field: 'amount', header: 'Amount (sum)', width: 140, align: 'right', format: usd },
   ]
   type Row = ServerRowModelGridRow<Sale>
 
@@ -159,13 +165,13 @@
   })
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <div class="opt">
       <span class="opt-label">Grand total</span>
       <div class="seg total-seg" role="group" aria-label="Grand total row">
         {#each ['none', 'top', 'bottom', 'pinnedTop', 'pinnedBottom'] as p (p)}
-          <button type="button" class:is-on={totals === p} aria-pressed={totals === p} onclick={() => (totals = p as TotalPos)}>{p === 'pinnedTop' ? 'pinned top' : p === 'pinnedBottom' ? 'pinned bottom' : p}</button>
+          <button type="button" class:is-on={totals === p} aria-pressed={totals === p} onclick={() => { totals = p as TotalPos; rebuild() }}>{p === 'pinnedTop' ? 'pinned top' : p === 'pinnedBottom' ? 'pinned bottom' : p}</button>
         {/each}
       </div>
     </div>
@@ -173,31 +179,31 @@
       <span class="opt-label">Open on load</span>
       <div class="seg depth-seg" role="group" aria-label="Levels open by default">
         {#each [0, 1, 2] as d (d)}
-          <button type="button" class:is-on={openDepth === d} aria-pressed={openDepth === d} onclick={() => (openDepth = d)}>{d === 0 ? 'nothing' : d === 1 ? 'regions' : 'countries'}</button>
+          <button type="button" class:is-on={openDepth === d} aria-pressed={openDepth === d} onclick={() => { openDepth = d; rebuild(false) }}>{d === 0 ? 'nothing' : d === 1 ? 'regions' : 'countries'}</button>
         {/each}
       </div>
     </div>
     <div class="opt">
       <span class="opt-label">A sort re-fetches</span>
       <div class="seg sort-seg" role="group" aria-label="Sort scope">
-        <button type="button" class:is-on={sortScope === 'affected'} aria-pressed={sortScope === 'affected'} onclick={() => (sortScope = 'affected')}>affected levels</button>
-        <button type="button" class:is-on={sortScope === 'all'} aria-pressed={sortScope === 'all'} onclick={() => (sortScope = 'all')}>every level</button>
+        <button type="button" class:is-on={sortScope === 'affected'} aria-pressed={sortScope === 'affected'} onclick={() => { sortScope = 'affected'; rebuild() }}>affected levels</button>
+        <button type="button" class:is-on={sortScope === 'all'} aria-pressed={sortScope === 'all'} onclick={() => { sortScope = 'all'; rebuild() }}>every level</button>
       </div>
     </div>
     <div class="opt">
       <span class="opt-label">A filter</span>
       <div class="seg filter-seg" role="group" aria-label="Filter scope">
-        <button type="button" class:is-on={filterScope === 'purge'} aria-pressed={filterScope === 'purge'} onclick={() => (filterScope = 'purge')}>purges all</button>
-        <button type="button" class:is-on={filterScope === 'touched'} aria-pressed={filterScope === 'touched'} onclick={() => (filterScope = 'touched')}>touched groups only</button>
+        <button type="button" class:is-on={filterScope === 'purge'} aria-pressed={filterScope === 'purge'} onclick={() => { filterScope = 'purge'; rebuild() }}>purges all</button>
+        <button type="button" class:is-on={filterScope === 'touched'} aria-pressed={filterScope === 'touched'} onclick={() => { filterScope = 'touched'; rebuild() }}>touched groups only</button>
       </div>
     </div>
-    <label class="chk"><input type="checkbox" bind:checked={footers} /> Subtotal footers</label>
+    <label class="chk"><input type="checkbox" checked={footers} onchange={(e) => { footers = e.currentTarget.checked; rebuild() }} /> Subtotal footers</label>
   </header>
   <div class="toolbar">
     <div class="actions">
-      <button type="button" class="btn" onclick={() => ctl.expandAll()}>Expand loaded</button>
+      <button type="button" class="btn" onclick={() => ctl.expandAll()} title="Open every group the grid has read">Expand loaded</button>
       <button type="button" class="btn" onclick={() => ctl.expandAll({ includeUnloaded: true })} title="Groups that arrive later open too, until the next collapse">Expand everything</button>
-      <button type="button" class="btn" onclick={() => ctl.collapseAll()}>Collapse all</button>
+      <button type="button" class="btn" onclick={() => ctl.collapseAll()} title="Close every group; their levels stay cached">Collapse all</button>
       <button type="button" class="btn" onclick={() => ctl.refresh({ route: [] })} title="Re-read the open levels in place: expansion and scroll survive">Refresh</button>
       <button type="button" class="btn" onclick={() => ctl.refresh({ route: [], purge: true })} title="Drop every cached level and start over">Purge</button>
     </div>
@@ -209,32 +215,34 @@
   </div>
   <div class="body">
     <div class="gridpane">
-      {#key optionsKey}
-        <SvGrid
-          responsive={true}
-          columnResize
-          fitColumns
-          rowModel={ctl}
-          {columns}
-          {features}
-          sortable
-          filterable
-          filterMode="menu"
-          selectionMode="none"
-          rowHeight={32}
-          containerHeight="100%"
-        />
-      {/key}
+      <SvGrid
+        responsive={true}
+        columnResize
+        fitColumns
+        rowModel={ctl}
+        stickyGroupRows
+        {columns}
+        {features}
+        sortable
+        filterable
+        filterMode="menu"
+        selectionMode="none"
+        rowHeight={32}
+        containerHeight="100%"
+      />
     </div>
     <aside class="log" aria-label="Request log">
       <div class="log-head">Requests <span class="muted">newest first · {levels} level{levels === 1 ? '' : 's'} cached</span></div>
+      <div class="log-row log-cols" aria-hidden="true">
+        <span>level</span><span>route</span><span>rows</span><span>sort</span><span>filter</span>
+      </div>
       {#each log as e (e.seq)}
         <div class="log-row">
           <span class="log-kind">{e.kind}</span>
           <span class="log-route" title={e.route}>{e.route}</span>
           <span class="log-range">{e.range}</span>
-          <span class="log-sort" title="sort">{e.sort}</span>
-          <span class="log-filter" title="filter">{e.filter}</span>
+          <span class="log-sort" class:muted={e.sort === '-'} title="the sort the request carried">{e.sort}</span>
+          <span class="log-filter" class:muted={e.filter === '-'} title="the filter columns the request carried">{e.filter}</span>
         </div>
       {/each}
       {#if !log.length}<div class="muted log-empty">No requests yet.</div>{/if}
@@ -243,93 +251,10 @@
 </section>
 
 <style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome, .toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex: none; }
-  .opt { display: inline-flex; align-items: center; gap: 6px; }
-  .opt-label { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--sg-muted, #64748b); white-space: nowrap; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); flex: 1 1 320px; }
-  .note em { font-style: normal; font-weight: 600; color: var(--sg-fg, #0f172a); }
-  .chk {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: var(--sg-fg, #0f172a);
-    white-space: nowrap;
-  }
-  .chk input { accent-color: var(--sg-accent, #2563eb); }
-  .seg {
-    display: inline-flex;
-    flex: none;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--sg-bg, #fff);
-  }
-  .seg > button {
-    font: inherit;
-    font-size: 12px;
-    padding: 3px 10px;
-    border: 0;
-    background: transparent;
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .seg > button + button { border-left: 1px solid var(--sg-border, #e2e8f0); }
-  .seg > button.is-on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
-  .seg > button:focus-visible { outline: 2px solid var(--sg-accent, #2563eb); outline-offset: -2px; }
-  .actions { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-  .btn {
-    font: inherit;
-    font-size: 13px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-bg, #fff);
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
-  .body { display: flex; gap: 10px; flex: 1; min-height: 0; }
-  .gridpane { flex: 1; min-width: 0; min-height: 0; }
-  .log {
-    width: 310px;
-    flex: none;
-    overflow: auto;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 10px;
-    background: var(--sg-bg, #fff);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-  }
-  .log-head {
-    position: sticky;
-    top: 0;
-    padding: 8px 10px;
-    font-weight: 600;
-    color: var(--sg-fg, #0f172a);
-    background: var(--sg-header-bg, #f8fafc);
-    border-bottom: 1px solid var(--sg-border, #e2e8f0);
-  }
-  .log-row {
-    display: grid;
-    grid-template-columns: 44px 1fr 52px 80px 60px;
-    gap: 6px;
-    padding: 4px 10px;
-    border-bottom: 1px solid var(--sg-border, #e2e8f0);
-    align-items: baseline;
-    color: var(--sg-fg, #0f172a);
-  }
-  .log-kind { font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.02em; }
+  /* Only what is particular to this demo; the chrome is the shared demo-kit. */
+  .log-row { grid-template-columns: 40px 1fr 44px 64px 48px; }
+  .log-cols { position: sticky; top: 30px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--sg-muted, #64748b); background: var(--sg-bg, #fff); }
   .log-route, .log-sort, .log-filter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .log-sort, .log-filter { color: var(--sg-muted, #64748b); }
   .log-range { text-align: right; white-space: nowrap; }
-  .log-empty { padding: 10px; }
-  .muted { color: var(--sg-muted, #64748b); font-weight: 400; }
-  @media (max-width: 900px) {
-    .body { flex-direction: column; }
-    .log { width: auto; max-height: 160px; }
-  }
 </style>

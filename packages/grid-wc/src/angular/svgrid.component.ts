@@ -18,8 +18,8 @@ import {
 } from '@angular/core'
 import '@svgrid/grid-wc'
 
-const PROP_NAMES: string[] = ["data","columns","board","scheduler","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"]
-const EVENT_NAMES: string[] = ["pivotmodechange","expandedchange","paginationchange","columnresize","rowresize","pasteclipboard","apiready","rowselectionchange","cellselectionchange","sortingchange","advancedfilterchange","filterschange","notechange","cellvaluechange","activecellchange","cellclick","rowclick","celldoubleclick","rowdoubleclick","scrollbottomreached","visiblerangechange","retryrow","columnorderchange","rowdragend","selectionchange"]
+const PROP_NAMES: string[] = ["data","columns","board","scheduler","gantt","chart","pivot","pivotMode","contextMenu","selectionBar","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","detailRowHeight","showDetailToggle","isDetailOpen","hasDetail","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","stickyGroupRows","mergedCells","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"]
+const EVENT_NAMES: string[] = ["pivotmodechange","expandedchange","paginationchange","columnresize","rowresize","pasteclipboard","apiready","rowselectionchange","cellselectionchange","sortingchange","advancedfilterchange","filterschange","notechange","cellvaluechange","activecellchange","cellclick","rowclick","celldoubleclick","rowdoubleclick","scrollbottomreached","visiblerangechange","retryrow","detailtoggle","columnorderchange","rowdragend","rowdrop","selectionchange"]
 
 /**
  * SvGrid as an Angular component.
@@ -48,6 +48,7 @@ export class SvGridComponent implements OnInit, OnChanges, OnDestroy {
   @Input() columns?: readonly unknown[]
   @Input() board?: unknown
   @Input() scheduler?: unknown
+  @Input() gantt?: unknown
   @Input() chart?: unknown
   @Input() pivot?: unknown
   @Input() pivotMode?: boolean
@@ -139,10 +140,15 @@ export class SvGridComponent implements OnInit, OnChanges, OnDestroy {
   @Input() pivotResultColumns?: readonly unknown[]
   @Input() rowSelectionModel?: unknown
   @Input() isDetailRow?: unknown
+  @Input() detailRowHeight?: number
+  @Input() showDetailToggle?: boolean
+  @Input() isDetailOpen?: unknown
+  @Input() hasDetail?: unknown
   @Input() serverGroup?: unknown
   @Input() serverFilterValues?: unknown
   @Input() pinnedTopRows?: readonly unknown[]
   @Input() frozenRows?: number
+  @Input() stickyGroupRows?: boolean
   @Input() mergedCells?: readonly unknown[]
   @Input() pinnedBottomRows?: readonly unknown[]
   @Input() enableColumnReorder?: boolean
@@ -175,8 +181,10 @@ export class SvGridComponent implements OnInit, OnChanges, OnDestroy {
   @Output() scrollbottomreached = new EventEmitter<unknown>()
   @Output() visiblerangechange = new EventEmitter<unknown>()
   @Output() retryrow = new EventEmitter<unknown>()
+  @Output() detailtoggle = new EventEmitter<unknown>()
   @Output() columnorderchange = new EventEmitter<unknown>()
   @Output() rowdragend = new EventEmitter<unknown>()
+  @Output() rowdrop = new EventEmitter<unknown>()
   @Output() selectionchange = new EventEmitter<unknown>()
 
   private listeners: Array<[string, EventListener]> = []

@@ -116,7 +116,25 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     ctx.rowDropIndex = rowIndex;
-    ctx.rowDropSide = e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+    ctx.rowDropSide = sideAt(rowIndex, rect, e.clientY);
+  }
+
+  /**
+   * Which edge the pointer is on. A custom drop handler also gets the middle
+   * of a group or tree row as "into" (the row becomes its child); the
+   * managed reorder only knows before and after.
+   */
+  function sideAt(rowIndex: number, rect: DOMRect, y: number): "before" | "after" | "into" {
+    const rel = (y - rect.top) / Math.max(rect.height, 1);
+    if (ctx.props.onRowDrop && rel >= 0.25 && rel <= 0.75 && canNest(rowIndex)) return "into";
+    return rel < 0.5 ? "before" : "after";
+  }
+  function canNest(rowIndex: number): boolean {
+    const row = ctx.allRows[rowIndex];
+    if (!row) return false;
+    const sg = ctx.props.serverGroup;
+    if (sg) return !!sg.isGroup(row.original);
+    return typeof row.getCanExpand === "function" && row.getCanExpand();
   }
 
   function onRowDragLeave(rowIndex: number) {
@@ -147,13 +165,22 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
    * both land here, so the reorder, the cross-grid hand-off and the
    * `onRowDragEnd` payload have exactly one implementation.
    */
-  function commitDropOnRow(rowIndex: number, side: "before" | "after") {
+  function commitDropOnRow(rowIndex: number, side: "before" | "after" | "into") {
     if (!canAccept() || !bus) return;
     const dragged = bus.row;
     const target = originalAt(rowIndex);
     const sourceGridId = bus.gridId;
     const sameGrid = sourceGridId === gridId;
     clearIndicators();
+
+    // A custom handler owns the drop: the grid reports it and leaves its
+    // data alone (a row model's rows are not the grid's to splice).
+    if (sameGrid && ctx.props.onRowDrop) {
+      bus = null;
+      ctx.props.onRowDrop({ row: dragged, target, targetIndex: rowIndex, side });
+      return;
+    }
+    if (side === "into") side = "after";
 
     const data = (ctx.internalData as unknown[]).slice();
     if (sameGrid) {
@@ -197,6 +224,12 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     const sourceGridId = bus.gridId;
     const sameGrid = sourceGridId === gridId;
     clearIndicators();
+
+    if (sameGrid && ctx.props.onRowDrop) {
+      bus = null;
+      ctx.props.onRowDrop({ row: dragged, target: null, targetIndex: null, side: "after" });
+      return;
+    }
 
     const data = (ctx.internalData as unknown[]).slice();
     if (sameGrid) {

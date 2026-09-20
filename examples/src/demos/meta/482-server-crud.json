@@ -1,0 +1,24 @@
+{
+  "description": "Create, edit and delete rows over a server-side row model in a Svelte 5 data grid, against a backend that validates and refuses. A new order goes in through the edit panel under the focused region and lands as a transaction; an inline edit is one updateRow that carries the row version, so an edit that lost a race to another user is refused with a conflict; a delete of a shipped order is refused; a delete that went through can be undone. The saving flag shows while a write is in flight. Optimistic mode shows the edit before the server answers and restores the row when the server refuses; the slow-server switch makes the difference visible. The write log shows what the server received and what it said.",
+  "keywords": [
+    "svelte grid server side crud",
+    "svelte 5 data grid create update delete server",
+    "svelte grid optimistic update rollback server row model",
+    "svelte grid edit conflict version check",
+    "svelte grid undo delete"
+  ],
+  "faq": [
+    {
+      "question": "What happens when the server refuses an edit?",
+      "answer": "updateRow rejects with the server's message. Waiting for the server, the cell never changed, so nothing moves; in optimistic mode the model had already shown the new value and puts the previous row back. The demo logs the refusal and shows it in the footer."
+    },
+    {
+      "question": "How does the demo detect that someone else edited the row?",
+      "answer": "Every row carries a version. The inline edit sends the version the grid read the row at; the mock server compares it with the one it holds and refuses the write when they differ, the way a real backend does with a version column or an updated_at check. Reload group re-reads the level in place so the next edit carries the current version."
+    },
+    {
+      "question": "Where does a new row land?",
+      "answer": "createRow(values, route) writes through the datasource and applies the saved row as a transaction under the route, here the region the form was seeded with from the focused row, so the row appears without refetching the level; the top level is refreshed in place so the region subtotals and counts follow."
+    }
+  ]
+}

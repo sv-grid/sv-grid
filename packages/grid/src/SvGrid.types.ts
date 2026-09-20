@@ -1113,6 +1113,268 @@ export type SchedulerConfig<
   searchPlaceholder?: string;
 };
 
+/**
+ * The Gantt axis presets: which unit is a tick and which is the coarser row
+ * grouping them. `week` (day ticks under month majors) is the default.
+ */
+export type GanttZoom = "day" | "week" | "month" | "quarter" | "year";
+
+/**
+ * The four classic dependency kinds. `FS` (finish-to-start) is the default:
+ * the successor may not start before the predecessor finishes.
+ */
+export type GanttDependencyType = "FS" | "SS" | "FF" | "SF";
+
+/**
+ * A link from a predecessor task (`from`) to a successor (`to`). Both are row
+ * ids (the grid's `getRowId`). `lag` is in DAYS - negative for a lead, so
+ * `{ type: 'FS', lag: -1 }` lets the successor start a day before the
+ * predecessor finishes.
+ */
+export type GanttDependency = {
+  id: string;
+  from: string;
+  to: string;
+  type?: GanttDependencyType;
+  lag?: number;
+};
+
+/** Fired when a task bar is dragged to new dates. {@link GanttConfig.onTaskMove}. */
+export type GanttTaskMoveEvent<TData extends RowData = RowData> = {
+  row: TData;
+  start: Date;
+  end: Date;
+  /**
+   * The moved row's descendants, shifted by the same delta - present only when
+   * a summary (parent) bar was dragged. Cascaded successors are NOT here; they
+   * arrive through {@link GanttConfig.onDependenciesChange}.
+   */
+  subtree?: Array<{ row: TData; start: Date; end: Date }>;
+};
+
+/** Fired when a task bar's edge is dragged. {@link GanttConfig.onTaskResize}. */
+export type GanttTaskResizeEvent<TData extends RowData = RowData> = {
+  row: TData;
+  start: Date;
+  end: Date;
+  /** Which edge the user dragged. */
+  edge: "start" | "end";
+};
+
+/** Fired when a bar's progress grip is dragged. {@link GanttConfig.onProgressChange}. */
+export type GanttProgressChangeEvent<TData extends RowData = RowData> = {
+  row: TData;
+  /** 0-100, in whole percent. */
+  progress: number;
+};
+
+/** Fired when the Gantt's detail drawer is saved. {@link GanttConfig.onTaskCommit}. */
+export type GanttTaskCommitEvent<TData extends RowData = RowData> = {
+  row: TData;
+  values: Partial<TData>;
+};
+
+/**
+ * The Gantt's built-in task drawer. Same shape as the scheduler's - a field
+ * list, a title and a width - so one drawer config type covers both views.
+ */
+export type GanttDrawerConfig<TData extends RowData = RowData> =
+  SchedulerDrawerConfig<TData>;
+
+/**
+ * Turns the grid into a Gantt chart. Set `gantt` and the grid renders its rows
+ * as a task table beside a time chart: one bar per row positioned by start /
+ * end, nested into a work-breakdown tree by `parentField`, with dependency
+ * arrows between linked tasks.
+ *
+ * Like the Kanban board and the scheduler it is a pure *view of the grid*: it
+ * renders the grid's filtered + sorted rows and writes back only through
+ * callbacks, never mutating your data. Dragging a bar fires
+ * {@link GanttConfig.onTaskMove} where you reassign the dates on your own rows.
+ *
+ * Dates are local calendar days and `end` is EXCLUSIVE, except that a date-only
+ * string (`'2026-09-14'`, no time part) is read as the end OF that day - the
+ * inclusive convention planning tools use. So
+ * `{ start: '2026-09-14', end: '2026-09-16' }` draws a three-day bar.
+ */
+export type GanttConfig<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = {
+  /** Field holding each task's start (`Date` | epoch-ms | ISO string). Required. */
+  startField: keyof TData & string;
+  /** Field holding the end. Omit to use `durationField`, else the task is a milestone. */
+  endField?: keyof TData & string;
+  /** Field holding the length in WORKING days, used when `endField` is absent. */
+  durationField?: keyof TData & string;
+  /** Field for the task name. Defaults to the first column's field. */
+  titleField?: keyof TData & string;
+  /** Field holding percent complete (0-100). Drives the bar's inner fill. */
+  progressField?: keyof TData & string;
+  /**
+   * Field holding each row's PARENT task id, nesting the flat rows into a
+   * work-breakdown tree. Parents render a rolled-up summary bar and a collapse
+   * chevron. Rows whose parent is missing become roots rather than vanishing.
+   *
+   * This is the Gantt's own tree - do NOT also set the grid's `treeData` prop.
+   * `treeData` hides collapsed children from the view entirely, which would
+   * drop them out of their phase's summary bar.
+   */
+  parentField?: keyof TData & string;
+  /**
+   * Boolean field marking a task as a milestone (a diamond, no length). A task
+   * whose end equals its start renders as one regardless.
+   */
+  milestoneField?: keyof TData & string;
+  /** Field holding a per-task accent color (any CSS color). Else `color`. */
+  colorField?: keyof TData & string;
+  /** Fallback accent color for every bar. */
+  color?: string;
+
+  // --- dependencies ---------------------------------------------------------
+  /**
+   * Predecessor -> successor links, drawn as arrows between bars. `from` / `to`
+   * are row ids (your `getRowId`). See {@link GanttDependency}.
+   */
+  dependencies?: ReadonlyArray<GanttDependency>;
+  /**
+   * Per-row field holding that row's links (as `GanttDependency[]` or a plain
+   * list of successor ids). An alternative to the flat `dependencies` array.
+   */
+  dependencyField?: keyof TData & string;
+  /**
+   * Cascade successors forward on move / resize so every link stays legal,
+   * preserving each task's duration. Defaults to `true` when any dependency is
+   * present. Cascading never pulls a task earlier.
+   */
+  autoReschedule?: boolean;
+  /**
+   * Schedule in working time (see `nonWorkingDays` / `holidays`): a moved
+   * or cascaded task lands on a working day and keeps its WORKING length, so
+   * a five-day task dragged over a weekend stays five days of work, and the
+   * critical path measures slack in working days. `false` schedules in
+   * calendar time. Default `true`.
+   */
+  respectWorkingTime?: boolean;
+  /** Fired with the cascaded shifts after a move / resize (never mutates rows). */
+  onDependenciesChange?: (
+    moves: Array<{ id: string; start: Date; end: Date }>,
+  ) => void;
+  /** Fired when the user draws a new link (drag from one bar's edge to another). */
+  onDependencyAdd?: (dep: GanttDependency) => void;
+  /** Fired when the user removes a link (arrow context menu). */
+  onDependencyRemove?: (id: string) => void;
+
+  // --- axis -----------------------------------------------------------------
+  /** The axis preset the chart opens on. Default `'week'`. */
+  zoom?: GanttZoom;
+  /**
+   * The presets the toolbar's zoom stepper offers. Default all five; a single
+   * entry hides the stepper.
+   */
+  zoomLevels?: ReadonlyArray<GanttZoom>;
+  /** Fired when the zoom preset changes (stepper or Ctrl+wheel). */
+  onZoomChange?: (zoom: GanttZoom) => void;
+  /** First day of the week, 0-6 (0 = Sunday). Default 0. */
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  /**
+   * Weekday numbers (0 = Sun ... 6 = Sat) that are non-working: shaded in the
+   * chart and skipped by duration + cascade arithmetic. Default `[0, 6]`.
+   */
+  nonWorkingDays?: ReadonlyArray<number>;
+  /** Specific dates that are non-working (holidays, closures). */
+  holidays?: ReadonlyArray<Date | number | string>;
+  /** Shade the non-working columns. Default `true`. */
+  showNonWorking?: boolean;
+  /** Draw the dashed "today" line across the chart. Default `true`. */
+  todayLine?: boolean;
+  /** Earliest date the axis shows and a drag may reach. */
+  minDate?: Date | number | string;
+  /** Latest date the axis shows and a drag may reach. */
+  maxDate?: Date | number | string;
+  /** Calendar days of slack around the first start / last end. Default 7. */
+  rangePaddingDays?: number;
+
+  // --- layout ---------------------------------------------------------------
+  /**
+   * Column ids shown in the task table, in order. Defaults to every leaf
+   * column. Two built-ins need no column definition: `'__duration'` (working
+   * days) and `'__progress'` (a small bar).
+   */
+  tableColumns?: ReadonlyArray<string>;
+  /** Width (px) of the task table pane. Default 360; a splitter resizes it. */
+  tableWidth?: number;
+  /** Height (px) of one task row. Default 32. */
+  rowHeight?: number;
+  /** Parents draw a rolled-up summary bar spanning their children. Default `true`. */
+  summaryBars?: boolean;
+  /**
+   * Where a bar's label sits: `'inside'` (default, falling back to the right
+   * when the bar is too narrow), always `'right'`, or `'none'`.
+   */
+  labelPosition?: "inside" | "right" | "none";
+
+  // --- work-breakdown collapse ------------------------------------------------
+  /**
+   * Controlled collapse: the ids of the parent rows whose children are hidden.
+   * Omit to let the Gantt own its own collapse state.
+   */
+  collapsed?: ReadonlyArray<string>;
+  /** Fired when a chevron (or Expand / Collapse all) changes the collapsed set. */
+  onCollapseChange?: (collapsed: string[]) => void;
+
+  // --- editing ----------------------------------------------------------------
+  /**
+   * Enable drag-to-move, edge resize, the progress grip and link drawing.
+   * Without it the chart is read-only.
+   */
+  editable?: boolean;
+  /**
+   * Enable undo / redo of move, resize and progress edits with `Ctrl/Cmd+Z` and
+   * `Ctrl/Cmd+Shift+Z` (or `Ctrl+Y`). The callbacks re-fire with the reversed
+   * values, so your data follows.
+   */
+  history?: boolean;
+  /** Fired when a bar is dragged to new dates. */
+  onTaskMove?: (event: GanttTaskMoveEvent<TData>) => void;
+  /** Fired when a bar's edge is dragged. */
+  onTaskResize?: (event: GanttTaskResizeEvent<TData>) => void;
+  /** Fired when the progress grip is dragged. */
+  onProgressChange?: (event: GanttProgressChangeEvent<TData>) => void;
+  /** Fired when empty chart space is double-clicked - create a task there. */
+  onTaskAdd?: (start: Date, end: Date, parentId?: string) => void;
+  /**
+   * Fired from the bar's Delete action. Setting this shows Delete in the
+   * drawer and the context menu. Remove the row from your data in the handler.
+   */
+  onTaskDelete?: (row: TData) => void;
+
+  // --- chrome -----------------------------------------------------------------
+  /**
+   * Custom body for a TASK bar. Receives the row. Omit for the built-in label.
+   * A phase's summary bar is a thin spine with no room for a body, so it keeps
+   * its plain label; a milestone has no body at all.
+   */
+  task?: Snippet<[TData]>;
+  /**
+   * Hover tooltip for a bar. A `Snippet<[TData]>` for custom content, or `true`
+   * for the built-in one (title, dates, duration, percent). Omit to disable.
+   */
+  tooltip?: boolean | Snippet<[TData]>;
+  /** Delay (ms) before the hover tooltip opens. Default 400. */
+  tooltipDelay?: number;
+  /** Built-in task drawer: `true` for all fields, or a config object. */
+  drawer?: boolean | GanttDrawerConfig<TData>;
+  /** Fired when the drawer is saved. */
+  onTaskCommit?: (event: GanttTaskCommitEvent<TData>) => void;
+  /** Right-click menu for a bar. Return items or `undefined` to suppress. */
+  taskMenu?: (row: TData) => MenuItem[] | undefined;
+
+  /** Show the search box (binds to the grid's global filter). Default `true`. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
+};
+
 export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
   /**
    * The rows to render.
@@ -1134,6 +1396,15 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * {@link SchedulerConfig}.
    */
   scheduler?: SchedulerConfig<TFeatures, TData>;
+  /**
+   * Gantt mode. When set, the grid renders its rows as a task table beside a
+   * time chart: one bar per row by start / end, a work-breakdown tree from
+   * `parentField`, and dependency arrows. See {@link GanttConfig}.
+   *
+   * A view of the grid like the board and scheduler; the renderer ships in
+   * `@svgrid/enterprise` (call `enableGanttView()`).
+   */
+  gantt?: GanttConfig<TFeatures, TData>;
   /**
    * Chart view. When set, the grid renders its FILTERED + SORTED rows as a chart
    * instead of a table (search / filters / sort flow through). Unlike board and
@@ -2216,6 +2487,35 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   renderDetailRow?: Snippet<[{ row: TData; rowIndex: number }]>;
   /**
+   * The height of a detail row, in px, or a function of its data. With it
+   * the virtualizer can size detail rows, so master-detail works with
+   * `virtualization` on (the panel scrolls inside its cell when taller).
+   * Without it a detail row is auto height, which needs
+   * `virtualization={false}`.
+   */
+  detailRowHeight?: number | ((row: TData) => number);
+  /**
+   * A row-header column of chevrons that open and close detail rows. It
+   * sits with the row-number and selection columns: sticky at the left,
+   * no column menu, not resizable, not reorderable, outside the active
+   * cell and the selection. The chevron calls `onDetailToggle` (or, on a
+   * server row model, the model's own toggle) and reads `isDetailOpen`
+   * for its direction; `hasDetail` hides it on rows that have nothing to
+   * open. Detail rows themselves get an empty cell.
+   */
+  showDetailToggle?: boolean;
+  /**
+   * Open or close the detail under a row. The chevron of `showDetailToggle`
+   * and Ctrl+Enter on a row call it; you keep the open set and insert or
+   * remove the detail row in `data`. A server row model supplies its own
+   * (the `rowModel` prop wires `toggleDetail`), so this is the client side.
+   */
+  onDetailToggle?: (row: TData, rowIndex: number) => void;
+  /** Whether the detail under a row is open: the chevron's direction and `aria-expanded`. */
+  isDetailOpen?: (row: TData) => boolean;
+  /** Whether a row has a detail to open; the chevron is left out where this returns false. */
+  hasDetail?: (row: TData) => boolean;
+  /**
    * Server-side group / tree keyboard + accessibility, built into the grid. When
    * set, the grid uses the treegrid role and marks matching rows with
    * `aria-level` / `aria-expanded`, and ArrowRight / ArrowLeft expand / collapse
@@ -2233,6 +2533,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     expanded?: (row: TData) => boolean;
     /** Expand / collapse a group row. Called on ArrowRight / ArrowLeft. */
     onToggle: (row: TData) => void;
+    /** Open / close the detail panel under a leaf. Called on Ctrl+Enter when `renderDetailRow` is set, and by the `showDetailToggle` chevron. */
+    toggleDetail?: (row: TData) => void;
+    /** Whether the detail under a leaf is open (the chevron's direction). */
+    detailOpen?: (row: TData) => boolean;
+    /** Whether a row can open a detail at all; a group, a placeholder or a detail row cannot. */
+    hasDetail?: (row: TData) => boolean;
   };
   /**
    * Server-side set-filter values. When set, a column's filter checklist is
@@ -2260,6 +2566,17 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * skips them.
    */
   frozenRows?: number;
+  /**
+   * Keep the group a row belongs to in view: while the rows of an open
+   * group scroll past, the group's row (and its parents' rows) stay under
+   * the header, the way a section heading stays put in a long list, so a
+   * screen deep inside a 60,000-row group still says which group it is.
+   * Works for server-side groups (`rowModel` / `serverGroup`), client
+   * grouping and tree data. Under `virtualization` the band shows a copy
+   * of each ancestor row; without it the rows themselves stick. Off by
+   * default.
+   */
+  stickyGroupRows?: boolean;
   /**
    * Merged cells: rectangles drawn as one cell, a spreadsheet's Merge &
    * Center. Each entry is the top-left cell (display indices) and how many
@@ -2335,6 +2652,23 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     sameGrid: boolean;
     fromGridId: number;
     toGridId: number;
+  }) => void;
+  /**
+   * Take the drop yourself. With this set the grid keeps the drag
+   * affordance and the drop indicator but does not touch its data: the
+   * handler gets the dragged row, the row it landed on (null for the
+   * empty space below the rows) and the side - `before` / `after`, or
+   * `into` when it landed on the middle of a group or tree row, which
+   * makes it that row's child. The path for a `rowModel`, whose rows the
+   * grid does not own: hand the move to the model (`moveRow`) or to your
+   * server. Only fires within one grid; a drop from another grid stays
+   * managed.
+   */
+  onRowDrop?: (event: {
+    row: TData;
+    target: TData | null;
+    targetIndex: number | null;
+    side: "before" | "after" | "into";
   }) => void;
   /**
    * Align this grid with others that share the same non-empty

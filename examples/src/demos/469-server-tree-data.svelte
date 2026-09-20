@@ -14,7 +14,7 @@
    * first request, so the tree is five levels deep and never built up front.
    * The row model is Enterprise; the datasource contract it runs on is free.
    */
-  import { SvGrid, renderComponent, tableFeatures, rowSortingFeature, type GridColumns, type ServerDataSource, type SvGridApi } from '@svgrid/grid'
+  import { SvGrid, renderComponent, tableFeatures, rowSortingFeature, type GridColumns, type ServerDataSource } from '@svgrid/grid'
   import {
     setLicenseKey,
     createServerRowModel,
@@ -47,6 +47,8 @@
   const EXT = ['ts', 'svelte', 'md', 'json', 'css', 'png', 'svg', 'sql']
   const OWNERS = ['ada', 'grace', 'linus', 'margaret', 'ken', 'barbara']
   const MAX_DEPTH = 5
+  const TODAY = new Date().toISOString().slice(0, 10)
+  const DAY = 86_400_000
 
   const hash = (s: string) => {
     let h = 2166136261
@@ -97,8 +99,8 @@
     return folders + files
   }
   function stamp(rng: ReturnType<typeof createPrng>): string {
-    const day = rng.int(0, 400)
-    return new Date(Date.UTC(2026, 8, 17) - day * 86_400_000).toISOString().slice(0, 10)
+    const day = rng.int(1, 400)
+    return new Date(Date.now() - day * DAY).toISOString().slice(0, 10)
   }
 
   let requests = $state(0)
@@ -130,7 +132,7 @@
         kind: 'file',
         size: 512,
         entries: null,
-        modified: '2026-09-18',
+        modified: TODAY,
         owner: 'you',
       }
       list.push(row)
@@ -143,6 +145,49 @@
       const i = list.findIndex((n) => n.id === id)
       if (i >= 0) list.splice(i, 1)
     },
+    // A move is an update of `parent`. Ids are paths here, so the node
+    // and every folder generated beneath it take new ids on the way.
+    async updateRow(id, patch) {
+      await new Promise((r) => setTimeout(r, 140))
+      const parent = id.slice(0, id.lastIndexOf('/'))
+      const list = entriesOf(parent)
+      const i = list.findIndex((n) => n.id === id)
+      if (i < 0) throw new Error(`no such node: ${id}`)
+      const node = list[i]!
+      const to = patch.parent === undefined ? parent : String(patch.parent)
+      if (to === parent) {
+        Object.assign(node, patch, { modified: TODAY })
+        return node
+      }
+      if (to === node.id || to.startsWith(node.id + '/')) throw new Error(`${node.name} cannot move into itself`)
+      list.splice(i, 1)
+      const target = entriesOf(to)
+      if (target.some((n) => n.name === node.name)) throw new Error(`${to.replace(/^root\/?/, '') || 'the root'} already has a ${node.name}`)
+      const moved: Node = { ...node, id: `${to}/${node.name}`, parent: to, modified: TODAY }
+      if (node.kind === 'folder') rekey(node.id, moved.id)
+      target.push(moved)
+      // The badges beside both folders count their entries.
+      const bump = (folderId: string, by: number) => {
+        if (folderId === 'root') return
+        const f = entriesOf(folderId.slice(0, folderId.lastIndexOf('/'))).find((n) => n.id === folderId)
+        if (f && f.entries != null) f.entries += by
+      }
+      bump(parent, -1)
+      bump(to, 1)
+      return moved
+    },
+  }
+  // Everything generated under a moved folder follows it, id by id.
+  function rekey(oldId: string, newId: string): void {
+    const list = entriesOf(oldId)
+    dirs.delete(oldId)
+    for (const n of list) {
+      const next = `${newId}/${n.name}`
+      if (n.kind === 'folder') rekey(n.id, next)
+      n.id = next
+      n.parent = newId
+    }
+    dirs.set(newId, list)
   }
   // "Someone else saved": the server changes a file behind the grid's back,
   // which is what a per-folder refresh is for.
@@ -151,7 +196,7 @@
     if (!files.length) return null
     const f = files[Math.floor(Math.random() * files.length)]!
     f.size = (f.size ?? 0) + 1024 * Math.ceil(Math.random() * 40)
-    f.modified = '2026-09-18'
+    f.modified = TODAY
     f.owner = 'ci-bot'
     return f.name
   }
@@ -185,8 +230,12 @@
   $effect(() => () => ctl.dispose())
 
   // ---- Actions on the focused row -----------------------------------------
-  let api = $state<SvGridApi<typeof features, Row> | null>(null)
+  // The active cell, by click or by arrow key: the buttons act on its row.
   let focused = $state<Row | null>(null)
+  const focusRow = (rowIndex: number) => {
+    const row = ctl.getRows()[rowIndex] as Row | undefined
+    focused = row && row.__group && row.__group.kind !== 'placeholder' ? row : null
+  }
   const focusedFolder = $derived.by(() => {
     if (!focused) return null
     const m = focused.__group
@@ -197,7 +246,7 @@
   const focusedFile = $derived(focused?.__group.kind === 'leaf' ? (focused as Node) : null)
   let last = $state('')
 
-  async function refreshFolder() {
+  function refreshFolder() {
     const f = focusedFolder
     if (!f) return
     const touched = touchOnServer(f.id)
@@ -212,10 +261,65 @@
     if (f.route.length && !ctl.isExpanded(f.route)) ctl.expandGroup(f.route)
     last = `${row.name} created under ${f.id.replace(/^root\/?/, '') || 'the root'} - one createRow, applied as a transaction`
   }
+  // A drop hands the move to the model: into a folder, or beside a row,
+  // which means that row's folder at that position. The server rewrites
+  // `parent`; the model moves the node between the two cached levels.
+  async function onRowDrop(e: { row: Row; target: Row | null; targetIndex: number | null; side: 'before' | 'after' | 'into' }) {
+    const moved = e.row as unknown as Node
+    const m = e.row.__group
+    if (!m || (m.kind !== 'leaf' && m.kind !== 'group')) return
+    let toRoute: string[]
+    let addIndex: number | undefined
+    const t = e.target?.__group
+    if (!e.target || !t) {
+      toRoute = []
+    } else if (e.side === 'into' && t.kind === 'group') {
+      toRoute = [...t.path]
+    } else if (t.kind === 'group') {
+      toRoute = t.path.slice(0, -1)
+      addIndex = indexInLevel(e.targetIndex!, toRoute) + (e.side === 'after' ? 1 : 0)
+    } else if (t.kind === 'leaf') {
+      toRoute = [...(t.route ?? [])]
+      addIndex = indexInLevel(e.targetIndex!, toRoute) + (e.side === 'after' ? 1 : 0)
+    } else {
+      return
+    }
+    const fromRoute = m.kind === 'group' ? m.path.slice(0, -1) : [...(m.route ?? [])]
+    if (JSON.stringify(fromRoute) === JSON.stringify(toRoute) && e.side === 'into') return
+    const toId = toRoute.length ? toRoute[toRoute.length - 1]! : 'root'
+    try {
+      const res = await ctl.moveRow(moved.id, toRoute, { patch: { parent: toId } as Partial<Node>, addIndex })
+      const dest = toId.replace(/^root\/?/, '') || 'the root'
+      last = res.status === 'applied' ? `${moved.name} moved to ${dest} - one updateRow, then a remove and an add transaction` : `${moved.name} moved to ${dest} on the server; the folder shows it when opened (${res.status})`
+      if (res.status === 'storeNotFound' && toRoute.length) ctl.expandGroup(toRoute)
+    } catch (err) {
+      last = err instanceof Error ? err.message : String(err)
+    }
+  }
+  // A row's position within its level: how many rows of that level sit
+  // above it in the flattened list. The parent route of a display row is
+  // its `route` (a leaf) or its `path` minus its own key (a folder).
+  function parentRouteOf(row: Row): string[] | null {
+    const g = row.__group
+    if (g?.kind === 'leaf') return [...(g.route ?? [])]
+    if (g?.kind === 'group') return g.path.slice(0, -1)
+    return null
+  }
+  function indexInLevel(displayIndex: number, route: string[]): number {
+    const rows = ctl.getRows() as Row[]
+    const key = JSON.stringify(route)
+    let n = 0
+    for (let i = 0; i < displayIndex; i += 1) {
+      const pr = parentRouteOf(rows[i]!)
+      if (pr && JSON.stringify(pr) === key) n += 1
+    }
+    return n
+  }
   async function deleteFile() {
     const f = focusedFile
     if (!f) return
     await ctl.deleteRow(f.id)
+    focused = null
     last = `${f.name} deleted - one deleteRow, removed from the cache without a refetch`
   }
 
@@ -250,20 +354,22 @@
   const loaded = $derived(levels.reduce((n, l) => n + l.blocks.filter((b) => b.status === 'loaded').length, 0))
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <div class="actions">
-      <button type="button" class="btn" onclick={() => ctl.expandAll()}>Expand loaded</button>
-      <button type="button" class="btn" onclick={() => ctl.collapseAll()}>Collapse all</button>
+      <button type="button" class="btn" onclick={() => ctl.expandAll()} title="Open every folder the grid has read">Expand loaded</button>
+      <button type="button" class="btn" onclick={() => ctl.collapseAll()} title="Close every folder; their entries stay cached">Collapse all</button>
       <button type="button" class="btn" disabled={!focusedFolder} onclick={refreshFolder} title="The server changes a file in the focused folder, then that folder alone is re-read">Refresh folder</button>
       <button type="button" class="btn" onclick={newFile} title="A file under the focused folder, or the root">New file</button>
-      <button type="button" class="btn btn-danger" disabled={!focusedFile} onclick={deleteFile}>Delete file</button>
+      <button type="button" class="btn btn-danger" disabled={!focusedFile} onclick={deleteFile} title="Delete the focused file">Delete file</button>
     </div>
     <label class="chk"><input type="checkbox" checked={openRoots} onchange={(e) => setOpenRoots(e.currentTarget.checked)} /> Open the first level on load</label>
     <span class="note">
       Click a folder: one <code>getRows</code> with its path as <code>groupKeys</code>, answered with that folder's
-      entries and nothing else. Sort a header and every open folder re-sorts on the server. Focus a row to
-      refresh its folder, add a file beside it, or delete it.
+      entries and nothing else. Sort Name, Size, Modified or Owner and every open folder re-sorts on the server.
+      Focus a row, by click or arrow key, to refresh its folder, add a file beside it, or delete it.
+      Drag a row onto a folder to move it there (the server rewrites its parent), or
+      between two rows to place it in their folder.
     </span>
   </header>
   <div class="gridpane">
@@ -272,14 +378,16 @@
       columnResize
       fitColumns
       rowModel={ctl}
+      stickyGroupRows
       {columns}
       {features}
       sortable
       selectionMode="none"
       rowHeight={32}
       containerHeight="100%"
-      onCellClick={(e) => (focused = (e.row as Row) ?? null)}
-      onApiReady={(next) => (api = next)}
+      rowDragManaged
+      onRowDrop={onRowDrop}
+      onActiveCellChange={(cell) => focusRow(cell.rowIndex)}
     />
   </div>
   <footer class="foot">
@@ -287,55 +395,7 @@
     <span class="stat"><span class="stat-label">Folders read</span><strong>{levels.length}</strong></span>
     <span class="stat"><span class="stat-label">Blocks cached</span><strong>{loaded}</strong></span>
     <span class="stat"><span class="stat-label">Focused</span>{focusedFolder ? focusedFolder.id.replace(/^root\/?/, '') || 'root' : 'nothing'}</span>
+    {#if view?.error}<span class="stat err">{String((view.error as Error).message ?? view.error)}</span>{/if}
     {#if last}<span class="stat last">{last}</span>{/if}
   </footer>
 </section>
-
-<style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); flex: 1 1 320px; }
-  .chk {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: var(--sg-fg, #0f172a);
-    white-space: nowrap;
-  }
-  .chk input { accent-color: var(--sg-accent, #2563eb); }
-  .actions { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-  .btn {
-    font: inherit;
-    font-size: 13px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    background: var(--sg-bg, #fff);
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
-  .btn:disabled { opacity: 0.45; cursor: default; }
-  .btn-danger { color: var(--sg-danger, #b91c1c); }
-  .gridpane { flex: 1; min-height: 0; }
-  .foot {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-    flex: none;
-    align-items: center;
-    padding: 6px 12px;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 8px;
-    background: var(--sg-header-bg, #f8fafc);
-    font-size: 12px;
-    color: var(--sg-muted, #64748b);
-    font-variant-numeric: tabular-nums;
-  }
-  .stat { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-  .stat.last { white-space: normal; color: var(--sg-fg, #0f172a); }
-  .stat-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-  .foot strong { color: var(--sg-fg, #0f172a); font-weight: 600; }
-</style>

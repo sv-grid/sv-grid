@@ -75,6 +75,14 @@ function mountGrid(extra: Record<string, unknown> = {}) {
   )
 }
 
+/**
+ * The close-on-scroll listener arms one animation frame after a popover
+ * mounts, so a scroll queued before the opening click cannot dismiss what
+ * that click opened. Every open helper waits that frame out before a case
+ * dispatches its scroll.
+ */
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
 async function openContextMenu(target: HTMLElement) {
   const cell = target.querySelector('.sv-grid-cell[data-svgrid-row]') as HTMLElement
   const r = cell.getBoundingClientRect()
@@ -86,6 +94,7 @@ async function openContextMenu(target: HTMLElement) {
     expect(menu).not.toBeNull()
     expect(menu!.querySelectorAll('.sv-grid-menu-item').length).toBeGreaterThan(0)
   })
+  await nextFrame()
   return target.querySelector('.sv-grid-context-menu') as HTMLElement
 }
 
@@ -100,6 +109,7 @@ async function openCommentEditor(target: HTMLElement) {
   await vi.waitFor(() => {
     expect(target.querySelector('.sv-grid-comment-editor')).not.toBeNull()
   })
+  await nextFrame()
   return target.querySelector('.sv-grid-comment-editor') as HTMLElement
 }
 

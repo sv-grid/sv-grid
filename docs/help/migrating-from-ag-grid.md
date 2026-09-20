@@ -333,7 +333,38 @@ const ctl = createServerRowModel(adaptCallbackDatasource(myServerSideDatasource)
 `adaptCallbackDatasource` maps the request both ways (`rowGroupCols` ->
 `groupBy`, `valueCols` -> `aggregations`, `pivotCols` -> `pivotBy`, the
 sort and filter models, `context`, `parentNode`) and turns `success` /
-`fail` into a resolved or rejected promise. Option by option:
+`fail` into a resolved or rejected promise.
+
+More often the datasource is a thin `fetch` and the real investment is the
+endpoint behind it - a Java or Node service that parses AG Grid's
+`IServerSideGetRowsRequest` JSON. That endpoint stays as it is: post
+`toCallbackRequest(request)` and read the answer back.
+
+```ts
+import { toCallbackRequest } from '@svgrid/enterprise'
+
+const source = {
+  async getRows(request) {
+    const res = await fetch('/api/sales', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(toCallbackRequest(request)),
+    })
+    const { rowData, rowCount, pivotResultFields } = await res.json()
+    return { rows: rowData, rowCount: rowCount ?? -1, pivotResultFields }
+  },
+}
+```
+
+`fromCallbackRequest` is the other direction, for a SvelteKit endpoint that
+has to keep serving an AG Grid client during the switch. A saved selection
+or a bulk endpoint written against `getServerSideSelectionState()` keeps
+its shape the same way: `toCallbackSelectionState(ctl.getSelectionState())`
+produces `{ selectAll, toggledNodes }` (or the `nodeId` /
+`selectAllChildren` / `toggledNodes` tree), `ctl.setSelectionState` takes
+that shape as it is when your group node ids are the group keys, and
+`fromCallbackSelectionState(state, { groupKey, isGroup })` maps them when
+a `getRowId` gave group rows ids of their own. Option by option:
 
 | AG Grid | SvGrid |
 | --- | --- |
@@ -354,7 +385,8 @@ sort and filter models, `context`, `parentNode`) and turns `success` /
 | `applyServerSideTransaction` / `applyServerSideTransactionAsync` / `flushServerSideAsyncTransactions` | `ctl.applyTransaction` / `applyTransactionAsync` / `flushAsyncTransactions` |
 | `applyServerSideRowData` | `ctl.applyRowData` |
 | `serverSideSortAllLevels`, `serverSideEnableClientSideSort`, `serverSideOnlyRefreshFilteredGroups` | `sortAllLevels`, `clientSideSort`, `onlyRefreshFilteredGroups` |
-| `getServerSideSelectionState` / `setServerSideSelectionState` | `ctl.getSelectionState()` / `setSelectionState()` |
+| `getServerSideSelectionState` / `setServerSideSelectionState` | `ctl.getSelectionState()` / `setSelectionState()` (the `toggledNodes` shape is accepted; `toCallbackSelectionState` / `fromCallbackSelectionState` convert) |
+| `ServerSideTransactionResult.status`: `Applied`, `StoreNotFound`, `StoreLoading`, `StoreWaitingToLoad`, `StoreLoadingFailed`, `Cancelled` | `ServerTransactionResult.status`: the same six, lower camel case (`applied`, `storeNotFound`, ...) - a `switch` on the old spelling falls through silently |
 | `groupSelects: 'descendants'` | `selection: { groupSelects: 'descendants' }` |
 | `pivotResultFields` in `success`, `setPivotResultColumns`, `processPivotResultColDef` | `pivotResultFields` / `pivotResultColumns` in the result, `pivotResultColumn(field, def)` |
 | `pagination` + `paginateChildRows` | `pagination: { pageSize, paginateChildRows }` |

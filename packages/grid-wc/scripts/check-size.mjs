@@ -155,10 +155,49 @@ const dist = join(here, '..', 'dist')
  * events: rowModel, rowPlaceholder, rowSelectionModel, pivotResultColumns,
  * onVisibleRangeChange, onRetryRow). The Enterprise row model itself is
  * not in it.
+ *
+ * 107.5 -> 107.9 and 108.0 -> 108.4 for the Gantt view's free half
+ * (2026-09-18). Measured 107.6 / 108.1: the grid's base went 93.1 -> 93.4
+ * (measure-size.mjs: the `gantt` prop, the gantt-view seam and the view branch
+ * in SvGrid.svelte), reaching the elements at 1:1, plus one surface entry
+ * (108 -> 109 properties; no new events - the Gantt reports through callbacks
+ * inside its config object, not through grid-level events). The Gantt itself -
+ * renderer, layout model, axis, planning helpers - is @svgrid/enterprise and
+ * costs an element consumer nothing. This is the two-edit cost the note above
+ * describes, for the third time: a prop on the grid is a prop on the elements.
+ *
+ * 107.9 -> 109.4 and 108.4 -> 109.9 for sticky group rows and sized detail
+ * rows (2026-09-19). Measured 109.1 / 109.6: the grid's base went 93.5 ->
+ * 94.8 (measure-size.mjs: the sticky band and its ancestor walk, the
+ * detailRowHeight sizing), reaching the elements at 1:1, plus two surface
+ * entries (109 -> 111 properties: stickyGroupRows, detailRowHeight; no new
+ * events). The fourth time for the two-edit cost.
+ *
+ * 109.4 -> 109.7 and 109.9 -> 110.3 for a custom row drop and Ctrl+Enter
+ * (2026-09-19). Measured 109.5 / 110.1: the grid's base went 94.8 -> 95.0,
+ * under its own budget (measure-size.mjs), for the `onRowDrop` prop with
+ * its third drop side (`into`, over the middle of a group row: a tinted
+ * row instead of a line) and the Ctrl+Enter branch that toggles a group
+ * or a server-side detail panel from the keyboard, plus one surface entry
+ * (25 -> 26 events: rowDrop). The fifth time.
+ *
+ * 109.7 -> 110.6 and 110.3 -> 111.1 for the detail-toggle column
+ * (2026-09-20). Measured 110.5 / 111.0: the grid's base went 95.0 -> 95.8
+ * (measure-size.mjs: `showDetailToggle`, a third system column with a
+ * chevron cell per row and a blank cell in every other row kind), reaching
+ * the elements at 1:1, plus four surface entries (111 -> 114 properties:
+ * showDetailToggle, isDetailOpen, hasDetail; 26 -> 27 events: detailToggle).
+ * The sixth time.
+ *
+ * 110.6 -> 110.8 and 111.1 -> 111.3 for the selection bar's ground
+ * (2026-09-20). Measured 110.7 / 111.2, the grid's JS unchanged: two CSS
+ * rules (the element inlines the sheet) that paint the strip the floating
+ * bar sits over, under the lowest pinned row or above the header, so body
+ * rows stop scrolling through it. 0.1 KiB of stylesheet.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 107.5 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 108.0 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 110.8 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.3 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

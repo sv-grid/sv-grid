@@ -50,6 +50,9 @@ export function getKeyboardIntent(event: KeyboardEvent): GridKeyboardIntent {
   //   Tab        → move right (Shift+Tab → left), wraps at row boundaries
   //   Delete     → clear contents of the selected cells
   //   F2 / Space → start editing the active cell
+  // Ctrl+Enter acts on the row rather than moving: a group opens or closes,
+  // a row with a detail panel shows or hides it (see the activate branch).
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) return 'activate'
   if (event.key === 'Enter') return event.shiftKey ? 'moveUp' : 'moveDown'
   if (event.key === 'Tab') return event.shiftKey ? 'tabPrev' : 'tabNext'
   if (event.key === 'F2') return 'activate'

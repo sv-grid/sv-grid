@@ -397,6 +397,17 @@ jobs:
           pnpm --filter @svgrid/enterprise build:lib
           pnpm --filter @svgrid/enterprise build:node
 
+      - name: Extract the runnable doc examples
+        # A ```svelte {runnable}``` block in docs/**.md is served as a
+        # component the site mounts under the code: tools/build-doc-snippets
+        # writes them to examples/src/doc-snippets/, which is gitignored. The
+        # unit job generates them for its guardrails; this job never did, so
+        # every docs page ran here without its examples and the two
+        # chart.spec.ts cases that read one (the responsive rules example on
+        # charts/axes-and-styling) timed out on every run since they landed,
+        # while passing on any checkout that had built the site once.
+        run: node tools/build-doc-snippets.mjs
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
@@ -407,10 +418,18 @@ jobs:
         # why browser wall-clock on a shared runner is not a gate.
         run: pnpm exec playwright test --project=chromium --project=mobile
 
-      - name: Upload the report when something fails
+      - name: Upload the failure evidence
+        # The `github` reporter writes annotations, not an HTML report, so
+        # playwright-report/ is empty here and this step used to upload
+        # nothing (it "succeeded" with no files). What a failure leaves is
+        # test-results/: the screenshot, the video and, from the first
+        # retry on, the trace of each failed case.
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-failures
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
           retention-days: 7

@@ -19,6 +19,14 @@ export type PivotResultColumnOptions = {
   pivotResultColumn?: (field: string, column: ColumnDef<any, any>) => ColumnDef<any, any>
   /** Width for a generated value column. Default 120. */
   width?: number
+  /**
+   * Append a header group of row totals after the pivot keys: one column
+   * per aggregation reading the plain aggregate field (`amount`, not
+   * `2024_amount`), which the backend puts on every group row in pivot
+   * mode beside the per-key fields. `true` labels the group `Total`; a
+   * string is the label.
+   */
+  rowTotals?: boolean | string
 }
 ```
 
@@ -78,6 +86,14 @@ export function buildPivotResultColumns(
     return out
   }
 
-  return emit(root, [])
+  const out = emit(root, [])
+  if (options.rowTotals) {
+    out.push({
+      id: 'pv_group_total',
+      header: typeof options.rowTotals === 'string' ? options.rowTotals : 'Total',
+      columns: aggregations.map((a) => leafColumn(a.col, a)),
+    } as unknown as ColumnDef<any, any>)
+  }
+  return out
 }
 ```

@@ -715,6 +715,9 @@
                    (no scrollbar), unlike an in-flow popup. -->
               <div class="sv-ep-field__dropdown">
                 <SvGridDropdown
+                  id={`sv-ef-${f.field}`}
+                  invalid={!!err}
+                  {describedBy}
                   options={selectOptions(f)}
                   value={values[f.field]}
                   autoOpen={false}

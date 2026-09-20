@@ -1,4 +1,5 @@
 import type { Component } from 'svelte'
+import { pendingDemoIds } from '../../../tools/lib/releases.mjs'
 import Calendar250 from '../demos/250-calendar.svelte'
 import TimePicker251 from '../demos/251-timepicker.svelte'
 import DateTimePicker252 from '../demos/252-datetimepicker.svelte'
@@ -99,6 +100,14 @@ import SchedulerBookableSlots396 from '../demos/396-scheduler-bookable-slots.sve
 import SchedulerMultiCalendar397 from '../demos/397-scheduler-multi-calendar.svelte'
 import SchedulerFindATime398 from '../demos/398-scheduler-find-a-time.svelte'
 import SchedulerClinicConsole399 from '../demos/399-scheduler-clinic-console.svelte'
+import GanttIntro474 from '../demos/474-gantt-intro.svelte'
+import GanttEditing475 from '../demos/475-gantt-editing.svelte'
+import GanttCriticalPath476 from '../demos/476-gantt-critical-path.svelte'
+import GanttResources477 from '../demos/477-gantt-resources.svelte'
+import GanttFourViews478 from '../demos/478-gantt-four-views.svelte'
+import GanttRoadmap479 from '../demos/479-gantt-roadmap.svelte'
+import GanttProgram480 from '../demos/480-gantt-program.svelte'
+import GanttPortfolioConsole481 from '../demos/481-gantt-portfolio-console.svelte'
 import AlertRulesEngine399 from '../demos/399-alert-rules-engine.svelte'
 import AlertStylingRules400 from '../demos/400-alert-styling-rules.svelte'
 import AlertAggregateKpi401 from '../demos/401-alert-aggregate-kpi.svelte'
@@ -292,6 +301,8 @@ import SheetTables491          from '../demos/491-sheet-tables.svelte'
 import SheetIterative492      from '../demos/492-sheet-iterative.svelte'
 import SheetAuditing493       from '../demos/493-sheet-auditing.svelte'
 import SheetCellImages494     from '../demos/494-sheet-cell-images.svelte'
+import ServerCrud482            from '../demos/482-server-crud.svelte'
+import ServerMasterDetail483    from '../demos/483-server-master-detail.svelte'
 import SelectionBar430          from '../demos/430-selection-bar.svelte'
 import CustomIcons431           from '../demos/431-custom-icons.svelte'
 import Candlestick432           from '../demos/432-chart-candlestick.svelte'
@@ -447,6 +458,8 @@ function sourceFor(id: string): string {
  * badged "Enterprise" in the sidebar. Every such demo also carries an
  * explicit `pro: true` flag the sidebar draws as a small dot.
  */
+export { categoryIcon, CATEGORY_ICON_PATHS } from './category-icons'
+
 export type DemoCategory =
   | 'Getting Started'
   | 'Headless'
@@ -464,6 +477,7 @@ export type DemoCategory =
   | 'Spreadsheet'
   | 'Charts'
   | 'Kanban'
+  | 'Gantt'
   | 'Scheduler'
   | 'Themes & Styling'
   | 'Keyboard & Accessibility'
@@ -504,6 +518,7 @@ export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
   'Kanban',
   'Spreadsheet',
   'Scheduler',
+  'Gantt',
   'Studio',
   'Alerts',
 ])
@@ -551,6 +566,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Server-Side Row Model',
   'Kanban',
   'Scheduler',
+  'Gantt',
   'Themes & Styling',
   'Keyboard & Accessibility',
   'Mobile & Responsive',
@@ -596,7 +612,7 @@ function demo(
   return { id, title, blurb, category, component, pro: opts?.pro, source: sourceFor(id) }
 }
 
-export const demos: Demo[] = [
+const baseDemos: Demo[] = [
   // ===== SvGrid Editors product (UI components in @svgrid/grid that double as
   // grid cell editors). Scoped to their own switcher entry, not the grid gallery.
   demo('250-calendar',              'Calendar',                    'SvCalendar: a themeable month/year/decade calendar with single / range / week / multi selection, min-max, restricted + important dates and week numbers. The same component SvGrid mounts to edit a date cell - and usable standalone in any SvGrid app.', 'Date & Time', Calendar250),
@@ -746,6 +762,16 @@ export const demos: Demo[] = [
   demo('397-scheduler-multi-calendar', 'Multi-calendar overlay', 'Several calendars overlaid on one week - Work, Personal, Family, Holidays - each colour-coded from a legend you can toggle. Turning a calendar off hides its events across every view; an event takes its calendar colour.', 'Scheduler', SchedulerMultiCalendar397, { pro: true }),
   demo('398-scheduler-find-a-time', 'Free/busy - find a time', 'Schedule a meeting across attendees: each person busy time (their events plus an external free/busy feed shown as a hatch) is combined, and find-a-time surfaces the windows when everyone is free for the chosen length. Click a suggestion to book it for all.', 'Scheduler', SchedulerFindATime398, { pro: true }),
   demo('399-scheduler-clinic-console', 'Clinic operations console', 'A whole clinic on the Scheduler: a NavPane switches modules; Schedule is a dockable workspace (SvDockManager) with the day scheduler as the hero over a live load chart and an Upcoming grid, providers grouped by department, every open slot bookable. Insights is a charting dashboard; Patients a records grid. Live KPIs.', 'Scheduler', SchedulerClinicConsole399, { pro: true }),
+
+  // ----- Gantt (Enterprise: the renderer behind the grid's `gantt` prop)
+  demo('474-gantt-intro', 'Project plan', 'A 14-week release as a Gantt: phases nest their tasks and draw a rolled-up summary bar, finish-to-start links draw as arrows, and a violated one turns red. Collapse a phase and its summary keeps the span. Toggle to the Table - same grid rows, just a view.', 'Gantt', GanttIntro474, { pro: true }),
+  demo('475-gantt-editing', 'Plan editing', 'The same plan with editing on: drag a bar or its edges, drag the diamond to set percent, drag a dot onto another bar to draw a link. A phase moves its whole subtree in one callback, successors slide forward over weekends, a cycle is refused, and Ctrl+Z replays it backwards. A log panel lists every write-back the view asks for.', 'Gantt', GanttEditing475, { pro: true }),
+  demo('476-gantt-critical-path', 'Critical path & baselines', 'A fit-out schedule with the planning layer on: the chain with no slack ringed in red with its arrows, a Slack column for everything else, baseline ghosts that redden where the plan has drifted, and two pinned tasks where a cascade stops at the constraint instead of running past it.', 'Gantt', GanttCriticalPath476, { pro: true }),
+  demo('477-gantt-resources', 'Resource load & folded axis', 'A field-service quarter with a load strip under the chart: one row per crew, one bar per column, red where a crew is booked past its capacity - the specialist is one person with two sign-offs in the same week. Capacity is per resource, so a two-van crew takes two jobs at once. Fold the weekends out and the quarter fits in the width a month used to take.', 'Gantt', GanttResources477, { pro: true }),
+  demo('478-gantt-four-views', 'One plan, four views: Grid, Gantt, Scheduler, Kanban', 'One <SvGrid>, one array, four renderers behind a switch: the plain table with inline editing, the Gantt with phases and links, a resource timeline with a lane per owner, and a Kanban of status lanes. Every view writes back through a callback to the same rows - change a status in the grid and the card moves lane, drag a bar in the Gantt and the timeline follows - and a line under the switcher names the last write.', 'Gantt', GanttFourViews478, { pro: true }),
+  demo('479-gantt-roadmap', 'Product roadmap - a year in quarters', 'The Gantt as a roadmap: three teams, their initiatives across four quarters, and the releases that cut across them as milestones. A `task` snippet draws the owner and a status chip inside each bar, colour is by status, a custom tooltip carries the effort and a summary, the header chips filter by status, and a month / quarter / year zoom ladder drills in with Ctrl+wheel.', 'Gantt', GanttRoadmap479, { pro: true }),
+  demo('480-gantt-program', 'A programme of 40 sites, 640 tasks', 'A fibre roll-out at programme scale: 40 sites, each a phase of 16 linked tasks, 640 tasks and 600 links, opening folded to one bar per site. Rows past the viewport are not rendered, the critical path over every chain names the site the finish date turns on, baselines count the sites running late, and the search box filters the whole thing. Ctrl+wheel to the week preset and the weekends fold out of the axis.', 'Gantt', GanttProgram480, { pro: true }),
+  demo('481-gantt-portfolio-console', 'Portfolio office - project console', 'A PMO console with the Gantt as the hero: a rail of projects with health and percent complete, live KPIs, and a dockable workspace (SvDockManager) with the plan over a risk register and a remaining-work chart. The plan runs with the critical path and baselines on and is editable; drag a task and the register, the chart and the KPIs recompute from the same rows.', 'Gantt', GanttPortfolioConsole481, { pro: true }),
   demo('399-alert-rules-engine', 'Alert Rules engine', 'A live trading desk where end users define alert rules at runtime - no code - that watch the data and react: raise a toast, tint the row, flash the cell, or log it. A visual condition builder (or free-text expression) reuses the grid own filter operators; rules persist to localStorage and export as shareable JSON. The bell opens the fired-alert log. Engine: @svgrid/enterprise.', 'Alerts', AlertRulesEngine399, { pro: true }),
   demo('400-alert-styling-rules', 'Styling rules', 'Alert rules are not just notifications: a highlight or badge action becomes live conditional formatting, painted through the grid own format pipeline. A server fleet lights up by rule - hot CPU turns amber, near-full disks turn red via a cross-column rule (used / total > 0.9). Randomise the load and the colours follow. Add your own styling rule in the visual builder.', 'Alerts', AlertStylingRules400, { pro: true }),
   demo('401-alert-aggregate-kpi', 'KPI & aggregate alerts', 'Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language SUM / AVG / COUNT reducers.', 'Alerts', AlertAggregateKpi401, { pro: true }),
@@ -865,7 +891,7 @@ export const demos: Demo[] = [
   demo('181-master-detail-grid',    'Master / detail (nested grid)','The classic AG-Grid master/detail: expand any account row to reveal a full nested SvGrid of its call records. Built on isDetailRow + renderDetailRow - a real full-width detail row hosting another grid. Expand-all / collapse-all.', 'Master-Detail & Forms', MasterDetailGrid),
 
   // ----- Server-Side Data
-  demo('148-server-row-model',      'Server-Side Row Model: paged and infinite', 'The free half of the row model: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Paged, the grid holds one 50-row page; infinite, a block cache under the scrollbar with placeholders, retry and an LRU. Here a 100,000-row in-memory server behind 250ms latency. Grouping, tree, pivot and transactions on top of the same contract are the Enterprise row model (demo 467).', 'Server-Side Data', ServerRowModel),
+  demo('148-server-row-model',      'Server-Side Row Model: paged and infinite', 'The free half of the row model: implement one async getRows({ startRow, endRow, sortModel, filterModel }) and createServerDataSource owns the sort/filter/page lifecycle and races stale responses away. Paged, the grid holds one 50-row page; infinite, a block cache under the scrollbar with placeholders, retry and an LRU, drawn live as you scroll. Here a 100,000-row in-memory server behind 250ms latency. Grouping, tree, pivot and transactions on top of the same contract are the Enterprise row model (demo 467).', 'Server-Side Data', ServerRowModel),
   demo('09-server-side',            'Server-side data',            'Sort/filter/page round-tripped to a mock endpoint with debounce + cancel.', 'Server-Side Data', ServerSide),
   demo('33-server-infinite',        'Server-side infinite scroll', '100k-event audit log behind a mock API. Sparse chunked load on scroll; sort + filter + search pushed to the server.', 'Server-Side Data', ServerInfinite),
   demo('72-graphql-adapter',        'GraphQL adapter',             'Server-side sort / filter / page wired to a mock GraphQL resolver. Side panel shows the live query doc so you can compare what the grid sent to the network tab.', 'Server-Side Data', GraphqlAdapter),
@@ -878,14 +904,16 @@ export const demos: Demo[] = [
   demo('118-live-dashboard',        'Live 10M-row dashboard',      '10,000,000-transaction stream behind a mock API: server-side paging, sort, filter, a 1-second live feed, and inline SVG throughput/distribution charts.', 'Server-Side Data', LiveDashboard),
 
   // ----- Server-Side Row Model
-  demo('467-server-row-model-1m',  'Server-Side Row Model: 1,000,000 rows', 'One grid, one rowModel prop, a million rows that stay on the server. Sort, filter, global search, grouping to any depth (Region > Country > Rep), infinite scroll or paging, inline edits applied back as transactions with the subtotal following, add and delete, select-all across rows the grid never loaded with a bulk edit by rule, failed blocks with Retry, and a request log that shows every call to the columnar warehouse behind it. The row model ships in @svgrid/enterprise; the datasource contract is free.', 'Server-Side Row Model', ServerRowModel1m467, { pro: true }),
-  demo('468-server-pivot',         'Server-side pivot',           'The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request. The backend answers with one field per pivot key and aggregation and lists them in pivotResultFields; the model builds the column groups from that list. Apply / Cancel hold a slice-and-dice session to one request, and a grand total row is pinned at the bottom.', 'Server-Side Row Model', ServerPivot468, { pro: true }),
+  demo('467-server-row-model-1m',  'Server-Side Row Model: 1,000,000 rows', 'One grid, one rowModel prop, a million rows that stay on the server. Sort, filter, global search, grouping to any depth (Region > Country > Rep), infinite scroll or paging, inline edits applied back as transactions with the subtotal following, add and delete, select-all across rows the grid never loaded with a bulk edit by rule, failed blocks with Retry, a request log that shows every call to the columnar warehouse behind it, and a live map of the block cache per level. The row model ships in @svgrid/enterprise; the datasource contract is free.', 'Server-Side Row Model', ServerRowModel1m467, { pro: true }),
+  demo('468-server-pivot',         'Server-side pivot',           'The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request. The backend answers with one field per pivot key and aggregation and lists them in pivotResultFields; the model builds the column groups from that list. Apply / Cancel hold a slice-and-dice session to one request, a Total column group carries the row totals, and a grand total row is pinned at the bottom.', 'Server-Side Row Model', ServerPivot468, { pro: true }),
   demo('344-server-grouping-model', 'Server grouping (row model)', 'Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.', 'Server-Side Row Model', ServerGroupingModel, { pro: true }),
   demo('469-server-tree-data', 'Server tree data (row model)', 'A file tree the grid never holds whole: expanding a folder is one getRows with the folder path as groupKeys, answered with that folder\'s entries one block at a time. createServerRowModel in treeData mode owns the lazy expand, a block cache per folder, open-by-default, expand and collapse all, a per-folder refresh that re-reads one folder in place, and transactions that add or delete a file without a refetch. The server generates each folder from a seeded PRNG on first request, five levels deep.', 'Server-Side Row Model', ServerTreeData469, { pro: true }),
   demo('470-server-transactions', 'Server transactions (live feed)', 'A socket-style feed of changes the server already made, applied without a refetch: a price tick patches the loaded row in place with a flash (updateRowData), a new order lands at the top of its warehouse and a shipped one leaves (applyTransactionAsync, batched every 500 ms, addressed by route). Every result carries a status the log shows: applied, cancelled under the veto hook, storeNotFound for a warehouse whose level is not cached. Refresh totals recomputes the sums a transaction leaves alone.', 'Server-Side Row Model', ServerTransactions470, { pro: true }),
   demo('471-server-selection', 'Server selection: select all, minus these', 'The header checkbox selects every row the filter matches, loaded or not, and the selection becomes a rule: all except these ids, or per group under grouping. The panel shows getSelectionState() live, Save and Restore round-trip it, and a bulk action sends the rule to the server as one updateWhere that answers with the count it changed. The selection bar shows the server\'s number, not the ticks on screen.', 'Server-Side Row Model', ServerSelection471, { pro: true }),
   demo('472-server-sql-planner', 'Server row model to SQL', 'What the backend runs for each request: planQuery turns the ServerRequest into a QueryPlan against an entity schema, planToSql renders it for Postgres, MySQL or SQLite, and the panel shows the statements createSqlDataSource would hand your executor for the request that just went out - grouped or flat rows, the count, the grand total, and the two statements a pivot needs. The rows come from the in-memory reference source over the same plan.', 'Server-Side Row Model', ServerSqlPlanner472, { pro: true }),
   demo('473-server-grouping-rules', 'Server grouping: totals, sort and refresh rules', 'The options around a grouped row model with the request log to show what each costs: a grand total in any of four positions, subtotal footers, levels that open on arrival, expand-all that reaches groups not loaded yet, refresh in place versus purge, and the rules for what a sort or a filter re-requests - a plain column re-fetches leaf levels only, a group column its own level, an aggregated column every level; a filter purges all or only the groups it touches.', 'Server-Side Row Model', ServerGroupingRules473, { pro: true }),
+  demo('482-server-crud', 'Server row model: CRUD', 'The four writes over a grouped server row model, against a backend that says no: a new order through the form lands under the focused region as a transaction, an inline edit is one updateRow carrying the row\'s version so a lost race is refused, a delete of a shipped order is refused, a delete that went through is undone. saving shows while a write is out; optimistic mode shows the edit before the server answers and puts the row back when it refuses, and the slow-server switch makes the difference visible. The log is what the server received and what it said.', 'Server-Side Row Model', ServerCrud482, { pro: true }),
+  demo('483-server-master-detail', 'Server row model: master-detail', 'A detail panel under a leaf of a grouped server row model: the chevron on an order asks the model to open its detail (toggleDetail), the model puts a detail row under the leaf, the grid draws it through renderDetailRow at a height the virtualizer knows (detailRowHeight), and the panel fetches the order\'s line items from a second endpoint the moment it appears. The tree stays virtualized, and the region row holds under the header (stickyGroupRows) while the panels scroll past.', 'Server-Side Row Model', ServerMasterDetail483, { pro: true }),
   demo('337-live-rest-dummyjson',   'Live REST (public API)',      'Real rows over the network from dummyjson.com via the enterprise createRestDataSource + a shape adapter (dummyJsonAdapter): skip/limit paging and sortBy/order sorting mapped to the API dialect. Swap URL + adapter (jsonServerAdapter / offsetLimitAdapter) to point at any public API. Includes an error/retry surface.', 'Server-Side Row Model', LiveRestDummyJson, { pro: true }),
 
   // ----- Real-time & Streaming
@@ -1071,6 +1099,11 @@ export const demos: Demo[] = [
   demo('204-import-dialog','Import - dialog + auto-mapping','The round-trip partner of export: SvImportDialog drops in a drag-drop / paste importer that auto-maps a file\'s headers to your columns, coerces each value with the column\'s own format (currency / date), previews the typed rows with bad cells flagged, then appends the clean ones. Reads .xlsx, CSV, TSV, JSON.', 'Data Export & Import', ImportDialog, { pro: true }),
 
 ]
+
+/** Demos of a feature whose release date has not come (tools/lib/releases.mjs)
+ *  stay out of the gallery until it does, as they do on the website. */
+const pendingDemos = pendingDemoIds()
+export const demos: Demo[] = baseDemos.filter((d) => !pendingDemos.has(d.id))
 
 export type DemoGroup = { category: DemoCategory; demos: Demo[] }
 

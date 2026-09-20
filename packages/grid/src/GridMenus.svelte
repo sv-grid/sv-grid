@@ -214,6 +214,19 @@
     });
   }
 
+  /**
+   * Whether a column's active filter operator is one of the set operators,
+   * read at event time from component state: the condition input's focus
+   * and blur handlers cannot depend on a template `@const`, because blur
+   * also fires while the popover is being torn down, after that const's
+   * effect is gone.
+   */
+  function isSetOperatorFor(colId: string): boolean {
+    const column = allColumns.find((c) => c.id === colId);
+    const op = filterMenuValues[colId]?.operator ?? defaultOperatorFor(column);
+    return op === "in" || op === "notIn";
+  }
+
   /** Enter anywhere in the panel means "done" - filtering is already live. */
   function onFilterPanelKeydown(event: KeyboardEvent) {
     if (event.key !== "Enter" || event.shiftKey) return;
@@ -396,10 +409,12 @@
               : menuActiveOperator === "regex"
                 ? "Pattern..."
                 : "Filter value..."}
-          onfocus={isSetOp
-            ? (event) => onSetOpFilterFocus(event.currentTarget as HTMLInputElement, colId)
-            : undefined}
-          onblur={isSetOp ? () => closeInSuggest() : undefined}
+          onfocus={(event) => {
+            if (isSetOperatorFor(colId)) onSetOpFilterFocus(event.currentTarget as HTMLInputElement, colId);
+          }}
+          onblur={() => {
+            if (isSetOperatorFor(colId)) closeInSuggest();
+          }}
           oninput={(event) => {
             const input = event.currentTarget as HTMLInputElement;
             updateFilterMenuValue(colId, input.value);

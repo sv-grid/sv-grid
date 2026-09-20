@@ -159,8 +159,9 @@ The built-in CSS supports stacking up to 4 rows per side. For larger stacks, ove
 | Sorting | Yes | No (pinned rows are in a separate `<tbody>`) |
 | Filtering | Yes | No (pinned rows are not filtered) |
 | Fill handle | Yes | No |
-| `cellClass` | Yes | Yes |
-| `format` | Yes | Yes |
+| `cellClass` | Yes | Yes (a function gets `row: null` and the pinned value) |
+| `format`, `formatter` | Yes | Yes |
+| `align` | Yes | Yes |
 | Column pinning (left/right) | Yes | Yes |
 
 Pinned rows are **read-only by design** - they represent aggregates or annotations, not transactional data. For an editable band at the top, freeze the grid's own rows instead: see below.

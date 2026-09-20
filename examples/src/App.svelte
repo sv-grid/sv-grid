@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-  import { demos, demoGroups, findDemo, landingDemo, isEnterpriseCategory, isEditorCategory } from './shared/registry'
+  import { demos, demoGroups, findDemo, landingDemo, isEnterpriseCategory, isEditorCategory, categoryIcon } from './shared/registry'
   import SourceModal from './shared/SourceModal.svelte'
   import './index.css'
 
@@ -546,7 +546,8 @@
               <svg class="demo-group-chev {isOpen ? 'is-open' : ''}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="9 6 15 12 9 18" />
               </svg>
-              <span class="flex-1 text-left">{group.category}</span>
+              <svg class="demo-group-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={categoryIcon(group.category)} /></svg>
+              <span class="flex-1 min-w-0 text-left truncate" title={group.category}>{group.category}</span>
               {#if isEnterpriseCategory(group.category)}
                 <span class="demo-group-pro-badge">Enterprise</span>
               {/if}
@@ -945,6 +946,8 @@
     transition: color 120ms ease, background-color 120ms ease;
   }
   .demo-group-head:hover { background: var(--sg-row-hover-bg, rgba(148,163,184,0.08)); }
+  .demo-group-ic { flex-shrink: 0; opacity: 0.85; }
+  .demo-group-head:hover .demo-group-ic { opacity: 1; }
   .demo-group-chev {
     flex-shrink: 0;
     transition: transform 140ms ease;

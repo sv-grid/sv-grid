@@ -189,15 +189,10 @@
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
-  // The first column owns the chevron; detail rows render full-width via the
+  // The chevron is the grid's own row-header column (`showDetailToggle`,
+  // wired to `expanded` below); detail rows render full-width via the
   // grid's `isDetailRow` / `renderDetailRow` props (a real colspan row).
   const columns: GridColumns<AnyRow> = [
-    {
-      id: 'expand', header: '', width: 36, editable: false,
-      cell: (ctx) => ctx.row.original.kind === 'order'
-        ? renderSnippet(ChevronCell, { id: ctx.row.original.id, isOpen: expanded.has(ctx.row.original.id) })
-        : renderSnippet(EmptyCell, {}),
-    },
     {
       field: 'id', header: 'Order', width: 130, editable: false,
       cell: (ctx) => ctx.row.original.kind === 'order'
@@ -230,15 +225,6 @@
         : renderSnippet(EmptyCell, {}) },
   ]
 </script>
-
-{#snippet ChevronCell(props: { id: string; isOpen: boolean })}
-  <button class="chev" aria-label={props.isOpen ? 'Collapse row' : 'Expand row'}
-    onclick={() => toggle(props.id)}>
-    <svg class={props.isOpen ? 'is-open' : ''} viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="6 4 10 8 6 12"></polyline>
-    </svg>
-  </button>
-{/snippet}
 
 {#snippet EmptyCell()}{/snippet}
 
@@ -365,6 +351,9 @@
       virtualization={false}
       isDetailRow={(row) => row.kind === 'detail'}
       renderDetailRow={DetailPanel}
+      showDetailToggle
+      onDetailToggle={(row) => toggle(row.id)}
+      isDetailOpen={(row) => expanded.has(row.id)}
     />
   </div>
 </section>
@@ -389,20 +378,6 @@
   .tb-btn:hover { filter: brightness(1.07); }
   .tb-count { font-size: 11px; color: var(--sg-muted, #64748b); }
 
-  /* Chevron --------------------------------------------------- */
-  :global(.chev) {
-    width: 22px; height: 22px;
-    background: transparent; border: 0; cursor: pointer;
-    color: var(--sg-muted, #64748b);
-    border-radius: 4px;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  :global(.chev:hover) {
-    background: var(--sg-row-hover-bg, color-mix(in oklab, #6366f1 12%, transparent));
-    color: var(--sg-accent, #6366f1);
-  }
-  :global(.chev svg) { transition: transform 140ms; }
-  :global(.chev svg.is-open) { transform: rotate(90deg); }
 
   /* Status pill ---------------------------------------------- */
   :global(.status) {

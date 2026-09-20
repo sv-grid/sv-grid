@@ -8,6 +8,13 @@ describe('resolveGridMessages', () => {
     expect(resolveGridMessages({})).toEqual(defaultGridMessages)
   })
 
+  it('names the client group expander, so a localized grid has no English left in it', () => {
+    const m = resolveGridMessages({ expandGroup: 'Gruppe aufklappen', rowsSuffix: 'Zeilen' })
+    expect(m.expandGroup).toBe('Gruppe aufklappen')
+    expect(m.collapseGroup).toBe('Collapse group')
+    expect(m.rowsSuffix).toBe('Zeilen')
+  })
+
   it('replaces only the provided keys, keeping English for the rest', () => {
     const m = resolveGridMessages({ noRows: 'Aucune ligne', pageSize: 'Taille :' })
     expect(m.noRows).toBe('Aucune ligne')

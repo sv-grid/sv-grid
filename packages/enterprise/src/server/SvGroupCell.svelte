@@ -10,6 +10,7 @@
 -->
 <script lang="ts" generics="TData">
   import type { GridIcons, ServerDisplayRow, ServerPlaceholderRow } from '@svgrid/grid'
+  import { fillMessage, resolveServerGroupMessages, type ServerGroupMessages } from './messages'
 
   // Rows from either model: the display-row union, plus the block-cached
   // model's shared placeholder (which the grid renders itself, so it never
@@ -39,11 +40,21 @@
      * the expander consistent with the rest of the chrome.
      */
     icons?: GridIcons
+    /**
+     * Strings, for localization: the "load more" row, the footer and grand
+     * total labels. Partial; missing keys keep the English default. Pass the
+     * same map to `SvRowGroupPanel` and `serverGroupText`.
+     */
+    messages?: Partial<ServerGroupMessages>
+    /** Locale for the child count and the "load more" number. Default: the browser's. */
+    locale?: string | ReadonlyArray<string>
   }
 
-  let { row, onToggle, leafField, indent = 18, icons }: Props = $props()
+  let { row, onToggle, leafField, indent = 18, icons, messages, locale }: Props = $props()
   const chevron = $derived(icons?.['chevron-right'])
   const meta = $derived(row.__group)
+  const m = $derived(resolveServerGroupMessages(messages))
+  const num = (n: number) => n.toLocaleString(locale as string | string[] | undefined)
   // A tree node's key is its id (`field` is empty under treeData); the
   // label is the leaf field then, the same as for its leaves.
   const label = $derived(
@@ -57,16 +68,18 @@
   <span class="sv-group-cell sv-group-cell-leaf" style={`padding-inline-start: ${meta.level * indent}px`}>
     <span class="sv-group-chev sv-group-chev-none" aria-hidden="true"></span>
     <span class="sv-group-key">{label}</span>
-    {#if meta.childCount != null}<span class="sv-group-count">({meta.childCount.toLocaleString()})</span>{/if}
+    {#if meta.childCount != null}<span class="sv-group-count">({num(meta.childCount)})</span>{/if}
   </span>
 {:else if meta && meta.kind === 'group'}
+  <!-- The button's accessible name is the group itself ("Germany (1,234)");
+       expanded and busy are states, on aria-expanded / aria-busy, so a
+       screen reader hears what it is opening rather than "Expand group". -->
   <button
     type="button"
     class="sv-group-cell"
     style={`padding-inline-start: ${meta.level * indent}px`}
     aria-expanded={meta.expanded}
     aria-busy={meta.loading ? 'true' : undefined}
-    aria-label={meta.loading ? 'Loading group' : meta.expanded ? 'Collapse group' : 'Expand group'}
     onclick={() => onToggle(row)}
   >
     {#if meta.loading}
@@ -86,24 +99,29 @@
       </span>
     {/if}
     <span class="sv-group-key">{label}</span>
-    {#if meta.childCount != null}<span class="sv-group-count">({meta.childCount.toLocaleString()})</span>{/if}
+    {#if meta.childCount != null}<span class="sv-group-count">({num(meta.childCount)})</span>{/if}
   </button>
 {:else if meta && meta.kind === 'more'}
+  <!-- aria-disabled rather than disabled: a disabled button drops keyboard
+       focus the moment it is pressed, and this one is pressed to wait. -->
   <button
     type="button"
     class="sv-group-more"
     style={`padding-inline-start: ${meta.level * indent}px`}
-    disabled={meta.loading}
-    onclick={() => onToggle(row)}
+    aria-disabled={meta.loading ? 'true' : undefined}
+    aria-busy={meta.loading ? 'true' : undefined}
+    onclick={() => {
+      if (!meta.loading) onToggle(row)
+    }}
   >
-    {meta.loading ? 'Loading...' : `Load ${meta.remaining} more`}
+    {meta.loading ? m.loading : fillMessage(m.loadMore, { count: num(meta.remaining) })}
   </button>
 {:else if meta && meta.kind === 'footer'}
-  <span class="sv-group-footer" style={`padding-inline-start: ${meta.level * indent}px`}>Total</span>
+  <span class="sv-group-footer" style={`padding-inline-start: ${meta.level * indent}px`}>{fillMessage(m.total, { label: meta.key })}</span>
 {:else if meta && meta.kind === 'skeleton'}
   <span class="sv-group-skeleton" style={`margin-inline-start: ${meta.level * indent}px`} aria-hidden="true"></span>
 {:else if meta && meta.kind === 'grandTotal'}
-  <span class="sv-group-footer sv-group-grand-total">Grand total</span>
+  <span class="sv-group-footer sv-group-grand-total">{m.grandTotal}</span>
 {:else if meta && meta.kind === 'placeholder'}
   <!-- The grid draws placeholder rows itself; nothing to add here. -->
 {:else if meta}
@@ -123,8 +141,16 @@
     font: inherit;
     color: inherit;
     cursor: pointer;
+    border-radius: 3px;
   }
   .sv-group-cell-leaf { cursor: default; }
+  /* The same ring the grid's own tree toggle draws, so keyboard focus looks
+     alike whichever expander it lands on. */
+  .sv-group-cell:focus-visible,
+  .sv-group-more:focus-visible {
+    outline: 2px solid var(--sg-accent, #2563eb);
+    outline-offset: 2px;
+  }
   .sv-group-chev {
     display: inline-flex;
     align-items: center;
@@ -160,7 +186,7 @@
   @media (prefers-reduced-motion: reduce) {
     .sv-group-spinner { animation: none; border-top-color: var(--sg-muted, #64748b); }
   }
-  .sv-group-leaf { color: var(--sg-muted, #475569); }
+  .sv-group-leaf { color: var(--sg-muted, #64748b); }
   .sv-group-more {
     background: none;
     border: 0;
@@ -169,8 +195,9 @@
     font-size: 13px;
     color: var(--sg-accent, #2563eb);
     cursor: pointer;
+    border-radius: 3px;
   }
-  .sv-group-more:disabled { color: var(--sg-muted, #64748b); cursor: default; }
+  .sv-group-more[aria-disabled='true'] { color: var(--sg-muted, #64748b); cursor: default; }
   .sv-group-footer { font-weight: 600; color: var(--sg-muted, #64748b); font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
   .sv-group-skeleton {
     display: inline-block;

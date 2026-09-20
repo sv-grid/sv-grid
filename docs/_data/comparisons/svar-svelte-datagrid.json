@@ -29,7 +29,7 @@
   "alternativeIntro": "The closest comparison on this list, since both are Svelte-native and both are MIT, so licensing does not decide it. The differences are depth and direction: SvGrid ships a larger feature surface, a UI component suite, in-grid AI helpers and an MCP server, while SVAR spans Svelte, React and Vue and keeps a smaller core. The At a glance table above has both measured bundle sizes; if a compact MIT grid with sorting, filtering, editing, tree data and CSV export is all you need, SVAR is a perfectly good answer.",
   "intro": [
     "SVAR DataGrid (npm: wx-svelte-grid) is part of the SVAR suite from XB Software, the makers of Webix, and is one of the few grids built for Svelte rather than wrapped from another framework. Its docs list in-cell editing, header and advanced filtering, single and multi-column sorting, tree data, virtual scrolling for rows and columns, columns pinned to the left, column and row spans in the header and footer, auto-sized rows, undo and redo, a context menu, row reordering, CSV export, a print API and a REST data provider, all under MIT.",
-    "SvGrid overlaps on the Svelte-native angle and reaches further: row grouping with aggregation, master/detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left and right column pinning, integrated charts, a server-side row model, a headless engine, in-grid AI helpers and the @svgrid/mcp server, all in the MIT package. Excel, PDF and print output, import and pivot tables live in the paid @svgrid/enterprise pack, whereas SVAR keeps its grid entirely free and sells PRO editions of its Gantt, Calendar and Kanban instead."
+    "SvGrid overlaps on the Svelte-native angle and reaches further: row grouping with aggregation, master/detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left and right column pinning, integrated charts, a server-side row model, a headless engine, in-grid AI helpers and the @svgrid/mcp server, all in the MIT package. Excel, PDF and print output, import, pivot tables and the Kanban and Scheduler views of the grid live in the paid @svgrid/enterprise pack, whereas SVAR keeps its grid entirely free and sells PRO editions of its Gantt, Calendar and Kanban instead."
   ],
   "similarities": [
     "Purpose-built for Svelte 5, not a cross-framework wrapper.",
@@ -397,7 +397,7 @@
     },
     {
       "question": "Are SvGrid and SVAR both free?",
-      "answer": "Both are free under MIT, including commercial use. SVAR keeps the whole grid free, CSV export and print included, and sells PRO editions of its Gantt, Calendar and Kanban. SvGrid's grid is free too, including CSV, TSV and JSON export, charts and the AI helpers; Excel, PDF and print output, import, pivot tables and support are in @svgrid/enterprise at $599 per developer per year."
+      "answer": "Both are free under MIT, including commercial use. SVAR keeps the whole grid free, CSV export and print included, and sells PRO editions of its Gantt, Calendar and Kanban. SvGrid's grid is free too, including CSV, TSV and JSON export, charts and the AI helpers; Excel, PDF and print output, import, pivot tables, the Kanban and Scheduler views and support are in @svgrid/enterprise at $599 per developer per year."
     },
     {
       "question": "Are both built for Svelte 5?",

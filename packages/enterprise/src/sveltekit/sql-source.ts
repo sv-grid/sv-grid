@@ -52,6 +52,12 @@ export type SqlDataSourceConfig<TData extends RowData> = {
    * Default true.
    */
   returning?: boolean
+  /**
+   * Aggregate function names to accept from a request besides `sum`,
+   * `avg`, `min`, `max` and `count`, spelt as the database spells them.
+   * Names outside this list never reach SQL.
+   */
+  aggregators?: ReadonlyArray<string>
 }
 
 function quoter(dialect: SqlDialect) {
@@ -77,6 +83,7 @@ export function createSqlDataSource<TData extends RowData>(
   const { schema, execute } = config
   const dialect = config.dialect ?? {}
   const returning = config.returning ?? true
+  const planOptions = { aggregators: config.aggregators ?? [] }
   const id = quoter(dialect)
   const idField = resolveIdField(schema)
   // Optionally schema-qualify the table: "schema"."table" (each part quoted separately).
@@ -97,7 +104,7 @@ export function createSqlDataSource<TData extends RowData>(
 
   return {
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
-      const plan = planQuery(schema, request)
+      const plan = planQuery(schema, request, planOptions)
       const sql = planToSql(plan, planDialect)
       const t = qtable
       // A grouped level selects the group column + aggregates and groups by

@@ -489,9 +489,11 @@ describe('createCellRender / formatPinnedValue', () => {
 })
 
 describe('createCellRender / computePinnedCellClass', () => {
-  it('returns empty string when cellClass is not a function', () => {
+  it('applies a static cellClass, a string or a list, the way a body cell does', () => {
     const cr = createCellRender(makeCtx())
-    expect(cr.computePinnedCellClass({ a: 1 }, makeColumn('a', { cellClass: 'x' }))).toBe('')
+    expect(cr.computePinnedCellClass({ a: 1 }, makeColumn('a', { cellClass: 'x' }))).toBe('x')
+    expect(cr.computePinnedCellClass({ a: 1 }, makeColumn('a', { cellClass: ['x', 'y'] }))).toBe('x y')
+    expect(cr.computePinnedCellClass({ a: 1 }, makeColumn('a', {}))).toBe('')
   })
 
   it('invokes a function cellClass with a null row and the pinned value', () => {
