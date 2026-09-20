@@ -80,11 +80,11 @@ describe('planQuery pivot', () => {
 describe('in-memory source pivots', () => {
   const source = createInMemoryDataSource(rows, schema)
 
-  it('splits every aggregate per pivot key and names the fields', async () => {
+  it('splits every aggregate per pivot key and names the fields, with the plain aggregate as the row total', async () => {
     const res = await source.getRows(pivoted())
     expect(res.rows).toEqual([
-      { region: 'APAC', '2024_amount': 400, '2025_amount': 500, childCount: 2 },
-      { region: 'EMEA', '2024_amount': 300, '2025_amount': 300, childCount: 3 },
+      { region: 'APAC', '2024_amount': 400, '2025_amount': 500, amount: 900, childCount: 2 },
+      { region: 'EMEA', '2024_amount': 300, '2025_amount': 300, amount: 600, childCount: 3 },
     ])
     expect(res.pivotResultFields).toEqual(['2024_amount', '2025_amount'])
   })
@@ -97,6 +97,7 @@ describe('in-memory source pivots', () => {
       '2024_Q2_amount': 200,
       '2025_Q1_amount': 300,
       '2025_Q2_amount': null,
+      amount: 600,
       childCount: 3,
     })
     // The union across groups, sorted, so the grid sees a stable column set.
@@ -111,13 +112,14 @@ describe('in-memory source pivots', () => {
       '2024_Q2_amount': null,
       '2025_Q1_amount': null,
       '2025_Q2_amount': 500,
+      amount: 900,
       childCount: 2,
     })
   })
 
   it('pivots the grand total the same way', async () => {
     const res = await source.getRows(pivoted({ needsGrandTotal: true }))
-    expect(res.grandTotal).toEqual({ '2024_amount': 700, '2025_amount': 800 })
+    expect(res.grandTotal).toEqual({ '2024_amount': 700, '2025_amount': 800, amount: 1500 })
   })
 
   it('pivots under a filter', async () => {
@@ -125,8 +127,8 @@ describe('in-memory source pivots', () => {
       pivoted({ filterModel: { columns: { amount: { operator: 'greaterThan', value: '250' } } } }),
     )
     expect(res.rows).toEqual([
-      { region: 'APAC', '2024_amount': 400, '2025_amount': 500, childCount: 2 },
-      { region: 'EMEA', '2024_amount': null, '2025_amount': 300, childCount: 1 },
+      { region: 'APAC', '2024_amount': 400, '2025_amount': 500, amount: 900, childCount: 2 },
+      { region: 'EMEA', '2024_amount': null, '2025_amount': 300, amount: 300, childCount: 1 },
     ])
     expect(res.pivotResultFields).toEqual(['2024_amount', '2025_amount'])
   })
@@ -143,9 +145,10 @@ describe('planToSql pivot', () => {
     const sql = planToSql(planQuery(schema, pivoted()))
     expect(sql.pivotKeysSelect).toBe('DISTINCT "year"')
     const pivot = sql.pivotSelect([{ year: '2024' }, { year: '2025' }])
-    expect(pivot.select).toBe(`"region", ${SUM_2024}, ${SUM_2025}, COUNT(*) AS "childCount"`)
+    // The plain SUM rides along as the row total.
+    expect(pivot.select).toBe(`"region", ${SUM_2024}, ${SUM_2025}, SUM("amount") AS "amount", COUNT(*) AS "childCount"`)
     expect(pivot.fields).toEqual(['2024_amount', '2025_amount'])
-    expect(pivot.grandTotalSelect).toBe(`${SUM_2024}, ${SUM_2025}`)
+    expect(pivot.grandTotalSelect).toBe(`${SUM_2024}, ${SUM_2025}, SUM("amount") AS "amount"`)
   })
 
   it('ANDs a multi-column key path and counts rows for a count aggregate', () => {
@@ -155,7 +158,7 @@ describe('planToSql pivot', () => {
     expect(sql.pivotKeysSelect).toBe('DISTINCT "year", "quarter"')
     const pivot = sql.pivotSelect([{ year: '2024', quarter: 'Q1' }])
     expect(pivot.select).toBe(
-      `"region", COUNT(CASE WHEN "year" = '2024' AND "quarter" = 'Q1' THEN 1 END) AS "2024_Q1_amount", COUNT(*) AS "childCount"`,
+      `"region", COUNT(CASE WHEN "year" = '2024' AND "quarter" = 'Q1' THEN 1 END) AS "2024_Q1_amount", COUNT(*) AS "amount", COUNT(*) AS "childCount"`,
     )
   })
 
@@ -195,9 +198,9 @@ describe('createSqlDataSource pivots in two statements', () => {
     const res = await src.getRows(pivoted({ needsGrandTotal: true }))
     expect(calls.map((c) => c.sql)).toEqual([
       'SELECT DISTINCT "year" FROM "sales"',
-      `SELECT "region", ${SUM_2024}, ${SUM_2025}, COUNT(*) AS "childCount" FROM "sales" GROUP BY "region" ORDER BY "region" ASC LIMIT 100 OFFSET 0`,
+      `SELECT "region", ${SUM_2024}, ${SUM_2025}, SUM("amount") AS "amount", COUNT(*) AS "childCount" FROM "sales" GROUP BY "region" ORDER BY "region" ASC LIMIT 100 OFFSET 0`,
       'SELECT COUNT(DISTINCT "region") AS count FROM "sales"',
-      `SELECT ${SUM_2024}, ${SUM_2025} FROM "sales"`,
+      `SELECT ${SUM_2024}, ${SUM_2025}, SUM("amount") AS "amount" FROM "sales"`,
     ])
     expect(res.pivotResultFields).toEqual(['2024_amount', '2025_amount'])
     expect(res.grandTotal).toEqual({ '2024_amount': 700, '2025_amount': 800 })

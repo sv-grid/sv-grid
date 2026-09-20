@@ -220,6 +220,16 @@ engine's row id instead, so set `getRowId` if you want those keys to be
 your own ids. Capture the map from `onExpandedChange` rather than
 hand-building the keys.
 
+## Sticky group rows
+
+`stickyGroupRows` keeps the banner of the group a row belongs to (and the
+banners of the groups above it) under the header while the group's rows
+scroll past, so a screen deep inside a large group still says where it
+is. Under virtualization the band shows a copy of each ancestor banner,
+clickable like the original; without virtualization the banners
+themselves stick. Off by default; the same prop serves tree data and the
+[server-side row model](./server/server-grouping.md#sticky-group-rows).
+
 ## Group sort vs leaf sort
 
 The sort UI sorts within the active sort scope:

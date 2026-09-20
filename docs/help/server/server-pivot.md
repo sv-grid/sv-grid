@@ -100,6 +100,17 @@ The innermost group level does not open under pivot: its rows are the
 pivoted result, and there are no leaves beneath them. `SvGroupCell` draws
 those rows without an expander.
 
+### Row totals
+
+`pivotRowTotals: true` (or a label) appends a `Total` header group after
+the pivot keys, one column per aggregation, reading the plain aggregate
+field: `amount` beside `2024_amount` and `2025_amount`. The backend puts
+that field on every group row and on the grand total in pivot mode - the
+in-memory source, the SQL planner and the demo warehouse all do - so
+switching totals on through `setLayout({ pivotRowTotals })` is a re-render,
+not a request. The designer's "Grand totals" switch drives it in server
+mode, the way it drives the total column of the client pivot.
+
 ## The designer
 
 `SvPivotDesigner` has a server mode: hand it the model and Rows become

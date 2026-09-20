@@ -234,7 +234,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [`<sv-grid>` reference](https://svgrid.com/docs/help/web-components/sv-grid/): Every property, attribute and event of the custom element.
 - [`<sv-chart>` reference](https://svgrid.com/docs/help/web-components/sv-chart/): Every property, attribute and event of the chart custom element.
 - [Shadow DOM: `<sv-grid-shadow>`](https://svgrid.com/docs/help/web-components/shadow-dom/): Two elements ship, and which one you want is a styling decision:
-- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 109 properties and 25 events are typed props, and it works the same on React 17, 18 and 19.
+- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 114 properties and 27 events are typed props, and it works the same on React 17, 18 and 19.
 - [SvGrid in Vue](https://svgrid.com/docs/help/web-components/vue/): The component is generated from <SvGrid>'s own types, and it removes the two things a raw custom element needs in Vue: the isCustomElement build config, and a .prop modifier on every object binding.
 - [SvGrid in Angular](https://svgrid.com/docs/help/web-components/angular/): A standalone component, compiled with ng-packagr in partial-Ivy mode, generated from <SvGrid>'s own types: every property is an @Input and every event an @Output.
 - [TypeScript with the custom element](https://svgrid.com/docs/help/web-components/typescript/): The element is plain JavaScript at the boundary, so TypeScript needs to be told it exists. Two declarations get completion and checking back.

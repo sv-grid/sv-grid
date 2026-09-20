@@ -82,6 +82,16 @@ describe('planQuery grouping', () => {
     expect(plan.groupBy).toBe('region')
     expect(plan.aggregations).toEqual([{ field: 'amount', fn: 'sum' }])
   })
+
+  it('whitelists the aggregate function too: built-ins always, others only when allowed', () => {
+    const ask = (fn: string, options?: { aggregators?: string[] }) =>
+      planQuery(schema, req({ groupBy: ['region'], groupKeys: [], aggregations: [{ col: 'amount', fn }] }), options).aggregations
+    expect(ask('median')).toEqual([])
+    expect(ask('median', { aggregators: ['median'] })).toEqual([{ field: 'amount', fn: 'median' }])
+    expect(ask('max')).toEqual([{ field: 'amount', fn: 'max' }])
+    // A name that is not an identifier is never allowed, listed or not.
+    expect(ask('SUM(1)); DROP TABLE sales; --', { aggregators: ['SUM(1)); DROP TABLE sales; --'] })).toEqual([])
+  })
 })
 
 describe('planToSql grouping', () => {
@@ -96,6 +106,18 @@ describe('planToSql grouping', () => {
     // number of rows under the group at the innermost level.
     expect(sql.select).toBe('"region", SUM("amount") AS "amount", COUNT(*) AS "childCount"')
     expect(sql.groupByText).toBe('GROUP BY "region"')
+  })
+
+  it('emits an allowed extra aggregate by name and refuses anything that is not a name', () => {
+    const plan = planQuery(
+      schema,
+      req({ groupBy: ['region'], groupKeys: [], aggregations: [{ col: 'amount', fn: 'median' }] }),
+      { aggregators: ['median'] },
+    )
+    expect(planToSql(plan).select).toBe('"region", MEDIAN("amount") AS "amount", COUNT(*) AS "childCount"')
+    // The emitter is the second lock: a plan built by hand cannot smuggle SQL in.
+    const forged = { ...plan, aggregations: [{ field: 'amount', fn: 'SUM(1)); DROP TABLE sales; --' }] }
+    expect(() => planToSql(forged)).toThrow(/not an aggregate function name/)
   })
 
   it('counts DISTINCT groups, not rows, when grouping', () => {

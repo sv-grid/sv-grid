@@ -194,4 +194,24 @@ describe('createServerRowModel selection', () => {
     expect(ctl.selection!.isSelected('x', gridRowFor(ctl, 's1'))).toBe(true)
     ctl.dispose()
   })
+
+  it('accepts a saved rule in the callback-style shape, flat and per group', async () => {
+    const flat = await opened()
+    flat.ctl.setSelectionState({ selectAll: true, toggledNodes: ['s0'] })
+    expect(flat.ctl.getSelectionState()).toEqual({ selectAll: true, toggled: ['s0'] })
+    expect(flat.ctl.selection!.isSelected('x', gridRowFor(flat.ctl, 's0'))).toBe(false)
+    expect(flat.ctl.selection!.isSelected('x', gridRowFor(flat.ctl, 's1'))).toBe(true)
+    flat.ctl.dispose()
+
+    const grouped = await opened('descendants')
+    // Nothing, except all of EMEA, except s1 inside DE.
+    grouped.ctl.setSelectionState({
+      selectAllChildren: false,
+      toggledNodes: [{ nodeId: 'EMEA', selectAllChildren: true, toggledNodes: [{ nodeId: 'DE', selectAllChildren: true, toggledNodes: [{ nodeId: 's1', selectAllChildren: false }] }] }],
+    })
+    expect(grouped.ctl.selection!.isSelected('x', gridRowFor(grouped.ctl, 's0'))).toBe(true)
+    expect(grouped.ctl.selection!.isSelected('x', gridRowFor(grouped.ctl, 's1'))).toBe(false)
+    expect(grouped.ctl.selection!.isSelected('x', gridRowForGroup(grouped.ctl, 'APAC'))).toBe(false)
+    grouped.ctl.dispose()
+  })
 })

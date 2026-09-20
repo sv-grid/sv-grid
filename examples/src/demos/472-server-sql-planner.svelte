@@ -86,7 +86,7 @@
   // The same assembly `createSqlDataSource` does, kept as text: the plan is
   // the seam, so this is exactly what an executor receives.
   type Statement = { label: string; sql: string; params: unknown[] }
-  type Entry = { seq: number; request: ServerRequest; ms: number }
+  type Entry = { request: ServerRequest; ms: number }
   function statementsFor(request: ServerRequest, name: DialectName): Statement[] {
     const plan = planQuery(schema, request)
     const sql = planToSql(plan, DIALECTS[name])
@@ -118,14 +118,15 @@
     return out.map((s) => ({ ...s, sql: s.sql.replace(/\n{2,}/g, '\n').replace(/\n$/, '') }))
   }
 
-  let log = $state<Entry[]>([])
-  let seq = 0
+  let latest = $state<Entry | null>(null)
+  let requests = $state(0)
   const source: ServerDataSource<Sale> = {
     async getRows(req) {
       const t0 = performance.now()
       await new Promise((r) => setTimeout(r, 100))
       const result = await memory.getRows(req)
-      log = [{ seq: seq++, request: req, ms: Math.round(performance.now() - t0) }, ...log].slice(0, 12)
+      requests += 1
+      latest = { request: req, ms: Math.round(performance.now() - t0) }
       return result
     },
   }
@@ -138,7 +139,7 @@
   const usd = { type: 'number' as const, options: { style: 'currency' as const, currency: 'USD', maximumFractionDigits: 0 } }
   const groupColumn: GridColumns<Row>[number] = {
     id: 'group',
-    header: 'Group',
+    header: 'Region / Country',
     width: 220,
     sortable: false,
     filterable: false,
@@ -158,6 +159,9 @@
     ],
     grandTotalRow: 'pinnedBottom',
     childCount: (r) => (r as { childCount?: number }).childCount,
+    // Americas opens on load: the second request carries the path as a
+    // predicate, which is the statement worth reading first.
+    isGroupOpenByDefault: (route) => route.length === 1 && route[0] === 'Americas',
     pivotBy: ['year'],
     pivotMode: false,
     // One value column per (year x measure): the field name says which measure.
@@ -189,9 +193,10 @@
   ]
 
   // ---- Columns -----------------------------------------------------------------
+  const groupLabel = $derived(groupBy.map((g) => g[0]!.toUpperCase() + g.slice(1)).join(' / ') || 'Group')
   const columns = $derived<GridColumns<Row>>([
     ...(groupBy.length
-      ? [{ ...groupColumn, header: groupBy.map((g) => g[0]!.toUpperCase() + g.slice(1)).join(' / ') }]
+      ? [{ ...groupColumn, header: groupLabel }]
       : [{ field: 'rep', header: 'Rep', width: 120 } as GridColumns<Row>[number]]),
     { field: 'product', header: 'Product', width: 120 },
     { field: 'year', header: 'Year', width: 80, align: 'right' },
@@ -199,7 +204,6 @@
     { field: 'amount', header: 'Amount', width: 130, align: 'right', format: usd },
   ])
 
-  const latest = $derived(log[0] ?? null)
   const statements = $derived(latest ? statementsFor(latest.request, dialect) : [])
   const describe = (r: ServerRequest) => {
     const parts = [`rows ${r.startRow}-${r.endRow}`]
@@ -215,7 +219,7 @@
   }
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <div class="seg dialect-seg" role="group" aria-label="SQL dialect">
       {#each Object.keys(DIALECTS) as d (d)}
@@ -236,7 +240,9 @@
       <SvGrid
         responsive={true}
         columnResize
+        fitColumns
         rowModel={ctl}
+        stickyGroupRows
         {columns}
         {features}
         sortable
@@ -265,44 +271,16 @@
       {/if}
     </aside>
   </div>
+  <footer class="foot">
+    <span class="stat"><span class="stat-label">Requests</span><strong>{requests}</strong></span>
+    <span class="stat"><span class="stat-label">Rows</span><strong>{(view?.rowCount ?? 0).toLocaleString()}</strong> at the top level</span>
+    <span class="stat"><span class="stat-label">On screen</span><strong>{(view?.gridRows.length ?? 0).toLocaleString()}</strong></span>
+    {#if view?.error}<span class="stat err">{String((view.error as Error).message ?? view.error)}</span>{/if}
+  </footer>
 </section>
 
 <style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); flex: 1 1 320px; }
-  .chk {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: var(--sg-fg, #0f172a);
-    white-space: nowrap;
-  }
-  .chk input { accent-color: var(--sg-accent, #2563eb); }
-  .seg {
-    display: inline-flex;
-    flex: none;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--sg-bg, #fff);
-  }
-  .seg > button {
-    font: inherit;
-    font-size: 12px;
-    padding: 3px 10px;
-    border: 0;
-    background: transparent;
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .seg > button + button { border-left: 1px solid var(--sg-border, #e2e8f0); }
-  .seg > button.is-on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
-  .seg > button:focus-visible { outline: 2px solid var(--sg-accent, #2563eb); outline-offset: -2px; }
-  .body { display: flex; gap: 10px; flex: 1; min-height: 0; }
-  .gridpane { flex: 1; min-width: 0; min-height: 0; }
+  /* Only what is particular to this demo; the chrome is the shared demo-kit. */
   .sql {
     width: 400px;
     flex: none;
@@ -337,9 +315,7 @@
   }
   .sql-params { margin-top: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--sg-muted, #64748b); word-break: break-all; }
   .sql-empty { padding: 10px; }
-  .muted { color: var(--sg-muted, #64748b); font-weight: 400; }
   @media (max-width: 900px) {
-    .body { flex-direction: column; }
     .sql { width: auto; max-height: 220px; }
   }
 </style>

@@ -205,10 +205,25 @@ export function createWarehouse(options: WarehouseOptions = {}): Warehouse {
     qty = copy((n) => new Uint16Array(n), qty)
   }
 
+  // Year and quarter by day, once for the whole range, so filling a
+  // million rows never builds a Date: two per row was eight seconds of
+  // startup, before the grid could mount.
+  const DAYS = 4 * 365 + 1
+  const yearByDay = new Uint8Array(DAYS)
+  const quarterByDay = new Uint8Array(DAYS)
+  for (let d = 0; d < DAYS; d += 1) {
+    yearByDay[d] = yearOfDay(d) - 2022
+    quarterByDay[d] = quarterOfDay(d) - 1
+  }
   function setDay(i: number, d: number): void {
     day[i] = d
-    yearCode[i] = yearOfDay(d) - 2022
-    quarterCode[i] = quarterOfDay(d) - 1
+    if (d >= 0 && d < DAYS) {
+      yearCode[i] = yearByDay[d]!
+      quarterCode[i] = quarterByDay[d]!
+    } else {
+      yearCode[i] = yearOfDay(d) - 2022
+      quarterCode[i] = quarterOfDay(d) - 1
+    }
   }
 
   for (let i = 0; i < total; i += 1) {
@@ -556,6 +571,8 @@ export function createWarehouse(options: WarehouseOptions = {}): Warehouse {
       }
       return parts.join('_')
     }
+    // The row total beside the per-key cells, fed by every row once.
+    const totals = aggs.map(acc)
     for (let n = 0; n < rows.length; n += 1) {
       const i = rows[n]!
       const key = pathOf(i)
@@ -564,13 +581,17 @@ export function createWarehouse(options: WarehouseOptions = {}): Warehouse {
         accs = aggs.map(acc)
         cells.set(key, accs)
       }
-      for (let k = 0; k < aggs.length; k += 1) feed(accs[k]!, aggs[k]!.col, i)
+      for (let k = 0; k < aggs.length; k += 1) {
+        feed(accs[k]!, aggs[k]!.col, i)
+        feed(totals[k]!, aggs[k]!.col, i)
+      }
     }
     for (const [key, accs] of cells) {
       const path = labelOf(key)
       paths?.add(path)
       aggs.forEach((a, k) => (out[`${path}_${a.col}`] = finish(accs[k]!, a.fn)))
     }
+    aggs.forEach((a, k) => (out[a.col] = finish(totals[k]!, a.fn)))
   }
 
   // ---- the request handlers ----------------------------------------------------

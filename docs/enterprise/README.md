@@ -95,7 +95,15 @@ paging over the tree, and a selection kept as a rule so select-all
 reaches rows the grid never loaded, with a bulk edit by rule. Flat paging
 and infinite scroll stay free in `@svgrid/grid`.
 
-Demo: [467 one million rows](../../examples/src/demos/467-server-row-model-1m.svelte).
+Demos: [467 one million rows](../../examples/src/demos/467-server-row-model-1m.svelte),
+[468 server pivot](../../examples/src/demos/468-server-pivot.svelte),
+[469 tree data](../../examples/src/demos/469-server-tree-data.svelte),
+[470 transactions](../../examples/src/demos/470-server-transactions.svelte),
+[471 selection by rule](../../examples/src/demos/471-server-selection.svelte),
+[472 request to SQL](../../examples/src/demos/472-server-sql-planner.svelte),
+[473 grouping rules](../../examples/src/demos/473-server-grouping-rules.svelte),
+[482 CRUD with a version check](../../examples/src/demos/482-server-crud.svelte),
+[483 master-detail](../../examples/src/demos/483-server-master-detail.svelte).
 
 ### Views of the same grid
 

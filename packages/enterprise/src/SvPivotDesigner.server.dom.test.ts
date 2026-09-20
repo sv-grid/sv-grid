@@ -118,13 +118,16 @@ describe('SvPivotDesigner server mode (DOM)', () => {
       pivotMode: true,
       aggregations: [{ col: 'amount', fn: 'sum' }],
     })
-    // The group column, then a header group per year over its value column.
+    // The group column, then a header group per year over its value column,
+    // then the Total group (row totals are on by default, like the client
+    // pivot's grand totals) reading the plain aggregate.
     const headers = headerTexts(host!)
     expect(headers).toContain('Group')
     expect(headers).toContain('2024')
     expect(headers).toContain('2025')
-    expect(headers.filter((h) => h === 'sum(amount)')).toHaveLength(2)
-    expect(rowTexts(host!)).toEqual(['APAC 400 500', 'EMEA 400 200'])
+    expect(headers).toContain('Total')
+    expect(headers.filter((h) => h === 'sum(amount)')).toHaveLength(3)
+    expect(rowTexts(host!)).toEqual(['APAC 400 500 900', 'EMEA 400 200 600'])
   })
 
   it('shows the plain grouped view with the app columns when pivot mode is off', async () => {

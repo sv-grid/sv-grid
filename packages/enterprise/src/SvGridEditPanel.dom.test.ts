@@ -81,6 +81,14 @@ describe('SvGridEditPanel (DOM)', () => {
     expect(el.querySelector('button[type="submit"]')?.textContent?.trim()).toBe('Create')
   })
 
+  it('names a select field: the label reaches the trigger, and an error marks it invalid', async () => {
+    const el = render({ schema, presentation: 'inline', onSubmit: vi.fn(), onCancel: vi.fn() })
+    const trigger = el.querySelector<HTMLButtonElement>('#sv-ef-tier')!
+    expect(trigger?.classList.contains('sv-grid-dropdown-trigger')).toBe(true)
+    expect(el.querySelector('label[for="sv-ef-tier"]')).not.toBeNull()
+    expect(trigger.getAttribute('aria-invalid')).toBeNull()
+  })
+
   it('routes each editorType to its rich editor from the suite', () => {
     const rich: EntitySchema = {
       name: 'assets',

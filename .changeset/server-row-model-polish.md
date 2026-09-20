@@ -36,6 +36,20 @@ In `@svgrid/grid`:
   Retry sit on the first failed row on screen and the rows under it are
   the plain tint. A first block that fails with no count known keeps the
   level's `initialRowCount` rows instead of claiming a whole block.
+- Escape closes the funnel filter popover, the value-suggestions dropdown
+  and the Choose Columns panel; the window handler only knew the column
+  and operator menus.
+- A popover no longer closes itself on the click that opened it. Scroll
+  events are delivered on the next rendering step, so a scroll that had
+  finished before the click (the browser pulling a half-hidden funnel
+  button into view as it focused it) still reached the close-on-scroll
+  listener after the panel had mounted. `onScrollOutside` arms one
+  animation frame after it is asked for, which by the rendering order is
+  after those queued events and before any scroll the user makes next.
+- The condition input's focus and blur handlers read the column's
+  operator from component state instead of a template constant; blur
+  also fires while the popover is torn down, after that constant is gone,
+  which logged a `derived_inert` warning in dev.
 
 In `@svgrid/enterprise`:
 
@@ -94,3 +108,131 @@ In `@svgrid/enterprise`:
 - The documented sort rule for a group column matched the code now: its own
   level re-fetches, not the levels beneath, since a group's children keep
   their own order.
+- `SvRowGroupPanel` in deferred mode compares `groupBy` by value before
+  dropping pending chips: a server row model hands out a fresh array on
+  every emit, so a block landing used to throw away un-applied edits. Chip
+  drag sets transfer data (Firefox started no drag without it), shows an
+  insertion mark, and a keyboard move is announced to a live region; the
+  remove button is a 24px target and every control has a focus ring.
+- `SvGroupCell`'s group button is named by the group itself ("Germany
+  (1,234)") with expanded and busy as states, instead of an aria-label that
+  hid the name; the "load more" row uses aria-disabled so it keeps focus
+  while it waits, and formats its count.
+- Footer and grand-total grid rows from the model carry `__groupFooter` /
+  `__grandTotal`, so the grid styles them like the client model's totals; a
+  `top` / `bottom` grand total looked like a plain row.
+- A group reads as loading only while its first block is in flight; a deep
+  scroll into an open group no longer spins its expander.
+- `applyTransaction` moves the parent group's `childCount` by the net add
+  and remove, so the badge beside the key follows a feed.
+- The Retry on a failed row re-fetches that block only (`retryFailedAt` on
+  the block cache, `retryRow(row, index)` on both controllers);
+  `retryLoads()` still re-fetches every failed block.
+- Localization of the group chrome: `SvGroupCell` and `SvRowGroupPanel` take
+  `messages` (a partial `ServerGroupMessages`) and the cell a `locale`;
+  `serverGroupText` takes the same map. `defaultServerGroupMessages` and
+  `resolveServerGroupMessages` are exported. In `@svgrid/grid` the client
+  group banner reads `expandGroup` / `collapseGroup` / `rowSuffix` /
+  `rowsSuffix` from `localization.text` instead of English literals.
+- The demos share one chrome stylesheet (`examples/src/demo-chrome.css`,
+  `.demo-kit`) instead of a pasted copy each; 148 and 337 join it; the
+  hint notes hide on phones so the grid starts near the top.
+- `toCallbackSelectionState` / `fromCallbackSelectionState` map the
+  selection rule to and from the callback-style shape (`{ selectAll,
+  toggledNodes }` flat, `{ nodeId, selectAllChildren, toggledNodes }` per
+  group), with a `SelectionStateMapping` for group rows whose ids are not
+  their keys; `ctl.setSelectionState` accepts that shape directly. The
+  migration guide now shows `toCallbackRequest` for a backend that keeps
+  parsing the callback-style request JSON, and lists the transaction
+  status spellings.
+- `ServerRowModelState.saving` is true while a `createRow`, `updateRow` or
+  `deleteRow` is out, and the model takes `optimistic: true`: an update
+  shows at once and the server answer replaces it, a delete takes the row
+  out at once, and a refusal puts the row back where it was - the free
+  controller's contract. `createRow(input, route, addIndex)` says where the
+  saved row lands in its level (the end by default, which in a level of
+  thousands is out of sight).
+- `refresh({ route: [] })` re-reads the grand total with the top level; it
+  kept the cached one before, so a subtotal followed a write and the total
+  did not.
+- Every `ServerRequest` carries `signal`, an `AbortSignal` the grid aborts
+  when it no longer wants the answer (a purged or evicted block, a sort or
+  filter change, a collapsed group, a superseded page, dispose). Hand it
+  to `fetch`. The SvelteKit transport does, and keeps it out of the body.
+  In `@svgrid/grid` the free controller's page mode aborts the fetch a
+  newer page supersedes.
+- `ServerAggregation.fn` takes any name a backend knows
+  (`ServerAggFn | string`), not only the five built-ins. The SvelteKit
+  planner whitelists the function the way it whitelists the column:
+  built-ins always, others through `planQuery(schema, request, {
+  aggregators })` or `createSqlDataSource({ aggregators })`, and
+  `planToSql` refuses a name that is not an identifier. The name was
+  pasted into the statement unchecked before.
+- `SvGridDropdown` takes `id`, `ariaLabel`, `invalid` and `describedBy`,
+  and the edit panel passes them, so a select field's label reaches its
+  trigger and an error marks it invalid; the trigger was a button with no
+  name.
+- Demo 482, server row model CRUD: the form under the focused region,
+  inline edits with a version check the server enforces, a refused delete,
+  an undo, `saving`, and optimistic against a slow server.
+- The row group panel's and the pivot designer's Apply button read as off
+  when there is nothing to apply (a neutral fill), not as a paler Apply.
+- `stickyGroupRows` on `<SvGrid>`: the group a row belongs to, and the
+  groups above it, stay under the header while its rows scroll past. Under
+  virtualization the band renders a copy of each ancestor row through the
+  same renderers (the expander in the copy works); without virtualization
+  the rows themselves stick. Server-side groups, client grouping and tree
+  data alike; off by default, on in the server row model demos.
+- Master-detail on the server row model: `ctl.toggleDetail(id)` puts a
+  display row of kind `detail` under the leaf (`master` on it), closed with
+  its group and gone with a removed leaf; `isDetailOpen`,
+  `closeAllDetails`, `state.openDetails`. In `@svgrid/grid`,
+  `detailRowHeight` (a number or a function of the row) sizes detail rows
+  for the virtualizer, so master-detail no longer needs
+  `virtualization={false}`; the panel scrolls inside its cell. Demo 483.
+- `api.getRowHeight(i)` answers with the height the row is drawn at
+  (dragged, measured, detail, declared), not only the declared one.
+- Pivot row totals: `pivotRowTotals` on the row model (and
+  `buildPivotResultColumns({ rowTotals })`) appends a Total header group
+  reading the plain aggregate fields, which the reference backends now put
+  on pivoted group rows and the grand total beside the per-key fields; the
+  designer's "Grand totals" switch drives it in server mode.
+- The active-cell ring waits for the user: a grid mounts with its active
+  cell seeded at (0,0), and drew the accent ring there in every grid on a
+  page (and in every detail grid) before anyone clicked. The ring now shows
+  once a click, an arrow key or `api.setActiveCell` has chosen a cell, and
+  stays through a blur, the same gate the fill handle had.
+- Demos: the million-row warehouse builds in a fraction of a second (it
+  built two Dates per row before, eight seconds before the grid could
+  mount); 467, 344 and 472 open their first region on load so the level
+  cascade shows without a click; 467 and 148 draw the block cache live
+  per level, and 467 reports the median request latency.
+- `onRowDrop` on `<SvGrid>`: with `rowDragManaged`, a drop is handed to
+  the app (`{ row, target, targetIndex, side }`) and the data is left
+  alone; the middle of a group row is a third target, `into`, drawn as a
+  tinted row rather than a line. Rows from another grid still go through
+  `onRowDragEnd`.
+- `ctl.moveRow(id, toRoute, { patch, addIndex })` on the server row
+  model writes the move through `updateRow` and moves the row between
+  two cached levels (a folder takes its subtree along). A target level
+  nothing has opened reports `storeNotFound` and its `childCount` badge
+  still follows. Demo 469 drags a file onto a folder with it.
+- Ctrl+Enter acts on the row under the active cell: a group row opens or
+  closes, a leaf on the server row model opens or closes its detail
+  panel (`serverGroup.toggleDetail`, wired by `rowModel`), and a plain
+  cell starts editing the way F2 does. It moved down like Enter before.
+- A pinned row's cells take the column's `align` and a static `cellClass`
+  (a string or a list), the way body cells do; a grand total under a
+  right-aligned Amount column sat on the left, and only a `cellClass`
+  function reached the pinned cell.
+- `showDetailToggle` on `<SvGrid>`: the master-detail chevrons as a
+  row-header column beside the row numbers and the selection checkbox,
+  sticky at the left, with no column menu, no resize handle and outside
+  the active cell. `onDetailToggle(row, rowIndex)` and `isDetailOpen(row)`
+  wire it on the client, `hasDetail(row)` leaves it out where there is
+  nothing to open; a server row model wires it itself (`rowModel` now
+  carries `detailOpen` and `hasDetail` beside `toggleDetail`). Ctrl+Enter
+  calls the same toggle on a client grid. The three master-detail demos
+  (106, 181, 483) drop their hand-drawn chevron columns, which took the
+  menu, the resize handle and the active cell along with them. Two
+  messages, `openDetail` and `closeDetail`.

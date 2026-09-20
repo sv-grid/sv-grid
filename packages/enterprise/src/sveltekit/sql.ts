@@ -109,6 +109,12 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     const c = columnFor(field)
     return `${q}${c.replace(new RegExp(q, 'g'), q + q)}${q}`
   }
+  // The planner whitelists function names; this is the second lock on the
+  // same door, since an aggregate name is pasted into the statement raw.
+  const aggName = (fn: string) => {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(fn)) throw new Error(`planToSql: "${fn}" is not an aggregate function name`)
+    return fn.toUpperCase()
+  }
 
   /**
    * Render predicates + search into one WHERE body, binding into `into`.
@@ -167,7 +173,7 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     for (const agg of plan.aggregations ?? []) {
       // COUNT(*) rather than COUNT(col) so the tally counts rows in the group
       // rather than non-null values of one column.
-      const expr = agg.fn === 'count' ? 'COUNT(*)' : `${agg.fn.toUpperCase()}(${id(agg.field)})`
+      const expr = agg.fn === 'count' ? 'COUNT(*)' : `${aggName(agg.fn)}(${id(agg.field)})`
       // Aliased back to the source column name: that is the key the grid reads
       // the aggregate from on the group row.
       parts.push(`${expr} AS ${id(agg.field)}`)
@@ -193,7 +199,7 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
   if (plan.grandTotal) {
     grandTotalSelect = (plan.aggregations ?? [])
       .map((agg) => {
-        const expr = agg.fn === 'count' ? 'COUNT(*)' : `${agg.fn.toUpperCase()}(${id(agg.field)})`
+        const expr = agg.fn === 'count' ? 'COUNT(*)' : `${aggName(agg.fn)}(${id(agg.field)})`
         return `${expr} AS ${id(agg.field)}`
       })
       .join(', ')
@@ -236,12 +242,19 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
         for (const agg of plan.aggregations ?? []) {
           const field = `${path.join('_')}_${agg.field}`
           const inner = agg.fn === 'count' ? '1' : id(agg.field)
-          const fn = agg.fn === 'count' ? 'COUNT' : agg.fn.toUpperCase()
+          const fn = agg.fn === 'count' ? 'COUNT' : aggName(agg.fn)
           const expr = `${fn}(CASE WHEN ${cond} THEN ${inner} END) AS ${id(field)}`
           parts.push(expr)
           totals.push(expr)
           fields.push(field)
         }
+      }
+      // The plain aggregates too: the row total beside the per-key cells,
+      // which is what a Total column group reads.
+      for (const agg of plan.aggregations ?? []) {
+        const expr = agg.fn === 'count' ? 'COUNT(*)' : `${aggName(agg.fn)}(${id(agg.field)})`
+        parts.push(`${expr} AS ${id(agg.field)}`)
+        totals.push(`${expr} AS ${id(agg.field)}`)
       }
       parts.push(`COUNT(*) AS ${id('childCount')}`)
       return { select: parts.join(', '), fields, grandTotalSelect: totals.join(', ') }

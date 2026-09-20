@@ -1,0 +1,24 @@
+{
+  "description": "Master-detail rows on a server-side row model in a Svelte 5 data grid. A chevron on an order asks the model to open its detail; the model places a detail display row under the leaf, the grid renders it through renderDetailRow at a fixed detailRowHeight the virtualizer understands, and the panel fetches the order's line items from a second endpoint the moment it appears, cached per order. The grouped tree stays virtualized end to end, and stickyGroupRows keeps the region row under the header while the panels scroll past.",
+  "keywords": [
+    "svelte grid master detail server side",
+    "svelte 5 data grid detail row virtualized",
+    "svelte grid expandable row nested grid server",
+    "svelte grid detail panel lazy load",
+    "svelte grid sticky group rows"
+  ],
+  "faq": [
+    {
+      "question": "How does a detail row work when the rows live on the server?",
+      "answer": "The row model keeps the set of open details and inserts a display row of kind detail right under its leaf when it flattens the tree, carrying the leaf as master. The grid marks it with isDetailRow and draws it with renderDetailRow; nothing about the leaf is refetched."
+    },
+    {
+      "question": "Why does the panel need a fixed height?",
+      "answer": "The grid is virtualized over the whole tree, so it has to know the height of every row before it renders it. detailRowHeight tells the virtualizer what a detail row measures; content taller than that scrolls inside the panel. Without it a detail row is auto height and needs virtualization off."
+    },
+    {
+      "question": "When are the line items fetched?",
+      "answer": "When the panel renders, from its own endpoint, and the promise is kept per order, so closing and reopening a panel shows its lines at once and the request count in the footer does not grow."
+    }
+  ]
+}

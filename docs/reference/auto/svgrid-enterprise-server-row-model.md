@@ -108,6 +108,13 @@ export type ServerRowModelOptions<TData> = {
    */
   pivotBy?: string[]
   pivotMode?: boolean
+  /**
+   * In pivot mode, a `Total` header group after the pivot keys with the
+   * row's plain aggregates (`amount` beside `2024_amount`, `2025_amount`).
+   * The backend puts those fields on every group row and on the grand
+   * total in pivot mode; the reference sources do. A string is the label.
+   */
+  pivotRowTotals?: boolean | string
   /** How a backend joins pivot keys and the value column into a field name. Default `_`. */
   pivotFieldSeparator?: string
   /** Post-process each generated pivot value column. */
@@ -207,6 +214,14 @@ export type ServerRowModelOptions<TData> = {
    * rows only. See `ctl.selection`, `getSelectionState`, `bulkUpdate`.
    */
   selection?: { groupSelects?: ServerSelectionGroupMode }
+  /**
+   * Apply `updateRow` and `deleteRow` to the loaded rows before the server
+   * answers, and put them back if it rejects: the same contract as the
+   * free controller's `optimistic`. A create waits for the server either
+   * way, since the row has no id until then. Off by default, so a cell
+   * shows a new value only once the server has it.
+   */
+  optimistic?: boolean
   /** Forwarded on every request as `ServerRequest.context`. Keep it serialisable. */
   context?: unknown
   /** Distinct values for a column's set filter, for `<SvGrid rowModel>` to use. */
@@ -260,12 +275,16 @@ export type ServerRowModelState<TData> = {
   rowCount: number | null
   /** True while the root has never loaded. */
   loading: boolean
+  /** True while a `createRow`, `updateRow` or `deleteRow` is in flight. */
+  saving: boolean
   /** The rejection from the last failed top-level fetch, else null. */
   error: unknown
   sortModel: ServerSortModel
   filterModel: ServerFilterModel
   /** Ids (JSON of the route) of the expanded groups. */
   expandedGroups: string[]
+  /** Ids (by `getRowId`) of the leaves whose detail panel is open. */
+  openDetails: string[]
   /** The grand-total row, when one is configured and has arrived. */
   grandTotal: TData | null
   pivotBy: string[]
@@ -403,6 +422,7 @@ export type ServerRowModel<TData> = GridRowModel<ServerRowModelGridRow<TData>> &
     aggregations?: ServerAggregation[]
     pivotBy?: string[]
     pivotMode?: boolean
+    pivotRowTotals?: boolean | string
   }): void
   /** Go to a page (clamped to what exists). No-op without `pagination`. */
   setPage(pageIndex: number): void
@@ -420,6 +440,19 @@ export type ServerRowModel<TData> = GridRowModel<ServerRowModelGridRow<TData>> &
   expandAll(options?: { includeUnloaded?: boolean }): void
   collapseAll(): void
   isExpanded(route: string[]): boolean
+  /**
+   * Master-detail: open or close the detail panel under a leaf, by the id
+   * `getRowId` gives it. The panel is a display row of kind `detail` right
+   * under its leaf, carrying the leaf as `master`; mark it for the grid
+   * with `isDetailRow: (row) => row.__group?.kind === 'detail'` and draw
+   * it with `renderDetailRow` (give `detailRowHeight` under
+   * virtualization). Closes with the group that holds the leaf, and goes
+   * when the leaf is removed.
+   */
+  toggleDetail(id: string, open?: boolean): void
+  isDetailOpen(id: string): boolean
+  /** Close every open detail panel. */
+  closeAllDetails(): void
   /**
    * Write rows straight into a level, bypassing the datasource: children
    * that came with their parent, a socket that pushed a whole level. Creates
@@ -457,18 +490,43 @@ export type ServerRowModel<TData> = GridRowModel<ServerRowModelGridRow<TData>> &
    * Write through the source, then update the cache with what it returned
    * (no refetch). Throws when the source lacks the method. Aggregates are
    * NOT recomputed - `refresh({ route })` the parent when a subtotal must
-   * follow.
+   * follow. A created row lands at `addIndex` within its level, else at the
+   * end, which in a level of thousands is out of sight: pass `0` for the
+   * top, or the index a deleted row had to put it back where it was.
    */
-  createRow(input: Partial<TData>, route?: string[]): Promise<TData>
+  createRow(input: Partial<TData>, route?: string[], addIndex?: number): Promise<TData>
   updateRow(id: string, patch: Partial<TData>): Promise<TData>
   deleteRow(id: string): Promise<void>
+  /**
+   * Move a loaded row to another level: a file dragged into a folder, an
+   * order into another region. With `patch` the move is written through
+   * `source.updateRow` first (the parent field, typically) and the saved
+   * row is what lands; without it the cache alone moves. The row leaves
+   * its level as a transaction and joins `toRoute` at `addIndex` (the end
+   * by default). A group takes its open children with it in the sense
+   * that their cached level is dropped: they are read again under the
+   * new route. A target level nothing has opened reports `storeNotFound`
+   * and holds the row once it opens; the parent counts follow either way.
+   */
+  moveRow(
+    id: string,
+    toRoute: string[],
+    options?: { patch?: Partial<TData>; addIndex?: number },
+  ): Promise<{ row: TData; status: ServerTransactionStatus }>
   /** Tell the model which display rows are on screen. `<SvGrid rowModel>` does this. */
   setViewport(startIndex: number, endIndex: number): void
   /** The selection rule, when `selection` was configured. */
   readonly selectionModel: ServerSelectionModel | null
   /** The rule as plain data, for saving or for sending to a bulk endpoint. */
   getSelectionState(): ServerSelectionState | ServerGroupSelectionNode | null
-  setSelectionState(state: ServerSelectionState | ServerGroupSelectionNode): void
+  /**
+   * Restore a saved rule. The callback-style shape (`toggledNodes`) is
+   * accepted as it is, with group ids read as group keys; pass it through
+   * `fromCallbackSelectionState(state, mapping)` first when they differ.
+   */
+  setSelectionState(
+    state: ServerSelectionState | ServerGroupSelectionNode | CallbackSelectionState | CallbackGroupSelectionState,
+  ): void
   /**
    * Apply one patch to every selected row, loaded or not, through the
    * datasource's `updateWhere`, then reload every level so the rows and
@@ -526,6 +584,7 @@ export function createServerRowModel<TData>(
   let aggregations = [...(options.aggregations ?? [])]
   let pivotBy = [...(options.pivotBy ?? [])]
   let pivotMode = !!options.pivotMode
+  let pivotRowTotals: boolean | string = options.pivotRowTotals ?? false
   const pivotSeparator = options.pivotFieldSeparator ?? '_'
   /** The union of every `pivotResultFields` seen since the last reset, in order. */
   let pivotFields: string[] = []
@@ -558,8 +617,18 @@ export function createServerRowModel<TData>(
   let autoExpand = false
 
   let grandTotal: TData | null | undefined = undefined
+  /**
+   * The grand total on hand is from before an in-place refresh of the top
+   * level or a bulk edit, so the next root block asks for a fresh one. The
+   * old one stays on screen until it lands rather than blinking out.
+   */
+  let grandTotalStale = false
+  /** Leaves whose detail panel is open, by the id `getRowId` gives them. */
+  const openDetails = new Set<string>()
   let rootError: unknown = null
   let disposed = false
+  /** Writes the server has not answered yet; `saving` is "any". */
+  let writesInFlight = 0
 
   // Generation guard: bumped on any reset so responses for the previous shape
   // are discarded when they land.
@@ -673,7 +742,7 @@ export function createServerRowModel<TData>(
             throw new Error('stale')
           }
           const needsGrandTotal =
-            route.length === 0 && grandTotalRow != null && grandTotal === undefined
+            route.length === 0 && grandTotalRow != null && (grandTotal === undefined || grandTotalStale)
           const request: ServerRequest = {
             startRow,
             endRow,
@@ -688,6 +757,7 @@ export function createServerRowModel<TData>(
             ...(needsGrandTotal ? { needsGrandTotal: true } : {}),
             ...(route.length ? { parentRow: parentRowOf(route) } : {}),
             ...(options.context !== undefined ? { context: options.context } : {}),
+            signal,
           }
           let result
           try {
@@ -702,7 +772,10 @@ export function createServerRowModel<TData>(
           if (disposed || gen !== generation) throw new Error('stale')
           if (route.length === 0) {
             rootError = null
-            if ('grandTotal' in result) grandTotal = result.grandTotal ?? null
+            if ('grandTotal' in result) {
+              grandTotal = result.grandTotal ?? null
+              grandTotalStale = false
+            }
           }
           if (pivotMode) {
             if (result.pivotResultColumns) pivotColumnsFromSource = result.pivotResultColumns
@@ -820,11 +893,7 @@ export function createServerRowModel<TData>(
 
     const pushRow = (d: ServerRowModelDisplayRow<TData>, data?: TData): void => {
       display.push(d)
-      grid.push(
-        (d.kind === 'placeholder'
-          ? d
-          : { ...(data as object), __group: d }) as ServerRowModelGridRow<TData>,
-      )
+      grid.push(toGridRow(d, data))
     }
 
     if (grandTotalRow === 'top' && grandTotal) pushRow(grandTotalDisplay(grandTotal), grandTotal)
@@ -862,6 +931,15 @@ export function createServerRowModel<TData>(
             { kind: 'leaf', id: child.id, level: store.level, route: store.route, data: child.data },
             child.data,
           )
+          if (openDetails.size) {
+            const masterId = childId(child)
+            if (openDetails.has(masterId)) {
+              pushRow(
+                { kind: 'detail', id: `${child.id}:detail`, level: store.level, route: store.route, masterId, master: child.data },
+                child.data,
+              )
+            }
+          }
           continue
         }
         const childRoute = [...store.route, child.key]
@@ -881,7 +959,9 @@ export function createServerRowModel<TData>(
               level: store.level,
               expanded: isExp,
               ...(pivotMode && !treeData && childRoute.length >= groupBy.length ? { expandable: false } : {}),
-              loading: !!childStore && childStore.cache.getCacheState().some((b) => b.status === 'loading'),
+              // The expander shows a spinner for the level opening, not for
+              // a block far down an open level that a deep scroll asked for.
+              loading: !!childStore && childStore.cache.getCacheState().some((b) => b.blockIndex === 0 && b.status === 'loading'),
               aggregates: child.aggregates,
               ...(child.childCount != null ? { childCount: child.childCount } : {}),
               data: child.data,
@@ -985,6 +1065,27 @@ export function createServerRowModel<TData>(
     }
   }
 
+  /**
+   * A display row as the grid sees it: the row's own fields at the top
+   * level plus the `__group` marker. Footers and the grand total also carry
+   * the flags the grid keys its `sv-grid-group-footer-row` /
+   * `sv-grid-grand-total-row` styling on, so they look like the client
+   * model's totals rather than like ordinary rows.
+   */
+  function toGridRow(d: ServerRowModelDisplayRow<TData>, data?: TData): ServerRowModelGridRow<TData> {
+    if (d.kind === 'placeholder') return d as unknown as ServerRowModelGridRow<TData>
+    const row = { ...(data as object), __group: d } as ServerRowModelGridRow<TData> & {
+      __groupFooter?: boolean
+      __grandTotal?: boolean
+    }
+    if (d.kind === 'footer') row.__groupFooter = true
+    if (d.kind === 'grandTotal') {
+      row.__groupFooter = true
+      row.__grandTotal = true
+    }
+    return row
+  }
+
   function grandTotalDisplay(data: TData): ServerGrandTotalRow<TData> {
     const agg: Record<string, unknown> = {}
     for (const a of aggregations) agg[a.col] = (data as Record<string, unknown>)[a.col]
@@ -993,8 +1094,7 @@ export function createServerRowModel<TData>(
 
   function pinnedGrandTotal(): ReadonlyArray<ServerRowModelGridRow<TData>> | undefined {
     if (!grandTotal) return undefined
-    const d = grandTotalDisplay(grandTotal)
-    return [{ ...(grandTotal as object), __group: d } as ServerRowModelGridRow<TData>]
+    return [toGridRow(grandTotalDisplay(grandTotal), grandTotal)]
   }
 
   // ------------------------------------------------------------- state
@@ -1006,10 +1106,12 @@ export function createServerRowModel<TData>(
     aggregations: [...aggregations],
     rowCount: null,
     loading: true,
+    saving: false,
     error: null,
     sortModel,
     filterModel,
     expandedGroups: [],
+    openDetails: [],
     grandTotal: null,
     pivotBy: [...pivotBy],
     pivotMode,
@@ -1028,10 +1130,12 @@ export function createServerRowModel<TData>(
       aggregations: [...aggregations],
       rowCount: root?.cache.rowCount() ?? null,
       loading: !!root && !rootLoaded && root.cache.getCacheState().some((b) => b.status === 'loading'),
+      saving: writesInFlight > 0,
       error: rootError,
       sortModel,
       filterModel,
       expandedGroups: [...expanded],
+      openDetails: [...openDetails],
       grandTotal: grandTotal ?? null,
       pivotBy: [...pivotBy],
       pivotMode,
@@ -1110,6 +1214,7 @@ export function createServerRowModel<TData>(
       for (const s of stores.values()) s.cache.dispose()
       stores.clear()
       grandTotal = undefined
+      grandTotalStale = false
       pivotFields = []
       pivotColumnsFromSource = null
     } else {
@@ -1322,8 +1427,24 @@ export function createServerRowModel<TData>(
     }
 
     if (typeof tx.rowCount === 'number') store.cache.setRowCount(tx.rowCount, true)
+    // The parent group row shows this level's count beside its key; adds
+    // and removes move it by the net change. Aggregates stay as they were:
+    // a refresh of the parent recomputes them, as documented.
+    const delta = result.add.length - result.remove.length
+    if (delta !== 0 && route.length > 0) adjustChildCount(route, delta)
     scheduleEmit()
     return result
+  }
+
+  function adjustChildCount(route: string[], delta: number): void {
+    const parent = stores.get(routeKey(route.slice(0, -1)))
+    if (!parent) return
+    const key = route[route.length - 1]
+    const index = parent.cache.findIndex((c) => c.kind === 'group' && c.key === key)
+    if (index < 0) return
+    const child = parent.cache.getRow(index) as Child<TData>
+    if (child.kind !== 'group' || child.childCount == null) return
+    parent.cache.patch(index, { ...child, childCount: Math.max(0, child.childCount + delta) })
   }
 
   const asyncQueue: Array<{
@@ -1359,6 +1480,18 @@ export function createServerRowModel<TData>(
       asyncTimer = null
       flushAsyncTransactions()
     }, options.asyncTransactionWaitMs ?? 50)
+  }
+
+  /** Run one write with `saving` raised around it; the flag is "any write in flight". */
+  async function saving<T>(write: () => Promise<T>): Promise<T> {
+    writesInFlight += 1
+    scheduleEmit()
+    try {
+      return await write()
+    } finally {
+      writesInFlight -= 1
+      scheduleEmit()
+    }
   }
 
   /** The level and index holding a leaf row with this id, searching loaded rows only. */
@@ -1476,7 +1609,7 @@ export function createServerRowModel<TData>(
       store.refreshPending = true
       store.cache.refresh()
     }
-    grandTotal = undefined
+    grandTotalStale = true
     scheduleEmit()
     return changed
   }
@@ -1499,12 +1632,15 @@ export function createServerRowModel<TData>(
       ...buildPivotResultColumns(pivotFields, aggregations, {
         separator: pivotSeparator,
         pivotResultColumn: options.pivotResultColumn,
+        rowTotals: pivotRowTotals,
       }),
     ]
   }
 
   // ---------------------------------------------------- the controller
 
+  // The id a leaf's detail is kept under: the app's row id, else the leaf's own.
+  const leafDetailId = (g: { id: string; data: TData }) => (getRowId ? getRowId(g.data) : g.id.slice(g.id.lastIndexOf(':') + 1))
   const nav = {
     isGroup: (row: ServerRowModelGridRow<TData>) => row.__group?.kind === 'group',
     level: (row: ServerRowModelGridRow<TData>) =>
@@ -1515,6 +1651,18 @@ export function createServerRowModel<TData>(
       if (row.__group?.kind === 'group') model.toggleGroup(row.__group)
       else if (row.__group?.kind === 'more') model.loadMoreChildren(row.__group.path)
     },
+    // A leaf's detail, by the id the app gave the row; a detail row toggles its master.
+    toggleDetail: (row: ServerRowModelGridRow<TData>) => {
+      const g = row.__group
+      if (g?.kind === 'leaf') model.toggleDetail(leafDetailId(g))
+      else if (g?.kind === 'detail') model.toggleDetail(g.masterId)
+    },
+    // Only a leaf has a detail to open; a group's expander is in the group column.
+    hasDetail: (row: ServerRowModelGridRow<TData>) => row.__group?.kind === 'leaf',
+    detailOpen: (row: ServerRowModelGridRow<TData>) => {
+      const g = row.__group
+      return g?.kind === 'leaf' ? model.isDetailOpen(leafDetailId(g)) : false
+    },
   }
 
   const model: ServerRowModel<TData> = {
@@ -1524,6 +1672,9 @@ export function createServerRowModel<TData>(
       const store = stores.get(routeKey(route))
       if (opts?.purge || !store) return rebuild(route)
       store.refreshPending = true
+      // The top level re-read in place brings its aggregates back fresh;
+      // the grand total is one of them.
+      if (route.length === 0) grandTotalStale = true
       store.cache.refresh()
       scheduleEmit()
     },
@@ -1549,6 +1700,14 @@ export function createServerRowModel<TData>(
       const pivotChanged =
         (next.pivotBy !== undefined && !same(next.pivotBy, pivotBy)) ||
         (next.pivotMode !== undefined && next.pivotMode !== pivotMode)
+      // The totals group is built from what is already loaded: no request.
+      if (next.pivotRowTotals !== undefined && next.pivotRowTotals !== pivotRowTotals) {
+        pivotRowTotals = next.pivotRowTotals
+        if (!groupChanged && !aggChanged && !pivotChanged) {
+          scheduleEmit()
+          return
+        }
+      }
       if (!groupChanged && !aggChanged && !pivotChanged) return
       if (next.groupBy) groupBy = [...next.groupBy]
       if (next.aggregations) aggregations = [...next.aggregations]
@@ -1569,6 +1728,21 @@ export function createServerRowModel<TData>(
     },
     expandGroup,
     collapseGroup,
+    toggleDetail(id, open) {
+      const next = open ?? !openDetails.has(id)
+      if (next === openDetails.has(id)) return
+      if (next) openDetails.add(id)
+      else openDetails.delete(id)
+      scheduleEmit()
+    },
+    isDetailOpen(id) {
+      return openDetails.has(id)
+    },
+    closeAllDetails() {
+      if (!openDetails.size) return
+      openDetails.clear()
+      scheduleEmit()
+    },
     expandAll(opts) {
       autoExpand = !!opts?.includeUnloaded
       for (const store of [...stores.values()]) {
@@ -1599,25 +1773,71 @@ export function createServerRowModel<TData>(
     },
     flushAsyncTransactions,
     updateRowData,
-    async createRow(input, route = []) {
+    async createRow(input, route = [], addIndex) {
       if (!source.createRow) throw new Error('createServerRowModel: the datasource does not implement createRow()')
-      const saved = await source.createRow(input)
+      const saved = await saving(() => source.createRow!(input))
       if (disposed) return saved
-      applyTransaction({ route, add: [saved] })
+      applyTransaction({ route, add: [saved], ...(addIndex !== undefined ? { addIndex } : {}) })
       return saved
     },
     async updateRow(id, patch) {
       if (!source.updateRow) throw new Error('createServerRowModel: the datasource does not implement updateRow()')
-      const saved = await source.updateRow(id, patch)
+      const before = options.optimistic ? locate(id) : null
+      const previous = before ? ((before.store.cache.getRow(before.index) as Child<TData>).data as TData) : null
+      // Show the patch now; the server answer replaces it, a rejection restores it.
+      if (previous) updateRowData(id, patch)
+      let saved: TData
+      try {
+        saved = await saving(() => source.updateRow!(id, patch))
+      } catch (err) {
+        if (previous && !disposed) updateRowData(id, previous, { replace: true })
+        throw err
+      }
       if (disposed) return saved
       const hit = locate(id)
       if (hit) applyTransaction({ route: hit.store.route, update: [saved] })
       return saved
     },
+    async moveRow(id, toRoute, opts = {}) {
+      const from = locate(id)
+      if (!from) throw new Error(`createServerRowModel: moveRow: row ${id} is not loaded`)
+      const child = from.store.cache.getRow(from.index) as Child<TData>
+      let row = child.data
+      if (opts.patch) {
+        if (!source.updateRow) throw new Error('createServerRowModel: the datasource does not implement updateRow()')
+        row = await saving(() => source.updateRow!(id, opts.patch!))
+        if (disposed) return { row, status: 'cancelled' }
+      }
+      const fromRoute = [...from.store.route]
+      // A moved group's children were cached under its old route.
+      if (child.kind === 'group') dropSubtree([...fromRoute, child.key])
+      applyTransaction({ route: fromRoute, remove: [id] })
+      const res = applyTransaction({
+        route: [...toRoute],
+        add: [row],
+        ...(opts.addIndex !== undefined ? { addIndex: opts.addIndex } : {}),
+      })
+      // A target level nothing has opened cannot take the row, but its group
+      // row is on screen and the row did go there: the badge follows now
+      // rather than at the next refresh.
+      if (res.status === 'storeNotFound' && toRoute.length) adjustChildCount([...toRoute], 1)
+      return { row, status: res.status }
+    },
     async deleteRow(id) {
       if (!source.deleteRow) throw new Error('createServerRowModel: the datasource does not implement deleteRow()')
-      await source.deleteRow(id)
-      if (disposed) return
+      const before = options.optimistic ? locate(id) : null
+      const removed = before ? ((before.store.cache.getRow(before.index) as Child<TData>).data as TData) : null
+      const route = before ? [...before.store.route] : []
+      const index = before?.index ?? 0
+      // Take the row out now; a rejection puts it back where it was.
+      if (removed) applyTransaction({ route, remove: [id] })
+      try {
+        await saving(() => source.deleteRow!(id))
+      } catch (err) {
+        if (removed && !disposed) applyTransaction({ route, add: [removed], addIndex: index })
+        throw err
+      }
+      if (disposed || removed) return
       const hit = locate(id)
       if (hit) applyTransaction({ route: hit.store.route, remove: [id] })
     },
@@ -1664,7 +1884,7 @@ export function createServerRowModel<TData>(
     selectionModel,
     getSelectionState: () => selectionModel?.getState() ?? null,
     setSelectionState(state) {
-      selectionModel?.setState(state)
+      selectionModel?.setState(isCallbackSelectionState(state) ? fromCallbackSelectionState(state) : state)
     },
     bulkUpdate,
     getLevelState(route = []) {
@@ -1729,7 +1949,14 @@ export function createServerRowModel<TData>(
     getRowId: (row, index) =>
       row.__group && 'id' in row.__group ? row.__group.id : `sv-ph:${index}`,
     rowPlaceholder: (row) => rowPlaceholderState(row),
-    retryRow() {
+    retryRow(_row, rowIndex) {
+      // The block under the clicked row; every failed block only when the
+      // index maps to no level (a stale index after a layout change).
+      for (const seg of segments) {
+        if (rowIndex < seg.displayStart || rowIndex >= seg.displayStart + seg.length) continue
+        seg.store.cache.retryFailedAt(rowIndex - seg.displayStart + seg.storeStart)
+        return
+      }
       for (const store of stores.values()) store.cache.retryFailed()
     },
     group: nav,
@@ -1776,15 +2003,18 @@ spinner; this is the value behind it, so give the group column
 `fieldFn: (row) => serverGroupText(row, leafField)` and copy, export, the
 clipboard and a `pinnedTop` / `pinnedBottom` grand total (which the grid
 formats from the accessor, not from the cell renderer) all read the same
-text.
+text. `messages` is the map `SvGroupCell` takes, so a localized footer
+and grand total read the same in the cell and in a copy.
 
 ```ts
 export function serverGroupText<TData>(
   row: ServerRowModelGridRow<TData>,
   leafField?: keyof TData & string,
+  messages?: Partial<ServerGroupMessages>,
 ): string {
   const meta = row.__group
   if (!meta) return ''
+  const m = resolveServerGroupMessages(messages)
   switch (meta.kind) {
     case 'group': {
       if (meta.field !== '' || !leafField) return meta.key
@@ -1792,9 +2022,9 @@ export function serverGroupText<TData>(
       return v == null ? meta.key : String(v)
     }
     case 'footer':
-      return 'Total'
+      return fillMessage(m.total, { label: meta.key })
     case 'grandTotal':
-      return 'Grand total'
+      return m.grandTotal
     case 'leaf': {
       if (!leafField) return ''
       const v = (row as Record<string, unknown>)[leafField]

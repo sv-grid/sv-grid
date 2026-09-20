@@ -64,6 +64,12 @@ export type GridRowModel<TData> = {
     level: (row: TData) => number
     expanded?: (row: TData) => boolean
     onToggle: (row: TData) => void
+    /** Open or close the detail panel under a leaf. Ctrl+Enter on a row calls it when `renderDetailRow` is set, and so does the `showDetailToggle` chevron. */
+    toggleDetail?: (row: TData) => void
+    /** Whether the detail under a leaf is open: the chevron's direction. */
+    detailOpen?: (row: TData) => boolean
+    /** Whether a row can open a detail; the chevron is left out where this is false. */
+    hasDetail?: (row: TData) => boolean
   }
   /** Selection the grid does not own - see the `rowSelectionModel` prop. */
   selection?: {

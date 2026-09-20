@@ -106,6 +106,47 @@ describe('applyTransaction', () => {
     ctl.dispose()
   })
 
+  it('moves the parent group\'s childCount by the net add and remove', async () => {
+    const be = backend()
+    const withCount: ServerDataSource<Order> = {
+      ...be.source,
+      async getRows(req) {
+        const res = await be.source.getRows(req)
+        // The count beside each region: how many orders it holds.
+        if ((req.groupKeys ?? []).length < (req.groupBy ?? []).length) {
+          return {
+            ...res,
+            rows: res.rows.map((g) => ({ ...g, n: be.table.filter((r) => r.region === (g as Order).region).length })),
+          }
+        }
+        return res
+      },
+    }
+    const ctl = createServerRowModel<Order>(withCount, {
+      groupBy: ['region'],
+      aggregations: [{ col: 'qty', fn: 'sum' }],
+      getRowId: (r) => r.id,
+      childCount: (r) => (r as { n?: number }).n,
+      onChange: () => {},
+    })
+    ctl.refresh()
+    await settle()
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const emea = () => ctl.getState().displayRows.find((r) => r.kind === 'group' && r.key === 'EMEA') as { childCount?: number }
+    expect(emea().childCount).toBe(6)
+    ctl.applyTransaction({
+      route: ['EMEA'],
+      add: [{ id: 'EMEA-a', region: 'EMEA', item: 'x', qty: 1 }, { id: 'EMEA-b', region: 'EMEA', item: 'y', qty: 1 }],
+      remove: ['EMEA-0'],
+    })
+    expect(emea().childCount).toBe(7)
+    // A remove that finds nothing does not move it.
+    ctl.applyTransaction({ route: ['EMEA'], remove: ['nope'] })
+    expect(emea().childCount).toBe(7)
+    ctl.dispose()
+  })
+
   it('appends at the end when no addIndex is given', async () => {
     const { ctl } = await opened()
     ctl.applyTransaction({ route: ['EMEA'], add: [{ id: 'last', region: 'EMEA', item: 'z', qty: 1 }] })
@@ -335,6 +376,11 @@ describe('updateRowData and source-backed CRUD', () => {
 
     const created = await ctl.createRow({ region: 'EMEA', item: 'brand new', qty: 7 }, ['EMEA'])
     expect(leavesOf(ctl, ['EMEA'])).toContain(created.id)
+    expect(leavesOf(ctl, ['EMEA']).at(-1)).toBe(created.id) // at the end by default
+    const onTop = await ctl.createRow({ region: 'EMEA', item: 'first', qty: 1 }, ['EMEA'], 0)
+    expect(leavesOf(ctl, ['EMEA'])[0]).toBe(onTop.id)
+    const third = await ctl.createRow({ region: 'EMEA', item: 'third', qty: 1 }, ['EMEA'], 2)
+    expect(leavesOf(ctl, ['EMEA'])[2]).toBe(third.id)
 
     await ctl.deleteRow('EMEA-4')
     expect(leavesOf(ctl, ['EMEA'])).not.toContain('EMEA-4')
@@ -347,6 +393,222 @@ describe('updateRowData and source-backed CRUD', () => {
     const readOnly: ServerDataSource<Order> = { async getRows() { return { rows: [], rowCount: 0 } } }
     const ctl = createServerRowModel<Order>(readOnly, { onChange: () => {} })
     await expect(ctl.deleteRow('x')).rejects.toThrow(/deleteRow/)
+    ctl.dispose()
+  })
+
+  it('raises saving while a write is in flight and drops it after, success or not', async () => {
+    const { be, ctl } = await opened()
+    let release!: (v: Order) => void
+    let refuse!: (e: Error) => void
+    be.source.updateRow = () => new Promise<Order>((res, rej) => { release = res; refuse = rej })
+    const states: boolean[] = []
+    const off = ctl.subscribe(() => states.push(ctl.getState().saving))
+
+    const p1 = ctl.updateRow('EMEA-1', { item: 'a' })
+    await settle()
+    expect(ctl.getState().saving).toBe(true)
+    release({ id: 'EMEA-1', region: 'EMEA', item: 'a', qty: 1 })
+    await p1
+    await settle()
+    expect(ctl.getState().saving).toBe(false)
+
+    const p2 = ctl.updateRow('EMEA-2', { item: 'b' })
+    await settle()
+    expect(ctl.getState().saving).toBe(true)
+    refuse(new Error('no'))
+    await expect(p2).rejects.toThrow(/no/)
+    await settle()
+    expect(ctl.getState().saving).toBe(false)
+    expect(states).toContain(true)
+    off()
+    ctl.dispose()
+  })
+
+  it('optimistic: shows an update at once, keeps the server answer, and restores the row when it rejects', async () => {
+    const be = backend()
+    const ctl = createServerRowModel<Order>(be.source, {
+      groupBy: ['region'],
+      aggregations: [{ col: 'qty', fn: 'sum' }],
+      getRowId: (r) => r.id,
+      optimistic: true,
+      onChange: () => {},
+    })
+    ctl.refresh()
+    await settle()
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const itemOf = (id: string) =>
+      (ctl.getState().displayRows.find((r) => r.kind === 'leaf' && (r as { data: Order }).data.id === id) as { data: Order }).data.item
+
+    // Slow server: the patch is visible before it answers.
+    let release!: (v: Order) => void
+    be.source.updateRow = (id, patch) => new Promise<Order>((res) => { release = (v) => res({ ...v, ...patch, id }) })
+    const p1 = ctl.updateRow('EMEA-1', { item: 'typed' })
+    await settle()
+    expect(itemOf('EMEA-1')).toBe('typed')
+    release({ id: 'EMEA-1', region: 'EMEA', item: 'ignored', qty: 99 })
+    await p1
+    await settle()
+    // The server answer wins over the local patch.
+    expect(itemOf('EMEA-1')).toBe('typed')
+    expect(
+      (ctl.getState().displayRows.find((r) => r.kind === 'leaf' && (r as { data: Order }).data.id === 'EMEA-1') as { data: Order }).data.qty,
+    ).toBe(99)
+
+    // A rejection restores the row as it was.
+    be.source.updateRow = async () => { throw new Error('amount must be positive') }
+    await expect(ctl.updateRow('EMEA-2', { item: 'bad' })).rejects.toThrow(/positive/)
+    await settle()
+    expect(itemOf('EMEA-2')).toBe('item2')
+    ctl.dispose()
+  })
+
+  it('optimistic: removes a row at once and puts it back in place when the delete rejects', async () => {
+    const be = backend()
+    const ctl = createServerRowModel<Order>(be.source, {
+      groupBy: ['region'],
+      getRowId: (r) => r.id,
+      optimistic: true,
+      onChange: () => {},
+    })
+    ctl.refresh()
+    await settle()
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const before = leavesOf(ctl, ['EMEA'])
+
+    let release!: () => void
+    be.source.deleteRow = () => new Promise<void>((res) => { release = res })
+    const p1 = ctl.deleteRow('EMEA-2')
+    await settle()
+    expect(leavesOf(ctl, ['EMEA'])).not.toContain('EMEA-2')
+    release()
+    await p1
+    await settle()
+    expect(leavesOf(ctl, ['EMEA'])).toEqual(before.filter((id) => id !== 'EMEA-2'))
+
+    be.source.deleteRow = async () => { throw new Error('locked') }
+    await expect(ctl.deleteRow('EMEA-4')).rejects.toThrow(/locked/)
+    await settle()
+    // Back where it was, not at the end.
+    expect(leavesOf(ctl, ['EMEA'])).toEqual(before.filter((id) => id !== 'EMEA-2'))
+    ctl.dispose()
+  })
+})
+
+describe('moveRow', () => {
+  it('writes the move through the source, then takes the row out of one level and into another', async () => {
+    const { be, ctl } = await opened()
+    ctl.expandGroup(['APAC'])
+    await settle()
+    const res = await ctl.moveRow('EMEA-1', ['APAC'], { patch: { region: 'APAC' }, addIndex: 0 })
+    expect(res.status).toBe('applied')
+    expect(res.row.region).toBe('APAC')
+    expect(be.table.find((r) => r.id === 'EMEA-1')!.region).toBe('APAC')
+    expect(leavesOf(ctl, ['EMEA'])).not.toContain('EMEA-1')
+    expect(leavesOf(ctl, ['APAC'])[0]).toBe('EMEA-1')
+    ctl.dispose()
+  })
+
+  it('into a level nothing has opened: gone from its level now, there once the target opens, both badges moved', async () => {
+    // A source that counts the orders per region, for the badge.
+    const be = backend()
+    const withCount: ServerDataSource<Order> = {
+      ...be.source,
+      async getRows(req) {
+        const res = await be.source.getRows(req)
+        if ((req.groupKeys ?? []).length < (req.groupBy ?? []).length) {
+          return { ...res, rows: res.rows.map((g) => ({ ...g, n: be.table.filter((r) => r.region === (g as Order).region).length })) }
+        }
+        return res
+      },
+    }
+    const ctl = createServerRowModel<Order>(withCount, {
+      groupBy: ['region'],
+      getRowId: (r) => r.id,
+      childCount: (r) => (r as { n?: number }).n,
+      onChange: () => {},
+    })
+    ctl.refresh()
+    await settle()
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const countOf = (key: string) => (ctl.getState().displayRows.find((r) => r.kind === 'group' && (r as { key: string }).key === key) as { childCount?: number }).childCount
+    expect(countOf('EMEA')).toBe(6)
+    expect(countOf('APAC')).toBe(6)
+    const res = await ctl.moveRow('EMEA-2', ['APAC'], { patch: { region: 'APAC' } })
+    expect(res.status).toBe('storeNotFound')
+    expect(leavesOf(ctl, ['EMEA'])).not.toContain('EMEA-2')
+    // The closed target's badge still moves: the row is there on the server.
+    expect(countOf('EMEA')).toBe(5)
+    expect(countOf('APAC')).toBe(7)
+    ctl.expandGroup(['APAC'])
+    await settle()
+    expect(leavesOf(ctl, ['APAC'])).toContain('EMEA-2')
+    ctl.dispose()
+  })
+
+  it('without a patch moves the cache alone, and refuses a row that is not loaded', async () => {
+    const { be, ctl } = await opened()
+    ctl.expandGroup(['APAC'])
+    await settle()
+    await ctl.moveRow('EMEA-3', ['APAC'])
+    expect(be.table.find((r) => r.id === 'EMEA-3')!.region).toBe('EMEA') // the server was not told
+    expect(leavesOf(ctl, ['APAC']).at(-1)).toBe('EMEA-3')
+    await expect(ctl.moveRow('nope', ['APAC'])).rejects.toThrow(/not loaded/)
+    ctl.dispose()
+  })
+})
+
+describe('master-detail', () => {
+  const kinds = (ctl: ReturnType<typeof createServerRowModel<Order>>) =>
+    ctl.getState().displayRows.map((r) => (r.kind === 'leaf' ? `leaf:${(r as { data: Order }).data.id}` : r.kind === 'detail' ? `detail:${(r as { masterId: string }).masterId}` : r.kind))
+
+  it('opens a detail row under its leaf, carrying the leaf as master, and closes it again', async () => {
+    const { ctl } = await opened()
+    expect(ctl.isDetailOpen('EMEA-1')).toBe(false)
+    ctl.toggleDetail('EMEA-1')
+    await settle()
+    expect(ctl.isDetailOpen('EMEA-1')).toBe(true)
+    expect(ctl.getState().openDetails).toEqual(['EMEA-1'])
+    const shown = kinds(ctl)
+    const at = shown.indexOf('leaf:EMEA-1')
+    expect(shown[at + 1]).toBe('detail:EMEA-1')
+    const detail = ctl.getState().displayRows[at + 1] as { kind: 'detail'; master: Order; route: string[]; id: string }
+    expect(detail.master.id).toBe('EMEA-1')
+    expect(detail.route).toEqual(['EMEA'])
+    // The grid row spreads the master and marks itself.
+    const grid = ctl.getState().gridRows[at + 1] as unknown as { item: string; __group: { kind: string } }
+    expect(grid.item).toBe('item1')
+    expect(grid.__group.kind).toBe('detail')
+    // The grid ids it apart from its leaf.
+    expect(ctl.getRowId!(ctl.getState().gridRows[at + 1]!, at + 1)).not.toBe(ctl.getRowId!(ctl.getState().gridRows[at]!, at))
+
+    ctl.toggleDetail('EMEA-1')
+    await settle()
+    expect(kinds(ctl)).not.toContain('detail:EMEA-1')
+    ctl.dispose()
+  })
+
+  it('goes with the leaf: a removed leaf takes its panel, a collapsed group hides it, closeAllDetails clears', async () => {
+    const { ctl } = await opened()
+    ctl.toggleDetail('EMEA-1', true)
+    ctl.toggleDetail('EMEA-2', true)
+    await settle()
+    expect(kinds(ctl).filter((k) => k.startsWith('detail:'))).toEqual(['detail:EMEA-1', 'detail:EMEA-2'])
+    ctl.applyTransaction({ route: ['EMEA'], remove: ['EMEA-1'] })
+    await settle()
+    expect(kinds(ctl).filter((k) => k.startsWith('detail:'))).toEqual(['detail:EMEA-2'])
+    ctl.collapseGroup(['EMEA'])
+    await settle()
+    expect(kinds(ctl)).not.toContain('detail:EMEA-2')
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    expect(kinds(ctl)).toContain('detail:EMEA-2')
+    ctl.closeAllDetails()
+    await settle()
+    expect(kinds(ctl)).not.toContain('detail:EMEA-2')
+    expect(ctl.getState().openDetails).toEqual([])
     ctl.dispose()
   })
 })

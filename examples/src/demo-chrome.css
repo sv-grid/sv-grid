@@ -1,0 +1,282 @@
+/* =========================================================================
+ * The house chrome for a demo: the block of rules every demo used to paste
+ * into its own <style> (a header row of segmented controls, checkboxes and
+ * a hint; a toolbar of buttons; a grid pane beside a log aside; a stat bar).
+ * Shared here so the copies stop drifting, and so the phone layer in
+ * mobile.css has one class set to target.
+ *
+ * Namespaced on `.demo-kit` (put it on the root `section.wrap`): the class
+ * names inside are the generic ones other demos also use with their own
+ * scoped rules, and a bare global `.wrap` / `.btn` would leak into them.
+ * Every rule here is (0,2,0), the same weight as a Svelte-scoped rule, so a
+ * demo that opts in must not also carry its own copy of these blocks.
+ *
+ * Colours come from the --sg-* tokens with the light-theme fallbacks the
+ * demos always used; the accent is reserved for the "on" segment and focus.
+ *
+ * Wiring - the same cross-repo import as mobile.css:
+ *   examples/src/index.css : @import './demo-chrome.css';
+ *   website/src/index.css  : @import '../../examples/src/demo-chrome.css';
+ * ========================================================================= */
+
+/* ---- The root: a column that hands its height to the grid pane. */
+.demo-kit.wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ---- Header row and toolbar row: controls that wrap, a hint that stretches. */
+.demo-kit .chrome,
+.demo-kit .toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: none;
+}
+.demo-kit .toolbar { gap: 8px; }
+.demo-kit .note {
+  font-size: 12px;
+  color: var(--sg-muted, #64748b);
+  flex: 1 1 320px;
+}
+.demo-kit .note code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent);
+}
+.demo-kit .note em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--sg-fg, #0f172a);
+}
+/* A labelled control: "GRAND TOTAL" beside its segmented buttons. */
+.demo-kit .opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.demo-kit .opt-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--sg-muted, #64748b);
+  white-space: nowrap;
+}
+
+/* ---- Checkbox switch. */
+.demo-kit .chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--sg-fg, #0f172a);
+  white-space: nowrap;
+}
+.demo-kit .chk input { accent-color: var(--sg-accent, #2563eb); }
+
+/* ---- Segmented control: one box, the active segment takes the accent. */
+.demo-kit .seg {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--sg-bg, #fff);
+}
+.demo-kit .seg > button {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--sg-fg, #0f172a);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.demo-kit .seg > button + button { border-left: 1px solid var(--sg-border, #e2e8f0); }
+.demo-kit .seg > button.is-on {
+  background: var(--sg-accent, #2563eb);
+  color: var(--sg-on-accent, #fff);
+}
+.demo-kit .seg > button:focus-visible {
+  outline: 2px solid var(--sg-accent, #2563eb);
+  outline-offset: -2px;
+}
+
+/* ---- Buttons and inputs. */
+.demo-kit .actions {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.demo-kit .btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.demo-kit .btn:hover:not(:disabled) { background: var(--sg-row-hover-bg, #f8fafc); }
+.demo-kit .btn:disabled { opacity: 0.45; cursor: default; }
+.demo-kit .btn:focus-visible {
+  outline: 2px solid var(--sg-accent, #2563eb);
+  outline-offset: 2px;
+}
+.demo-kit .btn-danger { color: var(--sg-danger, #b91c1c); }
+.demo-kit .field {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  min-width: 0;
+}
+
+/* ---- The grid beside a side panel. */
+.demo-kit .body {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+.demo-kit .gridpane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.demo-kit .log {
+  width: 320px;
+  flex: none;
+  overflow: auto;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--sg-bg, #fff);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.demo-kit .log-head {
+  position: sticky;
+  top: 0;
+  padding: 8px 10px;
+  font-weight: 600;
+  color: var(--sg-fg, #0f172a);
+  background: var(--sg-header-bg, #f8fafc);
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+}
+.demo-kit .log-row {
+  display: grid;
+  gap: 6px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--sg-border, #e2e8f0);
+  align-items: baseline;
+  color: var(--sg-fg, #0f172a);
+}
+.demo-kit .log-kind {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+}
+.demo-kit .log-empty { padding: 10px; }
+.demo-kit .muted {
+  color: var(--sg-muted, #64748b);
+  font-weight: 400;
+}
+
+/* ---- The stat bar under the grid. */
+.demo-kit .foot {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  flex: none;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--sg-header-bg, #f8fafc);
+  font-size: 12px;
+  color: var(--sg-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+.demo-kit .stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+.demo-kit .stat.last,
+.demo-kit .stat.err { white-space: normal; }
+.demo-kit .stat.last { color: var(--sg-fg, #0f172a); }
+.demo-kit .stat.err { color: var(--sg-danger, #b91c1c); }
+.demo-kit .stat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.demo-kit .foot strong {
+  color: var(--sg-fg, #0f172a);
+  font-weight: 600;
+}
+
+/* ---- Narrow: the side panel stacks under the grid. */
+@media (max-width: 900px) {
+  /* Stacked, the pane and the panel take their content height (the pane has
+     a 360px floor from mobile.css); a fixed flex share made the foot overlap
+     the grid. */
+  .demo-kit .body {
+    flex-direction: column;
+    flex: none;
+    min-height: auto;
+  }
+  .demo-kit .log {
+    width: auto;
+    max-height: 160px;
+  }
+  /* (0,3,0): a demo that pushes its actions right with a scoped rule of its
+     own still gets them back to the left here. */
+  .demo-kit .toolbar .actions,
+  .demo-kit .chrome .actions { margin-left: 0; }
+}
+
+/* ---- Phone: the hint is a desktop reading aid; on a phone it pushed the
+   grid half a screen down. The demo page's own description is still there. */
+@media (max-width: 767px) {
+  .demo-kit .note { display: none; }
+  /* The control rows scroll sideways instead of wrapping into a stack: four
+     labelled controls and a button row are two lines, not eight. The page
+     itself never pans (the row is its own scroll container). Written at
+     (0,4,0) because mobile.css wraps any row holding a -seg box at (0,3,0). */
+  .demo-page .demo-stage .demo-kit .chrome,
+  .demo-page .demo-stage .demo-kit .toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .demo-page .demo-stage .demo-kit .chrome > *,
+  .demo-page .demo-stage .demo-kit .toolbar > * {
+    flex: 0 0 auto;
+  }
+  .demo-page .demo-stage .demo-kit .seg,
+  .demo-page .demo-stage .demo-kit .actions {
+    flex-wrap: nowrap;
+    max-width: none;
+  }
+  .demo-page .demo-stage .demo-kit .toolbar form .field { width: 180px; }
+}

@@ -588,6 +588,8 @@
         const fn = SERVER_FN[v.agg]
         return fn ? [{ col: v.field, fn }] : []
       }),
+      // The same switch the client pivot reads as its total column.
+      pivotRowTotals: !l.hideGrandTotals,
     })
   })
   // The model is plain; a version bump re-reads its pivot columns.
@@ -952,6 +954,12 @@
         </label>
         <label class="pvd-toggle">
           <input type="checkbox" checked={!layout.hideGrandTotals} onchange={toggleHideGrandTotals} /> Grand totals
+        </label>
+      {:else}
+        <!-- The server model owns its grand-total row (a construction option);
+             the switch here is the Total column group, built without a request. -->
+        <label class="pvd-toggle">
+          <input type="checkbox" checked={!layout.hideGrandTotals} onchange={toggleHideGrandTotals} /> Row totals
         </label>
       {/if}
       {#if deferred}
@@ -1566,6 +1574,13 @@
   }
   .pvd-btn-primary:hover { opacity: 0.9; }
   .pvd-btn:disabled { opacity: 0.5; cursor: default; }
+  /* Apply with nothing to apply reads as off, not as a paler Apply. */
+  .pvd-btn-primary:disabled {
+    opacity: 1;
+    background: var(--sg-header-bg, #f1f5f9);
+    border-color: var(--sg-border, #e2e8f0);
+    color: var(--sg-muted, #64748b);
+  }
   .pvd-apply { display: inline-flex; gap: 6px; }
   .pvd-toggle {
     display: inline-flex;

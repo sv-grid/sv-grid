@@ -22,8 +22,18 @@
  * and the answer: `success({ rowData, rowCount, pivotResultFields })` becomes
  * `{ rows, rowCount, pivotResultFields }` (a `rowCount` of `-1` or absent
  * stays unknown), `fail()` rejects.
+ *
+ * A backend that keeps parsing the callback-style request JSON needs no
+ * datasource object at all: `getRows(request)` posts
+ * `toCallbackRequest(request)` and reads the answer as usual.
+ *
+ * The selection rule has a counterpart there too, `{ selectAll,
+ * toggledNodes }` flat and `{ nodeId, selectAllChildren, toggledNodes }`
+ * per group; `toCallbackSelectionState` / `fromCallbackSelectionState` map
+ * it for a saved selection or a bulk endpoint written against that shape.
  */
 import type { ServerDataSource, ServerFilterModel, ServerRequest, ServerResult, ServerSortModel } from '@svgrid/grid'
+import type { ServerGroupSelectionNode, ServerSelectionState } from './server-selection'
 
 /** The request a callback-style datasource receives; the subset the adapter reads. */
 export type CallbackServerRequest = {
@@ -229,4 +239,93 @@ export function toCallbackDatasource<TData>(source: ServerDataSource<TData>): Ca
     },
     ...(source.destroy ? { destroy: () => source.destroy!() } : {}),
   }
+}
+
+// ------------------------------------------------------- selection state
+
+/** The flat selection rule in the callback-style shape. */
+export type CallbackSelectionState = {
+  selectAll: boolean
+  /** Exceptions to `selectAll`, as row ids. */
+  toggledNodes: string[]
+}
+
+/**
+ * One node of the callback-style hierarchical rule. The root carries no
+ * `nodeId`; a child is a group row or a leaf, told apart by whether it has
+ * exceptions of its own (see `SelectionStateMapping.isGroup`).
+ */
+export type CallbackGroupSelectionState = {
+  nodeId?: string
+  selectAllChildren?: boolean
+  toggledNodes?: CallbackGroupSelectionState[]
+}
+
+/**
+ * How group rows are named across the two shapes. This model keys a group
+ * by its route segment (`['EMEA', 'DE']` is the DE group under EMEA); the
+ * callback shape keys it by a row node id that the app chose. When the two
+ * are the same string - the default - nothing needs to be passed.
+ */
+export type SelectionStateMapping = {
+  /** The node id of the group at `route`. Default: the last key of the route. */
+  groupId?: (route: string[]) => string
+  /** The group key for a node id under `parentRoute`. Default: the id itself. */
+  groupKey?: (nodeId: string, parentRoute: string[]) => string
+  /**
+   * Whether the node `nodeId` under `parentRoute` is a group row. Default:
+   * it is when it carries exceptions of its own, a leaf otherwise. A flipped
+   * group read as a leaf still selects the same rows; only `selectedCount`
+   * is off, since a group exception has no size of its own.
+   */
+  isGroup?: (nodeId: string, parentRoute: string[]) => boolean
+}
+
+/** Whether a selection state is in the callback-style shape (either level). */
+export function isCallbackSelectionState(
+  state: unknown,
+): state is CallbackSelectionState | CallbackGroupSelectionState {
+  return typeof state === 'object' && state !== null && 'toggledNodes' in state
+}
+
+/** The selection rule -> the callback-style shape, flat or per group. */
+export function toCallbackSelectionState(
+  state: ServerSelectionState | ServerGroupSelectionNode,
+  mapping: SelectionStateMapping = {},
+): CallbackSelectionState | CallbackGroupSelectionState {
+  if ('selectAll' in state) return { selectAll: !!state.selectAll, toggledNodes: [...(state.toggled ?? [])] }
+  const walk = (node: ServerGroupSelectionNode, route: string[]): CallbackGroupSelectionState => {
+    const out: CallbackGroupSelectionState = {}
+    if (route.length) {
+      out.nodeId = node.group ? (mapping.groupId?.(route) ?? route[route.length - 1]!) : route[route.length - 1]!
+    }
+    out.selectAllChildren = !!node.selectAllChildren
+    out.toggledNodes = Object.entries(node.toggled ?? {}).map(([key, child]) => walk(child, [...route, key]))
+    return out
+  }
+  return walk(state, [])
+}
+
+/** The callback-style shape -> the selection rule this model keeps. */
+export function fromCallbackSelectionState(
+  state: CallbackSelectionState | CallbackGroupSelectionState,
+  mapping: SelectionStateMapping = {},
+): ServerSelectionState | ServerGroupSelectionNode {
+  if ('selectAll' in state) {
+    const flat = state as CallbackSelectionState
+    return { selectAll: !!flat.selectAll, toggled: (flat.toggledNodes ?? []).map(String) }
+  }
+  const walk = (node: CallbackGroupSelectionState, route: string[]): ServerGroupSelectionNode => {
+    const toggled: Record<string, ServerGroupSelectionNode> = {}
+    for (const child of node.toggledNodes ?? []) {
+      if (child.nodeId == null) continue
+      const id = String(child.nodeId)
+      const group = mapping.isGroup?.(id, route) ?? (child.toggledNodes?.length ?? 0) > 0
+      const key = group ? (mapping.groupKey?.(id, route) ?? id) : id
+      const plain = walk(child, [...route, key])
+      toggled[key] = group ? { ...plain, group: true } : plain
+    }
+    return { selectAllChildren: !!node.selectAllChildren, toggled }
+  }
+  return walk(state, [])
 }

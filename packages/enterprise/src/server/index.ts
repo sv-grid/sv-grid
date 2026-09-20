@@ -39,6 +39,12 @@ export {
   toCallbackRequest,
   fromCallbackFilterModel,
   toCallbackFilterModel,
+  fromCallbackSelectionState,
+  toCallbackSelectionState,
+  isCallbackSelectionState,
+  type CallbackSelectionState,
+  type CallbackGroupSelectionState,
+  type SelectionStateMapping,
   type CallbackServerRequest,
   type CallbackColumnFilter,
   type CallbackGetRowsParams,
@@ -68,5 +74,10 @@ export {
   type PivotResultColumnOptions,
 } from './server-pivot'
 export { enableServerRowModel } from './enable'
+export {
+  defaultServerGroupMessages,
+  resolveServerGroupMessages,
+  type ServerGroupMessages,
+} from './messages'
 export { default as SvGroupCell } from './SvGroupCell.svelte'
 export { default as SvRowGroupPanel } from './SvRowGroupPanel.svelte'

@@ -97,6 +97,14 @@ Four details the plan handles that are easy to get wrong by hand:
   grouped SELECT also carries `COUNT(*) AS "childCount"`.
 - **Groups have an order.** A grouped level orders by the key unless the
   request sorts by the key or an aggregate, so paging over groups is stable.
+- **Function names are whitelisted, like columns.** `fn` is `sum`, `avg`,
+  `min`, `max` or `count` out of the box, and any other name your database
+  knows once you list it: `planQuery(schema, request, { aggregators:
+  ['median'] })`, or `aggregators` on `createSqlDataSource`. A name that is
+  neither is dropped from the plan, and `planToSql` refuses anything that
+  is not an identifier, because the name is pasted into the statement.
+  `ServerAggregation.fn` is typed to take any string for that reason: the
+  request carries `median` untouched, and the backend decides.
 
 Only fields declared on the `EntitySchema` reach the plan, so a client cannot
 group by or aggregate an identifier you did not declare.
@@ -167,17 +175,60 @@ rather than through the cell renderer. Want full control? Every grid row
 carries a `__group` marker (the display row), so you can skip `SvGroupCell`
 and render your own cell from it.
 
+Footer and grand-total rows carry the same `__groupFooter` / `__grandTotal`
+flags the client-side grouping sets, so the grid styles them the way it
+styles its own subtotals (`.sv-grid-group-footer-row`,
+`.sv-grid-grand-total-row`): a heavier top rule and weight, in the list
+or pinned.
+
+Every string the group chrome draws is a message you can replace:
+`SvGroupCell` and `SvRowGroupPanel` take `messages` (a partial
+`ServerGroupMessages`: the "load more" row, `Total {label}`, `Grand total`,
+`Group by:`, `Apply`, the chip labels for a screen reader, ...), plus
+`locale` on the cell for its numbers, and `serverGroupText` takes the same
+map as its third argument so a copy reads the way the cell does. The two
+components are mounted by you, not by the grid, so they cannot read
+`localization.text`; pass one object to all three.
+
+```svelte
+<script lang="ts">
+  const groupMessages = { total: 'Summe {label}', grandTotal: 'Gesamtsumme', loadMore: '{count} weitere laden', apply: 'Anwenden', cancel: 'Abbrechen' }
+</script>
+
+<SvRowGroupPanel {columns} {groupBy} onChange={...} messages={groupMessages} />
+<!-- and in the column: renderComponent(SvGroupCell, { ..., messages: groupMessages, locale: 'de-DE' }) -->
+```
+
 ## Keyboard and accessibility
 
 The model's `group` accessor set (`rowModel` wires it as `serverGroup`) makes
 the grid handle tree navigation itself - no app key handling:
 
-- **ArrowRight** expands the focused group row; **ArrowLeft** collapses it.
+- **ArrowRight** expands the focused group row; **ArrowLeft** collapses it;
+  **Ctrl+Enter** toggles it, and on a leaf opens or closes its
+  [detail panel](#master-detail) when the grid draws one.
 - The grid takes the `treegrid` role and sets `aria-level` + `aria-expanded` on
   each row, so screen readers announce the depth and expanded state.
 - Group rows do not take edits, whatever the column says; a leaf does.
 
 It works for [tree mode](./server-tree-data.md) the same way.
+
+## Sticky group rows
+
+A country with 60,000 rows is a long scroll with nothing on screen that
+says which country it is. `stickyGroupRows` keeps the group a row belongs
+to under the header - the country row, and the region row above it - while
+its rows scroll past, the way a section heading stays put in a long list:
+
+```svelte
+<SvGrid rowModel={ctl} {columns} stickyGroupRows />
+```
+
+Under virtualization the band holds a copy of each ancestor row, drawn by
+the same renderers (the expander in the copy collapses the group); without
+virtualization the rows themselves stick. The band comes off the top of
+the scrolled rows, so nothing jumps when it appears. It is the same prop
+for client grouping and tree data.
 
 ## Blocks, per level
 
@@ -271,7 +322,10 @@ createServerRowModel(source, {
 chips you can remove or drag to reorder, plus a menu to add one, and it accepts a
 column drop (`text/sv-column`). Wire its `onChange` to `setGroupBy`. With
 `applyMode="deferred"` it collects edits behind Apply / Cancel, so one
-session of changes is one reload rather than one per chip:
+session of changes is one reload rather than one per chip. Pending chips
+survive a block landing (the model hands out a fresh `groupBy` array on
+every emit; the panel compares by value) and are dropped only when the
+grouping really changes from outside:
 
 ```svelte
 <script lang="ts">
@@ -324,6 +378,45 @@ And the SQL a backend runs for each of these requests, per dialect, from
 `planQuery` and `planToSql`:
 
 <div data-docs-demo="472-server-sql-planner" data-height="600"></div>
+
+## Master-detail
+
+A leaf can open a detail panel under itself - an order and its line items,
+a customer and a chart - without the rows leaving the server. The model
+keeps the set of open details and, when it flattens the tree, puts a
+display row of kind `detail` right under its leaf, carrying the leaf as
+`master`. The grid draws it through the same two props client-side
+master-detail uses, plus a height the virtualizer can count on:
+
+```svelte
+<SvGrid
+  rowModel={ctl}
+  {columns}
+  isDetailRow={(row) => row.__group?.kind === 'detail'}
+  renderDetailRow={Detail}
+  detailRowHeight={200}
+  showDetailToggle
+/>
+
+{#snippet Detail({ row })}
+  {@const order = row.__group.master}
+  <!-- fetch the lines for order.id here; the panel is 200px and scrolls inside -->
+{/snippet}
+```
+
+`ctl.toggleDetail(id, open?)` opens or closes the panel under the leaf with
+that `getRowId`, `isDetailOpen(id)` reads it, `closeAllDetails()` clears,
+and `state.openDetails` lists them. A panel closes with the group that
+holds its leaf and goes when the leaf is removed by a transaction.
+`showDetailToggle` draws the chevrons as a
+[row-header column](../rows/master-detail.md#the-toggle-column) next to
+the row numbers: the model tells the grid which rows are leaves and which
+panels are open, so there is nothing to wire; a group row shows no
+chevron, since its expander is in the group column. **Ctrl+Enter** on a
+leaf opens or closes its panel from the keyboard, and on the panel row
+closes it.
+
+<div data-docs-demo="483-server-master-detail" data-height="620"></div>
 
 ## Without the model (manual pattern)
 

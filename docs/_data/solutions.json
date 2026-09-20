@@ -589,6 +589,7 @@
         "08-tree-and-master-detail",
         "28-org-chart-tree",
         "31-lazy-tree-load",
+        "469-server-tree-data",
         "102-tree-checkbox-cascade",
         "30-bom-tree"
       ],
@@ -872,8 +873,7 @@
         "09-server-side",
         "33-server-infinite",
         "113-cursor-pagination",
-        "344-server-grouping-model",
-        "467-server-row-model-1m",
+        "114-server-grouping",
         "79-loading-from-rest"
       ],
       "docs": [
@@ -907,11 +907,11 @@
         },
         {
           "title": "Server-side grouping",
-          "body": "Group nodes expand one level at a time through the same contract, so the grid holds only the groups you opened."
+          "body": "Group nodes expand one level at a time through the same contract, so the grid holds only the groups you opened. Lazy grouping, tree data, pivot, transactions and select-all across unloaded rows are the Enterprise server-side row model; the hand-wired pattern stays free."
         },
         {
           "title": "Free and MIT",
-          "body": "The server row model, cursor paging and server grouping are all in @svgrid/grid."
+          "body": "The datasource contract, the paged and block-cached infinite controller and cursor paging are all in @svgrid/grid, MIT."
         }
       ],
       "faq": [
@@ -929,7 +929,7 @@
         },
         {
           "question": "Is server-side data free?",
-          "answer": "Yes. The server row model, infinite scroll, cursor paging and server-side grouping are MIT-licensed in @svgrid/grid."
+          "answer": "The contract, paged and infinite loading and cursor paging are MIT-licensed in @svgrid/grid. Lazy server-side grouping, tree data, pivot, transactions and select-all across rows the grid never loaded are the server-side row model in @svgrid/enterprise."
         }
       ],
       "related": [

@@ -76,11 +76,12 @@ export function createKitDataSource<TData extends RowData>(
 ): WritableDataSource<TData> & Required<Pick<ServerDataSource<TData>, 'updateWhere'>> {
   const doFetch: FetchLike = options.fetch ?? ((i, init) => fetch(i, init))
 
-  async function post<T>(body: KitMessage<TData>): Promise<T> {
+  async function post<T>(body: KitMessage<TData>, signal?: AbortSignal): Promise<T> {
     const res = await doFetch(options.endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
+      ...(signal ? { signal } : {}),
     })
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
@@ -90,7 +91,8 @@ export function createKitDataSource<TData extends RowData>(
   }
 
   return {
-    getRows: (request) => post<ServerResult<TData>>({ kind: 'query', request }),
+    // The abort signal rides on the fetch, not in the body.
+    getRows: ({ signal, ...request }) => post<ServerResult<TData>>({ kind: 'query', request }, signal),
     createRow: (input) => post<TData>({ kind: 'mutate', op: 'create', input }),
     updateRow: (id, patch) => post<TData>({ kind: 'mutate', op: 'update', id, patch }),
     deleteRow: (id) => post<void>({ kind: 'mutate', op: 'delete', id }).then(() => undefined),

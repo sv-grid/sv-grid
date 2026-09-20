@@ -56,8 +56,10 @@
   })()
 
   // The server: GROUP BY the requested level within groupKeys, or return leaves.
+  let requests = $state(0)
   const source: ServerDataSource<Sale> = {
     async getRows(req) {
+      requests += 1
       await new Promise((r) => setTimeout(r, 200)) // simulated latency
       // `groupBy` / `groupKeys` are optional on ServerRequest (a flat source may
       // omit them); this grouped source is always called with both.
@@ -105,6 +107,9 @@
       blockSize: 20, // small, so the blocks are visible in every mode
       groupFooters: true, // subtotal row after each expanded group
       childCount: (row) => row.n, // the server's per-group row count, shown beside the key
+      // Americas and its first country open on load, so the level cascade
+      // (region request, country request, first leaf block) shows at once.
+      isGroupOpenByDefault: (route) => route[0] === 'Americas' && (route.length === 1 || (route.length === 2 && route[1] === 'US')),
       // Under a country (level 2) the leaves come one block per click.
       levelParams: m === 'more' ? (level) => (level === 2 ? { loadMore: true } : {}) : undefined,
       pagination: m === 'paged' ? { pageSize: 25, pageSizes: [10, 25, 50], paginateChildRows: true } : undefined,
@@ -114,6 +119,7 @@
     return model
   }
   let ctl = $state.raw(makeModel('scroll'))
+  $effect(() => () => ctl.dispose())
   function setMode(next: Mode) {
     if (next === mode) return
     ctl.dispose()
@@ -156,7 +162,7 @@
   ]
 </script>
 
-<section class="wrap">
+<section class="wrap demo-kit">
   <header class="chrome">
     <div class="seg mode-seg" role="group" aria-label="How leaves load">
       {#each MODES as m (m.id)}
@@ -171,34 +177,24 @@
   </header>
   <SvRowGroupPanel columns={groupCols} groupBy={view?.groupBy ?? []} onChange={(g) => ctl.setGroupBy(g)} />
   {#key mode}
-    <div class="gridpane"><SvGrid responsive={true} columnResize fitColumns rowModel={ctl} {columns} {features} pageable={mode === 'paged'} containerHeight="100%" /></div>
+    <div class="gridpane">
+      <SvGrid
+        responsive={true}
+        columnResize
+        fitColumns
+        rowModel={ctl}
+        stickyGroupRows
+        {columns}
+        {features}
+        pageable={mode === 'paged'}
+        containerHeight="100%"
+      />
+    </div>
   {/key}
+  <footer class="foot">
+    <span class="stat"><span class="stat-label">Requests</span><strong>{requests}</strong></span>
+    <span class="stat"><span class="stat-label">On screen</span><strong>{(view?.gridRows.length ?? 0).toLocaleString()}</strong> rows of 63,000</span>
+    <span class="stat"><span class="stat-label">Open</span><strong>{view?.expandedGroups.length ?? 0}</strong> group{(view?.expandedGroups.length ?? 0) === 1 ? '' : 's'}</span>
+    {#if view?.error}<span class="stat err">{String((view.error as Error).message ?? view.error)}</span>{/if}
+  </footer>
 </section>
-
-<style>
-  .wrap { display: flex; flex-direction: column; flex: 1; gap: 10px; height: 100%; min-height: 0; }
-  .chrome { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  .note { font-size: 12px; color: var(--sg-muted, #64748b); flex: 1 1 320px; }
-  .seg {
-    display: inline-flex;
-    flex: none;
-    border: 1px solid var(--sg-border, #e2e8f0);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--sg-bg, #fff);
-  }
-  .seg > button {
-    font: inherit;
-    font-size: 12px;
-    padding: 3px 10px;
-    border: 0;
-    background: transparent;
-    color: var(--sg-fg, #0f172a);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .seg > button + button { border-left: 1px solid var(--sg-border, #e2e8f0); }
-  .seg > button.is-on { background: var(--sg-accent, #2563eb); color: var(--sg-on-accent, #fff); }
-  .seg > button:focus-visible { outline: 2px solid var(--sg-accent, #2563eb); outline-offset: -2px; }
-  .gridpane { flex: 1; min-height: 0; }
-</style>

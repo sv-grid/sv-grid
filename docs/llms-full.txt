@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-19 from 384 pages, 18 comparison pages, plus 73 API reference pages.
+Generated 2026-09-20 from 384 pages, 18 comparison pages, plus 73 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -13505,6 +13505,12 @@ The keyboard handler in [Tree rows](./rows/tree-rows.md) adds:
 | Arrow Right         | Expand a collapsed node.            |
 | Arrow Left          | Collapse an expanded node.          |
 | Enter / Space       | Toggle.                             |
+
+On a grouped grid, a tree (`getSubRows`) or a
+[server-side row model](./server/server-grouping.md#keyboard-and-accessibility)
+the grid handles these itself, and **Ctrl+Enter** on any cell of a group
+row toggles it; on the server model a leaf with a detail panel
+(`renderDetailRow`) opens or closes it with the same key.
 
 ## Screen-reader announcements
 
@@ -31206,6 +31212,20 @@ The header row repeats on every page, each page gets a `Page X of Y` +
 date footer, per-column alignment is honored, and wide grids auto-switch to
 landscape (override with `pdf.pageOrientation`).
 
+The PDF looks like the grid it came from. With `pdf.matchTheme` (default
+true) the exporter reads the mounted grid's computed colours - header fill
+and text, body text, the zebra stripe, the lines, a group row's fill - so a
+grid on the Ember theme or a Theme Builder palette prints in those colours
+rather than the slate defaults. A dark theme lends only its header: the
+page is white, so its body text and stripes would not read. The order of
+precedence is explicit `pdf` colours (`headerColor`, `headerTextColor`,
+`textColor`, `zebraColor`, `borderColor`, `groupColor`, ...), then
+`styles`, then the theme, then the defaults. `styles.headerRow` /
+`styles.rows` / `styles.rowAlternate` / `styles.cells` (A1 references, row
+1 being the header) apply to the PDF table the way they do to xlsx and
+html, `header` / `footer` lines print above and below the table, and
+`merges` span data cells.
+
 When the grid is grouped, the PDF carries the grouping: a bold **group header**
 per cluster (nested for multi-level grouping) and a **subtotal row** summing the
 number / currency columns - matching the xlsx outline export. It's on by
@@ -34002,6 +34022,16 @@ gives `group_department_Engineering`, and adding `role` beneath it gives
 engine's row id instead, so set `getRowId` if you want those keys to be
 your own ids. Capture the map from `onExpandedChange` rather than
 hand-building the keys.
+
+## Sticky group rows
+
+`stickyGroupRows` keeps the banner of the group a row belongs to (and the
+banners of the groups above it) under the header while the group's rows
+scroll past, so a screen deep inside a large group still says where it
+is. Under virtualization the band shows a copy of each ancestor banner,
+clickable like the original; without virtualization the banners
+themselves stick. Off by default; the same prop serves tree data and the
+[server-side row model](./server/server-grouping.md#sticky-group-rows).
 
 ## Group sort vs leaf sort
 
@@ -38242,7 +38272,38 @@ const ctl = createServerRowModel(adaptCallbackDatasource(myServerSideDatasource)
 `adaptCallbackDatasource` maps the request both ways (`rowGroupCols` ->
 `groupBy`, `valueCols` -> `aggregations`, `pivotCols` -> `pivotBy`, the
 sort and filter models, `context`, `parentNode`) and turns `success` /
-`fail` into a resolved or rejected promise. Option by option:
+`fail` into a resolved or rejected promise.
+
+More often the datasource is a thin `fetch` and the real investment is the
+endpoint behind it - a Java or Node service that parses AG Grid's
+`IServerSideGetRowsRequest` JSON. That endpoint stays as it is: post
+`toCallbackRequest(request)` and read the answer back.
+
+```ts
+import { toCallbackRequest } from '@svgrid/enterprise'
+
+const source = {
+  async getRows(request) {
+    const res = await fetch('/api/sales', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(toCallbackRequest(request)),
+    })
+    const { rowData, rowCount, pivotResultFields } = await res.json()
+    return { rows: rowData, rowCount: rowCount ?? -1, pivotResultFields }
+  },
+}
+```
+
+`fromCallbackRequest` is the other direction, for a SvelteKit endpoint that
+has to keep serving an AG Grid client during the switch. A saved selection
+or a bulk endpoint written against `getServerSideSelectionState()` keeps
+its shape the same way: `toCallbackSelectionState(ctl.getSelectionState())`
+produces `{ selectAll, toggledNodes }` (or the `nodeId` /
+`selectAllChildren` / `toggledNodes` tree), `ctl.setSelectionState` takes
+that shape as it is when your group node ids are the group keys, and
+`fromCallbackSelectionState(state, { groupKey, isGroup })` maps them when
+a `getRowId` gave group rows ids of their own. Option by option:
 
 | AG Grid | SvGrid |
 | --- | --- |
@@ -38263,7 +38324,8 @@ sort and filter models, `context`, `parentNode`) and turns `success` /
 | `applyServerSideTransaction` / `applyServerSideTransactionAsync` / `flushServerSideAsyncTransactions` | `ctl.applyTransaction` / `applyTransactionAsync` / `flushAsyncTransactions` |
 | `applyServerSideRowData` | `ctl.applyRowData` |
 | `serverSideSortAllLevels`, `serverSideEnableClientSideSort`, `serverSideOnlyRefreshFilteredGroups` | `sortAllLevels`, `clientSideSort`, `onlyRefreshFilteredGroups` |
-| `getServerSideSelectionState` / `setServerSideSelectionState` | `ctl.getSelectionState()` / `setSelectionState()` |
+| `getServerSideSelectionState` / `setServerSideSelectionState` | `ctl.getSelectionState()` / `setSelectionState()` (the `toggledNodes` shape is accepted; `toCallbackSelectionState` / `fromCallbackSelectionState` convert) |
+| `ServerSideTransactionResult.status`: `Applied`, `StoreNotFound`, `StoreLoading`, `StoreWaitingToLoad`, `StoreLoadingFailed`, `Cancelled` | `ServerTransactionResult.status`: the same six, lower camel case (`applied`, `storeNotFound`, ...) - a `switch` on the old spelling falls through silently |
 | `groupSelects: 'descendants'` | `selection: { groupSelects: 'descendants' }` |
 | `pivotResultFields` in `success`, `setPivotResultColumns`, `processPivotResultColDef` | `pivotResultFields` / `pivotResultColumns` in the result, `pivotResultColumn(field, def)` |
 | `pagination` + `paginateChildRows` | `pagination: { pageSize, paginateChildRows }` |
@@ -45306,11 +45368,23 @@ The examples on this page run against these rows:
   {columns}
   isDetailRow={(row) => row.kind === 'detail'}
   renderDetailRow={DetailGrid}
+  showDetailToggle
+  onDetailToggle={(row) => toggle(row.id)}
+  isDetailOpen={(row) => expanded.has(row.id)}
 />
 ```
 
-The first master column typically renders a chevron whose click calls
-`toggle(row.id)`.
+### The toggle column
+
+`showDetailToggle` adds the chevrons as a row-header column, beside the
+row numbers and the selection checkbox: sticky at the left, on the
+header band's colour, with no column menu, no resize handle, and outside
+the active cell and the selection. A chevron calls `onDetailToggle(row,
+rowIndex)` and points down while `isDetailOpen(row)` is true; `hasDetail`
+leaves it out on rows with nothing to open, and a detail row gets an
+empty cell. Ctrl+Enter on a row does what the chevron does. Before the
+column existed, demos drew the chevron in a data column of their own,
+which took the menu, the resize handle and the active cell along with it.
 
 ## Notes
 
@@ -45318,8 +45392,15 @@ The first master column typically renders a chevron whose click calls
   the full width regardless of the master's column layout.
 - Give the detail container a fixed height (e.g. `200px`) so the nested grid
   scrolls internally instead of pushing the master layout around.
-- Set `virtualization={false}` on the master when detail rows have variable
-  height, so the fixed-row-height virtualizer doesn't fight them.
+- Under `virtualization` (the default) give the grid `detailRowHeight`, a
+  number or a function of the row: the virtualizer then sizes detail rows
+  and the panel scrolls inside its cell when taller. Without it a detail
+  row is auto height, which needs `virtualization={false}` so the
+  fixed-row-height virtualizer does not fight it.
+- On a [server-side row model](../server/server-grouping.md#master-detail)
+  the model inserts the detail row for you: `ctl.toggleDetail(id)`, the
+  toggle column reads the model (no `onDetailToggle` needed), and
+  **Ctrl+Enter** on a leaf opens or closes it from the keyboard.
 - The detail content is arbitrary - a nested grid, a form, timelines, charts.
   See [detail rows](../../../examples/src/demos/106-detail-rows.svelte) for a
   multi-panel (non-grid) detail.
@@ -46312,8 +46393,9 @@ The built-in CSS supports stacking up to 4 rows per side. For larger stacks, ove
 | Sorting | Yes | No (pinned rows are in a separate `<tbody>`) |
 | Filtering | Yes | No (pinned rows are not filtered) |
 | Fill handle | Yes | No |
-| `cellClass` | Yes | Yes |
-| `format` | Yes | Yes |
+| `cellClass` | Yes | Yes (a function gets `row: null` and the pinned value) |
+| `format`, `formatter` | Yes | Yes |
+| `align` | Yes | Yes |
 | Column pinning (left/right) | Yes | Yes |
 
 Pinned rows are **read-only by design** - they represent aggregates or annotations, not transactional data. For an editable band at the top, freeze the grid's own rows instead: see below.
@@ -50097,6 +50179,16 @@ If the target row is not on the current page, optimistic `updateRow` /
 to patch). `createRow` is always non-optimistic - a new row's server-assigned
 id and page position are not known until the refresh.
 
+The Enterprise row model (`createServerRowModel`) has the same contract:
+`optimistic: true` in its options, `state.saving` while a write is out, an
+update shown first and the row put back on a refusal, a delete taken out
+first and put back where it was. Its `createRow(input, route, addIndex)`
+also says which level the saved row joins and where. Demo 482 runs all of
+it against a backend that refuses bad input, a lost race and a delete of
+a shipped order:
+
+<div data-docs-demo="482-server-crud" data-height="620"></div>
+
 ## The `saving` state
 
 Every write flips a dedicated `saving` flag on the state, separate from the
@@ -50574,6 +50666,16 @@ if (plan.expression) {
 ```
 
 
+## What a filter re-requests under grouping
+
+Under the Enterprise row model a filter purges every level by default: a
+filtered group may have different children and different totals.
+`onlyRefreshFilteredGroups: true` re-fetches only the groups whose column is
+filtered. The demo shows both rules with a request log, beside the sort
+rules:
+
+<div data-docs-demo="473-server-grouping-rules" data-height="560"></div>
+
 ## Watching the filter model come out
 
 Before you wire a query builder, look at what the grid actually reports. Type
@@ -50819,6 +50921,14 @@ Four details the plan handles that are easy to get wrong by hand:
   grouped SELECT also carries `COUNT(*) AS "childCount"`.
 - **Groups have an order.** A grouped level orders by the key unless the
   request sorts by the key or an aggregate, so paging over groups is stable.
+- **Function names are whitelisted, like columns.** `fn` is `sum`, `avg`,
+  `min`, `max` or `count` out of the box, and any other name your database
+  knows once you list it: `planQuery(schema, request, { aggregators:
+  ['median'] })`, or `aggregators` on `createSqlDataSource`. A name that is
+  neither is dropped from the plan, and `planToSql` refuses anything that
+  is not an identifier, because the name is pasted into the statement.
+  `ServerAggregation.fn` is typed to take any string for that reason: the
+  request carries `median` untouched, and the backend decides.
 
 Only fields declared on the `EntitySchema` reach the plan, so a client cannot
 group by or aggregate an identifier you did not declare.
@@ -50889,17 +50999,60 @@ rather than through the cell renderer. Want full control? Every grid row
 carries a `__group` marker (the display row), so you can skip `SvGroupCell`
 and render your own cell from it.
 
+Footer and grand-total rows carry the same `__groupFooter` / `__grandTotal`
+flags the client-side grouping sets, so the grid styles them the way it
+styles its own subtotals (`.sv-grid-group-footer-row`,
+`.sv-grid-grand-total-row`): a heavier top rule and weight, in the list
+or pinned.
+
+Every string the group chrome draws is a message you can replace:
+`SvGroupCell` and `SvRowGroupPanel` take `messages` (a partial
+`ServerGroupMessages`: the "load more" row, `Total {label}`, `Grand total`,
+`Group by:`, `Apply`, the chip labels for a screen reader, ...), plus
+`locale` on the cell for its numbers, and `serverGroupText` takes the same
+map as its third argument so a copy reads the way the cell does. The two
+components are mounted by you, not by the grid, so they cannot read
+`localization.text`; pass one object to all three.
+
+```svelte
+<script lang="ts">
+  const groupMessages = { total: 'Summe {label}', grandTotal: 'Gesamtsumme', loadMore: '{count} weitere laden', apply: 'Anwenden', cancel: 'Abbrechen' }
+</script>
+
+<SvRowGroupPanel {columns} {groupBy} onChange={...} messages={groupMessages} />
+<!-- and in the column: renderComponent(SvGroupCell, { ..., messages: groupMessages, locale: 'de-DE' }) -->
+```
+
 ## Keyboard and accessibility
 
 The model's `group` accessor set (`rowModel` wires it as `serverGroup`) makes
 the grid handle tree navigation itself - no app key handling:
 
-- **ArrowRight** expands the focused group row; **ArrowLeft** collapses it.
+- **ArrowRight** expands the focused group row; **ArrowLeft** collapses it;
+  **Ctrl+Enter** toggles it, and on a leaf opens or closes its
+  [detail panel](#master-detail) when the grid draws one.
 - The grid takes the `treegrid` role and sets `aria-level` + `aria-expanded` on
   each row, so screen readers announce the depth and expanded state.
 - Group rows do not take edits, whatever the column says; a leaf does.
 
 It works for [tree mode](./server-tree-data.md) the same way.
+
+## Sticky group rows
+
+A country with 60,000 rows is a long scroll with nothing on screen that
+says which country it is. `stickyGroupRows` keeps the group a row belongs
+to under the header - the country row, and the region row above it - while
+its rows scroll past, the way a section heading stays put in a long list:
+
+```svelte
+<SvGrid rowModel={ctl} {columns} stickyGroupRows />
+```
+
+Under virtualization the band holds a copy of each ancestor row, drawn by
+the same renderers (the expander in the copy collapses the group); without
+virtualization the rows themselves stick. The band comes off the top of
+the scrolled rows, so nothing jumps when it appears. It is the same prop
+for client grouping and tree data.
 
 ## Blocks, per level
 
@@ -50993,7 +51146,10 @@ createServerRowModel(source, {
 chips you can remove or drag to reorder, plus a menu to add one, and it accepts a
 column drop (`text/sv-column`). Wire its `onChange` to `setGroupBy`. With
 `applyMode="deferred"` it collects edits behind Apply / Cancel, so one
-session of changes is one reload rather than one per chip:
+session of changes is one reload rather than one per chip. Pending chips
+survive a block landing (the model hands out a fresh `groupBy` array on
+every emit; the panel compares by value) and are dropped only when the
+grouping really changes from outside:
 
 ```svelte
 <script lang="ts">
@@ -51046,6 +51202,45 @@ And the SQL a backend runs for each of these requests, per dialect, from
 `planQuery` and `planToSql`:
 
 <div data-docs-demo="472-server-sql-planner" data-height="600"></div>
+
+## Master-detail
+
+A leaf can open a detail panel under itself - an order and its line items,
+a customer and a chart - without the rows leaving the server. The model
+keeps the set of open details and, when it flattens the tree, puts a
+display row of kind `detail` right under its leaf, carrying the leaf as
+`master`. The grid draws it through the same two props client-side
+master-detail uses, plus a height the virtualizer can count on:
+
+```svelte
+<SvGrid
+  rowModel={ctl}
+  {columns}
+  isDetailRow={(row) => row.__group?.kind === 'detail'}
+  renderDetailRow={Detail}
+  detailRowHeight={200}
+  showDetailToggle
+/>
+
+{#snippet Detail({ row })}
+  {@const order = row.__group.master}
+  <!-- fetch the lines for order.id here; the panel is 200px and scrolls inside -->
+{/snippet}
+```
+
+`ctl.toggleDetail(id, open?)` opens or closes the panel under the leaf with
+that `getRowId`, `isDetailOpen(id)` reads it, `closeAllDetails()` clears,
+and `state.openDetails` lists them. A panel closes with the group that
+holds its leaf and goes when the leaf is removed by a transaction.
+`showDetailToggle` draws the chevrons as a
+[row-header column](../rows/master-detail.md#the-toggle-column) next to
+the row numbers: the model tells the grid which rows are leaves and which
+panels are open, so there is nothing to wire; a group row shows no
+chevron, since its expander is in the group column. **Ctrl+Enter** on a
+leaf opens or closes its panel from the keyboard, and on the panel row
+closes it.
+
+<div data-docs-demo="483-server-master-detail" data-height="620"></div>
 
 ## Without the model (manual pattern)
 
@@ -51154,8 +51349,9 @@ itself to it through one prop.
   import { SvGrid, createServerDataSource, type ServerDataSource } from '@svgrid/grid'
 
   const source: ServerDataSource<Row> = {
-    async getRows({ startRow, endRow, sortModel, filterModel }) {
-      const res = await fetch('/api/rows', { method: 'POST', body: JSON.stringify({ startRow, endRow, sortModel, filterModel }) })
+    async getRows({ startRow, endRow, sortModel, filterModel, signal }) {
+      // `signal` aborts when the block is scrolled out of the cache or purged.
+      const res = await fetch('/api/rows', { method: 'POST', body: JSON.stringify({ startRow, endRow, sortModel, filterModel }), signal })
       const { rows, total } = await res.json()
       return { rows, rowCount: total }
     },
@@ -51184,7 +51380,8 @@ in every cell and marks the row `aria-busy`. Placeholder rows cannot be
 selected, edited or navigated into; there is nothing there yet. A block whose
 request rejected keeps its rows as a tinted band with one full-width "could
 not load" message and a **Retry** button on the first row in view, which
-calls `retryLoads()`. A first block that fails before anything is known
+re-fetches that block and no other (`retryLoads()` re-fetches every failed
+block). A first block that fails before anything is known
 about the list stays `initialRowCount` rows tall, so the message is not
 followed by a hundred empty slots.
 
@@ -51669,6 +51866,15 @@ it. The trade is that you lose the range text, so show a count yourself.
 </div>
 ```
 
+## Paging a grouped tree
+
+The Enterprise row model pages a grouped tree too: a page of top-level
+groups with their children, or of the flattened rows with
+`paginateChildRows`. The demo switches between scroll, "load more" and
+paged for the same tree:
+
+<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the full datasource contract, controller methods, writes, and race safety.
@@ -51780,6 +51986,17 @@ own for a layout of your own.
 The innermost group level does not open under pivot: its rows are the
 pivoted result, and there are no leaves beneath them. `SvGroupCell` draws
 those rows without an expander.
+
+### Row totals
+
+`pivotRowTotals: true` (or a label) appends a `Total` header group after
+the pivot keys, one column per aggregation, reading the plain aggregate
+field: `amount` beside `2024_amount` and `2025_amount`. The backend puts
+that field on every group row and on the grand total in pivot mode - the
+in-memory source, the SQL planner and the demo warehouse all do - so
+switching totals on through `setLayout({ pivotRowTotals })` is a re-render,
+not a request. The designer's "Grand totals" switch drives it in server
+mode, the way it drives the total column of the client pivot.
 
 ## The designer
 
@@ -51896,6 +52113,14 @@ type ServerRequest = {
 `startRow` / `endRow` are the **page** bounds (they map to `OFFSET` / `LIMIT`),
 not block-cache bounds. Return `{ rows, rowCount }` where `rowCount` is the total
 count **after filtering** - the pager needs it to compute the last page.
+
+Every request also carries `signal`, an `AbortSignal` the grid aborts when it
+no longer wants the answer: a newer page superseded this one, a block was
+purged or scrolled out of the cache, a group was collapsed, the controller
+was disposed. Hand it to `fetch(url, { signal })` and a query the user has
+scrolled past is cancelled at the server instead of completing for nothing;
+the grid ignores the rejection the abort produces. The SvelteKit transport
+does this for you and keeps the signal out of the posted body.
 
 ### The sort model
 
@@ -52121,7 +52346,73 @@ The flagship demo runs all of it over one million rows through one
 
 <div data-docs-demo="467-server-row-model-1m" data-height="640"></div>
 
+### A backend written for a callback-style datasource
+
+Some server-side row models hand the datasource a `getRows(params)` that
+answers through `params.success({ rowData, rowCount })`, with the request
+spelt `rowGroupCols` / `valueCols` / `pivotCols` and a `sortModel` of
+`{ colId, sort }`. `@svgrid/enterprise` maps that shape both ways, so a
+backend built for it needs no rewrite:
+
+- `adaptCallbackDatasource(ds)` wraps a datasource object of that shape
+  for `createServerRowModel` or `createServerDataSource`.
+- `toCallbackRequest(request)` turns a `ServerRequest` into that request
+  JSON, for a `getRows` that is a `fetch` against an endpoint which already
+  parses it; `fromCallbackRequest` reads it, for an endpoint of yours that
+  has to serve such a client too.
+- `toCallbackSelectionState` / `fromCallbackSelectionState` do the same for
+  a saved selection rule (`toggledNodes` instead of `toggled`); see
+  [Server selection](./server-selection.md).
+
 ## More examples
+
+### Server-side pivot
+
+The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request.
+
+<div data-docs-demo="468-server-pivot" data-height="560"></div>
+
+### Server tree data (row model)
+
+A file tree the grid never holds whole: expanding a folder is one getRows with the folder path as groupKeys, per-folder refresh, and a file added or deleted without a refetch.
+
+<div data-docs-demo="469-server-tree-data" data-height="560"></div>
+
+### Server transactions (live feed)
+
+Changes the server already made, applied without a refetch: in-place patches with a flash, batched add and remove transactions addressed by route, and a status for every result.
+
+<div data-docs-demo="470-server-transactions" data-height="560"></div>
+
+### Server selection: select all, minus these
+
+Select-all as a rule the server counts, flat and per group, with a bulk edit the server applies by rule.
+
+<div data-docs-demo="471-server-selection" data-height="560"></div>
+
+### Server row model to SQL
+
+The statements planToSql renders for every request, per dialect: rows, count, grand total and the two-step pivot.
+
+<div data-docs-demo="472-server-sql-planner" data-height="560"></div>
+
+### Server grouping: totals, sort and refresh rules
+
+Grand total positions, subtotal footers, open-by-default levels, expand-all over unloaded groups, refresh against purge, and what a sort or a filter re-requests, with the request log.
+
+<div data-docs-demo="473-server-grouping-rules" data-height="560"></div>
+
+### Server row model: CRUD
+
+The four writes against a backend that says no: a form under the focused region, inline edits with a version check, a refused delete, an undo, `saving`, and optimistic mode against a slow server.
+
+<div data-docs-demo="482-server-crud" data-height="560"></div>
+
+### Server row model: master-detail
+
+A detail panel under any order of the grouped, virtualized tree, fetched from its own endpoint when it opens, with the region row held under the header.
+
+<div data-docs-demo="483-server-master-detail" data-height="560"></div>
 
 ### Server grouping (row model)
 
@@ -52226,9 +52517,17 @@ already applied, so the rule is the same.
 
 Both shapes are plain data. `ctl.getSelectionState()` returns the rule and
 `ctl.setSelectionState(rule)` restores it, so a selection survives a page
-reload or travels to an endpoint. Under a `descendants` rule the state also
-carries `groupBy`, the columns its levels are keyed by, which is what a
-backend needs to resolve it.
+reload or travels to an endpoint. When `bulkUpdate` sends a `descendants`
+rule to `updateWhere` it adds `groupBy`, the columns the levels are keyed
+by, which is what a backend needs to resolve it.
+
+A selection saved in the callback-style shape other server-side row models
+use - `{ selectAll, toggledNodes }` flat, `{ nodeId, selectAllChildren,
+toggledNodes }` per group - is accepted by `ctl.setSelectionState` as it
+is, with a group's `nodeId` read as its key. `toCallbackSelectionState(rule)`
+produces that shape for an endpoint written against it, and
+`fromCallbackSelectionState(state, { groupKey, isGroup })` maps it when
+group rows carry ids of their own rather than their keys.
 
 ## An honest count
 
@@ -52600,9 +52899,10 @@ Rules worth knowing, each one a test:
 - A route whose group has not been expanded is `storeNotFound`. A transaction
   does not create levels; add the group row to the parent level instead.
 - A row added under a group inherits that group's selection state.
-- Aggregates are not recomputed by a transaction. Call
-  `refresh({ route: parentRoute })` after a leaf edit when the subtotal must
-  follow; the flagship demo does exactly that.
+- The parent group row's `childCount` moves by the net add and remove, so
+  the badge beside its key stays right. Aggregates are not recomputed by a
+  transaction. Call `refresh({ route: parentRoute })` after a leaf edit when
+  the subtotal must follow; the flagship demo does exactly that.
 
 ## Async transactions
 
@@ -52652,6 +52952,14 @@ Group rows do not take edits: the grid refuses them itself when a row model
 marks a row as a group, so the handler only ever sees leaves. Mark the value
 columns `cellFlash: true` and an updated cell flashes when the transaction
 lands.
+
+`createRow(input, route, addIndex)` puts the saved row at `addIndex` in its
+level; without one it goes to the end, which in a level of thousands is
+out of sight. `0` is the top of the level; the index a row had before a
+delete puts it back where it was, which is what an undo wants. Writes are
+non-optimistic unless the model has `optimistic: true`, in which case
+`updateRow` and `deleteRow` show the change first and put the row back if
+the server refuses; `state.saving` is true while any write is out.
 
 ## Delivering a whole level
 
@@ -52785,6 +53093,44 @@ placeholder rows; `refresh({ route })` reloads one node's children in place,
 request. See [Server grouping](./server-grouping.md) for the full contract
 and the aggregate case. The rest of this page is the **roll-your-own**
 alternative, for when you want to own the flat-row derivation yourself.
+
+### Moving rows
+
+A file dragged onto a folder is a move on the server, not a reorder of the
+rows the grid holds. Two pieces do it. The grid prop `onRowDrop` hands you
+every drop instead of touching the data: the dragged row, the row it landed
+on (or `null` below the last one), that row's display index, and a side.
+Over the top or bottom edge the side is `before` or `after`; over the middle
+of a group row it is `into`, and the grid tints the whole row rather than
+drawing a line, so the user sees the difference. The middle band exists
+only when `onRowDrop` is set. The model method `moveRow(id, toRoute,
+{ patch?, addIndex? })` then writes the move through the source's
+`updateRow` when you give it a patch, takes the row out of the level it
+was in and puts it into `toRoute` at `addIndex` (the end when omitted):
+
+```svelte
+<SvGrid
+  rowModel={ctl}
+  {columns}
+  rowDragManaged
+  onRowDrop={async ({ row, target, side }) => {
+    const t = target?.__group
+    // Into a folder: its path. Beside a row: that row's folder.
+    const toRoute = !t ? [] : side === 'into' && t.kind === 'group' ? [...t.path] : t.kind === 'group' ? t.path.slice(0, -1) : [...(t.route ?? [])]
+    const parent = toRoute.at(-1) ?? 'root'
+    await ctl.moveRow(row.id, toRoute, { patch: { parent } })
+  }}
+/>
+```
+
+The result carries the row the server returned and the status of the add.
+A target folder nothing has opened has no cached level to add to, so the
+status is `storeNotFound`: the row is gone from its old level, the closed
+folder's `childCount` badge already moved, and the folder shows the row
+when it opens. Demo 469 above expands the folder in that case. `moveRow`
+rejects a row that is not loaded; a folder moves with its subtree (the
+cached levels under its old key are dropped and re-read on expand). Rows
+dragged from another grid still go through `onRowDragEnd` / `rowDropTarget`.
 
 <img src="/docs-media/server-tree-lazy.svg" alt="Load-on-demand tree flow: only roots are seeded; expanding a node fires an async fetchChildren call that shows a loading placeholder; the fetched children are appended to the flat rows and cached so re-expanding is instant." width="100%" />
 
@@ -73336,7 +73682,7 @@ project, with no local setup.
   `<sv-grid>` like any built-in element.
 - **One bundle, no framework lock-in.** Ship a single file to a CDN; consumers
   add one `<script type="module">` and a tag.
-- **The whole grid.** 109 properties and 25 events, so virtualization,
+- **The whole grid.** 114 properties and 27 events, so virtualization,
   Excel-style filters, inline editing, grouping, tree data, pinning, pagination
   and the enterprise features are all reachable - not a hand-picked subset. The
   surface is **generated** from `<SvGrid>`'s own `Props` type and CI fails if
@@ -74169,7 +74515,7 @@ local setup, nothing to configure.
 | Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` | `<SvGrid :data="rows" :columns="cols" sortable filterable />` |
 | Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` | `<sv-grid [data]="rows" [columns]="cols" [sortable]="true" />` |
 
-That is the whole integration. All 109 properties and 25 events of the grid are
+That is the whole integration. All 114 properties and 27 events of the grid are
 typed props on every one of them.
 
 **Or skip step 1** and open a working project right now:
@@ -74516,7 +74862,7 @@ export default function Screen() {
 ```
 
 That is the whole integration. The component is generated from `<SvGrid>`'s
-own types, so all 109 properties and 25 events are typed props, and it works the
+own types, so all 114 properties and 27 events are typed props, and it works the
 same on React 17, 18 and 19.
 
 ## Why the wrapper rather than the raw element
@@ -75130,8 +75476,8 @@ flag can switch it, so no attribute can either.
 </script>
 ```
 
-Everything else is identical: the same 109 properties, the same 74 attributes,
-the same 25 events. Events are dispatched `composed: true`, so
+Everything else is identical: the same 114 properties, the same 77 attributes,
+the same 27 events. Events are dispatched `composed: true`, so
 `addEventListener` on the host works exactly as it does on `<sv-grid>`.
 
 
@@ -75392,7 +75738,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (74)
+### Attributes (77)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -75465,7 +75811,10 @@ Primitives, so they work in plain HTML as well as through a property.
 | `external-filter` | `externalFilter` | `boolean` |
 | `editable-comments` | `editableComments` | `boolean` |
 | `conditional-stat-scope` | `conditionalStatScope` | `"filtered" \| "visible" \| "all"` |
+| `detail-row-height` | `detailRowHeight` | `number \| ((row: TData) => number)` |
+| `show-detail-toggle` | `showDetailToggle` | `boolean` |
 | `frozen-rows` | `frozenRows` | `number` |
+| `sticky-group-rows` | `stickyGroupRows` | `boolean` |
 | `enable-column-reorder` | `enableColumnReorder` | `boolean` |
 | `infer-column-types` | `inferColumnTypes` | `boolean` |
 | `row-drag-managed` | `rowDragManaged` | `boolean` |
@@ -75473,7 +75822,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (35)
+### Properties only (37)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -75509,6 +75858,8 @@ only be assigned in script: `el.columns = [...]`.
 | `pivotResultColumns` | `Array<ColumnDef<TFeatures, TData>> \| null` |
 | `rowSelectionModel` | `{ ... }` |
 | `isDetailRow` | `(row: TData, rowIndex: number) => boolean` |
+| `isDetailOpen` | `(row: TData) => boolean` |
+| `hasDetail` | `(row: TData) => boolean` |
 | `serverGroup` | `{ ... }` |
 | `serverFilterValues` | `(columnId: string) => Promise<string[]>` |
 | `pinnedTopRows` | `ReadonlyArray<TData>` |
@@ -75516,7 +75867,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (24)
+### Events (26)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -75545,8 +75896,10 @@ an object keyed by its parameter names.
 | `scrollbottomreached` | `onScrollBottomReached` | `event` |
 | `visiblerangechange` | `onVisibleRangeChange` | `range` |
 | `retryrow` | `onRetryRow` | `{ row, rowIndex }` |
+| `detailtoggle` | `onDetailToggle` | `{ row, rowIndex }` |
 | `columnorderchange` | `onColumnOrderChange` | `order` |
 | `rowdragend` | `onRowDragEnd` | `event` |
+| `rowdrop` | `onRowDrop` | `event` |
 
 Plus one alias kept from before the surface was generated:
 
@@ -84765,6 +85118,8 @@ export function installEnterprise<
   enableSchedulerView()
   // Register the Kanban board view (no-op without the `board` prop).
   enableBoardView()
+  // Register the Gantt view (no-op without the `gantt` prop).
+  enableGanttView()
   enableSelectionBar()
   // Register the export engine so built-in AI exports (aiExport) can write the
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
@@ -85134,6 +85489,14 @@ export type PivotResultColumnOptions = {
   pivotResultColumn?: (field: string, column: ColumnDef<any, any>) => ColumnDef<any, any>
   /** Width for a generated value column. Default 120. */
   width?: number
+  /**
+   * Append a header group of row totals after the pivot keys: one column
+   * per aggregation reading the plain aggregate field (`amount`, not
+   * `2024_amount`), which the backend puts on every group row in pivot
+   * mode beside the per-key fields. `true` labels the group `Total`; a
+   * string is the label.
+   */
+  rowTotals?: boolean | string
 }
 ```
 
@@ -85193,7 +85556,15 @@ export function buildPivotResultColumns(
     return out
   }
 
-  return emit(root, [])
+  const out = emit(root, [])
+  if (options.rowTotals) {
+    out.push({
+      id: 'pv_group_total',
+      header: typeof options.rowTotals === 'string' ? options.rowTotals : 'Total',
+      columns: aggregations.map((a) => leafColumn(a.col, a)),
+    } as unknown as ColumnDef<any, any>)
+  }
+  return out
 }
 ```
 
@@ -85309,6 +85680,13 @@ export type ServerRowModelOptions<TData> = {
    */
   pivotBy?: string[]
   pivotMode?: boolean
+  /**
+   * In pivot mode, a `Total` header group after the pivot keys with the
+   * row's plain aggregates (`amount` beside `2024_amount`, `2025_amount`).
+   * The backend puts those fields on every group row and on the grand
+   * total in pivot mode; the reference sources do. A string is the label.
+   */
+  pivotRowTotals?: boolean | string
   /** How a backend joins pivot keys and the value column into a field name. Default `_`. */
   pivotFieldSeparator?: string
   /** Post-process each generated pivot value column. */
@@ -85408,6 +85786,14 @@ export type ServerRowModelOptions<TData> = {
    * rows only. See `ctl.selection`, `getSelectionState`, `bulkUpdate`.
    */
   selection?: { groupSelects?: ServerSelectionGroupMode }
+  /**
+   * Apply `updateRow` and `deleteRow` to the loaded rows before the server
+   * answers, and put them back if it rejects: the same contract as the
+   * free controller's `optimistic`. A create waits for the server either
+   * way, since the row has no id until then. Off by default, so a cell
+   * shows a new value only once the server has it.
+   */
+  optimistic?: boolean
   /** Forwarded on every request as `ServerRequest.context`. Keep it serialisable. */
   context?: unknown
   /** Distinct values for a column's set filter, for `<SvGrid rowModel>` to use. */
@@ -85461,12 +85847,16 @@ export type ServerRowModelState<TData> = {
   rowCount: number | null
   /** True while the root has never loaded. */
   loading: boolean
+  /** True while a `createRow`, `updateRow` or `deleteRow` is in flight. */
+  saving: boolean
   /** The rejection from the last failed top-level fetch, else null. */
   error: unknown
   sortModel: ServerSortModel
   filterModel: ServerFilterModel
   /** Ids (JSON of the route) of the expanded groups. */
   expandedGroups: string[]
+  /** Ids (by `getRowId`) of the leaves whose detail panel is open. */
+  openDetails: string[]
   /** The grand-total row, when one is configured and has arrived. */
   grandTotal: TData | null
   pivotBy: string[]
@@ -85604,6 +85994,7 @@ export type ServerRowModel<TData> = GridRowModel<ServerRowModelGridRow<TData>> &
     aggregations?: ServerAggregation[]
     pivotBy?: string[]
     pivotMode?: boolean
+    pivotRowTotals?: boolean | string
   }): void
   /** Go to a page (clamped to what exists). No-op without `pagination`. */
   setPage(pageIndex: number): void
@@ -85621,6 +86012,19 @@ export type ServerRowModel<TData> = GridRowModel<ServerRowModelGridRow<TData>> &
   expandAll(options?: { includeUnloaded?: boolean }): void
   collapseAll(): void
   isExpanded(route: string[]): boolean
+  /**
+   * Master-detail: open or close the detail panel under a leaf, by the id
+   * `getRowId` gives it. The panel is a display row of kind `detail` right
+   * under its leaf, carrying the leaf as `master`; mark it for the grid
+   * with `isDetailRow: (row) => row.__group?.kind === 'detail'` and draw
+   * it with `renderDetailRow` (give `detailRowHeight` under
+   * virtualization). Closes with the group that holds the leaf, and goes
+   * when the leaf is removed.
+   */
+  toggleDetail(id: string, open?: boolean): void
+  isDetailOpen(id: string): boolean
+  /** Close every open detail panel. */
+  closeAllDetails(): void
   /**
    * Write rows straight into a level, bypassing the datasource: children
    * that came with their parent, a socket that pushed a whole level. Creates
@@ -85658,18 +86062,43 @@ export type ServerRowModel<TData> = GridRowModel<ServerRowModelGridRow<TData>> &
    * Write through the source, then update the cache with what it returned
    * (no refetch). Throws when the source lacks the method. Aggregates are
    * NOT recomputed - `refresh({ route })` the parent when a subtotal must
-   * follow.
+   * follow. A created row lands at `addIndex` within its level, else at the
+   * end, which in a level of thousands is out of sight: pass `0` for the
+   * top, or the index a deleted row had to put it back where it was.
    */
-  createRow(input: Partial<TData>, route?: string[]): Promise<TData>
+  createRow(input: Partial<TData>, route?: string[], addIndex?: number): Promise<TData>
   updateRow(id: string, patch: Partial<TData>): Promise<TData>
   deleteRow(id: string): Promise<void>
+  /**
+   * Move a loaded row to another level: a file dragged into a folder, an
+   * order into another region. With `patch` the move is written through
+   * `source.updateRow` first (the parent field, typically) and the saved
+   * row is what lands; without it the cache alone moves. The row leaves
+   * its level as a transaction and joins `toRoute` at `addIndex` (the end
+   * by default). A group takes its open children with it in the sense
+   * that their cached level is dropped: they are read again under the
+   * new route. A target level nothing has opened reports `storeNotFound`
+   * and holds the row once it opens; the parent counts follow either way.
+   */
+  moveRow(
+    id: string,
+    toRoute: string[],
+    options?: { patch?: Partial<TData>; addIndex?: number },
+  ): Promise<{ row: TData; status: ServerTransactionStatus }>
   /** Tell the model which display rows are on screen. `<SvGrid rowModel>` does this. */
   setViewport(startIndex: number, endIndex: number): void
   /** The selection rule, when `selection` was configured. */
   readonly selectionModel: ServerSelectionModel | null
   /** The rule as plain data, for saving or for sending to a bulk endpoint. */
   getSelectionState(): ServerSelectionState | ServerGroupSelectionNode | null
-  setSelectionState(state: ServerSelectionState | ServerGroupSelectionNode): void
+  /**
+   * Restore a saved rule. The callback-style shape (`toggledNodes`) is
+   * accepted as it is, with group ids read as group keys; pass it through
+   * `fromCallbackSelectionState(state, mapping)` first when they differ.
+   */
+  setSelectionState(
+    state: ServerSelectionState | ServerGroupSelectionNode | CallbackSelectionState | CallbackGroupSelectionState,
+  ): void
   /**
    * Apply one patch to every selected row, loaded or not, through the
    * datasource's `updateWhere`, then reload every level so the rows and
@@ -85727,6 +86156,7 @@ export function createServerRowModel<TData>(
   let aggregations = [...(options.aggregations ?? [])]
   let pivotBy = [...(options.pivotBy ?? [])]
   let pivotMode = !!options.pivotMode
+  let pivotRowTotals: boolean | string = options.pivotRowTotals ?? false
   const pivotSeparator = options.pivotFieldSeparator ?? '_'
   /** The union of every `pivotResultFields` seen since the last reset, in order. */
   let pivotFields: string[] = []
@@ -85759,8 +86189,18 @@ export function createServerRowModel<TData>(
   let autoExpand = false
 
   let grandTotal: TData | null | undefined = undefined
+  /**
+   * The grand total on hand is from before an in-place refresh of the top
+   * level or a bulk edit, so the next root block asks for a fresh one. The
+   * old one stays on screen until it lands rather than blinking out.
+   */
+  let grandTotalStale = false
+  /** Leaves whose detail panel is open, by the id `getRowId` gives them. */
+  const openDetails = new Set<string>()
   let rootError: unknown = null
   let disposed = false
+  /** Writes the server has not answered yet; `saving` is "any". */
+  let writesInFlight = 0
 
   // Generation guard: bumped on any reset so responses for the previous shape
   // are discarded when they land.
@@ -85874,7 +86314,7 @@ export function createServerRowModel<TData>(
             throw new Error('stale')
           }
           const needsGrandTotal =
-            route.length === 0 && grandTotalRow != null && grandTotal === undefined
+            route.length === 0 && grandTotalRow != null && (grandTotal === undefined || grandTotalStale)
           const request: ServerRequest = {
             startRow,
             endRow,
@@ -85889,6 +86329,7 @@ export function createServerRowModel<TData>(
             ...(needsGrandTotal ? { needsGrandTotal: true } : {}),
             ...(route.length ? { parentRow: parentRowOf(route) } : {}),
             ...(options.context !== undefined ? { context: options.context } : {}),
+            signal,
           }
           let result
           try {
@@ -85903,7 +86344,10 @@ export function createServerRowModel<TData>(
           if (disposed || gen !== generation) throw new Error('stale')
           if (route.length === 0) {
             rootError = null
-            if ('grandTotal' in result) grandTotal = result.grandTotal ?? null
+            if ('grandTotal' in result) {
+              grandTotal = result.grandTotal ?? null
+              grandTotalStale = false
+            }
           }
           if (pivotMode) {
             if (result.pivotResultColumns) pivotColumnsFromSource = result.pivotResultColumns
@@ -86021,11 +86465,7 @@ export function createServerRowModel<TData>(
 
     const pushRow = (d: ServerRowModelDisplayRow<TData>, data?: TData): void => {
       display.push(d)
-      grid.push(
-        (d.kind === 'placeholder'
-          ? d
-          : { ...(data as object), __group: d }) as ServerRowModelGridRow<TData>,
-      )
+      grid.push(toGridRow(d, data))
     }
 
     if (grandTotalRow === 'top' && grandTotal) pushRow(grandTotalDisplay(grandTotal), grandTotal)
@@ -86063,6 +86503,15 @@ export function createServerRowModel<TData>(
             { kind: 'leaf', id: child.id, level: store.level, route: store.route, data: child.data },
             child.data,
           )
+          if (openDetails.size) {
+            const masterId = childId(child)
+            if (openDetails.has(masterId)) {
+              pushRow(
+                { kind: 'detail', id: `${child.id}:detail`, level: store.level, route: store.route, masterId, master: child.data },
+                child.data,
+              )
+            }
+          }
           continue
         }
         const childRoute = [...store.route, child.key]
@@ -86082,7 +86531,9 @@ export function createServerRowModel<TData>(
               level: store.level,
               expanded: isExp,
               ...(pivotMode && !treeData && childRoute.length >= groupBy.length ? { expandable: false } : {}),
-              loading: !!childStore && childStore.cache.getCacheState().some((b) => b.status === 'loading'),
+              // The expander shows a spinner for the level opening, not for
+              // a block far down an open level that a deep scroll asked for.
+              loading: !!childStore && childStore.cache.getCacheState().some((b) => b.blockIndex === 0 && b.status === 'loading'),
               aggregates: child.aggregates,
               ...(child.childCount != null ? { childCount: child.childCount } : {}),
               data: child.data,
@@ -86186,6 +86637,27 @@ export function createServerRowModel<TData>(
     }
   }
 
+  /**
+   * A display row as the grid sees it: the row's own fields at the top
+   * level plus the `__group` marker. Footers and the grand total also carry
+   * the flags the grid keys its `sv-grid-group-footer-row` /
+   * `sv-grid-grand-total-row` styling on, so they look like the client
+   * model's totals rather than like ordinary rows.
+   */
+  function toGridRow(d: ServerRowModelDisplayRow<TData>, data?: TData): ServerRowModelGridRow<TData> {
+    if (d.kind === 'placeholder') return d as unknown as ServerRowModelGridRow<TData>
+    const row = { ...(data as object), __group: d } as ServerRowModelGridRow<TData> & {
+      __groupFooter?: boolean
+      __grandTotal?: boolean
+    }
+    if (d.kind === 'footer') row.__groupFooter = true
+    if (d.kind === 'grandTotal') {
+      row.__groupFooter = true
+      row.__grandTotal = true
+    }
+    return row
+  }
+
   function grandTotalDisplay(data: TData): ServerGrandTotalRow<TData> {
     const agg: Record<string, unknown> = {}
     for (const a of aggregations) agg[a.col] = (data as Record<string, unknown>)[a.col]
@@ -86194,8 +86666,7 @@ export function createServerRowModel<TData>(
 
   function pinnedGrandTotal(): ReadonlyArray<ServerRowModelGridRow<TData>> | undefined {
     if (!grandTotal) return undefined
-    const d = grandTotalDisplay(grandTotal)
-    return [{ ...(grandTotal as object), __group: d } as ServerRowModelGridRow<TData>]
+    return [toGridRow(grandTotalDisplay(grandTotal), grandTotal)]
   }
 
   // ------------------------------------------------------------- state
@@ -86207,10 +86678,12 @@ export function createServerRowModel<TData>(
     aggregations: [...aggregations],
     rowCount: null,
     loading: true,
+    saving: false,
     error: null,
     sortModel,
     filterModel,
     expandedGroups: [],
+    openDetails: [],
     grandTotal: null,
     pivotBy: [...pivotBy],
     pivotMode,
@@ -86229,10 +86702,12 @@ export function createServerRowModel<TData>(
       aggregations: [...aggregations],
       rowCount: root?.cache.rowCount() ?? null,
       loading: !!root && !rootLoaded && root.cache.getCacheState().some((b) => b.status === 'loading'),
+      saving: writesInFlight > 0,
       error: rootError,
       sortModel,
       filterModel,
       expandedGroups: [...expanded],
+      openDetails: [...openDetails],
       grandTotal: grandTotal ?? null,
       pivotBy: [...pivotBy],
       pivotMode,
@@ -86311,6 +86786,7 @@ export function createServerRowModel<TData>(
       for (const s of stores.values()) s.cache.dispose()
       stores.clear()
       grandTotal = undefined
+      grandTotalStale = false
       pivotFields = []
       pivotColumnsFromSource = null
     } else {
@@ -86523,8 +86999,24 @@ export function createServerRowModel<TData>(
     }
 
     if (typeof tx.rowCount === 'number') store.cache.setRowCount(tx.rowCount, true)
+    // The parent group row shows this level's count beside its key; adds
+    // and removes move it by the net change. Aggregates stay as they were:
+    // a refresh of the parent recomputes them, as documented.
+    const delta = result.add.length - result.remove.length
+    if (delta !== 0 && route.length > 0) adjustChildCount(route, delta)
     scheduleEmit()
     return result
+  }
+
+  function adjustChildCount(route: string[], delta: number): void {
+    const parent = stores.get(routeKey(route.slice(0, -1)))
+    if (!parent) return
+    const key = route[route.length - 1]
+    const index = parent.cache.findIndex((c) => c.kind === 'group' && c.key === key)
+    if (index < 0) return
+    const child = parent.cache.getRow(index) as Child<TData>
+    if (child.kind !== 'group' || child.childCount == null) return
+    parent.cache.patch(index, { ...child, childCount: Math.max(0, child.childCount + delta) })
   }
 
   const asyncQueue: Array<{
@@ -86560,6 +87052,18 @@ export function createServerRowModel<TData>(
       asyncTimer = null
       flushAsyncTransactions()
     }, options.asyncTransactionWaitMs ?? 50)
+  }
+
+  /** Run one write with `saving` raised around it; the flag is "any write in flight". */
+  async function saving<T>(write: () => Promise<T>): Promise<T> {
+    writesInFlight += 1
+    scheduleEmit()
+    try {
+      return await write()
+    } finally {
+      writesInFlight -= 1
+      scheduleEmit()
+    }
   }
 
   /** The level and index holding a leaf row with this id, searching loaded rows only. */
@@ -86677,7 +87181,7 @@ export function createServerRowModel<TData>(
       store.refreshPending = true
       store.cache.refresh()
     }
-    grandTotal = undefined
+    grandTotalStale = true
     scheduleEmit()
     return changed
   }
@@ -86700,6 +87204,7 @@ export function createServerRowModel<TData>(
       ...buildPivotResultColumns(pivotFields, aggregations, {
         separator: pivotSeparator,
         pivotResultColumn: options.pivotResultColumn,
+        rowTotals: pivotRowTotals,
       }),
     ]
   }
@@ -86716,6 +87221,12 @@ export function createServerRowModel<TData>(
       if (row.__group?.kind === 'group') model.toggleGroup(row.__group)
       else if (row.__group?.kind === 'more') model.loadMoreChildren(row.__group.path)
     },
+    // A leaf's detail, by the id the app gave the row; a detail row toggles its master.
+    toggleDetail: (row: ServerRowModelGridRow<TData>) => {
+      const g = row.__group
+      if (g?.kind === 'leaf') model.toggleDetail(getRowId ? getRowId(g.data) : g.id.slice(g.id.lastIndexOf(':') + 1))
+      else if (g?.kind === 'detail') model.toggleDetail(g.masterId)
+    },
   }
 
   const model: ServerRowModel<TData> = {
@@ -86725,6 +87236,9 @@ export function createServerRowModel<TData>(
       const store = stores.get(routeKey(route))
       if (opts?.purge || !store) return rebuild(route)
       store.refreshPending = true
+      // The top level re-read in place brings its aggregates back fresh;
+      // the grand total is one of them.
+      if (route.length === 0) grandTotalStale = true
       store.cache.refresh()
       scheduleEmit()
     },
@@ -86750,6 +87264,14 @@ export function createServerRowModel<TData>(
       const pivotChanged =
         (next.pivotBy !== undefined && !same(next.pivotBy, pivotBy)) ||
         (next.pivotMode !== undefined && next.pivotMode !== pivotMode)
+      // The totals group is built from what is already loaded: no request.
+      if (next.pivotRowTotals !== undefined && next.pivotRowTotals !== pivotRowTotals) {
+        pivotRowTotals = next.pivotRowTotals
+        if (!groupChanged && !aggChanged && !pivotChanged) {
+          scheduleEmit()
+          return
+        }
+      }
       if (!groupChanged && !aggChanged && !pivotChanged) return
       if (next.groupBy) groupBy = [...next.groupBy]
       if (next.aggregations) aggregations = [...next.aggregations]
@@ -86770,6 +87292,21 @@ export function createServerRowModel<TData>(
     },
     expandGroup,
     collapseGroup,
+    toggleDetail(id, open) {
+      const next = open ?? !openDetails.has(id)
+      if (next === openDetails.has(id)) return
+      if (next) openDetails.add(id)
+      else openDetails.delete(id)
+      scheduleEmit()
+    },
+    isDetailOpen(id) {
+      return openDetails.has(id)
+    },
+    closeAllDetails() {
+      if (!openDetails.size) return
+      openDetails.clear()
+      scheduleEmit()
+    },
     expandAll(opts) {
       autoExpand = !!opts?.includeUnloaded
       for (const store of [...stores.values()]) {
@@ -86800,25 +87337,71 @@ export function createServerRowModel<TData>(
     },
     flushAsyncTransactions,
     updateRowData,
-    async createRow(input, route = []) {
+    async createRow(input, route = [], addIndex) {
       if (!source.createRow) throw new Error('createServerRowModel: the datasource does not implement createRow()')
-      const saved = await source.createRow(input)
+      const saved = await saving(() => source.createRow!(input))
       if (disposed) return saved
-      applyTransaction({ route, add: [saved] })
+      applyTransaction({ route, add: [saved], ...(addIndex !== undefined ? { addIndex } : {}) })
       return saved
     },
     async updateRow(id, patch) {
       if (!source.updateRow) throw new Error('createServerRowModel: the datasource does not implement updateRow()')
-      const saved = await source.updateRow(id, patch)
+      const before = options.optimistic ? locate(id) : null
+      const previous = before ? ((before.store.cache.getRow(before.index) as Child<TData>).data as TData) : null
+      // Show the patch now; the server answer replaces it, a rejection restores it.
+      if (previous) updateRowData(id, patch)
+      let saved: TData
+      try {
+        saved = await saving(() => source.updateRow!(id, patch))
+      } catch (err) {
+        if (previous && !disposed) updateRowData(id, previous, { replace: true })
+        throw err
+      }
       if (disposed) return saved
       const hit = locate(id)
       if (hit) applyTransaction({ route: hit.store.route, update: [saved] })
       return saved
     },
+    async moveRow(id, toRoute, opts = {}) {
+      const from = locate(id)
+      if (!from) throw new Error(`createServerRowModel: moveRow: row ${id} is not loaded`)
+      const child = from.store.cache.getRow(from.index) as Child<TData>
+      let row = child.data
+      if (opts.patch) {
+        if (!source.updateRow) throw new Error('createServerRowModel: the datasource does not implement updateRow()')
+        row = await saving(() => source.updateRow!(id, opts.patch!))
+        if (disposed) return { row, status: 'cancelled' }
+      }
+      const fromRoute = [...from.store.route]
+      // A moved group's children were cached under its old route.
+      if (child.kind === 'group') dropSubtree([...fromRoute, child.key])
+      applyTransaction({ route: fromRoute, remove: [id] })
+      const res = applyTransaction({
+        route: [...toRoute],
+        add: [row],
+        ...(opts.addIndex !== undefined ? { addIndex: opts.addIndex } : {}),
+      })
+      // A target level nothing has opened cannot take the row, but its group
+      // row is on screen and the row did go there: the badge follows now
+      // rather than at the next refresh.
+      if (res.status === 'storeNotFound' && toRoute.length) adjustChildCount([...toRoute], 1)
+      return { row, status: res.status }
+    },
     async deleteRow(id) {
       if (!source.deleteRow) throw new Error('createServerRowModel: the datasource does not implement deleteRow()')
-      await source.deleteRow(id)
-      if (disposed) return
+      const before = options.optimistic ? locate(id) : null
+      const removed = before ? ((before.store.cache.getRow(before.index) as Child<TData>).data as TData) : null
+      const route = before ? [...before.store.route] : []
+      const index = before?.index ?? 0
+      // Take the row out now; a rejection puts it back where it was.
+      if (removed) applyTransaction({ route, remove: [id] })
+      try {
+        await saving(() => source.deleteRow!(id))
+      } catch (err) {
+        if (removed && !disposed) applyTransaction({ route, add: [removed], addIndex: index })
+        throw err
+      }
+      if (disposed || removed) return
       const hit = locate(id)
       if (hit) applyTransaction({ route: hit.store.route, remove: [id] })
     },
@@ -86865,7 +87448,7 @@ export function createServerRowModel<TData>(
     selectionModel,
     getSelectionState: () => selectionModel?.getState() ?? null,
     setSelectionState(state) {
-      selectionModel?.setState(state)
+      selectionModel?.setState(isCallbackSelectionState(state) ? fromCallbackSelectionState(state) : state)
     },
     bulkUpdate,
     getLevelState(route = []) {
@@ -86930,7 +87513,14 @@ export function createServerRowModel<TData>(
     getRowId: (row, index) =>
       row.__group && 'id' in row.__group ? row.__group.id : `sv-ph:${index}`,
     rowPlaceholder: (row) => rowPlaceholderState(row),
-    retryRow() {
+    retryRow(_row, rowIndex) {
+      // The block under the clicked row; every failed block only when the
+      // index maps to no level (a stale index after a layout change).
+      for (const seg of segments) {
+        if (rowIndex < seg.displayStart || rowIndex >= seg.displayStart + seg.length) continue
+        seg.store.cache.retryFailedAt(rowIndex - seg.displayStart + seg.storeStart)
+        return
+      }
       for (const store of stores.values()) store.cache.retryFailed()
     },
     group: nav,
@@ -86977,15 +87567,18 @@ spinner; this is the value behind it, so give the group column
 `fieldFn: (row) => serverGroupText(row, leafField)` and copy, export, the
 clipboard and a `pinnedTop` / `pinnedBottom` grand total (which the grid
 formats from the accessor, not from the cell renderer) all read the same
-text.
+text. `messages` is the map `SvGroupCell` takes, so a localized footer
+and grand total read the same in the cell and in a copy.
 
 ```ts
 export function serverGroupText<TData>(
   row: ServerRowModelGridRow<TData>,
   leafField?: keyof TData & string,
+  messages?: Partial<ServerGroupMessages>,
 ): string {
   const meta = row.__group
   if (!meta) return ''
+  const m = resolveServerGroupMessages(messages)
   switch (meta.kind) {
     case 'group': {
       if (meta.field !== '' || !leafField) return meta.key
@@ -86993,9 +87586,9 @@ export function serverGroupText<TData>(
       return v == null ? meta.key : String(v)
     }
     case 'footer':
-      return 'Total'
+      return fillMessage(m.total, { label: meta.key })
     case 'grandTotal':
-      return 'Grand total'
+      return m.grandTotal
     case 'leaf': {
       if (!leafField) return ''
       const v = (row as Record<string, unknown>)[leafField]
@@ -87545,6 +88138,119 @@ export function toCallbackDatasource<TData>(source: ServerDataSource<TData>): Ca
     },
     ...(source.destroy ? { destroy: () => source.destroy!() } : {}),
   }
+}
+```
+
+### `type CallbackSelectionState`
+
+The flat selection rule in the callback-style shape.
+
+```ts
+export type CallbackSelectionState = {
+  selectAll: boolean
+  /** Exceptions to `selectAll`, as row ids. */
+  toggledNodes: string[]
+}
+```
+
+### `type CallbackGroupSelectionState`
+
+One node of the callback-style hierarchical rule. The root carries no
+`nodeId`; a child is a group row or a leaf, told apart by whether it has
+exceptions of its own (see `SelectionStateMapping.isGroup`).
+
+```ts
+export type CallbackGroupSelectionState = {
+  nodeId?: string
+  selectAllChildren?: boolean
+  toggledNodes?: CallbackGroupSelectionState[]
+}
+```
+
+### `type SelectionStateMapping`
+
+How group rows are named across the two shapes. This model keys a group
+by its route segment (`['EMEA', 'DE']` is the DE group under EMEA); the
+callback shape keys it by a row node id that the app chose. When the two
+are the same string - the default - nothing needs to be passed.
+
+```ts
+export type SelectionStateMapping = {
+  /** The node id of the group at `route`. Default: the last key of the route. */
+  groupId?: (route: string[]) => string
+  /** The group key for a node id under `parentRoute`. Default: the id itself. */
+  groupKey?: (nodeId: string, parentRoute: string[]) => string
+  /**
+   * Whether the node `nodeId` under `parentRoute` is a group row. Default:
+   * it is when it carries exceptions of its own, a leaf otherwise. A flipped
+   * group read as a leaf still selects the same rows; only `selectedCount`
+   * is off, since a group exception has no size of its own.
+   */
+  isGroup?: (nodeId: string, parentRoute: string[]) => boolean
+}
+```
+
+### `function isCallbackSelectionState`
+
+Whether a selection state is in the callback-style shape (either level).
+
+```ts
+export function isCallbackSelectionState(
+  state: unknown,
+): state is CallbackSelectionState | CallbackGroupSelectionState {
+  return typeof state === 'object' && state !== null && 'toggledNodes' in state
+}
+```
+
+### `function toCallbackSelectionState`
+
+The selection rule -> the callback-style shape, flat or per group.
+
+```ts
+export function toCallbackSelectionState(
+  state: ServerSelectionState | ServerGroupSelectionNode,
+  mapping: SelectionStateMapping = {},
+): CallbackSelectionState | CallbackGroupSelectionState {
+  if ('selectAll' in state) return { selectAll: !!state.selectAll, toggledNodes: [...(state.toggled ?? [])] }
+  const walk = (node: ServerGroupSelectionNode, route: string[]): CallbackGroupSelectionState => {
+    const out: CallbackGroupSelectionState = {}
+    if (route.length) {
+      out.nodeId = node.group ? (mapping.groupId?.(route) ?? route[route.length - 1]!) : route[route.length - 1]!
+    }
+    out.selectAllChildren = !!node.selectAllChildren
+    out.toggledNodes = Object.entries(node.toggled ?? {}).map(([key, child]) => walk(child, [...route, key]))
+    return out
+  }
+  return walk(state, [])
+}
+```
+
+### `function fromCallbackSelectionState`
+
+The callback-style shape -> the selection rule this model keeps.
+
+```ts
+export function fromCallbackSelectionState(
+  state: CallbackSelectionState | CallbackGroupSelectionState,
+  mapping: SelectionStateMapping = {},
+): ServerSelectionState | ServerGroupSelectionNode {
+  if ('selectAll' in state) {
+    const flat = state as CallbackSelectionState
+    return { selectAll: !!flat.selectAll, toggled: (flat.toggledNodes ?? []).map(String) }
+  }
+  const walk = (node: CallbackGroupSelectionState, route: string[]): ServerGroupSelectionNode => {
+    const toggled: Record<string, ServerGroupSelectionNode> = {}
+    for (const child of node.toggledNodes ?? []) {
+      if (child.nodeId == null) continue
+      const id = String(child.nodeId)
+      const group = mapping.isGroup?.(id, route) ?? (child.toggledNodes?.length ?? 0) > 0
+      const key = group ? (mapping.groupKey?.(id, route) ?? id) : id
+      const plain = walk(child, [...route, key])
+      toggled[key] = group ? { ...plain, group: true } : plain
+    }
+    return { selectAllChildren: !!node.selectAllChildren, toggled }
+  }
+  return walk(state, [])
 }
 ```
 
@@ -100026,9 +100732,16 @@ export type GridChromeMessages = {
   // Rows whose data has not arrived (server-side / infinite loading)
   rowLoadFailed: string
   rowLoadRetry: string
+  // The expander on a client-side group row
+  expandGroup: string
+  collapseGroup: string
   // Upsell notes (enterprise views not installed)
   pivotUpsellTitle: string
   pivotUpsellBody: string
+  ganttUpsellTitle: string
+  ganttUpsellBody: string
+  /** Placeholder in the Gantt view's search box. */
+  ganttSearchPlaceholder: string
   /** Shared licensing line under every Enterprise upsell note. */
   upsellLicense: string
   upsellLicenseLink: string
@@ -100112,8 +100825,13 @@ export const defaultGridMessages: GridChromeMessages = {
   chartRange: 'Chart selected range',
   rowLoadFailed: 'Could not load these rows.',
   rowLoadRetry: 'Retry',
+  expandGroup: 'Expand group',
+  collapseGroup: 'Collapse group',
   pivotUpsellTitle: 'Pivot mode',
   pivotUpsellBody: 'Pivot mode is an Enterprise feature. Install @svgrid/enterprise and call enablePivot() to use it.',
+  ganttUpsellTitle: 'Gantt view',
+  ganttUpsellBody: 'The Gantt view is an Enterprise feature. Install @svgrid/enterprise and call enableGanttView() to render it.',
+  ganttSearchPlaceholder: 'Search tasks...',
   upsellLicense:
     'A license key is required for production use. Without one the feature still works, but the grid renders an unlicensed watermark.',
   upsellLicenseLink: 'View licensing',
@@ -100758,6 +101476,8 @@ export type GridRowModel<TData> = {
     level: (row: TData) => number
     expanded?: (row: TData) => boolean
     onToggle: (row: TData) => void
+    /** Open or close the detail panel under a leaf. Ctrl+Enter on a row calls it when `renderDetailRow` is set. */
+    toggleDetail?: (row: TData) => void
   }
   /** Selection the grid does not own - see the `rowSelectionModel` prop. */
   selection?: {
@@ -102140,6 +102860,11 @@ export type BlockCache<TData> = {
   /** Re-fetch the blocks that failed. */
   retryFailed(): void
   /**
+   * Re-fetch the failed block holding `rowIndex`, and only that one; the
+   * Retry on a failed row. A row whose block has not failed is a no-op.
+   */
+  retryFailedAt(rowIndex: number): void
+  /**
    * Re-fetch the loaded blocks in place, keeping the row count and scroll
    * position. What you want after a mutation lands on the server.
    */
@@ -102456,6 +103181,14 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
       if (any) emit()
     },
 
+    retryFailedAt(rowIndex) {
+      const index = blockOf(Math.max(0, rowIndex))
+      if (blocks.get(index)?.status !== 'failed') return
+      blocks.delete(index)
+      ensureBlock(index)
+      emit()
+    },
+
     refresh() {
       // Keep the count and the scroll position: drop the DATA, re-request the
       // same blocks. The user sees skeletons where they were, not a jump home.
@@ -102684,12 +103417,24 @@ export type ServerFilterModel = {
 }
 ```
 
-### `type ServerAggregation`
+### `type ServerAggFn`
 
-A value column to roll up per group.
+The aggregate functions every backend helper understands.
 
 ```ts
-export type ServerAggregation = { col: string; fn: 'sum' | 'avg' | 'min' | 'max' | 'count' }
+export type ServerAggFn = 'sum' | 'avg' | 'min' | 'max' | 'count'
+```
+
+### `type ServerAggregation`
+
+One value column to roll up per group. `fn` is one of the five built-ins
+or any name your backend knows (`median`, `countDistinct`, a domain
+aggregate): the request carries it untouched. The SvelteKit planner emits
+only the built-ins plus the names it was told to allow, since `fn` ends
+up in SQL.
+
+```ts
+export type ServerAggregation = { col: string; fn: ServerAggFn | (string & {}) }
 ```
 
 ### `type ServerRequest`
@@ -102750,6 +103495,16 @@ export type ServerRequest = {
    * transport posts the whole request to your endpoint.
    */
   context?: unknown
+  /**
+   * Aborted when the grid no longer wants the answer: the block was purged
+   * or evicted, the sort or filter changed, a group was collapsed, the
+   * controller was disposed. Hand it to `fetch` and a query the user has
+   * scrolled past is cancelled at the server instead of completing for
+   * nothing; a rejection carrying the abort is ignored by the grid. Not
+   * serialisable - the SvelteKit transport reads it and leaves it out of
+   * the body.
+   */
+  signal?: AbortSignal
 }
 ```
 
@@ -102890,6 +103645,24 @@ export type ServerPlaceholderRow = {
 }
 ```
 
+### `type ServerDetailRow`
+
+The detail panel under a leaf whose detail is open: master-detail on a
+server-side row model. The grid draws it through `renderDetailRow`
+(mark it with `isDetailRow`); `master` is the leaf it belongs to.
+
+```ts
+export type ServerDetailRow<TData> = {
+  kind: 'detail'
+  id: string
+  level: number
+  route?: string[]
+  /** The leaf's id, as `getRowId` names it. */
+  masterId: string
+  master: TData
+}
+```
+
 ### `type ServerDisplayRow`
 
 Every row a server row model can put on screen. Each carries an `id` and
@@ -102900,6 +103673,7 @@ rows not yet loaded - see its own `ServerRowModelDisplayRow`.
 export type ServerDisplayRow<TData> =
   | ServerGroupRow<TData>
   | ServerLeafRow<TData>
+  | ServerDetailRow<TData>
   | ServerMoreRow
   | ServerFooterRow<TData>
   | ServerSkeletonRow
@@ -103200,6 +103974,8 @@ export function createServerDataSource<TData>(
   // Monotonic request id: only the latest fetch is allowed to land, so a slow
   // response for an old sort/filter can't clobber a newer one.
   let requestSeq = 0
+  /** The page fetch in flight; a newer one, or dispose, aborts it. */
+  let pageAbort: AbortController | null = null
   let disposed = false
   // Once per controller: a misconfigured backend would otherwise log on every
   // page, scroll and filter change.
@@ -103236,7 +104012,7 @@ export function createServerDataSource<TData>(
       maxConcurrentRequests: options.maxConcurrentRequests,
       blockLoadDebounceMs: options.blockLoadDebounceMs,
       initialRowCount: options.initialRowCount,
-      fetch: async (startRow, endRow) => {
+      fetch: async (startRow, endRow, signal) => {
         const result = await source.getRows({
           startRow,
           endRow,
@@ -103249,6 +104025,7 @@ export function createServerDataSource<TData>(
           groupBy: [],
           groupKeys: [],
           aggregations: [],
+          signal,
         })
         noteExpressionApplied(result)
         return { rows: result.rows, rowCount: result.rowCount }
@@ -103294,6 +104071,9 @@ export function createServerDataSource<TData>(
   async function fetchPage() {
     if (disposed) return
     const id = ++requestSeq
+    pageAbort?.abort()
+    const controller = new AbortController()
+    pageAbort = controller
     state.loading = true
     state.error = null
     emit()
@@ -103311,6 +104091,7 @@ export function createServerDataSource<TData>(
         groupBy: [],
         groupKeys: [],
         aggregations: [],
+        signal: controller.signal,
       })
       if (disposed || id !== requestSeq) return // stale
       state.rows = result.rows
@@ -103492,7 +104273,7 @@ export function createServerDataSource<TData>(
     getRowId: options.getRowId ? (row: TData) => options.getRowId!(row) : undefined,
     // Only infinite mode has unloaded rows to stand in for.
     rowPlaceholder: infinite ? (row: TData) => rowPlaceholderState(row) : undefined,
-    retryRow: infinite ? () => cache?.retryFailed() : undefined,
+    retryRow: infinite ? (_row: TData, rowIndex: number) => cache?.retryFailedAt(rowIndex) : undefined,
     /**
      * A getter, not a snapshot: the grid re-reads this after every change
      * notification, and a frozen object would leave the pager on page 1
@@ -103555,6 +104336,8 @@ export function createServerDataSource<TData>(
     getState: () => ({ ...state }),
     dispose() {
       disposed = true
+      pageAbort?.abort()
+      pageAbort = null
       cache?.dispose()
       cache = null
       // An in-flight fetch's resolution short-circuits on `disposed`, so it
@@ -103952,6 +104735,14 @@ export type SvGridApi<
   TFeatures extends TableFeatures,
   TData extends RowData,
 > = {
+  // ----- DOM -----
+  /**
+   * The grid's root element (`.sv-grid-root`), or null before mount and
+   * after unmount. For measuring, focusing, or reading the theme the grid
+   * is drawn with - the PDF export takes its colours from here.
+   */
+  getElement(): HTMLElement | null
+
   // ----- Cells -----
   /** Read a cell value from the underlying data at `rowIndex`. */
   getCellValue(rowIndex: number, columnId: string): unknown

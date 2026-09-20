@@ -526,6 +526,21 @@ describe('createServerRowModel', () => {
     ctl.setSort([{ id: 'amount', desc: true }])
     await settle()
     expect(be.log.at(-1)!.req.needsGrandTotal).toBeUndefined()
+
+    // A refresh of the top level in place asks for it again - it is an
+    // aggregate like the others - and keeps the old one until it lands.
+    const before = view!.grandTotal
+    ctl.refresh({ route: [] })
+    expect(ctl.getState().grandTotal).toBe(before)
+    await settle()
+    expect(be.log.at(-1)!.req.needsGrandTotal).toBe(true)
+    expect(view!.grandTotal).not.toBeNull()
+    // A child level refreshed in place does not.
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    ctl.refresh({ route: ['EMEA'] })
+    await settle()
+    expect(be.log.at(-1)!.req.needsGrandTotal).toBeUndefined()
     ctl.dispose()
   })
 
@@ -545,6 +560,68 @@ describe('createServerRowModel', () => {
     // The pinned row is formatted from the column accessor, so the group
     // column's text has to come from a `fieldFn`; this is what it returns.
     expect(serverGroupText(ctl.pinnedBottomRows![0]!)).toBe('Grand total')
+    expect(serverGroupText(ctl.pinnedBottomRows![0]!, undefined, { grandTotal: 'Gesamt' })).toBe('Gesamt')
+    // The grid keys its total styling on these flags; the pinned row carries them too.
+    expect((ctl.pinnedBottomRows![0] as { __grandTotal?: boolean }).__grandTotal).toBe(true)
+    ctl.dispose()
+  })
+
+  it('flags footer and grand-total grid rows the way the client model does', async () => {
+    const be = backend({ grandTotal: true })
+    let view: ReturnType<typeof ctl.getState> | null = null
+    const ctl = createServerRowModel<Sale>(be.source, {
+      groupBy: ['region'],
+      aggregations: [{ col: 'amount', fn: 'sum' }],
+      groupFooters: true,
+      grandTotalRow: 'bottom',
+      onChange: (s) => (view = s),
+    })
+    ctl.refresh()
+    await settle()
+    ctl.expandGroup(['APAC'])
+    await settle()
+    const flags = view!.gridRows.map((r) => {
+      const g = r as { __groupFooter?: boolean; __grandTotal?: boolean }
+      return `${r.__group?.kind ?? 'placeholder'}:${g.__groupFooter ? 'F' : '-'}${g.__grandTotal ? 'G' : '-'}`
+    })
+    expect(flags.filter((f) => !f.startsWith('leaf') && !f.startsWith('placeholder'))).toEqual([
+      'group:--',
+      'group:--',
+      'footer:F-',
+      'grandTotal:FG',
+    ])
+    ctl.dispose()
+  })
+
+  it('marks a group loading only while its first block is in flight', async () => {
+    const be = backend({ perCountry: 250, hold: true })
+    let view: ReturnType<typeof ctl.getState> | null = null
+    const ctl = createServerRowModel<Sale>(be.source, {
+      groupBy: ['region', 'country'],
+      blockSize: 50,
+      onChange: (s) => (view = s),
+    })
+    ctl.refresh()
+    await settle()
+    be.log[0]!.release()
+    await settle()
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const emea = () => view!.displayRows.find((r) => r.kind === 'group' && r.key === 'EMEA') as { loading: boolean }
+    expect(emea().loading).toBe(true)
+    be.log[1]!.release()
+    await settle()
+    expect(emea().loading).toBe(false)
+    ctl.expandGroup(['EMEA', 'DE'])
+    await settle()
+    be.log[2]!.release()
+    await settle()
+    // A deep scroll into DE asks for a far block: DE is not "loading" again.
+    ctl.setViewport(150, 199)
+    await settle()
+    const de = view!.displayRows.find((r) => r.kind === 'group' && r.key === 'DE') as { loading: boolean }
+    expect(be.log.length).toBeGreaterThan(3)
+    expect(de.loading).toBe(false)
     ctl.dispose()
   })
 
@@ -571,8 +648,8 @@ describe('createServerRowModel', () => {
       'leaf:rep6',
       'leaf:rep0',
       'leaf:rep1',
-      'footer:Total',
-      'footer:Total',
+      'footer:Total JP',
+      'footer:Total APAC',
     ])
     // Without a leaf field a leaf reads as nothing, the way the cell draws it.
     expect(serverGroupText(view!.gridRows[3]!)).toBe('')
@@ -695,6 +772,45 @@ describe('createServerRowModel', () => {
     expect(ctl.isExpanded(['EMEA'])).toBe(true)
     off()
     ctl.dispose()
+  })
+
+  it('hands every request a signal, aborted by a purge, a collapse that purges, and dispose', async () => {
+    const signals: Array<{ route: string; signal: AbortSignal }> = []
+    const source: ServerDataSource<Sale> = {
+      async getRows(req) {
+        signals.push({ route: (req.groupKeys ?? []).join('/'), signal: req.signal! })
+        // The top level answers; a child level hangs so only the abort can end it.
+        if (!req.groupKeys?.length) return { rows: [{ region: 'EMEA' } as Sale], rowCount: 1 }
+        return new Promise(() => {})
+      },
+    }
+    const ctl = createServerRowModel<Sale>(source, { groupBy: ['region'], purgeClosedGroups: true, onChange: () => {} })
+    ctl.refresh()
+    await settle()
+    expect(signals).toHaveLength(1)
+    expect(signals[0]!.signal.aborted).toBe(false)
+
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const child = signals.find((s) => s.route === 'EMEA')!
+    expect(child.signal.aborted).toBe(false)
+    ctl.collapseGroup(['EMEA'])
+    await settle()
+    expect(child.signal.aborted).toBe(true)
+
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const again = signals.filter((s) => s.route === 'EMEA').at(-1)!
+    expect(again).not.toBe(child)
+    ctl.refresh({ purge: true })
+    await settle()
+    expect(again.signal.aborted).toBe(true)
+
+    ctl.expandGroup(['EMEA'])
+    await settle()
+    const last = signals.filter((s) => s.route === 'EMEA').at(-1)!
+    ctl.dispose()
+    expect(last.signal.aborted).toBe(true)
   })
 
   it('closes the source on dispose', () => {

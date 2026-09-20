@@ -118,6 +118,16 @@ If the target row is not on the current page, optimistic `updateRow` /
 to patch). `createRow` is always non-optimistic - a new row's server-assigned
 id and page position are not known until the refresh.
 
+The Enterprise row model (`createServerRowModel`) has the same contract:
+`optimistic: true` in its options, `state.saving` while a write is out, an
+update shown first and the row put back on a refusal, a delete taken out
+first and put back where it was. Its `createRow(input, route, addIndex)`
+also says which level the saved row joins and where. Demo 482 runs all of
+it against a backend that refuses bad input, a lost race and a delete of
+a shipped order:
+
+<div data-docs-demo="482-server-crud" data-height="620"></div>
+
 ## The `saving` state
 
 Every write flips a dedicated `saving` flag on the state, separate from the

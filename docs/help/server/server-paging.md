@@ -379,6 +379,15 @@ it. The trade is that you lose the range text, so show a count yourself.
 </div>
 ```
 
+## Paging a grouped tree
+
+The Enterprise row model pages a grouped tree too: a page of top-level
+groups with their children, or of the flattened rows with
+`paginateChildRows`. The demo switches between scroll, "load more" and
+paged for the same tree:
+
+<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+
 ## See also
 
 - [Server-Side Row Model](./server-row-model.md) - the full datasource contract, controller methods, writes, and race safety.
