@@ -446,9 +446,26 @@ describe('planPaste', () => {
     expect(plan[0]!.offset).toEqual({ rows: 0, cols: 0 })
   })
 
-  it('does not translate a transposed paste', () => {
-    const plan = planPaste(grid, { row: 5, col: 5 }, { transpose: true }, { row: 0, col: 0 })
+  it('turns the formulas of a transposed paste rather than shifting them', () => {
+    // A price column with a total beside it, copied from A1 and laid on
+    // its side at F6: every cell (r, c) lands at (6 + c, 5 + r), and a
+    // total that read the price beside it reads the price above it now.
+    const block: ClipboardGrid = [
+      [cell('Price'), cell('Total')],
+      [cell('10'), cell('20', { formula: '=A2*2' })],
+      [cell('30'), cell('60', { formula: '=A3*2' })],
+    ]
+    const plan = planPaste(block, { row: 5, col: 5 }, { transpose: true }, { row: 0, col: 0 })
     expect(plan[0]!.offset).toEqual({ rows: 0, cols: 0 })
+    const at = (row: number, col: number) => plan.find((p) => p.row === row && p.col === col)!
+    // B2 (row 1, col 1) lands at G7 (row 6, col 6); A2, the price beside it,
+    // lands at G6, the cell above, and that is what the total reads now.
+    expect(at(6, 6).turn).toEqual({ source: { row: 1, col: 1 }, dest: { row: 6, col: 6 } })
+    expect(resolvePasteCell(at(6, 6).source, '', {}, at(6, 6).offset, undefined, at(6, 6).turn)).toEqual({ kind: 'both', value: '=G6*2', format: undefined })
+    expect(resolvePasteCell(at(6, 7).source, '', {}, at(6, 7).offset, undefined, at(6, 7).turn)).toEqual({ kind: 'both', value: '=H6*2', format: undefined })
+    // Without a transpose the same block is shifted, not turned.
+    const plain = planPaste(block, { row: 5, col: 5 }, {}, { row: 0, col: 0 })
+    expect(plain.find((p) => p.row === 6 && p.col === 6)!.turn).toBeUndefined()
   })
 
   it('repeats one copied cell over the selection, each copy with its own offset', () => {

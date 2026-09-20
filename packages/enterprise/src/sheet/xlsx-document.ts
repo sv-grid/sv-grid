@@ -39,6 +39,7 @@ import { findTableStyle, DEFAULT_TABLE_STYLE, NO_TABLE_STYLE } from './table-sty
 import { drawingPartsFor, objectsFromDrawing, rectOfRef, REL_DRAWING } from './xlsx-drawing'
 import { objectId } from './objects'
 import { sparklineLines, sparklineId, type SparklineGroup } from './sparklines'
+import { autoFilterXlsx, filteredRows, filtersFromXlsx } from './filter-files'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -486,9 +487,12 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       colXml.push(`<col min="${c + 1}" max="${c + 1}"${px !== undefined ? ` width="${pxToWidth(px)}" customWidth="1"` : ' width="12.5"'}${hidden ? ' hidden="1"' : ''}/>`)
     }
 
-    // <sheetData>
+    // <sheetData>. The rows the AutoFilter folds away go out hidden, as
+    // Excel writes them, so the file opens in the same view; the criteria
+    // beside the region are what lets Clear Filter bring them back.
+    const filtered = filteredRows(doc, name)
     const rowXml: string[] = []
-    for (let r = 0; r <= maxRow; r += 1) {
+    for (let r = 0; r <= Math.max(maxRow, ...filtered); r += 1) {
       const cells: string[] = []
       for (let c = 0; c <= maxCol; c += 1) {
         const raw = wb.getRaw(name, r, c)
@@ -510,7 +514,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         if (xml) cells.push(xml)
       }
       const height = state.heights.get(r)
-      const hidden = state.hidden.rows.has(r)
+      const hidden = state.hidden.rows.has(r) || filtered.has(r)
       if (!cells.length && height === undefined && !hidden) continue
       rowXml.push(`<row r="${r + 1}"${height !== undefined ? ` ht="${pxToPt(height)}" customHeight="1"` : ''}${hidden ? ' hidden="1"' : ''}>${cells.join('')}</row>`)
     }
@@ -534,7 +538,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     const editRanges = state.protection.ranges.length
       ? `<protectedRanges>${state.protection.ranges.map((range) => `<protectedRange sqref="${range.rects.map(rectRef).join(' ')}" name="${esc(range.title)}"/>`).join('')}</protectedRanges>`
       : ''
-    const autoFilter = state.autoFilter ? `<autoFilter ref="${rectRef(state.autoFilter.range)}"/>` : ''
+    const autoFilter = autoFilterXlsx(doc, name)
     const merges = state.merges.length
       ? `<mergeCells count="${state.merges.length}">${state.merges.map((m) => `<mergeCell ref="${rectRef(m)}"/>`).join('')}</mergeCells>`
       : ''
@@ -1297,9 +1301,27 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
         entry.protection ??= { allow: {}, ranges: [] }
         entry.protection.ranges.push({ id: newEditRangeId(), title: attr(range, 'name') ?? `Range${entry.protection.ranges.length + 1}`, rects })
       }
-      const af = attr(kid(root, 'autoFilter'), 'ref')
+      const afNode = kid(root, 'autoFilter')
+      const af = attr(afNode, 'ref')
       const afRect = af ? refRect(af) : null
-      if (afRect) entry.autoFilter = { range: afRect, filters: {} }
+      if (afRect && afNode) {
+        // The criteria come back with the region. Excel writes the rows a
+        // filter hides as hidden rows; the document releases the ones its
+        // criteria hide again (see releaseFilteredRows), and the rest stay
+        // hidden by hand, which shows the rows Excel showed.
+        const isDateColumn = (col: number): boolean => {
+          let dates = 0
+          let filled = 0
+          for (let r = afRect[0] + 1; r <= afRect[2]; r += 1) {
+            const raw = cells[r]?.[col] ?? ''
+            if (raw === '') continue
+            filled += 1
+            if (isoToSerial(raw.trim()) !== null) dates += 1
+          }
+          return filled > 0 && dates === filled
+        }
+        entry.autoFilter = { range: afRect, filters: filtersFromXlsx(afNode, afRect, isDateColumn).filters }
+      }
       for (const merge of kids(kid(root, 'mergeCells'), 'mergeCell')) {
         const rect = refRect(attr(merge, 'ref') ?? '')
         if (rect) entry.merges.push([rect[0], rect[1], rect[2], rect[3]])

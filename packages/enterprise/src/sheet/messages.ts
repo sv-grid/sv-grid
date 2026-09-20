@@ -163,6 +163,7 @@ export type SheetTextMessages = {
   selectBlockToChart: string
   selectChartFirst: string
   couldNotReadPicture: string
+  nothingToPaste: string
   /** "{count} {unit} left out of the file: a web address, or a type the file cannot hold" */
   picturesNotSaved: string
   unitPicture: string
@@ -569,7 +570,7 @@ export const defaultDialogMessages = {
   'removeDuplicates.columnLetter': 'Column {letter}',
   // Paste Special
   'pasteSpecial.title': 'Paste Special',
-  'pasteSpecial.empty': 'Nothing has been copied from the sheet yet. Copy a range first, then Paste Special.',
+  'pasteSpecial.empty': 'Nothing to paste yet. Copy cells on the sheet, or a table in another program, then Paste Special.',
   'pasteSpecial.paste': 'Paste',
   'pasteSpecial.all': 'All',
   'pasteSpecial.formulas': 'Formulas',
@@ -929,6 +930,7 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   selectBlockToChart: 'Select the cells to chart, headers included.',
   selectChartFirst: 'Select a chart first.',
   couldNotReadPicture: 'Could not read the picture.',
+  nothingToPaste: 'Nothing to paste. Copy cells first, or press Ctrl+V.',
   picturesNotSaved: '{count} {unit} left out of the file: a web address, or a type the file cannot hold',
   unitPicture: 'picture',
   unitPictures: 'pictures',

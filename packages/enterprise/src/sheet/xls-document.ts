@@ -26,6 +26,7 @@ import {
 import { isError, type CellValue } from './ast'
 import type { SheetDocument } from './document'
 import { TEXT_PREFIX } from './workbook'
+import { filteredRows } from './filter-files'
 
 // ---------------------------------------------------------------------------
 // The records this module knows by name.
@@ -953,7 +954,11 @@ export function documentToXls(doc: SheetDocument): Uint8Array {
         cells.push({ kind: 'string', row, col, ixfe, sst: sstOf(String(value === '' ? raw : value)) })
       }
     }
-    return { name, state, cells, maxRow, maxCol }
+    // The rows the AutoFilter folds away go out hidden: BIFF has AUTOFILTER
+    // records this does not write, so they come back hidden by hand, which
+    // shows the same rows.
+    const filtered = filteredRows(doc, name)
+    return { name, state, cells, maxRow, maxCol, filtered }
   })
 
   // The globals: what every sheet shares.
@@ -1030,9 +1035,9 @@ function splitKey(key: string): { row: number; col: number } | null {
 
 /** One sheet's own run of records. */
 function sheetStream(
-  sheet: { name: string; state: ReturnType<SheetDocument['get']>; cells: PlannedCell[]; maxRow: number; maxCol: number },
+  sheet: { name: string; state: ReturnType<SheetDocument['get']>; cells: PlannedCell[]; maxRow: number; maxCol: number; filtered: ReadonlySet<number> },
 ): Stream {
-  const { state, cells, maxRow, maxCol } = sheet
+  const { state, cells, maxRow, maxCol, filtered } = sheet
   const out = new Stream()
   out.record(BOF, [0x00, 0x06, 0x10, 0x00, 0xd3, 0x10, 0xcc, 0x07, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00])
   out.record(DEFAULTROWHEIGHT, [0x00, 0x00, 0xff, 0x00])
@@ -1062,10 +1067,11 @@ function sheetStream(
   const rowsWithCells = new Set(cells.map((c) => c.row))
   for (const row of state.heights.keys()) if (row < XLS_ROWS) rowsWithCells.add(row)
   for (const row of state.hidden.rows) if (row < XLS_ROWS) rowsWithCells.add(row)
+  for (const row of filtered) if (row < XLS_ROWS) rowsWithCells.add(row)
   for (const row of [...rowsWithCells].sort((a, b) => a - b)) {
     const px = state.heights.get(row)
     const twips = px === undefined ? 255 : Math.round(pxToPt(px) * 20)
-    const grbit = 0x0100 | (state.hidden.rows.has(row) ? 0x20 : 0) | (px === undefined ? 0 : 0x40)
+    const grbit = 0x0100 | (state.hidden.rows.has(row) || filtered.has(row) ? 0x20 : 0) | (px === undefined ? 0 : 0x40)
     out.record(ROW, [
       row & 0xff, (row >> 8) & 0xff, 0, 0, (maxCol + 1) & 0xff, ((maxCol + 1) >> 8) & 0xff,
       twips & 0xff, (twips >> 8) & 0xff, 0, 0, 0, 0,

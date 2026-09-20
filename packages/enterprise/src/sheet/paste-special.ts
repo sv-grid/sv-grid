@@ -20,7 +20,7 @@
  * `x:num`, and Sheets' `data-sheets-*` attributes all come through, so a
  * block copied from either arrives with its values, formulas and formats.
  */
-import { translateFormula } from './refs'
+import { translateFormula, transposeFormula } from './refs'
 import { parseFormula } from './parse'
 import { visit } from './ast'
 import { entryToStyle, type CellFormatEntry } from './format-store'
@@ -481,6 +481,9 @@ export function resolvePasteCell(
   opts: PasteSpecialOptions,
   offset: { rows: number; cols: number } = { rows: 0, cols: 0 },
   at?: { row: number; col: number },
+  /** Where the cell came from and lands, for a transposed paste: its
+   *  relative references are turned rather than shifted. */
+  turn?: { source: { row: number; col: number }; dest: { row: number; col: number } },
 ): PasteResolution {
   if (!source) return { kind: 'skip' }
   const what = opts.what ?? 'all'
@@ -500,7 +503,9 @@ export function resolvePasteCell(
   const value = wantsFormula && source.formula
     ? at && isR1C1(source.formula)
       ? r1c1ToA1(source.formula, at.row, at.col)
-      : String(translateFormula(source.formula, offset.rows, offset.cols))
+      : turn
+        ? String(transposeFormula(source.formula, turn.source, turn.dest))
+        : String(translateFormula(source.formula, offset.rows, offset.cols))
     : source.text
 
   if (what === 'values' || what === 'formulas') return { kind: 'value', value }
@@ -576,7 +581,7 @@ export function planPaste(
   opts: PasteSpecialOptions = {},
   origin?: { row: number; col: number } | null,
   fill?: { rows: number; cols: number },
-): Array<{ row: number; col: number; source: ClipboardCell; offset: { rows: number; cols: number } }> {
+): Array<{ row: number; col: number; source: ClipboardCell; offset: { rows: number; cols: number }; turn?: { source: { row: number; col: number }; dest: { row: number; col: number } } }> {
   const shaped = opts.transpose ? transposeGrid(grid) : grid
   const height = shaped.length
   const width = shaped.reduce((max, row) => Math.max(max, row.length), 0)
@@ -589,11 +594,13 @@ export function planPaste(
   const out: Array<{
     row: number; col: number; source: ClipboardCell
     offset: { rows: number; cols: number }
+    turn?: { source: { row: number; col: number }; dest: { row: number; col: number } }
   }> = []
   for (let tr = 0; tr < repeats.rows; tr += 1) {
     for (let tc = 0; tc < repeats.cols; tc += 1) {
       const corner = { row: destination.row + tr * height, col: destination.col + tc * width }
-      // A transposed paste changes the shape, so Excel does not translate either.
+      // A transposed paste turns each formula's references instead of
+      // shifting them (see `transposeFormula`); the offset is for the rest.
       const offset = origin && !opts.transpose
         ? { rows: corner.row - origin.row, cols: corner.col - origin.col }
         : { rows: 0, cols: 0 }
@@ -602,7 +609,10 @@ export function planPaste(
         for (let c = 0; c < row.length; c += 1) {
           const source = row[c]
           if (!source) continue
-          out.push({ row: corner.row + r, col: corner.col + c, source, offset })
+          const dest = { row: corner.row + r, col: corner.col + c }
+          // In the turned grid, (r, c) came from (c, r) of the block.
+          const turn = opts.transpose && origin ? { source: { row: origin.row + c, col: origin.col + r }, dest } : undefined
+          out.push({ ...dest, source, offset, ...(turn ? { turn } : {}) })
         }
       }
     }

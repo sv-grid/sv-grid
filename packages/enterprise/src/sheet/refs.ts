@@ -136,6 +136,54 @@ export function translateFormula(text: unknown, dRow: number, dCol: number): unk
 }
 
 /**
+ * A formula for a cell that a transposed paste moves from `source` to
+ * `dest`, its relative references turned with it.
+ *
+ * Excel rotates a relative offset on a transpose: a reference `dr` rows
+ * and `dc` columns away becomes `dc` rows and `dr` columns away. A cell
+ * inside the block moved the same way, so a formula that read the price
+ * beside it still reads that price, now above it, which is what makes a
+ * transposed totals column still total. A reference outside the block is
+ * turned too, as Excel turns it. Absolute parts stay where they point.
+ * A column-only reference has no row to turn and is left as it is.
+ */
+export function transposeFormula(
+  text: unknown,
+  source: { row: number; col: number },
+  dest: { row: number; col: number },
+): unknown {
+  if (typeof text !== 'string' || !text.startsWith('=')) return text
+  let ast: Node
+  try {
+    ast = parseFormula(text)
+  } catch {
+    return text
+  }
+  const turn = (ref: CellRef): CellRef => {
+    if (ref.row === null) return ref
+    return {
+      ...ref,
+      row: ref.rowAbs ? ref.row : dest.row + (ref.col - source.col),
+      col: ref.colAbs ? ref.col : dest.col + (ref.row - source.row),
+    }
+  }
+  const moved = mapNode(ast, (n) => {
+    if (n.k === 'ref') return { ...n, ref: turn(n.ref) }
+    if (n.k === 'range') {
+      // A turned range may come out with its corners swapped; a range is
+      // spelled top-left to bottom-right, so put them back in order.
+      const a = turn(n.from)
+      const b = turn(n.to)
+      const from = { ...a, row: a.row === null || b.row === null ? a.row : Math.min(a.row, b.row), col: Math.min(a.col, b.col), rowAbs: a.rowAbs, colAbs: a.colAbs }
+      const to = { ...b, row: a.row === null || b.row === null ? b.row : Math.max(a.row, b.row), col: Math.max(a.col, b.col), rowAbs: b.rowAbs, colAbs: b.colAbs }
+      return { ...n, from, to }
+    }
+    return n
+  })
+  return formatFormula(moved)
+}
+
+/**
  * Point every reference that names sheet `from` at `to` instead: what a
  * sheet rename owes the formulas on the other sheets and the defined
  * names, and what Excel does on one. Parsed and re-rendered rather than

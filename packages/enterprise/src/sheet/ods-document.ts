@@ -22,6 +22,7 @@ import { threadAt, type CommentsMap } from './comments'
 import type { Rect } from './rects'
 import { loadZip, type ZipCtor } from './xlsx-document'
 import { accountingParts, accountingPattern } from './number-format'
+import { autoFilterOds, filteredRows, filtersFromOds } from './filter-files'
 
 // ---------------------------------------------------------------------------
 // XML helpers. Local names throughout, so a document that spells its
@@ -492,6 +493,8 @@ export function sheetStateFromOds(parts: Record<string, string>): SheetState {
       const times = blank ? 1 : repeat
       for (let n = 0; n < times; n += 1, row += 1) {
         if (height !== undefined && !blank) rowHeights.push([row, height])
+        // A row the filter folded is hidden too; the document releases the
+        // ones its criteria fold again (see releaseFilteredRows).
         if (shown === 'collapse' || shown === 'filter') hidden.rows.push(row)
         let c = 0
         for (const cellNode of cellNodes) {
@@ -570,9 +573,12 @@ export function sheetStateFromOds(parts: Record<string, string>): SheetState {
     const from = odfCell(fromText ?? '')
     const to = odfCell(toText ?? '')
     if (!from || !to || !from.sheet) continue
-    const entry = entries[from.sheet] ?? Object.entries(entries).find(([name]) => name.toLowerCase() === from.sheet!.toLowerCase())?.[1]
+    const found = Object.entries(entries).find(([name]) => name === from.sheet || name.toLowerCase() === from.sheet!.toLowerCase())
+    const entry = found?.[1]
     if (!entry || entry.autoFilter) continue
-    entry.autoFilter = { range: [from.row, from.col, to.row, to.col] as Rect, filters: {} }
+    const rect = [from.row, from.col, to.row, to.col] as Rect
+    const filterEl = kid(range, 'filter')
+    entry.autoFilter = { range: rect, filters: filterEl ? filtersFromOds(filterEl, rect).filters : {} }
   }
 
   // Defined names: `table:named-expressions` beside the tables.
@@ -913,7 +919,10 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
 
   const tables = wb.sheets.map((name) => {
     const state = doc.get(name)
-    const rows = wb.rowCount(name)
+    // The rows the AutoFilter folds away: ODF marks them as filtered, apart
+    // from the ones hidden by hand, and the criteria ride in the database range.
+    const filtered = filteredRows(doc, name)
+    const rows = Math.max(wb.rowCount(name), ...[...filtered].map((r) => r + 1))
     const cols = wb.colCount(name)
     const covered = new Set<string>()
     const spans = new Map<string, { across: number; down: number }>()
@@ -932,7 +941,7 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
     for (let r = 0; r < rows; r += 1) {
       const height = state.heights.get(r)
       const style = height ? ` table:style-name="${rowName(height)}"` : ''
-      const hiddenRow = state.hidden.rows.has(r) ? ' table:visibility="collapse"' : ''
+      const hiddenRow = state.hidden.rows.has(r) ? ' table:visibility="collapse"' : filtered.has(r) ? ' table:visibility="filter"' : ''
       const cells: string[] = []
       for (let c = 0; c < Math.max(cols, 1); c += 1) {
         if (covered.has(`${r}:${c}`)) { cells.push('<table:covered-table-cell/>'); continue }
@@ -961,8 +970,9 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
     if (!filter) return ''
     const [r1, c1, r2, c2] = filter.range
     const where = (r: number, c: number) => `${esc(name)}.${colToLetters(c)}${r + 1}`
+    const criteria = autoFilterOds(doc, name)
     return `<table:database-range table:name="__Anonymous_Sheet_DB__${wb.sheets.indexOf(name)}"`
-      + ` table:target-range-address="${where(r1, c1)}:${where(r2, c2)}" table:display-filter-buttons="true"/>`
+      + ` table:target-range-address="${where(r1, c1)}:${where(r2, c2)}" table:display-filter-buttons="true"${criteria ? `>${criteria}</table:database-range>` : '/>'}`
   }).join('')
 
   const content = `${XML_HEAD}<office:document-content ${NS} office:version="1.3">`

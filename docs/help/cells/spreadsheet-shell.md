@@ -426,7 +426,8 @@ Open, Save As, Save As ODS, Save As XLS, Export CSV and Print. Open takes an
 bytes, not from the name - and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
-sheets, frozen panes, merges, the filter region, validation, conditional
+sheets, frozen panes, merges, the filter with its criteria and the rows it
+folds, validation, conditional
 formatting, protection, comments, names, the active sheet); Save As
 downloads the document as an .xlsx that Excel, Google Sheets and LibreOffice
 open with the same parts; Save As ODS writes the same document in
@@ -456,7 +457,9 @@ either format: cells and their formulas (translated both ways, so
 `=SUM(A1:A3)` here is `of:=SUM([.A1:.A3])` there, and a structured reference
 becomes the rectangle it names, since ODF has none), number formats, the cell
 looks, column widths and row heights, merges, hidden rows and columns, the
-filter region, hyperlinks, notes, defined names and sheet protection. Charts,
+filter with its values and conditions (a date period or a colour has no ODF
+spelling, so its rows go out hidden instead), hyperlinks, notes, defined
+names and sheet protection. Charts,
 images, sparklines, pivots, validation, conditional formatting and frozen
 panes travel in the .xlsx and not yet in the .ods.
 
@@ -471,7 +474,8 @@ fills, borders, alignment, column widths, row heights, hidden rows, columns
 and sheets, merges, frozen panes, sheet protection and defined names travel;
 charts, pictures, sparklines, pivots, validation, conditional formatting and
 comments do not, since the format kept them somewhere this reader does not
-go. The sheet is 65,536 rows by 256 columns, and anything past that edge is
+go. A filter goes out as the rows it folds, hidden, and nothing else: the
+file shows the same rows, and the arrows do not come back from it. The sheet is 65,536 rows by 256 columns, and anything past that edge is
 left out rather than written wrong.
 
 An app that keeps its workbooks somewhere other than the user's disk takes

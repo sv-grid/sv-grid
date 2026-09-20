@@ -1,8 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { translateFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, repointReferences, REFERENCE_COLOURS } from './refs'
+import { translateFormula, transposeFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, repointReferences, REFERENCE_COLOURS } from './refs'
 import { parseFormula } from './parse'
 
 const t = (src: string, dRow: number, dCol: number) => translateFormula(src, dRow, dCol)
+
+describe('a transposed formula', () => {
+  it('turns a relative offset: rows become columns and columns rows', () => {
+    // D2 reads B2 and C2, two and one columns to its left. Laid on its side
+    // at C6, it reads two and one rows ABOVE: C4 and C5.
+    expect(transposeFormula('=B2*C2', { row: 1, col: 3 }, { row: 5, col: 2 })).toBe('=C4*C5')
+  })
+  it('leaves absolute parts where they point, and turns a range corner by corner', () => {
+    // A1 is one column left of B1; from D4 that is one row up: D3.
+    expect(transposeFormula('=$A$1+A1', { row: 0, col: 1 }, { row: 3, col: 3 })).toBe('=$A$1+D3')
+    expect(transposeFormula('=SUM(A1:A3)', { row: 3, col: 0 }, { row: 0, col: 3 })).toBe('=SUM(A1:C1)')
+  })
+  it('leaves anything that is not a formula alone', () => {
+    expect(transposeFormula('12', { row: 0, col: 0 }, { row: 1, col: 1 })).toBe('12')
+  })
+})
 
 describe('the $ matrix', () => {
   // The bug this whole module exists for: every demo engine does

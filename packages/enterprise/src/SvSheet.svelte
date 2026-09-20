@@ -73,7 +73,7 @@
   import { applyBorders, type BorderPreset } from './sheet/ribbon'
   import { RIBBON_ICONS, type RibbonIconName } from './sheet/ribbon-icons'
   import {
-    planPaste, resolvePasteCell, buildClipboardPayload, parseClipboardHtml, readClipboardOrigin, anchorForeignFormulas,
+    planPaste, resolvePasteCell, buildClipboardPayload, parseClipboard, parseClipboardHtml, readClipboardOrigin, anchorForeignFormulas,
     type ClipboardGrid, type PasteSpecialOptions, type PasteWhat,
   } from './sheet/paste-special'
   import { setStructureTarget, insertRows, insertColumns, deleteRows, deleteColumns, axisForSelection } from './sheet/structure'
@@ -3079,7 +3079,7 @@
       case 'paste-formats':
       case 'paste-transpose':
         if (onAction?.(action, context) === true) return
-        pasteSpecial(
+        void pasteSpecial(
           action === 'paste-transpose' ? { transpose: true } : { what: action.slice('paste-'.length) as PasteWhat },
         )
         return
@@ -3358,7 +3358,7 @@
     if (onAction?.(action, context) === true) return
     switch (action) {
       case 'find-replace': findOpen = true; return
-      case 'paste-special': pasteSpecialOpen = true; return
+      case 'paste-special': void openPasteSpecial(); return
       case 'format-cells': formatCellsOpen = true; return
       case 'insert-function': insertFunctionOpen = true; return
       case 'name-manager': nameManagerOpen = true; return
@@ -3630,7 +3630,7 @@
         withFormatUndo(cmd, target, rects, () => {
           for (const entry of landing) {
             const at = { row: entry.row, col: entry.col }
-            const decision = resolvePasteCell(entry.source, wb.getValue(wb.active, entry.row, entry.col), opts, entry.offset, at)
+            const decision = resolvePasteCell(entry.source, wb.getValue(wb.active, entry.row, entry.col), opts, entry.offset, at, entry.turn)
             if (decision.kind === 'skip') continue
             const one = [[entry.row, entry.col, entry.row, entry.col] as const]
             if (decision.kind === 'value' || decision.kind === 'both') cmd.setCellValue(entry.row, entry.col, decision.value)
@@ -3710,11 +3710,70 @@
     if (copied) copied.cut = true
   }
 
-  function pasteSpecial(opts: PasteSpecialOptions) {
+  /**
+   * What the system clipboard holds, for a Paste Special of something
+   * copied OUTSIDE the sheet: a table from Excel or Sheets, a sheet in
+   * another tab, tab-separated text. Ctrl+V gets this from the paste event;
+   * a ribbon click has no event to read, so it asks the clipboard API,
+   * which a browser may refuse (no permission, no focus): null then.
+   */
+  async function readSystemClipboard(): Promise<{ text: string; html: string | null } | null> {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return null
+    try {
+      let text = ''
+      let html: string | null = null
+      for (const item of await navigator.clipboard.read()) {
+        if (item.types.includes('text/html')) html = await (await item.getType('text/html')).text()
+        if (item.types.includes('text/plain')) text = await (await item.getType('text/plain')).text()
+      }
+      return text || html ? { text, html } : null
+    } catch {
+      try {
+        const text = await navigator.clipboard.readText()
+        return text ? { text, html: null } : null
+      } catch {
+        return null
+      }
+    }
+  }
+
+  /**
+   * The system clipboard as read when the Paste Special dialog opened with
+   * nothing copied on the sheet, so the dialog can say whether there is
+   * anything to paste and OK pastes what was there at that moment.
+   */
+  let pendingPaste = $state<{ text: string; html: string | null } | null>(null)
+  async function openPasteSpecial() {
+    pendingPaste = copied ? null : await readSystemClipboard()
+    pasteSpecialOpen = true
+  }
+
+  /**
+   * Paste Special, from the ribbon's Paste menu (Values, Formulas,
+   * Formatting, Transpose) and from the dialog. The sheet's own copy is
+   * pasted as the block it is, formulas and formats included; anything
+   * else on the clipboard is read the way Ctrl+V reads it. The first
+   * version knew only the sheet's copy, so Transpose on a table copied
+   * from Excel did nothing at all, and said nothing.
+   */
+  async function pasteSpecial(opts: PasteSpecialOptions) {
     const cmd = cmdOf()
+    if (!cmd) return
     const block = copied
-    if (!cmd || !block) return
-    if (pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, opts)) focusSheet(cmd)
+    if (block && block.cells.length) {
+      if (pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, opts)) focusSheet(cmd)
+      return
+    }
+    const payload = pendingPaste ?? await readSystemClipboard()
+    pendingPaste = null
+    const grid = payload ? parseClipboard({ text: payload.text, html: payload.html ?? undefined }) : null
+    if (!grid || !grid.length || grid.every((line) => line.every((c) => c.text === '' && !c.formula))) {
+      say(t('nothingToPaste'))
+      return
+    }
+    const origin = payload?.html ? readClipboardOrigin(payload.html) : null
+    const placed = origin ? { grid, origin } : anchorForeignFormulas(grid)
+    if (pasteBlock(placed.grid, placed.origin, opts)) focusSheet(cmd)
   }
 
   /** A dialog took focus; the sheet gets it back once the dialog has gone. */
@@ -5435,7 +5494,7 @@
   {/if}
 
   <SvSheetFindReplace bind:open={findOpen} cmd={cmdOf} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
-  <SvSheetPasteSpecial bind:open={pasteSpecialOpen} hasClipboard={copied !== null} onPaste={pasteSpecial} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
+  <SvSheetPasteSpecial bind:open={pasteSpecialOpen} hasClipboard={copied !== null || pendingPaste !== null} onPaste={(opts) => { void pasteSpecial(opts) }} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetFormatCells bind:open={formatCellsOpen} entry={activeEntry} sample={activeValue} mixedLocked={mixedLocked} onApply={applyFormatCells} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetInsertFunction bind:open={insertFunctionOpen} onPick={insertFunction} />
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); doc.changed({ kind: 'workbook' }); bump() }} onClose={() => afterDialog()} />
