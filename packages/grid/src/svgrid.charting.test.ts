@@ -754,7 +754,15 @@ describe('SvGrid built-in charting', () => {
   })
 
 
-  it('the builder opens from the panel with a live thumbnail per type, and a card switches the chart', { timeout: 20_000 }, async () => {
+  // The builder mounts a live SvGridChart per type, thirty of them, in one
+  // synchronous flush. Alone that is well under a second; under `--coverage`
+  // (instrumented chart code, every file of the suite in parallel workers)
+  // it took 22 s on a loaded machine and the four tests that open the
+  // builder timed out at 20 s, the last of them then reading a builder a
+  // timed-out neighbour left behind. The budget is for instrumentation,
+  // not for the product: `pnpm test` runs with coverage and is the gate.
+  const BUILDER_TIMEOUT = 90_000
+  it('the builder opens from the panel with a live thumbnail per type, and a card switches the chart', { timeout: BUILDER_TIMEOUT }, async () => {
     const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {
       await tick()
@@ -805,7 +813,7 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
-  it('the Format tab writes series labels, crosshair pills, a compact rule, a stack group and a style through configureChart', { timeout: 20_000 }, async () => {
+  it('the Format tab writes series labels, crosshair pills, a compact rule, a stack group and a style through configureChart', { timeout: BUILDER_TIMEOUT }, async () => {
     const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {
       await tick()
@@ -848,7 +856,7 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
-  it('the builder Data tab renders the panel pickers and both write the same tab', { timeout: 20_000 }, async () => {
+  it('the builder Data tab renders the panel pickers and both write the same tab', { timeout: BUILDER_TIMEOUT }, async () => {
     const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {
       await tick()
@@ -883,7 +891,7 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
-  it('localization.text relabels the panel and the builder; unset keys stay English', { timeout: 20_000 }, async () => {
+  it('localization.text relabels the panel and the builder; unset keys stay English', { timeout: BUILDER_TIMEOUT }, async () => {
     const { target, destroy } = await mountGrid({
       charting: { defaultOpen: true },
       localization: { text: { chartPanelTitle: 'Diagramm', chartGroupBy: 'Gruppieren nach', chartTypeBar: 'Balken', chartAdd: 'Diagramm hinzufügen', chartBuilderTitle: 'Diagramm-Editor', chartBuilderTabData: 'Daten', noRows: 'Keine Zeilen' } },
