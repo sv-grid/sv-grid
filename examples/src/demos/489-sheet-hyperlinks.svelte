@@ -22,7 +22,7 @@
    * delete, and go into the .xlsx as real hyperlinks, an external one as a
    * relationship and an internal one as a location, both read back.
    *
-   * Try: click a ticket in C, then an owner in D. Press Ctrl+K on a cell to
+   * Try: click a ticket in C, then an owner in B. Press Ctrl+K on a cell to
    * add or edit a link, and Insert > Remove to take one off. Insert a row
    * above 2 and watch the links move with their rows. File > Save As, and
    * open the file in Excel.

@@ -830,6 +830,40 @@ describe('SvSheet printing what floats over the cells', () => {
   })
 })
 
+describe('SvSheet text spilling over a fill', () => {
+  const at = { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => String.fromCharCode(65 + i) }
+  const spills = (r: number, c: number) => !!host!.querySelector(`td[data-svgrid-row="${r}"][data-svgrid-col="${c}"] .sheet-cell.spill`)
+
+  it('runs over neighbours wearing the same background, and stops at a different one', async () => {
+    // Row 1: a title on a band A:C, the way a section header is laid out.
+    // Row 2: a filled title next to an unfilled empty cell.
+    // Row 3: an unfilled title next to a filled empty cell.
+    // Row 4: a plain title over plain empty cells, the ordinary case.
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['A title that is longer than its column', '', '', 'x'],
+      ['A title that is longer than its column', '', '', 'x'],
+      ['A title that is longer than its column', '', '', 'x'],
+      ['A title that is longer than its column', '', '', 'x'],
+    ] }] })
+    const formats = doc.get('S').formats
+    formats.set([[0, 0, 0, 2]], { fill: '#e2e8f0' }, at)
+    formats.set([[1, 0, 1, 0]], { fill: '#e2e8f0' }, at)
+    formats.set([[2, 1, 2, 1]], { fill: '#fde68a' }, at)
+    await mountSheet({ document: doc })
+    flushSync(); await tick()
+
+    // The band: the span grows over B and C, painting the band's own fill,
+    // so the title reads in full. "A filled cell never spills" cut every
+    // section title on a band at its column's edge.
+    expect(spills(0, 0)).toBe(true)
+    // A fill beside no fill, either way round: the colour would drag, so
+    // the text stays in its cell.
+    expect(spills(1, 0)).toBe(false)
+    expect(spills(2, 0)).toBe(false)
+    expect(spills(3, 0)).toBe(true)
+  })
+})
+
 describe('SvSheet IMAGE cells', () => {
   const PNG = 'data:image/png;base64,AAAA'
 

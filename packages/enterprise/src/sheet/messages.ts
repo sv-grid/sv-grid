@@ -635,6 +635,7 @@ export const defaultDialogMessages = {
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
   // Create Table
   'table.title': 'Create Table',
+  'table.editTitle': 'Table',
   'table.range': 'Where are the cells?',
   'table.rangePlaceholder': 'A1:D20',
   'table.name': 'Name:',

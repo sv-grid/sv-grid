@@ -2231,13 +2231,16 @@
    * window is simply not drawn this paint.
    */
   const peersHere = $derived.by(() => presenceOnSheet(livePresence(presence ?? []), wb.active))
-  let peerBoxes = $state<Record<string, { left: number; top: number; width: number; height: number; tagLeft: number; tagTop: number }>>({})
+  let peerBoxes = $state<Record<string, { left: number; top: number; width: number; height: number; tagLeft: number; tagTop: number; tagBelow: boolean }>>({})
 
   function measurePeers() {
     const host = gridHost
     if (!host || !peersHere.length) { peerBoxes = {}; return }
     const b = host.getBoundingClientRect()
     const cellBox = (row: number, col: number) => host.querySelector<HTMLElement>(`td[data-svgrid-row="${row}"][data-svgrid-col="${col}"]`)?.getBoundingClientRect() ?? null
+    // Where the cells begin: under the column header, and the frozen rows.
+    const headerBottom = host.querySelector('thead')?.getBoundingClientRect().bottom ?? b.top
+    const TAG_HEIGHT = 20
     const next: typeof peerBoxes = {}
     for (const person of peersHere) {
       const [r1, c1, r2, c2] = person.rect
@@ -2250,7 +2253,11 @@
       const height = Math.max(first.bottom, last.bottom) - b.top - top
       const anchor = presenceAnchor(person)
       const tag = cellBox(anchor.row, anchor.col) ?? first
-      next[person.id] = { left, top, width, height, tagLeft: startOf(tag, b), tagTop: tag.top - b.top }
+      // The tag hangs above its cell. On the first row, or a row scrolled
+      // up to the frozen ones, above is under the sticky header, so it
+      // sits below the cell instead, the way a name tag flips at an edge.
+      const tagBelow = tag.top - headerBottom < TAG_HEIGHT
+      next[person.id] = { left, top, width, height, tagLeft: startOf(tag, b), tagTop: (tagBelow ? tag.bottom : tag.top) - b.top, tagBelow }
     }
     peerBoxes = next
   }
@@ -2797,12 +2804,20 @@
     // A merged cell is as wide as its merge already; the text stays in it.
     if (sheetMergeAt(mergesNow(), r, c)) return 0
     if (entry?.align === 'right' || entry?.align === 'center') return 0
-    // A fill stays inside its cell in Excel; letting the span grow would
-    // drag the colour over the neighbours along with the text.
-    if (entry?.fill) return 0
+    // The span that spills paints its own background over the neighbours,
+    // the cell's fill or the sheet's, so it may only run over neighbours
+    // whose background is the same: an unfilled cell over unfilled cells,
+    // and a filled cell over cells wearing the SAME fill, which is a title
+    // on a banded row. "A filled cell never spills" was the first rule,
+    // and it cut every section title on a band at its column's edge; a
+    // neighbour with a different fill, or none, still stops the text, since
+    // the colour would drag over it.
+    const fill = entry?.fill ?? ''
+    const store = storeFor()
     let extra = 0
     for (let next = c + 1; next < colCount; next += 1) {
       if (wb.getRaw(wb.active, r, next) !== '') break
+      if ((store.get(`r${r}`, colToLetters(next))?.fill ?? '') !== fill) break
       extra += widthOf(next)
     }
     return extra
@@ -4972,7 +4987,9 @@
        over the empty cells beside it; the span that spills paints an opaque
        background, and it covered the picture. The cell shows a picture, not
        that text, so it never spills. -->
-  {@const spill = showFormulas || cellImage ? 0 : spillWidth(props.r, props.c, value, entry)}
+  <!-- A conditional format's fill is painted by the span too, and the
+       neighbours are not under the same rule, so that text stays in its cell. -->
+  {@const spill = showFormulas || cellImage || cf?.style?.fill ? 0 : spillWidth(props.r, props.c, value, entry)}
   {@const align = typing ? 'left' : entry?.align ?? (showFormulas ? 'left' : typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left')}
   {@const hashes = typeof value === 'number' && !showFormulas && !typing ? hashesFor(shown.text, props.c, entry, props.r, entry?.numFmt || cf?.style?.numFmt ? undefined : value) : null}
   {#if cf?.dataBar}
@@ -5204,6 +5221,7 @@
           ></div>
           <span
             class="sheet-presence-tag"
+            class:below={box.tagBelow}
             style:inset-inline-start="{box.tagLeft}px"
             style:top="{box.tagTop}px"
             style:--sheet-presence-colour={colour}
@@ -6455,6 +6473,7 @@
     transform: translateY(-100%);
     padding: 1px 5px;
     border-radius: 3px 3px 3px 0;
+    z-index: 1;
     background: var(--sheet-presence-colour, #2563eb);
     color: #fff;
     font-size: 11px;
@@ -6463,6 +6482,11 @@
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /* No room above: under the cell, the corner turned the other way. */
+  .sheet-presence-tag.below {
+    transform: none;
+    border-radius: 0 3px 3px 3px;
   }
 
   /* Excel's link: the theme's link colour, underlined, and a hand over it.

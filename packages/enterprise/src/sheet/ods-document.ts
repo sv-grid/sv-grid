@@ -21,6 +21,7 @@ import { linkAt, type LinksMap } from './links'
 import { threadAt, type CommentsMap } from './comments'
 import type { Rect } from './rects'
 import { loadZip, type ZipCtor } from './xlsx-document'
+import { accountingParts, accountingPattern } from './number-format'
 
 // ---------------------------------------------------------------------------
 // XML helpers. Local names throughout, so a document that spells its
@@ -239,11 +240,22 @@ const cellPart = (text: string): string => text.slice(text.lastIndexOf('.') + 1)
 
 /** An ODF data style as the pattern a cell's number format speaks. */
 function patternFromDataStyle(style: Element): string | undefined {
+  const kids = Array.from(style.children)
+  // Excel's accounting format is a currency (or number) style with a fill:
+  // the symbol at the left edge, the figure at the right, spaces between.
+  // Read as the one pattern `accountingPattern` spells, so the cell keeps
+  // the alignment it had rather than becoming a currency amount.
+  if ((style.localName === 'currency-style' || style.localName === 'number-style') && kids.some((k) => k.localName === 'fill-character' && (k.textContent ?? '') === ' ')) {
+    const number = kids.find((k) => k.localName === 'number')
+    if (number) return accountingPattern(kids.find((k) => k.localName === 'currency-symbol')?.textContent ?? '', numAttr(number, 'decimal-places') ?? 0)
+  }
   const parts: string[] = []
   let sawSomething = false
-  for (const node of Array.from(style.children)) {
+  for (const node of kids) {
     switch (node.localName) {
       case 'text': parts.push(quoteLiteral(node.textContent ?? '')); break
+      // A run of one character to the cell's edge: Excel's `*` fill.
+      case 'fill-character': parts.push(`*${(node.textContent ?? ' ').slice(0, 1) || ' '}`); break
       case 'number': {
         sawSomething = true
         const decimals = numAttr(node, 'decimal-places') ?? 0
@@ -710,6 +722,18 @@ const ERROR_TEXT = /^#(REF!|DIV\/0!|VALUE!|NAME\?|NUM!|N\/A|NULL!|SPILL!|CALC!|C
  * which is better than a style that says something untrue.
  */
 function dataStyleXml(pattern: string, name: string): string | null {
+  // Accounting: the symbol at the left edge, the figure at the right, and
+  // ODF's fill character for the space between, which is what LibreOffice
+  // writes for its own. Written as a plain currency style it came back as
+  // one, and the demo's "survives all three formats" was untrue for .ods.
+  const accounting = accountingParts(pattern)
+  if (accounting) {
+    const number = `<number:number number:decimal-places="${accounting.decimals}" number:min-decimal-places="${accounting.decimals}" number:min-integer-digits="1" number:grouping="true"/>`
+    const fill = '<number:fill-character> </number:fill-character>'
+    return accounting.symbol
+      ? `<number:currency-style style:name="${name}"><number:currency-symbol>${esc(accounting.symbol)}</number:currency-symbol>${fill}${number}</number:currency-style>`
+      : `<number:number-style style:name="${name}">${fill}${number}</number:number-style>`
+  }
   const body = pattern.split(';')[0]!.trim()
   if (body === '' || /^general$/i.test(body)) return null
   const dateLike = /[ymdhs]/i.test(body.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, ''))

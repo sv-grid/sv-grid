@@ -71,7 +71,9 @@
   }
 </script>
 
-<SvModal bind:open onClose={onClose} title={t('table.title')} size="sm">
+<!-- Opened from inside a table it edits that table, so it does not say
+     Create: the name, the range and the style are the ones it has. -->
+<SvModal bind:open onClose={onClose} title={t(existing ? 'table.editTitle' : 'table.title')} size="sm">
   <form class="sv-sheet-dialog" onsubmit={(e) => { e.preventDefault(); ok() }}>
     <label class="field">
       <span>{t('table.range')}</span>

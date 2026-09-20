@@ -139,7 +139,11 @@ test.describe('the formula bar chevron', () => {
     const long = '=' + Array.from({ length: 12 }, (_, i) =>
       `IF(B${(i % 4) + 2}>100, "price ${i} is above one hundred in this catalogue sheet", "price ${i} is below")`).join(' & ')
     await cell(page, 9, 0).click()
-    await page.keyboard.type(long)
+    // The first key opens the editor; the rest goes in as one insert, since
+    // typing 1,100 characters one keystroke at a time ran past the timeout
+    // on a busy machine and proves nothing the insert does not.
+    await page.keyboard.type('=')
+    await page.keyboard.insertText(long.slice(1))
     await page.keyboard.press('Enter')
     await cell(page, 9, 0).click()
     await page.waitForTimeout(200)
