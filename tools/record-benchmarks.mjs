@@ -56,6 +56,10 @@ for (const r of run.results) {
       filter: ms(r.filter),
       scrollP95: ms(r.scrollP95),
       scrollDropped: Number.isFinite(r.scrollDropped) ? r.scrollDropped : null,
+      // A tick is only recorded when the grid kept the sort across it;
+      // otherwise it did less than the others and the number would mislead.
+      tickP95: r.tickSortHeld ? ms(r.tickP95) : null,
+      tickOverBudget: r.tickSortHeld && Number.isFinite(r.tickOverBudget) ? r.tickOverBudget : null,
       domRows: r.domRows,
     },
   })
@@ -70,12 +74,13 @@ const benchmarks = {
   measuredAt: String(run.measuredAt).slice(0, 10),
   rows: run.rows,
   repeats: run.repeats,
-  cases: ['mount', 'sortText', 'sortNumber', 'filter', 'scrollP95'],
+  cases: ['mount', 'sortText', 'sortNumber', 'filter', 'scrollP95', 'tickP95'],
   rig: {
     statistic: `fastest of ${run.repeats} samples per operation, each grid in a fresh page`,
     browser: 'Chromium through Playwright, headless',
     machine: `${platform()} ${release()} ${arch()}, ${cpu}; a developer workstation, not a dedicated bench rig`,
     container: '1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme',
+    tick: '1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up',
   },
   grids,
 }
@@ -84,4 +89,4 @@ const raw = JSON.parse(await readFile(LEDGER_FILE, 'utf-8'))
 const out = { readme: raw.readme, registry: ledger.registry, bundles: ledger.bundles, benchmarks }
 await writeFile(LEDGER_FILE, JSON.stringify(out, null, 2) + '\n', 'utf-8')
 console.log(`recorded ${grids.length} grids measured ${benchmarks.measuredAt} into ${LEDGER_FILE}`)
-for (const g of grids) console.log(`  ${g.label.padEnd(30)} ${g.version.padEnd(10)} mount ${g.results.mount} ms, sort text ${g.results.sortText} ms, sort num ${g.results.sortNumber} ms, filter ${g.results.filter} ms, scroll p95 ${g.results.scrollP95} ms`)
+for (const g of grids) console.log(`  ${g.label.padEnd(30)} ${g.version.padEnd(10)} mount ${g.results.mount} ms, sort text ${g.results.sortText} ms, sort num ${g.results.sortNumber} ms, filter ${g.results.filter} ms, scroll p95 ${g.results.scrollP95} ms, tick p95 ${g.results.tickP95} ms`)

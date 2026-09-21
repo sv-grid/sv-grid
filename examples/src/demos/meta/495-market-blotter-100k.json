@@ -1,0 +1,28 @@
+{
+  "description": "A market blotter in the Svelte 5 data grid at the row count a trading desk has: 100,000 instruments sorted by percent change while a WebSocket feed pushes 1,000, 10,000 or 50,000 price updates a second. Ticks arrive as JSON batches, wait in a map keyed by instrument until the next animation frame, and go through one api.applyTransaction per frame, so the message rate never sets the pipeline rate. The rows are $state.raw, the grid reuses every row object that did not change and repairs the sort around the ones that did rather than re-sorting 100,000 rows, and cellFlash colours each move green or red. A frame-time readout shows the p95 gap between animation frames over the last three seconds. Add ?ws=ws://localhost:8787 to read from node tools/tick-server.mjs, a dependency-free WebSocket feed in the repository, or from your own.",
+  "keywords": [
+    "svelte grid 100000 rows real-time",
+    "svelte websocket data grid",
+    "svelte trading blotter",
+    "svelte 5 live updating table",
+    "svelte grid applyTransaction streaming"
+  ],
+  "faq": [
+    {
+      "question": "How does a 100,000-row grid keep its sort while prices tick?",
+      "answer": "Each frame's updates go through one applyTransaction, which hands the grid a new array in which only the ticked rows are new objects. The row model reuses the other row objects, and the sorted stage keeps its previous output with each row's sort key, drops the replaced rows, sorts the replacements among themselves and merges them back in one pass. The order is exactly what a full sort would produce, at a fraction of the cost."
+    },
+    {
+      "question": "Why wait for an animation frame instead of applying each tick as it arrives?",
+      "answer": "The screen paints at most once per frame, so applying ticks faster than that only runs the pipeline for results nobody sees. The map keyed by instrument id also merges a symbol that ticked several times in one frame into one update with its latest price."
+    },
+    {
+      "question": "Can I point this at a real feed?",
+      "answer": "Yes. Add ?ws= followed by a WebSocket URL to the page. node tools/tick-server.mjs in the repository serves the message format the demo reads, {\"t\": [[id, last], ...]}, and is forty lines with no dependency, so it is also a template for adapting your own feed."
+    },
+    {
+      "question": "Is the frame-time number the same one the benchmarks page reports?",
+      "answer": "It is measured the same way: the gap between consecutive animation frames, sampled from requestAnimationFrame, reported as the 95th percentile over a window. The benchmarks page reports it for sustained scrolling and for a fixed tick load in a headless browser on a stated machine; this readout is live, on your machine, under whatever rate you pick."
+    }
+  ]
+}

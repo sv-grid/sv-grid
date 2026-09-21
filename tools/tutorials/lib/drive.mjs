@@ -27,6 +27,27 @@ export const HIDE_CHROME = `
   vite-error-overlay { display: none !important; }
 `
 
+/** The website's header and footer, when a route of the site is recorded. */
+export const HIDE_SITE_CHROME = `
+  #root header.sticky, #root footer { display: none !important; }
+  html, body { overflow: hidden !important; }
+  vite-error-overlay { display: none !important; }
+`
+
+/**
+ * Applied to every take, whatever the target. The unlicensed-enterprise nudge
+ * (packages/enterprise/src/watermark.ts) fades after five seconds on its own;
+ * a recording is ours, so it is off. The Vite error overlay is here as well
+ * as in the chrome rules above: the dev server pushes it to EVERY connected
+ * page when any module fails to transform (the gitignored bench adapter
+ * importing an uninstalled package is enough), the stage and the website
+ * included, and it then covers the take from that moment on.
+ */
+export const HIDE_WATERMARK = `
+  [data-svgrid-enterprise-watermark] { display: none !important; }
+  vite-error-overlay { display: none !important; }
+`
+
 /** A string as a literal inside a RegExp source. */
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -272,6 +293,30 @@ export function createHelpers(page, log = () => {}) {
       )
     },
 
+    /** The horizontal twin of easedScroll: scrollLeft to a fraction of the width. */
+    async easedScrollX(fraction, ms = 3000, selector = '.sv-grid-container') {
+      await page.evaluate(
+        async ({ fraction, ms, selector }) => {
+          const el = document.querySelector(selector)
+          if (!el) throw new Error(`no scroller ${selector}`)
+          const from = el.scrollLeft
+          const target = Math.floor((el.scrollWidth - el.clientWidth) * fraction)
+          const start = performance.now()
+          await new Promise((done) => {
+            const step = (t) => {
+              const p = Math.min(1, (t - start) / ms)
+              const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2
+              el.scrollLeft = from + (target - from) * eased
+              if (p < 1) requestAnimationFrame(step)
+              else done()
+            }
+            requestAnimationFrame(step)
+          })
+        },
+        { fraction, ms, selector },
+      )
+    },
+
     /**
      * Open a column's Excel-style filter menu. The button is `width: 0` until
      * its header is hovered and shifts as it expands: hover, let the
@@ -433,6 +478,32 @@ export function createHelpers(page, log = () => {}) {
         el.remove()
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
       }, ms)
+    },
+
+    /**
+     * The recording stage (examples/stage.html): every call runs the same
+     * method on window.__stage inside the page and resolves when its animation
+     * has finished. `h.stage.show('terminal', { title })`,
+     * `h.stage.term.run(cmd, { output })`, `h.stage.editor.type(code)`,
+     * `h.stage.browser.mount('first-grid')` and so on; see the stage's main.ts.
+     */
+    stage: {
+      show: (layout, props = {}) => page.evaluate(([l, p]) => window.__stage.show(l, p), [layout, props]),
+      term: {
+        run: (cmd, opts = {}) => page.evaluate(([c, o]) => window.__stage.term.run(c, o), [cmd, opts]),
+        print: (lines, opts = {}) => page.evaluate(([l, o]) => window.__stage.term.print(l, o), [lines, opts]),
+        clear: () => page.evaluate(() => window.__stage.term.clear()),
+      },
+      editor: {
+        open: (file, code = '') => page.evaluate(([f, c]) => window.__stage.editor.open(f, c), [file, code]),
+        type: (code, opts = {}) => page.evaluate(([c, o]) => window.__stage.editor.type(c, o), [code, opts]),
+        set: (code) => page.evaluate((c) => window.__stage.editor.set(c), code),
+        cursor: (on) => page.evaluate((v) => window.__stage.editor.cursor(v), on),
+      },
+      browser: {
+        mount: (preset, opts = {}) => page.evaluate(([p, o]) => window.__stage.browser.mount(p, o), [preset, opts]),
+        url: (text) => page.evaluate((t) => window.__stage.browser.url(t), text),
+      },
     },
 
     /** Park the pointer somewhere harmless (default: lower right of the grid). */

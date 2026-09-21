@@ -92,7 +92,24 @@ export function getNumberFormatter(
     '|' +
     (options.currencyDisplay ?? '') +
     '|' +
-    (options.notation ?? '')
+    (options.notation ?? '') +
+    // Every option that changes the output belongs in the key. `signDisplay`
+    // was missing, so a percent column asking for "+3.27" got the formatter
+    // a currency column with the same digits had already cached, and no sign.
+    '|' +
+    (options.signDisplay ?? '') +
+    '|' +
+    (options.minimumIntegerDigits ?? '') +
+    '|' +
+    (options.compactDisplay ?? '') +
+    '|' +
+    (options.unit ?? '') +
+    '|' +
+    (options.unitDisplay ?? '') +
+    '|' +
+    (options.minimumSignificantDigits ?? '') +
+    '|' +
+    (options.maximumSignificantDigits ?? '')
   let fmt = numberFormatterCache.get(key)
   if (!fmt) {
     fmt = new Intl.NumberFormat(locales as string | string[] | undefined, options)

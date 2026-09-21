@@ -36,6 +36,32 @@ type OrientedRange = {
 }
 
 /**
+ * Row id -> index, per data array, for `applyTransaction`.
+ *
+ * An update batch used to walk every row calling `getRowId` to find the ones
+ * it replaced - 100k calls per tick on a 100k-row feed, whatever the batch
+ * size. The map is built once per array and, for an update-only transaction,
+ * carried to the array it produces: same ids at the same indices. An add or
+ * remove changes indices, so those transactions leave the next array to
+ * build its own map on first use. Keyed weakly so a replaced array takes its
+ * map with it.
+ */
+const rowIndexByData = new WeakMap<ReadonlyArray<unknown>, Map<string, number>>()
+
+function rowIndexOf<TData>(
+  data: ReadonlyArray<TData>,
+  getId: (row: TData, index: number) => string,
+): Map<string, number> {
+  let byId = rowIndexByData.get(data)
+  if (!byId) {
+    byId = new Map()
+    for (let i = 0; i < data.length; i++) byId.set(getId(data[i]!, i), i)
+    rowIndexByData.set(data, byId)
+  }
+  return byId
+}
+
+/**
  * The selection as the user made it: committed ranges first, the active one
  * last, each keeping its anchor as `from` and its focus as `to`. The active
  * cell is the highlight of the range it sits in and of no other, which is
@@ -247,38 +273,41 @@ export function createGridApi<
       },
       applyTransaction(tx) {
         const getId = ctx.props.getRowId;
-        let next = ctx.internalData.slice() as Array<TData>;
+        const current = ctx.internalData as ReadonlyArray<TData>;
+        let next = current.slice() as Array<TData>;
         let added = 0;
         let updated = 0;
         let removed = 0;
 
+        // Everything resolves against the indices of `current`: the id ->
+        // index map answers updates and id removals with one lookup each, a
+        // reference removal with one `indexOf`, and no pass over the rows
+        // that did not change. A row both updated and removed in the same
+        // transaction ends up removed, as it did when removes ran first.
+        const removeIdx = new Set<number>();
         if (tx.remove?.length) {
-          const removeIds = new Set<string>();
-          const removeRefs = new Set<TData>();
+          const byId = getId ? rowIndexOf(current, getId) : null;
           for (const r of tx.remove) {
-            if (typeof r === "string") removeIds.add(r);
-            else removeRefs.add(r as TData);
+            const idx = typeof r === "string" ? byId?.get(r) : current.indexOf(r as TData);
+            if (idx !== undefined && idx >= 0) removeIdx.add(idx);
           }
-          next = next.filter((row, i) => {
-            const hit =
-              removeRefs.has(row) ||
-              (getId ? removeIds.has(getId(row, i)) : false);
-            if (hit) removed += 1;
-            return !hit;
-          });
         }
 
         if (tx.update?.length && getId) {
-          const byId = new Map<string, TData>();
-          for (const u of tx.update) byId.set(getId(u, 0), u);
-          next = next.map((row, i) => {
-            const u = byId.get(getId(row, i));
-            if (u) {
-              updated += 1;
-              return u;
-            }
-            return row;
-          });
+          const byId = rowIndexOf(current, getId);
+          for (const u of tx.update) {
+            const idx = byId.get(getId(u, 0));
+            if (idx === undefined) continue;
+            next[idx] = u;
+            updated += 1;
+          }
+          // Same ids at the same indices: the next array can reuse the map.
+          if (!removeIdx.size && !tx.add?.length) rowIndexByData.set(next, byId);
+        }
+
+        if (removeIdx.size) {
+          next = next.filter((_, i) => !removeIdx.has(i));
+          removed = removeIdx.size;
         }
 
         if (tx.add?.length) {

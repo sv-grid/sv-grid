@@ -1442,6 +1442,13 @@ async function main() {
       body += `<p>${s.tier === 'enterprise'
         ? 'The grid and its data model are MIT-licensed in <code>@svgrid/grid</code>; this view ships in the commercial <a href="' + BASE + 'pricing/">@svgrid/enterprise</a> package and runs unlicensed while you evaluate.'
         : 'Free and MIT-licensed in <code>@svgrid/grid</code>: no license key, no row cap, no watermark.'}</p>`
+      // A page whose pitch is a size prints it from docs/_data/svgrid-size.json
+      // (pnpm size:json), the same file the compare pages read; the number is
+      // never typed into solutions.json. Mirrors the block in Solutions.svelte.
+      const measured = s.sizeEntry && svgridSize?.entries?.[s.sizeEntry]
+      if (measured) {
+        body += `<p>Measured: <strong>${Number(measured.baseGzipKb).toFixed(1)} KB</strong> gzipped JS${Number(measured.cssGzipKb) > 0 ? ` + ${Number(measured.cssGzipKb).toFixed(1)} KB CSS` : ', no stylesheet'}, minified with Svelte external, at <code>@svgrid/grid</code> ${escapeAttr(svgridSize.version)} on ${escapeAttr(svgridSize.measuredAt)}. Reproduce it with <code>pnpm size:json</code>; the method is on the <a href="${BASE}docs/help/bundle-size/">bundle size reference</a>.</p>`
+      }
     }
     if (s.snippet?.code) {
       body += `<h2>The code</h2><pre><code class="language-${escapeAttr(s.snippet.lang || 'svelte')}">${escapeAttr(s.snippet.code)}</code></pre>`

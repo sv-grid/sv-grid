@@ -16,7 +16,7 @@
  */
 import { copyFileSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { run, blackDetect, ffprobeVideo } from './ffmpeg.mjs'
+import { run, blackDetect, ffprobeVideo, ffprobeDuration } from './ffmpeg.mjs'
 import { cuesFromBeats, toSrt, toVtt, normalizeNarration } from '../../lib/tutorial-media.mjs'
 
 export const DOCS_WIDTH = 960
@@ -27,6 +27,7 @@ export const DEFAULT_BUDGET_BYTES = 2.5 * 1024 * 1024
  * the recorder's estimate. Falls back to the estimate with a warning.
  */
 export async function findTrimStart(raw, timeline, log = () => {}) {
+  if (timeline.trimmed) return 0
   const intervals = await blackDetect(raw)
   const est = timeline.flashEstimate
   const plausible = intervals.filter((b) => b.duration >= 0.06 && b.duration <= 0.6)
@@ -45,8 +46,8 @@ const s = (seconds) => seconds.toFixed(3)
 /**
  * @param {{ id: string, outDir: string, siteDir: string, timeline: object, budgetBytes?: number, gif?: boolean, gifBeats?: [number, number], log?: (m: string) => void }} opts
  */
-export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes = DEFAULT_BUDGET_BYTES, gif = true, gifBeats, log = () => {} }) {
-  mkdirSync(siteDir, { recursive: true })
+export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes = DEFAULT_BUDGET_BYTES, gif = true, gifBeats, posterBeat = null, docs = true, log = () => {} }) {
+  if (docs) mkdirSync(siteDir, { recursive: true })
   const raw = join(outDir, timeline.rawVideo)
   const trim = await findTrimStart(raw, timeline, log)
   const duration = timeline.duration
@@ -79,10 +80,10 @@ export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes =
   log(`master ${Math.round(statSync(master).size / 1024)} KB`)
 
   // ---- Docs cut: muted, 960 wide, under budget ---------------------------
-  const docsMp4 = join(siteDir, `${id}.mp4`)
-  const ladder = [
+  const docsMp4 = docs ? join(siteDir, `${id}.mp4`) : null
+  const ladder = docs ? [
     { crf: 28, fps: 24 }, { crf: 30, fps: 24 }, { crf: 32, fps: 24 }, { crf: 32, fps: 20 }, { crf: 34, fps: 20 },
-  ]
+  ] : []
   let docsBytes = 0
   let used = null
   for (const step of ladder) {
@@ -98,19 +99,23 @@ export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes =
     if (docsBytes <= budgetBytes) break
     log(`docs cut ${Math.round(docsBytes / 1024)} KB at crf ${step.crf}/${step.fps} fps is over budget, trying the next rung`)
   }
-  if (docsBytes > budgetBytes) {
+  if (docs && docsBytes > budgetBytes) {
     throw new Error(`docs cut is ${Math.round(docsBytes / 1024)} KB after the full ladder (budget ${Math.round(budgetBytes / 1024)} KB): shorten the tutorial or raise --budget-kb`)
   }
-  const docsInfo = await ffprobeVideo(docsMp4)
-  log(`docs cut ${docsInfo.width}x${docsInfo.height} ${Math.round(docsBytes / 1024)} KB (crf ${used.crf}, ${used.fps} fps)`)
+  const docsInfo = docs ? await ffprobeVideo(docsMp4) : { width: info.width, height: info.height }
+  if (docs) log(`docs cut ${docsInfo.width}x${docsInfo.height} ${Math.round(docsBytes / 1024)} KB (crf ${used.crf}, ${used.fps} fps)`)
 
   // ---- Poster (docs) + thumbnail (YouTube) from the intro hold -----------
-  const posterAt = trim + timeline.introHold / 2
-  const poster = join(siteDir, `${id}.poster.webp`)
-  await run(['-y', '-ss', s(posterAt), '-i', raw, '-frames:v', '1', '-vf', `scale=${DOCS_WIDTH}:-2`, '-c:v', 'libwebp', '-quality', '80', poster])
+  // The poster/thumbnail frame: the intro hold by default, or the settled end
+  // of a chosen beat (a stage cut opens on an empty terminal, which makes a
+  // poor thumbnail; its browser-frame beat does not).
+  const posterBeatEnd = posterBeat != null ? timeline.beats[posterBeat]?.end : null
+  const posterAt = trim + (posterBeatEnd != null ? Math.max(0, posterBeatEnd - 0.4) : timeline.introHold / 2)
+  const poster = docs ? join(siteDir, `${id}.poster.webp`) : null
+  if (docs) await run(['-y', '-ss', s(posterAt), '-i', raw, '-frames:v', '1', '-vf', `scale=${DOCS_WIDTH}:-2`, '-c:v', 'libwebp', '-quality', '80', poster])
   const thumb = join(outDir, `${id}.thumb.jpg`)
   await run(['-y', '-ss', s(posterAt), '-i', raw, '-frames:v', '1', '-vf', 'scale=1280:-2', '-q:v', '3', thumb])
-  const posterBytes = statSync(poster).size
+  const posterBytes = docs ? statSync(poster).size : 0
 
   // ---- GIF: a beat window, else the first 12 s ---------------------------
   let gifPath = null
@@ -135,9 +140,9 @@ export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes =
   // ---- Captions + transcript ---------------------------------------------
   const cues = cuesFromBeats(timeline.beats)
   writeFileSync(join(outDir, `${id}.srt`), toSrt(cues), 'utf-8')
-  writeFileSync(join(siteDir, `${id}.vtt`), toVtt(cues), 'utf-8')
+  writeFileSync(join(outDir, `${id}.vtt`), toVtt(cues), 'utf-8')
   writeFileSync(join(outDir, 'transcript.txt'), cues.map((c) => normalizeNarration(c.text)).join('\n\n') + '\n', 'utf-8')
-  copyFileSync(join(siteDir, `${id}.vtt`), join(outDir, `${id}.vtt`))
+  if (docs) copyFileSync(join(outDir, `${id}.vtt`), join(siteDir, `${id}.vtt`))
 
   return {
     trim,
@@ -153,4 +158,67 @@ export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes =
     height: docsInfo.height,
     cues,
   }
+}
+
+/**
+ * A longer cut is recorded as several takes (a title card on the stage, a
+ * demo, another demo, an end card), each with its own sync flash. Trim each
+ * at its flash, give it a short fade in and out, and join them into one
+ * intermediate the normal muxer can treat as an already-trimmed recording:
+ * the returned timeline carries every beat with its start shifted by the
+ * segments before it, so narration and captions land where they were spoken.
+ *
+ * @param {{ id: string, outDir: string, segments: Array<{ dir: string, timeline: object }>, fade?: number, log?: (m: string) => void }} opts
+ */
+export async function stitchSegments({ id, outDir, segments, fade = 0.25, log = () => {} }) {
+  const parts = []
+  const beats = []
+  let offset = 0
+  let view = null
+  for (let i = 0; i < segments.length; i += 1) {
+    const { dir, timeline } = segments[i]
+    const raw = join(dir, timeline.rawVideo)
+    const trim = await findTrimStart(raw, timeline, (m) => log(`segment ${i + 1}: ${m}`))
+    const duration = timeline.duration
+    const part = join(outDir, `segment-${i + 1}.mp4`)
+    const fadeOutAt = Math.max(0, duration - fade)
+    await run([
+      '-y', '-ss', s(trim), '-t', s(duration), '-i', raw, '-an',
+      '-vf', `fps=30,fade=t=in:st=0:d=${fade},fade=t=out:st=${s(fadeOutAt)}:d=${fade}`,
+      '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p',
+      part,
+    ])
+    const real = await ffprobeDuration(part)
+    parts.push(part)
+    view ??= timeline.view
+    for (const b of timeline.beats) {
+      beats.push({ ...b, start: b.start + offset, end: b.end + offset })
+    }
+    offset += real
+    log(`segment ${i + 1}: ${s(real)} s (${timeline.beats.length} beats)`)
+  }
+
+  const list = join(outDir, 'segments.txt')
+  writeFileSync(list, parts.map((p) => `file '${p.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`).join('\n') + '\n', 'utf-8')
+  const stitched = join(outDir, 'raw.mp4')
+  await run(['-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', stitched])
+  const total = await ffprobeDuration(stitched)
+
+  const timeline = {
+    id,
+    target: 'segments',
+    demo: segments.find((x) => x.timeline.demo)?.timeline.demo ?? null,
+    rawVideo: 'raw.mp4',
+    trimmed: true,
+    view,
+    flashEstimate: 0,
+    introHold: segments[0].timeline.introHold,
+    outroHold: segments[segments.length - 1].timeline.outroHold,
+    duration: total,
+    segments: segments.map((x, i) => ({ dir: x.dir, duration: x.timeline.duration, file: parts[i] })),
+    beats,
+  }
+  writeFileSync(join(outDir, 'timeline.json'), JSON.stringify(timeline, null, 2) + '\n')
+  log(`stitched ${segments.length} segments, ${s(total)} s`)
+  return timeline
 }

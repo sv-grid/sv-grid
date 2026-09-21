@@ -120,7 +120,7 @@ every element below is markup you wrote, which is the whole proposition.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -195,7 +195,7 @@ and a filter starts applying; leave it out and the code for it never ships.
     tableFeatures,
     columnFilteringFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -254,4 +254,6 @@ and a filter starts applying; leave it out and the code for it never ships.
 - [Controlled state](./controlled-state.md) - `createGridState` / `subscribeGrid`
 - [Headless virtualization](./virtualization.md) - render 100k rows yourself
 - [Why headless?](../../why-headless.md) - the design rationale
+- [Svelte headless table](https://svgrid.com/svelte/headless-table/) - the landing page, with the measured size of the engine
+- [Bundle size](../bundle-size.md) - every entry, measured on each release
 - [Architecture](../architecture.md) - the three-layer model

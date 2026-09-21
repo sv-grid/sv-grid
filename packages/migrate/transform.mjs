@@ -110,12 +110,25 @@ function resolveIdent(script, ident) {
 /** Unwrap `readable(x)` / `writable(x)` / `derived(...)` down to a plain value. */
 function unwrapStore(expr, warnings) {
   const trimmed = expr.trim()
+  // `writable<Person[]>(people)`: the TypeScript generic sits between the name
+  // and the paren, which `findCall` does not see. It came up on the first
+  // real component the lab ran (tools/migration-lab): the store stayed as
+  // `data` and nothing downstream compiled.
+  const generic = trimmed.match(/^(readable|writable)\s*<[^()]*>\s*\(/)
+  if (generic) {
+    const paren = generic[0].length - 1
+    const end = matchBracket(trimmed, paren)
+    if (end !== -1) {
+      const args = splitTopLevel(trimmed.slice(paren + 1, end), ',')
+      return args[0]?.trim() ?? trimmed
+    }
+  }
   for (const fn of ['readable', 'writable']) {
     const call = findCall(trimmed, fn)
     if (call && call.start === 0) {
       // `readable(value, start?)` - only the first argument is the data.
       const args = splitTopLevel(call.args, ',')
-      return args[0] ?? trimmed
+      return args[0]?.trim() ?? trimmed
     }
   }
   if (/^derived\s*\(/.test(trimmed)) {
@@ -186,6 +199,86 @@ function parseColumnEntry(entryText, tableIdent, warnings, depth = 0) {
   return { props: out, nested }
 }
 
+/**
+ * The lines of the script to carry into the result, and the names they
+ * declare. Kept: imports that are not the table library or `svelte/store`
+ * (row types, components, helpers), `export let` props, and a
+ * `let { ... } = $props()` block. Everything else is the table wiring or
+ * hand-written code the CLI shows beside the result.
+ *
+ * @param {string} body
+ * @returns {{ kept: string[], declared: Set<string> }}
+ */
+function carryOver(body) {
+  const lines = body.replace(/\r\n/g, '\n').split('\n')
+  const kept = []
+  const declared = new Set()
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim()
+    if (!t) continue
+    if (/^import\b/.test(t)) {
+      if (SOURCE_PACKAGES.some((p) => t.includes(p))) continue
+      if (/from\s+['"]svelte\/store['"]/.test(t)) continue
+      if (/from\s+['"]svelte['"]/.test(t) && /createEventDispatcher/.test(t)) continue
+      kept.push(t)
+      continue
+    }
+    const exp = t.match(/^export\s+let\s+([A-Za-z_$][\w$]*)/)
+    if (exp) {
+      kept.push(t)
+      declared.add(exp[1])
+      continue
+    }
+    if (/^let\s*\{/.test(t)) {
+      // `let { a, b = 1 } = $props()`, possibly over several lines.
+      let j = i
+      let block = t
+      while (j < lines.length && !/\$props\s*\(\s*\)/.test(block)) {
+        j += 1
+        if (j >= lines.length) break
+        block += '\n' + lines[j].trim()
+      }
+      if (/\$props\s*\(\s*\)/.test(block)) {
+        kept.push(block)
+        const inner = block.slice(block.indexOf('{') + 1, block.indexOf('}'))
+        for (const part of splitTopLevel(inner, ',')) {
+          const name = part.trim().match(/^([A-Za-z_$][\w$]*)/)
+          if (name) declared.add(name[1])
+        }
+        i = j
+      }
+    }
+  }
+  return { kept, declared }
+}
+
+/**
+ * Names the view model and the reactive statements over it declared, so a
+ * template that still reads them after the `<table>` is gone can be pointed
+ * at rather than left to fail in svelte-check.
+ * @param {string} body
+ */
+function viewModelNames(body, tableIdent) {
+  const names = new Set()
+  const vm = body.match(new RegExp('(?:const|let)\\s*\\{([^}]*)\\}\\s*=\\s*' + tableIdent + '\\.createViewModel'))
+  if (vm) {
+    for (const part of vm[1].split(',')) {
+      const n = part.trim().match(/^([A-Za-z_$][\w$]*)/)
+      if (n) names.add(n[1])
+    }
+  }
+  // `const { pageIndex, pageCount } = pluginStates.page`
+  for (const m of body.matchAll(/(?:const|let)\s*\{([^}]*)\}\s*=\s*pluginStates\b/g)) {
+    for (const part of m[1].split(',')) {
+      const n = part.trim().match(/^([A-Za-z_$][\w$]*)/)
+      if (n) names.add(n[1])
+    }
+  }
+  // `$: shown = $pageRows.length`
+  for (const m of body.matchAll(/^\s*\$:\s*([A-Za-z_$][\w$]*)\s*=/gm)) names.add(m[1])
+  return names
+}
+
 function renderColumn(col, indent) {
   const pad = INDENT.repeat(indent)
   const inner = INDENT.repeat(indent + 1)
@@ -247,7 +340,9 @@ export function migrate(source) {
       for (const p of spec.props) props.add(p)
       if (spec.note) notes.push(spec.note)
       if (name === 'addPagination') {
-        const ps = raw.match(/initialPageSize\s*:\s*(\d+)/)
+        // A literal or an identifier (`initialPageSize: pageSize`, a prop the
+        // component carries over) - both are valid inside `pageSize={...}`.
+        const ps = raw.match(/initialPageSize\s*:\s*([^,}\s]+)/)
         if (ps) pageSize = ps[1]
       }
     }
@@ -277,7 +372,6 @@ export function migrate(source) {
   // defaults TData to RowData, which makes `field` an unconstrained string and
   // leaves a `fieldFn` row parameter as `unknown` - both of which fail
   // svelte-check against the TData that <SvGrid> infers from `data`.
-  const typeAnn = isTs ? ': GridColumns<(typeof data)[number]>' : ''
   const importLine = isTs
     ? "import { SvGrid, type GridColumns } from '@svgrid/grid'"
     : "import { SvGrid } from '@svgrid/grid'"
@@ -285,32 +379,36 @@ export function migrate(source) {
   const propList = ['sortable', 'filterable', 'showGlobalFilter', 'showColumnFilters',
     'pageable', 'showRowSelection', 'groupable', 'treeData', 'enableColumnReorder']
     .filter((p) => props.has(p))
-  const attrs = ['{data}', '{columns}', ...propList]
-  if (pageSize) attrs.push('pageSize={' + pageSize + '}')
 
-  // Carry over any user code that was not part of the table wiring.
-  const leftovers = script.body
-    .split('\n')
-    .filter((line) => {
-      const t = line.trim()
-      if (!t) return false
-      if (t.startsWith('import ') && SOURCE_PACKAGES.some((p) => t.includes(p))) return false
-      if (/^import\s+\{[^}]*\}\s+from\s+['"]svelte\/store['"]/.test(t)) return false
-      return false // conservative: the CLI shows the original for anything hand-written
-    })
+  // Carry over the declarations the component's contract is made of: its
+  // props and the imports that are not table wiring (row types above all).
+  // The table wiring itself - the table, the view model, the store, the
+  // reactive statements over them - is dropped, and the CLI shows the
+  // original beside the result for anything else that was hand-written.
+  // Before this, `export let people` and `import type { Person }` were
+  // dropped too, and the emitted file could not compile.
+  const { kept: leftovers, declared } = carryOver(script.body)
+
+  // `createTable(data)` where `data` was a store over a prop: bind the grid
+  // to the prop directly instead of declaring a `const data` that shadows
+  // nothing and captures the prop's initial value.
+  const dataIdent = /^[A-Za-z_$][\w$]*$/.test(dataExpr) && declared.has(dataExpr) ? dataExpr : null
+  const dataAttr = dataIdent ? 'data={' + dataIdent + '}' : '{data}'
+  const typeAnn = isTs ? ': GridColumns<(typeof ' + (dataIdent ?? 'data') + ')[number]>' : ''
+  const attrs = [dataAttr, '{columns}', ...propList]
+  if (pageSize) attrs.push('pageSize={' + pageSize + '}')
 
   const scriptBody = [
     '',
     INDENT + importLine,
+    ...leftovers.map((l) => INDENT + l),
     '',
-    INDENT + 'const data = ' + dataExpr.replace(/\n/g, '\n' + INDENT),
-    '',
+    ...(dataIdent ? [] : [INDENT + 'const data = ' + dataExpr.replace(/\n/g, '\n' + INDENT), '']),
     INDENT + 'const columns' + typeAnn + ' = ' + columnsSrc.replace(/\n/g, '\n' + INDENT),
     '',
-    ...leftovers,
   ].join('\n')
 
-  const newScript = script.tag + scriptBody + '\n</script>'
+  const newScript = script.tag + scriptBody + '</script>'
 
   // Replace the whole `<table>` element the view model fed.
   let body = source.slice(source.indexOf('</script>', script.openEnd) + '</script>'.length)
@@ -329,6 +427,30 @@ export function migrate(source) {
 
   if (/\bSubscribe\b|\bRender\b/.test(body)) {
     warnings.push('`<Subscribe>` or `<Render>` still appears outside the main table. Those have no SvGrid equivalent and need removing by hand.')
+  }
+
+  // A pager or a row count written against the view model survives the
+  // `<table>` replacement and then fails in svelte-check as an unknown name.
+  // Name what is left rather than let the type-checker be the one to say.
+  const dangling = [...viewModelNames(script.body, tableIdent)].filter((n) =>
+    new RegExp('(^|[^\\w$])\\$?' + n.replace(/\$/g, '\\$') + '(?![\\w$])').test(body),
+  )
+  if (dangling.length) {
+    warnings.push(
+      'The template still reads ' + dangling.map((n) => '`' + n + '`').join(', ') +
+        ' from the view model, which is gone. <SvGrid> renders its own pager and row count (`pageable`, `showPagination`), so remove that markup, or read the grid through `onApiReady` if you need the numbers.',
+    )
+  }
+
+  // A `dispatch('select', row.original)` on the old `<tr>` went with the
+  // table. The event is still the component's contract; name the prop that
+  // carries it now.
+  const dispatched = [...source.matchAll(/\bdispatch\s*\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1])
+  if (dispatched.length) {
+    warnings.push(
+      'The table markup dispatched ' + [...new Set(dispatched)].map((n) => '`' + n + '`').join(', ') +
+        ' from a row; that handler went with the `<tr>`. Wire it to `onRowClick={({ row }) => ...}` (or `onCellClick`) on <SvGrid>, and turn the `createEventDispatcher` into a callback prop if the component is moving to runes.',
+    )
   }
 
   notes.push('Column resizing, keyboard navigation and ARIA grid semantics are built into <SvGrid>; the markup that provided them is intentionally gone.')

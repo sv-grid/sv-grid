@@ -13,7 +13,7 @@
     createSvelteVirtualizer,
     tableFeatures,
     type GridColumns,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Row = { id: number; name: string; city: string; score: number }
   const CITIES = ['London', 'Berlin', 'Tokyo', 'Austin', 'Oslo', 'Lisbon', 'Denver']

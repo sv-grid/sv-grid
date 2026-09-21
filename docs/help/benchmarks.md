@@ -45,19 +45,29 @@ gated in CI**. What CI gates instead is described under
 
 ## Bundle size
 
-Production build, gzipped. The first two rows come from
-`node packages/grid/scripts/measure-size.mjs` (Svelte excluded as a peer);
-see the [bundle size reference](../reference/bundle-size.md).
+Production build, gzipped, Svelte excluded as a peer. The table is
+generated from `docs/_data/svgrid-size.json` by `node tools/sync-guide-facts.mjs`
+(the file `pnpm size:json` writes), and the method and the lazy-chunk
+breakdown are on the [bundle size reference](./bundle-size.md). An earlier
+version of this page typed these and sat a month behind the measurement.
 
-| Surface                             | gzip   | Notes                                  |
-| ----------------------------------- | ------ | -------------------------------------- |
-| `@svgrid/grid` (full `<SvGrid>`)    | 77 kB  | One import covers the entire renderer; + 9 kB CSS |
-| Headless engine (`createGrid`)      | 2 kB   | If you bring your own renderer         |
-| Lazy chunks (charts, date editors, menus, export) | 64 kB | Loaded on demand, not in the initial bundle |
-| `@svgrid/enterprise` core           | 8 kB   | Export + print + import shells         |
-| `@svgrid/enterprise` import module only | 6 kB | Imported via `'@svgrid/enterprise/import'` |
-| Peer: `jszip`                       | 35 kB  | Loaded on first `xlsx` export *or* import |
-| Peer: `pdfmake` + vfs               | ~280 kB| Loaded on first `pdf` export only      |
+<!-- size:start -->
+Re-measured **20 Sep 2026** at `@svgrid/grid` 3.0.4 with the script that ships in the repo (`pnpm size:json`):
+
+| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
+| --- | ---: | ---: | ---: |
+| Headless core (`createSvGrid`) | **2.6 KB** | - | - |
+| Headless subpath (`@svgrid/grid/core`) | **6.5 KB** | - | - |
+| Full render component (`<SvGrid>`) | **95.8 KB** | **10.5 KB** | **183.5 KB** |
+| Standalone chart (`<SvChart>`) | **71.6 KB** | - | **15.1 KB** |
+<!-- size:end -->
+
+The "loaded on demand" column is the code reachable only through
+`import()`: charts, the date-time editor, the menus, export. Outside the
+grid package, and not in the ledger: the `@svgrid/enterprise` core is a few
+kilobytes of export, print and import shells; `jszip` loads on the first
+xlsx export or import and `pdfmake` with its fonts on the first PDF export,
+both as optional peers, neither in your synchronous bundle.
 
 The AI helpers are no longer in this table: they moved into the free
 `@svgrid/grid` and tree-shake out unless you import them.
@@ -244,6 +254,54 @@ one is now closed and has a counter that fails the build if it returns:
   ranked once where a column has few enough of them.
 
 Numbers here will move; the command that produces them will not.
+
+## Streaming updates
+
+**Measured.** Run `pnpm bench --case=tick-1k-of-100k-sorted` to reproduce.
+A tick is a new data array in which K row objects were replaced with new
+prices, handed to a grid sorted by that column, so the order has to stay
+current. 100,000 rows x 9 columns, same rig as above:
+
+| Operation                                            | Median | The same tick through a full sort |
+| ---------------------------------------------------- | ------ | --------------------------------- |
+| Tick: 100 rows replaced, sorted by the ticking column | 6 ms   | 31 ms                             |
+| Tick: 1,000 rows replaced, sorted by the ticking column | 9 ms | 31 ms                             |
+
+The right-hand column is the "Sort by one column" row above: before this
+round, any new data array re-sorted every row, so a 100-row tick cost
+exactly what a header click did. The sorted stage now keeps its previous
+output with each row's sort key, drops the rows that were replaced, sorts
+the K replacements among themselves and merges them back in one linear
+pass: O(n + K log K) instead of O(n log n) key builds and comparisons. The
+filtered stage does the same for a replacement whose membership did not
+change. The result is byte-identical to a full sort, which a test pins by
+comparing the two on every kind of key the sort specialises
+(`core.tick-repair.test.ts`).
+
+Three conditions, all checked, none assumed: the array has the same length
+(an add or a remove is structural and takes the full path), at least one
+object was replaced and no more than a quarter of them (a new array with
+every object the same is the documented "I mutated rows in place, re-read
+them" refresh and runs the full pipeline), and the sorting state, filters
+and columns are the same objects as last time. The rows that were kept are
+assumed unchanged in value as well as identity, which is what an immutable
+update guarantees and an in-place mutation does not: a feed that mutates
+rows in place must pass a new array with no replacements to refresh.
+
+The counter CI gates for this is cell reads on the kept rows during a tick,
+budgeted at zero: a repaired sort never re-reads a row it kept, a full sort
+reads all of them.
+
+What the component adds on top of the engine per tick is a rebuild of the
+base rows (2 ms at 100k, reusing every row object that did not change) and
+the render of the visible window. Three things on that path used to be
+O(rows) per data change and are not now: the header checkbox state walked
+every row to conclude "none selected" (30 ms at 100k), the expanded-rows
+stage copied all rows into a new array with nothing expanded, and the
+dev-time config check filtered every row to pick ten samples. The browser
+harness in the [comparison](./comparison.md) measures the whole thing,
+render included, against the other grids on the same tick; that column
+lands with its next recorded run.
 
 ## Spreadsheet engine
 
@@ -470,8 +528,9 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~77 KB gzipped for the full render component,
-or ~2 KB for the headless core) and virtualizes by default. Raw scroll
+It ships a small bundle (the measured figures for the full render component
+and for the headless core alone are in the table above) and virtualizes by
+default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.
 

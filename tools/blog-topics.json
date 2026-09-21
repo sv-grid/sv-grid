@@ -1708,6 +1708,401 @@
       "api": [],
       "brief": "The responsive prop, the breakpoint where columns unpin, and the card renderer for narrow screens. Show the same data at three widths.",
       "source": "component"
+    },
+    {
+      "slug": "svelte-headless-table-svelte-5-what-actually-happens",
+      "query": "svelte-headless-table svelte 5",
+      "secondary": [
+        "svelte headless table svelte 5 support",
+        "svelte-headless-table deprecated",
+        "svelte-headless-table alternative"
+      ],
+      "intent": "how-to",
+      "workingTitle": "svelte-headless-table on Svelte 5: what actually happens when you upgrade",
+      "category": "Comparisons",
+      "tags": [
+        "migration",
+        "svelte 5",
+        "svelte-headless-table",
+        "svelte data grid"
+      ],
+      "demos": [
+        "186-headless-table"
+      ],
+      "docs": [
+        "help/svelte-5-upgrade-data-tables",
+        "help/migrating-from-svelte-headless-table"
+      ],
+      "api": [],
+      "brief": "The upgrade, step by step, as the lab captured it. The install and compile diagnostics MUST be quoted from tools/migration-lab/captured/ (the guide docs/help/svelte-5-upgrade-data-tables.md already quotes them); never invent an error message, a version or a download count. Say plainly what the lab found: npm 11 warns and installs, the untouched component type-checks in legacy mode, the trouble starts with the first rune. Name all three exits (the maintained fork, TanStack Table v9, SvGrid) and say who each is for.",
+      "source": "migration-wave:2026-09"
+    },
+    {
+      "slug": "svelte-5-peer-dependency-conflict-table-library",
+      "query": "svelte 5 peer dependency conflict",
+      "secondary": [
+        "npm eresolve svelte 5",
+        "svelte ^4.0.0 peer dependency",
+        "legacy-peer-deps svelte"
+      ],
+      "intent": "how-to",
+      "workingTitle": "The svelte@^4 peer dependency warning on a Svelte 5 upgrade, and what it does and does not mean",
+      "category": "Concepts",
+      "tags": [
+        "migration",
+        "svelte 5",
+        "npm",
+        "svelte data grid"
+      ],
+      "demos": [],
+      "docs": [
+        "help/svelte-5-upgrade-data-tables",
+        "help/troubleshooting"
+      ],
+      "api": [],
+      "brief": "What a peer range is, why npm 11 overrides it with a warning where npm 7 to 10 stopped with ERESOLVE, what pnpm prints, and why none of it stops the code from running. Use a table library as the worked example. The install and compile diagnostics MUST be quoted from tools/migration-lab/captured/ (the guide docs/help/svelte-5-upgrade-data-tables.md already quotes them); never invent an error message, a version or a download count. Say plainly what the lab found: npm 11 warns and installs, the untouched component type-checks in legacy mode, the trouble starts with the first rune. Name all three exits (the maintained fork, TanStack Table v9, SvGrid) and say who each is for.",
+      "source": "migration-wave:2026-09"
+    },
+    {
+      "slug": "svelte-4-to-5-slots-let-directives-in-a-table-component",
+      "query": "svelte 5 let: directive slot props table",
+      "secondary": [
+        "svelte 5 slots deprecated",
+        "svelte 5 snippets vs let directive",
+        "svelte 4 to svelte 5 table component"
+      ],
+      "intent": "concept",
+      "workingTitle": "let: slot props in a runes component: what a Svelte 4 table looks like after the port",
+      "category": "Concepts",
+      "tags": [
+        "migration",
+        "svelte 5",
+        "snippets",
+        "svelte data grid"
+      ],
+      "demos": [
+        "186-headless-table"
+      ],
+      "docs": [
+        "help/svelte-5-upgrade-data-tables"
+      ],
+      "api": [],
+      "brief": "Slots and let: are deprecated, not removed; say so first. Then the store bridge a runes component needs for a store-based table library, the two state_referenced_locally warnings the lab captured, and why that bridge is the actual maintenance cost. The install and compile diagnostics MUST be quoted from tools/migration-lab/captured/ (the guide docs/help/svelte-5-upgrade-data-tables.md already quotes them); never invent an error message, a version or a download count. Say plainly what the lab found: npm 11 warns and installs, the untouched component type-checks in legacy mode, the trouble starts with the first rune. Name all three exits (the maintained fork, TanStack Table v9, SvGrid) and say who each is for.",
+      "source": "migration-wave:2026-09"
+    },
+    {
+      "slug": "shadcn-svelte-data-table-svelte-5-upgrade",
+      "query": "shadcn-svelte data table svelte 5",
+      "secondary": [
+        "shadcn svelte data table tanstack v9",
+        "shadcn-svelte table migration",
+        "svelte 5 shadcn data table"
+      ],
+      "intent": "how-to",
+      "workingTitle": "The shadcn-svelte data table on Svelte 5: keep the markup, swap the engine, or take a renderer",
+      "category": "Use cases",
+      "tags": [
+        "migration",
+        "shadcn",
+        "svelte 5",
+        "svelte data grid"
+      ],
+      "demos": [
+        "186-headless-table",
+        "188-headless-styled"
+      ],
+      "docs": [
+        "help/migrating-from-shadcn-data-table",
+        "help/headless/styling"
+      ],
+      "api": [],
+      "brief": "The recipe is built on TanStack Table v9, which has a Svelte 5 peer range, so this is not a stranding story; say so. Show the three options: keep Table.Root/Row/Cell on TanStack, keep them on @svgrid/grid/core (the headless styling guide has the layout), or take <SvGrid>. npx @svgrid/migrate handles the third and reports what it left.",
+      "source": "migration-wave:2026-09"
+    },
+    {
+      "slug": "tanstack-svelte-table-v8-to-v9-migration",
+      "query": "tanstack svelte table v9",
+      "secondary": [
+        "@tanstack/svelte-table v9 migration",
+        "tanstack table svelte 5",
+        "tanstack table v8 to v9"
+      ],
+      "intent": "how-to",
+      "workingTitle": "TanStack Table v8 to v9 on Svelte: the features object, the Svelte 5 adapter, and the moment to look around",
+      "category": "Comparisons",
+      "tags": [
+        "migration",
+        "tanstack",
+        "svelte 5",
+        "svelte data grid"
+      ],
+      "demos": [
+        "186-headless-table"
+      ],
+      "docs": [
+        "help/migrating-from-tanstack-table"
+      ],
+      "api": [
+        "tableFeatures",
+        "rowSortingFeature",
+        "createSvGrid"
+      ],
+      "brief": "v9 is a major version those users must migrate to anyway. Cover the v8 to v9 changes honestly and note that @svgrid/grid exports the same v9 vocabulary, so a features object written for v9 runs unchanged on createSvGrid, with a renderer available when wanted. Concede that TanStack has far more users and is the right choice for a multi-framework team.",
+      "source": "migration-wave:2026-09"
+    },
+    {
+      "slug": "createtable-in-svelte-5-headless-engines-compared",
+      "query": "createTable svelte 5",
+      "secondary": [
+        "svelte createTable headless",
+        "svelte 5 headless table engine",
+        "createSvGrid vs createTable"
+      ],
+      "intent": "comparison",
+      "workingTitle": "createTable in Svelte 5: three headless engines and what each asks you to write",
+      "category": "Comparisons",
+      "tags": [
+        "headless",
+        "svelte 5",
+        "comparison",
+        "svelte data grid"
+      ],
+      "demos": [
+        "186-headless-table",
+        "187-headless-virtual"
+      ],
+      "docs": [
+        "help/headless/overview",
+        "help/svelte-5-upgrade-data-tables"
+      ],
+      "api": [
+        "createSvGrid"
+      ],
+      "brief": "svelte-headless-table createTable (stores, Svelte 4), TanStack createTable (v9, runes-first), and createSvGrid on @svgrid/grid/core. Same job, three state models; show the same sortable table on each and count what the consumer maintains. No typed numbers: sizes and downloads live on the compare pages.",
+      "source": "migration-wave:2026-09"
+    },
+    {
+      "slug": "headless-table-svelte-5-engine-only",
+      "query": "headless table svelte 5",
+      "secondary": [
+        "svelte headless table",
+        "svelte 5 headless data grid",
+        "headless ui table svelte"
+      ],
+      "intent": "how-to",
+      "workingTitle": "A headless table in Svelte 5: the engine, your markup, and what a design system gets out of it",
+      "category": "Concepts",
+      "tags": [
+        "headless",
+        "svelte 5",
+        "design system",
+        "svelte data grid"
+      ],
+      "demos": [
+        "186-headless-table",
+        "188-headless-styled",
+        "189-headless-shared-state"
+      ],
+      "docs": [
+        "why-headless",
+        "help/headless/overview",
+        "help/headless/styling",
+        "help/bundle-size"
+      ],
+      "api": [
+        "createSvGrid",
+        "createCoreRowModel",
+        "createSortedRowModel",
+        "getGridRootA11yProps"
+      ],
+      "brief": "Import from @svgrid/grid/core, render your own <table>, wire sorting from getToggleSortingHandler and ARIA from the exported helpers. The pitch is for platform teams with a strict internal component library: the engine owns the state, the design system owns every element. Do not type the bundle size; link the bundle size page, which renders it from the ledger.",
+      "source": "headless-split:2026-09"
+    },
+    {
+      "slug": "svelte-table-with-shadcn-svelte-table-primitives",
+      "query": "svelte table shadcn",
+      "secondary": [
+        "shadcn-svelte table sorting",
+        "shadcn svelte data grid",
+        "svelte table component shadcn"
+      ],
+      "intent": "how-to",
+      "workingTitle": "shadcn-svelte Table primitives with a real engine underneath: sorting, filtering and virtualization without leaving the design system",
+      "category": "Integration",
+      "tags": [
+        "shadcn",
+        "headless",
+        "design system",
+        "svelte data grid"
+      ],
+      "demos": [
+        "188-headless-styled"
+      ],
+      "docs": [
+        "help/headless/styling",
+        "help/shadcn",
+        "help/migrating-from-shadcn-data-table"
+      ],
+      "api": [
+        "createSvGrid",
+        "createSvelteVirtualizer"
+      ],
+      "brief": "The layout from the headless styling guide, extended: Table.Root/Header/Row/Head/Body/Cell over createSvGrid, then the virtualizer for a long list, then the <SvGrid> shadcn theme preset for the screens where a renderer is fine. One state machine, either markup.",
+      "source": "headless-split:2026-09"
+    },
+    {
+      "slug": "svelte-virtual-table-with-your-own-markup",
+      "query": "svelte virtual table custom markup",
+      "secondary": [
+        "svelte virtualized table headless",
+        "svelte virtual list table 50000 rows",
+        "createVirtualizer svelte"
+      ],
+      "intent": "how-to",
+      "workingTitle": "A virtualized table in Svelte 5 with your own markup: createSvelteVirtualizer over the headless engine",
+      "category": "Performance",
+      "tags": [
+        "virtualization",
+        "headless",
+        "performance",
+        "svelte data grid"
+      ],
+      "demos": [
+        "187-headless-virtual"
+      ],
+      "docs": [
+        "help/headless/virtualization",
+        "help/headless/build-a-table"
+      ],
+      "api": [
+        "createSvelteVirtualizer",
+        "createSvGrid",
+        "createCoreRowModel"
+      ],
+      "brief": "Scroll offset in, visible window and spacer height out; 50,000 rows with a few dozen elements in the DOM, all from @svgrid/grid/core. Show the row loop with translateY, the overscan, and what changes for column virtualization.",
+      "source": "headless-split:2026-09"
+    },
+    {
+      "slug": "svelte-real-time-table-100000-rows",
+      "query": "svelte real-time table 100k rows",
+      "secondary": [
+        "svelte 5 live data grid 100000 rows",
+        "svelte streaming table performance",
+        "svelte grid real-time updates large dataset"
+      ],
+      "intent": "how-to",
+      "workingTitle": "A real-time table with 100,000 rows in Svelte 5: what has to be true for it to stay smooth",
+      "category": "Performance",
+      "tags": [
+        "realtime",
+        "performance",
+        "virtualization",
+        "svelte data grid"
+      ],
+      "demos": [
+        "495-market-blotter-100k"
+      ],
+      "docs": [
+        "help/real-time",
+        "help/benchmarks",
+        "help/rows/transactions"
+      ],
+      "api": [
+        "applyTransaction"
+      ],
+      "brief": "The two update paths (proxy write vs array replacement) and why a sorted grid needs the second; per-frame batching; the sort repair the engine does on a tick and the conditions under which it does not. Every number must be one the benchmarks page publishes, quoted with its date; no throughput figure of your own.",
+      "source": "live-data:2026-09"
+    },
+    {
+      "slug": "svelte-websocket-data-grid",
+      "query": "svelte websocket data grid",
+      "secondary": [
+        "svelte websocket table updates",
+        "svelte 5 websocket live grid",
+        "sveltekit websocket data table"
+      ],
+      "intent": "how-to",
+      "workingTitle": "Wiring a WebSocket to a Svelte data grid: batching, row identity, reconnects",
+      "category": "Integration",
+      "tags": [
+        "realtime",
+        "websocket",
+        "svelte data grid"
+      ],
+      "demos": [
+        "495-market-blotter-100k",
+        "34-realtime-orders",
+        "116-websocket-live-updates"
+      ],
+      "docs": [
+        "help/real-time",
+        "help/rows/transactions"
+      ],
+      "api": [
+        "applyTransaction"
+      ],
+      "brief": "A real WebSocket client: message shape, the pending map, one applyTransaction per frame, getRowId, out-of-order safety, pause while editing, reconnect with backoff. tools/tick-server.mjs is a dependency-free feed to develop against; show its message format.",
+      "source": "live-data:2026-09"
+    },
+    {
+      "slug": "svelte-trading-blotter",
+      "query": "svelte trading blotter",
+      "secondary": [
+        "svelte trading grid",
+        "svelte order blotter",
+        "svelte finance data grid"
+      ],
+      "intent": "how-to",
+      "workingTitle": "Building a trading blotter in Svelte 5: sorted by what ticks, flashing on every move",
+      "category": "Use cases",
+      "tags": [
+        "trading",
+        "finance",
+        "realtime",
+        "svelte data grid"
+      ],
+      "demos": [
+        "495-market-blotter-100k",
+        "00-trading-desk"
+      ],
+      "docs": [
+        "help/real-time",
+        "help/cells/highlighting-changes",
+        "help/cells/number-formats"
+      ],
+      "api": [
+        "applyTransaction"
+      ],
+      "brief": "The blotter as a checklist: stable row ids, sort on the ticking column, batched transactions, cellFlash with up/down classes, accounting formats with [Red] negatives on raw numbers, pinned symbol, sparklines. Link the trading grid solution page. No performance numbers except the benchmarks page ones, dated.",
+      "source": "live-data:2026-09"
+    },
+    {
+      "slug": "svelte-grid-cell-flash-on-update",
+      "query": "svelte grid cell flash on update",
+      "secondary": [
+        "svelte table highlight changed cell",
+        "svelte grid flash cell on change",
+        "svelte data grid cell animation on update"
+      ],
+      "intent": "how-to",
+      "workingTitle": "Flashing a cell when its value changes, without flashing on scroll",
+      "category": "Rows",
+      "tags": [
+        "realtime",
+        "cell flash",
+        "svelte data grid"
+      ],
+      "demos": [
+        "11-stock-market",
+        "495-market-blotter-100k"
+      ],
+      "docs": [
+        "help/cells/highlighting-changes",
+        "help/real-time"
+      ],
+      "api": [],
+      "brief": "cellFlash is keyed by row identity, so a recycled cell in a virtualized grid never flashes on scroll; explain why that matters and how the className form plus a cellClass direction class gives green up, red down with two CSS animations. Reduced motion respected.",
+      "source": "live-data:2026-09"
     }
   ]
 }

@@ -9,7 +9,7 @@
    * other 480 rows. Every state change fires one request; you watch the count
    * climb. The markup is a plain hand-styled <table>.
    */
-  import { createSvGrid, createCoreRowModel, tableFeatures, type GridColumns } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type GridColumns } from '@svgrid/grid/core'
 
   type Row = { id: number; name: string; dept: string; salary: number }
   type SortKey = 'name' | 'dept' | 'salary'

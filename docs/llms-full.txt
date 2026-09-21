@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-20 from 385 pages, 18 comparison pages, plus 73 API reference pages.
+Generated 2026-09-21 from 387 pages, 18 comparison pages, plus 72 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -6736,6 +6736,22 @@ whatever type your app already uses. If your app already sets a body font (or a
 
 ---
 
+<!-- tutorial:install-studio -->
+<figure class="docs-tutorial" id="tutorial-install-studio" data-docs-tutorial="install-studio">
+<video class="docs-tutorial-video" src="/tutorials/install-studio.mp4" poster="/tutorials/install-studio.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="SvGrid Studio: database to CRUD app, 72 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-studio.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-studio.mp4">Download the MP4</a>.</video>
+<figcaption><strong>SvGrid Studio: database to CRUD app</strong> (72 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvGrid Studio turns tables into a SvelteKit app. From the command line, one create command scaffolds a runnable app with sample tables.</p>
+<p>Point init at a real database and it reads the tables, then writes a list, an edit form and a record page for each one.</p>
+<p>The same generator runs in the browser. The designer opens with a wizard: start from sample data, your own database, or blank.</p>
+<p>Pick a dataset, choose which pages each table gets, and open the app.</p>
+<p>Two tables became six screens: an overview with a KPI and a chart, a list, a manage page and a detail page per table, all on the canvas to rearrange.</p>
+<p>Preview runs the app as a user sees it: the grid, the new record button, the navigation.</p>
+<p>Generate app writes the SvelteKit project: twenty-seven files, typed schemas, routes and a CI workflow. Download the zip or open it in StackBlitz.</p>
+</details>
+</figure>
+<!-- /tutorial:install-studio -->
+
 ## See also
 
 - [SvGrid Studio overview](../studio.md)
@@ -11595,6 +11611,21 @@ npm install @svgrid/grid
 yarn add @svgrid/grid
 ```
 
+<!-- tutorial:install-svgrid -->
+<figure class="docs-tutorial" id="tutorial-install-svgrid" data-docs-tutorial="install-svgrid">
+<video class="docs-tutorial-video" src="/tutorials/install-svgrid.mp4" poster="/tutorials/install-svgrid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install SvGrid, 51 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-svgrid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-svgrid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install SvGrid</strong> (51 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvGrid is one npm package. In an existing Svelte 5 project, install it and you are done with setup.</p>
+<p>Starting from scratch? The create command scaffolds a working project with the grid already wired.</p>
+<p>Either way, a grid is a component, a data array and a columns array. Import SvGrid and describe the rows.</p>
+<p>Columns map a field to a header. Then render the component with both.</p>
+<p>Save, and the dev server shows a styled table with keyboard navigation, selection and a focus ring, all out of the box.</p>
+<p>Sorting, filtering, editing and the rest are features you switch on next. The docs at svgrid.com take it from here.</p>
+</details>
+</figure>
+<!-- /tutorial:install-svgrid -->
+
 ## Requirements
 
 | Tool        | Version           | Why                                   |
@@ -15571,15 +15602,16 @@ mutate DOM nodes during a sort.
   primitive, drop `<SvGrid>` and read from `createSvGrid()` directly.
 - **Layer 2 is the public API surface.** Imports, exports, and types
   are versioned per the [API stability](./api-stability.md) policy.
-  The renderer's CSS classes are NOT - override them at your peril.
+  The `--sg-*` tokens are versioned too (the core set is not renamed in a minor).
+  The renderer's CSS classes and DOM structure are NOT - override them at your peril.
 
 ## Where the layers physically live
 
 | Layer | Source path                                       | Build output                         |
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
-| 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~2 kB gzip)     |
-| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~77 kB gzip + 9 kB CSS) |
+| 2     | `packages/grid/src/core.ts` + row-models | `dist/headless.js`, the `@svgrid/grid/core` entry (size in the [bundle size reference](./bundle-size.md)) |
+| 3     | `packages/grid/src/SvGrid.svelte`    | `dist/index.js`, bundled with the engine (size in the same reference) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## Frequently asked questions
@@ -15742,19 +15774,29 @@ gated in CI**. What CI gates instead is described under
 
 ## Bundle size
 
-Production build, gzipped. The first two rows come from
-`node packages/grid/scripts/measure-size.mjs` (Svelte excluded as a peer);
-see the [bundle size reference](../reference/bundle-size.md).
+Production build, gzipped, Svelte excluded as a peer. The table is
+generated from `docs/_data/svgrid-size.json` by `node tools/sync-guide-facts.mjs`
+(the file `pnpm size:json` writes), and the method and the lazy-chunk
+breakdown are on the [bundle size reference](./bundle-size.md). An earlier
+version of this page typed these and sat a month behind the measurement.
 
-| Surface                             | gzip   | Notes                                  |
-| ----------------------------------- | ------ | -------------------------------------- |
-| `@svgrid/grid` (full `<SvGrid>`)    | 77 kB  | One import covers the entire renderer; + 9 kB CSS |
-| Headless engine (`createGrid`)      | 2 kB   | If you bring your own renderer         |
-| Lazy chunks (charts, date editors, menus, export) | 64 kB | Loaded on demand, not in the initial bundle |
-| `@svgrid/enterprise` core           | 8 kB   | Export + print + import shells         |
-| `@svgrid/enterprise` import module only | 6 kB | Imported via `'@svgrid/enterprise/import'` |
-| Peer: `jszip`                       | 35 kB  | Loaded on first `xlsx` export *or* import |
-| Peer: `pdfmake` + vfs               | ~280 kB| Loaded on first `pdf` export only      |
+<!-- size:start -->
+Re-measured **20 Sep 2026** at `@svgrid/grid` 3.0.4 with the script that ships in the repo (`pnpm size:json`):
+
+| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
+| --- | ---: | ---: | ---: |
+| Headless core (`createSvGrid`) | **2.6 KB** | - | - |
+| Headless subpath (`@svgrid/grid/core`) | **6.5 KB** | - | - |
+| Full render component (`<SvGrid>`) | **95.8 KB** | **10.5 KB** | **183.5 KB** |
+| Standalone chart (`<SvChart>`) | **71.6 KB** | - | **15.1 KB** |
+<!-- size:end -->
+
+The "loaded on demand" column is the code reachable only through
+`import()`: charts, the date-time editor, the menus, export. Outside the
+grid package, and not in the ledger: the `@svgrid/enterprise` core is a few
+kilobytes of export, print and import shells; `jszip` loads on the first
+xlsx export or import and `pdfmake` with its fonts on the first PDF export,
+both as optional peers, neither in your synchronous bundle.
 
 The AI helpers are no longer in this table: they moved into the free
 `@svgrid/grid` and tree-shake out unless you import them.
@@ -15941,6 +15983,54 @@ one is now closed and has a counter that fails the build if it returns:
   ranked once where a column has few enough of them.
 
 Numbers here will move; the command that produces them will not.
+
+## Streaming updates
+
+**Measured.** Run `pnpm bench --case=tick-1k-of-100k-sorted` to reproduce.
+A tick is a new data array in which K row objects were replaced with new
+prices, handed to a grid sorted by that column, so the order has to stay
+current. 100,000 rows x 9 columns, same rig as above:
+
+| Operation                                            | Median | The same tick through a full sort |
+| ---------------------------------------------------- | ------ | --------------------------------- |
+| Tick: 100 rows replaced, sorted by the ticking column | 6 ms   | 31 ms                             |
+| Tick: 1,000 rows replaced, sorted by the ticking column | 9 ms | 31 ms                             |
+
+The right-hand column is the "Sort by one column" row above: before this
+round, any new data array re-sorted every row, so a 100-row tick cost
+exactly what a header click did. The sorted stage now keeps its previous
+output with each row's sort key, drops the rows that were replaced, sorts
+the K replacements among themselves and merges them back in one linear
+pass: O(n + K log K) instead of O(n log n) key builds and comparisons. The
+filtered stage does the same for a replacement whose membership did not
+change. The result is byte-identical to a full sort, which a test pins by
+comparing the two on every kind of key the sort specialises
+(`core.tick-repair.test.ts`).
+
+Three conditions, all checked, none assumed: the array has the same length
+(an add or a remove is structural and takes the full path), at least one
+object was replaced and no more than a quarter of them (a new array with
+every object the same is the documented "I mutated rows in place, re-read
+them" refresh and runs the full pipeline), and the sorting state, filters
+and columns are the same objects as last time. The rows that were kept are
+assumed unchanged in value as well as identity, which is what an immutable
+update guarantees and an in-place mutation does not: a feed that mutates
+rows in place must pass a new array with no replacements to refresh.
+
+The counter CI gates for this is cell reads on the kept rows during a tick,
+budgeted at zero: a repaired sort never re-reads a row it kept, a full sort
+reads all of them.
+
+What the component adds on top of the engine per tick is a rebuild of the
+base rows (2 ms at 100k, reusing every row object that did not change) and
+the render of the visible window. Three things on that path used to be
+O(rows) per data change and are not now: the header checkbox state walked
+every row to conclude "none selected" (30 ms at 100k), the expanded-rows
+stage copied all rows into a new array with nothing expanded, and the
+dev-time config check filtered every row to pick ten samples. The browser
+harness in the [comparison](./comparison.md) measures the whole thing,
+render included, against the other grids on the same tick; that column
+lands with its next recorded run.
 
 ## Spreadsheet engine
 
@@ -16167,8 +16257,9 @@ holds the visible window regardless of total row count.
 
 ### How fast is SvGrid, and how big is it?
 
-It ships a much smaller bundle (~77 KB gzipped for the full render component,
-or ~2 KB for the headless core) and virtualizes by default. Raw scroll
+It ships a small bundle (the measured figures for the full render component
+and for the headless core alone are in the table above) and virtualizes by
+default. Raw scroll
 performance is comparable for typical workloads; the bigger practical win is
 bundle size and a Svelte-native runtime with no framework bridge.
 
@@ -16312,6 +16403,120 @@ viewports and switch to the grid above an `md` breakpoint.
   documented machine.
 - [Testing and quality](./testing-and-quality.md) - the test suite and
   what it covers.
+
+<!-- =================================================================
+     /docs/help/bundle-size/  (community)
+     ================================================================== -->
+
+# Bundle size
+
+What SvGrid costs in your bundle, how to reproduce the number on your
+branch, and what to do if size matters.
+
+## Measured
+
+The table below is generated from `docs/_data/svgrid-size.json`, the file
+`pnpm size:json` writes; `node tools/sync-guide-facts.mjs` rewrites it and
+`tools/competitor-facts.test.ts` fails when it is stale or when a size is
+typed anywhere else on this page. An earlier version of this page typed its
+numbers and sat a month behind the measurement.
+
+<!-- size:start -->
+Re-measured **20 Sep 2026** at `@svgrid/grid` 3.0.4 with the script that ships in the repo (`pnpm size:json`):
+
+| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
+| --- | ---: | ---: | ---: |
+| Headless core (`createSvGrid`) | **2.6 KB** | - | - |
+| Headless subpath (`@svgrid/grid/core`) | **6.5 KB** | - | - |
+| Full render component (`<SvGrid>`) | **95.8 KB** | **10.5 KB** | **183.5 KB** |
+| Standalone chart (`<SvChart>`) | **71.6 KB** | - | **15.1 KB** |
+<!-- size:end -->
+
+The two headless rows measure different things on purpose. `createSvGrid` is
+the engine plus the row model it needs, which is what you pay when you import
+just that symbol. The subpath row is every export on `@svgrid/grid/core`
+pulled in at once with nothing tree-shaken, so it is the ceiling rather than
+the typical cost - a real consumer importing `createSvGrid` and two row models
+sits near the lower number.
+
+Svelte is a peer dependency and is excluded from every figure. Builds are
+minified and gzipped at level 9.
+
+The "loaded on demand" column is code that is reachable only through
+`import()`, so it never lands in your initial bundle. The script prints the
+per-chunk breakdown; the chunks and what triggers each of them:
+
+| Chunk | Loads when |
+| --- | --- |
+| `SvDateTimePicker` | a date / datetime / time cell editor opens |
+| `chart` (engine) | charting is enabled |
+| `SvGridChart`, `SvGridChartPanel`, `SvGridChartView` | a chart renders, the chart panel opens, the grid switches to chart view |
+| `GridMenus` | a header or context menu opens |
+| `SvGridCellEditor` | editing is enabled (loads at mount, before the first edit) |
+| `SvGridDropdown` | a list / chips cell editor or the page-size picker opens |
+| `dismissable`, `popover`, `focus-trap` | any popover, menu or dropdown layer opens |
+| `export-format` | CSV / TSV / JSON export or clipboard copy runs |
+| `date-format` | a date column formats a value |
+| `column-resize`, `row-resize`, `row-drag-touch` | the first resize drag or touch row drag |
+
+The Kanban board and the scheduler / calendar view are not in either
+figure: their renderers live in `@svgrid/enterprise` and register into the
+free grid through the board and scheduler view seams.
+
+## Reproduce on your branch
+
+`measure-size.mjs` runs one isolated Vite library build per target above,
+with Svelte marked external, then gzips each emitted chunk and classifies
+it as `base` (statically reachable from the entry) or `lazy` (reachable
+only via `import()`).
+
+```bash
+node packages/grid/scripts/measure-size.mjs
+# or, from the repo root:
+pnpm size
+```
+
+To see where the weight sits inside the base bundle:
+
+```bash
+corepack pnpm --filter @svgrid/grid build
+npx source-map-explorer packages/grid/dist/index.js
+```
+
+A treemap opens in your browser. Each block is a source file scaled by its
+byte cost in the final bundle.
+
+## @svgrid/enterprise
+
+The Enterprise pack is a separate install and a separate bundle. `xlsx`
+export pulls JSZip and PDF export pulls pdfmake as optional peer
+dependencies, imported on the first `api.exportData(...)` call rather than
+at module load, so neither is in your synchronous bundle.
+
+## What to do if size matters
+
+1. **Use the headless engine for read-only views.** When you only need to
+   display server-side data with no interaction, `createGrid` plus a short
+   `<table>` renderer costs the headless-core row of the table above rather
+   than the full-component row. See the
+   [headless engine reference](../reference/headless-engine.md).
+2. **Register only the features you use.** The grid is feature-gated:
+   sorting, filtering, grouping, pagination, expansion, and selection are
+   each opt-in and tree-shake out when not imported. See the
+   [features reference](../reference/features.md).
+3. **Let the lazy chunks stay lazy.** Charts, date/time editors, menus,
+   and export already split themselves. Importing their modules directly
+   at the top level pulls them back into your base bundle.
+4. **Code-split the Enterprise pack.** `installEnterprise(api)` is
+   async-safe, so import it in the route that needs export rather than at
+   module load:
+   `const { installEnterprise } = await import('@svgrid/enterprise')`.
+
+## See also
+
+- [Features reference](../reference/features.md) - what each feature does
+- [Headless engine reference](../reference/headless-engine.md) - skip the renderer entirely
+- [Going to production guide](../getting-started/6-going-to-production.md)
 
 <!-- =================================================================
      /docs/help/cells/cell-components/  (community)
@@ -17647,7 +17852,7 @@ the bottom of the sheet when it grows sideways.
 | Ctrl/Cmd + Shift + ; | Stamp the current time. |
 | Ctrl/Cmd + ' | Copy the cell above, unchanged. |
 | Ctrl/Cmd + Shift + " | Copy the value of the cell above: what a formula there shows, as a number or text. |
-| Alt + = | AutoSum the run above, or to the left. |
+| Alt + = | AutoSum the run above, or to the left. With one cell selected the `=SUM(...)` is proposed in the cell's editor, as Excel's is, so the range can be corrected before Enter takes it; a wider selection has it written outright. |
 | F4 (while editing) | Turn the reference at the caret through `$A$1`, `A$1`, `$A1`, `A1`; a range turns both ends. Also in the formula bar. |
 | Alt + Enter (while editing) | A line break in the cell, which turns on Wrap Text. |
 | Enter after a run of Tabs | Down a row and back to the column the run began in. |
@@ -18036,7 +18241,11 @@ formatWithPattern(0.000123, '##0.0E+0')// '123.0E-6'
 
 `FORMAT_PRESETS` holds what `Ctrl+Shift+1` through `6` apply: `number`, `time`,
 `date`, `currency`, `percent`, `scientific`, plus `general` and `accounting`,
-which the ribbon's `$` button applies, as Excel's does.
+which the ribbon's `$` button applies, as Excel's does. `percent` is `0%`,
+Excel's Percent Style: `Ctrl+Shift+%` and the `%` button show 0.425 as
+`43%`. The ribbon's Number Format combo is the one place that differs, as it
+does in Excel: its Percentage entry applies `0.00%`, from
+`FORMAT_CATEGORY_PATTERNS`.
 
 `accountingPattern(symbol, decimals)` spells an accounting pattern for any
 symbol (an empty one is Excel's "None"), and `accountingParts` reads one
@@ -18785,6 +18994,21 @@ Everything between the ribbon and the sheet tabs, as one component.
 That is the whole required API. `<SvSheet />` with no props at all opens an
 empty single-sheet workbook, which is what "open a spreadsheet" means.
 
+<!-- tutorial:install-spreadsheet -->
+<figure class="docs-tutorial" id="tutorial-install-spreadsheet" data-docs-tutorial="install-spreadsheet">
+<video class="docs-tutorial-video" src="/tutorials/install-spreadsheet.mp4" poster="/tutorials/install-spreadsheet.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install the SvGrid spreadsheet, 56 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-spreadsheet.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-spreadsheet.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install the SvGrid spreadsheet</strong> (56 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>The spreadsheet ships in the enterprise package. Install it next to the grid; it runs unlicensed for evaluation.</p>
+<p>A workbook is plain data: sheets with a name and a cells matrix. Formulas are strings that start with an equals sign.</p>
+<p>Hand it to SvSheet. That is the whole API.</p>
+<p>The result is the full surface: a ribbon, the name box and formula bar, lettered columns, sheet tabs and a status bar, with the totals already computed.</p>
+<p>It behaves like a spreadsheet. Type a formula into a cell, press Enter, and the value appears while the formula bar keeps the source.</p>
+<p>Every Excel shortcut, fill handle, number formats, conditional formatting and xlsx import and export come with it. The docs list the whole surface.</p>
+</details>
+</figure>
+<!-- /tutorial:install-spreadsheet -->
+
 ## What you get
 
 | Part | Comes from |
@@ -18810,12 +19034,29 @@ the wiring BETWEEN the parts, done once:
 - The tab strip is told when a shortcut moved the active sheet, so
   `Ctrl+PageUp` and the tabs cannot disagree.
 - AutoSum measures its run against evaluated values, so a column of subtotals
-  counts as numbers rather than as `"=SUM(...)"` strings.
+  counts as numbers rather than as `"=SUM(...)"` strings. With one cell
+  selected it proposes the `=SUM(...)` in the cell's editor, as Excel's
+  does, so a guess that stopped a row short is corrected before Enter takes
+  it; a wider selection has the sum written outright.
+- Ctrl+Z and Ctrl+Y, and the ribbon's Undo and Redo, go to the sheet the
+  change was made on: a step made on Orders and undone from Summary brings
+  Orders up and changes the cell back there, as Excel does, rather than
+  landing on Summary's cell of the same address. Every step the grid
+  records is marked with its sheet for this (`api.setHistoryTag` and
+  `api.peekUndo` on the grid), the mark follows a rename, and Delete
+  Sheet empties the undo list, as Excel's does. A click that selects a
+  chart or a picture is not a step; a drag that moves one is.
+- A click on a sheet tab, on the strip's add button or on an entry of the
+  tab menu leaves the keyboard on the cells, so the arrow keys, Ctrl+Z and
+  Shift+F11 work on the sheet that just came up. The arrow keys inside the
+  strip keep the focus on the tabs, as a tablist's do.
 - Formats are kept per sheet, as they are in Excel. Bold on Summary!C5 says
   nothing about Orders!C5, and the store follows a sheet through a rename.
 - The Name Box lists the workbook's defined names. Pick one and the shell
   selects what it refers to, switching sheets first when it lives elsewhere;
-  type an address and press Enter to go there. Either way focus comes back
+  type an address and press Enter to go there; type a name that is not one
+  yet and it is defined for the selection, sheet-qualified and absolute as
+  the Name Manager writes one, one undo. Either way focus comes back
   to the sheet, so the next keystroke edits the cell just reached. Beside it
   sit Excel's three: Cancel and Enter while a formula is being typed, and
   fx, which raises `insert-function`.
@@ -18836,6 +19077,15 @@ the wiring BETWEEN the parts, done once:
   offered, and two entries that both fit ("Apple", "Apricot" for "Ap")
   offer nothing until the typing tells them apart. `completeEntry(typed,
   entries)` is the rule on its own.
+- Formulas are typed the way Excel's are. Pointing: a click on a cell while
+  a formula is being typed, in the cell or in the bar, puts that cell's
+  address in at the caret rather than ending the edit, a drag puts a range,
+  and a second click replaces what the last one put there; typing goes on
+  from there. Formula AutoComplete: the function names a typed prefix could
+  be are listed under the cell, Up and Down walk them, Tab or Enter takes
+  one with the caret inside its brackets, Escape closes the list. Backspace
+  on a cell opens the editor empty, so Escape gives the value back where
+  Delete would have blanked it.
 - Data entry steps the way Excel's does: the Enter that ends a run of Tabs
   goes down from the column the run began in, and inside a selected block
   Enter and Tab walk the block and wrap at its edges while the block stays
@@ -18853,7 +19103,10 @@ the wiring BETWEEN the parts, done once:
 - A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
-  format of its own. `=A1*2` over a `12%` cell is 0.24.
+  format of its own. `=A1*2` over a `12%` cell is 0.24. A plain number
+  typed into a cell that already shows percentages is that percentage, so
+  `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
+  entry has it; `(5)` is -5, the way a statement writes a negative.
 - File > Open reads what the other spreadsheets write, not only what this
   one wrote: a sheet's own `<cols>` or a table's filter, a row height
   LibreOffice left unflagged, `General` as the absence of a format, a row
@@ -18904,8 +19157,9 @@ the wiring BETWEEN the parts, done once:
   .xlsx as text keeps its prefix, so a part number survives the round trip.
 - The fill handle fills the way Excel's does: a lone value repeats, `1, 2`
   continues, `Jan` runs on to `Feb`, and a formula moves every relative
-  reference by the distance dragged. Double-click it to fill down as far as
-  the column beside the selection has data. A number too wide for its
+  reference by the distance dragged. Ctrl held at the release turns it the
+  other way, a series into a copy and one number into a series. Double-click
+  it to fill down as far as the column beside the selection has data. A number too wide for its
   column reads as `####` until the column fits it; `TRUE` and `FALSE`
   typed into a cell are booleans, centred.
 - Freeze Panes freezes everything above and left of the active cell, both
@@ -18931,7 +19185,11 @@ the wiring BETWEEN the parts, done once:
   to its sheet.
 - Text spills over empty neighbours and is clipped by the first cell that
   holds something, so a title in A1 reads in full and a label beside a
-  number does not run under it. Numbers never spill.
+  number does not run under it. Numbers never spill. The text runs only
+  over neighbours with the same background as its own cell: a title on a
+  banded row reads across the band, and a filled cell beside an unfilled
+  one (or the other way round) keeps its text in its cell, since the run
+  would drag one colour over the other.
 - General alignment: numbers right, text left, errors and booleans centred,
   unless the cell says otherwise.
 - The headers of every column and row the selection touches are shaded and
@@ -19173,7 +19431,8 @@ Open, Save As, Save As ODS, Save As XLS, Export CSV and Print. Open takes an
 bytes, not from the name - and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
-sheets, frozen panes, merges, the filter region, validation, conditional
+sheets, frozen panes, merges, the filter with its criteria and the rows it
+folds, validation, conditional
 formatting, protection, comments, names, the active sheet); Save As
 downloads the document as an .xlsx that Excel, Google Sheets and LibreOffice
 open with the same parts; Save As ODS writes the same document in
@@ -19203,7 +19462,9 @@ either format: cells and their formulas (translated both ways, so
 `=SUM(A1:A3)` here is `of:=SUM([.A1:.A3])` there, and a structured reference
 becomes the rectangle it names, since ODF has none), number formats, the cell
 looks, column widths and row heights, merges, hidden rows and columns, the
-filter region, hyperlinks, notes, defined names and sheet protection. Charts,
+filter with its values and conditions (a date period or a colour has no ODF
+spelling, so its rows go out hidden instead), hyperlinks, notes, defined
+names and sheet protection. Charts,
 images, sparklines, pivots, validation, conditional formatting and frozen
 panes travel in the .xlsx and not yet in the .ods.
 
@@ -19218,7 +19479,8 @@ fills, borders, alignment, column widths, row heights, hidden rows, columns
 and sheets, merges, frozen panes, sheet protection and defined names travel;
 charts, pictures, sparklines, pivots, validation, conditional formatting and
 comments do not, since the format kept them somewhere this reader does not
-go. The sheet is 65,536 rows by 256 columns, and anything past that edge is
+go. A filter goes out as the rows it folds, hidden, and nothing else: the
+file shows the same rows, and the arrows do not come back from it. The sheet is 65,536 rows by 256 columns, and anything past that edge is
 left out rather than written wrong.
 
 An app that keeps its workbooks somewhere other than the user's disk takes
@@ -19258,7 +19520,8 @@ and Print Headings. Each change is one undo and reports
 File > Print (Ctrl+P) lays the sheet out as one HTML document and hands it
 to the browser's own print engine, so fonts, CJK and RTL come out right
 and nothing is bundled: the print area or the used range, column widths
-and row heights as the sheet shows them, hidden lines left out, merges as
+and row heights as the sheet shows them, hidden lines and the rows a filter
+folds away left out, merges as
 spans, every cell as it shows with its format and its conditional style,
 the title rows repeated on each page, the sparklines drawn in their cells
 and the charts and pictures hung from theirs, a table's header and banding
@@ -19566,7 +19829,7 @@ the cell menu is a button that does nothing:
 
 | Dialog | Opens from |
 | ------ | ---------- |
-| Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
+| Find and Replace | `Ctrl+F` or `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
 | Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking, a trendline over every series and one series on a secondary axis; Delete removes the chart. |
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
@@ -20237,8 +20500,10 @@ leftwards. The arrow keys follow the reading order with it, so on a
 right-to-left ribbon ArrowLeft is the next tab.
 
 The two bands that cannot fit a phone pan with a finger rather than
-clipping: the ribbon scrolls sideways over its groups, and the cells pan
-in both axes. A tap picks a cell, a second tap on the same cell opens its
+clipping: the ribbon scrolls sideways over its groups and over its tab
+labels, and the cells pan in both axes. The formula bar keeps a long entry
+on one line, cut off at the right and scrolling with the caret, until the
+chevron expands it; a one-row box that wrapped would only hide the rest. A tap picks a cell, a second tap on the same cell opens its
 editor, and the formula bar is where the address and the formula are read
 and typed.
 
@@ -22989,8 +23254,8 @@ The whole toolkit on one page, standalone and then inside the grid panel:
 
 <!-- tutorial:financial-workbench -->
 <figure class="docs-tutorial" id="tutorial-financial-workbench" data-docs-tutorial="financial-workbench">
-<video class="docs-tutorial-video" src="/tutorials/financial-workbench.mp4" poster="/tutorials/financial-workbench.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="A financial chart workbench in Svelte, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/financial-workbench.vtt" default>Your browser does not play embedded video. <a href="/tutorials/financial-workbench.mp4">Download the MP4</a>.</video>
-<figcaption><strong>A financial chart workbench in Svelte</strong> (31 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/financial-workbench.mp4" poster="/tutorials/financial-workbench.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="A financial chart workbench in Svelte, 30 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/financial-workbench.vtt" default>Your browser does not play embedded video. <a href="/tutorials/financial-workbench.mp4">Download the MP4</a>.</video>
+<figcaption><strong>A financial chart workbench in Svelte</strong> (30 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A year of sessions as candles, with volume, RSI and MACD panes under the price and Bollinger bands on it.</p>
 <p>Toggle an indicator chip and its pane comes and goes.</p>
@@ -29033,7 +29298,7 @@ per-competitor pages under [/compare/](https://svgrid.com/compare/) list
 the sources for every feature claim.
 
 <!-- facts:start ag-grid,tanstack-table -->
-> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/), [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/), [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
 <!-- facts:end -->
 
 ## TL;DR
@@ -29168,7 +29433,7 @@ into `import()` chunks that load on demand rather than shipping in the
 initial bundle; the headless core on its own is a small fraction of the
 render component, and `@svgrid/enterprise` features are separate subpath
 imports. The per-entry breakdown, including the headless core and the
-lazy chunks, is in the [bundle size reference](../reference/bundle-size.md).
+lazy chunks, is in the [bundle size reference](./bundle-size.md).
 
 What the AG Grid number contains: `createGrid` with every Community
 module registered and the Quartz theme, whose CSS ships inside the script
@@ -29419,7 +29684,7 @@ they ship free in `@svgrid/grid` with a model provider you register.
 The facts block at the top of this page has the measured gzipped size of the
 full `<SvGrid>` render component and its stylesheet, read from
 `docs/_data/svgrid-size.json`, which `pnpm size:json` writes. The
-[bundle size reference](../reference/bundle-size.md) breaks it down by entry:
+[bundle size reference](./bundle-size.md) breaks it down by entry:
 the headless core on its own, the core subpath, the charts, and the lazy
 chunks that load on demand.
 
@@ -31347,6 +31612,18 @@ cleanly is on the [gap list](../missing-features.md).
 ### Undo / redo (Ctrl+Z)
 
 `api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-step bounded history; clearHistory after a successful save resets the baseline.
+
+A grid that shows one of several data sets in turn (a workbook's sheets, a
+list of records opened one at a time) has a question the history cannot
+answer on its own: which data set does the next Ctrl+Z belong to? The rows
+of the second set carry the same ids as the first, so a step recorded on
+one would land on the other. `api.setHistoryTag(tag)` marks every step
+recorded from then on with a value of the consumer's choosing, kept as
+given, and `api.peekUndo()` / `api.peekRedo()` report the tag of the step
+the next undo or redo would take (or `null` when there is none). The
+spreadsheet shell tags steps with the sheet, and when the tag is not the
+sheet showing it switches first, then lets the grid apply the step, which
+is what Excel does.
 
 <div data-docs-demo="86-undo-redo" data-height="460"></div>
 
@@ -35511,7 +35788,7 @@ this for you; here you do it explicitly.
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -35623,7 +35900,7 @@ Two imports, one row model, one `{#each}`. Nothing here is a grid component -
 
 ```svelte {runnable}
 <script lang="ts">
-  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -35694,7 +35971,7 @@ write, because the engine has no opinion about what a sorted header looks like.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -35811,7 +36088,7 @@ returns a `[get, set]` tuple - a reactive store you own (`createSvGridState` is
 an alias).
 
 ```ts
-import { createGridState } from '@svgrid/grid'
+import { createGridState } from '@svgrid/grid/core'
 
 // [getter, setter] - the getter reads reactive $state, the setter takes a
 // value or an updater function.
@@ -35861,7 +36138,7 @@ use `subscribeGrid` for a plain pub/sub interface (`subscribeSvGrid` is an
 alias).
 
 ```ts
-import { subscribeGrid } from '@svgrid/grid'
+import { subscribeGrid } from '@svgrid/grid/core'
 
 const unsub = subscribeGrid(table, (event) => {
   if (event.type === 'sorting') analytics.track('grid_sort', event.value)
@@ -35887,7 +36164,7 @@ the same value drive a URL, a saved view, or two grids at once.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -35952,7 +36229,7 @@ path, and a header click stops working.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -36145,7 +36422,7 @@ every element below is markup you wrote, which is the whole proposition.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -36220,7 +36497,7 @@ and a filter starts applying; leave it out and the code for it never ships.
     tableFeatures,
     columnFilteringFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -36279,6 +36556,8 @@ and a filter starts applying; leave it out and the code for it never ships.
 - [Controlled state](./controlled-state.md) - `createGridState` / `subscribeGrid`
 - [Headless virtualization](./virtualization.md) - render 100k rows yourself
 - [Why headless?](../../why-headless.md) - the design rationale
+- [Svelte headless table](https://svgrid.com/svelte/headless-table/) - the landing page, with the measured size of the engine
+- [Bundle size](../bundle-size.md) - every entry, measured on each release
 - [Architecture](../architecture.md) - the three-layer model
 
 <!-- =================================================================
@@ -36328,7 +36607,7 @@ import {
   rowPaginationFeature,
   columnGroupingFeature,
   rowExpandingFeature,
-} from '@svgrid/grid'
+} from '@svgrid/grid/core'
 
 const table = createSvGrid({
   _features: features,
@@ -36443,7 +36722,7 @@ is why the buttons below just assign to it.
     tableFeatures,
     rowPaginationFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -36524,7 +36803,7 @@ branch on it.
     columnGroupingFeature,
     rowExpandingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -36628,7 +36907,7 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
 
 ```svelte
 <script lang="ts">
-  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid/core'
 
   type Row = { id: number; name: string; dept: string; salary: number }
 
@@ -36930,7 +37209,7 @@ five lines as the unstyled version.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -37034,7 +37313,7 @@ different markup.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -37100,11 +37379,222 @@ different markup.
 </style>
 ```
 
+## Your design system's table primitives
+
+If your team already has `Table` components - shadcn-svelte's `Table.Root` /
+`Table.Row` / `Table.Cell`, or your own - the engine slots under them
+unchanged. The header loop and the row loop are the same as above; only the
+elements differ. This is the layout the
+[shadcn data-table migration](../migrating-from-shadcn-data-table.md) lands
+on when it keeps the shadcn markup and swaps the engine.
+
+```svelte
+<script lang="ts">
+  import * as Table from '$lib/components/ui/table'
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    type ColumnDef,
+  } from '@svgrid/grid/core'
+
+  type Payment = { id: string; status: string; email: string; amount: number }
+  let { payments }: { payments: Payment[] } = $props()
+
+  const features = tableFeatures({ rowSortingFeature })
+  const columns: ColumnDef<typeof features, Payment>[] = [
+    { field: 'status', header: 'Status' },
+    { field: 'email',  header: 'Email' },
+    { field: 'amount', header: 'Amount', editorType: 'number' },
+  ]
+
+  let sorting = $state([{ id: 'amount', desc: true }])
+  const table = createSvGrid({
+    _features: features,
+    _rowModels: { coreRowModel: createCoreRowModel<Payment>(), sortedRowModel: createSortedRowModel<Payment>() },
+    data: payments,
+    columns,
+    state: { sorting },
+    onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+  })
+  const rows = $derived(table.getRowModel().rows)
+</script>
+
+<Table.Root>
+  <Table.Header>
+    {#each table.getHeaderGroups() as hg (hg.id)}
+      <Table.Row>
+        {#each hg.headers as h (h.id)}
+          <Table.Head onclick={h.column.getToggleSortingHandler()}>
+            {h.column.columnDef.header}
+          </Table.Head>
+        {/each}
+      </Table.Row>
+    {/each}
+  </Table.Header>
+  <Table.Body>
+    {#each rows as r (r.id)}
+      <Table.Row>
+        <Table.Cell>{r.original.status}</Table.Cell>
+        <Table.Cell>{r.original.email}</Table.Cell>
+        <Table.Cell class="text-right">{r.original.amount.toLocaleString()}</Table.Cell>
+      </Table.Row>
+    {/each}
+  </Table.Body>
+</Table.Root>
+```
+
+Nothing from `@svgrid/grid` reaches the DOM here: no stylesheet, no class
+names, no `--sg-*` variable unless you choose to read one. The design system
+owns the markup and the engine owns the state, which is the split a
+design-system team usually wants.
+
+## Keyboard navigation and ARIA
+
+Headless does not mean you lose the grid semantics; it means you apply them.
+The engine keeps an `activeCell` in its state and moves it with
+`moveActiveCell({ rowDelta, colDelta })`, and `@svgrid/grid/core` exports the
+WAI-ARIA attribute factories the render component uses, as plain objects to
+spread onto your own elements. Wire the four of them and arrow keys, `Home`,
+`End`, `aria-sort` and `aria-activedescendant` all work on a bare `<table>`.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    getGridRootA11yProps,
+    getGridHeaderA11yProps,
+    getGridRowA11yProps,
+    getGridCellA11yProps,
+    getGridCellDomId,
+    type ColumnDef,
+  } from '@svgrid/grid/core'
+
+  type Repo = { name: string; lang: string; stars: number }
+  const data: Repo[] = [
+    { name: 'svelte',  lang: 'JavaScript', stars: 78000 },
+    { name: 'vite',    lang: 'TypeScript', stars: 68000 },
+    { name: 'sv-grid', lang: 'TypeScript', stars: 172 },
+    { name: 'esbuild', lang: 'Go',         stars: 38000 },
+    { name: 'bun',     lang: 'Zig',        stars: 74000 },
+  ]
+
+  const features = tableFeatures({ rowSortingFeature })
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+    { field: 'stars', header: 'Stars', editorType: 'number' },
+  ]
+
+  let sorting = $state([{ id: 'stars', desc: true }])
+
+  // The selector picks the slices the template reads; `table.state` is the
+  // reactive view of them.
+  const table = createSvGrid(
+    {
+      _features: features,
+      _rowModels: { coreRowModel: createCoreRowModel<Repo>(), sortedRowModel: createSortedRowModel<Repo>() },
+      data,
+      columns,
+      state: { sorting },
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+    },
+    (s) => ({ activeCell: s.activeCell as { rowIndex: number; colIndex: number } }),
+  )
+
+  const rows = $derived(table.getRowModel().rows)
+  const active = $derived(table.state.activeCell)
+  const GRID_ID = 'repos'
+  const activeId = $derived(getGridCellDomId(GRID_ID, active.rowIndex, active.colIndex))
+
+  function onKeydown(e: KeyboardEvent) {
+    const moves: Record<string, { rowDelta?: number; colDelta?: number }> = {
+      ArrowDown: { rowDelta: 1 }, ArrowUp: { rowDelta: -1 },
+      ArrowRight: { colDelta: 1 }, ArrowLeft: { colDelta: -1 },
+      Home: { colDelta: -columns.length }, End: { colDelta: columns.length },
+      PageDown: { rowDelta: rows.length }, PageUp: { rowDelta: -rows.length },
+    }
+    const move = moves[e.key]
+    if (!move) return
+    e.preventDefault()
+    table.moveActiveCell(move)
+  }
+
+  function sortDirection(id: string) {
+    const s = sorting[0]
+    return s?.id !== id ? 'none' : s.desc ? 'descending' : 'ascending'
+  }
+</script>
+
+<table
+  class="kb"
+  {...getGridRootA11yProps({ activeDescendantId: activeId, rowCount: rows.length, colCount: columns.length })}
+  onkeydown={onKeydown}
+>
+  <thead>
+    {#each table.getHeaderGroups() as hg (hg.id)}
+      <tr {...getGridRowA11yProps(1)}>
+        {#each hg.headers as h (h.id)}
+          <th
+            {...getGridHeaderA11yProps({ sortable: true, sortDirection: sortDirection(h.column.id) })}
+            onclick={h.column.getToggleSortingHandler()}
+          >
+            {h.column.columnDef.header}
+          </th>
+        {/each}
+      </tr>
+    {/each}
+  </thead>
+  <tbody>
+    {#each rows as r, ri (r.id)}
+      <tr {...getGridRowA11yProps(ri + 2)}>
+        {#each columns as c, ci (c.field)}
+          {@const selected = active.rowIndex === ri && active.colIndex === ci}
+          <td
+            {...getGridCellA11yProps({ rowIndex: ri + 2, colIndex: ci + 1, selected, id: getGridCellDomId(GRID_ID, ri, ci) })}
+            class:active={selected}
+            onclick={() => table.setActiveCell({ rowIndex: ri, colIndex: ci, cellId: `${ri}_${c.field}` })}
+          >
+            {String(r.original[c.field as keyof Repo])}
+          </td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>
+
+<style>
+  .kb { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--sg-fg, #0f172a); }
+  .kb:focus { outline: 2px solid var(--sg-accent, #6366f1); outline-offset: 2px; }
+  .kb th { text-align: left; padding: 8px 12px; background: var(--sg-header-bg, #f1f5f9); cursor: pointer; }
+  .kb th[aria-sort='ascending']::after { content: ' ^'; }
+  .kb th[aria-sort='descending']::after { content: ' v'; }
+  .kb td { padding: 7px 12px; border-bottom: 1px solid var(--sg-border, #eef2f7); }
+  .kb td.active { box-shadow: inset 0 0 0 2px var(--sg-accent, #6366f1); }
+</style>
+```
+
+Click a cell, then use the arrow keys. The root carries `role="grid"`,
+`tabindex="0"` and `aria-activedescendant`; each header carries
+`aria-sort`; each cell carries `role="gridcell"`, `aria-rowindex`,
+`aria-colindex` and `aria-selected`. Screen readers announce the same grid
+the render component would. What you still own: focus styling, `Enter` to
+edit if you add editing, and `Tab` to leave the grid (the browser handles
+that one because the cells themselves are not focusable).
+
 ## See also
 
 - [Build a table from scratch](./build-a-table.md) - the render loop
 - [Headless virtualization](./virtualization.md) - style a virtualized list
 - [Tailwind & theming tokens](../tailwind.md) - the `--sg-*` reference
+- [Migrating from the shadcn-svelte data table](../migrating-from-shadcn-data-table.md) - keep the shadcn markup, swap the engine
+- [Keyboard and accessibility](../accessibility.md) - what the render component does, for parity
 
 <!-- =================================================================
      /docs/help/headless/virtualization/  (community)
@@ -37136,7 +37626,7 @@ recompute.
     createSvelteVirtualizer,
     tableFeatures,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Row = { id: number; name: string; score: number }
   const data: Row[] = Array.from({ length: 100_000 }, (_, i) => ({
@@ -39062,7 +39552,7 @@ React/Angular-first API and Svelte 5 runes is brittle, the bundle is
 heavy, and the Enterprise pricing only makes sense at scale.
 
 <!-- facts:start ag-grid -->
-> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
 <!-- facts:end -->
 
 This page is a 30-minute migration recipe from AG Grid to SvGrid. It
@@ -39605,7 +40095,7 @@ lower-cost paid tier.
 > columns and events onto the SvGrid equivalents below.
 
 <!-- facts:start devextreme-datagrid -->
-> **Facts, checked 12 Sep 2026.** `devextreme` 26.1.4, Commercial (see licence file), last published 7 Aug 2026, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). DevExtreme DataGrid pricing, as its site states it: js.devexpress.com lists DevExtreme Complete at $899.99 per developer for a 12-month subscription with updates and support, renewing at $449.99; no free or non-commercial tier is shown (https://js.devexpress.com/Buy/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/).
+> **Facts, checked 12 Sep 2026.** `devextreme` 26.1.4, Commercial (see licence file), last published 7 Aug 2026, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). DevExtreme DataGrid pricing, as its site states it: js.devexpress.com lists DevExtreme Complete at $899.99 per developer for a 12-month subscription with updates and support, renewing at $449.99; no free or non-commercial tier is shown (https://js.devexpress.com/Buy/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -39744,7 +40234,7 @@ accessibility + standards-compliant HTML.
 > data-array model; the mental flip takes the most time.
 
 <!-- facts:start glide-data-grid -->
-> **Facts, checked 12 Sep 2026.** `@glideapps/glide-data-grid` 6.0.3, MIT, last published 3 Feb 2024, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@glideapps/glide-data-grid` 6.0.3 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external (measured 12 Sep 2026). Glide Data Grid pricing, as its site states it: Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid (https://grid.glideapps.com/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/).
+> **Facts, checked 12 Sep 2026.** `@glideapps/glide-data-grid` 6.0.3, MIT, last published 3 Feb 2024, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `@glideapps/glide-data-grid` 6.0.3 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external (measured 12 Sep 2026). Glide Data Grid pricing, as its site states it: Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid (https://grid.glideapps.com/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/).
 <!-- facts:end -->
 
 ## Mental-model flip
@@ -39985,7 +40475,7 @@ filters, editing, grouping - when you outgrow the basics.
 > Estimated effort: **30 min - 1 hour** per table.
 
 <!-- facts:start gridjs -->
-> **Facts, checked 12 Sep 2026.** `gridjs` 6.2.0, MIT, last published 3 Mar 2024, 161,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `gridjs` 6.2.0 17.8 KB JS + 2.4 KB CSS (measured 12 Sep 2026). Grid.js pricing, as its site states it: Grid.js is MIT, free and open source; no licence is sold (https://gridjs.io/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/).
+> **Facts, checked 12 Sep 2026.** `gridjs` 6.2.0, MIT, last published 3 Mar 2024, 161,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `gridjs` 6.2.0 17.8 KB JS + 2.4 KB CSS (measured 12 Sep 2026). Grid.js pricing, as its site states it: Grid.js is MIT, free and open source; no licence is sold (https://gridjs.io/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -40119,7 +40609,7 @@ the Formulas section below).
 > HyperFormula features sv-grid doesn't ship.
 
 <!-- facts:start handsontable -->
-> **Facts, checked 12 Sep 2026.** `handsontable` 18.1.0, Commercial (see licence file), last published 1 Sep 2026, 1,190,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). Handsontable pricing, as its site states it: Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms (https://handsontable.com/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/).
+> **Facts, checked 12 Sep 2026.** `handsontable` 18.1.0, Commercial (see licence file), last published 1 Sep 2026, 1,190,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). Handsontable pricing, as its site states it: Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms (https://handsontable.com/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/).
 <!-- facts:end -->
 
 ## Imports
@@ -40420,7 +40910,7 @@ engineering lineage is shared.
 > from the imperative jQuery source / API to reactive `$state`.
 
 <!-- facts:start jqxgrid -->
-> **Facts, checked 12 Sep 2026.** `jqwidgets-scripts` 26.0.0, https://www.jqwidgets.com/license/, last published 9 Jul 2026, 41,900 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). jqxGrid pricing, as its site states it: jqwidgets.com lists the Developer License at $499 (on sale at $399) per developer, perpetual and royalty-free with one year of updates and support, and the Team License at $1,499 for five or more developers; the free Community License excludes the Grid (https://www.jqwidgets.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs jqxGrid (jQWidgets)](https://svgrid.com/compare/jqxgrid/).
+> **Facts, checked 12 Sep 2026.** `jqwidgets-scripts` 26.0.0, https://www.jqwidgets.com/license/, last published 9 Jul 2026, 41,900 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). jqxGrid pricing, as its site states it: jqwidgets.com lists the Developer License at $499 (on sale at $399) per developer, perpetual and royalty-free with one year of updates and support, and the Team License at $1,499 for five or more developers; the free Community License excludes the Grid (https://www.jqwidgets.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs jqxGrid (jQWidgets)](https://svgrid.com/compare/jqxgrid/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -40568,7 +41058,7 @@ with an MIT core - and a much cheaper paid tier.
 > equivalents below.
 
 <!-- facts:start kendo-ui-grid -->
-> **Facts, checked 12 Sep 2026.** `@progress/kendo-react-grid` 16.1.0, Commercial (see licence file), last published 8 Sep 2026, 385,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). Kendo UI Grid pricing, as its site states it: telerik.com lists the Kendo UI bundle at $799, $849 or $1,299 per developer per year depending on the support tier, and KendoReact alone from $649 per developer per year; no free tier for the grid (https://www.telerik.com/purchase.aspx, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Kendo UI Grid (Telerik)](https://svgrid.com/compare/kendo-ui-grid/).
+> **Facts, checked 12 Sep 2026.** `@progress/kendo-react-grid` 16.1.0, Commercial (see licence file), last published 8 Sep 2026, 385,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). Kendo UI Grid pricing, as its site states it: telerik.com lists the Kendo UI bundle at $799, $849 or $1,299 per developer per year depending on the support tier, and KendoReact alone from $649 per developer per year; no free tier for the grid (https://www.telerik.com/purchase.aspx, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Kendo UI Grid (Telerik)](https://svgrid.com/compare/kendo-ui-grid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -40704,7 +41194,7 @@ are paid in MUI X and free here. The port is mostly mechanical.
 > you've leant on `apiRef.current.*` calls.
 
 <!-- facts:start mui-x-datagrid -->
-> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
+> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
 <!-- facts:end -->
 
 ## Package map
@@ -40990,7 +41480,7 @@ The facts box below quotes the terms as read on the date shown.
 > Estimated effort: **2-4 hours** per grid.
 
 <!-- facts:start primevue-datatable -->
-> **Facts, checked 12 Sep 2026.** `primevue` 5.0.1, Commercial (see licence file), last published 13 Aug 2026, 3,010,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). PrimeVue / PrimeNG / PrimeReact DataTable pricing, as its site states it: primeui.dev lists the Commercial Suite at a launch price of $599 per developer (standard $799) as a perpetual licence with one year of updates, renewable at $399 per developer per year; the Community License is free for individuals, non-profits and organisations under $1M revenue, fewer than five developers, fewer than ten employees and under $3M in venture funding (https://primeui.dev/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/).
+> **Facts, checked 12 Sep 2026.** `primevue` 5.0.1, Commercial (see licence file), last published 13 Aug 2026, 3,010,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). PrimeVue / PrimeNG / PrimeReact DataTable pricing, as its site states it: primeui.dev lists the Commercial Suite at a launch price of $599 per developer (standard $799) as a perpetual licence with one year of updates, renewable at $399 per developer per year; the Community License is free for individuals, non-profits and organisations under $1M revenue, fewer than five developers, fewer than ten employees and under $3M in venture funding (https://primeui.dev/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -41127,7 +41617,7 @@ is mostly a column rename pass.
 > editors.
 
 <!-- facts:start react-data-grid -->
-> **Facts, checked 12 Sep 2026.** `react-data-grid` 7.0.0-beta.61, MIT, last published 14 Jul 2026, 2,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `react-data-grid` 7.0.0-beta.61 15.7 KB JS + 2.1 KB CSS, react + react-dom external (measured 12 Sep 2026). React Data Grid pricing, as its site states it: react-data-grid is MIT on npm and free; no licence is sold (https://github.com/adazzle/react-data-grid, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs React Data Grid (adazzle)](https://svgrid.com/compare/react-data-grid/).
+> **Facts, checked 12 Sep 2026.** `react-data-grid` 7.0.0-beta.61, MIT, last published 14 Jul 2026, 2,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `react-data-grid` 7.0.0-beta.61 15.7 KB JS + 2.1 KB CSS, react + react-dom external (measured 12 Sep 2026). React Data Grid pricing, as its site states it: react-data-grid is MIT on npm and free; no licence is sold (https://github.com/adazzle/react-data-grid, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs React Data Grid (adazzle)](https://svgrid.com/compare/react-data-grid/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -41266,7 +41756,7 @@ instead.
 > is deleting files.
 
 <!-- facts:start tanstack-table,svelte-ui-kit-tables -->
-> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/), [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/), [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
 <!-- facts:end -->
 
 ## Why this port is small
@@ -41555,7 +42045,7 @@ maps a Smart.Grid setup onto SvGrid.
 > Svelte component.
 
 <!-- facts:start smart-grid -->
-> **Facts, checked 12 Sep 2026.** `smart-webcomponents` 27.0.1, ISC, last published 13 Aug 2026, 6,620 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). Smart.Grid pricing, as its site states it: htmlelements.com lists the Developer License at $499 (on sale at $399) per developer, perpetual, or $39 per month, and the Team License at $1,499 per five developers; the free Community License covers the core components but not the Grid (https://www.htmlelements.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Smart.Grid (Smart Web Components)](https://svgrid.com/compare/smart-grid/).
+> **Facts, checked 12 Sep 2026.** `smart-webcomponents` 27.0.1, ISC, last published 13 Aug 2026, 6,620 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). Smart.Grid pricing, as its site states it: htmlelements.com lists the Developer License at $499 (on sale at $399) per developer, perpetual, or $39 per month, and the Team License at $1,499 per five developers; the free Community License covers the core components but not the Grid (https://www.htmlelements.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Smart.Grid (Smart Web Components)](https://svgrid.com/compare/smart-grid/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -41750,7 +42240,7 @@ also exposes a headless engine and an MCP server).
 > current SVAR docs and map them onto the SvGrid equivalents below.
 
 <!-- facts:start svar-svelte-datagrid -->
-> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
+> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -41967,7 +42457,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 > the `<table>` markup and `Subscribe` blocks you no longer need.
 
 <!-- facts:start svelte-headless-table pkg:@humanspeak/svelte-headless-table -->
-> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
+> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
 <!-- facts:end -->
 
 ## Know your options first
@@ -41987,12 +42477,15 @@ honest answers and you should know all of them:
    renderer instead.
 
 Pick SvGrid when the markup is the part you are tired of. Note that the blocker
-is the peer range, not the syntax: `svelte-headless-table@0.18.3` declares
-`svelte@^4`, so installing it beside Svelte 5 is a peer conflict. Slots and
-`let:` themselves still work in Svelte 5 - they are deprecated in favour of
-snippets, not removed - so the `Subscribe` blocks below keep rendering. What you
-cannot do is pass slotted content to a component that renders with
-`{@render ...}`, which is why the pattern grates in a runes codebase.
+is not the syntax and not really the install either: `svelte-headless-table@0.18.3`
+declares `svelte@^4`, which npm 11 overrides with a warning (older npm needed
+`--legacy-peer-deps`), and the untouched component then type-checks clean in
+legacy mode. Slots and `let:` still work in Svelte 5 - they are deprecated in
+favour of snippets, not removed - so the `Subscribe` blocks below keep
+rendering. The trouble starts when that component moves to runes: the library
+takes a store, your data is a rune, and the bridge between them is yours to
+write and maintain. We ran the whole upgrade and captured every line of it in
+[Upgrading a Svelte 4 table to Svelte 5](./svelte-5-upgrade-data-tables.md).
 
 ## Run the codemod
 
@@ -42214,6 +42707,7 @@ Sorting, filtering and selection, on a library that still ships for Svelte 5.
 
 ## See also
 
+- [Upgrading a Svelte 4 table to Svelte 5](./svelte-5-upgrade-data-tables.md) - the whole upgrade run and captured, step by step
 - [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison, with a source and date for every claim
 - [Headless: build a table](./headless/build-a-table.md) - the demo above, step by step
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide
@@ -42237,7 +42731,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 > version's columns and events onto the SvGrid equivalents below.
 
 <!-- facts:start syncfusion-grid -->
-> **Facts, checked 12 Sep 2026.** `@syncfusion/ej2-grids` 34.2.7, Commercial (see licence file), last published 8 Sep 2026, 711,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). Syncfusion Grid pricing, as its site states it: syncfusion.com lists the Grid SDK at $959 per developer per year and the UI Component Suite at $1,199 per developer per year, minimum five developers; a free Community License applies to companies and individuals with under $1M annual revenue, up to five developers and no more than ten employees (https://www.syncfusion.com/sales/products, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/).
+> **Facts, checked 12 Sep 2026.** `@syncfusion/ej2-grids` 34.2.7, Commercial (see licence file), last published 8 Sep 2026, 711,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). Syncfusion Grid pricing, as its site states it: syncfusion.com lists the Grid SDK at $959 per developer per year and the UI Component Suite at $1,199 per developer per year, minimum five developers; a free Community License applies to companies and individuals with under $1M annual revenue, up to five developers and no more than ten employees (https://www.syncfusion.com/sales/products, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -42372,7 +42866,7 @@ cells are snippets, and there is no manual mount / teardown.
 > swapping imperative `setData` for reactive state.
 
 <!-- facts:start tabulator -->
-> **Facts, checked 12 Sep 2026.** `tabulator-tables` 6.5.2, MIT, last published 23 Jun 2026, 672,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `tabulator-tables` 6.5.2 106.9 KB JS + 3.8 KB CSS (measured 12 Sep 2026). Tabulator pricing, as its site states it: Tabulator is MIT and free; no licence or support plan is sold (https://github.com/olifolkerd/tabulator, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/).
+> **Facts, checked 12 Sep 2026.** `tabulator-tables` 6.5.2, MIT, last published 23 Jun 2026, 672,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `tabulator-tables` 6.5.2 106.9 KB JS + 3.8 KB CSS (measured 12 Sep 2026). Tabulator pricing, as its site states it: Tabulator is MIT and free; no licence or support plan is sold (https://github.com/olifolkerd/tabulator, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -42514,7 +43008,7 @@ this is a half-day port; the vocabulary below covers the v8 names too.
 > hours** for editing-heavy grids.
 
 <!-- facts:start tanstack-table -->
-> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
 <!-- facts:end -->
 
 > **On v9?** SvGrid exports the same feature vocabulary, so most of this
@@ -42800,7 +43294,7 @@ letting you match the design system.
 > instead - the port is different, and smaller.
 
 <!-- facts:start svelte-ui-kit-tables -->
-> **Facts, checked 12 Sep 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
+> **Facts, checked 12 Sep 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
 <!-- facts:end -->
 
 > Estimated effort: **30 min - 1 hour** per table. You are mostly
@@ -42974,7 +43468,7 @@ port is mostly about deciding how much markup you want to keep.
 > 30-minute swap; a feature-heavy one trends toward two hours.
 
 <!-- facts:start vincjo-datatables -->
-> **Facts, checked 12 Sep 2026.** `@vincjo/datatables` 2.8.1, MIT, last published 4 Jun 2026, 72,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `@vincjo/datatables` 2.8.1 10.2 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). @vincjo/datatables pricing, as its site states it: @vincjo/datatables is MIT on npm and free; no licence is sold (https://github.com/vincjo/datatables, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/).
+> **Facts, checked 12 Sep 2026.** `@vincjo/datatables` 2.8.1, MIT, last published 4 Jun 2026, 72,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `@vincjo/datatables` 2.8.1 10.2 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). @vincjo/datatables pricing, as its site states it: @vincjo/datatables is MIT on npm and free; no licence is sold (https://github.com/vincjo/datatables, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -44743,7 +45237,7 @@ totals people ask for on day two.
 
 # Real-time / streaming updates
 
-How to drive the grid from a WebSocket / SSE / poll. Three patterns
+How to drive the grid from a WebSocket / SSE / poll. Four patterns
 ranked by the rate of change:
 
 1. **Periodic full refresh** - poll for the latest rows, swap the array.
@@ -44752,6 +45246,9 @@ ranked by the rate of change:
 3. **Delta merge with backlog** - WebSocket pushes individual row
    patches; you merge them into the in-memory state, optionally
    batching while the user has the page paused.
+4. **A large sorted grid under a tick feed** - ticks batched per frame
+   into one transaction; the grid repairs the sort around the rows that
+   changed instead of re-sorting them all.
 
 ![A live WebSocket or SSE feed pushes deltas that apply as add, update, or remove operations, run through the grid as a keyed row transaction, and surface as a cell flash on the changed row.](/docs-media/grid-realtime.svg)
 
@@ -45008,6 +45505,71 @@ For 1000 rows updating at 5 Hz, this caps the work at 1000
 assignments per frame regardless of the actual message rate. The
 streaming demo's "throughput slider" stresses this exact path.
 
+## Pattern 4: a large sorted grid under a tick feed
+
+A blotter is sorted by something that ticks, and it has more rows than the
+patterns above assume. Two facts decide the design.
+
+**Which of the two update paths you take.** Writing a field through a
+`$state` proxy (`rows[i].price = x`) re-renders that one cell and nothing
+else: the row model caches on the array reference, which did not change, so
+the sort and the filters are stale for that row until something replaces the
+array. Replacing the array (`api.applyTransaction`, or `rows = next`) runs the
+row model, and the order is current again. For a sorted blotter the second
+path is the correct one, and the question is how often.
+
+**What a data change costs at that row count.** Every array replacement used
+to re-sort every row - 100,000 rows in about 30 ms in the engine alone, so a
+feed ticking faster than that could not keep up. The grid now repairs the
+sort instead: when the new array has the same length and only some of its
+objects were replaced, the sorted stage keeps its previous output, drops the
+replaced rows, sorts the replacements among themselves and merges them back
+in one pass; a 1,000-row tick on 100,000 sorted rows is about 8 ms in the
+engine, measured on the [benchmarks page](./benchmarks.md#streaming-updates).
+The filtered stage does the same for a replacement whose membership did not
+change. The repaired order is exactly the order a full sort would produce.
+
+So the pattern is: batch ticks per animation frame into one
+`applyTransaction({ update })`, and never mutate a row in place on this
+path. The repair assumes the rows it keeps are unchanged in value as well
+as identity, which an immutable update guarantees. A feed that mutates rows
+in place must pass a new array with no replacements (`rows = [...rows]`) to
+refresh, and that runs the full pipeline.
+
+```ts
+// Ticks arrive as JSON batches; the newest price per id wins the frame.
+const pending = new Map<string, number>()
+let frame: number | null = null
+
+socket.onmessage = (e) => {
+  for (const [id, last] of JSON.parse(e.data).t) pending.set(id, last)
+  if (frame === null) frame = requestAnimationFrame(flush)
+}
+
+function flush() {
+  frame = null
+  const byId = new Map(api.getData().map((r) => [r.id, r]))
+  const update = []
+  for (const [id, last] of pending) {
+    const row = byId.get(id)
+    if (row) update.push({ ...row, last, direction: last > row.last ? 'up' : 'down' })
+  }
+  pending.clear()
+  api.applyTransaction({ update }) // one data change, one pipeline run
+}
+```
+
+When the repair does not apply and the full pipeline runs instead: the tick
+added or removed rows (structural), it replaced more than a quarter of the
+rows, the sort or filter state changed in the same frame, grouping is
+active (group rows are rebuilt from the sorted output), or a replaced text
+value is one the ranked text sort had never seen. None of these is wrong,
+only slower, and each is the full-sort cost above.
+
+The [market blotter demo](https://svgrid.com/demos/495-market-blotter-100k/)
+runs this at 100,000 rows with a live frame-time readout, over an in-page
+socket or your own (`?ws=`).
+
 ## Combining with sort + filter
 
 The grid's sort + filter run AFTER your patches land in `rows`. Two
@@ -45038,10 +45600,12 @@ resetting on every refresh.
 
 ### How fast can SvGrid update?
 
-Fast enough for tick-by-tick feeds - the stock-market demo updates 25 symbols
-every 250 ms with green/red cell flashes while sorting and selection stay live.
-For very high rates, patch only changed rows rather than swapping the whole
-array.
+Fast enough for tick-by-tick feeds. The stock-market demo updates 25 symbols
+every 250 ms with green/red cell flashes while sorting and selection stay
+live, and the market blotter demo keeps 100,000 rows sorted under tens of
+thousands of updates a second. Batch the ticks per animation frame into one
+`applyTransaction`; the engine cost of a 1,000-row tick on 100,000 sorted
+rows is on the [benchmarks page](./benchmarks.md#streaming-updates).
 
 ## See also
 
@@ -45050,7 +45614,11 @@ array.
 - [Saved views](./saved-views.md) - persist a "live mode on / off"
   toggle alongside the rest of the view config.
 - [Performance benchmarks](./benchmarks.md) - measured per-frame cost
-  of the patterns above.
+  of the patterns above, and the cost of a tick on a sorted grid.
+- [Transactions](./rows/transactions.md) - the `applyTransaction`
+  contract and what an update batch costs.
+- [Svelte trading grid](https://svgrid.com/svelte/trading-grid/) - the
+  blotter landing page: the 100,000-row demo, the formats and the flash.
 
 <!-- =================================================================
      /docs/help/recipes/  (community)
@@ -49395,10 +49963,29 @@ function schedule() {
 }
 ```
 
+## What a transaction costs
+
+`update` looks each row up in an id-to-index map built once per data array
+and carried across update-only transactions, so a batch of a thousand
+updates on a hundred-thousand-row grid does a thousand lookups and one copy
+of the array, not a hundred thousand `getRowId` calls. `add` and `remove`
+change indices, so a transaction with either leaves the next array to build
+its map on first use.
+
+The array the transaction produces then goes through the row model, which
+reuses every row object the transaction did not replace and, for an
+update-only transaction on a sorted grid, repairs the sort around the
+replaced rows instead of re-sorting everything. What that costs, and the
+conditions under which the full pipeline runs instead, are on the
+[benchmarks page](../benchmarks.md#streaming-updates) and in
+[real-time updates](../real-time.md).
+
 ## Notes
 
 - The grid owns its data after mount; read the current rows back with
   `api.getData()` (which reflects applied transactions).
+- A row that is both updated and removed in one transaction ends up removed,
+  whether the removal named its id or its object.
 - Selection, expansion, and edit state keyed by `getRowId` survive a
   transaction - that's the point of a stable row id.
 
@@ -56118,6 +56705,352 @@ Drag a rectangle across the Age or Salary column and watch the bar total it.
 ```
 
 <!-- =================================================================
+     /docs/help/svelte-5-upgrade-data-tables/  (community)
+     ================================================================== -->
+
+# Upgrading a Svelte 4 table to Svelte 5: what breaks, what does not, and the three ways out
+
+If your Svelte 4 app has a table built on `svelte-headless-table`, the Svelte 5
+upgrade forces a decision about it, and most of what is written about that
+decision is guesswork. This page is not. We put the table from the library's
+own documentation into a Svelte 4 project, upgraded it to Svelte 5 one step at a
+time, and captured every line the tools printed. The script and the captures
+are in the repo at
+[tools/migration-lab](https://github.com/sv-grid/sv-grid/tree/main/tools/migration-lab);
+every code block below is a quote from those files, checked by a test, and the
+first line of each capture records the versions it was made with.
+
+<!-- facts:start svelte-headless-table pkg:@humanspeak/svelte-headless-table -->
+> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
+<!-- facts:end -->
+
+The short version: the install warns and goes through, the untouched component
+keeps compiling, and the trouble starts the day you write your first rune in
+that component. The three exits are a maintained fork, TanStack Table v9, and
+SvGrid, and they trade different things.
+
+## The component we upgraded
+
+A `PeopleTable` written the way svelte-headless-table's docs teach it: a
+`writable` over a prop, a `$:` to keep it in sync, three plugins, the view model
+read through `<Subscribe>` and `<Render>`, a pager on `pluginStates.page`, and a
+`select` event dispatched from the row.
+
+<!-- captured: fixture/svelte4/PeopleTable.svelte -->
+```svelte
+<script lang="ts">
+  // The table as svelte-headless-table's own docs show it: a store for the
+  // data, plugins for behaviour, and a view model read through <Subscribe>
+  // and <Render>. Svelte 4 throughout: `export let`, `$:`, a dispatcher,
+  // `on:click`, and `let:` slot props.
+  import { createEventDispatcher } from 'svelte'
+  import { writable } from 'svelte/store'
+  import { createTable, Subscribe, Render } from 'svelte-headless-table'
+  import { addSortBy, addColumnFilters, addPagination } from 'svelte-headless-table/plugins'
+  import type { Person } from './people'
+
+  export let people: Person[] = []
+  export let pageSize = 5
+
+  const dispatch = createEventDispatcher<{ select: Person }>()
+
+  const data = writable<Person[]>(people)
+  $: data.set(people)
+
+  const table = createTable(data, {
+    sort: addSortBy(),
+    filter: addColumnFilters(),
+    page: addPagination({ initialPageSize: pageSize }),
+  })
+```
+
+The full file is 83 lines; the 40 that follow are the `<table>`, three levels
+of `<Subscribe let:...>` and a `<p>` with the pager. On the pinned Svelte 4
+toolchain it checks clean:
+
+<!-- captured: 01-svelte4-baseline.txt -->
+```text
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+svelte-check found 0 errors and 0 warnings
+```
+
+## Step 1: the install warns and goes through
+
+`svelte-headless-table` declares `peerDependencies: { svelte: "^4.0.0" }`, and
+that range is not going to change: the facts box above has the last release
+date, and the project's README says there are no plans for a Svelte 5 port.
+So what does `npm install svelte@5` do against it? On npm 11, this:
+
+<!-- captured: 02-npm-install-svelte5.txt -->
+```text
+$ npm install svelte@5.57.1
+
+added 10 packages, removed 10 packages, and changed 2 packages in <time>
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: svgrid-migration-lab@undefined
+npm warn Found: svelte@4.2.20
+npm warn node_modules/svelte
+npm warn   peer svelte@"^4.0.0 || ^5.0.0-next.0" from svelte-check@4.7.6
+npm warn   node_modules/svelte-check
+npm warn     dev svelte-check@"4.7.6" from the root project
+npm warn   5 more (svelte-headless-table, svelte-keyed, svelte-render, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer svelte@"^4.0.0" from svelte-headless-table@0.18.3
+npm warn node_modules/svelte-headless-table
+npm warn   dev svelte-headless-table@"0.18.3" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+
+(exit 0)
+```
+
+Exit 0. npm 11 overrides the conflict and tells you so; older npm releases
+stopped with an `ERESOLVE` error until you added `--legacy-peer-deps`, and
+pnpm prints an unmet-peer warning of its own. Either way, the peer range is a
+statement, not a lock: the library's author is telling you it was never run
+against the Svelte you now have. Nothing enforces it.
+
+## Step 2: the untouched component still compiles
+
+Svelte 5 compiles Svelte 4 components in legacy mode, so `export let`, `$:`,
+`createEventDispatcher`, `on:click` and `let:` slot props all keep working
+until you opt a file into runes. With Svelte 5 installed and the component
+exactly as it was:
+
+<!-- captured: 03-svelte5-legacy-component.txt -->
+```text
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+svelte-check found 0 errors and 0 warnings
+```
+
+This is the part the scare stories leave out. If your only goal is to be on
+Svelte 5, you can install it, keep the table exactly as it is, and ship. The
+library's own components (`<Subscribe>`, `<Render>`) compile in legacy mode
+too.
+
+## Step 3: the first rune
+
+What you cannot do is make that component a runes component and keep the
+table as it is. Port `PeopleTable` by the rules in the
+[official migration guide](https://svelte.dev/docs/svelte/v5-migration-guide):
+`export let` becomes `$props()`, `$:` becomes `$derived` and `$effect`, the
+dispatcher becomes a callback prop, `on:click` becomes `onclick`. Leave the
+svelte-headless-table wiring alone, because the guide has nothing to say about
+it. The checker now says:
+
+<!-- captured: 04-svelte5-runes-component.txt -->
+```text
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+<lab>\src\PeopleTable.svelte:19:35
+Warn: This reference only captures the initial value of `people`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+
+<lab>\src\PeopleTable.svelte:27:44
+Warn: This reference only captures the initial value of `pageSize`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+
+====================================
+svelte-check found 0 errors and 2 warnings in 1 file
+```
+
+Two warnings, no errors, and both are the same fact: the library takes a store,
+your data is now a rune, and the `writable(people)` you built to bridge them
+captured the first value of `people` and nothing after. The fix is an
+`$effect` that writes the prop into the store on every change, which is what
+the ported fixture does, and it works. It is also a bridge you now own, in
+every component that has a table, between a reactivity model the library was
+built for and the one your app is written in.
+
+That is the actual shape of the problem. Not a red build: a component that
+compiles, with a store-and-slot-props library bolted to a runes app by code you
+maintain, on a package that will not move. The pieces it leans on are the ones
+Svelte 5 has deprecated: `let:` slot props and `<slot>` in favour of snippets,
+and `<svelte:component>`, which is what `<Render>` uses underneath
+(`svelte-render` 2.0.1, `PropsRenderer.svelte`, peer `svelte ^4.0.0`). They
+keep working in legacy mode today; deprecated syntax is what the next major
+removes, and this library will not be updated when it does.
+
+## The three ways out
+
+You have three honest options, and you should know all of them before picking.
+
+1. **`@humanspeak/svelte-headless-table`**, a maintained fork on Svelte 5 with
+   the same API. Its version, publish date and downloads are in the facts box.
+   Switching is one package rename; you keep every line of markup and every
+   `<Subscribe>`, and you keep the store bridge from step 3. If your table
+   works and Svelte 5 is all you need, this is the cheapest exit by a wide
+   margin.
+2. **TanStack Table v9.** Its Svelte adapter declares a Svelte 5 peer range and
+   its state shape is runes-first, so the bridge goes away. It is still
+   headless: you write and maintain the `<table>`, the virtualizer, the filter
+   UI and the editors yourself. The
+   [TanStack migration guide](./migrating-from-tanstack-table.md) covers the
+   vocabulary.
+3. **SvGrid.** A different trade: you delete the markup and take a renderer.
+   The column definitions and the plugin list carry over; the `<table>`, the
+   `<Subscribe>` blocks, the pager and the store bridge do not exist any more,
+   because `<SvGrid>` renders all of that. The rest of this page is what that
+   looks like on the fixture above.
+
+Pick 1 if the markup is fine and the library being dead does not bother you.
+Pick 2 if you want the markup and a maintained engine. Pick 3 if the markup is
+the part you are tired of.
+
+## Step 4: the codemod
+
+`npx @svgrid/migrate` ports a svelte-headless-table component to SvGrid. It
+previews by default and only writes with `--write`, and it says what it could
+not map instead of dropping it. On the Svelte 4 original:
+
+<!-- captured: 05-codemod.txt -->
+```text
+  warning A custom `cell` renderer was found. SvGrid renders cells with a snippet, not `createRender`, so this one needs porting by hand - it is preserved as a comment.
+  warning The template still reads `pageIndex`, `pageCount`, `shown` from the view model, which is gone. <SvGrid> renders its own pager and row count (`pageable`, `showPagination`), so remove that markup, or read the grid through `onApiReady` if you need the numbers.
+  warning The table markup dispatched `select` from a row; that handler went with the `<tr>`. Wire it to `onRowClick={({ row }) => ...}` (or `onCellClick`) on <SvGrid>, and turn the `createEventDispatcher` into a callback prop if the component is moving to runes.
+  note    Column resizing, keyboard navigation and ARIA grid semantics are built into <SvGrid>; the markup that provided them is intentionally gone.
+
+1 file(s) would change, with 3 warning(s).
+Re-run with --write to apply.
+```
+
+Three warnings, each naming a thing it left for you. Write it, swap the
+packages, and check:
+
+<!-- captured: 06-after-codemod.txt -->
+```text
+$ npm install @svgrid/grid@3.0.4 --legacy-peer-deps
+
+added 1 package in <time>
+
+(exit 0)
+
+$ npm uninstall svelte-headless-table --legacy-peer-deps
+
+removed 4 packages in <time>
+
+(exit 0)
+
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+<lab>\src\PeopleTable.svelte:31:23
+Error: `$pageIndex` is an illegal variable name. To reference a global variable called `$pageIndex`, use `globalThis.$pageIndex`
+https://svelte.dev/e/global_reference_invalid (svelte)
+```
+
+<!-- captured: 06-after-codemod.txt -->
+```text
+svelte-check found 9 errors and 0 warnings in 1 file
+```
+
+All nine are the pager `<p>` the second warning named, reading `shown`,
+`$pageIndex` and `$pageCount` from a view model that no longer exists. The
+codemod does not delete markup outside the `<table>`, because it cannot know
+what else is in there; it tells you what will not compile. Delete the `<p>`
+(the grid draws its own pager), turn the `select` event into a callback prop
+on `onRowClick` as the third warning says, and:
+
+<!-- captured: 07-hand-edits.txt -->
+```text
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+svelte-check found 0 errors and 0 warnings
+```
+
+## What you end up with
+
+The component after the codemod and the two hand edits:
+
+<!-- captured: PeopleTable.after.svelte -->
+```svelte
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import type { Person } from './people'
+  export let people: Person[] = []
+  export let pageSize = 5
+  export let onselect: (person: Person) => void = () => {}
+
+  const columns: GridColumns<(typeof people)[number]> = [
+    {
+      header: 'Name',
+      field: 'name',
+    },
+    {
+      header: 'Department',
+      field: 'department',
+    },
+    {
+      header: 'City',
+      field: 'city',
+    },
+    {
+      header: 'Salary',
+      field: 'salary',
+      // TODO port: cell: ({ value }) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD
+    },
+  ]
+</script>
+
+<SvGrid data={people} {columns} sortable filterable showColumnFilters pageable pageSize={pageSize}
+  onRowClick={({ row }) => onselect(row)} />
+```
+
+83 lines became 31. The `TODO port:` comment is the one thing left to do by
+hand: the currency cell becomes `format: { type: 'currency', currency: 'USD' }`
+on the column, and the comment goes. There is no store, no `$:`, no
+`<Subscribe>`, no `let:`, and nothing in the file that Svelte 5 has deprecated,
+so the same component moves to runes whenever you like with the official
+migration script and nothing else to port.
+
+## What to read next
+
+- [Migrating from svelte-headless-table](./migrating-from-svelte-headless-table.md) -
+  the plugin-by-plugin mapping and what the codemod will not do
+- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) -
+  the side-by-side, with a source and date for every claim
+- [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - exit 2 in detail
+- [Migrating from the shadcn-svelte data table](./migrating-from-shadcn-data-table.md) -
+  the same codemod on the TanStack-based recipe
+- [Why headless?](../why-headless.md) - if you want to keep your own markup
+  on a maintained Svelte 5 engine, `@svgrid/grid/core` is that too
+
+## Frequently asked questions
+
+### Does svelte-headless-table work with Svelte 5?
+
+In legacy mode, yes: the install prints a peer-dependency warning and the
+untouched component type-checks clean, as the captures above show. What does
+not work is moving a component that uses it to runes without maintaining a
+store bridge yourself, and the library is not going to be updated for the
+deprecations that bridge leans on.
+
+### Is the peer dependency conflict an error?
+
+On npm 11 it is a warning and the install exits 0; on older npm it was an
+`ERESOLVE` error until you passed `--legacy-peer-deps`; pnpm warns. It never
+stops the code from running. It tells you the library was not built against
+the Svelte you have.
+
+### Should I just use the maintained fork?
+
+If your table works and all you need is Svelte 5, yes, and this page says so.
+The fork keeps the same API, so you keep the same markup and the same store
+bridge. Move to SvGrid when the markup and the bridge are what you want gone.
+
+### How much of the port does the codemod do?
+
+The column definitions, the plugin list and the `<table>` replacement, and it
+names what it leaves: custom cell renderers, markup outside the table that read
+the view model, and events the rows dispatched. On the fixture that was two
+hand edits and one `format` option.
+
+### Can I rerun this myself?
+
+`node tools/migration-lab/run.mjs` in the repo. It installs the pinned Svelte 4
+toolchain into its own folder, upgrades it, runs the codemod from the checkout,
+and rewrites the captured files; the header of each one records the versions.
+Bump the pins to try a newer Svelte.
+
+<!-- =================================================================
      /docs/help/tailwind/  (community)
      ================================================================== -->
 
@@ -56267,10 +57200,13 @@ applied via a `style="..."` per the user's pick.
 ## When you *do* need to override a class
 
 Some things aren't tokens - column-resize handle width, the funnel
-button hover opacity, pill paddings. The grid's class names are
-deliberately stable so you can target them from your global CSS
-(NOT through `@apply` - the grid lives outside the Tailwind
-purge pass):
+button hover opacity, pill paddings. The grid's class names follow one
+scheme (`.sv-grid-*`) and rarely move, but they are outside the semver
+contract: the [API stability policy](./api-stability.md) covers the
+`--sg-*` tokens and the props, not the markup. Reach for a token first;
+when only a class will do, target it from your global CSS (NOT through
+`@apply` - the grid lives outside the Tailwind purge pass) and re-check
+the rule when you bump the grid:
 
 ```css
 .sv-grid-resize-handle {
@@ -76093,10 +77029,13 @@ here because a custom element invites setting properties after upgrade.
 
 ## Bundle size
 
-The element bundles the grid **and** the Svelte runtime into one file, about
-104 KiB gzipped for the entry plus lazy chunks on demand. That is the price of
-a self-contained drop-in: a Svelte app importing `@svgrid/grid` shares the
-runtime it already has and ships less.
+The element bundles the grid **and** the Svelte runtime into one file, so it
+is larger than the component by roughly the runtime. The current figure is
+printed by `node packages/grid-wc/scripts/check-size.mjs`, which also holds
+the budget it is checked against in CI; the component's own numbers are on
+the [bundle size reference](../bundle-size.md). That is the
+price of a self-contained drop-in: a Svelte app importing `@svgrid/grid`
+shares the runtime it already has and ships less.
 
 If you are already on Svelte 5, use the component, not the element.
 
@@ -78848,7 +79787,7 @@ the assignment brackets exactly that.
 ## See also
 
 - [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - the matching live tool
-- [Bundle size reference](../reference/bundle-size.md) - the per-feature cost
+- [Bundle size reference](../help/bundle-size.md) - the per-feature cost
 - [Million rows recipe](./million-rows.md) - the engineering for very large grids
 
 <!-- =================================================================
@@ -81401,7 +82340,7 @@ Toggle from the console: `localStorage.setItem('svgrid:hud', 'on')`.
 
 ## See also
 
-- [Bundle size reference](../reference/bundle-size.md) - what each feature costs
+- [Bundle size reference](../help/bundle-size.md) - what each feature costs
 - [Benchmark harness recipe](./benchmark-harness.md) - measure across grid sizes
 - [Grid state inspector recipe](./grid-state-inspector.md) - the matching debug panel
 - [Million rows recipe](./million-rows.md) - virtualisation in anger
@@ -82981,6 +83920,8 @@ worked example.
 
 ## See also
 
+- [Svelte headless table](https://svgrid.com/svelte/headless-table/) - the landing page: what the engine does, what you do, and its measured size
+- [Headless guides](./help/headless/overview.md) - build a table, styling, virtualization, controlled state, row models, server-side
 - [Getting started](./getting-started.md) - the wrapper-first walkthrough
 - [Column definitions](./help/columns/column-definitions.md) - the contract the headless core enforces
 - [Filter API](./help/filtering/filter-api.md) - example of headless state surfaced through the wrapper
@@ -83015,11 +83956,11 @@ Migration guide: moving from AG Grid (community + enterprise) to SvGrid: https:/
 | Last published | 11 Sep 2026 | 5 Aug 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (JavaScript, React, Angular, Vue) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 12,400,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 317.5 KB JS, no separate stylesheet | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 317.5 KB JS, no separate stylesheet | 12 Sep 2026 |
 | Frameworks | Svelte 5 | JavaScript, React, Angular, Vue | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; ag-grid-community 36.1.0 entry `createGrid + AllCommunityModule + themeQuartz` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; ag-grid-community 36.1.0 entry `createGrid + AllCommunityModule + themeQuartz` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -83357,11 +84298,11 @@ Migration guide: moving from Glide Data Grid to SvGrid: https://svgrid.com/docs/
 | Last published | 11 Sep 2026 | 3 Feb 2024 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (React) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 1,180,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external | 12 Sep 2026 |
 | Frameworks | Svelte 5 | React | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; @glideapps/glide-data-grid 6.0.3 entry `DataEditor component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; @glideapps/glide-data-grid 6.0.3 entry `DataEditor component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -83501,11 +84442,11 @@ Migration guide: moving from Grid.js to SvGrid: https://svgrid.com/docs/help/mig
 | Last published | 11 Sep 2026 | 3 Mar 2024 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (JavaScript) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 161,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 17.8 KB JS + 2.4 KB CSS | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 17.8 KB JS + 2.4 KB CSS | 12 Sep 2026 |
 | Frameworks | Svelte 5 | JavaScript | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | Grid.js is MIT, free and open source; no licence is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; gridjs 6.2.0 entry `Grid` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; gridjs 6.2.0 entry `Grid` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -84109,11 +85050,11 @@ Migration guide: moving from MUI X DataGrid to SvGrid: https://svgrid.com/docs/h
 | Last published | 11 Sep 2026 | 4 Sep 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (React) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 11,800,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external | 12 Sep 2026 |
 | Frameworks | Svelte 5 | React | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; @mui/x-data-grid 9.13.0 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; @mui/x-data-grid 9.13.0 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -84434,11 +85375,11 @@ Migration guide: moving from React Data Grid (adazzle) to SvGrid: https://svgrid
 | Last published | 11 Sep 2026 | 14 Jul 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (React) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 2,180,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 15.7 KB JS + 2.1 KB CSS, react + react-dom external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 15.7 KB JS + 2.1 KB CSS, react + react-dom external | 12 Sep 2026 |
 | Frameworks | Svelte 5 | React | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | react-data-grid is MIT on npm and free; no licence is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; react-data-grid 7.0.0-beta.61 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; react-data-grid 7.0.0-beta.61 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -84721,11 +85662,12 @@ Migration guide: moving from SVAR Svelte DataGrid to SvGrid: https://svgrid.com/
 | Last published | 11 Sep 2026 | 3 Jun 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Svelte package, no peer range declared | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 62,800 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 51.5 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 51.5 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Engine alone, minified + gzip | 2.6 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 20 Sep 2026 |
 | Frameworks | Svelte 5 | Svelte, React, Vue | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; wx-svelte-grid 2.7.0 entry `Grid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; wx-svelte-grid 2.7.0 entry `Grid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -84924,11 +85866,12 @@ Migration guide: moving from svelte-headless-table to SvGrid: https://svgrid.com
 | Last published | 11 Sep 2026 | 28 Oct 2024 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Svelte 4 range (peer svelte ^4.0.0) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 90,100 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 5.7 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 5.7 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Engine alone, minified + gzip | 2.6 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 20 Sep 2026 |
 | Frameworks | Svelte 5 | Svelte | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; svelte-headless-table 0.18.3 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; svelte-headless-table 0.18.3 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -85366,11 +86309,11 @@ Migration guide: moving from Tabulator to SvGrid: https://svgrid.com/docs/help/m
 | Last published | 11 Sep 2026 | 23 Jun 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (JavaScript) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 672,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 106.9 KB JS + 3.8 KB CSS | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 106.9 KB JS + 3.8 KB CSS | 12 Sep 2026 |
 | Frameworks | Svelte 5 | JavaScript | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | Tabulator is MIT and free; no licence or support plan is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; tabulator-tables 6.5.2 entry `TabulatorFull` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; tabulator-tables 6.5.2 entry `TabulatorFull` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -85510,11 +86453,12 @@ Migration guide: moving from TanStack Table (Svelte) to SvGrid: https://svgrid.c
 | Last published | 11 Sep 2026 | 28 Aug 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Yes (peer svelte ^5.0.0) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 231,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 36.3 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 36.3 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Engine alone, minified + gzip | 2.6 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 20 Sep 2026 |
 | Frameworks | Svelte 5 | Svelte, React, Vue, Solid, Qwik, Lit | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; @tanstack/svelte-table 9.2.4 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; @tanstack/svelte-table 9.2.4 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -85698,11 +86642,12 @@ Migration guide: moving from @vincjo/datatables to SvGrid: https://svgrid.com/do
 | Last published | 11 Sep 2026 | 4 Jun 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Yes (peer svelte ^5.56.1) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 72,800 | 12 Sep 2026 |
-| Bundle, minified + gzip | 93.0 KB JS + 10.1 KB CSS | 10.2 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 95.8 KB JS + 10.5 KB CSS | 10.2 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Engine alone, minified + gzip | 2.6 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 20 Sep 2026 |
 | Frameworks | Svelte 5 | Svelte | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $599 per developer per year | @vincjo/datatables is MIT on npm and free; no licence is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 4.0.0 measured 17 Sep 2026 with packages/grid/scripts/measure-size.mjs; @vincjo/datatables 2.8.1 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.4 measured 20 Sep 2026 with packages/grid/scripts/measure-size.mjs; @vincjo/datatables 2.8.1 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -90639,7 +91584,24 @@ export function getNumberFormatter(
     '|' +
     (options.currencyDisplay ?? '') +
     '|' +
-    (options.notation ?? '')
+    (options.notation ?? '') +
+    // Every option that changes the output belongs in the key. `signDisplay`
+    // was missing, so a percent column asking for "+3.27" got the formatter
+    // a currency column with the same digits had already cached, and no sign.
+    '|' +
+    (options.signDisplay ?? '') +
+    '|' +
+    (options.minimumIntegerDigits ?? '') +
+    '|' +
+    (options.compactDisplay ?? '') +
+    '|' +
+    (options.unit ?? '') +
+    '|' +
+    (options.unitDisplay ?? '') +
+    '|' +
+    (options.minimumSignificantDigits ?? '') +
+    '|' +
+    (options.maximumSignificantDigits ?? '')
   let fmt = numberFormatterCache.get(key)
   if (!fmt) {
     fmt = new Intl.NumberFormat(locales as string | string[] | undefined, options)
@@ -98614,9 +99576,26 @@ Drops rows that fail the active {@link ColumnFiltersState}. Pairs with
 
 ```ts
 export function createFilteredRowModel<TData extends RowData>(): RowModelFactory<TData> {
+  /**
+   * The last full filter, so a tick can repair it. When `getRowModel`
+   * reports which rows were replaced (`replacedRowsOf`) and the filter state
+   * and columns are the same objects as last time, each replacement is tested
+   * on its own: a row that stays in keeps its slot, a row that stays out
+   * stays out, and a row whose membership flips sends the whole thing back
+   * through the full pass, because an insertion has to land in data order.
+   * Positions come from stamps on the rows (ROW_FILTER_GEN / ROW_FILTER_POS)
+   * written by the full pass; no map is built.
+   */
+  let cache: { input: Array<Row<TData>>; output: Array<Row<TData>>; filters: ColumnFiltersState; columns: Array<Column<TData>>; gen: number } | null = null
+  let generation = 0
+
   return ({ table, rows }) => {
     const filters: ColumnFiltersState = table.getState().columnFilters ?? []
-    if (!filters.length) return rows
+    if (!filters.length) {
+      cache = null
+      return rows
+    }
+    const columns = table.getAllColumns()
 
     // Resolve each filter's match function once, outside the row loop.
     const compiled = filters.map((filter) => ({
@@ -98624,8 +99603,7 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
       value: filter.value,
       fn: filter.fn ? filterFns[filter.fn] : filterFns.includesString,
     }))
-
-    return rows.filter((row) => {
+    const passes = (row: Row<TData>) => {
       for (let i = 0; i < compiled.length; i++) {
         const filter = compiled[i]!
         // `getCellValueByColumnId` rather than `getAllCells().find(...)`.
@@ -98637,7 +99615,48 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
         if (!filter.fn(row.getCellValueByColumnId(filter.id), filter.value as any)) return false
       }
       return true
-    })
+    }
+
+    if (cache && cache.filters === filters && cache.columns === columns) {
+      if (cache.input === rows) return cache.output
+      const replaced = replacedRowsOf(table)
+      if (replaced && rows.length === cache.input.length) {
+        let out: Array<Row<TData>> | null = null
+        let ok = true
+        for (let i = 0; i < rows.length && ok; i++) {
+          const prev = cache.input[i]! as BaseRowState<TData>
+          const next = rows[i]! as BaseRowState<TData>
+          if (next === prev) continue
+          if (replaced.get(prev) !== next) { ok = false; break }
+          const wasIn = prev[ROW_FILTER_GEN] === cache.gen
+          const isIn = passes(next)
+          if (wasIn !== isIn) { ok = false; break }
+          if (!isIn) continue
+          out ??= cache.output.slice()
+          const pos = prev[ROW_FILTER_POS]
+          out[pos] = next
+          next[ROW_FILTER_GEN] = cache.gen
+          next[ROW_FILTER_POS] = pos
+        }
+        if (ok) {
+          const output = out ?? cache.output
+          cache = { ...cache, input: rows, output }
+          return output
+        }
+      }
+    }
+
+    const gen = ++generation
+    const output: Array<Row<TData>> = []
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]! as BaseRowState<TData>
+      if (!passes(row)) continue
+      row[ROW_FILTER_GEN] = gen
+      row[ROW_FILTER_POS] = output.length
+      output.push(row)
+    }
+    cache = { input: rows, output, filters, columns, gen }
+    return output
   }
 }
 ```
@@ -98951,6 +99970,15 @@ master-detail alike - all three are the same expand/collapse mechanism.
 export function createExpandedRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const expanded: ExpandedState = table.getState().expanded ?? {}
+    // Nothing expanded means every collapsed row hides its children and the
+    // output is the input, element for element. Returning it as is keeps the
+    // array identity the stages downstream and the render window key on, and
+    // skips a 100k-element copy per data change on a flat grid.
+    let anyExpanded = false
+    for (const id in expanded) {
+      if (expanded[id]) { anyExpanded = true; break }
+    }
+    if (!anyExpanded) return rows
     const flattened: Array<Row<TData>> = []
     const visit = (row: Row<TData>) => {
       flattened.push(row)
@@ -98964,20 +99992,61 @@ export function createExpandedRowModel<TData extends RowData>(): RowModelFactory
 }
 ```
 
+### `function replacedRowsOf`
+
+The rows `getRowModel` replaced in the rebuild this pipeline run follows, or null.
+
+```ts
+export function replacedRowsOf(table: SvGrid<any>): ReadonlyMap<Row<any>, Row<any>> | null {
+  return replacedRowsByGrid.get(table) ?? null
+}
+```
+
 ### `function createSortedRowModel`
 
-Orders rows by the active {@link SortingState}. Pass your own comparators to
-override the built-in {@link sortFns} - useful for locale-aware or
-domain-specific ordering.
+_No JSDoc yet._
 
 ```ts
 export function createSortedRowModel<TData extends RowData>(
   localSortFns: typeof sortFns = sortFns,
 ): RowModelFactory<TData> {
-  return function sortedRowModelStage({ table, rows }) {
-    const sorting = table.getState().sorting ?? []
-    if (!sorting.length) return rows
+  /**
+   * What the last full sort produced, kept so a tick can repair it.
+   *
+   * A live feed replaces a few hundred row objects out of a hundred thousand
+   * and hands the grid a new array. Re-sorting all of it costs the same as
+   * the first sort did (115-149 ms in the browser for 100k rows, see
+   * docs/help/benchmarks.md); the order it would produce differs from the
+   * previous one only where the replaced rows land. So the previous output
+   * is kept, with its sort keys aligned to it, and when `getRowModel` says
+   * which rows were replaced (see `replacedRowsOf`) the stage drops those,
+   * sorts the replacements among themselves and merges them back in one
+   * linear pass: O(n + k log k) instead of O(n log n) key builds and
+   * comparisons.
+   *
+   * The repair is only attempted when everything else is the same object as
+   * last time - the sorting state, the columns, and every input row except
+   * the replaced ones - and it produces exactly what the full sort would:
+   * equal keys fall back to the data index, which is the order a stable sort
+   * over data-ordered input keeps.
+   */
+  let cache: {
+    input: Array<Row<TData>>
+    output: Array<Row<TData>>
+    sorting: SortingState
+    columns: Array<Column<TData>>
+    clauses: Array<SortClause>
+  } | null = null
 
+  type SortClause = {
+    desc: boolean
+    compare: (a: any, b: any) => number
+    /** The key for one row, or `MISSING_KEY` when it cannot be produced incrementally. */
+    keyOf: (row: Row<TData>) => any
+  }
+  const MISSING_KEY = Symbol('svgrid.sort.missing-key')
+
+  function fullSort(rows: Array<Row<TData>>, sorting: SortingState, allColumns: Array<Column<TData>>) {
     // Resolve every clause ONCE, before sorting.
     //
     // This used to live inside the comparator, so `getAllColumns().find(...)`
@@ -98985,11 +100054,11 @@ export function createSortedRowModel<TData extends RowData>(
     // 1,528,947 array scans, and a three-clause sort made 3,933,751 (measured;
     // `pnpm bench --case=sort-1col`). The comparator is called O(n log n)
     // times, so anything inside it that is not O(1) sets the cost of the sort.
-    const allColumns = table.getAllColumns()
     const clauses: Array<{
       keys: Array<any>
       desc: boolean
       compare: (a: any, b: any) => number
+      keyOf: (row: Row<TData>) => any
     }> = []
 
     for (const clause of sorting) {
@@ -99018,14 +100087,15 @@ export function createSortedRowModel<TData extends RowData>(
       const n = rows.length
       let keys: Array<any> = new Array(n)
       let compare: (a: any, b: any) => number
+      let keyOf: (row: Row<TData>) => any
 
       if (comparator === sortFns.number) {
-        for (let i = 0; i < n; i++) keys[i] = Number(rows[i]!.getCellValueByColumnId(columnId) ?? 0)
+        keyOf = (row) => Number(row.getCellValueByColumnId(columnId) ?? 0)
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
       } else if (comparator === sortFns.date) {
-        for (let i = 0; i < n; i++) {
-          keys[i] = new Date(rows[i]!.getCellValueByColumnId(columnId) as any).getTime()
-        }
+        keyOf = (row) => new Date(row.getCellValueByColumnId(columnId) as any).getTime()
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
       } else if (comparator === sortFns.auto) {
         const strings: string[] = new Array(n)
@@ -99084,19 +100154,24 @@ export function createSortedRowModel<TData extends RowData>(
           for (let i = 0; i < ordered.length; i++) rankOf.set(ordered[i]!, i)
           for (let i = 0; i < n; i++) keys[i] = rankOf.get(strings[i]!)!
           compare = compareNumericKeys
+          // A replacement whose text is not among the ranked values has no
+          // rank; the repair path treats that as "sort everything again".
+          keyOf = (row) => rankOf.get(String(row.getCellValueByColumnId(columnId))) ?? MISSING_KEY
         } else {
           keys = strings
           compare = compareCollatedKeys
+          keyOf = (row) => String(row.getCellValueByColumnId(columnId))
         }
       } else {
-        for (let i = 0; i < n; i++) keys[i] = rows[i]!.getCellValueByColumnId(columnId)
+        keyOf = (row) => row.getCellValueByColumnId(columnId)
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = comparator
       }
 
-      clauses.push({ keys, desc: clause.desc, compare })
+      clauses.push({ keys, desc: clause.desc, compare, keyOf })
     }
 
-    if (!clauses.length) return rows
+    if (!clauses.length) return null
 
     // Sort an index array, then materialise. `Array.prototype.sort` is stable,
     // so equal keys keep their original relative order exactly as the previous
@@ -99145,7 +100220,159 @@ export function createSortedRowModel<TData extends RowData>(
 
     const sorted = new Array<Row<TData>>(rows.length)
     for (let i = 0; i < order.length; i++) sorted[i] = rows[order[i]!]!
-    return sorted
+    // Each row keeps its key(s), so a later tick can place a replacement
+    // among the kept rows without reading any of them again. One property
+    // write per row; an array per row only when there are several clauses.
+    if (clauses.length === 1) {
+      const keys = clauses[0]!.keys
+      for (let i = 0; i < rows.length; i++) (rows[i] as any)[ROW_SORT_KEY] = keys[i]
+    } else {
+      for (let i = 0; i < rows.length; i++) {
+        const per = new Array(clauses.length)
+        for (let k = 0; k < clauses.length; k++) per[k] = clauses[k]!.keys[i]
+        ;(rows[i] as any)[ROW_SORT_KEY] = per
+      }
+    }
+    return { sorted, clauses: clauses.map(({ desc, compare, keyOf }) => ({ desc, compare, keyOf })) }
+  }
+
+  /**
+   * The previous output with the replaced rows swapped for their
+   * replacements, in sorted position. Null when the input is not the cached
+   * input plus replacements, or a replacement has no incremental key.
+   *
+   * Every row carries the key(s) the last full sort computed for it
+   * (ROW_SORT_KEY: the key itself for one clause, an array for several), so
+   * the merge moves row references and nothing else. At 100k rows the loop
+   * that also copied an aligned key array cost 3.7 ms; this one is the
+   * reference copy alone.
+   */
+  function repair(rows: Array<Row<TData>>, replaced: ReadonlyMap<Row<any>, Row<any>>) {
+    const c = cache!
+    if (rows.length !== c.input.length) return null
+    // Which rows of THIS stage's input changed. The map may name rows a
+    // stage upstream filtered out; only the ones that reach here matter.
+    const dropGen = ++sortDropGeneration
+    const added: Array<Row<TData>> = []
+    for (let i = 0; i < rows.length; i++) {
+      const prev = c.input[i]!
+      const next = rows[i]!
+      if (next === prev) continue
+      if (replaced.get(prev) !== next) return null
+      ;(prev as any)[ROW_SORT_DROPPED] = dropGen
+      added.push(next)
+    }
+    if (!added.length) return c.output
+
+    const clauses = c.clauses
+    const single = clauses.length === 1
+    for (let j = 0; j < added.length; j++) {
+      const row = added[j]! as any
+      if (single) {
+        const key = clauses[0]!.keyOf(row)
+        if (key === MISSING_KEY) return null
+        row[ROW_SORT_KEY] = key
+      } else {
+        const keys = new Array(clauses.length)
+        for (let k = 0; k < clauses.length; k++) {
+          const key = clauses[k]!.keyOf(row)
+          if (key === MISSING_KEY) return null
+          keys[k] = key
+        }
+        row[ROW_SORT_KEY] = keys
+      }
+    }
+
+    // Keys first, then the data index: the tie-break a stable sort over
+    // data-ordered input applies, so the merge lands where a full sort would.
+    const prevOut = c.output
+    const compareRows = single
+      ? (() => {
+          const { compare, desc } = clauses[0]!
+          return (a: Row<TData>, b: Row<TData>) => {
+            const r = compare((a as any)[ROW_SORT_KEY], (b as any)[ROW_SORT_KEY])
+            if (r !== 0) return desc ? -r : r
+            return a.index - b.index
+          }
+        })()
+      : (a: Row<TData>, b: Row<TData>) => {
+          const ka = (a as any)[ROW_SORT_KEY]
+          const kb = (b as any)[ROW_SORT_KEY]
+          for (let k = 0; k < clauses.length; k++) {
+            const clause = clauses[k]!
+            const r = clause.compare(ka[k], kb[k])
+            if (r !== 0) return clause.desc ? -r : r
+          }
+          return a.index - b.index
+        }
+
+    // Sort the replacements among themselves (k log k)...
+    added.sort(compareRows)
+
+    // ...find where each one goes in the previous output by binary search
+    // (k log n comparisons, against the dropped rows too - they are skipped
+    // below, which does not move an insertion point)...
+    const n = prevOut.length
+    const insertAt = new Array<number>(added.length)
+    let lo = 0
+    for (let j = 0; j < added.length; j++) {
+      // Monotone: the replacements are sorted, so each search starts where
+      // the previous one landed.
+      const row = added[j]!
+      let hi = n
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1
+        if (compareRows(row, prevOut[mid]!) < 0) hi = mid
+        else lo = mid + 1
+      }
+      insertAt[j] = lo
+    }
+
+    // ...then one linear pass that only moves references.
+    const out = new Array<Row<TData>>(rows.length)
+    let w = 0
+    let j = 0
+    let nextInsert = insertAt[0] ?? -1
+    for (let i = 0; i < n; i++) {
+      while (nextInsert === i) {
+        out[w++] = added[j++]!
+        nextInsert = j < added.length ? insertAt[j]! : -1
+      }
+      const prev = prevOut[i]!
+      if ((prev as any)[ROW_SORT_DROPPED] === dropGen) continue
+      out[w++] = prev
+    }
+    while (j < added.length) out[w++] = added[j++]!
+    return out
+  }
+
+  return function sortedRowModelStage({ table, rows }) {
+    const sorting = table.getState().sorting ?? []
+    if (!sorting.length) {
+      cache = null
+      return rows
+    }
+    const columns = table.getAllColumns()
+
+    if (cache && cache.sorting === sorting && cache.columns === columns) {
+      if (cache.input === rows) return cache.output
+      const replaced = replacedRowsOf(table)
+      if (replaced) {
+        const repaired = repair(rows, replaced)
+        if (repaired) {
+          cache = { ...cache, input: rows, output: repaired }
+          return repaired
+        }
+      }
+    }
+
+    const full = fullSort(rows, sorting, columns)
+    if (!full) {
+      cache = null
+      return rows
+    }
+    cache = { input: rows, output: full.sorted, sorting, columns, clauses: full.clauses }
+    return full.sorted
   }
 }
 ```
@@ -99250,6 +100477,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
   let cachedBaseRowsInput: ReadonlyArray<TData> | null = null
   let cachedBaseRowsColumns: Array<Column<TData>> | null = null
   let cachedBaseRows: Array<Row<TData>> = []
+  /** Old row -> new row for the rebuild the next pipeline run follows; see `replacedRowsOf`. */
+  let replacedRows: Map<Row<TData>, Row<TData>> | null = null
   let cachedRowCtx: BaseRowCtx<TData> | null = null
   let cachedRowModel: RowModel<TData> | null = null
   let cachedRowModelBaseRows: Array<Row<TData>> | null = null
@@ -99459,7 +100688,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
     },
     getRowModel() {
       const columns = grid.getAllColumns()
-      if (cachedBaseRowsInput !== options.data || cachedBaseRowsColumns !== columns) {
+      // Read once. `options.data` is a getter when <SvGrid> drives the engine
+      // (a $state.raw signal), and the rebuild below touched it twice per row:
+      // 200k tracked reads per 100k-row tick, 11 ms of a 65 ms tick.
+      const data = options.data
+      if (cachedBaseRowsInput !== data || cachedBaseRowsColumns !== columns) {
         // Same columns as last time: the shared context still describes them,
         // and a row whose data object sits at the same index can keep its
         // row object. A row model that streams blocks hands the grid a new
@@ -99469,7 +100702,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // an app may have changed the object in place before passing a new
         // array - that is the case the old rebuild covered by accident.
         const previous = cachedBaseRowsColumns === columns && cachedRowCtx ? cachedBaseRows : null
-        cachedBaseRowsInput = options.data
+        // Same length as last time: a replacement, not an add or remove, so
+        // each new row stands in for the old row at its index and the stages
+        // can repair rather than recompute. Anything else is structural.
+        replacedRows = previous && previous.length === data.length ? new Map() : null
+        cachedBaseRowsInput = data
         cachedBaseRowsColumns = columns
         // O(1) column-id → index lookup so getCellValueByColumnId doesn't do
         // a linear `findIndex` on every cell read (was O(rows × cells × cols)).
@@ -99491,7 +100728,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           cachedRowCtx = rowCtx
         }
 
-        cachedBaseRows = new Array(options.data.length)
+        cachedBaseRows = new Array(data.length)
         const getRowId = options.getRowId
         const m = BASE_ROW_METHODS as unknown as {
           getCanExpand: Row<TData>['getCanExpand']
@@ -99502,8 +100739,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           getAllCells: Row<TData>['getAllCells']
           getCellValueByColumnId: Row<TData>['getCellValueByColumnId']
         }
-        for (let index = 0; index < options.data.length; index++) {
-          const original = options.data[index]!
+        for (let index = 0; index < data.length; index++) {
+          const original = data[index]!
           const kept = previous?.[index] as BaseRowState<TData> | undefined
           if (kept && kept.original === original) {
             kept[ROW_VALUES] = null
@@ -99511,6 +100748,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             cachedBaseRows[index] = kept
             continue
           }
+          // Past a quarter of the rows the merge stops being cheaper than a
+          // sort with the ranking pass; let the stages do the full work.
+          if (replacedRows && replacedRows.size * 4 >= data.length) replacedRows = null
           // `_values` and `_cells` stay null until something reads them - a
           // 100k-row grid showing twenty rows must not materialise every row's
           // values or cell objects to paint.
@@ -99522,6 +100762,10 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             [ROW_CTX]: rowCtx,
             [ROW_VALUES]: null,
             [ROW_CELLS]: null,
+            [ROW_FILTER_GEN]: 0,
+            [ROW_FILTER_POS]: -1,
+            [ROW_SORT_DROPPED]: 0,
+            [ROW_SORT_KEY]: undefined,
             getCanExpand: m.getCanExpand,
             getIsExpanded: m.getIsExpanded,
             toggleExpanded: m.toggleExpanded,
@@ -99531,7 +100775,15 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             getCellValueByColumnId: m.getCellValueByColumnId,
           }
           cachedBaseRows[index] = row
+          if (replacedRows && kept) replacedRows.set(kept, row)
         }
+        // A new array with every object the same is the documented way to
+        // say "I changed rows in place, re-read them" (docs/help/cells/
+        // view-refresh.md). Nothing was replaced, so there is nothing to
+        // repair around: the stages recompute from the current values. A
+        // repair assumes the rows it keeps are unchanged in value as well as
+        // identity, which is the immutable-update contract a tick follows.
+        if (replacedRows && replacedRows.size === 0) replacedRows = null
       }
 
       // Only the slices a pipeline stage actually READS belong in this key.
@@ -99578,9 +100830,17 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         pipeline.expandedRowModel,
         pipeline.paginatedRowModel,
       ]
-      ordered.forEach((fn) => {
-        if (fn) rows = fn({ table: grid, rows })
-      })
+      // The stages read the replacements through `replacedRowsOf` while the
+      // run lasts; a stage that runs outside one sees null.
+      replacedRowsByGrid.set(grid, replacedRows)
+      try {
+        ordered.forEach((fn) => {
+          if (fn) rows = fn({ table: grid, rows })
+        })
+      } finally {
+        replacedRowsByGrid.set(grid, null)
+        replacedRows = null
+      }
       cachedPipeline = options._rowModels
       cachedSlices = currentSlices
       cachedRowModelBaseRows = cachedBaseRows
@@ -106813,6 +108073,20 @@ export type SvGridApi<
   canRedo(): boolean
   /** Wipe both stacks (e.g. after a server save commits the buffer). */
   clearHistory(): void
+  /**
+   * Mark every step recorded from now on with `tag`, until the next call;
+   * `undefined` stops the marking. The grid never reads the tag. It is for a
+   * consumer that shows one of several data sets through the grid (a
+   * workbook's sheets, say) and has to know which one the next Ctrl+Z would
+   * change before it lets the grid apply it: it tags the steps with the data
+   * set they were made on and asks `peekUndo` first.
+   */
+  setHistoryTag(tag: unknown): void
+  /** The step the next `undo()` would apply, or null when there is none. A
+   *  multi-cell action carries one tag, so it reports as one. */
+  peekUndo(): { tag: unknown } | null
+  /** The step the next `redo()` would apply, or null when there is none. */
+  peekRedo(): { tag: unknown } | null
 
   // ----- Keyboard commands -----
   /**
@@ -107666,113 +108940,6 @@ Resume a paused toast's countdown with the time it had left.
 export const resumeToast = (id: number): void => store.resume(id)
 ```
 
-<!-- docs/reference/bundle-size.md  (unrouted) -->
-
-# Bundle size
-
-What SvGrid costs in your bundle, how to reproduce the number on your
-branch, and what to do if size matters.
-
-## Measured
-
-Re-measured **2026-08-20** with the script that ships in the repo:
-
-```bash
-node packages/grid/scripts/measure-size.mjs
-```
-
-| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
-| --- | ---: | ---: | ---: |
-| Headless core (`createGrid`) | **2.3 kB** | - | - |
-| Headless subpath (`@svgrid/grid/core`) | **4.2 kB** | - | - |
-| Full render component (`<SvGrid>`) | **77.3 kB** | **9.1 kB** | 81.4 kB |
-
-The two headless rows measure different things on purpose. `createGrid` is the
-engine plus the row model it needs, which is what you pay when you import just
-that symbol. The subpath row is every export on `@svgrid/grid/core` pulled in at
-once with nothing tree-shaken, so it is the ceiling rather than the typical
-cost - a real consumer importing `createSvGrid` and two row models sits near the
-lower number.
-
-Svelte is a peer dependency and is excluded from every figure. Builds are
-minified and gzipped at level 9.
-
-The "loaded on demand" column is code that is reachable only through
-`import()`, so it never lands in your initial bundle. As measured, that
-splits into:
-
-| Chunk | gzip | Loads when |
-| --- | ---: | --- |
-| `SvDateTimePicker` | 18.2 kB | a date / datetime / time cell editor opens |
-| `SvGridChart` | 15.7 kB | a chart renders |
-| `chart` (engine) | 11.7 kB | charting is enabled |
-| `GridMenus` | 11.7 kB | a header or context menu opens |
-| `SvGridChartPanel` | 7.5 kB | the chart panel opens |
-| `SvGridCellEditor` | 4.3 kB | editing is enabled (loads at mount, before the first edit) |
-| `SvGridDropdown` | 5.2 kB | a list / chips cell editor or the page-size picker opens |
-| `dismissable` | 3.7 kB | any popover, menu or dropdown layer opens |
-| `export-format` | 1.8 kB | CSV / TSV / JSON export or clipboard copy runs |
-| `popover` | 0.9 kB | a popover is positioned |
-| `SvGridChartView` | 0.7 kB | the grid switches to chart view |
-
-The Kanban board and the scheduler / calendar view are not in either
-figure: their renderers live in `@svgrid/enterprise` and register into the
-free grid through the board and scheduler view seams.
-
-## Reproduce on your branch
-
-`measure-size.mjs` runs two isolated Vite library builds, one per target,
-with Svelte marked external, then gzips each emitted chunk and classifies
-it as `base` (statically reachable from the entry) or `lazy` (reachable
-only via `import()`).
-
-```bash
-node packages/grid/scripts/measure-size.mjs
-# or, from the repo root:
-pnpm size
-```
-
-To see where the weight sits inside the base bundle:
-
-```bash
-corepack pnpm --filter @svgrid/grid build
-npx source-map-explorer packages/grid/dist/index.js
-```
-
-A treemap opens in your browser. Each block is a source file scaled by its
-byte cost in the final bundle.
-
-## @svgrid/enterprise
-
-The Enterprise pack is a separate install and a separate bundle. `xlsx`
-export pulls JSZip and PDF export pulls pdfmake as optional peer
-dependencies, imported on the first `api.exportData(...)` call rather than
-at module load, so neither is in your synchronous bundle.
-
-## What to do if size matters
-
-1. **Use the headless engine for read-only views.** When you only need to
-   display server-side data with no interaction, `createGrid` plus a short
-   `<table>` renderer is 2.3 kB instead of 78.2 kB. See the
-   [headless engine reference](./headless-engine.md).
-2. **Register only the features you use.** The grid is feature-gated:
-   sorting, filtering, grouping, pagination, expansion, and selection are
-   each opt-in and tree-shake out when not imported. See the
-   [features reference](./features.md).
-3. **Let the lazy chunks stay lazy.** Charts, date/time editors, menus,
-   and export already split themselves. Importing their modules directly
-   at the top level pulls them back into your base bundle.
-4. **Code-split the Enterprise pack.** `installEnterprise(api)` is
-   async-safe, so import it in the route that needs export rather than at
-   module load:
-   `const { installEnterprise } = await import('@svgrid/enterprise')`.
-
-## See also
-
-- [Features reference](./features.md) - what each feature does
-- [Headless engine reference](./headless-engine.md) - skip the renderer entirely
-- [Going to production guide](../getting-started/6-going-to-production.md)
-
 <!-- docs/reference/ColumnDef.md  (unrouted) -->
 
 # `ColumnDef` reference
@@ -108462,7 +109629,7 @@ import {
   rowSortingFeature,
   columnFilteringFeature,
   type ColumnDef,
-} from '@svgrid/grid'
+} from '@svgrid/grid/core'
 
 type Repo = { name: string; lang: string; stars: number }
 

@@ -78,7 +78,7 @@ all wire up the moment you turn on the matching prop.
 |---|---|
 | **License** | MIT, free for commercial use |
 | **Requires** | `svelte@^5` (peer dependency), Node 16+ |
-| **Bundle (gzip)** | ~2 KB headless core, ~80 KB full `<SvGrid>` + ~9 KB CSS |
+| **Bundle (gzip)** | ~2.6 KB headless core, ~96 KB full `<SvGrid>` + ~10 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
 | **Types** | Bundled, no `@types/` package needed |
 | **Module format** | ESM, plus a CDN build at `@svgrid/grid/cdn` |
 | **SSR** | Works under SvelteKit SSR and static builds |
@@ -131,7 +131,7 @@ import {
 ```
 
 - **Headless** - drive `createSvGrid` and the row-model factories, render your own markup.
-  `getGrid*A11yProps` helpers keep custom markup accessible. About 2 KB gzipped.
+  `getGrid*A11yProps` helpers keep custom markup accessible. About 2.6 KB gzipped.
 - **Render-ready** - `<SvGrid />` is a complete, accessible, themeable grid you configure with props.
 
 Compatibility aliases are provided for the framework-neutral names: `createGrid`, `createGridState`,

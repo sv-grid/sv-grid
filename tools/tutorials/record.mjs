@@ -10,9 +10,19 @@
  *   pnpm dev                                     # the gallery on :5174
  *   node tools/tutorials/record.mjs <id>[,<id>]  # or `all`
  *
+ * A script records a gallery demo (`demo`), the recording stage
+ * (`stage: true`, examples/stage.html: terminal, editor, browser frame, title
+ * cards) or a website route (`site: 'studio/new'`). A longer cut lists
+ * `segments`, each one of those with its own beats; they are recorded as
+ * separate takes and joined. `kind: 'marketing'` skips the docs outputs and
+ * the docs page: the result is the narrated master for YouTube plus the GIF,
+ * captions and thumbnail.
+ *
  * Flags
  *   --base <url>     gallery URL (default http://localhost:5174)
- *   --serve          start the gallery when the base is unreachable, stop it after
+ *   --site <url>     website URL for `site` scripts (default http://localhost:5180)
+ *   --serve          start the gallery (and the website when needed) when
+ *                    unreachable, stop them after
  *   --dry            load and validate the scripts, print the beats, record nothing
  *   --skip-mux       record only; leave raw.webm + timeline.json in tutorials-out/<id>/
  *   --no-gif         skip the GIF export
@@ -26,11 +36,11 @@
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { requireFfmpeg } from './lib/ffmpeg.mjs'
 import { ttsConfig } from './lib/tts.mjs'
 import { recordTutorial } from './lib/recorder.mjs'
-import { muxTutorial, DEFAULT_BUDGET_BYTES } from './lib/mux.mjs'
+import { muxTutorial, stitchSegments, DEFAULT_BUDGET_BYTES } from './lib/mux.mjs'
 import { readManifest, writeManifest, upsertTutorial, ROOT, SCRIPTS_DIR, OUT_DIR, SITE_MEDIA_DIR } from './lib/manifest.mjs'
 import { normalizeNarration } from '../lib/tutorial-media.mjs'
 
@@ -40,9 +50,10 @@ const opt = (name, dflt) => {
   const i = args.indexOf(name)
   return i >= 0 && args[i + 1] ? args[i + 1] : dflt
 }
-const positional = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--base', '--budget-kb'].includes(args[i - 1])))
+const positional = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--base', '--site', '--budget-kb'].includes(args[i - 1])))
 
 const BASE = opt('--base', 'http://localhost:5174')
+const SITE_BASE = opt('--site', 'http://localhost:5180')
 const DRY = flag('--dry')
 const SERVE = flag('--serve')
 const SKIP_MUX = flag('--skip-mux')
@@ -64,12 +75,22 @@ async function loadScript(id) {
   if (!def || typeof def !== 'object') throw new Error(`${id}: default export must be an object`)
   const problems = []
   if (def.id !== id) problems.push(`id "${def.id}" must equal the file name "${id}"`)
-  for (const k of ['title', 'description', 'demo', 'docsPage']) if (!def[k]) problems.push(`missing ${k}`)
-  if (!existsSync(join(ROOT, 'examples', 'src', 'demos', `${def.demo}.svelte`))) problems.push(`demo ${def.demo} does not exist`)
+  for (const k of ['title', 'description']) if (!def[k]) problems.push(`missing ${k}`)
+  const marketing = def.kind === 'marketing'
+  if (!marketing && !def.docsPage) problems.push('missing docsPage (or set kind: "marketing")')
   if (def.docsPage && !existsSync(join(ROOT, def.docsPage))) problems.push(`docsPage ${def.docsPage} does not exist`)
-  if (!Array.isArray(def.beats) || !def.beats.length) problems.push('beats must be a non-empty array')
+  // A script is one take (demo | stage | site + beats) or a list of them.
+  const takes = Array.isArray(def.segments) ? def.segments : [def]
+  if (Array.isArray(def.segments) && !def.segments.length) problems.push('segments must be a non-empty array')
+  takes.forEach((t, i) => {
+    const where = Array.isArray(def.segments) ? `segment ${i + 1}: ` : ''
+    const targets = ['demo', 'stage', 'site'].filter((k) => t[k])
+    if (targets.length !== 1) problems.push(`${where}needs exactly one of demo, stage, site (has ${targets.join(', ') || 'none'})`)
+    if (t.demo && !existsSync(join(ROOT, 'examples', 'src', 'demos', `${t.demo}.svelte`))) problems.push(`${where}demo ${t.demo} does not exist`)
+    if (!Array.isArray(t.beats) || !t.beats.length) problems.push(`${where}beats must be a non-empty array`)
+  })
   if (def.description && def.description.length > 160) problems.push('description over 160 chars')
-  const text = [def.title, def.description, ...(def.beats ?? []).map((b) => b.say ?? '')].join(' ')
+  const text = [def.title, def.description, ...allBeats(def).map((b) => b.say ?? '')].join(' ')
   if (/[\u2013\u2014]/.test(text)) problems.push('em/en dash in narration or title (use a hyphen)')
   if (!Array.isArray(def.tags)) problems.push('tags must be an array')
   if (problems.length) throw new Error(`${id}:\n  - ${problems.join('\n  - ')}`)
@@ -111,8 +132,52 @@ async function serveGallery(base) {
   throw new Error(`gallery did not come up on ${base} within 120 s`)
 }
 
+/** Every beat of a script, across its segments. */
+function allBeats(def) {
+  return (Array.isArray(def.segments) ? def.segments : [def]).flatMap((t) => t.beats ?? [])
+}
+
+/**
+ * Start the website for a `site` script. Its predev index builders run
+ * first (the dev server reads docs-index.json and friends), then Vite's own
+ * entry, spawned like the gallery's.
+ */
+async function serveSite(base) {
+  const port = new URL(base).port || '5180'
+  const website = join(ROOT, 'website')
+  const vite = join(website, 'node_modules', 'vite', 'bin', 'vite.js')
+  if (!existsSync(vite)) throw new Error(`${vite} not found: is the website submodule checked out and installed?`)
+  console.log(`starting the website on :${port} ...`)
+  for (const script of ['tools/build-blog-index.mjs', 'tools/build-docs-page-index.mjs', 'tools/build-demo-search-index.mjs']) {
+    const r = spawnSync(process.execPath, [join(ROOT, script)], { cwd: ROOT, stdio: 'ignore', windowsHide: true })
+    if (r.status !== 0) throw new Error(`${script} exited ${r.status}`)
+  }
+  const child = spawn(process.execPath, [vite, '--port', port, '--strictPort'], { cwd: website, stdio: 'ignore', windowsHide: true })
+  const stop = () => {
+    if (!child.killed) child.kill()
+  }
+  const started = Date.now()
+  while (Date.now() - started < 180_000) {
+    if (child.exitCode !== null) throw new Error(`the website exited with code ${child.exitCode} (is :${port} taken?)`)
+    if (await reachable(base)) return stop
+    await new Promise((r) => setTimeout(r, 1000))
+  }
+  stop()
+  throw new Error(`website did not come up on ${base} within 180 s`)
+}
+
 function wordsOf(def) {
-  return def.beats.map((b) => normalizeNarration(b.say ?? '').split(' ').filter(Boolean).length).reduce((a, b) => a + b, 0)
+  return allBeats(def).map((b) => normalizeNarration(b.say ?? '').split(' ').filter(Boolean).length).reduce((a, b) => a + b, 0)
+}
+
+/** What a script records, for the log line. */
+function targetLabel(def) {
+  const one = (t) => (t.demo ? t.demo : t.site ? `site:${t.site}` : 'stage')
+  return Array.isArray(def.segments) ? def.segments.map(one).join(' + ') : one(def)
+}
+
+function needsSite(def) {
+  return (Array.isArray(def.segments) ? def.segments : [def]).some((t) => t.site)
 }
 
 async function main() {
@@ -128,9 +193,10 @@ async function main() {
   if (DRY) {
     for (const def of defs) {
       const words = wordsOf(def)
-      console.log(`\n${def.id}  (${def.demo} -> ${def.docsPage})`)
-      console.log(`  "${def.title}"  ${def.beats.length} beats, ${words} words (~${Math.round((words / 150) * 60)} s of speech)`)
-      def.beats.forEach((b, i) => console.log(`  ${i + 1}. ${b.say ?? '(silent)'}${b.do ? '' : '  [no action]'}`))
+      const beats = allBeats(def)
+      console.log(`\n${def.id}  (${targetLabel(def)} -> ${def.docsPage ?? (def.kind === 'marketing' ? 'YouTube only' : '?')})`)
+      console.log(`  "${def.title}"  ${beats.length} beats, ${words} words (~${Math.round((words / 150) * 60)} s of speech)`)
+      beats.forEach((b, i) => console.log(`  ${i + 1}. ${b.say ?? '(silent)'}${b.do ? '' : '  [no action]'}`))
     }
     return
   }
@@ -140,10 +206,14 @@ async function main() {
   console.log(`tts: ${tts.provider}${tts.provider === 'elevenlabs' ? ` (voice ${tts.voiceId}, ${tts.modelId})` : ''}`)
   if (tts.provider === 'silence') console.log('  no ELEVENLABS_API_KEY: narration will be silent, captions still written')
 
-  let stop = null
+  const stops = []
   if (!(await reachable(BASE))) {
     if (!SERVE) fail(`gallery not reachable at ${BASE}: run \`pnpm dev\` or pass --serve`)
-    stop = await serveGallery(BASE)
+    stops.push(await serveGallery(BASE))
+  }
+  if (defs.some(needsSite) && !(await reachable(SITE_BASE))) {
+    if (!SERVE) fail(`website not reachable at ${SITE_BASE}: run \`pnpm --filter svgrid-website dev\` or pass --serve`)
+    stops.push(await serveSite(SITE_BASE))
   }
 
   const results = []
@@ -152,24 +222,44 @@ async function main() {
     for (const def of defs) {
       const outDir = join(OUT_DIR, def.id)
       const log = (m) => console.log(`    ${m}`)
-      console.log(`\n${def.id}  (${def.demo})`)
+      console.log(`\n${def.id}  (${targetLabel(def)})`)
+      const marketing = def.kind === 'marketing'
+      const view = def.view ?? (marketing ? { width: 1920, height: 1080 } : undefined)
       try {
-        const timeline = await recordTutorial(def, { base: BASE, outDir, log, warm: WARM, tts })
-        if (SKIP_MUX) {
-          results.push({ id: def.id, ok: true, note: 'recorded (mux skipped)' })
-          continue
+        let timeline
+        if (Array.isArray(def.segments)) {
+          const recorded = []
+          for (let i = 0; i < def.segments.length; i += 1) {
+            const seg = { id: `${def.id}-${i + 1}`, theme: def.theme, preset: def.preset, ...def.segments[i] }
+            const dir = join(outDir, `seg-${i + 1}`)
+            console.log(`  segment ${i + 1}/${def.segments.length}: ${targetLabel(seg)}`)
+            const t = await recordTutorial(seg, { base: BASE, siteBase: SITE_BASE, outDir: dir, view, log, warm: WARM, tts })
+            recorded.push({ dir, timeline: t })
+          }
+          if (SKIP_MUX) {
+            results.push({ id: def.id, ok: true, note: 'recorded (mux skipped)' })
+            continue
+          }
+          timeline = await stitchSegments({ id: def.id, outDir, segments: recorded, log })
+        } else {
+          timeline = await recordTutorial(def, { base: BASE, siteBase: SITE_BASE, outDir, view, log, warm: WARM, tts })
+          if (SKIP_MUX) {
+            results.push({ id: def.id, ok: true, note: 'recorded (mux skipped)' })
+            continue
+          }
         }
         const m = await muxTutorial({
           id: def.id, outDir, siteDir: SITE_MEDIA_DIR, timeline, budgetBytes: BUDGET,
-          gif: !NO_GIF, gifBeats: def.gif?.beats, log,
+          gif: !NO_GIF, gifBeats: def.gif?.beats, posterBeat: def.poster?.beat ?? null, docs: !marketing, log,
         })
         const previous = manifest.tutorials.find((t) => t.id === def.id)
         const entry = {
           id: def.id,
+          ...(marketing ? { kind: 'marketing' } : {}),
           title: def.title,
           description: def.description,
-          demo: def.demo,
-          docsPage: def.docsPage,
+          demo: def.demo ?? timeline.demo ?? null,
+          docsPage: def.docsPage ?? null,
           ...(def.anchor ? { anchor: def.anchor } : {}),
           ...(def.anchorAfter ? { anchorAfter: def.anchorAfter } : {}),
           tags: def.tags,
@@ -179,12 +269,14 @@ async function main() {
           recordedAt: new Date().toISOString().slice(0, 10),
           youtubeId: previous?.youtubeId ?? null,
           publishedAt: previous?.publishedAt ?? null,
-          files: {
-            mp4: `/tutorials/${def.id}.mp4`,
-            poster: `/tutorials/${def.id}.poster.webp`,
-            vtt: `/tutorials/${def.id}.vtt`,
-          },
-          bytes: { mp4: m.docsBytes, poster: m.posterBytes },
+          files: marketing
+            ? { mp4: null, poster: null, vtt: null }
+            : {
+                mp4: `/tutorials/${def.id}.mp4`,
+                poster: `/tutorials/${def.id}.poster.webp`,
+                vtt: `/tutorials/${def.id}.vtt`,
+              },
+          bytes: { mp4: m.docsBytes, poster: m.posterBytes, master: statSync(m.master).size },
           transcript: m.cues.map((c) => ({ start: Math.round(c.start * 100) / 100, end: Math.round(c.end * 100) / 100, text: c.text })),
         }
         manifest = upsertTutorial(manifest, entry)
@@ -201,7 +293,7 @@ async function main() {
       }
     }
   } finally {
-    if (stop) stop()
+    for (const stop of stops) stop()
   }
 
   const kb = (n) => `${Math.round(n / 1024)} KB`
@@ -218,7 +310,8 @@ async function main() {
     console.log(`${r.id.padEnd(30)}ok   ${String(r.duration).padEnd(7)} ${kb(r.mp4).padEnd(10)} ${kb(r.poster).padEnd(8)} ${kb(r.gif).padEnd(9)} ${kb(r.master)}`)
   }
   const failed = results.filter((r) => !r.ok).length
-  if (!failed && !SKIP_MUX) console.log('\nnext: node tools/tutorials/embed.mjs   (puts the blocks on the docs pages and rebuilds the indexes)')
+  if (!failed && !SKIP_MUX && defs.some((d) => d.kind !== 'marketing')) console.log('\nnext: node tools/tutorials/embed.mjs   (puts the blocks on the docs pages and rebuilds the indexes)')
+  if (!failed && !SKIP_MUX && defs.some((d) => d.kind === 'marketing')) console.log('\nmarketing cuts: tutorials-out/<id>/<id>.youtube.mp4 (+ .srt, .thumb.jpg, .gif); publish with tools/tutorials/youtube.mjs upload <id>')
   if (failed) process.exit(1)
 }
 

@@ -111,7 +111,7 @@ five lines as the unstyled version.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -215,7 +215,7 @@ different markup.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -281,8 +281,219 @@ different markup.
 </style>
 ```
 
+## Your design system's table primitives
+
+If your team already has `Table` components - shadcn-svelte's `Table.Root` /
+`Table.Row` / `Table.Cell`, or your own - the engine slots under them
+unchanged. The header loop and the row loop are the same as above; only the
+elements differ. This is the layout the
+[shadcn data-table migration](../migrating-from-shadcn-data-table.md) lands
+on when it keeps the shadcn markup and swaps the engine.
+
+```svelte
+<script lang="ts">
+  import * as Table from '$lib/components/ui/table'
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    type ColumnDef,
+  } from '@svgrid/grid/core'
+
+  type Payment = { id: string; status: string; email: string; amount: number }
+  let { payments }: { payments: Payment[] } = $props()
+
+  const features = tableFeatures({ rowSortingFeature })
+  const columns: ColumnDef<typeof features, Payment>[] = [
+    { field: 'status', header: 'Status' },
+    { field: 'email',  header: 'Email' },
+    { field: 'amount', header: 'Amount', editorType: 'number' },
+  ]
+
+  let sorting = $state([{ id: 'amount', desc: true }])
+  const table = createSvGrid({
+    _features: features,
+    _rowModels: { coreRowModel: createCoreRowModel<Payment>(), sortedRowModel: createSortedRowModel<Payment>() },
+    data: payments,
+    columns,
+    state: { sorting },
+    onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+  })
+  const rows = $derived(table.getRowModel().rows)
+</script>
+
+<Table.Root>
+  <Table.Header>
+    {#each table.getHeaderGroups() as hg (hg.id)}
+      <Table.Row>
+        {#each hg.headers as h (h.id)}
+          <Table.Head onclick={h.column.getToggleSortingHandler()}>
+            {h.column.columnDef.header}
+          </Table.Head>
+        {/each}
+      </Table.Row>
+    {/each}
+  </Table.Header>
+  <Table.Body>
+    {#each rows as r (r.id)}
+      <Table.Row>
+        <Table.Cell>{r.original.status}</Table.Cell>
+        <Table.Cell>{r.original.email}</Table.Cell>
+        <Table.Cell class="text-right">{r.original.amount.toLocaleString()}</Table.Cell>
+      </Table.Row>
+    {/each}
+  </Table.Body>
+</Table.Root>
+```
+
+Nothing from `@svgrid/grid` reaches the DOM here: no stylesheet, no class
+names, no `--sg-*` variable unless you choose to read one. The design system
+owns the markup and the engine owns the state, which is the split a
+design-system team usually wants.
+
+## Keyboard navigation and ARIA
+
+Headless does not mean you lose the grid semantics; it means you apply them.
+The engine keeps an `activeCell` in its state and moves it with
+`moveActiveCell({ rowDelta, colDelta })`, and `@svgrid/grid/core` exports the
+WAI-ARIA attribute factories the render component uses, as plain objects to
+spread onto your own elements. Wire the four of them and arrow keys, `Home`,
+`End`, `aria-sort` and `aria-activedescendant` all work on a bare `<table>`.
+
+```svelte {runnable}
+<script lang="ts">
+  import {
+    createSvGrid,
+    createCoreRowModel,
+    createSortedRowModel,
+    tableFeatures,
+    rowSortingFeature,
+    getGridRootA11yProps,
+    getGridHeaderA11yProps,
+    getGridRowA11yProps,
+    getGridCellA11yProps,
+    getGridCellDomId,
+    type ColumnDef,
+  } from '@svgrid/grid/core'
+
+  type Repo = { name: string; lang: string; stars: number }
+  const data: Repo[] = [
+    { name: 'svelte',  lang: 'JavaScript', stars: 78000 },
+    { name: 'vite',    lang: 'TypeScript', stars: 68000 },
+    { name: 'sv-grid', lang: 'TypeScript', stars: 172 },
+    { name: 'esbuild', lang: 'Go',         stars: 38000 },
+    { name: 'bun',     lang: 'Zig',        stars: 74000 },
+  ]
+
+  const features = tableFeatures({ rowSortingFeature })
+  const columns: ColumnDef<typeof features, Repo>[] = [
+    { field: 'name',  header: 'Repo' },
+    { field: 'lang',  header: 'Language' },
+    { field: 'stars', header: 'Stars', editorType: 'number' },
+  ]
+
+  let sorting = $state([{ id: 'stars', desc: true }])
+
+  // The selector picks the slices the template reads; `table.state` is the
+  // reactive view of them.
+  const table = createSvGrid(
+    {
+      _features: features,
+      _rowModels: { coreRowModel: createCoreRowModel<Repo>(), sortedRowModel: createSortedRowModel<Repo>() },
+      data,
+      columns,
+      state: { sorting },
+      onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
+    },
+    (s) => ({ activeCell: s.activeCell as { rowIndex: number; colIndex: number } }),
+  )
+
+  const rows = $derived(table.getRowModel().rows)
+  const active = $derived(table.state.activeCell)
+  const GRID_ID = 'repos'
+  const activeId = $derived(getGridCellDomId(GRID_ID, active.rowIndex, active.colIndex))
+
+  function onKeydown(e: KeyboardEvent) {
+    const moves: Record<string, { rowDelta?: number; colDelta?: number }> = {
+      ArrowDown: { rowDelta: 1 }, ArrowUp: { rowDelta: -1 },
+      ArrowRight: { colDelta: 1 }, ArrowLeft: { colDelta: -1 },
+      Home: { colDelta: -columns.length }, End: { colDelta: columns.length },
+      PageDown: { rowDelta: rows.length }, PageUp: { rowDelta: -rows.length },
+    }
+    const move = moves[e.key]
+    if (!move) return
+    e.preventDefault()
+    table.moveActiveCell(move)
+  }
+
+  function sortDirection(id: string) {
+    const s = sorting[0]
+    return s?.id !== id ? 'none' : s.desc ? 'descending' : 'ascending'
+  }
+</script>
+
+<table
+  class="kb"
+  {...getGridRootA11yProps({ activeDescendantId: activeId, rowCount: rows.length, colCount: columns.length })}
+  onkeydown={onKeydown}
+>
+  <thead>
+    {#each table.getHeaderGroups() as hg (hg.id)}
+      <tr {...getGridRowA11yProps(1)}>
+        {#each hg.headers as h (h.id)}
+          <th
+            {...getGridHeaderA11yProps({ sortable: true, sortDirection: sortDirection(h.column.id) })}
+            onclick={h.column.getToggleSortingHandler()}
+          >
+            {h.column.columnDef.header}
+          </th>
+        {/each}
+      </tr>
+    {/each}
+  </thead>
+  <tbody>
+    {#each rows as r, ri (r.id)}
+      <tr {...getGridRowA11yProps(ri + 2)}>
+        {#each columns as c, ci (c.field)}
+          {@const selected = active.rowIndex === ri && active.colIndex === ci}
+          <td
+            {...getGridCellA11yProps({ rowIndex: ri + 2, colIndex: ci + 1, selected, id: getGridCellDomId(GRID_ID, ri, ci) })}
+            class:active={selected}
+            onclick={() => table.setActiveCell({ rowIndex: ri, colIndex: ci, cellId: `${ri}_${c.field}` })}
+          >
+            {String(r.original[c.field as keyof Repo])}
+          </td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>
+
+<style>
+  .kb { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--sg-fg, #0f172a); }
+  .kb:focus { outline: 2px solid var(--sg-accent, #6366f1); outline-offset: 2px; }
+  .kb th { text-align: left; padding: 8px 12px; background: var(--sg-header-bg, #f1f5f9); cursor: pointer; }
+  .kb th[aria-sort='ascending']::after { content: ' ^'; }
+  .kb th[aria-sort='descending']::after { content: ' v'; }
+  .kb td { padding: 7px 12px; border-bottom: 1px solid var(--sg-border, #eef2f7); }
+  .kb td.active { box-shadow: inset 0 0 0 2px var(--sg-accent, #6366f1); }
+</style>
+```
+
+Click a cell, then use the arrow keys. The root carries `role="grid"`,
+`tabindex="0"` and `aria-activedescendant`; each header carries
+`aria-sort`; each cell carries `role="gridcell"`, `aria-rowindex`,
+`aria-colindex` and `aria-selected`. Screen readers announce the same grid
+the render component would. What you still own: focus styling, `Enter` to
+edit if you add editing, and `Tab` to leave the grid (the browser handles
+that one because the cells themselves are not focusable).
+
 ## See also
 
 - [Build a table from scratch](./build-a-table.md) - the render loop
 - [Headless virtualization](./virtualization.md) - style a virtualized list
 - [Tailwind & theming tokens](../tailwind.md) - the `--sg-*` reference
+- [Migrating from the shadcn-svelte data table](../migrating-from-shadcn-data-table.md) - keep the shadcn markup, swap the engine
+- [Keyboard and accessibility](../accessibility.md) - what the render component does, for parity

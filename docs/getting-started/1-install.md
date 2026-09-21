@@ -37,6 +37,21 @@ npm install @svgrid/grid
 yarn add @svgrid/grid
 ```
 
+<!-- tutorial:install-svgrid -->
+<figure class="docs-tutorial" id="tutorial-install-svgrid" data-docs-tutorial="install-svgrid">
+<video class="docs-tutorial-video" src="/tutorials/install-svgrid.mp4" poster="/tutorials/install-svgrid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install SvGrid, 51 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-svgrid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-svgrid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install SvGrid</strong> (51 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvGrid is one npm package. In an existing Svelte 5 project, install it and you are done with setup.</p>
+<p>Starting from scratch? The create command scaffolds a working project with the grid already wired.</p>
+<p>Either way, a grid is a component, a data array and a columns array. Import SvGrid and describe the rows.</p>
+<p>Columns map a field to a header. Then render the component with both.</p>
+<p>Save, and the dev server shows a styled table with keyboard navigation, selection and a focus ring, all out of the box.</p>
+<p>Sorting, filtering, editing and the rest are features you switch on next. The docs at svgrid.com take it from here.</p>
+</details>
+</figure>
+<!-- /tutorial:install-svgrid -->
+
 ## Requirements
 
 | Tool        | Version           | Why                                   |

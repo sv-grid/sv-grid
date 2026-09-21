@@ -48,6 +48,20 @@ export type GridAdapter = {
   filter(field: keyof BenchRow, value: string): Promise<void>
   /** Scroll the body by `dy` px. Resolves on the next painted frame. */
   scrollBy(dy: number): Promise<void>
+  /**
+   * A tick: `next` is the previous array with `changed` row objects replaced
+   * (same length, same ids, same order). Each grid takes it on its own
+   * streaming path - a new array reference, an update transaction keyed by
+   * id, a data prop - and resolves when the changed cells are painted.
+   */
+  update?(next: BenchRow[], changed: BenchRow[]): Promise<void>
+  /**
+   * The `amount` cell of the first few rows as the user sees them, top
+   * down. After the ticks the harness checks these are still in sorted
+   * order: a grid that answered a data change by dropping the sort did less
+   * work than the others, and its tick time would say nothing.
+   */
+  firstRowAmounts?(count: number): number[]
   /** How many row elements are currently in the DOM. Proves virtualization. */
   domRowCount(): number
   /** Tear down and release. */
@@ -152,6 +166,7 @@ export async function svgridAdapter(): Promise<GridAdapter> {
     setSort?: (field: string | null, desc: boolean) => void
     setFilter?: (field: string | null, value: string) => void
     scroller?: () => HTMLElement | null
+    setRows?: (rows: Array<Record<string, unknown>>) => void
   } = {}
 
   return {
@@ -180,6 +195,20 @@ export async function svgridAdapter(): Promise<GridAdapter> {
       const el = handle.scroller?.()
       if (el) el.scrollTop += dy
       await painted()
+    },
+    async update(next) {
+      // A new array reference is the grid's streaming path: the row model
+      // reuses every row whose object is unchanged and repairs the sort for
+      // the ones that are not.
+      handle.setRows?.(next)
+      await domSettled(host!)
+    },
+    firstRowAmounts(count) {
+      // Body rows only (the header is a .sv-grid-row too); the amount column
+      // is the fifth of the harness columns, so data-svgrid-col="4".
+      return Array.from(host?.querySelectorAll('tbody.sv-grid-body tr.sv-grid-row:not(.sv-grid-row-spacer)') ?? [])
+        .slice(0, count)
+        .map((tr) => Number(String(tr.querySelector('td[data-svgrid-col="4"]')?.textContent ?? '').replace(/[^0-9.-]/g, '')))
     },
     domRowCount() {
       return host?.querySelectorAll('tr.sv-grid-row').length ?? 0
@@ -239,6 +268,8 @@ export async function agGridAdapter(): Promise<GridAdapter> {
         theme: themeQuartz,
         rowData: rows,
         rowHeight: ROW_HEIGHT,
+        // Needed for applyTransaction updates to find their rows.
+        getRowId: (p: { data: BenchRow }) => String(p.data.id),
         // Match sv-grid: both axes virtualized, no extra features enabled.
         columnDefs: COLUMNS.map((c) => ({
           field: c.field as string,
@@ -277,6 +308,21 @@ export async function agGridAdapter(): Promise<GridAdapter> {
       if (el) el.scrollTop += dy
       await painted()
     },
+    async update(_next, changed) {
+      // AG Grid's documented streaming path: a transaction of the changed
+      // rows, matched by getRowId.
+      ;(api as unknown as { applyTransaction: (tx: { update: BenchRow[] }) => void } | null)?.applyTransaction({ update: changed })
+      await domSettled(host!)
+    },
+    firstRowAmounts(count) {
+      // DOM order is not visual order in AG Grid; read by row-index.
+      const out: number[] = []
+      for (let i = 0; i < count; i++) {
+        const cell = host?.querySelector(`.ag-grid-scrolling-container .ag-row[row-index="${i}"] .ag-cell[col-id="amount"], .ag-center-cols-container .ag-row[row-index="${i}"] .ag-cell[col-id="amount"]`)
+        if (cell) out.push(Number(String(cell.textContent ?? '').replace(/[^0-9.-]/g, '')))
+      }
+      return out
+    },
     domRowCount() {
       return rowNodes().length
     },
@@ -304,6 +350,8 @@ async function svelteComponentAdapter(opts: {
   pkg: Promise<unknown>
   component: Promise<{ default: unknown }>
   rowSelector: string
+  /** The `amount` cell inside a row, by the grid's own column attribute. */
+  amountCellSelector: string
 }): Promise<GridAdapter> {
   const [{ mount, unmount }, pkg, mod] = await Promise.all([import('svelte'), opts.pkg, opts.component])
   const Component = mod.default as never
@@ -314,6 +362,7 @@ async function svelteComponentAdapter(opts: {
     setSort?: (field: string | null, desc: boolean) => void
     setFilter?: (field: string | null, value: string) => void
     scroller?: () => HTMLElement | null
+    setRows?: (rows: Array<Record<string, unknown>>) => void
   } = {}
 
   return {
@@ -343,6 +392,15 @@ async function svelteComponentAdapter(opts: {
       if (el) el.scrollTop += dy
       await painted()
     },
+    async update(next) {
+      handle.setRows?.(next)
+      await domSettled(host!)
+    },
+    firstRowAmounts(count) {
+      return Array.from(host?.querySelectorAll(opts.rowSelector) ?? [])
+        .slice(0, count)
+        .map((row) => Number(String(row.querySelector(opts.amountCellSelector)?.textContent ?? '').replace(/[^0-9.-]/g, '')))
+    },
     domRowCount() {
       return host?.querySelectorAll(opts.rowSelector).length ?? 0
     },
@@ -362,6 +420,7 @@ export function svarAdapter(): Promise<GridAdapter> {
     pkg: import('../../node_modules/wx-svelte-grid/package.json'),
     component: import('./BenchSvar.svelte'),
     rowSelector: '.wx-row',
+    amountCellSelector: '.wx-cell[data-col-id="amount"]',
   })
 }
 
@@ -377,6 +436,7 @@ export function tanstackAdapter(): Promise<GridAdapter> {
     pkg: import('../../node_modules/@tanstack/svelte-table/package.json'),
     component: import('./BenchTanStack.svelte'),
     rowSelector: 'tr.tt-row',
+    amountCellSelector: 'td:nth-child(5)',
   })
 }
 

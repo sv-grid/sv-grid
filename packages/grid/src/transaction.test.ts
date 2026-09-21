@@ -97,4 +97,62 @@ describe('api.applyTransaction', () => {
       destroy()
     }
   })
+  it('removes a row that the same transaction also updates, by id or by reference', async () => {
+    const { api, destroy } = await mountGrid()
+    try {
+      const byId = api.applyTransaction({ update: [{ id: 'a', symbol: 'AAPL', price: 1 }], remove: ['a'] })
+      await tick()
+      expect(byId).toEqual({ added: 0, updated: 1, removed: 1 })
+      expect(api.getData().map((o) => o.id)).toEqual(['b', 'c'])
+      const ref = api.getData()[0]! // 'b'
+      const byRef = api.applyTransaction({ update: [{ id: 'b', symbol: 'MSFT', price: 2 }], remove: [ref] })
+      await tick()
+      expect(byRef).toEqual({ added: 0, updated: 1, removed: 1 })
+      expect(api.getData().map((o) => o.id)).toEqual(['c'])
+    } finally {
+      destroy()
+    }
+  })
+
+  it('an update batch looks its rows up by id instead of walking the array', async () => {
+    // The id -> index map is built once per data array and carried across
+    // update-only transactions, so the second tick calls getRowId only for
+    // the rows in the batch. Before, every transaction called it for every
+    // row - 100k calls per tick on a 100k-row feed.
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    let calls = 0
+    let captured: SvGridApi<typeof features, Order> | null = null
+    const app = mount(SvGrid, {
+      target,
+      props: {
+        data: seed,
+        columns,
+        features,
+        getRowId: (o: Order) => { calls++; return o.id },
+        _rowModels: { coreRowModel: createCoreRowModel(), filteredRowModel: createFilteredRowModel(), sortedRowModel: createSortedRowModel(sortFns) },
+        containerHeight: 400,
+        virtualization: false,
+        onApiReady(api: SvGridApi<typeof features, Order>) { captured = api },
+      } as any,
+    })
+    try {
+      await tick()
+      const api = captured!
+      api.applyTransaction({ update: [{ id: 'b', symbol: 'MSFT', price: 201 }] })
+      await tick()
+      const afterFirst = calls
+      api.applyTransaction({ update: [{ id: 'b', symbol: 'MSFT', price: 202 }] })
+      await tick()
+      // One call: the id of the update itself. The row model's own getRowId
+      // calls for the replaced row are not part of this count because the
+      // map answered the lookup.
+      expect(calls - afterFirst).toBeLessThanOrEqual(2)
+      expect(api.getData()[1]!.price).toBe(202)
+    } finally {
+      unmount(app)
+      target.remove()
+    }
+  })
 })
+

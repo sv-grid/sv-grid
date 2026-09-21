@@ -24,7 +24,7 @@ recompute.
     createSvelteVirtualizer,
     tableFeatures,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Row = { id: number; name: string; score: number }
   const data: Row[] = Array.from({ length: 100_000 }, (_, i) => ({

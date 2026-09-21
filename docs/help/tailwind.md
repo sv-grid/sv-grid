@@ -144,10 +144,13 @@ applied via a `style="..."` per the user's pick.
 ## When you *do* need to override a class
 
 Some things aren't tokens - column-resize handle width, the funnel
-button hover opacity, pill paddings. The grid's class names are
-deliberately stable so you can target them from your global CSS
-(NOT through `@apply` - the grid lives outside the Tailwind
-purge pass):
+button hover opacity, pill paddings. The grid's class names follow one
+scheme (`.sv-grid-*`) and rarely move, but they are outside the semver
+contract: the [API stability policy](./api-stability.md) covers the
+`--sg-*` tokens and the props, not the markup. Reach for a token first;
+when only a class will do, target it from your global CSS (NOT through
+`@apply` - the grid lives outside the Tailwind purge pass) and re-check
+the rule when you bump the grid:
 
 ```css
 .sv-grid-resize-handle {

@@ -38,6 +38,9 @@ export default defineConfig({
       // The sparkline geometry, which the sheet's printer reads without
       // wanting a component in the graph.
       '@svgrid/grid/sparkline': path.resolve(repoRoot, 'packages/grid/src/sparkline.ts'),
+      // The headless entry, which the Headless demos import so their source
+      // pays the cost the docs quote for it rather than the whole barrel.
+      '@svgrid/grid/core': path.resolve(repoRoot, 'packages/grid/src/headless.ts'),
       '@svgrid/grid/server': path.resolve(repoRoot, 'packages/grid/src/server.ts'),
       '@svgrid/grid/themes': path.resolve(repoRoot, 'packages/grid/src/themes/index.ts'),
       '@svgrid/grid': path.resolve(repoRoot, 'packages/grid/src/index.ts'),

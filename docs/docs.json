@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-20T21:06:15.749Z",
+  "generatedAt": "2026-09-21T08:58:33.054Z",
   "counts": {
-    "pages": 385,
+    "pages": 387,
     "enterprise": 60,
     "withDemo": 271
   },
@@ -100,6 +100,7 @@
         "help/architecture.md",
         "help/benchmarks.md",
         "help/browser-support.md",
+        "help/bundle-size.md",
         "help/collaboration.md",
         "help/columns-hierarchy.md",
         "help/comparison.md",
@@ -149,6 +150,7 @@
         "help/spreadsheet-formulas.md",
         "help/state-maintenance.md",
         "help/status-bar.md",
+        "help/svelte-5-upgrade-data-tables.md",
         "help/tailwind.md",
         "help/testing-and-quality.md",
         "help/testing.md",
@@ -1115,9 +1117,12 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 2730,
-      "lastUpdated": "2026-08-22",
-      "demoIds": []
+      "words": 2939,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [],
+      "tutorialIds": [
+        "install-studio"
+      ]
     },
     {
       "path": "enterprise/studio/i18n.md",
@@ -1483,9 +1488,12 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 714,
-      "lastUpdated": "2026-09-03",
-      "demoIds": []
+      "words": 872,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [],
+      "tutorialIds": [
+        "install-svgrid"
+      ]
     },
     {
       "path": "getting-started/2-first-grid.md",
@@ -1690,8 +1698,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1297,
-      "lastUpdated": "2026-09-03",
+      "words": 1320,
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -1702,7 +1710,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 4152,
+      "words": 4724,
       "lastUpdated": "2026-09-20",
       "demoIds": [
         "06-large-dataset"
@@ -1721,6 +1729,18 @@
       "tier": "community",
       "words": 859,
       "lastUpdated": "2026-09-11",
+      "demoIds": []
+    },
+    {
+      "path": "help/bundle-size.md",
+      "url": "/docs/help/bundle-size/",
+      "title": "Bundle size",
+      "summary": "What SvGrid costs in your bundle, how to reproduce the number on your branch, and what to do if size matters.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 774,
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -1834,8 +1854,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1899,
-      "lastUpdated": "2026-09-20",
+      "words": 1931,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "452-excel-shortcuts"
       ]
@@ -1848,8 +1868,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1452,
-      "lastUpdated": "2026-09-20",
+      "words": 1490,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "453-formula-bar-formats"
       ]
@@ -1904,8 +1924,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 16587,
-      "lastUpdated": "2026-09-20",
+      "words": 17322,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "27-spreadsheet-ribbon",
         "456-sales-report-workbook",
@@ -1927,6 +1947,9 @@
         "492-sheet-iterative",
         "494-sheet-cell-images",
         "489-sheet-hyperlinks"
+      ],
+      "tutorialIds": [
+        "install-spreadsheet"
       ]
     },
     {
@@ -2432,7 +2455,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3832,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -2582,8 +2605,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 668,
-      "lastUpdated": "2026-09-03",
+      "words": 807,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "55-state-maintenance",
         "86-undo-redo"
@@ -2861,7 +2884,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1071,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "186-headless-table"
       ]
@@ -2875,7 +2898,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 977,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "189-headless-shared-state"
       ]
@@ -2888,8 +2911,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 1151,
-      "lastUpdated": "2026-09-03",
+      "words": 1176,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "186-headless-table"
       ]
@@ -2903,7 +2926,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1177,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "190-headless-row-models"
       ]
@@ -2917,7 +2940,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1038,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "191-headless-server-side",
         "19-ssr"
@@ -2931,8 +2954,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 1160,
-      "lastUpdated": "2026-09-03",
+      "words": 2074,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "188-headless-styled"
       ]
@@ -2946,7 +2969,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 811,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "187-headless-virtual"
       ]
@@ -3044,7 +3067,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 830,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3056,7 +3079,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1307,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3068,7 +3091,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 755,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3080,7 +3103,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2117,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -3095,7 +3118,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3107,7 +3130,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 864,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3119,7 +3142,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1625,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -3134,7 +3157,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 932,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3146,7 +3169,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 809,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3158,7 +3181,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1783,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3170,7 +3193,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1081,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -3184,7 +3207,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1623,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -3198,8 +3221,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1842,
-      "lastUpdated": "2026-09-17",
+      "words": 1898,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3213,7 +3236,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 834,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3225,7 +3248,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 825,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3237,7 +3260,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1603,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -3252,7 +3275,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1046,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3264,7 +3287,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 980,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -3349,12 +3372,12 @@
       "path": "help/real-time.md",
       "url": "/docs/help/real-time/",
       "title": "Real-time / streaming updates",
-      "summary": "How to drive the grid from a WebSocket / SSE / poll. Three patterns ranked by the rate of change:",
+      "summary": "How to drive the grid from a WebSocket / SSE / poll. Four patterns ranked by the rate of change:",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1401,
-      "lastUpdated": "2026-09-03",
+      "words": 2026,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "34-realtime-orders"
       ]
@@ -3646,8 +3669,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 898,
-      "lastUpdated": "2026-09-03",
+      "words": 1057,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "145-transaction-api"
       ]
@@ -4041,6 +4064,20 @@
       "demoIds": []
     },
     {
+      "path": "help/svelte-5-upgrade-data-tables.md",
+      "url": "/docs/help/svelte-5-upgrade-data-tables/",
+      "title": "Upgrading a Svelte 4 table to Svelte 5: what breaks, what does not, and the three ways out",
+      "summary": "If your Svelte 4 app has a table built on svelte-headless-table, the Svelte 5 upgrade forces a decision about it, and most of what is written about that decision is guesswork. This page is not. We put the table from the library's own documentation into a Svelte 4 project, upgraded it to Svelte 5 one step at a time, and captured every line the tools printed. The script and the captures are in the repo at tools/migration-lab; every code block below is a quote from those files, checked by a test, and the first line of each capture records the versions it was made with.",
+      "seoTitle": "Svelte 4 to Svelte 5 Table Upgrade - What Breaks, Three Ways Out",
+      "seoDescription": "A svelte-headless-table app taken from Svelte 4 to Svelte 5 step by step, every diagnostic captured verbatim. What the install says, what still compiles, what a rune changes, and the fork, TanStack and SvGrid exits.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 2400,
+      "lastUpdated": "2026-09-20",
+      "demoIds": []
+    },
+    {
       "path": "help/tailwind.md",
       "url": "/docs/help/tailwind/",
       "title": "Tailwind integration",
@@ -4048,8 +4085,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 947,
-      "lastUpdated": "2026-09-03",
+      "words": 989,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -5629,8 +5666,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Reference",
-      "words": 526,
-      "lastUpdated": "2026-09-06",
+      "words": 554,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "10-custom-cells-and-themes",
         "113-cursor-pagination"
@@ -5796,7 +5833,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1318,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -6133,7 +6170,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 711,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-09-20",
       "demoIds": []
     },
     {
@@ -6329,8 +6366,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 966,
-      "lastUpdated": "2026-09-03",
+      "words": 999,
+      "lastUpdated": "2026-09-20",
       "demoIds": [
         "186-headless-table"
       ]

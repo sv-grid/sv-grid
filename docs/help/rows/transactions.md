@@ -52,10 +52,29 @@ function schedule() {
 }
 ```
 
+## What a transaction costs
+
+`update` looks each row up in an id-to-index map built once per data array
+and carried across update-only transactions, so a batch of a thousand
+updates on a hundred-thousand-row grid does a thousand lookups and one copy
+of the array, not a hundred thousand `getRowId` calls. `add` and `remove`
+change indices, so a transaction with either leaves the next array to build
+its map on first use.
+
+The array the transaction produces then goes through the row model, which
+reuses every row object the transaction did not replace and, for an
+update-only transaction on a sorted grid, repairs the sort around the
+replaced rows instead of re-sorting everything. What that costs, and the
+conditions under which the full pipeline runs instead, are on the
+[benchmarks page](../benchmarks.md#streaming-updates) and in
+[real-time updates](../real-time.md).
+
 ## Notes
 
 - The grid owns its data after mount; read the current rows back with
   `api.getData()` (which reflects applied transactions).
+- A row that is both updated and removed in one transaction ends up removed,
+  whether the removal named its id or its object.
 - Selection, expansion, and edit state keyed by `getRowId` survive a
   transaction - that's the point of a stable row id.
 

@@ -1,0 +1,16 @@
+{
+  "name": "svgrid-migration-lab",
+  "private": true,
+  "type": "module",
+  "description": "A Svelte 4 app on svelte-headless-table, upgraded to Svelte 5 step by step with every diagnostic captured verbatim. Not a workspace package: it installs Svelte 4 and then Svelte 5 into its own node_modules with npm, because npm's peer resolution is what a reader hits.",
+  "scripts": {
+    "check": "svelte-check --tsconfig ./tsconfig.json --output human --threshold warning",
+    "lab": "node run.mjs"
+  },
+  "devDependencies": {
+    "svelte": "4.2.20",
+    "svelte-check": "4.7.6",
+    "svelte-headless-table": "0.18.3",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,6 +1,6 @@
 # Real-time / streaming updates
 
-How to drive the grid from a WebSocket / SSE / poll. Three patterns
+How to drive the grid from a WebSocket / SSE / poll. Four patterns
 ranked by the rate of change:
 
 1. **Periodic full refresh** - poll for the latest rows, swap the array.
@@ -9,6 +9,9 @@ ranked by the rate of change:
 3. **Delta merge with backlog** - WebSocket pushes individual row
    patches; you merge them into the in-memory state, optionally
    batching while the user has the page paused.
+4. **A large sorted grid under a tick feed** - ticks batched per frame
+   into one transaction; the grid repairs the sort around the rows that
+   changed instead of re-sorting them all.
 
 ![A live WebSocket or SSE feed pushes deltas that apply as add, update, or remove operations, run through the grid as a keyed row transaction, and surface as a cell flash on the changed row.](/docs-media/grid-realtime.svg)
 
@@ -265,6 +268,71 @@ For 1000 rows updating at 5 Hz, this caps the work at 1000
 assignments per frame regardless of the actual message rate. The
 streaming demo's "throughput slider" stresses this exact path.
 
+## Pattern 4: a large sorted grid under a tick feed
+
+A blotter is sorted by something that ticks, and it has more rows than the
+patterns above assume. Two facts decide the design.
+
+**Which of the two update paths you take.** Writing a field through a
+`$state` proxy (`rows[i].price = x`) re-renders that one cell and nothing
+else: the row model caches on the array reference, which did not change, so
+the sort and the filters are stale for that row until something replaces the
+array. Replacing the array (`api.applyTransaction`, or `rows = next`) runs the
+row model, and the order is current again. For a sorted blotter the second
+path is the correct one, and the question is how often.
+
+**What a data change costs at that row count.** Every array replacement used
+to re-sort every row - 100,000 rows in about 30 ms in the engine alone, so a
+feed ticking faster than that could not keep up. The grid now repairs the
+sort instead: when the new array has the same length and only some of its
+objects were replaced, the sorted stage keeps its previous output, drops the
+replaced rows, sorts the replacements among themselves and merges them back
+in one pass; a 1,000-row tick on 100,000 sorted rows is about 8 ms in the
+engine, measured on the [benchmarks page](./benchmarks.md#streaming-updates).
+The filtered stage does the same for a replacement whose membership did not
+change. The repaired order is exactly the order a full sort would produce.
+
+So the pattern is: batch ticks per animation frame into one
+`applyTransaction({ update })`, and never mutate a row in place on this
+path. The repair assumes the rows it keeps are unchanged in value as well
+as identity, which an immutable update guarantees. A feed that mutates rows
+in place must pass a new array with no replacements (`rows = [...rows]`) to
+refresh, and that runs the full pipeline.
+
+```ts
+// Ticks arrive as JSON batches; the newest price per id wins the frame.
+const pending = new Map<string, number>()
+let frame: number | null = null
+
+socket.onmessage = (e) => {
+  for (const [id, last] of JSON.parse(e.data).t) pending.set(id, last)
+  if (frame === null) frame = requestAnimationFrame(flush)
+}
+
+function flush() {
+  frame = null
+  const byId = new Map(api.getData().map((r) => [r.id, r]))
+  const update = []
+  for (const [id, last] of pending) {
+    const row = byId.get(id)
+    if (row) update.push({ ...row, last, direction: last > row.last ? 'up' : 'down' })
+  }
+  pending.clear()
+  api.applyTransaction({ update }) // one data change, one pipeline run
+}
+```
+
+When the repair does not apply and the full pipeline runs instead: the tick
+added or removed rows (structural), it replaced more than a quarter of the
+rows, the sort or filter state changed in the same frame, grouping is
+active (group rows are rebuilt from the sorted output), or a replaced text
+value is one the ranked text sort had never seen. None of these is wrong,
+only slower, and each is the full-sort cost above.
+
+The [market blotter demo](https://svgrid.com/demos/495-market-blotter-100k/)
+runs this at 100,000 rows with a live frame-time readout, over an in-page
+socket or your own (`?ws=`).
+
 ## Combining with sort + filter
 
 The grid's sort + filter run AFTER your patches land in `rows`. Two
@@ -295,10 +363,12 @@ resetting on every refresh.
 
 ### How fast can SvGrid update?
 
-Fast enough for tick-by-tick feeds - the stock-market demo updates 25 symbols
-every 250 ms with green/red cell flashes while sorting and selection stay live.
-For very high rates, patch only changed rows rather than swapping the whole
-array.
+Fast enough for tick-by-tick feeds. The stock-market demo updates 25 symbols
+every 250 ms with green/red cell flashes while sorting and selection stay
+live, and the market blotter demo keeps 100,000 rows sorted under tens of
+thousands of updates a second. Batch the ticks per animation frame into one
+`applyTransaction`; the engine cost of a 1,000-row tick on 100,000 sorted
+rows is on the [benchmarks page](./benchmarks.md#streaming-updates).
 
 ## See also
 
@@ -307,4 +377,8 @@ array.
 - [Saved views](./saved-views.md) - persist a "live mode on / off"
   toggle alongside the rest of the view config.
 - [Performance benchmarks](./benchmarks.md) - measured per-frame cost
-  of the patterns above.
+  of the patterns above, and the cost of a tick on a sorted grid.
+- [Transactions](./rows/transactions.md) - the `applyTransaction`
+  contract and what an update batch costs.
+- [Svelte trading grid](https://svgrid.com/svelte/trading-grid/) - the
+  blotter landing page: the 100,000-row demo, the formats and the flash.

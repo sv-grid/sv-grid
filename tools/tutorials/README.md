@@ -92,6 +92,49 @@ picker's label), `clickChip` (a button by its text, inside a scope), `kpi`,
 source, meta and docs pages with the Anthropic API (`ANTHROPIC_API_KEY`), with
 every action left as a `TODO` that you script by hand.
 
+## Beyond a gallery demo: the stage, the website, longer cuts
+
+A script names what it records with one of three keys:
+
+| Key | Records | Used for |
+| --- | --- | --- |
+| `demo: '05-inline-editing'` | a gallery demo (`:5174/#/<id>`) | feature tutorials |
+| `stage: true` | the recording stage, `examples/stage.html` | install tutorials, title and end cards |
+| `site: 'studio/new'` | a route of the website (`:5180`) | the Studio designer |
+
+The stage is a small page in the gallery's Vite root with four scenes, driven
+from a beat through `h.stage`: a terminal (`h.stage.term.run(cmd, { output })`
+types the command and prints the lines), an editor
+(`h.stage.editor.type(code)`), a browser frame around the real component
+(`h.stage.browser.mount('first-grid' | 'minimal-template' | 'sheet-budget')`,
+presets in `examples/src/stage/presets.ts`), and title / end cards
+(`h.stage.show('title', { kicker, title, subtitle, lines })`). `show('split')`
+puts the editor and the browser side by side. Terminal output is scripted, so
+keep it to what the real CLI prints (see the comments in `scripts/install-*.mjs`
+for where each transcript comes from).
+
+A longer cut lists `segments` instead of `beats`: each segment is one take
+(`demo` / `stage` / `site` + `setup` + `beats` + optional `verify`, `zoom`,
+`hideIntro`, `introHold`, `outroHold`). Segments are recorded one after the
+other, trimmed at their own sync flash, faded and joined; the narration and
+the captions keep their timing across the join.
+
+`kind: 'marketing'` marks a YouTube-only cut: no `docsPage`, nothing under
+`website/public/tutorials`, recorded at 1920x1080 (`view` overrides). The
+result is `tutorials-out/<id>/<id>.youtube.mp4` with the SRT, the GIF and the
+thumbnail; publish it with `youtube.mjs upload <id>`. Demo segments in a
+marketing cut set their own `zoom` (1.35-1.5 fills a 1080p frame).
+
+Before a cut ships, `node tools/tutorials/scan-overlay.mjs tutorials-out/<id>/<id>.youtube.mp4`
+checks the master for the Vite error overlay, which the dev server pushes to
+every open page when any module fails to transform; the recorder removes it
+on sight, and the scan proves it stayed away.
+
+`poster: { beat: n }` takes the poster and the YouTube thumbnail from the end
+of beat `n` instead of the intro hold (a stage cut opens on an empty
+terminal). `--serve` also starts the website when a script has a `site`
+segment; `--site <url>` points at one already running.
+
 ## Where the docs block goes
 
 `embed.mjs` writes a `<figure class="docs-tutorial">` between

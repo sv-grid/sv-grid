@@ -23,7 +23,7 @@ import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { factTokens, daysBetween, SVGRID_PRICING } from './lib/competitor-facts.mjs'
-import { guideFactsBlock, guideFactsSlugs, guideFactsPackages, syncGuideFacts, benchmarkBlock, syncBenchmarkBlock, stripGeneratedBlocks, comparisonForGuide } from './lib/guide-facts.mjs'
+import { guideFactsBlock, guideFactsSlugs, guideFactsPackages, syncGuideFacts, benchmarkBlock, syncBenchmarkBlock, stripGeneratedBlocks, comparisonForGuide, sizeBlock, syncSizeBlock, SIZE_START } from './lib/guide-facts.mjs'
 import type { Comparison } from '../website/src/lib/comparisons'
 
 const ROOT = process.cwd()
@@ -221,7 +221,7 @@ describe('comparison data files', () => {
 
 describe('comparison guides', () => {
   it('carry a current generated facts block and no typed numbers outside it', async () => {
-    const files = (await readdir(HELP)).filter((f) => f === 'comparison.md' || /^migrating-from-.*\.md$/.test(f))
+    const files = (await readdir(HELP)).filter((f) => f === 'comparison.md' || f === 'svelte-5-upgrade-data-tables.md' || /^migrating-from-.*\.md$/.test(f))
     expect(files.length).toBeGreaterThan(15)
     const problems: string[] = []
     // The guides may quote SvGrid's own prices; everything else with a number
@@ -249,6 +249,74 @@ describe('comparison guides', () => {
       }
       if (fileSlug === 'comparison') {
         for (const m of prose.matchAll(/\b\d+(?:\.\d+)?\s?ms\b/g)) problems.push(`${f}: timing "${m[0]}" outside the bench block`)
+      }
+    }
+    expect(problems).toEqual([])
+  })
+})
+
+/**
+ * SvGrid's own size, wherever it is stated. The homepage stat pill read
+ * "78 KB" for a month after the ledger said 93, and docs/help/bundle-size.md
+ * sat at 2.3 / 77.3 for as long; the number now renders from
+ * docs/_data/svgrid-size.json on the pages that can import it, and the pages
+ * that cannot (the READMEs) may state it only in a form the ledger produces:
+ * one decimal as `measure-size.mjs` prints it, or rounded to a whole KB.
+ */
+describe('size claims outside the comparison guides', () => {
+  // Pages with a generated size block. Only the bundle-size page is held to
+  // "no other size on the page": the benchmarks page types measured memory
+  // figures (MB retained, KB per row) that are not bundle sizes.
+  const SIZE_PAGES: Array<[rel: string, noOtherSizes: boolean]> = [
+    ['docs/help/bundle-size.md', true],
+    ['docs/help/benchmarks.md', false],
+  ]
+  const PROSE_PAGES = [
+    'README.md',
+    'packages/grid/README.md',
+    'docs/help/architecture.md',
+    'docs/help/web-components/limitations.md',
+    'docs/why-headless.md',
+    'docs/help/headless/overview.md',
+    'docs/help/headless/styling.md',
+    'docs/reference/headless-engine.md',
+  ]
+  const SIZE_RE = /~?\d+(?:\.\d+)?\s?(?:KB|kB|KiB|kb)\b/g
+
+  function allowedSizes(): Set<string> {
+    const out = new Set<string>()
+    for (const e of Object.values(data.size?.entries ?? {})) {
+      for (const kb of [e.baseGzipKb, e.cssGzipKb, e.lazyGzipKb]) {
+        const n = Number(kb)
+        if (!(n > 0)) continue
+        out.add(`${n.toFixed(1)} KB`)
+        out.add(`${Math.round(n)} KB`)
+        out.add(`${Math.floor(n)} KB`)
+      }
+    }
+    return out
+  }
+
+  it('the size pages carry a current generated size block, bundle-size.md with no typed size outside it', async () => {
+    const problems: string[] = []
+    for (const [rel, noOtherSizes] of SIZE_PAGES) {
+      const md = (await readFile(join(ROOT, rel), 'utf-8')).replace(/\r\n/g, '\n')
+      const expected = syncSizeBlock(md, sizeBlock(data.size))
+      if (!md.includes(SIZE_START)) problems.push(`${rel}: no size block`)
+      else if (expected !== md) problems.push(`${rel}: size block is stale (node tools/sync-guide-facts.mjs)`)
+      if (noOtherSizes) for (const m of stripGeneratedBlocks(md).matchAll(SIZE_RE)) problems.push(`${rel}: typed size "${m[0]}"`)
+    }
+    expect(problems).toEqual([])
+  })
+
+  it('READMEs and the architecture pages state only sizes the ledger produces', async () => {
+    const allowed = allowedSizes()
+    const problems: string[] = []
+    for (const rel of PROSE_PAGES) {
+      const md = (await readFile(join(ROOT, rel), 'utf-8')).replace(/\r\n/g, '\n')
+      for (const m of stripGeneratedBlocks(md).matchAll(SIZE_RE)) {
+        const tok = norm(m[0]).replace(/\s?(?:kB|KiB|kb)$/, ' KB').replace(/(\d)KB$/, '$1 KB')
+        if (!allowed.has(tok)) problems.push(`${rel}: "${m[0]}" is not a size in docs/_data/svgrid-size.json (pnpm size:json, then state it as printed or rounded)`)
       }
     }
     expect(problems).toEqual([])

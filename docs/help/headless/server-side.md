@@ -21,7 +21,7 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
 
 ```svelte
 <script lang="ts">
-  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid/core'
 
   type Row = { id: number; name: string; dept: string; salary: number }
 

@@ -418,7 +418,15 @@ const BUDGET_KB = {
   // numeric subtraction is worth the four extra closures: a single-column sort
   // went 32 ms -> 27 ms and a text sort 62 ms -> 59 ms. The budget keeps the
   // usual ~0.3 KB of headroom above the measurement.
-  'headless subpath (@svgrid/grid/core)': 5.3,
+  //
+  // 5.3 -> 6.8 (measured 5.1 -> 6.5) when the three virtualizers joined the
+  // entry. They are window arithmetic with no DOM and a custom renderer over
+  // 50k rows needs one, but they were only on the barrel, so every Headless
+  // demo imported the barrel to reach `createSvelteVirtualizer` and the
+  // "import the engine alone" claim was not what the demo source did. This
+  // row is the everything-imported ceiling; `createSvGrid` on its own is the
+  // row above and did not move.
+  'headless subpath (@svgrid/grid/core)': 6.8,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until

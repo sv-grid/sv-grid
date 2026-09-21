@@ -1,27 +1,27 @@
 {
-  "generatedAt": "2026-09-02T17:32:33.607Z",
+  "generatedAt": "2026-09-20T23:55:41.259Z",
   "node": "v24.18.0",
   "platform": "win32 x64",
   "rows": 100000,
-  "runs": 9,
+  "runs": 5,
   "results": {
     "rowmodel-build": {
       "label": "Build row model, 100k x 9, no stages",
       "time": {
-        "ms": 0.0016999999999995907,
-        "min": 0.0009000000000014552,
-        "max": 0.021299999999996544
+        "ms": 0.0016000000000246928,
+        "min": 0.001299999999986312,
+        "max": 0.028899999999993042
       },
       "heap": {
-        "bytes": 16806488
+        "bytes": 20008088
       }
     },
     "sort-1col": {
       "label": "Sort 100k rows by 1 column",
       "time": {
-        "ms": 27.60759999999999,
-        "min": 24.488099999999974,
-        "max": 32.79900000000001
+        "ms": 30.74459999999999,
+        "min": 26.52950000000004,
+        "max": 32.97319999999996
       },
       "counts": {
         "core.runs": 1,
@@ -33,9 +33,9 @@
     "sort-3col": {
       "label": "Sort 100k rows by 3 columns",
       "time": {
-        "ms": 44.9756000000001,
-        "min": 40.36700000000002,
-        "max": 60.38129999999998
+        "ms": 52.48829999999998,
+        "min": 48.036500000000046,
+        "max": 62.464200000000005
       },
       "counts": {
         "core.runs": 1,
@@ -47,59 +47,61 @@
     "sort-text": {
       "label": "Sort 100k rows by a text column (collated)",
       "time": {
-        "ms": 59.03550000000001,
-        "min": 54.057000000000016,
-        "max": 64.84680000000003
+        "ms": 56.000699999999995,
+        "min": 54.17070000000001,
+        "max": 56.7285
       }
     },
     "sort-date": {
       "label": "Sort 100k rows by a date column",
       "time": {
-        "ms": 39.32069999999999,
-        "min": 36.22109999999998,
-        "max": 48.08279999999999
+        "ms": 42.063800000000015,
+        "min": 38.58280000000002,
+        "max": 50.4948
       }
     },
     "filter-1op": {
       "label": "Filter 100k rows, 1 operator",
       "time": {
-        "ms": 3.978699999999975,
-        "min": 3.7456999999999994,
-        "max": 10.5822
+        "ms": 4.085699999999974,
+        "min": 3.4776999999999703,
+        "max": 15.002499999999998
       },
       "counts": {
         "core.runs": 1,
         "filter.runs": 1,
+        "filter.getAllColumns": 1,
         "filter.getCellValueByColumnId": 100000
       }
     },
     "filter-5op": {
       "label": "Filter 100k rows, 5 operators ANDed",
       "time": {
-        "ms": 6.0160999999999945,
-        "min": 5.746600000000001,
-        "max": 12.429100000000005
+        "ms": 7.342300000000023,
+        "min": 5.855399999999975,
+        "max": 7.761299999999949
       },
       "counts": {
         "core.runs": 1,
         "filter.runs": 1,
+        "filter.getAllColumns": 1,
         "filter.getCellValueByColumnId": 134702
       }
     },
     "group-2col-3agg": {
       "label": "Group 100k rows by 2 columns, 3 aggregators",
       "time": {
-        "ms": 48.75160000000005,
-        "min": 45.96160000000009,
-        "max": 58.51640000000003
+        "ms": 75.60300000000007,
+        "min": 65.1570999999999,
+        "max": 87.16320000000002
       }
     },
     "selection-toggle": {
       "label": "Toggle one row checkbox on a filtered + sorted 100k grid",
       "time": {
         "ms": 0.0018000000000029104,
-        "min": 0.0009000000000014552,
-        "max": 0.06440000000000623
+        "min": 0.0009999999999763531,
+        "max": 0.020800000000008367
       },
       "counts": {
         "selection.initialRuns": 2,
@@ -110,25 +112,126 @@
     "filter-excel-contains": {
       "label": "Filter 100k rows via the compiled Excel filter (contains)",
       "time": {
-        "ms": 3.1820999999999913,
-        "min": 2.9162000000000035,
-        "max": 6.27770000000001
+        "ms": 3.2186000000000092,
+        "min": 3.140100000000018,
+        "max": 4.329900000000009
       }
     },
     "filter-excel-accented": {
       "label": "Filter 100k accented rows via the compiled Excel filter",
       "time": {
-        "ms": 20.272899999999993,
-        "min": 19.722399999999993,
-        "max": 24.38220000000001
+        "ms": 20.478699999999975,
+        "min": 19.114299999999957,
+        "max": 25.07649999999998
+      }
+    },
+    "tick-100-of-100k-sorted": {
+      "label": "Tick: replace 100 of 100k rows, sorted by the ticking column",
+      "time": {
+        "ms": 6.225500000000011,
+        "min": 5.831499999999949,
+        "max": 8.298099999999977
+      },
+      "counts": {
+        "tick.rows": 100000,
+        "tick.newRows": 100,
+        "tick.keptRowReads": 0
+      }
+    },
+    "tick-1k-of-100k-sorted": {
+      "label": "Tick: replace 1,000 of 100k rows, sorted by the ticking column",
+      "time": {
+        "ms": 9.527899999999988,
+        "min": 8.068399999999997,
+        "max": 12.502400000000023
+      },
+      "counts": {
+        "tick.rows": 100000,
+        "tick.newRows": 998,
+        "tick.keptRowReads": 0
       }
     },
     "csv-export": {
       "label": "Export CSV, 10k rows x 9 cols",
       "time": {
-        "ms": 9.326999999999998,
-        "min": 8.11160000000001,
-        "max": 10.949000000000012
+        "ms": 9.967399999999998,
+        "min": 9.232499999999987,
+        "max": 18.515200000000007
+      }
+    },
+    "sheet-open-1k": {
+      "label": "Open a sheet of 1,000 rows, one SUM per row",
+      "time": {
+        "ms": 8.731100000000012,
+        "min": 4.667500000000018,
+        "max": 18.445300000000017
+      },
+      "counts": {
+        "evaluations": 1000
+      },
+      "heap": {
+        "bytes": 1686160
+      }
+    },
+    "sheet-open-10k": {
+      "label": "Open a sheet of 10,000 rows, one SUM per row",
+      "time": {
+        "ms": 62.81469999999996,
+        "min": 59.059800000000024,
+        "max": 65.064
+      },
+      "counts": {
+        "evaluations": 10000
+      },
+      "heap": {
+        "bytes": 17261624
+      }
+    },
+    "sheet-open-50k": {
+      "label": "Open a sheet of 50,000 rows, one SUM per row",
+      "time": {
+        "ms": 389.12020000000007,
+        "min": 380.1154999999999,
+        "max": 414.62019999999995
+      },
+      "counts": {
+        "evaluations": 50000
+      },
+      "heap": {
+        "bytes": 88289080
+      }
+    },
+    "sheet-edit-10k": {
+      "label": "Type in one cell of a 10,000-row sheet",
+      "time": {
+        "ms": 0.0327999999999804,
+        "min": 0.01300000000000523,
+        "max": 0.17199999999999704
+      },
+      "counts": {
+        "evaluations": 1
+      }
+    },
+    "sheet-edit-chain-10k": {
+      "label": "Type at the top of a 10,000-row dependency chain",
+      "time": {
+        "ms": 50.33789999999999,
+        "min": 33.432600000000036,
+        "max": 56.7962
+      },
+      "counts": {
+        "evaluations": 10000
+      }
+    },
+    "sheet-edit-column-sum-10k": {
+      "label": "Type in a column a single SUM of 10,000 cells reads",
+      "time": {
+        "ms": 8.02970000000002,
+        "min": 6.945599999999999,
+        "max": 15.264200000000002
+      },
+      "counts": {
+        "evaluations": 1
       }
     }
   }

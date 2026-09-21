@@ -148,7 +148,7 @@ Toggle from the console: `localStorage.setItem('svgrid:hud', 'on')`.
 
 ## See also
 
-- [Bundle size reference](../reference/bundle-size.md) - what each feature costs
+- [Bundle size reference](../help/bundle-size.md) - what each feature costs
 - [Benchmark harness recipe](./benchmark-harness.md) - measure across grid sizes
 - [Grid state inspector recipe](./grid-state-inspector.md) - the matching debug panel
 - [Million rows recipe](./million-rows.md) - virtualisation in anger

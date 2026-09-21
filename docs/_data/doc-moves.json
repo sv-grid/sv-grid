@@ -104,5 +104,8 @@
     "critical-path-baselines": "help/gantt/critical-path#the-critical-path",
     "resource-load-a-folded-axis": "help/gantt/resources#a-field-service-quarter",
     "see-also": "help/gantt#see-also"
+  },
+  "reference/bundle-size": {
+    "": "help/bundle-size"
   }
 }

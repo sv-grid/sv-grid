@@ -41,7 +41,7 @@ import {
   rowPaginationFeature,
   columnGroupingFeature,
   rowExpandingFeature,
-} from '@svgrid/grid'
+} from '@svgrid/grid/core'
 
 const table = createSvGrid({
   _features: features,
@@ -156,7 +156,7 @@ is why the buttons below just assign to it.
     tableFeatures,
     rowPaginationFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -237,7 +237,7 @@ branch on it.
     columnGroupingFeature,
     rowExpandingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 

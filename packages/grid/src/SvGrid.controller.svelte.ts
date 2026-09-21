@@ -925,36 +925,42 @@ export function createSvGridController<
   // svelte-ignore state_referenced_locally
   const treeDataConfig = props.treeData;
 
+  // Pagination is intentionally NOT in the grid's row-model pipeline. The
+  // wrapper applies its own filters (filterMenuValues, globalFilter,
+  // valueFilters) on top of `grid.getRowModel().rows`. If pagination ran
+  // first, those filters would only see the visible page. Instead the wrapper
+  // paginates last - see `allRows` below.
+  //
+  // Built ONCE. Both inputs are captured at mount, and the stages keep state
+  // between runs: the sorted and filtered stages hold their last output so a
+  // data tick can repair it instead of recomputing (core.ts, `replacedRowsOf`).
+  // This used to be a getter that built fresh stages on every read, which
+  // threw that cache away on each run - a live feed re-sorted 100k rows on
+  // every tick and the row-model memo's `cachedPipeline` never matched.
+  const rowModels = {
+    coreRowModel: createCoreRowModel<TData>(),
+    filteredRowModel: createFilteredRowModel<TData>(),
+    // External-sort mode: pass the rows through untouched so the consumer
+    // controls ordering (e.g. tree data that must preserve hierarchy).
+    sortedRowModel: externalSortEnabled
+      ? passthroughSortedRowModel
+      : createSortedRowModel<TData>(sortFns),
+    // Tree nesting replaces grouping when `treeData` is set - a row cannot
+    // be both a hierarchy node and bucketed under a group banner.
+    groupedRowModel: treeDataConfig
+      ? createTreeRowModel<TData>({
+          parentField: treeDataConfig.parentField,
+          idField: treeDataConfig.idField,
+        })
+      : createGroupedRowModel<TData>(),
+    expandedRowModel: createExpandedRowModel<TData>(),
+  };
 
   const grid = createSvGrid({
     get _features() {
       return resolveEffectiveFeatures();
     },
-    get _rowModels() {
-      // Pagination is intentionally NOT in the grid's row-model pipeline.
-      // The wrapper applies its own filters (filterMenuValues, globalFilter,
-      // valueFilters) on top of `grid.getRowModel().rows`. If pagination
-      // ran first, those filters would only see the visible page. Instead
-      // the wrapper paginates last - see `allRows` below.
-      return {
-        coreRowModel: createCoreRowModel<TData>(),
-        filteredRowModel: createFilteredRowModel<TData>(),
-        // External-sort mode: pass the rows through untouched so the consumer
-        // controls ordering (e.g. tree data that must preserve hierarchy).
-        sortedRowModel: externalSortEnabled
-          ? passthroughSortedRowModel
-          : createSortedRowModel<TData>(sortFns),
-        // Tree nesting replaces grouping when `treeData` is set - a row cannot
-        // be both a hierarchy node and bucketed under a group banner.
-        groupedRowModel: treeDataConfig
-          ? createTreeRowModel<TData>({
-              parentField: treeDataConfig.parentField,
-              idField: treeDataConfig.idField,
-            })
-          : createGroupedRowModel<TData>(),
-        expandedRowModel: createExpandedRowModel<TData>(),
-      };
-    },
+    _rowModels: rowModels,
     get columns() {
       return internalColumns;
     },
@@ -3888,6 +3894,14 @@ export function createSvGridController<
     // the only thing that can answer honestly once the data is a window
     // onto a server.
     if (props.rowSelectionModel) return props.rowSelectionModel.headerState();
+    // Nothing checked is the common case and needs no walk: this derived
+    // re-runs on every data change, and on a 100k-row live feed the filter
+    // below was 30 ms per tick spent to conclude "none".
+    let anyChecked = false;
+    for (const id in rowSelectionState) {
+      if (rowSelectionState[id]) { anyChecked = true; break; }
+    }
+    if (!anyChecked) return "none";
     const selectable = allRows.filter(
       (row) => !isGroupRow(row) && !placeholderStateOf(row),
     );

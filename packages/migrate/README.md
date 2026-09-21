@@ -49,8 +49,36 @@ These are reported as warnings, never silently dropped:
   depending on what you were doing.
 - **Unrecognised plugins**, including your own.
 
-Anything hand-written in the original `<script>` beyond the table wiring is not
-carried across. Preview first, and move that code over yourself.
+What carries across from the `<script>`: the column definitions and plugin
+config (translated), your `export let` props or `$props()` block, and every
+import that is not the table library or `svelte/store` (row types above all).
+When `createTable` took a store over a prop, the grid binds to the prop
+directly (`data={people}`). The table, the view model, the store and the `$:`
+statements over them are gone, and anything else hand-written in the script
+is not carried across: preview first, and move that code over yourself.
+
+Two more things it names rather than fixes, because they sit outside the
+`<table>` it replaces: markup that still reads the view model (a pager on
+`pluginStates.page`, a `$: shown = $pageRows.length`), and events the rows
+dispatched (`dispatch('select', row.original)`), which become
+`onRowClick={({ row }) => ...}` on `<SvGrid>`.
+
+## Svelte 5 upgrade checklist
+
+If the codemod is part of a Svelte 4 to 5 upgrade, this order keeps each
+step's diagnostics readable on their own. The whole sequence, with every line
+the tools print, is captured in
+[docs/help/svelte-5-upgrade-data-tables.md](https://svgrid.com/docs/help/svelte-5-upgrade-data-tables/).
+
+1. `npm install svelte@5`. On npm 11 the `svelte@^4` peer range of
+   svelte-headless-table is overridden with a warning; older npm needs
+   `--legacy-peer-deps`.
+2. `npx svelte-check`. The untouched component still type-checks in legacy
+   mode; if it does not, that is not the table.
+3. `npx @svgrid/migrate src`, read the preview and the warnings, then
+   `npx @svgrid/migrate src --write`.
+4. `npm install @svgrid/grid && npm uninstall svelte-headless-table`.
+5. `npx svelte-check` again. What is left is what the warnings named.
 
 ## From TanStack Table v9 (and the shadcn-svelte data table)
 
