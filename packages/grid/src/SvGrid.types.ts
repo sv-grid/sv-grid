@@ -2000,6 +2000,14 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     columnId: string;
   }) => unknown;
   /**
+   * Whether a collapsed row still goes on the clipboard when the copied
+   * range spans it. Left out, a copy skips every collapsed row, which is
+   * what "filter, copy, paste" needs. A spreadsheet answers per row: a row
+   * hidden by hand is copied, as Excel copies one, while a row a filter
+   * folded away is not.
+   */
+  copyCollapsedRows?: (rowIndex: number) => boolean;
+  /**
    * An HTML rendering of what Ctrl+C copies, written to the clipboard as
    * `text/html` beside the TSV. Excel and Google Sheets read the HTML
    * first, so a table with inline styles pastes into them with its formats,

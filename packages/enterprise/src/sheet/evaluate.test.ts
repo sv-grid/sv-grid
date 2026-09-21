@@ -390,6 +390,17 @@ describe('the function library', () => {
     expect(run('=POWER(2, 10)')).toBe(1024)
   })
 
+  it('reads a text date or time as its day number in arithmetic, as Excel reads a date cell', () => {
+    // 2026-03-04 is serial 46085; a day later is 46086, and two dates apart are days.
+    expect(run('=A1+1', [['2026-03-04']])).toBe(46086)
+    expect(run('=B1-A1', [['2026-03-04', '2026-03-11']])).toBe(7)
+    expect(run('=A1*2', [['10:30']])).toBe(0.875)
+    expect(run('=A1+0.5', [['2026-03-04 12:00']])).toBe(46086)
+    expect(run('=A1+1', [['3/4/2026']])).toBe(46086)
+    expect(run('=A1+1', [['hello']])).toEqual({ error: '#VALUE!' })
+    expect(run('=A1+1', [['2026-13-04']])).toEqual({ error: '#VALUE!' })
+  })
+
   it('does the date functions', () => {
     expect(run('=YEAR("2026-09-14")')).toBe(2026)
     expect(run('=MONTH("2026-09-14")')).toBe(9)

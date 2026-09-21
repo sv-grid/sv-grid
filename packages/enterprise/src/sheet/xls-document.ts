@@ -21,7 +21,7 @@ import type { SheetState, SheetStateEntry } from './document'
 import { isCompoundFile, readCompoundFile, writeCompoundFile } from './xls-cfb'
 import { formulaFromRpn, isModernFunctionName, rpnFromFormula, xlsErrorCode, xlsErrorText, type XlsReadContext } from './xls-formula'
 import {
-  asText, BUILTIN_NUMFMT, isDateFormat, isoToSerial, ptToPx, pxToPt, serialToIso, widthToPx,
+  asText, BUILTIN_NUMFMT, isDateFormat, isDayFormat, isoToSerial, ptToPx, pxToPt, serialToIso, widthToPx,
 } from './xlsx-document'
 import { isError, type CellValue } from './ast'
 import type { SheetDocument } from './document'
@@ -431,7 +431,7 @@ export function sheetStateFromXls(bytes: Uint8Array): SheetState {
     }
     /** A number as the workbook stores it: an ISO date when the cell is one. */
     const numberText = (value: number, ixfe: number): string =>
-      isDateFormat(style(ixfe)?.numFmt) && Number.isInteger(value) && value > 0 ? serialToIso(value) : String(value)
+      isDayFormat(style(ixfe)?.numFmt) && Number.isInteger(value) && value > 0 ? serialToIso(value) : String(value)
 
     // A shared or array formula is stored once, at its anchor, and every
     // other cell points back at it.

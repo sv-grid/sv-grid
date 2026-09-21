@@ -7060,6 +7060,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "advanced"
       },
       {
+        "key": "copyCollapsedRows",
+        "label": "Copy Collapsed Rows",
+        "type": "json",
+        "description": "Whether a collapsed row still goes on the clipboard when the copied range spans it. Left out, a copy skips every collapsed row, which is what \"filter, copy, paste\" needs. A spreadsheet answers per row: a row hidden by hand is copied, as Excel copies one, while a row a filter folded away is not.",
+        "code": true,
+        "group": "advanced"
+      },
+      {
         "key": "clipboardHtml",
         "label": "Clipboard Html",
         "type": "json",

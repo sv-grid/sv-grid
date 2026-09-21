@@ -26,13 +26,13 @@
  */
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
-  applyFormat, toggleFormat, preset, autoSum, structural, clearFormats,
+  applyFormat, toggleFormat, preset, autoSum, structural, clearFormats, newSheet,
   getFormatTarget, getWorkbook, withFormatUndo, nudgeFontSize, activeEntry,
   FONT_SIZES, DEFAULT_FONT_SIZE, applyBorders, formatAllowed, raiseRibbonAction,
   type SheetCommand, type BorderPreset,
 } from './shortcuts'
 export { FONT_SIZES, applyBorders, type BorderPreset } from './shortcuts'
-import { insertRows, deleteRows, getStructureTarget } from './structure'
+import { insertRows, deleteRows, insertColumns, deleteColumns, getStructureTarget } from './structure'
 import { fillDown, fillRight, targetRect } from './commands'
 import type { Rect } from './navigate'
 import { FORMAT_PRESETS, FORMAT_CATEGORY_PATTERNS, formatCategory, accountingParts, accountingPattern, type FormatPresetName } from './number-format'
@@ -179,6 +179,7 @@ export type RibbonActionId =
   | 'insert-picture'
   | 'chart-setup'
   | 'delete-object'
+  | 'delete-sheet'
   | 'sparkline-line'
   | 'sparkline-column'
   | 'sparkline-winloss'
@@ -806,19 +807,38 @@ const HOME: RibbonTab = {
       icon: 'table',
       label: 'Cells',
       items: [
+        // Excel's split buttons: the face takes the selection's axis (a
+        // whole column inserts columns, anything else rows, which is what
+        // Excel does with a cell selected), and the arrow spells the axis
+        // out, so a column can be inserted from a cell without selecting
+        // the column first.
         small(1, {
           id: 'insert', label: 'Insert', title: 'Insert Cells', keys: 'Ctrl+Shift++',
-          icon: 'insert-cells', kind: 'button', wide: true,
-          // A plain cell is ambiguous for the keystroke, which declines; the
-          // button behaves as Excel's does with a cell selected and inserts
-          // a row, shifting the sheet down.
-          run: (cmd) => structural(cmd, 'insert') || insertRows(cmd),
+          icon: 'insert-cells', kind: 'dropdown', split: true, wide: true,
+          run: (cmd, value) =>
+            value === 'rows' ? insertRows(cmd)
+              : value === 'columns' ? insertColumns(cmd)
+                : value === 'sheet' ? newSheet()
+                  : structural(cmd, 'insert') || insertRows(cmd),
+          options: [
+            { value: 'rows', label: 'Insert Sheet Rows' },
+            { value: 'columns', label: 'Insert Sheet Columns' },
+            { value: 'sheet', label: 'Insert Sheet', keys: 'Shift+F11' },
+          ],
           isEnabled: canRestructure,
         }),
         small(2, {
           id: 'delete', label: 'Delete', title: 'Delete Cells', keys: 'Ctrl+-',
-          icon: 'delete-cells', kind: 'button', wide: true,
-          run: (cmd) => structural(cmd, 'delete') || deleteRows(cmd),
+          icon: 'delete-cells', kind: 'dropdown', split: true, wide: true,
+          run: (cmd, value) =>
+            value === 'rows' ? deleteRows(cmd)
+              : value === 'columns' ? deleteColumns(cmd)
+                : structural(cmd, 'delete') || deleteRows(cmd),
+          options: [
+            { value: 'rows', label: 'Delete Sheet Rows' },
+            { value: 'columns', label: 'Delete Sheet Columns' },
+            { value: 'sheet', label: 'Delete Sheet', emits: 'delete-sheet' },
+          ],
           isEnabled: canRestructure,
         }),
         // Excel's Format menu: Cell Size, Visibility, and Format Cells at

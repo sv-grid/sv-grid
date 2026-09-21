@@ -106,14 +106,30 @@ function compareColours(
 
 /**
  * Excel's guess at "my data has headers": the first row of the key column
- * holds text and the row under it holds something that is not text.
+ * holds text and the row under it holds something that is not text. Given
+ * the block's columns it looks across them, as Excel does: a Name column
+ * over names says nothing, and the Pay column beside it, text over a
+ * number, is what says the first row is a header, so a sort by name does
+ * not carry "Name" down into the names.
  */
 export function guessHeaderRow(
   valueAt: (row: number, col: number) => CellValue,
   top: number,
   col: number,
+  columns?: { left: number; right: number },
 ): boolean {
   const isText = (v: CellValue) => typeof v === 'string' && v !== ''
-  const below = valueAt(top + 1, col)
-  return isText(valueAt(top, col)) && !isText(below) && !isBlankValue(below)
+  const headerOver = (c: number) => {
+    const below = valueAt(top + 1, c)
+    return isText(valueAt(top, c)) && !isText(below) && !isBlankValue(below)
+  }
+  if (!columns) return headerOver(col)
+  let someHeader = false
+  for (let c = columns.left; c <= columns.right; c += 1) {
+    const head = valueAt(top, c)
+    // A number or a blank in the first row is data, whatever is beside it.
+    if (!isBlankValue(head) && !isText(head)) return false
+    if (headerOver(c)) someHeader = true
+  }
+  return someHeader
 }

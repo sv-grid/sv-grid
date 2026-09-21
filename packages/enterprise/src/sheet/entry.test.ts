@@ -39,8 +39,28 @@ describe('parseEntry', () => {
     expect(shown('1,234.5')).toBe('1,234.5')
   })
 
+  it('reads a slash date as the sheet\'s yyyy-mm-dd under a date format, as Excel reads one', () => {
+    expect(parseEntry('3/4/2026')).toEqual({ value: '2026-03-04', numFmt: 'yyyy-mm-dd' })
+    expect(parseEntry('12/31/99')).toEqual({ value: '1999-12-31', numFmt: 'yyyy-mm-dd' })
+    expect(parseEntry('1/2/26')).toEqual({ value: '2026-01-02', numFmt: 'yyyy-mm-dd' })
+    expect(parseEntry('1/2')).toEqual({ value: `${new Date().getFullYear()}-01-02`, numFmt: 'yyyy-mm-dd' })
+    // Not a day of any month, so not a date: stays the text it is.
+    expect(parseEntry('2/30/2026')).toBeNull()
+    expect(parseEntry('13/1/2026')).toBeNull()
+  })
+
+  it('reads a clock time as the fraction of a day under a time format', () => {
+    expect(parseEntry('10:30')).toEqual({ value: '0.4375', numFmt: 'h:mm' })
+    expect(parseEntry('0:00')).toEqual({ value: '0', numFmt: 'h:mm' })
+    expect(parseEntry('6:00:00')).toEqual({ value: '0.25', numFmt: 'h:mm:ss' })
+    expect(parseEntry('10:30 PM')).toEqual({ value: '0.9375', numFmt: 'h:mm AM/PM' })
+    expect(parseEntry('12:00 am')).toEqual({ value: '0', numFmt: 'h:mm AM/PM' })
+    expect(parseEntry('25:00')).toBeNull()
+    expect(parseEntry('13:00 PM')).toBeNull()
+  })
+
   it('leaves everything else as typed', () => {
-    for (const text of ['', '=A1*2', '12', '1.5', 'hello', '12%%', '1,23', '$', '12,34.5', '1.2.3%', 'true']) {
+    for (const text of ['', '=A1*2', '12', '1.5', 'hello', '12%%', '1,23', '$', '12,34.5', '1.2.3%', 'true', '3/4/2026/1', '10:3']) {
       expect(parseEntry(text)).toBeNull()
     }
   })

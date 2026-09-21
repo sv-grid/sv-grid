@@ -89,6 +89,10 @@ export type SheetTextMessages = {
   menuNewComment: string
   menuEditComment: string
   menuDeleteComment: string
+  menuLink: string
+  menuEditLink: string
+  menuOpenLink: string
+  menuRemoveLink: string
   menuFormatCells: string
   menuColumnWidth: string
   menuRowHeight: string
@@ -870,6 +874,10 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   menuNewComment: 'New Comment',
   menuEditComment: 'Edit Comment',
   menuDeleteComment: 'Delete Comment',
+  menuLink: 'Link...',
+  menuEditLink: 'Edit Link...',
+  menuOpenLink: 'Open Link',
+  menuRemoveLink: 'Remove Link',
   menuFormatCells: 'Format Cells...',
   menuColumnWidth: 'Column Width...',
   menuRowHeight: 'Row Height...',

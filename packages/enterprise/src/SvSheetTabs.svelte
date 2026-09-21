@@ -155,6 +155,11 @@
     if (hasContent(name)) confirmDelete = name
     else remove(name)
   }
+  /** The ribbon's Delete Sheet: the tab menu's Delete for the active sheet,
+   *  with the same question first when the sheet holds anything. */
+  export function deleteSheet(name: string = workbook.active): void {
+    askRemove(name)
+  }
 
   function remove(name: string) {
     confirmDelete = null

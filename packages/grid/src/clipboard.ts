@@ -854,6 +854,7 @@ export function createClipboard<
     const processCell = ctx.props.processCellForClipboard as
       | ((params: { value: unknown; column: unknown; row: unknown; rowIndex: number; columnId: string }) => unknown)
       | undefined;
+    const copyCollapsed = ctx.props.copyCollapsedRows as ((rowIndex: number) => boolean) | undefined;
     const blocks: Array<string> = [];
     for (const rect of rects) {
       const lines: Array<string> = [];
@@ -871,9 +872,11 @@ export function createClipboard<
         if (!row || isGroupRow(row)) continue;
         // A collapsed row is folded to nothing: the user cannot see it and
         // the keyboard walks past it, so a copy leaves it out too. That is
-        // what a spreadsheet does with a filtered or hidden row, and it is
-        // what makes "filter, copy, paste" carry the rows that matched.
-        if (ctx.isRowCollapsed?.(r)) continue;
+        // what a spreadsheet does with a filtered row, and it is what makes
+        // "filter, copy, paste" carry the rows that matched. A consumer that
+        // tells hidden from filtered answers per row (`copyCollapsedRows`):
+        // Excel copies a row hidden by hand.
+        if (ctx.isRowCollapsed?.(r) && !copyCollapsed?.(r)) continue;
         const cells: Array<string> = [];
         for (let c = rect.minCol; c <= rect.maxCol; c += 1) {
           const column = ctx.allColumns[c];

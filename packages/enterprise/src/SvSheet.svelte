@@ -134,7 +134,7 @@
     ruleStats, evaluateCf, removeCf, cfId, COLOR_SCALES, DATA_BAR_COLOR,
     type CfRule, type CfRuleBody, type CfStats, type CfResult, type CfContext, type CfPreset, type CfBody, type CfStyledRule,
   } from './sheet/conditional-formats'
-  import type { Rect } from './sheet/rects'
+  import { rectsIntersect, type Rect } from './sheet/rects'
   import {
     mergePlan, unmergePlan, toGridMerges, isCoveredCell, selectionMerged, mergesIn, sortBlockedByMerges, reorderMerges,
     mergeAt as sheetMergeAt, normalRect, expandToMerges, type MergeKind, type MergePlan,
@@ -967,6 +967,8 @@
   /** Where the editor points: the cell's box relative to the grid host. */
   let anchorRect = $state<{ left: number; top: number; width: number; height: number } | null>(null)
   let gridHost = $state<HTMLDivElement | null>(null)
+  /** The tab strip, for the ribbon's Delete Sheet, which asks the strip's question first. */
+  let tabs = $state<SvSheetTabs | null>(null)
   let showComments = $state(false)
   const allComments = $derived.by(() => { void version; return listComments(notesNow()) })
 
@@ -3333,7 +3335,7 @@
     if (!block) return
     const keyCol = Math.min(Math.max(over?.keyCol ?? active.colIndex, block.left), block.right)
     // An AutoFilter's region has its header in row 1 by definition.
-    const headerRow = over ? true : guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol)
+    const headerRow = over ? true : guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol, block)
     sortBy(block, [{ col: keyCol, direction }], headerRow)
   }
 
@@ -3443,6 +3445,7 @@
     if (onAction?.(action, context) === true) return
     switch (action) {
       case 'undo': void undoRedo('undo'); return
+      case 'delete-sheet': tabs?.deleteSheet(wb.active); return
       case 'redo': void undoRedo('redo'); return
       case 'find-replace': findOpen = true; return
       case 'paste-special': void openPasteSpecial(); return
@@ -3463,7 +3466,7 @@
         const block = sortBlock()
         if (!block || block.bottom <= block.top) { say(t('selectBlockToSort')); return }
         const keyCol = Math.min(Math.max(active.colIndex, block.left), block.right)
-        sortDialog = { block, headerGuess: guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol) }
+        sortDialog = { block, headerGuess: guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol, block) }
         return
       }
       case 'data-validation': dataValidationOpen = true; return
@@ -3684,7 +3687,7 @@
    * block is moved rather than translated and a foreign one has nowhere to
    * have moved from, so both pass null. Values and formats are one undo.
    */
-  function pasteBlock(grid: ClipboardGrid, origin: { row: number; col: number } | null, opts: PasteSpecialOptions): boolean {
+  function pasteBlock(grid: ClipboardGrid, origin: { row: number; col: number } | null, opts: PasteSpecialOptions, merges: ReadonlyArray<Rect> = []): boolean {
     const cmd = cmdOf()
     const target = getFormatTarget()
     if (!cmd || !target) return false
@@ -3702,7 +3705,21 @@
     // A protected sheet refuses the whole paste when it reaches a locked
     // cell, as Excel does; handled, so the grid does not paste the text.
     if (protectedNow() && plan.some((entry) => locked(entry.row, entry.col))) { refuse(); return true }
-    const landing = plan.filter((entry) => !covered(entry.row, entry.col))
+    // The block's merges come along with a paste of everything or of the
+    // formats, as Excel's do, laid over the landing from its corner; a
+    // merge already there is replaced, so the cells under it are written.
+    const laying = (opts.what === 'all' || opts.what === 'formats') && merges.length > 0
+      ? merges
+        .map((m): Rect => opts.transpose
+          ? [dest.row + m[1], dest.col + m[0], dest.row + m[3], dest.col + m[2]]
+          : [dest.row + m[0], dest.col + m[1], dest.row + m[2], dest.col + m[3]])
+        .filter((m) => m[2] < rowCount && m[3] < colCount)
+      : []
+    const landingRect: Rect | null = plan.length
+      ? [Math.min(...plan.map((e) => e.row)), Math.min(...plan.map((e) => e.col)), Math.max(...plan.map((e) => e.row)), Math.max(...plan.map((e) => e.col))]
+      : null
+    const replacing = laying.length && landingRect ? mergesNow().filter((m) => rectsIntersect(m, landingRect)) : []
+    const landing = plan.filter((entry) => !covered(entry.row, entry.col) || replacing.some((m) => entry.row >= m[0] && entry.row <= m[2] && entry.col >= m[1] && entry.col <= m[3]))
     const rects: Array<readonly [number, number, number, number]> = []
     for (const entry of landing) rects.push([entry.row, entry.col, entry.row, entry.col])
     // A cut lands as a MOVE: the cells leave where they were, and every
@@ -3714,6 +3731,11 @@
     pasting = true
     try {
       cmd.batch(() => {
+        if (laying.length) {
+          const gone = new Set(replacing)
+          if (moving) for (const m of moving.merges) gone.add(mergesNow().find((own) => own[0] === m[0] && own[1] === m[1] && own[2] === m[2] && own[3] === m[3]) ?? m)
+          setMerges([...mergesNow().filter((m) => !gone.has(m)), ...laying])
+        }
         withFormatUndo(cmd, target, rects, () => {
           for (const entry of landing) {
             const at = { row: entry.row, col: entry.col }
@@ -3777,6 +3799,13 @@
       }
     }
     wb.repointAfterMove(move)
+    // A block cut from another sheet leaves its merges behind there; the
+    // paste laid them at the destination. Same-sheet moves drop them in
+    // pasteBlock, inside the merge step the paste records.
+    if (!sameSheet && block.merges.length) {
+      const source = doc.get(move.sheet)
+      source.merges = source.merges.filter((m) => !block.merges.some((b) => b[0] === m[0] && b[1] === m[1] && b[2] === m[2] && b[3] === m[3]))
+    }
     const after = getState()
     cmd.recordUndo?.(
       () => { doc.setState(before); registerSheetTargets(); applyLive(wb.active); bump() },
@@ -3848,7 +3877,7 @@
     if (!cmd) return
     const block = copied
     if (block && block.cells.length) {
-      if (pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, opts)) focusSheet(cmd)
+      if (pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, opts, blockMerges(block))) focusSheet(cmd)
       return
     }
     const payload = pendingPaste ?? await readSystemClipboard()
@@ -4038,13 +4067,48 @@
       event.preventDefault()
       event.stopPropagation()
       const block = copied
-      pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' })
+      pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' }, blockMerges(block))
       marquee = null
       return
     }
     if (!painter) return
     if (event.key === 'Escape') { painter = null; statusMessage = null; event.preventDefault(); return }
     if (event.key === 'Enter' && !editorOf(event.target)) { event.preventDefault(); paintFormats() }
+  }
+
+  /** Functions whose result is a value of their arguments' kind, so the
+   *  first reference's format still describes it. COUNT, LEN, YEAR and the
+   *  rest return a plain number and stay General, as they do in Excel. */
+  const PASS_THROUGH_FUNCTIONS = new Set(['SUM', 'AVERAGE', 'MIN', 'MAX', 'MEDIAN', 'ROUND', 'ROUNDUP', 'ROUNDDOWN', 'ABS', 'IF', 'IFERROR', 'IFNA', 'SUMIF', 'SUMIFS', 'AVERAGEIF', 'AVERAGEIFS', 'MINIFS', 'MAXIFS', 'SUMPRODUCT', 'PRODUCT', 'SUBTOTAL', 'INDEX', 'VLOOKUP', 'HLOOKUP', 'XLOOKUP', 'LOOKUP', 'CHOOSE', 'N', 'OFFSET', 'INDIRECT', 'LARGE', 'SMALL', 'MOD', 'INT', 'TRUNC', 'CEILING', 'FLOOR', 'MROUND'])
+  /** Functions whose result is a day, whatever went in. */
+  const DATE_FUNCTIONS = new Set(['TODAY', 'DATE', 'EOMONTH', 'EDATE', 'WORKDAY', 'DATEVALUE'])
+  const ISO_DATE_TEXT = /^\d{4}-\d{2}-\d{2}$/
+  /**
+   * The number format a formula typed into a General cell takes, as Excel
+   * gives it: the first referenced cell's, so a sum of currency is
+   * currency and a day plus one is a day, and a date for a date function's
+   * result. None when a function in it returns a count or a part (COUNT,
+   * YEAR), and none for one date taken from another, which is a number of
+   * days and stays General, the one exception Excel makes too.
+   */
+  function inheritedNumFmt(formula: string): string | undefined {
+    const names = [...formula.matchAll(/([A-Za-z][A-Za-z0-9_.]*)\s*\(/g)].map((m) => m[1]!.toUpperCase())
+    if (names.some((name) => !PASS_THROUGH_FUNCTIONS.has(name) && !DATE_FUNCTIONS.has(name))) return undefined
+    if (names.some((name) => DATE_FUNCTIONS.has(name))) return 'yyyy-mm-dd'
+    const spans = referenceSpans(formula)
+    const first = spans[0]
+    if (!first) return undefined
+    const dateAt = (span: ReferenceSpan) => {
+      const [r, c] = span.rect
+      const fmt = storeFor().get(`r${r}`, colToLetters(c))?.numFmt
+      const category = fmt ? formatCategory(fmt).category : undefined
+      return category === 'date' || category === 'time' || (fmt === undefined && ISO_DATE_TEXT.test(wb.getRaw(wb.active, r, c).trim()))
+    }
+    if (spans.length === 2 && dateAt(first) && dateAt(spans[1]!) && /^=\s*\$?[A-Za-z]{1,3}\$?\d+\s*-\s*\$?[A-Za-z]{1,3}\$?\d+\s*$/.test(formula)) return undefined
+    const [r, c] = first.rect
+    const fmt = storeFor().get(`r${r}`, colToLetters(c))?.numFmt
+    if (fmt) return fmt
+    return dateAt(first) ? 'yyyy-mm-dd' : undefined
   }
 
   /**
@@ -4085,7 +4149,18 @@
     const parsed = parseEntry(text)
     if (parsed) {
       stored = parsed.value
-      if (!entry?.numFmt && parsed.numFmt) patch.numFmt = parsed.numFmt
+      // The entry's format takes the cell when the cell has none, or one
+      // of another kind: 10:30 typed into a currency cell makes it a time
+      // cell, as it does in Excel, while 5% typed into a 0.0% cell keeps
+      // the cell's own decimals.
+      if (parsed.numFmt && (!entry?.numFmt || formatCategory(entry.numFmt).category !== formatCategory(parsed.numFmt).category)) patch.numFmt = parsed.numFmt
+    }
+    // Excel's rule for a formula typed into a General cell: it takes the
+    // number format of the first cell it reads, so =A1*2 under $5.00 is
+    // $10.00 and =A1+1 under a date is the next day rather than 46086.
+    if (!entry?.numFmt && text.startsWith('=')) {
+      const inherited = inheritedNumFmt(text)
+      if (inherited) patch.numFmt = inherited
     }
     // Excel's automatic percent entry: a plain number typed into a cell that
     // already shows percentages is the percentage it reads as, so 5 in a
@@ -4195,13 +4270,17 @@
     sheet: string
     cells: CopiedCell[][]
     /**
-     * Where each copied row and column sits in `cells`. A hidden or filtered
-     * row is not copied at all, so the block CLOSES UP around it the way
-     * Excel's does: filter, copy, paste gives the rows that matched, next to
-     * each other, rather than a block with holes in it.
+     * Where each copied row and column sits in `cells`. A row a filter
+     * folded away is not copied at all, so the block CLOSES UP around it the
+     * way Excel's does: filter, copy, paste gives the rows that matched, next
+     * to each other, rather than a block with holes in it. A row hidden by
+     * hand IS copied, as Excel copies one (copyCollapsedRows on the grid).
      */
     rowAt: Map<number, number>
     colAt: Map<number, number>
+    /** The merges lying inside the copied block, as they were: a paste of
+     *  the block lays them at the destination, as Excel's does. */
+    merges: Rect[]
     fresh: boolean
     cut: boolean
   }
@@ -4266,20 +4345,37 @@
     // The grid walks each rectangle top-left to bottom-right; the first
     // cell of the first one starts a new copy. Only the first rectangle is
     // kept, as Excel keeps only one.
-    const [minRow, minCol, maxRow, maxCol] = rects[0]!
+    const first = rects[0]!
+    // A merged cell selected on its own is the whole merge to Excel: the
+    // copy takes every cell under it, so a paste lays it out as one again.
+    const whole = first[0] === first[2] && first[1] === first[3] ? sheetMergeAt(mergesNow(), r, col) : null
+    const [minRow, minCol, maxRow, maxCol] = whole && whole[0] === r && whole[1] === col ? whole : first
     if (r === minRow && col === minCol) {
       copied = {
         origin: { row: r, col }, sheet: wb.active, cells: [],
         rowAt: new Map(), colAt: new Map(), fresh: true, cut: false,
+        merges: mergesNow().filter((m) => m[0] >= minRow && m[2] <= maxRow && m[1] >= minCol && m[3] <= maxCol).map((m) => [...m] as Rect),
       }
       queueMicrotask(() => { if (copied) copied.fresh = false })
       // A whole column or row is selected to Infinity; the ants stop at
       // the sheet's last line.
       marquee = { sheet: wb.active, rect: [minRow, minCol, Math.min(maxRow, rowCount - 1), Math.min(maxCol, colCount - 1)] }
+      // The grid walks only the anchor of a lone merged cell; the cells it
+      // covers are put in by hand, empty, so the block has the merge's shape.
+      if (whole && whole[0] === r && whole[1] === col) {
+        for (let rr = minRow; rr <= maxRow; rr += 1) {
+          copied.rowAt.set(rr, rr - minRow)
+          copied.cells[rr - minRow] = []
+          for (let cc = minCol; cc <= maxCol; cc += 1) {
+            copied.colAt.set(cc, cc - minCol)
+            if (rr !== r || cc !== col) copied.cells[rr - minRow]![cc - minCol] = { shown: '', raw: '', value: '', format: storeFor().get(`r${rr}`, colToLetters(cc)) }
+          }
+        }
+      }
     }
     if (copied && !copied.cut) {
       // Dense positions, not distances from the origin: the grid never
-      // offers a hidden row, so the block closes up around one.
+      // offers a filtered row, so the block closes up around one.
       let dr = copied.rowAt.get(r)
       if (dr === undefined) { dr = copied.rowAt.size; copied.rowAt.set(r, dr) }
       let dc = copied.colAt.get(col)
@@ -4309,6 +4405,17 @@
    * formula itself beside it. `shown` is what another application gets:
    * the display text, with the number behind it for a spreadsheet.
    */
+  /** The block's merges in its own dense coordinates, for laying at a paste. */
+  function blockMerges(block: Copied): Rect[] {
+    const out: Rect[] = []
+    for (const [r1, c1, r2, c2] of block.merges) {
+      const dr1 = block.rowAt.get(r1), dc1 = block.colAt.get(c1), dr2 = block.rowAt.get(r2), dc2 = block.colAt.get(c2)
+      if (dr1 === undefined || dc1 === undefined || dr2 === undefined || dc2 === undefined) continue
+      out.push([dr1, dc1, dr2, dc2])
+    }
+    return out
+  }
+
   function copiedGrid(block: Copied, text: 'plain' | 'shown'): ClipboardGrid {
     const width = block.cells.reduce((max, line) => Math.max(max, line.length), 0)
     return block.cells.map((line) =>
@@ -4354,7 +4461,7 @@
     const block = copied
     const text = payload.text.replace(/\r\n/g, '\n').replace(/\n$/, '')
     if (block && block.cells.length && copiedText(block) === text) {
-      return pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' })
+      return pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' }, blockMerges(block))
     }
     const grid = payload.html ? parseClipboardHtml(payload.html) : null
     if (!grid) return undefined
@@ -4384,6 +4491,8 @@
    */
   /** Whether the active cell carries a comment, for the menu's items. */
   const hasComment = () => commentAt(notesNow(), active.rowIndex, active.colIndex) !== undefined
+  /** Whether it carries a link, its own or a HYPERLINK's. */
+  const hasLink = () => linkOf(active.rowIndex, active.colIndex) !== undefined
   /** Whole rows, whole columns, or a block: what the menu's items are for. */
   const axis = (): 'rows' | 'cols' | 'ambiguous' => {
     const c = cmdOf()
@@ -4436,6 +4545,12 @@
     { key: 'new-comment', label: t('menuNewComment'), icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || hasComment(), action: () => withCmd((c) => handleAction('new-comment', c)) },
     { key: 'edit-comment', label: t('menuEditComment'), icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('edit-comment', c)) },
     { key: 'delete-comment', label: t('menuDeleteComment'), icon: glyph('comment-delete'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('delete-comment', c)) },
+    'separator',
+    // Excel's Link... on a plain cell; Edit, Open and Remove on a linked one.
+    { key: 'insert-link', label: t('menuLink'), icon: glyph('link'), hidden: () => axis() !== 'ambiguous' || hasLink(), action: () => withCmd((c) => handleAction('insert-link', c)) },
+    { key: 'edit-link', label: t('menuEditLink'), icon: glyph('link'), hidden: () => axis() !== 'ambiguous' || !hasLink(), action: () => withCmd((c) => handleAction('insert-link', c)) },
+    { key: 'open-link', label: t('menuOpenLink'), icon: glyph('link'), hidden: () => axis() !== 'ambiguous' || !hasLink(), action: () => { const link = linkOf(active.rowIndex, active.colIndex); if (link) void followLink(link) } },
+    { key: 'remove-link', label: t('menuRemoveLink'), icon: glyph('unlink'), hidden: () => axis() !== 'ambiguous' || !hasLink(), action: () => withCmd((c) => handleAction('remove-link', c)) },
     'separator',
     { key: 'format-cells', label: t('menuFormatCells'), icon: glyph('format-cells'), action: () => withCmd((c) => delegate('format-cells', c)) },
     { key: 'column-width', label: t('menuColumnWidth'), icon: glyph('column-width'), hidden: () => axis() !== 'cols', action: () => openSizeDialog('cols') },
@@ -5727,6 +5842,7 @@
     processCellForFill={({ value, delta }) =>
       typeof value === 'string' && value.startsWith('=') ? translateFormula(value, delta.rows, delta.cols) : undefined}
     processCellForClipboard={toClipboard}
+    copyCollapsedRows={(r: number) => !doc.get(wb.active).filterHidden.has(r)}
     clipboardHtml={copiedHtml}
     onPasteClipboard={pasteFromSystem}
     onCellSelectionChange={(ranges: Array<[number, number, number, number]>) => {
@@ -5743,6 +5859,7 @@
 
   {#if showTabs}
     <SvSheetTabs
+      bind:this={tabs}
       workbook={wb}
       {version}
       onChange={bump}

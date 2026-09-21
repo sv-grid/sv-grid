@@ -683,14 +683,17 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   // grid leaves Ctrl+PageDown to the browser.
   { key: 'PageDown', mod: true, run: () => switchSheet(1), label: 'Next sheet' },
   { key: 'PageUp', mod: true, run: () => switchSheet(-1), label: 'Previous sheet' },
-  { key: 'F11', shift: true, run: () => {
-    const wb = workbook
-    if (!wb) return false
-    wb.addSheet()
-    onWorkbookChange?.()
-    return true
-  }, label: 'New sheet' },
+  { key: 'F11', shift: true, run: () => newSheet(), label: 'New sheet' },
 ]
+
+/** Shift+F11 and the ribbon's Insert Sheet: a new sheet after the last, made active. */
+export function newSheet(): boolean {
+  const wb = workbook
+  if (!wb) return false
+  wb.addSheet()
+  onWorkbookChange?.()
+  return true
+}
 
 export function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean {
   if (!getStructureTarget()) return false

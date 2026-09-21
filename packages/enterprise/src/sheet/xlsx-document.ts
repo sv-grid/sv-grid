@@ -109,6 +109,20 @@ export function isDateFormat(fmt: string | undefined): boolean {
   return /[ymd]/i.test(bare) && !/[#0?]/.test(bare) && !/^General$/i.test(fmt)
 }
 
+/**
+ * A date format that shows a day (a year, month or day token), as against
+ * a time alone. The reader turns a whole serial under one of these into the
+ * sheet's yyyy-mm-dd text; under h:mm the fraction stays a number, which
+ * the sheet shows as the time it is.
+ */
+export function isDayFormat(fmt: string | undefined): boolean {
+  if (!isDateFormat(fmt)) return false
+  const bare = fmt!.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '')
+  if (/[yd]/i.test(bare)) return true
+  // An m beside an h or an s is minutes; any other is a month.
+  return /m/i.test(bare.replace(/h+:m+|m+:s+/gi, ''))
+}
+
 /** `$A$1:$D$10`, the way a print name spells a rectangle. */
 const absRef = ([r1, c1, r2, c2]: Rect): string => `$${colToLetters(c1)}$${r1 + 1}:$${colToLetters(c2)}$${r2 + 1}`
 
@@ -261,7 +275,7 @@ export function asText(text: string): string {
 }
 
 /** A cell's `<c>` element: a formula with its cached value, or a literal. */
-function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean, spill?: { ref: string } | 'covered', inTable?: string): string {
+function cellXml(ref: string, raw: string, value: CellValue, s: number, spill?: { ref: string } | 'covered', inTable?: string): string {
   const sAttr = s ? ` s="${s}"` : ''
   const text = raw.trim()
   if (text === '' && spill === 'covered') {
@@ -295,7 +309,9 @@ function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt:
   if (isError(value) && text.startsWith('#')) return `<c r="${ref}"${sAttr} t="e"><v>${esc(value.error)}</v></c>`
   const serial = isoToSerial(text)
   if (serial !== null) return `<c r="${ref}"${sAttr}><v>${serial}</v></c>`
-  if (typeof value === 'number' && !dateFmt) return `<c r="${ref}"${sAttr}><v>${value}</v></c>`
+  // A number under a date or time format is a serial to Excel, which shows
+  // it through the format: 0.4375 under h:mm is 10:30 there as here.
+  if (typeof value === 'number') return `<c r="${ref}"${sAttr}><v>${value}</v></c>`
   if (typeof value === 'boolean') return `<c r="${ref}"${sAttr} t="b"><v>${value ? 1 : 0}</v></c>`
   return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`
 }
@@ -509,7 +525,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         const s = look ? styles.xfId(look) : 0
         const xml = cellXml(
           `${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' && !spill ? '' : wb.getValue(name, r, c),
-          s, dated || isDateFormat(entry?.numFmt), spill, wb.tables.at(name, r, c)?.name,
+          s, spill, wb.tables.at(name, r, c)?.name,
         )
         if (xml) cells.push(xml)
       }
@@ -1255,7 +1271,7 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
             else if (type === 'e') text = v ?? ''
             else if (v !== null && v !== '') {
               const n = Number(v)
-              text = Number.isFinite(n) && isDateFormat(s !== null ? styles.numFmtOf(s) : undefined) && n >= 0 && Number.isInteger(n) ? serialToIso(n) : v
+              text = Number.isFinite(n) && isDayFormat(s !== null ? styles.numFmtOf(s) : undefined) && n >= 0 && Number.isInteger(n) ? serialToIso(n) : v
             }
           }
           if (text !== '') put(ref.row, c, text)

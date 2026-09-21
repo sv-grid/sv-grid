@@ -128,10 +128,26 @@ the wiring BETWEEN the parts, done once:
 - A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
-  format of its own. `=A1*2` over a `12%` cell is 0.24. A plain number
+  format of the same kind (a time typed into a currency cell makes it a
+  time cell, as it does in Excel; `5%` typed into a `0.0%` cell keeps the
+  cell's decimals). `=A1*2` over a `12%` cell is 0.24. A plain number
   typed into a cell that already shows percentages is that percentage, so
   `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
   entry has it; `(5)` is -5, the way a statement writes a negative.
+- A date typed the American way, `3/4/2026`, `3/4/26` or `3/4`, is the
+  sheet's `2026-03-04` under a date format, and a clock time, `10:30`,
+  `6:00:00` or `10:30 PM`, is the fraction of a day it is under a time
+  format, so the times add up. In arithmetic a date written as text is its
+  day number, as a date cell is in Excel: `=A1+1` under a date is the next
+  day rather than `#VALUE!`, and `=B1-A1` over two dates is the days
+  between them.
+- A formula typed into a cell with no format takes the number format of
+  the first cell it reads, as Excel's does: `=A1*2` under `$5.00` is
+  `$10.00`, `=SUM(B2:B9)` over currency is currency, `=A1+1` under a date
+  is a date and `=TODAY()+7` is a day. A formula whose function returns a
+  count or a part (COUNT, LEN, YEAR and the rest) stays General, and so
+  does one date taken from another, which is a number of days, the one
+  exception Excel makes too.
 - File > Open reads what the other spreadsheets write, not only what this
   one wrote: a sheet's own `<cols>` or a table's filter, a row height
   LibreOffice left unflagged, `General` as the absence of a format, a row
@@ -156,10 +172,14 @@ the wiring BETWEEN the parts, done once:
   reading over a filtered block. Delete and Clear Contents leave such a row
   as it is, so clearing a filtered selection cannot wipe what the filter
   hid.
-- A copy carries only the cells you can see: a row a filter or Hide Rows
-  folded away is left out, and the block closes up around it, so filtering
-  a log and copying the block gives the rows that matched with nothing
-  between them. A hidden column goes the same way.
+- A copy leaves out the rows a filter folded away, and the block closes up
+  around them, so filtering a log and copying the block gives the rows that
+  matched with nothing between them. A row hidden by hand with Hide Rows
+  IS copied, as Excel copies one (the grid's `copyCollapsedRows` prop is
+  how the shell tells the two apart); a hidden column is left out. The
+  merges inside the block travel with a paste of everything or of the
+  formats, laid over the landing from its corner, and a merged cell copied
+  on its own is the whole merge, as it is in Excel.
 - Ctrl+X marks the block rather than emptying it, as Excel's cut does: the
   cells stay where they are until the paste lands, Escape leaves the sheet
   as it was, and one Ctrl+Z puts a whole move back. The ribbon's Cut and
@@ -868,11 +888,22 @@ the cell menu is a button that does nothing:
 | Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
 | Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
 | Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
-| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
+| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on; the guess looks across every column of the block, so a Name column over names still reads as a header when the Pay column beside it is text over numbers, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
 | Conditional formatting | Home > Styles > Conditional Formatting: Greater Than..., Less Than..., Between..., Equal To..., Text that Contains..., Duplicate Values..., Top 10 Items..., Bottom 10 Items..., Above Average..., Below Average... and New Rule > Use a Formula... each open the small dialog (the value or values, or the formula, and the "with" style); Manage Rules... opens the Rules Manager. See Conditional formatting below. |
+
+Home > Cells > Insert and Delete are Excel's split buttons. The face takes
+the selection's axis: a whole column selected inserts or deletes columns,
+anything else rows, which is what Excel does with a cell selected. The
+arrow spells the axis out, so a column goes in from a cell without
+selecting the column first: Insert Sheet Rows, Insert Sheet Columns and
+Insert Sheet (Shift+F11); Delete Sheet Rows, Delete Sheet Columns and
+Delete Sheet, which asks the tab menu's question first when the sheet
+holds anything (raised as `delete-sheet`). The cell menu and the column
+and row header menus offer the same Insert and Delete for their axis, and
+Ctrl+Shift++ and Ctrl+- take a whole row or column selection.
 
 Home > Cells > Format is Excel's menu: Row Height..., AutoFit Row Height,
 Column Width... and AutoFit Column Width for the rows and columns the
@@ -1100,7 +1131,9 @@ Two ways to put a link in a cell, both Excel's.
 text to display, and a ScreenTip. The cell keeps whatever it says and the
 link is kept beside it, so editing the text keeps the link, a format
 change keeps it, and clearing the cell takes it away. Insert > Remove
-takes the links off the selection. Each is one undo.
+takes the links off the selection. The cell menu has Excel's entries too:
+Link... on a plain cell; Edit Link..., Open Link and Remove Link on one
+that carries a link. Each is one undo.
 
 **`=HYPERLINK(link, [friendly])`** puts one in a formula, showing the
 friendly name. A cell holding that formula is clickable too, and its

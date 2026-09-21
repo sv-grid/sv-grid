@@ -118,8 +118,11 @@ on a plain grid, `setRibbonActionHandler` decides what answers.
 A command that needs the clipboard calls `cmd.copy()`, `cmd.cut()` or
 `cmd.paste()` on its `GridCommandContext`: the selection copy, cut and
 paste that Ctrl+C, Ctrl+X and Ctrl+V run, cell by cell through
-`processCellForClipboard`. The api's `copyToClipboard` is something else,
-the export of the displayed rows with their headers.
+`processCellForClipboard`. A collapsed row is left out of a copy unless
+the grid's `copyCollapsedRows` says otherwise for it, which is how a
+spreadsheet copies a row hidden by hand and skips one a filter folded. The
+api's `copyToClipboard` is something else, the export of the displayed
+rows with their headers.
 
 ### Workbook
 

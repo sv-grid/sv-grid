@@ -179,6 +179,23 @@ describe('the round trip', () => {
     expect(strip(o.conditionalFormats)).toEqual(strip(before.sheets.Orders.conditionalFormats))
   })
 
+  it('a time is a number under h:mm both ways, and a whole serial under a day format comes back as the date', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['0.4375', '=A1*2', '46085']] }] })
+    const s = doc.get('S')
+    s.formats.set([[0, 0, 0, 1]], { numFmt: 'h:mm' }, lookup)
+    s.formats.set([[0, 2, 0, 2]], { numFmt: 'm/d/yyyy' }, lookup)
+    const parts = documentToXlsxParts(doc)
+    // Written as numbers: Excel shows 10:30 and 21:00 through the format,
+    // not the text "0.4375" a time-typed cell went out as before.
+    expect(parts['xl/worksheets/sheet1.xml']).toMatch(/<c r="A1" s="\d+"><v>0\.4375<\/v><\/c>/)
+    const again = createSheetDocument({ state: documentFromXlsxParts(parts) })
+    expect(again.workbook.getRaw('S', 0, 0)).toBe('0.4375')
+    expect(again.get('S').formats.get('r0', 'A')).toEqual({ numFmt: 'h:mm' })
+    expect(again.get('S').formats.get('r0', 'B')).toEqual({ numFmt: 'h:mm' })
+    expect(again.workbook.getValue('S', 0, 1)).toBe(0.875)
+    expect(again.workbook.getRaw('S', 0, 2)).toBe('2026-03-04')
+  })
+
   it('survives the zip, with the real jszip', async () => {
     const doc = fullDocument()
     const blob = await documentToXlsx(doc, JSZip)
