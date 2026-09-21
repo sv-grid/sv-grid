@@ -164,3 +164,18 @@ test('Increase/Decrease Decimal on a General number moves from what it shows', a
   await page.waitForTimeout(150)
   expect(await shown(page, 1, 0)).toBe('5.0')
 })
+
+test('a mixed fraction typed into a cell is a number, shown back as a fraction', async ({ page }) => {
+  // On 2026-09-21 "3 1/2" stayed text, so =A1*2 over it was #VALUE!. Excel
+  // reads a mixed fraction as its value; a bare "1/2" stays a date.
+  await open(page)
+  await typeInto(page, 0, 0, '3 1/2')
+  expect(await shown(page, 0, 0)).toBe('3 1/2')
+  await typeInto(page, 1, 0, '=A1*2')
+  expect(await shown(page, 1, 0)).toBe('7')
+  await typeInto(page, 2, 0, '0 3/4')
+  expect((await shown(page, 2, 0)).trim()).toBe('3/4')
+  // A bare fraction is still a date, as Excel keeps 1/2 the second of January.
+  await typeInto(page, 3, 0, '1/2')
+  expect(await shown(page, 3, 0)).toMatch(/^\d{4}-01-02$/)
+})

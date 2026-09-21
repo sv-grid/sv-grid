@@ -40,6 +40,10 @@ const THOUSANDS = new RegExp(String.raw`^(-?)(\d{1,3}(?:,\d{3})+(?:\.\d+)?)$`)
 /** (5): a negative the way a statement writes one, which Excel reads as -5. */
 const PAREN = new RegExp(String.raw`^\((${GROUPED})\)$`)
 const SLASH_DATE = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/
+// A fraction typed with a whole part, as Excel takes one: `3 1/2` is 3.5 and
+// `0 1/2` is the way to enter a bare half without `1/2` becoming a date. The
+// whole part is required - that space is what tells it apart from a date.
+const FRACTION = /^(-?)(\d+)\s+(\d+)\/(\d+)$/
 const CLOCK = /^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp])\.?[Mm]?\.?)?$/
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 
@@ -122,6 +126,18 @@ export function parseEntry(text: string): ParsedEntry | null {
   if (m) {
     const n = numberOf(m[1]!)
     return n === null ? null : { value: String(-n) }
+  }
+
+  // A mixed fraction: 3 1/2 is 3.5, shown back as the fraction under Excel's
+  // `# ?/?` format, so it adds up and =A1*2 over it is 7 rather than #VALUE!.
+  // The whole part is required, which is what keeps 1/2 a date and 0 1/2 a
+  // half. The format widens to the digits typed, so 3 11/16 keeps two.
+  m = FRACTION.exec(t)
+  if (m) {
+    const den = Number(m[4]!)
+    if (den === 0) return null
+    const value = (m[1] ? -1 : 1) * (Number(m[2]!) + Number(m[3]!) / den)
+    return { value: trim(value, 10), numFmt: `# ${'?'.repeat(m[3]!.length)}/${'?'.repeat(m[4]!.length)}` }
   }
 
   // A date typed the American way, as Excel reads one: 3/4/2026 is the

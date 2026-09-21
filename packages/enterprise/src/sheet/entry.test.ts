@@ -39,6 +39,21 @@ describe('parseEntry', () => {
     expect(shown('1,234.5')).toBe('1,234.5')
   })
 
+  it('reads a mixed fraction as its value under a fraction format', () => {
+    expect(parseEntry('3 1/2')).toEqual({ value: '3.5', numFmt: '# ?/?' })
+    expect(parseEntry('0 1/2')).toEqual({ value: '0.5', numFmt: '# ?/?' })
+    expect(parseEntry('3 11/16')).toEqual({ value: '3.6875', numFmt: '# ??/??' })
+    expect(parseEntry('-2 3/4')).toEqual({ value: '-2.75', numFmt: '# ?/?' })
+    // A bare fraction stays a date, the way Excel keeps 1/2 the second of January.
+    expect(parseEntry('1/2')?.numFmt).toBe('yyyy-mm-dd')
+    // A zero denominator is not a number.
+    expect(parseEntry('1 2/0')).toBeNull()
+    // It shows the fraction back: the leading 0 drops to a space, as Excel's
+    // `#` reserves the integer slot, so the cell reads " 1/2".
+    expect(shown('0 1/2')).toBe(' 1/2')
+    expect(shown('3 1/2')).toBe('3 1/2')
+  })
+
   it('reads a slash date as the sheet\'s yyyy-mm-dd under a date format, as Excel reads one', () => {
     expect(parseEntry('3/4/2026')).toEqual({ value: '2026-03-04', numFmt: 'yyyy-mm-dd' })
     expect(parseEntry('12/31/99')).toEqual({ value: '1999-12-31', numFmt: 'yyyy-mm-dd' })

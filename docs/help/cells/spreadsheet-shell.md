@@ -136,7 +136,10 @@ the wiring BETWEEN the parts, done once:
   cell's decimals). `=A1*2` over a `12%` cell is 0.24. A plain number
   typed into a cell that already shows percentages is that percentage, so
   `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
-  entry has it; `(5)` is -5, the way a statement writes a negative.
+  entry has it; `(5)` is -5, the way a statement writes a negative. A mixed
+  fraction with a whole part, `3 1/2`, is 3.5 shown back as a fraction, and
+  `0 1/2` is how you enter a bare half without `1/2` becoming the second of
+  January; `=A1*2` over `3 1/2` is 7.
 - A date typed the American way, `3/4/2026`, `3/4/26` or `3/4`, or with
   the month spelled out, `4-Mar-2026`, `4 Mar 26`, `March 4, 2026` or
   `Mar 4` (English month names, in either order), is the sheet's
