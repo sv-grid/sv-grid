@@ -16,7 +16,7 @@
  */
 import type { RowData, ServerRequest, ServerResult } from '@svgrid/grid'
 import { resolveIdField, type EntitySchema } from '../schema'
-import { nudgeEnterprise } from '../license'
+import { nudgeEnterpriseFor } from '../license'
 import type { WritableDataSource } from '../sveltekit/types'
 import { normalizeFilters, type NormalizedPredicate } from './filters'
 
@@ -141,7 +141,7 @@ function defaultParse<TData>(body: unknown, response: Response, request: ServerR
 export function createRestDataSource<TData extends RowData>(
   config: RestDataSourceConfig<TData>,
 ): WritableDataSource<TData> {
-  nudgeEnterprise('Studio') // soft-gate; never blocks
+  nudgeEnterpriseFor('studio', 'Studio') // soft-gate; never blocks
   const doFetch = config.fetch ?? globalThis.fetch
   const idField = config.idField ?? (config.schema ? resolveIdField(config.schema) : 'id')
   const base = config.url.replace(/\/+$/, '')

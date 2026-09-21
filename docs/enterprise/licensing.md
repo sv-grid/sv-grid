@@ -26,11 +26,25 @@ updates and support**. The price shown **renews automatically each year**
 to keep updates and support active; **cancel anytime** and you keep every
 version released during your paid term.
 
-| License                                    | Apps covered                        | Price (per developer) | Support                                   |
-| ------------------------------------------ | ----------------------------------- | --------------------- | ----------------------------------------- |
-| **Single Application Developer License**   | One deployed production app         | **$599**              | Email (next business day) + private Slack |
-| **Multiple Application Developer License** | Unlimited apps in your organisation | **$999**              | Email (next business day) + private Slack |
-| **Enterprise / volume**                    | Unlimited                           | Custom quote          | Priority + named contact, NDA / PO        |
+| License                            | What it covers                                                     | Price (per developer) | Support                                   |
+| ---------------------------------- | ------------------------------------------------------------------ | --------------------- | ----------------------------------------- |
+| **Grid Developer License**         | Enterprise grid features. No spreadsheet, no Studio                 | **$599**              | Email (next business day) + private Slack |
+| **Suite Developer License**        | Everything in Grid, plus the spreadsheet and Studio                 | **$999**              | Email (next business day) + private Slack |
+| **Enterprise / volume**            | Suite, site or organisation-wide                                    | Custom quote          | Priority + named contact, NDA / PO        |
+| **OEM / redistribution**           | Shipping SvGrid to third parties as a component or app builder      | Custom quote          | Priority + named contact, NDA / PO        |
+
+Both developer licenses cover an **unlimited number of production apps** in your
+organisation. The line between them is the feature set, not the app count.
+
+**Grid ($599)** is the enterprise grid: server-side row model, grouping and tree
+data, pivot, export and import, print, the advanced filter, alerts, the selection
+bar, and the Kanban, scheduler and Gantt renderers.
+
+**Suite ($999)** adds the two things that are their own products:
+
+- the **spreadsheet**: `<SvSheet>`, the `<sv-sheet>` element, the formula engine,
+  and the `.xlsx` / `.xls` / `.ods` / `.csv` readers and writers;
+- **Studio**: the designer, the code generator, and the SQL data sources.
 
 > Priced **per developer** - engineers who write or modify code that imports
 > `@svgrid/enterprise`. Production seats / end users are unlimited. One license key
@@ -38,20 +52,35 @@ version released during your paid term.
 > Teams of 5+ and multi-year terms get volume discounts; email
 > `sales@jqwidgets.com`.
 
+### When you need an OEM license
+
+A developer seat covers your own application, including a SaaS product your
+customers pay for. It does not cover handing SvGrid to third parties as
+something they build with: shipping it as a component or SDK, embedding it in an
+app builder or low-code platform where your customers author their own screens,
+or reselling it white-labelled. Those need an OEM license, priced separately from
+seats. Section 4A of the [EULA](/docs/legal/EULA) has the exact test. If you are
+not sure which side of the line you are on, email `sales@jqwidgets.com` and
+describe the product; the answer is usually one message.
+
 ## License key format
 
 ```
-SVENTERPRISE-IXIX-XXXX-XXXX-XXXX-XXXX
-│
+SVENTERPRISE-SUITE-XXXX-XXXX-XXXX-XXXX
+│            │
+│            └── edition: GRID or SUITE
 └── prefix the runtime recognises; the rest identifies your license
 ```
+
+A key issued before editions existed carries no edition segment. Those keys read
+as Suite, so nothing an existing customer already ships changes.
 
 The check is purely client-side and **no network call** is ever made to
 validate, so air-gapped deployments work out of the box.
 
 It is also deliberately not cryptography. The runtime classifies the key
-string - prefix recognised, on the revoked list, a `DEV` / `EVAL` sentinel, or
-a paid key - and nothing more (`checkLicenseKey` in
+string - prefix recognised, which edition it names, on the revoked list, a
+`DEV` / `EVAL` sentinel, or a paid key - and nothing more (`checkLicenseKey` in
 `packages/enterprise/src/license-core.ts`). Anyone with devtools can read a key
 out of a deployed bundle, and an unlicensed build still runs; it just shows a
 watermark and logs a one-time notice. The license is a legal agreement, not a
@@ -103,6 +132,23 @@ revoked in any production-domain validation pipeline.
 
 Nothing is "trial mode" - the soft-gate is meant for evaluation. Once
 you're sold, drop in a key.
+
+## A Grid key on a Suite feature
+
+The same soft gate, for the same reason. A Grid Developer License that opens
+`<SvSheet>`, calls the formula engine, or reaches a Studio data source gets the
+watermark and a one-time console notice naming the feature. Nothing stops
+working and nothing is hidden, so a Grid-tier team can try the spreadsheet in
+their own app before deciding to upgrade, exactly as an unlicensed team can.
+
+```ts
+import { licenseCovers } from '@svgrid/enterprise'
+
+licenseCovers('spreadsheet') // false on a GRID key, true on SUITE
+```
+
+Use `licenseCovers` if you want to hide a Suite-only entry point in your own UI
+rather than let it nudge.
 
 ## Studio (data-app generator)
 

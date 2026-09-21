@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-20 from 385 pages, 18 comparison pages, plus 73 API reference pages.
+Generated 2026-09-21 from 385 pages, 18 comparison pages, plus 73 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -1888,12 +1888,14 @@ ensure you only pay for what you use.
 
 ## Step 6: Decide
 
-- Shipping one production app? **Single Application Developer License**
-  ($599 per developer).
-- Shipping multiple apps across your org? **Multiple Application
-  Developer License** ($999 per developer).
+- Using the enterprise grid, without the spreadsheet or Studio? **Grid
+  Developer License** ($599 per developer, unlimited apps).
+- Using `<SvSheet>`, the formula engine, the spreadsheet file formats, or
+  Studio? **Suite Developer License** ($999 per developer, unlimited apps).
 - Large team (5+), multi-year, NDA, or PO? **Enterprise / volume**
   (contact sales).
+- Shipping SvGrid to third parties as a component, SDK, or app builder?
+  **OEM / redistribution** (contact sales; see Section 4A of the EULA).
 
 Each is a perpetual license + 1 year of updates and support that renews
 automatically; cancel anytime.
@@ -2207,11 +2209,25 @@ updates and support**. The price shown **renews automatically each year**
 to keep updates and support active; **cancel anytime** and you keep every
 version released during your paid term.
 
-| License                                    | Apps covered                        | Price (per developer) | Support                                   |
-| ------------------------------------------ | ----------------------------------- | --------------------- | ----------------------------------------- |
-| **Single Application Developer License**   | One deployed production app         | **$599**              | Email (next business day) + private Slack |
-| **Multiple Application Developer License** | Unlimited apps in your organisation | **$999**              | Email (next business day) + private Slack |
-| **Enterprise / volume**                    | Unlimited                           | Custom quote          | Priority + named contact, NDA / PO        |
+| License                            | What it covers                                                     | Price (per developer) | Support                                   |
+| ---------------------------------- | ------------------------------------------------------------------ | --------------------- | ----------------------------------------- |
+| **Grid Developer License**         | Enterprise grid features. No spreadsheet, no Studio                 | **$599**              | Email (next business day) + private Slack |
+| **Suite Developer License**        | Everything in Grid, plus the spreadsheet and Studio                 | **$999**              | Email (next business day) + private Slack |
+| **Enterprise / volume**            | Suite, site or organisation-wide                                    | Custom quote          | Priority + named contact, NDA / PO        |
+| **OEM / redistribution**           | Shipping SvGrid to third parties as a component or app builder      | Custom quote          | Priority + named contact, NDA / PO        |
+
+Both developer licenses cover an **unlimited number of production apps** in your
+organisation. The line between them is the feature set, not the app count.
+
+**Grid ($599)** is the enterprise grid: server-side row model, grouping and tree
+data, pivot, export and import, print, the advanced filter, alerts, the selection
+bar, and the Kanban, scheduler and Gantt renderers.
+
+**Suite ($999)** adds the two things that are their own products:
+
+- the **spreadsheet**: `<SvSheet>`, the `<sv-sheet>` element, the formula engine,
+  and the `.xlsx` / `.xls` / `.ods` / `.csv` readers and writers;
+- **Studio**: the designer, the code generator, and the SQL data sources.
 
 > Priced **per developer** - engineers who write or modify code that imports
 > `@svgrid/enterprise`. Production seats / end users are unlimited. One license key
@@ -2219,20 +2235,35 @@ version released during your paid term.
 > Teams of 5+ and multi-year terms get volume discounts; email
 > `sales@jqwidgets.com`.
 
+### When you need an OEM license
+
+A developer seat covers your own application, including a SaaS product your
+customers pay for. It does not cover handing SvGrid to third parties as
+something they build with: shipping it as a component or SDK, embedding it in an
+app builder or low-code platform where your customers author their own screens,
+or reselling it white-labelled. Those need an OEM license, priced separately from
+seats. Section 4A of the [EULA](/docs/legal/EULA) has the exact test. If you are
+not sure which side of the line you are on, email `sales@jqwidgets.com` and
+describe the product; the answer is usually one message.
+
 ## License key format
 
 ```
-SVENTERPRISE-IXIX-XXXX-XXXX-XXXX-XXXX
-│
+SVENTERPRISE-SUITE-XXXX-XXXX-XXXX-XXXX
+│            │
+│            └── edition: GRID or SUITE
 └── prefix the runtime recognises; the rest identifies your license
 ```
+
+A key issued before editions existed carries no edition segment. Those keys read
+as Suite, so nothing an existing customer already ships changes.
 
 The check is purely client-side and **no network call** is ever made to
 validate, so air-gapped deployments work out of the box.
 
 It is also deliberately not cryptography. The runtime classifies the key
-string - prefix recognised, on the revoked list, a `DEV` / `EVAL` sentinel, or
-a paid key - and nothing more (`checkLicenseKey` in
+string - prefix recognised, which edition it names, on the revoked list, a
+`DEV` / `EVAL` sentinel, or a paid key - and nothing more (`checkLicenseKey` in
 `packages/enterprise/src/license-core.ts`). Anyone with devtools can read a key
 out of a deployed bundle, and an unlicensed build still runs; it just shows a
 watermark and logs a one-time notice. The license is a legal agreement, not a
@@ -2284,6 +2315,23 @@ revoked in any production-domain validation pipeline.
 
 Nothing is "trial mode" - the soft-gate is meant for evaluation. Once
 you're sold, drop in a key.
+
+## A Grid key on a Suite feature
+
+The same soft gate, for the same reason. A Grid Developer License that opens
+`<SvSheet>`, calls the formula engine, or reaches a Studio data source gets the
+watermark and a one-time console notice naming the feature. Nothing stops
+working and nothing is hidden, so a Grid-tier team can try the spreadsheet in
+their own app before deciding to upgrade, exactly as an unlicensed team can.
+
+```ts
+import { licenseCovers } from '@svgrid/enterprise'
+
+licenseCovers('spreadsheet') // false on a GRID key, true on SUITE
+```
+
+Use `licenseCovers` if you want to hide a Suite-only entry point in your own UI
+rather than let it nudge.
 
 ## Studio (data-app generator)
 
@@ -39064,7 +39112,7 @@ We tell you when **not** to switch at the bottom.
 
 | | AG Grid Community | AG Grid Enterprise | SvGrid Community | @svgrid/enterprise |
 | --- | --- | --- | --- | --- |
-| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
+| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (grid) or $999/dev/yr (grid + spreadsheet + Studio) |
 | **Svelte 5 native** | No (community-built integration) | No (community-built integration) | Yes | Yes |
 | **Bundle (gzipped)** | measured, in the facts box above | not measured (licence) | measured, in the facts box above | lazy-loaded subpaths |
 | **Sorting / filtering** | Yes | Yes | Yes | (in Community) |
@@ -39543,7 +39591,8 @@ not a rewrite.
 
 `@svgrid/enterprise`. It adds Excel/PDF/styled-HTML export (CSV, TSV and JSON export are already free in the grid), a printable view, pivot
 tables and data import. The in-grid AI helpers are free in `@svgrid/grid`.
-It is licensed per developer ($599 single-app / $999 multi-app), and the
+It is licensed per developer ($599 for the grid, $999 with the spreadsheet
+and Studio, both covering unlimited apps), and the
 Community package is MIT-licensed and free for commercial use.
 
 ### Does SvGrid use Svelte 5 runes, or is it a wrapper?
@@ -40939,7 +40988,8 @@ bind your own MUI inputs inside custom cell components.
 ### Is SvGrid cheaper than MUI X Pro/Premium?
 
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
-is priced per developer ($599 single-app / $999 multi-app). MUI X Pro and
+is priced per developer ($599 for the grid, $999 with the spreadsheet and
+Studio, both covering unlimited apps). MUI X Pro and
 Premium are also per developer per year; the prices mui.com listed on the
 date we read it are in the facts box at the top of this page. The difference
 is what the free tier holds: most of what MUI X sells in Pro and Premium is
@@ -83119,10 +83169,6 @@ What you give up:
 
 Migration guide: moving from AG Grid (community + enterprise) to SvGrid: https://svgrid.com/docs/help/migrating-from-ag-grid/
 
-## Live example
-
-AG Grid ↔ sv-grid side-by-side: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/139-migration-from-ag-grid/
-
 ## The bottom line
 
 AG Grid is the safer pick for a multi-framework organisation, or when you need its deepest Enterprise modules, AG Charts or the viewport row model. For a Svelte-first team, SvGrid covers the Enterprise surface most teams actually buy AG Grid for, in the MIT core: master/detail, tree data, range selection, grouping, flat server-side infinite scroll and integrated charts, with pivot tables, the server-side row model and Excel, PDF and print output in the @svgrid/enterprise pack. The bundle and benchmark numbers on this page are measured on the dates shown, so read them rather than either vendor's adjectives.
@@ -83280,10 +83326,6 @@ What you give up:
 
 Migration guide: moving from DevExtreme DataGrid (DevExpress) to SvGrid: https://svgrid.com/docs/help/migrating-from-devextreme/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 DevExtreme is a deep, commercial multi-framework grid with built-ins like state storing and broad export. SvGrid trades that breadth for a Svelte-native grid with an MIT core and a far lower-cost paid tier.
@@ -83421,10 +83463,6 @@ What you give up:
 - The React ecosystem around it, including Glide Data Editor.
 
 Migration guide: moving from Glide Data Grid to SvGrid: https://svgrid.com/docs/help/migrating-from-glide/
-
-## Live example
-
-Headless virtualization: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/187-headless-virtual/
 
 ## The bottom line
 
@@ -83565,10 +83603,6 @@ What you give up:
 - Wrappers for React, Angular and Vue.
 
 Migration guide: moving from Grid.js to SvGrid: https://svgrid.com/docs/help/migrating-from-gridjs/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -83732,10 +83766,6 @@ What you give up:
 
 Migration guide: moving from Handsontable to SvGrid: https://svgrid.com/docs/help/migrating-from-handsontable/
 
-## Live example
-
-Blank sheet - just type: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/207-blank-sheet/
-
 ## The bottom line
 
 When you need HyperFormula's full function library as a supported feature, or the deepest spreadsheet editing edge cases, Handsontable is hard to beat and its licence is the price of that. If you want a spreadsheet-like grid in Svelte under MIT, SvGrid covers the surface most teams use, with ranges, a fill handle, clipboard, freeze panes, merged cells and formulas, and lets you add HyperFormula when the built-in functions run out.
@@ -83891,10 +83921,6 @@ What you give up:
 
 Migration guide: moving from jqxGrid (jQWidgets) to SvGrid: https://svgrid.com/docs/help/migrating-from-jqxgrid/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 jqxGrid and SvGrid come from the same team. If your stack is jQuery, Angular, React, or Vue, jqxGrid is the proven choice with a decade-plus track record. If you are building on Svelte 5, SvGrid is the native option in the family, with an MIT core and the same engineering behind it.
@@ -84031,10 +84057,6 @@ What you give up:
 - Telerik support tiers with response-time commitments priced into the licence.
 
 Migration guide: moving from Kendo UI Grid (Telerik) to SvGrid: https://svgrid.com/docs/help/migrating-from-kendo-grid/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -84193,10 +84215,6 @@ What you give up:
 
 Migration guide: moving from MUI X DataGrid to SvGrid: https://svgrid.com/docs/help/migrating-from-mui-x/
 
-## Live example
-
-Tree + master/detail: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/08-tree-and-master-detail/
-
 ## The bottom line
 
 If your app already lives in Material UI and React, MUI X is the path of least resistance, and its Premium tier now includes a hosted AI assistant. On Svelte 5, SvGrid is the better fit: it puts pinning, master/detail, tree data, grouping and cell selection in the MIT core that MUI X reserves for Pro and Premium, keeps Material UI and Emotion out of the bundle, and runs its AI helpers against a model you choose.
@@ -84351,10 +84369,6 @@ What you give up:
 
 Migration guide: moving from PrimeVue / PrimeNG / PrimeReact DataTable to SvGrid: https://svgrid.com/docs/help/migrating-from-primevue-datatable/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 Inside the Prime ecosystem for Vue, Angular or React, the Prime DataTable is the obvious choice, with the PrimeUI licence terms now part of the decision. For Svelte 5, SvGrid is the native fit, with an MIT core, a headless engine and no Prime-theme dependency.
@@ -84500,10 +84514,6 @@ What you give up:
 
 Migration guide: moving from React Data Grid (adazzle) to SvGrid: https://svgrid.com/docs/help/migrating-from-react-data-grid/
 
-## Live example
-
-Excel-style fill handle: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/95-fill-handle/
-
 ## The bottom line
 
 react-data-grid is a strong, focused choice in React. On Svelte 5, SvGrid is the equivalent - similar editing and virtualization - plus a built-in filter menu, grouping, and a headless core, with no React dependency.
@@ -84642,10 +84652,6 @@ What you give up:
 - A perpetual licence model and the wider Smart UI suite.
 
 Migration guide: moving from Smart.Grid (Smart Web Components) to SvGrid: https://svgrid.com/docs/help/migrating-from-smart-grid/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -84830,10 +84836,6 @@ What you give up:
 
 Migration guide: moving from SVAR Svelte DataGrid to SvGrid: https://svgrid.com/docs/help/migrating-from-svar-svelte-datagrid/
 
-## Live example
-
-Grouping + aggregation: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/07-grouping-aggregation/
-
 ## The bottom line
 
 Both grids are Svelte-5-native and MIT, so this is not a licensing call. On capability SvGrid is the more complete grid: grouping, master/detail, range editing with a fill handle, charts, a server-side row model, a headless core, AI helpers and an MCP server. SVAR is the smaller, fully free, multi-framework option from the Webix team, and it prints for free where SvGrid charges for print and Excel and PDF export. Choose SvGrid when you need the deeper feature set or support; choose SVAR when a compact free grid covers your needs or you also ship React and Vue.
@@ -85003,10 +85005,6 @@ What you give up:
 
 Migration guide: moving from svelte-headless-table to SvGrid: https://svgrid.com/docs/help/migrating-from-svelte-headless-table/
 
-## Live example
-
-Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
-
 ## The bottom line
 
 For a Svelte 4 codebase that is not moving, svelte-headless-table still works. For a Svelte 5 codebase, the original package is not an option and its author says so; the choice is between the @humanspeak fork, which keeps the plugin API, and SvGrid, which keeps the headless approach and adds virtualization, filters, editing, selection and a rendered grid in the same MIT package.
@@ -85148,10 +85146,6 @@ What you give up:
 
 Migration guide: moving from Flowbite / Skeleton / shadcn-svelte tables to SvGrid: https://svgrid.com/docs/help/migrating-from-ui-kit-tables/
 
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
-
 ## The bottom line
 
 A styled table from Flowbite, Skeleton, or shadcn-svelte is perfect until the behaviour becomes the work. Once you are hand-writing sort, filter, or virtualization, SvGrid replaces that code and still themes to match your design system.
@@ -85288,10 +85282,6 @@ What you give up:
 - Vendor support and the conditional free Community License for small companies.
 
 Migration guide: moving from Syncfusion Grid to SvGrid: https://svgrid.com/docs/help/migrating-from-syncfusion/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -85432,10 +85422,6 @@ What you give up:
 - Built-in download to CSV, XLSX and PDF without a paid pack; SvGrid has CSV free and Excel and PDF in @svgrid/enterprise.
 
 Migration guide: moving from Tabulator to SvGrid: https://svgrid.com/docs/help/migrating-from-tabulator/
-
-## Live example
-
-Excel-style filters: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/03-excel-filters/
 
 ## The bottom line
 
@@ -85609,10 +85595,6 @@ What you give up:
 
 Migration guide: moving from TanStack Table (Svelte) to SvGrid: https://svgrid.com/docs/help/migrating-from-tanstack-table/
 
-## Live example
-
-Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
-
 ## The bottom line
 
 If you build across React, Vue and Svelte and want one headless API, TanStack Table is the safer bet. If you are committed to Svelte 5 and want virtualization, Excel-style filters, editing and selection out of the box, SvGrid gets you there with far less code, and you keep a headless core when you need it.
@@ -85764,10 +85746,6 @@ What you give up:
 - Full control of the markup without opting into a headless mode.
 
 Migration guide: moving from @vincjo/datatables to SvGrid: https://svgrid.com/docs/help/migrating-from-vincjo-datatables/
-
-## Live example
-
-Headless -> your own table: open it in the gallery for the source and the full-size version. https://svgrid.com/demos/186-headless-table/
 
 ## The bottom line
 

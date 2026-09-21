@@ -6,8 +6,9 @@
  *
  * The grid ships the `registerGridShortcuts` seam for free and interprets a key
  * itself only when nothing claims it; the commands are here. Soft-gated like
- * the rest of Enterprise: it works without a license key but the grid shows the
- * unlicensed watermark and a one-time console nudge.
+ * the rest of Enterprise, and part of the Suite edition: it works without a
+ * license key, and under a Grid-edition key, but the grid shows the unlicensed
+ * watermark and a one-time console nudge in both cases.
  *
  * ```ts
  * import { setLicenseKey, enableSheet } from '@svgrid/enterprise'
@@ -19,8 +20,7 @@
 // The Svelte-free subpath: importing the barrel would drag SvGrid.svelte into
 // this module's chunk, and into any unit test that touches it.
 import { registerGridShortcuts } from '@svgrid/grid/shortcuts'
-import { isLicenseKeySet } from './license'
-import { emitUnlicensedNudge } from './watermark'
+import { nudgeEnterpriseFor } from './license'
 import { handleSheetKey } from './sheet/shortcuts'
 import { setFillTranslator } from './sheet/commands'
 import { translateFormula } from './sheet/refs'
@@ -42,5 +42,5 @@ export function enableSheet(): void {
   // literal text into every row; with it the relative half of each reference
   // shifts and the absolute half does not, the way Excel fills.
   setFillTranslator((value, delta) => translateFormula(value, delta.rows, delta.cols))
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  nudgeEnterpriseFor('spreadsheet', 'Spreadsheet')
 }

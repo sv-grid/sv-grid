@@ -39,8 +39,8 @@ export type FactRow = { label: string; svgrid: string; competitor: string; check
 export type Facts = { rows: FactRow[]; footnotes: string[]; verified: string }
 
 export const SVGRID_PRICING: {
-  readonly singleApp: number
-  readonly multiApp: number
+  readonly grid: number
+  readonly suite: number
   readonly unit: string
   readonly url: string
   readonly summary: string
